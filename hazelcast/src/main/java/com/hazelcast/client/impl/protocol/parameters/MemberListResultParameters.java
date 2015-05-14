@@ -48,7 +48,6 @@ public class MemberListResultParameters {
         final int requiredDataSize = calculateDataSize(members);
         ClientMessage clientMessage = ClientMessage.createForEncode(requiredDataSize);
         clientMessage.setMessageType(TYPE.id());
-        clientMessage.ensureCapacity(requiredDataSize);
 
         clientMessage.set(members.size());
         for (com.hazelcast.instance.MemberImpl m : members) {

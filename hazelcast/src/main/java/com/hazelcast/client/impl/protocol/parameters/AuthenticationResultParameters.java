@@ -47,7 +47,6 @@ public class AuthenticationResultParameters {
     public static ClientMessage encode(Address address, String uuid, String ownerUuid) {
         final int requiredDataSize = calculateDataSize(address, uuid, ownerUuid);
         ClientMessage clientMessage = ClientMessage.createForEncode(requiredDataSize);
-        clientMessage.ensureCapacity(requiredDataSize);
         clientMessage.setMessageType(TYPE.id());
         ParameterUtil.encodeAddress(clientMessage, address);
         clientMessage.set(uuid).set(ownerUuid);

@@ -35,7 +35,6 @@ public class AddDistributedObjectListenerParameters {
         final int requiredDataSize = calculateDataSize();
         ClientMessage clientMessage = ClientMessage.createForEncode(requiredDataSize);
         clientMessage.setMessageType(TYPE.id());
-        clientMessage.ensureCapacity(requiredDataSize);
         clientMessage.updateFrameLength();
         return clientMessage;
     }

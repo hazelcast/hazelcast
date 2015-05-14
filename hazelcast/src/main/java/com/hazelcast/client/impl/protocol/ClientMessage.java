@@ -16,27 +16,27 @@
 
 package com.hazelcast.client.impl.protocol;
 
-import com.hazelcast.client.impl.protocol.util.BitUtil;
-import com.hazelcast.client.impl.protocol.util.MutableDirectBuffer;
-import com.hazelcast.client.impl.protocol.util.ParameterFlyweight;
+import com.hazelcast.client.impl.protocol.util.ClientProtocolBuffer;
+import com.hazelcast.client.impl.protocol.util.MessageFlyweight;
+import com.hazelcast.client.impl.protocol.util.SafeBuffer;
+import com.hazelcast.client.impl.protocol.util.UnsafeBuffer;
+import com.hazelcast.nio.Bits;
 import com.hazelcast.nio.SocketReadable;
 import com.hazelcast.nio.SocketWritable;
+import com.hazelcast.util.QuickMath;
 
 import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-
-import static java.nio.ByteOrder.LITTLE_ENDIAN;
+import java.util.Arrays;
 
 /**
- *
  * <p>
- *     Client Message is the carrier framed data as defined below.
+ * Client Message is the carrier framed data as defined below.
  * </p>
  * <p>
- *     Any request parameter, response or event data will be carried in
- *     the payload.
+ * Any request parameter, response or event data will be carried in
+ * the payload.
  * </p>
- *
+ * <p/>
  * <pre>
  * 0                   1                   2                   3
  * 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
@@ -47,7 +47,7 @@ import static java.nio.ByteOrder.LITTLE_ENDIAN;
  * +-------------+---------------+---------------------------------+
  * |                       CorrelationId                           |
  * +---------------------------------------------------------------+
- * |R|                      PartitionId                            |
+ * |                        PartitionId                            |
  * +-----------------------------+---------------------------------+
  * |        Data Offset          |                                 |
  * +-----------------------------+                                 |
@@ -57,8 +57,9 @@ import static java.nio.ByteOrder.LITTLE_ENDIAN;
  * </pre>
  */
 public class ClientMessage
-        extends ParameterFlyweight
+        extends MessageFlyweight
         implements SocketWritable, SocketReadable {
+
 
     /**
      * Current protocol version
@@ -90,17 +91,22 @@ public class ClientMessage
      */
     public static final int HEADER_SIZE;
 
+
+    private static final String PROP_HAZELCAST_PROTOCOL_UNSAFE = "hazelcast.protocol.unsafe.enabled";
+    private static final boolean USE_UNSAFE = Boolean.getBoolean(PROP_HAZELCAST_PROTOCOL_UNSAFE);
+    private static final int INITIAL_BUFFER_SIZE = 1024;
+
     private static final int FRAME_LENGTH_FIELD_OFFSET = 0;
-    private static final int VERSION_FIELD_OFFSET = FRAME_LENGTH_FIELD_OFFSET + BitUtil.SIZE_OF_INT;
-    private static final int FLAGS_FIELD_OFFSET = VERSION_FIELD_OFFSET + BitUtil.SIZE_OF_BYTE;
-    private static final int TYPE_FIELD_OFFSET = FLAGS_FIELD_OFFSET + BitUtil.SIZE_OF_BYTE;
-    private static final int CORRELATION_ID_FIELD_OFFSET = TYPE_FIELD_OFFSET + BitUtil.SIZE_OF_SHORT;
-    private static final int PARTITION_ID_FIELD_OFFSET = CORRELATION_ID_FIELD_OFFSET + BitUtil.SIZE_OF_INT;
-    private static final int DATA_OFFSET_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + BitUtil.SIZE_OF_INT;
+    private static final int VERSION_FIELD_OFFSET = FRAME_LENGTH_FIELD_OFFSET + Bits.INT_SIZE_IN_BYTES;
+    private static final int FLAGS_FIELD_OFFSET = VERSION_FIELD_OFFSET + Bits.BYTE_SIZE_IN_BYTES;
+    private static final int TYPE_FIELD_OFFSET = FLAGS_FIELD_OFFSET + Bits.BYTE_SIZE_IN_BYTES;
+    private static final int CORRELATION_ID_FIELD_OFFSET = TYPE_FIELD_OFFSET + Bits.SHORT_SIZE_IN_BYTES;
+    private static final int PARTITION_ID_FIELD_OFFSET = CORRELATION_ID_FIELD_OFFSET + Bits.INT_SIZE_IN_BYTES;
+    private static final int DATA_OFFSET_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + Bits.INT_SIZE_IN_BYTES;
 
     static {
 
-        HEADER_SIZE = DATA_OFFSET_FIELD_OFFSET + BitUtil.SIZE_OF_SHORT;
+        HEADER_SIZE = DATA_OFFSET_FIELD_OFFSET + Bits.SHORT_SIZE_IN_BYTES;
     }
 
     private transient int valueOffset;
@@ -109,72 +115,59 @@ public class ClientMessage
         super();
     }
 
-    public ClientMessage(boolean encode, byte[] buffer, int offset, int length) {
-        super(buffer, offset, length);
-        if (encode) {
-            wrapForEncode(buffer, offset, length);
-        } else {
-            wrapForDecode(buffer, offset, length);
-        }
-    }
-
-    public ClientMessage(boolean encode, MutableDirectBuffer buffer, int offset) {
-        super(buffer, offset);
-        ensureHeaderSize(offset, buffer.capacity());
-        if (encode) {
-            setDataOffset(HEADER_SIZE);
-            setFrameLength(HEADER_SIZE);
-            setPartitionId(-1);
-        }
-        index(getDataOffset() + offset);
-    }
-
     public static ClientMessage create() {
         final ClientMessage clientMessage = new ClientMessage();
-        clientMessage.wrap(new byte[INITIAL_BUFFER_CAPACITY]);
+
+        if (USE_UNSAFE) {
+            clientMessage.wrap(new UnsafeBuffer(new byte[INITIAL_BUFFER_SIZE]), 0);
+        } else {
+            clientMessage.wrap(new SafeBuffer(new byte[INITIAL_BUFFER_SIZE]), 0);
+
+        }
         return clientMessage;
     }
 
     public static ClientMessage createForEncode(int initialCapacity) {
-        return new ClientMessage(true, new byte[initialCapacity], 0, initialCapacity);
+        initialCapacity = QuickMath.nextPowerOfTwo(initialCapacity);
+        if (USE_UNSAFE) {
+            return createForEncode(new UnsafeBuffer(new byte[initialCapacity]), 0);
+        } else {
+            return createForEncode(new SafeBuffer(new byte[initialCapacity]), 0);
+        }
     }
 
-    public static ClientMessage createForDecode(int initialCapacity) {
-        return new ClientMessage(false, new byte[initialCapacity], 0, initialCapacity);
+    public static ClientMessage createForEncode(ClientProtocolBuffer buffer, int offset) {
+        ClientMessage clientMessage = new ClientMessage();
+        clientMessage.wrapForEncode(buffer, offset);
+        return clientMessage;
     }
 
-    public static ClientMessage createForEncode(byte[] buffer, final int offset, int length) {
-        return new ClientMessage(true, buffer, offset, length);
+    public static ClientMessage createForDecode(ClientProtocolBuffer buffer, int offset) {
+        ClientMessage clientMessage = new ClientMessage();
+        clientMessage.wrapForDecode(buffer, offset);
+        return clientMessage;
     }
 
-    public static ClientMessage createForDecode(byte[] buffer, final int offset, int length) {
-        return new ClientMessage(false, buffer, offset, length);
-    }
-
-    public static ClientMessage createForDecode(final MutableDirectBuffer buffer, final int offset) {
-        return new ClientMessage(false, buffer, offset);
-    }
-
-    public void wrapForEncode(byte[] buffer, int offset, int length) {
-        ensureHeaderSize(offset, length);
-        super.wrap(buffer, offset, length);
+    protected void wrapForEncode(ClientProtocolBuffer buffer, int offset) {
+        ensureHeaderSize(offset, buffer.capacity());
+        super.wrap(buffer, offset);
         setDataOffset(HEADER_SIZE);
         setFrameLength(HEADER_SIZE);
-        index(getDataOffset() + offset);
+        index(getDataOffset());
         setPartitionId(-1);
     }
 
     private void ensureHeaderSize(int offset, int length) {
         if (length - offset < HEADER_SIZE) {
             throw new IndexOutOfBoundsException("ClientMessage buffer must contain at least "
-                + HEADER_SIZE + " bytes! length: " + length + ", offset: " + offset);
+                    + HEADER_SIZE + " bytes! length: " + length + ", offset: " + offset);
         }
     }
 
-    public void wrapForDecode(byte[] buffer, int offset, int length) {
-        ensureHeaderSize(offset, length);
-        super.wrap(buffer, offset, length);
-        index(getDataOffset() + offset);
+    protected void wrapForDecode(ClientProtocolBuffer buffer, int offset) {
+        ensureHeaderSize(offset, buffer.capacity());
+        super.wrap(buffer, offset);
+        index(getDataOffset());
     }
 
     /**
@@ -183,7 +176,7 @@ public class ClientMessage
      * @return The version field value.
      */
     public short getVersion() {
-        return uint8Get(offset() + VERSION_FIELD_OFFSET);
+        return uint8Get(VERSION_FIELD_OFFSET);
     }
 
     /**
@@ -193,7 +186,7 @@ public class ClientMessage
      * @return The ClientMessage with the new version field value.
      */
     public ClientMessage setVersion(final short version) {
-        uint8Put(offset() + VERSION_FIELD_OFFSET, version);
+        uint8Put(VERSION_FIELD_OFFSET, version);
         return this;
     }
 
@@ -213,7 +206,7 @@ public class ClientMessage
      * @return The flags field value.
      */
     public short getFlags() {
-        return uint8Get(offset() + FLAGS_FIELD_OFFSET);
+        return uint8Get(FLAGS_FIELD_OFFSET);
     }
 
     /**
@@ -223,7 +216,7 @@ public class ClientMessage
      * @return The ClientMessage with the new flags field value.
      */
     public ClientMessage addFlag(final short flags) {
-        uint8Put(offset() + FLAGS_FIELD_OFFSET, (short) (getFlags() | flags));
+        uint8Put(FLAGS_FIELD_OFFSET, (short) (getFlags() | flags));
         return this;
     }
 
@@ -233,7 +226,7 @@ public class ClientMessage
      * @return The message type field value.
      */
     public int getMessageType() {
-        return uint16Get(offset() + TYPE_FIELD_OFFSET, LITTLE_ENDIAN);
+        return uint16Get(TYPE_FIELD_OFFSET);
     }
 
     /**
@@ -243,7 +236,7 @@ public class ClientMessage
      * @return The ClientMessage with the new message type field value.
      */
     public ClientMessage setMessageType(final int type) {
-        uint16Put(offset() + TYPE_FIELD_OFFSET, (short) type, LITTLE_ENDIAN);
+        uint16Put(TYPE_FIELD_OFFSET, type);
         return this;
     }
 
@@ -253,7 +246,7 @@ public class ClientMessage
      * @return The frame length field.
      */
     public int getFrameLength() {
-        return (int) uint32Get(offset() + FRAME_LENGTH_FIELD_OFFSET, LITTLE_ENDIAN);
+        return int32Get(FRAME_LENGTH_FIELD_OFFSET);
     }
 
     /**
@@ -263,7 +256,7 @@ public class ClientMessage
      * @return The ClientMessage with the new frame length field value.
      */
     public ClientMessage setFrameLength(final int length) {
-        uint32Put(offset() + FRAME_LENGTH_FIELD_OFFSET, length, LITTLE_ENDIAN);
+        int32Set(FRAME_LENGTH_FIELD_OFFSET, length);
         return this;
     }
 
@@ -273,7 +266,7 @@ public class ClientMessage
      * @return The correlation id field.
      */
     public int getCorrelationId() {
-        return (int) uint32Get(offset() + CORRELATION_ID_FIELD_OFFSET, LITTLE_ENDIAN);
+        return int32Get(CORRELATION_ID_FIELD_OFFSET);
     }
 
     /**
@@ -283,7 +276,7 @@ public class ClientMessage
      * @return The ClientMessage with the new correlation id field value.
      */
     public ClientMessage setCorrelationId(final int correlationId) {
-        uint32Put(offset() + CORRELATION_ID_FIELD_OFFSET, correlationId, ByteOrder.LITTLE_ENDIAN);
+        int32Set(CORRELATION_ID_FIELD_OFFSET, correlationId);
         return this;
     }
 
@@ -293,7 +286,7 @@ public class ClientMessage
      * @return The partition id field.
      */
     public int getPartitionId() {
-        return (int) uint32Get(offset() + PARTITION_ID_FIELD_OFFSET, LITTLE_ENDIAN);
+        return int32Get(PARTITION_ID_FIELD_OFFSET);
     }
 
     /**
@@ -303,7 +296,7 @@ public class ClientMessage
      * @return The ClientMessage with the new partitions id field value.
      */
     public ClientMessage setPartitionId(final int partitionId) {
-        uint32Put(offset() + PARTITION_ID_FIELD_OFFSET, partitionId, ByteOrder.LITTLE_ENDIAN);
+        int32Set(PARTITION_ID_FIELD_OFFSET, partitionId);
         return this;
     }
 
@@ -313,7 +306,7 @@ public class ClientMessage
      * @return The setDataOffset type field value.
      */
     public int getDataOffset() {
-        return uint16Get(offset() + DATA_OFFSET_FIELD_OFFSET, LITTLE_ENDIAN);
+        return uint16Get(DATA_OFFSET_FIELD_OFFSET);
     }
 
     /**
@@ -323,36 +316,7 @@ public class ClientMessage
      * @return The ClientMessage with the new dataOffset field value.
      */
     public ClientMessage setDataOffset(final int dataOffset) {
-        uint16Put(offset() + DATA_OFFSET_FIELD_OFFSET, (short) dataOffset, LITTLE_ENDIAN);
-        return this;
-    }
-
-    /**
-     * Copy data into the payload data region located at data Offset.
-     *
-     * @param payload The data being copied into the ClientMessage payload data region.
-     * @return The ClientMessage with the new data in its payload data region.
-     */
-    public ClientMessage putPayloadData(byte[] payload) {
-        final int index = offset() + getDataOffset();
-        buffer.putBytes(index, payload);
-        setFrameLength(getFrameLength() + payload.length);
-        return this;
-    }
-
-    /**
-     * Reads from the ClientMessage payload data region and writes into the payload array.
-     *
-     * @param payload The payload array into which the payload data region in the ClientMessage will be copied.
-     * @return The ClientMessage from which its payload data region is copied into the payload array.
-     */
-    public ClientMessage getPayloadData(byte[] payload) {
-        final int index = offset() + getDataOffset();
-        if (index >= (offset() + getFrameLength())) {
-            throw new IndexOutOfBoundsException("index cannot exceed frame length");
-        }
-        final int length = (offset() + getFrameLength()) - index;
-        buffer.getBytes(index, payload, 0, length);
+        uint16Put(DATA_OFFSET_FIELD_OFFSET, dataOffset);
         return this;
     }
 
@@ -363,7 +327,7 @@ public class ClientMessage
 
     @Override
     public boolean writeTo(ByteBuffer destination) {
-        byte[] byteArray = buffer().byteArray();
+        byte[] byteArray = buffer.byteArray();
         int size = getFrameLength();
 
         // the number of bytes that can be written to the bb.
@@ -394,17 +358,17 @@ public class ClientMessage
         if (index() == 0) {
             initFrameSize(source);
         }
-        while (index() >= BitUtil.SIZE_OF_INT && source.hasRemaining() && !isComplete()) {
+        while (index() >= Bits.INT_SIZE_IN_BYTES && source.hasRemaining() && !isComplete()) {
             accumulate(source, getFrameLength() - index());
         }
         return isComplete();
     }
 
     private int initFrameSize(ByteBuffer byteBuffer) {
-        if (byteBuffer.remaining() < BitUtil.SIZE_OF_INT) {
+        if (byteBuffer.remaining() < Bits.INT_SIZE_IN_BYTES) {
             return 0;
         }
-        return accumulate(byteBuffer, BitUtil.SIZE_OF_INT);
+        return accumulate(byteBuffer, Bits.INT_SIZE_IN_BYTES);
     }
 
     private int accumulate(ByteBuffer byteBuffer, int length) {
@@ -413,7 +377,8 @@ public class ClientMessage
         if (readLength > 0) {
             final int requiredCapacity = index() + readLength;
             ensureCapacity(requiredCapacity);
-            buffer.putBytes(index(), byteBuffer, readLength);
+            buffer.putBytes(index(), byteBuffer.array(), byteBuffer.position(), readLength);
+            byteBuffer.position(byteBuffer.position() + readLength);
             index(index() + readLength);
             return readLength;
         }
@@ -422,6 +387,7 @@ public class ClientMessage
 
     /**
      * Checks the frame size and total data size to validate the message size.
+     *
      * @return true if the message is constructed.
      */
     public boolean isComplete() {
@@ -448,5 +414,14 @@ public class ClientMessage
         }
         sb.append('}');
         return sb.toString();
+    }
+
+    private void ensureCapacity(int requiredCapacity) {
+        int capacity = buffer.capacity() > 0 ? buffer.capacity() : 1;
+        if (requiredCapacity > capacity) {
+            int newCapacity = QuickMath.nextPowerOfTwo(requiredCapacity);
+            byte[] newBuffer = Arrays.copyOf(buffer.byteArray(), newCapacity);
+            buffer.wrap(newBuffer);
+        }
     }
 }

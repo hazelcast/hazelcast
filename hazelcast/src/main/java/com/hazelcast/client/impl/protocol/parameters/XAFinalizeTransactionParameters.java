@@ -18,10 +18,9 @@ package com.hazelcast.client.impl.protocol.parameters;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.ClientMessageType;
-import com.hazelcast.client.impl.protocol.util.BitUtil;
 import com.hazelcast.client.impl.protocol.util.ParameterUtil;
+import com.hazelcast.nio.Bits;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.transaction.impl.xa.SerializableXID;
 
 @edu.umd.cs.findbugs.annotations.SuppressWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
 public class XAFinalizeTransactionParameters {
@@ -42,7 +41,6 @@ public class XAFinalizeTransactionParameters {
     public static ClientMessage encode(Data xidData, boolean isCommit) {
         final int requiredDataSize = calculateDataSize(xidData, isCommit);
         ClientMessage clientMessage = ClientMessage.createForEncode(requiredDataSize);
-        clientMessage.ensureCapacity(requiredDataSize);
         clientMessage.set(xidData);
         clientMessage.set(isCommit);
         clientMessage.setMessageType(TYPE.id());
@@ -53,6 +51,6 @@ public class XAFinalizeTransactionParameters {
     public static int calculateDataSize(Data xidData, boolean isCommit) {
         return ClientMessage.HEADER_SIZE
                 + ParameterUtil.calculateDataSize(xidData)
-                + BitUtil.SIZE_OF_BOOLEAN;
+                + Bits.BOOLEAN_SIZE_IN_BYTES;
     }
 }

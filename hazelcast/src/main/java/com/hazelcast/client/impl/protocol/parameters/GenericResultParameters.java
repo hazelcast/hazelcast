@@ -48,7 +48,6 @@ public class GenericResultParameters {
 
         final int requiredDataSize = calculateDataSize(result);
         ClientMessage clientMessage = ClientMessage.createForEncode(requiredDataSize);
-        clientMessage.ensureCapacity(requiredDataSize);
         clientMessage.setMessageType(TYPE.id());
         clientMessage.set(result);
         clientMessage.updateFrameLength();

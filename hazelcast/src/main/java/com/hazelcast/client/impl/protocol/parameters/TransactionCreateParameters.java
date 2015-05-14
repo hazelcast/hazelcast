@@ -18,7 +18,7 @@ package com.hazelcast.client.impl.protocol.parameters;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.ClientMessageType;
-import com.hazelcast.client.impl.protocol.util.BitUtil;
+import com.hazelcast.nio.Bits;
 
 
 @edu.umd.cs.findbugs.annotations.SuppressWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
@@ -47,7 +47,6 @@ public final class TransactionCreateParameters {
                                        int transactionType, long threadId) {
         final int requiredDataSize = calculateDataSize(timeout, durability, transactionType, threadId);
         ClientMessage clientMessage = ClientMessage.createForEncode(requiredDataSize);
-        clientMessage.ensureCapacity(requiredDataSize);
         clientMessage.set(timeout).set(durability).set(transactionType).set(threadId);
         clientMessage.setMessageType(TYPE.id());
         clientMessage.updateFrameLength();
@@ -57,10 +56,10 @@ public final class TransactionCreateParameters {
     public static int calculateDataSize(long timeout, int durability,
                                         int transactionType, long threadId) {
         return ClientMessage.HEADER_SIZE
-                + BitUtil.SIZE_OF_LONG
-                + BitUtil.SIZE_OF_INT
-                + BitUtil.SIZE_OF_INT
-                + BitUtil.SIZE_OF_LONG;
+                + Bits.LONG_SIZE_IN_BYTES
+                + Bits.INT_SIZE_IN_BYTES
+                + Bits.INT_SIZE_IN_BYTES
+                + Bits.LONG_SIZE_IN_BYTES;
     }
 
 

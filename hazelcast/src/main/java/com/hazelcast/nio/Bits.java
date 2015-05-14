@@ -22,6 +22,14 @@ package com.hazelcast.nio;
 public final class Bits {
 
     /**
+     * Byte size in bytes
+     */
+    public static final int BYTE_SIZE_IN_BYTES = 1;
+    /**
+     * Boolean size in bytes
+     */
+    public static final int BOOLEAN_SIZE_IN_BYTES = 1;
+    /**
      * Short size in bytes
      */
     public static final int SHORT_SIZE_IN_BYTES = 2;
@@ -233,7 +241,7 @@ public final class Bits {
      * Sets n-th bit of the byte value
      *
      * @param value byte value
-     * @param bit n-th bit
+     * @param bit   n-th bit
      * @return value
      */
     public static byte setBit(byte value, int bit) {
@@ -245,7 +253,7 @@ public final class Bits {
      * Clears n-th bit of the byte value
      *
      * @param value byte value
-     * @param bit n-th bit
+     * @param bit   n-th bit
      * @return value
      */
     public static byte clearBit(byte value, int bit) {
@@ -257,7 +265,7 @@ public final class Bits {
      * Inverts n-th bit of the byte value
      *
      * @param value byte value
-     * @param bit n-th bit
+     * @param bit   n-th bit
      * @return value
      */
     public static byte invertBit(byte value, int bit) {
@@ -269,7 +277,7 @@ public final class Bits {
      * Sets n-th bit of the integer value
      *
      * @param value integer value
-     * @param bit n-th bit
+     * @param bit   n-th bit
      * @return value
      */
     public static int setBit(int value, int bit) {
@@ -281,7 +289,7 @@ public final class Bits {
      * Clears n-th bit of the integer value
      *
      * @param value integer value
-     * @param bit n-th bit
+     * @param bit   n-th bit
      * @return value
      */
     public static int clearBit(int value, int bit) {
@@ -293,7 +301,7 @@ public final class Bits {
      * Inverts n-th bit of the integer value
      *
      * @param value integer value
-     * @param bit n-th bit
+     * @param bit   n-th bit
      * @return value
      */
     public static int invertBit(int value, int bit) {

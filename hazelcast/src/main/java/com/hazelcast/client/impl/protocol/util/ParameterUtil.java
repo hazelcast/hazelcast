@@ -18,6 +18,7 @@ package com.hazelcast.client.impl.protocol.util;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.Bits;
 import com.hazelcast.nio.serialization.Data;
 
 import java.net.UnknownHostException;
@@ -27,26 +28,26 @@ public class ParameterUtil {
 
     public static int calculateStringDataSize(String string) {
         if (string == null) {
-            return BitUtil.SIZE_OF_INT * 5;
+            return Bits.INT_SIZE_IN_BYTES * 5;
         }
-        return BitUtil.SIZE_OF_INT + string.length() * 4;
+        return Bits.INT_SIZE_IN_BYTES + string.length() * 4;
     }
 
     public static int calculateByteArrayDataSize(byte[] bytes) {
         if (bytes == null) {
-            return BitUtil.SIZE_OF_INT;
+            return Bits.INT_SIZE_IN_BYTES;
         }
-        return BitUtil.SIZE_OF_INT + bytes.length;
+        return Bits.INT_SIZE_IN_BYTES + bytes.length;
     }
 
 
     public static int calculateAddressDataSize(Address address) {
         boolean isNull = address == null;
         if (isNull) {
-            return BitUtil.SIZE_OF_BOOLEAN;
+            return Bits.BOOLEAN_SIZE_IN_BYTES;
         }
         int dataSize = calculateStringDataSize(address.getHost());
-        dataSize += BitUtil.SIZE_OF_INT;
+        dataSize += Bits.INT_SIZE_IN_BYTES;
         return dataSize;
     }
 
@@ -76,7 +77,7 @@ public class ParameterUtil {
     }
 
     public static int calculateCollectionDataSize(Collection<Data> dataCollection) {
-        int total = BitUtil.SIZE_OF_INT;
+        int total = Bits.INT_SIZE_IN_BYTES;
         for (Data data : dataCollection) {
             total += calculateDataSize(data);
         }

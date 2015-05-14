@@ -18,8 +18,8 @@ package com.hazelcast.client.impl.protocol.parameters;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.ClientMessageType;
-import com.hazelcast.client.impl.protocol.util.BitUtil;
 import com.hazelcast.client.impl.protocol.util.ParameterUtil;
+import com.hazelcast.nio.Bits;
 import com.hazelcast.nio.serialization.Data;
 
 import java.util.HashMap;
@@ -33,11 +33,11 @@ public class MapIntDataResultParameters {
      * ClientMessageType of this message
      */
     public static final ClientMessageType TYPE = ClientMessageType.MAP_INT_DATA_RESULT;
-    public Map<Integer,Data> map;
+    public Map<Integer, Data> map;
 
     private MapIntDataResultParameters(ClientMessage clientMessage) {
         map = new HashMap<Integer, Data>();
-        for(Map.Entry<Integer,Data> entry:map.entrySet()){
+        for (Map.Entry<Integer, Data> entry : map.entrySet()) {
             clientMessage.set(entry.getKey());
             clientMessage.set(entry.getValue());
         }
@@ -47,12 +47,11 @@ public class MapIntDataResultParameters {
         return new MapIntDataResultParameters(clientMessage);
     }
 
-    public static ClientMessage encode(Map<Integer,Data> map) {
+    public static ClientMessage encode(Map<Integer, Data> map) {
         final int requiredDataSize = calculateDataSize(map);
         ClientMessage clientMessage = ClientMessage.createForEncode(requiredDataSize);
-        clientMessage.ensureCapacity(requiredDataSize);
         clientMessage.setMessageType(TYPE.id());
-        for(Map.Entry<Integer,Data> entry:map.entrySet()){
+        for (Map.Entry<Integer, Data> entry : map.entrySet()) {
             clientMessage.set(entry.getKey());
             clientMessage.set(entry.getValue());
         }
@@ -61,16 +60,16 @@ public class MapIntDataResultParameters {
     }
 
     public static int calculateDataSize(List<Data> keys, List<Data> values) {
-        int dataSize = ClientMessage.HEADER_SIZE ;
+        int dataSize = ClientMessage.HEADER_SIZE;
         dataSize += ParameterUtil.calculateCollectionDataSize(keys);
         dataSize += ParameterUtil.calculateCollectionDataSize(values);
         return dataSize;
     }
 
-    public static int calculateDataSize(Map<Integer,Data> map) {
-        int dataSize = ClientMessage.HEADER_SIZE ;
-        for(Map.Entry<Integer,Data> entry:map.entrySet()){
-            dataSize += BitUtil.SIZE_OF_INT;
+    public static int calculateDataSize(Map<Integer, Data> map) {
+        int dataSize = ClientMessage.HEADER_SIZE;
+        for (Map.Entry<Integer, Data> entry : map.entrySet()) {
+            dataSize += Bits.INT_SIZE_IN_BYTES;
             dataSize += ParameterUtil.calculateDataSize(entry.getValue());
         }
         return dataSize;

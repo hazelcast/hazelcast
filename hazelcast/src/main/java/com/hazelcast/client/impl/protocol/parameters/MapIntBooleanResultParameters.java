@@ -18,7 +18,7 @@ package com.hazelcast.client.impl.protocol.parameters;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.ClientMessageType;
-import com.hazelcast.client.impl.protocol.util.BitUtil;
+import com.hazelcast.nio.Bits;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -47,7 +47,6 @@ public class MapIntBooleanResultParameters {
     public static ClientMessage encode(Map<Integer, Boolean> map) {
         final int requiredDataSize = calculateDataSize(map);
         ClientMessage clientMessage = ClientMessage.createForEncode(requiredDataSize);
-        clientMessage.ensureCapacity(requiredDataSize);
         clientMessage.setMessageType(TYPE.id());
         for (Map.Entry<Integer, Boolean> entry : map.entrySet()) {
             clientMessage.set(entry.getKey());
@@ -58,7 +57,7 @@ public class MapIntBooleanResultParameters {
     }
 
     public static int calculateDataSize(Map<Integer, Boolean> map) {
-        return ClientMessage.HEADER_SIZE + map.size() * (BitUtil.SIZE_OF_INT + BitUtil.SIZE_OF_BOOLEAN);
+        return ClientMessage.HEADER_SIZE + map.size() * (Bits.INT_SIZE_IN_BYTES + Bits.BOOLEAN_SIZE_IN_BYTES);
     }
 }
 

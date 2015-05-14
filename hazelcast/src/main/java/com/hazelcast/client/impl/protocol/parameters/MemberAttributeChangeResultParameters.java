@@ -40,7 +40,6 @@ public class MemberAttributeChangeResultParameters {
         final int requiredDataSize = calculateDataSize(member, memberAttributeChange);
         ClientMessage clientMessage = ClientMessage.createForEncode(requiredDataSize);
         clientMessage.setMessageType(TYPE.id());
-        clientMessage.ensureCapacity(requiredDataSize);
 
         MemberCodec.encode(member, clientMessage);
         MemberAttributeChangeCodec.encode(memberAttributeChange, clientMessage);

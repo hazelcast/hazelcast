@@ -18,7 +18,7 @@ package com.hazelcast.client.impl.protocol.parameters;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.ClientMessageType;
-import com.hazelcast.client.impl.protocol.util.BitUtil;
+import com.hazelcast.nio.Bits;
 
 @edu.umd.cs.findbugs.annotations.SuppressWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
 public class MemberResultParameters {
@@ -43,7 +43,6 @@ public class MemberResultParameters {
         final int requiredDataSize = calculateDataSize(member, eventType);
         ClientMessage clientMessage = ClientMessage.createForEncode(requiredDataSize);
         clientMessage.setMessageType(TYPE.id());
-        clientMessage.ensureCapacity(requiredDataSize);
 
         MemberCodec.encode(member, clientMessage);
         clientMessage.set(eventType);
@@ -57,7 +56,7 @@ public class MemberResultParameters {
     public static int calculateDataSize(com.hazelcast.instance.MemberImpl member, int eventType) {
         return ClientMessage.HEADER_SIZE//
                 + MemberCodec.calculateDataSize(member)//
-                + BitUtil.SIZE_OF_INT;
+                + Bits.INT_SIZE_IN_BYTES;
     }
 
 }

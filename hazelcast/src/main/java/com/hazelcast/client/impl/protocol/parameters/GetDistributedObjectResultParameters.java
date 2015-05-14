@@ -19,7 +19,7 @@ package com.hazelcast.client.impl.protocol.parameters;
 import com.hazelcast.client.impl.client.DistributedObjectInfo;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.ClientMessageType;
-import com.hazelcast.client.impl.protocol.util.BitUtil;
+import com.hazelcast.nio.Bits;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -51,7 +51,6 @@ public class GetDistributedObjectResultParameters {
         for (DistributedObjectInfo distributedObjectInfo : infoCollection) {
             DistributedObjectInfoCodec.encode(distributedObjectInfo, clientMessage);
         }
-        clientMessage.ensureCapacity(requiredDataSize);
         clientMessage.updateFrameLength();
         return clientMessage;
     }
@@ -62,7 +61,7 @@ public class GetDistributedObjectResultParameters {
      * @return size
      */
     public static int calculateDataSize(Collection<DistributedObjectInfo> infoCollection) {
-        int size = ClientMessage.HEADER_SIZE + BitUtil.SIZE_OF_INT;
+        int size = ClientMessage.HEADER_SIZE + Bits.INT_SIZE_IN_BYTES;
         for (DistributedObjectInfo distributedObjectInfo : infoCollection) {
             size += DistributedObjectInfoCodec.calculateDataSize(distributedObjectInfo);
         }

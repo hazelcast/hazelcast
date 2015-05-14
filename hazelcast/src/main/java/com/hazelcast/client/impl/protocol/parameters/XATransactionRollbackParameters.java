@@ -18,7 +18,6 @@ package com.hazelcast.client.impl.protocol.parameters;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.ClientMessageType;
-import com.hazelcast.client.impl.protocol.util.BitUtil;
 import com.hazelcast.client.impl.protocol.util.ParameterUtil;
 
 @edu.umd.cs.findbugs.annotations.SuppressWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
@@ -38,7 +37,6 @@ public class XATransactionRollbackParameters {
     public static ClientMessage encode(String transactionId) {
         final int requiredDataSize = calculateDataSize(transactionId);
         ClientMessage clientMessage = ClientMessage.createForEncode(requiredDataSize);
-        clientMessage.ensureCapacity(requiredDataSize);
         clientMessage.set(transactionId);
         clientMessage.setMessageType(TYPE.id());
         clientMessage.updateFrameLength();

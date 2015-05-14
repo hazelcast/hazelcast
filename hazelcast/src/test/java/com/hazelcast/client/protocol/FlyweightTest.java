@@ -1,6 +1,7 @@
 package com.hazelcast.client.protocol;
 
-import com.hazelcast.client.impl.protocol.util.ParameterFlyweight;
+import com.hazelcast.client.impl.protocol.util.MessageFlyweight;
+import com.hazelcast.client.impl.protocol.util.SafeBuffer;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
@@ -26,14 +27,14 @@ public class FlyweightTest {
     private static byte[] DATA = new byte[]{(byte) 0x61, (byte) 0x62, (byte) 0x63, (byte) 0xC2, (byte) 0xA9, (byte) 0xE2,
             (byte) 0x98, (byte) 0xBA};
 
-    private ParameterFlyweight flyweight = new ParameterFlyweight();
+    private MessageFlyweight flyweight = new MessageFlyweight();
     private ByteBuffer byteBuffer;
 
     @Before
     public void setUp() {
         byteBuffer = ByteBuffer.allocate(512);
 
-        flyweight.wrap(byteBuffer);
+        flyweight.wrap(new SafeBuffer(byteBuffer.array()), 0);
     }
 
     @After
@@ -59,44 +60,11 @@ public class FlyweightTest {
     }
 
     @Test
-    public void shouldEncodeShort() {
-        flyweight.set((short) 0x12);
-        assertEquals(2, flyweight.index());
-        assertThat(byteBuffer.get(0), is((byte) 0x12));
-    }
-
-
-    @Test
     public void shouldEncodeBoolean() {
         flyweight.set(true);
         assertEquals(1, flyweight.index());
         assertThat(byteBuffer.get(0), is((byte) 0x1));
     }
-
-    @Test
-    public void shouldEncodeFloat() {
-        flyweight.set(Float.MAX_VALUE);
-        assertEquals(4, flyweight.index());
-        assertThat(byteBuffer.get(0), is((byte) 0xFF));
-        assertThat(byteBuffer.get(1), is((byte) 0xFF));
-        assertThat(byteBuffer.get(2), is((byte) 0x7F));
-        assertThat(byteBuffer.get(3), is((byte) 0x7F));
-    }
-
-    @Test
-    public void shouldEncodeDouble() {
-        flyweight.set(Double.MAX_VALUE);
-        assertEquals(8, flyweight.index());
-        assertThat(byteBuffer.get(0), is((byte) 0xFF));
-        assertThat(byteBuffer.get(1), is((byte) 0xFF));
-        assertThat(byteBuffer.get(2), is((byte) 0xFF));
-        assertThat(byteBuffer.get(3), is((byte) 0xFF));
-        assertThat(byteBuffer.get(4), is((byte) 0xFF));
-        assertThat(byteBuffer.get(5), is((byte) 0xFF));
-        assertThat(byteBuffer.get(6), is((byte) 0xEF));
-        assertThat(byteBuffer.get(7), is((byte) 0x7F));
-    }
-
 
     @Test
     public void shouldEncodeStringUtf8() {
@@ -152,38 +120,12 @@ public class FlyweightTest {
     }
 
     @Test
-    public void shouldDecodeShort() {
-        flyweight.set((short)0x12);
-        flyweight.index(0);
-        assertEquals(0x12, flyweight.getShort());
-        assertEquals(2, flyweight.index());
-    }
-
-
-    @Test
     public void shouldDecodeBoolean() {
         flyweight.set(true);
         flyweight.index(0);
         assertEquals(true, flyweight.getBoolean());
         assertEquals(1, flyweight.index());
     }
-
-    @Test
-    public void shouldDecodeFloat() {
-        flyweight.set(Float.MAX_VALUE);
-        flyweight.index(0);
-        assertThat(flyweight.getFloat() , is(Float.MAX_VALUE));
-        assertEquals(4, flyweight.index());
-    }
-
-    @Test
-    public void shouldDecodeDouble() {
-        flyweight.set(Double.MAX_VALUE);
-        flyweight.index(0);
-        assertThat(flyweight.getDouble() , is(Double.MAX_VALUE));
-        assertEquals(8, flyweight.index());
-    }
-
 
     @Test
     public void shouldDecodeStringUtf8() {
@@ -220,8 +162,6 @@ public class FlyweightTest {
         flyweight.set(0x1234);
         flyweight.set((short) 0x12);
         flyweight.set(true);
-        flyweight.set(Float.MAX_VALUE);
-        flyweight.set(Double.MAX_VALUE);
         flyweight.set(DATA);
     }
 
