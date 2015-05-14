@@ -28,14 +28,12 @@ import com.hazelcast.core.EntryView;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.instance.GroupProperties;
-import com.hazelcast.map.impl.DefaultRecordStore;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.map.impl.RecordStore;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.map.impl.record.Record;
-import com.hazelcast.nio.Address;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.test.AssertTask;
@@ -1013,19 +1011,11 @@ public class EvictionTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testBackupExpirationDelay_notAffectExpiration_onOwnerPartitions() throws Exception {
-        final int numberOfItemsToBeAdded = 1000;
-        final int expectedEntryCountAfterExpirationOnOwnerPartitions = 0;
-
-        testExpirationDelay(expectedEntryCountAfterExpirationOnOwnerPartitions, numberOfItemsToBeAdded, false);
-    }
-
-    @Test
     public void testBackupExpirationDelay_preventsSweepOfEntries_onBackupPartitions() throws Exception {
         final int numberOfItemsToBeAdded = 1000;
         final int expectedEntryCountAfterExpirationOnBackupPartitions = numberOfItemsToBeAdded;
 
-        testExpirationDelay(expectedEntryCountAfterExpirationOnBackupPartitions, numberOfItemsToBeAdded, true);
+        testExpirationDelay(expectedEntryCountAfterExpirationOnBackupPartitions, numberOfItemsToBeAdded);
     }
 
     @Test
@@ -1089,7 +1079,7 @@ public class EvictionTest extends HazelcastTestSupport {
     }
 
     private void testExpirationDelay(final int expectedEntryCountAfterExpiration,
-                                     final int numberOfItemsToBeAdded, final boolean backup) {
+                                     final int numberOfItemsToBeAdded) {
         // node count should be at least 2 since we are testing a scenario on backups.
         final int nodeCount = 2;
         final int maxIdleSeconds = 1;
@@ -1110,25 +1100,31 @@ public class EvictionTest extends HazelcastTestSupport {
         }
 
         // 1. Wait for idle expiration.
-        sleepSeconds(1);
+        sleepSeconds(2);
 
-        // 2. On backups expiration has 10 seconds delay. So entries on backups should be there.
+        // 2. Force entries to expire by touching each one.
+        for (int i = 0; i < numberOfItemsToBeAdded; i++) {
+            map1.get(i);
+        }
+
+        // 3. On backups expiration has 10 seconds delay. So entries on backups should be there.
         // but on owners they should be expired.
         final long now = Clock.currentTimeMillis();
+
+        waitClusterForSafeState(instances[0]);
 
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                final int notExpiredEntryCountOnNode1 = getNotExpiredEntryCount(map1, now, backup);
-                final int notExpiredEntryCountOnNode2 = getNotExpiredEntryCount(map2, now, backup);
+                final int nodeEntryCount1 = getNodeEntryCount(map1, now);
+                final int nodeEntryCount2 = getNodeEntryCount(map2, now);
 
-                assertEquals(expectedEntryCountAfterExpiration,
-                        notExpiredEntryCountOnNode1 + notExpiredEntryCountOnNode2);
+                assertEquals(expectedEntryCountAfterExpiration, nodeEntryCount1 + nodeEntryCount2);
             }
         });
     }
 
-    private int getNotExpiredEntryCount(IMap map, long now, boolean backup) {
+    private int getNodeEntryCount(IMap map, long now) {
         int count = 0;
         final MapProxyImpl mapProxy = (MapProxyImpl) map;
         final MapService mapService = (MapService) mapProxy.getService();
@@ -1136,22 +1132,18 @@ public class EvictionTest extends HazelcastTestSupport {
         final NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
         final InternalPartitionService partitionService = nodeEngine.getPartitionService();
         for (int i = 0; i < partitionService.getPartitionCount(); i++) {
-            final Address owner = partitionService.getPartitionOwner(i);
-            if (!nodeEngine.getThisAddress().equals(owner) && backup
-                    || nodeEngine.getThisAddress().equals(owner) && !backup) {
-                final PartitionContainer container = mapServiceContext.getPartitionContainer(i);
-                if (container == null) {
-                    continue;
-                }
-                final RecordStore recordStore = container.getRecordStore(map.getName());
-                final DefaultRecordStore defaultRecordStore = (DefaultRecordStore) recordStore;
-                final Iterator<Record> iterator = defaultRecordStore.iterator(now, backup);
-                while (iterator.hasNext()) {
-                    iterator.next();
-                    count++;
-                }
+            PartitionContainer container = mapServiceContext.getPartitionContainer(i);
+            RecordStore recordStore = container.getRecordStore(map.getName());
+            if (recordStore == null) {
+                continue;
+            }
+            Iterator<Record> iterator = recordStore.iterator(now, true);
+            while (iterator.hasNext()) {
+                iterator.next();
+                count++;
             }
         }
+
         return count;
     }
 
