@@ -317,6 +317,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
             for (ClientConnection connection : connections.values()) {
                 if (now - connection.lastReadTime() > heartBeatTimeout) {
                     if (connection.isHeartBeating()) {
+                        LOGGER.warning("Heartbeat failed to connection : " + connection);
                         connection.heartBeatingFailed();
                         fireHeartBeatStopped(connection);
                     }
@@ -328,6 +329,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                     clientInvocation.invoke();
                 } else {
                     if (!connection.isHeartBeating()) {
+                        LOGGER.warning("Heartbeat is back to healthy for connection : " + connection);
                         connection.heartBeatingSucceed();
                         fireHeartBeatStarted(connection);
                     }
