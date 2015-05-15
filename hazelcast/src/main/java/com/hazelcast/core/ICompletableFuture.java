@@ -37,7 +37,21 @@ import java.util.concurrent.Future;
 @Beta
 public interface ICompletableFuture<V> extends Future<V> {
 
+    /**
+     * Registers a callback that will run after the future is completed.
+     * Please note that there is no ordering guarantee for running multiple callbacks.
+     * It is also not guaranteed that the callback will run within the same thread that completes the future.
+     *
+     * @param callback the callback to execute
+     */
     void andThen(ExecutionCallback<V> callback);
 
+    /**
+     * Registers a callback that will run with the provided executor after the future is completed.
+     * Please note that there is no ordering guarantee for executing multiple callbacks.
+     *
+     * @param callback the callback to execute
+     * @param executor the executor in which the callback will be run
+     */
     void andThen(ExecutionCallback<V> callback, Executor executor);
 }
