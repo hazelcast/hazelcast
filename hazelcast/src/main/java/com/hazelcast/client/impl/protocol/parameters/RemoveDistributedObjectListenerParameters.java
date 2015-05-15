@@ -39,7 +39,6 @@ public class RemoveDistributedObjectListenerParameters {
         ClientMessage clientMessage = ClientMessage.createForEncode(requiredDataSize);
         clientMessage.setMessageType(TYPE.id());
         clientMessage.set(registrationId);
-        clientMessage.ensureCapacity(requiredDataSize);
         clientMessage.updateFrameLength();
         return clientMessage;
     }

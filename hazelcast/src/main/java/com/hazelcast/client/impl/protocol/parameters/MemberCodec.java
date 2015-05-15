@@ -17,9 +17,9 @@
 package com.hazelcast.client.impl.protocol.parameters;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.util.BitUtil;
 import com.hazelcast.client.impl.protocol.util.ParameterUtil;
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.Bits;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -59,7 +59,7 @@ public final class MemberCodec {
     public static int calculateDataSize(com.hazelcast.instance.MemberImpl member) {
         int dataSize = AddressCodec.calculateDataSize(member.getAddress());
         dataSize += ParameterUtil.calculateStringDataSize(member.getUuid());
-        dataSize += BitUtil.SIZE_OF_INT;
+        dataSize += Bits.INT_SIZE_IN_BYTES;
         Map<String, Object> attributes = member.getAttributes();
         for (Map.Entry<String, Object> entry : attributes.entrySet()) {
             dataSize += ParameterUtil.calculateStringDataSize(entry.getKey());

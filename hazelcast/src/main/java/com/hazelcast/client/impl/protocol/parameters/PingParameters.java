@@ -34,7 +34,6 @@ public class PingParameters {
     public static ClientMessage encode() {
         final int requiredDataSize = calculateDataSize();
         ClientMessage clientMessage = ClientMessage.createForEncode(requiredDataSize);
-        clientMessage.ensureCapacity(requiredDataSize);
         clientMessage.setMessageType(TYPE.id());
         clientMessage.updateFrameLength();
         return clientMessage;

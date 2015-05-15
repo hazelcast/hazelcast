@@ -2,8 +2,8 @@ package com.hazelcast.client.impl.protocol.parameters;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.ClientMessageType;
-import com.hazelcast.client.impl.protocol.util.BitUtil;
 import com.hazelcast.client.impl.protocol.util.ParameterUtil;
+import com.hazelcast.nio.Bits;
 
 /**
  * AuthenticationParameters
@@ -32,6 +32,7 @@ public class AuthenticationParameters {
 
     /**
      * Decode input byte array data into parameters
+     *
      * @param flyweight
      * @return AuthenticationParameters
      */
@@ -41,6 +42,7 @@ public class AuthenticationParameters {
 
     /**
      * Encode parameters into byte array, i.e. ClientMessage
+     *
      * @param username
      * @param password
      * @param uuid
@@ -52,7 +54,6 @@ public class AuthenticationParameters {
                                        boolean isOwnerConnection) {
         final int requiredDataSize = calculateDataSize(username, password, uuid, ownerUuid, isOwnerConnection);
         ClientMessage clientMessage = ClientMessage.createForEncode(requiredDataSize);
-        clientMessage.ensureCapacity(requiredDataSize);
         clientMessage.setMessageType(TYPE.id());
         clientMessage.set(username).set(password).set(uuid).set(ownerUuid).set(isOwnerConnection);
         clientMessage.updateFrameLength();
@@ -61,6 +62,7 @@ public class AuthenticationParameters {
 
     /**
      * sample data size estimation
+     *
      * @return size
      */
     public static int calculateDataSize(String username, String password, String uuid, String ownerUuid,
@@ -70,7 +72,7 @@ public class AuthenticationParameters {
                 + ParameterUtil.calculateStringDataSize(password)
                 + ParameterUtil.calculateStringDataSize(uuid)
                 + ParameterUtil.calculateStringDataSize(ownerUuid)
-                + BitUtil.SIZE_OF_BYTE;
+                + Bits.BYTE_SIZE_IN_BYTES;
     }
 
 }

@@ -1,7 +1,7 @@
 package com.hazelcast.client.protocol;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.util.MutableDirectBuffer;
+import com.hazelcast.client.impl.protocol.util.ClientProtocolBuffer;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
@@ -63,7 +63,7 @@ public class ClientMessageAccumulatorTest {
      * setup the wrapped bytebuffer to point to this clientMessages data
      * @return
      */
-    static ByteBuffer accumulatedByteBuffer(final MutableDirectBuffer buffer, int index) {
+    static ByteBuffer accumulatedByteBuffer(final ClientProtocolBuffer buffer, int index) {
         if (buffer != null) {
             ByteBuffer byteBuffer = ByteBuffer.wrap(buffer.byteArray());
             byteBuffer.limit(index);

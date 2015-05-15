@@ -18,8 +18,8 @@ package com.hazelcast.client.impl.protocol.parameters;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.ClientMessageType;
-import com.hazelcast.client.impl.protocol.util.BitUtil;
 import com.hazelcast.client.impl.protocol.util.ParameterUtil;
+import com.hazelcast.nio.Bits;
 import com.hazelcast.nio.serialization.Data;
 
 /**
@@ -55,7 +55,6 @@ public class EntryEventParameters {
         final int requiredDataSize = calculateDataSize(key, value, oldValue, mergingValue, eventType, uuid, numberOfAffectedEntries);
         ClientMessage clientMessage = ClientMessage.createForEncode(requiredDataSize);
         clientMessage.setMessageType(TYPE.id());
-        clientMessage.ensureCapacity(requiredDataSize);
         clientMessage.set(key).set(value).set(oldValue).set(mergingValue).set(eventType).set(uuid).set(numberOfAffectedEntries);
         clientMessage.addFlag(ClientMessage.LISTENER_EVENT_FLAG);
         clientMessage.updateFrameLength();
@@ -73,9 +72,9 @@ public class EntryEventParameters {
                 + ParameterUtil.calculateDataSize(value)
                 + ParameterUtil.calculateDataSize(oldValue)
                 + ParameterUtil.calculateDataSize(mergingValue)
-                + BitUtil.SIZE_OF_INT//eventType
+                + Bits.INT_SIZE_IN_BYTES//eventType
                 + ParameterUtil.calculateStringDataSize(uuid)
-                + BitUtil.SIZE_OF_INT;//numberOfAffectedEntries
+                + Bits.INT_SIZE_IN_BYTES;//numberOfAffectedEntries
     }
 
 }

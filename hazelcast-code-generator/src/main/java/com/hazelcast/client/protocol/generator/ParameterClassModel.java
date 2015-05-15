@@ -95,7 +95,7 @@ public class ParameterClassModel {
                     || type.equals("java.util.Collection<com.hazelcast.nio.serialization.Data>")) {
                 return "ParameterUtil.calculateCollectionDataSize(" + name + ")";
             }
-            return "BitUtil.SIZE_OF_" + type.toUpperCase();
+            return "Bits." + type.toUpperCase() + "_SIZE_IN_BYTES";
         }
 
         public String getDataGetterString() {

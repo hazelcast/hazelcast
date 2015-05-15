@@ -18,9 +18,9 @@ package com.hazelcast.client.impl.protocol.parameters;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.ClientMessageType;
-import com.hazelcast.client.impl.protocol.util.BitUtil;
 import com.hazelcast.client.impl.protocol.util.ParameterUtil;
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.Bits;
 
 import java.net.UnknownHostException;
 
@@ -63,12 +63,9 @@ public class GetPartitionsResultParameters {
     public static ClientMessage encode(Address[] addresses, int[] ownerIndexes) {
         final int requiredDataSize = calculateDataSize(addresses, ownerIndexes);
         ClientMessage clientMessage = ClientMessage.createForEncode(requiredDataSize);
-        clientMessage.ensureCapacity(requiredDataSize);
 
         encodeAddressArray(addresses, clientMessage);
         encodeIntArray(ownerIndexes, clientMessage);
-
-
         clientMessage.setMessageType(TYPE.id());
         clientMessage.updateFrameLength();
         return clientMessage;
@@ -95,12 +92,12 @@ public class GetPartitionsResultParameters {
      */
     public static int calculateDataSize(Address[] addresses, int[] ownerIndexes) {
         int dataSize = ClientMessage.HEADER_SIZE;
-        dataSize += BitUtil.SIZE_OF_INT;
+        dataSize += Bits.INT_SIZE_IN_BYTES;
         for (Address address : addresses) {
             dataSize += ParameterUtil.calculateAddressDataSize(address);
         }
-        dataSize += BitUtil.SIZE_OF_INT;
-        dataSize += ownerIndexes.length * BitUtil.SIZE_OF_INT;
+        dataSize += Bits.INT_SIZE_IN_BYTES;
+        dataSize += ownerIndexes.length * Bits.INT_SIZE_IN_BYTES;
         return dataSize;
     }
 

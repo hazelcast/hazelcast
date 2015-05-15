@@ -17,10 +17,10 @@
 package com.hazelcast.client.impl.protocol.parameters;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.util.BitUtil;
 import com.hazelcast.client.impl.protocol.util.ParameterUtil;
 import com.hazelcast.cluster.MemberAttributeOperationType;
 import com.hazelcast.cluster.client.MemberAttributeChange;
+import com.hazelcast.nio.Bits;
 
 import static com.hazelcast.cluster.MemberAttributeOperationType.PUT;
 
@@ -53,11 +53,11 @@ public final class MemberAttributeChangeCodec {
 
     public static int calculateDataSize(MemberAttributeChange memberAttributeChange) {
         if (memberAttributeChange == null) {
-            return BitUtil.SIZE_OF_BOOLEAN;
+            return Bits.BOOLEAN_SIZE_IN_BYTES;
         }
         int dataSize = ParameterUtil.calculateStringDataSize(memberAttributeChange.getUuid());
         dataSize += ParameterUtil.calculateStringDataSize(memberAttributeChange.getKey());
-        dataSize += BitUtil.SIZE_OF_BYTE;
+        dataSize += Bits.BYTE_SIZE_IN_BYTES;
         MemberAttributeOperationType operationType = memberAttributeChange.getOperationType();
         if (operationType == PUT) {
             dataSize += ParameterUtil.calculateStringDataSize(memberAttributeChange.getValue().toString());

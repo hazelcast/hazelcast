@@ -38,7 +38,6 @@ public class AddListenerResultParameters {
         final int requiredDataSize = calculateDataSize(registrationId);
         ClientMessage clientMessage = ClientMessage.createForEncode(requiredDataSize);
         clientMessage.setMessageType(TYPE.id());
-        clientMessage.ensureCapacity(requiredDataSize);
         clientMessage.set(registrationId);
         clientMessage.updateFrameLength();
         return clientMessage;

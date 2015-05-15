@@ -18,7 +18,7 @@ package com.hazelcast.client.impl.protocol.parameters;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.ClientMessageType;
-import com.hazelcast.client.impl.protocol.util.BitUtil;
+import com.hazelcast.nio.Bits;
 import com.hazelcast.transaction.impl.xa.SerializableXID;
 
 @edu.umd.cs.findbugs.annotations.SuppressWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
@@ -41,7 +41,6 @@ public class XATransactionCreateParameters {
     public static ClientMessage encode(SerializableXID xid, long timeout) {
         final int requiredDataSize = calculateDataSize(xid, timeout);
         ClientMessage clientMessage = ClientMessage.createForEncode(requiredDataSize);
-        clientMessage.ensureCapacity(requiredDataSize);
         SerializableXIDCodec.encode(xid, clientMessage);
         clientMessage.set(timeout);
         clientMessage.setMessageType(TYPE.id());
@@ -52,7 +51,7 @@ public class XATransactionCreateParameters {
     public static int calculateDataSize(SerializableXID xid, long timeout) {
         return ClientMessage.HEADER_SIZE
                 + SerializableXIDCodec.calculateDataSize(xid)
-                + BitUtil.SIZE_OF_LONG;
+                + Bits.LONG_SIZE_IN_BYTES;
     }
 
 }

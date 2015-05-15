@@ -18,8 +18,8 @@ package com.hazelcast.client.impl.protocol.parameters;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.ClientMessageType;
-import com.hazelcast.client.impl.protocol.util.BitUtil;
 import com.hazelcast.client.impl.protocol.util.ParameterUtil;
+import com.hazelcast.nio.Bits;
 
 
 @edu.umd.cs.findbugs.annotations.SuppressWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
@@ -44,7 +44,6 @@ public class MapPartitionLostEventParameters {
         clientMessage.setMessageType(TYPE.id());
         clientMessage.addFlag(ClientMessage.LISTENER_EVENT_FLAG);
         clientMessage.set(partitionId).set(uuid);
-        clientMessage.ensureCapacity(requiredDataSize);
         clientMessage.updateFrameLength();
         return clientMessage;
     }
@@ -55,7 +54,7 @@ public class MapPartitionLostEventParameters {
      * @return size
      */
     public static int calculateDataSize(int partitionId, String uuid) {
-        return ClientMessage.HEADER_SIZE + BitUtil.SIZE_OF_INT + ParameterUtil.calculateStringDataSize(uuid);
+        return ClientMessage.HEADER_SIZE + Bits.INT_SIZE_IN_BYTES + ParameterUtil.calculateStringDataSize(uuid);
     }
 }
 

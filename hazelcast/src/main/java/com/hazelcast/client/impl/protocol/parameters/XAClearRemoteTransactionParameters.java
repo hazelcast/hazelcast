@@ -38,7 +38,6 @@ public class XAClearRemoteTransactionParameters {
     public static ClientMessage encode(Data xidData) {
         final int requiredDataSize = calculateDataSize(xidData);
         ClientMessage clientMessage = ClientMessage.createForEncode(requiredDataSize);
-        clientMessage.ensureCapacity(requiredDataSize);
         clientMessage.set(xidData);
         clientMessage.setMessageType(TYPE.id());
         clientMessage.updateFrameLength();

@@ -43,7 +43,6 @@ public class DataCollectionResultParameters {
     public static ClientMessage encode(Collection<Data> result) {
         final int requiredDataSize = calculateDataSize(result);
         ClientMessage clientMessage = ClientMessage.createForEncode(requiredDataSize);
-        clientMessage.ensureCapacity(requiredDataSize);
         clientMessage.setMessageType(TYPE.id());
         clientMessage.set(result);
         clientMessage.updateFrameLength();

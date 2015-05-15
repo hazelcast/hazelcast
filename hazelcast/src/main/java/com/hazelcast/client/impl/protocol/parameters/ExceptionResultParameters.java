@@ -49,7 +49,6 @@ public class ExceptionResultParameters {
     public static ClientMessage encode(String className, String causeClassName, String message, String stacktrace) {
         final int requiredDataSize = calculateDataSize(className, causeClassName, message, stacktrace);
         ClientMessage clientMessage = ClientMessage.createForEncode(requiredDataSize);
-        clientMessage.ensureCapacity(requiredDataSize);
         clientMessage.setMessageType(TYPE.id());
         clientMessage.set(className).set(causeClassName).set(message).set(stacktrace);
         clientMessage.updateFrameLength();

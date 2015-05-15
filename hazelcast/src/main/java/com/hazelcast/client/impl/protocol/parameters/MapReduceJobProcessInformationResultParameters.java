@@ -18,8 +18,8 @@ package com.hazelcast.client.impl.protocol.parameters;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.ClientMessageType;
-import com.hazelcast.client.impl.protocol.util.BitUtil;
 import com.hazelcast.mapreduce.JobPartitionState;
+import com.hazelcast.nio.Bits;
 
 @edu.umd.cs.findbugs.annotations.SuppressWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
 public class MapReduceJobProcessInformationResultParameters {
@@ -40,7 +40,6 @@ public class MapReduceJobProcessInformationResultParameters {
     public static ClientMessage encode(JobPartitionState[] partitionStates, int processedRecords) {
         final int requiredDataSize = calculateDataSize(partitionStates, processedRecords);
         ClientMessage clientMessage = ClientMessage.createForEncode(requiredDataSize);
-        clientMessage.ensureCapacity(requiredDataSize);
         clientMessage.setMessageType(TYPE.id());
 //        clientMessage.set(result);
         clientMessage.updateFrameLength();
@@ -54,7 +53,7 @@ public class MapReduceJobProcessInformationResultParameters {
      */
     public static int calculateDataSize(JobPartitionState[] partitionStates, int processedRecords) {
         return ClientMessage.HEADER_SIZE
-                + BitUtil.SIZE_OF_INT;
+                + Bits.INT_SIZE_IN_BYTES;
     }
 }
 

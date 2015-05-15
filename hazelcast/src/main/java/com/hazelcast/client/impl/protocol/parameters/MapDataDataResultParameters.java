@@ -50,7 +50,6 @@ public class MapDataDataResultParameters {
     public static ClientMessage encode(Map<Data,Data> map) {
         final int requiredDataSize = calculateDataSize(map);
         ClientMessage clientMessage = ClientMessage.createForEncode(requiredDataSize);
-        clientMessage.ensureCapacity(requiredDataSize);
         clientMessage.setMessageType(TYPE.id());
         clientMessage.set(map.keySet()).set(map.values());
         clientMessage.updateFrameLength();

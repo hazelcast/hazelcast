@@ -18,7 +18,6 @@ package com.hazelcast.client.impl.protocol.parameters;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.ClientMessageType;
-import com.hazelcast.client.impl.protocol.util.BitUtil;
 import com.hazelcast.client.impl.protocol.util.ParameterUtil;
 import com.hazelcast.nio.serialization.Data;
 
@@ -47,17 +46,15 @@ public class DataEntryListResultParameters {
     public static ClientMessage encode(List<Data> keys, List<Data> values) {
         final int requiredDataSize = calculateDataSize(keys, values);
         ClientMessage clientMessage = ClientMessage.createForEncode(requiredDataSize);
-        clientMessage.ensureCapacity(requiredDataSize);
         clientMessage.setMessageType(TYPE.id());
         clientMessage.set(keys).set(values);
         clientMessage.updateFrameLength();
         return clientMessage;
     }
 
-    public static ClientMessage encode(Map<Data,Data> map) {
+    public static ClientMessage encode(Map<Data, Data> map) {
         final int requiredDataSize = calculateDataSize(map);
         ClientMessage clientMessage = ClientMessage.createForEncode(requiredDataSize);
-        clientMessage.ensureCapacity(requiredDataSize);
         clientMessage.setMessageType(TYPE.id());
         clientMessage.set(map.keySet()).set(map.values());
         clientMessage.updateFrameLength();
@@ -65,14 +62,14 @@ public class DataEntryListResultParameters {
     }
 
     public static int calculateDataSize(List<Data> keys, List<Data> values) {
-        int dataSize = ClientMessage.HEADER_SIZE ;
+        int dataSize = ClientMessage.HEADER_SIZE;
         dataSize += ParameterUtil.calculateCollectionDataSize(keys);
         dataSize += ParameterUtil.calculateCollectionDataSize(values);
         return dataSize;
     }
 
-    public static int calculateDataSize(Map<Data,Data> map) {
-        int dataSize = ClientMessage.HEADER_SIZE ;
+    public static int calculateDataSize(Map<Data, Data> map) {
+        int dataSize = ClientMessage.HEADER_SIZE;
         dataSize += ParameterUtil.calculateCollectionDataSize(map.keySet());
         dataSize += ParameterUtil.calculateCollectionDataSize(map.values());
         return dataSize;

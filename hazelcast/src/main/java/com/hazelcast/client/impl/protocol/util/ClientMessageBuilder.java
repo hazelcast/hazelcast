@@ -43,14 +43,14 @@ public class ClientMessageBuilder {
                 builder.append(message.buffer(), 0, message.getFrameLength());
             } else {
                 final BufferBuilder builder = builderBySessionIdMap.get(message.getCorrelationId());
-                if (builder.limit() == 0) {
+                if (builder.position() == 0) {
                     throw new IllegalStateException();
                 }
 
                 builder.append(message.buffer(), message.getDataOffset(), message.getFrameLength() - message.getDataOffset());
 
                 if (message.isFlagSet(END_FLAG)) {
-                    final int msgLength = builder.limit();
+                    final int msgLength = builder.position();
                     ClientMessage cm = ClientMessage.createForDecode(builder.buffer(), 0);
                     cm.setFrameLength(msgLength);
                     //HANDLE-MESSAGE
@@ -65,7 +65,7 @@ public class ClientMessageBuilder {
     }
 
     private void handleMessage(ClientMessage message) {
-        message.index(message.getDataOffset() + message.offset());
+        message.index(message.getDataOffset());
         delegate.handleMessage(message);
     }
 
@@ -76,6 +76,7 @@ public class ClientMessageBuilder {
 
         /**
          * Received message to be processed
+         *
          * @param message the ClientMessage
          */
         void handleMessage(ClientMessage message);

@@ -17,9 +17,9 @@
 package com.hazelcast.client.impl.protocol.parameters;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.util.BitUtil;
 import com.hazelcast.client.impl.protocol.util.ParameterUtil;
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.Bits;
 
 import java.net.UnknownHostException;
 
@@ -53,12 +53,12 @@ public final class AddressCodec {
 
     public static int calculateDataSize(Address address) {
         boolean isNull = address == null;
-        int dataSize = BitUtil.SIZE_OF_BOOLEAN;
+        int dataSize = Bits.BOOLEAN_SIZE_IN_BYTES;
         if (isNull) {
             return dataSize;
         }
         dataSize += ParameterUtil.calculateStringDataSize(address.getHost());
-        dataSize += BitUtil.SIZE_OF_INT;
+        dataSize += Bits.INT_SIZE_IN_BYTES;
         return dataSize;
     }
 }

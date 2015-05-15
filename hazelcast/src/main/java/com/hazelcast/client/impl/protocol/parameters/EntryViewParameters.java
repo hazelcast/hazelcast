@@ -18,9 +18,9 @@ package com.hazelcast.client.impl.protocol.parameters;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.ClientMessageType;
-import com.hazelcast.client.impl.protocol.util.BitUtil;
 import com.hazelcast.client.impl.protocol.util.ParameterUtil;
 import com.hazelcast.map.impl.SimpleEntryView;
+import com.hazelcast.nio.Bits;
 import com.hazelcast.nio.serialization.Data;
 
 @edu.umd.cs.findbugs.annotations.SuppressWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
@@ -62,7 +62,6 @@ public class EntryViewParameters {
 
 
         ClientMessage clientMessage = ClientMessage.createForEncode(requiredDataSize);
-        clientMessage.ensureCapacity(requiredDataSize);
         clientMessage.setMessageType(TYPE.id());
 
         boolean isNull;
@@ -97,7 +96,7 @@ public class EntryViewParameters {
 
     public static int calculateDataSize(SimpleEntryView<Data, Data> dataEntryView) {
         int dataSize = ClientMessage.HEADER_SIZE;
-        dataSize += BitUtil.SIZE_OF_BOOLEAN;
+        dataSize += Bits.BOOLEAN_SIZE_IN_BYTES;
         if (dataEntryView == null) {
             return dataSize;
         }
@@ -106,7 +105,7 @@ public class EntryViewParameters {
         return dataSize
                 + ParameterUtil.calculateDataSize(key)
                 + ParameterUtil.calculateDataSize(value)
-                + BitUtil.SIZE_OF_LONG * 10;
+                + Bits.LONG_SIZE_IN_BYTES * 10;
     }
 
 }

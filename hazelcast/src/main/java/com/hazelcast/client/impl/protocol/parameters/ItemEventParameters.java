@@ -18,9 +18,9 @@ package com.hazelcast.client.impl.protocol.parameters;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.ClientMessageType;
-import com.hazelcast.client.impl.protocol.util.BitUtil;
 import com.hazelcast.client.impl.protocol.util.ParameterUtil;
 import com.hazelcast.core.ItemEventType;
+import com.hazelcast.nio.Bits;
 import com.hazelcast.nio.serialization.Data;
 
 @edu.umd.cs.findbugs.annotations.SuppressWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
@@ -46,7 +46,6 @@ public class ItemEventParameters {
         ClientMessage clientMessage = ClientMessage.createForEncode(requiredDataSize);
         clientMessage.setMessageType(TYPE.id());
         clientMessage.addFlag(ClientMessage.LISTENER_EVENT_FLAG);
-        clientMessage.ensureCapacity(requiredDataSize);
         clientMessage.set(item).set(uuid).set(eventType.getType());
         clientMessage.updateFrameLength();
         return clientMessage;
@@ -60,7 +59,7 @@ public class ItemEventParameters {
     public static int calculateDataSize(Data item, String uuid, int eventType) {
         return ClientMessage.HEADER_SIZE
                 + ParameterUtil.calculateDataSize(item)
-                + ParameterUtil.calculateStringDataSize(uuid) + BitUtil.SIZE_OF_INT;
+                + ParameterUtil.calculateStringDataSize(uuid) + Bits.INT_SIZE_IN_BYTES;
     }
 }
 

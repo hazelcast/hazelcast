@@ -18,8 +18,8 @@ package com.hazelcast.client.impl.protocol.parameters;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.ClientMessageType;
-import com.hazelcast.client.impl.protocol.util.BitUtil;
 import com.hazelcast.client.impl.protocol.util.ParameterUtil;
+import com.hazelcast.nio.Bits;
 
 @edu.umd.cs.findbugs.annotations.SuppressWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"})
 public class XATransactionCommitParameters {
@@ -40,7 +40,6 @@ public class XATransactionCommitParameters {
     public static ClientMessage encode(String transactionId, boolean onePhase) {
         final int requiredDataSize = calculateDataSize(transactionId, onePhase);
         ClientMessage clientMessage = ClientMessage.createForEncode(requiredDataSize);
-        clientMessage.ensureCapacity(requiredDataSize);
         clientMessage.set(transactionId).set(onePhase);
         clientMessage.setMessageType(TYPE.id());
         clientMessage.updateFrameLength();
@@ -50,6 +49,6 @@ public class XATransactionCommitParameters {
     public static int calculateDataSize(String transactionId, boolean onePhase) {
         return ClientMessage.HEADER_SIZE
                 + ParameterUtil.calculateStringDataSize(transactionId)
-                + BitUtil.SIZE_OF_BOOLEAN;
+                + Bits.BOOLEAN_SIZE_IN_BYTES;
     }
 }

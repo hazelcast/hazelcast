@@ -42,7 +42,6 @@ public class DistributedObjectEventParameters {
     public static ClientMessage encode(String name, String serviceName, DistributedObjectEvent.EventType eventType) {
         final int requiredDataSize = calculateDataSize(name, serviceName, eventType);
         ClientMessage clientMessage = ClientMessage.createForEncode(requiredDataSize);
-        clientMessage.ensureCapacity(requiredDataSize);
         clientMessage.setMessageType(TYPE.id());
         clientMessage.set(name).set(serviceName).set(eventType.name());
         clientMessage.updateFrameLength();

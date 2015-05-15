@@ -38,7 +38,6 @@ public class TransactionCreateResultParameters {
         final int requiredDataSize = calculateDataSize(transactionId);
         ClientMessage clientMessage = ClientMessage.createForEncode(requiredDataSize);
         clientMessage.setMessageType(TYPE.id());
-        clientMessage.ensureCapacity(requiredDataSize);
         clientMessage.set(transactionId);
         clientMessage.updateFrameLength();
         return clientMessage;
