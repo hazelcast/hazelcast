@@ -26,31 +26,27 @@ import com.hazelcast.util.ExceptionUtil;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
 import static com.hazelcast.util.Preconditions.isNotNull;
 
 public abstract class AbstractCompletableFuture<V> implements ICompletableFuture<V> {
 
-    protected static final Object NULL_VALUE = new Object();
-    protected final AtomicReferenceFieldUpdater<AbstractCompletableFuture, Object> resultUpdater;
+    protected static final Object NOT_AVAILABLE_VALUE = new Object();
     protected final NodeEngine nodeEngine;
-    // This field is only assigned by the atomic updater
-    protected volatile Object result = NULL_VALUE;
 
-    private final AtomicReferenceFieldUpdater<AbstractCompletableFuture, ExecutionCallbackNode> callbackUpdater;
+    protected volatile Object result = NOT_AVAILABLE_VALUE;
+
+    private final Object completionLock = new Object();
+
     private final ILogger logger;
     private volatile ExecutionCallbackNode<V> callbackHead;
 
     protected AbstractCompletableFuture(NodeEngine nodeEngine, ILogger logger) {
         this.nodeEngine = nodeEngine;
         this.logger = logger;
-        this.callbackUpdater = AtomicReferenceFieldUpdater.newUpdater(
-                AbstractCompletableFuture.class, ExecutionCallbackNode.class, "callbackHead");
-        this.resultUpdater = AtomicReferenceFieldUpdater.newUpdater(
-                AbstractCompletableFuture.class, Object.class, "result");
     }
 
     @Override
@@ -63,22 +59,31 @@ public abstract class AbstractCompletableFuture<V> implements ICompletableFuture
         isNotNull(callback, "callback");
         isNotNull(executor, "executor");
 
-        if (isDone()) {
+        // no need to lock if the future is already completed
+        // isDone() is not called because it can be overridden by subclasses
+        if (isDoneInternal()) {
             runAsynchronous(callback, executor);
             return;
         }
-        for (;;) {
-            ExecutionCallbackNode oldCallbackHead = callbackHead;
-            ExecutionCallbackNode newCallbackHead = new ExecutionCallbackNode<V>(callback, executor, oldCallbackHead);
-            if (callbackUpdater.compareAndSet(this, oldCallbackHead, newCallbackHead)) {
-                break;
+
+        synchronized (completionLock) {
+            // isDone() is not called because it can be overridden by subclasses
+            if (isDoneInternal()) {
+                runAsynchronous(callback, executor);
+                return;
             }
+
+            this.callbackHead = new ExecutionCallbackNode<V>(callback, executor, callbackHead);
         }
     }
 
     @Override
     public boolean isDone() {
-        return result != NULL_VALUE;
+        return isDoneInternal();
+    }
+
+    private boolean isDoneInternal() {
+        return result != NOT_AVAILABLE_VALUE;
     }
 
     @Override
@@ -92,9 +97,19 @@ public abstract class AbstractCompletableFuture<V> implements ICompletableFuture
     }
 
     public void setResult(Object result) {
-        if (resultUpdater.compareAndSet(this, NULL_VALUE, result)) {
-            fireCallbacks();
+        ExecutionCallbackNode<V> callbackChain;
+        synchronized (completionLock) {
+            // isDone() is not called because it can be overridden by subclasses
+            if (isDoneInternal()) {
+                return;
+            }
+
+            this.result = result;
+            callbackChain = callbackHead;
+            callbackHead = null;
         }
+
+        fireCallbacks(callbackChain);
     }
 
     protected V getResult() {
@@ -105,14 +120,7 @@ public abstract class AbstractCompletableFuture<V> implements ICompletableFuture
         return (V) result;
     }
 
-    protected void fireCallbacks() {
-        ExecutionCallbackNode<V> callbackChain;
-        for (;;) {
-            callbackChain = callbackHead;
-            if (callbackUpdater.compareAndSet(this, callbackChain, null)) {
-                break;
-            }
-        }
+    protected void fireCallbacks(ExecutionCallbackNode<V> callbackChain) {
         while (callbackChain != null) {
             runAsynchronous(callbackChain.callback, callbackChain.executor);
             callbackChain = callbackChain.next;
@@ -120,22 +128,26 @@ public abstract class AbstractCompletableFuture<V> implements ICompletableFuture
     }
 
     private void runAsynchronous(final ExecutionCallback<V> callback, final Executor executor) {
-        final Object result = this.result;
-        executor.execute(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    if (result instanceof Throwable) {
-                        callback.onFailure((Throwable) result);
-                    } else {
-                        callback.onResponse((V) result);
+        try {
+            final Object result = this.result;
+            executor.execute(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        if (result instanceof Throwable) {
+                            callback.onFailure((Throwable) result);
+                        } else {
+                            callback.onResponse((V) result);
+                        }
+                    } catch (Throwable cause) {
+                        logger.severe("Failed asynchronous execution of execution callback: " + callback
+                                + "for call " + AbstractCompletableFuture.this, cause);
                     }
-                } catch (Throwable cause) {
-                    logger.severe("Failed asynchronous execution of execution callback: " + callback
-                            + "for call " + AbstractCompletableFuture.this, cause);
                 }
-            }
-        });
+            });
+        } catch (RejectedExecutionException e) {
+            logger.warning("Execution of callback: " + callback + " is rejected!", e);
+        }
     }
 
     protected ExecutorService getAsyncExecutor() {
