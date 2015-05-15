@@ -206,24 +206,21 @@ public final class ClientEndpointImpl implements Client, ClientEndpoint {
 
     @Override
     public void clearAllListeners() {
-        for (Runnable removeAction : removeListenerActions) {
+        //Changed from normal iteration to copying with toArray because of ConcurrentModificationException.
+        // toArray is called under internal mutex of synchronized list.
+        Object[] actions = removeListenerActions.toArray();
+        for (Object removeAction : actions) {
             try {
-                removeAction.run();
+                ((Runnable) removeAction).run();
             } catch (Exception e) {
-                getLogger().warning("Exception during destroy action", e);
+                getLogger().warning("Exception during remove listener action", e);
             }
         }
         removeListenerActions.clear();
     }
 
     public void destroy() throws LoginException {
-        for (Runnable removeAction : removeListenerActions) {
-            try {
-                removeAction.run();
-            } catch (Exception e) {
-                getLogger().warning("Exception during destroy action", e);
-            }
-        }
+        clearAllListeners();
 
         LoginContext lc = loginContext;
         if (lc != null) {
