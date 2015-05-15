@@ -208,10 +208,10 @@ public class BasicMapTest extends HazelcastTestSupport {
         }, true);
 
         map.put("key", value1, 1, TimeUnit.SECONDS);
-        assertTrue(latch1.await(10, TimeUnit.SECONDS));
+        assertOpenEventually(latch1);
 
         map.put("key", value2, 1, TimeUnit.SECONDS);
-        assertTrue(latch2.await(10, TimeUnit.SECONDS));
+        assertOpenEventually(latch2);
 
         assertEquals(value1, newList.get(0));
         assertEquals(value2, newList.get(1));
