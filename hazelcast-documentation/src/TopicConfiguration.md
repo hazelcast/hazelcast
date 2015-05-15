@@ -56,7 +56,8 @@ Topic related but not topic specific configuration parameters:
 
 ***RELATED INFORMATION***
 
-*Please refer to the [Topic Configuration section](#topic-configuration) for a full description of Hazelcast Distributed Topic configuration.*
+*Please refer to the [Topic Configuration section](#topic-configuration) for a full description of Hazelcast
+Distributed Topic configuration.*
 
 
 
