@@ -154,6 +154,7 @@
                         <exclude>**/*.html</exclude>
                         <exclude>**/*.sh</exclude>
                         <exclude>**/*.bat</exclude>
+                        <exclude>META-INF/services/javax.annotation.processing.Processor</exclude>
                     </excludes>
                 </configuration>
                 <executions>
