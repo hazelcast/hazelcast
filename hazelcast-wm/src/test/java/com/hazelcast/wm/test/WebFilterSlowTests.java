@@ -20,7 +20,7 @@ public abstract class WebFilterSlowTests extends AbstractWebFilterTest {
     protected WebFilterSlowTests(String serverXml1, String serverXml2) {
         super(serverXml1, serverXml2);
     }
-    
+
     @Test
     public void test_github_issue_3360() throws Exception {
         CookieStore cookieStore = new BasicCookieStore();
@@ -74,7 +74,7 @@ public abstract class WebFilterSlowTests extends AbstractWebFilterTest {
         //no name should be created
         assertEquals("", executeRequest("names", serverPort1, cookieStore));
     }
-    
+
     @Test(timeout = 60000)
     public void test_github_issue_2187() throws Exception {
         IMap<String, String> map = hz.getMap(DEFAULT_MAP_NAME);
@@ -110,6 +110,7 @@ public abstract class WebFilterSlowTests extends AbstractWebFilterTest {
         assertEquals("true", executeRequest("remove", serverPort2, cookieStore));
         assertEquals("null", executeRequest("read", serverPort1, cookieStore));
     }
+
     @Test(timeout = 60000)
     public void testAttributeUpdate() throws Exception {
         IMap<String, Object> map = hz.getMap(DEFAULT_MAP_NAME);
