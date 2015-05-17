@@ -4,11 +4,12 @@ import com.hazelcast.core.IMap;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.CookieStore;
 import org.apache.http.impl.client.BasicCookieStore;
+import org.junit.Test;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
-import org.junit.Test;
 
 public abstract class WebFilterSlowTests extends AbstractWebFilterTest {
 
@@ -19,7 +20,7 @@ public abstract class WebFilterSlowTests extends AbstractWebFilterTest {
     protected WebFilterSlowTests(String serverXml1, String serverXml2) {
         super(serverXml1, serverXml2);
     }
-
+    
     @Test
     public void test_github_issue_3360() throws Exception {
         CookieStore cookieStore = new BasicCookieStore();
@@ -73,7 +74,7 @@ public abstract class WebFilterSlowTests extends AbstractWebFilterTest {
         //no name should be created
         assertEquals("", executeRequest("names", serverPort1, cookieStore));
     }
-
+    
     @Test(timeout = 60000)
     public void test_github_issue_2187() throws Exception {
         IMap<String, String> map = hz.getMap(DEFAULT_MAP_NAME);
@@ -109,7 +110,6 @@ public abstract class WebFilterSlowTests extends AbstractWebFilterTest {
         assertEquals("true", executeRequest("remove", serverPort2, cookieStore));
         assertEquals("null", executeRequest("read", serverPort1, cookieStore));
     }
-
     @Test(timeout = 60000)
     public void testAttributeUpdate() throws Exception {
         IMap<String, Object> map = hz.getMap(DEFAULT_MAP_NAME);
@@ -197,5 +197,16 @@ public abstract class WebFilterSlowTests extends AbstractWebFilterTest {
         assertEquals("true", executeRequest("issue5186_remove_then_set", serverPort1, cookieStore));
         assertEquals("value-changed", executeRequest("read", serverPort1, cookieStore));
         assertEquals("value-changed", executeRequest("read", serverPort2, cookieStore));
+    }
+
+    @Test
+    public void test_update_server2_and_fetch_server1() throws Exception{
+        CookieStore cookieStore = new BasicCookieStore();
+
+        assertEquals("true", executeRequest("write", serverPort1, cookieStore));
+        assertEquals("value", executeRequest("read", serverPort2, cookieStore));
+
+        assertEquals("value-updated",executeRequest("update-and-read-same-request",serverPort2,cookieStore));
+        assertEquals("value-updated",executeRequest("update-and-read-same-request",serverPort1,cookieStore));
     }
 }

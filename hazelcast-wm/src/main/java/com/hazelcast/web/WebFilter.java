@@ -201,12 +201,15 @@ public class WebFilter implements Filter {
                 }
 
                 public void entryRemoved(EntryEvent<String, Object> entryEvent) {
-                    if (entryEvent.getMember() == null || !entryEvent.getMember().localMember()) {
+                    if ((entryEvent.getMember() == null || !entryEvent.getMember().localMember())) {
                         removeSessionLocally(entryEvent.getKey());
                     }
                 }
 
                 public void entryUpdated(EntryEvent<String, Object> entryEvent) {
+                    if ((entryEvent.getMember() == null || !entryEvent.getMember().localMember()) && sessions.get(entryEvent.getKey()) == null) {
+                        resetLocalCache((String) entryEvent.getKey());
+                    }
                 }
 
                 public void entryEvicted(EntryEvent<String, Object> entryEvent) {
@@ -225,10 +228,26 @@ public class WebFilter implements Filter {
             }, false);
         }
 
-        if (LOGGER.isLoggable(Level.FINEST)) {
+        if (LOGGER.isLoggable(Level.FINEST))
+
+        {
             LOGGER.finest("sticky:" + stickySession + ", shutdown-on-destroy: " + shutdownOnDestroy
                     + ", map-name: " + clusterMapName);
         }
+    }
+
+    private void resetLocalCache(String key) {
+
+        String sessionId = extractSessionId(key);
+        String attributeKey = extractAttributeKey(key);
+        HazelcastHttpSession hazelSession = sessions.get(sessionId);
+        if (hazelSession != null && hazelSession.localCache != null && hazelSession.localCache.get(attributeKey) != null) {
+            hazelSession.localCache.get(attributeKey).reload = true;
+        }
+    }
+
+    private String extractSessionId(String key) {
+        return key.substring(0, key.indexOf(HAZELCAST_SESSION_ATTRIBUTE_SEPARATOR));
     }
 
     private void initParams() {
@@ -322,9 +341,9 @@ public class WebFilter implements Filter {
      * {@code HazelcastHttpSession instance} creation is split off to a separate method to allow subclasses to return a
      * customized / extended version of {@code HazelcastHttpSession}.
      *
-     * @param id the session id
+     * @param id              the session id
      * @param originalSession the original session
-     * @param deferredWrite whether writes are deferred
+     * @param deferredWrite   whether writes are deferred
      * @return a new HazelcastHttpSession instance
      */
     protected HazelcastHttpSession createHazelcastHttpSession(String id, HttpSession originalSession, boolean deferredWrite) {
@@ -757,6 +776,7 @@ public class WebFilter implements Filter {
                 entry.removed = false;
                 entry.dirty = true;
             } else {
+                System.out.println(buildAttributeName(name) + " " + value);
                 getClusterMap().set(buildAttributeName(name), value);
             }
         }

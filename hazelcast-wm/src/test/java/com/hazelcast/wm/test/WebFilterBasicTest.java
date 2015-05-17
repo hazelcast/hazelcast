@@ -19,15 +19,13 @@ package com.hazelcast.wm.test;
 import com.hazelcast.core.IMap;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-
 import org.apache.http.client.CookieStore;
 import org.apache.http.impl.client.BasicCookieStore;
-
-import static org.junit.Assert.assertEquals;
-
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * Tests to basic session methods. getAttribute,setAttribute,isNew,getAttributeNames etc.
