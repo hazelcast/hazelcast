@@ -29,6 +29,8 @@ import org.junit.runner.RunWith;
 
 import java.util.Collection;
 
+import static org.junit.Assert.assertTrue;
+
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(SlowTest.class)
 public class SlowOperationDetector_purgeTest extends SlowOperationDetectorAbstractTest {
@@ -59,13 +61,13 @@ public class SlowOperationDetector_purgeTest extends SlowOperationDetectorAbstra
 
         // all of these entry processors are executed after each other, not in parallel
         for (int i = 0; i < 2; i++) {
-            map.executeOnEntries(getSlowEntryProcessor(2));
+            map.executeOnEntries(getSlowEntryProcessor(3));
         }
+        map.executeOnEntries(getSlowEntryProcessor(4));
         map.executeOnEntries(getSlowEntryProcessor(3));
-        map.executeOnEntries(getSlowEntryProcessor(2));
         awaitSlowEntryProcessors();
 
-        // shutdown to stop purging, so the last entry processor will survive
+        // shutdown to stop purging, so the last one or two entry processor invocations will survive
         shutdownOperationService(instance);
 
         Collection<SlowOperationLog> logs = getSlowOperationLogs(instance);
@@ -77,7 +79,8 @@ public class SlowOperationDetector_purgeTest extends SlowOperationDetectorAbstra
         assertStackTraceContainsClassName(firstLog, "SlowEntryProcessor");
 
         Collection<SlowOperationLog.Invocation> invocations = getInvocations(firstLog);
-        assertEqualsStringFormat("Expected %d invocations, but was %d", 2, invocations.size());
+        int invocationCount = invocations.size();
+        assertTrue("Expected 1 or 2 invocations, but was " + invocationCount, invocationCount >= 1 && invocationCount <= 2);
         for (SlowOperationLog.Invocation invocation : invocations) {
             assertInvocationDurationBetween(invocation, 1000, 3500);
         }
@@ -89,11 +92,11 @@ public class SlowOperationDetector_purgeTest extends SlowOperationDetectorAbstra
 
         // all of these entry processors are executed after each other, not in parallel
         for (int i = 0; i < 2; i++) {
-            map.executeOnEntries(getSlowEntryProcessor(2));
+            map.executeOnEntries(getSlowEntryProcessor(3));
         }
         awaitSlowEntryProcessors();
 
-        // sleep a bit to get the last entry processor purged
+        // sleep a bit to purge the last entry processor invocation (and the whole slow operation log with it)
         sleepSeconds(3);
         shutdownOperationService(instance);
 
