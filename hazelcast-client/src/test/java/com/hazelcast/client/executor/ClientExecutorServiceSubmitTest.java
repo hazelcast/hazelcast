@@ -585,7 +585,7 @@ public class ClientExecutorServiceSubmitTest {
             }
         });
 
-        assertOpenEventually("responseLatch", responseLatch, 5);
+        assertOpenEventually("responseLatch", responseLatch);
         assertEquals(msg + AppendCallable.APPENDAGE, result.get());
     }
 

@@ -55,6 +55,8 @@ public class ClientReconnectTest extends HazelcastTestSupport {
     @Test
     public void testClientReconnectOnClusterDown() throws Exception {
         final HazelcastInstance h1 = Hazelcast.newHazelcastInstance();
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.getNetworkConfig().setConnectionAttemptLimit(Integer.MAX_VALUE);
         final HazelcastInstance client = HazelcastClient.newHazelcastClient();
         final CountDownLatch connectedLatch = new CountDownLatch(2);
         client.getLifecycleService().addLifecycleListener(new LifecycleListener() {
