@@ -84,7 +84,7 @@ public class FuzzyClientProtocolBufferTest extends HazelcastTestSupport {
 
     private void testString(ClientProtocolBuffer clientProtocolBuffer) {
         String expected = randomString();
-        int index = pickIndexSuitableForSize(expected.getBytes(Charset.forName("utf-8")).length);
+        int index = pickIndexSuitableForSize(expected.getBytes(Charset.forName("utf-8")).length + Bits.INT_SIZE_IN_BYTES);
         clientProtocolBuffer.putStringUtf8(index, expected);
         int strSize = clientProtocolBuffer.getInt(index);
         assertEquals(expected, clientProtocolBuffer.getStringUtf8(index, strSize));

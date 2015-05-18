@@ -24,11 +24,9 @@ import com.hazelcast.cluster.client.MemberAttributeChange;
 public class MemberAttributeChangeResultParameters {
     public static final ClientMessageType TYPE = ClientMessageType.MEMBER_ATTRIBUTE_RESULT;
 
-    public com.hazelcast.client.impl.MemberImpl member;
     public MemberAttributeChange memberAttributeChange;
 
     public MemberAttributeChangeResultParameters(ClientMessage clientMessage) {
-        member = MemberCodec.decode(clientMessage);
         memberAttributeChange = MemberAttributeChangeCodec.decode(clientMessage);
     }
 
@@ -36,12 +34,11 @@ public class MemberAttributeChangeResultParameters {
         return new MemberAttributeChangeResultParameters(clientMessage);
     }
 
-    public static ClientMessage encode(com.hazelcast.instance.MemberImpl member, MemberAttributeChange memberAttributeChange) {
-        final int requiredDataSize = calculateDataSize(member, memberAttributeChange);
+    public static ClientMessage encode(MemberAttributeChange memberAttributeChange) {
+        final int requiredDataSize = calculateDataSize(memberAttributeChange);
         ClientMessage clientMessage = ClientMessage.createForEncode(requiredDataSize);
         clientMessage.setMessageType(TYPE.id());
 
-        MemberCodec.encode(member, clientMessage);
         MemberAttributeChangeCodec.encode(memberAttributeChange, clientMessage);
 
         clientMessage.addFlag(ClientMessage.LISTENER_EVENT_FLAG);
@@ -49,9 +46,8 @@ public class MemberAttributeChangeResultParameters {
         return clientMessage;
     }
 
-    public static int calculateDataSize(com.hazelcast.instance.MemberImpl member, MemberAttributeChange memberAttributeChange) {
-        return ClientMessage.HEADER_SIZE//
-                + MemberCodec.calculateDataSize(member)//
+    public static int calculateDataSize(MemberAttributeChange memberAttributeChange) {
+        return ClientMessage.HEADER_SIZE
                 + MemberAttributeChangeCodec.calculateDataSize(memberAttributeChange);
     }
 

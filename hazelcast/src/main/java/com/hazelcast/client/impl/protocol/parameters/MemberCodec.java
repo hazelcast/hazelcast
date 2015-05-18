@@ -46,7 +46,7 @@ public final class MemberCodec {
     public static void encode(com.hazelcast.instance.MemberImpl member, ClientMessage clientMessage) {
         AddressCodec.encode(member.getAddress(), clientMessage);
         clientMessage.set(member.getUuid());
-        Map<String, Object> attributes = member.getAttributes();
+        Map<String, Object> attributes = new HashMap<String, Object>(member.getAttributes());
         clientMessage.set(attributes.size());
         for (Map.Entry<String, Object> entry : attributes.entrySet()) {
             clientMessage.set(entry.getKey());
