@@ -39,6 +39,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -284,15 +285,15 @@ public class MapKeyLoader {
     }
 
     private static final class LoadFinishedFuture extends AbstractCompletableFuture<Boolean>
-        implements ExecutionCallback<Boolean> {
-
-        private LoadFinishedFuture() {
-            super(null, null);
-        }
+            implements ExecutionCallback<Boolean> {
 
         private LoadFinishedFuture(Boolean result) {
-            super(null, null);
+            this();
             setResult(result);
+        }
+
+        private LoadFinishedFuture() {
+            super((Executor) null, null);
         }
 
         @Override
@@ -331,6 +332,4 @@ public class MapKeyLoader {
             return getClass().getSimpleName() + "{done=" + isDone() + "}";
         }
     }
-
-
 }

@@ -61,7 +61,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
@@ -228,7 +227,7 @@ public class ClientMapReduceProxy
         private volatile boolean cancelled;
 
         protected ClientCompletableFuture(String jobId) {
-            super(null, Logger.getLogger(ClientCompletableFuture.class));
+            super(getContext().getExecutionService().getAsyncExecutor(), Logger.getLogger(ClientCompletableFuture.class));
             this.jobId = jobId;
             this.latch = new CountDownLatch(1);
         }
@@ -268,11 +267,6 @@ public class ClientMapReduceProxy
                 throw new TimeoutException("timeout reached");
             }
             return getResult();
-        }
-
-        @Override
-        protected ExecutorService getAsyncExecutor() {
-            return getContext().getExecutionService().getAsyncExecutor();
         }
     }
 

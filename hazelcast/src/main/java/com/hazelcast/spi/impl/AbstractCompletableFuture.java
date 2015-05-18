@@ -24,7 +24,6 @@ import com.hazelcast.spi.NodeEngine;
 
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
@@ -40,8 +39,7 @@ public abstract class AbstractCompletableFuture<V> implements ICompletableFuture
     private static final AtomicReferenceFieldUpdater<AbstractCompletableFuture, Object> STATE
             = newUpdater(AbstractCompletableFuture.class, Object.class, "state");
 
-     protected final NodeEngine nodeEngine;
-    // This field is only assigned by the STATE.
+    // This field is only assigned by the STATE AtomicReferenceFieldUpdater.
     // This field encodes an option type of 2 types, an ExecutionCallbackNode or a result.
     // if the state is an instance of the former, then the future is not done. Otherwise it is.
     // The reason for this abuse of the type system is to deal with the head node and the result
@@ -50,15 +48,20 @@ public abstract class AbstractCompletableFuture<V> implements ICompletableFuture
     volatile Object state = INITIAL_STATE;
 
     private final ILogger logger;
+    private final Executor defaultExecutor;
 
     protected AbstractCompletableFuture(NodeEngine nodeEngine, ILogger logger) {
-        this.nodeEngine = nodeEngine;
+        this(nodeEngine.getExecutionService().getExecutor(ExecutionService.ASYNC_EXECUTOR), logger);
+    }
+
+    protected AbstractCompletableFuture(Executor defaultExecutor, ILogger logger) {
+        this.defaultExecutor = defaultExecutor;
         this.logger = logger;
     }
 
     @Override
     public void andThen(ExecutionCallback<V> callback) {
-        andThen(callback, getAsyncExecutor());
+        andThen(callback, defaultExecutor);
     }
 
     @Override
@@ -145,10 +148,6 @@ public abstract class AbstractCompletableFuture<V> implements ICompletableFuture
 
     private void runAsynchronous(ExecutionCallback<V> callback, Executor executor, Object result) {
         executor.execute(new ExecutionCallbackRunnable<V>(result, callback));
-    }
-
-    protected ExecutorService getAsyncExecutor() {
-        return nodeEngine.getExecutionService().getExecutor(ExecutionService.ASYNC_EXECUTOR);
     }
 
     static final class ExecutionCallbackNode<E> {
