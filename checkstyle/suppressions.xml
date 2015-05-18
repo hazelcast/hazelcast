@@ -410,6 +410,7 @@
     <suppress checks="JavadocVariable" files="com.hazelcast.multimap[\\/]"/>
     <suppress checks="MethodLength" files="com.hazelcast.multimap.impl.MultiMapDataSerializerHook"/>
     <suppress checks="MethodCount" files="com.hazelcast.multimap.impl.MultiMapDataSerializerHook"/>
+    <suppress checks="MethodCount|ClassFanOutComplexity" files="com.hazelcast.multimap.impl.MultiMapService"/>
     <suppress checks="ClassDataAbstractionCouplingC" files="com.hazelcast.multimap.impl.MultiMapDataSerializerHook"/>
     <suppress checks="MethodLength" files="com.hazelcast.multimap.impl.MultiMapPortableHook"/>
     <suppress checks="ClassDataAbstractionCouplingC" files="com.hazelcast.multimap.impl.MultiMapPortableHook"/>

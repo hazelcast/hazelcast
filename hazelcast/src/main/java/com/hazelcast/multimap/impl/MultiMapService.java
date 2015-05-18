@@ -238,8 +238,23 @@ public class MultiMapService implements ManagedService, RemoteService, Migration
             String name = entry.getKey();
             MultiMapContainer container = getOrCreateCollectionContainer(partitionId, name);
             Map<Data, MultiMapWrapper> collections = entry.getValue();
-            container.getMultiMapWrappers().putAll(collections);
+            long maxRecordId = -1;
+            for (Map.Entry<Data, MultiMapWrapper> wrapperEntry : collections.entrySet()) {
+                MultiMapWrapper wrapper = wrapperEntry.getValue();
+                container.getMultiMapWrappers().put(wrapperEntry.getKey(), wrapper);
+                long wrapperMaxRecordId = getMaxRecordId(wrapper);
+                maxRecordId = Math.max(maxRecordId, wrapperMaxRecordId);
+            }
+            container.setId(maxRecordId);
         }
+    }
+
+    private long getMaxRecordId(MultiMapWrapper wrapper) {
+        long maxRecordId = -1;
+        for (MultiMapRecord record : wrapper.getCollection(false)) {
+            maxRecordId = Math.max(maxRecordId, record.getRecordId());
+        }
+        return maxRecordId;
     }
 
     private void clearMigrationData(int partitionId) {
