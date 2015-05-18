@@ -30,6 +30,7 @@ import com.hazelcast.cache.impl.record.SampleableCacheRecordMap;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
+import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.map.impl.MapEntrySet;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.DefaultData;
@@ -158,10 +159,10 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     protected abstract CRM createRecordCacheMap();
     protected abstract CacheEntryProcessorEntry createCacheEntryProcessorEntry(Data key, R record,
                                                                                long now, int completionId);
-    protected abstract <T> R createRecord(T value, long creationTime, long expiryTime);
-    protected abstract <T> Data valueToData(T value);
-    protected abstract <T> T dataToValue(Data data);
-    protected abstract <T> T recordToValue(R record);
+    protected abstract R createRecord(Object value, long creationTime, long expiryTime);
+    protected abstract Data valueToData(Object value);
+    protected abstract Object dataToValue(Data data);
+    protected abstract Object recordToValue(R record);
     protected abstract Data recordToData(R record);
     protected abstract Data toHeapData(Object obj);
 
@@ -224,13 +225,27 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         }
     }
 
-    protected <T> T toValue(Object obj) {
+    protected Object toValue(Object obj) {
         if (obj instanceof Data) {
-            return (T) dataToValue((Data) obj);
+            return dataToValue((Data) obj);
         } else if (obj instanceof CacheRecord) {
-            return (T) recordToValue((R) obj);
+            return recordToValue((R) obj);
         } else {
-            return (T) obj;
+            return obj;
+        }
+    }
+
+    protected Object toStorageValue(Object obj) {
+        if (obj instanceof Data) {
+            if (cacheConfig.getInMemoryFormat() == InMemoryFormat.OBJECT) {
+                return dataToValue((Data) obj);
+            } else {
+                return obj;
+            }
+        } else if (obj instanceof CacheRecord) {
+            return recordToValue((R) obj);
+        } else {
+            return obj;
         }
     }
 
@@ -684,7 +699,6 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         if (isExpiredAt(expiryTime, now)) {
             return null;
         }
-        // TODO below createRecord may fire create event, is it OK?
         return createRecord(key, value, expiryTime, IGNORE_COMPLETION);
     }
 
@@ -846,7 +860,6 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     @Override
     public Object get(Data key, ExpiryPolicy expiryPolicy) {
         expiryPolicy = getExpiryPolicy(expiryPolicy);
-
         long now = Clock.currentTimeMillis();
         Object value = null;
         R record = records.get(key);
@@ -903,7 +916,6 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
 
         final long now = Clock.currentTimeMillis();
         final long start = isStatisticsEnabled() ? System.nanoTime() : 0;
-
         boolean isOnNewPut = false;
         boolean isSaveSucceed;
         Object oldValue = null;
@@ -968,10 +980,8 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     protected boolean putIfAbsent(Data key, Object value, ExpiryPolicy expiryPolicy, String source,
                                   boolean disableWriteThrough, int completionId) {
         expiryPolicy = getExpiryPolicy(expiryPolicy);
-
         final long now = Clock.currentTimeMillis();
         final long start = isStatisticsEnabled() ? System.nanoTime() : 0;
-
         boolean result;
         R record = records.get(key);
         boolean isExpired = processExpiredEntry(key, record, now);
@@ -1020,7 +1030,6 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     @Override
     public boolean replace(Data key, Object value, ExpiryPolicy expiryPolicy, String source, int completionId) {
         expiryPolicy = getExpiryPolicy(expiryPolicy);
-
         final long now = Clock.currentTimeMillis();
         final long start = isStatisticsEnabled() ? System.nanoTime() : 0;
         boolean replaced = false;
@@ -1062,7 +1071,6 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     public boolean replace(Data key, Object oldValue, Object newValue, ExpiryPolicy expiryPolicy,
                            String source, int completionId) {
         expiryPolicy = getExpiryPolicy(expiryPolicy);
-
         final long now = Clock.currentTimeMillis();
         final long start = isStatisticsEnabled() ? System.nanoTime() : 0;
         boolean isHit = false;
@@ -1075,8 +1083,8 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
                 replaced = false;
             } else {
                 isHit = true;
-                Object currentValue = toValue(record);
-                if (compare(currentValue, toValue(oldValue))) {
+                Object currentValue = toStorageValue(record);
+                if (compare(currentValue, toStorageValue(oldValue))) {
                     replaced = updateRecordWithExpiry(key, newValue, record, expiryPolicy,
                                                       now, false, completionId);
                 } else {
@@ -1106,7 +1114,6 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     @Override
     public Object getAndReplace(Data key, Object value, ExpiryPolicy expiryPolicy, String source, int completionId) {
         expiryPolicy = getExpiryPolicy(expiryPolicy);
-
         final long now = Clock.currentTimeMillis();
         final long start = isStatisticsEnabled() ? System.nanoTime() : 0;
         Object obj = null;
@@ -1207,7 +1214,6 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     public boolean remove(Data key, Object value, String source, int completionId, String origin) {
         final long now = Clock.currentTimeMillis();
         final long start = System.nanoTime();
-
         R record = records.get(key);
         boolean isExpired = record != null && record.isExpiredAt(now);
         int hitCount = 0;
@@ -1221,7 +1227,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
                 removed = false;
             } else {
                 hitCount++;
-                if (compare(toValue(record), toValue(value))) {
+                if (compare(toStorageValue(record), toStorageValue(value))) {
                     deleteCacheEntry(key);
                     removed = deleteRecord(key, completionId, source, origin);
                 } else {
@@ -1316,7 +1322,6 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
 
     @Override
     public MapEntrySet getAll(Set<Data> keySet, ExpiryPolicy expiryPolicy) {
-        // We do not call loadAll. shouldn't we ?
         expiryPolicy = getExpiryPolicy(expiryPolicy);
         final MapEntrySet result = new MapEntrySet();
         for (Data key : keySet) {
@@ -1468,7 +1473,6 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     }
 
     protected void closeListeners() {
-        // Close the configured CacheEntryListeners
         InternalEventService eventService = (InternalEventService) cacheService.getNodeEngine().getEventService();
         Collection<EventRegistration> candidates =
                 eventService.getRegistrations(CacheService.SERVICE_NAME, name);
