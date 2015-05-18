@@ -136,7 +136,7 @@ public class RegisterMembershipListenerMessageTask
             String key = memberAttributeEvent.getKey();
             Object value = memberAttributeEvent.getValue();
             MemberAttributeChange memberAttributeChange = new MemberAttributeChange(uuid, op, key, value);
-            ClientMessage eventMessage = MemberAttributeChangeResultParameters.encode(member, memberAttributeChange);
+            ClientMessage eventMessage = MemberAttributeChangeResultParameters.encode(memberAttributeChange);
             sendClientMessage(endpoint.getUuid(), eventMessage);
         }
     }

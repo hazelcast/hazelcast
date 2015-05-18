@@ -57,7 +57,8 @@ public final class MemberAttributeChangeCodec {
         }
         int dataSize = ParameterUtil.calculateStringDataSize(memberAttributeChange.getUuid());
         dataSize += ParameterUtil.calculateStringDataSize(memberAttributeChange.getKey());
-        dataSize += Bits.BYTE_SIZE_IN_BYTES;
+        //operation type
+        dataSize += Bits.INT_SIZE_IN_BYTES;
         MemberAttributeOperationType operationType = memberAttributeChange.getOperationType();
         if (operationType == PUT) {
             dataSize += ParameterUtil.calculateStringDataSize(memberAttributeChange.getValue().toString());
