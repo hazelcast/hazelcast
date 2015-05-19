@@ -17,7 +17,8 @@
 package com.hazelcast.internal.metrics;
 
 /**
- * A gauge metric is an instantaneous reading of a particular value: for example, the current size of the pending operations queue.
+ * A gauge metric is an instantaneous reading of a particular value: for example, the current size of the pending
+ * operations queue.
  *
  * A Gauge can be used before it is registered and there is no input/source set. In this case, the {@link #readDouble()} and
  * {@link #readDouble()} return 0.

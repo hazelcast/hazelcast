@@ -33,7 +33,7 @@ import static java.util.concurrent.atomic.AtomicLongFieldUpdater.newUpdater;
  *
  * This counter does not provide padding to prevent false sharing.
  *
- * You might wonder why not use the AtomicLong.inc. The problem here is that AtomicLong requires a full fence, so there is 
+ * You might wonder why not use the AtomicLong.inc. The problem here is that AtomicLong requires a full fence, so there is
  * waiting for store and load buffers to be drained. This is more expensive.
  *
  * You might also wonder why not use the following:

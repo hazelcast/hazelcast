@@ -102,7 +102,7 @@ public class ReliableTopicConfig {
     }
 
     /**
-     * Gets the TopicOverloadPolicy for this reliable topic. 
+     * Gets the TopicOverloadPolicy for this reliable topic.
      *
      * @return the TopicOverloadPolicy.
      */
@@ -111,7 +111,8 @@ public class ReliableTopicConfig {
     }
 
     /**
-     * Sets the TopicOverloadPolicy for this reliable topic. Check the {@link TopicOverloadPolicy} for more details about this setting.
+     * Sets the TopicOverloadPolicy for this reliable topic. Check the {@link TopicOverloadPolicy} for more details about
+     * this setting.
      *
      * @param topicOverloadPolicy the new TopicOverloadPolicy.
      * @return the updated reliable topic config.

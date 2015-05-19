@@ -78,14 +78,14 @@ abstract class AccessibleObjectProbe {
 
     /**
      * Gets the accessible object probe type for this class object type.
-     *  accessible object probe    class object     
-     *  TYPE_PRIMITIVE_LONG = 1    byte, short, int, long
-     *  TYPE_LONG_NUMBER = 2       Byte, Short, Integer, Long, AtomicInteger, AtomicLong
-     *  TYPE_DOUBLE_PRIMITIVE = 3  double, float
-     *  TYPE_DOUBLE_NUMBER = 4     Double, Float
-     *  TYPE_COLLECTION = 5        Collection
-     *  TYPE_MAP = 6               Map
-     *  TYPE_COUNTER = 7           Counter
+     * accessible object probe    class object
+     * TYPE_PRIMITIVE_LONG = 1    byte, short, int, long
+     * TYPE_LONG_NUMBER = 2       Byte, Short, Integer, Long, AtomicInteger, AtomicLong
+     * TYPE_DOUBLE_PRIMITIVE = 3  double, float
+     * TYPE_DOUBLE_NUMBER = 4     Double, Float
+     * TYPE_COLLECTION = 5        Collection
+     * TYPE_MAP = 6               Map
+     * TYPE_COUNTER = 7           Counter
      *
      * @param classType the class object type.
      * @return the accessible object probe type.

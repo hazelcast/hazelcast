@@ -50,7 +50,7 @@ import java.util.concurrent.TimeUnit;
 public interface MetricsRegistry {
 
     /**
-     * Scans the source object for any fields/methods that have been given a name prefix with {@link Probe} 
+     * Scans the source object for any fields/methods that have been given a name prefix with {@link Probe}
      * annotation, and registering these fields/methods as metrics.
      *
      * If metrics with the same name already exist, their source/inputs will be updated. Multiple registrations
@@ -70,9 +70,9 @@ public interface MetricsRegistry {
      *
      * If a Metric with the given name already has an input, that input will be overwritten.
      *
-     * @param source  the source object.
-     * @param name  the name of the metric.
-     * @param input the input for the metric.
+     * @param source the source object.
+     * @param name   the name of the metric.
+     * @param input  the input for the metric.
      * @throws NullPointerException if source, name or input is null.
      */
     <S> void register(S source, String name, LongProbe<S> input);
@@ -82,9 +82,9 @@ public interface MetricsRegistry {
      *
      * If a Metric with the given name already has an input, that input will be overwritten.
      *
-     * @param source  the source object.
-     * @param name  the name of the metric.
-     * @param input the input for the metric.
+     * @param source the source object.
+     * @param name   the name of the metric.
+     * @param input  the input for the metric.
      * @throws NullPointerException if name or input is null.
      */
     <S> void register(S source, String name, DoubleProbe<S> input);
