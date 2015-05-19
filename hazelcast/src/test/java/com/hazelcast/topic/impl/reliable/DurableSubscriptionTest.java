@@ -15,6 +15,7 @@ import org.junit.runner.RunWith;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
@@ -52,7 +53,7 @@ public class DurableSubscriptionTest extends HazelcastTestSupport {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                 assertEquals(asList("item1", "item2", "item3"), listener.objects);
+                assertEquals(asList("item1", "item2", "item3"), listener.objects);
                 assertEquals(asList(0l, 1l, 2l), listener.sequences);
             }
         });
@@ -64,8 +65,8 @@ public class DurableSubscriptionTest extends HazelcastTestSupport {
     }
 
     public class DurableMessageListener<String> implements ReliableMessageListener<String> {
-        public final List<String> objects = Collections.synchronizedList(new ArrayList<String>());
-        public final List<Long> sequences = Collections.synchronizedList(new ArrayList<Long>());
+        public final List<String> objects = new CopyOnWriteArrayList<String>();
+        public final List<Long> sequences = new CopyOnWriteArrayList<Long>();
         public volatile long sequence = -1;
 
         @Override
