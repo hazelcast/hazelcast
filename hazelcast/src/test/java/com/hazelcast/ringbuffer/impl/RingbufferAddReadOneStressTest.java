@@ -138,7 +138,7 @@ public class RingbufferAddReadOneStressTest extends HazelcastTestSupport {
 
         @Override
         public void doRun() throws Throwable {
-            seq = ringbuffer.headSequence() + 1;
+            seq = ringbuffer.headSequence();
             long prev = System.currentTimeMillis();
 
             for (; ; ) {
