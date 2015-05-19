@@ -3,15 +3,13 @@ package com.hazelcast.topic.impl.reliable;
 import com.hazelcast.core.Message;
 import com.hazelcast.topic.ReliableMessageListener;
 
-import java.util.ArrayList;
 import java.util.List;
-
-import static java.util.Collections.synchronizedList;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public class ReliableMessageListenerMock implements ReliableMessageListener<String> {
 
-    public final List<String> objects = synchronizedList(new ArrayList<String>());
-    public final List<Message<String>> messages = synchronizedList(new ArrayList<Message<String>>());
+    public final List<String> objects = new CopyOnWriteArrayList<String>();
+    public final List<Message<String>> messages = new CopyOnWriteArrayList<Message<String>>();
     public volatile long storedSequence;
     public volatile boolean isLossTolerant = false;
     public volatile long initialSequence = -1;

@@ -15,6 +15,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -64,7 +65,7 @@ public class ReliableMessageListenerAdapterTest extends HazelcastTestSupport {
     }
 
     class MessageListenerMock implements MessageListener<String> {
-        private final List<String> messages = Collections.synchronizedList(new ArrayList<String>());
+        private final List<String> messages = new CopyOnWriteArrayList<String>();
 
         @Override
         public void onMessage(Message<String> message) {
