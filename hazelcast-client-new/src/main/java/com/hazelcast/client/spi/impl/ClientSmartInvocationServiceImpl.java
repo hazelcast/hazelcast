@@ -21,23 +21,23 @@ import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.ClusterAuthenticator;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.MemberImpl;
+import com.hazelcast.client.spi.ClientClusterService;
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.security.Credentials;
 
 import java.io.IOException;
 
 public final class ClientSmartInvocationServiceImpl extends ClientInvocationServiceSupport {
 
     private final LoadBalancer loadBalancer;
-    private final Credentials credentials;
     private final ClusterAuthenticator authenticator;
 
     public ClientSmartInvocationServiceImpl(HazelcastClientInstanceImpl client, LoadBalancer loadBalancer) {
         super(client);
         this.loadBalancer = loadBalancer;
-        credentials = client.getCredentials();
-        authenticator = new ClusterAuthenticator(client, credentials);
+        authenticator = new ClusterAuthenticator(client, client.getCredentials());
+
     }
 
     public void invokeOnPartitionOwner(ClientInvocation invocation, int partitionId) throws IOException {
@@ -45,10 +45,9 @@ public final class ClientSmartInvocationServiceImpl extends ClientInvocationServ
         if (owner == null) {
             throw new IOException("Partition does not have owner. partitionId : " + partitionId);
         }
-        ClientConnection connection =
-                (ClientConnection) connectionManager.getOrConnect(owner, authenticator);
         invocation.getClientMessage().setPartitionId(partitionId);
-        send(invocation, connection);
+        Connection connection = getConnection(owner);
+        send(invocation, (ClientConnection) connection);
     }
 
     @Override
@@ -57,7 +56,7 @@ public final class ClientSmartInvocationServiceImpl extends ClientInvocationServ
         if (randomAddress == null) {
             throw new IOException("Not address found to invoke ");
         }
-        final Connection connection = connectionManager.getOrConnect(randomAddress, authenticator);
+        final Connection connection = getConnection(randomAddress);
         send(invocation, (ClientConnection) connection);
     }
 
@@ -70,10 +69,29 @@ public final class ClientSmartInvocationServiceImpl extends ClientInvocationServ
         if (!isMember(target)) {
             throw new IOException("Target :  " + target + " is not member. ");
         }
-        final Connection connection = connectionManager.getOrConnect(target, authenticator);
+        final Connection connection = getConnection(target);
         invokeOnConnection(invocation, (ClientConnection) connection);
     }
 
+    private Connection getConnection(Address target) throws IOException {
+        ensureOwnerConnectionAvailable();
+        return connectionManager.getOrConnect(target, authenticator);
+    }
+
+    private void ensureOwnerConnectionAvailable() throws IOException {
+        ClientClusterService clientClusterService = client.getClientClusterService();
+        Address ownerConnectionAddress = clientClusterService.getOwnerConnectionAddress();
+
+        boolean isOwnerConnectionAvailable = ownerConnectionAddress != null
+                && connectionManager.getConnection(ownerConnectionAddress) != null;
+
+        if (!isOwnerConnectionAvailable) {
+            if (isShutdown()) {
+                throw new HazelcastException("ConnectionManager is not active!");
+            }
+            throw new IOException("Not able to setup owner connection!");
+        }
+    }
 
     @Override
     public void invokeOnConnection(ClientInvocation invocation, ClientConnection connection) throws IOException {

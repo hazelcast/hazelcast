@@ -237,6 +237,10 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
         }
     }
 
+    public boolean isShutdown() {
+        return isShutdown;
+    }
+
     public void shutdown() {
         isShutdown = true;
         responseThread.interrupt();

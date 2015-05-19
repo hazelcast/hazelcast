@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.impl.protocol.task;
 
+import com.hazelcast.client.AuthenticationException;
 import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.ClientEndpointManager;
 import com.hazelcast.client.impl.ClientEngineImpl;
@@ -89,21 +90,45 @@ public abstract class AbstractMessageTask<P>
         try {
             if (endpoint == null) {
                 handleMissingEndpoint();
-                return;
+            } else if (isAuthenticationMessage()) {
+                initializeAndProcessMessage();
+            } else if (!endpoint.isAuthenticated()) {
+                handleAuthenticationFailure();
+            } else {
+                initializeAndProcessMessage();
             }
-            // process message
-            if (!node.joined()) {
-                throw new HazelcastInstanceNotActiveException("Hazelcast instance is not ready yet!");
-            }
-            Credentials credentials = endpoint.getCredentials();
-            interceptBefore(credentials);
-            checkPermissions(endpoint);
-            processMessage();
-            interceptAfter(credentials);
+
         } catch (Throwable e) {
             logProcessingFailure(e);
             handleProcessingFailure(e);
         }
+    }
+
+    protected boolean isAuthenticationMessage() {
+        return false;
+    }
+
+    private void initializeAndProcessMessage() {
+        if (!node.joined()) {
+            throw new HazelcastInstanceNotActiveException("Hazelcast instance is not ready yet!");
+        }
+        Credentials credentials = endpoint.getCredentials();
+        interceptBefore(credentials);
+        checkPermissions(endpoint);
+        processMessage();
+    }
+
+    private void handleAuthenticationFailure() {
+        Exception exception;
+        if (nodeEngine.isActive()) {
+            String message = "Client " + endpoint + " must authenticate before any operation.";
+            logger.severe(message);
+            exception = new AuthenticationException(message);
+        } else {
+            exception = new HazelcastInstanceNotActiveException();
+        }
+        endpoint.sendResponse(exception, clientMessage.getCorrelationId());
+        endpointManager.removeEndpoint(endpoint);
     }
 
     private void handleMissingEndpoint() {
