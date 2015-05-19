@@ -23,6 +23,9 @@ import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.transaction.TransactionTimedOutException;
 import com.hazelcast.util.FutureUtil.ExceptionHandler;
 import com.hazelcast.util.executor.CompletedFuture;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -30,6 +33,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -41,14 +45,9 @@ import java.util.logging.Level;
 import static com.hazelcast.util.FutureUtil.logAllExceptions;
 import static com.hazelcast.util.FutureUtil.returnWithDeadline;
 import static com.hazelcast.util.FutureUtil.waitWithDeadline;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
@@ -311,7 +310,7 @@ public class FutureUtilTest extends HazelcastTestSupport {
     private static class UncancellableFuture<V> extends AbstractCompletableFuture<V> {
 
         public UncancellableFuture() {
-            super(null, null);
+            super((Executor) null, null);
         }
 
         @Override
