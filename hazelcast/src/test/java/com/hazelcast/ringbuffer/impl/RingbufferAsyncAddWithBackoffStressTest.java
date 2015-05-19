@@ -133,7 +133,7 @@ public class RingbufferAsyncAddWithBackoffStressTest extends HazelcastTestSuppor
         @Override
         public void doRun() throws Throwable {
             long lastMs = System.currentTimeMillis();
-            seq = ringbuffer.headSequence() + 1;
+            seq = ringbuffer.headSequence();
 
             for (; ; ) {
                 Long item = ringbuffer.readOne(seq);
