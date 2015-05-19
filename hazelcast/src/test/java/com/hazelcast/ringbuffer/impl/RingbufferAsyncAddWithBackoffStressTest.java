@@ -69,6 +69,8 @@ public class RingbufferAsyncAddWithBackoffStressTest extends HazelcastTestSuppor
         ConsumeThread consumer2 = new ConsumeThread(2);
         consumer2.start();
 
+        sleepSeconds(2);
+
         ProduceThread producer = new ProduceThread();
         producer.start();
 
@@ -91,6 +93,11 @@ public class RingbufferAsyncAddWithBackoffStressTest extends HazelcastTestSuppor
 
         public ProduceThread() {
             super("ProduceThread");
+        }
+
+        @Override
+        public void onError(Throwable t) {
+            stop = true;
         }
 
         @Override
@@ -128,6 +135,11 @@ public class RingbufferAsyncAddWithBackoffStressTest extends HazelcastTestSuppor
 
         public ConsumeThread(int id) {
             super("ConsumeThread-" + id);
+        }
+
+        @Override
+        public void onError(Throwable t) {
+            stop = true;
         }
 
         @Override

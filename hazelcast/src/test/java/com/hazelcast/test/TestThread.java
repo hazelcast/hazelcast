@@ -18,7 +18,7 @@ public abstract class TestThread extends Thread {
 
     @Override
     public final void run() {
-        System.out.println(getName()+" Starting");
+        System.out.println(getName() + " Starting");
         try {
             doRun();
             System.out.println(getName() + " Completed");
@@ -26,7 +26,11 @@ public abstract class TestThread extends Thread {
             System.out.println(getName()+" Completed with failure");
             t.printStackTrace();
             this.error = t;
+            onError(t);
         }
+    }
+
+    public void onError(Throwable t){
     }
 
     public Throwable getError() {

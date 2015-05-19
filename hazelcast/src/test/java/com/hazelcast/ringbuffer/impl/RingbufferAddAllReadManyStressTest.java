@@ -75,6 +75,8 @@ public class RingbufferAddAllReadManyStressTest extends HazelcastTestSupport {
         ConsumeThread consumer2 = new ConsumeThread(2);
         consumer2.start();
 
+        sleepSeconds(2);
+
         ProduceThread producer = new ProduceThread();
         producer.start();
 
@@ -97,6 +99,11 @@ public class RingbufferAddAllReadManyStressTest extends HazelcastTestSupport {
 
         public ProduceThread() {
             super("ProduceThread");
+        }
+
+        @Override
+        public void onError(Throwable t) {
+            stop = true;
         }
 
         @Override
@@ -150,8 +157,13 @@ public class RingbufferAddAllReadManyStressTest extends HazelcastTestSupport {
         }
 
         @Override
+        public void onError(Throwable t) {
+            stop = true;
+        }
+
+        @Override
         public void doRun() throws Throwable {
-            seq = ringbuffer.headSequence() + 1;
+            seq = ringbuffer.headSequence();
 
             Random random = new Random();
 

@@ -68,6 +68,8 @@ public class RingbufferAddReadOneStressTest extends HazelcastTestSupport {
         ConsumeThread consumer2 = new ConsumeThread(2);
         consumer2.start();
 
+        sleepSeconds(2);
+
         ProduceThread producer = new ProduceThread();
         producer.start();
 
@@ -99,6 +101,11 @@ public class RingbufferAddReadOneStressTest extends HazelcastTestSupport {
         }
 
         @Override
+        public void onError(Throwable t) {
+            stop = true;
+        }
+
+        @Override
         public void doRun() throws Throwable {
             long prev = System.currentTimeMillis();
             while (!stop) {
@@ -122,6 +129,11 @@ public class RingbufferAddReadOneStressTest extends HazelcastTestSupport {
 
         public ConsumeThread(int id) {
             super("ConsumeThread-" + id);
+        }
+
+        @Override
+        public void onError(Throwable t) {
+            stop = true;
         }
 
         @Override
