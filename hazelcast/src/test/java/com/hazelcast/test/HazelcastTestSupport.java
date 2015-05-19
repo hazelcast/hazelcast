@@ -56,6 +56,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.test.TestPartitionUtils.getInternalPartitionServiceState;
 import static java.lang.String.format;
@@ -76,6 +77,7 @@ public abstract class HazelcastTestSupport {
     }
 
     private TestHazelcastInstanceFactory factory;
+
 
     public static void assertUtilityConstructor(Class clazz) {
         Constructor[] constructors = clazz.getDeclaredConstructors();
@@ -226,6 +228,27 @@ public abstract class HazelcastTestSupport {
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }
+    }
+
+    /**
+     * Sleeps for the given amount of time and after that, sets stop to true.
+     *
+     * If stop is changed to true while sleeping, the calls returns before waiting the full sleeping period.
+     *
+     * This method is very useful for stress tests that run for a certain amount of time. But if one of the stress tests
+     * runs into a failure, the test should be aborted immediately. This is done by letting the thread set stop to true.
+     *
+     * @param stop
+     * @param durationSeconds
+     */
+    public static void sleepAndStop(AtomicBoolean stop, long durationSeconds) {
+        for (int k = 0; k < durationSeconds; k++) {
+            if (stop.get()) {
+                return;
+            }
+            sleepSeconds(1);
+        }
+        stop.set(true);
     }
 
     public static void sleepAtLeastMillis(int millis) {

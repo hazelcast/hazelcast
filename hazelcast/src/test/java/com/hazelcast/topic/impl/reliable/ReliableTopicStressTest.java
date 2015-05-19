@@ -18,7 +18,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static java.util.concurrent.TimeUnit.SECONDS;
+import java.util.concurrent.atomic.AtomicBoolean;
+
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -26,7 +27,7 @@ import static org.junit.Assert.assertEquals;
 @Ignore
 public class ReliableTopicStressTest extends HazelcastTestSupport {
 
-    private volatile boolean stop;
+    private final AtomicBoolean stop = new AtomicBoolean();
     private ITopic<Long> topic;
 
     @Before
@@ -52,9 +53,8 @@ public class ReliableTopicStressTest extends HazelcastTestSupport {
         produceThread.start();
 
         System.out.println("Starting test");
-        SECONDS.sleep(30);
+        sleepAndStop(stop, 30);
         System.out.println("Completed");
-        stop = true;
 
         produceThread.join();
 
@@ -75,8 +75,13 @@ public class ReliableTopicStressTest extends HazelcastTestSupport {
         private volatile long send = 0;
 
         @Override
+        public void onError(Throwable t) {
+            stop.set(true);
+        }
+
+        @Override
         public void doRun() throws Throwable {
-            while (!stop) {
+            while (!stop.get()) {
                 topic.publish(send);
                 send++;
             }

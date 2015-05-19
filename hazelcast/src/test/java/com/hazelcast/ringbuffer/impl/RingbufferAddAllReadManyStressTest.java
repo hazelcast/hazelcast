@@ -9,7 +9,6 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestThread;
 import com.hazelcast.test.annotation.NightlyTest;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -17,10 +16,10 @@ import org.junit.runner.RunWith;
 import java.util.LinkedList;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.ringbuffer.OverflowPolicy.FAIL;
 import static java.lang.Math.max;
-import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -28,7 +27,7 @@ import static org.junit.Assert.assertEquals;
 public class RingbufferAddAllReadManyStressTest extends HazelcastTestSupport {
 
     public static final int MAX_BATCH = 100;
-    private volatile boolean stop;
+    private final AtomicBoolean stop = new AtomicBoolean();
     private Ringbuffer<Long> ringbuffer;
 
     @Test
@@ -80,8 +79,7 @@ public class RingbufferAddAllReadManyStressTest extends HazelcastTestSupport {
         ProduceThread producer = new ProduceThread();
         producer.start();
 
-        SECONDS.sleep(5 * 60);
-        stop = true;
+        sleepAndStop(stop, 5 * 60);
         System.out.println("Waiting fo completion");
 
         producer.assertSucceedsEventually();
@@ -103,14 +101,14 @@ public class RingbufferAddAllReadManyStressTest extends HazelcastTestSupport {
 
         @Override
         public void onError(Throwable t) {
-            stop = true;
+            stop.set(true);
         }
 
         @Override
         public void doRun() throws Throwable {
             Random random = new Random();
 
-            while (!stop) {
+            while (!stop.get()) {
                 LinkedList<Long> items = makeBatch(random);
                 addAll(items);
             }
@@ -158,7 +156,7 @@ public class RingbufferAddAllReadManyStressTest extends HazelcastTestSupport {
 
         @Override
         public void onError(Throwable t) {
-            stop = true;
+            stop.set(true);
         }
 
         @Override
