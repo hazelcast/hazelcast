@@ -35,7 +35,7 @@ public final class ClassLoadingMetricSet {
     /**
      * Registers all the metrics in this metric pack.
      *
-     * @param metricsRegistry the MetricsRegistry the metrics are registered on.
+     * @param metricsRegistry the MetricsRegistry upon which the metrics are registered.
      */
     public static void register(MetricsRegistry metricsRegistry) {
         checkNotNull(metricsRegistry, "metricsRegistry");

@@ -39,7 +39,7 @@ public final class OperatingSystemMetricsSet {
     /**
      * Registers all the metrics in this metrics pack.
      *
-     * @param metricsRegistry the MetricsRegistry the metrics are registered on.
+     * @param metricsRegistry the MetricsRegistry upon which the metrics are registered.
      */
     public static void register(MetricsRegistry metricsRegistry) {
         checkNotNull(metricsRegistry, "metricsRegistry");
@@ -96,6 +96,13 @@ public final class OperatingSystemMetricsSet {
         }
     }
 
+    /**
+     * Returns a method from the given source object.
+     *
+     * @param source the source object.
+     * @param methodName the name of the method to retrieve.
+     * @return the method
+     */
     private static Method getMethod(Object source, String methodName) {
         try {
             Method method = source.getClass().getDeclaredMethod(methodName);

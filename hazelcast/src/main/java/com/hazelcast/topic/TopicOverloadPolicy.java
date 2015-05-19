@@ -29,7 +29,7 @@ import com.hazelcast.spi.annotation.Beta;
  *
  * Because a ringbuffer has a capacity and to prevent that a fast producer overwrites the messages needed by a slow consumer, a
  * retention time can be set on the ringbuffer. See {@link com.hazelcast.config.RingbufferConfig#setRetentionSeconds(int)}. This
- * {@link TopicOverloadPolicy} controls how te publisher is going to deal with the situation that a ringbuffer is full and the
+ * {@link TopicOverloadPolicy} controls how the publisher is going to deal with the situation that a ringbuffer is full and the
  * oldest item in the ringbuffer is not old enough to get overwritten.
  *
  * So keep in mind that a this retention period keep the messages in memory, even though it might by that all readers already
@@ -39,11 +39,11 @@ import com.hazelcast.spi.annotation.Beta;
 public enum TopicOverloadPolicy {
 
     /**
-     * Using this policy a message that has not expired can be overwritten. So no matter the retention period set, the overwrite
+     * Using this policy, a message that has not expired can be overwritten. No matter the retention period set, the overwrite
      * will just overwrite the item.
      *
-     * This can be a problem for the slow consumer because he was promised a certain time window to process messages. But it will
-     * benefit producers and fast consumers since they are able to continue. So this policy sacrifices the slow producer in favor
+     * This can be a problem for slow consumers because they were promised a certain time window to process messages. But it will
+     * benefit producers and fast consumers since they are able to continue. This policy sacrifices the slow producer in favor
      * of fast producers/consumers.
      */
     DISCARD_OLDEST,

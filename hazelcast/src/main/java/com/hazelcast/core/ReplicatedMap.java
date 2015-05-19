@@ -78,8 +78,8 @@ public interface ReplicatedMap<K, V>
      * Removes the specified entry listener.
      * Returns silently if there was no such listener added before.
      *
-     * @param id id of the registered listener
-     * @return true if registration is removed, false otherwise
+     * @param id id of the registered entry listener.
+     * @return true if registration is removed, false otherwise.
      */
     boolean removeEntryListener(String id);
 
@@ -101,7 +101,7 @@ public interface ReplicatedMap<K, V>
      * the <tt>key</tt>, not the actual implementations of <tt>hashCode</tt> and <tt>equals</tt>
      * defined in the <tt>key</tt>'s class.
      *
-     * @param listener the entry listener
+     * @param listener the entry listener to add
      * @param key      the key to listen to
      * @throws NullPointerException if the specified key is null
      */
@@ -111,7 +111,7 @@ public interface ReplicatedMap<K, V>
      * Adds an continuous entry listener for this map. The listener will be notified
      * for map add/remove/update/evict events filtered by the given predicate.
      *
-     * @param listener  the entry listener
+     * @param listener  the entry listener to add
      * @param predicate the predicate for filtering entries
      */
     String addEntryListener(EntryListener<K, V> listener, Predicate<K, V> predicate);
@@ -137,12 +137,12 @@ public interface ReplicatedMap<K, V>
      * Changes to any returned object are <b>NOT</b> replicated back to other
      * members.
      *
-     * @return a collection view of the values contained in this map
+     * @return A collection view of the values contained in this map.
      */
     Collection<V> values();
 
     /**
-     * Returns a eagerly populated {@link Collection} view of the values contained in this map.
+     * Returns an eagerly populated {@link Collection} view of the values contained in this map.
      * The collection is <b>NOT</b> backed by the map, so changes to the map are
      * <b>NOT</b> reflected in the collection, and vice-versa.<br/>
      * The order of the elements is guaranteed by executing the given
@@ -151,7 +151,7 @@ public interface ReplicatedMap<K, V>
      * members.
      *
      * @param comparator the Comparator to sort the returned elements
-     * @return a collection view of the values contained in this map
+     * @return An eagerly populated {@link Collection} view of the values contained in this map.
      */
     Collection<V> values(Comparator<V> comparator);
 
@@ -164,7 +164,7 @@ public interface ReplicatedMap<K, V>
      * Changes to any returned object are <b>NOT</b> replicated back to other
      * members.
      *
-     * @return a set view of the mappings contained in this map
+     * @return A lazy set view of the mappings contained in this map.
      */
     Set<Entry<K, V>> entrySet();
 
@@ -177,7 +177,7 @@ public interface ReplicatedMap<K, V>
      * Changes to any returned object are <b>NOT</b> replicated back to other
      * members.
      *
-     * @return a collection view of the keys contained in this map
+     * @return A lazy {@link Set} view of the keys contained in this map.
      */
     Set<K> keySet();
 }

@@ -28,15 +28,15 @@ import static java.util.concurrent.atomic.AtomicLongFieldUpdater.newUpdater;
 /**
  * A {@link Counter} that is made to be used by a single writing thread.
  *
- * It makes use of the lazy-set to provide a lower overhead than a volatile write on X86 systems. The volatile write requires
+ * It makes use of the lazySet to provide a lower overhead than a volatile write on X86 systems. The volatile write requires
  * waiting for the store buffer to be drained which isn't needed for the lazySet.
  *
  * This counter does not provide padding to prevent false sharing.
  *
- * You might wonder why not to use the AtomicLong.inc; the problem here is that it requires a full fence (so waiting for
- * store and load buffers to be drained). This is more expensive.
+ * You might wonder why not use the AtomicLong.inc. The problem here is that AtomicLong requires a full fence, so there is 
+ * waiting for store and load buffers to be drained. This is more expensive.
  *
- * You might wonder why not to use the following:
+ * You might also wonder why not use the following:
  * <pre>
  *     atomicLong.lazySet(atomicLong.get()+1)
  * </pre>
@@ -50,7 +50,7 @@ public abstract class SwCounter implements Counter {
     /**
      * Creates a new SwCounter with 0 as initial value.
      *
-     * @return the created SwCounter.
+     * @return the created SwCounter, set to zero.
      */
     public static SwCounter newSwCounter() {
         return newSwCounter(0);
@@ -59,6 +59,7 @@ public abstract class SwCounter implements Counter {
     /**
      * Creates a new SwCounter with the given initial value.
      *
+     * @param initialValue the initial value for the SwCounter.
      * @return the created SwCounter.
      */
     public static SwCounter newSwCounter(int initialValue) {
@@ -73,9 +74,9 @@ public abstract class SwCounter implements Counter {
      * The UnsafeSwCounter relies on the same {@link Unsafe#putOrderedLong(Object, long, long)} as the
      * {@link AtomicLongFieldUpdater#lazySet(Object, long)} but it removes all kinds of checks.
      *
-     * For the AtomicLongFieldUpdater these checks are needed since an arbitrary object can be passed to the
-     * lazySet method and that needs to be verified. In our case we always pass UnsafeSwCounter instance so
-     * there is no need for all these checks.
+     * For the AtomicLongFieldUpdater, these checks are needed since an arbitrary object can be passed to the
+     * lazySet method and that needs to be verified. In our case we always pass the UnsafeSwCounter instance so
+     * there is no need for these checks.
      */
     static final class UnsafeSwCounter extends SwCounter {
         private static final Unsafe UNSAFE = UnsafeHelper.UNSAFE;

@@ -34,8 +34,8 @@ import com.hazelcast.topic.ReliableMessageListener;
 
 /**
  * An {@link com.hazelcast.core.ExecutionCallback} that will try to read an item from the ringbuffer or blocks
- * if no item is available. All data read is pushed into the {@link com.hazelcast.core.MessageListener}. It is
- * a self perpetuating stream of async calls.
+ * if no item is available. All data that are read is pushed into the {@link com.hazelcast.core.MessageListener}. It is
+ * a self-perpetuating stream of async calls.
  *
  * The ReliableTopicRunner keeps track of the sequence.
  */

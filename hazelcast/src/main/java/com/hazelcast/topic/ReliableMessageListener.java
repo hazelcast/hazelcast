@@ -23,7 +23,7 @@ import com.hazelcast.spi.annotation.Beta;
  * A {@link MessageListener} to better integrate with the reliable topic.
  *
  * If a regular MessageListener is registered on a reliable topic, the message listener works fine, but it can't do much
- * more than listening to messages.
+ * more than listen to messages.
  *
  * If a ReliableMessageListener is registered on a normal topic, only the {@link MessageListener} methods will be called.
  *
@@ -33,20 +33,20 @@ import com.hazelcast.spi.annotation.Beta;
  * using this sequenceId as the sequenceId to start from.
  *
  * <h1>Exception handling</h1>
- * The ReliableMessageListener also gives the ability to deal with exception using the {@link #isTerminal(Throwable)}
- * method. If a plain MessageListener is used, then it won't terminate on exceptions and keep on running. But in some
+ * The ReliableMessageListener also gives the ability to deal with exceptions using the {@link #isTerminal(Throwable)}
+ * method. If a plain MessageListener is used, then it won't terminate on exceptions and it will keep on running. But in some
  * cases it is better to stop running.
  *
  * <h1>Global order</h1>
  * The ReliableMessageListener will always get all events in order (global order). It will not get duplicates and
- * there will only gaps if it too slow. For more information see {@link #isLossTolerant()}.
+ * there will only be gaps if it is too slow. For more information see {@link #isLossTolerant()}.
  *
  * <h1>Delivery guarantees</h1>
- * Because the ReliableMessageListener control which item it wants to continue from on restart, it is very easy to provide
+ * Because the ReliableMessageListener controls which item it wants to continue from upon restart, it is very easy to provide
  * an at-least-once or at-most-once delivery guarantee. The storeSequence is always called before a message is processed;
- * so it can be persisted on some non volatile storage. When the {@link #retrieveInitialSequence()} returns the stored
- * sequence, then a at-least-once delivery is implemented since the same item is now being processed twice. To implement
- * an at-most-once delivery guarantee, add 1 to stored sequence when the {@link #retrieveInitialSequence()} is called.
+ * so it can be persisted on some non-volatile storage. When the {@link #retrieveInitialSequence()} returns the stored
+ * sequence, then an at-least-once delivery is implemented since the same item is now being processed twice. To implement
+ * an at-most-once delivery guarantee, add 1 to the stored sequence when the {@link #retrieveInitialSequence()} is called.
  *
  * @param <E>
  */
@@ -54,12 +54,13 @@ import com.hazelcast.spi.annotation.Beta;
 public interface ReliableMessageListener<E> extends MessageListener<E> {
 
     /**
-     * Retrieves the initial sequence this ReliableMessageListener should start from.
+     * Retrieves the initial sequence from which this ReliableMessageListener should start.
      *
      * Return -1 if there is no initial sequence and you want to start from the next published message.
      *
-     * If you intent to create a durable subscriber, so continue where you stopped the previous time, load the previous sequence
-     * and add 1. If you don't add one, then you will be receiving the same message twice.
+     * If you intent to create a durable subscriber so you continue from where you stopped the previous
+     * time, load the previous sequence and add 1. If you don't add one, then you will be receiving the
+     * same message twice.
      *
      * @return the initial sequence
      */
@@ -88,7 +89,7 @@ public interface ReliableMessageListener<E> extends MessageListener<E> {
      * Checks if the ReliableMessageListener should be terminated based on an exception thrown while calling
      * {@link #onMessage(com.hazelcast.core.Message)}.
      *
-     * @param failure the failure
+     * @param failure the exception thrown while calling {@link #onMessage(com.hazelcast.core.Message)}.
      * @return true if the ReliableMessageListener should terminate itself, false if it should keep on running.
      */
     boolean isTerminal(Throwable failure);

@@ -61,7 +61,9 @@ public final class MwCounter implements Counter {
     }
 
     /**
-     * Creates a new MwCounter with 0 as initial value.
+     * Creates a new MwCounter with 0 as its initial value.
+     *
+     * @return the new MwCounter, set to 0.
      */
     public static MwCounter newMwCounter() {
         return new MwCounter(0);
@@ -70,7 +72,8 @@ public final class MwCounter implements Counter {
     /**
      * Creates a new MwCounter with the given initial value.
      *
-     * @param initialValue the initial value.
+     * @param initialValue the initial value of the counter.
+     * @return the new MwCounter, set to the given initial value.
      */
     public static MwCounter newMwCounter(int initialValue) {
         return new MwCounter(initialValue);

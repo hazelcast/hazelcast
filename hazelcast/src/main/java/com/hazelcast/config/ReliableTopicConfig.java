@@ -28,17 +28,17 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.Preconditions.checkPositive;
 
 /**
- * Configuration for the a reliable {@link com.hazelcast.core.ITopic}.
+ * Configuration for a reliable {@link com.hazelcast.core.ITopic}.
  *
  * The reliable topic makes use of the {@link com.hazelcast.ringbuffer.Ringbuffer} to store the actual messages.
  *
  * To configure the ringbuffer for a reliable topic, define a ringbuffer in the config with exactly the same name. It is very
  * unlikely that you want to run with the default settings.
  *
- * When a ReliableTopic start, it will always start from the tail+1 item from the RingBuffer. It will not chew its way through
+ * When a ReliableTopic starts, it will always start from the tail+1 item from the RingBuffer. It will not chew its way through
  * all available events but it will wait for the next item being published.
  *
- * In the reliable topic global order is always maintained. So all listeners will observe exactly the same order of sequence of
+ * In the reliable topic, global order is always maintained, so all listeners will observe exactly the same order of sequence of
  * messages.
  */
 @Beta
@@ -50,7 +50,7 @@ public class ReliableTopicConfig {
     public static final int DEFAULT_READ_BATCH_SIZE = 10;
 
     /**
-     * The default slow consumer policy
+     * The default slow consumer policy.
      */
     public static final TopicOverloadPolicy DEFAULT_TOPIC_OVERLOAD_POLICY = BLOCK;
 
@@ -93,16 +93,16 @@ public class ReliableTopicConfig {
     }
 
     /**
-     * Gets the name of the topic.
+     * Gets the name of the reliable topic.
      *
-     * @return the name
+     * @return the name of the reliable topic.
      */
     public String getName() {
         return name;
     }
 
     /**
-     * Gets the TopicOverloadPolicy
+     * Gets the TopicOverloadPolicy for this reliable topic. 
      *
      * @return the TopicOverloadPolicy.
      */
@@ -111,10 +111,10 @@ public class ReliableTopicConfig {
     }
 
     /**
-     * Sets the TopicOverloadPolicy. Check the {@link TopicOverloadPolicy} for more details about this setting.
+     * Sets the TopicOverloadPolicy for this reliable topic. Check the {@link TopicOverloadPolicy} for more details about this setting.
      *
      * @param topicOverloadPolicy the new TopicOverloadPolicy.
-     * @return the updated config.
+     * @return the updated reliable topic config.
      * @throws IllegalArgumentException if topicOverloadPolicy is null.
      */
     public ReliableTopicConfig setTopicOverloadPolicy(TopicOverloadPolicy topicOverloadPolicy) {
@@ -137,8 +137,8 @@ public class ReliableTopicConfig {
     /**
      * Sets the Executor that is going to process the event.
      *
-     * In some cases it is desirable to set a specific Executor. For example you want to isolate a certain topic from other
-     * topic e.g. because it contains long running messages or very high priority messages.
+     * In some cases it is desirable to set a specific Executor. For example, you may want to isolate a certain topic from other
+     * topics because it contains long running messages or very high priority messages.
      *
      * A single Executor can be shared between multiple Reliable topics, although it could take more time to process a message.
      * If a single Executor is not shared with other reliable topics, then the Executor only needs to have a single thread.
@@ -172,19 +172,19 @@ public class ReliableTopicConfig {
      * messages will be processed by the thread running the MessageListener before it returns back to the pool
      * to look for other MessageListeners that need to be processed. The problem with returning to the pool and
      * looking for new work is that interacting with an Executor is quite expensive due to contention on the
-     * work-queue. So the more work that can be done without retuning to the pool, the smaller the overhead.
+     * work-queue. The more work that can be done without retuning to the pool, the smaller the overhead.
      *
-     * So if the readBatchSize is 10 and there are 50 messages available, 10 items are retrieved and processed
-     * consecutively before the thread is going back to the pool and help out with the processing of other messages.
+     * If the readBatchSize is 10 and there are 50 messages available, 10 items are retrieved and processed
+     * consecutively before the thread goes back to the pool and helps out with the processing of other messages.
      *
      * If the readBatchSize is 10 and there are 2 items available, 2 items are retrieved and processed consecutively.
      *
      * If the readBatchSize is an issue because a thread will be busy too long with processing a single MessageListener
-     * and can't help out other MessageListener, increase the size of the threadpool so the other MessageListener don't
+     * and it can't help out other MessageListeners, increase the size of the threadpool so the other MessageListeners don't
      * need to wait for a thread, but can be processed in parallel.
      *
-     * @param readBatchSize the readBatchSize
-     * @return the updated config.
+     * @param readBatchSize the maximum number of items to read in a batch.
+     * @return the updated reliable topic config.
      * @throws IllegalArgumentException if readBatchSize is smaller than 1.
      */
     public ReliableTopicConfig setReadBatchSize(int readBatchSize) {
@@ -193,7 +193,7 @@ public class ReliableTopicConfig {
     }
 
     /**
-     * Checks if statistics are enabled.
+     * Checks if statistics are enabled for this reliable topic.
      *
      * @return true if enabled, false otherwise.
      */
@@ -202,10 +202,10 @@ public class ReliableTopicConfig {
     }
 
     /**
-     * Enabled or disabled statistics.
+     * Enables or disables statistics for this reliable topic..
      *
-     * @param statisticsEnabled if statistics should be enabled
-     * @return the updated config.
+     * @param statisticsEnabled true to enable statistics, false to disable.
+     * @return the updated reliable topic config.
      */
     public ReliableTopicConfig setStatisticsEnabled(boolean statisticsEnabled) {
         this.statisticsEnabled = statisticsEnabled;
@@ -213,16 +213,16 @@ public class ReliableTopicConfig {
     }
 
     /**
-     * Gets the List of MessageListener configurations.
+     * Gets the list of message listeners (listens for when messages are added or removed) for this reliable topic.
      *
-     * @return list of MessageListener configuration.
+     * @return list of MessageListener configurations.
      */
     public List<ListenerConfig> getMessageListenerConfigs() {
         return listenerConfigs;
     }
 
     /**
-     * Adds a ListenerConfig.
+     * Adds a message listener (listens for when messages are added or removed) to this reliable topic.
      *
      * @param listenerConfig the ListenerConfig to add.
      * @return the updated config.
@@ -237,7 +237,7 @@ public class ReliableTopicConfig {
     /**
      * Returns a readonly version of the ReliableTopicConfig.
      *
-     * @return a readonly version.
+     * @return a readonly version of this reliable topic config.
      */
     public ReliableTopicConfig getAsReadOnly() {
         return new ReliableTopicConfigReadOnly(this);

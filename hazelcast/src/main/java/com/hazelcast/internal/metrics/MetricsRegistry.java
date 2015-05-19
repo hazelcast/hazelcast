@@ -35,31 +35,31 @@ import java.util.concurrent.TimeUnit;
  * For the time being there the MetricsRegistry doesn't require any syntax for the name content; so any String is fine.
  *
  * <h1>Duplicate Registrations</h1>
- * The MetricsRegistry is lenient regarding duplicate registrations of metrics. So if a metric is created and
- * an input is set and a new registration for the same Metric is done, the old input/source is overwritten.
- * The reason to be lenient is that the MetricRegistry should not throw exception. Of course there will be a log
+ * The MetricsRegistry is lenient regarding duplicate registrations of metrics. If a metric is created and
+ * an input is set, and then a new registration for the same Metric is done, the old input/source is overwritten.
+ * The reason to be lenient is that the MetricRegistry should not throw exceptions. Of course, there will be a log
  * warning.
  *
  * <h1>Performance</h1>
- * The MetricRegistry is designed for low overhead metrics. So once a metric is registered, there is no overhead
- * for the provider of the Metric data. The provider could have for example a volatile long field and increment
+ * The MetricRegistry is designed for low overhead metrics. Once a metric is registered, there is no overhead
+ * for the provider of the Metric data. For example, the provider could have a volatile long field and increment
  * this using a lazy-set. As long as the MetricRegistry can frequently read out this field, the MetricRegistry
- * is perfectly happy with such low overhead inputs. So it is up to the provider of the metric input
+ * is perfectly happy with such low overhead inputs. It is up to the provider of the metric input to determine
  * how much overhead is required.
  */
 public interface MetricsRegistry {
 
     /**
-     * Scans the source object for any fields/methods that have been annotated with {@link Probe} annotation, and
-     * registering these fields/methods as metrics.
+     * Scans the source object for any fields/methods that have been given a name prefix with {@link Probe} 
+     * annotation, and registering these fields/methods as metrics.
      *
-     * If metrics with the same name already exist, there source/inputs will be updated. So multiple registrations
-     * if the same object are ignored.
+     * If metrics with the same name already exist, their source/inputs will be updated. Multiple registrations
+     * of the same object are ignored.
      *
      * If an object has no @Gauge annotations, the call is ignored.
      *
-     * @param source     the object to scan.
-     * @param namePrefix the name prefix.
+     * @param source     the source object to scan.
+     * @param namePrefix search the source object for fields/methods that have this name prefix.
      * @throws NullPointerException     if namePrefix or source is null.
      * @throws IllegalArgumentException if the source contains Gauge annotation on a field/method of unsupported type.
      */
@@ -70,6 +70,7 @@ public interface MetricsRegistry {
      *
      * If a Metric with the given name already has an input, that input will be overwritten.
      *
+     * @param source  the source object.
      * @param name  the name of the metric.
      * @param input the input for the metric.
      * @throws NullPointerException if source, name or input is null.
@@ -77,10 +78,11 @@ public interface MetricsRegistry {
     <S> void register(S source, String name, LongProbe<S> input);
 
     /**
-     * Registers a probe
+     * Registers a probe.
      *
      * If a Metric with the given name already has an input, that input will be overwritten.
      *
+     * @param source  the source object.
      * @param name  the name of the metric.
      * @param input the input for the metric.
      * @throws NullPointerException if name or input is null.
@@ -95,20 +97,20 @@ public interface MetricsRegistry {
      *
      * If the object was never registered, the call is ignored.
      *
-     * @param source the object to deregister
+     * @param source the object to deregister.
      * @throws NullPointerException if source is null.
      */
     <S> void deregister(S source);
 
     /**
-     * Schedules a publisher to be executed at a fixed rate.
+     * Schedules a publisher to be periodically executed.
      *
      * Probably this method will be removed in the future, but we need a mechanism for complex gauges that require some
      * calculation to provide their values.
      *
-     * @param publisher the published task that needs to be executed
-     * @param period    the time between executions
-     * @param timeUnit  the timeunit for period
+     * @param publisher the published task that needs to be periodically executed.
+     * @param period    the time between executions.
+     * @param timeUnit  the timeunit for period.
      * @throws NullPointerException if publisher or timeUnit is null.
      */
     void scheduleAtFixedRate(Runnable publisher, long period, TimeUnit timeUnit);
@@ -117,10 +119,10 @@ public interface MetricsRegistry {
      * Gets the Gauge for a given name.
      *
      * If no gauge exists for the name, it will be created but no input is set. The reason to do so is
-     * that you don't want to depend on the order of registration. Perhaps you want to read out e.g. operations.count
+     * that you don't want to depend on the order of registration. For example, you want to read out operations.count
      * gauge, but the OperationService has not started yet and the metric is not yet available.
      *
-     * @param name the name
+     * @param name the name of the gauge to get.
      * @return the Gauge. Multiple calls with the same name, return the same Metric instance.
      * @throws NullPointerException if name is null.
      */
@@ -129,7 +131,7 @@ public interface MetricsRegistry {
     /**
      * Gets a set of all current metric names.
      *
-     * @return set of all current names.
+     * @return set of all current metric names.
      */
     Set<String> getNames();
 
@@ -138,7 +140,7 @@ public interface MetricsRegistry {
      *
      * Returned modCount will always be equal or larger than 0.
      *
-     * @return the modCount.
+     * @return the modCount: the number of times Metrics are added or removed.
      */
     int modCount();
 }

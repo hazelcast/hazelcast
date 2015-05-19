@@ -17,37 +17,37 @@
 package com.hazelcast.internal.metrics;
 
 /**
- * A gauge metric is an instantaneous reading of a particular value. For example the current size of the pending operations queue.
+ * A gauge metric is an instantaneous reading of a particular value: for example, the current size of the pending operations queue.
  *
- * A Gauge can be used before it is registered and there has no input/source set. In this case the {@link #readDouble()} and
+ * A Gauge can be used before it is registered and there is no input/source set. In this case, the {@link #readDouble()} and
  * {@link #readDouble()} return 0.
  *
- * A Gauge can be used after the {@link MetricsRegistry#deregister(Object)} is called. In this case the {@link #readDouble()} and
+ * A Gauge can be used after the {@link MetricsRegistry#deregister(Object)} is called. In this case, the {@link #readDouble()} and
  * {@link #readDouble()} return 0.
  */
 public interface Gauge extends Metric {
 
     /**
-     * Reads the current available value as a long.
+     * Reads the current available (gauge metric) value as a long.
      *
      * If the underlying metric input providing a floating point value, then the value will be rounded using
      * {@link Math#round(double)}.
      *
      * If no input is available, or there a problems obtaining a value from the input, 0 is returned.
      *
-     * @return the current value.
+     * @return the current available value as a long.
      */
     long readLong();
 
     /**
-     * Reads the current available value as a double.
+     * Reads the current available (gauge metric) value as a double.
      *
      * If the underlying metric input doesn't provide a floating point value, then the value will be converted to
      * a floating point value.
      *
-     * If no input is available, or there a problems obtaining a value from the input, 0 is returned.
+     * If no input is available, or there are problems obtaining a value from the input, 0 is returned.
      *
-     * @return the current value.
+     * @return the current available (gauge metric) value as a double.
      */
     double readDouble();
 }

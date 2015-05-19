@@ -25,10 +25,10 @@ package com.hazelcast.internal.metrics;
 public interface DoubleProbe<S> {
 
     /**
-     * Gets the current value.
+     * Gets the current value of the source object.
      *
-     * @param source the source
-     * @return the current value.
+     * @param source the source object.
+     * @return the current value of the source object.
      * @throws Exception if something fails while getting the value.
      */
     double get(S source) throws Exception;

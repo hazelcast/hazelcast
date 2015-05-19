@@ -21,15 +21,15 @@ package com.hazelcast.util.counters;
  *
  * It depends on the counter if increments are thread-safe.
  *
- * The get is thread-safe in the sense that it will see a recently published value. It doesn't need to mean that it
+ * The get is thread-safe in the sense that it will see a recently published value. It doesn't mean that it
  * will see the most recently published value.
  */
 public interface Counter {
 
     /**
-     * Gets the current value.
+     * Gets the current value of the counter.
      *
-     * @return the current value.
+     * @return the current value of the counter.
      */
     long get();
 
@@ -39,11 +39,11 @@ public interface Counter {
     void inc();
 
     /**
-     * Increments the counter by the given amount.
+     * Increments (or decrements) the counter by the given amount.
      *
      * If the amount is negative, the counter is decremented.
      *
-     * @param amount the amount to increase the counter with.
+     * @param amount the amount to increase or decrease the counter with.
      */
     void inc(int amount);
 }

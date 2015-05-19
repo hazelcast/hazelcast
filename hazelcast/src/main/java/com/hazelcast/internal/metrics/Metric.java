@@ -35,7 +35,7 @@ public interface Metric {
     /**
      * Gets the name that identifies this metric. The returned value will never change and never be null.
      *
-     * @return the name.
+     * @return the name of the metric.
      */
     String getName();
 

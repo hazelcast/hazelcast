@@ -53,7 +53,7 @@ public final class GarbageCollectionMetricSet {
     /**
      * Registers all the metrics in this metrics pack.
      *
-     * @param metricsRegistry the MetricsRegister the metrics are registered on.
+     * @param metricsRegistry the MetricsRegister upon which the metrics are registered.
      */
     public static void register(MetricsRegistry metricsRegistry) {
         checkNotNull(metricsRegistry, "metricsRegistry");

@@ -31,7 +31,7 @@ public class TopicOverloadException extends HazelcastException {
     /**
      * Creates a TopicOverloadException.
      *
-     * @param msg the message.
+     * @param msg the message for this TopicOverloadException.
      */
     public TopicOverloadException(String msg) {
         super(msg);
