@@ -173,7 +173,7 @@ public class ClientCacheProxy<K, V>
     public V getAndRemove(K key) {
         final ICompletableFuture<V> f = removeAsyncInternal(key, null, false, true, true);
         try {
-            return f.get();
+            return toObject(f.get());
         } catch (Throwable e) {
             throw ExceptionUtil.rethrowAllowedTypeFirst(e, CacheException.class);
         }
