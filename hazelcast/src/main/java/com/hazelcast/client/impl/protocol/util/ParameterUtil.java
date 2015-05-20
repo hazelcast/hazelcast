@@ -40,6 +40,13 @@ public class ParameterUtil {
         return Bits.INT_SIZE_IN_BYTES + bytes.length;
     }
 
+    public static int calculateIntArrayDataSize(int[] intArray) {
+        if (intArray == null) {
+            return Bits.INT_SIZE_IN_BYTES;
+        }
+        return Bits.INT_SIZE_IN_BYTES + intArray.length * Bits.INT_SIZE_IN_BYTES;
+    }
+
 
     public static int calculateAddressDataSize(Address address) {
         boolean isNull = address == null;

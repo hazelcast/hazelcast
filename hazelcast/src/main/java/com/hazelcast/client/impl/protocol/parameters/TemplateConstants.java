@@ -16,29 +16,30 @@
 
 package com.hazelcast.client.impl.protocol.parameters;
 
-final class TemplateConstants {
+public final class TemplateConstants {
 
-    static final int MAP_TEMPLATE_ID = 1;
-    static final int MULTIMAP_TEMPLATE_ID = 2;
-    static final int QUEUE_TEMPLATE_ID = 3;
-    static final int TOPIC_TEMPLATE_ID = 4;
-    static final int LIST_TEMPLATE_ID = 5;
-    static final int SET_TEMPLATE_ID = 6;
-    static final int LOCK_TEMPLATE_ID = 7;
-    static final int CONDITION_TEMPLATE_ID = 8;
-    static final int EXECUTOR_TEMPLATE_ID = 9;
-    static final int ATOMIC_LONG_TEMPLATE_ID = 10;
-    static final int ATOMIC_REFERENCE_TEMPLATE_ID = 11;
-    static final int COUNTDOWN_LATCH_TEMPLATE_ID = 12;
-    static final int SEMAPHORE_TEMPLATE_ID = 13;
-    static final int REPLICATED_MAP_TEMPLATE_ID = 14;
-    static final int MAP_REDUCE_TEMPLATE_ID = 15;
-    static final int TX_MAP_TEMPLATE_ID = 16;
-    static final int TX_MULTIMAP_TEMPLATE_ID = 17;
-    static final int TX_SET_TEMPLATE_ID = 18;
-    static final int TX_LIST_TEMPLATE_ID = 19;
-    static final int TX_QUEUE_TEMPLATE_ID = 20;
-    static final int JCACHE_TEMPLATE_ID = 21;
+    public static final int MAP_TEMPLATE_ID = 1;
+    public static final int MULTIMAP_TEMPLATE_ID = 2;
+    public static final int QUEUE_TEMPLATE_ID = 3;
+    public static final int TOPIC_TEMPLATE_ID = 4;
+    public static final int LIST_TEMPLATE_ID = 5;
+    public static final int SET_TEMPLATE_ID = 6;
+    public static final int LOCK_TEMPLATE_ID = 7;
+    public static final int CONDITION_TEMPLATE_ID = 8;
+    public static final int EXECUTOR_TEMPLATE_ID = 9;
+    public static final int ATOMIC_LONG_TEMPLATE_ID = 10;
+    public static final int ATOMIC_REFERENCE_TEMPLATE_ID = 11;
+    public static final int COUNTDOWN_LATCH_TEMPLATE_ID = 12;
+    public static final int SEMAPHORE_TEMPLATE_ID = 13;
+    public static final int REPLICATED_MAP_TEMPLATE_ID = 14;
+    public static final int MAP_REDUCE_TEMPLATE_ID = 15;
+    public static final int TX_MAP_TEMPLATE_ID = 16;
+    public static final int TX_MULTIMAP_TEMPLATE_ID = 17;
+    public static final int TX_SET_TEMPLATE_ID = 18;
+    public static final int TX_LIST_TEMPLATE_ID = 19;
+    public static final int TX_QUEUE_TEMPLATE_ID = 20;
+    public static final int JCACHE_TEMPLATE_ID = 21;
+    public static final int CLIENT_TEMPLATE_ID = 99;
 
     private TemplateConstants() {
     }
