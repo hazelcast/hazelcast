@@ -19,8 +19,8 @@ package com.hazelcast.spi.exception;
 import com.hazelcast.nio.Address;
 
 /**
- * A RetryableHazelcastException that indicates that a request was send to a machine which isn't member
- * in the cluster.
+ * A {@link RetryableHazelcastException} that indicates that a operation was send by a machine which isn't member
+ * in the cluster when the request is operation.
  */
 public class CallerNotMemberException extends RetryableHazelcastException {
 
