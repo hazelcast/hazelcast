@@ -20,7 +20,7 @@ import com.hazelcast.nio.Address;
 
 /**
  * A {@link RetryableHazelcastException} that indicates that an operation was send by a machine which isn't member
- * in the cluster when the request is operation.
+ * in the cluster when the operation is executed.
  */
 public class CallerNotMemberException extends RetryableHazelcastException {
 
