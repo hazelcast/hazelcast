@@ -68,7 +68,7 @@ Here are the steps to enable Elastic Memory:
 - Set the total direct memory size for HazelcastInstance by setting the `hazelcast.elastic.memory.total.size` property. Size can be in MB or GB and abbreviation can be used, such as 60G and 500M.
 - Set the chunk size by setting the `hazelcast.elastic.memory.chunk.size` property. Hazelcast will partition the entire off-heap memory into chunks. Default chunk size is 1K.
 - You can enable `sun.misc.Unsafe` based off-heap storage implementation instead of `java.nio.DirectByteBuffer` based one, by setting the `hazelcast.elastic.memory.unsafe.enabled` property to true. Default value is false.
-- Configure maps that will use Elastic Memory by setting `InMemoryFormat` to OFFHEAP. Default value is BINARY.
+- Configure maps that will use Elastic Memory by setting `InMemoryFormat` to NATIVE. Default value is BINARY.
 
 Below is the declarative configuration.
 
@@ -77,7 +77,7 @@ Below is the declarative configuration.
   ...
   <map name="default">
     ...
-    <in-memory-format>OFFHEAP</in-memory-format>
+    <in-memory-format>NATIVE</in-memory-format>
   </map>
 </hazelcast>
 ```
@@ -86,7 +86,7 @@ And, the programmatic configuration:
 
 ```java
 MapConfig mapConfig = new MapConfig();
-mapConfig.setInMemoryFormat( InMemoryFormat.OFFHEAP );
+mapConfig.setInMemoryFormat( InMemoryFormat.NATIVE );
 ```
 
 And, the following are the High-Denisty Memory First Generation related system properties.
