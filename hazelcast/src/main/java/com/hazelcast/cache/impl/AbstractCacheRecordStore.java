@@ -29,6 +29,7 @@ import com.hazelcast.cache.impl.record.SampleableCacheRecordMap;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.CacheEvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
+import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.map.impl.MapEntrySet;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.EventRegistration;
@@ -160,15 +161,15 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     protected abstract CacheEntryProcessorEntry createCacheEntryProcessorEntry(Data key,
         R record, long now, int completionId);
 
-    protected abstract <T> R createRecord(T value, long creationTime, long expiryTime);
+    protected abstract R createRecord(Object value, long creationTime, long expiryTime);
 
-    protected abstract <T> Data valueToData(T value);
+    protected abstract Data valueToData(Object value);
 
-    protected abstract <T> T dataToValue(Data data);
+    protected abstract Object dataToValue(Data data);
 
-    protected abstract <T> R valueToRecord(T value);
+    protected abstract R valueToRecord(Object value);
 
-    protected abstract <T> T recordToValue(R record);
+    protected abstract Object recordToValue(R record);
 
     protected abstract Data recordToData(R record);
 
@@ -248,13 +249,27 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         }
     }
 
-    protected <T> T toValue(Object obj) {
+    protected Object toValue(Object obj) {
         if (obj instanceof Data) {
-            return (T) dataToValue((Data) obj);
+            return dataToValue((Data) obj);
         } else if (obj instanceof CacheRecord) {
-            return (T) recordToValue((R) obj);
+            return recordToValue((R) obj);
         } else {
-            return (T) obj;
+            return obj;
+        }
+    }
+
+    protected Object toStorageValue(Object obj) {
+        if (obj instanceof Data) {
+            if (cacheConfig.getInMemoryFormat() == InMemoryFormat.OBJECT) {
+                return dataToValue((Data) obj);
+            } else {
+                return obj;
+            }
+        } else if (obj instanceof CacheRecord) {
+            return recordToValue((R) obj);
+        } else {
+            return obj;
         }
     }
 
@@ -991,8 +1006,8 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
                 replaced = false;
             } else {
                 isHit = true;
-                Object currentValue = toValue(record);
-                if (compare(currentValue, toValue(oldValue))) {
+                Object currentValue = toStorageValue(record);
+                if (compare(currentValue, toStorageValue(oldValue))) {
                     replaced = updateRecordWithExpiry(key, newValue, record,
                             expiryPolicy, now, false, completionId);
                 } else {
@@ -1132,7 +1147,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
                 removed = false;
             } else {
                 hitCount++;
-                if (compare(toValue(record), toValue(value))) {
+                if (compare(toStorageValue(record), toStorageValue(value))) {
                     deleteCacheEntry(key);
                     removed = deleteRecord(key, completionId);
                 } else {

@@ -176,7 +176,7 @@ abstract class AbstractClientCacheProxy<K, V>
     public V get(K key, ExpiryPolicy expiryPolicy) {
         final Future<V> f = getAsync(key, expiryPolicy);
         try {
-            return f.get();
+            return toObject(f.get());
         } catch (Throwable e) {
             throw ExceptionUtil.rethrowAllowedTypeFirst(e, CacheException.class);
         }
