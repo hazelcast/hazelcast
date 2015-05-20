@@ -96,34 +96,42 @@ public class CacheRecordStore
     }
 
     @Override
-    protected <T> CacheRecord createRecord(T value, long creationTime, long expiryTime) {
+    protected CacheRecord createRecord(Object value, long creationTime, long expiryTime) {
         evictIfRequired();
 
         return cacheRecordFactory.newRecordWithExpiry(value, creationTime, expiryTime);
     }
 
     @Override
-    protected <T> Data valueToData(T value) {
+    protected Data valueToData(Object value) {
         return cacheService.toData(value);
     }
 
     @Override
-    protected <T> T dataToValue(Data data) {
-        return (T) serializationService.toObject(data);
+    protected Object dataToValue(Data data) {
+        return serializationService.toObject(data);
     }
 
     @Override
-    protected <T> CacheRecord valueToRecord(T value) {
+    protected CacheRecord valueToRecord(Object value) {
         return cacheRecordFactory.newRecord(value);
     }
 
     @Override
-    protected <T> T recordToValue(CacheRecord record) {
+    protected Object recordToValue(CacheRecord record) {
         Object value = record.getValue();
         if (value instanceof Data) {
-            return dataToValue((Data) value);
+            switch (cacheConfig.getInMemoryFormat()) {
+                case BINARY:
+                    return value;
+                case OBJECT:
+                    return dataToValue((Data) value);
+                default:
+                    throw new IllegalStateException("Unsupported in-memory format: "
+                            + cacheConfig.getInMemoryFormat());
+            }
         } else {
-            return (T) value;
+            return value;
         }
     }
 
