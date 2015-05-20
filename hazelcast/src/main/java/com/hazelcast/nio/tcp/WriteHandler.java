@@ -50,6 +50,11 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
     private volatile long lastHandle;
     //This field will be incremented by a single thread. It can be read by multiple threads.
     private volatile long eventCount;
+    private boolean shutdown;
+    // this field will be accessed by the IOSelector-thread or
+    // it is accessed by any other thread but only that thread managed to cas the scheduled flag to true.
+    // This prevents running into an IOSelector that is migrating.
+    private IOSelector newOwner;
 
     WriteHandler(TcpIpConnection connection, IOSelector ioSelector) {
         super(connection, ioSelector, SelectionKey.OP_WRITE);
@@ -108,12 +113,20 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
     }
 
     private SocketWritable poll() {
-        SocketWritable packet = urgentWriteQueue.poll();
-        if (packet == null) {
-            packet = writeQueue.poll();
-        }
+        for (; ; ) {
+            SocketWritable packet = urgentWriteQueue.poll();
 
-        return packet;
+            if (packet == null) {
+                packet = writeQueue.poll();
+            }
+
+            if (packet instanceof TaskPacket) {
+                ((TaskPacket) packet).run();
+                continue;
+            }
+
+            return packet;
+        }
     }
 
     /**
@@ -202,7 +215,7 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
     public void handle() {
         eventCount++;
         lastHandle = Clock.currentTimeMillis();
-        if (!connection.isAlive()) {
+        if (shutdown) {
             return;
         }
 
@@ -220,7 +233,14 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
         } catch (Throwable t) {
             logger.severe("Fatal Error at WriteHandler for endPoint: " + connection.getEndPoint(), t);
         }
-        unschedule();
+
+        if (newOwner == null) {
+            unschedule();
+        } else {
+            IOSelector newOwner = this.newOwner;
+            this.newOwner = null;
+            startMigration(newOwner);
+        }
     }
 
     /**
@@ -304,23 +324,85 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
         writeQueue.clear();
         urgentWriteQueue.clear();
 
-        final CountDownLatch latch = new CountDownLatch(1);
-        ioSelector.addTaskAndWakeup(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    socketChannel.closeOutbound();
-                } catch (IOException e) {
-                    logger.finest("Error while closing outbound", e);
-                } finally {
-                    latch.countDown();
-                }
+        ShutdownTask shutdownTask = new ShutdownTask();
+        offer(shutdownTask);
+        shutdownTask.awaitCompletion();
+    }
+
+    @Override
+    public void requestMigration(IOSelector newOwner) {
+        offer(new StartMigrationTask(newOwner));
+    }
+
+    /**
+     * The taskPacket is not really a Packet. It is a way to put a task on one of the packet queues. Using this approach we
+     * can lift on top of the packet scheduling mechanism and we can prevent having:
+     * - multiple IOSelector-tasks for a WriteHandler on multiple IOSelectors
+     * - multiple IOSelector-tasks for a WriteHandler on the same IOSelector.
+     */
+    private abstract class TaskPacket implements SocketWritable {
+        abstract void run();
+
+        @Override
+        public boolean writeTo(ByteBuffer destination) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean isUrgent() {
+            return true;
+        }
+    }
+
+    /**
+     * Triggers the migration when executed by setting the WriteHandler.newOwner field. When the handle method completes, it
+     * checks if this field if set, if so, the migration starts.
+     *
+     * If the current ioSelector is the same as 'theNewOwner' then the call is ignored.
+     */
+    private class StartMigrationTask extends TaskPacket {
+        // field is called 'theNewOwner' to prevent any ambiguity problems with the writeHandler.newOwner.
+        // Else you get a lot of ugly WriteHandler.this.newOwner is ...
+        private final IOSelector theNewOwner;
+
+        public StartMigrationTask(IOSelector theNewOwner) {
+            this.theNewOwner = theNewOwner;
+        }
+
+        @Override
+        void run() {
+            assert newOwner == null : "No migration can be in progress";
+
+            if (ioSelector == theNewOwner) {
+                // if there is no change, we are done
+                return;
             }
-        });
-        try {
-            latch.await(TIMEOUT, TimeUnit.SECONDS);
-        } catch (InterruptedException e) {
-            EmptyStatement.ignore(e);
+
+            newOwner = theNewOwner;
+        }
+    }
+
+    private class ShutdownTask extends TaskPacket {
+        private final CountDownLatch latch = new CountDownLatch(1);
+
+        @Override
+        void run() {
+            shutdown = true;
+            try {
+                socketChannel.closeOutbound();
+            } catch (IOException e) {
+                logger.finest("Error while closing outbound", e);
+            } finally {
+                latch.countDown();
+            }
+        }
+
+        void awaitCompletion() {
+            try {
+                latch.await(TIMEOUT, TimeUnit.SECONDS);
+            } catch (InterruptedException e) {
+                EmptyStatement.ignore(e);
+            }
         }
     }
 }
