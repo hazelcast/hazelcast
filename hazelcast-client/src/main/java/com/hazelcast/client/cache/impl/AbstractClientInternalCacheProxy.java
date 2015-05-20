@@ -73,6 +73,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -191,7 +192,7 @@ abstract class AbstractClientInternalCacheProxy<K, V>
             final ClientInvocation clientInvocation = new ClientInvocation(client, req, partitionId);
             final ICompletableFuture<T> f = clientInvocation.invoke();
             if (completionOperation) {
-                waitCompletionLatch(completionId);
+                waitCompletionLatch(completionId, f);
             }
             return f;
         } catch (Throwable e) {
@@ -351,7 +352,7 @@ abstract class AbstractClientInternalCacheProxy<K, V>
                     }
                 }
             }
-            waitCompletionLatch(completionId, partitionCount - completionCount);
+            waitCompletionLatch(completionId, partitionCount - completionCount, null);
         } catch (Throwable t) {
             deregisterCompletionLatch(completionId);
             throw ExceptionUtil.rethrowAllowedTypeFirst(t, CacheException.class);
@@ -465,25 +466,28 @@ abstract class AbstractClientInternalCacheProxy<K, V>
         syncLocks.remove(countDownLatchId);
     }
 
-    protected void waitCompletionLatch(Integer countDownLatchId) {
+    protected void waitCompletionLatch(Integer countDownLatchId, ICompletableFuture future)
+            throws ExecutionException {
         final CountDownLatch countDownLatch = syncLocks.get(countDownLatchId);
         if (countDownLatch != null) {
-            awaitLatch(countDownLatch);
+            awaitLatch(countDownLatch, future);
         }
     }
 
-    protected void waitCompletionLatch(Integer countDownLatchId, int offset) {
+    protected void waitCompletionLatch(Integer countDownLatchId, int offset, ICompletableFuture future)
+            throws ExecutionException {
         //fix completion count
         final CountDownLatch countDownLatch = syncLocks.get(countDownLatchId);
         if (countDownLatch != null) {
             for (int i = 0; i < offset; i++) {
                 countDownLatch.countDown();
             }
-            awaitLatch(countDownLatch);
+            awaitLatch(countDownLatch, future);
         }
     }
 
-    private void awaitLatch(CountDownLatch countDownLatch) {
+    private void awaitLatch(CountDownLatch countDownLatch, ICompletableFuture future)
+            throws ExecutionException {
         try {
             long currentTimeoutMs = MAX_COMPLETION_LATCH_WAIT_TIME;
             // Call latch await in small steps to be able to check if node is still active.
@@ -494,6 +498,12 @@ abstract class AbstractClientInternalCacheProxy<K, V>
             // Warning: Silently ignoring if latch does not countDown in time.
             while (currentTimeoutMs > 0
                     && !countDownLatch.await(COMPLETION_LATCH_WAIT_TIME_STEP, TimeUnit.MILLISECONDS)) {
+                if (future != null && future.isDone()) {
+                    Object response = future.get();
+                    if (response instanceof Throwable) {
+                        return;
+                    }
+                }
                 currentTimeoutMs -= COMPLETION_LATCH_WAIT_TIME_STEP;
                 if (!clientContext.isActive()) {
                     throw new HazelcastInstanceNotActiveException();
@@ -502,6 +512,10 @@ abstract class AbstractClientInternalCacheProxy<K, V>
                 } else if (isDestroyed()) {
                     throw new IllegalStateException("Cache (" + nameWithPrefix + ") is destroyed !");
                 }
+            }
+            if (countDownLatch.getCount() > 0) {
+                logger.finest("Countdown latch wait timeout after "
+                        + MAX_COMPLETION_LATCH_WAIT_TIME + " milliseconds!");
             }
         } catch (InterruptedException e) {
             ExceptionUtil.sneakyThrow(e);
