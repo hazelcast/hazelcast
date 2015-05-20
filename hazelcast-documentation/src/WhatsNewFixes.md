@@ -5,6 +5,9 @@
 
 This section lists issues solved for **Hazelcast 3.5** release.
 
+- When the method `finalizeCombine()` is used, Hazelcast throws `NullPointerException` [[#5283]](https://github.com/hazelcast/hazelcast/issues/5283).
+- `WanBatchReplication` causes `OutOfMemoryException` when the default value for WAN Replication Batch Size (50) is used [[#5280]](https://github.com/hazelcast/hazelcast/issues/5280).
+- When testing Hazelcast, it does not start as an OSGI bundle. After the OSGI package was refactored, the dynamic class loading of the Script engine was missed [[#5274]](https://github.com/hazelcast/hazelcast/issues/5274).
 - The test for unbounded return values runs forever with the new client implementation [[#5230]](https://github.com/hazelcast/hazelcast/issues/5230).
 - The method `putTransient` actuated the MapStore unexpectedly in an environment with multiple instances [[#5225]](https://github.com/hazelcast/hazelcast/issues/5225).
 - The method `removeAttribute` will prevent any updates by the method `setAttribute` in the deferred write mode [[#5186]](https://github.com/hazelcast/hazelcast/issues/5186).
