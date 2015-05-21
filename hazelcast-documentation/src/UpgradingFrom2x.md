@@ -114,8 +114,9 @@ The `ISemaphore` has been substantially changed. `attach()`, `detach()` methods 
 In this section, we list the changes what users should take into account before upgrading to latest Hazelcast from 3.x versions.
 
 - **Introducing the `spring-aware` element:**
-By default, Hazelcast uses `SpringManagedContext` to scan `SpringAware` annotations. This may cause some performance penalties even if the users do not use `SpringAware`. 
-By introducing the `spring-aware` element, now it is possible to disable it by adding the `<hz:spring-aware enabled="false"/>` tag to the configuration. Please see the [Spring Integration section](#spring-integration).
+Before Hazelcast 3.5, Hazelcast uses `SpringManagedContext` to scan `SpringAware` annotations by default. This may cause some performance overhead for the users who don't use `SpringAware`.
+This behaviour has been changed in Hazelcast 3.5. `SpringAware` annotations are disabled by default.
+By introducing the `spring-aware` element, now it is possible to enable it by adding the `<hz:spring-aware />` tag to the configuration. Please see the [Spring Integration section](#spring-integration).
 
 
 
