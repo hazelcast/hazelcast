@@ -118,7 +118,7 @@ public class WebFilter implements Filter {
             new ConcurrentHashMap<String, HazelcastHttpSession>(1000);
 
     private String sessionCookieName = HAZELCAST_SESSION_COOKIE_NAME;
-    private HazelcastInstance hazelcastInstance;
+    private HazelcastInstanceDelegate hazelcastInstanceDelegate;
     private String clusterMapName = "none";
     private String sessionCookieDomain;
     private boolean sessionCookieSecure;
@@ -184,7 +184,7 @@ public class WebFilter implements Filter {
         try {
             String sessionTTL = getParam("session-ttl-seconds");
             if (sessionTTL != null) {
-                Config hzConfig = hazelcastInstance.getConfig();
+                Config hzConfig = hazelcastInstanceDelegate.getInstanceConfig();
 
                 MapConfig mapConfig = hzConfig.getMapConfig(clusterMapName);
                 mapConfig.setTimeToLiveSeconds(Integer.parseInt(sessionTTL));
@@ -196,7 +196,7 @@ public class WebFilter implements Filter {
         }
 
         if (!stickySession) {
-            getClusterMap().addEntryListener(new EntryListener<String, Object>() {
+            hazelcastInstanceDelegate.addEntryListener(clusterMapName, new EntryListener<String, Object>() {
                 public void entryAdded(EntryEvent<String, Object> entryEvent) {
                 }
 
@@ -273,7 +273,7 @@ public class WebFilter implements Filter {
         setProperty(HazelcastInstanceLoader.INSTANCE_NAME);
         setProperty(HazelcastInstanceLoader.USE_CLIENT);
         setProperty(HazelcastInstanceLoader.CLIENT_CONFIG_LOCATION);
-        hazelcastInstance = getInstance(properties);
+        hazelcastInstanceDelegate = new HazelcastInstanceDelegate(filterConfig, properties);
     }
 
     private void setProperty(String propertyName) {
@@ -309,7 +309,7 @@ public class WebFilter implements Filter {
         if (existingSessionId == null) {
             hazelcastSession.setClusterWideNew(true);
             // If the session is being created for the first time, add its initial reference in the cluster-wide map.
-            getClusterMap().executeOnKey(id, new AddSessionEntryProcessor());
+            hazelcastInstanceDelegate.executeOnKey(clusterMapName, id, new AddSessionEntryProcessor());
         }
 
         updateSessionMaps(id, originalSession, hazelcastSession);
@@ -368,16 +368,16 @@ public class WebFilter implements Filter {
         originalSessions.remove(session.originalSession.getId());
         session.destroy();
 
-        final IMap<String, Object> clusterMap = getClusterMap();
         final boolean invalidated;
         if (invalidate) {
             if (LOGGER.isFinestEnabled()) {
                 LOGGER.finest("Destroying cluster session: " + session.getId() + " => Ignore-timeout: true");
             }
-            clusterMap.delete(session.getId());
+            hazelcastInstanceDelegate.delete(clusterMapName, session.getId());
             invalidated = true;
         } else {
-            Boolean destroyed = (Boolean) clusterMap.executeOnKey(session.getId(), new DestroySessionEntryProcessor());
+            Boolean destroyed = (Boolean) hazelcastInstanceDelegate.executeOnKey(clusterMapName,
+                    session.getId(), new DestroySessionEntryProcessor());
 
             invalidated = (destroyed != null && destroyed);
         }
@@ -385,15 +385,12 @@ public class WebFilter implements Filter {
         if (invalidated) {
             // If the session was invalidated, either explicitly or because the final reference to it was
             // destroyed, invalidate all of the attributes that were attached to it
-            clusterMap.executeOnEntries(new InvalidateSessionAttributesEntryProcessor(session.getId()));
+            hazelcastInstanceDelegate.executeOnEntries(clusterMapName,
+                    new InvalidateSessionAttributesEntryProcessor(session.getId()));
         }
     }
-
-    private IMap<String, Object> getClusterMap() {
-        return hazelcastInstance.getMap(clusterMapName);
-    }
-
     private HazelcastHttpSession getSessionWithId(final String sessionId) {
+
         HazelcastHttpSession session = sessions.get(sessionId);
         if (session != null && !session.isValid()) {
             destroySession(session, true);
@@ -480,13 +477,9 @@ public class WebFilter implements Filter {
         shutdownInstance();
     }
 
-    protected HazelcastInstance getInstance(Properties properties) throws ServletException {
-        return HazelcastInstanceLoader.createInstance(filterConfig, properties);
-    }
-
     protected void shutdownInstance() {
-        if (shutdownOnDestroy && hazelcastInstance != null) {
-            hazelcastInstance.getLifecycleService().shutdown();
+        if (shutdownOnDestroy && hazelcastInstanceDelegate != null) {
+            hazelcastInstanceDelegate.shutdown();
         }
     }
 
@@ -569,8 +562,8 @@ public class WebFilter implements Filter {
             if (requestedSessionId != null) {
                 hazelcastSession = getSessionWithId(requestedSessionId);
                 if (hazelcastSession == null) {
-                    final Boolean existing = (Boolean) getClusterMap()
-                            .executeOnKey(requestedSessionId, new ReferenceSessionEntryProcessor());
+                    final Boolean existing = (Boolean) hazelcastInstanceDelegate.executeOnKey(clusterMapName,
+                            requestedSessionId, new ReferenceSessionEntryProcessor());
                     boolean canOrMustCreate = create || !RequestWrapper.this.res.isCommitted()
                             || getOriginalSession(false) != null;
                     if (existing != null && existing && canOrMustCreate) {
@@ -652,11 +645,10 @@ public class WebFilter implements Filter {
         }
 
         public Object getAttribute(final String name) {
-            IMap<String, Object> clusterMap = getClusterMap();
             if (deferredWrite) {
                 LocalCacheEntry cacheEntry = localCache.get(name);
                 if (cacheEntry == null || (cacheEntry.reload && !cacheEntry.dirty)) {
-                    Object value = clusterMap.get(buildAttributeName(name));
+                    Object value = hazelcastInstanceDelegate.get(clusterMapName, buildAttributeName(name));
                     if (value == null) {
                         cacheEntry = NULL_ENTRY;
                     } else {
@@ -668,7 +660,7 @@ public class WebFilter implements Filter {
                 }
                 return cacheEntry != NULL_ENTRY ? cacheEntry.value : null;
             }
-            return clusterMap.get(buildAttributeName(name));
+            return hazelcastInstanceDelegate.get(clusterMapName, buildAttributeName(name));
         }
 
         public Enumeration<String> getAttributeNames() {
@@ -735,7 +727,7 @@ public class WebFilter implements Filter {
                     entry.dirty = true;
                 }
             } else {
-                getClusterMap().delete(buildAttributeName(name));
+                hazelcastInstanceDelegate.delete(clusterMapName, buildAttributeName(name));
             }
         }
 
@@ -757,7 +749,7 @@ public class WebFilter implements Filter {
                 entry.removed = false;
                 entry.dirty = true;
             } else {
-                getClusterMap().set(buildAttributeName(name), value);
+                hazelcastInstanceDelegate.set(clusterMapName, buildAttributeName(name), value);
             }
         }
 
@@ -810,7 +802,8 @@ public class WebFilter implements Filter {
         }
 
         private Map<String, LocalCacheEntry> buildLocalCache() {
-            Set<Entry<String, Object>> entrySet = getClusterMap().entrySet(new SessionAttributePredicate(id));
+            Set<Entry<String, Object>> entrySet = hazelcastInstanceDelegate.entrySet(clusterMapName,
+                    new SessionAttributePredicate(id));
 
             Map<String, LocalCacheEntry> cache = new ConcurrentHashMap<String, LocalCacheEntry>();
             for (Entry<String, Object> entry : entrySet) {
@@ -832,18 +825,16 @@ public class WebFilter implements Filter {
 
         private void sessionDeferredWrite() {
             if (sessionChanged()) {
-                IMap<String, Object> clusterMap = getClusterMap();
-
                 Iterator<Entry<String, LocalCacheEntry>> iterator = localCache.entrySet().iterator();
                 while (iterator.hasNext()) {
                     Entry<String, LocalCacheEntry> entry = iterator.next();
                     if (entry.getValue().dirty) {
                         LocalCacheEntry cacheEntry = entry.getValue();
                         if (cacheEntry.removed) {
-                            clusterMap.delete(buildAttributeName(entry.getKey()));
+                            hazelcastInstanceDelegate.delete(clusterMapName, buildAttributeName(entry.getKey()));
                             iterator.remove();
                         } else {
-                            clusterMap.set(buildAttributeName(entry.getKey()), cacheEntry.value);
+                            hazelcastInstanceDelegate.set(clusterMapName, buildAttributeName(entry.getKey()), cacheEntry.value);
                             cacheEntry.dirty = false;
                         }
                     }
@@ -854,7 +845,8 @@ public class WebFilter implements Filter {
         private Set<String> selectKeys() {
             Set<String> keys = new HashSet<String>();
             if (!deferredWrite) {
-                for (String qualifiedAttributeKey : getClusterMap().keySet(new SessionAttributePredicate(id))) {
+                for (String qualifiedAttributeKey : hazelcastInstanceDelegate.keySet(clusterMapName,
+                        new SessionAttributePredicate(id))) {
                     keys.add(extractAttributeKey(qualifiedAttributeKey));
                 }
             } else {

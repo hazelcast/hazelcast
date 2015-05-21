@@ -1,14 +1,19 @@
 package com.hazelcast.wm.test;
 
+import com.hazelcast.config.FileSystemXmlConfig;
+import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.IMap;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.CookieStore;
 import org.apache.http.impl.client.BasicCookieStore;
+import org.junit.Test;
+
+import java.io.File;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
-import org.junit.Test;
 
 public abstract class WebFilterSlowTests extends AbstractWebFilterTest {
 
@@ -19,6 +24,60 @@ public abstract class WebFilterSlowTests extends AbstractWebFilterTest {
     protected WebFilterSlowTests(String serverXml1, String serverXml2) {
         super(serverXml1, serverXml2);
     }
+
+    @Test
+    public void whenClusterIsDown_enabledDeferredWrite() throws Exception {
+        if (!serverXml1.equals("node1-client-deferred.xml")) return;
+        CookieStore cookieStore = new BasicCookieStore();
+        assertEquals("true", executeRequest("write", serverPort1, cookieStore));
+        assertEquals("value", executeRequest("read", serverPort1, cookieStore));
+        hz.shutdown();
+        assertEquals("value", executeRequest("read", serverPort1, cookieStore));
+        assertEquals("true", executeRequest("remove", serverPort1, cookieStore));
+        assertEquals("null", executeRequest("read", serverPort1, cookieStore));
+        hz = Hazelcast.newHazelcastInstance(
+                new FileSystemXmlConfig(new File(sourceDir + "/WEB-INF/", "hazelcast.xml")));
+        assertEquals("true", executeRequest("write", serverPort1, cookieStore));
+        assertEquals("value", executeRequest("read", serverPort1, cookieStore));
+    }
+
+
+    @Test
+    public void whenClusterIsDownAtBeginning_enabledDeferredWrite() throws Exception {
+        if (!serverXml1.equals("node1-client-deferred.xml")) return;
+        hz.shutdown();
+        CookieStore cookieStore = new BasicCookieStore();
+        assertEquals("true", executeRequest("write", serverPort1, cookieStore));
+        assertEquals("value", executeRequest("read", serverPort1, cookieStore));
+
+        assertEquals("value", executeRequest("read", serverPort1, cookieStore));
+        assertEquals("true", executeRequest("remove", serverPort1, cookieStore));
+        assertEquals("null", executeRequest("read", serverPort1, cookieStore));
+
+        assertEquals("true", executeRequest("write", serverPort1, cookieStore));
+        assertEquals("value", executeRequest("read", serverPort1, cookieStore));
+        hz = Hazelcast.newHazelcastInstance(
+                new FileSystemXmlConfig(new File(sourceDir + "/WEB-INF/", "hazelcast.xml")));
+        assertEquals("value", executeRequest("read", serverPort1, cookieStore));
+        assertEquals("true", executeRequest("remove", serverPort1, cookieStore));
+        assertEquals("null", executeRequest("read", serverPort1, cookieStore));
+    }
+
+    @Test
+    public void whenClusterIsDownAtBeginning_MapSizeAfterClusterIsUp() throws Exception {
+        if (!serverXml1.equals("node1-client-deferred.xml")) return;
+        hz.shutdown();
+        CookieStore cookieStore = new BasicCookieStore();
+        assertEquals("true", executeRequest("write", serverPort1, cookieStore));
+        assertEquals("value", executeRequest("read", serverPort1, cookieStore));
+
+        hz = Hazelcast.newHazelcastInstance(
+                new FileSystemXmlConfig(new File(sourceDir + "/WEB-INF/", "hazelcast.xml")));
+        assertEquals("value", executeRequest("read", serverPort1, cookieStore));
+        IMap<String, Object> map = hz.getMap(DEFAULT_MAP_NAME);
+        assertEquals(2, map.size());
+    }
+
 
     @Test
     public void test_github_issue_3360() throws Exception {
