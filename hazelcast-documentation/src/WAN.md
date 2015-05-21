@@ -9,7 +9,7 @@ the Internet.
 Imagine you have different data centers in New York, London and Tokyo each running an independent Hazelcast cluster. Every cluster
 would be operating at native speed in their own LAN (Local Area Network), but you also want some or all recordsets in
 these clusters to be replicated to each other: updates in the Tokyo cluster should also replicate to London and New York, in the meantime updates
-couring in thr New York cluster are synchronized to the Tokyo and London clusters.
+in the New York cluster are synchronized to the Tokyo and London clusters.
 
 ### Configuring WAN Replication
 
@@ -52,7 +52,8 @@ If the New York and London cluster configurations contain the `wan-replication` 
 New York and London are active endpoints and Tokyo is a passive endpoint.
 
 When using Active-Active Replication, multiple clusters can simultaneously update the same entry in a distributed data structure.
-You can configure a merge-policy to resolve these potential conflicts
+You can configure a merge-policy to resolve these potential conflicts.
+
 ```xml
 <hazelcast>
   <wan-replication name="my-wan-cluster">
@@ -143,7 +144,7 @@ You can configure them using the configuration element `replication-impl`, as sh
 When `WanBatchReplication` is preferred as the replication implementation, the maximum size of events that are sent in a single batch can be changed 
 depending on your needs. Default value for batch size is `50`.
 
-To change the `WanBatchReplication` batch size, in Hazelcast Enterprise use the `hazelcast.enterprise.wanrep.batch.size` property
+To change the `WanBatchReplication` batch size, use the `hazelcast.enterprise.wanrep.batch.size` property in Hazelcast Enterprise.
 
 You can do this by setting the property on the command line (where xxx is the batch size),
 
