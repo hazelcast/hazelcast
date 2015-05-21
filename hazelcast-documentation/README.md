@@ -8,4 +8,5 @@ Required packages:
 Installation with Ubuntu:
 
 - sudo apt-get install nodejs nodejs-legacy npm pandoc texlive
-- sudo npm install -g beautiful-docs
+
+NOTE: [Beautiful Docs](https://github.com/beautiful-docs/beautiful-docs) repo should be cloned and compiled from source since the latest release does not include recent fixes which is vital for us
