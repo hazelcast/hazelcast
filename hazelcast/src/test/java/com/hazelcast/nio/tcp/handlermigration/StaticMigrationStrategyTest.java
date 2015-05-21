@@ -19,6 +19,7 @@ package com.hazelcast.nio.tcp.handlermigration;
 import com.hazelcast.nio.tcp.IOSelector;
 import com.hazelcast.nio.tcp.MigratableHandler;
 import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.ItemCounter;
 import org.junit.Before;
@@ -26,33 +27,31 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static com.hazelcast.test.TestCollectionUtils.setOf;
 import static java.util.Collections.singleton;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.mock;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
-public class MigrationStrategyTest {
+public class StaticMigrationStrategyTest extends HazelcastTestSupport {
 
     private Map<IOSelector, Set<MigratableHandler>> selectorToHandlers;
     private ItemCounter<MigratableHandler> handlerEventsCounter;
     private LoadImbalance imbalance;
 
-    private MigrationStrategy strategy;
+    private StaticMigrationStrategy strategy;
 
     @Before
     public void setUp() {
         selectorToHandlers = new HashMap<IOSelector, Set<MigratableHandler>>();
         handlerEventsCounter = new ItemCounter<MigratableHandler>();
         imbalance = new LoadImbalance(selectorToHandlers, handlerEventsCounter);
-        strategy = new MigrationStrategy();
+        strategy = new StaticMigrationStrategy();
     }
 
     @Test
@@ -107,15 +106,10 @@ public class MigrationStrategyTest {
         MigratableHandler handler3 = mock(MigratableHandler.class);
         handlerEventsCounter.set(handler2, 200l);
         handlerEventsCounter.set(handler3, 100l);
-        selectorToHandlers.put(sourceSelector, setWith(handler2, handler3));
+        selectorToHandlers.put(sourceSelector, setOf(handler2, handler3));
 
         MigratableHandler handlerToMigrate = strategy.findHandlerToMigrate(imbalance);
         assertEquals(handler3, handlerToMigrate);
-    }
-
-    private static <T> Set<T> setWith(T... items) {
-        List<T> list = Arrays.asList(items);
-        return new HashSet<T>(list);
     }
 
 }
