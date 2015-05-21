@@ -95,6 +95,12 @@ public abstract class AbstractIOSelector extends Thread implements IOSelector {
         selectorQueue.add(runnable);
     }
 
+    @Override
+    public final void addTaskAndWakeup(Runnable runnable) {
+        selectorQueue.add(runnable);
+        selector.wakeup();
+    }
+
     private void processSelectionQueue() {
         //noinspection WhileLoopSpinsOnField
         while (live) {
@@ -191,11 +197,6 @@ public abstract class AbstractIOSelector extends Thread implements IOSelector {
     @Override
     public final Selector getSelector() {
         return selector;
-    }
-
-    @Override
-    public final void wakeup() {
-        selector.wakeup();
     }
 
     private void handleSelectFailure(Throwable e) {

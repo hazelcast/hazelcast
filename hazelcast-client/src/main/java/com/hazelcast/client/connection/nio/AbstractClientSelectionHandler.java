@@ -80,8 +80,7 @@ public abstract class AbstractClientSelectionHandler implements SelectionHandler
     }
 
     public void register() {
-        ioSelector.addTask(this);
-        ioSelector.wakeup();
+        ioSelector.addTaskAndWakeup(this);
     }
 
 }

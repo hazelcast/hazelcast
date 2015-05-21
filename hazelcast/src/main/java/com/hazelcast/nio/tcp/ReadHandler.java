@@ -49,15 +49,13 @@ public final class ReadHandler extends AbstractSelectionHandler {
     }
 
     public void start() {
-        ioSelector.addTask(new Runnable() {
+        ioSelector.addTaskAndWakeup(new Runnable() {
             @Override
             public void run() {
                 getSelectionKey();
 
             }
         });
-
-        ioSelector.wakeup();
     }
 
     @Override
@@ -151,7 +149,7 @@ public final class ReadHandler extends AbstractSelectionHandler {
     }
 
     void shutdown() {
-        ioSelector.addTask(new Runnable() {
+        ioSelector.addTaskAndWakeup(new Runnable() {
             @Override
             public void run() {
                 try {
@@ -161,6 +159,5 @@ public final class ReadHandler extends AbstractSelectionHandler {
                 }
             }
         });
-        ioSelector.wakeup();
     }
 }
