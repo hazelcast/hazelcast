@@ -62,8 +62,7 @@ public abstract class AbstractSelectionHandler implements MigratableHandler {
             return;
         }
 
-        ioSelector.addTask(new MigrationTask(newOwner));
-        ioSelector.wakeup();
+        ioSelector.addTaskAndWakeup(new MigrationTask(newOwner));
     }
 
     protected SelectionKey getSelectionKey() {
@@ -145,7 +144,7 @@ public abstract class AbstractSelectionHandler implements MigratableHandler {
             ioSelector = newOwner;
             selectionKey.cancel();
             selectionKey = null;
-            newOwner.addTask(new Runnable() {
+            newOwner.addTaskAndWakeup(new Runnable() {
                 @Override
                 public void run() {
                     if (!socketChannel.isOpen()) {
@@ -156,7 +155,6 @@ public abstract class AbstractSelectionHandler implements MigratableHandler {
                     registerOp(initialOps);
                 }
             });
-            newOwner.wakeup();
         }
     }
 }

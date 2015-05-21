@@ -67,13 +67,12 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
     // accessed from ReadHandler and SocketConnector
     void setProtocol(final String protocol) {
         final CountDownLatch latch = new CountDownLatch(1);
-        ioSelector.addTask(new Runnable() {
+        ioSelector.addTaskAndWakeup(new Runnable() {
             public void run() {
                 createWriter(protocol);
                 latch.countDown();
             }
         });
-        ioSelector.wakeup();
         try {
             latch.await(TIMEOUT, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
@@ -138,8 +137,7 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
 
         // We managed to schedule this WriteHandler. This means we need to add a task to
         // the ioReactor and to give the reactor-thread a kick so that it processes our packets.
-        ioSelector.addTask(this);
-        ioSelector.wakeup();
+        ioSelector.addTaskAndWakeup(this);
     }
 
     /**
@@ -306,7 +304,7 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
         urgentWriteQueue.clear();
 
         final CountDownLatch latch = new CountDownLatch(1);
-        ioSelector.addTask(new Runnable() {
+        ioSelector.addTaskAndWakeup(new Runnable() {
             @Override
             public void run() {
                 try {
@@ -318,7 +316,6 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
                 }
             }
         });
-        ioSelector.wakeup();
         try {
             latch.await(TIMEOUT, TimeUnit.SECONDS);
         } catch (InterruptedException e) {

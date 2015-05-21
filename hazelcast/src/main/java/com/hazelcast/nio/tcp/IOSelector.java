@@ -26,7 +26,13 @@ public interface IOSelector extends OperationHostileThread {
 
     void addTask(Runnable runnable);
 
-    void wakeup();
+    /**
+     * Adds a task to be executed by the IOSelector and wakes up the IOSelector so that it will
+     * eventually pick up the task.
+     *
+     * @param runnable the task to add.
+     */
+    void addTaskAndWakeup(Runnable runnable);
 
     void start();
 
