@@ -527,7 +527,12 @@ abstract class Invocation implements OperationResponseHandler, Runnable {
             return;
         }
 
-        invocationFuture.set(WAIT_RESPONSE);
+        if (!invocationFuture.set(WAIT_RESPONSE)) {
+            logger.finest("Cannot retry " + toString() + ", because a different response is already set: "
+                    + invocationFuture.response);
+            return;
+        }
+
         ExecutionService ex = nodeEngine.getExecutionService();
         // fast retry for the first few invocations
         if (invokeCount < MAX_FAST_INVOCATION_COUNT) {

@@ -1,32 +1,45 @@
 package com.hazelcast.spi.impl.operationservice.impl;
 
+import com.hazelcast.concurrent.lock.InternalLockNamespace;
+import com.hazelcast.concurrent.lock.operations.IsLockedOperation;
+import com.hazelcast.concurrent.lock.operations.LockOperation;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ILock;
 import com.hazelcast.core.IQueue;
+import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.core.Partition;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.map.impl.MapService;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.AbstractOperation;
+import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.PartitionAwareOperation;
+import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
+
+import java.io.IOException;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
+import java.util.concurrent.locks.LockSupport;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
@@ -217,4 +230,67 @@ public class InvocationTimeoutTest extends HazelcastTestSupport {
         protected abstract void doOp() throws InterruptedException;
     }
 
+    @Test
+    public void test_operationExecution_whenOperationTimedOut() {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        HazelcastInstance hz = factory.newHazelcastInstance();
+        factory.newHazelcastInstance();
+
+        warmUpPartitions(factory.getAllHazelcastInstances());
+
+        NodeEngineImpl nodeEngine = getNodeEngineImpl(hz);
+
+        String key = randomString();
+        int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
+
+        long callTimeout = 3000L;
+        LongRunningOperation longRunningOperation = new LongRunningOperation(3 * callTimeout);
+        InternalOperationService operationService = nodeEngine.getOperationService();
+        operationService.invokeOnPartition(null, longRunningOperation, partitionId);
+
+        InternalCompletableFuture<Object> future = operationService.createInvocationBuilder(null,
+                new LockOperation(new InternalLockNamespace(key), nodeEngine.toData(key), 1, -1, -1), partitionId)
+                .setCallTimeout(callTimeout).invoke();
+
+        try {
+            future.getSafely();
+            fail("Invocation should failed with timeout!");
+        } catch (OperationTimeoutException ignored) {
+        }
+
+        IsLockedOperation isLockedOperation = new IsLockedOperation(new InternalLockNamespace(key),
+                nodeEngine.toData(key), 1);
+        Boolean isLocked = (Boolean) operationService
+                .invokeOnPartition(null, isLockedOperation, partitionId).getSafely();
+        assertFalse(isLocked);
+    }
+
+    static class LongRunningOperation extends AbstractOperation {
+
+        long timeout;
+
+        public LongRunningOperation() {
+        }
+
+        LongRunningOperation(long timeout) {
+            this.timeout = timeout;
+        }
+
+        @Override
+        public void run() throws Exception {
+            LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(timeout));
+        }
+
+        @Override
+        protected void writeInternal(ObjectDataOutput out) throws IOException {
+            super.writeInternal(out);
+            out.writeLong(timeout);
+        }
+
+        @Override
+        protected void readInternal(ObjectDataInput in) throws IOException {
+            super.readInternal(in);
+            timeout = in.readLong();
+        }
+    }
 }
