@@ -168,7 +168,7 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
         while (iter.hasNext()) {
             final Map.Entry<Integer, ClientInvocation> entry = iter.next();
             final ClientInvocation invocation = entry.getValue();
-            if (invocation.getSendConnection().equals(connection)) {
+            if (connection.equals(invocation.getSendConnection())) {
                 iter.remove();
                 invocation.notify(responseCtor.createNew(null));
                 eventHandlerMap.remove(entry.getKey());
@@ -177,7 +177,7 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
         final Iterator<ClientInvocation> iterator = eventHandlerMap.values().iterator();
         while (iterator.hasNext()) {
             final ClientInvocation invocation = iterator.next();
-            if (invocation.getSendConnection().equals(connection)) {
+            if (connection.equals(invocation.getSendConnection())) {
                 iterator.remove();
                 invocation.notify(responseCtor.createNew(null));
             }
