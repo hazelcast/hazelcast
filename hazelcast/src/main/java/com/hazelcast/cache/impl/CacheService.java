@@ -45,7 +45,7 @@ import com.hazelcast.spi.PartitionReplicationEvent;
  * using {@link AbstractHazelcastCacheManager#cacheNamePrefix()}.
  * </p>
  */
-public class CacheService extends AbstractCacheService implements ICacheService {
+public class CacheService extends AbstractCacheService {
 
     protected ICacheRecordStore createNewRecordStore(String name, int partitionId) {
         return new CacheRecordStore(name, partitionId, nodeEngine, CacheService.this);
