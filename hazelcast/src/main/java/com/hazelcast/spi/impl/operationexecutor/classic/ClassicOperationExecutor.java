@@ -325,12 +325,14 @@ public final class ClassicOperationExecutor implements OperationExecutor {
     @Override
     public void execute(Operation op) {
         checkNotNull(op, "op can't be null");
+
         execute(op, op.getPartitionId(), op.isUrgent());
     }
 
     @Override
     public void execute(PartitionSpecificRunnable task) {
         checkNotNull(task, "task can't be null");
+
         execute(task, task.getPartitionId(), false);
     }
 
@@ -346,10 +348,7 @@ public final class ClassicOperationExecutor implements OperationExecutor {
     @Override
     public void execute(Packet packet) {
         checkNotNull(packet, "packet can't be null");
-
-        if (!packet.isHeaderSet(Packet.HEADER_OP)) {
-            throw new IllegalStateException("Packet " + packet + " doesn't have Packet.HEADER_OP set");
-        }
+        checkOpPacket(packet);
 
         if (packet.isHeaderSet(Packet.HEADER_RESPONSE)) {
             // it's a response packet
@@ -362,6 +361,12 @@ public final class ClassicOperationExecutor implements OperationExecutor {
         }
     }
 
+    private void checkOpPacket(Packet packet) {
+        if (!packet.isHeaderSet(Packet.HEADER_OP)) {
+            throw new IllegalStateException("Packet " + packet + " doesn't have Packet.HEADER_OP set");
+        }
+    }
+
     @Override
     public void runOnCallingThread(Operation operation) {
         checkNotNull(operation, "operation can't be null");
@@ -371,17 +376,27 @@ public final class ClassicOperationExecutor implements OperationExecutor {
                     + Thread.currentThread());
         }
 
-        // TODO: we need to find the correct operation handler
-        OperationRunner operationRunner = getCurrentThreadOperationRunner();
+        OperationRunner operationRunner = getOperationRunner(operation);
         operationRunner.run(operation);
     }
 
-    public OperationRunner getCurrentThreadOperationRunner() {
+    OperationRunner getOperationRunner(Operation operation) {
+        checkNotNull(operation, "operation can't be null");
+
+        if (operation.getPartitionId() >= 0) {
+            // retrieving an OperationRunner for a partition specific operation is easy; we can just use the partition id.
+            return partitionOperationRunners[operation.getPartitionId()];
+        }
+
         Thread thread = Thread.currentThread();
         if (!(thread instanceof OperationThread)) {
+            // if thread is not an operation thread, we return the adHocOperationRunner
             return adHocOperationRunner;
         }
 
+        // It is a generic operation and we are running on an operation-thread. So we can just return the operation-runner
+        // for that thread. There won't be any partition-conflict since generic operations are allowed to be executed by
+        // a partition-specific operation-runner.
         OperationThread operationThread = (OperationThread) thread;
         return operationThread.getCurrentOperationRunner();
     }
@@ -403,7 +418,7 @@ public final class ClassicOperationExecutor implements OperationExecutor {
         }
     }
 
-    private int toPartitionThreadIndex(int partitionId) {
+    public int toPartitionThreadIndex(int partitionId) {
         return partitionId % partitionOperationThreads.length;
     }
 

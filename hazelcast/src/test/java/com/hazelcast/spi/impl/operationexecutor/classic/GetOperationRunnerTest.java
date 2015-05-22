@@ -9,43 +9,46 @@ import org.junit.Test;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
-public class GetCurrentThreadOperationRunnerTest extends AbstractClassicOperationExecutorTest {
+public class GetOperationRunnerTest extends AbstractClassicOperationExecutorTest {
 
-    @Test
-    public void test_whenCallerIsNormalThread() {
+    @Test(expected = NullPointerException.class)
+    public void test_whenNull() {
         initExecutor();
 
-        OperationRunner operationRunner = executor.getCurrentThreadOperationRunner();
+        executor.getOperationRunner(null);
+    }
+
+    @Test
+    public void test_whenCallerIsNormalThread_andGenericOperation_thenReturnAdHocRunner() {
+        initExecutor();
+
+        Operation op = new DummyOperation(-1);
+        OperationRunner operationRunner = executor.getOperationRunner(op);
 
         DummyOperationRunnerFactory f = (DummyOperationRunnerFactory) handlerFactory;
-
         assertSame(f.adhocHandler, operationRunner);
     }
 
     @Test
-    public void test_whenCallerIsPartitionOperationThread() {
+    public void test_whenPartitionSpecificOperation_thenReturnCorrectPartitionOperationRunner() {
         initExecutor();
 
-        final GetCurrentThreadOperationHandlerOperation op = new GetCurrentThreadOperationHandlerOperation();
-        op.setPartitionId(0);
+        int partitionId = 0;
 
-        executor.execute(op);
+        Operation op = new DummyOperation(partitionId);
+        OperationRunner runner = executor.getOperationRunner(op);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                OperationRunner expected = executor.getPartitionOperationRunners()[0];
-                OperationRunner actual = op.getResponse();
-                assertSame(expected, actual);
-            }
-        });
+        assertSame(executor.getPartitionOperationRunners()[partitionId], runner);
     }
 
     @Test
     public void test_whenCallerIsGenericOperationThread() {
         initExecutor();
 
-        final GetCurrentThreadOperationHandlerOperation op = new GetCurrentThreadOperationHandlerOperation();
+        Operation nestedOp = new DummyOperation(-1);
+
+
+        final GetCurrentThreadOperationHandlerOperation op = new GetCurrentThreadOperationHandlerOperation(nestedOp);
         op.setPartitionId(Operation.GENERIC_PARTITION_ID);
 
         executor.execute(op);
@@ -69,15 +72,31 @@ public class GetCurrentThreadOperationRunnerTest extends AbstractClassicOperatio
 
     public class GetCurrentThreadOperationHandlerOperation extends AbstractOperation {
         volatile OperationRunner operationRunner;
+        final Operation op;
+
+        public GetCurrentThreadOperationHandlerOperation(Operation op) {
+            this.op = op;
+        }
 
         @Override
         public void run() throws Exception {
-            operationRunner = executor.getCurrentThreadOperationRunner();
+            operationRunner = executor.getOperationRunner(op);
         }
 
         @Override
         public OperationRunner getResponse() {
             return operationRunner;
+        }
+    }
+
+    class DummyOperation extends AbstractOperation {
+        DummyOperation(int partitionId) {
+            setPartitionId(partitionId);
+        }
+
+        @Override
+        public void run() throws Exception {
+
         }
     }
 }

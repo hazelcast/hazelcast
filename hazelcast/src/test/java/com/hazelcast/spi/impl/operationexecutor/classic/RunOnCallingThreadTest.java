@@ -10,7 +10,7 @@ import java.util.concurrent.FutureTask;
 
 import static org.junit.Assert.assertTrue;
 
-public class RunOperationOnCallingThreadTest extends AbstractClassicOperationExecutorTest {
+public class RunOnCallingThreadTest extends AbstractClassicOperationExecutorTest {
 
     @Test(expected = NullPointerException.class)
     public void test_whenNull() {
