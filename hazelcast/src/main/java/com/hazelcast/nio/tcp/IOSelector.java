@@ -38,7 +38,5 @@ public interface IOSelector extends OperationHostileThread {
 
     void shutdown();
 
-    void awaitShutdown();
-
     void handleSelectionKeyFailure(Throwable e);
 }
