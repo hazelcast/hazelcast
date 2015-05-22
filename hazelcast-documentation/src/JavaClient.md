@@ -96,7 +96,7 @@ The client executes each operation through the already established connection to
 
 #### Retry-able Operation Failure
 
-While sending the requests to related nodes, operation can fail due to various reasons. For any read-only operation, you can have your client retry sending the operation by enabling `redoOperation`. Please see the [Redo Operation section](#redo-operation).
+While sending the requests to related nodes, operation can fail due to various reasons. Read-only operations are retried by default. If you want to enable this for the other operations, set the `redoOperation` to `true`. Please see the [Redo Operation section](#redo-operation).
 
 The number of retries is given with the property `hazelcast.client.request.retry.count` in `ClientProperties`. The client will resend the request as many as RETRY-COUNT, then it will throw an exception. Please see the [Client Properties section](#client-properties).
 
