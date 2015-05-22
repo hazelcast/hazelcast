@@ -78,7 +78,7 @@ class MapSplitBrainHandlerService implements SplitBrainHandlerService {
                     }
                 }
                 // clear all records either owned or backup
-                recordStore.reset();
+                recordStore.reset(true);
             }
         }
         return new Merger(recordMap);

@@ -33,7 +33,6 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.FutureUtil;
-
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -437,12 +436,28 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
         return numOfClearedEntries;
     }
 
+    /**
+     * Resets the record store to it's initial state.
+     *
+     * @param clearIndexes if true indexes will also cleared.
+     */
     @Override
-    public void reset() {
+    public void reset(boolean clearIndexes) {
+        if (clearIndexes) {
+            clearIndexes();
+        }
         clearRecordsMap(Collections.<Data, Record>emptyMap());
         resetSizeEstimator();
         resetAccessSequenceNumber();
         mapDataStore.clear();
+    }
+
+    private void clearIndexes() {
+        Set<Data> keys = records.keySet();
+        IndexService indexService = mapContainer.getIndexService();
+        for (Data key : keys) {
+            indexService.removeEntryIndex(key);
+        }
     }
 
     @Override
