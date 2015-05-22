@@ -1095,6 +1095,28 @@ public class EvictionTest extends HazelcastTestSupport {
 
         assertNull("value of expired key should be null on a replicated partition", value);
     }
+
+    @Test
+    public void testGetAll_doesNotShiftLastUpdateTimeOfEntry() throws Exception {
+        HazelcastInstance node = createHazelcastInstance();
+        IMap<Integer, Integer> map = node.getMap(randomMapName());
+
+        int key = 1;
+        map.put(key, 0, 1, TimeUnit.MINUTES);
+
+        EntryView<Integer, Integer> entryView = map.getEntryView(key);
+        long lastUpdateTimeBeforeGetAll = entryView.getLastUpdateTime();
+
+        Set<Integer> keys = Collections.singleton(key);
+        map.getAll(keys);
+
+        entryView = map.getEntryView(key);
+        long lastUpdateTimeAfterGetAll = entryView.getLastUpdateTime();
+
+        assertEquals("getAll should not shift lastUpdateTime of the entry",
+                lastUpdateTimeBeforeGetAll, lastUpdateTimeAfterGetAll);
+
+    }
 }
 
 

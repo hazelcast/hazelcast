@@ -621,18 +621,27 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
                 iterator.remove();
             }
         }
-        final Map entriesLoaded = mapDataStore.loadAll(keys);
-        addMapEntrySet(entriesLoaded, mapEntrySet);
 
-        // add loaded key-value pairs to this record-store.
-        Set<Map.Entry<Data, Data>> entrySet = mapEntrySet.getEntrySet();
-        for (Map.Entry<Data, Data> entry : entrySet) {
-            // correct TTL will be set in the put method below, when creating record.
-            // use putTransient since we already fetched entries from map-loader.
-            putTransient(entry.getKey(), entry.getValue(), DEFAULT_TTL);
-        }
+        Map loadedEntries = loadEntries(keys);
+        addMapEntrySet(loadedEntries, mapEntrySet);
+
         return mapEntrySet;
     }
+
+    private Map loadEntries(Set<Data> keys) {
+        Map loadedEntries = mapDataStore.loadAll(keys);
+        if (loadedEntries == null || loadedEntries.isEmpty()) {
+            return Collections.emptyMap();
+        }
+        // add loaded key-value pairs to this record-store.
+        Set entrySet = loadedEntries.entrySet();
+        for (Object object : entrySet) {
+            Map.Entry entry = (Map.Entry) object;
+            putFromLoad(toData(entry.getKey()), entry.getValue());
+        }
+        return loadedEntries;
+    }
+
 
     private void addMapEntrySet(Object key, Object value, MapEntrySet mapEntrySet) {
         if (key == null || value == null) {
