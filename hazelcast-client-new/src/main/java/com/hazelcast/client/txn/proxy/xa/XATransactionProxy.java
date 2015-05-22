@@ -25,7 +25,6 @@ import com.hazelcast.client.impl.protocol.parameters.XATransactionCreateParamete
 import com.hazelcast.client.impl.protocol.parameters.XATransactionPrepareParameters;
 import com.hazelcast.client.impl.protocol.parameters.XATransactionRollbackParameters;
 import com.hazelcast.client.spi.impl.ClientInvocation;
-import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionNotActiveException;
 import com.hazelcast.transaction.impl.Transaction;
 import com.hazelcast.transaction.impl.xa.SerializableXID;
@@ -33,6 +32,7 @@ import com.hazelcast.util.Clock;
 import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.ExceptionUtil;
 
+import javax.transaction.xa.XAException;
 import javax.transaction.xa.Xid;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -83,11 +83,11 @@ public class XATransactionProxy {
     }
 
     void prepare() {
+        checkTimeout();
         try {
             if (state != ACTIVE) {
                 throw new TransactionNotActiveException("Transaction is not active");
             }
-            checkTimeout();
             ClientMessage request = XATransactionPrepareParameters.encode(txnId);
             invoke(request);
             state = PREPARED;
@@ -98,6 +98,7 @@ public class XATransactionProxy {
     }
 
     void commit(boolean onePhase) {
+        checkTimeout();
         try {
             if (onePhase && state != ACTIVE) {
                 throw new TransactionNotActiveException("Transaction is not active");
@@ -105,7 +106,6 @@ public class XATransactionProxy {
             if (!onePhase && state != PREPARED) {
                 throw new TransactionNotActiveException("Transaction is not prepared");
             }
-            checkTimeout();
             ClientMessage request = XATransactionCommitParameters.encode(txnId, onePhase);
             invoke(request);
             state = COMMITTED;
@@ -139,7 +139,7 @@ public class XATransactionProxy {
     private void checkTimeout() {
         long timeoutMillis = TimeUnit.SECONDS.toMillis(timeout);
         if (startTime + timeoutMillis < Clock.currentTimeMillis()) {
-            throw new TransactionException("Transaction is timed-out!");
+            ExceptionUtil.sneakyThrow(new XAException(XAException.XA_RBTIMEOUT));
         }
     }
 

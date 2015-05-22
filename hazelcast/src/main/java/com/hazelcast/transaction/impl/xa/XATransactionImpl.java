@@ -33,6 +33,7 @@ import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.FutureUtil;
 import com.hazelcast.util.UuidUtil;
 
+import javax.transaction.xa.XAException;
 import javax.transaction.xa.Xid;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -127,6 +128,7 @@ final class XATransactionImpl implements Transaction, TransactionSupport {
         if (state != ACTIVE) {
             throw new TransactionNotActiveException("Transaction is not active");
         }
+        checkTimeout();
         try {
             final List<Future> futures = new ArrayList<Future>(txLogs.size());
             state = PREPARING;
@@ -288,9 +290,9 @@ final class XATransactionImpl implements Transaction, TransactionSupport {
         return xid;
     }
 
-    private void checkTimeout() throws TransactionException {
+    private void checkTimeout() {
         if (startTime + timeoutMillis < Clock.currentTimeMillis()) {
-            throw new TransactionException("Transaction is timed-out!");
+            ExceptionUtil.sneakyThrow(new XAException(XAException.XA_RBTIMEOUT));
         }
     }
 

@@ -26,7 +26,9 @@ import java.util.concurrent.Executors;
 
 import static javax.transaction.xa.XAResource.TMNOFLAGS;
 import static javax.transaction.xa.XAResource.TMSUCCESS;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
@@ -187,6 +189,26 @@ public class ClientXACompatibilityTest extends HazelcastTestSupport {
         xaResource.start(xid, TMNOFLAGS);
         TransactionContext transactionContext = xaResource.getTransactionContext();
         transactionContext.rollbackTransaction();
+    }
+
+    @Test
+    public void testTransactionTimeout() throws XAException {
+        boolean timeoutSet = xaResource.setTransactionTimeout(2);
+        assertTrue(timeoutSet);
+        xaResource.start(xid, TMNOFLAGS);
+        TransactionContext context = xaResource.getTransactionContext();
+        TransactionalMap<Object, Object> map = context.getMap("map");
+        map.put("key", "val");
+        xaResource.end(xid, TMSUCCESS);
+
+        sleepSeconds(3);
+
+        try {
+            xaResource.commit(xid, true);
+            fail();
+        } catch (XAException e) {
+            assertEquals(XAException.XA_RBTIMEOUT, e.errorCode);
+        }
     }
 
 }
