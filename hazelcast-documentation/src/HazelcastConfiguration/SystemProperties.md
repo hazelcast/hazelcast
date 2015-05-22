@@ -55,7 +55,7 @@ Property Name | Default Value | Type | Description
 `hazelcast.enterprise.license.key` | null | string  |   [Hazelcast Enterprise](http://www.hazelcast.com/products.jsp) license key.
 `hazelcast.enterprise.wanrep.batch.size`|50|int|Maximum number of WAN replication events to be drained and sent to the target cluster in a batch.
 `hazelcast.enterprise.wanrep.batchfrequency.seconds`|5|int|Batch sending frequency in seconds.
-`hazelcast.enterprise.wanrep.optimeout.millis`|-1|int|Timeout duration (in milliseconds) for a WAN replication event before retry.
+`hazelcast.enterprise.wanrep.optimeout.millis`|60000|int|Timeout duration (in milliseconds) for a WAN replication event before retry.
 `hazelcast.enterprise.wanrep.queue.capacity`|100000|int|Event queue capacity for WAN replication.
 `hazelcast.event.queue.capacity` | 1000000 | int | Capacity of internal event queue.
 `hazelcast.event.queue.timeout.millis` | 250 | int | Timeout to enqueue events to event queue.
