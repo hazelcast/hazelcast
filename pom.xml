@@ -634,6 +634,13 @@
                                     <value>http://download.oracle.com/javase/1.7.0/docs/api/</value>
                                 </property>
                             </javaApiLinks>
+                            <excludePackageNames>
+                              *.impl:*.internal:*.operations:*.proxy:*.util:com.hazelcast.aws.security:
+                              *.handlermigration:*.client.connection.nio:*.client.console:*.buildutils:
+                              *.client.protocol.generator:*.cluster.client:*.concurrent:*.collection:
+                              *.nio.ascii:*.nio.ssl:*.nio.tcp:*.partition.client:*.transaction.client:
+                              *.core.server:com.hazelcast.instance:com.hazelcast.PlaceHolder
+                            </excludePackageNames>
                         </configuration>
                         <executions>
                             <execution>
