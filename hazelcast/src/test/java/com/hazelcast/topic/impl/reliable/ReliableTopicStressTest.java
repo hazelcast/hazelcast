@@ -56,7 +56,7 @@ public class ReliableTopicStressTest extends HazelcastTestSupport {
         sleepAndStop(stop, 30);
         System.out.println("Completed");
 
-        produceThread.join();
+        produceThread.assertSucceedsEventually();
 
         System.out.println("Number of items produced: " + produceThread.send);
 

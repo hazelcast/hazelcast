@@ -3,7 +3,6 @@ package com.hazelcast.spi.impl.operationservice.impl;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.AbstractOperation;
@@ -14,9 +13,9 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.TestThread;
 import com.hazelcast.test.annotation.NightlyTest;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -28,6 +27,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static com.hazelcast.instance.GroupProperties.*;
+import static com.hazelcast.test.HazelcastTestSupport.sleepAndStop;
+import static java.util.concurrent.TimeUnit.MINUTES;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -42,7 +43,7 @@ public class BackpressureRegulatorStressTest extends HazelcastTestSupport {
     // activity. It is very easy to detect when back pressure is disabled.
     public static final int MEMORY_STRESS_PAYLOAD_SIZE = 100000;
 
-    private static final int runningTimeMs = (int) TimeUnit.MINUTES.toMillis(5);
+    private static final int runningTimeSeconds = (int) MINUTES.toSeconds(5);
 
     private final Random random = new Random();
     private final AtomicLong completedCall = new AtomicLong();
@@ -67,9 +68,8 @@ public class BackpressureRegulatorStressTest extends HazelcastTestSupport {
         localOperationService = (OperationServiceImpl) getOperationService(local);
     }
 
-    // verified
     @Test
-    public void test_asyncInvocation() throws Exception {
+    public void asyncInvocation() throws Exception {
         test(new StressThreadFactory() {
             @Override
             public StressThread create() {
@@ -87,9 +87,8 @@ public class BackpressureRegulatorStressTest extends HazelcastTestSupport {
         });
     }
 
-    // verified
     @Test
-    public void test_asyncInvocation_and_syncBackups() throws Exception{
+    public void asyncInvocation_and_syncBackups() throws Exception{
         test(new StressThreadFactory() {
             @Override
             public StressThread create() {
@@ -107,9 +106,8 @@ public class BackpressureRegulatorStressTest extends HazelcastTestSupport {
         });
     }
 
-    // current
     @Test
-    public void test_asyncInvocation_and_asyncBackups()throws Exception {
+    public void asyncInvocation_and_asyncBackups()throws Exception {
         test(new StressThreadFactory() {
             @Override
             public StressThread create() {
@@ -127,9 +125,8 @@ public class BackpressureRegulatorStressTest extends HazelcastTestSupport {
         });
     }
 
-    // verified
     @Test
-    public void test_syncInvocation_and_asyncBackups() throws Exception {
+    public void syncInvocation_and_asyncBackups() throws Exception {
         test(new StressThreadFactory() {
             @Override
             public StressThread create() {
@@ -147,9 +144,8 @@ public class BackpressureRegulatorStressTest extends HazelcastTestSupport {
         });
     }
 
-    // verified
     @Test
-    public void test_asyncInvocation_and_syncBackups_and_asyncBackups() throws Exception {
+    public void asyncInvocation_and_syncBackups_and_asyncBackups() throws Exception {
         test(new StressThreadFactory() {
             @Override
             public StressThread create() {
@@ -172,11 +168,9 @@ public class BackpressureRegulatorStressTest extends HazelcastTestSupport {
 
         stressThread.start();
 
-        sleepMillis(runningTimeMs);
+        sleepAndStop(stop, runningTimeSeconds);
 
-        stop.set(true);
-
-        stressThread.join();
+        stressThread.assertSucceedsEventually();
 
         System.out.println("Completed with asynchronous calls, waiting for everything to complete");
 
@@ -196,7 +190,7 @@ public class BackpressureRegulatorStressTest extends HazelcastTestSupport {
 
     private final static AtomicLong THREAD_ID_GENERATOR = new AtomicLong();
 
-    private class StressThread extends Thread {
+    private class StressThread extends TestThread {
 
         public int partitionId;
         public boolean syncInvocation;
@@ -212,15 +206,12 @@ public class BackpressureRegulatorStressTest extends HazelcastTestSupport {
         }
 
         @Override
-        public void run() {
-            try {
-                doRun();
-            }catch (Throwable t){
-                t.printStackTrace();
-            }
+        public void onError(Throwable t) {
+            stop.set(true);
         }
 
-        private void doRun() {
+        @Override
+        public void doRun() {
             long operationCount = 0;
 
             long lastSecond = System.currentTimeMillis() / 1000;
