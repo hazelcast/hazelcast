@@ -157,7 +157,7 @@ public class IOBalancer {
             strategy = new MonkeyMigrationStrategy();
         } else {
             log.finest("Using normal IO Balancer Strategy.");
-            strategy =  new StaticMigrationStrategy();
+            strategy =  new DefaultMigrationStrategy();
         }
         return strategy;
     }

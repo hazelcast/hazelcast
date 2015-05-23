@@ -38,20 +38,20 @@ import static org.mockito.Mockito.mock;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
-public class StaticMigrationStrategyTest extends HazelcastTestSupport {
+public class DefaultMigrationStrategyTest extends HazelcastTestSupport {
 
     private Map<IOSelector, Set<MigratableHandler>> selectorToHandlers;
     private ItemCounter<MigratableHandler> handlerEventsCounter;
     private LoadImbalance imbalance;
 
-    private StaticMigrationStrategy strategy;
+    private DefaultMigrationStrategy strategy;
 
     @Before
     public void setUp() {
         selectorToHandlers = new HashMap<IOSelector, Set<MigratableHandler>>();
         handlerEventsCounter = new ItemCounter<MigratableHandler>();
         imbalance = new LoadImbalance(selectorToHandlers, handlerEventsCounter);
-        strategy = new StaticMigrationStrategy();
+        strategy = new DefaultMigrationStrategy();
     }
 
     @Test

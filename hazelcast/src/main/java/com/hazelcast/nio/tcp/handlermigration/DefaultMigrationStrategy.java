@@ -20,7 +20,7 @@ import com.hazelcast.nio.tcp.MigratableHandler;
 import java.util.Set;
 
 /**
- * Simple Migration Strategy for Handlers.
+ * Default {@link MigrationStrategy} for {@link MigratableHandler} instances.
  *
  * It attempts to trigger a migration if a ratio between least busy and most busy selectors
  * exceeds {@link #MIN_MAX_RATIO_MIGRATION_THRESHOLD}.
@@ -30,7 +30,7 @@ import java.util.Set;
  * overload of the {@link LoadImbalance#destinationSelector} after a migration.
  *
  */
-class StaticMigrationStrategy implements MigrationStrategy {
+class DefaultMigrationStrategy implements MigrationStrategy {
 
     /**
      * You can use this property to tune whether the migration will be attempted at all. The higher the number is
@@ -91,5 +91,4 @@ class StaticMigrationStrategy implements MigrationStrategy {
         }
         return candidate;
     }
-
 }
