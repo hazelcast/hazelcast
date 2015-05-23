@@ -26,7 +26,7 @@ import java.util.Set;
 /**
  * Describes a state of IOSelector (im-)balance.
  *
- * It's used by {@link com.hazelcast.nio.tcp.handlermigration.MigrationStrategy} to decide whether and what
+ * It's used by {@link MigrationStrategy} to decide whether and what
  * {@link com.hazelcast.nio.tcp.SelectionHandler} should be migrated.
  *
  *

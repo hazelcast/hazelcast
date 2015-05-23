@@ -53,6 +53,7 @@ import com.hazelcast.nio.tcp.WriteHandler;
  *
  */
 public class IOBalancer {
+    private static final String PROP_MONKEY_BALANCER = "hazelcast.io.balancer.monkey";
     private final ILogger log;
 
     private final int migrationIntervalSeconds;
@@ -69,7 +70,8 @@ public class IOBalancer {
                       int migrationIntervalSeconds, LoggingService loggingService) {
         this.log = loggingService.getLogger(IOBalancer.class);
         this.migrationIntervalSeconds = migrationIntervalSeconds;
-        this.strategy = new MigrationStrategy();
+
+        this.strategy = createMigrationStrategy();
         this.threadGroup = threadGroup;
 
         this.inLoadTracker = new LoadTracker(inSelectors, loggingService);
@@ -145,6 +147,19 @@ public class IOBalancer {
                 log.finest("No imbalance has been detected. Max. events: " + max + " Min events: " + min + ".");
             }
         }
+    }
+
+    private MigrationStrategy createMigrationStrategy() {
+        MigrationStrategy strategy;
+        if (Boolean.getBoolean("hazelcast.io.balancer.monkey")) {
+            log.warning("Using Monkey IO Balancer Strategy. This is for stress tests only. Do not user in production! "
+                    + "Disable by not setting the property '" + PROP_MONKEY_BALANCER + "' to true.");
+            strategy = new MonkeyMigrationStrategy();
+        } else {
+            log.finest("Using normal IO Balancer Strategy.");
+            strategy =  new StaticMigrationStrategy();
+        }
+        return strategy;
     }
 
     private boolean isEnabled(InSelectorImpl[] inSelectors, OutSelectorImpl[] outSelectors) {
