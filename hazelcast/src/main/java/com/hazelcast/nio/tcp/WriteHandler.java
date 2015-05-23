@@ -68,6 +68,7 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
     void setProtocol(final String protocol) {
         final CountDownLatch latch = new CountDownLatch(1);
         ioSelector.addTaskAndWakeup(new Runnable() {
+            @Override
             public void run() {
                 createWriter(protocol);
                 latch.countDown();
@@ -107,12 +108,12 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
     }
 
     private SocketWritable poll() {
-        SocketWritable writable = urgentWriteQueue.poll();
-        if (writable == null) {
-            writable = writeQueue.poll();
+        SocketWritable packet = urgentWriteQueue.poll();
+        if (packet == null) {
+            packet = writeQueue.poll();
         }
 
-        return writable;
+        return packet;
     }
 
     /**
