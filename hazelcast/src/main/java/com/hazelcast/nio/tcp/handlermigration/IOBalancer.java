@@ -177,6 +177,6 @@ public class IOBalancer {
             log.finest("Scheduling a migration of a handler " + handler
                     + " from a selector thread " + sourceSelector + " to " + destinationSelector);
         }
-        handler.migrate(destinationSelector);
+        handler.requestMigration(destinationSelector);
     }
 }

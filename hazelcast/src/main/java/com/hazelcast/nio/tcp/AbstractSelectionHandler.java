@@ -57,7 +57,7 @@ public abstract class AbstractSelectionHandler implements MigratableHandler {
      *
      * @param newOwner target IOSelector this handler migrates to
      */
-    public void migrate(final IOSelector newOwner) {
+    public void requestMigration(final IOSelector newOwner) {
         if (ioSelector == newOwner || !socketChannel.isOpen()) {
             return;
         }

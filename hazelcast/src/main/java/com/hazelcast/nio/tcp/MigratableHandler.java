@@ -17,17 +17,23 @@
 package com.hazelcast.nio.tcp;
 
 /**
- * Read/Write handlers that supports migration between {@link com.hazelcast.nio.tcp.IOSelector}.
- *
+ * A {@link SelectionHandler} that supports migration between {@link com.hazelcast.nio.tcp.IOSelector} instances.
+ * This API is called by the {@link com.hazelcast.nio.tcp.handlermigration.IOBalancer}.
  */
 public interface MigratableHandler extends SelectionHandler {
 
     /**
-     * Migrate to a new IOSelector.
+     * Requests the MigratableHandler to move to the new IOSelector. This call will not wait for the
+     * migration to complete.
      *
-     * @param newOwner
+     * This method can be called by any thread, and will probably be called by the
+     * {@link com.hazelcast.nio.tcp.handlermigration.IOBalancer}.
+     *
+     * Call is ignored when handler is moving to the same IOSelector.
+     *
+     * @param newOwner the IOSelector that is going to own this MigratableHandler
      */
-    void migrate(final IOSelector newOwner);
+    void requestMigration(IOSelector newOwner);
 
     /**
      * Get IOSelector currently owning this handler. Handler owner is a thread running this handler.
