@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.nio.tcp.handlermigration;
+package com.hazelcast.nio.tcp.iobalancer;
 
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.HazelcastThreadGroup;
@@ -41,7 +41,7 @@ import com.hazelcast.nio.tcp.WriteHandler;
  *
  * It measures number of events serviced by each handler in a given interval and if imbalance is detected then it
  * schedules handler migration to fix the situation. The exact migration strategy can be customized via
- * {@link com.hazelcast.nio.tcp.handlermigration.MigrationStrategy}.
+ * {@link com.hazelcast.nio.tcp.iobalancer.MigrationStrategy}.
  *
  * Measuring interval can be customized via {@link com.hazelcast.instance.GroupProperties#IO_BALANCER_INTERVAL_SECONDS}
  *

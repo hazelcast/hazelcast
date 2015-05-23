@@ -17,4 +17,4 @@
 /**
  * Contains Handler Migration classes
  */
-package com.hazelcast.nio.tcp.handlermigration;
+package com.hazelcast.nio.tcp.iobalancer;

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.nio.tcp.handlermigration;
+package com.hazelcast.nio.tcp.iobalancer;
 
 import com.hazelcast.nio.tcp.MigratableHandler;
 

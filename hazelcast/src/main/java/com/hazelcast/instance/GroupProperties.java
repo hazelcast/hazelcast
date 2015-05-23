@@ -68,10 +68,10 @@ public class GroupProperties {
     public static final String PROP_IO_THREAD_COUNT = "hazelcast.io.thread.count";
 
     /**
-     * The interval in seconds between {@link com.hazelcast.nio.tcp.handlermigration.IOBalancer IOBalancer}
+     * The interval in seconds between {@link com.hazelcast.nio.tcp.iobalancer.IOBalancer IOBalancer}
      * executions. The shorter intervals will catch I/O Imbalance faster, but they will cause higher overhead.
      *
-     * Please see the documentation of {@link com.hazelcast.nio.tcp.handlermigration.IOBalancer IOBalancer} for a
+     * Please see the documentation of {@link com.hazelcast.nio.tcp.iobalancer.IOBalancer IOBalancer} for a
      * detailed explanation of the problem.
      *
      * Default value is 20 seconds. A negative value disables the balancer.
