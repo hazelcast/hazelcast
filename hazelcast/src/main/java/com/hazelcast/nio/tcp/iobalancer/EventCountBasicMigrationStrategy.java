@@ -30,7 +30,7 @@ import java.util.Set;
  * overload of the {@link LoadImbalance#destinationSelector} after a migration.
  *
  */
-class DefaultMigrationStrategy implements MigrationStrategy {
+class EventCountBasicMigrationStrategy implements MigrationStrategy {
 
     /**
      * You can use this property to tune whether the migration will be attempted at all. The higher the number is
