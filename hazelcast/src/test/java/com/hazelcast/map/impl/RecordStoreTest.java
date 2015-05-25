@@ -82,7 +82,7 @@ public class RecordStoreTest extends HazelcastTestSupport {
 
     private DefaultRecordStore getRecordStore(IMap<Object, Object> map, int key) {
         MapProxyImpl mapProxy = (MapProxyImpl) map;
-        MapService mapService = mapProxy.getService();
+        MapService mapService = (MapService) mapProxy.getService();
         MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
         InternalPartitionService partitionService = nodeEngine.getPartitionService();
