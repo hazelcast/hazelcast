@@ -2,7 +2,6 @@ package com.hazelcast.xa;
 
 import com.atomikos.datasource.xa.XID;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
 import com.hazelcast.core.TransactionalMap;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -18,10 +17,12 @@ import org.junit.runner.RunWith;
 import javax.transaction.xa.XAException;
 import javax.transaction.xa.XAResource;
 import javax.transaction.xa.Xid;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
+import static javax.transaction.xa.XAResource.TMNOFLAGS;
+import static javax.transaction.xa.XAResource.TMSUCCESS;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
@@ -102,7 +103,7 @@ public class HazelcastXACompatibilityTest extends HazelcastTestSupport {
     }
 
     private void doSomeWorkWithXa(HazelcastXAResource xaResource) throws Exception {
-        xaResource.start(xid, XAResource.TMNOFLAGS);
+        xaResource.start(xid, TMNOFLAGS);
         TransactionContext context = xaResource.getTransactionContext();
         TransactionalMap<Object, Object> map = context.getMap("map");
         map.put("key", "value");
@@ -126,27 +127,47 @@ public class HazelcastXACompatibilityTest extends HazelcastTestSupport {
 
     @Test(expected = UnsupportedOperationException.class)
     public void testManualBeginShouldThrowException() throws Exception {
-        xaResource.start(xid, XAResource.TMNOFLAGS);
+        xaResource.start(xid, TMNOFLAGS);
         TransactionContext transactionContext = xaResource.getTransactionContext();
         transactionContext.beginTransaction();
     }
 
     @Test(expected = UnsupportedOperationException.class)
     public void testManualCommitShouldThrowException() throws Exception {
-        xaResource.start(xid, XAResource.TMNOFLAGS);
+        xaResource.start(xid, TMNOFLAGS);
         TransactionContext transactionContext = xaResource.getTransactionContext();
         transactionContext.commitTransaction();
     }
 
     @Test(expected = UnsupportedOperationException.class)
     public void testManualRollbackShouldThrowException() throws Exception {
-        xaResource.start(xid, XAResource.TMNOFLAGS);
+        xaResource.start(xid, TMNOFLAGS);
         TransactionContext transactionContext = xaResource.getTransactionContext();
         transactionContext.rollbackTransaction();
     }
 
     private void recover(XAResource xaResource) throws XAException {
         xaResource.recover(XAResource.TMSTARTRSCAN | XAResource.TMENDRSCAN);
+    }
+
+    @Test
+    public void testTransactionTimeout() throws XAException {
+        boolean timeoutSet = xaResource.setTransactionTimeout(2);
+        assertTrue(timeoutSet);
+        xaResource.start(xid, TMNOFLAGS);
+        TransactionContext context = xaResource.getTransactionContext();
+        TransactionalMap<Object, Object> map = context.getMap("map");
+        map.put("key", "val");
+        xaResource.end(xid, TMSUCCESS);
+
+        sleepSeconds(3);
+
+        try {
+            xaResource.commit(xid, true);
+            fail();
+        } catch (XAException e) {
+            assertEquals(XAException.XA_RBTIMEOUT, e.errorCode);
+        }
     }
 
 }

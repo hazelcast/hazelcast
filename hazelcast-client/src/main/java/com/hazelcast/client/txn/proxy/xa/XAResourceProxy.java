@@ -38,17 +38,20 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
  * Client side XaResource implementation
  */
 public class XAResourceProxy extends ClientProxy implements HazelcastXAResource {
 
-    private static final int DEFAULT_TIMEOUT = (int) TimeUnit.MILLISECONDS.toSeconds(TransactionOptions.DEFAULT_TIMEOUT_MILLIS);
+    private static final int DEFAULT_TIMEOUT_SECONDS = (int) MILLISECONDS.toSeconds(TransactionOptions.DEFAULT_TIMEOUT_MILLIS);
     private final ConcurrentMap<Long, TransactionContext> threadContextMap = new ConcurrentHashMap<Long, TransactionContext>();
     private final ConcurrentMap<Xid, List<TransactionContext>> xidContextMap
             = new ConcurrentHashMap<Xid, List<TransactionContext>>();
+    private final AtomicInteger timeoutInSeconds = new AtomicInteger(DEFAULT_TIMEOUT_SECONDS);
 
     public XAResourceProxy(String serviceName, String objectName) {
         super(serviceName, objectName);
@@ -89,7 +92,7 @@ public class XAResourceProxy extends ClientProxy implements HazelcastXAResource 
     private TransactionContext createTransactionContext(Xid xid) {
         ClientContext clientContext = getContext();
         ClientTransactionManagerService transactionManager = clientContext.getTransactionManager();
-        TransactionContext context = transactionManager.newXATransactionContext(xid, DEFAULT_TIMEOUT);
+        TransactionContext context = transactionManager.newXATransactionContext(xid, timeoutInSeconds.get());
         getTransaction(context).begin();
         return context;
     }
@@ -218,12 +221,13 @@ public class XAResourceProxy extends ClientProxy implements HazelcastXAResource 
 
     @Override
     public int getTransactionTimeout() throws XAException {
-        return DEFAULT_TIMEOUT;
+        return timeoutInSeconds.get();
     }
 
     @Override
     public boolean setTransactionTimeout(int seconds) throws XAException {
-        return false;
+        timeoutInSeconds.set(seconds == 0 ? DEFAULT_TIMEOUT_SECONDS : seconds);
+        return true;
     }
 
     @Override
