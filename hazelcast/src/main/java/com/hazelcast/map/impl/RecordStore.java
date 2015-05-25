@@ -219,7 +219,11 @@ public interface RecordStore {
 
     void clearPartition();
 
-    void reset();
+    /**
+     * Resets the record store to it's initial state.
+     * @param clearIndexes if true indexes will also cleared.
+     */
+    void reset(boolean clearIndexes);
 
     boolean forceUnlock(Data dataKey);
 
