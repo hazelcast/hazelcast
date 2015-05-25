@@ -604,7 +604,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
             writeThroughCache(key, value);
         }
         updateRecord(key, record, value, completionId, source, origin);
-        return processExpiredEntry(key, record, expiryTime, now) != null;
+        return processExpiredEntry(key, record, expiryTime, now, source) != null;
     }
 
     public boolean updateRecordWithExpiry(Data key, Object value, R record, ExpiryPolicy expiryPolicy,
@@ -920,7 +920,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         boolean isSaveSucceed;
         Object oldValue = null;
         R record = records.get(key);
-        boolean isExpired = processExpiredEntry(key, record, now);
+        boolean isExpired = processExpiredEntry(key, record, now, source);
 
         try {
             // Check that new entry is not already expired, in which case it should
@@ -928,14 +928,14 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
             if (record == null || isExpired) {
                 isOnNewPut = true;
                 record = createRecordWithExpiry(key, value, expiryPolicy, now,
-                                                disableWriteThrough, completionId);
+                                                disableWriteThrough, completionId, source);
                 isSaveSucceed = record != null;
             } else {
                 if (getValue) {
                     oldValue = toValue(record);
                 }
                 isSaveSucceed = updateRecordWithExpiry(key, value, record, expiryPolicy,
-                                                       now, disableWriteThrough, completionId);
+                                                       now, disableWriteThrough, completionId, source);
             }
 
             onPut(key, value, expiryPolicy, source, getValue, disableWriteThrough,
@@ -984,12 +984,12 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         final long start = isStatisticsEnabled() ? System.nanoTime() : 0;
         boolean result;
         R record = records.get(key);
-        boolean isExpired = processExpiredEntry(key, record, now);
+        boolean isExpired = processExpiredEntry(key, record, now, source);
 
         try {
             if (record == null || isExpired) {
                 result = createRecordWithExpiry(key, value, expiryPolicy, now,
-                                                disableWriteThrough, completionId) != null;
+                                                disableWriteThrough, completionId, source) != null;
             } else {
                 result = false;
                 publishEvent(CacheEventType.COMPLETED, key, null, null, false,
@@ -1042,7 +1042,8 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
                 publishEvent(CacheEventType.COMPLETED, key, null, null, false,
                              completionId, CacheRecord.EXPIRATION_TIME_NOT_AVAILABLE);
             } else {
-                replaced = updateRecordWithExpiry(key, value, record, expiryPolicy, now, false, completionId);
+                replaced = updateRecordWithExpiry(key, value, record, expiryPolicy,
+                                                  now, false, completionId, source);
             }
 
             onReplace(key, null, value, expiryPolicy, source, false, record, isExpired, replaced);
@@ -1086,7 +1087,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
                 Object currentValue = toStorageValue(record);
                 if (compare(currentValue, toStorageValue(oldValue))) {
                     replaced = updateRecordWithExpiry(key, newValue, record, expiryPolicy,
-                                                      now, false, completionId);
+                                                      now, false, completionId, source);
                 } else {
                     onRecordAccess(key, record, expiryPolicy, now);
                     replaced = false;
@@ -1131,7 +1132,8 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
                 publishEvent(CacheEventType.COMPLETED, key, null, null, false,
                              completionId, CacheRecord.EXPIRATION_TIME_NOT_AVAILABLE);
             } else {
-                replaced = updateRecordWithExpiry(key, value, record, expiryPolicy, now, false, completionId);
+                replaced = updateRecordWithExpiry(key, value, record, expiryPolicy,
+                                                  now, false, completionId, source);
             }
 
             onReplace(key, null, value, expiryPolicy, source, false,
