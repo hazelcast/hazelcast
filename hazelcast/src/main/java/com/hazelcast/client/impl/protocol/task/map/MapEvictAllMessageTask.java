@@ -18,7 +18,7 @@ package com.hazelcast.client.impl.protocol.task.map;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.parameters.IntResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.MapEvictAllParameters;
+import com.hazelcast.client.impl.protocol.codec.MapEvictAllCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractAllPartitionsMessageTask;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.instance.Node;
@@ -33,7 +33,7 @@ import com.hazelcast.spi.OperationFactory;
 import java.security.Permission;
 import java.util.Map;
 
-public class MapEvictAllMessageTask extends AbstractAllPartitionsMessageTask<MapEvictAllParameters> {
+public class MapEvictAllMessageTask extends AbstractAllPartitionsMessageTask<MapEvictAllCodec.RequestParameters> {
 
     public MapEvictAllMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -62,8 +62,8 @@ public class MapEvictAllMessageTask extends AbstractAllPartitionsMessageTask<Map
     }
 
     @Override
-    protected MapEvictAllParameters decodeClientMessage(ClientMessage clientMessage) {
-        return MapEvictAllParameters.decode(clientMessage);
+    protected MapEvictAllCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return MapEvictAllCodec.decodeRequest(clientMessage);
     }
 
     public String getServiceName() {

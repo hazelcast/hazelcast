@@ -17,7 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.map;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.MapRemoveParameters;
+import com.hazelcast.client.impl.protocol.codec.MapRemoveCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.map.impl.MapContainer;
@@ -30,7 +30,7 @@ import com.hazelcast.spi.Operation;
 
 import java.security.Permission;
 
-public class MapRemoveMessageTask extends AbstractPartitionMessageTask<MapRemoveParameters> {
+public class MapRemoveMessageTask extends AbstractPartitionMessageTask<MapRemoveCodec.RequestParameters> {
 
     protected transient long startTime;
 
@@ -62,8 +62,8 @@ public class MapRemoveMessageTask extends AbstractPartitionMessageTask<MapRemove
     }
 
     @Override
-    protected MapRemoveParameters decodeClientMessage(ClientMessage clientMessage) {
-        return MapRemoveParameters.decode(clientMessage);
+    protected MapRemoveCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return MapRemoveCodec.decodeRequest(clientMessage);
     }
 
     @Override

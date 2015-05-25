@@ -18,9 +18,8 @@ package com.hazelcast.client.impl.protocol.task.map;
 
 import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.codec.MapAddPartitionLostListenerCodec;
 import com.hazelcast.client.impl.protocol.parameters.AddListenerResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.MapAddPartitionLostListenerParameters;
-import com.hazelcast.client.impl.protocol.parameters.MapPartitionLostEventParameters;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.map.MapPartitionLostEvent;
@@ -33,7 +32,7 @@ import com.hazelcast.security.permission.MapPermission;
 import java.security.Permission;
 
 public class MapAddPartitionLostListenerMessageTask
-        extends AbstractCallableMessageTask<MapAddPartitionLostListenerParameters> {
+        extends AbstractCallableMessageTask<MapAddPartitionLostListenerCodec.RequestParameters> {
 
 
     public MapAddPartitionLostListenerMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
@@ -50,7 +49,8 @@ public class MapAddPartitionLostListenerMessageTask
             public void partitionLost(MapPartitionLostEvent event) {
                 if (endpoint.isAlive()) {
                     ClientMessage eventMessage =
-                            MapPartitionLostEventParameters.encode(event.getPartitionId(), event.getMember().getUuid());
+                            MapAddPartitionLostListenerCodec.encodePartitionLostEventEvent(event.getPartitionId(),
+                                    event.getMember().getUuid());
                     sendClientMessage(null, eventMessage);
                 }
             }
@@ -62,8 +62,8 @@ public class MapAddPartitionLostListenerMessageTask
     }
 
     @Override
-    protected MapAddPartitionLostListenerParameters decodeClientMessage(ClientMessage clientMessage) {
-        return MapAddPartitionLostListenerParameters.decode(clientMessage);
+    protected MapAddPartitionLostListenerCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return MapAddPartitionLostListenerCodec.decodeRequest(clientMessage);
     }
 
 

@@ -18,7 +18,7 @@ package com.hazelcast.client.impl.protocol.task.map;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.parameters.DataCollectionResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.MapKeySetParameters;
+import com.hazelcast.client.impl.protocol.codec.MapKeySetCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractAllPartitionsMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.map.impl.MapKeySet;
@@ -36,7 +36,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-public class MapKeySetMessageTask extends AbstractAllPartitionsMessageTask<MapKeySetParameters> {
+public class MapKeySetMessageTask extends AbstractAllPartitionsMessageTask<MapKeySetCodec.RequestParameters> {
 
     public MapKeySetMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -60,8 +60,8 @@ public class MapKeySetMessageTask extends AbstractAllPartitionsMessageTask<MapKe
     }
 
     @Override
-    protected MapKeySetParameters decodeClientMessage(ClientMessage clientMessage) {
-        return MapKeySetParameters.decode(clientMessage);
+    protected MapKeySetCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return MapKeySetCodec.decodeRequest(clientMessage);
     }
 
 

@@ -18,7 +18,7 @@ package com.hazelcast.client.impl.protocol.task.map;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.parameters.DataEntryListResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.MapGetAllParameters;
+import com.hazelcast.client.impl.protocol.codec.MapGetAllCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractAllPartitionsMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.map.impl.MapEntrySet;
@@ -36,7 +36,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-public class MapGetAllMessageTask extends AbstractAllPartitionsMessageTask<MapGetAllParameters> {
+public class MapGetAllMessageTask extends AbstractAllPartitionsMessageTask<MapGetAllCodec.RequestParameters> {
 
 
     public MapGetAllMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
@@ -70,8 +70,8 @@ public class MapGetAllMessageTask extends AbstractAllPartitionsMessageTask<MapGe
     }
 
     @Override
-    protected MapGetAllParameters decodeClientMessage(ClientMessage clientMessage) {
-        return MapGetAllParameters.decode(clientMessage);
+    protected MapGetAllCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return MapGetAllCodec.decodeRequest(clientMessage);
     }
 
     @Override

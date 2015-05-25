@@ -27,15 +27,6 @@ import com.hazelcast.nio.serialization.Data;
 @GenerateCodec(id = TemplateConstants.CLIENT_TEMPLATE_ID, name = "Client", ns = "Hazelcast.Client.Protocol.Internal")
 public interface ClientMessageTemplate {
 
-    //    ADD_ENTRY_LISTENER_EVENT(6),
-    //    REGISTER_MEMBERSHIP_LISTENER_EVENT(9),
-
-    //    ENTRY_VIEW(23),
-    //
-    //    ITEM_EVENT(25),
-    //    TOPIC_EVENT(26),
-    //    PARTITION_LOST_EVENT(28),
-
     @Request(id = 1, retryable = true, response = ResponseMessageConst.AUTHENTICATION)
     void authentication(String username, String password, String uuid, String ownerUuid, boolean isOwnerConnection);
 
@@ -43,7 +34,7 @@ public interface ClientMessageTemplate {
     void authenticationCustom(Data credentials, String uuid, String ownerUuid, boolean isOwnerConnection);
 
     @Request(id = 8, retryable = false, response = ResponseMessageConst.STRING,
-             event = {EventMessageConst.EVENT_MEMBER, EventMessageConst.EVENT_MEMBERLIST, EventMessageConst.EVENT_MEMBERATTRIBUTECHANGE})
+            event = {EventMessageConst.EVENT_MEMBER, EventMessageConst.EVENT_MEMBERLIST, EventMessageConst.EVENT_MEMBERATTRIBUTECHANGE})
     void membershipListener();
 
     @Request(id = 11, retryable = false, response = ResponseMessageConst.VOID)
@@ -61,7 +52,7 @@ public interface ClientMessageTemplate {
     @Request(id = 19, retryable = false, response = ResponseMessageConst.VOID)
     void removeAllListener();
 
-    @Request(id = 20, retryable = false, response = ResponseMessageConst.VOID)
+    @Request(id = 20, retryable = false, response = ResponseMessageConst.VOID, event = {EventMessageConst.EVENT_PARTITIONLOSTEVENT})
     void addPartitionLostListener(int partitionId, int lostBackupCount, Address source);
 
     @Request(id = 20, retryable = false, response = ResponseMessageConst.VOID)
@@ -70,7 +61,7 @@ public interface ClientMessageTemplate {
     @Request(id = 21, retryable = false, response = ResponseMessageConst.DISTRIBUTED_OBJECT)
     void getDistributedObject();
 
-    @Request(id = 21, retryable = false, response = ResponseMessageConst.STRING)
+    @Request(id = 21, retryable = false, response = ResponseMessageConst.STRING, event = {EventMessageConst.EVENT_DISTRIBUTEDOBJECT})
     void addDistributedObjectListener();
 
     @Request(id = 22, retryable = false, response = ResponseMessageConst.VOID)

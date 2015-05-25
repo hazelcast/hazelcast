@@ -17,7 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.map;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.MapAddEntryListenerToKeyWithPredicateParameters;
+import com.hazelcast.client.impl.protocol.codec.MapAddEntryListenerToKeyWithPredicateCodec;
 import com.hazelcast.instance.Node;
 import com.hazelcast.map.impl.QueryEventFilter;
 import com.hazelcast.nio.Connection;
@@ -25,7 +25,7 @@ import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.EventFilter;
 
 public class MapAddEntryListenerToKeyWithPredicateMessageTask
-        extends AbstractMapAddEntryListenerMessageTask<MapAddEntryListenerToKeyWithPredicateParameters> {
+        extends AbstractMapAddEntryListenerMessageTask<MapAddEntryListenerToKeyWithPredicateCodec.RequestParameters> {
 
     public MapAddEntryListenerToKeyWithPredicateMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -38,8 +38,8 @@ public class MapAddEntryListenerToKeyWithPredicateMessageTask
     }
 
     @Override
-    protected MapAddEntryListenerToKeyWithPredicateParameters decodeClientMessage(ClientMessage clientMessage) {
-        return MapAddEntryListenerToKeyWithPredicateParameters.decode(clientMessage);
+    protected MapAddEntryListenerToKeyWithPredicateCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return MapAddEntryListenerToKeyWithPredicateCodec.decodeRequest(clientMessage);
     }
 
     @Override

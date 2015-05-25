@@ -68,10 +68,10 @@ public interface MapCodecTemplate {
     @Request(id = 13, retryable = false, response = ResponseMessageConst.VOID)
     void flush(String name);
 
-    @Request(id = 14, retryable = false, response = ResponseMessageConst.DATA)
+    @Request(id = 14, retryable = false, response = ResponseMessageConst.BOOLEAN)
     void tryRemove(String name, Data key, long threadId, long timeout);
 
-    @Request(id = 15, retryable = false, response = ResponseMessageConst.DATA)
+    @Request(id = 15, retryable = false, response = ResponseMessageConst.BOOLEAN)
     void tryPut(String name, Data key, Data value, long threadId, long timeout);
 
     @Request(id = 16, retryable = false, response = ResponseMessageConst.VOID)
@@ -86,7 +86,7 @@ public interface MapCodecTemplate {
     @Request(id = 19, retryable = false, response = ResponseMessageConst.VOID)
     void lock(String name, Data key, long threadId, long ttl);
 
-    @Request(id = 20, retryable = false, response = ResponseMessageConst.DATA)
+    @Request(id = 20, retryable = false, response = ResponseMessageConst.BOOLEAN)
     void tryLock(String name, Data key, long threadId, long timeout);
 
     @Request(id = 21, retryable = true, response = ResponseMessageConst.BOOLEAN)
@@ -113,7 +113,7 @@ public interface MapCodecTemplate {
     @Request(id = 28, retryable = false, response = ResponseMessageConst.STRING, event = EventMessageConst.EVENT_ENTRYEVENT)
     void addEntryListener(String name, boolean includeValue);
 
-    @Request(id = 29, retryable = false, response = ResponseMessageConst.DATA)
+    @Request(id = 29, retryable = false, response = ResponseMessageConst.DATA, event = EventMessageConst.EVENT_ENTRYEVENT)
     void addNearCacheEntryListener(String name, boolean includeValue);
 
     @Request(id = 30, retryable = false, response = ResponseMessageConst.BOOLEAN)
@@ -183,16 +183,25 @@ public interface MapCodecTemplate {
     @Request(id = 51, retryable = false, response = ResponseMessageConst.DATA)
     void submitToKey(String name, Data entryProcessor, Data key);
 
-    @Request(id = 52, retryable = false, response = ResponseMessageConst.DATA)
+    @Request(id = 52, retryable = false, response = ResponseMessageConst.MAP_DATA_DATA)
     void executeOnAllKeys(String name, Data entryProcessor);
 
-    @Request(id = 53, retryable = false, response = ResponseMessageConst.DATA)
+    @Request(id = 53, retryable = false, response = ResponseMessageConst.MAP_DATA_DATA)
     void executeWithPredicate(String name, Data entryProcessor, Data predicate);
 
-    @Request(id = 54, retryable = false, response = ResponseMessageConst.DATA)
+    @Request(id = 54, retryable = false, response = ResponseMessageConst.MAP_DATA_DATA)
     void executeOnKeys(String name, Data entryProcessor, Set<Data> keys);
 
     @Request(id = 55, retryable = false, response = ResponseMessageConst.VOID)
     void forceUnlock(String name, Data key);
+
+    @Request(id = 56, retryable = false, response = ResponseMessageConst.MAP_DATA_DATA)
+    void keySetWithPagingPredicate(String name, Data predicate);
+
+    @Request(id = 57, retryable = false, response = ResponseMessageConst.MAP_DATA_DATA)
+    void valuesWithPagingPredicate(String name, Data predicate);
+
+    @Request(id = 58, retryable = false, response = ResponseMessageConst.MAP_DATA_DATA)
+    void entriesWithPagingPredicate(String name, Data predicate);
 
 }

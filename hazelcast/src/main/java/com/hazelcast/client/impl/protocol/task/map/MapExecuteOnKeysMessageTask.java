@@ -18,7 +18,7 @@ package com.hazelcast.client.impl.protocol.task.map;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.parameters.DataEntryListResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.MapExecuteOnKeysParameters;
+import com.hazelcast.client.impl.protocol.codec.MapExecuteOnKeysCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractMultiPartitionMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.map.EntryProcessor;
@@ -41,7 +41,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-public class MapExecuteOnKeysMessageTask extends AbstractMultiPartitionMessageTask<MapExecuteOnKeysParameters> {
+public class MapExecuteOnKeysMessageTask extends AbstractMultiPartitionMessageTask<MapExecuteOnKeysCodec.RequestParameters> {
 
     public MapExecuteOnKeysMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -87,8 +87,8 @@ public class MapExecuteOnKeysMessageTask extends AbstractMultiPartitionMessageTa
     }
 
     @Override
-    protected MapExecuteOnKeysParameters decodeClientMessage(ClientMessage clientMessage) {
-        return MapExecuteOnKeysParameters.decode(clientMessage);
+    protected MapExecuteOnKeysCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return MapExecuteOnKeysCodec.decodeRequest(clientMessage);
     }
 
 

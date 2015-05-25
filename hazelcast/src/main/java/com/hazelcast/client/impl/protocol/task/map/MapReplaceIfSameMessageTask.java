@@ -18,13 +18,13 @@ package com.hazelcast.client.impl.protocol.task.map;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.MapReplaceIfSameParameters;
+import com.hazelcast.client.impl.protocol.codec.MapReplaceIfSameCodec;
 import com.hazelcast.instance.Node;
 import com.hazelcast.map.impl.operation.ReplaceIfSameOperation;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.Operation;
 
-public class MapReplaceIfSameMessageTask extends AbstractMapPutMessageTask<MapReplaceIfSameParameters> {
+public class MapReplaceIfSameMessageTask extends AbstractMapPutMessageTask<MapReplaceIfSameCodec.RequestParameters> {
 
     public MapReplaceIfSameMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -39,8 +39,8 @@ public class MapReplaceIfSameMessageTask extends AbstractMapPutMessageTask<MapRe
     }
 
     @Override
-    protected MapReplaceIfSameParameters decodeClientMessage(ClientMessage clientMessage) {
-        return MapReplaceIfSameParameters.decode(clientMessage);
+    protected MapReplaceIfSameCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return MapReplaceIfSameCodec.decodeRequest(clientMessage);
     }
 
     @Override

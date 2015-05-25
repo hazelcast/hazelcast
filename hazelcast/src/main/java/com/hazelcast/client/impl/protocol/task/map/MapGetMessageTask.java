@@ -17,7 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.map;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.MapGetParameters;
+import com.hazelcast.client.impl.protocol.codec.MapGetCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.map.impl.MapContainer;
@@ -30,7 +30,7 @@ import com.hazelcast.spi.Operation;
 
 import java.security.Permission;
 
-public class MapGetMessageTask extends AbstractPartitionMessageTask<MapGetParameters> {
+public class MapGetMessageTask extends AbstractPartitionMessageTask<MapGetCodec.RequestParameters> {
 
     private transient long startTime;
 
@@ -39,8 +39,8 @@ public class MapGetMessageTask extends AbstractPartitionMessageTask<MapGetParame
     }
 
     @Override
-    protected MapGetParameters decodeClientMessage(ClientMessage clientMessage) {
-        return MapGetParameters.decode(clientMessage);
+    protected MapGetCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return MapGetCodec.decodeRequest(clientMessage);
     }
 
     @Override

@@ -18,7 +18,7 @@ package com.hazelcast.client.impl.protocol.task.map;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.MapLoadAllParameters;
+import com.hazelcast.client.impl.protocol.codec.MapLoadAllCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.instance.Node;
@@ -30,7 +30,7 @@ import com.hazelcast.security.permission.MapPermission;
 
 import java.security.Permission;
 
-public class MapLoadAllMessageTask extends AbstractCallableMessageTask<MapLoadAllParameters> {
+public class MapLoadAllMessageTask extends AbstractCallableMessageTask<MapLoadAllCodec.RequestParameters> {
 
     public MapLoadAllMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -48,8 +48,8 @@ public class MapLoadAllMessageTask extends AbstractCallableMessageTask<MapLoadAl
     }
 
     @Override
-    protected MapLoadAllParameters decodeClientMessage(ClientMessage clientMessage) {
-        return MapLoadAllParameters.decode(clientMessage);
+    protected MapLoadAllCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return MapLoadAllCodec.decodeRequest(clientMessage);
     }
 
 

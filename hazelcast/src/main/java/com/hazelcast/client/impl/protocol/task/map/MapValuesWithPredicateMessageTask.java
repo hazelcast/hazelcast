@@ -18,7 +18,7 @@ package com.hazelcast.client.impl.protocol.task.map;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.parameters.DataCollectionResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.MapValuesWithPredicateParameters;
+import com.hazelcast.client.impl.protocol.codec.MapValuesWithPredicateCodec;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
@@ -29,7 +29,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-public class MapValuesWithPredicateMessageTask extends AbstractMapQueryMessageTask<MapValuesWithPredicateParameters> {
+public class MapValuesWithPredicateMessageTask
+        extends AbstractMapQueryMessageTask<MapValuesWithPredicateCodec.RequestParameters> {
 
     public MapValuesWithPredicateMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -50,8 +51,8 @@ public class MapValuesWithPredicateMessageTask extends AbstractMapQueryMessageTa
     }
 
     @Override
-    protected MapValuesWithPredicateParameters decodeClientMessage(ClientMessage clientMessage) {
-        return MapValuesWithPredicateParameters.decode(clientMessage);
+    protected MapValuesWithPredicateCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return MapValuesWithPredicateCodec.decodeRequest(clientMessage);
     }
 
     @Override

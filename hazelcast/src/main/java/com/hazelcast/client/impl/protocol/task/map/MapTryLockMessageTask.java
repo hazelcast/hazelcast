@@ -18,7 +18,7 @@ package com.hazelcast.client.impl.protocol.task.map;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.MapTryLockParameters;
+import com.hazelcast.client.impl.protocol.codec.MapTryLockCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.concurrent.lock.operations.LockOperation;
@@ -38,7 +38,7 @@ import java.util.concurrent.TimeUnit;
  * Client Protocol Task for handling messages with type id:
  * {@link com.hazelcast.client.impl.protocol.parameters.MapMessageType#MAP_TRYLOCK}
  */
-public class MapTryLockMessageTask extends AbstractPartitionMessageTask<MapTryLockParameters> {
+public class MapTryLockMessageTask extends AbstractPartitionMessageTask<MapTryLockCodec.RequestParameters> {
 
     public MapTryLockMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -51,8 +51,8 @@ public class MapTryLockMessageTask extends AbstractPartitionMessageTask<MapTryLo
     }
 
     @Override
-    protected MapTryLockParameters decodeClientMessage(ClientMessage clientMessage) {
-        return MapTryLockParameters.decode(clientMessage);
+    protected MapTryLockCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return MapTryLockCodec.decodeRequest(clientMessage);
     }
 
     @Override

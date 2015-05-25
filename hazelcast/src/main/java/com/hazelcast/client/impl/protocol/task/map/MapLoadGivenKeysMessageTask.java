@@ -18,7 +18,7 @@ package com.hazelcast.client.impl.protocol.task.map;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.MapLoadGivenKeysParameters;
+import com.hazelcast.client.impl.protocol.codec.MapLoadGivenKeysCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractAllPartitionsMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.map.impl.MapService;
@@ -31,7 +31,7 @@ import com.hazelcast.spi.OperationFactory;
 import java.security.Permission;
 import java.util.Map;
 
-public class MapLoadGivenKeysMessageTask extends AbstractAllPartitionsMessageTask<MapLoadGivenKeysParameters> {
+public class MapLoadGivenKeysMessageTask extends AbstractAllPartitionsMessageTask<MapLoadGivenKeysCodec.RequestParameters> {
 
     public MapLoadGivenKeysMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -48,8 +48,8 @@ public class MapLoadGivenKeysMessageTask extends AbstractAllPartitionsMessageTas
     }
 
     @Override
-    protected MapLoadGivenKeysParameters decodeClientMessage(ClientMessage clientMessage) {
-        return MapLoadGivenKeysParameters.decode(clientMessage);
+    protected MapLoadGivenKeysCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return MapLoadGivenKeysCodec.decodeRequest(clientMessage);
     }
 
     @Override

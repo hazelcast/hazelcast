@@ -18,7 +18,7 @@ package com.hazelcast.client.impl.protocol.task.map;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.parameters.DataEntryListResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.MapExecuteWithPredicateParameters;
+import com.hazelcast.client.impl.protocol.codec.MapExecuteWithPredicateCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractAllPartitionsMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.map.EntryProcessor;
@@ -38,7 +38,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-public class MapExecuteWithPredicateMessageTask extends AbstractAllPartitionsMessageTask<MapExecuteWithPredicateParameters> {
+public class MapExecuteWithPredicateMessageTask
+        extends AbstractAllPartitionsMessageTask<MapExecuteWithPredicateCodec.RequestParameters> {
 
     public MapExecuteWithPredicateMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -70,8 +71,8 @@ public class MapExecuteWithPredicateMessageTask extends AbstractAllPartitionsMes
     }
 
     @Override
-    protected MapExecuteWithPredicateParameters decodeClientMessage(ClientMessage clientMessage) {
-        return MapExecuteWithPredicateParameters.decode(clientMessage);
+    protected MapExecuteWithPredicateCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return MapExecuteWithPredicateCodec.decodeRequest(clientMessage);
     }
 
     @Override

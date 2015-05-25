@@ -18,7 +18,7 @@ package com.hazelcast.client.impl.protocol.task.map;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.parameters.EntryViewParameters;
-import com.hazelcast.client.impl.protocol.parameters.MapGetEntryViewParameters;
+import com.hazelcast.client.impl.protocol.codec.MapGetEntryViewCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.map.impl.MapService;
@@ -32,7 +32,7 @@ import com.hazelcast.spi.Operation;
 
 import java.security.Permission;
 
-public class MapGetEntryViewMessageTask extends AbstractPartitionMessageTask<MapGetEntryViewParameters> {
+public class MapGetEntryViewMessageTask extends AbstractPartitionMessageTask<MapGetEntryViewCodec.RequestParameters> {
 
     public MapGetEntryViewMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -46,8 +46,8 @@ public class MapGetEntryViewMessageTask extends AbstractPartitionMessageTask<Map
     }
 
     @Override
-    protected MapGetEntryViewParameters decodeClientMessage(ClientMessage clientMessage) {
-        return MapGetEntryViewParameters.decode(clientMessage);
+    protected MapGetEntryViewCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return MapGetEntryViewCodec.decodeRequest(clientMessage);
     }
 
     @Override

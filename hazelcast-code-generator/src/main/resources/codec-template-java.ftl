@@ -14,6 +14,7 @@ public final class ${model.className} {
     //************************ REQUEST *************************//
 
     public static class RequestParameters {
+    public static final ${model.parentName}MessageType TYPE = REQUEST_TYPE;
 <#list model.requestParams as param>
         public ${param.type} ${param.name};
 </#list>

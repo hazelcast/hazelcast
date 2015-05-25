@@ -49,7 +49,7 @@ public interface EventResponseTemplate {
     void TopicEvent(Data item, String uuid);
 
     @EventResponse(EventMessageConst.EVENT_PARTITIONLOSTEVENT)
-    void PartitionLostEvent(String name);
+    void PartitionLostEvent(int partitionId, String uuid);
 
     @EventResponse(EventMessageConst.EVENT_DISTRIBUTEDOBJECT)
     void DistributedObject(String name, String serviceName, int eventType);

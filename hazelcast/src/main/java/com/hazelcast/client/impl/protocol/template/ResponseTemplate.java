@@ -21,7 +21,6 @@ import com.hazelcast.annotation.Nullable;
 import com.hazelcast.annotation.Response;
 import com.hazelcast.client.impl.client.DistributedObjectInfo;
 import com.hazelcast.client.impl.protocol.ResponseMessageConst;
-import com.hazelcast.client.impl.protocol.parameters.TemplateConstants;
 import com.hazelcast.map.impl.SimpleEntryView;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
@@ -78,5 +77,7 @@ public interface ResponseTemplate {
     @Response(ResponseMessageConst.ENTRY_VIEW)
     void EntryView(@Nullable SimpleEntryView<Data, Data> dataEntryView);
 
+    @Response(ResponseMessageConst.JOB_PROCESS_INFO)
+    void JobProcessInfo(Address[] partitionStates, int[] state, int processRecords);
 
 }

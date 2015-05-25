@@ -17,7 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.map;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.MapAddIndexParameters;
+import com.hazelcast.client.impl.protocol.codec.MapAddIndexCodec;
 import com.hazelcast.client.impl.protocol.parameters.VoidResultParameters;
 import com.hazelcast.client.impl.protocol.task.AbstractAllPartitionsMessageTask;
 import com.hazelcast.instance.Node;
@@ -31,7 +31,7 @@ import com.hazelcast.spi.OperationFactory;
 import java.security.Permission;
 import java.util.Map;
 
-public class MapAddIndexMessageTask extends AbstractAllPartitionsMessageTask<MapAddIndexParameters> {
+public class MapAddIndexMessageTask extends AbstractAllPartitionsMessageTask<MapAddIndexCodec.RequestParameters> {
 
     public MapAddIndexMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -48,8 +48,8 @@ public class MapAddIndexMessageTask extends AbstractAllPartitionsMessageTask<Map
     }
 
     @Override
-    protected MapAddIndexParameters decodeClientMessage(ClientMessage clientMessage) {
-        return MapAddIndexParameters.decode(clientMessage);
+    protected MapAddIndexCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return MapAddIndexCodec.decodeRequest(clientMessage);
     }
 
     public String getServiceName() {

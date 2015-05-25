@@ -214,6 +214,8 @@ public class CodecModel {
             }
             if (type.equals(DATA_FULL_NAME)) {
                 sizeString.append("dataSize += ParameterUtil.calculateDataSize(" + name + ");");
+            } else if (type.equals("java.lang.Integer")) {
+                sizeString.append("dataSize += Bits.INT_SIZE_IN_BYTES;");
             } else if (type.equals("java.lang.String")) {
                 sizeString.append("dataSize += ParameterUtil.calculateStringDataSize(" + name + ");");
             } else if (type.equals("int") || type.equals("long") || type.equals("short")
@@ -337,6 +339,8 @@ public class CodecModel {
 
             if (type.equals(DATA_FULL_NAME)) {
                 getterString = name + " = clientMessage.getData();";
+            } else if (type.equals("java.lang.Integer")) {
+                getterString = name + " = clientMessage.getInt();";
             } else if (type.equals("java.lang.String")) {
                 getterString = name + " = clientMessage.getStringUtf8();";
             } else if (type.equals("com.hazelcast.nio.Address")) {
