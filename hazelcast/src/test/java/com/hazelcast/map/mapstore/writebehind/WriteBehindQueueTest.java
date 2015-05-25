@@ -1,8 +1,9 @@
 package com.hazelcast.map.mapstore.writebehind;
 
 import com.hazelcast.map.ReachedMaxSizeException;
-import com.hazelcast.map.impl.mapstore.writebehind.DelayedEntry;
 import com.hazelcast.map.impl.mapstore.writebehind.WriteBehindQueue;
+import com.hazelcast.map.impl.mapstore.writebehind.entry.DelayedEntries;
+import com.hazelcast.map.impl.mapstore.writebehind.entry.DelayedEntry;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.DefaultSerializationServiceBuilder;
 import com.hazelcast.nio.serialization.SerializationService;
@@ -18,7 +19,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.hazelcast.map.impl.mapstore.writebehind.DelayedEntry.createWithNullValue;
 import static com.hazelcast.map.impl.mapstore.writebehind.WriteBehindQueues.createBoundedWriteBehindQueue;
 import static com.hazelcast.map.impl.mapstore.writebehind.WriteBehindQueues.createDefaultWriteBehindQueue;
 import static org.junit.Assert.assertEquals;
@@ -199,7 +199,7 @@ public class WriteBehindQueueTest extends HazelcastTestSupport {
         SerializationService ss1 = new DefaultSerializationServiceBuilder().build();
         final long storeTime = Clock.currentTimeMillis();
         for (int i = 0; i < numberOfEntriesToCreate; i++) {
-            final DelayedEntry<Data, Object> e = createWithNullValue(ss1.toData(i), storeTime, i);
+            final DelayedEntry<Data, Object> e = DelayedEntries.createWithoutValue(ss1.toData(i), storeTime, i);
             list.add(e);
         }
         return list;

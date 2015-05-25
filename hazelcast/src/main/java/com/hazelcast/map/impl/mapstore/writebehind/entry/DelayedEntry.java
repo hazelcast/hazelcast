@@ -14,20 +14,27 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map.impl.mapstore.writebehind;
-
-import java.util.EventListener;
+package com.hazelcast.map.impl.mapstore.writebehind.entry;
 
 /**
- * (For internal usage only.)
- * Listener's main contract
- * which are called before and after store operations.
+ * General contract for an entry to be stored into {@link com.hazelcast.core.MapStore}
+ * when {@link com.hazelcast.config.MapStoreConfig#writeDelaySeconds} is greater than 0.
  *
- * @param <E> Type of entry
+ * @param <K> the key type.
+ * @param <V> the value type.
+ * @see AddedDelayedEntry
+ * @see DeletedDelayedEntry
+ * @see NullValueDelayedEntry
  */
-interface StoreListener<E> extends EventListener {
+public interface DelayedEntry<K, V> {
 
-    void beforeStore(StoreEvent<E> storeEvent);
+    K getKey();
 
-    void afterStore(StoreEvent<E> storeEvent);
+    V getValue();
+
+    long getStoreTime();
+
+    int getPartitionId();
+
+    void setStoreTime(long storeTime);
 }
