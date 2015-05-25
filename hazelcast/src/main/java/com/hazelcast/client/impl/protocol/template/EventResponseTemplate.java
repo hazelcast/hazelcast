@@ -18,9 +18,8 @@ package com.hazelcast.client.impl.protocol.template;
 
 import com.hazelcast.annotation.EventResponse;
 import com.hazelcast.annotation.GenerateCodec;
-import com.hazelcast.client.impl.protocol.EventResponseMessageType;
+import com.hazelcast.client.impl.protocol.EventMessageConst;
 import com.hazelcast.cluster.client.MemberAttributeChange;
-import com.hazelcast.core.ItemEventType;
 import com.hazelcast.nio.serialization.Data;
 
 import java.util.Collection;
@@ -28,25 +27,31 @@ import java.util.Collection;
 /**
  * Client Protocol Event Responses
  */
-@GenerateCodec(id= 0, name= "Event", ns = "")
+@GenerateCodec(id = 0, name = "Event", ns = "")
 public interface EventResponseTemplate {
 
-    @EventResponse(EventResponseMessageType.MEMBER_EVENT)
+    @EventResponse(EventMessageConst.EVENT_MEMBER)
     void Member(com.hazelcast.client.impl.MemberImpl member, int eventType);
 
-    @EventResponse(EventResponseMessageType.MEMBER_ATTRIBUTE_EVENT)
+    @EventResponse(EventMessageConst.EVENT_MEMBERATTRIBUTECHANGE)
     void MemberAttributeChange(MemberAttributeChange memberAttributeChange);
 
-    @EventResponse(EventResponseMessageType.MEMBER_LIST_EVENT)
+    @EventResponse(EventMessageConst.EVENT_MEMBERLIST)
     void MemberList(Collection<com.hazelcast.client.impl.MemberImpl> members);
 
-    @EventResponse(EventResponseMessageType.ITEM_EVENT)
-    void ItemEvent(Data item, String uuid, ItemEventType eventType);
-
-    @EventResponse(EventResponseMessageType.TOPIC_EVENT)
-    void TopicEvent(Data item, String uuid, ItemEventType eventType);
-
-    @EventResponse(EventResponseMessageType.ENTRY_EVENT)
+    @EventResponse(EventMessageConst.EVENT_ENTRYEVENT)
     void EntryEvent(Data key, Data value, Data oldValue, Data mergingValue, int eventType, String uuid, int numberOfAffectedEntries);
+
+    @EventResponse(EventMessageConst.EVENT_ITEMEVENT)
+    void ItemEvent(Data item, String uuid, int eventType);
+
+    @EventResponse(EventMessageConst.EVENT_TOPICEVENT)
+    void TopicEvent(Data item, String uuid);
+
+    @EventResponse(EventMessageConst.EVENT_PARTITIONLOSTEVENT)
+    void PartitionLostEvent(String name);
+
+    @EventResponse(EventMessageConst.EVENT_DISTRIBUTEDOBJECT)
+    void DistributedObject(String name, String serviceName, int eventType);
 
 }

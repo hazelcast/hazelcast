@@ -18,6 +18,7 @@ package com.hazelcast.client.impl.protocol.parameters;
 
 public final class TemplateConstants {
 
+    public static final int CLIENT_TEMPLATE_ID = 0;
     public static final int MAP_TEMPLATE_ID = 1;
     public static final int MULTIMAP_TEMPLATE_ID = 2;
     public static final int QUEUE_TEMPLATE_ID = 3;
@@ -39,7 +40,6 @@ public final class TemplateConstants {
     public static final int TX_LIST_TEMPLATE_ID = 19;
     public static final int TX_QUEUE_TEMPLATE_ID = 20;
     public static final int JCACHE_TEMPLATE_ID = 21;
-    public static final int CLIENT_TEMPLATE_ID = 99;
 
     private TemplateConstants() {
     }

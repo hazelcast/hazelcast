@@ -27,8 +27,29 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.SOURCE)
 @Target(ElementType.TYPE)
 public @interface GenerateCodec {
+    /**
+     * Returns master id of class.
+     * Mostly id of a distributed object like IMap, IQueue in protocol.
+     * This id should be unique.
+     * Ids are kept together at com.hazelcast.client.impl.protocol.parameters.TemplateConstants
+     * to make sure uniqueness.
+     *
+     * @return id
+     */
     short id() default 0;
+
+    /**
+     * Suffix to be used when generating request classes.
+     *
+     * @return name
+     */
     String name();
+
+    /**
+     * Namespace of related classes in c# client.
+     *
+     * @return namespace
+     */
     String ns();
 }
 

@@ -44,6 +44,7 @@ public class DistributedObjectEventParameters {
         ClientMessage clientMessage = ClientMessage.createForEncode(requiredDataSize);
         clientMessage.setMessageType(TYPE.id());
         clientMessage.set(name).set(serviceName).set(eventType.name());
+        clientMessage.addFlag(ClientMessage.LISTENER_EVENT_FLAG);
         clientMessage.updateFrameLength();
         return clientMessage;
     }

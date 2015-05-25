@@ -16,7 +16,6 @@
 
 package com.hazelcast.client.protocol.generator;
 
-import com.hazelcast.annotation.Codec;
 import com.hazelcast.annotation.EventResponse;
 import com.hazelcast.annotation.GenerateCodec;
 import com.hazelcast.annotation.Request;
@@ -59,17 +58,14 @@ public class CodecCodeGenerator
     private Filer filer;
     private Messager messager;
     private Template codecTemplate;
-    private Template codecTemplateCSharp;
+//    private Template codecTemplateCSharp;
     private Template messageTypeTemplate;
     private Template messageTypeTemplateCSharp;
-
-    private boolean csharpEnabled = false;//Boolean.getBoolean("hazelcast.generator.csharp");
-    private boolean cppEnabled = false;//Boolean.getBoolean("hazelcast.generator.cpp");
-
-    private Map<Short, ExecutableElement> requestMap = new HashMap<Short, ExecutableElement>();
-    private Map<Short, ExecutableElement> responseMap = new HashMap<Short, ExecutableElement>();
-    private Map<Short, ExecutableElement> eventResponseMap = new HashMap<Short, ExecutableElement>();
-    private Map<Short, ExecutableElement> codecMap = new HashMap<Short, ExecutableElement>();
+//    private boolean csharpEnabled = Boolean.getBoolean("hazelcast.generator.csharp");
+//    private boolean cppEnabled = Boolean.getBoolean("hazelcast.generator.cpp");
+    private Map<String, ExecutableElement> requestMap = new HashMap<String, ExecutableElement>();
+    private Map<Integer, ExecutableElement> responseMap = new HashMap<Integer, ExecutableElement>();
+    private Map<Integer, ExecutableElement> eventResponseMap = new HashMap<Integer, ExecutableElement>();
 
     @Override
     public void init(ProcessingEnvironment env) {
@@ -86,7 +82,7 @@ public class CodecCodeGenerator
         cfg.setTemplateLoader(new ClassTemplateLoader(getClass(), "/"));
         try {
             codecTemplate = cfg.getTemplate("codec-template-java.ftl");
-            //codecTemplateCSharp = cfg.getTemplate("codec-template-csharp.ftl");
+//            codecTemplateCSharp = cfg.getTemplate("codec-template-csharp.ftl");
             messageTypeTemplate = cfg.getTemplate("messagetype-template-java.ftl");
             messageTypeTemplateCSharp = cfg.getTemplate("messagetype-template-csharp.ftl");
         } catch (IOException e) {
@@ -128,9 +124,12 @@ public class CodecCodeGenerator
             }
             ExecutableElement methodElement = (ExecutableElement) enclosedElement;
 
+            short masterId = classElement.getAnnotation(GenerateCodec.class).id();
+
             final Request request = methodElement.getAnnotation(Request.class);
             if (request != null) {
-                requestMap.put(request.id(), methodElement);
+                String id = CodeGenerationUtils.mergeIds(masterId, request.id());
+                requestMap.put(id, methodElement);
                 continue;
             }
 
@@ -145,10 +144,6 @@ public class CodecCodeGenerator
                 eventResponseMap.put(eventResponse.value(), methodElement);
             }
 
-//            final Codec codec = methodElement.getAnnotation(Codec.class);
-//            if (codec != null) {
-//                codecMap.put(codec.name(), methodElement);
-//            }
         }
     }
 
@@ -156,27 +151,24 @@ public class CodecCodeGenerator
         final TypeElement parent = (TypeElement) methodElement.getEnclosingElement();
 
         final Request methodElementAnnotation = methodElement.getAnnotation(Request.class);
-        final short response = methodElementAnnotation.response();
-        final short[] events = methodElementAnnotation.event();
+        final int response = methodElementAnnotation.response();
+        final int[] events = methodElementAnnotation.event();
         final boolean retryable = methodElementAnnotation.retryable();
 
         ExecutableElement responseElement = responseMap.get(response);
-        if(responseElement == null) {
-            //messager.printMessage(Diagnostic.Kind.WARNING, "Missing RESPONSE:" + response);
-            System.err.println("Missing RESPONSE:" + response + " @ request :" + methodElement.getSimpleName());
-        }
 
         List<ExecutableElement> eventElementList = new ArrayList<ExecutableElement>();
         if (events != null) {
-            for (Short event : events) {
-                final ExecutableElement eventResponse = eventResponseMap.get(event);
-                if(eventResponse != null) {
+            for (Integer eventType : events) {
+                final ExecutableElement eventResponse = eventResponseMap.get(eventType);
+                if (eventResponse != null) {
                     eventElementList.add(eventResponse);
                 }
             }
         }
 
-        CodecModel codecModel = new CodecModel(parent, methodElement, responseElement, eventElementList, retryable, lang);
+        CodecModel codecModel = new CodecModel(parent, methodElement,
+                responseElement, eventElementList, retryable, lang);
 
         final String content;
         switch (lang) {
@@ -185,9 +177,9 @@ public class CodecCodeGenerator
                 saveClass(codecModel.getPackageName(), codecModel.getClassName(), content);
                 break;
             case CSHARP:
-                content = generateFromTemplate(codecTemplateCSharp, codecModel);
-                saveFile(codecModel.getClassName() + ".cs", codecModel.getPackageName(), content);
-                break;
+//                content = generateFromTemplate(codecTemplateCSharp, codecModel);
+//                saveFile(codecModel.getClassName() + ".cs", codecModel.getPackageName(), content);
+//                break;
             case CPP:
                 //TODO
                 //content = generateFromTemplate(parameterTemplateCSharp, clazz);
@@ -200,6 +192,9 @@ public class CodecCodeGenerator
 
     private void generateMessageTypeEnum(TypeElement classElement, Lang lang) {
         MessageTypeEnumModel2 clazz = new MessageTypeEnumModel2(classElement, lang);
+        if (clazz.isEmpty()) {
+            return;
+        }
         final String content;
         switch (lang) {
             case JAVA:

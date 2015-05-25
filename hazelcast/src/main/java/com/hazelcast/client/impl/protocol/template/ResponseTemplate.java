@@ -16,12 +16,12 @@
 
 package com.hazelcast.client.impl.protocol.template;
 
-import com.hazelcast.annotation.Codec;
 import com.hazelcast.annotation.GenerateCodec;
 import com.hazelcast.annotation.Nullable;
 import com.hazelcast.annotation.Response;
 import com.hazelcast.client.impl.client.DistributedObjectInfo;
 import com.hazelcast.client.impl.protocol.ResponseMessageConst;
+import com.hazelcast.client.impl.protocol.parameters.TemplateConstants;
 import com.hazelcast.map.impl.SimpleEntryView;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
@@ -33,26 +33,26 @@ import java.util.Map;
 /**
  * Client Protocol Responses
  */
-@GenerateCodec(id=0, name="response", ns ="")
+@GenerateCodec(id = 0, name = "response", ns = "")
 public interface ResponseTemplate {
 
     @Response(ResponseMessageConst.VOID)
     void Void();
 
     @Response(ResponseMessageConst.BOOLEAN)
-    void Boolean(int response);
+    void Boolean(boolean response);
 
     @Response(ResponseMessageConst.INTEGER)
     void Integer(int response);
 
     @Response(ResponseMessageConst.LONG)
-    void Long(int response);
+    void Long(long response);
 
     @Response(ResponseMessageConst.STRING)
-    void String(int response);
+    void String(String response);
 
     @Response(ResponseMessageConst.DATA)
-    void Data(Data response);
+    void Data(@Nullable Data response);
 
     @Response(ResponseMessageConst.LIST_DATA)
     void ListData(List<Data> list);
@@ -64,19 +64,19 @@ public interface ResponseTemplate {
     void MapIntData(Map<Integer, Data> map);
 
     @Response(ResponseMessageConst.AUTHENTICATION)
-    void Authentication(@Codec(Address.class)Address address, String uuid, String ownerUuid);
+    void Authentication(Address address, String uuid, String ownerUuid);
 
     @Response(ResponseMessageConst.PARTITIONS)
-    void Partitions(@Codec(Address[].class) Address[] members, int[] ownerIndexes);
+    void Partitions(Address[] members, int[] ownerIndexes);
 
     @Response(ResponseMessageConst.EXCEPTION)
     void Exception();
 
     @Response(ResponseMessageConst.DISTRIBUTED_OBJECT)
-    void DistributedObject(@Codec(Collection.class) Collection<DistributedObjectInfo> infoCollection);
+    void DistributedObject(Collection<DistributedObjectInfo> infoCollection);
 
     @Response(ResponseMessageConst.ENTRY_VIEW)
-    void EntryView(@Nullable @Codec(SimpleEntryView.class) SimpleEntryView<Data,Data> dataEntryView);
+    void EntryView(@Nullable SimpleEntryView<Data, Data> dataEntryView);
 
 
 }

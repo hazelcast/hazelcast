@@ -27,6 +27,6 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.SOURCE)
 @Target(ElementType.METHOD)
 public @interface Response {
-    short value();
+    int value();
 }
 

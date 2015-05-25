@@ -57,8 +57,8 @@ public class CodeGenerator
     private Template messageTypeTemplate;
     private Template messageTypeTemplateCSharp;
 
-    private boolean csharpEnabled = false;//Boolean.getBoolean("hazelcast.generator.csharp");
-    private boolean cppEnabled = false;//Boolean.getBoolean("hazelcast.generator.cpp");
+//    private boolean csharpEnabled = Boolean.getBoolean("hazelcast.generator.csharp");
+//    private boolean cppEnabled = Boolean.getBoolean("hazelcast.generator.cpp");
 
     @Override
     public void init(ProcessingEnvironment env) {

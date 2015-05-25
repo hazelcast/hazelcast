@@ -29,7 +29,7 @@ import java.lang.annotation.Target;
 public @interface Request {
     short id();
     boolean retryable();
-    short response();
-    short[] event() default -1;
+    int response();
+    int[] event() default -1;
 }
 

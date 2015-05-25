@@ -18,7 +18,7 @@ package com.hazelcast.client.impl.protocol.template;
 
 import com.hazelcast.annotation.GenerateCodec;
 import com.hazelcast.annotation.Request;
-import com.hazelcast.client.impl.protocol.EventResponseMessageType;
+import com.hazelcast.client.impl.protocol.EventMessageConst;
 import com.hazelcast.client.impl.protocol.ResponseMessageConst;
 import com.hazelcast.client.impl.protocol.parameters.TemplateConstants;
 import com.hazelcast.nio.Address;
@@ -37,46 +37,46 @@ public interface ClientMessageTemplate {
     //    PARTITION_LOST_EVENT(28),
 
     @Request(id = 1, retryable = true, response = ResponseMessageConst.AUTHENTICATION)
-    void Authentication(String username, String password, String uuid, String ownerUuid, boolean isOwnerConnection);
+    void authentication(String username, String password, String uuid, String ownerUuid, boolean isOwnerConnection);
 
     @Request(id = 2, retryable = true, response = ResponseMessageConst.AUTHENTICATION)
-    void AuthenticationCustom(Data credentials, String uuid, String ownerUuid, boolean isOwnerConnection);
+    void authenticationCustom(Data credentials, String uuid, String ownerUuid, boolean isOwnerConnection);
 
     @Request(id = 8, retryable = false, response = ResponseMessageConst.STRING,
-             event = {EventResponseMessageType.MEMBER_EVENT, EventResponseMessageType.MEMBER_LIST_EVENT, EventResponseMessageType.MEMBER_ATTRIBUTE_EVENT})
-    void MembershipListener();
+             event = {EventMessageConst.EVENT_MEMBER, EventMessageConst.EVENT_MEMBERLIST, EventMessageConst.EVENT_MEMBERATTRIBUTECHANGE})
+    void membershipListener();
 
     @Request(id = 11, retryable = false, response = ResponseMessageConst.VOID)
-    void CreateProxy(String name, String serviceName);
+    void createProxy(String name, String serviceName);
 
     @Request(id = 12, retryable = false, response = ResponseMessageConst.VOID)
-    void DestroyProxy(String name, String serviceName);
+    void destroyProxy(String name, String serviceName);
 
-    @Request(id = 17, retryable = false, response = ResponseMessageConst.STRING, event = EventResponseMessageType.ITEM_EVENT)
-    void ItemListener(String name, boolean includeValue);
+    @Request(id = 17, retryable = false, response = ResponseMessageConst.STRING, event = EventMessageConst.EVENT_ITEMEVENT)
+    void itemListener(String name, boolean includeValue);
 
     @Request(id = 18, retryable = false, response = ResponseMessageConst.PARTITIONS)
-    void GetPartition();
+    void getPartition();
 
     @Request(id = 19, retryable = false, response = ResponseMessageConst.VOID)
-    void RemoveAllListener();
+    void removeAllListener();
 
     @Request(id = 20, retryable = false, response = ResponseMessageConst.VOID)
-    void AddPartitionLostListener(int partitionId, int lostBackupCount, Address source);
+    void addPartitionLostListener(int partitionId, int lostBackupCount, Address source);
 
     @Request(id = 20, retryable = false, response = ResponseMessageConst.VOID)
-    void RemovePartitionLostListener(String registrationId);
+    void removePartitionLostListener(String registrationId);
 
     @Request(id = 21, retryable = false, response = ResponseMessageConst.DISTRIBUTED_OBJECT)
-    void GetDistributedObject();
+    void getDistributedObject();
 
     @Request(id = 21, retryable = false, response = ResponseMessageConst.STRING)
-    void AddDistributedObjectListener();
+    void addDistributedObjectListener();
 
     @Request(id = 22, retryable = false, response = ResponseMessageConst.VOID)
-    void RemoveDistributedObjectListener(String registrationId);
+    void removeDistributedObjectListener(String registrationId);
 
     @Request(id = 23, retryable = true, response = ResponseMessageConst.VOID)
-    void Ping();
+    void ping();
 
 }

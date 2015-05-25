@@ -17,22 +17,28 @@
 package com.hazelcast.client.impl.protocol;
 
 /**
- * Client Message type is the unique id defines the type of message.
+ * Message type ids of responses in client protocol. They also used to bind a request to a response inside Request
+ * annotation.
+ * <p/>
+ * Response classes are defined    {@link com.hazelcast.client.impl.protocol.template.ResponseTemplate}
+ * <p/>
+ * see {@link   com.hazelcast.client.impl.protocol.template.ClientMessageTemplate#membershipListener()}
+ * for  a sample usage of responses in a request.
  */
 public final class ResponseMessageConst {
 
-    public static final short VOID = 1;
-    public static final short BOOLEAN = 2;
-    public static final short INTEGER = 3;
-    public static final short LONG = 4;
-    public static final short STRING = 5;
-    public static final short DATA = 6;
-    public static final short LIST_DATA = 7;
-    public static final short MAP_INT_DATA = 8;
-    public static final short MAP_DATA_DATA = 9;
-    public static final short AUTHENTICATION = 10;
-    public static final short PARTITIONS = 11;
-    public static final short EXCEPTION = 12;
-    public static final short DISTRIBUTED_OBJECT = 13;
-    public static final short ENTRY_VIEW = 14;
+    public static final int VOID = 100;
+    public static final int BOOLEAN = 101;
+    public static final int INTEGER = 102;
+    public static final int LONG = 103;
+    public static final int STRING = 104;
+    public static final int DATA = 105;
+    public static final int LIST_DATA = 106;
+    public static final int MAP_INT_DATA = 107;
+    public static final int MAP_DATA_DATA = 108;
+    public static final int AUTHENTICATION = 109;
+    public static final int PARTITIONS = 110;
+    public static final int EXCEPTION = 111;
+    public static final int DISTRIBUTED_OBJECT = 112;
+    public static final int ENTRY_VIEW = 113;
 }
