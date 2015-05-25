@@ -24,7 +24,10 @@ package com.hazelcast.map.impl.mapstore.writebehind;
  */
 public final class DelayedEntry<K, V> extends AbstractDelayedEntry<K> {
 
-    private final V value;
+    private V value;
+
+    public DelayedEntry() {
+    }
 
     private DelayedEntry(K key, V value, long storeTime, int partitionId) {
         super(key, storeTime, partitionId);
@@ -44,20 +47,6 @@ public final class DelayedEntry<K, V> extends AbstractDelayedEntry<K> {
     }
 
     /**
-     * Used to put staging area.
-     *
-     * @param value     to put.
-     * @param storeTime target store time
-     * @param <K>       the key type.
-     * @param <V>       the value type.
-     * @return new delayed entry object with a null key.
-     * @see WriteBehindStore#stagingArea
-     */
-    public static <K, V> DelayedEntry<K, V> createWithNullKey(V value, long storeTime) {
-        return new DelayedEntry<K, V>(null, value, storeTime, 0);
-    }
-
-    /**
      * Used to removal operations from map store.
      *
      * @param key       to put.
@@ -68,16 +57,6 @@ public final class DelayedEntry<K, V> extends AbstractDelayedEntry<K> {
      */
     public static <K, V> DelayedEntry<K, V> createWithNullValue(K key, long storeTime, int partitionId) {
         return new DelayedEntry<K, V>(key, null, storeTime, partitionId);
-    }
-
-    @Override
-    public int hashCode() {
-        return super.hashCode();
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        return super.equals(o);
     }
 
     @Override

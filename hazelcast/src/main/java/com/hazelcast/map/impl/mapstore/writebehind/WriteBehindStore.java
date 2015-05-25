@@ -1,30 +1,46 @@
+/*
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.hazelcast.map.impl.mapstore.writebehind;
 
 import com.hazelcast.map.impl.MapStoreWrapper;
 import com.hazelcast.map.impl.mapstore.AbstractMapDataStore;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
-import com.hazelcast.util.Clock;
 
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.hazelcast.map.impl.mapstore.writebehind.DelayedEntry.createWithNullKey;
-
 /**
- * TODO Holds current write behind state and should be included in migrations.
  * Write behind map data store implementation.
  * Created per every record-store. So only called from one-thread.
  */
 public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
+
+    /**
+     * Represents a transient {@link DelayedEntry}.
+     * A transient entry can be added via {@link com.hazelcast.core.IMap#putTransient}.
+     */
+    private static final DelayedEntry TRANSIENT = new DelayedEntry();
 
     private final long writeDelayTime;
 
@@ -59,18 +75,6 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
      */
     private final ConcurrentMap<Data, DelayedEntry> stagingArea;
 
-    /**
-     * To check if a key has a delayed delete operation or not.
-     */
-    private final Set<Data> writeBehindWaitingDeletions;
-
-    /**
-     * To look up entries which are put with {@link com.hazelcast.core.IMap#putTransient}.
-     * This lookup is needed when write-behind and eviction are used together. During eviction
-     * of an entry normally we are flushing evicted entry to the {@link #stagingArea} to get rid of any stale read
-     * but transient entries should not be flushed there because they don't exist in data stores.
-     */
-    private final Set<Data> transients;
 
     public WriteBehindStore(MapStoreWrapper store, SerializationService serializationService,
                             long writeDelayTime, int partitionId) {
@@ -79,8 +83,6 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
         this.partitionId = partitionId;
         this.stagingArea = createStagingArea();
         this.flushCounter = new AtomicInteger(0);
-        this.writeBehindWaitingDeletions = new HashSet<Data>();
-        this.transients = new HashSet<Data>();
     }
 
     private ConcurrentHashMap<Data, DelayedEntry> createStagingArea() {
@@ -99,17 +101,19 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
         final DelayedEntry<Data, Object> delayedEntry =
                 DelayedEntry.create(key, value, storeTime, partitionId);
 
-        writeBehindQueue.offer(delayedEntry);
-        removeFromWaitingDeletions(key);
-        transients.remove(key);
+        add(delayedEntry);
 
         return value;
     }
 
+    public void add(DelayedEntry<Data, Object> delayedEntry) {
+        writeBehindQueue.offer(delayedEntry);
+        stagingArea.put(delayedEntry.getKey(), delayedEntry);
+    }
+
     @Override
     public void addTransient(Data key, long now) {
-        removeFromWaitingDeletions(key);
-        transients.add(key);
+        stagingArea.put(key, TRANSIENT);
     }
 
     @Override
@@ -123,11 +127,8 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
         final long storeTime = now + writeDelay;
         final DelayedEntry<Data, Object> delayedEntry =
                 DelayedEntry.createWithNullValue(key, storeTime, partitionId);
-        addToWaitingDeletions(key);
-        removeFromStagingArea(key);
-        transients.remove(key);
 
-        writeBehindQueue.offer(delayedEntry);
+        add(delayedEntry);
     }
 
     @Override
@@ -138,20 +139,15 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
     @Override
     public void clear() {
         writeBehindQueue.clear();
-        writeBehindWaitingDeletions.clear();
-        transients.clear();
         stagingArea.clear();
         flushCounter.set(0);
     }
 
     @Override
     public Object load(Data key) {
-        if (hasWaitingWriteBehindDeleteOperation(key)) {
-            return null;
-        }
-        final Object valueFromStagingArea = getFromStagingArea(key);
-        return valueFromStagingArea == null ? getStore().load(toObject(key))
-                : valueFromStagingArea;
+        DelayedEntry delayedEntry = getFromStagingArea(key);
+        return delayedEntry == null ? getStore().load(toObject(key))
+                : toObject(delayedEntry.getValue());
     }
 
     @Override
@@ -164,13 +160,13 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
         while (iterator.hasNext()) {
             final Object key = iterator.next();
             final Data dataKey = toData(key);
-            if (hasWaitingWriteBehindDeleteOperation(dataKey)) {
-                iterator.remove();
-                continue;
-            }
-            final Object valueFromStagingArea = getFromStagingArea(dataKey);
-            if (valueFromStagingArea != null) {
-                map.put(dataKey, valueFromStagingArea);
+
+            DelayedEntry delayedEntry = getFromStagingArea(dataKey);
+            if (delayedEntry != null) {
+                Object value = delayedEntry.getValue();
+                if (value != null) {
+                    map.put(dataKey, toObject(value));
+                }
                 iterator.remove();
             }
         }
@@ -195,8 +191,7 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
      */
     @Override
     public boolean loadable(Data key, long lastUpdateTime, long now) {
-        if (hasWaitingWriteBehindDeleteOperation(key)
-                || isInStagingArea(key, now)
+        if (isInStagingArea(key, now)
                 || hasAnyWaitingOperationInWriteBehindQueue(lastUpdateTime, now)) {
             return false;
         }
@@ -210,7 +205,9 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
 
     @Override
     public Object flush(Data key, Object value, long now, boolean backup) {
-        if (transients.remove(key)) {
+        DelayedEntry delayedEntry = stagingArea.get(key);
+        if (delayedEntry == TRANSIENT) {
+            stagingArea.remove(key);
             return null;
         }
 
@@ -218,13 +215,7 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
             return null;
         }
 
-        long storeTime = now + writeDelayTime;
-        DelayedEntry<Void, Object> delayedEntry = createWithNullKey(value, storeTime);
-        stagingArea.put(key, delayedEntry);
-
-        removeFromWaitingDeletions(key);
         flushCounter.incrementAndGet();
-
         return value;
     }
 
@@ -233,24 +224,16 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
         return writeBehindProcessor.flush(writeBehindQueue);
     }
 
-    private void addToWaitingDeletions(Data key) {
-        writeBehindWaitingDeletions.add(key);
-    }
+    /**
+     * Removes processed entries from temporary spaces.
+     */
+    void removeProcessed(DelayedEntry entry) {
+        if (entry == null) {
+            return;
+        }
 
-    public void removeFromWaitingDeletions(Data key) {
-        writeBehindWaitingDeletions.remove(key);
-    }
-
-    public void removeFromStagingArea(Data key, Object value) {
-        stagingArea.remove(key, value);
-    }
-
-    public void removeFromStagingArea(Data key) {
-        stagingArea.remove(key);
-    }
-
-    private boolean hasWaitingWriteBehindDeleteOperation(Data key) {
-        return writeBehindWaitingDeletions.contains(key);
+        Object key = entry.getKey();
+        stagingArea.remove(key, entry);
     }
 
     private boolean hasAnyWaitingOperationInWriteBehindQueue(long lastUpdateTime, long now) {
@@ -267,18 +250,12 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
         return now < storeTime;
     }
 
-    private Object getFromStagingArea(Data key) {
-        final DelayedEntry entry = stagingArea.get(key);
-        if (entry == null) {
+    private DelayedEntry getFromStagingArea(Data key) {
+        DelayedEntry entry = stagingArea.get(key);
+        if (entry == null || entry == TRANSIENT) {
             return null;
         }
-        final long storeTime = entry.getStoreTime();
-        final long now = Clock.currentTimeMillis();
-        // entry can not be reached from staging area.
-        if (now >= storeTime) {
-            return null;
-        }
-        return toObject(entry.getValue());
+        return entry;
     }
 
     public WriteBehindQueue<DelayedEntry> getWriteBehindQueue() {
