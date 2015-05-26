@@ -17,6 +17,7 @@
 package com.hazelcast.cache;
 
 import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
+import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.CacheEvictionConfig;
 import com.hazelcast.config.CacheSimpleConfig;
@@ -26,6 +27,10 @@ import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.HazelcastInstanceFactory;
+import com.hazelcast.instance.Node;
+import com.hazelcast.instance.TestUtil;
+import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -236,6 +241,48 @@ public class CacheConfigTest extends HazelcastTestSupport {
         cacheSimpleConfig.addEntryListenerConfig(cacheSimpleEntryListenerConfig);
         config.addCacheConfig(cacheSimpleConfig);
         return config;
+    }
+
+    private ICacheService getCacheService(HazelcastInstance instance) {
+        Node node = TestUtil.getNode(instance);
+        return node.getNodeEngine().getService(ICacheService.SERVICE_NAME);
+    }
+
+    private NodeEngine getNodeEngine(HazelcastInstance instance) {
+        Node node = TestUtil.getNode(instance);
+        return node.getNodeEngine();
+    }
+
+    @Test
+    public void testGetCacheConfigsAtJoin() {
+        final String cacheName = randomString();
+        final String managerPrefix = "hz:";
+        final String fullCacheName = managerPrefix + cacheName;
+        final Config config = new Config();
+        final CacheConfig cacheConfig =
+                new CacheConfig()
+                        .setName(cacheName)
+                        .setManagerPrefix(managerPrefix);
+
+        final TestHazelcastInstanceFactory instanceFactory = createHazelcastInstanceFactory(2);
+        final HazelcastInstance instance1 = instanceFactory.newHazelcastInstance(config);
+        final ICacheService cacheService1 = getCacheService(instance1);
+
+        assertNull(cacheService1.getCacheConfig(fullCacheName));
+
+        cacheService1.createCacheConfigIfAbsent(cacheConfig);
+
+        assertNotNull(cacheService1.getCacheConfig(fullCacheName));
+
+        final HazelcastInstance instance2 = instanceFactory.newHazelcastInstance(config);
+        final ICacheService cacheService2 = getCacheService(instance2);
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertNotNull(cacheService2.getCacheConfig(fullCacheName));
+            }
+        });
     }
 
     public static class EntryListenerFactory implements Factory<EntryListener> {
