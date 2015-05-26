@@ -17,7 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.executorservice;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.ExecutorServiceSubmitToPartitionParameters;
+import com.hazelcast.client.impl.protocol.codec.ExecutorServiceSubmitToPartitionCodec;
 import com.hazelcast.client.impl.protocol.task.InvocationMessageTask;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.executor.impl.DistributedExecutorService;
@@ -35,7 +35,7 @@ import java.security.Permission;
 import java.util.concurrent.Callable;
 
 public class ExecutorServiceSubmitToPartitionMessageTask
-        extends InvocationMessageTask<ExecutorServiceSubmitToPartitionParameters>
+        extends InvocationMessageTask<ExecutorServiceSubmitToPartitionCodec.RequestParameters>
         implements ExecutionCallback {
 
     public ExecutorServiceSubmitToPartitionMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
@@ -66,8 +66,13 @@ public class ExecutorServiceSubmitToPartitionMessageTask
 
 
     @Override
-    protected ExecutorServiceSubmitToPartitionParameters decodeClientMessage(ClientMessage clientMessage) {
-        return ExecutorServiceSubmitToPartitionParameters.decode(clientMessage);
+    protected ExecutorServiceSubmitToPartitionCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return ExecutorServiceSubmitToPartitionCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return ExecutorServiceSubmitToPartitionCodec.encodeResponse((Data) response);
     }
 
     @Override

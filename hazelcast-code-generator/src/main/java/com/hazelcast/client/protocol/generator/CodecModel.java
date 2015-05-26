@@ -190,6 +190,10 @@ public class CodecModel {
             if (lang == Lang.CSHARP) {
                 return convertTypeToCSharp(type);
             }
+            if (type.startsWith("java.util.List<") || type.startsWith("java.util.Set<")
+                    || type.startsWith("java.util.Collection<")) {
+                return type.replaceAll("java.util.*<(.*)>", "java.util.Collection<$1>");
+            }
             return type;
         }
 
@@ -223,8 +227,7 @@ public class CodecModel {
                 sizeString.append("dataSize += Bits." + type.toUpperCase() + "_SIZE_IN_BYTES;");
             } else if (type.equals("com.hazelcast.nio.Address")) {
                 sizeString.append("dataSize += " + PARAMETERS_PACKAGE + "AddressCodec.calculateDataSize(" + name + ");");
-            } else if (type.equals("com.hazelcast.core.Member")
-                    || type.equals("com.hazelcast.client.impl.MemberImpl")) {
+            } else if (type.equals("com.hazelcast.instance.AbstractMember")) {
                 sizeString.append("dataSize += " + PARAMETERS_PACKAGE + "MemberCodec.calculateDataSize(" + name + ");");
             } else if (type.equals("com.hazelcast.cluster.client.MemberAttributeChange")) {
                 sizeString.append("dataSize += " + PARAMETERS_PACKAGE
@@ -232,6 +235,12 @@ public class CodecModel {
             } else if (type.equals("com.hazelcast.map.impl.SimpleEntryView<" + DATA_FULL_NAME
                     + "," + DATA_FULL_NAME + ">")) {
                 sizeString.append("dataSize += " + PARAMETERS_PACKAGE + "EntryViewCodec.calculateDataSize(" + name + ");");
+            } else if (type.equals("com.hazelcast.client.impl.client.DistributedObjectInfo")) {
+                sizeString.append("dataSize += " + PARAMETERS_PACKAGE + "DistributedObjectInfoCodec.calculateDataSize(" + name + ");");
+            } else if (type.equals("com.hazelcast.mapreduce.JobPartitionState")) {
+                sizeString.append("dataSize += " + PARAMETERS_PACKAGE + "JobPartitionStateCodec.calculateDataSize(" + name + ");");
+            } else if (type.equals("javax.transaction.xa.Xid")) {
+                sizeString.append("dataSize += " + PARAMETERS_PACKAGE + "XIDCodec.calculateDataSize(" + name + ");");
             } else if (type.startsWith("java.util.Map<")) {
                 sizeString.append(getMapSizeStringJava(type, name));
             } else if (type.startsWith("java.util.List<") || type.startsWith("java.util.Set<")
@@ -316,20 +325,20 @@ public class CodecModel {
         }
 
         private String getNullableCheckedGetterStringJava(String innerGetterString) {
-            String getterString = type + " " + name + ";\n";
+            String getterString = type + " " + name + ";\n        ";
             if (!isPrimitive) {
-                getterString += name + " = null ;\n";
+                getterString += name + " = null ;\n        ";
             }
 
             if (isNullable) {
-                getterString += " boolean " + name + "_isNull = clientMessage.getBoolean();\n";
-                getterString += " if(!" + name + "_isNull) { \n";
+                getterString += " boolean " + name + "_isNull = clientMessage.getBoolean();\n        ";
+                getterString += " if(!" + name + "_isNull) { \n        ";
             }
 
             getterString += innerGetterString;
 
             if (isNullable) {
-                getterString += " \n}\n";
+                getterString += "\n             }\n        ";
             }
             return getterString;
         }
@@ -345,13 +354,19 @@ public class CodecModel {
                 getterString = name + " = clientMessage.getStringUtf8();";
             } else if (type.equals("com.hazelcast.nio.Address")) {
                 getterString = name + " = " + PARAMETERS_PACKAGE + "AddressCodec.decode(clientMessage);";
-            } else if (type.equals("com.hazelcast.core.Member") || type.equals("com.hazelcast.client.impl.MemberImpl")) {
+            } else if (type.equals("com.hazelcast.instance.AbstractMember")) {
                 getterString = name + " = " + PARAMETERS_PACKAGE + "MemberCodec.decode(clientMessage);";
             } else if (type.equals("com.hazelcast.cluster.client.MemberAttributeChange")) {
                 getterString = name + " = " + PARAMETERS_PACKAGE + "MemberAttributeChangeCodec.decode(clientMessage);";
             } else if (type.equals("com.hazelcast.map.impl.SimpleEntryView<" + DATA_FULL_NAME
                     + "," + DATA_FULL_NAME + ">")) {
                 getterString = name + " = " + PARAMETERS_PACKAGE + "EntryViewCodec.decode(clientMessage);";
+            } else if (type.equals("com.hazelcast.client.impl.client.DistributedObjectInfo")) {
+                getterString = name + " = " + PARAMETERS_PACKAGE + "DistributedObjectInfoCodec.decode(clientMessage);";
+            } else if (type.equals("com.hazelcast.mapreduce.JobPartitionState")) {
+                getterString = name + " = " + PARAMETERS_PACKAGE + "JobPartitionStateCodec.decode(clientMessage);";
+            } else if (type.equals("javax.transaction.xa.Xid")) {
+                getterString = name + " = " + PARAMETERS_PACKAGE + "XIDCodec.decode(clientMessage);";
             } else if (type.startsWith("java.util.Map<")) {
                 getterString = getMapGetterString(type, name);
             } else if (type.startsWith("java.util.List<") || type.startsWith("java.util.Set<")
@@ -441,7 +456,7 @@ public class CodecModel {
 
         public String getDataGetterStringCSharp() {
             String getterString;
-            if (type.equals("" + DATA_FULL_NAME + " ")) {
+            if (type.equals(DATA_FULL_NAME + " ")) {
                 getterString = "GetData";
             } else if (type.equals("java.lang.String")) {
                 getterString = "GetStringUtf8";
@@ -485,15 +500,21 @@ public class CodecModel {
             }
 
             if (type.equals("com.hazelcast.nio.Address")) {
-                setterString.append("" + PARAMETERS_PACKAGE + "AddressCodec.encode(" + name + ",clientMessage);");
-            } else if (type.equals("com.hazelcast.core.Member") || type.equals("com.hazelcast.client.impl.MemberImpl")) {
-                setterString.append("" + PARAMETERS_PACKAGE + "MemberCodec.encode(" + name + ", clientMessage);");
+                setterString.append(PARAMETERS_PACKAGE + "AddressCodec.encode(" + name + ",clientMessage);");
+            } else if (type.equals("com.hazelcast.instance.AbstractMember")) {
+                setterString.append(PARAMETERS_PACKAGE + "MemberCodec.encode(" + name + ", clientMessage);");
             } else if (type.equals("com.hazelcast.cluster.client.MemberAttributeChange")) {
-                setterString.append("" + PARAMETERS_PACKAGE
+                setterString.append(PARAMETERS_PACKAGE
                         + "MemberAttributeChangeCodec.encode(" + name + ", clientMessage);");
             } else if (type.equals("com.hazelcast.map.impl.SimpleEntryView<" + DATA_FULL_NAME
                     + "," + DATA_FULL_NAME + ">")) {
-                setterString.append("" + PARAMETERS_PACKAGE + "EntryViewCodec.encode(" + name + ", clientMessage);");
+                setterString.append(PARAMETERS_PACKAGE + "EntryViewCodec.encode(" + name + ", clientMessage);");
+            } else if (type.equals("com.hazelcast.client.impl.client.DistributedObjectInfo")) {
+                setterString.append(PARAMETERS_PACKAGE + "DistributedObjectInfoCodec.encode(" + name + ", clientMessage);");
+            } else if (type.equals("com.hazelcast.mapreduce.JobPartitionState")) {
+                setterString.append(PARAMETERS_PACKAGE + "JobPartitionStateCodec.encode(" + name + ", clientMessage);");
+            } else if (type.equals("javax.transaction.xa.Xid")) {
+                setterString.append(PARAMETERS_PACKAGE + "XIDCodec.encode(" + name + ", clientMessage);");
             } else if (type.startsWith("java.util.Map<")) {
                 setterString.append(getMapSetterString(type, name));
             } else if (type.startsWith("java.util.List<") || type.startsWith("java.util.Set<")
@@ -550,7 +571,7 @@ public class CodecModel {
 //
 //        public String getDataSetterStringCSharp() {
 //            String getterString;
-//            if (type.equals("" + DATA_FULL_NAME  + " ")) {
+//            if (type.equals(DATA_FULL_NAME  + " ")) {
 //                getterString = "GetData";
 //            } else if (type.equals("java.lang.String")) {
 //                getterString = "GetStringUtf8";
@@ -570,7 +591,7 @@ public class CodecModel {
 
         public String convertTypeToCSharp(String type) {
             String getterString;
-            if (type.equals("" + DATA_FULL_NAME + " ")) {
+            if (type.equals(DATA_FULL_NAME + " ")) {
                 getterString = "IData";
             } else if (type.equals("java.lang.String")) {
                 getterString = "string";

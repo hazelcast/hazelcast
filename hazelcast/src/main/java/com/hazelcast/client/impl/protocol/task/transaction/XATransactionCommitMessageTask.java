@@ -17,8 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.transaction;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.VoidResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.XATransactionCommitParameters;
+import com.hazelcast.client.impl.protocol.codec.XATransactionCommitCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
@@ -31,18 +30,24 @@ import com.hazelcast.transaction.impl.xa.XAService;
 
 import java.security.Permission;
 
-public class XATransactionCommitMessageTask extends AbstractCallableMessageTask<XATransactionCommitParameters> {
+public class XATransactionCommitMessageTask
+        extends AbstractCallableMessageTask<XATransactionCommitCodec.RequestParameters> {
     public XATransactionCommitMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected XATransactionCommitParameters decodeClientMessage(ClientMessage clientMessage) {
-        return XATransactionCommitParameters.decode(clientMessage);
+    protected XATransactionCommitCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return XATransactionCommitCodec.decodeRequest(clientMessage);
     }
 
     @Override
-    protected ClientMessage call() throws Exception {
+    protected ClientMessage encodeResponse(Object response) {
+        return XATransactionCommitCodec.encodeResponse();
+    }
+
+    @Override
+    protected Object call() throws Exception {
         String transactionId = parameters.transactionId;
         TransactionContext transactionContext = endpoint.getTransactionContext(transactionId);
         if (transactionContext == null) {
@@ -54,7 +59,7 @@ public class XATransactionCommitMessageTask extends AbstractCallableMessageTask<
         }
         transaction.commit();
         endpoint.removeTransactionContext(transactionId);
-        return VoidResultParameters.encode();
+        return null;
     }
 
     @Override

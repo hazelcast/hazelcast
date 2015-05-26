@@ -30,7 +30,7 @@ public interface TopicCodecTemplate {
     void publish(String name, Data message);
 
     @Request(id = 2, retryable = false, response = ResponseMessageConst.STRING
-            , event = {EventMessageConst.EVENT_TOPICEVENT})
+            , event = {EventMessageConst.EVENT_TOPIC})
     void addMessageListener(String name);
 
     @Request(id = 3, retryable = false, response = ResponseMessageConst.BOOLEAN)

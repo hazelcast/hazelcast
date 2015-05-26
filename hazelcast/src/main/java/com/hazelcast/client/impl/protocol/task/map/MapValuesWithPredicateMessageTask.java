@@ -17,7 +17,6 @@
 package com.hazelcast.client.impl.protocol.task.map;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.DataCollectionResultParameters;
 import com.hazelcast.client.impl.protocol.codec.MapValuesWithPredicateCodec;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
@@ -37,12 +36,12 @@ public class MapValuesWithPredicateMessageTask
     }
 
     @Override
-    protected ClientMessage reduce(Collection<QueryResultEntry> result) {
+    protected Object reduce(Collection<QueryResultEntry> result) {
         List<Data> values = new ArrayList<Data>(result.size());
         for (QueryResultEntry resultEntry : result) {
             values.add(resultEntry.getValueData());
         }
-        return DataCollectionResultParameters.encode(values);
+        return values;
     }
 
     @Override
@@ -53,6 +52,11 @@ public class MapValuesWithPredicateMessageTask
     @Override
     protected MapValuesWithPredicateCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
         return MapValuesWithPredicateCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return MapValuesWithPredicateCodec.encodeResponse((Collection<Data>) response);
     }
 
     @Override

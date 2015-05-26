@@ -17,11 +17,11 @@
 package com.hazelcast.client.impl.protocol.task.replicatedmap;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.GenericResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.ReplicatedMapGetParameters;
+import com.hazelcast.client.impl.protocol.codec.ReplicatedMapGetCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
 import com.hazelcast.security.permission.ActionConstants;
@@ -29,23 +29,29 @@ import com.hazelcast.security.permission.ReplicatedMapPermission;
 
 import java.security.Permission;
 
-public class ReplicatedMapGetMessageTask extends AbstractCallableMessageTask<ReplicatedMapGetParameters> {
+public class ReplicatedMapGetMessageTask
+        extends AbstractCallableMessageTask<ReplicatedMapGetCodec.RequestParameters> {
 
     public ReplicatedMapGetMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected ClientMessage call() throws Exception {
+    protected Object call() throws Exception {
         ReplicatedMapService replicatedMapService = getService(ReplicatedMapService.SERVICE_NAME);
         ReplicatedRecordStore recordStore = replicatedMapService.getReplicatedRecordStore(parameters.name, true);
         Object returnValue = recordStore.get(parameters.key);
-        return GenericResultParameters.encode(serializationService.toData(returnValue));
+        return serializationService.toData(returnValue);
     }
 
     @Override
-    protected ReplicatedMapGetParameters decodeClientMessage(ClientMessage clientMessage) {
-        return ReplicatedMapGetParameters.decode(clientMessage);
+    protected ReplicatedMapGetCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return ReplicatedMapGetCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return ReplicatedMapGetCodec.encodeResponse((Data) response);
     }
 
     @Override

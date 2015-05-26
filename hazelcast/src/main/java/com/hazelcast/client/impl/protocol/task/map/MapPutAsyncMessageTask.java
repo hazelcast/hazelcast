@@ -21,11 +21,13 @@ import com.hazelcast.client.impl.protocol.codec.MapPutAsyncCodec;
 import com.hazelcast.instance.Node;
 import com.hazelcast.map.impl.operation.PutOperation;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
 
 import java.util.concurrent.TimeUnit;
 
-public class MapPutAsyncMessageTask extends AbstractMapPutMessageTask<MapPutAsyncCodec.RequestParameters> {
+public class MapPutAsyncMessageTask
+        extends AbstractMapPutMessageTask<MapPutAsyncCodec.RequestParameters> {
 
     public MapPutAsyncMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -41,6 +43,11 @@ public class MapPutAsyncMessageTask extends AbstractMapPutMessageTask<MapPutAsyn
     @Override
     protected MapPutAsyncCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
         return MapPutAsyncCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return MapPutAsyncCodec.encodeResponse((Data) response);
     }
 
     @Override

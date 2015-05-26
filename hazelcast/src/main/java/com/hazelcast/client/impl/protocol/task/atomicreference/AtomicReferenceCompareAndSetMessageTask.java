@@ -17,7 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.atomicreference;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.AtomicReferenceCompareAndSetParameters;
+import com.hazelcast.client.impl.protocol.codec.AtomicReferenceCompareAndSetCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.concurrent.atomicreference.AtomicReferenceService;
 import com.hazelcast.concurrent.atomicreference.operations.CompareAndSetOperation;
@@ -30,7 +30,7 @@ import com.hazelcast.spi.Operation;
 import java.security.Permission;
 
 public class AtomicReferenceCompareAndSetMessageTask
-        extends AbstractPartitionMessageTask<AtomicReferenceCompareAndSetParameters> {
+        extends AbstractPartitionMessageTask<AtomicReferenceCompareAndSetCodec.RequestParameters> {
 
     public AtomicReferenceCompareAndSetMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -42,8 +42,13 @@ public class AtomicReferenceCompareAndSetMessageTask
     }
 
     @Override
-    protected AtomicReferenceCompareAndSetParameters decodeClientMessage(ClientMessage clientMessage) {
-        return AtomicReferenceCompareAndSetParameters.decode(clientMessage);
+    protected AtomicReferenceCompareAndSetCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return AtomicReferenceCompareAndSetCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return AtomicReferenceCompareAndSetCodec.encodeResponse((Boolean) response);
     }
 
     @Override

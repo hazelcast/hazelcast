@@ -17,8 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.transactionalset;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.IntResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.TransactionalSetSizeParameters;
+import com.hazelcast.client.impl.protocol.codec.TransactionalSetSizeCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractTransactionalMessageTask;
 import com.hazelcast.collection.impl.set.SetService;
 import com.hazelcast.core.TransactionalSet;
@@ -31,18 +30,17 @@ import com.hazelcast.transaction.TransactionContext;
 import java.security.Permission;
 
 public class TransactionalSetSizeMessageTask
-        extends AbstractTransactionalMessageTask<TransactionalSetSizeParameters> {
+        extends AbstractTransactionalMessageTask<TransactionalSetSizeCodec.RequestParameters> {
 
     public TransactionalSetSizeMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected ClientMessage innerCall() throws Exception {
+    protected Object innerCall() throws Exception {
         final TransactionContext context = endpoint.getTransactionContext(parameters.txnId);
         TransactionalSet<Object> set = context.getSet(parameters.name);
-        int size = set.size();
-        return IntResultParameters.encode(size);
+        return set.size();
     }
 
     @Override
@@ -51,8 +49,13 @@ public class TransactionalSetSizeMessageTask
     }
 
     @Override
-    protected TransactionalSetSizeParameters decodeClientMessage(ClientMessage clientMessage) {
-        return TransactionalSetSizeParameters.decode(clientMessage);
+    protected TransactionalSetSizeCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return TransactionalSetSizeCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return TransactionalSetSizeCodec.encodeResponse((Integer) response);
     }
 
     @Override

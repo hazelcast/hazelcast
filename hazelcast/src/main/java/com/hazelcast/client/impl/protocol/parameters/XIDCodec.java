@@ -21,12 +21,14 @@ import com.hazelcast.client.impl.protocol.util.ParameterUtil;
 import com.hazelcast.nio.Bits;
 import com.hazelcast.transaction.impl.xa.SerializableXID;
 
-public final class SerializableXIDCodec {
+import javax.transaction.xa.Xid;
 
-    private SerializableXIDCodec() {
+public final class XIDCodec {
+
+    private XIDCodec() {
     }
 
-    public static SerializableXID decode(ClientMessage clientMessage) {
+    public static Xid decode(ClientMessage clientMessage) {
         int formatId = clientMessage.getInt();
         byte[] globalTransactionId = clientMessage.getByteArray();
         byte[] branchQualifier = clientMessage.getByteArray();
@@ -34,13 +36,13 @@ public final class SerializableXIDCodec {
 
     }
 
-    public static void encode(SerializableXID xid, ClientMessage clientMessage) {
+    public static void encode(Xid xid, ClientMessage clientMessage) {
         clientMessage.set(xid.getFormatId());
         clientMessage.set(xid.getGlobalTransactionId());
         clientMessage.set(xid.getBranchQualifier());
     }
 
-    public static int calculateDataSize(SerializableXID xid) {
+    public static int calculateDataSize(Xid xid) {
         int dataSize = 0;
         dataSize += Bits.INT_SIZE_IN_BYTES;
         dataSize += ParameterUtil.calculateByteArrayDataSize(xid.getGlobalTransactionId());

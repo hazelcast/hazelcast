@@ -31,27 +31,30 @@ import java.util.Collection;
 public interface EventResponseTemplate {
 
     @EventResponse(EventMessageConst.EVENT_MEMBER)
-    void Member(com.hazelcast.client.impl.MemberImpl member, int eventType);
+    void Member(com.hazelcast.instance.AbstractMember member, int eventType);
 
     @EventResponse(EventMessageConst.EVENT_MEMBERATTRIBUTECHANGE)
     void MemberAttributeChange(MemberAttributeChange memberAttributeChange);
 
     @EventResponse(EventMessageConst.EVENT_MEMBERLIST)
-    void MemberList(Collection<com.hazelcast.client.impl.MemberImpl> members);
+    void MemberList(Collection<com.hazelcast.instance.AbstractMember> members);
 
-    @EventResponse(EventMessageConst.EVENT_ENTRYEVENT)
-    void EntryEvent(Data key, Data value, Data oldValue, Data mergingValue, int eventType, String uuid, int numberOfAffectedEntries);
+    @EventResponse(EventMessageConst.EVENT_ENTRY)
+    void Entry(Data key, Data value, Data oldValue, Data mergingValue, int eventType, String uuid, int numberOfAffectedEntries);
 
-    @EventResponse(EventMessageConst.EVENT_ITEMEVENT)
-    void ItemEvent(Data item, String uuid, int eventType);
+    @EventResponse(EventMessageConst.EVENT_ITEM)
+    void Item(Data item, String uuid, int eventType);
 
-    @EventResponse(EventMessageConst.EVENT_TOPICEVENT)
-    void TopicEvent(Data item, String uuid);
+    @EventResponse(EventMessageConst.EVENT_TOPIC)
+    void Topic(Data item, long publishTime, String uuid);
 
     @EventResponse(EventMessageConst.EVENT_PARTITIONLOSTEVENT)
     void PartitionLostEvent(int partitionId, String uuid);
 
     @EventResponse(EventMessageConst.EVENT_DISTRIBUTEDOBJECT)
     void DistributedObject(String name, String serviceName, int eventType);
+
+    @EventResponse(EventMessageConst.EVENT_CACHEINVALIDATION)
+    void CacheInvalidation(String name, Data key, String sourceUuid);
 
 }

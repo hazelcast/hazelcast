@@ -18,8 +18,7 @@ package com.hazelcast.client.impl.protocol.task.cache;
 
 import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.CacheRemoveEntryListenerParameters;
+import com.hazelcast.client.impl.protocol.codec.CacheRemoveEntryListenerCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.map.impl.MapService;
@@ -33,23 +32,28 @@ import java.security.Permission;
  * @see com.hazelcast.cache.impl.CacheService#deregisterListener(String, String)
  */
 public class CacheRemoveEntryListenerMessageTask
-        extends AbstractCallableMessageTask<CacheRemoveEntryListenerParameters> {
+        extends AbstractCallableMessageTask<CacheRemoveEntryListenerCodec.RequestParameters> {
 
     public CacheRemoveEntryListenerMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected ClientMessage call() {
+    protected Object call() {
         CacheService service = getService(MapService.SERVICE_NAME);
         boolean success = service.deregisterListener(parameters.name, parameters.registrationId);
 
-        return BooleanResultParameters.encode(success);
+        return CacheRemoveEntryListenerCodec.encodeResponse(success);
     }
 
     @Override
-    protected CacheRemoveEntryListenerParameters decodeClientMessage(ClientMessage clientMessage) {
-        return CacheRemoveEntryListenerParameters.decode(clientMessage);
+    protected CacheRemoveEntryListenerCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return CacheRemoveEntryListenerCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return CacheRemoveEntryListenerCodec.encodeResponse((Boolean) response);
     }
 
     @Override

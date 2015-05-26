@@ -17,7 +17,6 @@
 package com.hazelcast.client.impl.protocol.task.map;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.DataEntryListResultParameters;
 import com.hazelcast.client.impl.protocol.codec.MapExecuteOnKeysCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractMultiPartitionMessageTask;
 import com.hazelcast.instance.Node;
@@ -33,15 +32,15 @@ import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.OperationFactory;
 
 import java.security.Permission;
-import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-public class MapExecuteOnKeysMessageTask extends AbstractMultiPartitionMessageTask<MapExecuteOnKeysCodec.RequestParameters> {
+public class MapExecuteOnKeysMessageTask
+        extends AbstractMultiPartitionMessageTask<MapExecuteOnKeysCodec.RequestParameters> {
 
     public MapExecuteOnKeysMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -50,13 +49,12 @@ public class MapExecuteOnKeysMessageTask extends AbstractMultiPartitionMessageTa
     @Override
     protected OperationFactory createOperationFactory() {
         EntryProcessor entryProcessor = serializationService.toObject(parameters.entryProcessor);
-        return new MultipleEntryOperationFactory(parameters.name, parameters.keys, entryProcessor);
+        return new MultipleEntryOperationFactory(parameters.name, (Set<Data>) parameters.keys, entryProcessor);
     }
 
     @Override
-    protected ClientMessage reduce(Map<Integer, Object> map) {
-        List<Data> keys = new ArrayList<Data>();
-        List<Data> values = new ArrayList<Data>();
+    protected Object reduce(Map<Integer, Object> map) {
+        Map<Data, Data> dataMap = new HashMap<Data, Data>();
 
         MapService mapService = getService(MapService.SERVICE_NAME);
         for (Object o : map.values()) {
@@ -64,12 +62,11 @@ public class MapExecuteOnKeysMessageTask extends AbstractMultiPartitionMessageTa
                 MapEntrySet entrySet = (MapEntrySet) mapService.getMapServiceContext().toObject(o);
                 Set<Map.Entry<Data, Data>> entries = entrySet.getEntrySet();
                 for (Map.Entry<Data, Data> entry : entries) {
-                    keys.add(entry.getKey());
-                    values.add(entry.getValue());
+                    dataMap.put(entry.getKey(), entry.getValue());
                 }
             }
         }
-        return DataEntryListResultParameters.encode(keys, values);
+        return dataMap;
     }
 
     @Override
@@ -89,6 +86,11 @@ public class MapExecuteOnKeysMessageTask extends AbstractMultiPartitionMessageTa
     @Override
     protected MapExecuteOnKeysCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
         return MapExecuteOnKeysCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return MapExecuteOnKeysCodec.encodeResponse((Map<Data, Data>) response);
     }
 
 

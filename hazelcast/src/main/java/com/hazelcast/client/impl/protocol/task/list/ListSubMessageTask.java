@@ -17,8 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.list;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.DataCollectionResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.ListSubParameters;
+import com.hazelcast.client.impl.protocol.codec.ListSubCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.collection.impl.list.ListService;
 import com.hazelcast.collection.impl.list.operations.ListSubOperation;
@@ -34,10 +33,9 @@ import java.security.Permission;
 /**
  * Client Protocol Task for handling messages with type id:
  * {@link com.hazelcast.client.impl.protocol.parameters.ListMessageType#LIST_SUB}
- *
  */
 public class ListSubMessageTask
-        extends AbstractPartitionMessageTask<ListSubParameters> {
+        extends AbstractPartitionMessageTask<ListSubCodec.RequestParameters> {
 
     public ListSubMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -49,13 +47,13 @@ public class ListSubMessageTask
     }
 
     @Override
-    protected ListSubParameters decodeClientMessage(ClientMessage clientMessage) {
-        return ListSubParameters.decode(clientMessage);
+    protected ListSubCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return ListSubCodec.decodeRequest(clientMessage);
     }
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return DataCollectionResultParameters.encode(((SerializableCollection) response).getCollection());
+        return ListSubCodec.encodeResponse(((SerializableCollection) response).getCollection());
     }
 
     @Override

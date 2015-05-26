@@ -32,7 +32,7 @@ public interface MultiMapCodecTemplate {
     @Request(id = 2, retryable = true, response = ResponseMessageConst.LIST_DATA)
     void get(String name, Data key, long threadId);
 
-    @Request(id = 3, retryable = false, response = ResponseMessageConst.BOOLEAN)
+    @Request(id = 3, retryable = false, response = ResponseMessageConst.LIST_DATA)
     void remove(String name, Data key, long threadId);
 
     @Request(id = 4, retryable = true, response = ResponseMessageConst.LIST_DATA)
@@ -63,11 +63,11 @@ public interface MultiMapCodecTemplate {
     void count(String name, Data key, long threadId);
 
     @Request(id = 13, retryable = false, response = ResponseMessageConst.STRING,
-            event = {EventMessageConst.EVENT_ENTRYEVENT})
+            event = {EventMessageConst.EVENT_ENTRY})
     void addEntryListenerToKey(String name, Data key, boolean includeValue);
 
     @Request(id = 14, retryable = false, response = ResponseMessageConst.STRING,
-            event = {EventMessageConst.EVENT_ENTRYEVENT})
+            event = {EventMessageConst.EVENT_ENTRY})
     void addEntryListener(String name, boolean includeValue);
 
     @Request(id = 15, retryable = false, response = ResponseMessageConst.BOOLEAN)
@@ -76,7 +76,7 @@ public interface MultiMapCodecTemplate {
     @Request(id = 16, retryable = false, response = ResponseMessageConst.VOID)
     void lock(String name, Data key, long threadId, long ttl);
 
-    @Request(id = 17, retryable = false, response = ResponseMessageConst.VOID)
+    @Request(id = 17, retryable = false, response = ResponseMessageConst.BOOLEAN)
     void tryLock(String name, Data key, long threadId, long timeout);
 
     @Request(id = 18, retryable = true, response = ResponseMessageConst.BOOLEAN)

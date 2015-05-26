@@ -17,8 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.transactionalmap;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.DataCollectionResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.TransactionalMapValuesParameters;
+import com.hazelcast.client.impl.protocol.codec.TransactionalMapValuesCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractTransactionalMessageTask;
 import com.hazelcast.core.TransactionalMap;
 import com.hazelcast.instance.Node;
@@ -35,14 +34,14 @@ import java.util.Collection;
 import java.util.List;
 
 public class TransactionalMapValuesMessageTask
-        extends AbstractTransactionalMessageTask<TransactionalMapValuesParameters> {
+        extends AbstractTransactionalMessageTask<TransactionalMapValuesCodec.RequestParameters> {
 
     public TransactionalMapValuesMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected ClientMessage innerCall() throws Exception {
+    protected Object innerCall() throws Exception {
         final TransactionContext context = getEndpoint().getTransactionContext(parameters.txnId);
         final TransactionalMap map = context.getMap(parameters.name);
         Collection values = map.values();
@@ -50,7 +49,7 @@ public class TransactionalMapValuesMessageTask
         for (Object o : values) {
             list.add(serializationService.toData(o));
         }
-        return DataCollectionResultParameters.encode(list);
+        return list;
     }
 
     @Override
@@ -59,8 +58,13 @@ public class TransactionalMapValuesMessageTask
     }
 
     @Override
-    protected TransactionalMapValuesParameters decodeClientMessage(ClientMessage clientMessage) {
-        return TransactionalMapValuesParameters.decode(clientMessage);
+    protected TransactionalMapValuesCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return TransactionalMapValuesCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return TransactionalMapValuesCodec.encodeResponse((Collection<Data>) response);
     }
 
     @Override

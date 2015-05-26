@@ -17,8 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.queue;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.QueueRemoveListenerParameters;
+import com.hazelcast.client.impl.protocol.codec.QueueRemoveListenerCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.instance.Node;
@@ -31,25 +30,28 @@ import java.security.Permission;
 /**
  * Client Protocol Task for handling messages with type id:
  * {@link com.hazelcast.client.impl.protocol.parameters.QueueMessageType#QUEUE_REMOVELISTENER}
- *
  */
 public class QueueRemoveListenerMessageTask
-        extends AbstractCallableMessageTask<QueueRemoveListenerParameters> {
+        extends AbstractCallableMessageTask<QueueRemoveListenerCodec.RequestParameters> {
 
     public QueueRemoveListenerMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected ClientMessage call() {
+    protected Object call() {
         final QueueService service = getService(getServiceName());
-        final boolean removeItemListener = service.removeItemListener(parameters.name, parameters.registrationId);
-        return BooleanResultParameters.encode(removeItemListener);
+        return service.removeItemListener(parameters.name, parameters.registrationId);
     }
 
     @Override
-    protected QueueRemoveListenerParameters decodeClientMessage(ClientMessage clientMessage) {
-        return QueueRemoveListenerParameters.decode(clientMessage);
+    protected QueueRemoveListenerCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return QueueRemoveListenerCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return QueueRemoveListenerCodec.encodeResponse((Boolean) response);
     }
 
     @Override

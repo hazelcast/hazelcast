@@ -21,9 +21,7 @@ import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.client.CacheInvalidationMessage;
 import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.AddListenerResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.CacheAddInvalidationListenerParameters;
-import com.hazelcast.client.impl.protocol.parameters.CacheInvalidationMessageParameters;
+import com.hazelcast.client.impl.protocol.codec.CacheAddInvalidationListenerCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
@@ -31,14 +29,14 @@ import com.hazelcast.nio.Connection;
 import java.security.Permission;
 
 public class CacheAddInvalidationListenerTask
-        extends AbstractCallableMessageTask<CacheAddInvalidationListenerParameters> {
+        extends AbstractCallableMessageTask<CacheAddInvalidationListenerCodec.RequestParameters> {
 
     public CacheAddInvalidationListenerTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected ClientMessage call() {
+    protected Object call() {
         final ClientEndpoint endpoint = getEndpoint();
         CacheService cacheService = getService(CacheService.SERVICE_NAME);
         String registrationId = cacheService.addInvalidationListener(parameters.name, new CacheEventListener() {
@@ -48,21 +46,27 @@ public class CacheAddInvalidationListenerTask
                     CacheInvalidationMessage message = (CacheInvalidationMessage) eventObject;
 
                     if (endpoint.isAlive()) {
-                        ClientMessage eventMessage = CacheInvalidationMessageParameters
-                                .encode(message.getName(), message.getKey(), message.getSourceUuid());
-                        sendClientMessage(eventMessage);
+                        ClientMessage eventMessage =
+                                CacheAddInvalidationListenerCodec.
+                                        encodeCacheInvalidationEvent(message.getName(), message.getKey(), message.getSourceUuid());
+                        sendClientMessage(message.getKey(), eventMessage);
 
                     }
                 }
             }
         });
         endpoint.setListenerRegistration(CacheService.SERVICE_NAME, parameters.name, registrationId);
-        return AddListenerResultParameters.encode(registrationId);
+        return registrationId;
     }
 
     @Override
-    protected CacheAddInvalidationListenerParameters decodeClientMessage(ClientMessage clientMessage) {
-        return null;
+    protected CacheAddInvalidationListenerCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return CacheAddInvalidationListenerCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return CacheAddInvalidationListenerCodec.encodeResponse((String) response);
     }
 
     @Override

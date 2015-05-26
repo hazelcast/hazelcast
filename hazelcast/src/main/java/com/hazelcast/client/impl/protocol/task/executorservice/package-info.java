@@ -17,8 +17,7 @@
 /**
  * <p>Client protocol tasks implementations for ExecutorService</p>
  */
-@GenerateMessageTaskFactory
-package com.hazelcast.client.impl.protocol.task.executorservice;
+@GenerateMessageTaskFactory package com.hazelcast.client.impl.protocol.task.executorservice;
 
 import com.hazelcast.annotation.GenerateMessageTaskFactory;
 

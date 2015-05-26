@@ -18,23 +18,23 @@ package com.hazelcast.client.impl.protocol.task.map;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapPutAllCodec;
-import com.hazelcast.client.impl.protocol.parameters.VoidResultParameters;
 import com.hazelcast.client.impl.protocol.task.AbstractAllPartitionsMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.map.impl.MapEntrySet;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.operation.MapPutAllOperationFactory;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.security.Permission;
-import java.util.HashMap;
 import java.util.Map;
 
-public class MapPutAllMessageTask extends AbstractAllPartitionsMessageTask<MapPutAllCodec.RequestParameters> {
+public class MapPutAllMessageTask
+        extends AbstractAllPartitionsMessageTask<MapPutAllCodec.RequestParameters> {
 
     public MapPutAllMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -42,16 +42,15 @@ public class MapPutAllMessageTask extends AbstractAllPartitionsMessageTask<MapPu
 
     @Override
     protected OperationFactory createOperationFactory() {
-        int length = parameters.keys.size();
         final MapEntrySet mapEntrySet = new MapEntrySet();
-        for (int i = 0; i < length; i++) {
-            mapEntrySet.add(parameters.keys.get(i), parameters.values.get(i));
+        for (Map.Entry<Data, Data> entry : parameters.entries.entrySet()) {
+            mapEntrySet.add(entry.getKey(), entry.getValue());
         }
         return new MapPutAllOperationFactory(parameters.name, mapEntrySet);
     }
 
     @Override
-    protected ClientMessage reduce(Map<Integer, Object> map) {
+    protected Object reduce(Map<Integer, Object> map) {
         MapService mapService = getService(MapService.SERVICE_NAME);
         for (Map.Entry<Integer, Object> entry : map.entrySet()) {
             Object result = mapService.getMapServiceContext().toObject(entry.getValue());
@@ -59,12 +58,17 @@ public class MapPutAllMessageTask extends AbstractAllPartitionsMessageTask<MapPu
                 throw ExceptionUtil.rethrow((Throwable) result);
             }
         }
-        return VoidResultParameters.encode();
+        return null;
     }
 
     @Override
     protected MapPutAllCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
         return MapPutAllCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return MapPutAllCodec.encodeResponse();
     }
 
     @Override
@@ -89,11 +93,6 @@ public class MapPutAllMessageTask extends AbstractAllPartitionsMessageTask<MapPu
 
     @Override
     public Object[] getParameters() {
-        final HashMap map = new HashMap();
-        final int length = parameters.keys.size();
-        for (int i = 0; i < length; i++) {
-            map.put(parameters.keys.get(i), parameters.values.get(i));
-        }
-        return new Object[]{map};
+        return new Object[]{parameters.entries};
     }
 }

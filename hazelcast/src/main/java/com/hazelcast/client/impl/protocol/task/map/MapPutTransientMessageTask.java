@@ -25,7 +25,8 @@ import com.hazelcast.spi.Operation;
 
 import java.util.concurrent.TimeUnit;
 
-public class MapPutTransientMessageTask extends AbstractMapPutMessageTask<MapPutTransientCodec.RequestParameters> {
+public class MapPutTransientMessageTask
+        extends AbstractMapPutMessageTask<MapPutTransientCodec.RequestParameters> {
 
     public MapPutTransientMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -42,6 +43,11 @@ public class MapPutTransientMessageTask extends AbstractMapPutMessageTask<MapPut
     @Override
     protected MapPutTransientCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
         return MapPutTransientCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return MapPutTransientCodec.encodeResponse();
     }
 
     @Override

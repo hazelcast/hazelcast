@@ -17,13 +17,13 @@
 package com.hazelcast.client.impl.protocol.task.transactionalqueue;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.GenericResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.TransactionalQueuePeekParameters;
+import com.hazelcast.client.impl.protocol.codec.TransactionalQueuePeekCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractTransactionalMessageTask;
 import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.core.TransactionalQueue;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.QueuePermission;
 import com.hazelcast.transaction.TransactionContext;
@@ -32,18 +32,18 @@ import java.security.Permission;
 import java.util.concurrent.TimeUnit;
 
 public class TransactionalQueuePeekMessageTask
-        extends AbstractTransactionalMessageTask<TransactionalQueuePeekParameters> {
+        extends AbstractTransactionalMessageTask<TransactionalQueuePeekCodec.RequestParameters> {
 
     public TransactionalQueuePeekMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected ClientMessage innerCall() throws Exception {
+    protected Object innerCall() throws Exception {
         final TransactionContext context = endpoint.getTransactionContext(parameters.txnId);
         final TransactionalQueue queue = context.getQueue(parameters.name);
         Object item = queue.peek(parameters.timeout, TimeUnit.MILLISECONDS);
-        return GenericResultParameters.encode(serializationService.toData(item));
+        return serializationService.toData(item);
     }
 
     @Override
@@ -52,8 +52,13 @@ public class TransactionalQueuePeekMessageTask
     }
 
     @Override
-    protected TransactionalQueuePeekParameters decodeClientMessage(ClientMessage clientMessage) {
-        return TransactionalQueuePeekParameters.decode(clientMessage);
+    protected TransactionalQueuePeekCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return TransactionalQueuePeekCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return TransactionalQueuePeekCodec.encodeResponse((Data) response);
     }
 
     @Override

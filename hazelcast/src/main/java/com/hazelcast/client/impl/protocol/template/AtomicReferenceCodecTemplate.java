@@ -29,7 +29,7 @@ public interface AtomicReferenceCodecTemplate {
     @Request(id = 1, retryable = false, response = ResponseMessageConst.DATA)
     void apply(String name, Data function);
 
-    @Request(id = 2, retryable = false, response = ResponseMessageConst.DATA)
+    @Request(id = 2, retryable = false, response = ResponseMessageConst.VOID)
     void alter(String name, Data function);
 
     @Request(id = 3, retryable = false, response = ResponseMessageConst.DATA)

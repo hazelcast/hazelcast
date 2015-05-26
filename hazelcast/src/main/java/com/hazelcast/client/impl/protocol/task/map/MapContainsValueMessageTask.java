@@ -17,7 +17,6 @@
 package com.hazelcast.client.impl.protocol.task.map;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
 import com.hazelcast.client.impl.protocol.codec.MapContainsValueCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractAllPartitionsMessageTask;
 import com.hazelcast.instance.Node;
@@ -31,7 +30,8 @@ import com.hazelcast.spi.OperationFactory;
 import java.security.Permission;
 import java.util.Map;
 
-public class MapContainsValueMessageTask extends AbstractAllPartitionsMessageTask<MapContainsValueCodec.RequestParameters> {
+public class MapContainsValueMessageTask
+        extends AbstractAllPartitionsMessageTask<MapContainsValueCodec.RequestParameters> {
 
     public MapContainsValueMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -43,7 +43,7 @@ public class MapContainsValueMessageTask extends AbstractAllPartitionsMessageTas
     }
 
     @Override
-    protected ClientMessage reduce(Map<Integer, Object> map) {
+    protected Object reduce(Map<Integer, Object> map) {
         boolean result = false;
         for (Object contains : map.values()) {
             if (Boolean.TRUE.equals(contains)) {
@@ -51,12 +51,17 @@ public class MapContainsValueMessageTask extends AbstractAllPartitionsMessageTas
                 break;
             }
         }
-        return BooleanResultParameters.encode(result);
+        return result;
     }
 
     @Override
     protected MapContainsValueCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
         return MapContainsValueCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return MapContainsValueCodec.encodeResponse((Boolean) response);
     }
 
     @Override

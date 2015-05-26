@@ -17,8 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.replicatedmap;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.DataCollectionResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.ReplicatedMapValuesParameters;
+import com.hazelcast.client.impl.protocol.codec.ReplicatedMapValuesCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
@@ -33,14 +32,15 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-public class ReplicatedMapValuesMessageTask extends AbstractCallableMessageTask<ReplicatedMapValuesParameters> {
+public class ReplicatedMapValuesMessageTask
+        extends AbstractCallableMessageTask<ReplicatedMapValuesCodec.RequestParameters> {
 
     public ReplicatedMapValuesMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected ClientMessage call() throws Exception {
+    protected Object call() throws Exception {
         ReplicatedMapService replicatedMapService = getService(getServiceName());
         final ReplicatedRecordStore recordStore = replicatedMapService.getReplicatedRecordStore(parameters.name, true);
         final Collection values = recordStore.values();
@@ -48,13 +48,18 @@ public class ReplicatedMapValuesMessageTask extends AbstractCallableMessageTask<
         for (Object o : values) {
             res.add(serializationService.toData(o));
         }
-        return DataCollectionResultParameters.encode(res);
+        return res;
     }
 
 
     @Override
-    protected ReplicatedMapValuesParameters decodeClientMessage(ClientMessage clientMessage) {
-        return ReplicatedMapValuesParameters.decode(clientMessage);
+    protected ReplicatedMapValuesCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return ReplicatedMapValuesCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return ReplicatedMapValuesCodec.encodeResponse((Collection<Data>) response);
     }
 
     @Override

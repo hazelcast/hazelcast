@@ -32,12 +32,13 @@ public final class EventMessageConst {
     public static final int EVENT_MEMBERLIST = 201;
     public static final int EVENT_MEMBERATTRIBUTECHANGE = 202;
 
-    public static final int EVENT_ENTRYEVENT = 203;
-    public static final int EVENT_ITEMEVENT = 204;
-    public static final int EVENT_TOPICEVENT = 205;
+    public static final int EVENT_ENTRY = 203;
+    public static final int EVENT_ITEM = 204;
+    public static final int EVENT_TOPIC = 205;
     public static final int EVENT_PARTITIONLOSTEVENT = 206;
 
 
     public static final int EVENT_DISTRIBUTEDOBJECT = 207;
 
+    public static final int EVENT_CACHEINVALIDATION = 208;
 }

@@ -29,7 +29,7 @@ public final class MemberCodec {
     private MemberCodec() {
     }
 
-    public static com.hazelcast.client.impl.MemberImpl decode(ClientMessage clientMessage) {
+    public static com.hazelcast.instance.AbstractMember decode(ClientMessage clientMessage) {
         final Address address = AddressCodec.decode(clientMessage);
         String uuid = clientMessage.getStringUtf8();
         int attributeSize = clientMessage.getInt();
@@ -43,7 +43,7 @@ public final class MemberCodec {
         return new com.hazelcast.client.impl.MemberImpl(address, uuid, attributes);
     }
 
-    public static void encode(com.hazelcast.instance.MemberImpl member, ClientMessage clientMessage) {
+    public static void encode(com.hazelcast.instance.AbstractMember member, ClientMessage clientMessage) {
         AddressCodec.encode(member.getAddress(), clientMessage);
         clientMessage.set(member.getUuid());
         Map<String, Object> attributes = new HashMap<String, Object>(member.getAttributes());
@@ -56,34 +56,7 @@ public final class MemberCodec {
         }
     }
 
-    public static void encode(com.hazelcast.client.impl.MemberImpl member, ClientMessage clientMessage) {
-        AddressCodec.encode(member.getAddress(), clientMessage);
-        clientMessage.set(member.getUuid());
-        Map<String, Object> attributes = new HashMap<String, Object>(member.getAttributes());
-        clientMessage.set(attributes.size());
-        for (Map.Entry<String, Object> entry : attributes.entrySet()) {
-            clientMessage.set(entry.getKey());
-            Object value = entry.getValue();
-            clientMessage.set(value.toString());
-
-        }
-    }
-
-    public static int calculateDataSize(com.hazelcast.client.impl.MemberImpl member) {
-        int dataSize = AddressCodec.calculateDataSize(member.getAddress());
-        dataSize += ParameterUtil.calculateStringDataSize(member.getUuid());
-        dataSize += Bits.INT_SIZE_IN_BYTES;
-        Map<String, Object> attributes = member.getAttributes();
-        for (Map.Entry<String, Object> entry : attributes.entrySet()) {
-            dataSize += ParameterUtil.calculateStringDataSize(entry.getKey());
-            Object value = entry.getValue();
-            //TODO: this is costly to use toString
-            dataSize += ParameterUtil.calculateStringDataSize(value.toString());
-        }
-        return dataSize;
-    }
-
-    public static int calculateDataSize(com.hazelcast.instance.MemberImpl member) {
+    public static int calculateDataSize(com.hazelcast.instance.AbstractMember member) {
         int dataSize = AddressCodec.calculateDataSize(member.getAddress());
         dataSize += ParameterUtil.calculateStringDataSize(member.getUuid());
         dataSize += Bits.INT_SIZE_IN_BYTES;

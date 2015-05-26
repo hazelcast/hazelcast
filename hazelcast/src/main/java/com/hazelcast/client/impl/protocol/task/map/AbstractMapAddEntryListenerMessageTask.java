@@ -18,8 +18,6 @@ package com.hazelcast.client.impl.protocol.task.map;
 
 import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.AddListenerResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.EntryEventParameters;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
@@ -48,7 +46,7 @@ public abstract class AbstractMapAddEntryListenerMessageTask<Parameter>
     }
 
     @Override
-    protected ClientMessage call() {
+    protected Object call() {
         final ClientEndpoint endpoint = getEndpoint();
         final MapService mapService = getService(MapService.SERVICE_NAME);
 
@@ -57,7 +55,7 @@ public abstract class AbstractMapAddEntryListenerMessageTask<Parameter>
         final String name = getDistributedObjectName();
         final String registrationId = mapServiceContext.addEventListener(listener, getEventFilter(), name);
         endpoint.setListenerRegistration(MapService.SERVICE_NAME, name, registrationId);
-        return AddListenerResultParameters.encode(registrationId);
+        return registrationId;
     }
 
     protected abstract EventFilter getEventFilter();
@@ -91,10 +89,9 @@ public abstract class AbstractMapAddEntryListenerMessageTask<Parameter>
                 Data newValueData = resolveData(dataAwareEntryEvent.getNewValueData());
                 Data oldValueData = resolveData(dataAwareEntryEvent.getOldValueData());
                 Data meringValueData = resolveData(dataAwareEntryEvent.getMeringValueData());
-                ClientMessage entryEvent = EntryEventParameters.encode(keyData
+                sendClientMessage(keyData, encodeEvent(keyData
                         , newValueData, oldValueData, meringValueData, event.getEventType().getType(),
-                        event.getMember().getUuid(), 1);
-                sendClientMessage(entryEvent);
+                        event.getMember().getUuid(), 1));
             }
         }
 
@@ -108,10 +105,13 @@ public abstract class AbstractMapAddEntryListenerMessageTask<Parameter>
                 final EntryEventType type = event.getEventType();
                 final String uuid = event.getMember().getUuid();
                 int numberOfEntriesAffected = event.getNumberOfEntriesAffected();
-                ClientMessage entryEvent = EntryEventParameters.encode(NULL_DATA,
-                        NULL_DATA, NULL_DATA, NULL_DATA, type.getType(), uuid, numberOfEntriesAffected);
-                sendClientMessage(entryEvent);
+                sendClientMessage(null, encodeEvent(NULL_DATA,
+                        NULL_DATA, NULL_DATA, NULL_DATA, type.getType(), uuid, numberOfEntriesAffected));
             }
         }
     }
+
+    protected abstract ClientMessage encodeEvent(Data keyData, Data newValueData,
+                                                 Data oldValueData, Data meringValueData,
+                                                 int type, String uuid, int numberOfEntriesAffected);
 }

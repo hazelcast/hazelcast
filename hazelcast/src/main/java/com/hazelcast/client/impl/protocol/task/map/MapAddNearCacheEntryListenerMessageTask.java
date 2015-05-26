@@ -22,6 +22,7 @@ import com.hazelcast.instance.Node;
 import com.hazelcast.map.impl.EntryEventFilter;
 import com.hazelcast.map.impl.SyntheticEventFilter;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.EventFilter;
 
 public class MapAddNearCacheEntryListenerMessageTask
@@ -39,6 +40,14 @@ public class MapAddNearCacheEntryListenerMessageTask
 
 
     @Override
+    protected ClientMessage encodeEvent(Data keyData, Data newValueData, Data oldValueData,
+                                        Data meringValueData, int type, String uuid, int numberOfAffectedEntries) {
+        return MapAddNearCacheEntryListenerCodec.encodeEntryEvent(keyData, newValueData,
+                oldValueData, meringValueData, type, uuid, numberOfAffectedEntries);
+    }
+
+
+    @Override
     public String getDistributedObjectName() {
         return parameters.name;
     }
@@ -51,6 +60,11 @@ public class MapAddNearCacheEntryListenerMessageTask
     @Override
     protected MapAddNearCacheEntryListenerCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
         return MapAddNearCacheEntryListenerCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return MapAddNearCacheEntryListenerCodec.encodeResponse((String) response);
     }
 
 }

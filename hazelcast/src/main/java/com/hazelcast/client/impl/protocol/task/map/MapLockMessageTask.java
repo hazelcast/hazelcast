@@ -17,7 +17,6 @@
 package com.hazelcast.client.impl.protocol.task.map;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
 import com.hazelcast.client.impl.protocol.codec.MapLockCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.concurrent.lock.LockService;
@@ -34,11 +33,8 @@ import com.hazelcast.spi.Operation;
 import java.security.Permission;
 import java.util.concurrent.TimeUnit;
 
-/**
- * Client Protocol Task for handling messages with type id:
- * {@link com.hazelcast.client.impl.protocol.parameters.MapMessageType#MAP_LOCK}
- */
-public class MapLockMessageTask extends AbstractPartitionMessageTask<MapLockCodec.RequestParameters> {
+public class MapLockMessageTask
+        extends AbstractPartitionMessageTask<MapLockCodec.RequestParameters> {
 
     public MapLockMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -57,7 +53,7 @@ public class MapLockMessageTask extends AbstractPartitionMessageTask<MapLockCode
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return BooleanResultParameters.encode((Boolean) response);
+        return MapLockCodec.encodeResponse();
     }
 
     @Override

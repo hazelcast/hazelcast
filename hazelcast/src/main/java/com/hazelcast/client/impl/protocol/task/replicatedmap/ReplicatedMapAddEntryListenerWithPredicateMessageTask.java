@@ -17,14 +17,15 @@
 package com.hazelcast.client.impl.protocol.task.replicatedmap;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.ReplicatedMapAddEntryListenerWithPredicateParameters;
+import com.hazelcast.client.impl.protocol.codec.ReplicatedMapAddEntryListenerWithPredicateCodec;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
 
 public class ReplicatedMapAddEntryListenerWithPredicateMessageTask
-        extends AbstractReplicatedMapAddEntryListenerMessageTask<ReplicatedMapAddEntryListenerWithPredicateParameters> {
+        extends AbstractReplicatedMapAddEntryListenerMessageTask
+        <ReplicatedMapAddEntryListenerWithPredicateCodec.RequestParameters> {
 
     public ReplicatedMapAddEntryListenerWithPredicateMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -41,13 +42,25 @@ public class ReplicatedMapAddEntryListenerWithPredicateMessageTask
     }
 
     @Override
+    protected ClientMessage encodeEvent(Data key, Data newValue, Data oldValue, Data mergingValue,
+                                        int type, String uuid, int numberOfAffectedEntries) {
+        return ReplicatedMapAddEntryListenerWithPredicateCodec.encodeEntryEvent(key, newValue,
+                oldValue, mergingValue, type, uuid, numberOfAffectedEntries);
+    }
+
+    @Override
     public String getDistributedObjectName() {
         return parameters.name;
     }
 
     @Override
-    protected ReplicatedMapAddEntryListenerWithPredicateParameters decodeClientMessage(ClientMessage clientMessage) {
-        return ReplicatedMapAddEntryListenerWithPredicateParameters.decode(clientMessage);
+    protected ReplicatedMapAddEntryListenerWithPredicateCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return ReplicatedMapAddEntryListenerWithPredicateCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return ReplicatedMapAddEntryListenerWithPredicateCodec.encodeResponse((String) response);
     }
 
     @Override

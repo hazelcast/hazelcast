@@ -17,21 +17,23 @@
 package com.hazelcast.client.impl.protocol.task.map;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
 import com.hazelcast.client.impl.protocol.codec.MapLoadGivenKeysCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractAllPartitionsMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.operation.MapLoadAllOperationFactory;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.OperationFactory;
 
 import java.security.Permission;
+import java.util.List;
 import java.util.Map;
 
-public class MapLoadGivenKeysMessageTask extends AbstractAllPartitionsMessageTask<MapLoadGivenKeysCodec.RequestParameters> {
+public class MapLoadGivenKeysMessageTask
+        extends AbstractAllPartitionsMessageTask<MapLoadGivenKeysCodec.RequestParameters> {
 
     public MapLoadGivenKeysMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -39,17 +41,22 @@ public class MapLoadGivenKeysMessageTask extends AbstractAllPartitionsMessageTas
 
     @Override
     protected OperationFactory createOperationFactory() {
-        return new MapLoadAllOperationFactory(parameters.name, parameters.keys, parameters.replaceExistingValues);
+        return new MapLoadAllOperationFactory(parameters.name, (List<Data>) parameters.keys, parameters.replaceExistingValues);
     }
 
     @Override
-    protected ClientMessage reduce(Map<Integer, Object> map) {
-        return BooleanResultParameters.encode(true);
+    protected Object reduce(Map<Integer, Object> map) {
+        return MapLoadGivenKeysCodec.encodeResponse();
     }
 
     @Override
     protected MapLoadGivenKeysCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
         return MapLoadGivenKeysCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return MapLoadGivenKeysCodec.encodeResponse();
     }
 
     @Override

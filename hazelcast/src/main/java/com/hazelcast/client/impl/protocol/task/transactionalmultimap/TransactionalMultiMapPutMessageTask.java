@@ -17,8 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.transactionalmultimap;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.TransactionalMultiMapPutParameters;
+import com.hazelcast.client.impl.protocol.codec.TransactionalMultiMapPutCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractTransactionalMessageTask;
 import com.hazelcast.core.TransactionalMultiMap;
 import com.hazelcast.instance.Node;
@@ -31,18 +30,17 @@ import com.hazelcast.transaction.TransactionContext;
 import java.security.Permission;
 
 public class TransactionalMultiMapPutMessageTask
-        extends AbstractTransactionalMessageTask<TransactionalMultiMapPutParameters> {
+        extends AbstractTransactionalMessageTask<TransactionalMultiMapPutCodec.RequestParameters> {
 
     public TransactionalMultiMapPutMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected ClientMessage innerCall() throws Exception {
+    protected Object innerCall() throws Exception {
         final TransactionContext context = endpoint.getTransactionContext(parameters.txnId);
         TransactionalMultiMap<Object, Object> multiMap = context.getMultiMap(parameters.name);
-        boolean success = multiMap.put(parameters.key, parameters.value);
-        return BooleanResultParameters.encode(success);
+        return multiMap.put(parameters.key, parameters.value);
     }
 
     @Override
@@ -51,8 +49,13 @@ public class TransactionalMultiMapPutMessageTask
     }
 
     @Override
-    protected TransactionalMultiMapPutParameters decodeClientMessage(ClientMessage clientMessage) {
-        return TransactionalMultiMapPutParameters.decode(clientMessage);
+    protected TransactionalMultiMapPutCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return TransactionalMultiMapPutCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return TransactionalMultiMapPutCodec.encodeResponse((Boolean) response);
     }
 
     @Override

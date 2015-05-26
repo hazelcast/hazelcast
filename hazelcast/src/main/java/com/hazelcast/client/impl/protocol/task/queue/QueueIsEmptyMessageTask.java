@@ -17,8 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.queue;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.QueueIsEmptyParameters;
+import com.hazelcast.client.impl.protocol.codec.QueueIsEmptyCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.collection.impl.queue.operations.IsEmptyOperation;
@@ -33,10 +32,9 @@ import java.security.Permission;
 /**
  * Client Protocol Task for handling messages with type id:
  * {@link com.hazelcast.client.impl.protocol.parameters.QueueMessageType#QUEUE_ISEMPTY}
- *
  */
 public class QueueIsEmptyMessageTask
-        extends AbstractPartitionMessageTask<QueueIsEmptyParameters> {
+        extends AbstractPartitionMessageTask<QueueIsEmptyCodec.RequestParameters> {
 
     public QueueIsEmptyMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -49,12 +47,12 @@ public class QueueIsEmptyMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return BooleanResultParameters.encode((Boolean) response);
+        return QueueIsEmptyCodec.encodeResponse((Boolean) response);
     }
 
     @Override
-    protected QueueIsEmptyParameters decodeClientMessage(ClientMessage clientMessage) {
-        return QueueIsEmptyParameters.decode(clientMessage);
+    protected QueueIsEmptyCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return QueueIsEmptyCodec.decodeRequest(clientMessage);
     }
 
     @Override

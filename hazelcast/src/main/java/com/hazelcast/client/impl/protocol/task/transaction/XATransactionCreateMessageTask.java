@@ -18,8 +18,7 @@ package com.hazelcast.client.impl.protocol.task.transaction;
 
 import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.TransactionCreateResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.XATransactionCreateParameters;
+import com.hazelcast.client.impl.protocol.codec.XATransactionCreateCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
@@ -31,25 +30,30 @@ import com.hazelcast.transaction.impl.xa.XAService;
 import java.security.Permission;
 
 public class XATransactionCreateMessageTask
-        extends AbstractCallableMessageTask<XATransactionCreateParameters> {
+        extends AbstractCallableMessageTask<XATransactionCreateCodec.RequestParameters> {
 
     public XATransactionCreateMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected ClientMessage call() throws Exception {
+    protected Object call() throws Exception {
         ClientEndpoint endpoint = getEndpoint();
         XAService xaService = getService(getServiceName());
         TransactionContext context = xaService.newXATransactionContext(parameters.xid, (int) parameters.timeout);
         TransactionAccessor.getTransaction(context).begin();
         endpoint.setTransactionContext(context);
-        return TransactionCreateResultParameters.encode(context.getTxnId());
+        return context.getTxnId();
     }
 
     @Override
-    protected XATransactionCreateParameters decodeClientMessage(ClientMessage clientMessage) {
-        return XATransactionCreateParameters.decode(clientMessage);
+    protected XATransactionCreateCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return XATransactionCreateCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return XATransactionCreateCodec.encodeResponse((String) response);
     }
 
     @Override

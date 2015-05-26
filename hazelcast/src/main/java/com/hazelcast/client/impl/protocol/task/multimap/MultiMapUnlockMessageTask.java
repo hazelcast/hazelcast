@@ -17,8 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.multimap;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.MultiMapUnlockParameters;
-import com.hazelcast.client.impl.protocol.parameters.VoidResultParameters;
+import com.hazelcast.client.impl.protocol.codec.MultiMapUnlockCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.concurrent.lock.operations.UnlockOperation;
@@ -36,7 +35,8 @@ import java.security.Permission;
  * Client Protocol Task for handling messages with type id:
  * {@link com.hazelcast.client.impl.protocol.parameters.MultiMapMessageType#MULTIMAP_UNLOCK}
  */
-public class MultiMapUnlockMessageTask extends AbstractPartitionMessageTask<MultiMapUnlockParameters> {
+public class MultiMapUnlockMessageTask
+        extends AbstractPartitionMessageTask<MultiMapUnlockCodec.RequestParameters> {
 
     public MultiMapUnlockMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -50,12 +50,12 @@ public class MultiMapUnlockMessageTask extends AbstractPartitionMessageTask<Mult
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return VoidResultParameters.encode();
+        return MultiMapUnlockCodec.encodeResponse();
     }
 
     @Override
-    protected MultiMapUnlockParameters decodeClientMessage(ClientMessage clientMessage) {
-        return MultiMapUnlockParameters.decode(clientMessage);
+    protected MultiMapUnlockCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return MultiMapUnlockCodec.decodeRequest(clientMessage);
     }
 
     @Override

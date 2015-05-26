@@ -17,7 +17,6 @@
 package com.hazelcast.client.impl.protocol.task.map;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
 import com.hazelcast.client.impl.protocol.codec.MapRemoveEntryListenerCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.instance.Node;
@@ -36,16 +35,21 @@ public class MapRemoveEntryListenerMessageTask
     }
 
     @Override
-    protected ClientMessage call() {
+    protected Object call() {
         MapService service = getService(MapService.SERVICE_NAME);
         boolean success = service.getMapServiceContext().removeEventListener(parameters.name, parameters.registrationId);
 
-        return BooleanResultParameters.encode(success);
+        return MapRemoveEntryListenerCodec.encodeResponse(success);
     }
 
     @Override
     protected MapRemoveEntryListenerCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
         return MapRemoveEntryListenerCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return MapRemoveEntryListenerCodec.encodeResponse((Boolean) response);
     }
 
     @Override

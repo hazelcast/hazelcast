@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.impl.protocol.parameters;
 
+import com.hazelcast.client.impl.MemberImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.ClientMessageType;
 import com.hazelcast.nio.Bits;
@@ -31,7 +32,7 @@ public class MemberResultParameters {
     public int eventType;
 
     public MemberResultParameters(ClientMessage clientMessage) {
-        member = MemberCodec.decode(clientMessage);
+        member = (MemberImpl) MemberCodec.decode(clientMessage);
         eventType = clientMessage.getInt();
     }
 

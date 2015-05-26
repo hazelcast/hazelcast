@@ -17,8 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.transactionalmap;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.TransactionalMapDeleteParameters;
-import com.hazelcast.client.impl.protocol.parameters.VoidResultParameters;
+import com.hazelcast.client.impl.protocol.codec.TransactionalMapDeleteCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractTransactionalMessageTask;
 import com.hazelcast.core.TransactionalMap;
 import com.hazelcast.instance.Node;
@@ -31,18 +30,18 @@ import com.hazelcast.transaction.TransactionContext;
 import java.security.Permission;
 
 public class TransactionalMapDeleteMessageTask
-        extends AbstractTransactionalMessageTask<TransactionalMapDeleteParameters> {
+        extends AbstractTransactionalMessageTask<TransactionalMapDeleteCodec.RequestParameters> {
 
     public TransactionalMapDeleteMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected ClientMessage innerCall() throws Exception {
+    protected Object innerCall() throws Exception {
         final TransactionContext context = getEndpoint().getTransactionContext(parameters.txnId);
         final TransactionalMap map = context.getMap(parameters.name);
         map.delete(parameters.key);
-        return VoidResultParameters.encode();
+        return null;
     }
 
     @Override
@@ -51,8 +50,13 @@ public class TransactionalMapDeleteMessageTask
     }
 
     @Override
-    protected TransactionalMapDeleteParameters decodeClientMessage(ClientMessage clientMessage) {
-        return TransactionalMapDeleteParameters.decode(clientMessage);
+    protected TransactionalMapDeleteCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return TransactionalMapDeleteCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return TransactionalMapDeleteCodec.encodeResponse();
     }
 
     @Override

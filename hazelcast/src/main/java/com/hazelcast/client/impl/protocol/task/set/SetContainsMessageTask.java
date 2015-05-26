@@ -17,8 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.set;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.SetContainsParameters;
+import com.hazelcast.client.impl.protocol.codec.SetContainsCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.collection.impl.collection.operations.CollectionContainsOperation;
 import com.hazelcast.collection.impl.set.SetService;
@@ -28,6 +27,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.SetPermission;
 import com.hazelcast.spi.Operation;
+
 import java.security.Permission;
 import java.util.HashSet;
 
@@ -35,7 +35,7 @@ import java.util.HashSet;
  * SetContainsMessageTask
  */
 public class SetContainsMessageTask
-        extends AbstractPartitionMessageTask<SetContainsParameters> {
+        extends AbstractPartitionMessageTask<SetContainsCodec.RequestParameters> {
 
     public SetContainsMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -49,13 +49,13 @@ public class SetContainsMessageTask
     }
 
     @Override
-    protected SetContainsParameters decodeClientMessage(ClientMessage clientMessage) {
-        return SetContainsParameters.decode(clientMessage);
+    protected SetContainsCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return SetContainsCodec.decodeRequest(clientMessage);
     }
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return BooleanResultParameters.encode((Boolean) response);
+        return SetContainsCodec.encodeResponse((Boolean) response);
     }
 
     @Override

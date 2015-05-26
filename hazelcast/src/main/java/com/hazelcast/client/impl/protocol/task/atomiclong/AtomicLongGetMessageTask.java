@@ -29,7 +29,8 @@ import com.hazelcast.spi.Operation;
 
 import java.security.Permission;
 
-public class AtomicLongGetMessageTask extends AbstractPartitionMessageTask<AtomicLongGetCodec.RequestParameters> {
+public class AtomicLongGetMessageTask
+        extends AbstractPartitionMessageTask<AtomicLongGetCodec.RequestParameters> {
 
     public AtomicLongGetMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);

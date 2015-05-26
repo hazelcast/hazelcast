@@ -24,6 +24,7 @@ import com.hazelcast.client.impl.protocol.parameters.TemplateConstants;
 import com.hazelcast.nio.serialization.Data;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 @GenerateCodec(id = TemplateConstants.MAP_TEMPLATE_ID, name = "Map", ns = "Hazelcast.Client.Protocol.Map")
@@ -101,19 +102,19 @@ public interface MapCodecTemplate {
     @Request(id = 24, retryable = false, response = ResponseMessageConst.BOOLEAN)
     void removeInterceptor(String name, String id);
 
-    @Request(id = 25, retryable = false, response = ResponseMessageConst.STRING, event = EventMessageConst.EVENT_ENTRYEVENT)
+    @Request(id = 25, retryable = false, response = ResponseMessageConst.STRING, event = EventMessageConst.EVENT_ENTRY)
     void addEntryListenerToKeyWithPredicate(String name, Data key, Data predicate, boolean includeValue);
 
-    @Request(id = 26, retryable = false, response = ResponseMessageConst.STRING, event = EventMessageConst.EVENT_ENTRYEVENT)
+    @Request(id = 26, retryable = false, response = ResponseMessageConst.STRING, event = EventMessageConst.EVENT_ENTRY)
     void addEntryListenerWithPredicate(String name, Data predicate, boolean includeValue);
 
-    @Request(id = 27, retryable = false, response = ResponseMessageConst.STRING, event = EventMessageConst.EVENT_ENTRYEVENT)
+    @Request(id = 27, retryable = false, response = ResponseMessageConst.STRING, event = EventMessageConst.EVENT_ENTRY)
     void addEntryListenerToKey(String name, Data key, boolean includeValue);
 
-    @Request(id = 28, retryable = false, response = ResponseMessageConst.STRING, event = EventMessageConst.EVENT_ENTRYEVENT)
+    @Request(id = 28, retryable = false, response = ResponseMessageConst.STRING, event = EventMessageConst.EVENT_ENTRY)
     void addEntryListener(String name, boolean includeValue);
 
-    @Request(id = 29, retryable = false, response = ResponseMessageConst.DATA, event = EventMessageConst.EVENT_ENTRYEVENT)
+    @Request(id = 29, retryable = false, response = ResponseMessageConst.STRING, event = EventMessageConst.EVENT_ENTRY)
     void addNearCacheEntryListener(String name, boolean includeValue);
 
     @Request(id = 30, retryable = false, response = ResponseMessageConst.BOOLEAN)
@@ -172,7 +173,7 @@ public interface MapCodecTemplate {
     void isEmpty(String name);
 
     @Request(id = 48, retryable = false, response = ResponseMessageConst.VOID)
-    void putAll(String name, List<Data> keys, List<Data> values);
+    void putAll(String name, Map<Data, Data> entries);
 
     @Request(id = 49, retryable = false, response = ResponseMessageConst.VOID)
     void clear(String name);

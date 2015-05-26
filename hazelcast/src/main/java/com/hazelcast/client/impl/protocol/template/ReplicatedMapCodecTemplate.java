@@ -23,7 +23,7 @@ import com.hazelcast.client.impl.protocol.ResponseMessageConst;
 import com.hazelcast.client.impl.protocol.parameters.TemplateConstants;
 import com.hazelcast.nio.serialization.Data;
 
-import java.util.List;
+import java.util.Map;
 
 @GenerateCodec(id = TemplateConstants.REPLICATED_MAP_TEMPLATE_ID,
         name = "ReplicatedMap", ns = "Hazelcast.Client.Protocol.ReplicatedMap")
@@ -51,25 +51,25 @@ public interface ReplicatedMapCodecTemplate {
     void remove(String name, Data key);
 
     @Request(id = 8, retryable = false, response = ResponseMessageConst.VOID)
-    void putAll(String name, List<Data> key, List<Data> value);
+    void putAll(String name, Map<Data, Data> map);
 
     @Request(id = 9, retryable = false, response = ResponseMessageConst.VOID)
     void clear(String name);
 
     @Request(id = 10, retryable = false, response = ResponseMessageConst.STRING
-            , event = {EventMessageConst.EVENT_ENTRYEVENT})
+            , event = {EventMessageConst.EVENT_ENTRY})
     void addEntryListenerToKeyWithPredicate(String name, Data key, Data predicate);
 
     @Request(id = 11, retryable = false, response = ResponseMessageConst.STRING
-            , event = {EventMessageConst.EVENT_ENTRYEVENT})
+            , event = {EventMessageConst.EVENT_ENTRY})
     void addEntryListenerWithPredicate(String name, Data predicate);
 
     @Request(id = 12, retryable = false, response = ResponseMessageConst.STRING
-            , event = {EventMessageConst.EVENT_ENTRYEVENT})
+            , event = {EventMessageConst.EVENT_ENTRY})
     void addEntryListenerToKey(String name, Data key);
 
     @Request(id = 13, retryable = false, response = ResponseMessageConst.STRING
-            , event = {EventMessageConst.EVENT_ENTRYEVENT})
+            , event = {EventMessageConst.EVENT_ENTRY})
     void addEntryListener(String name);
 
     @Request(id = 14, retryable = false, response = ResponseMessageConst.BOOLEAN)

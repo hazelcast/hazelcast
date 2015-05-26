@@ -17,8 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.set;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.SetRemoveListenerParameters;
+import com.hazelcast.client.impl.protocol.codec.SetRemoveListenerCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.collection.impl.set.SetService;
 import com.hazelcast.instance.Node;
@@ -26,28 +25,34 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.SetPermission;
 import com.hazelcast.spi.EventService;
+
 import java.security.Permission;
 
 /**
  * SetRemoveListenerMessageTask
  */
 public class SetRemoveListenerMessageTask
-        extends AbstractCallableMessageTask<SetRemoveListenerParameters> {
+        extends AbstractCallableMessageTask<SetRemoveListenerCodec.RequestParameters> {
 
     public SetRemoveListenerMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected ClientMessage call() {
+    protected Object call() {
         final EventService eventService = clientEngine.getEventService();
         boolean result = eventService.deregisterListener(getServiceName(), parameters.name, parameters.registrationId);
-        return BooleanResultParameters.encode(result);
+        return SetRemoveListenerCodec.encodeResponse(result);
     }
 
     @Override
-    protected SetRemoveListenerParameters decodeClientMessage(ClientMessage clientMessage) {
-        return SetRemoveListenerParameters.decode(clientMessage);
+    protected SetRemoveListenerCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return SetRemoveListenerCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return SetRemoveListenerCodec.encodeResponse((Boolean) response);
     }
 
     @Override

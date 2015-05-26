@@ -17,16 +17,18 @@
 package com.hazelcast.client.impl.protocol.task.multimap;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.MultiMapAddEntryListenerParameters;
+import com.hazelcast.client.impl.protocol.codec.MultiMapAddEntryListenerCodec;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.DefaultData;
 
 /**
  * Client Protocol Task for handling messages with type id:
  * {@link com.hazelcast.client.impl.protocol.parameters.MultiMapMessageType#MULTIMAP_ADDENTRYLISTENER}
  */
 public class MultiMapAddEntryListenerMessageTask
-        extends AbstractMultiMapAddEntryListenerMessageTask<MultiMapAddEntryListenerParameters> {
+        extends AbstractMultiMapAddEntryListenerMessageTask<MultiMapAddEntryListenerCodec.RequestParameters> {
 
     public MultiMapAddEntryListenerMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -38,8 +40,19 @@ public class MultiMapAddEntryListenerMessageTask
     }
 
     @Override
-    protected MultiMapAddEntryListenerParameters decodeClientMessage(ClientMessage clientMessage) {
-        return MultiMapAddEntryListenerParameters.decode(clientMessage);
+    protected ClientMessage encodeEvent(Data key, Data value, int type, String uuid, int numberOfEntriesAffected) {
+        return MultiMapAddEntryListenerCodec.encodeEntryEvent(key, value, DefaultData.NULL_DATA,
+                DefaultData.NULL_DATA, type, uuid, numberOfEntriesAffected);
+    }
+
+    @Override
+    protected MultiMapAddEntryListenerCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return MultiMapAddEntryListenerCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return MultiMapAddEntryListenerCodec.encodeResponse((String) response);
     }
 
     @Override

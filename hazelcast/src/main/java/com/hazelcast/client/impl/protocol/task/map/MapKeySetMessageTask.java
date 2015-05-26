@@ -17,7 +17,6 @@
 package com.hazelcast.client.impl.protocol.task.map;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.DataCollectionResultParameters;
 import com.hazelcast.client.impl.protocol.codec.MapKeySetCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractAllPartitionsMessageTask;
 import com.hazelcast.instance.Node;
@@ -32,11 +31,13 @@ import com.hazelcast.spi.OperationFactory;
 
 import java.security.Permission;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-public class MapKeySetMessageTask extends AbstractAllPartitionsMessageTask<MapKeySetCodec.RequestParameters> {
+public class MapKeySetMessageTask
+        extends AbstractAllPartitionsMessageTask<MapKeySetCodec.RequestParameters> {
 
     public MapKeySetMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -49,19 +50,24 @@ public class MapKeySetMessageTask extends AbstractAllPartitionsMessageTask<MapKe
 
 
     @Override
-    protected ClientMessage reduce(Map<Integer, Object> map) {
-        List<Data> res = new ArrayList<Data>();
+    protected Object reduce(Map<Integer, Object> map) {
+        List<Data> list = new ArrayList<Data>();
         MapService service = getService(MapService.SERVICE_NAME);
         for (Object o : map.values()) {
             Set keys = ((MapKeySet) service.getMapServiceContext().toObject(o)).getKeySet();
-            res.addAll(keys);
+            list.addAll(keys);
         }
-        return DataCollectionResultParameters.encode(res);
+        return list;
     }
 
     @Override
     protected MapKeySetCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
         return MapKeySetCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return MapKeySetCodec.encodeResponse((Collection<Data>) response);
     }
 
 

@@ -14,45 +14,55 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.impl.protocol.task.atomicreference;
+package com.hazelcast.client.impl.protocol.task.lock;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.AtomicReferenceContainsParameters;
+import com.hazelcast.client.impl.protocol.codec.LockUnlockCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
-import com.hazelcast.concurrent.atomicreference.AtomicReferenceService;
-import com.hazelcast.concurrent.atomicreference.operations.ContainsOperation;
+import com.hazelcast.concurrent.lock.InternalLockNamespace;
+import com.hazelcast.concurrent.lock.LockService;
+import com.hazelcast.concurrent.lock.operations.UnlockOperation;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.security.permission.ActionConstants;
-import com.hazelcast.security.permission.AtomicReferencePermission;
+import com.hazelcast.security.permission.LockPermission;
 import com.hazelcast.spi.Operation;
 
 import java.security.Permission;
 
-public class AtomicRefenceContainsMessageTask extends AbstractPartitionMessageTask<AtomicReferenceContainsParameters> {
+public class LockUnlockMessageTask
+        extends AbstractPartitionMessageTask<LockUnlockCodec.RequestParameters> {
 
-    public AtomicRefenceContainsMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
+    public LockUnlockMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
     protected Operation prepareOperation() {
-        return new ContainsOperation(parameters.name, parameters.expected);
+        final Data key = serializationService.toData(parameters.name);
+        return new UnlockOperation(new InternalLockNamespace(parameters.name), key, parameters.threadId, false);
     }
 
     @Override
-    protected AtomicReferenceContainsParameters decodeClientMessage(ClientMessage clientMessage) {
-        return AtomicReferenceContainsParameters.decode(clientMessage);
+    protected LockUnlockCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return LockUnlockCodec.decodeRequest(clientMessage);
     }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return LockUnlockCodec.encodeResponse();
+    }
+
 
     @Override
     public String getServiceName() {
-        return AtomicReferenceService.SERVICE_NAME;
+        return LockService.SERVICE_NAME;
     }
 
     @Override
     public Permission getRequiredPermission() {
-        return new AtomicReferencePermission(parameters.name, ActionConstants.ACTION_READ);
+        return new LockPermission(parameters.name, ActionConstants.ACTION_LOCK);
     }
 
     @Override
@@ -62,11 +72,12 @@ public class AtomicRefenceContainsMessageTask extends AbstractPartitionMessageTa
 
     @Override
     public String getMethodName() {
-        return "contains";
+        return "unlock";
     }
 
     @Override
     public Object[] getParameters() {
-        return new Object[]{parameters.expected};
+        return null;
     }
 }
+

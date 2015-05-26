@@ -21,6 +21,7 @@ import com.hazelcast.client.impl.protocol.codec.MapAddEntryListenerToKeyWithPred
 import com.hazelcast.instance.Node;
 import com.hazelcast.map.impl.QueryEventFilter;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.EventFilter;
 
@@ -40,6 +41,18 @@ public class MapAddEntryListenerToKeyWithPredicateMessageTask
     @Override
     protected MapAddEntryListenerToKeyWithPredicateCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
         return MapAddEntryListenerToKeyWithPredicateCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return MapAddEntryListenerToKeyWithPredicateCodec.encodeResponse((String) response);
+    }
+
+    @Override
+    protected ClientMessage encodeEvent(Data keyData, Data newValueData, Data oldValueData,
+                                        Data meringValueData, int type, String uuid, int numberOfAffectedEntries) {
+        return MapAddEntryListenerToKeyWithPredicateCodec.encodeEntryEvent(keyData, newValueData,
+                oldValueData, meringValueData, type, uuid, numberOfAffectedEntries);
     }
 
     @Override

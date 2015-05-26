@@ -17,7 +17,6 @@
 package com.hazelcast.client.impl.protocol.task.map;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
 import com.hazelcast.client.impl.protocol.codec.MapLoadAllCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.core.DistributedObject;
@@ -30,26 +29,32 @@ import com.hazelcast.security.permission.MapPermission;
 
 import java.security.Permission;
 
-public class MapLoadAllMessageTask extends AbstractCallableMessageTask<MapLoadAllCodec.RequestParameters> {
+public class MapLoadAllMessageTask
+        extends AbstractCallableMessageTask<MapLoadAllCodec.RequestParameters> {
 
     public MapLoadAllMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected ClientMessage call() {
+    protected Object call() {
         final MapService mapService = getService(MapService.SERVICE_NAME);
         final DistributedObject distributedObject
                 = mapService.getMapServiceContext().getNodeEngine().getProxyService()
                 .getDistributedObject(MapService.SERVICE_NAME, parameters.name);
         final MapProxyImpl mapProxy = (MapProxyImpl) distributedObject;
         mapProxy.loadAll(parameters.replaceExistingValues);
-        return BooleanResultParameters.encode(Boolean.TRUE);
+        return null;
     }
 
     @Override
     protected MapLoadAllCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
         return MapLoadAllCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return MapLoadAllCodec.encodeResponse();
     }
 
 

@@ -17,7 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.executorservice;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.ExecutorServiceCancelOnPartitionParameters;
+import com.hazelcast.client.impl.protocol.codec.ExecutorServiceCancelOnPartitionCodec;
 import com.hazelcast.executor.impl.DistributedExecutorService;
 import com.hazelcast.executor.impl.operations.CancellationOperation;
 import com.hazelcast.instance.Node;
@@ -28,7 +28,7 @@ import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import java.net.UnknownHostException;
 
 public class ExecutorServiceCancelOnPartitionMessageTask
-        extends AbstractExecutorServiceCancelMessageTask<ExecutorServiceCancelOnPartitionParameters> {
+        extends AbstractExecutorServiceCancelMessageTask<ExecutorServiceCancelOnPartitionCodec.RequestParameters> {
 
     public ExecutorServiceCancelOnPartitionMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -43,8 +43,13 @@ public class ExecutorServiceCancelOnPartitionMessageTask
     }
 
     @Override
-    protected ExecutorServiceCancelOnPartitionParameters decodeClientMessage(ClientMessage clientMessage) {
-        return ExecutorServiceCancelOnPartitionParameters.decode(clientMessage);
+    protected ExecutorServiceCancelOnPartitionCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return ExecutorServiceCancelOnPartitionCodec.decodeRequest(clientMessage);
+    }
+
+
+    protected ClientMessage encodeResponse(Object response) {
+        return ExecutorServiceCancelOnPartitionCodec.encodeResponse((Boolean) response);
     }
 
     @Override

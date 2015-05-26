@@ -18,7 +18,6 @@ package com.hazelcast.client.impl.protocol.task.atomiclong;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.AtomicLongGetAndIncrementCodec;
-import com.hazelcast.client.impl.protocol.parameters.LongResultParameters;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.concurrent.atomiclong.AtomicLongService;
 import com.hazelcast.concurrent.atomiclong.operations.GetAndAddOperation;
@@ -49,7 +48,7 @@ public class AtomicLongGetAndIncrementMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return LongResultParameters.encode((Long) response);
+        return AtomicLongGetAndIncrementCodec.encodeResponse((Long) response);
     }
 
     @Override

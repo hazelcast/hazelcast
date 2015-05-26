@@ -24,7 +24,8 @@ import com.hazelcast.nio.serialization.Data;
 
 @GenerateCodec(id = TemplateConstants.ATOMIC_LONG_TEMPLATE_ID,
         name = "AtomicLong", ns = "Hazelcast.Client.Protocol.AtomicLong")
-public interface AtomicLongCodecTemplate {
+public interface
+        AtomicLongCodecTemplate {
 
     @Request(id = 1, retryable = false, response = ResponseMessageConst.DATA)
     void apply(String name, Data function);

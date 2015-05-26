@@ -17,8 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.transactionalmap;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.TransactionalMapIsEmptyParameters;
+import com.hazelcast.client.impl.protocol.codec.TransactionalMapIsEmptyCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractTransactionalMessageTask;
 import com.hazelcast.core.TransactionalMap;
 import com.hazelcast.instance.Node;
@@ -30,18 +29,18 @@ import com.hazelcast.transaction.TransactionContext;
 
 import java.security.Permission;
 
-public class TransactionalMapIsEmptyMessageTask extends AbstractTransactionalMessageTask<TransactionalMapIsEmptyParameters> {
+public class TransactionalMapIsEmptyMessageTask
+        extends AbstractTransactionalMessageTask<TransactionalMapIsEmptyCodec.RequestParameters> {
 
     public TransactionalMapIsEmptyMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected ClientMessage innerCall() throws Exception {
+    protected Object innerCall() throws Exception {
         final TransactionContext context = getEndpoint().getTransactionContext(parameters.txnId);
         final TransactionalMap map = context.getMap(parameters.name);
-        boolean isEmpty = map.isEmpty();
-        return BooleanResultParameters.encode(isEmpty);
+        return map.isEmpty();
     }
 
     @Override
@@ -50,8 +49,13 @@ public class TransactionalMapIsEmptyMessageTask extends AbstractTransactionalMes
     }
 
     @Override
-    protected TransactionalMapIsEmptyParameters decodeClientMessage(ClientMessage clientMessage) {
-        return TransactionalMapIsEmptyParameters.decode(clientMessage);
+    protected TransactionalMapIsEmptyCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return TransactionalMapIsEmptyCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return TransactionalMapIsEmptyCodec.encodeResponse((Boolean) response);
     }
 
     @Override

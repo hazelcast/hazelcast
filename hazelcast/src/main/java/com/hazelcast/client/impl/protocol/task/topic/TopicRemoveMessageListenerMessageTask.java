@@ -17,8 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.topic;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.TopicRemoveMessageListenerParameters;
+import com.hazelcast.client.impl.protocol.codec.TopicRemoveMessageListenerCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
@@ -29,22 +28,27 @@ import com.hazelcast.topic.impl.TopicService;
 import java.security.Permission;
 
 public class TopicRemoveMessageListenerMessageTask
-        extends AbstractCallableMessageTask<TopicRemoveMessageListenerParameters> {
+        extends AbstractCallableMessageTask<TopicRemoveMessageListenerCodec.RequestParameters> {
 
     public TopicRemoveMessageListenerMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected ClientMessage call() throws Exception {
+    protected Object call() throws Exception {
         TopicService service = getService(TopicService.SERVICE_NAME);
         final boolean success = service.removeMessageListener(parameters.name, parameters.registrationId);
-        return BooleanResultParameters.encode(success);
+        return success;
     }
 
     @Override
-    protected TopicRemoveMessageListenerParameters decodeClientMessage(ClientMessage clientMessage) {
-        return TopicRemoveMessageListenerParameters.decode(clientMessage);
+    protected TopicRemoveMessageListenerCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return TopicRemoveMessageListenerCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return TopicRemoveMessageListenerCodec.encodeResponse((Boolean) response);
     }
 
 

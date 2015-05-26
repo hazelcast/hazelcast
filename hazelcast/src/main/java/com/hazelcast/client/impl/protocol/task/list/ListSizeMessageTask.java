@@ -17,8 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.list;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.IntResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.ListSizeParameters;
+import com.hazelcast.client.impl.protocol.codec.ListSizeCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.collection.impl.collection.operations.CollectionSizeOperation;
 import com.hazelcast.collection.impl.list.ListService;
@@ -33,10 +32,9 @@ import java.security.Permission;
 /**
  * Client Protocol Task for handling messages with type id:
  * {@link com.hazelcast.client.impl.protocol.parameters.ListMessageType#LIST_SIZE}
- *
  */
 public class ListSizeMessageTask
-        extends AbstractPartitionMessageTask<ListSizeParameters> {
+        extends AbstractPartitionMessageTask<ListSizeCodec.RequestParameters> {
 
     public ListSizeMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -48,13 +46,13 @@ public class ListSizeMessageTask
     }
 
     @Override
-    protected ListSizeParameters decodeClientMessage(ClientMessage clientMessage) {
-        return ListSizeParameters.decode(clientMessage);
+    protected ListSizeCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return ListSizeCodec.decodeRequest(clientMessage);
     }
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return IntResultParameters.encode((Integer) response);
+        return ListSizeCodec.encodeResponse((Integer) response);
     }
 
     @Override

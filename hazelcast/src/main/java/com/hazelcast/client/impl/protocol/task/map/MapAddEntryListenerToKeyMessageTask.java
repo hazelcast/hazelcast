@@ -22,6 +22,7 @@ import com.hazelcast.client.impl.protocol.codec.MapAddEntryListenerToKeyCodec;
 import com.hazelcast.instance.Node;
 import com.hazelcast.map.impl.EntryEventFilter;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.EventFilter;
 
 public class MapAddEntryListenerToKeyMessageTask
@@ -34,6 +35,18 @@ public class MapAddEntryListenerToKeyMessageTask
     @Override
     protected MapAddEntryListenerToKeyCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
         return MapAddEntryListenerToKeyCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return MapAddEntryListenerToKeyCodec.encodeResponse((String) response);
+    }
+
+    @Override
+    protected ClientMessage encodeEvent(Data keyData, Data newValueData, Data oldValueData,
+                                        Data meringValueData, int type, String uuid, int numberOfAffectedEntries) {
+        return MapAddEntryListenerToKeyCodec.encodeEntryEvent(keyData, newValueData,
+                oldValueData, meringValueData, type, uuid, numberOfAffectedEntries);
     }
 
     @Override

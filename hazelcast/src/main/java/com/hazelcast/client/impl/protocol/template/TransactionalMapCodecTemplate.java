@@ -65,10 +65,10 @@ public interface TransactionalMapCodecTemplate {
     @Request(id = 13, retryable = false, response = ResponseMessageConst.BOOLEAN)
     void removeIfSame(String name, String txnId, long threadId, Data key, Data value);
 
-    @Request(id = 14, retryable = false, response = ResponseMessageConst.LIST_DATA)
+    @Request(id = 14, retryable = false, response = ResponseMessageConst.SET_DATA)
     void keySet(String name, String txnId, long threadId);
 
-    @Request(id = 15, retryable = false, response = ResponseMessageConst.LIST_DATA)
+    @Request(id = 15, retryable = false, response = ResponseMessageConst.SET_DATA)
     void keySetWithPredicate(String name, String txnId, long threadId, Data predicate);
 
     @Request(id = 16, retryable = false, response = ResponseMessageConst.LIST_DATA)

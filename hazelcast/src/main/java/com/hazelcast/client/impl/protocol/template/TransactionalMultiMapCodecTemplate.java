@@ -27,10 +27,10 @@ import com.hazelcast.nio.serialization.Data;
         name = "TransactionalMultiMap", ns = "Hazelcast.Client.Protocol.TransactionalMultiMap")
 public interface TransactionalMultiMapCodecTemplate {
 
-    @Request(id = 1, retryable = false, response = ResponseMessageConst.LIST_DATA)
+    @Request(id = 1, retryable = false, response = ResponseMessageConst.BOOLEAN)
     void put(String name, String txnId, long threadId, Data key, Data value);
 
-    @Request(id = 2, retryable = false, response = ResponseMessageConst.DATA)
+    @Request(id = 2, retryable = false, response = ResponseMessageConst.LIST_DATA)
     void get(String name, String txnId, long threadId, Data key);
 
     @Request(id = 3, retryable = false, response = ResponseMessageConst.LIST_DATA)

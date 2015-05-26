@@ -17,7 +17,6 @@
 package com.hazelcast.client.impl.protocol.task.map;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
 import com.hazelcast.client.impl.protocol.codec.MapFlushCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractAllPartitionsMessageTask;
 import com.hazelcast.instance.Node;
@@ -31,7 +30,8 @@ import com.hazelcast.spi.OperationFactory;
 import java.security.Permission;
 import java.util.Map;
 
-public class MapFlushMessageTask extends AbstractAllPartitionsMessageTask<MapFlushCodec.RequestParameters> {
+public class MapFlushMessageTask
+        extends AbstractAllPartitionsMessageTask<MapFlushCodec.RequestParameters> {
 
     public MapFlushMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -48,8 +48,13 @@ public class MapFlushMessageTask extends AbstractAllPartitionsMessageTask<MapFlu
     }
 
     @Override
-    protected ClientMessage reduce(Map<Integer, Object> map) {
-        return BooleanResultParameters.encode(true);
+    protected ClientMessage encodeResponse(Object response) {
+        return MapFlushCodec.encodeResponse();
+    }
+
+    @Override
+    protected Object reduce(Map<Integer, Object> map) {
+        return MapFlushCodec.encodeResponse();
     }
 
     @Override

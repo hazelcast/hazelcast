@@ -17,8 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.lock;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.LockForceUnlockParameters;
+import com.hazelcast.client.impl.protocol.codec.LockForceUnlockCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.concurrent.lock.InternalLockNamespace;
 import com.hazelcast.concurrent.lock.LockService;
@@ -32,7 +31,8 @@ import com.hazelcast.spi.Operation;
 
 import java.security.Permission;
 
-public class LockForceUnlockMessageTask extends AbstractPartitionMessageTask<LockForceUnlockParameters> {
+public class LockForceUnlockMessageTask
+        extends AbstractPartitionMessageTask<LockForceUnlockCodec.RequestParameters> {
 
     public LockForceUnlockMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -45,13 +45,13 @@ public class LockForceUnlockMessageTask extends AbstractPartitionMessageTask<Loc
     }
 
     @Override
-    protected LockForceUnlockParameters decodeClientMessage(ClientMessage clientMessage) {
-        return LockForceUnlockParameters.decode(clientMessage);
+    protected LockForceUnlockCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return LockForceUnlockCodec.decodeRequest(clientMessage);
     }
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return BooleanResultParameters.encode((Boolean) response);
+        return LockForceUnlockCodec.encodeResponse();
     }
 
 

@@ -17,8 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.list;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.ListRemoveListenerParameters;
+import com.hazelcast.client.impl.protocol.codec.ListRemoveListenerCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.collection.impl.list.ListService;
 import com.hazelcast.instance.Node;
@@ -32,25 +31,29 @@ import java.security.Permission;
 /**
  * Client Protocol Task for handling messages with type id:
  * {@link com.hazelcast.client.impl.protocol.parameters.ListMessageType#LIST_REMOVELISTENER}
- *
  */
 public class ListRemoveListenerMessageTask
-        extends AbstractCallableMessageTask<ListRemoveListenerParameters> {
+        extends AbstractCallableMessageTask<ListRemoveListenerCodec.RequestParameters> {
 
     public ListRemoveListenerMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected ClientMessage call() {
+    protected Object call() {
         final EventService eventService = clientEngine.getEventService();
         boolean result = eventService.deregisterListener(getServiceName(), parameters.name, parameters.registrationId);
-        return BooleanResultParameters.encode(result);
+        return ListRemoveListenerCodec.encodeResponse(result);
     }
 
     @Override
-    protected ListRemoveListenerParameters decodeClientMessage(ClientMessage clientMessage) {
-        return ListRemoveListenerParameters.decode(clientMessage);
+    protected ListRemoveListenerCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return ListRemoveListenerCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return ListRemoveListenerCodec.encodeResponse((Boolean) response);
     }
 
     @Override

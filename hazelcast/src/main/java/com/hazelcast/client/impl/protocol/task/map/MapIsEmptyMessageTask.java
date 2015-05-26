@@ -17,7 +17,6 @@
 package com.hazelcast.client.impl.protocol.task.map;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
 import com.hazelcast.client.impl.protocol.codec.MapIsEmptyCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractAllPartitionsMessageTask;
 import com.hazelcast.instance.Node;
@@ -31,7 +30,8 @@ import com.hazelcast.spi.OperationFactory;
 import java.security.Permission;
 import java.util.Map;
 
-public class MapIsEmptyMessageTask extends AbstractAllPartitionsMessageTask<MapIsEmptyCodec.RequestParameters> {
+public class MapIsEmptyMessageTask
+        extends AbstractAllPartitionsMessageTask<MapIsEmptyCodec.RequestParameters> {
 
     public MapIsEmptyMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -43,7 +43,7 @@ public class MapIsEmptyMessageTask extends AbstractAllPartitionsMessageTask<MapI
     }
 
     @Override
-    protected ClientMessage reduce(Map<Integer, Object> map) {
+    protected Object reduce(Map<Integer, Object> map) {
         MapService mapService = getService(MapService.SERVICE_NAME);
         boolean response = true;
         for (Object result : map.values()) {
@@ -53,12 +53,17 @@ public class MapIsEmptyMessageTask extends AbstractAllPartitionsMessageTask<MapI
             }
         }
 
-        return BooleanResultParameters.encode(response);
+        return response;
     }
 
     @Override
     protected MapIsEmptyCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
         return MapIsEmptyCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return MapIsEmptyCodec.encodeResponse((Boolean) response);
     }
 
     @Override

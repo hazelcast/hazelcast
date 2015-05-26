@@ -39,16 +39,16 @@ public interface ListCodecTemplate {
     @Request(id = 3, retryable = true, response = ResponseMessageConst.BOOLEAN)
     void containsAll(String name, Set<Data> valueSet);
 
-    @Request(id = 4, retryable = false, response = ResponseMessageConst.VOID)
+    @Request(id = 4, retryable = false, response = ResponseMessageConst.BOOLEAN)
     void add(String name, Data value);
 
-    @Request(id = 5, retryable = false, response = ResponseMessageConst.DATA)
+    @Request(id = 5, retryable = false, response = ResponseMessageConst.BOOLEAN)
     void remove(String name, Data value);
 
     @Request(id = 6, retryable = false, response = ResponseMessageConst.BOOLEAN)
     void addAll(String name, List<Data> valueList);
 
-    @Request(id = 7, retryable = false, response = ResponseMessageConst.STRING)
+    @Request(id = 7, retryable = false, response = ResponseMessageConst.BOOLEAN)
     void compareAndRemoveAll(String name, Set<Data> valueSet);
 
     @Request(id = 8, retryable = false, response = ResponseMessageConst.BOOLEAN)
@@ -61,7 +61,7 @@ public interface ListCodecTemplate {
     void getAll(String name);
 
     @Request(id = 11, retryable = false, response = ResponseMessageConst.STRING
-            , event = {EventMessageConst.EVENT_ITEMEVENT})
+            , event = {EventMessageConst.EVENT_ITEM})
     void addListener(String name, boolean includeValue);
 
     @Request(id = 12, retryable = false, response = ResponseMessageConst.BOOLEAN)

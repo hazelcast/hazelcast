@@ -17,8 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.transaction;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.DataCollectionResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.XACollectTransactionsParameters;
+import com.hazelcast.client.impl.protocol.codec.XATransactionCollectTransactionsCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractMultiTargetMessageTask;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
@@ -36,15 +35,21 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
 
-public class XACollectTransactionsMessageTask extends AbstractMultiTargetMessageTask<XACollectTransactionsParameters> {
+public class XACollectTransactionsMessageTask
+        extends AbstractMultiTargetMessageTask<XATransactionCollectTransactionsCodec.RequestParameters> {
 
     public XACollectTransactionsMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected XACollectTransactionsParameters decodeClientMessage(ClientMessage clientMessage) {
-        return XACollectTransactionsParameters.decode(clientMessage);
+    protected XATransactionCollectTransactionsCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return XATransactionCollectTransactionsCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return XATransactionCollectTransactionsCodec.encodeResponse((Collection<Data>) response);
     }
 
     @Override
@@ -53,13 +58,13 @@ public class XACollectTransactionsMessageTask extends AbstractMultiTargetMessage
     }
 
     @Override
-    protected ClientMessage reduce(Map<Address, Object> map) throws Throwable {
+    protected Object reduce(Map<Address, Object> map) throws Throwable {
         HashSet<Data> set = new HashSet<Data>();
         for (Object o : map.values()) {
             SerializableCollection xidSet = (SerializableCollection) o;
             set.addAll(xidSet.getCollection());
         }
-        return DataCollectionResultParameters.encode(set);
+        return set;
     }
 
     @Override

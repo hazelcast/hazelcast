@@ -24,13 +24,15 @@ import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.operation.EntryOperation;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.Operation;
 
 import java.security.Permission;
 
-public class MapExecuteOnKeyMessageTask extends AbstractPartitionMessageTask<MapExecuteOnKeyCodec.RequestParameters> {
+public class MapExecuteOnKeyMessageTask
+        extends AbstractPartitionMessageTask<MapExecuteOnKeyCodec.RequestParameters> {
 
     public MapExecuteOnKeyMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -45,6 +47,11 @@ public class MapExecuteOnKeyMessageTask extends AbstractPartitionMessageTask<Map
     @Override
     protected MapExecuteOnKeyCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
         return MapExecuteOnKeyCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return MapExecuteOnKeyCodec.encodeResponse((Data) response);
     }
 
     @Override

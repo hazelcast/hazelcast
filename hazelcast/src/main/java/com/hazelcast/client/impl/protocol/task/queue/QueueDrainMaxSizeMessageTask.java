@@ -17,8 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.queue;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.DataCollectionResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.QueueDrainToMaxSizeParameters;
+import com.hazelcast.client.impl.protocol.codec.QueueDrainToMaxSizeCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.collection.impl.queue.operations.DrainOperation;
@@ -38,7 +37,7 @@ import java.util.Collection;
  * {@link com.hazelcast.client.impl.protocol.parameters.QueueMessageType#QUEUE_DRAINTOMAXSIZE}
  */
 public class QueueDrainMaxSizeMessageTask
-        extends AbstractPartitionMessageTask<QueueDrainToMaxSizeParameters> {
+        extends AbstractPartitionMessageTask<QueueDrainToMaxSizeCodec.RequestParameters> {
 
     public QueueDrainMaxSizeMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -50,8 +49,8 @@ public class QueueDrainMaxSizeMessageTask
     }
 
     @Override
-    protected QueueDrainToMaxSizeParameters decodeClientMessage(ClientMessage clientMessage) {
-        return QueueDrainToMaxSizeParameters.decode(clientMessage);
+    protected QueueDrainToMaxSizeCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return QueueDrainToMaxSizeCodec.decodeRequest(clientMessage);
     }
 
     @Override
@@ -73,7 +72,7 @@ public class QueueDrainMaxSizeMessageTask
     protected ClientMessage encodeResponse(Object response) {
         SerializableCollection serializableCollection = (SerializableCollection) response;
         Collection<Data> coll = serializableCollection.getCollection();
-        return DataCollectionResultParameters.encode(coll);
+        return QueueDrainToMaxSizeCodec.encodeResponse(coll);
     }
 
     @Override

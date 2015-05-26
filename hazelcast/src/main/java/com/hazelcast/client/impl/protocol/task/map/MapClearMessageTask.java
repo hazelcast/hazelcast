@@ -17,7 +17,6 @@
 package com.hazelcast.client.impl.protocol.task.map;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
 import com.hazelcast.client.impl.protocol.codec.MapClearCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractAllPartitionsMessageTask;
 import com.hazelcast.core.EntryEventType;
@@ -33,7 +32,8 @@ import com.hazelcast.spi.OperationFactory;
 import java.security.Permission;
 import java.util.Map;
 
-public class MapClearMessageTask extends AbstractAllPartitionsMessageTask<MapClearCodec.RequestParameters> {
+public class MapClearMessageTask
+        extends AbstractAllPartitionsMessageTask<MapClearCodec.RequestParameters> {
 
     public MapClearMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -45,7 +45,7 @@ public class MapClearMessageTask extends AbstractAllPartitionsMessageTask<MapCle
     }
 
     @Override
-    protected ClientMessage reduce(Map<Integer, Object> map) {
+    protected Object reduce(Map<Integer, Object> map) {
         int totalAffectedEntries = 0;
         for (Object affectedEntries : map.values()) {
             totalAffectedEntries += (Integer) affectedEntries;
@@ -56,12 +56,17 @@ public class MapClearMessageTask extends AbstractAllPartitionsMessageTask<MapCle
             service.getMapServiceContext().getMapEventPublisher()
                     .publishMapEvent(thisAddress, parameters.name, EntryEventType.CLEAR_ALL, totalAffectedEntries);
         }
-        return BooleanResultParameters.encode(true);
+        return null;
     }
 
     @Override
     protected MapClearCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
         return MapClearCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return MapClearCodec.encodeResponse();
     }
 
     public String getServiceName() {

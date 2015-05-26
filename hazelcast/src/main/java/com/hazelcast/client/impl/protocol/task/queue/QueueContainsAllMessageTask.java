@@ -17,8 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.queue;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.QueueContainsAllParameters;
+import com.hazelcast.client.impl.protocol.codec.QueueContainsAllCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.collection.impl.queue.operations.ContainsOperation;
@@ -33,10 +32,9 @@ import java.security.Permission;
 /**
  * Client Protocol Task for handling messages with type id:
  * {@link com.hazelcast.client.impl.protocol.parameters.QueueMessageType#QUEUE_CONTAINSALL}
- *
  */
 public class QueueContainsAllMessageTask
-        extends AbstractPartitionMessageTask<QueueContainsAllParameters> {
+        extends AbstractPartitionMessageTask<QueueContainsAllCodec.RequestParameters> {
 
     public QueueContainsAllMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -48,14 +46,14 @@ public class QueueContainsAllMessageTask
     }
 
     @Override
-    protected QueueContainsAllParameters decodeClientMessage(ClientMessage clientMessage) {
-        return QueueContainsAllParameters.decode(clientMessage);
+    protected QueueContainsAllCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return QueueContainsAllCodec.decodeRequest(clientMessage);
     }
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
         final boolean result = response != null && ((Boolean) response);
-        return BooleanResultParameters.encode(result);
+        return QueueContainsAllCodec.encodeResponse(result);
     }
 
     @Override

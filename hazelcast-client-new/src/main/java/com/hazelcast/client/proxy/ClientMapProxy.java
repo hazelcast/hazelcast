@@ -1174,18 +1174,14 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
 
     @Override
     public void putAll(Map<? extends K, ? extends V> m) {
-        int len = m.size();
-        List<Data> keys = new ArrayList<Data>(len);
-        List<Data> values = new ArrayList<Data>(len);
-
+        Map<Data, Data> map = new HashMap<Data, Data>();
         for (Entry<? extends K, ? extends V> entry : m.entrySet()) {
             final Data keyData = toData(entry.getKey());
             invalidateNearCache(keyData);
-            keys.add(keyData);
-            values.add(toData(entry.getValue()));
+            map.put(keyData, toData(entry.getValue()));
         }
 
-        ClientMessage request = MapPutAllCodec.encodeRequest(name, keys, values);
+        ClientMessage request = MapPutAllCodec.encodeRequest(name, map);
         invoke(request);
     }
 

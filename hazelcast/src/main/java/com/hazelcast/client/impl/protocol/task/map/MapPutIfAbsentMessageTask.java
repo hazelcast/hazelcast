@@ -21,11 +21,13 @@ import com.hazelcast.client.impl.protocol.codec.MapPutIfAbsentCodec;
 import com.hazelcast.instance.Node;
 import com.hazelcast.map.impl.operation.PutIfAbsentOperation;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
 
 import java.util.concurrent.TimeUnit;
 
-public class MapPutIfAbsentMessageTask extends AbstractMapPutMessageTask<MapPutIfAbsentCodec.RequestParameters> {
+public class MapPutIfAbsentMessageTask
+        extends AbstractMapPutMessageTask<MapPutIfAbsentCodec.RequestParameters> {
 
     public MapPutIfAbsentMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -34,6 +36,11 @@ public class MapPutIfAbsentMessageTask extends AbstractMapPutMessageTask<MapPutI
     @Override
     protected MapPutIfAbsentCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
         return MapPutIfAbsentCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return MapPutIfAbsentCodec.encodeResponse((Data) response);
     }
 
     protected Operation prepareOperation() {

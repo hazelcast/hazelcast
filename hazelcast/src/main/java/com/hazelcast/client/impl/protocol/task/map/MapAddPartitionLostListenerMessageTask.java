@@ -19,7 +19,6 @@ package com.hazelcast.client.impl.protocol.task.map;
 import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapAddPartitionLostListenerCodec;
-import com.hazelcast.client.impl.protocol.parameters.AddListenerResultParameters;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.map.MapPartitionLostEvent;
@@ -40,7 +39,7 @@ public class MapAddPartitionLostListenerMessageTask
     }
 
     @Override
-    protected ClientMessage call() {
+    protected Object call() {
         final ClientEndpoint endpoint = getEndpoint();
         final MapService mapService = getService(MapService.SERVICE_NAME);
 
@@ -58,12 +57,17 @@ public class MapAddPartitionLostListenerMessageTask
 
         String registrationId = mapService.getMapServiceContext().addPartitionLostListener(listener, parameters.name);
         endpoint.setListenerRegistration(MapService.SERVICE_NAME, parameters.name, registrationId);
-        return AddListenerResultParameters.encode(registrationId);
+        return MapAddPartitionLostListenerCodec.encodeResponse(registrationId);
     }
 
     @Override
     protected MapAddPartitionLostListenerCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
         return MapAddPartitionLostListenerCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return MapAddPartitionLostListenerCodec.encodeResponse((String) response);
     }
 
 

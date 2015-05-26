@@ -24,13 +24,15 @@ import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.operation.GetOperation;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.Operation;
 
 import java.security.Permission;
 
-public class MapGetMessageTask extends AbstractPartitionMessageTask<MapGetCodec.RequestParameters> {
+public class MapGetMessageTask
+        extends AbstractPartitionMessageTask<MapGetCodec.RequestParameters> {
 
     private transient long startTime;
 
@@ -41,6 +43,11 @@ public class MapGetMessageTask extends AbstractPartitionMessageTask<MapGetCodec.
     @Override
     protected MapGetCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
         return MapGetCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return MapGetCodec.encodeResponse((Data) response);
     }
 
     @Override

@@ -17,9 +17,7 @@
 package com.hazelcast.client.impl.protocol.task;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.AddDistributedObjectListenerParameters;
-import com.hazelcast.client.impl.protocol.parameters.AddListenerResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.DistributedObjectEventParameters;
+import com.hazelcast.client.impl.protocol.codec.ClientAddDistributedObjectListenerCodec;
 import com.hazelcast.core.DistributedObjectEvent;
 import com.hazelcast.core.DistributedObjectListener;
 import com.hazelcast.instance.Node;
@@ -29,7 +27,7 @@ import com.hazelcast.spi.ProxyService;
 import java.security.Permission;
 
 public class AddDistributedObjectListenerMessageTask
-        extends AbstractCallableMessageTask<AddDistributedObjectListenerParameters>
+        extends AbstractCallableMessageTask<ClientAddDistributedObjectListenerCodec.RequestParameters>
         implements DistributedObjectListener {
 
     public AddDistributedObjectListenerMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
@@ -37,16 +35,21 @@ public class AddDistributedObjectListenerMessageTask
     }
 
     @Override
-    protected ClientMessage call() throws Exception {
+    protected Object call() throws Exception {
         ProxyService proxyService = clientEngine.getProxyService();
         String registrationId = proxyService.addProxyListener(this);
         endpoint.setDistributedObjectListener(registrationId);
-        return AddListenerResultParameters.encode(registrationId);
+        return registrationId;
     }
 
     @Override
-    protected AddDistributedObjectListenerParameters decodeClientMessage(ClientMessage clientMessage) {
-        return AddDistributedObjectListenerParameters.decode(clientMessage);
+    protected ClientAddDistributedObjectListenerCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return ClientAddDistributedObjectListenerCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return ClientAddDistributedObjectListenerCodec.encodeResponse((String) response);
     }
 
     @Override
@@ -89,7 +92,7 @@ public class AddDistributedObjectListenerMessageTask
             String name = event.getDistributedObject().getName();
             String serviceName = event.getServiceName();
             ClientMessage eventMessage =
-                    DistributedObjectEventParameters.encode(name, serviceName, event.getEventType());
+                    ClientAddDistributedObjectListenerCodec.encodeDistributedObjectEvent(name, serviceName, event.getEventType().ordinal());
             sendClientMessage(null, eventMessage);
         }
     }

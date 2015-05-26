@@ -18,8 +18,7 @@ package com.hazelcast.client.impl.protocol.task.multimap;
 
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.DataEntryListResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.MultiMapEntrySetParameters;
+import com.hazelcast.client.impl.protocol.codec.MultiMapEntrySetCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractAllPartitionsMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.multimap.impl.MultiMapService;
@@ -32,8 +31,7 @@ import com.hazelcast.security.permission.MultiMapPermission;
 import com.hazelcast.spi.OperationFactory;
 
 import java.security.Permission;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -41,7 +39,8 @@ import java.util.Set;
  * Client Protocol Task for handling messages with type id:
  * {@link com.hazelcast.client.impl.protocol.parameters.MultiMapMessageType#MULTIMAP_ENTRYSET}
  */
-public class MultiMapEntrySetMessageTask extends AbstractAllPartitionsMessageTask<MultiMapEntrySetParameters> {
+public class MultiMapEntrySetMessageTask
+        extends AbstractAllPartitionsMessageTask<MultiMapEntrySetCodec.RequestParameters> {
 
     public MultiMapEntrySetMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -53,9 +52,8 @@ public class MultiMapEntrySetMessageTask extends AbstractAllPartitionsMessageTas
     }
 
     @Override
-    protected ClientMessage reduce(Map<Integer, Object> map) {
-        List<Data> keys = new ArrayList<Data>();
-        List<Data> values = new ArrayList<Data>();
+    protected Object reduce(Map<Integer, Object> map) {
+        Map<Data, Data> dataMap = new HashMap<Data, Data>();
         for (Object obj : map.values()) {
             if (obj == null) {
                 continue;
@@ -63,16 +61,20 @@ public class MultiMapEntrySetMessageTask extends AbstractAllPartitionsMessageTas
             EntrySetResponse response = (EntrySetResponse) obj;
             Set<Map.Entry<Data, Data>> entries = response.getDataEntrySet();
             for (Map.Entry<Data, Data> entry : entries) {
-                keys.add(entry.getKey());
-                values.add(entry.getValue());
+                dataMap.put(entry.getKey(), entry.getValue());
             }
         }
-        return DataEntryListResultParameters.encode(keys, values);
+        return dataMap;
     }
 
     @Override
-    protected MultiMapEntrySetParameters decodeClientMessage(ClientMessage clientMessage) {
-        return MultiMapEntrySetParameters.decode(clientMessage);
+    protected MultiMapEntrySetCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return MultiMapEntrySetCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return MultiMapEntrySetCodec.encodeResponse((Map<Data, Data>) response);
     }
 
     @Override

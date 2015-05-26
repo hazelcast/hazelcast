@@ -20,9 +20,10 @@ import com.hazelcast.cache.impl.CacheOperationProvider;
 import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.operation.CacheGetAndReplaceOperation;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.CacheGetAndReplaceParameters;
+import com.hazelcast.client.impl.protocol.codec.CacheGetAndReplaceCodec;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
 
 import javax.cache.expiry.ExpiryPolicy;
@@ -33,7 +34,7 @@ import javax.cache.expiry.ExpiryPolicy;
  * @see CacheGetAndReplaceOperation
  */
 public class CacheGetAndReplaceMessageTask
-        extends AbstractCacheMessageTask<CacheGetAndReplaceParameters> {
+        extends AbstractCacheMessageTask<CacheGetAndReplaceCodec.RequestParameters> {
 
     public CacheGetAndReplaceMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -49,8 +50,13 @@ public class CacheGetAndReplaceMessageTask
     }
 
     @Override
-    protected CacheGetAndReplaceParameters decodeClientMessage(ClientMessage clientMessage) {
-        return CacheGetAndReplaceParameters.decode(clientMessage);
+    protected CacheGetAndReplaceCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return CacheGetAndReplaceCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return CacheGetAndReplaceCodec.encodeResponse((Data) response);
     }
 
     @Override

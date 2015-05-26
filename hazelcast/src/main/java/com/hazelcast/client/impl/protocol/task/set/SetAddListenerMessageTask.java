@@ -18,9 +18,7 @@ package com.hazelcast.client.impl.protocol.task.set;
 
 import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.AddListenerResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.ItemEventParameters;
-import com.hazelcast.client.impl.protocol.parameters.SetAddListenerParameters;
+import com.hazelcast.client.impl.protocol.codec.SetAddListenerCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.collection.common.DataAwareItemEvent;
 import com.hazelcast.collection.impl.collection.CollectionEventFilter;
@@ -34,20 +32,21 @@ import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.SetPermission;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
+
 import java.security.Permission;
 
 /**
  * SetAddListenerMessageTask
  */
 public class SetAddListenerMessageTask
-        extends AbstractCallableMessageTask<SetAddListenerParameters> {
+        extends AbstractCallableMessageTask<SetAddListenerCodec.RequestParameters> {
 
     public SetAddListenerMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected ClientMessage call() {
+    protected Object call() {
         final ClientEndpoint endpoint = getEndpoint();
         Data partitionKey = serializationService.toData(parameters.name);
         ItemListener listener = createItemListener(endpoint, partitionKey);
@@ -57,7 +56,7 @@ public class SetAddListenerMessageTask
                 , filter, listener);
         final String registrationId = registration.getId();
         endpoint.setListenerRegistration(getServiceName(), parameters.name, registrationId);
-        return AddListenerResultParameters.encode(registrationId);
+        return registration;
     }
 
     private ItemListener createItemListener(final ClientEndpoint endpoint, final Data partitionKey) {
@@ -83,7 +82,8 @@ public class SetAddListenerMessageTask
                     DataAwareItemEvent dataAwareItemEvent = (DataAwareItemEvent) event;
                     Data item = dataAwareItemEvent.getItemData();
                     ClientMessage clientMessage =
-                            ItemEventParameters.encode(item, event.getMember().getUuid(), event.getEventType());
+                            SetAddListenerCodec.encodeItemEvent(item, event.getMember().getUuid()
+                                    , event.getEventType().getType());
                     sendClientMessage(partitionKey, clientMessage);
                 }
             }
@@ -92,8 +92,13 @@ public class SetAddListenerMessageTask
 
 
     @Override
-    protected SetAddListenerParameters decodeClientMessage(ClientMessage clientMessage) {
-        return SetAddListenerParameters.decode(clientMessage);
+    protected SetAddListenerCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return SetAddListenerCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return SetAddListenerCodec.encodeResponse((String) response);
     }
 
     @Override

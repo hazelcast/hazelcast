@@ -18,7 +18,6 @@ package com.hazelcast.client.impl.protocol.template;
 
 import com.hazelcast.annotation.GenerateCodec;
 import com.hazelcast.annotation.Request;
-import com.hazelcast.annotation.GenerateParameters;
 import com.hazelcast.client.impl.protocol.EventMessageConst;
 import com.hazelcast.client.impl.protocol.ResponseMessageConst;
 import com.hazelcast.client.impl.protocol.parameters.TemplateConstants;
@@ -61,7 +60,7 @@ public interface SetCodecTemplate {
     void getAll(String name);
 
     @Request(id = 11, retryable = false, response = ResponseMessageConst.STRING,
-    event = {EventMessageConst.EVENT_ITEMEVENT})
+    event = {EventMessageConst.EVENT_ITEM})
     void addListener(String name, boolean includeValue);
 
     @Request(id = 12, retryable = false, response = ResponseMessageConst.BOOLEAN)

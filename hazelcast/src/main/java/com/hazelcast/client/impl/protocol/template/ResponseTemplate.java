@@ -22,12 +22,14 @@ import com.hazelcast.annotation.Response;
 import com.hazelcast.client.impl.client.DistributedObjectInfo;
 import com.hazelcast.client.impl.protocol.ResponseMessageConst;
 import com.hazelcast.map.impl.SimpleEntryView;
+import com.hazelcast.mapreduce.JobPartitionState;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Client Protocol Responses
@@ -78,6 +80,9 @@ public interface ResponseTemplate {
     void EntryView(@Nullable SimpleEntryView<Data, Data> dataEntryView);
 
     @Response(ResponseMessageConst.JOB_PROCESS_INFO)
-    void JobProcessInfo(Address[] partitionStates, int[] state, int processRecords);
+    void JobProcessInfo(JobPartitionState[] jobPartitionStates, int processRecords);
+
+    @Response(ResponseMessageConst.SET_DATA)
+    void SetData(Set<Data> list);
 
 }

@@ -17,7 +17,6 @@
 package com.hazelcast.client.impl.protocol.task.map;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.DataEntryListResultParameters;
 import com.hazelcast.client.impl.protocol.codec.MapExecuteOnAllKeysCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractAllPartitionsMessageTask;
 import com.hazelcast.instance.Node;
@@ -32,12 +31,12 @@ import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.OperationFactory;
 
 import java.security.Permission;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-public class MapExecuteOnAllKeysMessageTask extends AbstractAllPartitionsMessageTask<MapExecuteOnAllKeysCodec.RequestParameters> {
+public class MapExecuteOnAllKeysMessageTask
+        extends AbstractAllPartitionsMessageTask<MapExecuteOnAllKeysCodec.RequestParameters> {
 
     public MapExecuteOnAllKeysMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -50,26 +49,29 @@ public class MapExecuteOnAllKeysMessageTask extends AbstractAllPartitionsMessage
     }
 
     @Override
-    protected ClientMessage reduce(Map<Integer, Object> map) {
-        List<Data> keys = new ArrayList<Data>();
-        List<Data> values = new ArrayList<Data>();
+    protected Object reduce(Map<Integer, Object> map) {
+        HashMap<Data, Data> dataMap = new HashMap<Data, Data>();
         MapService mapService = getService(MapService.SERVICE_NAME);
         for (Object o : map.values()) {
             if (o != null) {
                 MapEntrySet entrySet = (MapEntrySet) mapService.getMapServiceContext().toObject(o);
                 Set<Map.Entry<Data, Data>> entries = entrySet.getEntrySet();
                 for (Map.Entry<Data, Data> entry : entries) {
-                    keys.add(entry.getKey());
-                    values.add(entry.getValue());
+                    dataMap.put(entry.getKey(), entry.getValue());
                 }
             }
         }
-        return DataEntryListResultParameters.encode(keys, values);
+        return dataMap;
     }
 
     @Override
     protected MapExecuteOnAllKeysCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
         return MapExecuteOnAllKeysCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return MapExecuteOnAllKeysCodec.encodeResponse((Map<Data, Data>) response);
     }
 
     @Override

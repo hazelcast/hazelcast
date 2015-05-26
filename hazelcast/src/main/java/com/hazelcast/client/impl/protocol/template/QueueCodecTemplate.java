@@ -77,7 +77,7 @@ public interface QueueCodecTemplate {
     void addAll(String name, Collection<Data> dataList);
 
     @Request(id = 17, retryable = false, response = ResponseMessageConst.STRING,
-            event = {EventMessageConst.EVENT_ITEMEVENT})
+            event = {EventMessageConst.EVENT_ITEM})
     void addListener(String name, boolean includeValue);
 
     @Request(id = 18, retryable = false, response = ResponseMessageConst.BOOLEAN)

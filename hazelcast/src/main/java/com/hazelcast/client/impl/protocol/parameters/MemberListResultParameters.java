@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.impl.protocol.parameters;
 
+import com.hazelcast.client.impl.MemberImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.ClientMessageType;
 
@@ -34,7 +35,7 @@ public class MemberListResultParameters {
         int size = clientMessage.getInt();
         List<com.hazelcast.client.impl.MemberImpl> members = new ArrayList<com.hazelcast.client.impl.MemberImpl>(size);
         for (int i = 0; i < size; i++) {
-            members.add(MemberCodec.decode(clientMessage));
+            members.add((MemberImpl) MemberCodec.decode(clientMessage));
         }
         memberList = members;
     }

@@ -17,8 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.transactionalmultimap;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.IntResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.TransactionalMultiMapValueCountParameters;
+import com.hazelcast.client.impl.protocol.codec.TransactionalMultiMapValueCountCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractTransactionalMessageTask;
 import com.hazelcast.core.TransactionalMultiMap;
 import com.hazelcast.instance.Node;
@@ -31,18 +30,18 @@ import com.hazelcast.transaction.TransactionContext;
 import java.security.Permission;
 
 public class TransactionalMultiMapValueCountMessageTask
-        extends AbstractTransactionalMessageTask<TransactionalMultiMapValueCountParameters> {
+        extends AbstractTransactionalMessageTask<TransactionalMultiMapValueCountCodec.RequestParameters> {
 
     public TransactionalMultiMapValueCountMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected ClientMessage innerCall() throws Exception {
+    protected Object innerCall() throws Exception {
         final TransactionContext context = endpoint.getTransactionContext(parameters.txnId);
         TransactionalMultiMap<Object, Object> multiMap = context.getMultiMap(parameters.name);
         int valueCount = multiMap.valueCount(parameters.key);
-        return IntResultParameters.encode(valueCount);
+        return TransactionalMultiMapValueCountCodec.encodeResponse(valueCount);
     }
 
     @Override
@@ -51,8 +50,13 @@ public class TransactionalMultiMapValueCountMessageTask
     }
 
     @Override
-    protected TransactionalMultiMapValueCountParameters decodeClientMessage(ClientMessage clientMessage) {
-        return TransactionalMultiMapValueCountParameters.decode(clientMessage);
+    protected TransactionalMultiMapValueCountCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return TransactionalMultiMapValueCountCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return TransactionalMultiMapValueCountCodec.encodeResponse((Integer) response);
     }
 
     @Override

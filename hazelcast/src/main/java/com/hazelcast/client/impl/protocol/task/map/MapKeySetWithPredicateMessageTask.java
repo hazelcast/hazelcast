@@ -17,7 +17,6 @@
 package com.hazelcast.client.impl.protocol.task.map;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.DataCollectionResultParameters;
 import com.hazelcast.client.impl.protocol.codec.MapKeySetWithPredicateCodec;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
@@ -37,12 +36,12 @@ public class MapKeySetWithPredicateMessageTask
     }
 
     @Override
-    protected ClientMessage reduce(Collection<QueryResultEntry> result) {
+    protected Object reduce(Collection<QueryResultEntry> result) {
         List<Data> keys = new ArrayList<Data>(result.size());
         for (QueryResultEntry resultEntry : result) {
             keys.add(resultEntry.getKeyData());
         }
-        return DataCollectionResultParameters.encode(keys);
+        return keys;
     }
 
     @Override
@@ -53,6 +52,11 @@ public class MapKeySetWithPredicateMessageTask
     @Override
     protected MapKeySetWithPredicateCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
         return MapKeySetWithPredicateCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return MapKeySetWithPredicateCodec.encodeResponse((Collection<Data>) response);
     }
 
     @Override

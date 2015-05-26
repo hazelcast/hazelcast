@@ -18,6 +18,7 @@ package com.hazelcast.client.impl.protocol.template;
 
 import com.hazelcast.annotation.GenerateCodec;
 import com.hazelcast.annotation.Request;
+import com.hazelcast.client.impl.protocol.EventMessageConst;
 import com.hazelcast.client.impl.protocol.ResponseMessageConst;
 import com.hazelcast.client.impl.protocol.parameters.TemplateConstants;
 import com.hazelcast.nio.serialization.Data;
@@ -31,13 +32,14 @@ public interface CacheCodecTemplate {
     @Request(id = 1, retryable = false, response = ResponseMessageConst.STRING)
     void addEntryListener(String name);
 
-    @Request(id = 2, retryable = false, response = ResponseMessageConst.STRING)
+    @Request(id = 2, retryable = false, response = ResponseMessageConst.STRING,
+            event = {EventMessageConst.EVENT_CACHEINVALIDATION})
     void addInvalidationListener(String name);
 
     @Request(id = 3, retryable = false, response = ResponseMessageConst.VOID)
     void clear(String name);
 
-    @Request(id = 4, retryable = false, response = ResponseMessageConst.MAP_INT_DATA)
+    @Request(id = 4, retryable = false, response = ResponseMessageConst.VOID)
     void removeAll(String name, Set<Data> keys, int completionId);
 
     @Request(id = 5, retryable = true, response = ResponseMessageConst.BOOLEAN)
@@ -99,8 +101,5 @@ public interface CacheCodecTemplate {
 
     @Request(id = 24, retryable = true, response = ResponseMessageConst.INTEGER)
     void size(String name);
-
-    @Request(id = 25, retryable = false, response = ResponseMessageConst.VOID)
-    void invalidationMessage(String name, Data key, String sourceUuid);
 
 }

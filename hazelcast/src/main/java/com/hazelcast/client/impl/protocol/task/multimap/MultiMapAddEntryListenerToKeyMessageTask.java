@@ -17,16 +17,18 @@
 package com.hazelcast.client.impl.protocol.task.multimap;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.MultiMapAddEntryListenerToKeyParameters;
+import com.hazelcast.client.impl.protocol.codec.MultiMapAddEntryListenerToKeyCodec;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.DefaultData;
 
 /**
  * Client Protocol Task for handling messages with type id:
  * {@link com.hazelcast.client.impl.protocol.parameters.MultiMapMessageType#MULTIMAP_ADDENTRYLISTENERTOKEY}
  */
 public class MultiMapAddEntryListenerToKeyMessageTask
-        extends AbstractMultiMapAddEntryListenerMessageTask<MultiMapAddEntryListenerToKeyParameters> {
+        extends AbstractMultiMapAddEntryListenerMessageTask<MultiMapAddEntryListenerToKeyCodec.RequestParameters> {
 
     public MultiMapAddEntryListenerToKeyMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -38,8 +40,19 @@ public class MultiMapAddEntryListenerToKeyMessageTask
     }
 
     @Override
-    protected MultiMapAddEntryListenerToKeyParameters decodeClientMessage(ClientMessage clientMessage) {
-        return MultiMapAddEntryListenerToKeyParameters.decode(clientMessage);
+    protected ClientMessage encodeEvent(Data key, Data value, int type, String uuid, int numberOfEntriesAffected) {
+        return MultiMapAddEntryListenerToKeyCodec.encodeEntryEvent(key, value, DefaultData.NULL_DATA,
+                DefaultData.NULL_DATA, type, uuid, numberOfEntriesAffected);
+    }
+
+    @Override
+    protected MultiMapAddEntryListenerToKeyCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return MultiMapAddEntryListenerToKeyCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return MultiMapAddEntryListenerToKeyCodec.encodeResponse((String) response);
     }
 
     @Override

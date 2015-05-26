@@ -17,13 +17,13 @@
 package com.hazelcast.client.impl.protocol.task.transactionalmap;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.GenericResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.TransactionalMapGetForUpdateParameters;
+import com.hazelcast.client.impl.protocol.codec.TransactionalMapGetForUpdateCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractTransactionalMessageTask;
 import com.hazelcast.core.TransactionalMap;
 import com.hazelcast.instance.Node;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.transaction.TransactionContext;
@@ -31,18 +31,18 @@ import com.hazelcast.transaction.TransactionContext;
 import java.security.Permission;
 
 public class TransactionalMapGetForUpdateMessageTask
-        extends AbstractTransactionalMessageTask<TransactionalMapGetForUpdateParameters> {
+        extends AbstractTransactionalMessageTask<TransactionalMapGetForUpdateCodec.RequestParameters> {
 
     public TransactionalMapGetForUpdateMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected ClientMessage innerCall() throws Exception {
+    protected Object innerCall() throws Exception {
         final TransactionContext context = getEndpoint().getTransactionContext(parameters.txnId);
         final TransactionalMap map = context.getMap(parameters.name);
         Object response = map.getForUpdate(parameters.key);
-        return GenericResultParameters.encode(serializationService.toData(response));
+        return serializationService.toData(response);
     }
 
     @Override
@@ -51,8 +51,13 @@ public class TransactionalMapGetForUpdateMessageTask
     }
 
     @Override
-    protected TransactionalMapGetForUpdateParameters decodeClientMessage(ClientMessage clientMessage) {
-        return TransactionalMapGetForUpdateParameters.decode(clientMessage);
+    protected TransactionalMapGetForUpdateCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return TransactionalMapGetForUpdateCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return TransactionalMapGetForUpdateCodec.encodeResponse((Data) response);
     }
 
     @Override

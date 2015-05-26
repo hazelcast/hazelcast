@@ -30,7 +30,7 @@ public class XATransactionCreateParameters {
 
 
     private XATransactionCreateParameters(ClientMessage clientMessage) {
-        xid = SerializableXIDCodec.decode(clientMessage);
+        xid = (SerializableXID) XIDCodec.decode(clientMessage);
         timeout = clientMessage.getLong();
     }
 
@@ -41,7 +41,7 @@ public class XATransactionCreateParameters {
     public static ClientMessage encode(SerializableXID xid, long timeout) {
         final int requiredDataSize = calculateDataSize(xid, timeout);
         ClientMessage clientMessage = ClientMessage.createForEncode(requiredDataSize);
-        SerializableXIDCodec.encode(xid, clientMessage);
+        XIDCodec.encode(xid, clientMessage);
         clientMessage.set(timeout);
         clientMessage.setMessageType(TYPE.id());
         clientMessage.updateFrameLength();
@@ -50,7 +50,7 @@ public class XATransactionCreateParameters {
 
     public static int calculateDataSize(SerializableXID xid, long timeout) {
         return ClientMessage.HEADER_SIZE
-                + SerializableXIDCodec.calculateDataSize(xid)
+                + XIDCodec.calculateDataSize(xid)
                 + Bits.LONG_SIZE_IN_BYTES;
     }
 

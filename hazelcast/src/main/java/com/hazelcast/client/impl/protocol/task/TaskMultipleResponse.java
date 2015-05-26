@@ -14,9 +14,12 @@
  * limitations under the License.
  */
 
-/**
- * <p>Client protocol tasks implementations for ReplicatedMap</p>
- */
-@GenerateMessageTaskFactory package com.hazelcast.client.impl.protocol.task.replicatedmap;
+package com.hazelcast.client.impl.protocol.task;
 
-import com.hazelcast.annotation.GenerateMessageTaskFactory;
+public class TaskMultipleResponse {
+    public Object[] responses;
+
+    public TaskMultipleResponse(Object... response) {
+        this.responses = response;
+    }
+}

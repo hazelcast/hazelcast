@@ -43,31 +43,31 @@ public interface ClientMessageTemplate {
     @Request(id = 12, retryable = false, response = ResponseMessageConst.VOID)
     void destroyProxy(String name, String serviceName);
 
-    @Request(id = 17, retryable = false, response = ResponseMessageConst.STRING, event = EventMessageConst.EVENT_ITEMEVENT)
+    @Request(id = 17, retryable = false, response = ResponseMessageConst.STRING, event = EventMessageConst.EVENT_ITEM)
     void itemListener(String name, boolean includeValue);
 
     @Request(id = 18, retryable = false, response = ResponseMessageConst.PARTITIONS)
-    void getPartition();
+    void getPartitions();
 
     @Request(id = 19, retryable = false, response = ResponseMessageConst.VOID)
-    void removeAllListener();
+    void removeAllListeners();
 
-    @Request(id = 20, retryable = false, response = ResponseMessageConst.VOID, event = {EventMessageConst.EVENT_PARTITIONLOSTEVENT})
+    @Request(id = 20, retryable = false, response = ResponseMessageConst.STRING, event = {EventMessageConst.EVENT_PARTITIONLOSTEVENT})
     void addPartitionLostListener(int partitionId, int lostBackupCount, Address source);
 
-    @Request(id = 20, retryable = false, response = ResponseMessageConst.VOID)
+    @Request(id = 21, retryable = false, response = ResponseMessageConst.BOOLEAN)
     void removePartitionLostListener(String registrationId);
 
-    @Request(id = 21, retryable = false, response = ResponseMessageConst.DISTRIBUTED_OBJECT)
+    @Request(id = 22, retryable = false, response = ResponseMessageConst.DISTRIBUTED_OBJECT)
     void getDistributedObject();
 
-    @Request(id = 21, retryable = false, response = ResponseMessageConst.STRING, event = {EventMessageConst.EVENT_DISTRIBUTEDOBJECT})
+    @Request(id = 23, retryable = false, response = ResponseMessageConst.STRING, event = {EventMessageConst.EVENT_DISTRIBUTEDOBJECT})
     void addDistributedObjectListener();
 
-    @Request(id = 22, retryable = false, response = ResponseMessageConst.VOID)
+    @Request(id = 24, retryable = false, response = ResponseMessageConst.BOOLEAN)
     void removeDistributedObjectListener(String registrationId);
 
-    @Request(id = 23, retryable = true, response = ResponseMessageConst.VOID)
+    @Request(id = 25, retryable = true, response = ResponseMessageConst.VOID)
     void ping();
 
 }

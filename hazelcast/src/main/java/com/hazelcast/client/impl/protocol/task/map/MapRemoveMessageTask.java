@@ -24,13 +24,15 @@ import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.operation.RemoveOperation;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.Operation;
 
 import java.security.Permission;
 
-public class MapRemoveMessageTask extends AbstractPartitionMessageTask<MapRemoveCodec.RequestParameters> {
+public class MapRemoveMessageTask
+        extends AbstractPartitionMessageTask<MapRemoveCodec.RequestParameters> {
 
     protected transient long startTime;
 
@@ -64,6 +66,11 @@ public class MapRemoveMessageTask extends AbstractPartitionMessageTask<MapRemove
     @Override
     protected MapRemoveCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
         return MapRemoveCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return MapRemoveCodec.encodeResponse((Data) response);
     }
 
     @Override

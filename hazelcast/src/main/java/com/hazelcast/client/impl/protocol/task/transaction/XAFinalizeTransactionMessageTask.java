@@ -17,10 +17,11 @@
 package com.hazelcast.client.impl.protocol.task.transaction;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.XAFinalizeTransactionParameters;
+import com.hazelcast.client.impl.protocol.codec.XATransactionFinalizeCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.security.permission.TransactionPermission;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.transaction.impl.xa.FinalizeRemoteTransactionOperation;
@@ -28,20 +29,27 @@ import com.hazelcast.transaction.impl.xa.XAService;
 
 import java.security.Permission;
 
-public class XAFinalizeTransactionMessageTask extends AbstractPartitionMessageTask<XAFinalizeTransactionParameters> {
+public class XAFinalizeTransactionMessageTask
+        extends AbstractPartitionMessageTask<XATransactionFinalizeCodec.RequestParameters> {
 
     public XAFinalizeTransactionMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected XAFinalizeTransactionParameters decodeClientMessage(ClientMessage clientMessage) {
-        return XAFinalizeTransactionParameters.decode(clientMessage);
+    protected XATransactionFinalizeCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return XATransactionFinalizeCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return XATransactionFinalizeCodec.encodeResponse();
     }
 
     @Override
     protected Operation prepareOperation() {
-        return new FinalizeRemoteTransactionOperation(parameters.xidData, parameters.isCommit);
+        Data xid = serializationService.toData(parameters.xid);
+        return new FinalizeRemoteTransactionOperation(xid, parameters.isCommit);
     }
 
     @Override

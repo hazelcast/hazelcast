@@ -30,7 +30,8 @@ import com.hazelcast.spi.Operation;
 
 import java.security.Permission;
 
-public class AtomicLongAlterMessageTask extends AbstractPartitionMessageTask<AtomicLongAlterCodec.RequestParameters> {
+public class AtomicLongAlterMessageTask
+        extends AbstractPartitionMessageTask<AtomicLongAlterCodec.RequestParameters> {
 
     public AtomicLongAlterMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
