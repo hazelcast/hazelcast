@@ -30,8 +30,9 @@ import java.util.concurrent.atomic.AtomicReference;
  * This class contains methods which manipulate and access index.
  */
 public class IndexService {
+    private static final Index[] EMPTY_INDEX = {};
     private final ConcurrentMap<String, Index> mapIndexes = new ConcurrentHashMap<String, Index>(3);
-    private final AtomicReference<Index[]> indexes = new AtomicReference<Index[]>();
+    private final AtomicReference<Index[]> indexes = new AtomicReference<Index[]>(EMPTY_INDEX);
     private volatile boolean hasIndex;
 
     public synchronized Index destroyIndex(String attribute) {
@@ -57,6 +58,12 @@ public class IndexService {
 
     public Index[] getIndexes() {
         return indexes.get();
+    }
+
+    public void clearIndexes() {
+        indexes.set(EMPTY_INDEX);
+        mapIndexes.clear();
+        hasIndex = false;
     }
 
     public void removeEntryIndex(Data indexKey) throws QueryException {
