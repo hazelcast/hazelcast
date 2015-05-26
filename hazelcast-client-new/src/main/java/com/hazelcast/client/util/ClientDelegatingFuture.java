@@ -17,7 +17,7 @@
 package com.hazelcast.client.util;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.GenericResultParameters;
+import com.hazelcast.client.impl.protocol.codec.ExecutorServiceSubmitToPartitionCodec;
 import com.hazelcast.client.spi.impl.ClientInvocationFuture;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
@@ -141,7 +141,7 @@ public class ClientDelegatingFuture<V> implements ICompletableFuture<V> {
     }
 
     private Data resolveMessageToValue(ClientMessage message) {
-        return GenericResultParameters.decode(message).result;
+        return ExecutorServiceSubmitToPartitionCodec.decodeResponse(message).response;
     }
 
     protected void setError(Throwable error) {

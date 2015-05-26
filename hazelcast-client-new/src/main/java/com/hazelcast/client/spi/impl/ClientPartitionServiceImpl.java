@@ -18,8 +18,7 @@ package com.hazelcast.client.spi.impl;
 
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.GetPartitionsParameters;
-import com.hazelcast.client.impl.protocol.parameters.GetPartitionsResultParameters;
+import com.hazelcast.client.impl.protocol.codec.ClientGetPartitionsCodec;
 import com.hazelcast.client.spi.ClientClusterService;
 import com.hazelcast.client.spi.ClientExecutionService;
 import com.hazelcast.client.spi.ClientPartitionService;
@@ -92,22 +91,22 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
             return false;
         }
         Connection connection = client.getConnectionManager().getConnection(ownerAddress);
-        GetPartitionsResultParameters response = getPartitionsFrom(connection);
+        ClientGetPartitionsCodec.ResponseParameters response = getPartitionsFrom(connection);
         if (response != null) {
             return processPartitionResponse(response);
         }
         return false;
     }
 
-    private GetPartitionsResultParameters getPartitionsFrom(Connection connection) {
+    private ClientGetPartitionsCodec.ResponseParameters getPartitionsFrom(Connection connection) {
         if (connection == null) {
             return null;
         }
         try {
-            ClientMessage requestMessage = GetPartitionsParameters.encode();
+            ClientMessage requestMessage = ClientGetPartitionsCodec.encodeRequest();
             Future<ClientMessage> future = new ClientInvocation(client, requestMessage, connection).invoke();
             ClientMessage responseMessage = future.get();
-            return GetPartitionsResultParameters.decode(responseMessage);
+            return ClientGetPartitionsCodec.decodeResponse(responseMessage);
         } catch (Exception e) {
             if (client.getLifecycleService().isRunning()) {
                 LOGGER.severe("Error while fetching cluster partition table!", e);
@@ -116,7 +115,7 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
         return null;
     }
 
-    private boolean processPartitionResponse(GetPartitionsResultParameters response) {
+    private boolean processPartitionResponse(ClientGetPartitionsCodec.ResponseParameters response) {
         int[] ownerIndexes = response.ownerIndexes;
         if (ownerIndexes.length == 0) {
             return false;

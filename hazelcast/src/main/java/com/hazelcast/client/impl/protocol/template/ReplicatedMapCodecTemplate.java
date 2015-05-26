@@ -20,7 +20,6 @@ import com.hazelcast.annotation.GenerateCodec;
 import com.hazelcast.annotation.Request;
 import com.hazelcast.client.impl.protocol.EventMessageConst;
 import com.hazelcast.client.impl.protocol.ResponseMessageConst;
-import com.hazelcast.client.impl.protocol.parameters.TemplateConstants;
 import com.hazelcast.nio.serialization.Data;
 
 import java.util.Map;

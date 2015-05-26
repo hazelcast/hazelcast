@@ -16,8 +16,8 @@
 
 package com.hazelcast.client.protocol.generator;
 
-import com.hazelcast.annotation.EncodeMethod;
-import com.hazelcast.annotation.GenerateParameters;
+import com.hazelcast.annotation.GenerateCodec;
+import com.hazelcast.annotation.Request;
 
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
@@ -28,7 +28,6 @@ import java.util.List;
 
 public class MessageTypeEnumModel {
 
-    private static final int BYTE_BIT_COUNT = 8;
     private String name;
     private String className;
     private String packageName;
@@ -37,33 +36,37 @@ public class MessageTypeEnumModel {
 
     public MessageTypeEnumModel(TypeElement classElement, Lang lang) {
         try {
-            name = classElement.getAnnotation(GenerateParameters.class).name();
+            name = classElement.getAnnotation(GenerateCodec.class).name();
             className = CodeGenerationUtils.capitalizeFirstLetter(name) + "MessageType";
-            packageName = "com.hazelcast.client.impl.protocol.parameters";
-            //CodeGenerationUtils.getPackageNameFromQualifiedName(classElement.getQualifiedName().toString());
+            packageName = "com.hazelcast.client.impl.protocol.codec";
 
             if (lang != Lang.JAVA) {
-                packageName = classElement.getAnnotation(GenerateParameters.class).ns();
+                packageName = classElement.getAnnotation(GenerateCodec.class).ns();
             }
 
-            short masterId = classElement.getAnnotation(GenerateParameters.class).id();
+            short masterId = classElement.getAnnotation(GenerateCodec.class).id();
 
             for (Element enclosedElement : classElement.getEnclosedElements()) {
                 if (!enclosedElement.getKind().equals(ElementKind.METHOD)) {
                     continue;
                 }
                 ExecutableElement methodElement = (ExecutableElement) enclosedElement;
+                final Request annotation1 = methodElement.getAnnotation(Request.class);
 
                 ParameterModel pm = new ParameterModel();
                 pm.name = methodElement.getSimpleName().toString();
-                final String s = Integer
-                        .toHexString((masterId << BYTE_BIT_COUNT) + methodElement.getAnnotation(EncodeMethod.class).id());
-                pm.id = s.length() == 3 ? "0x0" + s : "0x" + s;
-                params.add(pm);
+                if (annotation1 != null) {
+                    pm.id = CodeGenerationUtils.mergeIds(masterId, annotation1.id());
+                    params.add(pm);
+                }
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    public boolean isEmpty() {
+        return params.isEmpty();
     }
 
     public String getName() {

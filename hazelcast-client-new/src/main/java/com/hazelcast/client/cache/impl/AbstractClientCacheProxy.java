@@ -20,11 +20,10 @@ import com.hazelcast.cache.CacheStatistics;
 import com.hazelcast.cache.impl.ICacheInternal;
 import com.hazelcast.cache.impl.client.CacheGetAllRequest;
 import com.hazelcast.cache.impl.client.CacheGetRequest;
-import com.hazelcast.cache.impl.client.CacheSizeRequest;
 import com.hazelcast.cache.impl.nearcache.NearCache;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.IntResultParameters;
+import com.hazelcast.client.impl.protocol.codec.CacheSizeCodec;
 import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.client.spi.impl.ClientInvocationFuture;
@@ -313,13 +312,9 @@ abstract class AbstractClientCacheProxy<K, V>
     public int size() {
         ensureOpen();
         try {
-            CacheSizeRequest request = new CacheSizeRequest(nameWithPrefix);
+            ClientMessage request = CacheSizeCodec.encodeRequest(nameWithPrefix);
             ClientMessage resultMessage = invoke(request);
-            Integer result = IntResultParameters.decode(resultMessage).result;
-            if (result == null) {
-                return 0;
-            }
-            return result;
+            return CacheSizeCodec.decodeResponse(resultMessage).response;
         } catch (Throwable t) {
             throw ExceptionUtil.rethrowAllowedTypeFirst(t, CacheException.class);
         }

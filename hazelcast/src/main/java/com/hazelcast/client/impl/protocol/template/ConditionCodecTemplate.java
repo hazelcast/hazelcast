@@ -19,7 +19,6 @@ package com.hazelcast.client.impl.protocol.template;
 import com.hazelcast.annotation.GenerateCodec;
 import com.hazelcast.annotation.Request;
 import com.hazelcast.client.impl.protocol.ResponseMessageConst;
-import com.hazelcast.client.impl.protocol.parameters.TemplateConstants;
 
 @GenerateCodec(id = TemplateConstants.CONDITION_TEMPLATE_ID,
         name = "Condition", ns = "Hazelcast.Client.Protocol.Condition")

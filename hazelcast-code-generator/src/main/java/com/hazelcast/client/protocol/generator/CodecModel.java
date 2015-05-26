@@ -30,7 +30,7 @@ import java.util.List;
 
 public class CodecModel {
 
-    private static final String PARAMETERS_PACKAGE = "com.hazelcast.client.impl.protocol.parameters.";
+    private static final String PARAMETERS_PACKAGE = "com.hazelcast.client.impl.protocol.codec.";
     private static final String DATA_FULL_NAME = "com.hazelcast.nio.serialization.Data";
 
     private final Lang lang;
@@ -489,14 +489,15 @@ public class CodecModel {
         private String resolveDataSetterStringJava(String type, String name) {
             StringBuilder setterString = new StringBuilder();
             if (isNullable) {
-                setterString.append("            boolean isNull;\n")
+                String isNullVariableName = name + "_isNull";
+                setterString.append("            boolean " + isNullVariableName + ";\n")
                         .append("            if (" + name + " == null) {\n")
-                        .append("                isNull = true;\n")
-                        .append("                clientMessage.set(isNull);\n")
+                        .append("                " + isNullVariableName + " = true;\n")
+                        .append("                clientMessage.set(" + isNullVariableName + ");\n")
                         .append("                return clientMessage;\n")
                         .append("            }\n")
-                        .append("            isNull = false;\n")
-                        .append("            clientMessage.set(isNull);\n");
+                        .append("            " + isNullVariableName + " = false;\n")
+                        .append("            clientMessage.set(" + isNullVariableName + ");\n");
             }
 
             if (type.equals("com.hazelcast.nio.Address")) {

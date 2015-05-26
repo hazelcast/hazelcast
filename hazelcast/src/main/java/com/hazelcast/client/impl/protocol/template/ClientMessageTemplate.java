@@ -17,21 +17,20 @@
 package com.hazelcast.client.impl.protocol.template;
 
 import com.hazelcast.annotation.GenerateCodec;
+import com.hazelcast.annotation.Nullable;
 import com.hazelcast.annotation.Request;
 import com.hazelcast.client.impl.protocol.EventMessageConst;
 import com.hazelcast.client.impl.protocol.ResponseMessageConst;
-import com.hazelcast.client.impl.protocol.parameters.TemplateConstants;
-import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 
 @GenerateCodec(id = TemplateConstants.CLIENT_TEMPLATE_ID, name = "Client", ns = "Hazelcast.Client.Protocol.Internal")
 public interface ClientMessageTemplate {
 
     @Request(id = 1, retryable = true, response = ResponseMessageConst.AUTHENTICATION)
-    void authentication(String username, String password, String uuid, String ownerUuid, boolean isOwnerConnection);
+    void authentication(String username, String password, @Nullable String uuid, @Nullable String ownerUuid, boolean isOwnerConnection);
 
     @Request(id = 2, retryable = true, response = ResponseMessageConst.AUTHENTICATION)
-    void authenticationCustom(Data credentials, String uuid, String ownerUuid, boolean isOwnerConnection);
+    void authenticationCustom(Data credentials, @Nullable String uuid, @Nullable String ownerUuid, boolean isOwnerConnection);
 
     @Request(id = 8, retryable = false, response = ResponseMessageConst.STRING,
             event = {EventMessageConst.EVENT_MEMBER, EventMessageConst.EVENT_MEMBERLIST, EventMessageConst.EVENT_MEMBERATTRIBUTECHANGE})

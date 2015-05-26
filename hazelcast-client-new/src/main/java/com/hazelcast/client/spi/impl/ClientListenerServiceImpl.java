@@ -18,8 +18,8 @@ package com.hazelcast.client.spi.impl;
 
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.AddListenerResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
+import com.hazelcast.client.impl.protocol.codec.MapAddEntryListenerCodec;
+import com.hazelcast.client.impl.protocol.codec.MapRemoveEntryListenerCodec;
 import com.hazelcast.client.spi.ClientInvocationService;
 import com.hazelcast.client.spi.ClientListenerService;
 import com.hazelcast.client.spi.EventHandler;
@@ -70,10 +70,8 @@ public final class ClientListenerServiceImpl implements ClientListenerService {
                 final int partitionId = client.getClientPartitionService().getPartitionId(key);
                 future = new ClientInvocation(client, handler, clientMessage, partitionId).invoke();
             }
-            ClientMessage responseMessage = (ClientMessage) future.get();
-            AddListenerResultParameters eventResultParameters = AddListenerResultParameters.decode(responseMessage);
-
-            String registrationId = eventResultParameters.registrationId;
+            ClientMessage responseMessage = future.get();
+            String registrationId = MapAddEntryListenerCodec.decodeResponse(responseMessage).response;
 
             registerListener(registrationId, clientMessage.getCorrelationId());
             return registrationId;
@@ -90,8 +88,7 @@ public final class ClientListenerServiceImpl implements ClientListenerService {
                 return false;
             }
             final Future future = new ClientInvocation(client, clientMessage).invoke();
-            BooleanResultParameters resultParameters = BooleanResultParameters.decode((ClientMessage) future.get());
-            return resultParameters.result;
+            return MapRemoveEntryListenerCodec.decodeResponse((ClientMessage) future.get()).response;
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }

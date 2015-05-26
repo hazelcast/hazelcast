@@ -16,10 +16,9 @@
 
 package com.hazelcast.client.impl.protocol.template;
 
-import com.hazelcast.annotation.Request;
 import com.hazelcast.annotation.GenerateCodec;
+import com.hazelcast.annotation.Request;
 import com.hazelcast.client.impl.protocol.ResponseMessageConst;
-import com.hazelcast.client.impl.protocol.parameters.TemplateConstants;
 import com.hazelcast.nio.serialization.Data;
 
 @GenerateCodec(id = TemplateConstants.TX_SET_TEMPLATE_ID,

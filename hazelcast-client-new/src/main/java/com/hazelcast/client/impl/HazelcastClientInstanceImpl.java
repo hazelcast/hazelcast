@@ -14,8 +14,7 @@ import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.connection.nio.ClientConnectionManagerImpl;
 import com.hazelcast.client.impl.client.DistributedObjectInfo;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.GetDistributedObjectParameters;
-import com.hazelcast.client.impl.protocol.parameters.GetDistributedObjectResultParameters;
+import com.hazelcast.client.impl.protocol.codec.ClientGetDistributedObjectCodec;
 import com.hazelcast.client.proxy.ClientClusterProxy;
 import com.hazelcast.client.proxy.PartitionServiceProxy;
 import com.hazelcast.client.spi.ClientClusterService;
@@ -87,8 +86,8 @@ import com.hazelcast.ringbuffer.impl.RingbufferService;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.UsernamePasswordCredentials;
 import com.hazelcast.topic.impl.TopicService;
-import com.hazelcast.transaction.HazelcastXAResource;
 import com.hazelcast.topic.impl.reliable.ReliableTopicService;
+import com.hazelcast.transaction.HazelcastXAResource;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionOptions;
@@ -406,11 +405,11 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance {
     @Override
     public Collection<DistributedObject> getDistributedObjects() {
         try {
-            ClientMessage request = GetDistributedObjectParameters.encode();
+            ClientMessage request = ClientGetDistributedObjectCodec.encodeRequest();
             final Future<ClientMessage> future = new ClientInvocation(this, request).invoke();
             ClientMessage response = future.get();
-            GetDistributedObjectResultParameters resultParameters =
-                    GetDistributedObjectResultParameters.decode(response);
+            ClientGetDistributedObjectCodec.ResponseParameters resultParameters =
+                    ClientGetDistributedObjectCodec.decodeResponse(response);
 
             Collection<DistributedObjectInfo> infoCollection = resultParameters.infoCollection;
             for (DistributedObjectInfo distributedObjectInfo : infoCollection) {

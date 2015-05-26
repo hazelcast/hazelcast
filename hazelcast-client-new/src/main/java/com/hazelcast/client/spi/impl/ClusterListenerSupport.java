@@ -25,14 +25,13 @@ import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.LifecycleServiceImpl;
+import com.hazelcast.client.impl.MemberImpl;
 import com.hazelcast.client.impl.client.ClientPrincipal;
-import com.hazelcast.client.impl.protocol.parameters.AuthenticationCustomCredentialsParameters;
-import com.hazelcast.client.impl.protocol.parameters.AuthenticationParameters;
-import com.hazelcast.client.impl.protocol.parameters.AuthenticationResultParameters;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.codec.ClientAuthenticationCodec;
+import com.hazelcast.client.impl.protocol.codec.ClientAuthenticationCustomCodec;
 import com.hazelcast.client.spi.ClientClusterService;
 import com.hazelcast.core.LifecycleEvent;
-import com.hazelcast.client.impl.MemberImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
@@ -111,20 +110,20 @@ public abstract class ClusterListenerSupport implements ConnectionListener, Conn
         @Override
         public void authenticate(ClientConnection connection) throws AuthenticationException, IOException {
             final SerializationService ss = client.getSerializationService();
-            String uuid = "";
-            String ownerUuid = "";
+            String uuid = null;
+            String ownerUuid = null;
             if (principal != null) {
                 uuid = principal.getUuid();
                 ownerUuid = principal.getOwnerUuid();
             }
-
             ClientMessage clientMessage;
             if (credentials instanceof UsernamePasswordCredentials) {
                 UsernamePasswordCredentials cr = (UsernamePasswordCredentials) credentials;
-                clientMessage = AuthenticationParameters.encode(cr.getUsername(), cr.getPassword(), uuid, ownerUuid, true);
+                clientMessage = ClientAuthenticationCodec.encodeRequest(cr.getUsername(),
+                        cr.getPassword(), uuid, ownerUuid, false);
             } else {
                 Data data = ss.toData(credentials);
-                clientMessage = AuthenticationCustomCredentialsParameters.encode(data.toByteArray(), uuid, ownerUuid, true);
+                clientMessage = ClientAuthenticationCustomCodec.encodeRequest(data, uuid, ownerUuid, false);
 
             }
             connection.init();
@@ -133,15 +132,15 @@ public abstract class ClusterListenerSupport implements ConnectionListener, Conn
             final ClientInvocation clientInvocation = new ClientInvocation(client, clientMessage, connection);
             final Future<ClientMessage> future = clientInvocation.invoke();
             try {
-                response = future.get();
+                response = ss.toObject(future.get());
             } catch (Exception e) {
                 throw ExceptionUtil.rethrow(e, IOException.class);
             }
-            AuthenticationResultParameters resultParameters = AuthenticationResultParameters.decode(response);
+            ClientAuthenticationCodec.ResponseParameters result = ClientAuthenticationCodec.decodeResponse(response);
 
-            connection.setRemoteEndpoint(resultParameters.address);
+            connection.setRemoteEndpoint(result.address);
 
-            principal = new ClientPrincipal(resultParameters.uuid, resultParameters.ownerUuid);
+            principal = new ClientPrincipal(result.uuid, result.ownerUuid);
         }
     }
 
