@@ -114,7 +114,7 @@ public class NearCacheStatsImpl
 
     @Override
     public double getRatio() {
-        return (double) hits / misses;
+        return ((double) hits / misses) * 100.0;
     }
 
     @Override
@@ -145,7 +145,7 @@ public class NearCacheStatsImpl
                 + ", creationTime=" + creationTime
                 + ", hits=" + hits
                 + ", misses=" + misses
-                + ", ratio=" + getRatio()
+                + ", ratio=" + String.format("%.1f%%", getRatio())
                 + '}';
     }
 
