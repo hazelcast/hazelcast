@@ -629,7 +629,6 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         fail(); //if we, for any reason, we get through the parsing, fail.
     }
 
-
     @Test
     public void setMapStoreConfigImplementationTest() {
         String mapName = "mapStoreImpObjTest";

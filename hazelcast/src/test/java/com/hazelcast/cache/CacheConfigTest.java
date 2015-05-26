@@ -33,6 +33,10 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.EmptyStatement;
+import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig;
+import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig;
+import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.DurationConfig;
+import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig.ExpiryPolicyType;
 
 import org.junit.After;
 import org.junit.Before;
@@ -55,6 +59,7 @@ import java.net.URL;
 import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -85,9 +90,12 @@ public class CacheConfigTest extends HazelcastTestSupport {
         assertEquals("test-pass1", config1.getGroupConfig().getPassword());
 
         CacheSimpleConfig cacheConfig1 = config1.getCacheConfig("cache1");
-        assertEquals("com.hazelcast.cache.CacheConfigTest$MyCacheLoaderFactory", cacheConfig1.getCacheLoaderFactory());
-        assertEquals("com.hazelcast.cache.CacheConfigTest$MyCacheWriterFactory", cacheConfig1.getCacheWriterFactory());
-        assertEquals("com.hazelcast.cache.CacheConfigTest$MyExpirePolicyFactory", cacheConfig1.getExpiryPolicyFactory());
+        assertEquals("com.hazelcast.cache.CacheConfigTest$MyCacheLoaderFactory",
+                cacheConfig1.getCacheLoaderFactory());
+        assertEquals("com.hazelcast.cache.CacheConfigTest$MyCacheWriterFactory",
+                cacheConfig1.getCacheWriterFactory());
+        assertEquals("com.hazelcast.cache.CacheConfigTest$MyExpirePolicyFactory",
+                cacheConfig1.getExpiryPolicyFactoryConfig().getClassName());
         assertTrue(cacheConfig1.isReadThrough());
         assertTrue(cacheConfig1.isWriteThrough());
         assertTrue(cacheConfig1.isStatisticsEnabled());
@@ -125,6 +133,114 @@ public class CacheConfigTest extends HazelcastTestSupport {
         WanReplicationRef wanRefDisabledRepublishingTestCache =
                 config1.getCacheConfig("wanRefDisabledRepublishingTestCache").getWanReplicationRef();
         assertFalse(wanRefDisabledRepublishingTestCache.isRepublishingEnabled());
+    }
+
+    @Test
+    public void cacheConfigXmlTest_TimedCreatedExpiryPolicyFactory() throws IOException {
+        Config config1 = new XmlConfigBuilder(configUrl1).build();
+
+        CacheSimpleConfig cacheWithTimedCreatedExpiryPolicyFactoryConfig =
+                config1.getCacheConfig("cacheWithTimedCreatedExpiryPolicyFactory");
+        ExpiryPolicyFactoryConfig expiryPolicyFactoryConfig =
+                cacheWithTimedCreatedExpiryPolicyFactoryConfig.getExpiryPolicyFactoryConfig();
+        TimedExpiryPolicyFactoryConfig timedExpiryPolicyFactoryConfig =
+                expiryPolicyFactoryConfig.getTimedExpiryPolicyFactoryConfig();
+        DurationConfig durationConfig = timedExpiryPolicyFactoryConfig.getDurationConfig();
+
+        assertNotNull(expiryPolicyFactoryConfig);
+        assertNotNull(timedExpiryPolicyFactoryConfig);
+        assertNotNull(durationConfig);
+        assertNull(expiryPolicyFactoryConfig.getClassName());
+
+        assertEquals(ExpiryPolicyType.CREATED, timedExpiryPolicyFactoryConfig.getExpiryPolicyType());
+        assertEquals(1, durationConfig.getDurationAmount());
+        assertEquals(TimeUnit.DAYS, durationConfig.getTimeUnit());
+    }
+
+    @Test
+    public void cacheConfigXmlTest_TimedAccessedExpiryPolicyFactory() throws IOException {
+        Config config1 = new XmlConfigBuilder(configUrl1).build();
+
+        CacheSimpleConfig cacheWithTimedAccessedExpiryPolicyFactoryConfig =
+                config1.getCacheConfig("cacheWithTimedAccessedExpiryPolicyFactory");
+        ExpiryPolicyFactoryConfig expiryPolicyFactoryConfig =
+                cacheWithTimedAccessedExpiryPolicyFactoryConfig.getExpiryPolicyFactoryConfig();
+        TimedExpiryPolicyFactoryConfig timedExpiryPolicyFactoryConfig =
+                expiryPolicyFactoryConfig.getTimedExpiryPolicyFactoryConfig();
+        DurationConfig durationConfig = timedExpiryPolicyFactoryConfig.getDurationConfig();
+
+        assertNotNull(expiryPolicyFactoryConfig);
+        assertNotNull(timedExpiryPolicyFactoryConfig);
+        assertNotNull(durationConfig);
+        assertNull(expiryPolicyFactoryConfig.getClassName());
+
+        assertEquals(ExpiryPolicyType.ACCESSED, timedExpiryPolicyFactoryConfig.getExpiryPolicyType());
+        assertEquals(2, durationConfig.getDurationAmount());
+        assertEquals(TimeUnit.HOURS, durationConfig.getTimeUnit());
+    }
+
+    @Test
+    public void cacheConfigXmlTest_TimedModifiedExpiryPolicyFactory() throws IOException {
+        Config config1 = new XmlConfigBuilder(configUrl1).build();
+
+        CacheSimpleConfig cacheWithTimedModifiedExpiryPolicyFactoryConfig =
+                config1.getCacheConfig("cacheWithTimedModifiedExpiryPolicyFactory");
+        ExpiryPolicyFactoryConfig expiryPolicyFactoryConfig =
+                cacheWithTimedModifiedExpiryPolicyFactoryConfig.getExpiryPolicyFactoryConfig();
+        TimedExpiryPolicyFactoryConfig timedExpiryPolicyFactoryConfig =
+                expiryPolicyFactoryConfig.getTimedExpiryPolicyFactoryConfig();
+        DurationConfig durationConfig = timedExpiryPolicyFactoryConfig.getDurationConfig();
+
+        assertNotNull(expiryPolicyFactoryConfig);
+        assertNotNull(timedExpiryPolicyFactoryConfig);
+        assertNotNull(durationConfig);
+        assertNull(expiryPolicyFactoryConfig.getClassName());
+
+        assertEquals(ExpiryPolicyType.MODIFIED, timedExpiryPolicyFactoryConfig.getExpiryPolicyType());
+        assertEquals(3, durationConfig.getDurationAmount());
+        assertEquals(TimeUnit.MINUTES, durationConfig.getTimeUnit());
+    }
+
+    @Test
+    public void cacheConfigXmlTest_TimedModifiedTouchedPolicyFactory() throws IOException {
+        Config config1 = new XmlConfigBuilder(configUrl1).build();
+
+        CacheSimpleConfig cacheWithTimedTouchedExpiryPolicyFactoryConfig =
+                config1.getCacheConfig("cacheWithTimedTouchedExpiryPolicyFactory");
+        ExpiryPolicyFactoryConfig expiryPolicyFactoryConfig =
+                cacheWithTimedTouchedExpiryPolicyFactoryConfig.getExpiryPolicyFactoryConfig();
+        TimedExpiryPolicyFactoryConfig timedExpiryPolicyFactoryConfig =
+                expiryPolicyFactoryConfig.getTimedExpiryPolicyFactoryConfig();
+        DurationConfig durationConfig = timedExpiryPolicyFactoryConfig.getDurationConfig();
+
+        assertNotNull(expiryPolicyFactoryConfig);
+        assertNotNull(timedExpiryPolicyFactoryConfig);
+        assertNotNull(durationConfig);
+        assertNull(expiryPolicyFactoryConfig.getClassName());
+
+        assertEquals(ExpiryPolicyType.TOUCHED, timedExpiryPolicyFactoryConfig.getExpiryPolicyType());
+        assertEquals(4, durationConfig.getDurationAmount());
+        assertEquals(TimeUnit.SECONDS, durationConfig.getTimeUnit());
+    }
+
+    @Test
+    public void cacheConfigXmlTest_TimedEternalTouchedPolicyFactory() throws IOException {
+        Config config1 = new XmlConfigBuilder(configUrl1).build();
+
+        CacheSimpleConfig cacheWithTimedEternalExpiryPolicyFactoryConfig =
+                config1.getCacheConfig("cacheWithTimedEternalExpiryPolicyFactory");
+        ExpiryPolicyFactoryConfig expiryPolicyFactoryConfig =
+                cacheWithTimedEternalExpiryPolicyFactoryConfig.getExpiryPolicyFactoryConfig();
+        TimedExpiryPolicyFactoryConfig timedExpiryPolicyFactoryConfig =
+                expiryPolicyFactoryConfig.getTimedExpiryPolicyFactoryConfig();
+        DurationConfig durationConfig = timedExpiryPolicyFactoryConfig.getDurationConfig();
+
+        assertNotNull(expiryPolicyFactoryConfig);
+        assertNotNull(timedExpiryPolicyFactoryConfig);
+        assertNull(durationConfig);
+        assertNull(expiryPolicyFactoryConfig.getClassName());
+
+        assertEquals(ExpiryPolicyType.ETERNAL, timedExpiryPolicyFactoryConfig.getExpiryPolicyType());
     }
 
     @Test

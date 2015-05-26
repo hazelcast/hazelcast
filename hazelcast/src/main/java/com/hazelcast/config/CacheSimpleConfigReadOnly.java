@@ -81,7 +81,11 @@ public class CacheSimpleConfigReadOnly
     }
 
     @Override
-    public CacheSimpleConfig setExpiryPolicyFactory(String expiryPolicyFactory) {
+    public CacheSimpleConfig setExpiryPolicyFactoryConfig(ExpiryPolicyFactoryConfig expiryPolicyFactoryConfig) {
+        throw new UnsupportedOperationException("This config is read-only cache: " + getName());
+    }
+
+    public CacheSimpleConfig setExpiryPolicyFactory(String className) {
         throw new UnsupportedOperationException("This config is read-only cache: " + getName());
     }
 
