@@ -34,6 +34,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.LockSupport;
 import java.util.concurrent.locks.ReentrantLock;
 
 import static com.hazelcast.nio.IOUtil.toData;
@@ -1807,5 +1808,80 @@ public class MapStoreTest extends TestUtil {
         }
         Thread.sleep(5000);
         assertFalse("Detected concurrent map-store access!", error.get());
+    }
+
+    /**
+     * see zendesk ticket #916
+     */
+    @Test
+    public void test_write_behind_MapStore_should_not_load_removed_entry() {
+        final int range = 1 << 20;
+        final String name = "test";
+
+        final Config config = new Config();
+        config.setProperty(GroupProperties.PROP_REMOVE_DELAY_SECONDS, "1");
+        config.getMapConfig(name)
+                .setMapStoreConfig(new MapStoreConfig().setEnabled(true).setWriteDelaySeconds(1)
+                        .setImplementation(new DeletedKeysAwareMapStore()));
+
+        HazelcastInstance hz = Hazelcast.newHazelcastInstance(config);
+        IMap<Object, Object> map = hz.getMap(name);
+
+        Random random = new Random();
+        Set<Integer> removedKeys = new HashSet<Integer>();
+        long end = System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(25);
+
+        while (System.currentTimeMillis() < end) {
+            int key = random.nextInt(range);
+            if (map.remove(key) != null) {
+                assertTrue("Duplicate remove for: " + key, removedKeys.add(key));
+            }
+        }
+    }
+
+    private static class DeletedKeysAwareMapStore implements MapStore {
+
+        private final Set deletedKeys = Collections.newSetFromMap(new ConcurrentHashMap<Integer, Boolean>());
+        private final Random random = new Random();
+
+        private void pause() {
+            LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(2000 + random.nextInt(1000)));
+        }
+
+        public void store(Object key, Object value) {
+            pause();
+            deletedKeys.remove(key);
+        }
+
+        public void storeAll(Map map) {
+            pause();
+            deletedKeys.removeAll(map.keySet());
+        }
+
+        public void delete(Object key) {
+            pause();
+            deletedKeys.add(key);
+        }
+
+        public void deleteAll(Collection keys) {
+            pause();
+            deletedKeys.addAll(keys);
+        }
+
+        public Object load(Object key) {
+            boolean contains = deletedKeys.contains(key);
+            if (contains) {
+                return null;
+            }
+            return "value";
+        }
+
+        public Map loadAll(Collection collection) {
+            return Collections.emptyMap();
+        }
+
+        public Set loadAllKeys() {
+            return Collections.emptySet();
+        }
     }
 }

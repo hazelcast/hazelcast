@@ -1012,11 +1012,9 @@ public class CMap {
 
     void runStoreUpdate(final Set<StoreRecord> storeRecords) throws Exception {
         Set<Object> keysToDelete = new HashSet<Object>();
-        Set<Data> toStore = new HashSet<Data>();
         Map<Object, Object> updates = new HashMap<Object, Object>();
         for (StoreRecord storeRecord : storeRecords) {
             if (storeRecord.active) {
-                toStore.add(storeRecord.key);
                 updates.put(toObject(storeRecord.key), toObject(storeRecord.value));
             } else {
                 keysToDelete.add(toObject(storeRecord.key));
@@ -1034,9 +1032,9 @@ public class CMap {
             store.storeAll(updates);
         }
         long now = Clock.currentTimeMillis();
-        for (Data key : toStore) {
+        for (StoreRecord sr : storeRecords) {
             // to make sure actual store time is after expected write time
-            Record record = mapRecords.get(key);
+            Record record = mapRecords.get(sr.key);
             if (record != null) {
                 long storedTime = Math.max(now, record.getWriteTime() + 1);
                 record.setLastStoredTime(storedTime);
@@ -1414,7 +1412,9 @@ public class CMap {
                                     dirty = true;
                                 }
                             } else if (shouldPurgeRecord(record, now)) {
-                                recordsToPurge.add(record);  // removed records
+                                if (!hasWriteBehindStore || (record.getWriteTime() <= record.getLastStoredTime())) {
+                                    recordsToPurge.add(record);  // removed records
+                                }
                             } else if (record.isActive() && !record.isValid(now)) {
                                 if (!hasWriteBehindStore || (record.getWriteTime() <= record.getLastStoredTime())) {
                                     recordsToEvict.add(record);  // expired records
