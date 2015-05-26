@@ -3,7 +3,13 @@
 
 ### Execution Cancellation
 
-A task in the code you execute in a cluster might take longer than expected. If you cannot stop/cancel that task, it will keep eating your resources. The standard Java executor framework solves this problem with the `cancel()` API and by encouraging us to code and design for cancellations. That is a highly ignored part of software development.
+A task in the code you execute in a cluster might take longer than expected. If you cannot stop/cancel that task, it will keep eating your resources. 
+
+To cancel a task, you can use the standard Java executor framework's `cancel()` API. This framework encourages us to code and design for cancellations, a highly ignored part of software development.
+
+#### Example Task to Cancel
+
+The Fibanacci callable class below calculates the Fibonacci number for a given number. In the `calculate` method, we check if the current thread is interrupted so that the code can respond to cancellations once the execution is started. 
 
 ```java
 public class Fibonacci<Long> implements Callable<Long>, Serializable {
@@ -33,7 +39,9 @@ public class Fibonacci<Long> implements Callable<Long>, Serializable {
 }
 ```
 
-The Fibanacci callable class above calculates the Fibonacci number for a given number. In the `calculate` method, we check if the current thread is interrupted so that the code can respond to cancellations once the execution is started. The `fib()` method below submits the Fibonacci calculation task for number 'n' and waits a maximum of 3 seconds for the result. If the execution does not completed in 3 seconds, `future.get()` will throw a `TimeoutException` and upon catching it, we cancel the execution, saving some CPU cycles.
+#### Example Method to Execute and Cancel the Task
+
+The `fib()` method below submits the Fibonacci calculation task above for number 'n' and waits a maximum of 3 seconds for the result. If the execution does not completed in 3 seconds, `future.get()` will throw a `TimeoutException` and upon catching it, we cancel the execution, saving some CPU cycles.
 
 ```java
 long fib( int n ) throws Exception {
