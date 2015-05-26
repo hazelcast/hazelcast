@@ -17,30 +17,26 @@
 package com.hazelcast.client.proxy;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.DataCollectionResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.GenericResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.IntResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.ItemEventParameters;
-import com.hazelcast.client.impl.protocol.parameters.QueueAddAllParameters;
-import com.hazelcast.client.impl.protocol.parameters.QueueAddListenerParameters;
-import com.hazelcast.client.impl.protocol.parameters.QueueClearParameters;
-import com.hazelcast.client.impl.protocol.parameters.QueueCompareAndRemoveAllParameters;
-import com.hazelcast.client.impl.protocol.parameters.QueueCompareAndRetainAllParameters;
-import com.hazelcast.client.impl.protocol.parameters.QueueContainsAllParameters;
-import com.hazelcast.client.impl.protocol.parameters.QueueContainsParameters;
-import com.hazelcast.client.impl.protocol.parameters.QueueDrainToMaxSizeParameters;
-import com.hazelcast.client.impl.protocol.parameters.QueueIsEmptyParameters;
-import com.hazelcast.client.impl.protocol.parameters.QueueIteratorParameters;
-import com.hazelcast.client.impl.protocol.parameters.QueueOfferParameters;
-import com.hazelcast.client.impl.protocol.parameters.QueuePeekParameters;
-import com.hazelcast.client.impl.protocol.parameters.QueuePollParameters;
-import com.hazelcast.client.impl.protocol.parameters.QueuePutParameters;
-import com.hazelcast.client.impl.protocol.parameters.QueueRemainingCapacityParameters;
-import com.hazelcast.client.impl.protocol.parameters.QueueRemoveListenerParameters;
-import com.hazelcast.client.impl.protocol.parameters.QueueRemoveParameters;
-import com.hazelcast.client.impl.protocol.parameters.QueueSizeParameters;
-import com.hazelcast.client.impl.protocol.parameters.QueueTakeParameters;
+import com.hazelcast.client.impl.protocol.codec.ListAddListenerCodec;
+import com.hazelcast.client.impl.protocol.codec.QueueAddAllCodec;
+import com.hazelcast.client.impl.protocol.codec.QueueAddListenerCodec;
+import com.hazelcast.client.impl.protocol.codec.QueueClearCodec;
+import com.hazelcast.client.impl.protocol.codec.QueueCompareAndRemoveAllCodec;
+import com.hazelcast.client.impl.protocol.codec.QueueCompareAndRetainAllCodec;
+import com.hazelcast.client.impl.protocol.codec.QueueContainsAllCodec;
+import com.hazelcast.client.impl.protocol.codec.QueueContainsCodec;
+import com.hazelcast.client.impl.protocol.codec.QueueDrainToMaxSizeCodec;
+import com.hazelcast.client.impl.protocol.codec.QueueIsEmptyCodec;
+import com.hazelcast.client.impl.protocol.codec.QueueIteratorCodec;
+import com.hazelcast.client.impl.protocol.codec.QueueOfferCodec;
+import com.hazelcast.client.impl.protocol.codec.QueuePeekCodec;
+import com.hazelcast.client.impl.protocol.codec.QueuePollCodec;
+import com.hazelcast.client.impl.protocol.codec.QueuePutCodec;
+import com.hazelcast.client.impl.protocol.codec.QueueRemainingCapacityCodec;
+import com.hazelcast.client.impl.protocol.codec.QueueRemoveCodec;
+import com.hazelcast.client.impl.protocol.codec.QueueRemoveListenerCodec;
+import com.hazelcast.client.impl.protocol.codec.QueueSizeCodec;
+import com.hazelcast.client.impl.protocol.codec.QueueTakeCodec;
 import com.hazelcast.client.spi.ClientClusterService;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.spi.EventHandler;
@@ -76,38 +72,52 @@ public final class ClientQueueProxy<E> extends ClientProxy implements IQueue<E> 
 
     @Override
     public String addItemListener(final ItemListener<E> listener, final boolean includeValue) {
-        ClientMessage request = QueueAddListenerParameters.encode(name, includeValue);
+        ClientMessage request = QueueAddListenerCodec.encodeRequest(name, includeValue);
 
-        EventHandler<ClientMessage> eventHandler = new EventHandler<ClientMessage>() {
-            final SerializationService serializationService = getContext().getSerializationService();
-            final ClientClusterService clusterService = getContext().getClusterService();
-
-            public void handle(ClientMessage message) {
-                ItemEventParameters event = ItemEventParameters.decode(message);
-                E item = includeValue ? (E) serializationService.toObject(event.item) : null;
-                Member member = clusterService.getMember(event.uuid);
-                ItemEvent<E> itemEvent = new ItemEvent<E>(name, event.eventType, item, member);
-                if (event.eventType == ItemEventType.ADDED) {
-                    listener.itemAdded(itemEvent);
-                } else {
-                    listener.itemRemoved(itemEvent);
-                }
-            }
-
-            @Override
-            public void beforeListenerRegister() {
-            }
-
-            @Override
-            public void onListenerRegister() {
-
-            }
-        };
+        EventHandler<ClientMessage> eventHandler = new ItemEventHandler(includeValue, listener);
         return listen(request, getPartitionKey(), eventHandler);
     }
 
+    private class ItemEventHandler extends ListAddListenerCodec.AbstractEventHandler
+            implements EventHandler<ClientMessage> {
+
+        private final boolean includeValue;
+        private final ItemListener<E> listener;
+
+        public ItemEventHandler(boolean includeValue, ItemListener<E> listener) {
+            this.includeValue = includeValue;
+            this.listener = listener;
+        }
+
+        @Override
+        public void handle(Data dataItem, String uuid, int eventType) {
+            SerializationService serializationService = getContext().getSerializationService();
+            ClientClusterService clusterService = getContext().getClusterService();
+
+            E item = includeValue ? (E) serializationService.toObject(dataItem) : null;
+            Member member = clusterService.getMember(uuid);
+            ItemEvent<E> itemEvent = new ItemEvent<E>(name, ItemEventType.getByType(eventType), item, member);
+            if (eventType == ItemEventType.ADDED.getType()) {
+                listener.itemAdded(itemEvent);
+            } else {
+                listener.itemRemoved(itemEvent);
+            }
+        }
+
+        @Override
+        public void beforeListenerRegister() {
+
+        }
+
+        @Override
+        public void onListenerRegister() {
+
+        }
+    }
+
+
     public boolean removeItemListener(String registrationId) {
-        ClientMessage request = QueueRemoveListenerParameters.encode(name, registrationId);
+        ClientMessage request = QueueRemoveListenerCodec.encodeRequest(name, registrationId);
         return stopListening(request, registrationId);
     }
 
@@ -142,53 +152,53 @@ public final class ClientQueueProxy<E> extends ClientProxy implements IQueue<E> 
 
     public void put(E e) throws InterruptedException {
         Data data = toData(e);
-        ClientMessage request = QueuePutParameters.encode(name, data);
+        ClientMessage request = QueuePutCodec.encodeRequest(name, data);
         invokeInterruptibly(request);
     }
 
     public boolean offer(E e, long timeout, TimeUnit unit) throws InterruptedException {
         Data data = toData(e);
-        ClientMessage request = QueueOfferParameters.encode(name, data, unit.toMillis(timeout));
+        ClientMessage request = QueueOfferCodec.encodeRequest(name, data, unit.toMillis(timeout));
         ClientMessage response = invokeInterruptibly(request);
-        BooleanResultParameters resultParameters = BooleanResultParameters.decode(response);
-        return resultParameters.result;
+        QueueOfferCodec.ResponseParameters resultParameters = QueueOfferCodec.decodeResponse(response);
+        return resultParameters.response;
     }
 
     public E take() throws InterruptedException {
-        ClientMessage request = QueueTakeParameters.encode(name);
+        ClientMessage request = QueueTakeCodec.encodeRequest(name);
         ClientMessage response = invokeInterruptibly(request);
-        GenericResultParameters resultParameters = GenericResultParameters.decode(response);
-        return toObject(resultParameters.result);
+        QueueTakeCodec.ResponseParameters resultParameters = QueueTakeCodec.decodeResponse(response);
+        return toObject(resultParameters.response);
     }
 
     public E poll(long timeout, TimeUnit unit) throws InterruptedException {
-        ClientMessage request = QueuePollParameters.encode(name, unit.toMillis(timeout));
+        ClientMessage request = QueuePollCodec.encodeRequest(name, unit.toMillis(timeout));
         ClientMessage response = invokeInterruptibly(request);
-        GenericResultParameters resultParameters = GenericResultParameters.decode(response);
-        return toObject(resultParameters.result);
+        QueuePollCodec.ResponseParameters resultParameters = QueuePollCodec.decodeResponse(response);
+        return toObject(resultParameters.response);
     }
 
     public int remainingCapacity() {
-        ClientMessage request = QueueRemainingCapacityParameters.encode(name);
+        ClientMessage request = QueueRemainingCapacityCodec.encodeRequest(name);
         ClientMessage response = invoke(request);
-        IntResultParameters resultParameters = IntResultParameters.decode(response);
-        return resultParameters.result;
+        QueueRemainingCapacityCodec.ResponseParameters resultParameters = QueueRemainingCapacityCodec.decodeResponse(response);
+        return resultParameters.response;
     }
 
     public boolean remove(Object o) {
         Data data = toData(o);
-        ClientMessage request = QueueRemoveParameters.encode(name, data);
+        ClientMessage request = QueueRemoveCodec.encodeRequest(name, data);
         ClientMessage response = invoke(request);
-        BooleanResultParameters resultParameters = BooleanResultParameters.decode(response);
-        return resultParameters.result;
+        QueueRemoveCodec.ResponseParameters resultParameters = QueueRemoveCodec.decodeResponse(response);
+        return resultParameters.response;
     }
 
     public boolean contains(Object o) {
         Data data = toData(o);
-        ClientMessage request = QueueContainsParameters.encode(name, data);
+        ClientMessage request = QueueContainsCodec.encodeRequest(name, data);
         ClientMessage response = invoke(request);
-        BooleanResultParameters resultParameters = BooleanResultParameters.decode(response);
-        return resultParameters.result;
+        QueueContainsCodec.ResponseParameters resultParameters = QueueContainsCodec.decodeResponse(response);
+        return resultParameters.response;
     }
 
     public int drainTo(Collection<? super E> objects) {
@@ -196,10 +206,10 @@ public final class ClientQueueProxy<E> extends ClientProxy implements IQueue<E> 
     }
 
     public int drainTo(Collection<? super E> c, int maxElements) {
-        ClientMessage request = QueueDrainToMaxSizeParameters.encode(name, maxElements);
+        ClientMessage request = QueueDrainToMaxSizeCodec.encodeRequest(name, maxElements);
         ClientMessage response = invoke(request);
-        DataCollectionResultParameters resultParameters = DataCollectionResultParameters.decode(response);
-        Collection<Data> resultCollection = resultParameters.result;
+        QueueDrainToMaxSizeCodec.ResponseParameters resultParameters = QueueDrainToMaxSizeCodec.decodeResponse(response);
+        Collection<Data> resultCollection = resultParameters.list;
         for (Data data : resultCollection) {
             E e = toObject(data);
             c.add(e);
@@ -232,39 +242,39 @@ public final class ClientQueueProxy<E> extends ClientProxy implements IQueue<E> 
     }
 
     public E peek() {
-        ClientMessage request = QueuePeekParameters.encode(name);
+        ClientMessage request = QueuePeekCodec.encodeRequest(name);
         ClientMessage response = invoke(request);
-        GenericResultParameters resultParameters = GenericResultParameters.decode(response);
-        return toObject(resultParameters.result);
+        QueuePeekCodec.ResponseParameters resultParameters = QueuePeekCodec.decodeResponse(response);
+        return toObject(resultParameters.response);
     }
 
     public int size() {
-        ClientMessage request = QueueSizeParameters.encode(name);
+        ClientMessage request = QueueSizeCodec.encodeRequest(name);
         ClientMessage response = invoke(request);
-        IntResultParameters resultParameters = IntResultParameters.decode(response);
-        return resultParameters.result;
+        QueueSizeCodec.ResponseParameters resultParameters = QueueSizeCodec.decodeResponse(response);
+        return resultParameters.response;
     }
 
     public boolean isEmpty() {
-        ClientMessage request = QueueIsEmptyParameters.encode(name);
+        ClientMessage request = QueueIsEmptyCodec.encodeRequest(name);
         ClientMessage response = invoke(request);
-        BooleanResultParameters resultParameters = BooleanResultParameters.decode(response);
-        return resultParameters.result;
+        QueueIsEmptyCodec.ResponseParameters resultParameters = QueueIsEmptyCodec.decodeResponse(response);
+        return resultParameters.response;
     }
 
     public Iterator<E> iterator() {
-        ClientMessage request = QueueIteratorParameters.encode(name);
+        ClientMessage request = QueueIteratorCodec.encodeRequest(name);
         ClientMessage response = invoke(request);
-        DataCollectionResultParameters resultParameters = DataCollectionResultParameters.decode(response);
-        Collection<Data> resultCollection = resultParameters.result;
+        QueueIteratorCodec.ResponseParameters resultParameters = QueueIteratorCodec.decodeResponse(response);
+        Collection<Data> resultCollection = resultParameters.list;
         return new QueueIterator<E>(resultCollection.iterator(), getContext().getSerializationService(), false);
     }
 
     public Object[] toArray() {
-        ClientMessage request = QueueIteratorParameters.encode(name);
+        ClientMessage request = QueueIteratorCodec.encodeRequest(name);
         ClientMessage response = invoke(request);
-        DataCollectionResultParameters resultParameters = DataCollectionResultParameters.decode(response);
-        Collection<Data> resultCollection = resultParameters.result;
+        QueueIteratorCodec.ResponseParameters resultParameters = QueueIteratorCodec.decodeResponse(response);
+        Collection<Data> resultCollection = resultParameters.list;
         int i = 0;
         Object[] array = new Object[resultCollection.size()];
         for (Data data : resultCollection) {
@@ -274,10 +284,10 @@ public final class ClientQueueProxy<E> extends ClientProxy implements IQueue<E> 
     }
 
     public <T> T[] toArray(T[] ts) {
-        ClientMessage request = QueueIteratorParameters.encode(name);
+        ClientMessage request = QueueIteratorCodec.encodeRequest(name);
         ClientMessage response = invoke(request);
-        DataCollectionResultParameters resultParameters = DataCollectionResultParameters.decode(response);
-        Collection<Data> resultCollection = resultParameters.result;
+        QueueIteratorCodec.ResponseParameters resultParameters = QueueIteratorCodec.decodeResponse(response);
+        Collection<Data> resultCollection = resultParameters.list;
         int size = resultCollection.size();
         if (ts.length < size) {
             ts = (T[]) java.lang.reflect.Array.newInstance(ts.getClass().getComponentType(), size);
@@ -290,35 +300,35 @@ public final class ClientQueueProxy<E> extends ClientProxy implements IQueue<E> 
     }
 
     public boolean containsAll(Collection<?> c) {
-        ClientMessage request = QueueContainsAllParameters.encode(name, getDataList(c));
+        ClientMessage request = QueueContainsAllCodec.encodeRequest(name, getDataList(c));
         ClientMessage response = invoke(request);
-        BooleanResultParameters resultParameters = BooleanResultParameters.decode(response);
-        return resultParameters.result;
+        QueueContainsAllCodec.ResponseParameters resultParameters = QueueContainsAllCodec.decodeResponse(response);
+        return resultParameters.response;
     }
 
     public boolean addAll(Collection<? extends E> c) {
-        ClientMessage request = QueueAddAllParameters.encode(name, getDataList(c));
+        ClientMessage request = QueueAddAllCodec.encodeRequest(name, getDataList(c));
         ClientMessage response = invoke(request);
-        BooleanResultParameters resultParameters = BooleanResultParameters.decode(response);
-        return resultParameters.result;
+        QueueAddAllCodec.ResponseParameters resultParameters = QueueAddAllCodec.decodeResponse(response);
+        return resultParameters.response;
     }
 
     public boolean removeAll(Collection<?> c) {
-        ClientMessage request = QueueCompareAndRemoveAllParameters.encode(name, getDataList(c));
+        ClientMessage request = QueueCompareAndRemoveAllCodec.encodeRequest(name, getDataList(c));
         ClientMessage response = invoke(request);
-        BooleanResultParameters resultParameters = BooleanResultParameters.decode(response);
-        return resultParameters.result;
+        QueueCompareAndRemoveAllCodec.ResponseParameters resultParameters = QueueCompareAndRemoveAllCodec.decodeResponse(response);
+        return resultParameters.response;
     }
 
     public boolean retainAll(Collection<?> c) {
-        ClientMessage request = QueueCompareAndRetainAllParameters.encode(name, getDataList(c));
+        ClientMessage request = QueueCompareAndRetainAllCodec.encodeRequest(name, getDataList(c));
         ClientMessage response = invoke(request);
-        BooleanResultParameters resultParameters = BooleanResultParameters.decode(response);
-        return resultParameters.result;
+        QueueCompareAndRetainAllCodec.ResponseParameters resultParameters = QueueCompareAndRetainAllCodec.decodeResponse(response);
+        return resultParameters.response;
     }
 
     public void clear() {
-        ClientMessage request = QueueClearParameters.encode(name);
+        ClientMessage request = QueueClearCodec.encodeRequest(name);
         invoke(request);
     }
 

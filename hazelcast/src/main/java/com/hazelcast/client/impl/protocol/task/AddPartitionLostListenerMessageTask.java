@@ -44,7 +44,8 @@ public class AddPartitionLostListenerMessageTask
             public void partitionLost(PartitionLostEvent event) {
                 if (endpoint.isAlive()) {
 
-                    ClientMessage eventMessage = ClientAddPartitionLostListenerCodec.encodeRequest(event.getPartitionId(),
+                    ClientMessage eventMessage =
+                            ClientAddPartitionLostListenerCodec.encodePartitionLostEventEvent(event.getPartitionId(),
                             event.getLostBackupCount(), event.getEventSource());
                     sendClientMessage(null, eventMessage);
                 }

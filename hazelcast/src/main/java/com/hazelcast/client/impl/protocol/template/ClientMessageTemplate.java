@@ -53,7 +53,7 @@ public interface ClientMessageTemplate {
     void removeAllListeners();
 
     @Request(id = 20, retryable = false, response = ResponseMessageConst.STRING, event = {EventMessageConst.EVENT_PARTITIONLOSTEVENT})
-    void addPartitionLostListener(int partitionId, int lostBackupCount, Address source);
+    void addPartitionLostListener();
 
     @Request(id = 21, retryable = false, response = ResponseMessageConst.BOOLEAN)
     void removePartitionLostListener(String registrationId);

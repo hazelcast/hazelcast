@@ -41,4 +41,5 @@ public final class EventMessageConst {
     public static final int EVENT_DISTRIBUTEDOBJECT = 207;
 
     public static final int EVENT_CACHEINVALIDATION = 208;
+    public static final int EVENT_MAPPARTITIONLOSTEVENT = 209;
 }

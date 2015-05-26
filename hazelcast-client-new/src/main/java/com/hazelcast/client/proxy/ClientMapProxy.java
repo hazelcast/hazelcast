@@ -1218,7 +1218,8 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
         return new ClientMapEventHandler(listenerAdaptor, includeValue);
     }
 
-    private class ClientMapEventHandler extends MapAddEntryListenerCodec.AbstractEventHandler implements EventHandler<ClientMessage> {
+    private class ClientMapEventHandler extends MapAddEntryListenerCodec.AbstractEventHandler
+            implements EventHandler<ClientMessage> {
 
         private final ListenerAdapter listenerAdapter;
         private final boolean includeValue;

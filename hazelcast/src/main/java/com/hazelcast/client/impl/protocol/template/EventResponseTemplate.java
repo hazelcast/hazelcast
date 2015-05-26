@@ -20,6 +20,7 @@ import com.hazelcast.annotation.EventResponse;
 import com.hazelcast.annotation.GenerateCodec;
 import com.hazelcast.client.impl.protocol.EventMessageConst;
 import com.hazelcast.cluster.client.MemberAttributeChange;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 
 import java.util.Collection;
@@ -49,12 +50,15 @@ public interface EventResponseTemplate {
     void Topic(Data item, long publishTime, String uuid);
 
     @EventResponse(EventMessageConst.EVENT_PARTITIONLOSTEVENT)
-    void PartitionLostEvent(int partitionId, String uuid);
+    void PartitionLostEvent(int partitionId, int lostBackupCount, Address source);
 
     @EventResponse(EventMessageConst.EVENT_DISTRIBUTEDOBJECT)
     void DistributedObject(String name, String serviceName, int eventType);
 
     @EventResponse(EventMessageConst.EVENT_CACHEINVALIDATION)
     void CacheInvalidation(String name, Data key, String sourceUuid);
+
+    @EventResponse(EventMessageConst.EVENT_MAPPARTITIONLOSTEVENT)
+    void MapPartitionLostEvent(int partitionId, String uuid);
 
 }
