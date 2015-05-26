@@ -229,9 +229,8 @@ public interface RecordStore {
 
     /**
      * Resets the record store to it's initial state.
-     * @param clearIndexes if true indexes will also cleared.
      */
-    void reset(boolean clearIndexes);
+    void reset();
 
     boolean forceUnlock(Data dataKey);
 
