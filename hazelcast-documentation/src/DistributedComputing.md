@@ -103,7 +103,7 @@ Please note that the Echo callable in the above code sample also implements a Se
 
 #### Runnable
 
-In Hazelcast, when you implement a task as `java.util.concurrent.runnable` (a task that does not return a value), you implement Callable and Serializable.
+In Hazelcast, when you implement a task as `java.util.concurrent.runnable` (a task that does not return a value), you implement Runnable and Serializable.
 
 Below is Runnable example code. It is a task that waits for some time and echoes a message.
 
