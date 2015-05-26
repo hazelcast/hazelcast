@@ -63,9 +63,10 @@ public class MapKeyLoader {
     private IFunction<Object, Data> toData;
     private ExecutionService execService;
 
-    private int maxSize;
+    private int maxSizePerNode;
     private int maxBatch;
     private int mapNamePartition;
+    private boolean hasBackup;
 
     private LoadFinishedFuture loadFinished = new LoadFinishedFuture(true);
 
@@ -211,9 +212,11 @@ public class MapKeyLoader {
 
         Iterator<Object> keys = allKeys.iterator();
         Iterator<Data> dataKeys = map(keys, toData);
+        int clusterSize = partitionService.getMemberPartitionsMap().size();
+        int mapMaxSize = clusterSize * maxSizePerNode;
 
-        if (maxSize > 0) {
-            dataKeys = limit(dataKeys, maxSize);
+        if (mapMaxSize > 0) {
+            dataKeys = limit(dataKeys, mapMaxSize);
         }
 
         Iterator<Entry<Integer, Data>> partitionsAndKeys = map(dataKeys, toPartition(partitionService));
@@ -224,7 +227,7 @@ public class MapKeyLoader {
             sendBatch(batch, replaceExistingValues);
         }
 
-        sendLoadCompleted(partitionService.getPartitionCount(), replaceExistingValues);
+        sendLoadCompleted(clusterSize, partitionService.getPartitionCount(), replaceExistingValues);
 
         if (keys instanceof Closeable) {
             closeResource((Closeable) keys);
@@ -240,7 +243,7 @@ public class MapKeyLoader {
         }
     }
 
-    private List<Future<Object>> sendLoadCompleted(int partitions, boolean replaceExistingValues) {
+    private List<Future<Object>> sendLoadCompleted(int clusterSize, int partitions, boolean replaceExistingValues) {
 
         List<Future<Object>> futures = new ArrayList<Future<Object>>();
         boolean lastBatch = true;
@@ -250,10 +253,11 @@ public class MapKeyLoader {
             futures.add(opService.invokeOnPartition(SERVICE_NAME, op, partitionId));
         }
 
-        LoadAllOperation op = new LoadAllOperation(mapName, Collections.<Data>emptyList(), replaceExistingValues, lastBatch);
-
         // notify SENDER_BACKUP
-        futures.add(opService.createInvocationBuilder(SERVICE_NAME, op, mapNamePartition).setReplicaIndex(1).invoke());
+        if (hasBackup && clusterSize > 1) {
+            LoadAllOperation op = new LoadAllOperation(mapName, Collections.<Data>emptyList(), replaceExistingValues, lastBatch);
+            futures.add(opService.createInvocationBuilder(SERVICE_NAME, op, mapNamePartition).setReplicaIndex(1).invoke());
+        }
 
         return futures;
     }
@@ -263,7 +267,11 @@ public class MapKeyLoader {
     }
 
     public void setMaxSize(int maxSize) {
-        this.maxSize = maxSize;
+        this.maxSizePerNode = maxSize;
+    }
+
+    public void setHasBackup(boolean hasBackup) {
+        this.hasBackup = hasBackup;
     }
 
     private ExecutionCallback<Boolean> ifLoadedCallback() {
