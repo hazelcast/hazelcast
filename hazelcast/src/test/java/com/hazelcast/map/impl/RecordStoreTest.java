@@ -31,9 +31,10 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
 import groovy.lang.Category;
-import java.util.Collection;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+
+import java.util.Collection;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;

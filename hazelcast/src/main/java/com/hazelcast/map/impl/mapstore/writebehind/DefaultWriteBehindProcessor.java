@@ -17,6 +17,7 @@
 package com.hazelcast.map.impl.mapstore.writebehind;
 
 import com.hazelcast.map.impl.mapstore.MapStoreContext;
+import com.hazelcast.map.impl.mapstore.writebehind.entry.DelayedEntry;
 import com.hazelcast.nio.serialization.Data;
 
 import java.util.ArrayList;

@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.mapstore.writebehind;
 
+import com.hazelcast.map.impl.mapstore.writebehind.entry.DelayedEntry;
 import com.hazelcast.nio.serialization.Data;
 
 import java.util.ArrayList;
@@ -92,6 +93,7 @@ class CoalescedWriteBehindQueue implements WriteBehindQueue<DelayedEntry> {
 
     @Override
     public boolean contains(DelayedEntry entry) {
+        //noinspection SuspiciousMethodCalls
         return map.containsKey(entry.getKey());
     }
 
