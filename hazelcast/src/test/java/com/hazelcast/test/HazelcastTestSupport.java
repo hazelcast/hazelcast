@@ -61,6 +61,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static com.hazelcast.test.TestPartitionUtils.getInternalPartitionServiceState;
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -216,7 +218,7 @@ public abstract class HazelcastTestSupport {
 
     public static void sleepMillis(int millis) {
         try {
-            TimeUnit.MILLISECONDS.sleep(millis);
+            MILLISECONDS.sleep(millis);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }
@@ -251,11 +253,25 @@ public abstract class HazelcastTestSupport {
         stop.set(true);
     }
 
-    public static void sleepAtLeastMillis(int millis) {
-        final long targetTime = System.currentTimeMillis() + millis + 1;
-        while (System.currentTimeMillis() < targetTime) {
-            sleepMillis(1);
-        }
+    public static void sleepAtLeastMillis(int sleepFor) {
+       boolean interrupted = false;
+       try {
+           long remainingNanos = MILLISECONDS.toNanos(sleepFor);
+           final long sleepUntil = System.nanoTime() + remainingNanos;
+           while (remainingNanos > 0) {
+               try {
+                   NANOSECONDS.sleep(remainingNanos);
+               } catch (InterruptedException e) {
+                   interrupted = true;
+               } finally {
+                   remainingNanos = sleepUntil - System.nanoTime();
+               }
+           }
+       } finally {
+           if (interrupted) {
+               Thread.currentThread().interrupt();
+           }
+       }
     }
 
     public static void sleepAtLeastSeconds(int seconds) {
