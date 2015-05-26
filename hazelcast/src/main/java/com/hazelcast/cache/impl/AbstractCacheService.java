@@ -18,6 +18,7 @@ package com.hazelcast.cache.impl;
 
 import com.hazelcast.cache.impl.operation.CacheDestroyOperation;
 import com.hazelcast.cache.impl.operation.CacheGetConfigOperation;
+import com.hazelcast.cache.impl.operation.PostJoinCacheOperation;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.InMemoryFormat;
@@ -30,8 +31,10 @@ import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.PartitionMigrationEvent;
+import com.hazelcast.spi.PostJoinAwareService;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 
@@ -39,12 +42,14 @@ import javax.cache.event.CacheEntryListener;
 import java.io.Closeable;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-public abstract class AbstractCacheService implements ICacheService {
+public abstract class AbstractCacheService
+        implements ICacheService, PostJoinAwareService {
 
     protected final ConcurrentMap<String, CacheConfig> configs = new ConcurrentHashMap<String, CacheConfig>();
     protected final ConcurrentMap<String, CacheStatisticsImpl> statistics = new ConcurrentHashMap<String, CacheStatisticsImpl>();
@@ -431,4 +436,14 @@ public abstract class AbstractCacheService implements ICacheService {
             cacheResources.clear();
         }
     }
+
+    @Override
+    public Operation getPostJoinOperation() {
+        PostJoinCacheOperation postJoinCacheOperation = new PostJoinCacheOperation();
+        for (Map.Entry<String, CacheConfig> cacheConfigEntry : configs.entrySet()) {
+            postJoinCacheOperation.addCacheConfig(cacheConfigEntry.getValue());
+        }
+        return postJoinCacheOperation;
+    }
+
 }

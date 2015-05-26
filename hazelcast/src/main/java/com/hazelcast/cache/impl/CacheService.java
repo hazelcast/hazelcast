@@ -53,7 +53,7 @@ import java.util.Collection;
  * using {@link AbstractHazelcastCacheManager#cacheNamePrefix()}.
  * </p>
  */
-public class CacheService extends AbstractCacheService implements ICacheService {
+public class CacheService extends AbstractCacheService {
 
     protected ICacheRecordStore createNewRecordStore(String name, int partitionId) {
         return new CacheRecordStore(name, partitionId, nodeEngine, CacheService.this);
@@ -114,7 +114,7 @@ public class CacheService extends AbstractCacheService implements ICacheService 
         EventService eventService = nodeEngine.getEventService();
         Collection<EventRegistration> registrations = eventService.getRegistrations(SERVICE_NAME, name);
         if (!registrations.isEmpty()) {
-            //TODO : fix below for client protocol
+            // TODO fix below for client protocol
             eventService.publishEvent(SERVICE_NAME, registrations,
                     new CacheInvalidationMessage(name, key, sourceUuid), name.hashCode());
 
