@@ -109,7 +109,7 @@ public class MapReplicationOperation extends AbstractOperation implements Mutati
                 Set<RecordReplicationInfo> recordReplicationInfos = dataEntry.getValue();
                 final String mapName = dataEntry.getKey();
                 RecordStore recordStore = mapServiceContext.getRecordStore(getPartitionId(), mapName);
-                recordStore.reset(false);
+                recordStore.reset();
 
                 for (RecordReplicationInfo recordReplicationInfo : recordReplicationInfos) {
                     Data key = recordReplicationInfo.getKey();
