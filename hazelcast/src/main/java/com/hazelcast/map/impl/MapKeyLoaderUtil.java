@@ -85,14 +85,16 @@ public final class MapKeyLoaderUtil {
         return batch;
     }
 
-    public static int getMaxSize(int clusterSize, MaxSizeConfig maxSizeConfig) {
+    public static int getMaxSizePerNode(MaxSizeConfig maxSizeConfig) {
+
         int maxSizePerNode = getApproximateMaxSize(maxSizeConfig, MaxSizePolicy.PER_NODE);
+
         if (maxSizePerNode == MaxSizeConfig.DEFAULT_MAX_SIZE) {
             // unlimited
             return -1;
         }
-        int maxSize = clusterSize * maxSizePerNode;
-        return maxSize;
+
+        return maxSizePerNode;
     }
 
     static IFunction<Data, Entry<Integer, Data>> toPartition(final InternalPartitionService partitionService) {

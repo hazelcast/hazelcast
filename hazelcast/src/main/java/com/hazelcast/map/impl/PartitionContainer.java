@@ -16,7 +16,6 @@
 
 package com.hazelcast.map.impl;
 
-import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.instance.GroupProperties;
@@ -32,7 +31,7 @@ import com.hazelcast.util.ConstructorFunction;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import static com.hazelcast.map.impl.MapKeyLoaderUtil.getMaxSize;
+import static com.hazelcast.map.impl.MapKeyLoaderUtil.getMaxSizePerNode;
 
 public class PartitionContainer {
 
@@ -53,12 +52,12 @@ public class PartitionContainer {
             InternalPartitionService ps = nodeEngine.getPartitionService();
             OperationService opService = nodeEngine.getOperationService();
             ExecutionService execService = nodeEngine.getExecutionService();
-            ClusterService clusterService = nodeEngine.getClusterService();
             GroupProperties groupProperties = nodeEngine.getGroupProperties();
 
             MapKeyLoader keyLoader = new MapKeyLoader(name, opService, ps, execService, mapContainer.toData());
             keyLoader.setMaxBatch(groupProperties.MAP_LOAD_CHUNK_SIZE.getInteger());
-            keyLoader.setMaxSize(getMaxSize(clusterService.getSize(), mapConfig.getMaxSizeConfig()));
+            keyLoader.setMaxSize(getMaxSizePerNode(mapConfig.getMaxSizeConfig()));
+            keyLoader.setHasBackup(mapConfig.getBackupCount() > 0 || mapConfig.getAsyncBackupCount() > 0);
 
             ILogger logger = nodeEngine.getLogger(DefaultRecordStore.class);
             DefaultRecordStore recordStore = new DefaultRecordStore(mapContainer, partitionId, keyLoader, logger);
