@@ -33,6 +33,7 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.FutureUtil;
+
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -122,6 +123,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
                 FutureUtil.checkAllDone(loadingFutures);
                 loadingFutures.clear();
             } catch (Exception e) {
+                logger.severe("Exception while loading map " + name, e);
                 ExceptionUtil.rethrow(e);
             }
         } else {
