@@ -1337,7 +1337,7 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
 
         IExecutorService executor = hz1.getExecutorService("test");
         Future<Boolean> f = executor
-                .submitToMember(new SleepingTask(TimeUnit.MILLISECONDS.toSeconds(callTimeout) * 3)
+                .submitToMember(new SleepingTask((int) TimeUnit.MILLISECONDS.toSeconds(callTimeout) * 3)
                         , hz2.getCluster().getLocalMember());
 
         Boolean result = f.get(1, TimeUnit.MINUTES);
