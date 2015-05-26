@@ -7,7 +7,6 @@ import com.hazelcast.map.impl.mapstore.MapDataStore;
 import com.hazelcast.map.impl.mapstore.MapDataStores;
 import com.hazelcast.map.impl.mapstore.MapStoreContext;
 import com.hazelcast.map.impl.mapstore.MapStoreManager;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.executor.ExecutorType;
@@ -103,14 +102,7 @@ public class WriteBehindManager implements MapStoreManager {
             if (writeBehindStore == null) {
                 return;
             }
-            Data key = (Data) delayedEntry.getKey();
-            Object value = delayedEntry.getValue();
-            // remove from additions.
-            writeBehindStore.removeFromStagingArea(key, value);
-            // remove from deletions.
-            if (value == null) {
-                writeBehindStore.removeFromWaitingDeletions(key);
-            }
+            writeBehindStore.removeProcessed(delayedEntry);
         }
 
         private WriteBehindStore getWriteBehindStoreOrNull(int partitionId) {

@@ -21,11 +21,14 @@ package com.hazelcast.map.impl.mapstore.writebehind;
  */
 abstract class AbstractDelayedEntry<K> {
 
-    protected final K key;
+    protected K key;
 
     protected long storeTime;
 
-    private final int partitionId;
+    private int partitionId;
+
+    public AbstractDelayedEntry() {
+    }
 
     protected AbstractDelayedEntry(K key, long storeTime, int partitionId) {
         this.key = key;
@@ -58,19 +61,6 @@ abstract class AbstractDelayedEntry<K> {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-
-        AbstractDelayedEntry that = (AbstractDelayedEntry) o;
-
-        if (key != null ? !key.equals(that.key) : that.key != null) {
-            return false;
-        }
-
-        return true;
+        return this == o;
     }
 }

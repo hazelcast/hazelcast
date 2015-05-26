@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,6 +37,7 @@ import com.hazelcast.util.Clock;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -100,6 +101,7 @@ public class MapReplicationOperation extends AbstractOperation {
         }
     }
 
+    @Override
     public void run() {
         MapService mapService = getService();
         final MapServiceContext mapServiceContext = mapService.getMapServiceContext();
@@ -121,12 +123,17 @@ public class MapReplicationOperation extends AbstractOperation {
 
             }
         }
+
         for (Entry<String, List<DelayedEntry>> entry : delayedEntries.entrySet()) {
-            final RecordStore recordStore = mapServiceContext.getRecordStore(getPartitionId(), entry.getKey());
-            final List<DelayedEntry> replicatedEntries = entry.getValue();
-            final WriteBehindQueue<DelayedEntry> writeBehindQueue
-                    = ((WriteBehindStore) recordStore.getMapDataStore()).getWriteBehindQueue();
-            writeBehindQueue.addEnd(replicatedEntries);
+            String mapName = entry.getKey();
+            RecordStore recordStore = mapServiceContext.getRecordStore(getPartitionId(), mapName);
+            WriteBehindStore mapDataStore = (WriteBehindStore) recordStore.getMapDataStore();
+            mapDataStore.clear();
+
+            Collection<DelayedEntry> replicatedEntries = entry.getValue();
+            for (DelayedEntry delayedEntry : replicatedEntries) {
+                mapDataStore.add(delayedEntry);
+            }
         }
     }
 
