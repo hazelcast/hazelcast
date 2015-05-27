@@ -30,6 +30,7 @@
 |[Chapter 22 - Hazelcast Configuration](#hazelcast-configuration)||Improved by adding missing configuration elements and attributes. Added introduction paragraphs to the chapter.|
 ||[Using Variables](#using-variables)| Added as a new section explaining how to use variables in declarative configuration.|
 ||[System Properties](#system-properties)|Updated by adding the new system properties.
+||[Enterprise WAN Replication Configuration](#enterprise-wan-replication-configuration)|Added as a new section describing the elements and attributes of Enterprise WAN Replication configuration.
 |[Chapter 24 - License Questions](#license-questions)||Added as a new chapter describing the license information of dependencies.|
 |[Chapter 25 - FAQ](#frequently-asked-questions)||Added new questions/answers.|
 |[Chapter 26 - Glossary](#glossary)||Added new glossary items.|

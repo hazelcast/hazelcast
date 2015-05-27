@@ -1,6 +1,9 @@
 ## Enterprise WAN Replication Configuration
 
-The following are example WAN replication configurations.
+![](images/enterprise-onlycopy.jpg)
+
+
+The following are example Enterprise WAN replication configurations.
 
 **Declarative Configuration:**
 
@@ -50,18 +53,18 @@ wtcConfig.setReplicationImplObject("com.hazelcast.enterprise.wan.replication.Wan
 config.addWanReplicationConfig(wrConfig);
 ```
 
-WAN replication configuration has the following elements.
+Enterprise WAN replication configuration has the following elements.
 
-- name: Name for your WAN replication configuration.
-- snapshot-enabled: This parameter is only valid when used with `WanBatchReplication`. When this parameter is set to `true`, only the latest events (based on key) are selected and send in a batch. 
-- target-cluster: Creates a group and its password.
-- replication-impl: Name of the class implementation for the WAN replication.
-- end-points: IP addresses of the cluster members for which the WAN replication is implemented.
+- `name`: Name for your WAN replication configuration.
+- `snapshot-enabled`: Only valid when used with `WanBatchReplication`. When set to `true`, only the latest events (based on key) are selected and sent in a batch. 
+- `target-cluster`: Creates a group and its password.
+- `replication-impl`: Name of the class implementation for the Enterprise WAN replication.
+- `end-points`: IP addresses of the cluster members for which the Enterprise WAN replication is implemented.
 
 ### IMap and ICache WAN Configuration
 
-To enable WAN replication for an IMap or ICache instance `wan-replication-ref` configuration is used. 
-Each IMap and ICache instance can have different WAN replication configuration.
+To enable WAN replication for an IMap or ICache instance, you can use `wan-replication-ref` element. 
+Each IMap and ICache instance can have different WAN replication configurations.
 
 **Declarative Configuration:**
 
@@ -94,14 +97,12 @@ wanRef.setName("my-wan-cluster");
 wanRef.setMergePolicy(PassThroughMergePolicy.class.getName());
 wanRef.setRepublishingEnabled(true);
 config.getMapConfig("testMap").setWanReplicationRef(wanRef);
-
 ```
 
-`wan-replication-ref` configuration has the following elements;
+`wan-replication-ref` has the following elements;
 
-- name: Name of `wan-replication` configuration. IMap or ICache instance will use this `wan-replication` config. 
-Please refer to [Enterprise WAN Replication Configuration section](#enterprise-wan-replication-configuration) for details about `wan-replication` configuration 
-- merge-policy: Merge policy is used to resolve conflicts that are occurred when target cluster already has the replicated entry key.
-- republishing-enabled: When enabled, an incoming event to a member is forwarded to target cluster of that member.
+- `name`: Name of `wan-replication` configuration. IMap or ICache instance uses this `wan-replication` config. Please refer to the [Enterprise WAN Replication Configuration section](#enterprise-wan-replication-configuration) for details about `wan-replication` configuration.
+- `merge-policy`: Resolve conflicts that are occurred when target cluster already has the replicated entry key.
+- `republishing-enabled`: When enabled, an incoming event to a member is forwarded to target cluster of that member.
  
 

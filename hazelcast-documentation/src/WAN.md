@@ -242,7 +242,7 @@ or by setting the properties inside the `hazelcast.xml` (where xxx is the reques
 
 Each cluster in WAN topology has to have a unique `group-name` property for a proper handling of forwarded events. 
 
-*Please refer to the [WAN Replication Configuration section](#wan-replication-configuration) for a full description of Hazelcast WAN Replication configuration.*
+*Please refer to the [Enterprise WAN Replication Configuration section](#enterprise-wan-replication-configuration) for a full description of Hazelcast WAN Replication configuration.*
 
 
 
