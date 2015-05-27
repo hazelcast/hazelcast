@@ -15,6 +15,7 @@ import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionalTask;
 import com.hazelcast.transaction.TransactionalTaskContext;
+import java.util.concurrent.ConcurrentHashMap;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -129,7 +130,7 @@ public class PostProcessingMapStoreTest extends HazelcastTestSupport {
 
     public static class IncrementerPostProcessingMapStore implements MapStore<Integer, SampleObject>, PostProcessingMapStore {
 
-        Map<Integer, SampleObject> map = new HashMap<Integer, SampleObject>();
+        Map<Integer, SampleObject> map = new ConcurrentHashMap<Integer, SampleObject>();
 
         @Override
         public void store(Integer key, SampleObject value) {
