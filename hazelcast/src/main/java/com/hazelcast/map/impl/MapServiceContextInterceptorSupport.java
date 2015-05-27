@@ -40,4 +40,6 @@ public interface MapServiceContextInterceptorSupport {
     void removeInterceptor(String mapName, String id);
 
     Object interceptGet(String mapName, Object value);
+
+    boolean hasInterceptor(String mapName);
 }

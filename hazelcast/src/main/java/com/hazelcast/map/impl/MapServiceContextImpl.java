@@ -424,6 +424,12 @@ class MapServiceContextImpl implements MapServiceContext {
     }
 
     @Override
+    public boolean hasInterceptor(String mapName) {
+        List<MapInterceptor> interceptors = getMapContainer(mapName).getInterceptors();
+        return !interceptors.isEmpty();
+    }
+
+    @Override
     public String addLocalEventListener(Object listener, String mapName) {
         ListenerAdapter listenerAdaptor = createListenerAdapter(listener);
         EventRegistration registration = nodeEngine.getEventService().
