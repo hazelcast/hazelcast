@@ -99,8 +99,10 @@ public abstract class AuthenticationBaseMessageTask<P>
         clientEngine.bind(endpoint);
 
         final Address thisAddress = clientEngine.getThisAddress();
-        return new TaskMultipleResponse(thisAddress, principal.getUuid(), principal.getOwnerUuid());
+        return encodeAuth(thisAddress, principal.getUuid(), principal.getOwnerUuid());
     }
+
+    protected abstract ClientMessage encodeAuth(Address thisAddress, String uuid, String ownerUuid);
 
     protected abstract boolean isOwnerConnection();
 

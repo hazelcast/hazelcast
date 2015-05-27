@@ -51,9 +51,12 @@ public class AuthenticationMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        Object[] responses = ((TaskMultipleResponse) response).getResponses();
-        return ClientAuthenticationCodec.encodeResponse((Address) responses[0],
-                (String) responses[1], (String) responses[2]);
+        return (ClientMessage) response;
+    }
+
+    @Override
+    protected ClientMessage encodeAuth(Address thisAddress, String uuid, String ownerUuid) {
+        return ClientAuthenticationCodec.encodeResponse(thisAddress, uuid, ownerUuid);
     }
 
     @Override

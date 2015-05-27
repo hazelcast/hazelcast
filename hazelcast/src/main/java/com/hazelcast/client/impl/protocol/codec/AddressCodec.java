@@ -29,10 +29,6 @@ public final class AddressCodec {
     }
 
     public static Address decode(ClientMessage clientMessage) {
-        boolean isNull = clientMessage.getBoolean();
-        if (isNull) {
-            return null;
-        }
         String host = clientMessage.getStringUtf8();
         int port = clientMessage.getInt();
         try {
@@ -43,21 +39,11 @@ public final class AddressCodec {
     }
 
     public static void encode(Address address, ClientMessage clientMessage) {
-        boolean isNull = address == null;
-        clientMessage.set(isNull);
-        if (isNull) {
-            return;
-        }
         clientMessage.set(address.getHost()).set(address.getPort());
     }
 
     public static int calculateDataSize(Address address) {
-        boolean isNull = address == null;
-        int dataSize = Bits.BOOLEAN_SIZE_IN_BYTES;
-        if (isNull) {
-            return dataSize;
-        }
-        dataSize += ParameterUtil.calculateStringDataSize(address.getHost());
+        int dataSize = ParameterUtil.calculateStringDataSize(address.getHost());
         dataSize += Bits.INT_SIZE_IN_BYTES;
         return dataSize;
     }

@@ -59,7 +59,7 @@ public class GetPartitionsMessageTask extends AbstractCallableMessageTask<Client
             Address owner = partitions[i].getOwnerOrNull();
             int index = -1;
             if (owner == null) {
-                return new TaskMultipleResponse(new Address[0], new int[0]);
+                return ClientGetPartitionsCodec.encodeResponse(new Address[0], new int[0]);
             }
 
             final Integer idx = addressMap.get(owner);
@@ -69,7 +69,7 @@ public class GetPartitionsMessageTask extends AbstractCallableMessageTask<Client
 
             indexes[i] = index;
         }
-        return new TaskMultipleResponse(addresses, indexes);
+        return ClientGetPartitionsCodec.encodeResponse(addresses, indexes);
     }
 
     @Override
@@ -79,8 +79,7 @@ public class GetPartitionsMessageTask extends AbstractCallableMessageTask<Client
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        Object[] responses = ((TaskMultipleResponse) response).getResponses();
-        return ClientGetPartitionsCodec.encodeResponse((Address[]) responses[0], (int[]) responses[1]);
+        return (ClientMessage) response;
     }
 
     @Override

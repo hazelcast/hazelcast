@@ -19,9 +19,7 @@ package com.hazelcast.client.impl.protocol.task.mapreduce;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapReduceJobProcessInformationCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
-import com.hazelcast.client.impl.protocol.task.TaskMultipleResponse;
 import com.hazelcast.instance.Node;
-import com.hazelcast.mapreduce.JobPartitionState;
 import com.hazelcast.mapreduce.JobProcessInformation;
 import com.hazelcast.mapreduce.impl.MapReduceService;
 import com.hazelcast.mapreduce.impl.task.JobSupervisor;
@@ -44,7 +42,7 @@ public class MapReduceJobProcessInformationMessageTask
         if (supervisor != null && supervisor.getJobProcessInformation() != null) {
             JobProcessInformation current = supervisor.getJobProcessInformation();
 
-            return new TaskMultipleResponse(current.getPartitionStates(),
+            return MapReduceJobProcessInformationCodec.encodeResponse(current.getPartitionStates(),
                     current.getProcessedRecords());
         }
         throw new IllegalStateException("Information not found for map reduce with name : "
@@ -58,9 +56,7 @@ public class MapReduceJobProcessInformationMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        Object[] responses = ((TaskMultipleResponse) response).getResponses();
-        return MapReduceJobProcessInformationCodec.encodeResponse((JobPartitionState[]) responses[0],
-                (Integer) responses[1]);
+        return (ClientMessage) response;
     }
 
     @Override
