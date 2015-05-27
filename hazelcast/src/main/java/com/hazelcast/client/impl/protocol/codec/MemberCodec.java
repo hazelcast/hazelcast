@@ -18,6 +18,8 @@ package com.hazelcast.client.impl.protocol.codec;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.util.ParameterUtil;
+import com.hazelcast.core.Member;
+import com.hazelcast.instance.AbstractMember;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Bits;
 
@@ -29,7 +31,7 @@ public final class MemberCodec {
     private MemberCodec() {
     }
 
-    public static com.hazelcast.instance.AbstractMember decode(ClientMessage clientMessage) {
+    public static Member decode(ClientMessage clientMessage) {
         final Address address = AddressCodec.decode(clientMessage);
         String uuid = clientMessage.getStringUtf8();
         int attributeSize = clientMessage.getInt();
@@ -43,8 +45,8 @@ public final class MemberCodec {
         return new com.hazelcast.client.impl.MemberImpl(address, uuid, attributes);
     }
 
-    public static void encode(com.hazelcast.instance.AbstractMember member, ClientMessage clientMessage) {
-        AddressCodec.encode(member.getAddress(), clientMessage);
+    public static void encode(Member member, ClientMessage clientMessage) {
+        AddressCodec.encode(((AbstractMember) member).getAddress(), clientMessage);
         clientMessage.set(member.getUuid());
         Map<String, Object> attributes = new HashMap<String, Object>(member.getAttributes());
         clientMessage.set(attributes.size());
@@ -56,8 +58,8 @@ public final class MemberCodec {
         }
     }
 
-    public static int calculateDataSize(com.hazelcast.instance.AbstractMember member) {
-        int dataSize = AddressCodec.calculateDataSize(member.getAddress());
+    public static int calculateDataSize(Member member) {
+        int dataSize = AddressCodec.calculateDataSize(((AbstractMember) member).getAddress());
         dataSize += ParameterUtil.calculateStringDataSize(member.getUuid());
         dataSize += Bits.INT_SIZE_IN_BYTES;
         Map<String, Object> attributes = member.getAttributes();

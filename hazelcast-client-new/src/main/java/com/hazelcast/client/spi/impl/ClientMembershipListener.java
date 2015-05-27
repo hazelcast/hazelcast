@@ -28,7 +28,6 @@ import com.hazelcast.cluster.client.MemberAttributeChange;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MemberAttributeEvent;
 import com.hazelcast.core.MembershipEvent;
-import com.hazelcast.instance.AbstractMember;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
@@ -66,7 +65,7 @@ class ClientMembershipListener extends ClientMembershipListenerCodec.AbstractEve
     }
 
     @Override
-    public void handle(AbstractMember member, int eventType) {
+    public void handle(Member member, int eventType) {
         switch (eventType) {
             case MembershipEvent.MEMBER_ADDED:
                 memberAdded((MemberImpl) member);
@@ -81,11 +80,11 @@ class ClientMembershipListener extends ClientMembershipListenerCodec.AbstractEve
     }
 
     @Override
-    public void handle(Collection<AbstractMember> members) {
+    public void handle(Collection<Member> members) {
         Map<String, MemberImpl> prevMembers = Collections.emptyMap();
         if (!members.isEmpty()) {
             prevMembers = new HashMap<String, MemberImpl>(members.size());
-            for (AbstractMember member : members) {
+            for (Member member : members) {
                 prevMembers.put(member.getUuid(), (MemberImpl) member);
             }
             members.clear();

@@ -42,16 +42,16 @@ public class CacheAddInvalidationListenerTask
         String registrationId = cacheService.addInvalidationListener(parameters.name, new CacheEventListener() {
             @Override
             public void handleEvent(Object eventObject) {
+                if (!endpoint.isAlive()) {
+                    return;
+                }
                 if (eventObject instanceof CacheInvalidationMessage) {
                     CacheInvalidationMessage message = (CacheInvalidationMessage) eventObject;
 
-                    if (endpoint.isAlive()) {
-                        ClientMessage eventMessage =
-                                CacheAddInvalidationListenerCodec.
-                                        encodeCacheInvalidationEvent(message.getName(), message.getKey(), message.getSourceUuid());
-                        sendClientMessage(message.getKey(), eventMessage);
-
-                    }
+                    ClientMessage eventMessage
+                            = CacheAddInvalidationListenerCodec.encodeCacheInvalidationEvent(message.getName(),
+                            message.getKey(), message.getSourceUuid());
+                    sendClientMessage(message.getKey(), eventMessage);
                 }
             }
         });

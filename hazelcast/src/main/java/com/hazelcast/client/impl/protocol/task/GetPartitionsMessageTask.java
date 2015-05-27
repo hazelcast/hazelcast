@@ -79,7 +79,7 @@ public class GetPartitionsMessageTask extends AbstractCallableMessageTask<Client
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        Object[] responses = ((TaskMultipleResponse) response).responses;
+        Object[] responses = ((TaskMultipleResponse) response).getResponses();
         return ClientGetPartitionsCodec.encodeResponse((Address[]) responses[0], (int[]) responses[1]);
     }
 

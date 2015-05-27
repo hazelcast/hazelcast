@@ -58,7 +58,7 @@ public class MapReduceJobProcessInformationMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        Object[] responses = ((TaskMultipleResponse) response).responses;
+        Object[] responses = ((TaskMultipleResponse) response).getResponses();
         return MapReduceJobProcessInformationCodec.encodeResponse((JobPartitionState[]) responses[0],
                 (Integer) responses[1]);
     }

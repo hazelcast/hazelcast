@@ -85,7 +85,7 @@ public class ClientTopicProxy<E> extends ClientProxy implements ITopic<E> {
         return "ITopic{" + "name='" + getName() + '\'' + '}';
     }
 
-    private class TopicItemHandler extends TopicAddMessageListenerCodec.AbstractEventHandler
+    private final class TopicItemHandler extends TopicAddMessageListenerCodec.AbstractEventHandler
             implements EventHandler<ClientMessage> {
         private final MessageListener<E> listener;
 

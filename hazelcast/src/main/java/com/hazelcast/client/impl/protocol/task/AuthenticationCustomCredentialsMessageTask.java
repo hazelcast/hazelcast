@@ -50,7 +50,7 @@ public class AuthenticationCustomCredentialsMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        Object[] responses = ((TaskMultipleResponse) response).responses;
+        Object[] responses = ((TaskMultipleResponse) response).getResponses();
         return ClientAuthenticationCustomCodec.encodeResponse((Address) responses[0],
                 (String) responses[1], (String) responses[2]);
     }

@@ -16,10 +16,21 @@
 
 package com.hazelcast.client.impl.protocol.task;
 
+import java.util.Arrays;
+
+/**
+ * Wrapper object to be used return multiple parameters from
+ * a method.
+ */
 public class TaskMultipleResponse {
-    public Object[] responses;
+
+    private final Object[] responses;
 
     public TaskMultipleResponse(Object... response) {
         this.responses = response;
+    }
+
+    public Object[] getResponses() {
+        return Arrays.copyOf(responses, responses.length);
     }
 }

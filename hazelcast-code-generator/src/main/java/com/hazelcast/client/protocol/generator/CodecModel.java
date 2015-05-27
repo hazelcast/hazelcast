@@ -227,7 +227,7 @@ public class CodecModel {
                 sizeString.append("dataSize += Bits." + type.toUpperCase() + "_SIZE_IN_BYTES;");
             } else if (type.equals("com.hazelcast.nio.Address")) {
                 sizeString.append("dataSize += " + PARAMETERS_PACKAGE + "AddressCodec.calculateDataSize(" + name + ");");
-            } else if (type.equals("com.hazelcast.instance.AbstractMember")) {
+            } else if (type.equals("com.hazelcast.core.Member")) {
                 sizeString.append("dataSize += " + PARAMETERS_PACKAGE + "MemberCodec.calculateDataSize(" + name + ");");
             } else if (type.equals("com.hazelcast.cluster.client.MemberAttributeChange")) {
                 sizeString.append("dataSize += " + PARAMETERS_PACKAGE
@@ -236,9 +236,11 @@ public class CodecModel {
                     + "," + DATA_FULL_NAME + ">")) {
                 sizeString.append("dataSize += " + PARAMETERS_PACKAGE + "EntryViewCodec.calculateDataSize(" + name + ");");
             } else if (type.equals("com.hazelcast.client.impl.client.DistributedObjectInfo")) {
-                sizeString.append("dataSize += " + PARAMETERS_PACKAGE + "DistributedObjectInfoCodec.calculateDataSize(" + name + ");");
+                sizeString.append("dataSize += "
+                        + PARAMETERS_PACKAGE + "DistributedObjectInfoCodec.calculateDataSize(" + name + ");");
             } else if (type.equals("com.hazelcast.mapreduce.JobPartitionState")) {
-                sizeString.append("dataSize += " + PARAMETERS_PACKAGE + "JobPartitionStateCodec.calculateDataSize(" + name + ");");
+                sizeString.append("dataSize += "
+                        + PARAMETERS_PACKAGE + "JobPartitionStateCodec.calculateDataSize(" + name + ");");
             } else if (type.equals("javax.transaction.xa.Xid")) {
                 sizeString.append("dataSize += " + PARAMETERS_PACKAGE + "XIDCodec.calculateDataSize(" + name + ");");
             } else if (type.startsWith("java.util.Map<")) {
@@ -354,7 +356,7 @@ public class CodecModel {
                 getterString = name + " = clientMessage.getStringUtf8();";
             } else if (type.equals("com.hazelcast.nio.Address")) {
                 getterString = name + " = " + PARAMETERS_PACKAGE + "AddressCodec.decode(clientMessage);";
-            } else if (type.equals("com.hazelcast.instance.AbstractMember")) {
+            } else if (type.equals("com.hazelcast.core.Member")) {
                 getterString = name + " = " + PARAMETERS_PACKAGE + "MemberCodec.decode(clientMessage);";
             } else if (type.equals("com.hazelcast.cluster.client.MemberAttributeChange")) {
                 getterString = name + " = " + PARAMETERS_PACKAGE + "MemberAttributeChangeCodec.decode(clientMessage);";
@@ -502,7 +504,7 @@ public class CodecModel {
 
             if (type.equals("com.hazelcast.nio.Address")) {
                 setterString.append(PARAMETERS_PACKAGE + "AddressCodec.encode(" + name + ",clientMessage);");
-            } else if (type.equals("com.hazelcast.instance.AbstractMember")) {
+            } else if (type.equals("com.hazelcast.core.Member")) {
                 setterString.append(PARAMETERS_PACKAGE + "MemberCodec.encode(" + name + ", clientMessage);");
             } else if (type.equals("com.hazelcast.cluster.client.MemberAttributeChange")) {
                 setterString.append(PARAMETERS_PACKAGE

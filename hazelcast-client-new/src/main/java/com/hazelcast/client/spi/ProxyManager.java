@@ -234,7 +234,7 @@ public final class ProxyManager {
         return client.getListenerService().startListening(request, null, eventHandler);
     }
 
-    private class DistributedObjectEventHandler extends ClientAddDistributedObjectListenerCodec.AbstractEventHandler
+    private final class DistributedObjectEventHandler extends ClientAddDistributedObjectListenerCodec.AbstractEventHandler
             implements EventHandler<ClientMessage> {
 
         private final DistributedObjectListener listener;
@@ -244,7 +244,7 @@ public final class ProxyManager {
         }
 
         @Override
-        public void handle(String name, String serviceName, int eventType) {
+        public void handle(String name, String serviceName, String eventTypeName) {
             final ObjectNamespace ns = new DefaultObjectNamespace(serviceName, name);
             ClientProxyFuture future = proxies.get(ns);
             ClientProxy proxy = future == null ? null : future.get();
@@ -252,13 +252,12 @@ public final class ProxyManager {
                 proxy = getOrCreateProxy(serviceName, name);
             }
 
+            DistributedObjectEvent.EventType eventType = DistributedObjectEvent.EventType.valueOf(eventTypeName);
+            DistributedObjectEvent event = new DistributedObjectEvent(eventType,
+                    serviceName, proxy);
             if (DistributedObjectEvent.EventType.CREATED.equals(eventType)) {
-                DistributedObjectEvent event = new DistributedObjectEvent(DistributedObjectEvent.EventType.CREATED,
-                        serviceName, proxy);
                 listener.distributedObjectCreated(event);
             } else if (DistributedObjectEvent.EventType.DESTROYED.equals(eventType)) {
-                DistributedObjectEvent event = new DistributedObjectEvent(DistributedObjectEvent.EventType.DESTROYED,
-                        serviceName, proxy);
                 listener.distributedObjectDestroyed(event);
             }
         }

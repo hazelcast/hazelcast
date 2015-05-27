@@ -103,7 +103,8 @@ public class TopicAddMessageListenerMessageTask
         DataAwareMessage dataAwareMessage = (DataAwareMessage) message;
         Data messageData = dataAwareMessage.getMessageData();
         String publisherUuid = message.getPublishingMember().getUuid();
-        ClientMessage eventMessage = TopicAddMessageListenerCodec.encodeTopicEvent(messageData, message.getPublishTime(), publisherUuid);
+        ClientMessage eventMessage = TopicAddMessageListenerCodec.encodeTopicEvent(messageData,
+                message.getPublishTime(), publisherUuid);
         sendClientMessage(partitionKey, eventMessage);
     }
 }

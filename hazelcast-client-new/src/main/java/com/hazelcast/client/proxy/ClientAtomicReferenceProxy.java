@@ -50,8 +50,9 @@ public class ClientAtomicReferenceProxy<E> extends ClientProxy implements IAtomi
     public <R> R apply(IFunction<E, R> function) {
         isNotNull(function, "function");
         ClientMessage request = AtomicReferenceApplyCodec.encodeRequest(name, toData(function));
+        ClientMessage response = invoke(request);
         AtomicReferenceApplyCodec.ResponseParameters resultParameters =
-                AtomicReferenceApplyCodec.decodeResponse((ClientMessage) invoke(request));
+                AtomicReferenceApplyCodec.decodeResponse(response);
         return toObject(resultParameters.response);
     }
 
@@ -66,38 +67,38 @@ public class ClientAtomicReferenceProxy<E> extends ClientProxy implements IAtomi
     public E alterAndGet(IFunction<E, E> function) {
         isNotNull(function, "function");
         ClientMessage request = AtomicReferenceAlterAndGetCodec.encodeRequest(name, toData(function));
-        AtomicReferenceAlterAndGetCodec.ResponseParameters resultParameters = AtomicReferenceAlterAndGetCodec.decodeResponse((ClientMessage) invoke(request));
-        return toObject(resultParameters.response);
+        ClientMessage response = invoke(request);
+        return toObject(AtomicReferenceAlterAndGetCodec.decodeResponse(response).response);
     }
 
     @Override
     public E getAndAlter(IFunction<E, E> function) {
         isNotNull(function, "function");
         ClientMessage request = AtomicReferenceGetAndAlterCodec.encodeRequest(name, toData(function));
-        AtomicReferenceGetAndAlterCodec.ResponseParameters resultParameters = AtomicReferenceGetAndAlterCodec.decodeResponse((ClientMessage) invoke(request));
-        return toObject(resultParameters.response);
+        ClientMessage response = invoke(request);
+        return toObject(AtomicReferenceGetAndAlterCodec.decodeResponse(response).response);
 
     }
 
     @Override
     public boolean compareAndSet(E expect, E update) {
         ClientMessage request = AtomicReferenceCompareAndSetCodec.encodeRequest(name, toData(expect), toData(update));
-        AtomicReferenceCompareAndSetCodec.ResponseParameters resultParameters = AtomicReferenceCompareAndSetCodec.decodeResponse((ClientMessage) invoke(request));
-        return resultParameters.response;
+        ClientMessage response = invoke(request);
+        return AtomicReferenceCompareAndSetCodec.decodeResponse(response).response;
     }
 
     @Override
     public boolean contains(E expected) {
         ClientMessage request = AtomicReferenceContainsCodec.encodeRequest(name, toData(expected));
-        AtomicReferenceContainsCodec.ResponseParameters resultParameters = AtomicReferenceContainsCodec.decodeResponse((ClientMessage) invoke(request));
-        return resultParameters.response;
+        ClientMessage response = invoke(request);
+        return AtomicReferenceContainsCodec.decodeResponse(response).response;
     }
 
     @Override
     public E get() {
         ClientMessage request = AtomicReferenceGetCodec.encodeRequest(name);
-        AtomicReferenceGetCodec.ResponseParameters resultParameters = AtomicReferenceGetCodec.decodeResponse((ClientMessage) invoke(request));
-        return toObject(resultParameters.response);
+        ClientMessage response = invoke(request);
+        return toObject(AtomicReferenceGetCodec.decodeResponse(response).response);
     }
 
     @Override
@@ -115,22 +116,22 @@ public class ClientAtomicReferenceProxy<E> extends ClientProxy implements IAtomi
     @Override
     public E getAndSet(E newValue) {
         ClientMessage request = AtomicReferenceGetAndSetCodec.encodeRequest(name, toData(newValue));
-        AtomicReferenceGetAndSetCodec.ResponseParameters resultParameters = AtomicReferenceGetAndSetCodec.decodeResponse((ClientMessage) invoke(request));
-        return toObject(resultParameters.response);
+        ClientMessage response = invoke(request);
+        return toObject(AtomicReferenceGetAndSetCodec.decodeResponse(response).response);
     }
 
     @Override
     public E setAndGet(E update) {
         ClientMessage request = AtomicReferenceSetAndGetCodec.encodeRequest(name, toData(update));
-        AtomicReferenceSetAndGetCodec.ResponseParameters resultParameters = AtomicReferenceSetAndGetCodec.decodeResponse((ClientMessage) invoke(request));
-        return toObject(resultParameters.response);
+        ClientMessage response = invoke(request);
+        return toObject(AtomicReferenceSetAndGetCodec.decodeResponse(response).response);
     }
 
     @Override
     public boolean isNull() {
         ClientMessage request = AtomicReferenceIsNullCodec.encodeRequest(name);
-        AtomicReferenceIsNullCodec.ResponseParameters resultParameters = AtomicReferenceIsNullCodec.decodeResponse((ClientMessage) invoke(request));
-        return resultParameters.response;
+        ClientMessage response = invoke(request);
+        return AtomicReferenceIsNullCodec.decodeResponse(response).response;
     }
 
     protected <T> T invoke(ClientMessage req) {
