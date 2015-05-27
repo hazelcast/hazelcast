@@ -34,6 +34,7 @@ public class DelegatingFuture<V> implements ICompletableFuture<V> {
     private final SerializationService serializationService;
     private final V defaultValue;
     private final boolean hasDefaultValue;
+    private final Object mutex = new Object();
     private V value;
     private Throwable error;
     private volatile boolean done;
@@ -64,7 +65,7 @@ public class DelegatingFuture<V> implements ICompletableFuture<V> {
     @Override
     public final V get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
         if (!done) {
-            synchronized (this) {
+            synchronized (mutex) {
                 if (!done) {
                     try {
                         value = getResult(future.get(timeout, unit));
@@ -135,12 +136,47 @@ public class DelegatingFuture<V> implements ICompletableFuture<V> {
     }
 
     @Override
-    public void andThen(ExecutionCallback<V> callback) {
-        future.andThen(callback);
+    public void andThen(final ExecutionCallback<V> callback) {
+        future.andThen(new DelegatingExecutionCallback<V>(callback));
     }
 
     @Override
-    public void andThen(ExecutionCallback<V> callback, Executor executor) {
-        future.andThen(callback, executor);
+    public void andThen(final ExecutionCallback<V> callback, Executor executor) {
+        future.andThen(new DelegatingExecutionCallback<V>(callback), executor);
+    }
+
+    private class DelegatingExecutionCallback<T> implements ExecutionCallback {
+
+        private final ExecutionCallback<T> callback;
+
+        DelegatingExecutionCallback(ExecutionCallback<T> callback) {
+            this.callback = callback;
+        }
+
+        @Override
+        public void onResponse(Object response) {
+            if (!done) {
+                synchronized (mutex) {
+                    if (!done) {
+                        value = getResult(response);
+                        done = true;
+                    }
+                }
+            }
+            callback.onResponse((T) value);
+        }
+
+        @Override
+        public void onFailure(Throwable t) {
+            if (!done) {
+                synchronized (mutex) {
+                    if (!done) {
+                        error = t;
+                        done = true;
+                    }
+                }
+            }
+            callback.onFailure(t);
+        }
     }
 }
