@@ -63,6 +63,21 @@ public final class ReadHandler extends AbstractSelectionHandler {
         return eventCount;
     }
 
+    /**
+     * Migrates this handler to a new IOSelector thread.
+     * The migration logic is rather simple:
+     * <p><ul>
+     * <li>Submit a de-registration task to a current IOSelector thread</li>
+     * <li>The de-registration task submits a registration task to the new IOSelector thread</li>
+     * </ul></p>
+     *
+     * @param newOwner target IOSelector this handler migrates to
+     */
+    @Override
+    public void requestMigration(IOSelector newOwner) {
+        ioSelector.addTaskAndWakeup(new StartMigrationTask(newOwner));
+    }
+
     @Override
     @edu.umd.cs.findbugs.annotations.SuppressWarnings(value = "VO_VOLATILE_INCREMENT",
             justification = "eventCount is accessed by a single thread only.")
@@ -149,6 +164,8 @@ public final class ReadHandler extends AbstractSelectionHandler {
     }
 
     void shutdown() {
+        //todo:
+        // ioSelector race, shutdown can end up on the old selector
         ioSelector.addTaskAndWakeup(new Runnable() {
             @Override
             public void run() {
@@ -159,5 +176,23 @@ public final class ReadHandler extends AbstractSelectionHandler {
                 }
             }
         });
+    }
+
+    private class StartMigrationTask implements Runnable {
+        private final IOSelector newOwner;
+
+        public StartMigrationTask(IOSelector newOwner) {
+            this.newOwner = newOwner;
+        }
+
+        @Override
+        public void run() {
+            // if there is no change, we are done
+            if (ioSelector == newOwner) {
+                return;
+            }
+
+            startMigration(newOwner);
+        }
     }
 }
