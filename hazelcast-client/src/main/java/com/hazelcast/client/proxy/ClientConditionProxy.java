@@ -70,7 +70,7 @@ public class ClientConditionProxy extends ClientProxy implements ICondition {
         long start = System.nanoTime();
         await(nanosTimeout, TimeUnit.NANOSECONDS);
         long end = System.nanoTime();
-        return (end - start);
+        return nanosTimeout - (end - start);
     }
 
     @Override

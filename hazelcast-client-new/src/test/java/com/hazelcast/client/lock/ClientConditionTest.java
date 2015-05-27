@@ -9,10 +9,6 @@ import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
-import java.io.IOException;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -21,7 +17,13 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.io.IOException;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
@@ -176,5 +178,20 @@ public class ClientConditionTest extends HazelcastTestSupport {
         final ICondition condition = lock.newCondition("condition");
         condition.await(1, TimeUnit.SECONDS);
         lock.unlock();
+    }
+
+    @Test
+    public void testAwaitNanos_remainingTime() throws InterruptedException {
+        ICondition condition = lock.newCondition("condition");
+
+        lock.lock();
+        try {
+            long timeout = 1000L;
+            long remainingTimeout = condition.awaitNanos(timeout);
+            assertTrue("Remaining timeout should be <= 0, but it's = " + remainingTimeout,
+                    remainingTimeout <= 0);
+        } finally {
+            lock.unlock();
+        }
     }
 }
