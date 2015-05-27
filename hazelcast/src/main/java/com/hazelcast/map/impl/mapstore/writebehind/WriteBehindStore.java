@@ -41,8 +41,6 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
     /**
      * Represents a transient {@link DelayedEntry}.
      * A transient entry can be added via {@link com.hazelcast.core.IMap#putTransient}.
-     *
-     * @see com.hazelcast.map.impl.mapstore.writebehind.entry.TransientDelayedEntry
      */
     private static final DelayedEntry TRANSIENT = DelayedEntries.emptyDelayedEntry();
 
