@@ -180,6 +180,7 @@ final class TestNodeRegistry {
                 node.setMasterAddress(master);
                 if (node.getMasterAddress().equals(node.getThisAddress())) {
                     node.setJoined();
+                    node.setAsMaster();
                 } else {
                     for (int i = 0; !node.joined() && i < 1000; i++) {
                         try {

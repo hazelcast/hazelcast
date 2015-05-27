@@ -101,4 +101,12 @@ public interface ClusterService extends CoreService {
      */
     ClusterClock getClusterClock();
 
+    /**
+     * Returns UUID for the cluster.
+     *
+     * @return unique Id for cluster
+     */
+    String getClusterId();
+
+
 }

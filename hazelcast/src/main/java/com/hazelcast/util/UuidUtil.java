@@ -55,6 +55,10 @@ public final class UuidUtil {
         }
     }
 
+    public static String createClusterUuid() {
+        return  buildRandomUuidString();
+    }
+
     public static String createMemberUuid(Address endpoint) {
         return buildRandomUUID().toString();
     }

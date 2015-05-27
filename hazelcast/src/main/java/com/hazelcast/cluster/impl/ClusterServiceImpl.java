@@ -172,6 +172,8 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
 
     private final ClusterClockImpl clusterClock;
 
+    private String clusterId = null;
+
     public ClusterServiceImpl(final Node node) {
         this.node = node;
         nodeEngine = node.nodeEngine;
@@ -198,6 +200,17 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
     @Override
     public ClusterClockImpl getClusterClock() {
         return clusterClock;
+    }
+
+    @Override
+    public String getClusterId() {
+        return clusterId;
+    }
+
+    public void setClusterId(String clusterId) {
+        if (this.clusterId == null) {
+            this.clusterId = clusterId;
+        }
     }
 
     @Override
@@ -976,7 +989,9 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
                 final int count = members.size() - 1 + setJoins.size();
                 final List<Future> calls = new ArrayList<Future>(count);
                 for (MemberInfo member : setJoins) {
-                    calls.add(invokeClusterOperation(new FinalizeJoinOperation(memberInfos, postJoinOp, time), member.getAddress()));
+                    final long startTime = clusterClock.getClusterStartTime();
+                    calls.add(invokeClusterOperation(new FinalizeJoinOperation(memberInfos, postJoinOp, time,
+                            clusterId, startTime), member.getAddress()));
                 }
                 for (MemberImpl member : members) {
                     if (!member.getAddress().equals(thisAddress)) {

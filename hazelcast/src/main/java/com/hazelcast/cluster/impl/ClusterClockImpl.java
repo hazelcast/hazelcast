@@ -20,10 +20,12 @@ import com.hazelcast.cluster.ClusterClock;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.util.Clock;
 
+
 public class ClusterClockImpl implements ClusterClock {
 
     private final ILogger logger;
     private volatile long clusterTimeDiff = Long.MAX_VALUE;
+    private volatile long clusterStartTime = Long.MIN_VALUE;
 
     public ClusterClockImpl(ILogger logger) {
         this.logger = logger;
@@ -46,4 +48,20 @@ public class ClusterClockImpl implements ClusterClock {
     public long getClusterTimeDiff() {
         return (clusterTimeDiff == Long.MAX_VALUE) ? 0 : clusterTimeDiff;
     }
+
+    @Override
+    public long getClusterUpTime() {
+        return Clock.currentTimeMillis() - clusterStartTime;
+    }
+
+    public void setClusterStartTime(long startTime) {
+        if (this.clusterStartTime == Long.MIN_VALUE) {
+            this.clusterStartTime = startTime;
+        }
+    }
+
+    public long getClusterStartTime() {
+       return clusterStartTime;
+    }
+
 }
