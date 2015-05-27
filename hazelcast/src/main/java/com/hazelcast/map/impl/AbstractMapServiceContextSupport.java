@@ -210,5 +210,11 @@ abstract class AbstractMapServiceContextSupport implements MapServiceContextSupp
         final String serviceName = mapServiceContext.serviceName();
         return eventService.hasEventRegistration(serviceName, name);
     }
+
+    @Override
+    public boolean hasInterceptor(String mapName) {
+        List<MapInterceptor> interceptors = mapServiceContext.getMapContainer(mapName).getInterceptors();
+        return !interceptors.isEmpty();
+    }
 }
 
