@@ -18,32 +18,38 @@ If entry processing is the major operation for a map and if the map consists of 
 
 ![image](images/NoteSmall.jpg) ***NOTE***: *When `in-memory-format` is `OBJECT`, old value of the updated entry will be null.*
 
-#### IMap Interface for Entry Processing
+#### Entry Processing with IMap
 
 The methods below are in the IMap interface for entry processing.
+
+* `executeOnKey` processes an entry mapped by a key.
+* `executeOnKeys` processes entries mapped by a collection of keys.
+* `submitToKey` processes an entry mapped by a key while listening to event status.
+* `executeOnEntries` processes all entries in a map.
+* `executeOnEntries` can also process all entries in a map with a defined predicate.
 
 ```java
 /**
  * Applies the user defined EntryProcessor to the entry mapped by the key.
- * Returns the the object which is result of the process() method of EntryProcessor.
+ * Returns the object which is the result of the process() method of EntryProcessor.
  */
 Object executeOnKey( K key, EntryProcessor entryProcessor );
 
 /**
  * Applies the user defined EntryProcessor to the entries mapped by the collection of keys.
- * the results mapped by each key in the collection.
+ * Returns the results mapped by each key in the collection.
  */
 Map<K, Object> executeOnKeys( Set<K> keys, EntryProcessor entryProcessor );
 
 /**
  * Applies the user defined EntryProcessor to the entry mapped by the key with
- * specified ExecutionCallback to listen event status and returns immediately.
+ * specified ExecutionCallback to listen to event status and return immediately.
  */
 void submitToKey( K key, EntryProcessor entryProcessor, ExecutionCallback callback );
 
 
 /**
- * Applies the user defined EntryProcessor to the all entries in the map.
+ * Applies the user defined EntryProcessor to all entries in the map.
  * Returns the results mapped by each key in the map.
  */
 Map<K, Object> executeOnEntries( EntryProcessor entryProcessor );
@@ -56,7 +62,7 @@ Map<K, Object> executeOnEntries( EntryProcessor entryProcessor );
 Map<K, Object> executeOnEntries( EntryProcessor entryProcessor, Predicate predicate );
 ```
 
-#### EntryProcessor Interface
+#### Entry Processing with EntryProcessor
 
 And, here is the EntryProcessor interface:
 
@@ -72,7 +78,7 @@ public interface EntryProcessor<K, V> extends Serializable {
 
 When using `executeOnEntries` method, if the number of entries is high and you do need the results, then returning null in `process()` method is a good practice. By this way, results of the processing is not stored in the map and hence out of memory errors are eliminated.
 
-#### Processor for Backup Entries
+#### Processing Backup Entries
 
 If your code modifies the data, then you should also provide a processor for backup entries. This is required to prevent the primary map entries from having different values than the backups; it causes the entry processor to be applied both on the primary and backup entries.
 
