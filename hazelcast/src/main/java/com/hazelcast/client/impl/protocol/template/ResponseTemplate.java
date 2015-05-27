@@ -85,4 +85,7 @@ public interface ResponseTemplate {
     @Response(ResponseMessageConst.SET_DATA)
     void SetData(Set<Data> list);
 
+    @Response(ResponseMessageConst.SET_ENTRY)
+    void SetEntry(List<Data> keys, List<Data> values);
+
 }

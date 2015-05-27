@@ -18,6 +18,7 @@ package com.hazelcast.client.impl.protocol.template;
 
 import com.hazelcast.annotation.EventResponse;
 import com.hazelcast.annotation.GenerateCodec;
+import com.hazelcast.annotation.Nullable;
 import com.hazelcast.client.impl.protocol.EventMessageConst;
 import com.hazelcast.cluster.client.MemberAttributeChange;
 import com.hazelcast.core.Member;
@@ -42,10 +43,11 @@ public interface EventResponseTemplate {
     void MemberList(Collection<Member> members);
 
     @EventResponse(EventMessageConst.EVENT_ENTRY)
-    void Entry(Data key, Data value, Data oldValue, Data mergingValue, int eventType, String uuid, int numberOfAffectedEntries);
+    void Entry(@Nullable Data key, @Nullable Data value, @Nullable Data oldValue, @Nullable Data mergingValue,
+               int eventType, String uuid, int numberOfAffectedEntries);
 
     @EventResponse(EventMessageConst.EVENT_ITEM)
-    void Item(Data item, String uuid, int eventType);
+    void Item(@Nullable Data item, String uuid, int eventType);
 
     @EventResponse(EventMessageConst.EVENT_TOPIC)
     void Topic(Data item, long publishTime, String uuid);

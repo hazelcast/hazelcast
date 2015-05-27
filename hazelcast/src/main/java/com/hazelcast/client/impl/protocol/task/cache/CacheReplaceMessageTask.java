@@ -43,8 +43,7 @@ public class CacheReplaceMessageTask
     @Override
     protected Operation prepareOperation() {
         CacheOperationProvider operationProvider = getOperationProvider(parameters.name);
-        CacheService service = getService(getServiceName());
-        ExpiryPolicy expiryPolicy = (ExpiryPolicy) service.toObject(parameters.expiryPolicy);
+        ExpiryPolicy expiryPolicy = serializationService.toObject(parameters.expiryPolicy);
         int completionId = clientMessage.getCorrelationId();
         return operationProvider
                 .createReplaceOperation(parameters.key, parameters.oldValue, parameters.newValue, expiryPolicy, completionId);

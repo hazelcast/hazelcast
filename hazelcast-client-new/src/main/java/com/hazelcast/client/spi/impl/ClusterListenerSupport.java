@@ -120,10 +120,10 @@ public abstract class ClusterListenerSupport implements ConnectionListener, Conn
             if (credentials instanceof UsernamePasswordCredentials) {
                 UsernamePasswordCredentials cr = (UsernamePasswordCredentials) credentials;
                 clientMessage = ClientAuthenticationCodec.encodeRequest(cr.getUsername(),
-                        cr.getPassword(), uuid, ownerUuid, false);
+                        cr.getPassword(), uuid, ownerUuid, true);
             } else {
                 Data data = ss.toData(credentials);
-                clientMessage = ClientAuthenticationCustomCodec.encodeRequest(data, uuid, ownerUuid, false);
+                clientMessage = ClientAuthenticationCustomCodec.encodeRequest(data, uuid, ownerUuid, true);
 
             }
             connection.init();

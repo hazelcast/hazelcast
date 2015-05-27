@@ -72,7 +72,8 @@ public class ExecutorServiceSubmitToPartitionMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return ExecutorServiceSubmitToPartitionCodec.encodeResponse((Data) response);
+        Data data = serializationService.toData(response);
+        return ExecutorServiceSubmitToPartitionCodec.encodeResponse(data);
     }
 
     @Override

@@ -29,7 +29,6 @@ import com.hazelcast.map.impl.DataAwareEntryEvent;
 import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.DefaultData;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MultiMapPermission;
 
@@ -52,7 +51,7 @@ public abstract class AbstractMultiMapAddEntryListenerMessageTask<P> extends Abs
         boolean includeValue = shouldIncludeValue();
         String registrationId = service.addListener(name, listener, key, includeValue, false);
         endpoint.setListenerRegistration(MultiMapService.SERVICE_NAME, name, registrationId);
-        return MultiMapAddEntryListenerToKeyCodec.encodeResponse(registrationId);
+        return registrationId;
     }
 
     protected abstract boolean shouldIncludeValue();
@@ -87,11 +86,9 @@ public abstract class AbstractMultiMapAddEntryListenerMessageTask<P> extends Abs
                             + event.getClass().getSimpleName());
                 }
                 DataAwareEntryEvent dataAwareEntryEvent = (DataAwareEntryEvent) event;
-                Data keyData = dataAwareEntryEvent.getKeyData();
-                Data key = keyData == null ? DefaultData.NULL_DATA : keyData;
+                Data key = dataAwareEntryEvent.getKeyData();
 
-                Data newValueData = dataAwareEntryEvent.getNewValueData();
-                Data value = newValueData == null ? DefaultData.NULL_DATA : newValueData;
+                Data value = dataAwareEntryEvent.getNewValueData();
 
                 final EntryEventType type = event.getEventType();
                 final String uuid = event.getMember().getUuid();
@@ -105,8 +102,8 @@ public abstract class AbstractMultiMapAddEntryListenerMessageTask<P> extends Abs
             if (endpoint.isAlive()) {
                 final EntryEventType type = event.getEventType();
                 final String uuid = event.getMember().getUuid();
-                sendClientMessage(null, encodeEvent(DefaultData.NULL_DATA,
-                        DefaultData.NULL_DATA, type.getType(),
+                sendClientMessage(null, encodeEvent(null,
+                        null, type.getType(),
                         uuid, event.getNumberOfEntriesAffected()));
             }
         }

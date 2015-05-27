@@ -205,17 +205,25 @@ public class CodecModel {
         }
 
         public String getSizeStringJava() {
-            return resolveSizeStringJava(type, name);
+            String stringJava = resolveSizeStringJava(type, name);
+            return getNullableCheckedSizeStringJava(stringJava);
+        }
+
+        private String getNullableCheckedSizeStringJava(String innerString) {
+            StringBuilder sizeString = new StringBuilder();
+            if (isNullable) {
+                sizeString.append("dataSize += Bits.BOOLEAN_SIZE_IN_BYTES;\n");
+                sizeString.append("        if (" + name + " != null) {\n");
+                sizeString.append(innerString);
+                sizeString.append("        }\n");
+                return sizeString.toString();
+            } else {
+                return innerString;
+            }
         }
 
         private String resolveSizeStringJava(String type, String name) {
             StringBuilder sizeString = new StringBuilder();
-            if (isNullable) {
-                sizeString.append("dataSize += Bits.BOOLEAN_SIZE_IN_BYTES;\n")
-                        .append("        if (" + name + " == null) {\n")
-                        .append("            return dataSize;\n")
-                        .append("        }\n");
-            }
             if (type.equals(DATA_FULL_NAME)) {
                 sizeString.append("dataSize += ParameterUtil.calculateDataSize(" + name + ");");
             } else if (type.equals("java.lang.Integer")) {
@@ -281,14 +289,14 @@ public class CodecModel {
         private String getMapSizeStringJava(String type, String name) {
             StringBuilder builder = new StringBuilder();
             String keyType = CodeGenerationUtils.getKeyTypeInsideMap(type);
-            builder.append("java.util.Set<" + keyType + "> " + name
-                    + "_keySet = (java.util.Set<" + keyType + ">) " + name + ".keySet();\n     ");
-            builder.append(resolveSizeStringJava("java.util.Set<" + keyType + "> ", name + "_keySet"));
+            builder.append("java.util.Collection<" + keyType + "> " + name
+                    + "_keySet = (java.util.Collection<" + keyType + ">) " + name + ".keySet();\n     ");
+            builder.append(resolveSizeStringJava("java.util.Collection<" + keyType + "> ", name + "_keySet"));
 
             String valueType = CodeGenerationUtils.getValueTypeInsideMap(type);
-            builder.append("java.util.List<" + valueType + "> " + name
-                    + "_values = (java.util.List<" + valueType + "> )" + name + ".values();\n       ");
-            builder.append(resolveSizeStringJava("java.util.List<" + valueType + ">", name + "_values"));
+            builder.append("java.util.Collection<" + valueType + "> " + name
+                    + "_values = (java.util.Collection<" + valueType + "> )" + name + ".values();\n       ");
+            builder.append(resolveSizeStringJava("java.util.Collection<" + valueType + ">", name + "_values"));
             return builder.toString();
         }
 
@@ -485,23 +493,35 @@ public class CodecModel {
         }
 
         public String getDataSetterStringJava() {
-            return resolveDataSetterStringJava(type, name);
+            String setterString = resolveDataSetterStringJava(type, name);
+            return getNullableCheckedSetterStringJava(setterString);
+        }
+
+        private String getNullableCheckedSetterStringJava(String innerGetterString) {
+            StringBuilder setterString = new StringBuilder();
+
+
+            String isNullVariableName = name + "_isNull";
+            if (isNullable) {
+                setterString.append("boolean " + isNullVariableName + ";\n            ");
+                setterString.append("if (" + name + " == null) {\n            ");
+                setterString.append("    " + isNullVariableName + " = true;\n            ");
+                setterString.append("    clientMessage.set(" + isNullVariableName + ");\n            ");
+                setterString.append("} else {\n            ");
+                setterString.append("" + isNullVariableName + " = false;\n            ");
+                setterString.append("clientMessage.set(" + isNullVariableName + ");\n            ");
+                setterString.append(innerGetterString);
+                setterString.append("} \n            ");
+
+                return setterString.toString();
+            } else {
+                return innerGetterString;
+            }
+
         }
 
         private String resolveDataSetterStringJava(String type, String name) {
             StringBuilder setterString = new StringBuilder();
-            if (isNullable) {
-                String isNullVariableName = name + "_isNull";
-                setterString.append("            boolean " + isNullVariableName + ";\n")
-                        .append("            if (" + name + " == null) {\n")
-                        .append("                " + isNullVariableName + " = true;\n")
-                        .append("                clientMessage.set(" + isNullVariableName + ");\n")
-                        .append("                return clientMessage;\n")
-                        .append("            }\n")
-                        .append("            " + isNullVariableName + " = false;\n")
-                        .append("            clientMessage.set(" + isNullVariableName + ");\n");
-            }
-
             if (type.equals("com.hazelcast.nio.Address")) {
                 setterString.append(PARAMETERS_PACKAGE + "AddressCodec.encode(" + name + ",clientMessage);");
             } else if (type.equals("com.hazelcast.core.Member")) {
@@ -560,14 +580,14 @@ public class CodecModel {
             StringBuilder builder = new StringBuilder();
 
             String keyType = CodeGenerationUtils.getKeyTypeInsideMap(type);
-            builder.append("java.util.Set<" + keyType + "> " + name
-                    + "_keySet = (java.util.Set<" + keyType + ">) " + name + ".keySet();\n     ");
-            builder.append(resolveDataSetterStringJava("java.util.Set<" + keyType + "> ", name + "_keySet"));
+            builder.append("java.util.Collection<" + keyType + "> " + name
+                    + "_keySet = (java.util.Collection<" + keyType + ">) " + name + ".keySet();\n     ");
+            builder.append(resolveDataSetterStringJava("java.util.Collection<" + keyType + "> ", name + "_keySet"));
 
             String valueType = CodeGenerationUtils.getValueTypeInsideMap(type);
-            builder.append("java.util.List<" + valueType + "> " + name
-                    + "_values = (java.util.List<" + valueType + "> )" + name + ".values();\n       ");
-            builder.append(resolveDataSetterStringJava("java.util.List<" + valueType + ">", name + "_values"));
+            builder.append("java.util.Collection<" + valueType + "> " + name
+                    + "_values = (java.util.Collection<" + valueType + "> )" + name + ".values();\n       ");
+            builder.append(resolveDataSetterStringJava("java.util.Collection<" + valueType + ">", name + "_values"));
 
             return builder.toString();
         }

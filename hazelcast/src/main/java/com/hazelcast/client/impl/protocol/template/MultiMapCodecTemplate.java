@@ -40,7 +40,7 @@ public interface MultiMapCodecTemplate {
     @Request(id = 5, retryable = true, response = ResponseMessageConst.LIST_DATA)
     void values(String name);
 
-    @Request(id = 6, retryable = true, response = ResponseMessageConst.MAP_DATA_DATA)
+    @Request(id = 6, retryable = true, response = ResponseMessageConst.SET_ENTRY)
     void entrySet(String name);
 
     @Request(id = 7, retryable = true, response = ResponseMessageConst.BOOLEAN)

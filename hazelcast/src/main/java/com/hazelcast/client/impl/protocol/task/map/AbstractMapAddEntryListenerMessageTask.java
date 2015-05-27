@@ -29,14 +29,11 @@ import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.DefaultData;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.EventFilter;
 
 import java.security.Permission;
-
-import static com.hazelcast.nio.serialization.DefaultData.NULL_DATA;
 
 public abstract class AbstractMapAddEntryListenerMessageTask<Parameter>
         extends AbstractCallableMessageTask<Parameter> {
@@ -85,18 +82,14 @@ public abstract class AbstractMapAddEntryListenerMessageTask<Parameter>
                             "Expecting: DataAwareEntryEvent, Found: " + event.getClass().getSimpleName());
                 }
                 DataAwareEntryEvent dataAwareEntryEvent = (DataAwareEntryEvent) event;
-                Data keyData = resolveData(dataAwareEntryEvent.getKeyData());
-                Data newValueData = resolveData(dataAwareEntryEvent.getNewValueData());
-                Data oldValueData = resolveData(dataAwareEntryEvent.getOldValueData());
-                Data meringValueData = resolveData(dataAwareEntryEvent.getMeringValueData());
+                Data keyData = dataAwareEntryEvent.getKeyData();
+                Data newValueData = dataAwareEntryEvent.getNewValueData();
+                Data oldValueData = dataAwareEntryEvent.getOldValueData();
+                Data meringValueData = dataAwareEntryEvent.getMeringValueData();
                 sendClientMessage(keyData, encodeEvent(keyData
                         , newValueData, oldValueData, meringValueData, event.getEventType().getType(),
                         event.getMember().getUuid(), 1));
             }
-        }
-
-        private Data resolveData(Data data) {
-            return data == null ? DefaultData.NULL_DATA : data;
         }
 
         @Override
@@ -105,8 +98,8 @@ public abstract class AbstractMapAddEntryListenerMessageTask<Parameter>
                 final EntryEventType type = event.getEventType();
                 final String uuid = event.getMember().getUuid();
                 int numberOfEntriesAffected = event.getNumberOfEntriesAffected();
-                sendClientMessage(null, encodeEvent(NULL_DATA,
-                        NULL_DATA, NULL_DATA, NULL_DATA, type.getType(), uuid, numberOfEntriesAffected));
+                sendClientMessage(null, encodeEvent(null,
+                        null, null, null, type.getType(), uuid, numberOfEntriesAffected));
             }
         }
     }

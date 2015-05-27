@@ -80,7 +80,7 @@ class ClientMembershipListener extends ClientMembershipListenerCodec.AbstractEve
     }
 
     @Override
-    public void handle(Collection<Member> members) {
+    public void handle(Collection<Member> initialMembers) {
         Map<String, MemberImpl> prevMembers = Collections.emptyMap();
         if (!members.isEmpty()) {
             prevMembers = new HashMap<String, MemberImpl>(members.size());
@@ -89,7 +89,10 @@ class ClientMembershipListener extends ClientMembershipListenerCodec.AbstractEve
             }
             members.clear();
         }
-        members.addAll(members);
+
+        for (Member initialMember : initialMembers) {
+            members.add((MemberImpl) initialMember);
+        }
 
         final List<MembershipEvent> events = detectMembershipEvents(prevMembers);
         if (events.size() != 0) {

@@ -37,9 +37,7 @@ public class MapRemoveEntryListenerMessageTask
     @Override
     protected Object call() {
         MapService service = getService(MapService.SERVICE_NAME);
-        boolean success = service.getMapServiceContext().removeEventListener(parameters.name, parameters.registrationId);
-
-        return MapRemoveEntryListenerCodec.encodeResponse(success);
+        return service.getMapServiceContext().removeEventListener(parameters.name, parameters.registrationId);
     }
 
     @Override

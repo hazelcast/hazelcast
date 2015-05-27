@@ -58,7 +58,7 @@ public class TransactionalMultiMapRemoveEntryMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return TransactionalMultiMapRemoveCodec.encodeResponse((Collection<Data>) response);
+        return TransactionalMultiMapRemoveEntryCodec.encodeResponse((Boolean) response);
     }
 
     @Override

@@ -47,7 +47,7 @@ public class ClientAtomicLongProxy extends ClientProxy implements IAtomicLong {
     public <R> R apply(IFunction<Long, R> function) {
         isNotNull(function, "function");
         ClientMessage request = AtomicLongApplyCodec.encodeRequest(name, toData(function));
-        ClientMessage response = invoke(request);
+        ClientMessage response = invokeMessage(request);
         AtomicLongApplyCodec.ResponseParameters resultParameters = AtomicLongApplyCodec.decodeResponse(response);
         return toObject(resultParameters.response);
     }
@@ -56,7 +56,7 @@ public class ClientAtomicLongProxy extends ClientProxy implements IAtomicLong {
     public void alter(IFunction<Long, Long> function) {
         isNotNull(function, "function");
         ClientMessage request = AtomicLongAlterCodec.encodeRequest(name, toData(function));
-        invoke(request);
+        invokeMessage(request);
     }
 
     @Override

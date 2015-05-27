@@ -24,7 +24,6 @@ import java.util.Arrays;
 @edu.umd.cs.findbugs.annotations.SuppressWarnings("EI_EXPOSE_REP")
 public final class DefaultData implements Data {
 
-    public static final DefaultData NULL_DATA = new DefaultData();
     // type and partition_hash are always written with BIG_ENDIAN byte-order
     static final int TYPE_OFFSET = 0;
     // will use a byte to store partition_hash bit

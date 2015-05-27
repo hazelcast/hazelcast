@@ -31,7 +31,8 @@ import com.hazelcast.security.permission.MultiMapPermission;
 import com.hazelcast.spi.OperationFactory;
 
 import java.security.Permission;
-import java.util.HashMap;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -53,7 +54,8 @@ public class MultiMapEntrySetMessageTask
 
     @Override
     protected Object reduce(Map<Integer, Object> map) {
-        Map<Data, Data> dataMap = new HashMap<Data, Data>();
+        List<Data> keys = new ArrayList<Data>();
+        List<Data> values = new ArrayList<Data>();
         for (Object obj : map.values()) {
             if (obj == null) {
                 continue;
@@ -61,10 +63,11 @@ public class MultiMapEntrySetMessageTask
             EntrySetResponse response = (EntrySetResponse) obj;
             Set<Map.Entry<Data, Data>> entries = response.getDataEntrySet();
             for (Map.Entry<Data, Data> entry : entries) {
-                dataMap.put(entry.getKey(), entry.getValue());
+                keys.add(entry.getKey());
+                values.add(entry.getValue());
             }
         }
-        return dataMap;
+        return MultiMapEntrySetCodec.encodeResponse(keys, values);
     }
 
     @Override
@@ -74,7 +77,7 @@ public class MultiMapEntrySetMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return MultiMapEntrySetCodec.encodeResponse((Map<Data, Data>) response);
+        return (ClientMessage) response;
     }
 
     @Override

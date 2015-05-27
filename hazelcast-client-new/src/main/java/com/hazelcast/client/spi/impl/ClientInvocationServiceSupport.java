@@ -367,8 +367,7 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
             if (ClientMessageType.EXCEPTION.id() == clientMessage.getMessageType()) {
                 ExceptionResultParameters exceptionResultParameters = ExceptionResultParameters.decode(clientMessage);
                 Throwable exception;
-                boolean hasCause = !exceptionResultParameters.causeClassName.equals("null");
-                if (hasCause) {
+                if (exceptionResultParameters.causeClassName != null) {
                     Class<?> causeClazz = Class.forName(exceptionResultParameters.causeClassName);
                     Constructor<?> causeConstructor = causeClazz.getDeclaredConstructor(new Class[]{String.class});
                     causeConstructor.setAccessible(true);

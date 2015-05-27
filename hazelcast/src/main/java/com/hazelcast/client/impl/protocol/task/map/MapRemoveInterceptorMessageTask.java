@@ -53,7 +53,7 @@ public class MapRemoveInterceptorMessageTask
                 throw (Throwable) result;
             }
         }
-        return MapRemoveInterceptorCodec.encodeResponse(true);
+        return true;
     }
 
     @Override

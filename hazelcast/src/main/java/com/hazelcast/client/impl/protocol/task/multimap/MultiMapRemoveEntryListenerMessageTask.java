@@ -41,8 +41,7 @@ public class MultiMapRemoveEntryListenerMessageTask
     @Override
     protected Object call() throws Exception {
         final MultiMapService service = getService(MultiMapService.SERVICE_NAME);
-        boolean success = service.removeListener(parameters.name, parameters.registrationId);
-        return MultiMapRemoveEntryListenerCodec.encodeResponse(success);
+        return service.removeListener(parameters.name, parameters.registrationId);
     }
 
     @Override

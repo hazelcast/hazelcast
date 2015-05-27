@@ -56,7 +56,7 @@ public class SetAddListenerMessageTask
                 , filter, listener);
         final String registrationId = registration.getId();
         endpoint.setListenerRegistration(getServiceName(), parameters.name, registrationId);
-        return registration;
+        return registrationId;
     }
 
     private ItemListener createItemListener(final ClientEndpoint endpoint, final Data partitionKey) {

@@ -40,8 +40,7 @@ public class TransactionalMultiMapValueCountMessageTask
     protected Object innerCall() throws Exception {
         final TransactionContext context = endpoint.getTransactionContext(parameters.txnId);
         TransactionalMultiMap<Object, Object> multiMap = context.getMultiMap(parameters.name);
-        int valueCount = multiMap.valueCount(parameters.key);
-        return TransactionalMultiMapValueCountCodec.encodeResponse(valueCount);
+        return multiMap.valueCount(parameters.key);
     }
 
     @Override

@@ -80,7 +80,8 @@ public class ExecutorServiceSubmitToAddressMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return ExecutorServiceSubmitToAddressCodec.encodeResponse((Data) response);
+        Data data = serializationService.toData(response);
+        return ExecutorServiceSubmitToAddressCodec.encodeResponse(data);
     }
 
     @Override

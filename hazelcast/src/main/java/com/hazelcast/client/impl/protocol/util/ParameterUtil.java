@@ -22,16 +22,10 @@ import com.hazelcast.nio.serialization.Data;
 public class ParameterUtil {
 
     public static int calculateStringDataSize(String string) {
-        if (string == null) {
-            return Bits.INT_SIZE_IN_BYTES * 5;
-        }
         return Bits.INT_SIZE_IN_BYTES + string.length() * 4;
     }
 
     public static int calculateByteArrayDataSize(byte[] bytes) {
-        if (bytes == null) {
-            return Bits.INT_SIZE_IN_BYTES;
-        }
         return Bits.INT_SIZE_IN_BYTES + bytes.length;
     }
 
