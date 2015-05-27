@@ -27,7 +27,6 @@ import com.hazelcast.test.HazelcastTestSupport;
 import java.io.Serializable;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.fail;
 
@@ -57,14 +56,14 @@ public class ExecutorServiceTestSupport extends HazelcastTestSupport {
     }
 
     static class SleepingTask implements Callable<Boolean>, Serializable, PartitionAware {
-        long sleepSeconds;
+        int sleepSeconds;
 
-        public SleepingTask(long sleepSeconds) {
+        public SleepingTask(int sleepSeconds) {
             this.sleepSeconds = sleepSeconds;
         }
         @Override
         public Boolean call() throws InterruptedException {
-            Thread.sleep(TimeUnit.SECONDS.toMillis(sleepSeconds));
+            sleepAtLeastSeconds(sleepSeconds);
             return true;
         }
         @Override
