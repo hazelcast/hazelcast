@@ -11,16 +11,15 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
-
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
 
@@ -63,7 +62,7 @@ public class PostProcessingMapStoreTest extends HazelcastTestSupport {
 
     public static class IncrementerPostProcessingMapStore implements MapStore<Integer, SampleObject>, PostProcessingMapStore {
 
-        Map<Integer, SampleObject> map = new HashMap<Integer, SampleObject>();
+        Map<Integer, SampleObject> map = new ConcurrentHashMap<Integer, SampleObject>();
 
         @Override
         public void store(Integer key, SampleObject value) {
