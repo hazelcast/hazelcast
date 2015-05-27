@@ -9,7 +9,7 @@ To cancel a task, you can use the standard Java executor framework's `cancel()` 
 
 #### Example Task to Cancel
 
-The Fibanacci callable class below calculates the Fibonacci number for a given number. In the `calculate` method, we check if the current thread is interrupted so that the code can respond to cancellations once the execution is started. 
+The Fibonacci callable class below calculates the Fibonacci number for a given number. In the `calculate` method, we check if the current thread is interrupted so that the code can respond to cancellations once the execution is started. 
 
 ```java
 public class Fibonacci<Long> implements Callable<Long>, Serializable {
