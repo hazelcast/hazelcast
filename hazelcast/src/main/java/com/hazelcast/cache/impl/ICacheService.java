@@ -62,9 +62,7 @@ public interface ICacheService extends ManagedService, RemoteService, MigrationA
 
     Collection<CacheConfig> getCacheConfigs();
 
-    void publishEvent(String cacheName, CacheEventType eventType, Data dataKey, Data dataValue, Data dataOldValue,
-                      boolean isOldValueAvailable, int orderKey, int completionId, long expirationTime,
-                      String origin);
+    void publishEvent(CacheEventContext cacheEventContext);
 
     void publishEvent(String cacheName, CacheEventSet eventSet, int orderKey);
 
