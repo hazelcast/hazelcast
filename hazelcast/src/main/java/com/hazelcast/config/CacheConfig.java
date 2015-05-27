@@ -26,7 +26,17 @@ import javax.cache.configuration.Factory;
 import javax.cache.configuration.MutableCacheEntryListenerConfiguration;
 import javax.cache.event.CacheEntryEventFilter;
 import javax.cache.event.CacheEntryListener;
+import javax.cache.expiry.AccessedExpiryPolicy;
+import javax.cache.expiry.CreatedExpiryPolicy;
+import javax.cache.expiry.Duration;
+import javax.cache.expiry.EternalExpiryPolicy;
+import javax.cache.expiry.ModifiedExpiryPolicy;
+import javax.cache.expiry.TouchedExpiryPolicy;
 import java.io.IOException;
+
+import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig;
+import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.DurationConfig;
+import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig.ExpiryPolicyType;
 
 import static com.hazelcast.config.CacheSimpleConfig.DEFAULT_BACKUP_COUNT;
 import static com.hazelcast.config.CacheSimpleConfig.DEFAULT_IN_MEMORY_FORMAT;
@@ -104,9 +114,7 @@ public class CacheConfig<K, V>
         if (simpleConfig.getCacheWriterFactory() != null) {
             this.cacheWriterFactory = ClassLoaderUtil.newInstance(null, simpleConfig.getCacheWriterFactory());
         }
-        if (simpleConfig.getExpiryPolicyFactory() != null) {
-            this.expiryPolicyFactory = ClassLoaderUtil.newInstance(null, simpleConfig.getExpiryPolicyFactory());
-        }
+        initExpiryPolicyFactoryConfig(simpleConfig);
         this.asyncBackupCount = simpleConfig.getAsyncBackupCount();
         this.backupCount = simpleConfig.getBackupCount();
         this.inMemoryFormat = simpleConfig.getInMemoryFormat();
@@ -132,6 +140,55 @@ public class CacheConfig<K, V>
                     new MutableCacheEntryListenerConfiguration<K, V>(
                     listenerFactory, filterFactory, isOldValueRequired, synchronous);
             addCacheEntryListenerConfiguration(listenerConfiguration);
+        }
+    }
+
+    private void initExpiryPolicyFactoryConfig(CacheSimpleConfig simpleConfig) throws Exception {
+        CacheSimpleConfig.ExpiryPolicyFactoryConfig expiryPolicyFactoryConfig =
+                simpleConfig.getExpiryPolicyFactoryConfig();
+        if (expiryPolicyFactoryConfig != null) {
+            if (expiryPolicyFactoryConfig.getClassName() != null) {
+                this.expiryPolicyFactory =
+                        ClassLoaderUtil.newInstance(null, expiryPolicyFactoryConfig.getClassName());
+            } else {
+                TimedExpiryPolicyFactoryConfig timedExpiryPolicyConfig =
+                        expiryPolicyFactoryConfig.getTimedExpiryPolicyFactoryConfig();
+                if (timedExpiryPolicyConfig != null) {
+                    DurationConfig durationConfig = timedExpiryPolicyConfig.getDurationConfig();
+                    ExpiryPolicyType expiryPolicyType = timedExpiryPolicyConfig.getExpiryPolicyType();
+                    switch (expiryPolicyType) {
+                        case CREATED:
+                            this.expiryPolicyFactory =
+                                    CreatedExpiryPolicy.factoryOf(
+                                            new Duration(durationConfig.getTimeUnit(),
+                                                         durationConfig.getDurationAmount()));
+                            break;
+                        case MODIFIED:
+                            this.expiryPolicyFactory =
+                                    ModifiedExpiryPolicy.factoryOf(
+                                            new Duration(durationConfig.getTimeUnit(),
+                                                         durationConfig.getDurationAmount()));
+                            break;
+                        case ACCESSED:
+                            this.expiryPolicyFactory =
+                                    AccessedExpiryPolicy.factoryOf(
+                                            new Duration(durationConfig.getTimeUnit(),
+                                                         durationConfig.getDurationAmount()));
+                            break;
+                        case TOUCHED:
+                            this.expiryPolicyFactory =
+                                    TouchedExpiryPolicy.factoryOf(
+                                            new Duration(durationConfig.getTimeUnit(),
+                                                         durationConfig.getDurationAmount()));
+                            break;
+                        case ETERNAL:
+                            this.expiryPolicyFactory = EternalExpiryPolicy.factoryOf();
+                            break;
+                        default:
+                            throw new IllegalArgumentException("Unsupported expiry policy type: " + expiryPolicyType);
+                    }
+                }
+            }
         }
     }
 

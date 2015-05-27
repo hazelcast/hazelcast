@@ -299,12 +299,16 @@
             </xs:element>
             <xs:element name="expiry-policy-factory" minOccurs="0" maxOccurs="1">
                 <xs:complexType>
-                    <xs:annotation>
-                        <xs:documentation>
-                            Defines the expiry policy factory class name.
-                        </xs:documentation>
-                    </xs:annotation>
-                    <xs:attribute name="class-name" use="required"/>
+                    <xs:all>
+                        <xs:annotation>
+                            <xs:documentation>
+                                Defines the expiry policy factory class name or
+                                defines the expiry policy factory from predefined ones with duration configuration.
+                            </xs:documentation>
+                        </xs:annotation>
+                        <xs:element name="timed-expiry-policy-factory" minOccurs="0" maxOccurs="1"/>
+                    </xs:all>
+                    <xs:attribute name="class-name"/>
                 </xs:complexType>
             </xs:element>
             <xs:element name="cache-entry-listeners" type="cache-entry-listeners" minOccurs="0" maxOccurs="1">
@@ -1212,6 +1216,34 @@
             <xs:enumeration value="NATIVE"/>
         </xs:restriction>
     </xs:simpleType>
+
+    <xs:simpleType name="time-unit">
+        <xs:restriction base="non-space-string">
+            <xs:enumeration value="NANOSECONDS"/>
+            <xs:enumeration value="MICROSECONDS"/>
+            <xs:enumeration value="MILLISECONDS"/>
+            <xs:enumeration value="SECONDS"/>
+            <xs:enumeration value="MINUTES"/>
+            <xs:enumeration value="HOURS"/>
+            <xs:enumeration value="DAYS"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="expiry-policy-type">
+        <xs:restriction base="non-space-string">
+            <xs:enumeration value="CREATED"/>
+            <xs:enumeration value="ACCESSED"/>
+            <xs:enumeration value="ETERNAL"/>
+            <xs:enumeration value="MODIFIED"/>
+            <xs:enumeration value="TOUCHED"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:complexType name="timed-expiry-policy-factory">
+        <xs:attribute name="expiry-policy-type" type="expiry-policy-type" use="required"/>
+        <xs:attribute name="duration-amount" type="xs:unsignedLong" use="optional"/>
+        <xs:attribute name="time-unit" type="time-unit" use="optional"/>
+    </xs:complexType>
 
     <xs:simpleType name="non-space-string">
         <xs:restriction base="xs:string">

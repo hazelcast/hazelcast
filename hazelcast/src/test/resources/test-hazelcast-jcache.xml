@@ -49,6 +49,44 @@
         <async-backup-count>2</async-backup-count>
     </cache>
 
+    <cache name="cacheWithTimedCreatedExpiryPolicyFactory">
+        <expiry-policy-factory>
+               <timed-expiry-policy-factory expiry-policy-type="CREATED"
+                                            duration-amount="1"
+                                            time-unit="DAYS"/>
+        </expiry-policy-factory>
+    </cache>
+
+    <cache name="cacheWithTimedAccessedExpiryPolicyFactory">
+        <expiry-policy-factory>
+            <timed-expiry-policy-factory expiry-policy-type="ACCESSED"
+                                         duration-amount="2"
+                                         time-unit="HOURS"/>
+        </expiry-policy-factory>
+    </cache>
+
+    <cache name="cacheWithTimedModifiedExpiryPolicyFactory">
+        <expiry-policy-factory>
+            <timed-expiry-policy-factory expiry-policy-type="MODIFIED"
+                                         duration-amount="3"
+                                         time-unit="MINUTES"/>
+        </expiry-policy-factory>
+    </cache>
+
+    <cache name="cacheWithTimedTouchedExpiryPolicyFactory">
+        <expiry-policy-factory>
+            <timed-expiry-policy-factory expiry-policy-type="TOUCHED"
+                                         duration-amount="4"
+                                         time-unit="SECONDS"/>
+        </expiry-policy-factory>
+    </cache>
+
+    <cache name="cacheWithTimedEternalExpiryPolicyFactory">
+        <expiry-policy-factory>
+            <timed-expiry-policy-factory expiry-policy-type="ETERNAL"/>
+        </expiry-policy-factory>
+    </cache>
+
     <cache name="testCache">
         <key-type class-name="java.lang.Integer"/>
         <value-type class-name="java.lang.String"/>

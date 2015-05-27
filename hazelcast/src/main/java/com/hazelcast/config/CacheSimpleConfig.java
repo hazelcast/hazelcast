@@ -20,6 +20,7 @@ import com.hazelcast.partition.InternalPartition;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.util.Preconditions.checkAsyncBackupCount;
 import static com.hazelcast.util.Preconditions.checkBackupCount;
@@ -71,7 +72,7 @@ public class CacheSimpleConfig {
     private String cacheLoaderFactory;
     private String cacheWriterFactory;
 
-    private String expiryPolicyFactory;
+    private ExpiryPolicyFactoryConfig expiryPolicyFactoryConfig;
     private List<CacheSimpleEntryListenerConfig> cacheEntryListeners;
 
     private int asyncBackupCount = MIN_BACKUP_COUNT;
@@ -95,7 +96,7 @@ public class CacheSimpleConfig {
         this.writeThrough = cacheSimpleConfig.writeThrough;
         this.cacheLoaderFactory = cacheSimpleConfig.cacheLoaderFactory;
         this.cacheWriterFactory = cacheSimpleConfig.cacheWriterFactory;
-        this.expiryPolicyFactory = cacheSimpleConfig.expiryPolicyFactory;
+        this.expiryPolicyFactoryConfig = cacheSimpleConfig.expiryPolicyFactoryConfig;
         this.cacheEntryListeners = cacheSimpleConfig.cacheEntryListeners;
         this.asyncBackupCount = cacheSimpleConfig.asyncBackupCount;
         this.backupCount = cacheSimpleConfig.backupCount;
@@ -306,22 +307,35 @@ public class CacheSimpleConfig {
     }
 
     /**
-     * Gets the factory for the {@link javax.cache.expiry.ExpiryPolicy}.
+     * Gets the factory configuration for the {@link javax.cache.expiry.ExpiryPolicy}.
      *
-     * @return The factory for the {@link javax.cache.expiry.ExpiryPolicy}.
+     * @return The factory configuration for the {@link javax.cache.expiry.ExpiryPolicy}.
      */
-    public String getExpiryPolicyFactory() {
-        return expiryPolicyFactory;
+    public ExpiryPolicyFactoryConfig getExpiryPolicyFactoryConfig() {
+        return expiryPolicyFactoryConfig;
+    }
+
+    /**
+     * Sets the factory configuration for this {@link javax.cache.expiry.ExpiryPolicy}.
+     *
+     * @param expiryPolicyFactoryConfig The factory configuration to set for this
+     *                                  {@link javax.cache.expiry.ExpiryPolicy}.
+     * @return The current cache config instance.
+     */
+    public CacheSimpleConfig setExpiryPolicyFactoryConfig(ExpiryPolicyFactoryConfig expiryPolicyFactoryConfig) {
+        this.expiryPolicyFactoryConfig = expiryPolicyFactoryConfig;
+        return this;
     }
 
     /**
      * Sets the factory for this {@link javax.cache.expiry.ExpiryPolicy}.
      *
-     * @param expiryPolicyFactory The factory to set for this {@link javax.cache.expiry.ExpiryPolicy}.
+     * @param className The factory to set for this
+     *                  {@link javax.cache.expiry.ExpiryPolicy}.
      * @return The current cache config instance.
      */
-    public CacheSimpleConfig setExpiryPolicyFactory(String expiryPolicyFactory) {
-        this.expiryPolicyFactory = expiryPolicyFactory;
+    public CacheSimpleConfig setExpiryPolicyFactory(String className) {
+        this.expiryPolicyFactoryConfig = new ExpiryPolicyFactoryConfig(className);
         return this;
     }
 
@@ -436,6 +450,110 @@ public class CacheSimpleConfig {
 
     public void setWanReplicationRef(WanReplicationRef wanReplicationRef) {
         this.wanReplicationRef = wanReplicationRef;
+    }
+
+    /**
+     * Represents configuration for "ExpiryPolicyFactory".
+     */
+    public static class ExpiryPolicyFactoryConfig {
+
+        private final String className;
+        private final TimedExpiryPolicyFactoryConfig timedExpiryPolicyFactoryConfig;
+
+        public ExpiryPolicyFactoryConfig(String className) {
+            this.className = className;
+            this.timedExpiryPolicyFactoryConfig = null;
+        }
+
+        public ExpiryPolicyFactoryConfig(TimedExpiryPolicyFactoryConfig timedExpiryPolicyFactoryConfig) {
+            this.className = null;
+            this.timedExpiryPolicyFactoryConfig = timedExpiryPolicyFactoryConfig;
+        }
+
+        public String getClassName() {
+            return className;
+        }
+
+        public TimedExpiryPolicyFactoryConfig getTimedExpiryPolicyFactoryConfig() {
+            return timedExpiryPolicyFactoryConfig;
+        }
+
+        /**
+         * Represents configuration for time based "ExpiryPolicyFactory" with duration and time unit.
+         */
+        public static class TimedExpiryPolicyFactoryConfig {
+
+            private final ExpiryPolicyType expiryPolicyType;
+            private final DurationConfig durationConfig;
+
+            public TimedExpiryPolicyFactoryConfig(ExpiryPolicyType expiryPolicyType,
+                                                  DurationConfig durationConfig) {
+                this.expiryPolicyType = expiryPolicyType;
+                this.durationConfig = durationConfig;
+            }
+
+            public ExpiryPolicyType getExpiryPolicyType() {
+                return expiryPolicyType;
+            }
+
+            public DurationConfig getDurationConfig() {
+                return durationConfig;
+            }
+
+            /**
+             * Represents type of the "TimedExpiryPolicyFactoryConfig".
+             */
+            public enum ExpiryPolicyType {
+
+                /**
+                 * Expiry policy type for the "javax.cache.expiry.AccessedExpiryPolicy"
+                 */
+                CREATED,
+                /**
+                 * Expiry policy type for the "javax.cache.expiry.ModifiedExpiryPolicy"
+                 */
+                MODIFIED,
+                /**
+                 * Expiry policy type for the "javax.cache.expiry.AccessedExpiryPolicy"
+                 */
+                ACCESSED,
+                /**
+                 * Expiry policy type for the "javax.cache.expiry.TouchedExpiryPolicy"
+                 */
+                TOUCHED,
+                /**
+                 * Expiry policy type for the "javax.cache.expiry.EternalExpiryPolicy"
+                 */
+                ETERNAL
+
+            }
+
+        }
+
+        /**
+         * Represents duration configuration with duration amount and time unit
+         * for the "TimedExpiryPolicyFactoryConfig".
+         */
+        public static class DurationConfig {
+
+            private final long durationAmount;
+            private final TimeUnit timeUnit;
+
+            public DurationConfig(long durationAmount, TimeUnit timeUnit) {
+                this.durationAmount = durationAmount;
+                this.timeUnit = timeUnit;
+            }
+
+            public long getDurationAmount() {
+                return durationAmount;
+            }
+
+            public TimeUnit getTimeUnit() {
+                return timeUnit;
+            }
+
+        }
+
     }
 
 }
