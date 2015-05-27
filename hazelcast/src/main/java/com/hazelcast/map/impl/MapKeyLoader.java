@@ -137,8 +137,7 @@ public class MapKeyLoader {
             Future<Boolean> sent = execService.submit(MAP_LOAD_ALL_KEYS_EXECUTOR, new Callable<Boolean>() {
                 @Override
                 public Boolean call() throws Exception {
-                    Iterable<Object> allKeys = mapStoreContext.loadAllKeys();
-                    sendKeysInBatches(allKeys, replaceExistingValues);
+                    sendKeysInBatches(mapStoreContext, replaceExistingValues);
                     return false;
                 }
             });
@@ -209,29 +208,34 @@ public class MapKeyLoader {
         return state.is(State.NOT_LOADED);
     }
 
-    private void sendKeysInBatches(Iterable<Object> allKeys, boolean replaceExistingValues) {
+    private void sendKeysInBatches(MapStoreContext mapStoreContext, boolean replaceExistingValues) {
 
-        Iterator<Object> keys = allKeys.iterator();
-        Iterator<Data> dataKeys = map(keys, toData);
         int clusterSize = partitionService.getMemberPartitionsMap().size();
-        int mapMaxSize = clusterSize * maxSizePerNode;
+        Iterator<Object> keys = null;
 
-        if (mapMaxSize > 0) {
-            dataKeys = limit(dataKeys, mapMaxSize);
-        }
+        try {
+            Iterable<Object> allKeys = mapStoreContext.loadAllKeys();
+            keys = allKeys.iterator();
+            Iterator<Data> dataKeys = map(keys, toData);
+            int mapMaxSize = clusterSize * maxSizePerNode;
 
-        Iterator<Entry<Integer, Data>> partitionsAndKeys = map(dataKeys, toPartition(partitionService));
-        Iterator<Map<Integer, List<Data>>> batches = toBatches(partitionsAndKeys, maxBatch);
+            if (mapMaxSize > 0) {
+                dataKeys = limit(dataKeys, mapMaxSize);
+            }
 
-        while (batches.hasNext()) {
-            Map<Integer, List<Data>> batch = batches.next();
-            sendBatch(batch, replaceExistingValues);
-        }
+            Iterator<Entry<Integer, Data>> partitionsAndKeys = map(dataKeys, toPartition(partitionService));
+            Iterator<Map<Integer, List<Data>>> batches = toBatches(partitionsAndKeys, maxBatch);
 
-        sendLoadCompleted(clusterSize, partitionService.getPartitionCount(), replaceExistingValues);
+            while (batches.hasNext()) {
+                Map<Integer, List<Data>> batch = batches.next();
+                sendBatch(batch, replaceExistingValues);
+            }
+        } finally {
+            sendLoadCompleted(clusterSize, partitionService.getPartitionCount(), replaceExistingValues);
 
-        if (keys instanceof Closeable) {
-            closeResource((Closeable) keys);
+            if (keys instanceof Closeable) {
+                closeResource((Closeable) keys);
+            }
         }
     }
 

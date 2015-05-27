@@ -32,7 +32,9 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.hazelcast.test.TimeConstants.MINUTE;
 import static java.lang.String.format;
+import static java.util.Collections.singleton;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -141,6 +143,24 @@ public class MapLoaderTest extends HazelcastTestSupport {
         map.getAll(keySet);
 
         assertEquals(requestedKeys.length, loadedKeysCounter.get());
+    }
+
+    @Test(timeout = MINUTE)
+    public void testMapCanBeLoaded_whenLoadAllKeysThrowsExceptionFirstTime() throws InterruptedException {
+
+        MapLoader failingMapLoader = new FailingMapLoader();
+        MapStoreConfig mapStoreConfig = new MapStoreConfig().setImplementation(failingMapLoader);
+        MapConfig mapConfig = new MapConfig(getClass().getName()).setMapStoreConfig(mapStoreConfig);
+        Config config = new Config().addMapConfig(mapConfig);
+
+        HazelcastInstance[] hz = createHazelcastInstanceFactory(2).newInstances(config, 2);
+        IMap map = hz[0].getMap(mapConfig.getName());
+
+        map.get(generateKeyNotOwnedBy(hz[0]));
+        assertEquals(0, map.size());
+
+        map.loadAll(true);
+        assertEquals(1, map.size());
     }
 
     private MapStore createMapLoader(final AtomicInteger loadAllCounter) {
@@ -301,5 +321,23 @@ public class MapLoaderTest extends HazelcastTestSupport {
         }
     }
 
+    static class FailingMapLoader extends MapStoreAdapter {
+
+        boolean first = true;
+
+        @Override
+        public Set loadAllKeys() {
+            if (first) {
+                first = false;
+                throw new IllegalStateException();
+            }
+            return singleton("key");
+        }
+
+        @Override
+        public Map loadAll(Collection keys) {
+            return Collections.singletonMap("key", "value");
+        }
+    };
 }
 
