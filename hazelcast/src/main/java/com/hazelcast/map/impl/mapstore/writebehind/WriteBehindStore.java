@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.mapstore.writebehind;
 
+import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.map.impl.MapStoreWrapper;
 import com.hazelcast.map.impl.mapstore.AbstractMapDataStore;
 import com.hazelcast.map.impl.mapstore.writebehind.entry.DelayedEntries;
@@ -56,6 +57,8 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
      */
     private final AtomicInteger flushCounter;
 
+    private final InMemoryFormat inMemoryFormat;
+
     private WriteBehindQueue<DelayedEntry> writeBehindQueue;
 
     private WriteBehindProcessor writeBehindProcessor;
@@ -82,18 +85,25 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
     private final ConcurrentMap<Data, DelayedEntry> stagingArea;
 
     public WriteBehindStore(MapStoreWrapper store, SerializationService serializationService,
-                            long writeDelayTime, int partitionId) {
+                            long writeDelayTime, int partitionId, InMemoryFormat inMemoryFormat) {
         super(store, serializationService);
         this.writeDelayTime = writeDelayTime;
         this.partitionId = partitionId;
         this.stagingArea = new ConcurrentHashMap<Data, DelayedEntry>();
         this.flushCounter = new AtomicInteger(0);
+        this.inMemoryFormat = inMemoryFormat;
     }
 
 
-    // TODO when mode is not write-coalescing, clone value objects. this is for EntryProcessors in object memory format.
     @Override
     public Object add(Data key, Object value, long now) {
+
+        // we will be in this `if` only in case of an entry modification via entry-processor.
+        // otherwise this extra serialization of value should not be happen.
+        if (InMemoryFormat.OBJECT.equals(inMemoryFormat)) {
+            value = toData(value);
+        }
+
         long writeDelay = this.writeDelayTime;
         long storeTime = now + writeDelay;
         DelayedEntry<Data, Object> delayedEntry
