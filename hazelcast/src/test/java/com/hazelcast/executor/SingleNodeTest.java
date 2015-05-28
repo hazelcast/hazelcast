@@ -77,9 +77,9 @@ public class SingleNodeTest extends ExecutorServiceTestSupport {
 
     @Test
     public void submitBasicTask() throws Exception {
-        Callable<String> task = new BasicTestTask();
+        Callable<String> task = new BasicTestCallable();
         Future future = executor.submit(task);
-        assertEquals(future.get(), BasicTestTask.RESULT);
+        assertEquals(future.get(), BasicTestCallable.RESULT);
     }
 
     @Test(expected = RejectedExecutionException.class)
@@ -95,7 +95,7 @@ public class SingleNodeTest extends ExecutorServiceTestSupport {
 
     @Test
     public void executionCallback_notifiedOnSuccess() throws Exception {
-        Callable<String> task = new BasicTestTask();
+        Callable<String> task = new BasicTestCallable();
         final CountDownLatch latch = new CountDownLatch(1);
         final ExecutionCallback<String> executionCallback = new ExecutionCallback<String>() {
             public void onResponse(String response) {
@@ -145,7 +145,7 @@ public class SingleNodeTest extends ExecutorServiceTestSupport {
         Callable task1 = new SleepingTask(100);
         Future inProgFuture = executor.submit(task1);
 
-        Callable task2 = new BasicTestTask();
+        Callable task2 = new BasicTestCallable();
         /* This future should not be an instance of CompletedFuture
          * Because even if we get an exception, isDone is returning true */
         Future queuedFuture = executor.submit(task2);
@@ -167,9 +167,9 @@ public class SingleNodeTest extends ExecutorServiceTestSupport {
 
     @Test
     public void isDoneAfterGet() throws Exception {
-        Callable<String> task = new BasicTestTask();
+        Callable<String> task = new BasicTestCallable();
         Future future = executor.submit(task);
-        assertEquals(future.get(), BasicTestTask.RESULT);
+        assertEquals(future.get(), BasicTestCallable.RESULT);
         assertTrue(future.isDone());
     }
 
@@ -177,14 +177,14 @@ public class SingleNodeTest extends ExecutorServiceTestSupport {
     public void issue129() throws Exception {
         for (int i = 0; i < 1000; i++) {
             Callable<String>
-                    task1 = new BasicTestTask(),
-                    task2 = new BasicTestTask();
+                    task1 = new BasicTestCallable(),
+                    task2 = new BasicTestCallable();
             Future<String>
                     future1 = executor.submit(task1),
                     future2 = executor.submit(task2);
-            assertEquals(future2.get(), BasicTestTask.RESULT);
+            assertEquals(future2.get(), BasicTestCallable.RESULT);
             assertTrue(future2.isDone());
-            assertEquals(future1.get(), BasicTestTask.RESULT);
+            assertEquals(future1.get(), BasicTestCallable.RESULT);
             assertTrue(future1.isDone());
         }
     }
@@ -209,10 +209,10 @@ public class SingleNodeTest extends ExecutorServiceTestSupport {
 
     @Test
     public void getManyTimesFromSameFuture() throws Exception {
-        Callable<String> task = new BasicTestTask();
+        Callable<String> task = new BasicTestCallable();
         Future<String> future = executor.submit(task);
         for (int i = 0; i < 4; i++) {
-            assertEquals(future.get(), BasicTestTask.RESULT);
+            assertEquals(future.get(), BasicTestCallable.RESULT);
             assertTrue(future.isDone());
         }
     }
@@ -221,19 +221,19 @@ public class SingleNodeTest extends ExecutorServiceTestSupport {
     public void invokeAll() throws Exception {
         // Only one task
         ArrayList<Callable<String>> tasks = new ArrayList<Callable<String>>();
-        tasks.add(new BasicTestTask());
+        tasks.add(new BasicTestCallable());
         List<Future<String>> futures = executor.invokeAll(tasks);
         assertEquals(futures.size(), 1);
-        assertEquals(futures.get(0).get(), BasicTestTask.RESULT);
+        assertEquals(futures.get(0).get(), BasicTestCallable.RESULT);
         // More tasks
         tasks.clear();
         for (int i = 0; i < 1000; i++) {
-            tasks.add(new BasicTestTask());
+            tasks.add(new BasicTestCallable());
         }
         futures = executor.invokeAll(tasks);
         assertEquals(futures.size(), 1000);
         for (int i = 0; i < 1000; i++) {
-            assertEquals(futures.get(i).get(), BasicTestTask.RESULT);
+            assertEquals(futures.get(i).get(), BasicTestCallable.RESULT);
         }
     }
 
@@ -267,19 +267,19 @@ public class SingleNodeTest extends ExecutorServiceTestSupport {
     public void invokeAllTimeoutSuccess() throws Exception {
         // Only one task
         ArrayList<Callable<String>> tasks = new ArrayList<Callable<String>>();
-        tasks.add(new BasicTestTask());
+        tasks.add(new BasicTestCallable());
         List<Future<String>> futures = executor.invokeAll(tasks, 5, TimeUnit.SECONDS);
         assertEquals(futures.size(), 1);
-        assertEquals(futures.get(0).get(), BasicTestTask.RESULT);
+        assertEquals(futures.get(0).get(), BasicTestCallable.RESULT);
         // More tasks
         tasks.clear();
         for (int i = 0; i < 1000; i++) {
-            tasks.add(new BasicTestTask());
+            tasks.add(new BasicTestCallable());
         }
         futures = executor.invokeAll(tasks, 5, TimeUnit.SECONDS);
         assertEquals(futures.size(), 1000);
         for (int i = 0; i < 1000; i++) {
-            assertEquals(futures.get(i).get(), BasicTestTask.RESULT);
+            assertEquals(futures.get(i).get(), BasicTestCallable.RESULT);
         }
     }
 
@@ -323,7 +323,7 @@ public class SingleNodeTest extends ExecutorServiceTestSupport {
         assertTrue(executor.isTerminated());
 
         // New tasks must be rejected
-        Callable<String> task = new BasicTestTask();
+        Callable<String> task = new BasicTestCallable();
         executor.submit(task);
     }
 
