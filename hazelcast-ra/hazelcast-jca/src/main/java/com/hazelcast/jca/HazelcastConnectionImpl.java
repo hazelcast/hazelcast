@@ -167,7 +167,6 @@ public class HazelcastConnectionImpl implements HazelcastConnection {
         return getHazelcastInstance().getList(name);
     }
 
-
     @Override
     public <K, V> MultiMap<K, V> getMultiMap(String name) {
         return getHazelcastInstance().getMultiMap(name);
@@ -251,47 +250,41 @@ public class HazelcastConnectionImpl implements HazelcastConnection {
 
     @Override
     public <K, V> TransactionalMap<K, V> getTransactionalMap(String name) {
-        final TransactionContext txContext = this.managedConnection.getTx().getTxContext();
-        if (txContext == null) {
-            throw new IllegalStateException("Transaction is not active");
-        }
+        TransactionContext txContext = getTransactionContext();
         return txContext.getMap(name);
     }
 
     @Override
     public <E> TransactionalQueue<E> getTransactionalQueue(String name) {
-        final TransactionContext txContext = this.managedConnection.getTx().getTxContext();
-        if (txContext == null) {
-            throw new IllegalStateException("Transaction is not active");
-        }
+        TransactionContext txContext = getTransactionContext();
         return txContext.getQueue(name);
     }
 
     @Override
     public <K, V> TransactionalMultiMap<K, V> getTransactionalMultiMap(String name) {
-        final TransactionContext txContext = this.managedConnection.getTx().getTxContext();
-        if (txContext == null) {
-            throw new IllegalStateException("Transaction is not active");
-        }
+        TransactionContext txContext = getTransactionContext();
         return txContext.getMultiMap(name);
     }
 
     @Override
     public <E> TransactionalList<E> getTransactionalList(String name) {
-        final TransactionContext txContext = this.managedConnection.getTx().getTxContext();
-        if (txContext == null) {
-            throw new IllegalStateException("Transaction is not active");
-        }
+        TransactionContext txContext = getTransactionContext();
         return txContext.getList(name);
     }
 
     @Override
     public <E> TransactionalSet<E> getTransactionalSet(String name) {
-        final TransactionContext txContext = this.managedConnection.getTx().getTxContext();
-        if (txContext == null) {
-            throw new IllegalStateException("Transaction is not active");
-        }
+        TransactionContext txContext = getTransactionContext();
         return txContext.getSet(name);
+    }
+
+    private TransactionContext getTransactionContext() {
+        TransactionContext transactionContext = managedConnection.getTransactionContext();
+        if (transactionContext != null) {
+            return transactionContext;
+        }
+        HazelcastXAResource xaResource = getXAResource();
+        return xaResource.getTransactionContext();
     }
 
     @Override

@@ -76,7 +76,6 @@ public class HazelcastTransactionImpl extends JcaBase implements HazelcastTransa
             factory.logHzConnectionEvent(this, HzConnectionEvent.TX_START);
 
             this.txContext = getHazelcastInstance().newTransactionContext();
-            this.connection.getTx().setTxContext(txContext);
 
             log(Level.FINEST, "begin");
             txContext.beginTransaction();
@@ -124,11 +123,7 @@ public class HazelcastTransactionImpl extends JcaBase implements HazelcastTransa
     }
 
     public TransactionContext getTxContext() {
-        return this.txContext;
-    }
-
-    public void setTxContext(TransactionContext txContext) {
-        this.txContext = txContext;
+        return txContext;
     }
 
 }
