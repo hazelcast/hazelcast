@@ -17,13 +17,13 @@
 package com.hazelcast.client.impl.protocol.task.transactionalmap;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.GenericResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.TransactionalMapReplaceParameters;
+import com.hazelcast.client.impl.protocol.codec.TransactionalMapReplaceCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractTransactionalMessageTask;
 import com.hazelcast.core.TransactionalMap;
 import com.hazelcast.instance.Node;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.transaction.TransactionContext;
@@ -31,18 +31,18 @@ import com.hazelcast.transaction.TransactionContext;
 import java.security.Permission;
 
 public class TransactionalMapReplaceMessageTask
-        extends AbstractTransactionalMessageTask<TransactionalMapReplaceParameters> {
+        extends AbstractTransactionalMessageTask<TransactionalMapReplaceCodec.RequestParameters> {
 
     public TransactionalMapReplaceMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected ClientMessage innerCall() throws Exception {
+    protected Object innerCall() throws Exception {
         final TransactionContext context = getEndpoint().getTransactionContext(parameters.txnId);
         final TransactionalMap map = context.getMap(parameters.name);
         Object oldValue = map.replace(parameters.key, parameters.value);
-        return GenericResultParameters.encode(serializationService.toData(oldValue));
+        return serializationService.toData(oldValue);
     }
 
     @Override
@@ -51,8 +51,13 @@ public class TransactionalMapReplaceMessageTask
     }
 
     @Override
-    protected TransactionalMapReplaceParameters decodeClientMessage(ClientMessage clientMessage) {
-        return TransactionalMapReplaceParameters.decode(clientMessage);
+    protected TransactionalMapReplaceCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return TransactionalMapReplaceCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return TransactionalMapReplaceCodec.encodeResponse((Data) response);
     }
 
     @Override

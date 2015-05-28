@@ -17,7 +17,6 @@
 package com.hazelcast.client.impl.protocol.task.executorservice;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.executor.impl.DistributedExecutorService;
 import com.hazelcast.instance.Node;
@@ -40,7 +39,7 @@ public abstract class AbstractExecutorServiceCancelMessageTask<P> extends Abstra
     }
 
     @Override
-    protected ClientMessage call() throws Exception {
+    protected Object call() throws Exception {
         InvocationBuilder builder = createInvocationBuilder();
         builder.setTryCount(CANCEL_TRY_COUNT).setTryPauseMillis(CANCEL_TRY_PAUSE_MILLIS);
         InternalCompletableFuture future = builder.invoke();
@@ -52,9 +51,9 @@ public abstract class AbstractExecutorServiceCancelMessageTask<P> extends Abstra
         } catch (ExecutionException e) {
             logException(e);
         }
-        return BooleanResultParameters.encode(result);
-
+        return result;
     }
+
 
     protected abstract InvocationBuilder createInvocationBuilder() throws UnknownHostException;
 

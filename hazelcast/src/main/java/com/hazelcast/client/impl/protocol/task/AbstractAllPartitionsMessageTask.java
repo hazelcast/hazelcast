@@ -39,8 +39,7 @@ public abstract class AbstractAllPartitionsMessageTask<P> extends AbstractMessag
         final InternalOperationService operationService = nodeEngine.getOperationService();
         try {
             Map<Integer, Object> map = operationService.invokeOnAllPartitions(getServiceName(), operationFactory);
-            ClientMessage result = reduce(map);
-            sendClientMessage(result);
+            sendResponse(reduce(map));
         } catch (Exception e) {
             clientEngine.getLogger(getClass()).warning(e);
             sendClientMessage(e);
@@ -49,5 +48,5 @@ public abstract class AbstractAllPartitionsMessageTask<P> extends AbstractMessag
 
     protected abstract OperationFactory createOperationFactory();
 
-    protected abstract ClientMessage reduce(Map<Integer, Object> map);
+    protected abstract Object reduce(Map<Integer, Object> map);
 }

@@ -17,9 +17,8 @@
 package com.hazelcast.client.proxy;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.AddPartitionLostListenerParameters;
-import com.hazelcast.client.impl.protocol.parameters.PartitionLostEventParameters;
-import com.hazelcast.client.impl.protocol.parameters.RemovePartitionLostListenerParameters;
+import com.hazelcast.client.impl.protocol.codec.ClientAddPartitionLostListenerCodec;
+import com.hazelcast.client.impl.protocol.codec.ClientRemovePartitionLostListenerCodec;
 import com.hazelcast.client.spi.ClientListenerService;
 import com.hazelcast.client.spi.ClientPartitionService;
 import com.hazelcast.client.spi.EventHandler;
@@ -27,6 +26,7 @@ import com.hazelcast.core.Member;
 import com.hazelcast.core.MigrationListener;
 import com.hazelcast.core.Partition;
 import com.hazelcast.core.PartitionService;
+import com.hazelcast.nio.Address;
 import com.hazelcast.partition.PartitionLostEvent;
 import com.hazelcast.partition.PartitionLostListener;
 
@@ -83,14 +83,14 @@ public final class PartitionServiceProxy implements PartitionService {
 
     @Override
     public String addPartitionLostListener(PartitionLostListener partitionLostListener) {
-        ClientMessage request = AddPartitionLostListenerParameters.encode();
+        ClientMessage request = ClientAddPartitionLostListenerCodec.encodeRequest();
         final EventHandler<ClientMessage> handler = new ClientPartitionLostEventHandler(partitionLostListener);
         return listenerService.startListening(request, null, handler);
     }
 
     @Override
     public boolean removePartitionLostListener(String registrationId) {
-        ClientMessage request = RemovePartitionLostListenerParameters.encode(registrationId);
+        ClientMessage request = ClientRemovePartitionLostListenerCodec.encodeRequest(registrationId);
         return listenerService.stopListening(request, registrationId);
     }
 
@@ -114,7 +114,8 @@ public final class PartitionServiceProxy implements PartitionService {
         throw new UnsupportedOperationException();
     }
 
-    private static class ClientPartitionLostEventHandler implements EventHandler<ClientMessage> {
+    private static class ClientPartitionLostEventHandler extends ClientAddPartitionLostListenerCodec.AbstractEventHandler
+            implements EventHandler<ClientMessage> {
 
         private PartitionLostListener listener;
 
@@ -123,9 +124,8 @@ public final class PartitionServiceProxy implements PartitionService {
         }
 
         @Override
-        public void handle(ClientMessage clientMessage) {
-            PartitionLostEventParameters event = PartitionLostEventParameters.decode(clientMessage);
-            listener.partitionLost(new PartitionLostEvent(event.partitionId, event.lostBackupCount, event.source));
+        public void handle(int partitionId, int lostBackupCount, Address source) {
+            listener.partitionLost(new PartitionLostEvent(partitionId, lostBackupCount, source));
         }
 
         @Override

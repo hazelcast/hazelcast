@@ -28,17 +28,17 @@ import com.hazelcast.cache.impl.operation.MutableOperation;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.MemberImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.CacheAddInvalidationListenerParameters;
-import com.hazelcast.client.impl.protocol.parameters.CacheClearParameters;
-import com.hazelcast.client.impl.protocol.parameters.CacheGetAndRemoveParameters;
-import com.hazelcast.client.impl.protocol.parameters.CacheGetAndReplaceParameters;
-import com.hazelcast.client.impl.protocol.parameters.CachePutIfAbsentParameters;
-import com.hazelcast.client.impl.protocol.parameters.CachePutParameters;
-import com.hazelcast.client.impl.protocol.parameters.CacheRemoveAllParameters;
-import com.hazelcast.client.impl.protocol.parameters.CacheRemoveEntryListenerParameters;
-import com.hazelcast.client.impl.protocol.parameters.CacheRemoveInvalidationListenerParameters;
-import com.hazelcast.client.impl.protocol.parameters.CacheRemoveParameters;
-import com.hazelcast.client.impl.protocol.parameters.CacheReplaceParameters;
+import com.hazelcast.client.impl.protocol.codec.CacheAddInvalidationListenerCodec;
+import com.hazelcast.client.impl.protocol.codec.CacheClearCodec;
+import com.hazelcast.client.impl.protocol.codec.CacheGetAndRemoveCodec;
+import com.hazelcast.client.impl.protocol.codec.CacheGetAndReplaceCodec;
+import com.hazelcast.client.impl.protocol.codec.CachePutCodec;
+import com.hazelcast.client.impl.protocol.codec.CachePutIfAbsentCodec;
+import com.hazelcast.client.impl.protocol.codec.CacheRemoveAllCodec;
+import com.hazelcast.client.impl.protocol.codec.CacheRemoveCodec;
+import com.hazelcast.client.impl.protocol.codec.CacheRemoveEntryListenerCodec;
+import com.hazelcast.client.impl.protocol.codec.CacheRemoveInvalidationListenerCodec;
+import com.hazelcast.client.impl.protocol.codec.CacheReplaceCodec;
 import com.hazelcast.client.spi.ClientClusterService;
 import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.ClientExecutionService;
@@ -225,9 +225,9 @@ abstract class AbstractClientInternalCacheProxy<K, V>
         final Data oldValueData = oldValue != null ? toData(oldValue) : null;
         ClientMessage request;
         if (isGet) {
-            request = CacheGetAndRemoveParameters.encode(nameWithPrefix, keyData);
+            request = CacheGetAndRemoveCodec.encodeRequest(nameWithPrefix, keyData);
         } else {
-            request = CacheRemoveParameters.encode(nameWithPrefix, keyData, oldValueData);
+            request = CacheRemoveCodec.encodeRequest(nameWithPrefix, keyData, oldValueData);
         }
         ICompletableFuture future;
         try {
@@ -256,9 +256,9 @@ abstract class AbstractClientInternalCacheProxy<K, V>
         final Data expiryPolicyData = toData(expiryPolicy);
         ClientMessage request;
         if (isGet) {
-            request = CacheGetAndReplaceParameters.encode(nameWithPrefix, keyData, newValueData, expiryPolicyData);
+            request = CacheGetAndReplaceCodec.encodeRequest(nameWithPrefix, keyData, newValueData, expiryPolicyData);
         } else {
-            request = CacheReplaceParameters.encode(nameWithPrefix, keyData, oldValueData, newValueData, expiryPolicyData);
+            request = CacheReplaceCodec.encodeRequest(nameWithPrefix, keyData, oldValueData, newValueData, expiryPolicyData);
         }
         ICompletableFuture future;
         try {
@@ -278,7 +278,7 @@ abstract class AbstractClientInternalCacheProxy<K, V>
         final Data keyData = toData(key);
         final Data valueData = toData(value);
         final Data expiryPolicyData = toData(expiryPolicy);
-        ClientMessage request = CachePutParameters.encode(nameWithPrefix, keyData, valueData, expiryPolicyData, isGet);
+        ClientMessage request = CachePutCodec.encodeRequest(nameWithPrefix, keyData, valueData, expiryPolicyData, isGet);
         ICompletableFuture future;
         try {
             future = invoke(request, keyData, withCompletionEvent);
@@ -301,7 +301,7 @@ abstract class AbstractClientInternalCacheProxy<K, V>
         final Data keyData = toData(key);
         final Data valueData = toData(value);
         final Data expiryPolicyData = toData(expiryPolicy);
-        ClientMessage request = CachePutIfAbsentParameters.encode(nameWithPrefix, keyData, valueData, expiryPolicyData);
+        ClientMessage request = CachePutIfAbsentCodec.encodeRequest(nameWithPrefix, keyData, valueData, expiryPolicyData);
         ICompletableFuture<Boolean> future;
         try {
             future = invoke(request, keyData, withCompletionEvent);
@@ -328,7 +328,7 @@ abstract class AbstractClientInternalCacheProxy<K, V>
         }
         final int partitionCount = clientContext.getPartitionService().getPartitionCount();
         int completionId = registerCompletionLatch(partitionCount);
-        ClientMessage request = CacheRemoveAllParameters.encode(nameWithPrefix, keysData, completionId);
+        ClientMessage request = CacheRemoveAllCodec.encodeRequest(nameWithPrefix, keysData, completionId);
         try {
             invoke(request);
             waitCompletionLatch(completionId, null);
@@ -339,7 +339,7 @@ abstract class AbstractClientInternalCacheProxy<K, V>
     }
 
     protected void clearInternal() {
-        ClientMessage request = CacheClearParameters.encode(nameWithPrefix);
+        ClientMessage request = CacheClearCodec.encodeRequest(nameWithPrefix);
         try {
             invoke(request);
         } catch (Throwable t) {
@@ -381,7 +381,7 @@ abstract class AbstractClientInternalCacheProxy<K, V>
 
     private void deregisterAllCacheEntryListener(Collection<String> listenerRegistrations) {
         for (String regId : listenerRegistrations) {
-            ClientMessage removeReq = CacheRemoveEntryListenerParameters.encode(nameWithPrefix, regId);
+            ClientMessage removeReq = CacheRemoveEntryListenerCodec.encodeRequest(nameWithPrefix, regId);
             clientContext.getListenerService().stopListening(removeReq, regId);
         }
     }
@@ -601,7 +601,7 @@ abstract class AbstractClientInternalCacheProxy<K, V>
             return;
         }
         try {
-            ClientMessage request = CacheAddInvalidationListenerParameters.encode(nameWithPrefix);
+            ClientMessage request = CacheAddInvalidationListenerCodec.encodeRequest(nameWithPrefix);
             Client client = clientContext.getClusterService().getLocalClient();
             EventHandler handler = new NearCacheInvalidationHandler(client);
             HazelcastClientInstanceImpl clientInstance = (HazelcastClientInstanceImpl) clientContext.getHazelcastInstance();
@@ -621,7 +621,7 @@ abstract class AbstractClientInternalCacheProxy<K, V>
         if (registrationId != null) {
             try {
                 if (removeFromMemberAlso) {
-                    ClientMessage request = CacheRemoveInvalidationListenerParameters.encode(nameWithPrefix, registrationId);
+                    ClientMessage request = CacheRemoveInvalidationListenerCodec.encodeRequest(nameWithPrefix, registrationId);
                     HazelcastClientInstanceImpl clientInstance = (HazelcastClientInstanceImpl) clientContext
                             .getHazelcastInstance();
                     ClientInvocation invocation = new ClientInvocation(clientInstance, request, member.getAddress());

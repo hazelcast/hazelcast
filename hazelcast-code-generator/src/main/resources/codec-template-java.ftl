@@ -14,6 +14,7 @@ public final class ${model.className} {
     //************************ REQUEST *************************//
 
     public static class RequestParameters {
+    public static final ${model.parentName}MessageType TYPE = REQUEST_TYPE;
 <#list model.requestParams as param>
         public ${param.type} ${param.name};
 </#list>
@@ -33,6 +34,7 @@ public final class ${model.className} {
         final int requiredDataSize = RequestParameters.calculateDataSize(<#list model.requestParams as param>${param.name}<#if param_has_next>, </#if></#list>);
         ClientMessage clientMessage = ClientMessage.createForEncode(requiredDataSize);
         clientMessage.setMessageType(REQUEST_TYPE.id());
+        clientMessage.setRetryable(RETRYABLE);
 <#list model.requestParams as param>
         ${param.dataSetterString}
 </#list>

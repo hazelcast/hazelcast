@@ -17,8 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.condition;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.ConditionAwaitParameters;
+import com.hazelcast.client.impl.protocol.codec.ConditionAwaitCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.concurrent.lock.InternalLockNamespace;
 import com.hazelcast.concurrent.lock.LockService;
@@ -33,7 +32,8 @@ import com.hazelcast.spi.Operation;
 import java.security.Permission;
 import java.util.concurrent.TimeUnit;
 
-public class ConditionAwaitMessageTask extends AbstractPartitionMessageTask<ConditionAwaitParameters> {
+public class ConditionAwaitMessageTask
+        extends AbstractPartitionMessageTask<ConditionAwaitCodec.RequestParameters> {
 
     public ConditionAwaitMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -47,13 +47,13 @@ public class ConditionAwaitMessageTask extends AbstractPartitionMessageTask<Cond
     }
 
     @Override
-    protected ConditionAwaitParameters decodeClientMessage(ClientMessage clientMessage) {
-        return ConditionAwaitParameters.decode(clientMessage);
+    protected ConditionAwaitCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return ConditionAwaitCodec.decodeRequest(clientMessage);
     }
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return BooleanResultParameters.encode((Boolean) response);
+        return ConditionAwaitCodec.encodeResponse((Boolean) response);
     }
 
     @Override

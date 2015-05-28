@@ -17,13 +17,13 @@
 package com.hazelcast.client.impl.protocol.task.transactionalqueue;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.GenericResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.TransactionalQueuePollParameters;
+import com.hazelcast.client.impl.protocol.codec.TransactionalQueuePollCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractTransactionalMessageTask;
 import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.core.TransactionalQueue;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.QueuePermission;
 import com.hazelcast.transaction.TransactionContext;
@@ -32,18 +32,18 @@ import java.security.Permission;
 import java.util.concurrent.TimeUnit;
 
 public class TransactionalQueuePollMessageTask
-        extends AbstractTransactionalMessageTask<TransactionalQueuePollParameters> {
+        extends AbstractTransactionalMessageTask<TransactionalQueuePollCodec.RequestParameters> {
 
     public TransactionalQueuePollMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected ClientMessage innerCall() throws Exception {
+    protected Object innerCall() throws Exception {
         final TransactionContext context = endpoint.getTransactionContext(parameters.txnId);
         final TransactionalQueue queue = context.getQueue(parameters.name);
         Object item = queue.poll(parameters.timeout, TimeUnit.MILLISECONDS);
-        return GenericResultParameters.encode(serializationService.toData(item));
+        return serializationService.toData(item);
     }
 
     @Override
@@ -52,8 +52,13 @@ public class TransactionalQueuePollMessageTask
     }
 
     @Override
-    protected TransactionalQueuePollParameters decodeClientMessage(ClientMessage clientMessage) {
-        return TransactionalQueuePollParameters.decode(clientMessage);
+    protected TransactionalQueuePollCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return TransactionalQueuePollCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return TransactionalQueuePollCodec.encodeResponse((Data) response);
     }
 
     @Override

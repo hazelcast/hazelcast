@@ -1,8 +1,7 @@
 package com.hazelcast.client.protocol;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.MapMessageType;
-import com.hazelcast.client.impl.protocol.parameters.MapPutParameters;
+import com.hazelcast.client.impl.protocol.codec.MapPutCodec;
 import com.hazelcast.client.impl.protocol.util.ClientProtocolBuffer;
 import com.hazelcast.client.impl.protocol.util.SafeBuffer;
 import com.hazelcast.nio.serialization.Data;
@@ -40,17 +39,17 @@ public class MapMessageEncodeDecodeTest {
 
     @Test
     public void shouldEncodeDecodeCorrectly_PUT() {
-        final int calculatedSize = MapPutParameters.calculateDataSize(NAME, DATA, DATA, THE_LONG, THE_LONG);
-        ClientMessage cmEncode = MapPutParameters.encode(NAME, DATA, DATA, THE_LONG, THE_LONG);
+        final int calculatedSize = MapPutCodec.RequestParameters.calculateDataSize(NAME, DATA, DATA, THE_LONG, THE_LONG);
+        ClientMessage cmEncode = MapPutCodec.encodeRequest(NAME, DATA, DATA, THE_LONG, THE_LONG);
         cmEncode.setVersion((short) 3).addFlag(ClientMessage.BEGIN_AND_END_FLAGS).setCorrelationId(66).setPartitionId(77);
 
         assertTrue(calculatedSize > cmEncode.getFrameLength());
         byteBuffer = cmEncode.buffer();
 
         ClientMessage cmDecode = ClientMessage.createForDecode(byteBuffer, 0);
-        MapPutParameters decodeParams = MapPutParameters.decode(cmDecode);
+        MapPutCodec.RequestParameters decodeParams = MapPutCodec.decodeRequest(cmDecode);
 
-        assertEquals(MapMessageType.MAP_PUT.id(), cmDecode.getMessageType());
+        assertEquals(MapPutCodec.REQUEST_TYPE.id(), cmDecode.getMessageType());
         assertEquals(3, cmDecode.getVersion());
         assertEquals(ClientMessage.BEGIN_AND_END_FLAGS, cmDecode.getFlags());
         assertEquals(66, cmDecode.getCorrelationId());

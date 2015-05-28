@@ -17,8 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.map;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.DataCollectionResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.MapKeySetWithPredicateParameters;
+import com.hazelcast.client.impl.protocol.codec.MapKeySetWithPredicateCodec;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
@@ -29,19 +28,20 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-public class MapKeySetWithPredicateMessageTask extends AbstractMapQueryMessageTask<MapKeySetWithPredicateParameters> {
+public class MapKeySetWithPredicateMessageTask
+        extends AbstractMapQueryMessageTask<MapKeySetWithPredicateCodec.RequestParameters> {
 
     public MapKeySetWithPredicateMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected ClientMessage reduce(Collection<QueryResultEntry> result) {
+    protected Object reduce(Collection<QueryResultEntry> result) {
         List<Data> keys = new ArrayList<Data>(result.size());
         for (QueryResultEntry resultEntry : result) {
             keys.add(resultEntry.getKeyData());
         }
-        return DataCollectionResultParameters.encode(keys);
+        return keys;
     }
 
     @Override
@@ -50,8 +50,13 @@ public class MapKeySetWithPredicateMessageTask extends AbstractMapQueryMessageTa
     }
 
     @Override
-    protected MapKeySetWithPredicateParameters decodeClientMessage(ClientMessage clientMessage) {
-        return MapKeySetWithPredicateParameters.decode(clientMessage);
+    protected MapKeySetWithPredicateCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return MapKeySetWithPredicateCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return MapKeySetWithPredicateCodec.encodeResponse((Collection<Data>) response);
     }
 
     @Override

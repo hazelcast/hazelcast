@@ -17,12 +17,10 @@
 package com.hazelcast.client.proxy;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.CountDownLatchAwaitParameters;
-import com.hazelcast.client.impl.protocol.parameters.CountDownLatchCountDownParameters;
-import com.hazelcast.client.impl.protocol.parameters.CountDownLatchGetCountParameters;
-import com.hazelcast.client.impl.protocol.parameters.CountDownLatchTrySetCountParameters;
-import com.hazelcast.client.impl.protocol.parameters.IntResultParameters;
+import com.hazelcast.client.impl.protocol.codec.CountDownLatchAwaitCodec;
+import com.hazelcast.client.impl.protocol.codec.CountDownLatchCountDownCodec;
+import com.hazelcast.client.impl.protocol.codec.CountDownLatchGetCountCodec;
+import com.hazelcast.client.impl.protocol.codec.CountDownLatchTrySetCountCodec;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.core.ICountDownLatch;
 import com.hazelcast.nio.serialization.Data;
@@ -38,29 +36,32 @@ public class ClientCountDownLatchProxy extends ClientProxy implements ICountDown
     }
 
     public boolean await(long timeout, TimeUnit unit) throws InterruptedException {
-        ClientMessage request = CountDownLatchAwaitParameters.encode(getName(), getTimeInMillis(timeout, unit));
-        BooleanResultParameters resultParameters = BooleanResultParameters.decode((ClientMessage) invoke(request));
-        return resultParameters.result;
+        ClientMessage request = CountDownLatchAwaitCodec.encodeRequest(getName(), getTimeInMillis(timeout, unit));
+        CountDownLatchAwaitCodec.ResponseParameters resultParameters =
+                CountDownLatchAwaitCodec.decodeResponse((ClientMessage) invoke(request));
+        return resultParameters.response;
     }
 
     public void countDown() {
-        ClientMessage request = CountDownLatchCountDownParameters.encode(getName());
+        ClientMessage request = CountDownLatchCountDownCodec.encodeRequest(getName());
         invoke(request);
     }
 
     public int getCount() {
-        ClientMessage request = CountDownLatchGetCountParameters.encode(getName());
-        IntResultParameters resultParameters = IntResultParameters.decode((ClientMessage) invoke(request));
-        return resultParameters.result;
+        ClientMessage request = CountDownLatchGetCountCodec.encodeRequest(getName());
+        CountDownLatchGetCountCodec.ResponseParameters resultParameters =
+                CountDownLatchGetCountCodec.decodeResponse((ClientMessage) invoke(request));
+        return resultParameters.response;
     }
 
     public boolean trySetCount(int count) {
         if (count < 0) {
             throw new IllegalArgumentException("count can't be negative");
         }
-        ClientMessage request = CountDownLatchTrySetCountParameters.encode(getName(), count);
-        BooleanResultParameters resultParameters = BooleanResultParameters.decode((ClientMessage) invoke(request));
-        return resultParameters.result;
+        ClientMessage request = CountDownLatchTrySetCountCodec.encodeRequest(getName(), count);
+        CountDownLatchTrySetCountCodec.ResponseParameters resultParameters =
+                CountDownLatchTrySetCountCodec.decodeResponse((ClientMessage) invoke(request));
+        return resultParameters.response;
     }
 
     private Data getKey() {

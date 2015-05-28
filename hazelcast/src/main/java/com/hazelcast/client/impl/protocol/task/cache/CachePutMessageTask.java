@@ -20,9 +20,10 @@ import com.hazelcast.cache.impl.CacheOperationProvider;
 import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.operation.CachePutOperation;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.CachePutParameters;
+import com.hazelcast.client.impl.protocol.codec.CachePutCodec;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
 
 import javax.cache.expiry.ExpiryPolicy;
@@ -33,7 +34,7 @@ import javax.cache.expiry.ExpiryPolicy;
  * @see CachePutOperation
  */
 public class CachePutMessageTask
-        extends AbstractCacheMessageTask<CachePutParameters> {
+        extends AbstractCacheMessageTask<CachePutCodec.RequestParameters> {
 
     public CachePutMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -49,8 +50,13 @@ public class CachePutMessageTask
     }
 
     @Override
-    protected CachePutParameters decodeClientMessage(ClientMessage clientMessage) {
-        return CachePutParameters.decode(clientMessage);
+    protected CachePutCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return CachePutCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return CachePutCodec.encodeResponse((Data) response);
     }
 
     @Override

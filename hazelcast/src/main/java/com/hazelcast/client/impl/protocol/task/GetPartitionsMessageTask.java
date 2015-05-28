@@ -17,8 +17,7 @@
 package com.hazelcast.client.impl.protocol.task;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.GetPartitionsParameters;
-import com.hazelcast.client.impl.protocol.parameters.GetPartitionsResultParameters;
+import com.hazelcast.client.impl.protocol.codec.ClientGetPartitionsCodec;
 import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.instance.MemberImpl;
@@ -33,14 +32,14 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
-public class GetPartitionsMessageTask extends AbstractCallableMessageTask<GetPartitionsParameters> {
+public class GetPartitionsMessageTask extends AbstractCallableMessageTask<ClientGetPartitionsCodec.RequestParameters> {
 
     public GetPartitionsMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected ClientMessage call() {
+    protected Object call() {
         InternalPartitionService service = getService(InternalPartitionService.SERVICE_NAME);
         service.firstArrangement();
         ClusterService clusterService = getService(ClusterServiceImpl.SERVICE_NAME);
@@ -60,7 +59,7 @@ public class GetPartitionsMessageTask extends AbstractCallableMessageTask<GetPar
             Address owner = partitions[i].getOwnerOrNull();
             int index = -1;
             if (owner == null) {
-                return GetPartitionsResultParameters.encode(new Address[0], new int[0]);
+                return ClientGetPartitionsCodec.encodeResponse(new Address[0], new int[0]);
             }
 
             final Integer idx = addressMap.get(owner);
@@ -70,12 +69,17 @@ public class GetPartitionsMessageTask extends AbstractCallableMessageTask<GetPar
 
             indexes[i] = index;
         }
-        return GetPartitionsResultParameters.encode(addresses, indexes);
+        return ClientGetPartitionsCodec.encodeResponse(addresses, indexes);
     }
 
     @Override
-    protected GetPartitionsParameters decodeClientMessage(ClientMessage clientMessage) {
-        return GetPartitionsParameters.decode(clientMessage);
+    protected ClientGetPartitionsCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return ClientGetPartitionsCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return (ClientMessage) response;
     }
 
     @Override

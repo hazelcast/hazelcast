@@ -17,8 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.list;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.ListAddParameters;
+import com.hazelcast.client.impl.protocol.codec.ListAddCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.collection.impl.collection.operations.CollectionAddOperation;
 import com.hazelcast.collection.impl.list.ListService;
@@ -33,10 +32,9 @@ import java.security.Permission;
 /**
  * Client Protocol Task for handling messages with type id:
  * {@link com.hazelcast.client.impl.protocol.parameters.ListMessageType#LIST_ADD}
- *
  */
 public class ListAddMessageTask
-        extends AbstractPartitionMessageTask<ListAddParameters> {
+        extends AbstractPartitionMessageTask<ListAddCodec.RequestParameters> {
 
     public ListAddMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -48,13 +46,13 @@ public class ListAddMessageTask
     }
 
     @Override
-    protected ListAddParameters decodeClientMessage(ClientMessage clientMessage) {
-        return ListAddParameters.decode(clientMessage);
+    protected ListAddCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return ListAddCodec.decodeRequest(clientMessage);
     }
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return BooleanResultParameters.encode((Boolean) response);
+        return ListAddCodec.encodeResponse((Boolean) response);
     }
 
     @Override

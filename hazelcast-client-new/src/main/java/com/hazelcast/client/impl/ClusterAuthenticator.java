@@ -21,9 +21,8 @@ import com.hazelcast.client.connection.Authenticator;
 import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.client.ClientPrincipal;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.AuthenticationCustomCredentialsParameters;
-import com.hazelcast.client.impl.protocol.parameters.AuthenticationParameters;
-import com.hazelcast.client.impl.protocol.parameters.AuthenticationResultParameters;
+import com.hazelcast.client.impl.protocol.codec.ClientAuthenticationCodec;
+import com.hazelcast.client.impl.protocol.codec.ClientAuthenticationCustomCodec;
 import com.hazelcast.client.spi.impl.ClientClusterServiceImpl;
 import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.nio.serialization.Data;
@@ -37,7 +36,6 @@ import java.util.concurrent.Future;
 
 /**
  * Used to authenticate client connections to cluster as parameter to ClientConnectionManager.
- *
  */
 public class ClusterAuthenticator implements Authenticator {
 
@@ -61,10 +59,11 @@ public class ClusterAuthenticator implements Authenticator {
         ClientMessage clientMessage;
         if (credentials instanceof UsernamePasswordCredentials) {
             UsernamePasswordCredentials cr = (UsernamePasswordCredentials) credentials;
-            clientMessage = AuthenticationParameters.encode(cr.getUsername(), cr.getPassword(), uuid, ownerUuid, false);
+            clientMessage = ClientAuthenticationCodec.encodeRequest(cr.getUsername(),
+                    cr.getPassword(), uuid, ownerUuid, false);
         } else {
             Data data = ss.toData(credentials);
-            clientMessage = AuthenticationCustomCredentialsParameters.encode(data.toByteArray(), uuid, ownerUuid, false);
+            clientMessage = ClientAuthenticationCustomCodec.encodeRequest(data, uuid, ownerUuid, false);
 
         }
         connection.init();
@@ -77,8 +76,8 @@ public class ClusterAuthenticator implements Authenticator {
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e, IOException.class);
         }
-        AuthenticationResultParameters resultParameters = AuthenticationResultParameters.decode(response);
+        ClientAuthenticationCodec.ResponseParameters result = ClientAuthenticationCodec.decodeResponse(response);
 
-        connection.setRemoteEndpoint(resultParameters.address);
+        connection.setRemoteEndpoint(result.address);
     }
 }

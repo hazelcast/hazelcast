@@ -17,7 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.list;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.ListClearParameters;
+import com.hazelcast.client.impl.protocol.codec.ListClearCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.collection.impl.collection.operations.CollectionClearOperation;
 import com.hazelcast.collection.impl.list.ListService;
@@ -32,10 +32,9 @@ import java.security.Permission;
 /**
  * Client Protocol Task for handling messages with type id:
  * {@link com.hazelcast.client.impl.protocol.parameters.ListMessageType#LIST_CLEAR}
- *
  */
 public class ListClearMessageTask
-        extends AbstractPartitionMessageTask<ListClearParameters> {
+        extends AbstractPartitionMessageTask<ListClearCodec.RequestParameters> {
 
     public ListClearMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -47,8 +46,13 @@ public class ListClearMessageTask
     }
 
     @Override
-    protected ListClearParameters decodeClientMessage(ClientMessage clientMessage) {
-        return ListClearParameters.decode(clientMessage);
+    protected ListClearCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return ListClearCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return ListClearCodec.encodeResponse();
     }
 
     @Override

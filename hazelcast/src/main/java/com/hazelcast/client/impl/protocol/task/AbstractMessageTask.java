@@ -79,6 +79,8 @@ public abstract class AbstractMessageTask<P>
 
     protected abstract P decodeClientMessage(ClientMessage clientMessage);
 
+    protected abstract ClientMessage encodeResponse(Object response);
+
     @Override
     public int getPartitionId() {
         return clientMessage.getPartitionId();
@@ -175,7 +177,12 @@ public abstract class AbstractMessageTask<P>
 
     protected abstract void processMessage();
 
-    protected void sendClientMessage(ClientMessage resultClientMessage) {
+    protected void sendResponse(Object response) {
+        ClientMessage clientMessage = encodeResponse(response);
+        sendClientMessage(clientMessage);
+    }
+
+    private void sendClientMessage(ClientMessage resultClientMessage) {
         resultClientMessage.setCorrelationId(clientMessage.getCorrelationId());
         resultClientMessage.addFlag(ClientMessage.BEGIN_AND_END_FLAGS);
         resultClientMessage.setVersion(ClientMessage.VERSION);

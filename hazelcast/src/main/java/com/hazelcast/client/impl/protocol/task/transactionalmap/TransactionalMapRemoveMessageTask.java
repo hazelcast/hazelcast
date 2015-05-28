@@ -17,31 +17,32 @@
 package com.hazelcast.client.impl.protocol.task.transactionalmap;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.GenericResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.TransactionalMapRemoveParameters;
+import com.hazelcast.client.impl.protocol.codec.TransactionalMapRemoveCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractTransactionalMessageTask;
 import com.hazelcast.core.TransactionalMap;
 import com.hazelcast.instance.Node;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.transaction.TransactionContext;
 
 import java.security.Permission;
 
-public class TransactionalMapRemoveMessageTask extends AbstractTransactionalMessageTask<TransactionalMapRemoveParameters> {
+public class TransactionalMapRemoveMessageTask
+        extends AbstractTransactionalMessageTask<TransactionalMapRemoveCodec.RequestParameters> {
 
     public TransactionalMapRemoveMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected ClientMessage innerCall() throws Exception {
+    protected Object innerCall() throws Exception {
         final TransactionContext context = getEndpoint().getTransactionContext(parameters.txnId);
         final TransactionalMap map = context.getMap(parameters.name);
         Object oldValue = map.remove(parameters.key);
-        return GenericResultParameters.encode(serializationService.toData(oldValue));
+        return serializationService.toData(oldValue);
     }
 
     @Override
@@ -50,8 +51,13 @@ public class TransactionalMapRemoveMessageTask extends AbstractTransactionalMess
     }
 
     @Override
-    protected TransactionalMapRemoveParameters decodeClientMessage(ClientMessage clientMessage) {
-        return TransactionalMapRemoveParameters.decode(clientMessage);
+    protected TransactionalMapRemoveCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return TransactionalMapRemoveCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return TransactionalMapRemoveCodec.encodeResponse((Data) response);
     }
 
     @Override

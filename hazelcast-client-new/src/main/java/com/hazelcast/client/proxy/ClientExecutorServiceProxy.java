@@ -18,12 +18,10 @@ package com.hazelcast.client.proxy;
 
 import com.hazelcast.client.impl.MemberImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.ExecutorServiceIsShutdownParameters;
-import com.hazelcast.client.impl.protocol.parameters.ExecutorServiceShutdownParameters;
-import com.hazelcast.client.impl.protocol.parameters.ExecutorServiceSubmitToAddressParameters;
-import com.hazelcast.client.impl.protocol.parameters.ExecutorServiceSubmitToPartitionParameters;
-import com.hazelcast.client.impl.protocol.parameters.GenericResultParameters;
+import com.hazelcast.client.impl.protocol.codec.ExecutorServiceIsShutdownCodec;
+import com.hazelcast.client.impl.protocol.codec.ExecutorServiceShutdownCodec;
+import com.hazelcast.client.impl.protocol.codec.ExecutorServiceSubmitToAddressCodec;
+import com.hazelcast.client.impl.protocol.codec.ExecutorServiceSubmitToPartitionCodec;
 import com.hazelcast.client.spi.ClientPartitionService;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.spi.impl.ClientInvocation;
@@ -324,7 +322,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
     }
 
     public void shutdown() {
-        ClientMessage request = ExecutorServiceShutdownParameters.encode(name);
+        ClientMessage request = ExecutorServiceShutdownCodec.encodeRequest(name);
         invoke(request);
     }
 
@@ -334,9 +332,11 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
     }
 
     public boolean isShutdown() {
-        ClientMessage request = ExecutorServiceIsShutdownParameters.encode(name);
-        BooleanResultParameters resultParameters = BooleanResultParameters.decode((ClientMessage) invoke(request));
-        return resultParameters.result;
+        ClientMessage request = ExecutorServiceIsShutdownCodec.encodeRequest(name);
+        ClientMessage response = invoke(request);
+        ExecutorServiceIsShutdownCodec.ResponseParameters resultParameters =
+                ExecutorServiceIsShutdownCodec.decodeResponse(response);
+        return resultParameters.response;
     }
 
     public boolean isTerminated() {
@@ -396,7 +396,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         String uuid = getUUID();
         int partitionId = getPartitionId(key);
         ClientMessage request =
-                ExecutorServiceSubmitToPartitionParameters.encode(name, uuid, toData(task), partitionId);
+                ExecutorServiceSubmitToPartitionCodec.encodeRequest(name, uuid, toData(task), partitionId);
         ClientInvocationFuture f = invokeOnPartitionOwner(request, partitionId);
         return checkSync(f, uuid, null, partitionId, preventSync, defaultValue);
     }
@@ -407,7 +407,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         String uuid = getUUID();
         int partitionId = getPartitionId(key);
         ClientMessage request =
-                ExecutorServiceSubmitToPartitionParameters.encode(name, uuid, toData(task), partitionId);
+                ExecutorServiceSubmitToPartitionCodec.encodeRequest(name, uuid, toData(task), partitionId);
         ClientInvocationFuture f = invokeOnPartitionOwner(request, partitionId);
         SerializationService serializationService = getContext().getSerializationService();
         ClientDelegatingFuture<T> delegatingFuture = new ClientDelegatingFuture<T>(f, serializationService);
@@ -420,7 +420,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         String uuid = getUUID();
         int partitionId = randomPartitionId();
         ClientMessage request =
-                ExecutorServiceSubmitToPartitionParameters.encode(name, uuid, toData(task), partitionId);
+                ExecutorServiceSubmitToPartitionCodec.encodeRequest(name, uuid, toData(task), partitionId);
         ClientInvocationFuture f = invokeOnPartitionOwner(request, partitionId);
         return checkSync(f, uuid, null, partitionId, preventSync, defaultValue);
     }
@@ -432,7 +432,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         String uuid = getUUID();
         int partitionId = randomPartitionId();
         ClientMessage request =
-                ExecutorServiceSubmitToPartitionParameters.encode(name, uuid, toData(task), partitionId);
+                ExecutorServiceSubmitToPartitionCodec.encodeRequest(name, uuid, toData(task), partitionId);
         ClientInvocationFuture f = invokeOnPartitionOwner(request, partitionId);
         SerializationService serializationService = getContext().getSerializationService();
         ClientDelegatingFuture<T> delegatingFuture = new ClientDelegatingFuture<T>(f, serializationService);
@@ -445,7 +445,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         checkNotNull(task, "task should not be null");
 
         String uuid = getUUID();
-        ClientMessage request = ExecutorServiceSubmitToAddressParameters.encode(name, uuid, toData(task),
+        ClientMessage request = ExecutorServiceSubmitToAddressCodec.encodeRequest(name, uuid, toData(task),
                 address.getHost(), address.getPort());
         ClientInvocationFuture f = invokeOnTarget(request, address);
         return checkSync(f, uuid, address, -1, preventSync, defaultValue);
@@ -455,7 +455,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         checkNotNull(task, "task should not be null");
 
         String uuid = getUUID();
-        ClientMessage request = ExecutorServiceSubmitToAddressParameters.encode(name, uuid, toData(task),
+        ClientMessage request = ExecutorServiceSubmitToAddressCodec.encodeRequest(name, uuid, toData(task),
                 address.getHost(), address.getPort());
         ClientInvocationFuture f = invokeOnTarget(request, address);
         SerializationService serializationService = getContext().getSerializationService();
@@ -495,7 +495,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         Object response;
         try {
             SerializationService serializationService = getClient().getSerializationService();
-            Data data = GenericResultParameters.decode(f.get()).result;
+            Data data = ExecutorServiceSubmitToAddressCodec.decodeResponse(f.get()).response;
             response = serializationService.toObject(data);
         } catch (Exception e) {
             response = e;

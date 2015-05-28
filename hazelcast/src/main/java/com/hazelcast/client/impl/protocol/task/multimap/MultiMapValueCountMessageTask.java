@@ -17,8 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.multimap;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.IntResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.MultiMapValueCountParameters;
+import com.hazelcast.client.impl.protocol.codec.MultiMapValueCountCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.multimap.impl.MultiMapService;
@@ -34,7 +33,8 @@ import java.security.Permission;
  * Client Protocol Task for handling messages with type id:
  * {@link com.hazelcast.client.impl.protocol.parameters.MultiMapMessageType#MULTIMAP_VALUECOUNT}
  */
-public class MultiMapValueCountMessageTask extends AbstractPartitionMessageTask<MultiMapValueCountParameters> {
+public class MultiMapValueCountMessageTask
+        extends AbstractPartitionMessageTask<MultiMapValueCountCodec.RequestParameters> {
 
     public MultiMapValueCountMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -48,13 +48,13 @@ public class MultiMapValueCountMessageTask extends AbstractPartitionMessageTask<
     }
 
     @Override
-    protected MultiMapValueCountParameters decodeClientMessage(ClientMessage clientMessage) {
-        return MultiMapValueCountParameters.decode(clientMessage);
+    protected MultiMapValueCountCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return MultiMapValueCountCodec.decodeRequest(clientMessage);
     }
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return IntResultParameters.encode((Integer) response);
+        return MultiMapValueCountCodec.encodeResponse((Integer) response);
     }
 
     @Override

@@ -20,7 +20,6 @@ import com.hazelcast.client.HazelcastClientNotActiveException;
 import com.hazelcast.client.config.ClientProperties;
 import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
-import com.hazelcast.client.impl.client.RetryableRequest;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.spi.ClientExecutionService;
 import com.hazelcast.client.spi.ClientInvocationService;
@@ -203,7 +202,7 @@ public class ClientInvocation implements Runnable {
             }
         }
         if (exception instanceof RetryableHazelcastException) {
-            if (clientMessage instanceof RetryableRequest || invocationService.isRedoOperation()) {
+            if (clientMessage.isRetryable() || invocationService.isRedoOperation()) {
                 if (handleRetry()) {
                     return;
                 }

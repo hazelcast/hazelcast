@@ -17,13 +17,13 @@
 package com.hazelcast.client.impl.protocol.task.transactionalmap;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.GenericResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.TransactionalMapPutParameters;
+import com.hazelcast.client.impl.protocol.codec.TransactionalMapPutCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractTransactionalMessageTask;
 import com.hazelcast.core.TransactionalMap;
 import com.hazelcast.instance.Node;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.transaction.TransactionContext;
@@ -31,18 +31,19 @@ import com.hazelcast.transaction.TransactionContext;
 import java.security.Permission;
 import java.util.concurrent.TimeUnit;
 
-public class TransactionalMapPutMessageTask extends AbstractTransactionalMessageTask<TransactionalMapPutParameters> {
+public class TransactionalMapPutMessageTask
+        extends AbstractTransactionalMessageTask<TransactionalMapPutCodec.RequestParameters> {
 
     public TransactionalMapPutMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected ClientMessage innerCall() throws Exception {
+    protected Object innerCall() throws Exception {
         final TransactionContext context = getEndpoint().getTransactionContext(parameters.txnId);
         final TransactionalMap map = context.getMap(parameters.name);
         Object response = map.put(parameters.key, parameters.value, parameters.ttl, TimeUnit.MILLISECONDS);
-        return GenericResultParameters.encode(serializationService.toData(response));
+        return serializationService.toData(response);
     }
 
     @Override
@@ -51,8 +52,13 @@ public class TransactionalMapPutMessageTask extends AbstractTransactionalMessage
     }
 
     @Override
-    protected TransactionalMapPutParameters decodeClientMessage(ClientMessage clientMessage) {
-        return TransactionalMapPutParameters.decode(clientMessage);
+    protected TransactionalMapPutCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return TransactionalMapPutCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return TransactionalMapPutCodec.encodeResponse((Data) response);
     }
 
     @Override

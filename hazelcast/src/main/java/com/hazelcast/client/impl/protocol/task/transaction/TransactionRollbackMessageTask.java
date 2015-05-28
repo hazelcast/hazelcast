@@ -18,8 +18,7 @@ package com.hazelcast.client.impl.protocol.task.transaction;
 
 import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.TransactionRollbackParameters;
-import com.hazelcast.client.impl.protocol.parameters.VoidResultParameters;
+import com.hazelcast.client.impl.protocol.codec.TransactionRollbackCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractTransactionalMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
@@ -28,18 +27,19 @@ import com.hazelcast.transaction.TransactionContext;
 
 import java.security.Permission;
 
-public class TransactionRollbackMessageTask extends AbstractTransactionalMessageTask<TransactionRollbackParameters> {
+public class TransactionRollbackMessageTask
+        extends AbstractTransactionalMessageTask<TransactionRollbackCodec.RequestParameters> {
 
     public TransactionRollbackMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected ClientMessage innerCall() throws Exception {
+    protected Object innerCall() throws Exception {
         TransactionContext transactionContext = endpoint.getTransactionContext(parameters.transactionId);
         transactionContext.rollbackTransaction();
         endpoint.removeTransactionContext(parameters.transactionId);
-        return VoidResultParameters.encode();
+        return null;
     }
 
     @Override
@@ -48,8 +48,13 @@ public class TransactionRollbackMessageTask extends AbstractTransactionalMessage
     }
 
     @Override
-    protected TransactionRollbackParameters decodeClientMessage(ClientMessage clientMessage) {
-        return TransactionRollbackParameters.decode(clientMessage);
+    protected TransactionRollbackCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return TransactionRollbackCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return TransactionRollbackCodec.encodeResponse();
     }
 
     @Override

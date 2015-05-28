@@ -17,7 +17,6 @@
 package com.hazelcast.client.impl.protocol.task.mapreduce;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.GenericResultParameters;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.config.JobTrackerConfig;
@@ -57,7 +56,7 @@ public abstract class AbstractMapReduceTask<Parameters> extends AbstractCallable
     }
 
     @Override
-    protected ClientMessage call() {
+    protected Object call() {
         MapReduceService mapReduceService = getService(MapReduceService.SERVICE_NAME);
         NodeEngine nodeEngine = mapReduceService.getNodeEngine();
         final String objectName = getDistributedObjectName();
@@ -142,7 +141,7 @@ public abstract class AbstractMapReduceTask<Parameters> extends AbstractCallable
         if (clientResponse instanceof HashMap) {
             clientResponse = new HashMapAdapter((HashMap) clientResponse);
         }
-        sendClientMessage(GenericResultParameters.encode(serializationService.toData(clientResponse)));
+        sendResponse(clientResponse);
     }
 
     @Override

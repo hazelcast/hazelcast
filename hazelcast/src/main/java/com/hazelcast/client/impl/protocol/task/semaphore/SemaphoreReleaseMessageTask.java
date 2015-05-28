@@ -17,8 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.semaphore;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.SemaphoreReleaseParameters;
+import com.hazelcast.client.impl.protocol.codec.SemaphoreReleaseCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.concurrent.semaphore.SemaphoreService;
 import com.hazelcast.concurrent.semaphore.operations.ReleaseOperation;
@@ -30,7 +29,8 @@ import com.hazelcast.spi.Operation;
 
 import java.security.Permission;
 
-public class SemaphoreReleaseMessageTask extends AbstractPartitionMessageTask<SemaphoreReleaseParameters> {
+public class SemaphoreReleaseMessageTask
+        extends AbstractPartitionMessageTask<SemaphoreReleaseCodec.RequestParameters> {
 
     public SemaphoreReleaseMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -42,13 +42,13 @@ public class SemaphoreReleaseMessageTask extends AbstractPartitionMessageTask<Se
     }
 
     @Override
-    protected SemaphoreReleaseParameters decodeClientMessage(ClientMessage clientMessage) {
-        return SemaphoreReleaseParameters.decode(clientMessage);
+    protected SemaphoreReleaseCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return SemaphoreReleaseCodec.decodeRequest(clientMessage);
     }
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return BooleanResultParameters.encode((Boolean) response);
+        return SemaphoreReleaseCodec.encodeResponse();
     }
 
     @Override

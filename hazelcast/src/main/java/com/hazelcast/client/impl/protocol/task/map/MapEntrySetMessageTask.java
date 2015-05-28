@@ -17,8 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.map;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.DataEntryListResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.MapEntrySetParameters;
+import com.hazelcast.client.impl.protocol.codec.MapEntrySetCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractAllPartitionsMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.map.impl.MapEntrySet;
@@ -31,12 +30,12 @@ import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.OperationFactory;
 
 import java.security.Permission;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-public class MapEntrySetMessageTask extends AbstractAllPartitionsMessageTask<MapEntrySetParameters> {
+public class MapEntrySetMessageTask
+        extends AbstractAllPartitionsMessageTask<MapEntrySetCodec.RequestParameters> {
 
     public MapEntrySetMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -48,23 +47,26 @@ public class MapEntrySetMessageTask extends AbstractAllPartitionsMessageTask<Map
     }
 
     @Override
-    protected ClientMessage reduce(Map<Integer, Object> map) {
-        List<Data> keys = new ArrayList<Data>();
-        List<Data> values = new ArrayList<Data>();
+    protected Object reduce(Map<Integer, Object> map) {
+        HashMap<Data, Data> dataMap = new HashMap<Data, Data>();
         MapService service = getService(MapService.SERVICE_NAME);
         for (Object result : map.values()) {
             Set<Map.Entry<Data, Data>> entries = ((MapEntrySet) service.getMapServiceContext().toObject(result)).getEntrySet();
             for (Map.Entry<Data, Data> entry : entries) {
-                keys.add(entry.getKey());
-                values.add(entry.getValue());
+                dataMap.put(entry.getKey(), entry.getValue());
             }
         }
-        return DataEntryListResultParameters.encode(keys, values);
+        return dataMap;
     }
 
     @Override
-    protected MapEntrySetParameters decodeClientMessage(ClientMessage clientMessage) {
-        return MapEntrySetParameters.decode(clientMessage);
+    protected MapEntrySetCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return MapEntrySetCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return MapEntrySetCodec.encodeResponse((Map<Data, Data>) response);
     }
 
     @Override

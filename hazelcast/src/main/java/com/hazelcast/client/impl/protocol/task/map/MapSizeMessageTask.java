@@ -17,8 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.map;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.IntResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.MapSizeParameters;
+import com.hazelcast.client.impl.protocol.codec.MapSizeCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractAllPartitionsMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.map.impl.MapService;
@@ -31,7 +30,8 @@ import com.hazelcast.spi.OperationFactory;
 import java.security.Permission;
 import java.util.Map;
 
-public class MapSizeMessageTask extends AbstractAllPartitionsMessageTask<MapSizeParameters> {
+public class MapSizeMessageTask
+        extends AbstractAllPartitionsMessageTask<MapSizeCodec.RequestParameters> {
 
     public MapSizeMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -43,19 +43,24 @@ public class MapSizeMessageTask extends AbstractAllPartitionsMessageTask<MapSize
     }
 
     @Override
-    protected ClientMessage reduce(Map<Integer, Object> map) {
+    protected Object reduce(Map<Integer, Object> map) {
         int total = 0;
         MapService mapService = getService(MapService.SERVICE_NAME);
         for (Object result : map.values()) {
             Integer size = (Integer) mapService.getMapServiceContext().toObject(result);
             total += size;
         }
-        return IntResultParameters.encode(total);
+        return total;
     }
 
     @Override
-    protected MapSizeParameters decodeClientMessage(ClientMessage clientMessage) {
-        return MapSizeParameters.decode(clientMessage);
+    protected MapSizeCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return MapSizeCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return MapSizeCodec.encodeResponse((Integer) response);
     }
 
     @Override

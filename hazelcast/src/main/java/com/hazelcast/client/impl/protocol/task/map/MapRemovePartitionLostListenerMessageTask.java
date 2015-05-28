@@ -17,8 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.map;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.MapRemovePartitionLostListenerParameters;
+import com.hazelcast.client.impl.protocol.codec.MapRemovePartitionLostListenerCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
@@ -27,7 +26,7 @@ import com.hazelcast.partition.InternalPartitionService;
 import java.security.Permission;
 
 public class MapRemovePartitionLostListenerMessageTask
-        extends AbstractCallableMessageTask<MapRemovePartitionLostListenerParameters> {
+        extends AbstractCallableMessageTask<MapRemovePartitionLostListenerCodec.RequestParameters> {
 
 
     public MapRemovePartitionLostListenerMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
@@ -35,15 +34,20 @@ public class MapRemovePartitionLostListenerMessageTask
     }
 
     @Override
-    protected ClientMessage call() {
+    protected Object call() {
         InternalPartitionService service = getService(InternalPartitionService.SERVICE_NAME);
         boolean success = service.removePartitionLostListener(parameters.registrationId);
-        return BooleanResultParameters.encode(success);
+        return MapRemovePartitionLostListenerCodec.encodeResponse(success);
     }
 
     @Override
-    protected MapRemovePartitionLostListenerParameters decodeClientMessage(ClientMessage clientMessage) {
-        return MapRemovePartitionLostListenerParameters.decode(clientMessage);
+    protected MapRemovePartitionLostListenerCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return MapRemovePartitionLostListenerCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return MapRemovePartitionLostListenerCodec.encodeResponse((Boolean) response);
     }
 
     @Override

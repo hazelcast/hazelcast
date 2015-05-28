@@ -26,7 +26,7 @@ import com.hazelcast.client.connection.Authenticator;
 import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.PingParameters;
+import com.hazelcast.client.impl.protocol.codec.ClientPingCodec;
 import com.hazelcast.client.spi.ClientInvocationService;
 import com.hazelcast.client.spi.impl.ClientExecutionServiceImpl;
 import com.hazelcast.client.spi.impl.ClientInvocation;
@@ -323,7 +323,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                     }
                 }
                 if (now - connection.lastReadTime() > heartBeatInterval) {
-                    ClientMessage request = PingParameters.encode();
+                    ClientMessage request = ClientPingCodec.encodeRequest();
                     ClientInvocation clientInvocation = new ClientInvocation(client, request, connection);
                     clientInvocation.setBypassHeartbeatCheck(true);
                     clientInvocation.invoke();

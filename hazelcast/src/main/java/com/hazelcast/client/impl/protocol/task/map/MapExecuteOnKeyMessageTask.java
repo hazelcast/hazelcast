@@ -17,20 +17,22 @@
 package com.hazelcast.client.impl.protocol.task.map;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.MapExecuteOnKeyParameters;
+import com.hazelcast.client.impl.protocol.codec.MapExecuteOnKeyCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.operation.EntryOperation;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.Operation;
 
 import java.security.Permission;
 
-public class MapExecuteOnKeyMessageTask extends AbstractPartitionMessageTask<MapExecuteOnKeyParameters> {
+public class MapExecuteOnKeyMessageTask
+        extends AbstractPartitionMessageTask<MapExecuteOnKeyCodec.RequestParameters> {
 
     public MapExecuteOnKeyMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -43,8 +45,13 @@ public class MapExecuteOnKeyMessageTask extends AbstractPartitionMessageTask<Map
     }
 
     @Override
-    protected MapExecuteOnKeyParameters decodeClientMessage(ClientMessage clientMessage) {
-        return MapExecuteOnKeyParameters.decode(clientMessage);
+    protected MapExecuteOnKeyCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return MapExecuteOnKeyCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return MapExecuteOnKeyCodec.encodeResponse((Data) response);
     }
 
     @Override

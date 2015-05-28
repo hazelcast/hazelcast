@@ -17,7 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.topic;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.TopicPublishParameters;
+import com.hazelcast.client.impl.protocol.codec.TopicPublishCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
@@ -29,7 +29,8 @@ import com.hazelcast.topic.impl.TopicService;
 
 import java.security.Permission;
 
-public class TopicPublishMessageTask extends AbstractPartitionMessageTask<TopicPublishParameters> {
+public class TopicPublishMessageTask
+        extends AbstractPartitionMessageTask<TopicPublishCodec.RequestParameters> {
 
     public TopicPublishMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -41,8 +42,13 @@ public class TopicPublishMessageTask extends AbstractPartitionMessageTask<TopicP
     }
 
     @Override
-    protected TopicPublishParameters decodeClientMessage(ClientMessage clientMessage) {
-        return TopicPublishParameters.decode(clientMessage);
+    protected TopicPublishCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return TopicPublishCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return TopicPublishCodec.encodeResponse();
     }
 
     @Override

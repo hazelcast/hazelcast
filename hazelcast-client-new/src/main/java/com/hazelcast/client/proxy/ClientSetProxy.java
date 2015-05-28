@@ -17,23 +17,20 @@
 package com.hazelcast.client.proxy;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.DataCollectionResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.IntResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.ItemEventParameters;
-import com.hazelcast.client.impl.protocol.parameters.SetAddAllParameters;
-import com.hazelcast.client.impl.protocol.parameters.SetAddListenerParameters;
-import com.hazelcast.client.impl.protocol.parameters.SetAddParameters;
-import com.hazelcast.client.impl.protocol.parameters.SetClearParameters;
-import com.hazelcast.client.impl.protocol.parameters.SetCompareAndRemoveAllParameters;
-import com.hazelcast.client.impl.protocol.parameters.SetCompareAndRetainAllParameters;
-import com.hazelcast.client.impl.protocol.parameters.SetContainsAllParameters;
-import com.hazelcast.client.impl.protocol.parameters.SetContainsParameters;
-import com.hazelcast.client.impl.protocol.parameters.SetGetAllParameters;
-import com.hazelcast.client.impl.protocol.parameters.SetIsEmptyParameters;
-import com.hazelcast.client.impl.protocol.parameters.SetRemoveListenerParameters;
-import com.hazelcast.client.impl.protocol.parameters.SetRemoveParameters;
-import com.hazelcast.client.impl.protocol.parameters.SetSizeParameters;
+import com.hazelcast.client.impl.protocol.codec.ListAddListenerCodec;
+import com.hazelcast.client.impl.protocol.codec.SetAddAllCodec;
+import com.hazelcast.client.impl.protocol.codec.SetAddCodec;
+import com.hazelcast.client.impl.protocol.codec.SetAddListenerCodec;
+import com.hazelcast.client.impl.protocol.codec.SetClearCodec;
+import com.hazelcast.client.impl.protocol.codec.SetCompareAndRemoveAllCodec;
+import com.hazelcast.client.impl.protocol.codec.SetCompareAndRetainAllCodec;
+import com.hazelcast.client.impl.protocol.codec.SetContainsAllCodec;
+import com.hazelcast.client.impl.protocol.codec.SetContainsCodec;
+import com.hazelcast.client.impl.protocol.codec.SetGetAllCodec;
+import com.hazelcast.client.impl.protocol.codec.SetIsEmptyCodec;
+import com.hazelcast.client.impl.protocol.codec.SetRemoveCodec;
+import com.hazelcast.client.impl.protocol.codec.SetRemoveListenerCodec;
+import com.hazelcast.client.impl.protocol.codec.SetSizeCodec;
 import com.hazelcast.client.spi.ClientClusterService;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.spi.EventHandler;
@@ -67,26 +64,26 @@ public class ClientSetProxy<E> extends ClientProxy implements ISet<E> {
 
     @Override
     public int size() {
-        ClientMessage request = SetSizeParameters.encode(name);
+        ClientMessage request = SetSizeCodec.encodeRequest(name);
         ClientMessage response = invoke(request);
-        IntResultParameters resultParameters = IntResultParameters.decode(response);
-        return resultParameters.result;
+        SetSizeCodec.ResponseParameters resultParameters = SetSizeCodec.decodeResponse(response);
+        return resultParameters.response;
     }
 
     public boolean isEmpty() {
-        ClientMessage request = SetIsEmptyParameters.encode(name);
+        ClientMessage request = SetIsEmptyCodec.encodeRequest(name);
         ClientMessage response = invoke(request);
-        BooleanResultParameters resultParameters = BooleanResultParameters.decode(response);
-        return resultParameters.result;
+        SetIsEmptyCodec.ResponseParameters resultParameters = SetIsEmptyCodec.decodeResponse(response);
+        return resultParameters.response;
     }
 
     public boolean contains(Object o) {
         throwExceptionIfNull(o);
         final Data value = toData(o);
-        ClientMessage request = SetContainsParameters.encode(name, value);
+        ClientMessage request = SetContainsCodec.encodeRequest(name, value);
         ClientMessage response = invoke(request);
-        BooleanResultParameters resultParameters = BooleanResultParameters.decode(response);
-        return resultParameters.result;
+        SetContainsCodec.ResponseParameters resultParameters = SetContainsCodec.decodeResponse(response);
+        return resultParameters.response;
     }
 
     public Iterator<E> iterator() {
@@ -104,19 +101,19 @@ public class ClientSetProxy<E> extends ClientProxy implements ISet<E> {
     public boolean add(E e) {
         throwExceptionIfNull(e);
         final Data element = toData(e);
-        ClientMessage request = SetAddParameters.encode(name, element);
+        ClientMessage request = SetAddCodec.encodeRequest(name, element);
         ClientMessage response = invoke(request);
-        BooleanResultParameters resultParameters = BooleanResultParameters.decode(response);
-        return resultParameters.result;
+        SetAddCodec.ResponseParameters resultParameters = SetAddCodec.decodeResponse(response);
+        return resultParameters.response;
     }
 
     public boolean remove(Object o) {
         throwExceptionIfNull(o);
         final Data value = toData(o);
-        ClientMessage request = SetRemoveParameters.encode(name, value);
+        ClientMessage request = SetRemoveCodec.encodeRequest(name, value);
         ClientMessage response = invoke(request);
-        BooleanResultParameters resultParameters = BooleanResultParameters.decode(response);
-        return resultParameters.result;
+        SetRemoveCodec.ResponseParameters resultParameters = SetRemoveCodec.decodeResponse(response);
+        return resultParameters.response;
     }
 
     public boolean containsAll(Collection<?> c) {
@@ -126,10 +123,10 @@ public class ClientSetProxy<E> extends ClientProxy implements ISet<E> {
             throwExceptionIfNull(o);
             valueSet.add(toData(o));
         }
-        ClientMessage request = SetContainsAllParameters.encode(name, valueSet);
+        ClientMessage request = SetContainsAllCodec.encodeRequest(name, valueSet);
         ClientMessage response = invoke(request);
-        BooleanResultParameters resultParameters = BooleanResultParameters.decode(response);
-        return resultParameters.result;
+        SetContainsAllCodec.ResponseParameters resultParameters = SetContainsAllCodec.decodeResponse(response);
+        return resultParameters.response;
     }
 
     public boolean addAll(Collection<? extends E> c) {
@@ -139,10 +136,10 @@ public class ClientSetProxy<E> extends ClientProxy implements ISet<E> {
             throwExceptionIfNull(e);
             valueList.add(toData(e));
         }
-        ClientMessage request = SetAddAllParameters.encode(name, valueList);
+        ClientMessage request = SetAddAllCodec.encodeRequest(name, valueList);
         ClientMessage response = invoke(request);
-        BooleanResultParameters resultParameters = BooleanResultParameters.decode(response);
-        return resultParameters.result;
+        SetAddAllCodec.ResponseParameters resultParameters = SetAddAllCodec.decodeResponse(response);
+        return resultParameters.response;
     }
 
     public boolean removeAll(Collection<?> c) {
@@ -152,10 +149,10 @@ public class ClientSetProxy<E> extends ClientProxy implements ISet<E> {
             throwExceptionIfNull(o);
             valueSet.add(toData(o));
         }
-        ClientMessage request = SetCompareAndRemoveAllParameters.encode(name, valueSet);
+        ClientMessage request = SetCompareAndRemoveAllCodec.encodeRequest(name, valueSet);
         ClientMessage response = invoke(request);
-        BooleanResultParameters resultParameters = BooleanResultParameters.decode(response);
-        return resultParameters.result;
+        SetCompareAndRemoveAllCodec.ResponseParameters resultParameters = SetCompareAndRemoveAllCodec.decodeResponse(response);
+        return resultParameters.response;
     }
 
     public boolean retainAll(Collection<?> c) {
@@ -165,58 +162,71 @@ public class ClientSetProxy<E> extends ClientProxy implements ISet<E> {
             throwExceptionIfNull(o);
             valueSet.add(toData(o));
         }
-        ClientMessage request = SetCompareAndRetainAllParameters.encode(name, valueSet);
+        ClientMessage request = SetCompareAndRetainAllCodec.encodeRequest(name, valueSet);
         ClientMessage response = invoke(request);
-        BooleanResultParameters resultParameters = BooleanResultParameters.decode(response);
-        return resultParameters.result;
+        SetCompareAndRetainAllCodec.ResponseParameters resultParameters = SetCompareAndRetainAllCodec.decodeResponse(response);
+        return resultParameters.response;
     }
 
     public void clear() {
-        ClientMessage request = SetClearParameters.encode(name);
+        ClientMessage request = SetClearCodec.encodeRequest(name);
         invoke(request);
     }
 
     public String addItemListener(final ItemListener<E> listener, final boolean includeValue) {
-        ClientMessage request = SetAddListenerParameters.encode(name, includeValue);
+        ClientMessage request = SetAddListenerCodec.encodeRequest(name, includeValue);
 
-        EventHandler<ClientMessage> eventHandler = new EventHandler<ClientMessage>() {
-            final SerializationService serializationService = getContext().getSerializationService();
-            final ClientClusterService clusterService = getContext().getClusterService();
-
-            public void handle(ClientMessage message) {
-                ItemEventParameters event = ItemEventParameters.decode(message);
-                E item = includeValue ? (E) serializationService.toObject(event.item) : null;
-                Member member = clusterService.getMember(event.uuid);
-                ItemEvent<E> itemEvent = new ItemEvent<E>(name, event.eventType, item, member);
-                if (event.eventType == ItemEventType.ADDED) {
-                    listener.itemAdded(itemEvent);
-                } else {
-                    listener.itemRemoved(itemEvent);
-                }
-            }
-
-            @Override
-            public void beforeListenerRegister() {
-            }
-
-            @Override
-            public void onListenerRegister() {
-
-            }
-        };
+        EventHandler<ClientMessage> eventHandler = new ItemEventHandler(includeValue, listener);
         return listen(request, getPartitionKey(), eventHandler);
     }
 
+    private class ItemEventHandler extends ListAddListenerCodec.AbstractEventHandler
+            implements EventHandler<ClientMessage> {
+
+        private final boolean includeValue;
+        private final ItemListener<E> listener;
+
+        public ItemEventHandler(boolean includeValue, ItemListener<E> listener) {
+            this.includeValue = includeValue;
+            this.listener = listener;
+        }
+
+        @Override
+        public void handle(Data dataItem, String uuid, int eventType) {
+            SerializationService serializationService = getContext().getSerializationService();
+            ClientClusterService clusterService = getContext().getClusterService();
+
+            E item = includeValue ? (E) serializationService.toObject(dataItem) : null;
+            Member member = clusterService.getMember(uuid);
+            ItemEvent<E> itemEvent = new ItemEvent<E>(name, ItemEventType.getByType(eventType), item, member);
+            if (eventType == ItemEventType.ADDED.getType()) {
+                listener.itemAdded(itemEvent);
+            } else {
+                listener.itemRemoved(itemEvent);
+            }
+        }
+
+        @Override
+        public void beforeListenerRegister() {
+
+        }
+
+        @Override
+        public void onListenerRegister() {
+
+        }
+    }
+
     public boolean removeItemListener(String registrationId) {
-        ClientMessage request = SetRemoveListenerParameters.encode(name, registrationId);
+        ClientMessage request = SetRemoveListenerCodec.encodeRequest(name, registrationId);
         return stopListening(request, registrationId);
     }
 
     private Collection<E> getAll() {
-        ClientMessage request = SetGetAllParameters.encode(name);
+        ClientMessage request = SetGetAllCodec.encodeRequest(name);
         ClientMessage response = invoke(request);
-        DataCollectionResultParameters resultParameters = DataCollectionResultParameters.decode(response);
-        Collection<Data> resultCollection = resultParameters.result;
+        SetGetAllCodec.ResponseParameters resultParameters = SetGetAllCodec.decodeResponse(response);
+        Collection<Data> resultCollection = resultParameters.list;
         final ArrayList<E> list = new ArrayList<E>(resultCollection.size());
         for (Data value : resultCollection) {
             list.add((E) toObject(value));

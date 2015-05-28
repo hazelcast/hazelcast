@@ -17,8 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.queue;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.QueuePutParameters;
-import com.hazelcast.client.impl.protocol.parameters.VoidResultParameters;
+import com.hazelcast.client.impl.protocol.codec.QueuePutCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.collection.impl.queue.operations.OfferOperation;
@@ -33,10 +32,9 @@ import java.security.Permission;
 /**
  * Client Protocol Task for handling messages with type id:
  * {@link com.hazelcast.client.impl.protocol.parameters.QueueMessageType#QUEUE_PUT}
- *
  */
 public class QueuePutMessageTask
-        extends AbstractPartitionMessageTask<QueuePutParameters> {
+        extends AbstractPartitionMessageTask<QueuePutCodec.RequestParameters> {
 
     public QueuePutMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -48,13 +46,13 @@ public class QueuePutMessageTask
     }
 
     @Override
-    protected QueuePutParameters decodeClientMessage(ClientMessage clientMessage) {
-        return QueuePutParameters.decode(clientMessage);
+    protected QueuePutCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return QueuePutCodec.decodeRequest(clientMessage);
     }
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return VoidResultParameters.encode();
+        return QueuePutCodec.encodeResponse();
     }
 
     @Override

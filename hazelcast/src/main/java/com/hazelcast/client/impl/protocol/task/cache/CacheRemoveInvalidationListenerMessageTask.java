@@ -18,8 +18,7 @@ package com.hazelcast.client.impl.protocol.task.cache;
 
 import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.CacheRemoveInvalidationListenerParameters;
+import com.hazelcast.client.impl.protocol.codec.CacheRemoveInvalidationListenerCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.map.impl.MapService;
@@ -33,23 +32,28 @@ import java.security.Permission;
  * @see com.hazelcast.cache.impl.CacheService#deregisterListener(String, String)
  */
 public class CacheRemoveInvalidationListenerMessageTask
-        extends AbstractCallableMessageTask<CacheRemoveInvalidationListenerParameters> {
+        extends AbstractCallableMessageTask<CacheRemoveInvalidationListenerCodec.RequestParameters> {
 
     public CacheRemoveInvalidationListenerMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected ClientMessage call() {
+    protected Object call() {
         CacheService service = getService(MapService.SERVICE_NAME);
         boolean success = service.deregisterListener(parameters.name, parameters.registrationId);
 
-        return BooleanResultParameters.encode(success);
+        return CacheRemoveInvalidationListenerCodec.encodeResponse(success);
     }
 
     @Override
-    protected CacheRemoveInvalidationListenerParameters decodeClientMessage(ClientMessage clientMessage) {
-        return CacheRemoveInvalidationListenerParameters.decode(clientMessage);
+    protected CacheRemoveInvalidationListenerCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return CacheRemoveInvalidationListenerCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return CacheRemoveInvalidationListenerCodec.encodeResponse((Boolean) response);
     }
 
     @Override

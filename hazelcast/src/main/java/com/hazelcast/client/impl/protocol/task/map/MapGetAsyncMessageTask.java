@@ -17,20 +17,22 @@
 package com.hazelcast.client.impl.protocol.task.map;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.MapGetAsyncParameters;
+import com.hazelcast.client.impl.protocol.codec.MapGetAsyncCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.operation.GetOperation;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.Operation;
 
 import java.security.Permission;
 
-public class MapGetAsyncMessageTask extends AbstractPartitionMessageTask<MapGetAsyncParameters> {
+public class MapGetAsyncMessageTask
+        extends AbstractPartitionMessageTask<MapGetAsyncCodec.RequestParameters> {
 
     private transient long startTime;
 
@@ -39,8 +41,13 @@ public class MapGetAsyncMessageTask extends AbstractPartitionMessageTask<MapGetA
     }
 
     @Override
-    protected MapGetAsyncParameters decodeClientMessage(ClientMessage clientMessage) {
-        return MapGetAsyncParameters.decode(clientMessage);
+    protected MapGetAsyncCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return MapGetAsyncCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return MapGetAsyncCodec.encodeResponse((Data) response);
     }
 
     @Override

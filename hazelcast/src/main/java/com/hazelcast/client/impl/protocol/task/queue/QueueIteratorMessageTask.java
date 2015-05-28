@@ -17,8 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.queue;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.DataCollectionResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.QueueIteratorParameters;
+import com.hazelcast.client.impl.protocol.codec.QueueIteratorCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.collection.impl.queue.operations.IteratorOperation;
@@ -38,7 +37,7 @@ import java.util.Collection;
  * {@link com.hazelcast.client.impl.protocol.parameters.QueueMessageType#QUEUE_ITERATOR}
  */
 public class QueueIteratorMessageTask
-        extends AbstractPartitionMessageTask<QueueIteratorParameters> {
+        extends AbstractPartitionMessageTask<QueueIteratorCodec.RequestParameters> {
 
     public QueueIteratorMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -50,8 +49,8 @@ public class QueueIteratorMessageTask
     }
 
     @Override
-    protected QueueIteratorParameters decodeClientMessage(ClientMessage clientMessage) {
-        return QueueIteratorParameters.decode(clientMessage);
+    protected QueueIteratorCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return QueueIteratorCodec.decodeRequest(clientMessage);
     }
 
     @Override
@@ -68,7 +67,7 @@ public class QueueIteratorMessageTask
     protected ClientMessage encodeResponse(Object response) {
         SerializableCollection serializableCollection = (SerializableCollection) response;
         Collection<Data> coll = serializableCollection.getCollection();
-        return DataCollectionResultParameters.encode(coll);
+        return QueueIteratorCodec.encodeResponse(coll);
     }
 
     @Override

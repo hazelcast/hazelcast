@@ -18,8 +18,7 @@ package com.hazelcast.client.impl.protocol.task.multimap;
 
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.DataEntryListResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.MultiMapEntrySetParameters;
+import com.hazelcast.client.impl.protocol.codec.MultiMapEntrySetCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractAllPartitionsMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.multimap.impl.MultiMapService;
@@ -41,7 +40,8 @@ import java.util.Set;
  * Client Protocol Task for handling messages with type id:
  * {@link com.hazelcast.client.impl.protocol.parameters.MultiMapMessageType#MULTIMAP_ENTRYSET}
  */
-public class MultiMapEntrySetMessageTask extends AbstractAllPartitionsMessageTask<MultiMapEntrySetParameters> {
+public class MultiMapEntrySetMessageTask
+        extends AbstractAllPartitionsMessageTask<MultiMapEntrySetCodec.RequestParameters> {
 
     public MultiMapEntrySetMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -53,7 +53,7 @@ public class MultiMapEntrySetMessageTask extends AbstractAllPartitionsMessageTas
     }
 
     @Override
-    protected ClientMessage reduce(Map<Integer, Object> map) {
+    protected Object reduce(Map<Integer, Object> map) {
         List<Data> keys = new ArrayList<Data>();
         List<Data> values = new ArrayList<Data>();
         for (Object obj : map.values()) {
@@ -67,12 +67,17 @@ public class MultiMapEntrySetMessageTask extends AbstractAllPartitionsMessageTas
                 values.add(entry.getValue());
             }
         }
-        return DataEntryListResultParameters.encode(keys, values);
+        return MultiMapEntrySetCodec.encodeResponse(keys, values);
     }
 
     @Override
-    protected MultiMapEntrySetParameters decodeClientMessage(ClientMessage clientMessage) {
-        return MultiMapEntrySetParameters.decode(clientMessage);
+    protected MultiMapEntrySetCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return MultiMapEntrySetCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return (ClientMessage) response;
     }
 
     @Override

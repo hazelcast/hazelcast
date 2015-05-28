@@ -17,7 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.mapreduce;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.MapReduceForMultiMapParameters;
+import com.hazelcast.client.impl.protocol.codec.MapReduceForMultiMapCodec;
 import com.hazelcast.instance.Node;
 import com.hazelcast.mapreduce.CombinerFactory;
 import com.hazelcast.mapreduce.KeyPredicate;
@@ -26,10 +26,13 @@ import com.hazelcast.mapreduce.Mapper;
 import com.hazelcast.mapreduce.ReducerFactory;
 import com.hazelcast.mapreduce.impl.MapKeyValueSource;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.nio.serialization.Data;
 
 import java.util.Collection;
+import java.util.Map;
 
-public class MapReduceForMultiMapMessageTask extends AbstractMapReduceTask<MapReduceForMultiMapParameters> {
+public class MapReduceForMultiMapMessageTask
+        extends AbstractMapReduceTask<MapReduceForMultiMapCodec.RequestParameters> {
 
     public MapReduceForMultiMapMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -81,8 +84,12 @@ public class MapReduceForMultiMapMessageTask extends AbstractMapReduceTask<MapRe
     }
 
     @Override
-    protected MapReduceForMultiMapParameters decodeClientMessage(ClientMessage clientMessage) {
-        return MapReduceForMultiMapParameters.decode(clientMessage);
+    protected MapReduceForMultiMapCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return MapReduceForMultiMapCodec.decodeRequest(clientMessage);
+    }
+
+    protected ClientMessage encodeResponse(Object response) {
+        return MapReduceForMultiMapCodec.encodeResponse((Map<Data, Data>) response);
     }
 
     @Override

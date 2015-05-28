@@ -17,8 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.atomiclong;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.AtomicLongIncrementAndGetParameters;
-import com.hazelcast.client.impl.protocol.parameters.LongResultParameters;
+import com.hazelcast.client.impl.protocol.codec.AtomicLongIncrementAndGetCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.concurrent.atomiclong.AtomicLongService;
 import com.hazelcast.concurrent.atomiclong.operations.AddAndGetOperation;
@@ -30,7 +29,8 @@ import com.hazelcast.spi.Operation;
 
 import java.security.Permission;
 
-public class AtomicLongIncrementAndGetMessageTask extends AbstractPartitionMessageTask<AtomicLongIncrementAndGetParameters> {
+public class AtomicLongIncrementAndGetMessageTask
+        extends AbstractPartitionMessageTask<AtomicLongIncrementAndGetCodec.RequestParameters> {
 
     public AtomicLongIncrementAndGetMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -42,13 +42,13 @@ public class AtomicLongIncrementAndGetMessageTask extends AbstractPartitionMessa
     }
 
     @Override
-    protected AtomicLongIncrementAndGetParameters decodeClientMessage(ClientMessage clientMessage) {
-        return AtomicLongIncrementAndGetParameters.decode(clientMessage);
+    protected AtomicLongIncrementAndGetCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return AtomicLongIncrementAndGetCodec.decodeRequest(clientMessage);
     }
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return LongResultParameters.encode((Long) response);
+        return AtomicLongIncrementAndGetCodec.encodeResponse((Long) response);
     }
 
     @Override

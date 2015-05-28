@@ -17,23 +17,25 @@
 package com.hazelcast.client.impl.protocol.task.set;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.SetCompareAndRetainAllParameters;
+import com.hazelcast.client.impl.protocol.codec.SetCompareAndRetainAllCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.collection.impl.collection.operations.CollectionCompareAndRemoveOperation;
 import com.hazelcast.collection.impl.set.SetService;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.SetPermission;
 import com.hazelcast.spi.Operation;
+
 import java.security.Permission;
+import java.util.Set;
 
 /**
  * SetCompareAndRetainAllMessageTask
  */
 public class SetCompareAndRetainAllMessageTask
-        extends AbstractPartitionMessageTask<SetCompareAndRetainAllParameters> {
+        extends AbstractPartitionMessageTask<SetCompareAndRetainAllCodec.RequestParameters> {
 
     public SetCompareAndRetainAllMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -41,17 +43,17 @@ public class SetCompareAndRetainAllMessageTask
 
     @Override
     protected Operation prepareOperation() {
-        return new CollectionCompareAndRemoveOperation(parameters.name, true, parameters.valueSet);
+        return new CollectionCompareAndRemoveOperation(parameters.name, true, (Set<Data>) parameters.valueSet);
     }
 
     @Override
-    protected SetCompareAndRetainAllParameters decodeClientMessage(ClientMessage clientMessage) {
-        return SetCompareAndRetainAllParameters.decode(clientMessage);
+    protected SetCompareAndRetainAllCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return SetCompareAndRetainAllCodec.decodeRequest(clientMessage);
     }
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return BooleanResultParameters.encode((Boolean) response);
+        return SetCompareAndRetainAllCodec.encodeResponse((Boolean) response);
     }
 
     @Override

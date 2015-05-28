@@ -22,7 +22,6 @@ import com.hazelcast.client.impl.ClientEndpointImpl;
 import com.hazelcast.client.impl.client.ClientPrincipal;
 import com.hazelcast.client.impl.operations.ClientReAuthOperation;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.AuthenticationResultParameters;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Address;
@@ -62,7 +61,7 @@ public abstract class AuthenticationBaseMessageTask<P>
     }
 
     @Override
-    public ClientMessage call() {
+    public Object call() {
         boolean authenticated = authenticate();
 
         if (authenticated) {
@@ -74,11 +73,11 @@ public abstract class AuthenticationBaseMessageTask<P>
 
     protected abstract boolean authenticate();
 
-    private ClientMessage handleUnauthenticated() {
+    private Object handleUnauthenticated() {
         throw new AuthenticationException("Invalid credentials!");
     }
 
-    private ClientMessage handleAuthenticated() {
+    private Object handleAuthenticated() {
         if (isOwnerConnection()) {
             final String uuid = getUuid();
             final String localMemberUUID = clientEngine.getLocalMember().getUuid();
@@ -100,9 +99,10 @@ public abstract class AuthenticationBaseMessageTask<P>
         clientEngine.bind(endpoint);
 
         final Address thisAddress = clientEngine.getThisAddress();
-        return AuthenticationResultParameters
-                .encode(thisAddress, principal.getUuid(), principal.getOwnerUuid());
+        return encodeAuth(thisAddress, principal.getUuid(), principal.getOwnerUuid());
     }
+
+    protected abstract ClientMessage encodeAuth(Address thisAddress, String uuid, String ownerUuid);
 
     protected abstract boolean isOwnerConnection();
 

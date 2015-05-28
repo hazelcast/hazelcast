@@ -17,23 +17,25 @@
 package com.hazelcast.client.impl.protocol.task.set;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.SetContainsAllParameters;
+import com.hazelcast.client.impl.protocol.codec.SetContainsAllCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.collection.impl.collection.operations.CollectionContainsOperation;
 import com.hazelcast.collection.impl.set.SetService;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.SetPermission;
 import com.hazelcast.spi.Operation;
+
 import java.security.Permission;
+import java.util.Set;
 
 /**
  * SetContainsAllMessageTask
  */
 public class SetContainsAllMessageTask
-        extends AbstractPartitionMessageTask<SetContainsAllParameters> {
+        extends AbstractPartitionMessageTask<SetContainsAllCodec.RequestParameters> {
 
     public SetContainsAllMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -41,17 +43,17 @@ public class SetContainsAllMessageTask
 
     @Override
     protected Operation prepareOperation() {
-        return new CollectionContainsOperation(parameters.name, parameters.valueSet);
+        return new CollectionContainsOperation(parameters.name, (Set<Data>) parameters.valueSet);
     }
 
     @Override
-    protected SetContainsAllParameters decodeClientMessage(ClientMessage clientMessage) {
-        return SetContainsAllParameters.decode(clientMessage);
+    protected SetContainsAllCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return SetContainsAllCodec.decodeRequest(clientMessage);
     }
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return BooleanResultParameters.encode((Boolean) response);
+        return SetContainsAllCodec.encodeResponse((Boolean) response);
     }
 
     @Override

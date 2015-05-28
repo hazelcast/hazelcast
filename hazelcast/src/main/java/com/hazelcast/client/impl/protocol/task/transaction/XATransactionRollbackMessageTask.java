@@ -17,8 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.transaction;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.VoidResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.XATransactionRollbackParameters;
+import com.hazelcast.client.impl.protocol.codec.XATransactionRollbackCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
@@ -31,18 +30,24 @@ import com.hazelcast.transaction.impl.xa.XAService;
 
 import java.security.Permission;
 
-public class XATransactionRollbackMessageTask extends AbstractCallableMessageTask<XATransactionRollbackParameters> {
+public class XATransactionRollbackMessageTask
+        extends AbstractCallableMessageTask<XATransactionRollbackCodec.RequestParameters> {
     public XATransactionRollbackMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected XATransactionRollbackParameters decodeClientMessage(ClientMessage clientMessage) {
-        return XATransactionRollbackParameters.decode(clientMessage);
+    protected XATransactionRollbackCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return XATransactionRollbackCodec.decodeRequest(clientMessage);
     }
 
     @Override
-    protected ClientMessage call() throws Exception {
+    protected ClientMessage encodeResponse(Object response) {
+        return XATransactionRollbackCodec.encodeResponse();
+    }
+
+    @Override
+    protected Object call() throws Exception {
         String transactionId = parameters.transactionId;
         TransactionContext transactionContext = endpoint.getTransactionContext(transactionId);
         if (transactionContext == null) {
@@ -51,7 +56,7 @@ public class XATransactionRollbackMessageTask extends AbstractCallableMessageTas
         Transaction transaction = TransactionAccessor.getTransaction(transactionContext);
         transaction.rollback();
         endpoint.removeTransactionContext(transactionId);
-        return VoidResultParameters.encode();
+        return null;
     }
 
     @Override

@@ -17,10 +17,11 @@
 package com.hazelcast.client.impl.protocol.task;
 
 import com.hazelcast.client.impl.client.ClientPrincipal;
-import com.hazelcast.client.impl.protocol.parameters.AuthenticationParameters;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.codec.ClientAuthenticationCodec;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.instance.Node;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.security.UsernamePasswordCredentials;
 
@@ -30,15 +31,15 @@ import java.util.logging.Level;
  * Default Authentication with username password handling task
  */
 public class AuthenticationMessageTask
-        extends AuthenticationBaseMessageTask<AuthenticationParameters> {
+        extends AuthenticationBaseMessageTask<ClientAuthenticationCodec.RequestParameters> {
 
     public AuthenticationMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected AuthenticationParameters decodeClientMessage(ClientMessage clientMessage) {
-        final AuthenticationParameters parameters = AuthenticationParameters.decode(clientMessage);
+    protected ClientAuthenticationCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        final ClientAuthenticationCodec.RequestParameters parameters = ClientAuthenticationCodec.decodeRequest(clientMessage);
         final String uuid = parameters.uuid;
         final String ownerUuid = parameters.ownerUuid;
         if (uuid != null && uuid.length() > 0) {
@@ -46,6 +47,16 @@ public class AuthenticationMessageTask
         }
         credentials = new UsernamePasswordCredentials(parameters.username, parameters.password);
         return parameters;
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return (ClientMessage) response;
+    }
+
+    @Override
+    protected ClientMessage encodeAuth(Address thisAddress, String uuid, String ownerUuid) {
+        return ClientAuthenticationCodec.encodeResponse(thisAddress, uuid, ownerUuid);
     }
 
     @Override

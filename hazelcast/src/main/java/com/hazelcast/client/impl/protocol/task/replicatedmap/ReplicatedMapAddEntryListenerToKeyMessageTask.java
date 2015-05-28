@@ -18,14 +18,14 @@ package com.hazelcast.client.impl.protocol.task.replicatedmap;
 
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.ReplicatedMapAddEntryListenerToKeyParameters;
+import com.hazelcast.client.impl.protocol.codec.ReplicatedMapAddEntryListenerToKeyCodec;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
 
 public class ReplicatedMapAddEntryListenerToKeyMessageTask
-        extends AbstractReplicatedMapAddEntryListenerMessageTask<ReplicatedMapAddEntryListenerToKeyParameters> {
+        extends AbstractReplicatedMapAddEntryListenerMessageTask<ReplicatedMapAddEntryListenerToKeyCodec.RequestParameters> {
 
     public ReplicatedMapAddEntryListenerToKeyMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -42,8 +42,20 @@ public class ReplicatedMapAddEntryListenerToKeyMessageTask
     }
 
     @Override
-    protected ReplicatedMapAddEntryListenerToKeyParameters decodeClientMessage(ClientMessage clientMessage) {
-        return ReplicatedMapAddEntryListenerToKeyParameters.decode(clientMessage);
+    protected ClientMessage encodeEvent(Data key, Data newValue, Data oldValue, Data mergingValue,
+                                        int type, String uuid, int numberOfAffectedEntries) {
+        return ReplicatedMapAddEntryListenerToKeyCodec.encodeEntryEvent(key, newValue,
+                oldValue, mergingValue, type, uuid, numberOfAffectedEntries);
+    }
+
+    @Override
+    protected ReplicatedMapAddEntryListenerToKeyCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return ReplicatedMapAddEntryListenerToKeyCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return ReplicatedMapAddEntryListenerToKeyCodec.encodeResponse((String) response);
     }
 
     @Override

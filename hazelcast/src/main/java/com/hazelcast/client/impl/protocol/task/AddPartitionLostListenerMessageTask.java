@@ -17,9 +17,7 @@
 package com.hazelcast.client.impl.protocol.task;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.AddListenerResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.AddPartitionLostListenerParameters;
-import com.hazelcast.client.impl.protocol.parameters.PartitionLostEventParameters;
+import com.hazelcast.client.impl.protocol.codec.ClientAddPartitionLostListenerCodec;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.partition.InternalPartitionService;
@@ -31,14 +29,14 @@ import java.security.Permission;
 import static com.hazelcast.partition.InternalPartitionService.PARTITION_LOST_EVENT_TOPIC;
 
 public class AddPartitionLostListenerMessageTask
-        extends AbstractCallableMessageTask<AddPartitionLostListenerParameters> {
+        extends AbstractCallableMessageTask<ClientAddPartitionLostListenerCodec.RequestParameters> {
 
     public AddPartitionLostListenerMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected ClientMessage call() throws Exception {
+    protected Object call() throws Exception {
         final InternalPartitionService partitionService = getService(getServiceName());
 
         final PartitionLostListener listener = new PartitionLostListener() {
@@ -46,7 +44,8 @@ public class AddPartitionLostListenerMessageTask
             public void partitionLost(PartitionLostEvent event) {
                 if (endpoint.isAlive()) {
 
-                    ClientMessage eventMessage = PartitionLostEventParameters.encode(event.getPartitionId(),
+                    ClientMessage eventMessage =
+                            ClientAddPartitionLostListenerCodec.encodePartitionLostEventEvent(event.getPartitionId(),
                             event.getLostBackupCount(), event.getEventSource());
                     sendClientMessage(null, eventMessage);
                 }
@@ -55,13 +54,18 @@ public class AddPartitionLostListenerMessageTask
 
         final String registrationId = partitionService.addPartitionLostListener(listener);
         endpoint.setListenerRegistration(getServiceName(), PARTITION_LOST_EVENT_TOPIC, registrationId);
-        return AddListenerResultParameters.encode(registrationId);
+        return registrationId;
 
     }
 
     @Override
-    protected AddPartitionLostListenerParameters decodeClientMessage(ClientMessage clientMessage) {
-        return AddPartitionLostListenerParameters.decode(clientMessage);
+    protected ClientAddPartitionLostListenerCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return ClientAddPartitionLostListenerCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return ClientAddPartitionLostListenerCodec.encodeResponse((String) response);
     }
 
     @Override

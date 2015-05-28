@@ -17,8 +17,7 @@
 package com.hazelcast.client.impl.protocol.task;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.CreateProxyParameters;
-import com.hazelcast.client.impl.protocol.parameters.VoidResultParameters;
+import com.hazelcast.client.impl.protocol.codec.ClientCreateProxyCodec;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.security.permission.ActionConstants;
@@ -27,7 +26,7 @@ import com.hazelcast.spi.ProxyService;
 import java.security.Permission;
 import java.util.Collection;
 
-public class CreateProxyMessageTask extends AbstractCallableMessageTask<CreateProxyParameters> {
+public class CreateProxyMessageTask extends AbstractCallableMessageTask<ClientCreateProxyCodec.RequestParameters> {
 
     public CreateProxyMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -35,15 +34,20 @@ public class CreateProxyMessageTask extends AbstractCallableMessageTask<CreatePr
 
 
     @Override
-    protected ClientMessage call() {
+    protected Object call() {
         ProxyService proxyService = clientEngine.getProxyService();
         proxyService.initializeDistributedObject(parameters.serviceName, parameters.name);
-        return VoidResultParameters.encode();
+        return null;
     }
 
     @Override
-    protected CreateProxyParameters decodeClientMessage(ClientMessage clientMessage) {
-        return CreateProxyParameters.decode(clientMessage);
+    protected ClientCreateProxyCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return ClientCreateProxyCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return ClientCreateProxyCodec.encodeResponse();
     }
 
     @Override

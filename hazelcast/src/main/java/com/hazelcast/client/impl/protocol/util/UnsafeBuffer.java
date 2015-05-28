@@ -37,7 +37,6 @@ public class UnsafeBuffer implements ClientProtocolBuffer {
     private static final String DISABLE_BOUNDS_CHECKS_PROP_NAME = "hazelcast.disable.bounds.checks";
     private static final boolean SHOULD_BOUNDS_CHECK = !Boolean.getBoolean(DISABLE_BOUNDS_CHECKS_PROP_NAME);
 
-    private static final byte[] NULL_BYTES = "null".getBytes(UTF_8);
     private static final ByteOrder NATIVE_BYTE_ORDER = ByteOrder.nativeOrder();
     private static final ByteOrder PROTOCOL_BYTE_ORDER = ByteOrder.LITTLE_ENDIAN;
     private static final Unsafe UNSAFE = UnsafeHelper.UNSAFE;
@@ -208,7 +207,7 @@ public class UnsafeBuffer implements ClientProtocolBuffer {
 
     @Override
     public int putStringUtf8(final int index, final String value, final int maxEncodedSize) {
-        final byte[] bytes = value != null ? value.getBytes(UTF_8) : NULL_BYTES;
+        final byte[] bytes = value.getBytes(UTF_8);
         if (bytes.length > maxEncodedSize) {
             throw new IllegalArgumentException("Encoded string larger than maximum size: " + maxEncodedSize);
         }

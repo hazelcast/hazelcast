@@ -17,8 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.map;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.MapTryRemoveParameters;
+import com.hazelcast.client.impl.protocol.codec.MapTryRemoveCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.map.impl.MapService;
@@ -31,20 +30,21 @@ import com.hazelcast.spi.Operation;
 import java.security.Permission;
 import java.util.concurrent.TimeUnit;
 
-public class MapTryRemoveMessageTask extends AbstractPartitionMessageTask<MapTryRemoveParameters> {
+public class MapTryRemoveMessageTask
+        extends AbstractPartitionMessageTask<MapTryRemoveCodec.RequestParameters> {
 
     public MapTryRemoveMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected MapTryRemoveParameters decodeClientMessage(ClientMessage clientMessage) {
-        return MapTryRemoveParameters.decode(clientMessage);
+    protected MapTryRemoveCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return MapTryRemoveCodec.decodeRequest(clientMessage);
     }
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return BooleanResultParameters.encode((Boolean) response);
+        return MapTryRemoveCodec.encodeResponse((Boolean) response);
     }
 
     @Override

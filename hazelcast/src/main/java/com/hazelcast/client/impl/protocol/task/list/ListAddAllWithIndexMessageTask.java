@@ -17,26 +17,26 @@
 package com.hazelcast.client.impl.protocol.task.list;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.ListAddAllWithIndexParameters;
+import com.hazelcast.client.impl.protocol.codec.ListAddAllWithIndexCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.collection.impl.list.ListService;
 import com.hazelcast.collection.impl.list.operations.ListAddAllOperation;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.ListPermission;
 import com.hazelcast.spi.Operation;
 
 import java.security.Permission;
+import java.util.List;
 
 /**
  * Client Protocol Task for handling messages with type id:
  * {@link com.hazelcast.client.impl.protocol.parameters.ListMessageType#LIST_ADDALLWITHINDEX}
- *
  */
 public class ListAddAllWithIndexMessageTask
-        extends AbstractPartitionMessageTask<ListAddAllWithIndexParameters> {
+        extends AbstractPartitionMessageTask<ListAddAllWithIndexCodec.RequestParameters> {
 
     public ListAddAllWithIndexMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -44,17 +44,17 @@ public class ListAddAllWithIndexMessageTask
 
     @Override
     protected Operation prepareOperation() {
-        return new ListAddAllOperation(parameters.name, parameters.index, parameters.valueList);
+        return new ListAddAllOperation(parameters.name, parameters.index, (List<Data>) parameters.valueList);
     }
 
     @Override
-    protected ListAddAllWithIndexParameters decodeClientMessage(ClientMessage clientMessage) {
-        return ListAddAllWithIndexParameters.decode(clientMessage);
+    protected ListAddAllWithIndexCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return ListAddAllWithIndexCodec.decodeRequest(clientMessage);
     }
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return BooleanResultParameters.encode((Boolean) response);
+        return ListAddAllWithIndexCodec.encodeResponse((Boolean) response);
     }
 
     @Override

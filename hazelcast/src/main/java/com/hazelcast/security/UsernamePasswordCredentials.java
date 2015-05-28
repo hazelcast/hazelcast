@@ -60,7 +60,7 @@ public class UsernamePasswordCredentials extends AbstractCredentials {
      */
     public String getPassword() {
         if (password == null) {
-            return "";
+            return null;
         } else {
             return bytesToString(password);
         }

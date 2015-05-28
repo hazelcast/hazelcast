@@ -17,8 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.replicatedmap;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.DataEntryListResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.ReplicatedMapEntrySetParameters;
+import com.hazelcast.client.impl.protocol.codec.ReplicatedMapEntrySetCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
@@ -29,38 +28,41 @@ import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.ReplicatedMapPermission;
 
 import java.security.Permission;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-public class ReplicatedMapEntrySetMessageTask extends AbstractCallableMessageTask<ReplicatedMapEntrySetParameters> {
+public class ReplicatedMapEntrySetMessageTask
+        extends AbstractCallableMessageTask<ReplicatedMapEntrySetCodec.RequestParameters> {
 
     public ReplicatedMapEntrySetMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected ClientMessage call() throws Exception {
+    protected Object call() throws Exception {
         ReplicatedMapService replicatedMapService = getService(getServiceName());
         final ReplicatedRecordStore recordStore = replicatedMapService.getReplicatedRecordStore(parameters.name, true);
 
         final Set<Map.Entry> entrySet = recordStore.entrySet();
-        List<Data> keys = new ArrayList<Data>(entrySet.size());
-        List<Data> values = new ArrayList<Data>(entrySet.size());
+        HashMap<Data, Data> dataMap = new HashMap<Data, Data>();
 
         for (Map.Entry entry : entrySet) {
-            keys.add(serializationService.toData(entry.getKey()));
-            values.add(serializationService.toData(entry.getValue()));
+            dataMap.put(serializationService.toData(entry.getKey()), serializationService.toData(entry.getValue()));
         }
 
-        return DataEntryListResultParameters.encode(keys, values);
+        return dataMap;
     }
 
 
     @Override
-    protected ReplicatedMapEntrySetParameters decodeClientMessage(ClientMessage clientMessage) {
-        return ReplicatedMapEntrySetParameters.decode(clientMessage);
+    protected ReplicatedMapEntrySetCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return ReplicatedMapEntrySetCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return ReplicatedMapEntrySetCodec.encodeResponse((Map<Data, Data>) response);
     }
 
     @Override

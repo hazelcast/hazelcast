@@ -17,8 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.transactionalmap;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.TransactionalMapContainsKeyParameters;
+import com.hazelcast.client.impl.protocol.codec.TransactionalMapContainsKeyCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractTransactionalMessageTask;
 import com.hazelcast.core.TransactionalMap;
 import com.hazelcast.instance.Node;
@@ -31,18 +30,17 @@ import com.hazelcast.transaction.TransactionContext;
 import java.security.Permission;
 
 public class TransactionalMapContainsKeyMessageTask
-        extends AbstractTransactionalMessageTask<TransactionalMapContainsKeyParameters> {
+        extends AbstractTransactionalMessageTask<TransactionalMapContainsKeyCodec.RequestParameters> {
 
     public TransactionalMapContainsKeyMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected ClientMessage innerCall() throws Exception {
+    protected Object innerCall() throws Exception {
         final TransactionContext context = getEndpoint().getTransactionContext(parameters.txnId);
         final TransactionalMap map = context.getMap(parameters.name);
-        boolean containsKey = map.containsKey(parameters.key);
-        return BooleanResultParameters.encode(containsKey);
+        return map.containsKey(parameters.key);
     }
 
     @Override
@@ -51,8 +49,13 @@ public class TransactionalMapContainsKeyMessageTask
     }
 
     @Override
-    protected TransactionalMapContainsKeyParameters decodeClientMessage(ClientMessage clientMessage) {
-        return TransactionalMapContainsKeyParameters.decode(clientMessage);
+    protected TransactionalMapContainsKeyCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return TransactionalMapContainsKeyCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return TransactionalMapContainsKeyCodec.encodeResponse((Boolean) response);
     }
 
     @Override

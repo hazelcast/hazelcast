@@ -30,7 +30,7 @@ import java.util.List;
 
 public class CodecModel {
 
-    private static final String PARAMETERS_PACKAGE = "com.hazelcast.client.impl.protocol.parameters.";
+    private static final String PARAMETERS_PACKAGE = "com.hazelcast.client.impl.protocol.codec.";
     private static final String DATA_FULL_NAME = "com.hazelcast.nio.serialization.Data";
 
     private final Lang lang;
@@ -190,6 +190,10 @@ public class CodecModel {
             if (lang == Lang.CSHARP) {
                 return convertTypeToCSharp(type);
             }
+            if (type.startsWith("java.util.List<") || type.startsWith("java.util.Set<")
+                    || type.startsWith("java.util.Collection<")) {
+                return type.replaceAll("java.util.*<(.*)>", "java.util.Collection<$1>");
+            }
             return type;
         }
 
@@ -201,19 +205,29 @@ public class CodecModel {
         }
 
         public String getSizeStringJava() {
-            return resolveSizeStringJava(type, name);
+            String stringJava = resolveSizeStringJava(type, name);
+            return getNullableCheckedSizeStringJava(stringJava);
+        }
+
+        private String getNullableCheckedSizeStringJava(String innerString) {
+            StringBuilder sizeString = new StringBuilder();
+            if (isNullable) {
+                sizeString.append("dataSize += Bits.BOOLEAN_SIZE_IN_BYTES;\n");
+                sizeString.append("        if (" + name + " != null) {\n");
+                sizeString.append(innerString);
+                sizeString.append("        }\n");
+                return sizeString.toString();
+            } else {
+                return innerString;
+            }
         }
 
         private String resolveSizeStringJava(String type, String name) {
             StringBuilder sizeString = new StringBuilder();
-            if (isNullable) {
-                sizeString.append("dataSize += Bits.BOOLEAN_SIZE_IN_BYTES;\n")
-                        .append("        if (" + name + " == null) {\n")
-                        .append("            return dataSize;\n")
-                        .append("        }\n");
-            }
             if (type.equals(DATA_FULL_NAME)) {
                 sizeString.append("dataSize += ParameterUtil.calculateDataSize(" + name + ");");
+            } else if (type.equals("java.lang.Integer")) {
+                sizeString.append("dataSize += Bits.INT_SIZE_IN_BYTES;");
             } else if (type.equals("java.lang.String")) {
                 sizeString.append("dataSize += ParameterUtil.calculateStringDataSize(" + name + ");");
             } else if (type.equals("int") || type.equals("long") || type.equals("short")
@@ -221,8 +235,7 @@ public class CodecModel {
                 sizeString.append("dataSize += Bits." + type.toUpperCase() + "_SIZE_IN_BYTES;");
             } else if (type.equals("com.hazelcast.nio.Address")) {
                 sizeString.append("dataSize += " + PARAMETERS_PACKAGE + "AddressCodec.calculateDataSize(" + name + ");");
-            } else if (type.equals("com.hazelcast.core.Member")
-                    || type.equals("com.hazelcast.client.impl.MemberImpl")) {
+            } else if (type.equals("com.hazelcast.core.Member")) {
                 sizeString.append("dataSize += " + PARAMETERS_PACKAGE + "MemberCodec.calculateDataSize(" + name + ");");
             } else if (type.equals("com.hazelcast.cluster.client.MemberAttributeChange")) {
                 sizeString.append("dataSize += " + PARAMETERS_PACKAGE
@@ -230,6 +243,14 @@ public class CodecModel {
             } else if (type.equals("com.hazelcast.map.impl.SimpleEntryView<" + DATA_FULL_NAME
                     + "," + DATA_FULL_NAME + ">")) {
                 sizeString.append("dataSize += " + PARAMETERS_PACKAGE + "EntryViewCodec.calculateDataSize(" + name + ");");
+            } else if (type.equals("com.hazelcast.client.impl.client.DistributedObjectInfo")) {
+                sizeString.append("dataSize += "
+                        + PARAMETERS_PACKAGE + "DistributedObjectInfoCodec.calculateDataSize(" + name + ");");
+            } else if (type.equals("com.hazelcast.mapreduce.JobPartitionState")) {
+                sizeString.append("dataSize += "
+                        + PARAMETERS_PACKAGE + "JobPartitionStateCodec.calculateDataSize(" + name + ");");
+            } else if (type.equals("javax.transaction.xa.Xid")) {
+                sizeString.append("dataSize += " + PARAMETERS_PACKAGE + "XIDCodec.calculateDataSize(" + name + ");");
             } else if (type.startsWith("java.util.Map<")) {
                 sizeString.append(getMapSizeStringJava(type, name));
             } else if (type.startsWith("java.util.List<") || type.startsWith("java.util.Set<")
@@ -268,14 +289,14 @@ public class CodecModel {
         private String getMapSizeStringJava(String type, String name) {
             StringBuilder builder = new StringBuilder();
             String keyType = CodeGenerationUtils.getKeyTypeInsideMap(type);
-            builder.append("java.util.Set<" + keyType + "> " + name
-                    + "_keySet = (java.util.Set<" + keyType + ">) " + name + ".keySet();\n     ");
-            builder.append(resolveSizeStringJava("java.util.Set<" + keyType + "> ", name + "_keySet"));
+            builder.append("java.util.Collection<" + keyType + "> " + name
+                    + "_keySet = (java.util.Collection<" + keyType + ">) " + name + ".keySet();\n     ");
+            builder.append(resolveSizeStringJava("java.util.Collection<" + keyType + "> ", name + "_keySet"));
 
             String valueType = CodeGenerationUtils.getValueTypeInsideMap(type);
-            builder.append("java.util.List<" + valueType + "> " + name
-                    + "_values = (java.util.List<" + valueType + "> )" + name + ".values();\n       ");
-            builder.append(resolveSizeStringJava("java.util.List<" + valueType + ">", name + "_values"));
+            builder.append("java.util.Collection<" + valueType + "> " + name
+                    + "_values = (java.util.Collection<" + valueType + "> )" + name + ".values();\n       ");
+            builder.append(resolveSizeStringJava("java.util.Collection<" + valueType + ">", name + "_values"));
             return builder.toString();
         }
 
@@ -314,20 +335,20 @@ public class CodecModel {
         }
 
         private String getNullableCheckedGetterStringJava(String innerGetterString) {
-            String getterString = type + " " + name + ";\n";
+            String getterString = type + " " + name + ";\n        ";
             if (!isPrimitive) {
-                getterString += name + " = null ;\n";
+                getterString += name + " = null ;\n        ";
             }
 
             if (isNullable) {
-                getterString += " boolean " + name + "_isNull = clientMessage.getBoolean();\n";
-                getterString += " if(!" + name + "_isNull) { \n";
+                getterString += " boolean " + name + "_isNull = clientMessage.getBoolean();\n        ";
+                getterString += " if(!" + name + "_isNull) { \n        ";
             }
 
             getterString += innerGetterString;
 
             if (isNullable) {
-                getterString += " \n}\n";
+                getterString += "\n             }\n        ";
             }
             return getterString;
         }
@@ -337,17 +358,25 @@ public class CodecModel {
 
             if (type.equals(DATA_FULL_NAME)) {
                 getterString = name + " = clientMessage.getData();";
+            } else if (type.equals("java.lang.Integer")) {
+                getterString = name + " = clientMessage.getInt();";
             } else if (type.equals("java.lang.String")) {
                 getterString = name + " = clientMessage.getStringUtf8();";
             } else if (type.equals("com.hazelcast.nio.Address")) {
                 getterString = name + " = " + PARAMETERS_PACKAGE + "AddressCodec.decode(clientMessage);";
-            } else if (type.equals("com.hazelcast.core.Member") || type.equals("com.hazelcast.client.impl.MemberImpl")) {
+            } else if (type.equals("com.hazelcast.core.Member")) {
                 getterString = name + " = " + PARAMETERS_PACKAGE + "MemberCodec.decode(clientMessage);";
             } else if (type.equals("com.hazelcast.cluster.client.MemberAttributeChange")) {
                 getterString = name + " = " + PARAMETERS_PACKAGE + "MemberAttributeChangeCodec.decode(clientMessage);";
             } else if (type.equals("com.hazelcast.map.impl.SimpleEntryView<" + DATA_FULL_NAME
                     + "," + DATA_FULL_NAME + ">")) {
                 getterString = name + " = " + PARAMETERS_PACKAGE + "EntryViewCodec.decode(clientMessage);";
+            } else if (type.equals("com.hazelcast.client.impl.client.DistributedObjectInfo")) {
+                getterString = name + " = " + PARAMETERS_PACKAGE + "DistributedObjectInfoCodec.decode(clientMessage);";
+            } else if (type.equals("com.hazelcast.mapreduce.JobPartitionState")) {
+                getterString = name + " = " + PARAMETERS_PACKAGE + "JobPartitionStateCodec.decode(clientMessage);";
+            } else if (type.equals("javax.transaction.xa.Xid")) {
+                getterString = name + " = " + PARAMETERS_PACKAGE + "XIDCodec.decode(clientMessage);";
             } else if (type.startsWith("java.util.Map<")) {
                 getterString = getMapGetterString(type, name);
             } else if (type.startsWith("java.util.List<") || type.startsWith("java.util.Set<")
@@ -437,7 +466,7 @@ public class CodecModel {
 
         public String getDataGetterStringCSharp() {
             String getterString;
-            if (type.equals("" + DATA_FULL_NAME + " ")) {
+            if (type.equals(DATA_FULL_NAME + " ")) {
                 getterString = "GetData";
             } else if (type.equals("java.lang.String")) {
                 getterString = "GetStringUtf8";
@@ -464,32 +493,51 @@ public class CodecModel {
         }
 
         public String getDataSetterStringJava() {
-            return resolveDataSetterStringJava(type, name);
+            String setterString = resolveDataSetterStringJava(type, name);
+            return getNullableCheckedSetterStringJava(setterString);
+        }
+
+        private String getNullableCheckedSetterStringJava(String innerGetterString) {
+            StringBuilder setterString = new StringBuilder();
+
+
+            String isNullVariableName = name + "_isNull";
+            if (isNullable) {
+                setterString.append("boolean " + isNullVariableName + ";\n            ");
+                setterString.append("if (" + name + " == null) {\n            ");
+                setterString.append("    " + isNullVariableName + " = true;\n            ");
+                setterString.append("    clientMessage.set(" + isNullVariableName + ");\n            ");
+                setterString.append("} else {\n            ");
+                setterString.append("" + isNullVariableName + " = false;\n            ");
+                setterString.append("clientMessage.set(" + isNullVariableName + ");\n            ");
+                setterString.append(innerGetterString);
+                setterString.append("} \n            ");
+
+                return setterString.toString();
+            } else {
+                return innerGetterString;
+            }
+
         }
 
         private String resolveDataSetterStringJava(String type, String name) {
             StringBuilder setterString = new StringBuilder();
-            if (isNullable) {
-                setterString.append("            boolean isNull;\n")
-                        .append("            if (" + name + " == null) {\n")
-                        .append("                isNull = true;\n")
-                        .append("                clientMessage.set(isNull);\n")
-                        .append("                return clientMessage;\n")
-                        .append("            }\n")
-                        .append("            isNull = false;\n")
-                        .append("            clientMessage.set(isNull);\n");
-            }
-
             if (type.equals("com.hazelcast.nio.Address")) {
-                setterString.append("" + PARAMETERS_PACKAGE + "AddressCodec.encode(" + name + ",clientMessage);");
-            } else if (type.equals("com.hazelcast.core.Member") || type.equals("com.hazelcast.client.impl.MemberImpl")) {
-                setterString.append("" + PARAMETERS_PACKAGE + "MemberCodec.encode(" + name + ", clientMessage);");
+                setterString.append(PARAMETERS_PACKAGE + "AddressCodec.encode(" + name + ",clientMessage);");
+            } else if (type.equals("com.hazelcast.core.Member")) {
+                setterString.append(PARAMETERS_PACKAGE + "MemberCodec.encode(" + name + ", clientMessage);");
             } else if (type.equals("com.hazelcast.cluster.client.MemberAttributeChange")) {
-                setterString.append("" + PARAMETERS_PACKAGE
+                setterString.append(PARAMETERS_PACKAGE
                         + "MemberAttributeChangeCodec.encode(" + name + ", clientMessage);");
             } else if (type.equals("com.hazelcast.map.impl.SimpleEntryView<" + DATA_FULL_NAME
                     + "," + DATA_FULL_NAME + ">")) {
-                setterString.append("" + PARAMETERS_PACKAGE + "EntryViewCodec.encode(" + name + ", clientMessage);");
+                setterString.append(PARAMETERS_PACKAGE + "EntryViewCodec.encode(" + name + ", clientMessage);");
+            } else if (type.equals("com.hazelcast.client.impl.client.DistributedObjectInfo")) {
+                setterString.append(PARAMETERS_PACKAGE + "DistributedObjectInfoCodec.encode(" + name + ", clientMessage);");
+            } else if (type.equals("com.hazelcast.mapreduce.JobPartitionState")) {
+                setterString.append(PARAMETERS_PACKAGE + "JobPartitionStateCodec.encode(" + name + ", clientMessage);");
+            } else if (type.equals("javax.transaction.xa.Xid")) {
+                setterString.append(PARAMETERS_PACKAGE + "XIDCodec.encode(" + name + ", clientMessage);");
             } else if (type.startsWith("java.util.Map<")) {
                 setterString.append(getMapSetterString(type, name));
             } else if (type.startsWith("java.util.List<") || type.startsWith("java.util.Set<")
@@ -532,21 +580,21 @@ public class CodecModel {
             StringBuilder builder = new StringBuilder();
 
             String keyType = CodeGenerationUtils.getKeyTypeInsideMap(type);
-            builder.append("java.util.Set<" + keyType + "> " + name
-                    + "_keySet = (java.util.Set<" + keyType + ">) " + name + ".keySet();\n     ");
-            builder.append(resolveDataSetterStringJava("java.util.Set<" + keyType + "> ", name + "_keySet"));
+            builder.append("java.util.Collection<" + keyType + "> " + name
+                    + "_keySet = (java.util.Collection<" + keyType + ">) " + name + ".keySet();\n     ");
+            builder.append(resolveDataSetterStringJava("java.util.Collection<" + keyType + "> ", name + "_keySet"));
 
             String valueType = CodeGenerationUtils.getValueTypeInsideMap(type);
-            builder.append("java.util.List<" + valueType + "> " + name
-                    + "_values = (java.util.List<" + valueType + "> )" + name + ".values();\n       ");
-            builder.append(resolveDataSetterStringJava("java.util.List<" + valueType + ">", name + "_values"));
+            builder.append("java.util.Collection<" + valueType + "> " + name
+                    + "_values = (java.util.Collection<" + valueType + "> )" + name + ".values();\n       ");
+            builder.append(resolveDataSetterStringJava("java.util.Collection<" + valueType + ">", name + "_values"));
 
             return builder.toString();
         }
 //
 //        public String getDataSetterStringCSharp() {
 //            String getterString;
-//            if (type.equals("" + DATA_FULL_NAME  + " ")) {
+//            if (type.equals(DATA_FULL_NAME  + " ")) {
 //                getterString = "GetData";
 //            } else if (type.equals("java.lang.String")) {
 //                getterString = "GetStringUtf8";
@@ -566,7 +614,7 @@ public class CodecModel {
 
         public String convertTypeToCSharp(String type) {
             String getterString;
-            if (type.equals("" + DATA_FULL_NAME + " ")) {
+            if (type.equals(DATA_FULL_NAME + " ")) {
                 getterString = "IData";
             } else if (type.equals("java.lang.String")) {
                 getterString = "string";

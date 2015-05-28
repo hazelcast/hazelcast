@@ -17,29 +17,33 @@
 package com.hazelcast.client.impl.protocol.task;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.RemoveDistributedObjectListenerParameters;
+import com.hazelcast.client.impl.protocol.codec.ClientRemoveDistributedObjectListenerCodec;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
 
 import java.security.Permission;
 
 public class RemoveDistrubtedObjectListenerMessageTask
-        extends AbstractCallableMessageTask<RemoveDistributedObjectListenerParameters> {
+        extends AbstractCallableMessageTask<ClientRemoveDistributedObjectListenerCodec.RequestParameters> {
 
     public RemoveDistrubtedObjectListenerMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected ClientMessage call() throws Exception {
+    protected Object call() throws Exception {
         boolean success = clientEngine.getProxyService().removeProxyListener(parameters.registrationId);
-        return BooleanResultParameters.encode(success);
+        return success;
     }
 
     @Override
-    protected RemoveDistributedObjectListenerParameters decodeClientMessage(ClientMessage clientMessage) {
-        return RemoveDistributedObjectListenerParameters.decode(clientMessage);
+    protected ClientRemoveDistributedObjectListenerCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return ClientRemoveDistributedObjectListenerCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return ClientRemoveDistributedObjectListenerCodec.encodeResponse((Boolean) response);
     }
 
     @Override

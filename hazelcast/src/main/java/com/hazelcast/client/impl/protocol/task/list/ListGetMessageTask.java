@@ -17,12 +17,13 @@
 package com.hazelcast.client.impl.protocol.task.list;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.ListGetParameters;
+import com.hazelcast.client.impl.protocol.codec.ListGetCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.collection.impl.list.ListService;
 import com.hazelcast.collection.impl.list.operations.ListGetOperation;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.ListPermission;
 import com.hazelcast.spi.Operation;
@@ -32,10 +33,9 @@ import java.security.Permission;
 /**
  * Client Protocol Task for handling messages with type id:
  * {@link com.hazelcast.client.impl.protocol.parameters.ListMessageType#LIST_GET}
- *
  */
 public class ListGetMessageTask
-        extends AbstractPartitionMessageTask<ListGetParameters> {
+        extends AbstractPartitionMessageTask<ListGetCodec.RequestParameters> {
 
     public ListGetMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -47,8 +47,13 @@ public class ListGetMessageTask
     }
 
     @Override
-    protected ListGetParameters decodeClientMessage(ClientMessage clientMessage) {
-        return ListGetParameters.decode(clientMessage);
+    protected ListGetCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return ListGetCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return ListGetCodec.encodeResponse((Data) response);
     }
 
     @Override

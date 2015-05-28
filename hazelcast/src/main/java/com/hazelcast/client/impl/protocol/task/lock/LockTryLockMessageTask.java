@@ -17,8 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.lock;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.LockTryLockParameters;
+import com.hazelcast.client.impl.protocol.codec.LockTryLockCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.concurrent.lock.InternalLockNamespace;
 import com.hazelcast.concurrent.lock.LockService;
@@ -33,7 +32,8 @@ import com.hazelcast.spi.Operation;
 import java.security.Permission;
 import java.util.concurrent.TimeUnit;
 
-public class LockTryLockMessageTask extends AbstractPartitionMessageTask<LockTryLockParameters> {
+public class LockTryLockMessageTask
+        extends AbstractPartitionMessageTask<LockTryLockCodec.RequestParameters> {
 
     public LockTryLockMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -47,13 +47,13 @@ public class LockTryLockMessageTask extends AbstractPartitionMessageTask<LockTry
     }
 
     @Override
-    protected LockTryLockParameters decodeClientMessage(ClientMessage clientMessage) {
-        return LockTryLockParameters.decode(clientMessage);
+    protected LockTryLockCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return LockTryLockCodec.decodeRequest(clientMessage);
     }
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return BooleanResultParameters.encode((Boolean) response);
+        return LockTryLockCodec.encodeResponse((Boolean) response);
     }
 
     @Override

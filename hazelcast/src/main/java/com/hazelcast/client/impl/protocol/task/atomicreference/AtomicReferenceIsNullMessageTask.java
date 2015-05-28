@@ -17,8 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.atomicreference;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.AtomicReferenceIsNullParameters;
-import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
+import com.hazelcast.client.impl.protocol.codec.AtomicReferenceIsNullCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.concurrent.atomicreference.AtomicReferenceService;
 import com.hazelcast.concurrent.atomicreference.operations.IsNullOperation;
@@ -30,7 +29,8 @@ import com.hazelcast.spi.Operation;
 
 import java.security.Permission;
 
-public class AtomicReferenceIsNullMessageTask extends AbstractPartitionMessageTask<AtomicReferenceIsNullParameters> {
+public class AtomicReferenceIsNullMessageTask
+        extends AbstractPartitionMessageTask<AtomicReferenceIsNullCodec.RequestParameters> {
 
     public AtomicReferenceIsNullMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -42,13 +42,13 @@ public class AtomicReferenceIsNullMessageTask extends AbstractPartitionMessageTa
     }
 
     @Override
-    protected AtomicReferenceIsNullParameters decodeClientMessage(ClientMessage clientMessage) {
-        return AtomicReferenceIsNullParameters.decode(clientMessage);
+    protected AtomicReferenceIsNullCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return AtomicReferenceIsNullCodec.decodeRequest(clientMessage);
     }
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return BooleanResultParameters.encode((Boolean) response);
+        return AtomicReferenceIsNullCodec.encodeResponse((Boolean) response);
     }
 
     @Override

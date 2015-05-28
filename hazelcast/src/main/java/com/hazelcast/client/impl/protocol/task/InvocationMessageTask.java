@@ -18,11 +18,9 @@ package com.hazelcast.client.impl.protocol.task;
 
 import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.GenericResultParameters;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.Operation;
@@ -52,22 +50,9 @@ public abstract class InvocationMessageTask<P> extends AbstractMessageTask<P> im
 
     protected abstract Operation prepareOperation();
 
-    protected ClientMessage encodeResponse(Object response) {
-        final ClientMessage resultParameters;
-        try {
-            final Data responseData = serializationService.toData(response);
-            resultParameters = GenericResultParameters.encode(responseData);
-            return resultParameters;
-        } catch (ClassCastException e) {
-            logger.severe("Unsupported response type :" + response.getClass().getName());
-            throw e;
-        }
-    }
-
     @Override
     public void onResponse(Object response) {
-        final ClientMessage resultParameters = encodeResponse(response);
-        sendClientMessage(resultParameters);
+        sendResponse(response);
     }
 
     @Override

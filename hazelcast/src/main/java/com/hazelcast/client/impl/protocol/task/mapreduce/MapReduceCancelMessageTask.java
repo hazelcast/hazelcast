@@ -17,8 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.mapreduce;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.MapReduceCancelParameters;
+import com.hazelcast.client.impl.protocol.codec.MapReduceCancelCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.mapreduce.impl.MapReduceService;
@@ -29,14 +28,15 @@ import com.hazelcast.nio.Connection;
 import java.security.Permission;
 import java.util.concurrent.CancellationException;
 
-public class MapReduceCancelMessageTask extends AbstractCallableMessageTask<MapReduceCancelParameters> {
+public class MapReduceCancelMessageTask
+        extends AbstractCallableMessageTask<MapReduceCancelCodec.RequestParameters> {
 
     public MapReduceCancelMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected ClientMessage call() throws Exception {
+    protected Object call() throws Exception {
 
         MapReduceService mapReduceService = getService(MapReduceService.SERVICE_NAME);
         Address jobOwner = mapReduceService.getLocalAddress();
@@ -47,12 +47,17 @@ public class MapReduceCancelMessageTask extends AbstractCallableMessageTask<MapR
             Exception exception = new CancellationException("Operation was cancelled by the user");
             supervisor.cancelAndNotify(exception);
         }
-        return BooleanResultParameters.encode(true);
+        return true;
     }
 
     @Override
-    protected MapReduceCancelParameters decodeClientMessage(ClientMessage clientMessage) {
-        return MapReduceCancelParameters.decode(clientMessage);
+    protected MapReduceCancelCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return MapReduceCancelCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return MapReduceCancelCodec.encodeResponse((Boolean) response);
     }
 
     @Override

@@ -17,12 +17,10 @@
 package com.hazelcast.client.proxy;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.MapReduceCancelParameters;
-import com.hazelcast.client.impl.protocol.parameters.MapReduceForCustomParameters;
-import com.hazelcast.client.impl.protocol.parameters.MapReduceForMapParameters;
-import com.hazelcast.client.impl.protocol.parameters.MapReduceJobProcessInformationParameters;
-import com.hazelcast.client.impl.protocol.parameters.MapReduceJobProcessInformationResultParameters;
+import com.hazelcast.client.impl.protocol.codec.MapReduceCancelCodec;
+import com.hazelcast.client.impl.protocol.codec.MapReduceForCustomCodec;
+import com.hazelcast.client.impl.protocol.codec.MapReduceForMapCodec;
+import com.hazelcast.client.impl.protocol.codec.MapReduceJobProcessInformationCodec;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.client.spi.impl.ClientInvocationFuture;
@@ -46,6 +44,7 @@ import com.hazelcast.mapreduce.impl.ListKeyValueSource;
 import com.hazelcast.mapreduce.impl.MapKeyValueSource;
 import com.hazelcast.mapreduce.impl.MultiMapKeyValueSource;
 import com.hazelcast.mapreduce.impl.SetKeyValueSource;
+import com.hazelcast.mapreduce.impl.task.TransferableJobProcessInformation;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.AbstractCompletableFuture;
@@ -97,14 +96,6 @@ public class ClientMapReduceProxy
     public String toString() {
         return "JobTracker{" + "name='" + getName() + '\'' + '}';
     }
-
-    /*
-     * Removed for now since it is moved to Hazelcast 3.3
-    @Override
-    public <K, V> ProcessJob<K, V> newProcessJob(KeyValueSource<K, V> source) {
-        // TODO
-        return null;
-    }*/
 
     private ClientMessage invoke(ClientMessage request, String jobId) throws Exception {
         ClientTrackableJob trackableJob = trackableJobs.get(jobId);
@@ -192,26 +183,26 @@ public class ClientMapReduceProxy
 
         if (keyValueSource instanceof MapKeyValueSource) {
             MapKeyValueSource source = (MapKeyValueSource) keyValueSource;
-            return MapReduceForMapParameters.encode(name, jobId, predicateData, mapperData,
+            return MapReduceForMapCodec.encodeRequest(name, jobId, predicateData, mapperData,
                     combinerFactoryData, reducerFactoryData, source.getMapName(), chunkSize,
                     list, topologyChangedStrategy.name());
         } else if (keyValueSource instanceof ListKeyValueSource) {
             ListKeyValueSource source = (ListKeyValueSource) keyValueSource;
-            return MapReduceForMapParameters.encode(name, jobId, predicateData, mapperData,
+            return MapReduceForMapCodec.encodeRequest(name, jobId, predicateData, mapperData,
                     combinerFactoryData, reducerFactoryData, source.getListName(), chunkSize,
                     list, topologyChangedStrategy.name());
         } else if (keyValueSource instanceof SetKeyValueSource) {
             SetKeyValueSource source = (SetKeyValueSource) keyValueSource;
-            return MapReduceForMapParameters.encode(name, jobId, predicateData, mapperData,
+            return MapReduceForMapCodec.encodeRequest(name, jobId, predicateData, mapperData,
                     combinerFactoryData, reducerFactoryData, source.getSetName(), chunkSize,
                     list, topologyChangedStrategy.name());
         } else if (keyValueSource instanceof MultiMapKeyValueSource) {
             MultiMapKeyValueSource source = (MultiMapKeyValueSource) keyValueSource;
-            return MapReduceForMapParameters.encode(name, jobId, predicateData, mapperData,
+            return MapReduceForMapCodec.encodeRequest(name, jobId, predicateData, mapperData,
                     combinerFactoryData, reducerFactoryData, source.getMultiMapName(), chunkSize,
                     list, topologyChangedStrategy.name());
         }
-        return MapReduceForCustomParameters.encode(name, jobId, predicateData, mapperData,
+        return MapReduceForCustomCodec.encodeRequest(name, jobId, predicateData, mapperData,
                 combinerFactoryData, reducerFactoryData, toData(keyValueSource), chunkSize,
                 list, topologyChangedStrategy.name());
 
@@ -240,9 +231,9 @@ public class ClientMapReduceProxy
         @Override
         public boolean cancel(boolean mayInterruptIfRunning) {
             try {
-                ClientMessage request = MapReduceCancelParameters.encode(getName(), jobId);
+                ClientMessage request = MapReduceCancelCodec.encodeRequest(getName(), jobId);
                 ClientMessage response = invoke(request, jobId);
-                cancelled = BooleanResultParameters.decode(response).result;
+                cancelled = MapReduceCancelCodec.decodeResponse(response).response;
             } catch (Exception ignore) {
                 EmptyStatement.ignore(ignore);
             }
@@ -307,10 +298,12 @@ public class ClientMapReduceProxy
         @Override
         public JobProcessInformation getJobProcessInformation() {
             try {
-                ClientMessage request = MapReduceJobProcessInformationParameters.encode(getName(), jobId);
+                ClientMessage request = MapReduceJobProcessInformationCodec.encodeRequest(getName(), jobId);
 
-                MapReduceJobProcessInformationResultParameters.decode(invoke(request, jobId));
-                return null;
+                MapReduceJobProcessInformationCodec.ResponseParameters responseParameters =
+                        MapReduceJobProcessInformationCodec.decodeResponse(invoke(request, jobId));
+                return new TransferableJobProcessInformation(responseParameters.jobPartitionStates,
+                        responseParameters.processRecords);
             } catch (Exception ignore) {
                 EmptyStatement.ignore(ignore);
             }

@@ -22,8 +22,8 @@ import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.ClientMessageType;
+import com.hazelcast.client.impl.protocol.codec.ClientRemoveAllListenersCodec;
 import com.hazelcast.client.impl.protocol.parameters.ExceptionResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.RemoveAllListenersParameters;
 import com.hazelcast.client.spi.ClientExecutionService;
 import com.hazelcast.client.spi.ClientInvocationService;
 import com.hazelcast.client.spi.ClientPartitionService;
@@ -191,7 +191,7 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
 
     @Override
     public void heartBeatStopped(Connection connection) {
-        ClientMessage request = RemoveAllListenersParameters.encode();
+        ClientMessage request = ClientRemoveAllListenersCodec.encodeRequest();
         ClientInvocation removeListenerInvocation = new ClientInvocation(client, request, connection);
         removeListenerInvocation.setBypassHeartbeatCheck(true);
         removeListenerInvocation.invoke();
@@ -367,8 +367,7 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
             if (ClientMessageType.EXCEPTION.id() == clientMessage.getMessageType()) {
                 ExceptionResultParameters exceptionResultParameters = ExceptionResultParameters.decode(clientMessage);
                 Throwable exception;
-                boolean hasCause = !exceptionResultParameters.causeClassName.equals("null");
-                if (hasCause) {
+                if (exceptionResultParameters.causeClassName != null) {
                     Class<?> causeClazz = Class.forName(exceptionResultParameters.causeClassName);
                     Constructor<?> causeConstructor = causeClazz.getDeclaredConstructor(new Class[]{String.class});
                     causeConstructor.setAccessible(true);

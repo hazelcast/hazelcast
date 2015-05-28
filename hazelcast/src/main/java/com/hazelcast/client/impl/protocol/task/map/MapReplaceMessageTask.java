@@ -17,13 +17,15 @@
 package com.hazelcast.client.impl.protocol.task.map;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.MapReplaceParameters;
+import com.hazelcast.client.impl.protocol.codec.MapReplaceCodec;
 import com.hazelcast.instance.Node;
 import com.hazelcast.map.impl.operation.ReplaceOperation;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
 
-public class MapReplaceMessageTask extends AbstractMapPutMessageTask<MapReplaceParameters> {
+public class MapReplaceMessageTask
+        extends AbstractMapPutMessageTask<MapReplaceCodec.RequestParameters> {
     public MapReplaceMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
@@ -36,8 +38,13 @@ public class MapReplaceMessageTask extends AbstractMapPutMessageTask<MapReplaceP
     }
 
     @Override
-    protected MapReplaceParameters decodeClientMessage(ClientMessage clientMessage) {
-        return MapReplaceParameters.decode(clientMessage);
+    protected MapReplaceCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return MapReplaceCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return MapReplaceCodec.encodeResponse((Data) response);
     }
 
 

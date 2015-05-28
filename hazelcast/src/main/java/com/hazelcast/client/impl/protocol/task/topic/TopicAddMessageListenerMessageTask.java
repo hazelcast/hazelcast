@@ -18,9 +18,7 @@ package com.hazelcast.client.impl.protocol.task.topic;
 
 import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.AddListenerResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.TopicAddMessageListenerParameters;
-import com.hazelcast.client.impl.protocol.parameters.TopicEventParameters;
+import com.hazelcast.client.impl.protocol.codec.TopicAddMessageListenerCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.core.Message;
 import com.hazelcast.core.MessageListener;
@@ -35,7 +33,7 @@ import com.hazelcast.topic.impl.TopicService;
 import java.security.Permission;
 
 public class TopicAddMessageListenerMessageTask
-        extends AbstractCallableMessageTask<TopicAddMessageListenerParameters>
+        extends AbstractCallableMessageTask<TopicAddMessageListenerCodec.RequestParameters>
         implements MessageListener {
 
     private final Data partitionKey;
@@ -46,17 +44,22 @@ public class TopicAddMessageListenerMessageTask
     }
 
     @Override
-    protected ClientMessage call() throws Exception {
+    protected Object call() throws Exception {
         TopicService service = getService(TopicService.SERVICE_NAME);
         ClientEndpoint endpoint = getEndpoint();
         String registrationId = service.addMessageListener(parameters.name, this);
         endpoint.setListenerRegistration(TopicService.SERVICE_NAME, parameters.name, registrationId);
-        return AddListenerResultParameters.encode(registrationId);
+        return registrationId;
     }
 
     @Override
-    protected TopicAddMessageListenerParameters decodeClientMessage(ClientMessage clientMessage) {
-        return TopicAddMessageListenerParameters.decode(clientMessage);
+    protected TopicAddMessageListenerCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return TopicAddMessageListenerCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return TopicAddMessageListenerCodec.encodeResponse((String) response);
     }
 
 
@@ -100,7 +103,8 @@ public class TopicAddMessageListenerMessageTask
         DataAwareMessage dataAwareMessage = (DataAwareMessage) message;
         Data messageData = dataAwareMessage.getMessageData();
         String publisherUuid = message.getPublishingMember().getUuid();
-        ClientMessage eventMessage = TopicEventParameters.encode(messageData, message.getPublishTime(), publisherUuid);
+        ClientMessage eventMessage = TopicAddMessageListenerCodec.encodeTopicEvent(messageData,
+                message.getPublishTime(), publisherUuid);
         sendClientMessage(partitionKey, eventMessage);
     }
 }

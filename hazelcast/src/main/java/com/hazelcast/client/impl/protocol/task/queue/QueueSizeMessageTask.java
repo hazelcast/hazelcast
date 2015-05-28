@@ -17,8 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.queue;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.IntResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.QueueSizeParameters;
+import com.hazelcast.client.impl.protocol.codec.QueueSizeCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.collection.impl.queue.operations.SizeOperation;
@@ -33,10 +32,9 @@ import java.security.Permission;
 /**
  * Client Protocol Task for handling messages with type id:
  * {@link com.hazelcast.client.impl.protocol.parameters.QueueMessageType#QUEUE_SIZE}
- *
  */
 public class QueueSizeMessageTask
-        extends AbstractPartitionMessageTask<QueueSizeParameters> {
+        extends AbstractPartitionMessageTask<QueueSizeCodec.RequestParameters> {
 
     public QueueSizeMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -48,13 +46,13 @@ public class QueueSizeMessageTask
     }
 
     @Override
-    protected QueueSizeParameters decodeClientMessage(ClientMessage clientMessage) {
-        return QueueSizeParameters.decode(clientMessage);
+    protected QueueSizeCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return QueueSizeCodec.decodeRequest(clientMessage);
     }
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return IntResultParameters.encode((Integer) response);
+        return QueueSizeCodec.encodeResponse((Integer) response);
     }
 
     @Override

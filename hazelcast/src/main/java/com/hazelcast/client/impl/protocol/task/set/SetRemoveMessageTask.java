@@ -17,8 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.set;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.SetRemoveParameters;
+import com.hazelcast.client.impl.protocol.codec.SetRemoveCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.collection.impl.collection.operations.CollectionRemoveOperation;
 import com.hazelcast.collection.impl.set.SetService;
@@ -27,13 +26,14 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.SetPermission;
 import com.hazelcast.spi.Operation;
+
 import java.security.Permission;
 
 /**
  * SetRemoveMessageTask
  */
 public class SetRemoveMessageTask
-        extends AbstractPartitionMessageTask<SetRemoveParameters> {
+        extends AbstractPartitionMessageTask<SetRemoveCodec.RequestParameters> {
 
     public SetRemoveMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -45,13 +45,13 @@ public class SetRemoveMessageTask
     }
 
     @Override
-    protected SetRemoveParameters decodeClientMessage(ClientMessage clientMessage) {
-        return SetRemoveParameters.decode(clientMessage);
+    protected SetRemoveCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return SetRemoveCodec.decodeRequest(clientMessage);
     }
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return BooleanResultParameters.encode((Boolean) response);
+        return SetRemoveCodec.encodeResponse((Boolean) response);
     }
 
     @Override
