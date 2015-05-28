@@ -1,9 +1,31 @@
 
 ### Map Eviction
 
-Unless you delete the map entries manually or use an eviction policy, they will remain in the map. Hazelcast supports policy based eviction for distributed maps. Currently supported policies are LRU (Least Recently Used) and LFU (Least Frequently Used). 
+Unless you delete the map entries manually or use an eviction policy, they will remain in the map. Hazelcast supports policy based eviction for distributed maps. Currently supported policies are LRU (Least Recently Used) and LFU (Least Frequently Used).
 
-There are other eviction properties, shown in the following sample declarative configuration. 
+Map eviction works based on the size of a partition. For example, once you specify a size using the `PER_NODE` attribute for `max-size` (please see [Configuring Map Eviction](#configuring-map-eviction)), Hazelcast internally calculates the maximum size for every partition. Eviction process starts according to this calculated per-partition maximum size when you try to put an entry. Below section gives an example scenario.
+
+#### Example Map Eviction Scenario
+
+Assume that you have the following figures:
+
+* Partition count: 200
+* Entry count for each partition: 100
+* `max-size` (PER_NODE): 20000
+* `eviction-percentage` (please see [Configuring Map Eviction](#configuring-map-eviction)):  10%
+
+The total number of entries here is 20000 (partition count * entry count for each partition). This means you are at the eviction threshold since you set the `max-size` to 20000. When you try to put an entry:
+
+1. Entry goes to the relevant partition.
+2. Partition checks whether the eviction threshold is reached (`max-size`).
+3. If so, 10 (entry count for each partition * eviction percentage) entries are evicted from that particular partition.
+
+As a result of this eviction process, when you check the size of your map, it is 19990 (20000 - 10). After this eviction, subsequent put operations will not trigger the next eviction until the map size is again close to the `max-size`.
+
+
+#### Configuring Map Eviction
+
+The following is an example declarative configuration for map eviction. 
 
 ```xml
 <hazelcast>
@@ -19,7 +41,7 @@ There are other eviction properties, shown in the following sample declarative c
 </hazelcast>
 ```
 
-Let's describe each property. 
+Let's describe each element. 
 
 -	`time-to-live`: Maximum time in seconds for each entry to stay in the map. If it is not 0, entries that are older than this time and not updated for this time are evicted automatically. Valid values are integers between 0 and `Integer.MAX VALUE`. Default value is 0, which means infinite. If it is not 0, entries are evicted regardless of the set `eviction-policy`.  
 -	`max-idle-seconds`: Maximum time in seconds for each entry to stay idle in the map. Entries that are idle for more than this time are evicted automatically. An entry is idle if no `get`, `put` or `containsKey` is called. Valid values are integers between 0 and `Integer.MAX VALUE`. Default value is 0, which means infinite.
