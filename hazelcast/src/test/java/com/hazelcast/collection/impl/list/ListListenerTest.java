@@ -54,9 +54,30 @@ public class ListListenerTest extends HazelcastTestSupport {
         for (int i = 0; i < count; i++) {
             getList(instances, name).remove("item" + i);
         }
-        assertTrue(listener.latchAdd.await(5,TimeUnit.SECONDS));
+        assertTrue(listener.latchAdd.await(5, TimeUnit.SECONDS));
         assertTrue(listener.latchRemove.await(5, TimeUnit.SECONDS));
 
+    }
+
+    @Test
+    public void testListenerRemove() throws Exception {
+        final String name = randomString();
+        final int count = 10;
+        final int insCount = 4;
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(insCount);
+        final HazelcastInstance[] instances = factory.newInstances();
+        ListenerTest listener = new ListenerTest(count);
+        IList list = getList(instances, name);
+        list.addItemListener(listener, true);
+
+        for (int i = 0; i < count; i++) {
+            list.add("item" + i);
+        }
+        for (int i = count - 1; i >= 0; i--) {
+            list.remove(i);
+        }
+        assertTrue(listener.latchAdd.await(5, TimeUnit.SECONDS));
+        assertTrue(listener.latchRemove.await(5, TimeUnit.SECONDS));
     }
 
     private class ListenerTest implements ItemListener {
@@ -71,11 +92,13 @@ public class ListListenerTest extends HazelcastTestSupport {
 
         @Override
         public void itemAdded(ItemEvent item) {
+            System.out.println("item = " + item);
             latchAdd.countDown();
         }
 
         @Override
         public void itemRemoved(ItemEvent item) {
+            System.out.println("itemr = " + item);
             latchRemove.countDown();
         }
     }
