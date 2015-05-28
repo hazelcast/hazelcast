@@ -21,13 +21,9 @@ import com.hazelcast.config.QueueConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IAtomicLong;
 import com.hazelcast.core.IQueue;
-import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -304,6 +300,7 @@ public abstract class QueueBasicTest extends HazelcastTestSupport {
         }
     }
 
+    @Test
     public void testContainsAll_whenExists() {
         for (int i = 0; i < 10; i++) {
             queue.offer("item" + i);
@@ -512,7 +509,7 @@ public abstract class QueueBasicTest extends HazelcastTestSupport {
         iterator.remove();
     }
 
-    private class OfferThread extends Thread {
+    private static class OfferThread extends Thread {
         IQueue queue;
 
         OfferThread(IQueue queue) {
@@ -529,7 +526,7 @@ public abstract class QueueBasicTest extends HazelcastTestSupport {
         }
     }
 
-    private class PollThread extends Thread {
+    private static class PollThread extends Thread {
         IQueue queue;
 
         PollThread(IQueue queue) {
