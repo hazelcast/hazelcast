@@ -92,13 +92,11 @@ public class ListListenerTest extends HazelcastTestSupport {
 
         @Override
         public void itemAdded(ItemEvent item) {
-            System.out.println("item = " + item);
             latchAdd.countDown();
         }
 
         @Override
         public void itemRemoved(ItemEvent item) {
-            System.out.println("itemr = " + item);
             latchRemove.countDown();
         }
     }
