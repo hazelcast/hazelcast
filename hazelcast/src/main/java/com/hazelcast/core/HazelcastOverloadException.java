@@ -17,7 +17,7 @@
 package com.hazelcast.core;
 
 /**
- * A {@link com.hazelcast.core.HazelcastInstance} that is thrown when the system won't handle more load due to
+ * A {@link com.hazelcast.core.HazelcastException} that is thrown when the system won't handle more load due to
  * an overload.
  *
  * This exception is thrown when backpressure is enabled. For more information see
