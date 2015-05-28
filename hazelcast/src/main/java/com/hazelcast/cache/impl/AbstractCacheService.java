@@ -278,39 +278,42 @@ public abstract class AbstractCacheService
     }
 
     @Override
-    public void publishEvent(String cacheName, CacheEventType eventType, Data dataKey, Data dataValue,
-                             Data dataOldValue, boolean isOldValueAvailable, int orderKey,
-                             int completionId, long expirationTime, String origin) {
+    public void publishEvent(CacheEventContext cacheEventContext) {
         final EventService eventService = getNodeEngine().getEventService();
+        final String cacheName = cacheEventContext.getCacheName();
         final Collection<EventRegistration> candidates = eventService.getRegistrations(SERVICE_NAME, cacheName);
 
         if (candidates.isEmpty()) {
             return;
         }
         final Object eventData;
+        final CacheEventType eventType = cacheEventContext.getEventType();
         switch (eventType) {
             case CREATED:
             case UPDATED:
             case REMOVED:
             case EXPIRED:
                 final CacheEventData cacheEventData =
-                        new CacheEventDataImpl(cacheName, eventType, dataKey, dataValue,
-                                               dataOldValue, isOldValueAvailable);
-                CacheEventSet eventSet = new CacheEventSet(eventType, completionId);
+                        new CacheEventDataImpl(cacheName, eventType, cacheEventContext.getDataKey(),
+                                cacheEventContext.getDataValue(), cacheEventContext.getDataOldValue(),
+                                               cacheEventContext.isOldValueAvailable());
+                CacheEventSet eventSet = new CacheEventSet(eventType, cacheEventContext.getCompletionId());
                 eventSet.addEventData(cacheEventData);
                 eventData = eventSet;
                 break;
             case EVICTED:
-                eventData = new CacheEventDataImpl(cacheName, CacheEventType.EVICTED, dataKey, null, null, false);
+                eventData = new CacheEventDataImpl(cacheName, CacheEventType.EVICTED,
+                        cacheEventContext.getDataKey(), null, null, false);
                 break;
             case INVALIDATED:
-                eventData = new CacheEventDataImpl(cacheName, CacheEventType.INVALIDATED, dataKey, null, null, false);
+                eventData = new CacheEventDataImpl(cacheName, CacheEventType.INVALIDATED,
+                        cacheEventContext.getDataKey(), null, null, false);
                 break;
             case COMPLETED:
                 CacheEventData completedEventData =
                         new CacheEventDataImpl(cacheName, CacheEventType.COMPLETED,
-                                               dataKey, dataValue, null, false);
-                eventSet = new CacheEventSet(eventType, completionId);
+                                cacheEventContext.getDataKey(), cacheEventContext.getDataValue(), null, false);
+                eventSet = new CacheEventSet(eventType, cacheEventContext.getCompletionId());
                 eventSet.addEventData(completedEventData);
                 eventData = eventSet;
                 break;
@@ -318,7 +321,7 @@ public abstract class AbstractCacheService
                 throw new IllegalArgumentException(
                         "Event Type not defined to create an eventData during publish : " + eventType.name());
         }
-        nodeEngine.getEventService().publishEvent(SERVICE_NAME, candidates, eventData, orderKey);
+        nodeEngine.getEventService().publishEvent(SERVICE_NAME, candidates, eventData, cacheEventContext.getOrderKey());
     }
 
     @Override

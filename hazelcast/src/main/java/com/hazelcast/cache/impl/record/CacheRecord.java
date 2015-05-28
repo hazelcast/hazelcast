@@ -31,6 +31,8 @@ public interface CacheRecord<V> extends Expirable, Evictable {
 
     int EXPIRATION_TIME_NOT_AVAILABLE = -1;
 
+    int ACCESS_HIT_NOT_AVAILABLE = -1;
+
     /**
      * Gets the value of this {@link CacheRecord}.
      *
