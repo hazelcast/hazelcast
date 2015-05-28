@@ -24,6 +24,7 @@ import com.hazelcast.core.IQueue;
 import com.hazelcast.core.MemberAttributeEvent;
 import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MembershipListener;
+import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -39,6 +40,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -566,6 +568,64 @@ public class ClusterQueueTest extends HazelcastTestSupport {
         config.getQueueConfig(configName).setMaxSize(100);
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         return factory.newInstances(config);
+    }
+
+    @Test
+    public void testTakeInterruption() throws InterruptedException {
+        Config config = new Config();
+        config.setProperty(GroupProperties.PROP_OPERATION_CALL_TIMEOUT_MILLIS, "1000");
+
+        HazelcastInstance instance = createHazelcastInstance(config);
+        final IQueue<Object> queue = instance.getQueue(randomString());
+
+        final AtomicBoolean interrupted = new AtomicBoolean();
+
+        Thread t = new Thread() {
+            public void run() {
+                try {
+                    queue.take();
+                } catch (InterruptedException e) {
+                    interrupted.set(true);
+                }
+            }
+        };
+        t.start();
+
+        sleepSeconds(1);
+        t.interrupt();
+        t.join(5000);
+
+        assertTrue(interrupted.get());
+    }
+
+    @Test
+    public void testPutInterruption() throws InterruptedException {
+        Config config = new Config();
+        config.setProperty(GroupProperties.PROP_OPERATION_CALL_TIMEOUT_MILLIS, "1000");
+        config.getQueueConfig("default").setMaxSize(1);
+
+        HazelcastInstance instance = createHazelcastInstance(config);
+        final IQueue<Object> queue = instance.getQueue(randomString());
+        final AtomicBoolean interrupted = new AtomicBoolean();
+
+        assertTrue(queue.offer("item"));
+
+        Thread t = new Thread() {
+            public void run() {
+                try {
+                    queue.put("item");
+                } catch (InterruptedException e) {
+                    interrupted.set(true);
+                }
+            }
+        };
+        t.start();
+
+        sleepSeconds(1);
+        t.interrupt();
+        t.join(5000);
+
+        assertTrue(interrupted.get());
     }
 
 }

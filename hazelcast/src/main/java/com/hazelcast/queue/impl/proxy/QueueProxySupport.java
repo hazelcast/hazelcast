@@ -88,11 +88,7 @@ abstract class QueueProxySupport extends AbstractDistributedObject<QueueService>
     boolean offerInternal(Data data, long timeout) throws InterruptedException {
         throwExceptionIfNull(data);
         OfferOperation operation = new OfferOperation(name, timeout, data);
-        try {
-            return (Boolean) invokeAndGet(operation);
-        } catch (Throwable throwable) {
-            throw ExceptionUtil.rethrowAllowInterrupted(throwable);
-        }
+        return (Boolean) invokeAndGet(operation, InterruptedException.class);
     }
 
     public boolean isEmpty() {
@@ -122,11 +118,7 @@ abstract class QueueProxySupport extends AbstractDistributedObject<QueueService>
 
     Object pollInternal(long timeout) throws InterruptedException {
         PollOperation operation = new PollOperation(name, timeout);
-        try {
-            return invokeAndGet(operation);
-        } catch (Throwable throwable) {
-            throw ExceptionUtil.rethrowAllowInterrupted(throwable);
-        }
+        return invokeAndGet(operation, InterruptedException.class);
     }
 
     boolean removeInternal(Data data) {
@@ -173,12 +165,16 @@ abstract class QueueProxySupport extends AbstractDistributedObject<QueueService>
     }
 
     private <T> T invokeAndGet(QueueOperation operation) {
+        return invokeAndGet(operation, RuntimeException.class);
+    }
+
+    private <T, E extends Throwable> T invokeAndGet(QueueOperation operation, Class<E> allowedException) throws E {
         final NodeEngine nodeEngine = getNodeEngine();
         try {
             Future f = invoke(operation);
             return (T) nodeEngine.toObject(f.get());
         } catch (Throwable throwable) {
-            throw ExceptionUtil.rethrow(throwable);
+            throw ExceptionUtil.rethrow(throwable, allowedException);
         }
     }
 
