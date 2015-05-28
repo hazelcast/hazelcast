@@ -26,16 +26,16 @@ import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.HazelcastClientProxy;
 import com.hazelcast.client.impl.MemberImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.CacheCreateConfigParameters;
-import com.hazelcast.client.impl.protocol.parameters.CacheGetConfigParameters;
-import com.hazelcast.client.impl.protocol.parameters.CacheManagementConfigParameters;
-import com.hazelcast.client.impl.protocol.parameters.GenericResultParameters;
+import com.hazelcast.client.impl.protocol.codec.CacheCreateConfigCodec;
+import com.hazelcast.client.impl.protocol.codec.CacheGetConfigCodec;
+import com.hazelcast.client.impl.protocol.codec.CacheManagementConfigCodec;
 import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.FutureUtil;
 
@@ -90,8 +90,9 @@ public final class HazelcastClientCacheManager
             try {
                 Address address = member.getAddress();
 
-                ClientMessage request = CacheManagementConfigParameters
-                        .encode(getCacheNameWithPrefix(cacheName), statOrMan, enabled, address.getHost(), address.getPort());
+                ClientMessage request = CacheManagementConfigCodec
+                        .encodeRequest(getCacheNameWithPrefix(cacheName),
+                                statOrMan, enabled, address.getHost(), address.getPort());
                 ClientInvocation clientInvocation = new ClientInvocation(client, request, address);
                 Future<ClientMessage> future = clientInvocation.invoke();
                 futures.add(future);
@@ -120,14 +121,15 @@ public final class HazelcastClientCacheManager
 
     @Override
     protected <K, V> CacheConfig<K, V> getCacheConfigFromPartition(String cacheName, String simpleCacheName) {
-        ClientMessage request = CacheGetConfigParameters.encode(cacheName, simpleCacheName);
+        ClientMessage request = CacheGetConfigCodec.encodeRequest(cacheName, simpleCacheName);
         HazelcastClientInstanceImpl client = (HazelcastClientInstanceImpl) clientContext.getHazelcastInstance();
         try {
             int partitionId = clientContext.getPartitionService().getPartitionId(cacheName);
             ClientInvocation clientInvocation = new ClientInvocation(client, request, partitionId);
             Future<ClientMessage> future = clientInvocation.invoke();
             ClientMessage responseMessage = future.get();
-            return clientContext.getSerializationService().toObject(GenericResultParameters.decode(responseMessage).result);
+            SerializationService serializationService = clientContext.getSerializationService();
+            return serializationService.toObject(CacheGetConfigCodec.decodeResponse(responseMessage).response);
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }
@@ -139,12 +141,12 @@ public final class HazelcastClientCacheManager
         try {
             int partitionId = clientContext.getPartitionService().getPartitionId(cacheConfig.getNameWithPrefix());
             Data cacheConfigData = clientContext.getSerializationService().toData(cacheConfig);
-            ClientMessage request = CacheCreateConfigParameters.encode(cacheConfigData, false);
+            ClientMessage request = CacheCreateConfigCodec.encodeRequest(cacheConfigData, false);
             ClientInvocation clientInvocation = new ClientInvocation(client, request, partitionId);
 
             Future<ClientMessage> future = clientInvocation.invoke();
             ClientMessage responseMessage = future.get();
-            final Data result = GenericResultParameters.decode(responseMessage).result;
+            final Data result = CacheCreateConfigCodec.decodeResponse(responseMessage).response;
             return (CacheConfig<K, V>) clientContext.getSerializationService().toObject(result);
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
@@ -179,13 +181,13 @@ public final class HazelcastClientCacheManager
         try {
             int partitionId = clientContext.getPartitionService().getPartitionId(config.getNameWithPrefix());
             Data cacheConfigData = clientContext.getSerializationService().toData(config);
-            ClientMessage request = CacheCreateConfigParameters.encode(cacheConfigData, createAlsoOnOthers);
+            ClientMessage request = CacheCreateConfigCodec.encodeRequest(cacheConfigData, createAlsoOnOthers);
             ClientInvocation clientInvocation = new ClientInvocation(client, request, partitionId);
 
             Future<ClientMessage> future = clientInvocation.invoke();
             if (syncCreate) {
                 final ClientMessage response = future.get();
-                final Data data = GenericResultParameters.decode(response).result;
+                final Data data = CacheCreateConfigCodec.decodeResponse(response).response;
                 return (CacheConfig<K, V>) clientContext.getSerializationService().toObject(data);
             } else {
                 return currentCacheConfig;

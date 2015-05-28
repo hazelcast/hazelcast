@@ -228,6 +228,8 @@ public class CodecModel {
                 sizeString.append("dataSize += ParameterUtil.calculateDataSize(" + name + ");");
             } else if (type.equals("java.lang.Integer")) {
                 sizeString.append("dataSize += Bits.INT_SIZE_IN_BYTES;");
+            } else if (type.equals("java.lang.Boolean")) {
+                sizeString.append("dataSize += Bits.BOOLEAN_SIZE_IN_BYTES;");
             } else if (type.equals("java.lang.String")) {
                 sizeString.append("dataSize += ParameterUtil.calculateStringDataSize(" + name + ");");
             } else if (type.equals("int") || type.equals("long") || type.equals("short")
@@ -251,6 +253,8 @@ public class CodecModel {
                         + PARAMETERS_PACKAGE + "JobPartitionStateCodec.calculateDataSize(" + name + ");");
             } else if (type.equals("javax.transaction.xa.Xid")) {
                 sizeString.append("dataSize += " + PARAMETERS_PACKAGE + "XIDCodec.calculateDataSize(" + name + ");");
+            } else if (type.equals("com.hazelcast.cache.impl.CacheEventData")) {
+                sizeString.append("dataSize += " + PARAMETERS_PACKAGE + "CacheEventDataCodec.calculateDataSize(" + name + ");");
             } else if (type.startsWith("java.util.Map<")) {
                 sizeString.append(getMapSizeStringJava(type, name));
             } else if (type.startsWith("java.util.List<") || type.startsWith("java.util.Set<")
@@ -360,6 +364,8 @@ public class CodecModel {
                 getterString = name + " = clientMessage.getData();";
             } else if (type.equals("java.lang.Integer")) {
                 getterString = name + " = clientMessage.getInt();";
+            } else if (type.equals("java.lang.Boolean")) {
+                getterString = name + " = clientMessage.getBoolean();";
             } else if (type.equals("java.lang.String")) {
                 getterString = name + " = clientMessage.getStringUtf8();";
             } else if (type.equals("com.hazelcast.nio.Address")) {
@@ -377,6 +383,8 @@ public class CodecModel {
                 getterString = name + " = " + PARAMETERS_PACKAGE + "JobPartitionStateCodec.decode(clientMessage);";
             } else if (type.equals("javax.transaction.xa.Xid")) {
                 getterString = name + " = " + PARAMETERS_PACKAGE + "XIDCodec.decode(clientMessage);";
+            } else if (type.equals("com.hazelcast.cache.impl.CacheEventData")) {
+                getterString = name + " = " + PARAMETERS_PACKAGE + "CacheEventDataCodec.decode(clientMessage);";
             } else if (type.startsWith("java.util.Map<")) {
                 getterString = getMapGetterString(type, name);
             } else if (type.startsWith("java.util.List<") || type.startsWith("java.util.Set<")
@@ -538,6 +546,8 @@ public class CodecModel {
                 setterString.append(PARAMETERS_PACKAGE + "JobPartitionStateCodec.encode(" + name + ", clientMessage);");
             } else if (type.equals("javax.transaction.xa.Xid")) {
                 setterString.append(PARAMETERS_PACKAGE + "XIDCodec.encode(" + name + ", clientMessage);");
+            } else if (type.equals("com.hazelcast.cache.impl.CacheEventData")) {
+                setterString.append(PARAMETERS_PACKAGE + "CacheEventDataCodec.encode(" + name + ", clientMessage);");
             } else if (type.startsWith("java.util.Map<")) {
                 setterString.append(getMapSetterString(type, name));
             } else if (type.startsWith("java.util.List<") || type.startsWith("java.util.Set<")

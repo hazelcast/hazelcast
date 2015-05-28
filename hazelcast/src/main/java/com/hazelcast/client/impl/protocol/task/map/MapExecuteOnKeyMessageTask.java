@@ -24,7 +24,6 @@ import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.operation.EntryOperation;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.Operation;
@@ -51,7 +50,7 @@ public class MapExecuteOnKeyMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return MapExecuteOnKeyCodec.encodeResponse((Data) response);
+        return MapExecuteOnKeyCodec.encodeResponse(serializationService.toData(response));
     }
 
     @Override

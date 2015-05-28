@@ -23,7 +23,6 @@ import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.core.TransactionalQueue;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.QueuePermission;
 import com.hazelcast.transaction.TransactionContext;
@@ -58,7 +57,7 @@ public class TransactionalQueuePeekMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return TransactionalQueuePeekCodec.encodeResponse((Data) response);
+        return TransactionalQueuePeekCodec.encodeResponse(serializationService.toData(response));
     }
 
     @Override

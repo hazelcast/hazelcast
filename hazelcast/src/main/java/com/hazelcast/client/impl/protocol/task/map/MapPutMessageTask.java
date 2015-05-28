@@ -21,7 +21,6 @@ import com.hazelcast.client.impl.protocol.codec.MapPutCodec;
 import com.hazelcast.instance.Node;
 import com.hazelcast.map.impl.operation.PutOperation;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
 
 import java.util.concurrent.TimeUnit;
@@ -48,7 +47,7 @@ public class MapPutMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return MapPutCodec.encodeResponse((Data) response);
+        return MapPutCodec.encodeResponse(serializationService.toData(response));
     }
 
     @Override

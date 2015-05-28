@@ -21,7 +21,6 @@ import com.hazelcast.client.impl.protocol.codec.MapPutIfAbsentCodec;
 import com.hazelcast.instance.Node;
 import com.hazelcast.map.impl.operation.PutIfAbsentOperation;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
 
 import java.util.concurrent.TimeUnit;
@@ -40,7 +39,7 @@ public class MapPutIfAbsentMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return MapPutIfAbsentCodec.encodeResponse((Data) response);
+        return MapPutIfAbsentCodec.encodeResponse(serializationService.toData(response));
     }
 
     protected Operation prepareOperation() {

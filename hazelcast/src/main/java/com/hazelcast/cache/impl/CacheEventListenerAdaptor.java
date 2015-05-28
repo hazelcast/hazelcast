@@ -17,8 +17,6 @@
 package com.hazelcast.cache.impl;
 
 import com.hazelcast.cache.ICache;
-import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.CacheEventSetParameters;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 
@@ -32,6 +30,7 @@ import javax.cache.event.CacheEntryListener;
 import javax.cache.event.CacheEntryRemovedListener;
 import javax.cache.event.CacheEntryUpdatedListener;
 import javax.cache.event.EventType;
+import java.util.Collection;
 import java.util.HashSet;
 
 /**
@@ -112,34 +111,24 @@ public class CacheEventListenerAdaptor<K, V>
 
     @Override
     public void handleEvent(Object eventObject) {
-        CacheEventSet cacheEventSet = convertEventObject(eventObject);
-        if (cacheEventSet != null) {
+        if (eventObject instanceof CacheEventSet) {
+            CacheEventSet cacheEventSet = (CacheEventSet) eventObject;
             try {
                 if (cacheEventSet.getEventType() != CacheEventType.COMPLETED) {
-                    handleEvent(cacheEventSet);
+                    handleEvent(cacheEventSet.getEventType().getType(), cacheEventSet.getEvents());
                 }
             } finally {
                 ((CacheSyncListenerCompleter) source).countDownCompletionLatch(cacheEventSet.getCompletionId());
             }
-
-        }
-    }
-
-    protected CacheEventSet convertEventObject(Object eventObject) {
-        if (eventObject instanceof CacheEventSet) {
-            return (CacheEventSet) eventObject;
-        }
-        if (eventObject instanceof ClientMessage) {
-            final CacheEventSetParameters parameters = CacheEventSetParameters.decode((ClientMessage) eventObject);
-            return new CacheEventSet(parameters.eventType, parameters.events, parameters.completionId);
+            return;
         }
         throw new UnsupportedOperationException("Event object not supported : " + eventObject.getClass().getName());
     }
 
-    private void handleEvent(CacheEventSet cacheEventSet) {
-        final Iterable<CacheEntryEvent<? extends K, ? extends V>> cacheEntryEvent = createCacheEntryEvent(cacheEventSet);
-
-        switch (cacheEventSet.getEventType()) {
+    private void handleEvent(int type, Collection<CacheEventData> keys) {
+        final Iterable<CacheEntryEvent<? extends K, ? extends V>> cacheEntryEvent = createCacheEntryEvent(keys);
+        CacheEventType eventType = CacheEventType.getByType(type);
+        switch (eventType) {
             case CREATED:
                 if (this.cacheEntryCreatedListener != null) {
                     this.cacheEntryCreatedListener.onCreated(cacheEntryEvent);
@@ -161,13 +150,13 @@ public class CacheEventListenerAdaptor<K, V>
                 }
                 break;
             default:
-                throw new IllegalArgumentException("Invalid event type: " + cacheEventSet.getEventType().name());
+                throw new IllegalArgumentException("Invalid event type: " + eventType.name());
         }
     }
 
-    private Iterable<CacheEntryEvent<? extends K, ? extends V>> createCacheEntryEvent(CacheEventSet cacheEventSet) {
+    private Iterable<CacheEntryEvent<? extends K, ? extends V>> createCacheEntryEvent(Collection<CacheEventData> keys) {
         HashSet<CacheEntryEvent<? extends K, ? extends V>> evt = new HashSet<CacheEntryEvent<? extends K, ? extends V>>();
-        for (CacheEventData cacheEventData : cacheEventSet.getEvents()) {
+        for (CacheEventData cacheEventData : keys) {
             final EventType eventType = CacheEventType.convertToEventType(cacheEventData.getCacheEventType());
             final K key = toObject(cacheEventData.getDataKey());
             final V newValue = toObject(cacheEventData.getDataValue());
@@ -189,4 +178,14 @@ public class CacheEventListenerAdaptor<K, V>
         return serializationService.toObject(data);
     }
 
+    public void handle(int type, Collection<CacheEventData> keys, int completionId) {
+        try {
+            if (CacheEventType.getByType(type) != CacheEventType.COMPLETED) {
+                handleEvent(type, keys);
+            }
+        } finally {
+            ((CacheSyncListenerCompleter) source).countDownCompletionLatch(completionId);
+        }
+
+    }
 }

@@ -22,7 +22,6 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CacheRemoveCodec;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
 
 /**
@@ -50,7 +49,7 @@ public class CacheRemoveMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return CacheRemoveCodec.encodeResponse((Data) response);
+        return CacheRemoveCodec.encodeResponse(serializationService.toData(response));
     }
 
     @Override

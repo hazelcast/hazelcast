@@ -48,7 +48,7 @@ public class MapAddPartitionLostListenerMessageTask
             public void partitionLost(MapPartitionLostEvent event) {
                 if (endpoint.isAlive()) {
                     ClientMessage eventMessage =
-                            MapAddPartitionLostListenerCodec.encodeMapPartitionLostEventEvent(event.getPartitionId(),
+                            MapAddPartitionLostListenerCodec.encodeMapPartitionLostEvent(event.getPartitionId(),
                                     event.getMember().getUuid());
                     sendClientMessage(null, eventMessage);
                 }

@@ -22,7 +22,6 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CacheReplaceCodec;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
 
 import javax.cache.expiry.ExpiryPolicy;
@@ -43,9 +42,9 @@ public class CacheReplaceMessageTask
     protected Operation prepareOperation() {
         CacheOperationProvider operationProvider = getOperationProvider(parameters.name);
         ExpiryPolicy expiryPolicy = serializationService.toObject(parameters.expiryPolicy);
-        int completionId = clientMessage.getCorrelationId();
         return operationProvider
-                .createReplaceOperation(parameters.key, parameters.oldValue, parameters.newValue, expiryPolicy, completionId);
+                .createReplaceOperation(parameters.key, parameters.oldValue, parameters.newValue,
+                        expiryPolicy, parameters.completionId);
     }
 
     @Override
@@ -55,7 +54,7 @@ public class CacheReplaceMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return CacheReplaceCodec.encodeResponse((Data) response);
+        return CacheReplaceCodec.encodeResponse(serializationService.toData(response));
     }
 
     @Override

@@ -120,7 +120,7 @@ public interface MapCodecTemplate {
     void removeEntryListener(String name, String registrationId);
 
     @Request(id = 31, retryable = false, response = ResponseMessageConst.STRING,
-            event = EventMessageConst.EVENT_MAPPARTITIONLOSTEVENT)
+            event = EventMessageConst.EVENT_MAPPARTITIONLOST)
     void addPartitionLostListener(String name);
 
     @Request(id = 32, retryable = false, response = ResponseMessageConst.BOOLEAN)

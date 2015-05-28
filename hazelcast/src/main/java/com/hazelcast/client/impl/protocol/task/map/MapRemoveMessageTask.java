@@ -24,7 +24,6 @@ import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.operation.RemoveOperation;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.Operation;
@@ -70,7 +69,7 @@ public class MapRemoveMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return MapRemoveCodec.encodeResponse((Data) response);
+        return MapRemoveCodec.encodeResponse(serializationService.toData(response));
     }
 
     @Override

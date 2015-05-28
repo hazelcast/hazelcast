@@ -53,7 +53,7 @@ public class CachePutIfAbsentMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return CachePutIfAbsentCodec.encodeResponse((Boolean) response);
+        return CachePutIfAbsentCodec.encodeResponse(serializationService.toData(response));
     }
 
     @Override

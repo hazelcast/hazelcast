@@ -21,7 +21,6 @@ import com.hazelcast.client.impl.protocol.codec.MapReplaceCodec;
 import com.hazelcast.instance.Node;
 import com.hazelcast.map.impl.operation.ReplaceOperation;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
 
 public class MapReplaceMessageTask
@@ -44,7 +43,7 @@ public class MapReplaceMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return MapReplaceCodec.encodeResponse((Data) response);
+        return MapReplaceCodec.encodeResponse(serializationService.toData(response));
     }
 
 

@@ -23,12 +23,10 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CacheRemoveAllCodec;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.OperationFactory;
 
 import javax.cache.CacheException;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * This client request  specifically calls {@link CacheRemoveAllOperationFactory} on the server side.
@@ -55,13 +53,13 @@ public class CacheRemoveAllMessageTask
     @Override
     protected OperationFactory createOperationFactory() {
         CacheOperationProvider operationProvider = getOperationProvider(parameters.name);
-        return operationProvider.createRemoveAllOperationFactory((Set<Data>) parameters.keys, parameters.completionId);
+        return operationProvider.createRemoveAllOperationFactory(null, parameters.completionId);
     }
 
     @Override
     protected Object reduce(Map<Integer, Object> map) {
         for (Map.Entry<Integer, Object> entry : map.entrySet()) {
-            if(entry.getValue() == null) {
+            if (entry.getValue() == null) {
                 continue;
             }
             final CacheClearResponse cacheClearResponse = (CacheClearResponse) nodeEngine.toObject(entry.getValue());

@@ -56,7 +56,7 @@ public class CacheCreateConfigMessageTask
     protected ClientMessage encodeResponse(Object response) {
         CacheService service = getService(getServiceName());
         final Data responseData = service.toData(response);
-        return CacheCreateConfigCodec.encodeResponse((Data) responseData);
+        return CacheCreateConfigCodec.encodeResponse(serializationService.toData(responseData));
     }
 
     @Override

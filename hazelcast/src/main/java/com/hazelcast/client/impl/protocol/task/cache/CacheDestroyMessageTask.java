@@ -23,7 +23,6 @@ import com.hazelcast.client.impl.protocol.codec.CacheDestroyCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
 
 import java.security.Permission;
@@ -47,7 +46,7 @@ public class CacheDestroyMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return CacheDestroyCodec.encodeResponse((Data) response);
+        return CacheDestroyCodec.encodeResponse(serializationService.toData(response));
     }
 
     @Override

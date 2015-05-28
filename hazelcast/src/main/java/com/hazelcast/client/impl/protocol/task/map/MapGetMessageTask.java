@@ -24,7 +24,6 @@ import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.operation.GetOperation;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.Operation;
@@ -47,7 +46,7 @@ public class MapGetMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return MapGetCodec.encodeResponse((Data) response);
+        return MapGetCodec.encodeResponse(serializationService.toData(response));
     }
 
     @Override

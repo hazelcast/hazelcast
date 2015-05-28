@@ -24,7 +24,6 @@ import com.hazelcast.client.impl.protocol.task.InvocationMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
@@ -56,7 +55,7 @@ public class CacheManagementConfigMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return CacheManagementConfigCodec.encodeResponse((Data) response);
+        return CacheManagementConfigCodec.encodeResponse(serializationService.toData(response));
     }
 
     @Override

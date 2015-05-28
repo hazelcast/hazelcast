@@ -21,7 +21,6 @@ import com.hazelcast.client.impl.protocol.codec.ReplicatedMapPutCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
 import com.hazelcast.security.permission.ActionConstants;
@@ -52,7 +51,7 @@ public class ReplicatedMapPutMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return ReplicatedMapPutCodec.encodeResponse((Data) response);
+        return ReplicatedMapPutCodec.encodeResponse(serializationService.toData(response));
     }
 
     @Override

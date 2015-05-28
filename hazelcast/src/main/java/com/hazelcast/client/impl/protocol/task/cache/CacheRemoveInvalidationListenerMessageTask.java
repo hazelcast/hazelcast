@@ -21,7 +21,6 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CacheRemoveInvalidationListenerCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.instance.Node;
-import com.hazelcast.map.impl.MapService;
 import com.hazelcast.nio.Connection;
 
 import java.security.Permission;
@@ -40,10 +39,8 @@ public class CacheRemoveInvalidationListenerMessageTask
 
     @Override
     protected Object call() {
-        CacheService service = getService(MapService.SERVICE_NAME);
-        boolean success = service.deregisterListener(parameters.name, parameters.registrationId);
-
-        return CacheRemoveInvalidationListenerCodec.encodeResponse(success);
+        CacheService service = getService(CacheService.SERVICE_NAME);
+        return service.deregisterListener(parameters.name, parameters.registrationId);
     }
 
     @Override

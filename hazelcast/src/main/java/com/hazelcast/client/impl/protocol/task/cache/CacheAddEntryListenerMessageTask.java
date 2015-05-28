@@ -23,7 +23,6 @@ import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CacheAddEntryListenerCodec;
-import com.hazelcast.client.impl.protocol.parameters.CacheEventSetParameters;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
@@ -56,17 +55,16 @@ public class CacheAddEntryListenerMessageTask
                 if (!endpoint.isAlive()) {
                     return;
                 }
-                if(eventObject instanceof CacheEventSet) {
+                if (eventObject instanceof CacheEventSet) {
                     CacheEventSet ces = (CacheEventSet) eventObject;
                     Data partitionKey = getPartitionKey(eventObject);
-                    final ClientMessage clientMessage = CacheEventSetParameters
-                            .encode(ces.getEventType(), ces.getEvents(), ces.getCompletionId());
+                    ClientMessage clientMessage = CacheAddEntryListenerCodec
+                            .encodeCacheEvent(ces.getEventType().getType(), ces.getEvents(), ces.getCompletionId());
                     sendClientMessage(partitionKey, clientMessage);
                 }
             }
         };
-        final String registrationId = service.registerListener(parameters.name, entryListener);
-        return registrationId;
+        return service.registerListener(parameters.name, entryListener);
     }
 
     private Data getPartitionKey(Object eventObject) {

@@ -60,9 +60,8 @@ public class CacheClearMessageTask
 
     @Override
     protected Object reduce(Map<Integer, Object> map) {
-        CacheService service = getService(getServiceName());
         for (Map.Entry<Integer, Object> entry : map.entrySet()) {
-            if(entry.getValue() == null) {
+            if (entry.getValue() == null) {
                 continue;
             }
             final CacheClearResponse cacheClearResponse = (CacheClearResponse) nodeEngine.toObject(entry.getValue());

@@ -51,7 +51,8 @@ public class CacheEntryProcessorMessageTask
             argumentsList.add(service.toObject(data));
         }
         return operationProvider
-                .createEntryProcessorOperation(parameters.key, parameters.completionId, entryProcessor, argumentsList.toArray());
+                .createEntryProcessorOperation(parameters.key, parameters.completionId, entryProcessor
+                        , argumentsList.toArray());
     }
 
     @Override
@@ -61,7 +62,7 @@ public class CacheEntryProcessorMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return CacheEntryProcessorCodec.encodeResponse((Data) response);
+        return CacheEntryProcessorCodec.encodeResponse(serializationService.toData(response));
     }
 
     @Override

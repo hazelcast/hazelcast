@@ -22,7 +22,6 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CachePutCodec;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
 
 import javax.cache.expiry.ExpiryPolicy;
@@ -54,7 +53,7 @@ public class CachePutMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return CachePutCodec.encodeResponse((Data) response);
+        return CachePutCodec.encodeResponse(serializationService.toData(response));
     }
 
     @Override

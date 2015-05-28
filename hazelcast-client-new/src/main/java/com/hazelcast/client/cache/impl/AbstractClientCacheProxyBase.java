@@ -19,7 +19,7 @@ package com.hazelcast.client.cache.impl;
 import com.hazelcast.cache.impl.ICacheInternal;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.CacheDestroyParameters;
+import com.hazelcast.client.impl.protocol.codec.CacheDestroyCodec;
 import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.impl.ClientExecutionServiceImpl;
 import com.hazelcast.client.spi.impl.ClientInvocation;
@@ -119,7 +119,7 @@ abstract class AbstractClientCacheProxyBase<K, V> implements ICacheInternal<K, V
         isClosed.set(true);
         try {
             int partitionId = clientContext.getPartitionService().getPartitionId(nameWithPrefix);
-            ClientMessage request = CacheDestroyParameters.encode(nameWithPrefix);
+            ClientMessage request = CacheDestroyCodec.encodeRequest(nameWithPrefix);
             final ClientInvocation clientInvocation = new ClientInvocation(
                     (HazelcastClientInstanceImpl) clientContext.getHazelcastInstance(), request, partitionId);
             final Future<ClientMessage> future = clientInvocation.invoke();
@@ -164,20 +164,22 @@ abstract class AbstractClientCacheProxyBase<K, V> implements ICacheInternal<K, V
     }
 
     protected ClientMessage invoke(ClientMessage clientMessage) {
-        return invoke(clientMessage, null);
+        try {
+            final Future<ClientMessage> future = new ClientInvocation(
+                    (HazelcastClientInstanceImpl) clientContext.getHazelcastInstance(), clientMessage).invoke();
+            return future.get();
+
+        } catch (Exception e) {
+            throw ExceptionUtil.rethrow(e);
+        }
     }
 
     protected ClientMessage invoke(ClientMessage clientMessage, Data keyData) {
         try {
-            if (keyData != null) {
-                final int partitionId = clientContext.getPartitionService().getPartitionId(keyData);
-                final Future future = new ClientInvocation((HazelcastClientInstanceImpl) clientContext.getHazelcastInstance(),
-                        clientMessage, partitionId).invoke();
-                return (ClientMessage) future.get();
-            }
-            final Future<ClientMessage> future = new ClientInvocation(
-                    (HazelcastClientInstanceImpl) clientContext.getHazelcastInstance(), clientMessage).invoke();
-            return future.get();
+            final int partitionId = clientContext.getPartitionService().getPartitionId(keyData);
+            final Future future = new ClientInvocation((HazelcastClientInstanceImpl) clientContext.getHazelcastInstance(),
+                    clientMessage, partitionId).invoke();
+            return (ClientMessage) future.get();
 
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);

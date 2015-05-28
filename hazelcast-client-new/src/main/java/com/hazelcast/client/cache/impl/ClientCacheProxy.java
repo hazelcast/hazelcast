@@ -98,7 +98,7 @@ public class ClientCacheProxy<K, V>
             return true;
         }
         ClientMessage request = CacheContainsKeyCodec.encodeRequest(nameWithPrefix, keyData);
-        ClientMessage result = invoke(request);
+        ClientMessage result = invoke(request, keyData);
         return CacheContainsKeyCodec.decodeResponse(result).response;
     }
 
@@ -147,7 +147,7 @@ public class ClientCacheProxy<K, V>
 
     @Override
     public boolean remove(K key) {
-        final ICompletableFuture<Boolean> f = removeAsyncInternal(key, null, false, false, true);
+        final ICompletableFuture<Boolean> f = removeAsyncInternal(key, null, false, true);
         try {
             return f.get();
         } catch (Throwable e) {
@@ -157,7 +157,7 @@ public class ClientCacheProxy<K, V>
 
     @Override
     public boolean remove(K key, V oldValue) {
-        final ICompletableFuture<Boolean> f = removeAsyncInternal(key, oldValue, true, false, true);
+        final ICompletableFuture<Boolean> f = removeAsyncInternal(key, oldValue, true, true);
         try {
             return f.get();
         } catch (Throwable e) {
@@ -167,7 +167,7 @@ public class ClientCacheProxy<K, V>
 
     @Override
     public V getAndRemove(K key) {
-        final ICompletableFuture<V> f = removeAsyncInternal(key, null, false, true, true);
+        final ICompletableFuture<V> f = getAndRemoveAsyncInternal(key, true);
         try {
             return toObject(f.get());
         } catch (Throwable e) {
@@ -194,13 +194,13 @@ public class ClientCacheProxy<K, V>
     public void removeAll(Set<? extends K> keys) {
         ensureOpen();
         validateNotNull(keys);
-        removeAllInternal(keys);
+        removeAllKeysInternal(keys);
     }
 
     @Override
     public void removeAll() {
         ensureOpen();
-        removeAllInternal(null);
+        removeAllInternal();
     }
 
     @Override
@@ -234,8 +234,9 @@ public class ClientCacheProxy<K, V>
                 argumentsData.add(toData(arguments[i]));
             }
         }
-        final ClientMessage request = CacheEntryProcessorCodec.encodeRequest(nameWithPrefix, keyData, epData, argumentsData);
         final int completionId = nextCompletionId();
+        ClientMessage request =
+                CacheEntryProcessorCodec.encodeRequest(nameWithPrefix, keyData, epData, argumentsData, completionId);
         try {
             final ICompletableFuture<ClientMessage> f = invoke(request, keyData, completionId);
             final ClientMessage response = getSafely(f);
@@ -299,7 +300,7 @@ public class ClientCacheProxy<K, V>
         }
         final CacheEventListenerAdaptor<K, V> adaptor = new CacheEventListenerAdaptor<K, V>(this, cacheEntryListenerConfiguration,
                 clientContext.getSerializationService());
-        final EventHandler<Object> handler = createHandler(adaptor);
+        final EventHandler handler = createHandler(adaptor);
         final ClientMessage registrationRequest = CacheAddEntryListenerCodec.encodeRequest(nameWithPrefix);
         final String regId = clientContext.getListenerService().startListening(registrationRequest, null, handler);
         if (regId != null) {

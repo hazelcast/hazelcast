@@ -17,7 +17,7 @@
 package com.hazelcast.client.impl.protocol.parameters;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.ClientMessageType;
+import com.hazelcast.client.impl.protocol.ResponseMessageConst;
 import com.hazelcast.client.impl.protocol.util.ParameterUtil;
 import com.hazelcast.nio.Bits;
 
@@ -30,7 +30,7 @@ public class ExceptionResultParameters {
     /**
      * ClientMessageType of this message
      */
-    public static final ClientMessageType TYPE = ClientMessageType.EXCEPTION;
+    public static final int TYPE = ResponseMessageConst.EXCEPTION;
     public String className;
     public String causeClassName;
     public String message;
@@ -59,7 +59,7 @@ public class ExceptionResultParameters {
     public static ClientMessage encode(String className, String causeClassName, String message, String stacktrace) {
         final int requiredDataSize = calculateDataSize(className, causeClassName, message, stacktrace);
         ClientMessage clientMessage = ClientMessage.createForEncode(requiredDataSize);
-        clientMessage.setMessageType(TYPE.id());
+        clientMessage.setMessageType(TYPE);
         clientMessage.set(className);
         boolean causeClassName_isNull = causeClassName == null;
         clientMessage.set(causeClassName_isNull);

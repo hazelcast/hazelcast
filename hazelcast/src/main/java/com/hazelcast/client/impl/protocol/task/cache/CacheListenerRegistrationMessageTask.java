@@ -21,7 +21,6 @@ import com.hazelcast.cache.impl.operation.CacheListenerRegistrationOperation;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CacheListenerRegistrationCodec;
 import com.hazelcast.client.impl.protocol.task.InvocationMessageTask;
-import com.hazelcast.executor.impl.DistributedExecutorService;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
@@ -58,7 +57,7 @@ public class CacheListenerRegistrationMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return CacheListenerRegistrationCodec.encodeResponse((String) response);
+        return CacheListenerRegistrationCodec.encodeResponse();
     }
 
     @Override

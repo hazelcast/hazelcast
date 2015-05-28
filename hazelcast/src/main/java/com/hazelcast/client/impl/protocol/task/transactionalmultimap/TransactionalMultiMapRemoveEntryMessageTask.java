@@ -17,20 +17,17 @@
 package com.hazelcast.client.impl.protocol.task.transactionalmultimap;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.TransactionalMultiMapRemoveCodec;
 import com.hazelcast.client.impl.protocol.codec.TransactionalMultiMapRemoveEntryCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractTransactionalMessageTask;
 import com.hazelcast.core.TransactionalMultiMap;
 import com.hazelcast.instance.Node;
 import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MultiMapPermission;
 import com.hazelcast.transaction.TransactionContext;
 
 import java.security.Permission;
-import java.util.Collection;
 
 public class TransactionalMultiMapRemoveEntryMessageTask
         extends AbstractTransactionalMessageTask<TransactionalMultiMapRemoveEntryCodec.RequestParameters> {

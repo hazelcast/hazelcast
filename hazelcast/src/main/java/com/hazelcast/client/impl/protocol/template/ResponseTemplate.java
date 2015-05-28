@@ -70,9 +70,6 @@ public interface ResponseTemplate {
     @Response(ResponseMessageConst.PARTITIONS)
     void Partitions(Address[] members, int[] ownerIndexes);
 
-    @Response(ResponseMessageConst.EXCEPTION)
-    void Exception();
-
     @Response(ResponseMessageConst.DISTRIBUTED_OBJECT)
     void DistributedObject(Collection<DistributedObjectInfo> infoCollection);
 
@@ -87,5 +84,8 @@ public interface ResponseTemplate {
 
     @Response(ResponseMessageConst.SET_ENTRY)
     void SetEntry(List<Data> keys, List<Data> values);
+
+    @Response(ResponseMessageConst.MAP_INT_BOOLEAN)
+    void MapIntBoolean(Map<Integer, Boolean> map);
 
 }

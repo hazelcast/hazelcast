@@ -23,7 +23,6 @@ import com.hazelcast.core.TransactionalMap;
 import com.hazelcast.instance.Node;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.transaction.TransactionContext;
@@ -58,7 +57,7 @@ public class TransactionalMapPutMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return TransactionalMapPutCodec.encodeResponse((Data) response);
+        return TransactionalMapPutCodec.encodeResponse(serializationService.toData(response));
     }
 
     @Override

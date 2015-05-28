@@ -23,7 +23,6 @@ import com.hazelcast.core.TransactionalMap;
 import com.hazelcast.instance.Node;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.transaction.TransactionContext;
@@ -57,7 +56,7 @@ public class TransactionalMapPutIfAbsentMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return TransactionalMapPutIfAbsentCodec.encodeResponse((Data) response);
+        return TransactionalMapPutIfAbsentCodec.encodeResponse(serializationService.toData(response));
     }
 
     @Override
