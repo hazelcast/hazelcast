@@ -18,9 +18,11 @@ The total number of entries here is 20000 (partition count * entry count for eac
 
 1. Entry goes to the relevant partition.
 2. Partition checks whether the eviction threshold is reached (`max-size`).
-3. If so, 10 (entry count for each partition * eviction percentage) entries are evicted from that particular partition.
+3. If reached, approximately 10 (100 * 10%) entries are evicted from that particular partition.
 
-As a result of this eviction process, when you check the size of your map, it is 19990 (20000 - 10). After this eviction, subsequent put operations will not trigger the next eviction until the map size is again close to the `max-size`.
+As a result of this eviction process, when you check the size of your map, it is ~19990 (20000 - ~10). After this eviction, subsequent put operations will not trigger the next eviction until the map size is again close to the `max-size`.
+
+![image](images/NoteSmall.jpg) ***NOTE:*** *Above scenario is just an example to describe how the eviction process works. Hazelcast finds the most optimum number of entries to be evicted according to your cluster size and selected policy.*
 
 
 #### Configuring Map Eviction
