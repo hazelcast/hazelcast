@@ -34,7 +34,7 @@ import java.util.Collection;
 
 /**
  * Client Protocol Task for handling messages with type id:
- * {@link com.hazelcast.client.impl.protocol.parameters.QueueMessageType#QUEUE_DRAINTOMAXSIZE}
+ * {@link com.hazelcast.client.impl.protocol.codec.QueueMessageType#QUEUE_DRAINTOMAXSIZE}
  */
 public class QueueDrainMaxSizeMessageTask
         extends AbstractPartitionMessageTask<QueueDrainToMaxSizeCodec.RequestParameters> {

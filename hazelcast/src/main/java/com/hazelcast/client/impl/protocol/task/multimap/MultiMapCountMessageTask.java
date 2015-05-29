@@ -31,7 +31,7 @@ import java.security.Permission;
 
 /**
  * Client Protocol Task for handling messages with type id:
- * {@link com.hazelcast.client.impl.protocol.parameters.MultiMapMessageType#MULTIMAP_COUNT}
+ * {@link com.hazelcast.client.impl.protocol.codec.MultiMapMessageType#MULTIMAP_COUNT}
  */
 public class MultiMapCountMessageTask
         extends AbstractPartitionMessageTask<MultiMapCountCodec.RequestParameters> {

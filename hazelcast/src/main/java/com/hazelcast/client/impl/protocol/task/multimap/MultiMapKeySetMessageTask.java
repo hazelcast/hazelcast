@@ -38,7 +38,7 @@ import java.util.Map;
 
 /**
  * Client Protocol Task for handling messages with type id:
- * {@link com.hazelcast.client.impl.protocol.parameters.MultiMapMessageType#MULTIMAP_KEYSET}
+ * {@link com.hazelcast.client.impl.protocol.codec.MultiMapMessageType#MULTIMAP_KEYSET}
  */
 public class MultiMapKeySetMessageTask
         extends AbstractAllPartitionsMessageTask<MultiMapKeySetCodec.RequestParameters> {

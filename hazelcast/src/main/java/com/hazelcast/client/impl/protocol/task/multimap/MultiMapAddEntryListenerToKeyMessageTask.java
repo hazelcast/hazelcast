@@ -24,7 +24,7 @@ import com.hazelcast.nio.serialization.Data;
 
 /**
  * Client Protocol Task for handling messages with type id:
- * {@link com.hazelcast.client.impl.protocol.parameters.MultiMapMessageType#MULTIMAP_ADDENTRYLISTENERTOKEY}
+ * {@link com.hazelcast.client.impl.protocol.codec.MultiMapMessageType#MULTIMAP_ADDENTRYLISTENERTOKEY}
  */
 public class MultiMapAddEntryListenerToKeyMessageTask
         extends AbstractMultiMapAddEntryListenerMessageTask<MultiMapAddEntryListenerToKeyCodec.RequestParameters> {

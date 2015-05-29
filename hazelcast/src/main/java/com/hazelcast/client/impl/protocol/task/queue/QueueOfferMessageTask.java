@@ -32,7 +32,7 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * Client Protocol Task for handling messages with type id:
- * {@link com.hazelcast.client.impl.protocol.parameters.QueueMessageType#QUEUE_OFFER}
+ * {@link com.hazelcast.client.impl.protocol.codec.QueueMessageType#QUEUE_OFFER}
  */
 public class QueueOfferMessageTask
         extends AbstractPartitionMessageTask<QueueOfferCodec.RequestParameters> {

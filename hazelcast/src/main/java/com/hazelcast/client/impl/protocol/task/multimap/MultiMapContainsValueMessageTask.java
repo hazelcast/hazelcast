@@ -32,7 +32,7 @@ import java.util.Map;
 
 /**
  * Client Protocol Task for handling messages with type id:
- * {@link com.hazelcast.client.impl.protocol.parameters.MultiMapMessageType#MULTIMAP_CONTAINSVALUE}
+ * {@link com.hazelcast.client.impl.protocol.codec.MultiMapMessageType#MULTIMAP_CONTAINSVALUE}
  */
 public class MultiMapContainsValueMessageTask
         extends AbstractAllPartitionsMessageTask<MultiMapContainsValueCodec.RequestParameters> {

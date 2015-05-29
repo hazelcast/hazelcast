@@ -29,7 +29,7 @@ import java.security.Permission;
 
 /**
  * Client Protocol Task for handling messages with type id:
- * {@link com.hazelcast.client.impl.protocol.parameters.QueueMessageType#QUEUE_REMOVELISTENER}
+ * {@link com.hazelcast.client.impl.protocol.codec.QueueMessageType#QUEUE_REMOVELISTENER}
  */
 public class QueueRemoveListenerMessageTask
         extends AbstractCallableMessageTask<QueueRemoveListenerCodec.RequestParameters> {

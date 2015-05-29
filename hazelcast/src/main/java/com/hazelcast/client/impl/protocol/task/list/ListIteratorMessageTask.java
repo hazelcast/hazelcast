@@ -32,7 +32,7 @@ import java.security.Permission;
 
 /**
  * Client Protocol Task for handling messages with type id:
- * {@link com.hazelcast.client.impl.protocol.parameters.ListMessageType#LIST_ITERATOR}
+ * {@link com.hazelcast.client.impl.protocol.codec.ListMessageType#LIST_ITERATOR}
  */
 public class ListIteratorMessageTask
         extends AbstractPartitionMessageTask<ListIteratorCodec.RequestParameters> {

@@ -38,7 +38,7 @@ import static com.hazelcast.multimap.impl.ValueCollectionFactory.createCollectio
 
 /**
  * Client Protocol Task for handling messages with type id:
- * {@link com.hazelcast.client.impl.protocol.parameters.MultiMapMessageType#MULTIMAP_GET}
+ * {@link com.hazelcast.client.impl.protocol.codec.MultiMapMessageType#MULTIMAP_GET}
  */
 public class MultiMapGetMessageTask
         extends AbstractPartitionMessageTask<MultiMapGetCodec.RequestParameters> {

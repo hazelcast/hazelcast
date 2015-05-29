@@ -32,7 +32,7 @@ import java.security.Permission;
 
 /**
  * Client Protocol Task for handling messages with type id:
- * {@link com.hazelcast.client.impl.protocol.parameters.ListMessageType#LIST_SET}
+ * {@link com.hazelcast.client.impl.protocol.codec.ListMessageType#LIST_SET}
  */
 public class ListSetMessageTask
         extends AbstractPartitionMessageTask<ListSetCodec.RequestParameters> {

@@ -36,7 +36,7 @@ import java.util.Collection;
 
 /**
  * Client Protocol Task for handling messages with type id:
- * {@link com.hazelcast.client.impl.protocol.parameters.MultiMapMessageType#MULTIMAP_REMOVE}
+ * {@link com.hazelcast.client.impl.protocol.codec.MultiMapMessageType#MULTIMAP_REMOVE}
  */
 public class MultiMapRemoveMessageTask
         extends AbstractPartitionMessageTask<MultiMapRemoveCodec.RequestParameters> {

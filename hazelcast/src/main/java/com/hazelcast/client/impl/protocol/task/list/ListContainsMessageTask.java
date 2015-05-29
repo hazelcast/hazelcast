@@ -33,7 +33,7 @@ import java.util.HashSet;
 
 /**
  * Client Protocol Task for handling messages with type id:
- * {@link com.hazelcast.client.impl.protocol.parameters.ListMessageType#LIST_CONTAINS}
+ * {@link com.hazelcast.client.impl.protocol.codec.ListMessageType#LIST_CONTAINS}
  */
 public class ListContainsMessageTask
         extends AbstractPartitionMessageTask<ListContainsCodec.RequestParameters> {

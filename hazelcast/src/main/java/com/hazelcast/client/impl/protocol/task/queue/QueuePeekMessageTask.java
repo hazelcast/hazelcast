@@ -32,7 +32,7 @@ import java.security.Permission;
 
 /**
  * Client Protocol Task for handling messages with type id:
- * {@link com.hazelcast.client.impl.protocol.parameters.QueueMessageType#QUEUE_PEEK}
+ * {@link com.hazelcast.client.impl.protocol.codec.QueueMessageType#QUEUE_PEEK}
  */
 public class QueuePeekMessageTask
         extends AbstractPartitionMessageTask<QueuePeekCodec.RequestParameters> {

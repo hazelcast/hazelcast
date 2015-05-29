@@ -31,7 +31,7 @@ import java.security.Permission;
 
 /**
  * Client Protocol Task for handling messages with type id:
- * {@link com.hazelcast.client.impl.protocol.parameters.QueueMessageType#QUEUE_COMPAREANDRETAINALL}
+ * {@link com.hazelcast.client.impl.protocol.codec.QueueMessageType#QUEUE_COMPAREANDRETAINALL}
  */
 public class QueueCompareAndRetainAllMessageTask
         extends AbstractPartitionMessageTask<QueueCompareAndRetainAllCodec.RequestParameters> {

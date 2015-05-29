@@ -31,7 +31,7 @@ import java.security.Permission;
 
 /**
  * Client Protocol Task for handling messages with type id:
- * {@link com.hazelcast.client.impl.protocol.parameters.MultiMapMessageType#MULTIMAP_CONTAINSKEY}
+ * {@link com.hazelcast.client.impl.protocol.codec.MultiMapMessageType#MULTIMAP_CONTAINSKEY}
  */
 public class MultiMapContainsKeyMessageTask
         extends AbstractPartitionMessageTask<MultiMapContainsKeyCodec.RequestParameters> {

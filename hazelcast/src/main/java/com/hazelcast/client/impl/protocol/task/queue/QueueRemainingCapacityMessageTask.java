@@ -31,7 +31,7 @@ import java.security.Permission;
 
 /**
  * Client Protocol Task for handling messages with type id:
- * {@link com.hazelcast.client.impl.protocol.parameters.QueueMessageType#QUEUE_REMAININGCAPACITY}
+ * {@link com.hazelcast.client.impl.protocol.codec.QueueMessageType#QUEUE_REMAININGCAPACITY}
  */
 public class QueueRemainingCapacityMessageTask
         extends AbstractPartitionMessageTask<QueueRemainingCapacityCodec.RequestParameters> {

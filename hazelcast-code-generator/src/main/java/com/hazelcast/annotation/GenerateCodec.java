@@ -31,7 +31,7 @@ public @interface GenerateCodec {
      * Returns master id of class.
      * Mostly id of a distributed object like IMap, IQueue in protocol.
      * This id should be unique.
-     * Ids are kept together at com.hazelcast.client.impl.protocol.parameters.TemplateConstants
+     * Ids are kept together at com.hazelcast.client.impl.protocol.codec.TemplateConstants
      * to make sure uniqueness.
      *
      * @return id

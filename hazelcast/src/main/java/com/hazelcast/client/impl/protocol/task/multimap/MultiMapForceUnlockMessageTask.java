@@ -33,7 +33,7 @@ import java.security.Permission;
 
 /**
  * Client Protocol Task for handling messages with type id:
- * {@link com.hazelcast.client.impl.protocol.parameters.MultiMapMessageType#MULTIMAP_FORCEUNLOCK}
+ * {@link com.hazelcast.client.impl.protocol.codec.MultiMapMessageType#MULTIMAP_FORCEUNLOCK}
  */
 public class MultiMapForceUnlockMessageTask
         extends AbstractPartitionMessageTask<MultiMapForceUnlockCodec.RequestParameters> {

@@ -34,7 +34,7 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * Client Protocol Task for handling messages with type id:
- * {@link com.hazelcast.client.impl.protocol.parameters.MultiMapMessageType#MULTIMAP_TRYLOCK}
+ * {@link com.hazelcast.client.impl.protocol.codec.MultiMapMessageType#MULTIMAP_TRYLOCK}
  */
 public class MultiMapTryLockMessageTask
         extends AbstractPartitionMessageTask<MultiMapTryLockCodec.RequestParameters> {

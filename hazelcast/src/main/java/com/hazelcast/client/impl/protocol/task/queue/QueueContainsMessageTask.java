@@ -34,7 +34,7 @@ import java.util.HashSet;
 
 /**
  * Client Protocol Task for handling messages with type id:
- * {@link com.hazelcast.client.impl.protocol.parameters.QueueMessageType#QUEUE_CONTAINS}
+ * {@link com.hazelcast.client.impl.protocol.codec.QueueMessageType#QUEUE_CONTAINS}
  */
 public class QueueContainsMessageTask
         extends AbstractPartitionMessageTask<QueueContainsCodec.RequestParameters> {

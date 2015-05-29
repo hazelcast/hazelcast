@@ -32,7 +32,7 @@ import java.util.Map;
 
 /**
  * Client Protocol Task for handling messages with type id:
- * {@link com.hazelcast.client.impl.protocol.parameters.MultiMapMessageType#MULTIMAP_SIZE}
+ * {@link com.hazelcast.client.impl.protocol.codec.MultiMapMessageType#MULTIMAP_SIZE}
  */
 public class MultiMapSizeMessageTask
         extends AbstractAllPartitionsMessageTask<MultiMapSizeCodec.RequestParameters> {
