@@ -438,7 +438,8 @@
                                         <xs:annotation>
                                             <xs:documentation>
                                                 Defines the expiry policy factory class name or
-                                                defines the expiry policy factory from predefined ones with duration configuration.
+                                                defines the expiry policy factory from predefined ones with duration
+                                                configuration.
                                             </xs:documentation>
                                         </xs:annotation>
                                         <xs:complexType>
@@ -2062,7 +2063,7 @@
     <xs:complexType name="predicate">
         <xs:simpleContent>
             <xs:extension base="xs:string">
-                <xs:attribute name="type">
+                <xs:attribute name="type" use="required">
                     <xs:simpleType>
                         <xs:restriction base="non-space-string">
                             <xs:enumeration value="class-name"/>
