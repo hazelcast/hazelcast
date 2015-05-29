@@ -19,9 +19,7 @@ package com.hazelcast.cache.impl;
 import com.hazelcast.nio.serialization.Data;
 
 /**
- * Implementation of {@link CacheEventData}.
- *
- * @see CacheEventData
+ * Wrapper class for parameters of {@link ICacheService#publishEvent(CacheEventContext)}
  */
 public class CacheEventContext {
 
