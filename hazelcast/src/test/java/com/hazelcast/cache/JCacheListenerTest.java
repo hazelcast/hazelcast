@@ -18,7 +18,6 @@ package com.hazelcast.cache;
 
 import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -46,7 +45,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.LockSupport;
 
-@RunWith(HazelcastParallelClassRunner.class)
+@RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class JCacheListenerTest extends HazelcastTestSupport {
 
@@ -93,7 +92,6 @@ public class JCacheListenerTest extends HazelcastTestSupport {
 
         HazelcastTestSupport.assertOpenEventually(latch);
         Assert.assertEquals(threadCount * putCount, counter.get());
-        cachingProvider.close();
     }
 
     @Test(timeout = 30000)
@@ -157,7 +155,6 @@ public class JCacheListenerTest extends HazelcastTestSupport {
         String key = randomString();
         cache.put(key, randomString());
         // there should not be any hanging due to sync listener
-
         cache.replace(key, randomString(), randomString());
     }
 
@@ -326,14 +323,12 @@ public class JCacheListenerTest extends HazelcastTestSupport {
         @Override
         public void onCreated(Iterable<CacheEntryEvent<? extends String, ? extends String>> cacheEntryEvents)
                 throws CacheEntryListenerException {
-
             onEvent(cacheEntryEvents);
         }
 
         @Override
         public void onUpdated(Iterable<CacheEntryEvent<? extends String, ? extends String>> cacheEntryEvents)
                 throws CacheEntryListenerException {
-
             onEvent(cacheEntryEvents);
         }
 
