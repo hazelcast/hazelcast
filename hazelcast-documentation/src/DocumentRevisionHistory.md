@@ -33,8 +33,9 @@
 ||[System Properties](#system-properties)|Updated by adding the new system properties.
 ||[Enterprise WAN Replication Configuration](#enterprise-wan-replication-configuration)|Added as a new section describing the elements and attributes of Enterprise WAN Replication configuration.
 |[Chapter 25 - License Questions](#license-questions)||Added as a new chapter describing the license information of dependencies.|
-|[Chapter 26 - FAQ](#frequently-asked-questions)||Added new questions/answers.|
-|[Chapter 27 - Glossary](#glossary)||Added new glossary items.|
+|[Chapter 26 - Common Exception Types](#common-exception-types)||Added as a new chapter.|
+|[Chapter 27 - FAQ](#frequently-asked-questions)||Added new questions/answers.|
+|[Chapter 28 - Glossary](#glossary)||Added new glossary items.|
 
 
 

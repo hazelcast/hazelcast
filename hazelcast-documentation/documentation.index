@@ -218,5 +218,6 @@ src/HazelcastConfiguration/HazelcastConfiguration.md
 	src/HazelcastConfiguration/SystemProperties.md
 src/NetworkPartitioning.md
 src/Licenses.md
+src/CommonExceptionTypes.md
 src/FAQ.md
 src/Glossary.md
