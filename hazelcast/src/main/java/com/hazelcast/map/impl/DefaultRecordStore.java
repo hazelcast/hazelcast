@@ -127,6 +127,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
                 ExceptionUtil.rethrow(e);
             }
         } else {
+            keyLoader.triggerLoadingWithDelay();
             throw new RetryableHazelcastException("Map " + getName()
                     + " is still loading data from external store");
         }

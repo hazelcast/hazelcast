@@ -29,6 +29,7 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.impl.AbstractCompletableFuture;
 import com.hazelcast.util.StateMachine;
+import com.hazelcast.util.scheduler.CoalescingDelayedTrigger;
 
 import java.io.Closeable;
 import java.util.ArrayList;
@@ -52,17 +53,21 @@ import static com.hazelcast.nio.IOUtil.closeResource;
 import static com.hazelcast.spi.ExecutionService.MAP_LOAD_ALL_KEYS_EXECUTOR;
 import static com.hazelcast.util.IterableUtil.limit;
 import static com.hazelcast.util.IterableUtil.map;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * Loads keys from a {@link MapLoader} and sends them to all partitions for loading
  */
 public class MapKeyLoader {
 
+    private static final long LOADING_TRIGGER_DELAY = SECONDS.toMillis(5);
+
     private String mapName;
     private OperationService opService;
     private InternalPartitionService partitionService;
     private IFunction<Object, Data> toData;
     private ExecutionService execService;
+    private CoalescingDelayedTrigger deleayedTrigger;
 
     private int maxSizePerNode;
     private int maxBatch;
@@ -150,7 +155,6 @@ public class MapKeyLoader {
 
     /**
      * Check if loaded on SENDER partition. Triggers key loading if it hadn't started
-     * @param partitionId
      */
     public Future triggerLoading() {
 
@@ -190,6 +194,22 @@ public class MapKeyLoader {
         } else if (state.is(State.LOADED)) {
             state.next(State.LOADING);
         }
+    }
+
+    /** Triggers key loading on SENDER if it hadn't started. Delays triggering if invoked multiple times. **/
+    public void triggerLoadingWithDelay() {
+        if (deleayedTrigger == null) {
+            Runnable runnable = new Runnable() {
+                @Override
+                public void run() {
+                    Operation op = new PartitionCheckIfLoadedOperation(mapName, true);
+                    opService.invokeOnPartition(SERVICE_NAME, op, mapNamePartition);
+                }
+            };
+            deleayedTrigger = new CoalescingDelayedTrigger(execService, LOADING_TRIGGER_DELAY, LOADING_TRIGGER_DELAY, runnable);
+        }
+
+        deleayedTrigger.executeWithDelay();
     }
 
     public boolean shouldDoInitialLoad() {
