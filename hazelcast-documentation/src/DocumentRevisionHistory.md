@@ -18,22 +18,23 @@
 |[Chapter 13 - Integrated Clustering](#integrated-clustering)||Added introduction paragraphs.|
 ||[Tomcat Based Web Session Replication](#tomcat-based-web-session-replication)|Updated the Overview paragraph to include the support for Tomcat 8.
 |[Chapter 14 - Storage](#storage)|[Sizing Practices](#sizing-practices)|Added as a new section.|
-|[Chapter 15 - Clients](#clients)||Added introduction paragraphs.|
-|[Chapter 17 - Management](#management)|[JMX API per Node](#jmx-api-per-node)|Two new bean definitions added to the Hazelcast Instance list (Cluster Safe State and LocalMember Safe State).|
-|[Chapter 18 - Security](#security)|[ClusterLoginModule](#clusterloginmodule)|The [Enterprise Integration section](#enterprise-integration) added .|
-|[Chapter 19 - Performance](#performance)|[Hazelcast Performance on AWS](#hazelcast-performance-on-aws)|Added as a new section that provides best practices to improve the Hazelcast performance on Amazon Web Service.|
+|[Chapter 15 - Hazelcast Java Client](#hazelcast-java-client)||Separated from the formerly known "Clients" chapter to be a chapter of its own.|
+|[Chapter 16 - Other Client Implementations](#other-client-implementations)||C++, .NET, Memcache and REST client sections separated from the formerly known "Clients" chapter.|
+|[Chapter 18 - Management](#management)|[JMX API per Node](#jmx-api-per-node)|Two new bean definitions added to the Hazelcast Instance list (Cluster Safe State and LocalMember Safe State).|
+|[Chapter 19 - Security](#security)|[ClusterLoginModule](#clusterloginmodule)|The [Enterprise Integration section](#enterprise-integration) added .|
+|[Chapter 20 - Performance](#performance)|[Hazelcast Performance on AWS](#hazelcast-performance-on-aws)|Added as a new section that provides best practices to improve the Hazelcast performance on Amazon Web Service.|
 ||[Back Pressure](#back-pressure)|Added as a new section.
 ||[SlowOperationDetector](#slowoperationdetector)|Added as a new section explaining the `SlowOperationDetector`, a monitoring feature that collects information of all slow operations.
-|[Chapter 20 - Hazelcast Simulator](#hazelcast-simulator)||Added as a new chapter providing comprehensive information on the Hazelcast Simulator feature.|
-|[Chapter 21 - WAN](#wan)|[WAN Replication Queue Capacity](#wan-replication-queue-capacity)|The previous heading title (WAN Replication Queue Size) and the system property name (`hazelcast.enterprise.wanrep.queuesize`) changed to WAN Replication Queue Capacity and `hazelcast.enterprise.wanrep.queue.capacity`.|
+|[Chapter 21 - Hazelcast Simulator](#hazelcast-simulator)||Added as a new chapter providing comprehensive information on the Hazelcast Simulator feature.|
+|[Chapter 22 - WAN](#wan)|[WAN Replication Queue Capacity](#wan-replication-queue-capacity)|The previous heading title (WAN Replication Queue Size) and the system property name (`hazelcast.enterprise.wanrep.queuesize`) changed to WAN Replication Queue Capacity and `hazelcast.enterprise.wanrep.queue.capacity`.|
 ||[Enterprise WAN Replication](#enterprise-wan-replication)|Added as a new section.
-|[Chapter 22 - Hazelcast Configuration](#hazelcast-configuration)||Improved by adding missing configuration elements and attributes. Added introduction paragraphs to the chapter.|
+|[Chapter 23 - Hazelcast Configuration](#hazelcast-configuration)||Improved by adding missing configuration elements and attributes. Added introduction paragraphs to the chapter.|
 ||[Using Variables](#using-variables)| Added as a new section explaining how to use variables in declarative configuration.|
 ||[System Properties](#system-properties)|Updated by adding the new system properties.
 ||[Enterprise WAN Replication Configuration](#enterprise-wan-replication-configuration)|Added as a new section describing the elements and attributes of Enterprise WAN Replication configuration.
-|[Chapter 24 - License Questions](#license-questions)||Added as a new chapter describing the license information of dependencies.|
-|[Chapter 25 - FAQ](#frequently-asked-questions)||Added new questions/answers.|
-|[Chapter 26 - Glossary](#glossary)||Added new glossary items.|
+|[Chapter 25 - License Questions](#license-questions)||Added as a new chapter describing the license information of dependencies.|
+|[Chapter 26 - FAQ](#frequently-asked-questions)||Added new questions/answers.|
+|[Chapter 27 - Glossary](#glossary)||Added new glossary items.|
 
 
 

@@ -129,8 +129,11 @@ src/IntegratedClustering.md
 		src/JettySessionReplication.md
 	src/SpringIntegration.md
 src/Storage.md
-src/Clients.md
-	src/JavaClient.md
+src/HazelcastJavaClient/JavaClient.md
+src/HazelcastJavaClient/Overview.md
+src/HazelcastJavaClient/Configuration.md
+src/HazelcastJavaClient/SystemProperties.md
+src/OtherClientImplementations.md
 	src/CPlusClient.md
 	src/CSharpClient.md
 	src/RestClient.md
