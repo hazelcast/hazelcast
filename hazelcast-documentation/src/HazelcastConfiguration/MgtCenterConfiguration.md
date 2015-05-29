@@ -14,9 +14,9 @@ The example configurations are shown below.
 
 ```java
 Config config = new Config();
-config.getManagementCenterConfig().setEnabled( "true" )
+config.getManagementCenterConfig().setEnabled( true )
          .setUrl( "http://localhost:8080/mancenter" )
-            .setUpdateInterval( "3" );
+            .setUpdateInterval( 3 );
 ```
 
 Management Center configuration has the following attributes.
