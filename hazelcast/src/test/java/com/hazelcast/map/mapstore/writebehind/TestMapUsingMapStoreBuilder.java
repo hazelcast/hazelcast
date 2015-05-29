@@ -15,7 +15,7 @@ public class TestMapUsingMapStoreBuilder<K, V> {
 
     private HazelcastInstance[] nodes;
 
-    private int nodeCount;
+    private int nodeCount = 1;
 
     private int partitionCount = 271;
 

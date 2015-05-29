@@ -1,5 +1,8 @@
 package com.hazelcast.map.impl.mapstore;
 
+import com.hazelcast.config.Config;
+import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.MapStoreWrapper;
@@ -40,17 +43,29 @@ public final class MapDataStores {
                                                                    WriteBehindProcessor writeBehindProcessor) {
         final MapServiceContext mapServiceContext = mapStoreContext.getMapServiceContext();
         final MapStoreWrapper store = mapStoreContext.getMapStoreWrapper();
-        final SerializationService serializationService = mapServiceContext.getNodeEngine().getSerializationService();
+        final NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
+        final SerializationService serializationService = nodeEngine.getSerializationService();
         final MapStoreConfig mapStoreConfig = mapStoreContext.getMapStoreConfig();
         final int writeDelaySeconds = mapStoreConfig.getWriteDelaySeconds();
         final long writeDelayMillis = TimeUnit.SECONDS.toMillis(writeDelaySeconds);
         final boolean writeCoalescing = mapStoreConfig.isWriteCoalescing();
+        final InMemoryFormat inMemoryFormat = getInMemoryFormat(mapStoreContext);
         final WriteBehindStore mapDataStore
-                = new WriteBehindStore(store, serializationService, writeDelayMillis, partitionId);
+                = new WriteBehindStore(store, serializationService, writeDelayMillis, partitionId, inMemoryFormat);
         final WriteBehindQueue writeBehindQueue = newWriteBehindQueue(mapServiceContext, writeCoalescing);
         mapDataStore.setWriteBehindQueue(writeBehindQueue);
         mapDataStore.setWriteBehindProcessor(writeBehindProcessor);
         return (MapDataStore<K, V>) mapDataStore;
+    }
+
+    private static InMemoryFormat getInMemoryFormat(MapStoreContext mapStoreContext) {
+        MapServiceContext mapServiceContext = mapStoreContext.getMapServiceContext();
+        NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
+
+        Config config = nodeEngine.getConfig();
+        String mapName = mapStoreContext.getMapName();
+        MapConfig mapConfig = config.findMapConfig(mapName);
+        return mapConfig.getInMemoryFormat();
     }
 
     private static WriteBehindQueue newWriteBehindQueue(MapServiceContext mapServiceContext, boolean writeCoalescing) {
