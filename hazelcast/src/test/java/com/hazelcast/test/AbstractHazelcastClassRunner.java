@@ -40,8 +40,7 @@ import org.junit.runners.model.Statement;
  */
 public abstract class AbstractHazelcastClassRunner extends AbstractParameterizedHazelcastClassRunner {
 
-    protected static final boolean DISABLE_THREAD_DUMP_ON_FAILURE = 
-            Boolean.getBoolean("hazelcast.test.disableThreadDumpOnFailure");
+    protected static final boolean DISABLE_THREAD_DUMP_ON_FAILURE = true;
 
     static {
         final String logging = "hazelcast.logging.type";
