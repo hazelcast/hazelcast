@@ -17,8 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.transaction;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.VoidResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.XATransactionPrepareParameters;
+import com.hazelcast.client.impl.protocol.codec.XATransactionPrepareCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
@@ -31,18 +30,24 @@ import com.hazelcast.transaction.impl.xa.XAService;
 
 import java.security.Permission;
 
-public class XATransactionPrepareMessageTask extends AbstractCallableMessageTask<XATransactionPrepareParameters> {
+public class XATransactionPrepareMessageTask
+        extends AbstractCallableMessageTask<XATransactionPrepareCodec.RequestParameters> {
     public XATransactionPrepareMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected XATransactionPrepareParameters decodeClientMessage(ClientMessage clientMessage) {
-        return XATransactionPrepareParameters.decode(clientMessage);
+    protected XATransactionPrepareCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return XATransactionPrepareCodec.decodeRequest(clientMessage);
     }
 
     @Override
-    protected ClientMessage call() throws Exception {
+    protected ClientMessage encodeResponse(Object response) {
+        return XATransactionPrepareCodec.encodeResponse();
+    }
+
+    @Override
+    protected Object call() throws Exception {
         String transactionId = parameters.transactionId;
         TransactionContext transactionContext = endpoint.getTransactionContext(transactionId);
         if (transactionContext == null) {
@@ -50,7 +55,7 @@ public class XATransactionPrepareMessageTask extends AbstractCallableMessageTask
         }
         Transaction transaction = TransactionAccessor.getTransaction(transactionContext);
         transaction.prepare();
-        return VoidResultParameters.encode();
+        return null;
     }
 
     @Override

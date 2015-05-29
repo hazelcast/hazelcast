@@ -17,8 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.transactionalmap;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.DataCollectionResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.TransactionalMapKeySetWithPredicateParameters;
+import com.hazelcast.client.impl.protocol.codec.TransactionalMapKeySetWithPredicateCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractTransactionalMessageTask;
 import com.hazelcast.core.TransactionalMap;
 import com.hazelcast.instance.Node;
@@ -31,29 +30,29 @@ import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.transaction.TransactionContext;
 
 import java.security.Permission;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.Set;
 
 public class TransactionalMapKeySetWithPredicateMessageTask
-        extends AbstractTransactionalMessageTask<TransactionalMapKeySetWithPredicateParameters> {
+        extends AbstractTransactionalMessageTask<TransactionalMapKeySetWithPredicateCodec.RequestParameters> {
 
     public TransactionalMapKeySetWithPredicateMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected ClientMessage innerCall() throws Exception {
+    protected Object innerCall() throws Exception {
         final TransactionContext context = getEndpoint().getTransactionContext(parameters.txnId);
         final TransactionalMap map = context.getMap(parameters.name);
 
         Predicate predicate = serializationService.toObject(parameters.predicate);
         Set keySet = map.keySet(predicate);
-        List<Data> list = new ArrayList<Data>(keySet.size());
+        Collection<Data> list = new HashSet<Data>(keySet.size());
         for (Object o : keySet) {
             list.add(serializationService.toData(o));
         }
-        return DataCollectionResultParameters.encode(list);
+        return list;
     }
 
     @Override
@@ -62,8 +61,13 @@ public class TransactionalMapKeySetWithPredicateMessageTask
     }
 
     @Override
-    protected TransactionalMapKeySetWithPredicateParameters decodeClientMessage(ClientMessage clientMessage) {
-        return TransactionalMapKeySetWithPredicateParameters.decode(clientMessage);
+    protected TransactionalMapKeySetWithPredicateCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return TransactionalMapKeySetWithPredicateCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return TransactionalMapKeySetWithPredicateCodec.encodeResponse((Collection<Data>) response);
     }
 
     @Override

@@ -22,8 +22,7 @@ import com.hazelcast.cache.impl.CacheEventSet;
 import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.AddListenerResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.CacheAddEntryListenerParameters;
+import com.hazelcast.client.impl.protocol.codec.CacheAddEntryListenerCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
@@ -40,27 +39,32 @@ import java.util.Set;
  * @see CacheService#registerListener(String, CacheEventListener)
  */
 public class CacheAddEntryListenerMessageTask
-        extends AbstractCallableMessageTask<CacheAddEntryListenerParameters> {
+        extends AbstractCallableMessageTask<CacheAddEntryListenerCodec.RequestParameters> {
 
     public CacheAddEntryListenerMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected ClientMessage call() {
+    protected Object call() {
         final ClientEndpoint endpoint = getEndpoint();
         final CacheService service = getService(CacheService.SERVICE_NAME);
         CacheEventListener entryListener = new CacheEventListener() {
             @Override
             public void handleEvent(Object eventObject) {
-                if (endpoint.isAlive()) {
+                if (!endpoint.isAlive()) {
+                    return;
+                }
+                if (eventObject instanceof CacheEventSet) {
+                    CacheEventSet ces = (CacheEventSet) eventObject;
                     Data partitionKey = getPartitionKey(eventObject);
-                    endpoint.sendEvent(partitionKey, eventObject, clientMessage.getCorrelationId());
+                    ClientMessage clientMessage = CacheAddEntryListenerCodec
+                            .encodeCacheEvent(ces.getEventType().getType(), ces.getEvents(), ces.getCompletionId());
+                    sendClientMessage(partitionKey, clientMessage);
                 }
             }
         };
-        final String registrationId = service.registerListener(parameters.name, entryListener);
-        return AddListenerResultParameters.encode(registrationId);
+        return service.registerListener(parameters.name, entryListener);
     }
 
     private Data getPartitionKey(Object eventObject) {
@@ -79,8 +83,13 @@ public class CacheAddEntryListenerMessageTask
     }
 
     @Override
-    protected CacheAddEntryListenerParameters decodeClientMessage(ClientMessage clientMessage) {
-        return null;
+    protected CacheAddEntryListenerCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return CacheAddEntryListenerCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return CacheAddEntryListenerCodec.encodeResponse((String) response);
     }
 
     @Override

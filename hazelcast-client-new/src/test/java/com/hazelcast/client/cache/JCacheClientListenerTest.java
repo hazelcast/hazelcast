@@ -36,7 +36,6 @@ import javax.cache.spi.CachingProvider;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-@Ignore
 public class JCacheClientListenerTest extends JCacheListenerTest {
 
     @Before

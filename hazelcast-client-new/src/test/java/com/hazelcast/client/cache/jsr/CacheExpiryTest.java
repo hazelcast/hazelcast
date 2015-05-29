@@ -26,7 +26,6 @@ import org.junit.Ignore;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-@Ignore
 public class CacheExpiryTest
         extends org.jsr107.tck.expiry.CacheExpiryTest {
 

@@ -17,8 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.mapreduce;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.MapReduceJobProcessInformationParameters;
-import com.hazelcast.client.impl.protocol.parameters.MapReduceJobProcessInformationResultParameters;
+import com.hazelcast.client.impl.protocol.codec.MapReduceJobProcessInformationCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.mapreduce.JobProcessInformation;
@@ -29,20 +28,21 @@ import com.hazelcast.nio.Connection;
 import java.security.Permission;
 
 public class MapReduceJobProcessInformationMessageTask
-        extends AbstractCallableMessageTask<MapReduceJobProcessInformationParameters> {
+        extends AbstractCallableMessageTask<MapReduceJobProcessInformationCodec.RequestParameters> {
 
     public MapReduceJobProcessInformationMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected ClientMessage call() throws Exception {
+    protected Object call() throws Exception {
         MapReduceService mapReduceService = getService(MapReduceService.SERVICE_NAME);
         JobSupervisor supervisor = mapReduceService.getJobSupervisor(parameters.name, parameters.jobId);
 
         if (supervisor != null && supervisor.getJobProcessInformation() != null) {
             JobProcessInformation current = supervisor.getJobProcessInformation();
-            return MapReduceJobProcessInformationResultParameters.encode(current.getPartitionStates(),
+
+            return MapReduceJobProcessInformationCodec.encodeResponse(current.getPartitionStates(),
                     current.getProcessedRecords());
         }
         throw new IllegalStateException("Information not found for map reduce with name : "
@@ -50,8 +50,13 @@ public class MapReduceJobProcessInformationMessageTask
     }
 
     @Override
-    protected MapReduceJobProcessInformationParameters decodeClientMessage(ClientMessage clientMessage) {
-        return MapReduceJobProcessInformationParameters.decode(clientMessage);
+    protected MapReduceJobProcessInformationCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return MapReduceJobProcessInformationCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return (ClientMessage) response;
     }
 
     @Override

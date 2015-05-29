@@ -26,7 +26,6 @@ import org.junit.runner.RunWith;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-@Ignore
 public class CacheInvokeTest
         extends org.jsr107.tck.processor.CacheInvokeTest {
 

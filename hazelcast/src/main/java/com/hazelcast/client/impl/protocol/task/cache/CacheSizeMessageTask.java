@@ -20,8 +20,7 @@ import com.hazelcast.cache.impl.CacheOperationProvider;
 import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.operation.CacheSizeOperationFactory;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.CacheSizeParameters;
-import com.hazelcast.client.impl.protocol.parameters.IntResultParameters;
+import com.hazelcast.client.impl.protocol.codec.CacheSizeCodec;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.OperationFactory;
@@ -34,7 +33,7 @@ import java.util.Map;
  * @see CacheSizeOperationFactory
  */
 public class CacheSizeMessageTask
-        extends AbstractCacheAllPartitionsTask<CacheSizeParameters> {
+        extends AbstractCacheAllPartitionsTask<CacheSizeCodec.RequestParameters> {
 
     public CacheSizeMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -47,19 +46,24 @@ public class CacheSizeMessageTask
     }
 
     @Override
-    protected ClientMessage reduce(Map<Integer, Object> map) {
+    protected Object reduce(Map<Integer, Object> map) {
         int total = 0;
         CacheService service = getService(getServiceName());
         for (Object result : map.values()) {
             Integer size = (Integer) service.toObject(result);
             total += size;
         }
-        return IntResultParameters.encode(total);
+        return total;
     }
 
     @Override
-    protected CacheSizeParameters decodeClientMessage(ClientMessage clientMessage) {
-        return CacheSizeParameters.decode(clientMessage);
+    protected CacheSizeCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return CacheSizeCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return CacheSizeCodec.encodeResponse((Integer) response);
     }
 
     @Override

@@ -17,8 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.queue;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.DataCollectionResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.QueueDrainToParameters;
+import com.hazelcast.client.impl.protocol.codec.QueueDrainToCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.collection.impl.queue.operations.DrainOperation;
@@ -36,10 +35,9 @@ import java.util.Collection;
 /**
  * Client Protocol Task for handling messages with type id:
  * {@link com.hazelcast.client.impl.protocol.parameters.QueueMessageType#QUEUE_DRAINTO}
- *
  */
 public class QueueDrainMessageTask
-        extends AbstractPartitionMessageTask<QueueDrainToParameters> {
+        extends AbstractPartitionMessageTask<QueueDrainToCodec.RequestParameters> {
 
     public QueueDrainMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -51,8 +49,8 @@ public class QueueDrainMessageTask
     }
 
     @Override
-    protected QueueDrainToParameters decodeClientMessage(ClientMessage clientMessage) {
-        return QueueDrainToParameters.decode(clientMessage);
+    protected QueueDrainToCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return QueueDrainToCodec.decodeRequest(clientMessage);
     }
 
     @Override
@@ -72,9 +70,9 @@ public class QueueDrainMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-            SerializableCollection serializableCollection = (SerializableCollection) response;
-            Collection<Data> coll = serializableCollection.getCollection();
-            return DataCollectionResultParameters.encode(coll);
+        SerializableCollection serializableCollection = (SerializableCollection) response;
+        Collection<Data> coll = serializableCollection.getCollection();
+        return QueueDrainToCodec.encodeResponse(coll);
     }
 
     @Override

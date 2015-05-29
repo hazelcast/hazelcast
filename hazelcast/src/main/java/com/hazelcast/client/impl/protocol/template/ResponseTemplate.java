@@ -21,14 +21,15 @@ import com.hazelcast.annotation.Nullable;
 import com.hazelcast.annotation.Response;
 import com.hazelcast.client.impl.client.DistributedObjectInfo;
 import com.hazelcast.client.impl.protocol.ResponseMessageConst;
-import com.hazelcast.client.impl.protocol.parameters.TemplateConstants;
 import com.hazelcast.map.impl.SimpleEntryView;
+import com.hazelcast.mapreduce.JobPartitionState;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Client Protocol Responses
@@ -69,14 +70,22 @@ public interface ResponseTemplate {
     @Response(ResponseMessageConst.PARTITIONS)
     void Partitions(Address[] members, int[] ownerIndexes);
 
-    @Response(ResponseMessageConst.EXCEPTION)
-    void Exception();
-
     @Response(ResponseMessageConst.DISTRIBUTED_OBJECT)
     void DistributedObject(Collection<DistributedObjectInfo> infoCollection);
 
     @Response(ResponseMessageConst.ENTRY_VIEW)
     void EntryView(@Nullable SimpleEntryView<Data, Data> dataEntryView);
 
+    @Response(ResponseMessageConst.JOB_PROCESS_INFO)
+    void JobProcessInfo(JobPartitionState[] jobPartitionStates, int processRecords);
+
+    @Response(ResponseMessageConst.SET_DATA)
+    void SetData(Set<Data> list);
+
+    @Response(ResponseMessageConst.SET_ENTRY)
+    void SetEntry(List<Data> keys, List<Data> values);
+
+    @Response(ResponseMessageConst.MAP_INT_BOOLEAN)
+    void MapIntBoolean(Map<Integer, Boolean> map);
 
 }

@@ -17,8 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.semaphore;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.IntResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.SemaphoreAvailablePermitsParameters;
+import com.hazelcast.client.impl.protocol.codec.SemaphoreAvailablePermitsCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.concurrent.semaphore.SemaphoreService;
 import com.hazelcast.concurrent.semaphore.operations.AvailableOperation;
@@ -31,7 +30,7 @@ import com.hazelcast.spi.Operation;
 import java.security.Permission;
 
 public class SemaphoreAvailablePermitsMessageTasks
-        extends AbstractPartitionMessageTask<SemaphoreAvailablePermitsParameters> {
+        extends AbstractPartitionMessageTask<SemaphoreAvailablePermitsCodec.RequestParameters> {
 
     public SemaphoreAvailablePermitsMessageTasks(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -43,13 +42,13 @@ public class SemaphoreAvailablePermitsMessageTasks
     }
 
     @Override
-    protected SemaphoreAvailablePermitsParameters decodeClientMessage(ClientMessage clientMessage) {
-        return SemaphoreAvailablePermitsParameters.decode(clientMessage);
+    protected SemaphoreAvailablePermitsCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return SemaphoreAvailablePermitsCodec.decodeRequest(clientMessage);
     }
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return IntResultParameters.encode((Integer) response);
+        return SemaphoreAvailablePermitsCodec.encodeResponse((Integer) response);
     }
 
     @Override

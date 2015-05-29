@@ -55,7 +55,6 @@ import static junit.framework.Assert.assertNotNull;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-@Ignore
 public class ClientCacheConfigTest {
 
     private final URL configUrl1 = getClass().getClassLoader().getResource("hazelcast-client-c1.xml");

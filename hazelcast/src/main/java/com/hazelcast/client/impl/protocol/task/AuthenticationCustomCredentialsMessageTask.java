@@ -16,9 +16,10 @@
 
 package com.hazelcast.client.impl.protocol.task;
 
-import com.hazelcast.client.impl.protocol.parameters.AuthenticationCustomCredentialsParameters;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.codec.ClientAuthenticationCustomCodec;
 import com.hazelcast.instance.Node;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.security.SecurityContext;
 
@@ -31,7 +32,7 @@ import java.util.logging.Level;
  * Custom Authentication with custom credential impl
  */
 public class AuthenticationCustomCredentialsMessageTask
-        extends AuthenticationBaseMessageTask<AuthenticationCustomCredentialsParameters> {
+        extends AuthenticationBaseMessageTask<ClientAuthenticationCustomCodec.RequestParameters> {
 
     public AuthenticationCustomCredentialsMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -43,8 +44,19 @@ public class AuthenticationCustomCredentialsMessageTask
     }
 
     @Override
-    protected AuthenticationCustomCredentialsParameters decodeClientMessage(ClientMessage clientMessage) {
-        return AuthenticationCustomCredentialsParameters.decode(clientMessage);
+    protected ClientAuthenticationCustomCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return ClientAuthenticationCustomCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return (ClientMessage) response;
+    }
+
+
+    @Override
+    protected ClientMessage encodeAuth(Address thisAddress, String uuid, String ownerUuid) {
+        return ClientAuthenticationCustomCodec.encodeResponse(thisAddress, uuid, ownerUuid);
     }
 
     @Override

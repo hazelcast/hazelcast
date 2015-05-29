@@ -18,11 +18,11 @@ package com.hazelcast.client.impl.protocol.task.transaction;
 
 import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.VoidResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.XAClearRemoteTransactionParameters;
+import com.hazelcast.client.impl.protocol.codec.XATransactionClearRemoteCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.security.permission.TransactionPermission;
 import com.hazelcast.spi.InvocationBuilder;
@@ -33,7 +33,8 @@ import com.hazelcast.transaction.impl.xa.XAService;
 
 import java.security.Permission;
 
-public class XAClearRemoteTransactionMessageTask extends AbstractCallableMessageTask<XAClearRemoteTransactionParameters> {
+public class XAClearRemoteTransactionMessageTask
+        extends AbstractCallableMessageTask<XATransactionClearRemoteCodec.RequestParameters> {
 
     private static final int TRY_COUNT = 100;
 
@@ -42,24 +43,30 @@ public class XAClearRemoteTransactionMessageTask extends AbstractCallableMessage
     }
 
     @Override
-    protected XAClearRemoteTransactionParameters decodeClientMessage(ClientMessage clientMessage) {
-        return XAClearRemoteTransactionParameters.decode(clientMessage);
+    protected XATransactionClearRemoteCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return XATransactionClearRemoteCodec.decodeRequest(clientMessage);
     }
 
     @Override
-    protected ClientMessage call() throws Exception {
+    protected ClientMessage encodeResponse(Object response) {
+        return XATransactionClearRemoteCodec.encodeResponse();
+    }
+
+    @Override
+    protected Object call() throws Exception {
         InternalOperationService operationService = nodeEngine.getOperationService();
         InternalPartitionService partitionService = nodeEngine.getPartitionService();
         ClientEndpoint endpoint = getEndpoint();
 
-        Operation op = new ClearRemoteTransactionOperation(parameters.xidData);
+        Data xidData = serializationService.toData(parameters.xid);
+        Operation op = new ClearRemoteTransactionOperation(xidData);
         op.setCallerUuid(endpoint.getUuid());
-        int partitionId = partitionService.getPartitionId(parameters.xidData);
+        int partitionId = partitionService.getPartitionId(xidData);
 
         InvocationBuilder builder = operationService.createInvocationBuilder(getServiceName(), op, partitionId);
         builder.setTryCount(TRY_COUNT).setResultDeserialized(false);
         builder.invoke();
-        return VoidResultParameters.encode();
+        return XATransactionClearRemoteCodec.encodeResponse();
     }
 
     @Override

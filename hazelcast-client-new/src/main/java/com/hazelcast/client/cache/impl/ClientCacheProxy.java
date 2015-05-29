@@ -23,14 +23,12 @@ import com.hazelcast.cache.impl.nearcache.NearCache;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.MemberImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.CacheAddEntryListenerParameters;
-import com.hazelcast.client.impl.protocol.parameters.CacheContainsKeyParameters;
-import com.hazelcast.client.impl.protocol.parameters.CacheEntryProcessorParameters;
-import com.hazelcast.client.impl.protocol.parameters.CacheListenerRegistrationParameters;
-import com.hazelcast.client.impl.protocol.parameters.CacheLoadAllParameters;
-import com.hazelcast.client.impl.protocol.parameters.CacheRemoveEntryListenerParameters;
-import com.hazelcast.client.impl.protocol.parameters.GenericResultParameters;
+import com.hazelcast.client.impl.protocol.codec.CacheAddEntryListenerCodec;
+import com.hazelcast.client.impl.protocol.codec.CacheContainsKeyCodec;
+import com.hazelcast.client.impl.protocol.codec.CacheEntryProcessorCodec;
+import com.hazelcast.client.impl.protocol.codec.CacheListenerRegistrationCodec;
+import com.hazelcast.client.impl.protocol.codec.CacheLoadAllCodec;
+import com.hazelcast.client.impl.protocol.codec.CacheRemoveEntryListenerCodec;
 import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.client.spi.impl.ClientInvocation;
@@ -99,10 +97,9 @@ public class ClientCacheProxy<K, V>
         if (cached != null && !NearCache.NULL_OBJECT.equals(cached)) {
             return true;
         }
-        ClientMessage request = CacheContainsKeyParameters.encode(nameWithPrefix, keyData);
-        ClientMessage result = invoke(request);
-        BooleanResultParameters resultParameters = BooleanResultParameters.decode(result);
-        return resultParameters.result;
+        ClientMessage request = CacheContainsKeyCodec.encodeRequest(nameWithPrefix, keyData);
+        ClientMessage result = invoke(request, keyData);
+        return CacheContainsKeyCodec.decodeResponse(result).response;
     }
 
     @Override
@@ -117,7 +114,7 @@ public class ClientCacheProxy<K, V>
         for (K key : keys) {
             keysData.add(toData(key));
         }
-        ClientMessage request = CacheLoadAllParameters.encode(nameWithPrefix, keysData, replaceExistingValues);
+        ClientMessage request = CacheLoadAllCodec.encodeRequest(nameWithPrefix, keysData, replaceExistingValues);
         try {
             submitLoadAllTask(request, completionListener);
         } catch (Exception e) {
@@ -150,7 +147,7 @@ public class ClientCacheProxy<K, V>
 
     @Override
     public boolean remove(K key) {
-        final ICompletableFuture<Boolean> f = removeAsyncInternal(key, null, false, false, true);
+        final ICompletableFuture<Boolean> f = removeAsyncInternal(key, null, false, true);
         try {
             return f.get();
         } catch (Throwable e) {
@@ -160,7 +157,7 @@ public class ClientCacheProxy<K, V>
 
     @Override
     public boolean remove(K key, V oldValue) {
-        final ICompletableFuture<Boolean> f = removeAsyncInternal(key, oldValue, true, false, true);
+        final ICompletableFuture<Boolean> f = removeAsyncInternal(key, oldValue, true, true);
         try {
             return f.get();
         } catch (Throwable e) {
@@ -170,7 +167,7 @@ public class ClientCacheProxy<K, V>
 
     @Override
     public V getAndRemove(K key) {
-        final ICompletableFuture<V> f = removeAsyncInternal(key, null, false, true, true);
+        final ICompletableFuture<V> f = getAndRemoveAsyncInternal(key, true);
         try {
             return toObject(f.get());
         } catch (Throwable e) {
@@ -197,13 +194,13 @@ public class ClientCacheProxy<K, V>
     public void removeAll(Set<? extends K> keys) {
         ensureOpen();
         validateNotNull(keys);
-        removeAllInternal(keys);
+        removeAllKeysInternal(keys);
     }
 
     @Override
     public void removeAll() {
         ensureOpen();
-        removeAllInternal(null);
+        removeAllInternal();
     }
 
     @Override
@@ -237,11 +234,13 @@ public class ClientCacheProxy<K, V>
                 argumentsData.add(toData(arguments[i]));
             }
         }
-        final ClientMessage request = CacheEntryProcessorParameters.encode(nameWithPrefix, keyData, epData, argumentsData);
+        final int completionId = nextCompletionId();
+        ClientMessage request =
+                CacheEntryProcessorCodec.encodeRequest(nameWithPrefix, keyData, epData, argumentsData, completionId);
         try {
-            final ICompletableFuture<ClientMessage> f = invoke(request, keyData, true);
+            final ICompletableFuture<ClientMessage> f = invoke(request, keyData, completionId);
             final ClientMessage response = getSafely(f);
-            final Data data = GenericResultParameters.decode(response).result;
+            final Data data = CacheEntryProcessorCodec.decodeResponse(response).response;
             return toObject(data);
         } catch (CacheException ce) {
             throw ce;
@@ -301,8 +300,8 @@ public class ClientCacheProxy<K, V>
         }
         final CacheEventListenerAdaptor<K, V> adaptor = new CacheEventListenerAdaptor<K, V>(this, cacheEntryListenerConfiguration,
                 clientContext.getSerializationService());
-        final EventHandler<Object> handler = createHandler(adaptor);
-        final ClientMessage registrationRequest = CacheAddEntryListenerParameters.encode(nameWithPrefix);
+        final EventHandler handler = createHandler(adaptor);
+        final ClientMessage registrationRequest = CacheAddEntryListenerCodec.encodeRequest(nameWithPrefix);
         final String regId = clientContext.getListenerService().startListening(registrationRequest, null, handler);
         if (regId != null) {
             cacheConfig.addCacheEntryListenerConfiguration(cacheEntryListenerConfiguration);
@@ -319,7 +318,7 @@ public class ClientCacheProxy<K, V>
         }
         final String regId = removeListenerLocally(cacheEntryListenerConfiguration);
         if (regId != null) {
-            ClientMessage removeReq = CacheRemoveEntryListenerParameters.encode(nameWithPrefix, regId);
+            ClientMessage removeReq = CacheRemoveEntryListenerCodec.encodeRequest(nameWithPrefix, regId);
             boolean isDeregistered = clientContext.getListenerService().stopListening(removeReq, regId);
 
             if (isDeregistered) {
@@ -341,8 +340,8 @@ public class ClientCacheProxy<K, V>
             try {
                 final Address address = member.getAddress();
                 Data configData = toData(cacheEntryListenerConfiguration);
-                final ClientMessage request = CacheListenerRegistrationParameters
-                        .encode(nameWithPrefix, configData, isRegister, address.getHost(), address.getPort());
+                final ClientMessage request = CacheListenerRegistrationCodec
+                        .encodeRequest(nameWithPrefix, configData, isRegister, address.getHost(), address.getPort());
                 final ClientInvocation invocation = new ClientInvocation(client, request, address);
                 final Future future = invocation.invoke();
                 futures.add(future);

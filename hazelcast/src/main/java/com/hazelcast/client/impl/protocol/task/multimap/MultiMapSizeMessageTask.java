@@ -17,8 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.multimap;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.IntResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.MultiMapSizeParameters;
+import com.hazelcast.client.impl.protocol.codec.MultiMapSizeCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractAllPartitionsMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.multimap.impl.MultiMapService;
@@ -35,7 +34,8 @@ import java.util.Map;
  * Client Protocol Task for handling messages with type id:
  * {@link com.hazelcast.client.impl.protocol.parameters.MultiMapMessageType#MULTIMAP_SIZE}
  */
-public class MultiMapSizeMessageTask extends AbstractAllPartitionsMessageTask<MultiMapSizeParameters> {
+public class MultiMapSizeMessageTask
+        extends AbstractAllPartitionsMessageTask<MultiMapSizeCodec.RequestParameters> {
 
     public MultiMapSizeMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -47,17 +47,22 @@ public class MultiMapSizeMessageTask extends AbstractAllPartitionsMessageTask<Mu
     }
 
     @Override
-    protected ClientMessage reduce(Map<Integer, Object> map) {
+    protected Object reduce(Map<Integer, Object> map) {
         int total = 0;
         for (Object obj : map.values()) {
             total += (Integer) obj;
         }
-        return IntResultParameters.encode(total);
+        return total;
     }
 
     @Override
-    protected MultiMapSizeParameters decodeClientMessage(ClientMessage clientMessage) {
-        return MultiMapSizeParameters.decode(clientMessage);
+    protected MultiMapSizeCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return MultiMapSizeCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return MultiMapSizeCodec.encodeResponse((Integer) response);
     }
 
     @Override

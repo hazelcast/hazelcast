@@ -18,9 +18,10 @@ package com.hazelcast.client.impl.protocol.task.cache;
 
 import com.hazelcast.cache.impl.operation.CacheGetConfigOperation;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.CacheGetConfigParameters;
+import com.hazelcast.client.impl.protocol.codec.CacheGetConfigCodec;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
 
 /**
@@ -29,7 +30,7 @@ import com.hazelcast.spi.Operation;
  * @see CacheGetConfigOperation
  */
 public class CacheGetConfigMessageTask
-        extends AbstractCacheMessageTask<CacheGetConfigParameters> {
+        extends AbstractCacheMessageTask<CacheGetConfigCodec.RequestParameters> {
 
     public CacheGetConfigMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -41,8 +42,14 @@ public class CacheGetConfigMessageTask
     }
 
     @Override
-    protected CacheGetConfigParameters decodeClientMessage(ClientMessage clientMessage) {
-        return CacheGetConfigParameters.decode(clientMessage);
+    protected CacheGetConfigCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return CacheGetConfigCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        final Data responseData = nodeEngine.toData(response);
+        return CacheGetConfigCodec.encodeResponse(responseData);
     }
 
     @Override

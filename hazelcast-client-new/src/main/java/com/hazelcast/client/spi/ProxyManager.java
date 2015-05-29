@@ -23,10 +23,9 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ProxyFactoryConfig;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.AddDistributedObjectListenerParameters;
-import com.hazelcast.client.impl.protocol.parameters.CreateProxyParameters;
-import com.hazelcast.client.impl.protocol.parameters.DistributedObjectEventParameters;
-import com.hazelcast.client.impl.protocol.parameters.RemoveDistributedObjectListenerParameters;
+import com.hazelcast.client.impl.protocol.codec.ClientAddDistributedObjectListenerCodec;
+import com.hazelcast.client.impl.protocol.codec.ClientCreateProxyCodec;
+import com.hazelcast.client.impl.protocol.codec.ClientRemoveDistributedObjectListenerCodec;
 import com.hazelcast.client.proxy.ClientAtomicLongProxy;
 import com.hazelcast.client.proxy.ClientAtomicReferenceProxy;
 import com.hazelcast.client.proxy.ClientCountDownLatchProxy;
@@ -41,8 +40,8 @@ import com.hazelcast.client.proxy.ClientReplicatedMapProxy;
 import com.hazelcast.client.proxy.ClientSemaphoreProxy;
 import com.hazelcast.client.proxy.ClientSetProxy;
 import com.hazelcast.client.proxy.ClientTopicProxy;
+import com.hazelcast.client.proxy.txn.xa.XAResourceProxy;
 import com.hazelcast.client.spi.impl.ClientInvocation;
-import com.hazelcast.client.txn.proxy.xa.XAResourceProxy;
 import com.hazelcast.collection.impl.list.ListService;
 import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.collection.impl.set.SetService;
@@ -206,7 +205,8 @@ public final class ProxyManager {
     }
 
     private void initialize(ClientProxy clientProxy) throws Exception {
-        ClientMessage clientMessage = CreateProxyParameters.encode(clientProxy.getName(), clientProxy.getServiceName());
+        ClientMessage clientMessage = ClientCreateProxyCodec.encodeRequest(clientProxy.getName(),
+                clientProxy.getServiceName());
         final ClientContext context = new ClientContext(client, this);
         new ClientInvocation(client, clientMessage).invoke().get();
         clientProxy.setContext(context);
@@ -229,39 +229,52 @@ public final class ProxyManager {
     }
 
     public String addDistributedObjectListener(final DistributedObjectListener listener) {
-        ClientMessage request = AddDistributedObjectListenerParameters.encode();
-        final EventHandler<ClientMessage> eventHandler = new EventHandler<ClientMessage>() {
-            public void handle(ClientMessage clientMessage) {
-                DistributedObjectEventParameters e = DistributedObjectEventParameters.decode(clientMessage);
-                final ObjectNamespace ns = new DefaultObjectNamespace(e.serviceName, e.name);
-                ClientProxyFuture future = proxies.get(ns);
-                ClientProxy proxy = future == null ? null : future.get();
-                if (proxy == null) {
-                    proxy = getOrCreateProxy(e.serviceName, e.name);
-                }
-
-                DistributedObjectEvent event = new DistributedObjectEvent(e.eventType, e.serviceName, proxy);
-                if (DistributedObjectEvent.EventType.CREATED.equals(e.eventType)) {
-                    listener.distributedObjectCreated(event);
-                } else if (DistributedObjectEvent.EventType.DESTROYED.equals(e.eventType)) {
-                    listener.distributedObjectDestroyed(event);
-                }
-            }
-
-            @Override
-            public void beforeListenerRegister() {
-            }
-
-            @Override
-            public void onListenerRegister() {
-
-            }
-        };
+        ClientMessage request = ClientAddDistributedObjectListenerCodec.encodeRequest();
+        final EventHandler<ClientMessage> eventHandler = new DistributedObjectEventHandler(listener);
         return client.getListenerService().startListening(request, null, eventHandler);
     }
 
+    private final class DistributedObjectEventHandler extends ClientAddDistributedObjectListenerCodec.AbstractEventHandler
+            implements EventHandler<ClientMessage> {
+
+        private final DistributedObjectListener listener;
+
+        private DistributedObjectEventHandler(DistributedObjectListener listener) {
+            this.listener = listener;
+        }
+
+        @Override
+        public void handle(String name, String serviceName, String eventTypeName) {
+            final ObjectNamespace ns = new DefaultObjectNamespace(serviceName, name);
+            ClientProxyFuture future = proxies.get(ns);
+            ClientProxy proxy = future == null ? null : future.get();
+            if (proxy == null) {
+                proxy = getOrCreateProxy(serviceName, name);
+            }
+
+            DistributedObjectEvent.EventType eventType = DistributedObjectEvent.EventType.valueOf(eventTypeName);
+            DistributedObjectEvent event = new DistributedObjectEvent(eventType,
+                    serviceName, proxy);
+            if (DistributedObjectEvent.EventType.CREATED.equals(eventType)) {
+                listener.distributedObjectCreated(event);
+            } else if (DistributedObjectEvent.EventType.DESTROYED.equals(eventType)) {
+                listener.distributedObjectDestroyed(event);
+            }
+        }
+
+        @Override
+        public void beforeListenerRegister() {
+
+        }
+
+        @Override
+        public void onListenerRegister() {
+
+        }
+    }
+
     public boolean removeDistributedObjectListener(String id) {
-        ClientMessage request = RemoveDistributedObjectListenerParameters.encode(id);
+        ClientMessage request = ClientRemoveDistributedObjectListenerCodec.encodeRequest(id);
         return client.getListenerService().stopListening(request, id);
     }
 

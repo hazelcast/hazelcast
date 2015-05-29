@@ -191,7 +191,7 @@ public class CodecCodeGenerator
     }
 
     private void generateMessageTypeEnum(TypeElement classElement, Lang lang) {
-        MessageTypeEnumModel2 clazz = new MessageTypeEnumModel2(classElement, lang);
+        MessageTypeEnumModel clazz = new MessageTypeEnumModel(classElement, lang);
         if (clazz.isEmpty()) {
             return;
         }

@@ -18,9 +18,7 @@ package com.hazelcast.client.impl.protocol.task.list;
 
 import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.AddListenerResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.ItemEventParameters;
-import com.hazelcast.client.impl.protocol.parameters.ListAddListenerParameters;
+import com.hazelcast.client.impl.protocol.codec.ListAddListenerCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.collection.common.DataAwareItemEvent;
 import com.hazelcast.collection.impl.collection.CollectionEventFilter;
@@ -30,7 +28,6 @@ import com.hazelcast.core.ItemListener;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.DefaultData;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.ListPermission;
 import com.hazelcast.spi.EventRegistration;
@@ -38,19 +35,15 @@ import com.hazelcast.spi.EventService;
 
 import java.security.Permission;
 
-/**
- * Client Protocol Task for handling messages with type id:
- * {@link com.hazelcast.client.impl.protocol.parameters.ListMessageType#LIST_ADDLISTENER}
- */
 public class ListAddListenerMessageTask
-        extends AbstractCallableMessageTask<ListAddListenerParameters> {
+        extends AbstractCallableMessageTask<ListAddListenerCodec.RequestParameters> {
 
     public ListAddListenerMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected ClientMessage call() {
+    protected Object call() {
         final ClientEndpoint endpoint = getEndpoint();
         Data partitionKey = serializationService.toData(parameters.name);
         ItemListener listener = createItemListener(endpoint, partitionKey);
@@ -59,7 +52,7 @@ public class ListAddListenerMessageTask
         final EventRegistration registration = eventService.registerListener(getServiceName(), parameters.name, filter, listener);
         final String registrationId = registration.getId();
         endpoint.setListenerRegistration(getServiceName(), parameters.name, registrationId);
-        return AddListenerResultParameters.encode(registrationId);
+        return registrationId;
     }
 
     private ItemListener createItemListener(final ClientEndpoint endpoint, final Data partitionKey) {
@@ -84,11 +77,8 @@ public class ListAddListenerMessageTask
 
                     DataAwareItemEvent dataAwareItemEvent = (DataAwareItemEvent) event;
                     Data item = dataAwareItemEvent.getItemData();
-                    if (item == null) {
-                        item = DefaultData.NULL_DATA;
-                    }
-                    ClientMessage clientMessage = ItemEventParameters
-                            .encode(item, event.getMember().getUuid(), event.getEventType());
+                    ClientMessage clientMessage = ListAddListenerCodec
+                            .encodeItemEvent(item, event.getMember().getUuid(), event.getEventType().getType());
                     sendClientMessage(partitionKey, clientMessage);
                 }
             }
@@ -96,8 +86,13 @@ public class ListAddListenerMessageTask
     }
 
     @Override
-    protected ListAddListenerParameters decodeClientMessage(ClientMessage clientMessage) {
-        return ListAddListenerParameters.decode(clientMessage);
+    protected ListAddListenerCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return ListAddListenerCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return ListAddListenerCodec.encodeResponse((String) response);
     }
 
     @Override

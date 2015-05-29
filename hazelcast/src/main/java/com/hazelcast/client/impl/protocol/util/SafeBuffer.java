@@ -30,7 +30,6 @@ import java.nio.charset.Charset;
 public class SafeBuffer implements ClientProtocolBuffer {
 
     public static final Charset UTF_8 = Charset.forName("utf-8");
-    private static final byte[] NULL_BYTES = "null".getBytes(UTF_8);
     private ByteBuffer byteBuffer;
 
     public SafeBuffer(byte[] buffer) {
@@ -75,7 +74,7 @@ public class SafeBuffer implements ClientProtocolBuffer {
 
     @Override
     public int putStringUtf8(int index, String value, int maxEncodedSize) {
-        final byte[] bytes = value != null ? value.getBytes(UTF_8) : NULL_BYTES;
+        final byte[] bytes = value.getBytes(UTF_8);
         if (bytes.length > maxEncodedSize) {
             throw new IllegalArgumentException("Encoded string larger than maximum size: " + maxEncodedSize);
         }

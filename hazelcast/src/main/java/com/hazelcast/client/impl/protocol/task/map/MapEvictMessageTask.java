@@ -17,8 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.map;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.MapEvictParameters;
+import com.hazelcast.client.impl.protocol.codec.MapEvictCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.map.impl.MapService;
@@ -30,7 +29,8 @@ import com.hazelcast.spi.Operation;
 
 import java.security.Permission;
 
-public class MapEvictMessageTask extends AbstractPartitionMessageTask<MapEvictParameters> {
+public class MapEvictMessageTask
+        extends AbstractPartitionMessageTask<MapEvictCodec.RequestParameters> {
 
     public MapEvictMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -44,13 +44,13 @@ public class MapEvictMessageTask extends AbstractPartitionMessageTask<MapEvictPa
     }
 
     @Override
-    protected MapEvictParameters decodeClientMessage(ClientMessage clientMessage) {
-        return MapEvictParameters.decode(clientMessage);
+    protected MapEvictCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return MapEvictCodec.decodeRequest(clientMessage);
     }
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return BooleanResultParameters.encode((Boolean) response);
+        return MapEvictCodec.encodeResponse((Boolean) response);
     }
 
     @Override

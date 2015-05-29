@@ -17,8 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.map;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.MapRemoveInterceptorParameters;
+import com.hazelcast.client.impl.protocol.codec.MapRemoveInterceptorCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractMultiTargetMessageTask;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
@@ -35,7 +34,8 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
 
-public class MapRemoveInterceptorMessageTask extends AbstractMultiTargetMessageTask<MapRemoveInterceptorParameters> {
+public class MapRemoveInterceptorMessageTask
+        extends AbstractMultiTargetMessageTask<MapRemoveInterceptorCodec.RequestParameters> {
 
     public MapRemoveInterceptorMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -47,13 +47,13 @@ public class MapRemoveInterceptorMessageTask extends AbstractMultiTargetMessageT
     }
 
     @Override
-    protected ClientMessage reduce(Map<Address, Object> map) throws Throwable {
+    protected Object reduce(Map<Address, Object> map) throws Throwable {
         for (Object result : map.values()) {
             if (result instanceof Throwable) {
                 throw (Throwable) result;
             }
         }
-        return BooleanResultParameters.encode(true);
+        return true;
     }
 
     @Override
@@ -67,8 +67,13 @@ public class MapRemoveInterceptorMessageTask extends AbstractMultiTargetMessageT
     }
 
     @Override
-    protected MapRemoveInterceptorParameters decodeClientMessage(ClientMessage clientMessage) {
-        return MapRemoveInterceptorParameters.decode(clientMessage);
+    protected MapRemoveInterceptorCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return MapRemoveInterceptorCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return MapRemoveInterceptorCodec.encodeResponse((Boolean) response);
     }
 
     @Override

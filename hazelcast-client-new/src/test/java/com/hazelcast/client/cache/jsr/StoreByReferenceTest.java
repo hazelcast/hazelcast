@@ -26,7 +26,6 @@ import org.junit.Ignore;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-@Ignore
 public class StoreByReferenceTest
         extends org.jsr107.tck.StoreByReferenceTest {
 

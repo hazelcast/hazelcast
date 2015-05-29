@@ -17,8 +17,6 @@
 package com.hazelcast.client.impl.protocol.task.replicatedmap;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.EntryEventParameters;
-import com.hazelcast.client.impl.protocol.parameters.AddListenerResultParameters;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
@@ -44,7 +42,7 @@ public abstract class AbstractReplicatedMapAddEntryListenerMessageTask<Parameter
     }
 
     @Override
-    protected ClientMessage call() {
+    protected Object call() {
         ReplicatedMapService replicatedMapService = getService(ReplicatedMapService.SERVICE_NAME);
         ReplicatedRecordStore recordStore = replicatedMapService.getReplicatedRecordStore(getDistributedObjectName(), true);
 
@@ -57,7 +55,7 @@ public abstract class AbstractReplicatedMapAddEntryListenerMessageTask<Parameter
             registrationId = recordStore.addEntryListener(this, predicate, getKey());
         }
         endpoint.setListenerRegistration(ReplicatedMapService.SERVICE_NAME, getDistributedObjectName(), registrationId);
-        return AddListenerResultParameters.encode(registrationId);
+        return registrationId;
     }
 
     @Override
@@ -86,14 +84,17 @@ public abstract class AbstractReplicatedMapAddEntryListenerMessageTask<Parameter
             final Data newValue = dataAwareEntryEvent.getNewValueData();
             final Data oldValue = dataAwareEntryEvent.getOldValueData();
             final Data mergingValue = dataAwareEntryEvent.getMeringValueData();
-            ClientMessage entryEvent = EntryEventParameters.encode(key
-                    , newValue, oldValue, mergingValue, event.getEventType().getType(),
-                    event.getMember().getUuid(), 1);
 
             Data partitionKey = serializationService.toData(key);
-            sendClientMessage(partitionKey, entryEvent);
+            ClientMessage clientMessage = encodeEvent(key
+                    , newValue, oldValue, mergingValue, event.getEventType().getType(),
+                    event.getMember().getUuid(), 1);
+            sendClientMessage(partitionKey, clientMessage);
         }
     }
+
+    protected abstract ClientMessage encodeEvent(Data key, Data newValue, Data oldValue,
+                                                 Data mergingValue, int type, String uuid, int numberOfAffectedEntries);
 
     @Override
     public void entryAdded(EntryEvent<Object, Object> event) {

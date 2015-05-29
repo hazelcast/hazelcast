@@ -18,11 +18,16 @@ package com.hazelcast.client.impl.protocol.template;
 
 import com.hazelcast.annotation.EventResponse;
 import com.hazelcast.annotation.GenerateCodec;
+import com.hazelcast.annotation.Nullable;
+import com.hazelcast.cache.impl.CacheEventData;
 import com.hazelcast.client.impl.protocol.EventMessageConst;
 import com.hazelcast.cluster.client.MemberAttributeChange;
+import com.hazelcast.core.Member;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 
 import java.util.Collection;
+import java.util.Set;
 
 /**
  * Client Protocol Event Responses
@@ -31,27 +36,37 @@ import java.util.Collection;
 public interface EventResponseTemplate {
 
     @EventResponse(EventMessageConst.EVENT_MEMBER)
-    void Member(com.hazelcast.client.impl.MemberImpl member, int eventType);
+    void Member(Member member, int eventType);
 
     @EventResponse(EventMessageConst.EVENT_MEMBERATTRIBUTECHANGE)
     void MemberAttributeChange(MemberAttributeChange memberAttributeChange);
 
     @EventResponse(EventMessageConst.EVENT_MEMBERLIST)
-    void MemberList(Collection<com.hazelcast.client.impl.MemberImpl> members);
+    void MemberList(Collection<Member> members);
 
-    @EventResponse(EventMessageConst.EVENT_ENTRYEVENT)
-    void EntryEvent(Data key, Data value, Data oldValue, Data mergingValue, int eventType, String uuid, int numberOfAffectedEntries);
+    @EventResponse(EventMessageConst.EVENT_ENTRY)
+    void Entry(@Nullable Data key, @Nullable Data value, @Nullable Data oldValue, @Nullable Data mergingValue,
+               int eventType, String uuid, int numberOfAffectedEntries);
 
-    @EventResponse(EventMessageConst.EVENT_ITEMEVENT)
-    void ItemEvent(Data item, String uuid, int eventType);
+    @EventResponse(EventMessageConst.EVENT_ITEM)
+    void Item(@Nullable Data item, String uuid, int eventType);
 
-    @EventResponse(EventMessageConst.EVENT_TOPICEVENT)
-    void TopicEvent(Data item, String uuid);
+    @EventResponse(EventMessageConst.EVENT_TOPIC)
+    void Topic(Data item, long publishTime, String uuid);
 
-    @EventResponse(EventMessageConst.EVENT_PARTITIONLOSTEVENT)
-    void PartitionLostEvent(String name);
+    @EventResponse(EventMessageConst.EVENT_PARTITIONLOST)
+    void PartitionLost(int partitionId, int lostBackupCount, Address source);
 
     @EventResponse(EventMessageConst.EVENT_DISTRIBUTEDOBJECT)
-    void DistributedObject(String name, String serviceName, int eventType);
+    void DistributedObject(String name, String serviceName, String eventType);
+
+    @EventResponse(EventMessageConst.EVENT_CACHEINVALIDATION)
+    void CacheInvalidation(String name, @Nullable Data key, String sourceUuid);
+
+    @EventResponse(EventMessageConst.EVENT_MAPPARTITIONLOST)
+    void MapPartitionLost(int partitionId, String uuid);
+
+    @EventResponse(EventMessageConst.EVENT_CACHE)
+    void Cache(int type, Set<CacheEventData> keys, int completionId);
 
 }

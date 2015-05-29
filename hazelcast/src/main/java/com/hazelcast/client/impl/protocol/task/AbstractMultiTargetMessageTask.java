@@ -70,8 +70,7 @@ public abstract class AbstractMultiTargetMessageTask<P> extends AbstractMessageT
     private boolean returnResponseIfNoTargetLeft(Collection<Address> targets, Map<Address, Object> results) {
         if (targets.isEmpty()) {
             try {
-                final ClientMessage resultMessage = reduce(results);
-                sendClientMessage(resultMessage);
+                sendResponse(reduce(results));
             } catch (Throwable throwable) {
                 sendClientMessage(throwable);
             }
@@ -82,7 +81,7 @@ public abstract class AbstractMultiTargetMessageTask<P> extends AbstractMessageT
 
     protected abstract OperationFactory createOperationFactory();
 
-    protected abstract ClientMessage reduce(Map<Address, Object> map) throws Throwable;
+    protected abstract Object reduce(Map<Address, Object> map) throws Throwable;
 
     public abstract Collection<Address> getTargets();
 

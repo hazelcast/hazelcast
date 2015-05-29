@@ -18,8 +18,6 @@ package com.hazelcast.client.impl.protocol.task.multimap;
 
 import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.AddListenerResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.EntryEventParameters;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
@@ -30,7 +28,6 @@ import com.hazelcast.map.impl.DataAwareEntryEvent;
 import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.DefaultData;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MultiMapPermission;
 
@@ -43,7 +40,7 @@ public abstract class AbstractMultiMapAddEntryListenerMessageTask<P> extends Abs
     }
 
     @Override
-    protected ClientMessage call() throws Exception {
+    protected Object call() throws Exception {
         final ClientEndpoint endpoint = getEndpoint();
         final MultiMapService service = getService(MultiMapService.SERVICE_NAME);
         EntryAdapter listener = new MultiMapListener();
@@ -53,7 +50,7 @@ public abstract class AbstractMultiMapAddEntryListenerMessageTask<P> extends Abs
         boolean includeValue = shouldIncludeValue();
         String registrationId = service.addListener(name, listener, key, includeValue, false);
         endpoint.setListenerRegistration(MultiMapService.SERVICE_NAME, name, registrationId);
-        return AddListenerResultParameters.encode(registrationId);
+        return registrationId;
     }
 
     protected abstract boolean shouldIncludeValue();
@@ -88,18 +85,14 @@ public abstract class AbstractMultiMapAddEntryListenerMessageTask<P> extends Abs
                             + event.getClass().getSimpleName());
                 }
                 DataAwareEntryEvent dataAwareEntryEvent = (DataAwareEntryEvent) event;
-                Data keyData = dataAwareEntryEvent.getKeyData();
-                Data key = keyData == null ? DefaultData.NULL_DATA : keyData;
+                Data key = dataAwareEntryEvent.getKeyData();
 
-                Data newValueData = dataAwareEntryEvent.getNewValueData();
-                Data value = newValueData == null ? DefaultData.NULL_DATA : newValueData;
+                Data value = dataAwareEntryEvent.getNewValueData();
 
                 final EntryEventType type = event.getEventType();
                 final String uuid = event.getMember().getUuid();
 
-                ClientMessage entryEvent = EntryEventParameters.encode(key, value, DefaultData.NULL_DATA,
-                        DefaultData.NULL_DATA, type.getType(), uuid, 1);
-                sendClientMessage(entryEvent);
+                sendClientMessage(key, encodeEvent(key, value, type.getType(), uuid, 1));
             }
         }
 
@@ -108,11 +101,13 @@ public abstract class AbstractMultiMapAddEntryListenerMessageTask<P> extends Abs
             if (endpoint.isAlive()) {
                 final EntryEventType type = event.getEventType();
                 final String uuid = event.getMember().getUuid();
-                ClientMessage entryEvent = EntryEventParameters.encode(DefaultData.NULL_DATA,
-                        DefaultData.NULL_DATA, DefaultData.NULL_DATA, DefaultData.NULL_DATA, type.getType(),
-                        uuid, event.getNumberOfEntriesAffected());
-                sendClientMessage(entryEvent);
+                sendClientMessage(null, encodeEvent(null,
+                        null, type.getType(),
+                        uuid, event.getNumberOfEntriesAffected()));
             }
         }
     }
+
+    protected abstract ClientMessage encodeEvent(Data key, Data value,
+                                                 int type, String uuid, int numberOfEntriesAffected);
 }

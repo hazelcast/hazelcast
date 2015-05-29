@@ -19,9 +19,8 @@ package com.hazelcast.client.impl.protocol.task.cache;
 import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.operation.CacheListenerRegistrationOperation;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.CacheListenerRegistrationParameters;
+import com.hazelcast.client.impl.protocol.codec.CacheListenerRegistrationCodec;
 import com.hazelcast.client.impl.protocol.task.InvocationMessageTask;
-import com.hazelcast.executor.impl.DistributedExecutorService;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
@@ -39,7 +38,7 @@ import java.security.Permission;
  * @see CacheListenerRegistrationOperation
  */
 public class CacheListenerRegistrationMessageTask
-        extends InvocationMessageTask<CacheListenerRegistrationParameters> {
+        extends InvocationMessageTask<CacheListenerRegistrationCodec.RequestParameters> {
 
     public CacheListenerRegistrationMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -47,14 +46,18 @@ public class CacheListenerRegistrationMessageTask
 
     @Override
     protected Operation prepareOperation() {
-        CacheService service = getService(getServiceName());
-        CacheEntryListenerConfiguration conf = (CacheEntryListenerConfiguration) service.toObject(parameters.listenerConfig);
+        CacheEntryListenerConfiguration conf = (CacheEntryListenerConfiguration) nodeEngine.toObject(parameters.listenerConfig);
         return new CacheListenerRegistrationOperation(parameters.name, conf, parameters.register);
     }
 
     @Override
-    protected CacheListenerRegistrationParameters decodeClientMessage(ClientMessage clientMessage) {
-        return CacheListenerRegistrationParameters.decode(clientMessage);
+    protected CacheListenerRegistrationCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return CacheListenerRegistrationCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return CacheListenerRegistrationCodec.encodeResponse();
     }
 
     @Override
@@ -71,7 +74,7 @@ public class CacheListenerRegistrationMessageTask
 
     @Override
     public String getServiceName() {
-        return DistributedExecutorService.SERVICE_NAME;
+        return CacheService.SERVICE_NAME;
     }
 
     @Override

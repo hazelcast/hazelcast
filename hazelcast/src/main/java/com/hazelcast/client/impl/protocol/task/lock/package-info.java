@@ -17,7 +17,6 @@
 /**
  * <p>Client protocol tasks implementations for ILock</p>
  */
-@GenerateMessageTaskFactory
-package com.hazelcast.client.impl.protocol.task.lock;
+@GenerateMessageTaskFactory package com.hazelcast.client.impl.protocol.task.lock;
 
 import com.hazelcast.annotation.GenerateMessageTaskFactory;

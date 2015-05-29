@@ -17,12 +17,10 @@
 package com.hazelcast.client.impl.protocol.task;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.GenericResultParameters;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.Operation;
 
@@ -70,15 +68,10 @@ public abstract class AbstractPartitionMessageTask<P>
 
     protected abstract Operation prepareOperation();
 
-    protected ClientMessage encodeResponse(Object response) {
-        return GenericResultParameters.encode((Data) response);
-    }
-
     @Override
     public void onResponse(Object response) {
         beforeResponse();
-        final ClientMessage resultParameters = encodeResponse(response);
-        sendClientMessage(resultParameters);
+        sendResponse(response);
         afterResponse();
     }
 

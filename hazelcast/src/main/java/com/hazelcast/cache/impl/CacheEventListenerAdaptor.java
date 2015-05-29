@@ -30,6 +30,7 @@ import javax.cache.event.CacheEntryListener;
 import javax.cache.event.CacheEntryRemovedListener;
 import javax.cache.event.CacheEntryUpdatedListener;
 import javax.cache.event.EventType;
+import java.util.Collection;
 import java.util.HashSet;
 
 /**
@@ -69,8 +70,8 @@ public class CacheEventListenerAdaptor<K, V>
         this.source = source;
         this.serializationService = serializationService;
 
-        final CacheEntryListener<? super K, ? super V> cacheEntryListener =
-                cacheEntryListenerConfiguration.getCacheEntryListenerFactory().create();
+        final CacheEntryListener<? super K, ? super V> cacheEntryListener = cacheEntryListenerConfiguration
+                .getCacheEntryListenerFactory().create();
 
         this.cacheEntryListener = (CacheEntryListener<K, V>) cacheEntryListener;
         if (cacheEntryListener instanceof CacheEntryCreatedListener) {
@@ -93,8 +94,8 @@ public class CacheEventListenerAdaptor<K, V>
         } else {
             this.cacheEntryExpiredListener = null;
         }
-        final Factory<CacheEntryEventFilter<? super K, ? super V>> filterFactory =
-                cacheEntryListenerConfiguration.getCacheEntryEventFilterFactory();
+        final Factory<CacheEntryEventFilter<? super K, ? super V>> filterFactory = cacheEntryListenerConfiguration
+                .getCacheEntryEventFilterFactory();
         if (filterFactory != null) {
             this.filter = filterFactory.create();
         } else {
@@ -114,19 +115,20 @@ public class CacheEventListenerAdaptor<K, V>
             CacheEventSet cacheEventSet = (CacheEventSet) eventObject;
             try {
                 if (cacheEventSet.getEventType() != CacheEventType.COMPLETED) {
-                    handleEvent(cacheEventSet);
+                    handleEvent(cacheEventSet.getEventType().getType(), cacheEventSet.getEvents());
                 }
             } finally {
                 ((CacheSyncListenerCompleter) source).countDownCompletionLatch(cacheEventSet.getCompletionId());
             }
+            return;
         }
+        throw new UnsupportedOperationException("Event object not supported : " + eventObject.getClass().getName());
     }
 
-    private void handleEvent(CacheEventSet cacheEventSet) {
-        final Iterable<CacheEntryEvent<? extends K, ? extends V>> cacheEntryEvent =
-                createCacheEntryEvent(cacheEventSet);
-
-        switch (cacheEventSet.getEventType()) {
+    private void handleEvent(int type, Collection<CacheEventData> keys) {
+        final Iterable<CacheEntryEvent<? extends K, ? extends V>> cacheEntryEvent = createCacheEntryEvent(keys);
+        CacheEventType eventType = CacheEventType.getByType(type);
+        switch (eventType) {
             case CREATED:
                 if (this.cacheEntryCreatedListener != null) {
                     this.cacheEntryCreatedListener.onCreated(cacheEntryEvent);
@@ -148,13 +150,13 @@ public class CacheEventListenerAdaptor<K, V>
                 }
                 break;
             default:
-                throw new IllegalArgumentException("Invalid event type: " + cacheEventSet.getEventType().name());
+                throw new IllegalArgumentException("Invalid event type: " + eventType.name());
         }
     }
 
-    private Iterable<CacheEntryEvent<? extends K, ? extends V>> createCacheEntryEvent(CacheEventSet cacheEventSet) {
+    private Iterable<CacheEntryEvent<? extends K, ? extends V>> createCacheEntryEvent(Collection<CacheEventData> keys) {
         HashSet<CacheEntryEvent<? extends K, ? extends V>> evt = new HashSet<CacheEntryEvent<? extends K, ? extends V>>();
-        for (CacheEventData cacheEventData : cacheEventSet.getEvents()) {
+        for (CacheEventData cacheEventData : keys) {
             final EventType eventType = CacheEventType.convertToEventType(cacheEventData.getCacheEventType());
             final K key = toObject(cacheEventData.getDataKey());
             final V newValue = toObject(cacheEventData.getDataValue());
@@ -164,8 +166,7 @@ public class CacheEventListenerAdaptor<K, V>
             } else {
                 oldValue = null;
             }
-            final CacheEntryEventImpl<K, V> event =
-                    new CacheEntryEventImpl<K, V>(source, eventType, key, newValue, oldValue);
+            final CacheEntryEventImpl<K, V> event = new CacheEntryEventImpl<K, V>(source, eventType, key, newValue, oldValue);
             if (filter == null || filter.evaluate(event)) {
                 evt.add(event);
             }
@@ -177,4 +178,14 @@ public class CacheEventListenerAdaptor<K, V>
         return serializationService.toObject(data);
     }
 
+    public void handle(int type, Collection<CacheEventData> keys, int completionId) {
+        try {
+            if (CacheEventType.getByType(type) != CacheEventType.COMPLETED) {
+                handleEvent(type, keys);
+            }
+        } finally {
+            ((CacheSyncListenerCompleter) source).countDownCompletionLatch(completionId);
+        }
+
+    }
 }

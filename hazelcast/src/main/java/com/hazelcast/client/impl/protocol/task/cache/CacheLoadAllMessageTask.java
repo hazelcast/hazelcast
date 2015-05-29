@@ -21,15 +21,16 @@ import com.hazelcast.cache.impl.CacheOperationProvider;
 import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.operation.CacheLoadAllOperationFactory;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.CacheLoadAllParameters;
-import com.hazelcast.client.impl.protocol.parameters.VoidResultParameters;
+import com.hazelcast.client.impl.protocol.codec.CacheLoadAllCodec;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.OperationFactory;
 
 import javax.cache.CacheException;
 import java.security.Permission;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * This client request  specifically calls {@link CacheLoadAllOperationFactory} on the server side.
@@ -37,35 +38,41 @@ import java.util.Map;
  * @see CacheLoadAllOperationFactory
  */
 public class CacheLoadAllMessageTask
-        extends AbstractCacheAllPartitionsTask<CacheLoadAllParameters> {
+        extends AbstractCacheAllPartitionsTask<CacheLoadAllCodec.RequestParameters> {
 
     public CacheLoadAllMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected CacheLoadAllParameters decodeClientMessage(ClientMessage clientMessage) {
-        return CacheLoadAllParameters.decode(clientMessage);
+    protected CacheLoadAllCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return CacheLoadAllCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return CacheLoadAllCodec.encodeResponse();
     }
 
     @Override
     protected OperationFactory createOperationFactory() {
         CacheOperationProvider operationProvider = getOperationProvider(parameters.name);
-        return operationProvider.createLoadAllOperationFactory(parameters.keys, parameters.replaceExistingValues);
+        return operationProvider.createLoadAllOperationFactory((Set<Data>) parameters.keys, parameters.replaceExistingValues);
     }
 
     @Override
-    protected ClientMessage reduce(Map<Integer, Object> map) {
-        CacheService service = getService(getServiceName());
+    protected Object reduce(Map<Integer, Object> map) {
         for (Map.Entry<Integer, Object> entry : map.entrySet()) {
-            CacheClearResponse cacheClearResponse = (CacheClearResponse) service.toObject(entry.getValue());
+            if (entry.getValue() == null) {
+                continue;
+            }
+            final CacheClearResponse cacheClearResponse = (CacheClearResponse) nodeEngine.toObject(entry.getValue());
             final Object response = cacheClearResponse.getResponse();
             if (response instanceof CacheException) {
                 throw (CacheException) response;
             }
         }
-        return VoidResultParameters.encode();
-
+        return null;
     }
 
     @Override

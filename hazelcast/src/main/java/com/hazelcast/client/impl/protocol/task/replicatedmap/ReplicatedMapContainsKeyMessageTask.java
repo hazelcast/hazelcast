@@ -17,8 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.replicatedmap;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.ReplicatedMapContainsKeyParameters;
+import com.hazelcast.client.impl.protocol.codec.ReplicatedMapContainsKeyCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
@@ -30,23 +29,28 @@ import com.hazelcast.security.permission.ReplicatedMapPermission;
 import java.security.Permission;
 
 public class ReplicatedMapContainsKeyMessageTask
-        extends AbstractCallableMessageTask<ReplicatedMapContainsKeyParameters> {
+        extends AbstractCallableMessageTask<ReplicatedMapContainsKeyCodec.RequestParameters> {
 
     public ReplicatedMapContainsKeyMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected ClientMessage call() throws Exception {
+    protected Object call() throws Exception {
         ReplicatedMapService replicatedMapService = getService(ReplicatedMapService.SERVICE_NAME);
         ReplicatedRecordStore recordStore = replicatedMapService.getReplicatedRecordStore(parameters.name, true);
-        return BooleanResultParameters.encode(recordStore.containsKey(parameters.key));
+        return recordStore.containsKey(parameters.key);
     }
 
 
     @Override
-    protected ReplicatedMapContainsKeyParameters decodeClientMessage(ClientMessage clientMessage) {
-        return ReplicatedMapContainsKeyParameters.decode(clientMessage);
+    protected ReplicatedMapContainsKeyCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return ReplicatedMapContainsKeyCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return ReplicatedMapContainsKeyCodec.encodeResponse((Boolean) response);
     }
 
     @Override

@@ -17,8 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.multimap;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.MultiMapRemoveEntryListenerParameters;
+import com.hazelcast.client.impl.protocol.codec.MultiMapRemoveEntryListenerCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.multimap.impl.MultiMapService;
@@ -33,22 +32,26 @@ import java.security.Permission;
  * {@link com.hazelcast.client.impl.protocol.parameters.MultiMapMessageType#MULTIMAP_REMOVEENTRYLISTENER}
  */
 public class MultiMapRemoveEntryListenerMessageTask
-        extends AbstractCallableMessageTask<MultiMapRemoveEntryListenerParameters> {
+        extends AbstractCallableMessageTask<MultiMapRemoveEntryListenerCodec.RequestParameters> {
 
     public MultiMapRemoveEntryListenerMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected ClientMessage call() throws Exception {
+    protected Object call() throws Exception {
         final MultiMapService service = getService(MultiMapService.SERVICE_NAME);
-        boolean success = service.removeListener(parameters.name, parameters.registrationId);
-        return BooleanResultParameters.encode(success);
+        return service.removeListener(parameters.name, parameters.registrationId);
     }
 
     @Override
-    protected MultiMapRemoveEntryListenerParameters decodeClientMessage(ClientMessage clientMessage) {
-        return MultiMapRemoveEntryListenerParameters.decode(clientMessage);
+    protected MultiMapRemoveEntryListenerCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return MultiMapRemoveEntryListenerCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return MultiMapRemoveEntryListenerCodec.encodeResponse((Boolean) response);
     }
 
     @Override

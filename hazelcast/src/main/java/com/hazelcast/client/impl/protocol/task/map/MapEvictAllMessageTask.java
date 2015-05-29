@@ -17,8 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.map;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.IntResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.MapEvictAllParameters;
+import com.hazelcast.client.impl.protocol.codec.MapEvictAllCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractAllPartitionsMessageTask;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.instance.Node;
@@ -30,10 +29,12 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.OperationFactory;
+
 import java.security.Permission;
 import java.util.Map;
 
-public class MapEvictAllMessageTask extends AbstractAllPartitionsMessageTask<MapEvictAllParameters> {
+public class MapEvictAllMessageTask
+        extends AbstractAllPartitionsMessageTask<MapEvictAllCodec.RequestParameters> {
 
     public MapEvictAllMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -45,7 +46,7 @@ public class MapEvictAllMessageTask extends AbstractAllPartitionsMessageTask<Map
     }
 
     @Override
-    protected ClientMessage reduce(Map<Integer, Object> map) {
+    protected Object reduce(Map<Integer, Object> map) {
         int total = 0;
         MapService mapService = getService(MapService.SERVICE_NAME);
         final MapServiceContext mapServiceContext = mapService.getMapServiceContext();
@@ -58,12 +59,17 @@ public class MapEvictAllMessageTask extends AbstractAllPartitionsMessageTask<Map
             mapServiceContext.getMapEventPublisher().
                     publishMapEvent(thisAddress, parameters.name, EntryEventType.EVICT_ALL, total);
         }
-        return IntResultParameters.encode(total);
+        return null;
     }
 
     @Override
-    protected MapEvictAllParameters decodeClientMessage(ClientMessage clientMessage) {
-        return MapEvictAllParameters.decode(clientMessage);
+    protected MapEvictAllCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return MapEvictAllCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return MapEvictAllCodec.encodeResponse();
     }
 
     public String getServiceName() {

@@ -17,12 +17,13 @@
 package com.hazelcast.client.impl.protocol.task.queue;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.QueuePeekParameters;
+import com.hazelcast.client.impl.protocol.codec.QueuePeekCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.collection.impl.queue.operations.PeekOperation;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.QueuePermission;
 import com.hazelcast.spi.Operation;
@@ -32,10 +33,9 @@ import java.security.Permission;
 /**
  * Client Protocol Task for handling messages with type id:
  * {@link com.hazelcast.client.impl.protocol.parameters.QueueMessageType#QUEUE_PEEK}
- *
  */
 public class QueuePeekMessageTask
-        extends AbstractPartitionMessageTask<QueuePeekParameters> {
+        extends AbstractPartitionMessageTask<QueuePeekCodec.RequestParameters> {
 
     public QueuePeekMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -47,8 +47,13 @@ public class QueuePeekMessageTask
     }
 
     @Override
-    protected QueuePeekParameters decodeClientMessage(ClientMessage clientMessage) {
-        return QueuePeekParameters.decode(clientMessage);
+    protected QueuePeekCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return QueuePeekCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return QueuePeekCodec.encodeResponse((Data) response);
     }
 
     @Override

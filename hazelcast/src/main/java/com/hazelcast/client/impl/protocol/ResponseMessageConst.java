@@ -41,4 +41,8 @@ public final class ResponseMessageConst {
     public static final int EXCEPTION = 111;
     public static final int DISTRIBUTED_OBJECT = 112;
     public static final int ENTRY_VIEW = 113;
+    public static final int JOB_PROCESS_INFO = 114;
+    public static final int SET_DATA = 115;
+    public static final int SET_ENTRY = 116;
+    public static final int MAP_INT_BOOLEAN = 117;
 }

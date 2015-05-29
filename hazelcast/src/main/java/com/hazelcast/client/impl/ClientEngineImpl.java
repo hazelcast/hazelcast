@@ -256,7 +256,8 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
     void sendClientEvent(ClientEndpoint endpoint) {
         final EventService eventService = nodeEngine.getEventService();
         final Collection<EventRegistration> regs = eventService.getRegistrations(SERVICE_NAME, SERVICE_NAME);
-        eventService.publishEvent(SERVICE_NAME, regs, endpoint, endpoint.getUuid().hashCode());
+        String uuid = endpoint.getUuid();
+        eventService.publishEvent(SERVICE_NAME, regs, endpoint, uuid.hashCode());
     }
 
     @Override

@@ -17,7 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.multimap;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.MultiMapCountParameters;
+import com.hazelcast.client.impl.protocol.codec.MultiMapCountCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.multimap.impl.MultiMapService;
@@ -33,7 +33,8 @@ import java.security.Permission;
  * Client Protocol Task for handling messages with type id:
  * {@link com.hazelcast.client.impl.protocol.parameters.MultiMapMessageType#MULTIMAP_COUNT}
  */
-public class MultiMapCountMessageTask extends AbstractPartitionMessageTask<MultiMapCountParameters> {
+public class MultiMapCountMessageTask
+        extends AbstractPartitionMessageTask<MultiMapCountCodec.RequestParameters> {
 
     public MultiMapCountMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -47,8 +48,13 @@ public class MultiMapCountMessageTask extends AbstractPartitionMessageTask<Multi
     }
 
     @Override
-    protected MultiMapCountParameters decodeClientMessage(ClientMessage clientMessage) {
-        return MultiMapCountParameters.decode(clientMessage);
+    protected MultiMapCountCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return MultiMapCountCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return MultiMapCountCodec.encodeResponse((Boolean) response);
     }
 
     @Override

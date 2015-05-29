@@ -17,8 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.replicatedmap;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.ReplicatedMapIsEmptyParameters;
+import com.hazelcast.client.impl.protocol.codec.ReplicatedMapIsEmptyCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
@@ -29,22 +28,28 @@ import com.hazelcast.security.permission.ReplicatedMapPermission;
 
 import java.security.Permission;
 
-public class ReplicatedMapIsEmptyMessageTask extends AbstractCallableMessageTask<ReplicatedMapIsEmptyParameters> {
+public class ReplicatedMapIsEmptyMessageTask
+        extends AbstractCallableMessageTask<ReplicatedMapIsEmptyCodec.RequestParameters> {
 
     public ReplicatedMapIsEmptyMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected ClientMessage call() throws Exception {
+    protected Object call() throws Exception {
         ReplicatedMapService replicatedMapService = getService(ReplicatedMapService.SERVICE_NAME);
         ReplicatedRecordStore recordStore = replicatedMapService.getReplicatedRecordStore(parameters.name, true);
-        return BooleanResultParameters.encode(recordStore.isEmpty());
+        return recordStore.isEmpty();
     }
 
     @Override
-    protected ReplicatedMapIsEmptyParameters decodeClientMessage(ClientMessage clientMessage) {
-        return ReplicatedMapIsEmptyParameters.decode(clientMessage);
+    protected ReplicatedMapIsEmptyCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return ReplicatedMapIsEmptyCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return ReplicatedMapIsEmptyCodec.encodeResponse((Boolean) response);
     }
 
     @Override

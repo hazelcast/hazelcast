@@ -17,8 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.lock;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.IntResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.LockGetLockCountParameters;
+import com.hazelcast.client.impl.protocol.codec.LockGetLockCountCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.concurrent.lock.InternalLockNamespace;
 import com.hazelcast.concurrent.lock.LockService;
@@ -29,9 +28,11 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.LockPermission;
 import com.hazelcast.spi.Operation;
+
 import java.security.Permission;
 
-public class LockGetLockCountMessageTask extends AbstractPartitionMessageTask<LockGetLockCountParameters> {
+public class LockGetLockCountMessageTask
+        extends AbstractPartitionMessageTask<LockGetLockCountCodec.RequestParameters> {
 
     public LockGetLockCountMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -44,13 +45,13 @@ public class LockGetLockCountMessageTask extends AbstractPartitionMessageTask<Lo
     }
 
     @Override
-    protected LockGetLockCountParameters decodeClientMessage(ClientMessage clientMessage) {
-        return LockGetLockCountParameters.decode(clientMessage);
+    protected LockGetLockCountCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return LockGetLockCountCodec.decodeRequest(clientMessage);
     }
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return IntResultParameters.encode((Integer) response);
+        return LockGetLockCountCodec.encodeResponse((Integer) response);
     }
 
 

@@ -17,8 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.transactionallist;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.TransactionalListAddParameters;
+import com.hazelcast.client.impl.protocol.codec.TransactionalListAddCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractTransactionalMessageTask;
 import com.hazelcast.collection.impl.list.ListService;
 import com.hazelcast.core.TransactionalList;
@@ -31,18 +30,17 @@ import com.hazelcast.transaction.TransactionContext;
 import java.security.Permission;
 
 public class TransactionalListAddMessageTask
-        extends AbstractTransactionalMessageTask<TransactionalListAddParameters> {
+        extends AbstractTransactionalMessageTask<TransactionalListAddCodec.RequestParameters> {
 
     public TransactionalListAddMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected ClientMessage innerCall() throws Exception {
+    protected Object innerCall() throws Exception {
         final TransactionContext context = endpoint.getTransactionContext(parameters.txnId);
         TransactionalList<Object> list = context.getList(parameters.name);
-        boolean success = list.add(parameters.item);
-        return BooleanResultParameters.encode(success);
+        return list.add(parameters.item);
     }
 
     @Override
@@ -51,8 +49,13 @@ public class TransactionalListAddMessageTask
     }
 
     @Override
-    protected TransactionalListAddParameters decodeClientMessage(ClientMessage clientMessage) {
-        return TransactionalListAddParameters.decode(clientMessage);
+    protected TransactionalListAddCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return TransactionalListAddCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return TransactionalListAddCodec.encodeResponse((Boolean) response);
     }
 
     @Override

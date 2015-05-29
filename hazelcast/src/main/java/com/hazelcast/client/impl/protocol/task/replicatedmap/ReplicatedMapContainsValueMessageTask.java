@@ -17,8 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.replicatedmap;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.ReplicatedMapContainsValueParameters;
+import com.hazelcast.client.impl.protocol.codec.ReplicatedMapContainsValueCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
@@ -30,23 +29,28 @@ import com.hazelcast.security.permission.ReplicatedMapPermission;
 import java.security.Permission;
 
 public class ReplicatedMapContainsValueMessageTask
-        extends AbstractCallableMessageTask<ReplicatedMapContainsValueParameters> {
+        extends AbstractCallableMessageTask<ReplicatedMapContainsValueCodec.RequestParameters> {
 
     public ReplicatedMapContainsValueMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected ClientMessage call() throws Exception {
+    protected Object call() throws Exception {
         ReplicatedMapService replicatedMapService = getService(ReplicatedMapService.SERVICE_NAME);
         ReplicatedRecordStore recordStore = replicatedMapService.getReplicatedRecordStore(parameters.name, true);
-        return BooleanResultParameters.encode(recordStore.containsValue(parameters.value));
+        return recordStore.containsValue(parameters.value);
     }
 
 
     @Override
-    protected ReplicatedMapContainsValueParameters decodeClientMessage(ClientMessage clientMessage) {
-        return ReplicatedMapContainsValueParameters.decode(clientMessage);
+    protected ReplicatedMapContainsValueCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return ReplicatedMapContainsValueCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return ReplicatedMapContainsValueCodec.encodeResponse((Boolean) response);
     }
 
     @Override

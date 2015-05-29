@@ -18,9 +18,8 @@ package com.hazelcast.client.util;
 
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.ExecutorServiceCancelOnAddressParameters;
-import com.hazelcast.client.impl.protocol.parameters.ExecutorServiceCancelOnPartitionParameters;
+import com.hazelcast.client.impl.protocol.codec.ExecutorServiceCancelOnAddressCodec;
+import com.hazelcast.client.impl.protocol.codec.ExecutorServiceCancelOnPartitionCodec;
 import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.client.spi.impl.ClientInvocationFuture;
@@ -68,7 +67,7 @@ public final class ClientCancellableDelegatingFuture<V> extends ClientDelegating
         waitForRequestToBeSend();
         ClientInvocationFuture f = invokeCancelRequest(mayInterruptIfRunning);
         try {
-            boolean cancelSuccessful =  BooleanResultParameters.decode(f.get()).result;
+            boolean cancelSuccessful = ExecutorServiceCancelOnAddressCodec.decodeResponse(f.get()).response;
             if (cancelSuccessful) {
                 setError(new CancellationException());
                 cancelled = true;
@@ -86,12 +85,12 @@ public final class ClientCancellableDelegatingFuture<V> extends ClientDelegating
         ClientInvocation clientInvocation;
         final HazelcastClientInstanceImpl client = (HazelcastClientInstanceImpl) context.getHazelcastInstance();
         if (target != null) {
-            ClientMessage request = ExecutorServiceCancelOnAddressParameters.encode(uuid, target.getHost(),
+            ClientMessage request = ExecutorServiceCancelOnAddressCodec.encodeRequest(uuid, target.getHost(),
                     target.getPort(), mayInterruptIfRunning);
             clientInvocation = new ClientInvocation(client, request, target);
         } else {
             ClientMessage request =
-                    ExecutorServiceCancelOnPartitionParameters.encode(uuid, partitionId, mayInterruptIfRunning);
+                    ExecutorServiceCancelOnPartitionCodec.encodeRequest(uuid, partitionId, mayInterruptIfRunning);
             clientInvocation = new ClientInvocation(client, request, partitionId);
         }
 

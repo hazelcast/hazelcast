@@ -17,10 +17,9 @@
 package com.hazelcast.client.impl.protocol.task.cache;
 
 import com.hazelcast.cache.impl.CacheOperationProvider;
-import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.operation.CacheGetOperation;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.CacheGetParameters;
+import com.hazelcast.client.impl.protocol.codec.CacheGetCodec;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.Operation;
@@ -33,7 +32,7 @@ import javax.cache.expiry.ExpiryPolicy;
  * @see CacheGetOperation
  */
 public class CacheGetMessageTask
-        extends AbstractCacheMessageTask<CacheGetParameters> {
+        extends AbstractCacheMessageTask<CacheGetCodec.RequestParameters> {
 
     public CacheGetMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -42,14 +41,18 @@ public class CacheGetMessageTask
     @Override
     protected Operation prepareOperation() {
         CacheOperationProvider operationProvider = getOperationProvider(parameters.name);
-        CacheService service = getService(getServiceName());
-        ExpiryPolicy expiryPolicy = (ExpiryPolicy) service.toObject(parameters.expiryPolicy);
+        ExpiryPolicy expiryPolicy = (ExpiryPolicy) nodeEngine.toObject(parameters.expiryPolicy);
         return operationProvider.createGetOperation(parameters.key, expiryPolicy);
     }
 
     @Override
-    protected CacheGetParameters decodeClientMessage(ClientMessage clientMessage) {
-        return CacheGetParameters.decode(clientMessage);
+    protected CacheGetCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return CacheGetCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return CacheGetCodec.encodeResponse(serializationService.toData(response));
     }
 
     @Override

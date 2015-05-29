@@ -17,7 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.executorservice;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.ExecutorServiceSubmitToAddressParameters;
+import com.hazelcast.client.impl.protocol.codec.ExecutorServiceSubmitToAddressCodec;
 import com.hazelcast.client.impl.protocol.task.InvocationMessageTask;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.executor.impl.DistributedExecutorService;
@@ -37,7 +37,7 @@ import java.security.Permission;
 import java.util.concurrent.Callable;
 
 public class ExecutorServiceSubmitToAddressMessageTask
-        extends InvocationMessageTask<ExecutorServiceSubmitToAddressParameters>
+        extends InvocationMessageTask<ExecutorServiceSubmitToAddressCodec.RequestParameters>
         implements ExecutionCallback {
 
     public ExecutorServiceSubmitToAddressMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
@@ -74,8 +74,14 @@ public class ExecutorServiceSubmitToAddressMessageTask
     }
 
     @Override
-    protected ExecutorServiceSubmitToAddressParameters decodeClientMessage(ClientMessage clientMessage) {
-        return ExecutorServiceSubmitToAddressParameters.decode(clientMessage);
+    protected ExecutorServiceSubmitToAddressCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return ExecutorServiceSubmitToAddressCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        Data data = serializationService.toData(response);
+        return ExecutorServiceSubmitToAddressCodec.encodeResponse(data);
     }
 
     @Override

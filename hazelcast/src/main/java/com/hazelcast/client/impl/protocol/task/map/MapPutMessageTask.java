@@ -17,7 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.map;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.MapPutParameters;
+import com.hazelcast.client.impl.protocol.codec.MapPutCodec;
 import com.hazelcast.instance.Node;
 import com.hazelcast.map.impl.operation.PutOperation;
 import com.hazelcast.nio.Connection;
@@ -25,7 +25,8 @@ import com.hazelcast.spi.Operation;
 
 import java.util.concurrent.TimeUnit;
 
-public class MapPutMessageTask extends AbstractMapPutMessageTask<MapPutParameters> {
+public class MapPutMessageTask
+        extends AbstractMapPutMessageTask<MapPutCodec.RequestParameters> {
 
     public MapPutMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -38,9 +39,15 @@ public class MapPutMessageTask extends AbstractMapPutMessageTask<MapPutParameter
         return op;
     }
 
+
     @Override
-    protected MapPutParameters decodeClientMessage(ClientMessage clientMessage) {
-        return MapPutParameters.decode(clientMessage);
+    protected MapPutCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return MapPutCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return MapPutCodec.encodeResponse(serializationService.toData(response));
     }
 
     @Override

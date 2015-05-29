@@ -17,8 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.transactionalmultimap;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.DataCollectionResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.TransactionalMultiMapGetParameters;
+import com.hazelcast.client.impl.protocol.codec.TransactionalMultiMapGetCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractTransactionalMessageTask;
 import com.hazelcast.core.TransactionalMultiMap;
 import com.hazelcast.instance.Node;
@@ -35,14 +34,14 @@ import java.util.Collection;
 import java.util.List;
 
 public class TransactionalMultiMapGetMessageTask
-        extends AbstractTransactionalMessageTask<TransactionalMultiMapGetParameters> {
+        extends AbstractTransactionalMessageTask<TransactionalMultiMapGetCodec.RequestParameters> {
 
     public TransactionalMultiMapGetMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected ClientMessage innerCall() throws Exception {
+    protected Object innerCall() throws Exception {
         final TransactionContext context = endpoint.getTransactionContext(parameters.txnId);
         TransactionalMultiMap<Object, Object> multiMap = context.getMultiMap(parameters.name);
         Collection<Object> collection = multiMap.get(parameters.key);
@@ -50,7 +49,7 @@ public class TransactionalMultiMapGetMessageTask
         for (Object o : collection) {
             list.add(serializationService.toData(o));
         }
-        return DataCollectionResultParameters.encode(list);
+        return list;
     }
 
     @Override
@@ -59,8 +58,13 @@ public class TransactionalMultiMapGetMessageTask
     }
 
     @Override
-    protected TransactionalMultiMapGetParameters decodeClientMessage(ClientMessage clientMessage) {
-        return TransactionalMultiMapGetParameters.decode(clientMessage);
+    protected TransactionalMultiMapGetCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return TransactionalMultiMapGetCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return TransactionalMultiMapGetCodec.encodeResponse((Collection<Data>) response);
     }
 
     @Override

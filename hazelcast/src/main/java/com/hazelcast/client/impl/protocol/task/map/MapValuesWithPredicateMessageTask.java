@@ -17,8 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.map;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.DataCollectionResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.MapValuesWithPredicateParameters;
+import com.hazelcast.client.impl.protocol.codec.MapValuesWithPredicateCodec;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
@@ -29,19 +28,20 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-public class MapValuesWithPredicateMessageTask extends AbstractMapQueryMessageTask<MapValuesWithPredicateParameters> {
+public class MapValuesWithPredicateMessageTask
+        extends AbstractMapQueryMessageTask<MapValuesWithPredicateCodec.RequestParameters> {
 
     public MapValuesWithPredicateMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected ClientMessage reduce(Collection<QueryResultEntry> result) {
+    protected Object reduce(Collection<QueryResultEntry> result) {
         List<Data> values = new ArrayList<Data>(result.size());
         for (QueryResultEntry resultEntry : result) {
             values.add(resultEntry.getValueData());
         }
-        return DataCollectionResultParameters.encode(values);
+        return values;
     }
 
     @Override
@@ -50,8 +50,13 @@ public class MapValuesWithPredicateMessageTask extends AbstractMapQueryMessageTa
     }
 
     @Override
-    protected MapValuesWithPredicateParameters decodeClientMessage(ClientMessage clientMessage) {
-        return MapValuesWithPredicateParameters.decode(clientMessage);
+    protected MapValuesWithPredicateCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return MapValuesWithPredicateCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return MapValuesWithPredicateCodec.encodeResponse((Collection<Data>) response);
     }
 
     @Override

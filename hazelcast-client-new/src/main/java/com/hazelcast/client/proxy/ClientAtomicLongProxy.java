@@ -17,18 +17,15 @@
 package com.hazelcast.client.proxy;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.AtomicLongAddAndGetParameters;
-import com.hazelcast.client.impl.protocol.parameters.AtomicLongAlterAndGetParameters;
-import com.hazelcast.client.impl.protocol.parameters.AtomicLongAlterParameters;
-import com.hazelcast.client.impl.protocol.parameters.AtomicLongApplyParameters;
-import com.hazelcast.client.impl.protocol.parameters.AtomicLongCompareAndSetParameters;
-import com.hazelcast.client.impl.protocol.parameters.AtomicLongGetAndAddParameters;
-import com.hazelcast.client.impl.protocol.parameters.AtomicLongGetAndAlterParameters;
-import com.hazelcast.client.impl.protocol.parameters.AtomicLongGetAndSetParameters;
-import com.hazelcast.client.impl.protocol.parameters.AtomicLongSetParameters;
-import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.GenericResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.LongResultParameters;
+import com.hazelcast.client.impl.protocol.codec.AtomicLongAddAndGetCodec;
+import com.hazelcast.client.impl.protocol.codec.AtomicLongAlterAndGetCodec;
+import com.hazelcast.client.impl.protocol.codec.AtomicLongAlterCodec;
+import com.hazelcast.client.impl.protocol.codec.AtomicLongApplyCodec;
+import com.hazelcast.client.impl.protocol.codec.AtomicLongCompareAndSetCodec;
+import com.hazelcast.client.impl.protocol.codec.AtomicLongGetAndAddCodec;
+import com.hazelcast.client.impl.protocol.codec.AtomicLongGetAndAlterCodec;
+import com.hazelcast.client.impl.protocol.codec.AtomicLongGetAndSetCodec;
+import com.hazelcast.client.impl.protocol.codec.AtomicLongSetCodec;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.core.IAtomicLong;
 import com.hazelcast.core.IFunction;
@@ -49,47 +46,51 @@ public class ClientAtomicLongProxy extends ClientProxy implements IAtomicLong {
     @Override
     public <R> R apply(IFunction<Long, R> function) {
         isNotNull(function, "function");
-        ClientMessage request = AtomicLongApplyParameters.encode(name, toData(function));
-        ClientMessage response = invoke(request);
-        GenericResultParameters resultParameters = GenericResultParameters.decode(response);
-        return toObject(resultParameters.result);
+        ClientMessage request = AtomicLongApplyCodec.encodeRequest(name, toData(function));
+        ClientMessage response = invokeMessage(request);
+        AtomicLongApplyCodec.ResponseParameters resultParameters = AtomicLongApplyCodec.decodeResponse(response);
+        return toObject(resultParameters.response);
     }
 
     @Override
     public void alter(IFunction<Long, Long> function) {
         isNotNull(function, "function");
-        ClientMessage request = AtomicLongAlterParameters.encode(name, toData(function));
-        invoke(request);
+        ClientMessage request = AtomicLongAlterCodec.encodeRequest(name, toData(function));
+        invokeMessage(request);
     }
 
     @Override
     public long alterAndGet(IFunction<Long, Long> function) {
         isNotNull(function, "function");
-        ClientMessage request = AtomicLongAlterAndGetParameters.encode(name, toData(function));
-        LongResultParameters resultParameters = LongResultParameters.decode((ClientMessage) invoke(request));
-        return resultParameters.result;
+        ClientMessage request = AtomicLongAlterAndGetCodec.encodeRequest(name, toData(function));
+        AtomicLongAlterAndGetCodec.ResponseParameters resultParameters
+                = AtomicLongAlterAndGetCodec.decodeResponse(invokeMessage(request));
+        return resultParameters.response;
     }
 
     @Override
     public long getAndAlter(IFunction<Long, Long> function) {
         isNotNull(function, "function");
-        ClientMessage request = AtomicLongGetAndAlterParameters.encode(name, toData(function));
-        LongResultParameters resultParameters = LongResultParameters.decode((ClientMessage) invoke(request));
-        return resultParameters.result;
+        ClientMessage request = AtomicLongGetAndAlterCodec.encodeRequest(name, toData(function));
+        AtomicLongGetAndAlterCodec.ResponseParameters resultParameters
+                = AtomicLongGetAndAlterCodec.decodeResponse(invokeMessage(request));
+        return resultParameters.response;
     }
 
     @Override
     public long addAndGet(long delta) {
-        ClientMessage request = AtomicLongAddAndGetParameters.encode(name, delta);
-        LongResultParameters resultParameters = LongResultParameters.decode((ClientMessage) invoke(request));
-        return resultParameters.result;
+        ClientMessage request = AtomicLongAddAndGetCodec.encodeRequest(name, delta);
+        AtomicLongAddAndGetCodec.ResponseParameters resultParameters
+                = AtomicLongAddAndGetCodec.decodeResponse(invokeMessage(request));
+        return resultParameters.response;
     }
 
     @Override
     public boolean compareAndSet(long expect, long update) {
-        ClientMessage request = AtomicLongCompareAndSetParameters.encode(name, expect, update);
-        BooleanResultParameters resultParameters = BooleanResultParameters.decode((ClientMessage) invoke(request));
-        return resultParameters.result;
+        ClientMessage request = AtomicLongCompareAndSetCodec.encodeRequest(name, expect, update);
+        AtomicLongCompareAndSetCodec.ResponseParameters resultParameters
+                = AtomicLongCompareAndSetCodec.decodeResponse(invokeMessage(request));
+        return resultParameters.response;
     }
 
     @Override
@@ -104,16 +105,18 @@ public class ClientAtomicLongProxy extends ClientProxy implements IAtomicLong {
 
     @Override
     public long getAndAdd(long delta) {
-        ClientMessage request = AtomicLongGetAndAddParameters.encode(name, delta);
-        LongResultParameters resultParameters = LongResultParameters.decode((ClientMessage) invoke(request));
-        return resultParameters.result;
+        ClientMessage request = AtomicLongGetAndAddCodec.encodeRequest(name, delta);
+        AtomicLongGetAndAddCodec.ResponseParameters resultParameters
+                = AtomicLongGetAndAddCodec.decodeResponse(invokeMessage(request));
+        return resultParameters.response;
     }
 
     @Override
     public long getAndSet(long newValue) {
-        ClientMessage request = AtomicLongGetAndSetParameters.encode(name, newValue);
-        LongResultParameters resultParameters = LongResultParameters.decode((ClientMessage) invoke(request));
-        return resultParameters.result;
+        ClientMessage request = AtomicLongGetAndSetCodec.encodeRequest(name, newValue);
+        AtomicLongGetAndSetCodec.ResponseParameters resultParameters
+                = AtomicLongGetAndSetCodec.decodeResponse(invokeMessage(request));
+        return resultParameters.response;
     }
 
     @Override
@@ -128,11 +131,11 @@ public class ClientAtomicLongProxy extends ClientProxy implements IAtomicLong {
 
     @Override
     public void set(long newValue) {
-        ClientMessage request = AtomicLongSetParameters.encode(name, newValue);
-        invoke(request);
+        ClientMessage request = AtomicLongSetCodec.encodeRequest(name, newValue);
+        invokeMessage(request);
     }
 
-    protected <T> T invoke(ClientMessage req) {
+    protected ClientMessage invokeMessage(ClientMessage req) {
         return super.invoke(req, getKey());
     }
 

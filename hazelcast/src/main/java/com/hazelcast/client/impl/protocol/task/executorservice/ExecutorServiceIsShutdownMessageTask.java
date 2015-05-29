@@ -17,8 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.executorservice;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.ExecutorServiceIsShutdownParameters;
+import com.hazelcast.client.impl.protocol.codec.ExecutorServiceIsShutdownCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.executor.impl.DistributedExecutorService;
 import com.hazelcast.instance.Node;
@@ -27,21 +26,26 @@ import com.hazelcast.nio.Connection;
 import java.security.Permission;
 
 public class ExecutorServiceIsShutdownMessageTask
-        extends AbstractCallableMessageTask<ExecutorServiceIsShutdownParameters> {
+        extends AbstractCallableMessageTask<ExecutorServiceIsShutdownCodec.RequestParameters> {
 
     public ExecutorServiceIsShutdownMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected ClientMessage call() throws Exception {
+    protected Object call() throws Exception {
         final DistributedExecutorService service = getService(DistributedExecutorService.SERVICE_NAME);
-        return BooleanResultParameters.encode(service.isShutdown(parameters.name));
+        return service.isShutdown(parameters.name);
     }
 
     @Override
-    protected ExecutorServiceIsShutdownParameters decodeClientMessage(ClientMessage clientMessage) {
-        return ExecutorServiceIsShutdownParameters.decode(clientMessage);
+    protected ExecutorServiceIsShutdownCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return ExecutorServiceIsShutdownCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return ExecutorServiceIsShutdownCodec.encodeResponse((Boolean) response);
     }
 
     @Override

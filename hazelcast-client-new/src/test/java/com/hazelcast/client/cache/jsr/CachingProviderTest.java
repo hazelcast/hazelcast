@@ -26,7 +26,6 @@ import org.junit.Ignore;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-@Ignore
 public class CachingProviderTest
         extends org.jsr107.tck.spi.CachingProviderTest {
 

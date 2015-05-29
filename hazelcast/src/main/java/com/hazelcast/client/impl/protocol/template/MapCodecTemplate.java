@@ -20,10 +20,10 @@ import com.hazelcast.annotation.GenerateCodec;
 import com.hazelcast.annotation.Request;
 import com.hazelcast.client.impl.protocol.EventMessageConst;
 import com.hazelcast.client.impl.protocol.ResponseMessageConst;
-import com.hazelcast.client.impl.protocol.parameters.TemplateConstants;
 import com.hazelcast.nio.serialization.Data;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 @GenerateCodec(id = TemplateConstants.MAP_TEMPLATE_ID, name = "Map", ns = "Hazelcast.Client.Protocol.Map")
@@ -68,10 +68,10 @@ public interface MapCodecTemplate {
     @Request(id = 13, retryable = false, response = ResponseMessageConst.VOID)
     void flush(String name);
 
-    @Request(id = 14, retryable = false, response = ResponseMessageConst.DATA)
+    @Request(id = 14, retryable = false, response = ResponseMessageConst.BOOLEAN)
     void tryRemove(String name, Data key, long threadId, long timeout);
 
-    @Request(id = 15, retryable = false, response = ResponseMessageConst.DATA)
+    @Request(id = 15, retryable = false, response = ResponseMessageConst.BOOLEAN)
     void tryPut(String name, Data key, Data value, long threadId, long timeout);
 
     @Request(id = 16, retryable = false, response = ResponseMessageConst.VOID)
@@ -86,7 +86,7 @@ public interface MapCodecTemplate {
     @Request(id = 19, retryable = false, response = ResponseMessageConst.VOID)
     void lock(String name, Data key, long threadId, long ttl);
 
-    @Request(id = 20, retryable = false, response = ResponseMessageConst.DATA)
+    @Request(id = 20, retryable = false, response = ResponseMessageConst.BOOLEAN)
     void tryLock(String name, Data key, long threadId, long timeout);
 
     @Request(id = 21, retryable = true, response = ResponseMessageConst.BOOLEAN)
@@ -101,26 +101,26 @@ public interface MapCodecTemplate {
     @Request(id = 24, retryable = false, response = ResponseMessageConst.BOOLEAN)
     void removeInterceptor(String name, String id);
 
-    @Request(id = 25, retryable = false, response = ResponseMessageConst.STRING, event = EventMessageConst.EVENT_ENTRYEVENT)
+    @Request(id = 25, retryable = false, response = ResponseMessageConst.STRING, event = EventMessageConst.EVENT_ENTRY)
     void addEntryListenerToKeyWithPredicate(String name, Data key, Data predicate, boolean includeValue);
 
-    @Request(id = 26, retryable = false, response = ResponseMessageConst.STRING, event = EventMessageConst.EVENT_ENTRYEVENT)
+    @Request(id = 26, retryable = false, response = ResponseMessageConst.STRING, event = EventMessageConst.EVENT_ENTRY)
     void addEntryListenerWithPredicate(String name, Data predicate, boolean includeValue);
 
-    @Request(id = 27, retryable = false, response = ResponseMessageConst.STRING, event = EventMessageConst.EVENT_ENTRYEVENT)
+    @Request(id = 27, retryable = false, response = ResponseMessageConst.STRING, event = EventMessageConst.EVENT_ENTRY)
     void addEntryListenerToKey(String name, Data key, boolean includeValue);
 
-    @Request(id = 28, retryable = false, response = ResponseMessageConst.STRING, event = EventMessageConst.EVENT_ENTRYEVENT)
+    @Request(id = 28, retryable = false, response = ResponseMessageConst.STRING, event = EventMessageConst.EVENT_ENTRY)
     void addEntryListener(String name, boolean includeValue);
 
-    @Request(id = 29, retryable = false, response = ResponseMessageConst.DATA)
+    @Request(id = 29, retryable = false, response = ResponseMessageConst.STRING, event = EventMessageConst.EVENT_ENTRY)
     void addNearCacheEntryListener(String name, boolean includeValue);
 
     @Request(id = 30, retryable = false, response = ResponseMessageConst.BOOLEAN)
     void removeEntryListener(String name, String registrationId);
 
     @Request(id = 31, retryable = false, response = ResponseMessageConst.STRING,
-            event = EventMessageConst.EVENT_PARTITIONLOSTEVENT)
+            event = EventMessageConst.EVENT_MAPPARTITIONLOST)
     void addPartitionLostListener(String name);
 
     @Request(id = 32, retryable = false, response = ResponseMessageConst.BOOLEAN)
@@ -172,7 +172,7 @@ public interface MapCodecTemplate {
     void isEmpty(String name);
 
     @Request(id = 48, retryable = false, response = ResponseMessageConst.VOID)
-    void putAll(String name, List<Data> keys, List<Data> values);
+    void putAll(String name, Map<Data, Data> entries);
 
     @Request(id = 49, retryable = false, response = ResponseMessageConst.VOID)
     void clear(String name);
@@ -183,16 +183,25 @@ public interface MapCodecTemplate {
     @Request(id = 51, retryable = false, response = ResponseMessageConst.DATA)
     void submitToKey(String name, Data entryProcessor, Data key);
 
-    @Request(id = 52, retryable = false, response = ResponseMessageConst.DATA)
+    @Request(id = 52, retryable = false, response = ResponseMessageConst.MAP_DATA_DATA)
     void executeOnAllKeys(String name, Data entryProcessor);
 
-    @Request(id = 53, retryable = false, response = ResponseMessageConst.DATA)
+    @Request(id = 53, retryable = false, response = ResponseMessageConst.MAP_DATA_DATA)
     void executeWithPredicate(String name, Data entryProcessor, Data predicate);
 
-    @Request(id = 54, retryable = false, response = ResponseMessageConst.DATA)
+    @Request(id = 54, retryable = false, response = ResponseMessageConst.MAP_DATA_DATA)
     void executeOnKeys(String name, Data entryProcessor, Set<Data> keys);
 
     @Request(id = 55, retryable = false, response = ResponseMessageConst.VOID)
     void forceUnlock(String name, Data key);
+
+    @Request(id = 56, retryable = false, response = ResponseMessageConst.MAP_DATA_DATA)
+    void keySetWithPagingPredicate(String name, Data predicate);
+
+    @Request(id = 57, retryable = false, response = ResponseMessageConst.MAP_DATA_DATA)
+    void valuesWithPagingPredicate(String name, Data predicate);
+
+    @Request(id = 58, retryable = false, response = ResponseMessageConst.MAP_DATA_DATA)
+    void entriesWithPagingPredicate(String name, Data predicate);
 
 }

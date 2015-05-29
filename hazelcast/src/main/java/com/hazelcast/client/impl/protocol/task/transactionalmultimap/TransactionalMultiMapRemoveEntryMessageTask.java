@@ -17,8 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.transactionalmultimap;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.TransactionalMultiMapRemoveEntryParameters;
+import com.hazelcast.client.impl.protocol.codec.TransactionalMultiMapRemoveEntryCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractTransactionalMessageTask;
 import com.hazelcast.core.TransactionalMultiMap;
 import com.hazelcast.instance.Node;
@@ -31,18 +30,17 @@ import com.hazelcast.transaction.TransactionContext;
 import java.security.Permission;
 
 public class TransactionalMultiMapRemoveEntryMessageTask
-        extends AbstractTransactionalMessageTask<TransactionalMultiMapRemoveEntryParameters> {
+        extends AbstractTransactionalMessageTask<TransactionalMultiMapRemoveEntryCodec.RequestParameters> {
 
     public TransactionalMultiMapRemoveEntryMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected ClientMessage innerCall() throws Exception {
+    protected Object innerCall() throws Exception {
         final TransactionContext context = endpoint.getTransactionContext(parameters.txnId);
         TransactionalMultiMap<Object, Object> multiMap = context.getMultiMap(parameters.name);
-        boolean success = multiMap.remove(parameters.key, parameters.value);
-        return BooleanResultParameters.encode(success);
+        return multiMap.remove(parameters.key, parameters.value);
     }
 
     @Override
@@ -51,8 +49,13 @@ public class TransactionalMultiMapRemoveEntryMessageTask
     }
 
     @Override
-    protected TransactionalMultiMapRemoveEntryParameters decodeClientMessage(ClientMessage clientMessage) {
-        return TransactionalMultiMapRemoveEntryParameters.decode(clientMessage);
+    protected TransactionalMultiMapRemoveEntryCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return TransactionalMultiMapRemoveEntryCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return TransactionalMultiMapRemoveEntryCodec.encodeResponse((Boolean) response);
     }
 
     @Override

@@ -1,8 +1,7 @@
 package com.hazelcast.client.protocol;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.AuthenticationParameters;
-import com.hazelcast.client.impl.protocol.parameters.AuthenticationResultParameters;
+import com.hazelcast.client.impl.protocol.codec.ClientAuthenticationCodec;
 import com.hazelcast.client.impl.protocol.util.ClientProtocolBuffer;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.GroupConfig;
@@ -81,7 +80,7 @@ public class RawProtocolTest {
         String username = GroupConfig.DEFAULT_GROUP_NAME;
         String pass = GroupConfig.DEFAULT_GROUP_PASSWORD;
 
-        final ClientMessage parameters = AuthenticationParameters.encode(username, pass, "", "", true);
+        final ClientMessage parameters = ClientAuthenticationCodec.encodeRequest(username, pass, null, null, true);
         parameters.setCorrelationId(1).addFlag(ClientMessage.BEGIN_AND_END_FLAGS);
 
         final ClientProtocolBuffer byteBuffer = parameters.buffer();
@@ -104,7 +103,7 @@ public class RawProtocolTest {
         assertTrue(clientMessage.isComplete());
 
         ClientMessage cmResult = ClientMessage.createForDecode(clientMessage.buffer(), 0);
-        final AuthenticationResultParameters resultParameters = AuthenticationResultParameters.decode(cmResult);
+        ClientAuthenticationCodec.ResponseParameters resultParameters = ClientAuthenticationCodec.decodeResponse(cmResult);
 
         assertEquals(cmResult.getCorrelationId(), 1);
         assertEquals(resultParameters.ownerUuid, server.getCluster().getLocalMember().getUuid());

@@ -17,8 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.transactionalqueue;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.IntResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.TransactionalQueueSizeParameters;
+import com.hazelcast.client.impl.protocol.codec.TransactionalQueueSizeCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractTransactionalMessageTask;
 import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.core.TransactionalQueue;
@@ -31,18 +30,17 @@ import com.hazelcast.transaction.TransactionContext;
 import java.security.Permission;
 
 public class TransactionalQueueSizeMessageTask
-        extends AbstractTransactionalMessageTask<TransactionalQueueSizeParameters> {
+        extends AbstractTransactionalMessageTask<TransactionalQueueSizeCodec.RequestParameters> {
 
     public TransactionalQueueSizeMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected ClientMessage innerCall() throws Exception {
+    protected Object innerCall() throws Exception {
         final TransactionContext context = endpoint.getTransactionContext(parameters.txnId);
         final TransactionalQueue queue = context.getQueue(parameters.name);
-        int size = queue.size();
-        return IntResultParameters.encode(size);
+        return queue.size();
     }
 
     @Override
@@ -51,8 +49,13 @@ public class TransactionalQueueSizeMessageTask
     }
 
     @Override
-    protected TransactionalQueueSizeParameters decodeClientMessage(ClientMessage clientMessage) {
-        return TransactionalQueueSizeParameters.decode(clientMessage);
+    protected TransactionalQueueSizeCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return TransactionalQueueSizeCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return TransactionalQueueSizeCodec.encodeResponse((Integer) response);
     }
 
     @Override

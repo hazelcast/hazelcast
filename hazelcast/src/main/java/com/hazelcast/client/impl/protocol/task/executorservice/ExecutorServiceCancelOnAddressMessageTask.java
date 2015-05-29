@@ -17,7 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.executorservice;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.ExecutorServiceCancelOnAddressParameters;
+import com.hazelcast.client.impl.protocol.codec.ExecutorServiceCancelOnAddressCodec;
 import com.hazelcast.executor.impl.DistributedExecutorService;
 import com.hazelcast.executor.impl.operations.CancellationOperation;
 import com.hazelcast.instance.Node;
@@ -29,7 +29,7 @@ import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import java.net.UnknownHostException;
 
 public class ExecutorServiceCancelOnAddressMessageTask
-        extends AbstractExecutorServiceCancelMessageTask<ExecutorServiceCancelOnAddressParameters> {
+        extends AbstractExecutorServiceCancelMessageTask<ExecutorServiceCancelOnAddressCodec.RequestParameters> {
 
     public ExecutorServiceCancelOnAddressMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -46,8 +46,13 @@ public class ExecutorServiceCancelOnAddressMessageTask
 
 
     @Override
-    protected ExecutorServiceCancelOnAddressParameters decodeClientMessage(ClientMessage clientMessage) {
-        return ExecutorServiceCancelOnAddressParameters.decode(clientMessage);
+    protected ExecutorServiceCancelOnAddressCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return ExecutorServiceCancelOnAddressCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return ExecutorServiceCancelOnAddressCodec.encodeResponse((Boolean) response);
     }
 
     @Override

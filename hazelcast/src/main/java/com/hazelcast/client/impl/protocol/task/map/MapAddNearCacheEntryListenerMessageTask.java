@@ -17,15 +17,16 @@
 package com.hazelcast.client.impl.protocol.task.map;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.MapAddNearCacheEntryListenerParameters;
+import com.hazelcast.client.impl.protocol.codec.MapAddNearCacheEntryListenerCodec;
 import com.hazelcast.instance.Node;
 import com.hazelcast.map.impl.EntryEventFilter;
 import com.hazelcast.map.impl.SyntheticEventFilter;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.EventFilter;
 
 public class MapAddNearCacheEntryListenerMessageTask
-        extends AbstractMapAddEntryListenerMessageTask<MapAddNearCacheEntryListenerParameters> {
+        extends AbstractMapAddEntryListenerMessageTask<MapAddNearCacheEntryListenerCodec.RequestParameters> {
 
     public MapAddNearCacheEntryListenerMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -35,6 +36,14 @@ public class MapAddNearCacheEntryListenerMessageTask
     protected EventFilter getEventFilter() {
         EntryEventFilter eventFilter = new EntryEventFilter(parameters.includeValue, null);
         return new SyntheticEventFilter(eventFilter);
+    }
+
+
+    @Override
+    protected ClientMessage encodeEvent(Data keyData, Data newValueData, Data oldValueData,
+                                        Data meringValueData, int type, String uuid, int numberOfAffectedEntries) {
+        return MapAddNearCacheEntryListenerCodec.encodeEntryEvent(keyData, newValueData,
+                oldValueData, meringValueData, type, uuid, numberOfAffectedEntries);
     }
 
 
@@ -49,8 +58,13 @@ public class MapAddNearCacheEntryListenerMessageTask
     }
 
     @Override
-    protected MapAddNearCacheEntryListenerParameters decodeClientMessage(ClientMessage clientMessage) {
-        return MapAddNearCacheEntryListenerParameters.decode(clientMessage);
+    protected MapAddNearCacheEntryListenerCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return MapAddNearCacheEntryListenerCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return MapAddNearCacheEntryListenerCodec.encodeResponse((String) response);
     }
 
 }

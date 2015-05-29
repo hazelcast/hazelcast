@@ -18,16 +18,17 @@ package com.hazelcast.client.cache.impl;
 
 import com.hazelcast.cache.impl.AbstractClusterWideIterator;
 import com.hazelcast.cache.impl.CacheKeyIteratorResult;
-import com.hazelcast.cache.impl.client.CacheIterateRequest;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
+import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.codec.CacheIterateCodec;
 import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.impl.ClientInvocation;
+import com.hazelcast.client.spi.impl.ClientInvocationFuture;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.util.ExceptionUtil;
 
 import javax.cache.Cache;
 import java.util.Iterator;
-import java.util.concurrent.Future;
 
 /**
  * Client side cluster-wide iterator for {@link com.hazelcast.cache.ICache}.
@@ -54,13 +55,13 @@ public class ClientClusterWideIterator<K, V>
     }
 
     protected CacheKeyIteratorResult fetch() {
-        CacheIterateRequest request = new CacheIterateRequest(cacheProxy.getNameWithPrefix(), partitionIndex, lastTableIndex,
-                fetchSize, cacheProxy.cacheConfig.getInMemoryFormat());
-        final HazelcastClientInstanceImpl client = (HazelcastClientInstanceImpl) context.getHazelcastInstance();
+        ClientMessage request = CacheIterateCodec
+                .encodeRequest(cacheProxy.getNameWithPrefix(), partitionIndex, lastTableIndex, fetchSize);
+        HazelcastClientInstanceImpl client = (HazelcastClientInstanceImpl) context.getHazelcastInstance();
         try {
-            final ClientInvocation clientInvocation = new ClientInvocation(client, request);
-            final Future f = clientInvocation.invoke();
-            return toObject(f.get());
+            ClientInvocation clientInvocation = new ClientInvocation(client, request, partitionIndex);
+            ClientInvocationFuture f = clientInvocation.invoke();
+            return toObject(CacheIterateCodec.decodeResponse(f.get()).response);
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }

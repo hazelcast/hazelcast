@@ -17,7 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.atomicreference;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.AtomicReferenceSetParameters;
+import com.hazelcast.client.impl.protocol.codec.AtomicReferenceSetCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.concurrent.atomicreference.AtomicReferenceService;
 import com.hazelcast.concurrent.atomicreference.operations.SetOperation;
@@ -29,7 +29,8 @@ import com.hazelcast.spi.Operation;
 
 import java.security.Permission;
 
-public class AtomicReferenceSetMessageTask extends AbstractPartitionMessageTask<AtomicReferenceSetParameters> {
+public class AtomicReferenceSetMessageTask
+        extends AbstractPartitionMessageTask<AtomicReferenceSetCodec.RequestParameters> {
 
     public AtomicReferenceSetMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -41,8 +42,13 @@ public class AtomicReferenceSetMessageTask extends AbstractPartitionMessageTask<
     }
 
     @Override
-    protected AtomicReferenceSetParameters decodeClientMessage(ClientMessage clientMessage) {
-        return AtomicReferenceSetParameters.decode(clientMessage);
+    protected AtomicReferenceSetCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return AtomicReferenceSetCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return AtomicReferenceSetCodec.encodeResponse();
     }
 
     @Override

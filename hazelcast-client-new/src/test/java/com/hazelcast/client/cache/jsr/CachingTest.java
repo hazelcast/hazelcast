@@ -27,7 +27,6 @@ import org.junit.Ignore;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-@Ignore
 public class CachingTest
         extends org.jsr107.tck.CachingTest {
 

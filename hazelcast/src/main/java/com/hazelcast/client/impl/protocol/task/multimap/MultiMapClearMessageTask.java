@@ -17,8 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.multimap;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.MultiMapClearParameters;
-import com.hazelcast.client.impl.protocol.parameters.VoidResultParameters;
+import com.hazelcast.client.impl.protocol.codec.MultiMapClearCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractAllPartitionsMessageTask;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.instance.Node;
@@ -36,7 +35,8 @@ import java.util.Map;
  * Client Protocol Task for handling messages with type id:
  * {@link com.hazelcast.client.impl.protocol.parameters.MultiMapMessageType#MULTIMAP_CLEAR}
  */
-public class MultiMapClearMessageTask extends AbstractAllPartitionsMessageTask<MultiMapClearParameters> {
+public class MultiMapClearMessageTask
+        extends AbstractAllPartitionsMessageTask<MultiMapClearCodec.RequestParameters> {
 
     public MultiMapClearMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -47,20 +47,25 @@ public class MultiMapClearMessageTask extends AbstractAllPartitionsMessageTask<M
     }
 
     @Override
-    protected ClientMessage reduce(Map<Integer, Object> map) {
+    protected Object reduce(Map<Integer, Object> map) {
         int totalAffectedEntries = 0;
         for (Object affectedEntries : map.values()) {
             totalAffectedEntries += (Integer) affectedEntries;
         }
         final MultiMapService service = getService(MultiMapService.SERVICE_NAME);
         service.publishMultiMapEvent(parameters.name, EntryEventType.CLEAR_ALL, totalAffectedEntries);
-        return VoidResultParameters.encode();
+        return null;
     }
 
 
     @Override
-    protected MultiMapClearParameters decodeClientMessage(ClientMessage clientMessage) {
-        return MultiMapClearParameters.decode(clientMessage);
+    protected MultiMapClearCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return MultiMapClearCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return MultiMapClearCodec.encodeResponse();
     }
 
     @Override

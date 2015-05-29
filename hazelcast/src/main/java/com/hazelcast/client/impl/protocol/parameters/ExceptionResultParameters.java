@@ -17,8 +17,9 @@
 package com.hazelcast.client.impl.protocol.parameters;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.ClientMessageType;
+import com.hazelcast.client.impl.protocol.ResponseMessageConst;
 import com.hazelcast.client.impl.protocol.util.ParameterUtil;
+import com.hazelcast.nio.Bits;
 
 /**
  * ExceptionResultParameters
@@ -29,7 +30,7 @@ public class ExceptionResultParameters {
     /**
      * ClientMessageType of this message
      */
-    public static final ClientMessageType TYPE = ClientMessageType.EXCEPTION;
+    public static final int TYPE = ResponseMessageConst.EXCEPTION;
     public String className;
     public String causeClassName;
     public String message;
@@ -37,9 +38,18 @@ public class ExceptionResultParameters {
 
     private ExceptionResultParameters(ClientMessage flyweight) {
         className = flyweight.getStringUtf8();
-        causeClassName = flyweight.getStringUtf8();
-        message = flyweight.getStringUtf8();
-        stacktrace = flyweight.getStringUtf8();
+        boolean causeClassName_isNull = flyweight.getBoolean();
+        if (!causeClassName_isNull) {
+            causeClassName = flyweight.getStringUtf8();
+        }
+        boolean message_isNull = flyweight.getBoolean();
+        if (!message_isNull) {
+            message = flyweight.getStringUtf8();
+        }
+        boolean stackTrace_isNull = flyweight.getBoolean();
+        if (!stackTrace_isNull) {
+            stacktrace = flyweight.getStringUtf8();
+        }
     }
 
     public static ExceptionResultParameters decode(ClientMessage flyweight) {
@@ -49,8 +59,24 @@ public class ExceptionResultParameters {
     public static ClientMessage encode(String className, String causeClassName, String message, String stacktrace) {
         final int requiredDataSize = calculateDataSize(className, causeClassName, message, stacktrace);
         ClientMessage clientMessage = ClientMessage.createForEncode(requiredDataSize);
-        clientMessage.setMessageType(TYPE.id());
-        clientMessage.set(className).set(causeClassName).set(message).set(stacktrace);
+        clientMessage.setMessageType(TYPE);
+        clientMessage.set(className);
+        boolean causeClassName_isNull = causeClassName == null;
+        clientMessage.set(causeClassName_isNull);
+        if (!causeClassName_isNull) {
+            clientMessage.set(causeClassName);
+        }
+        boolean message_isNull = message == null;
+        clientMessage.set(message_isNull);
+        if (!message_isNull) {
+            clientMessage.set(message);
+        }
+        boolean stackTrace_isNull = stacktrace == null;
+        clientMessage.set(stackTrace_isNull);
+        if (!stackTrace_isNull) {
+            clientMessage.set(stacktrace);
+        }
+
         clientMessage.updateFrameLength();
         return clientMessage;
     }
@@ -60,12 +86,24 @@ public class ExceptionResultParameters {
      *
      * @return size
      */
-    public static int calculateDataSize(String className, String causeClassName,  String message, String stacktrace) {
-        return ClientMessage.HEADER_SIZE//
-                + ParameterUtil.calculateStringDataSize(className)
-                + ParameterUtil.calculateStringDataSize(causeClassName)
-                + ParameterUtil.calculateStringDataSize(message)
-                + ParameterUtil.calculateStringDataSize(stacktrace);
+    public static int calculateDataSize(String className, String causeClassName, String message, String stacktrace) {
+        int dataSize = ClientMessage.HEADER_SIZE + ParameterUtil.calculateStringDataSize(className);
+        if (causeClassName == null) {
+            dataSize += Bits.BOOLEAN_SIZE_IN_BYTES;
+        } else {
+            dataSize += ParameterUtil.calculateStringDataSize(causeClassName);
+        }
+        if (message == null) {
+            dataSize += Bits.BOOLEAN_SIZE_IN_BYTES;
+        } else {
+            dataSize += ParameterUtil.calculateStringDataSize(message);
+        }
+        if (stacktrace == null) {
+            dataSize += Bits.BOOLEAN_SIZE_IN_BYTES;
+        } else {
+            dataSize += ParameterUtil.calculateStringDataSize(stacktrace);
+        }
+        return dataSize;
     }
 
 }

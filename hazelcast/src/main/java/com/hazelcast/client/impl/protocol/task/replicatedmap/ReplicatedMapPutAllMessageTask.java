@@ -17,42 +17,45 @@
 package com.hazelcast.client.impl.protocol.task.replicatedmap;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.ReplicatedMapPutAllParameters;
-import com.hazelcast.client.impl.protocol.parameters.VoidResultParameters;
+import com.hazelcast.client.impl.protocol.codec.ReplicatedMapPutAllCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.ReplicatedMapPermission;
 
 import java.security.Permission;
-import java.util.HashMap;
 import java.util.Map;
 
-public class ReplicatedMapPutAllMessageTask extends AbstractCallableMessageTask<ReplicatedMapPutAllParameters> {
+public class ReplicatedMapPutAllMessageTask
+        extends AbstractCallableMessageTask<ReplicatedMapPutAllCodec.RequestParameters> {
 
     public ReplicatedMapPutAllMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected ClientMessage call() throws Exception {
+    protected Object call() throws Exception {
 
         ReplicatedMapService replicatedMapService = getService(ReplicatedMapService.SERVICE_NAME);
         ReplicatedRecordStore recordStore = replicatedMapService.getReplicatedRecordStore(parameters.name, true);
-        final int size = parameters.key.size();
-        for (int i = 0; i < size; i++) {
-            recordStore.put(parameters.key.get(i), parameters.value.get(i));
-
+        for (Map.Entry<Data, Data> entry : parameters.map.entrySet()) {
+            recordStore.put(entry.getKey(), entry.getValue());
         }
-        return VoidResultParameters.encode();
+        return null;
     }
 
     @Override
-    protected ReplicatedMapPutAllParameters decodeClientMessage(ClientMessage clientMessage) {
-        return ReplicatedMapPutAllParameters.decode(clientMessage);
+    protected ReplicatedMapPutAllCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return ReplicatedMapPutAllCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return ReplicatedMapPutAllCodec.encodeResponse();
     }
 
     @Override
@@ -77,12 +80,7 @@ public class ReplicatedMapPutAllMessageTask extends AbstractCallableMessageTask<
 
     @Override
     public Object[] getParameters() {
-        final int size = parameters.key.size();
-        Map map = new HashMap();
-        for (int i = 0; i < size; i++) {
-            map.put(parameters.key.get(i), parameters.value.get(i));
-        }
-        return new Object[]{parameters.key};
+        return new Object[]{parameters.map};
     }
 }
 

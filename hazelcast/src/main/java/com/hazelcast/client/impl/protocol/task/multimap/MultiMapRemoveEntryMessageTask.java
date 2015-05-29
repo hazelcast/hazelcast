@@ -17,8 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.multimap;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.MultiMapRemoveEntryParameters;
+import com.hazelcast.client.impl.protocol.codec.MultiMapRemoveEntryCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.multimap.impl.MultiMapService;
@@ -34,7 +33,8 @@ import java.security.Permission;
  * Client Protocol Task for handling messages with type id:
  * {@link com.hazelcast.client.impl.protocol.parameters.MultiMapMessageType#MULTIMAP_REMOVEENTRY}
  */
-public class MultiMapRemoveEntryMessageTask extends AbstractPartitionMessageTask<MultiMapRemoveEntryParameters> {
+public class MultiMapRemoveEntryMessageTask
+        extends AbstractPartitionMessageTask<MultiMapRemoveEntryCodec.RequestParameters> {
 
     public MultiMapRemoveEntryMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -46,13 +46,13 @@ public class MultiMapRemoveEntryMessageTask extends AbstractPartitionMessageTask
     }
 
     @Override
-    protected MultiMapRemoveEntryParameters decodeClientMessage(ClientMessage clientMessage) {
-        return MultiMapRemoveEntryParameters.decode(clientMessage);
+    protected MultiMapRemoveEntryCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return MultiMapRemoveEntryCodec.decodeRequest(clientMessage);
     }
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return BooleanResultParameters.encode((Boolean) response);
+        return MultiMapRemoveEntryCodec.encodeResponse((Boolean) response);
     }
 
     @Override

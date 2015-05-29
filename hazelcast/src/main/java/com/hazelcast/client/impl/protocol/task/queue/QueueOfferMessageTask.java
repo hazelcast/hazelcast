@@ -17,8 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.queue;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.QueueOfferParameters;
+import com.hazelcast.client.impl.protocol.codec.QueueOfferCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.collection.impl.queue.operations.OfferOperation;
@@ -34,10 +33,9 @@ import java.util.concurrent.TimeUnit;
 /**
  * Client Protocol Task for handling messages with type id:
  * {@link com.hazelcast.client.impl.protocol.parameters.QueueMessageType#QUEUE_OFFER}
- *
  */
 public class QueueOfferMessageTask
-        extends AbstractPartitionMessageTask<QueueOfferParameters> {
+        extends AbstractPartitionMessageTask<QueueOfferCodec.RequestParameters> {
 
     public QueueOfferMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -50,12 +48,12 @@ public class QueueOfferMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return BooleanResultParameters.encode((Boolean) response);
+        return QueueOfferCodec.encodeResponse((Boolean) response);
     }
 
     @Override
-    protected QueueOfferParameters decodeClientMessage(ClientMessage clientMessage) {
-        return QueueOfferParameters.decode(clientMessage);
+    protected QueueOfferCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return QueueOfferCodec.decodeRequest(clientMessage);
     }
 
     @Override

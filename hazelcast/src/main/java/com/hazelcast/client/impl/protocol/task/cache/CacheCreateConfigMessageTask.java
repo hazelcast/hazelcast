@@ -19,11 +19,12 @@ package com.hazelcast.client.impl.protocol.task.cache;
 import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.operation.CacheCreateConfigOperation;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.CacheCreateConfigParameters;
+import com.hazelcast.client.impl.protocol.codec.CacheCreateConfigCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
 
 import java.security.Permission;
@@ -34,7 +35,7 @@ import java.security.Permission;
  * @see CacheCreateConfigOperation
  */
 public class CacheCreateConfigMessageTask
-        extends AbstractPartitionMessageTask<CacheCreateConfigParameters> {
+        extends AbstractPartitionMessageTask<CacheCreateConfigCodec.RequestParameters> {
 
     public CacheCreateConfigMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -42,14 +43,20 @@ public class CacheCreateConfigMessageTask
 
     @Override
     protected Operation prepareOperation() {
-        CacheService service = getService(getServiceName());
-        CacheConfig cacheConfig = (CacheConfig) service.toObject(parameters.cacheConfig);
+        CacheConfig cacheConfig = (CacheConfig) nodeEngine.toObject(parameters.cacheConfig);
         return new CacheCreateConfigOperation(cacheConfig, parameters.createAlsoOnOthers);
     }
 
     @Override
-    protected CacheCreateConfigParameters decodeClientMessage(ClientMessage clientMessage) {
-        return CacheCreateConfigParameters.decode(clientMessage);
+    protected CacheCreateConfigCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return CacheCreateConfigCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        CacheService service = getService(getServiceName());
+        final Data responseData = service.toData(response);
+        return CacheCreateConfigCodec.encodeResponse(serializationService.toData(responseData));
     }
 
     @Override

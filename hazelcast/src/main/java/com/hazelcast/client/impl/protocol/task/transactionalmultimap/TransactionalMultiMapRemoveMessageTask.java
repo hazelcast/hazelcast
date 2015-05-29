@@ -17,8 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.transactionalmultimap;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.DataCollectionResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.TransactionalMultiMapRemoveParameters;
+import com.hazelcast.client.impl.protocol.codec.TransactionalMultiMapRemoveCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractTransactionalMessageTask;
 import com.hazelcast.core.TransactionalMultiMap;
 import com.hazelcast.instance.Node;
@@ -35,14 +34,14 @@ import java.util.Collection;
 import java.util.List;
 
 public class TransactionalMultiMapRemoveMessageTask
-        extends AbstractTransactionalMessageTask<TransactionalMultiMapRemoveParameters> {
+        extends AbstractTransactionalMessageTask<TransactionalMultiMapRemoveCodec.RequestParameters> {
 
     public TransactionalMultiMapRemoveMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected ClientMessage innerCall() throws Exception {
+    protected Object innerCall() throws Exception {
         final TransactionContext context = endpoint.getTransactionContext(parameters.txnId);
         TransactionalMultiMap<Object, Object> multiMap = context.getMultiMap(parameters.name);
         Collection<Object> collection = multiMap.remove(parameters.key);
@@ -50,7 +49,7 @@ public class TransactionalMultiMapRemoveMessageTask
         for (Object o : collection) {
             list.add(serializationService.toData(o));
         }
-        return DataCollectionResultParameters.encode(list);
+        return list;
     }
 
     @Override
@@ -59,8 +58,13 @@ public class TransactionalMultiMapRemoveMessageTask
     }
 
     @Override
-    protected TransactionalMultiMapRemoveParameters decodeClientMessage(ClientMessage clientMessage) {
-        return TransactionalMultiMapRemoveParameters.decode(clientMessage);
+    protected TransactionalMultiMapRemoveCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return TransactionalMultiMapRemoveCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return TransactionalMultiMapRemoveCodec.encodeResponse((Collection<Data>) response);
     }
 
     @Override

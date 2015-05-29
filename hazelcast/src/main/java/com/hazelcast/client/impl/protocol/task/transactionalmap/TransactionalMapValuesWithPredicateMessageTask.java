@@ -17,8 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.transactionalmap;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.DataCollectionResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.TransactionalMapValuesWithPredicateParameters;
+import com.hazelcast.client.impl.protocol.codec.TransactionalMapValuesWithPredicateCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractTransactionalMessageTask;
 import com.hazelcast.core.TransactionalMap;
 import com.hazelcast.instance.Node;
@@ -36,14 +35,14 @@ import java.util.Collection;
 import java.util.List;
 
 public class TransactionalMapValuesWithPredicateMessageTask
-        extends AbstractTransactionalMessageTask<TransactionalMapValuesWithPredicateParameters> {
+        extends AbstractTransactionalMessageTask<TransactionalMapValuesWithPredicateCodec.RequestParameters> {
 
     public TransactionalMapValuesWithPredicateMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected ClientMessage innerCall() throws Exception {
+    protected Object innerCall() throws Exception {
         final TransactionContext context = getEndpoint().getTransactionContext(parameters.txnId);
         final TransactionalMap map = context.getMap(parameters.name);
         Predicate predicate = serializationService.toObject(parameters.predicate);
@@ -52,7 +51,7 @@ public class TransactionalMapValuesWithPredicateMessageTask
         for (Object o : values) {
             list.add(serializationService.toData(o));
         }
-        return DataCollectionResultParameters.encode(list);
+        return list;
     }
 
     @Override
@@ -61,8 +60,13 @@ public class TransactionalMapValuesWithPredicateMessageTask
     }
 
     @Override
-    protected TransactionalMapValuesWithPredicateParameters decodeClientMessage(ClientMessage clientMessage) {
-        return TransactionalMapValuesWithPredicateParameters.decode(clientMessage);
+    protected TransactionalMapValuesWithPredicateCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return TransactionalMapValuesWithPredicateCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return TransactionalMapValuesWithPredicateCodec.encodeResponse((Collection<Data>) response);
     }
 
     @Override

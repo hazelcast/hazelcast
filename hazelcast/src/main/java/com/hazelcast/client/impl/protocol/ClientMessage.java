@@ -104,12 +104,14 @@ public class ClientMessage
     private static final int PARTITION_ID_FIELD_OFFSET = CORRELATION_ID_FIELD_OFFSET + Bits.INT_SIZE_IN_BYTES;
     private static final int DATA_OFFSET_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + Bits.INT_SIZE_IN_BYTES;
 
+
     static {
 
         HEADER_SIZE = DATA_OFFSET_FIELD_OFFSET + Bits.SHORT_SIZE_IN_BYTES;
     }
 
     private transient int valueOffset;
+    private transient boolean isRetryable;
 
     public ClientMessage() {
         super();
@@ -399,6 +401,13 @@ public class ClientMessage
         return false;
     }
 
+    public void setRetryable(boolean isRetryable) {
+        this.isRetryable = isRetryable;
+    }
+
+    public boolean isRetryable() {
+        return isRetryable;
+    }
 
     @Override
     public String toString() {

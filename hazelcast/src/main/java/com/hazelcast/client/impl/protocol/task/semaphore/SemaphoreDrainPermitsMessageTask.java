@@ -17,8 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.semaphore;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.IntResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.SemaphoreDrainPermitsParameters;
+import com.hazelcast.client.impl.protocol.codec.SemaphoreDrainPermitsCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.concurrent.semaphore.SemaphoreService;
 import com.hazelcast.concurrent.semaphore.operations.DrainOperation;
@@ -30,7 +29,8 @@ import com.hazelcast.spi.Operation;
 
 import java.security.Permission;
 
-public class SemaphoreDrainPermitsMessageTask extends AbstractPartitionMessageTask<SemaphoreDrainPermitsParameters> {
+public class SemaphoreDrainPermitsMessageTask
+        extends AbstractPartitionMessageTask<SemaphoreDrainPermitsCodec.RequestParameters> {
 
     public SemaphoreDrainPermitsMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -42,13 +42,13 @@ public class SemaphoreDrainPermitsMessageTask extends AbstractPartitionMessageTa
     }
 
     @Override
-    protected SemaphoreDrainPermitsParameters decodeClientMessage(ClientMessage clientMessage) {
-        return SemaphoreDrainPermitsParameters.decode(clientMessage);
+    protected SemaphoreDrainPermitsCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return SemaphoreDrainPermitsCodec.decodeRequest(clientMessage);
     }
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return IntResultParameters.encode((Integer) response);
+        return SemaphoreDrainPermitsCodec.encodeResponse((Integer) response);
     }
 
     @Override

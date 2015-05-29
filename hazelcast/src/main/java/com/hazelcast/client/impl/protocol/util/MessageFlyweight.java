@@ -87,22 +87,18 @@ public class MessageFlyweight {
     }
 
     public MessageFlyweight set(final byte[] value) {
-        final int length = value != null ? value.length : 0;
+        final int length = value.length;
         set(length);
-        if (length > 0) {
-            buffer.putBytes(index + offset, value);
-            index += length;
-        }
+        buffer.putBytes(index + offset, value);
+        index += length;
         return this;
     }
 
     public MessageFlyweight set(final Collection<Data> value) {
-        final int length = value != null ? value.size() : 0;
+        final int length = value.size();
         set(length);
-        if (length > 0) {
-            for (Data v : value) {
-                set(v);
-            }
+        for (Data v : value) {
+            set(v);
         }
         return this;
     }
