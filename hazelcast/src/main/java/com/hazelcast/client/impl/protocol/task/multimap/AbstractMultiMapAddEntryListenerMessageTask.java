@@ -30,7 +30,6 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MultiMapPermission;
-
 import java.security.Permission;
 
 public abstract class AbstractMultiMapAddEntryListenerMessageTask<P> extends AbstractCallableMessageTask<P> {
@@ -86,13 +85,13 @@ public abstract class AbstractMultiMapAddEntryListenerMessageTask<P> extends Abs
                 }
                 DataAwareEntryEvent dataAwareEntryEvent = (DataAwareEntryEvent) event;
                 Data key = dataAwareEntryEvent.getKeyData();
-
                 Data value = dataAwareEntryEvent.getNewValueData();
+                Data oldValue = dataAwareEntryEvent.getOldValueData();
 
                 final EntryEventType type = event.getEventType();
                 final String uuid = event.getMember().getUuid();
 
-                sendClientMessage(key, encodeEvent(key, value, type.getType(), uuid, 1));
+                sendClientMessage(key, encodeEvent(key, value, oldValue, type.getType(), uuid, 1));
             }
         }
 
@@ -102,12 +101,12 @@ public abstract class AbstractMultiMapAddEntryListenerMessageTask<P> extends Abs
                 final EntryEventType type = event.getEventType();
                 final String uuid = event.getMember().getUuid();
                 sendClientMessage(null, encodeEvent(null,
-                        null, type.getType(),
+                        null, null, type.getType(),
                         uuid, event.getNumberOfEntriesAffected()));
             }
         }
     }
 
-    protected abstract ClientMessage encodeEvent(Data key, Data value,
+    protected abstract ClientMessage encodeEvent(Data key, Data value, Data oldValue,
                                                  int type, String uuid, int numberOfEntriesAffected);
 }
