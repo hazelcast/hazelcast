@@ -62,7 +62,7 @@ public class PutOperation extends MultiMapBackupAwareOperation {
 
     public void afterRun() throws Exception {
         if (Boolean.TRUE.equals(response)) {
-            publishEvent(EntryEventType.ADDED, dataKey, value);
+            publishEvent(EntryEventType.ADDED, dataKey, value, null);
         }
     }
 

@@ -73,9 +73,9 @@ public abstract class MultiMapOperation extends Operation
         return registrations.size() > 0;
     }
 
-    public final void publishEvent(EntryEventType eventType, Data key, Object value) {
+    public final void publishEvent(EntryEventType eventType, Data key, Object newValue, Object oldValue) {
         MultiMapService multiMapService = getService();
-        multiMapService.publishEntryEvent(name, eventType, key, value);
+        multiMapService.publishEntryEvent(name, eventType, key, newValue, oldValue);
     }
 
     public final Object toObject(Object obj) {
