@@ -73,11 +73,17 @@ public class QueryEntry implements QueryableEntry {
         this.indexKey = indexKey;
         this.serializationService = serializationService;
 
+        keyData = null;
+        keyObject = null;
+
         if (key instanceof Data) {
             this.keyData = (Data) key;
         } else {
             this.keyObject = key;
         }
+
+        valueData = null;
+        valueObject = null;
 
         if (value instanceof Data) {
             this.valueData = (Data) value;
