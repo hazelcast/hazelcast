@@ -20,7 +20,7 @@ package com.hazelcast.internal.metrics;
  * A gauge metric is an instantaneous reading of a particular value: for example, the current size of the pending
  * operations queue.
  *
- * A Gauge can be used before it is registered and there is no input/source set. In this case, the {@link #readDouble()} and
+ * A Gauge can be used before it is registered and no input/source is set. In this case, the {@link #readDouble()} and
  * {@link #readDouble()} return 0.
  *
  * A Gauge can be used after the {@link MetricsRegistry#deregister(Object)} is called. In this case, the {@link #readDouble()} and
@@ -34,9 +34,9 @@ public interface Gauge extends Metric {
      * If the underlying metric input providing a floating point value, then the value will be rounded using
      * {@link Math#round(double)}.
      *
-     * If no input is available, or there a problems obtaining a value from the input, 0 is returned.
+     * If no input is available, or there are problems obtaining a value from the input, 0 is returned.
      *
-     * @return the current available value as a long.
+     * @return the current available (gauge metric) value as a long.
      */
     long readLong();
 

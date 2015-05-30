@@ -339,11 +339,22 @@ public class CacheSimpleConfig {
         return this;
     }
 
+    /**
+     * Adds {@link CacheSimpleEntryListenerConfig} to this {@link com.hazelcast.cache.ICache}.
+     *
+     * @param listenerConfig
+     * @return this {@code CacheSimpleConfig} instance.
+     */
     public CacheSimpleConfig addEntryListenerConfig(CacheSimpleEntryListenerConfig listenerConfig) {
         getCacheEntryListeners().add(listenerConfig);
         return this;
     }
 
+    /**
+     * Gets a list of {@link CacheSimpleEntryListenerConfig} from this {@link com.hazelcast.cache.ICache}.
+     *
+     * @return list of {@link CacheSimpleEntryListenerConfig}.
+     */
     public List<CacheSimpleEntryListenerConfig> getCacheEntryListeners() {
         if (cacheEntryListeners == null) {
             cacheEntryListeners = new ArrayList<CacheSimpleEntryListenerConfig>();
@@ -351,6 +362,12 @@ public class CacheSimpleConfig {
         return cacheEntryListeners;
     }
 
+    /**
+     * Sets a list of {@link CacheSimpleEntryListenerConfig} for this {@link com.hazelcast.cache.ICache}.
+     *
+     * @param cacheEntryListeners list of {@link CacheSimpleEntryListenerConfig}.
+     * @return this {@code CacheSimpleConfig} instance.
+     */
     public CacheSimpleConfig setCacheEntryListeners(List<CacheSimpleEntryListenerConfig> cacheEntryListeners) {
         this.cacheEntryListeners = cacheEntryListeners;
         return this;
@@ -371,8 +388,8 @@ public class CacheSimpleConfig {
      * @param asyncBackupCount the number of asynchronous synchronous backups to set.
      * @return the updated CacheSimpleConfig
      * @throws IllegalArgumentException if asyncBackupCount smaller than 0,
-     *                                  or larger than the maximum number of backup
-     *                                  or the sum of the backups and async backups is larger than the maximum number of backups
+     *              or larger than the maximum number of backups,
+     *              or the sum of the backups and async backups is larger than the maximum number of backups.
      * @see #setBackupCount(int)
      * @see #getAsyncBackupCount()
      */
@@ -437,17 +454,27 @@ public class CacheSimpleConfig {
      * Sets the eviction configuration for this {@link com.hazelcast.cache.ICache}.
      *
      * @param evictionConfig The eviction configuration to set.
-     * @return the updated CacheSimpleConfig
+     * @return the updated CacheSimpleConfig.
      */
     public CacheSimpleConfig setEvictionConfig(EvictionConfig evictionConfig) {
         this.evictionConfig = isNotNull(evictionConfig, "Eviction config cannot be null !");
         return this;
     }
 
+    /**
+     * Gets the Wan target replication reference.
+     *
+     * @return The Wan target replication reference.
+     */
     public WanReplicationRef getWanReplicationRef() {
         return wanReplicationRef;
     }
 
+    /**
+     * Sets the Wan target replication reference.
+     *
+     * @param wanReplicationRef the Wan target replication reference.
+     */
     public void setWanReplicationRef(WanReplicationRef wanReplicationRef) {
         this.wanReplicationRef = wanReplicationRef;
     }

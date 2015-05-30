@@ -53,24 +53,24 @@ public interface ReplicatedMap<K, V>
      * to define when the value is outdated and thus should be removed from the
      * replicated map.</p>
      *
-     * @param key      key with which the specified value is to be associated
-     * @param value    value to be associated with the specified key
-     * @param ttl      ttl to be associated with the specified key-value pair
-     * @param timeUnit TimeUnit to be used for the ttl value
+     * @param key      key with which the specified value is to be associated.
+     * @param value    value to be associated with the specified key.
+     * @param ttl      ttl to be associated with the specified key-value pair.
+     * @param timeUnit TimeUnit to be used for the ttl value.
      */
     V put(K key, V value, long ttl, TimeUnit timeUnit);
 
     /**
-     * <p>The clear operation is used for wiping data out of the replicated maps.
+     * <p>The clear operation wipes data out of the replicated maps.
      * It is the only synchronous remote operation in this implementation, so
      * be aware that this might be a slow operation.</p>
      * <p>If some node fails on executing the operation, it is retried for at most
-     * 3 times (on the failing nodes only). If not working after the third time, this
+     * 3 times (on the failing nodes only). If it does not work after the third time, this
      * method throws a {@link com.hazelcast.core.OperationTimeoutException} back
      * to the caller.</p>
      *
      * @throws com.hazelcast.core.OperationTimeoutException thrown if clear could not
-     *                                                          executed on remote nodes
+     *                                           be executed on remote nodes.
      */
     void clear();
 
@@ -117,8 +117,8 @@ public interface ReplicatedMap<K, V>
     String addEntryListener(EntryListener<K, V> listener, Predicate<K, V> predicate);
 
     /**
-     * Adds an continuous entry listener for this map. Listener will get notified
-     * for map add/remove/update/evict events filtered by given predicate.
+     * Adds an continuous entry listener for this map. The listener will be notified
+     * for map add/remove/update/evict events filtered by the given predicate.
      *
      * @param listener  the entry listener
      * @param predicate the predicate for filtering entries
@@ -133,9 +133,9 @@ public interface ReplicatedMap<K, V>
      * Any kind of mutating function will throw an
      * {@link java.lang.UnsupportedOperationException}. Same is true for operations
      * like {@link java.util.Collection#contains(Object)} and
-     * {@link java.util.Collection#containsAll(java.util.Collection)} would result in
-     * very poor performance if called repeatedly (for example in a loop). If the use
-     * case is different from querying the data please copy the resulting set into a
+     * {@link java.util.Collection#containsAll(java.util.Collection)}, which would result in
+     * very poor performance if called repeatedly (for example, in a loop). If the use
+     * case is different from querying the data, please copy the resulting set into a
      * new {@link java.util.List} or similar data structure.
      * <pre>
      *     ReplicatedMap&lt;K, V> repMap = ...;
@@ -146,7 +146,7 @@ public interface ReplicatedMap<K, V>
      *         // ...
      *     }
      * </pre>
-     * Due to the lazy nature of the returned set so changes to the map (addition,
+     * Due to the lazy nature of the returned set, changes to the map (addition,
      * removal, update) might be reflected in the set.<br/>
      * The order of the elements is not guaranteed due to the internal
      * asynchronous replication behavior. If a specific order is needed, use
@@ -168,7 +168,7 @@ public interface ReplicatedMap<K, V>
      * Changes to any returned object are <b>NOT</b> replicated back to other
      * members.
      *
-     * @param comparator the Comparator to sort the returned elements
+     * @param comparator the Comparator to sort the returned elements.
      * @return An eagerly populated {@link Collection} view of the values contained in this map.
      */
     Collection<V> values(Comparator<V> comparator);
@@ -181,8 +181,8 @@ public interface ReplicatedMap<K, V>
      * {@link java.lang.UnsupportedOperationException}. Same is true for operations
      * like {@link java.util.Set#contains(Object)} and
      * {@link java.util.Set#containsAll(java.util.Collection)} which would result in
-     * very poor performance if called repeatedly (for example i a loop). If the use
-     * case is different from querying the data please copy the resulting set into a
+     * very poor performance if called repeatedly (for example, in a loop). If the use
+     * case is different from querying the data, please copy the resulting set into a
      * new {@link java.util.HashSet}.
      * <pre>
      *     ReplicatedMap&lt;K, V> repMap = ...;
@@ -190,7 +190,7 @@ public interface ReplicatedMap<K, V>
      *     Set&lt;Map.Entry&lt;K, V>> entrySet = repMap.entrySet();
      *     Set&lt;Map.Entry&lt;K, V>> copy = new HashSet&lt;Map.Entry&lt;K, V>>(entrySet);
      * </pre>
-     * Due to the lazy nature of the returned set so changes to the map (addition,
+     * Due to the lazy nature of the returned set, changes to the map (addition,
      * removal, update) might be reflected in the set.<br/>
      * The order of the elements is not guaranteed due to the internal
      * asynchronous replication behavior.<br/>
@@ -209,8 +209,8 @@ public interface ReplicatedMap<K, V>
      * {@link java.lang.UnsupportedOperationException}. Same is true for operations
      * like {@link java.util.Set#contains(Object)} and
      * {@link java.util.Set#containsAll(java.util.Collection)} which would result in
-     * very poor performance if called repeatedly (for example i a loop). If the use
-     * case is different from querying the data please copy the resulting set into a
+     * very poor performance if called repeatedly (for example, in a loop). If the use
+     * case is different from querying the data, please copy the resulting set into a
      * new {@link java.util.HashSet}.
      * <pre>
      *     ReplicatedMap&lt;K, V> repMap = ...;
@@ -223,7 +223,7 @@ public interface ReplicatedMap<K, V>
      *     }
      * </pre>
      * <p/>
-     * Due to the lazy nature of the returned set so changes to the map (addition,
+     * Due to the lazy nature of the returned set, changes to the map (addition,
      * removal, update) might be reflected in the set.<br/>
      * The order of the elements is not guaranteed due to the internal
      * asynchronous replication behavior.<br/>

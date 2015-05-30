@@ -2,7 +2,7 @@
 
 # Common Exception Types
 
-You may see the following exceptions in any Hazelcast operation when the stated situations occur:
+You may see the following exceptions in any Hazelcast operation when the following situations occur:
 
 - `HazelcastInstanceNotActiveException`: Thrown when `HazelcastInstance` is not active (already shutdown or being shutdown) during an invocation. 
 
@@ -18,9 +18,9 @@ Hazelcast also throws the following exceptions in the cases of overall system pr
 
 - `TargetNotMemberException`: Thrown when an operation is sent to a machine that is not a member of the cluster.
 
-- `CallerNotMemberException`: Thrown when an operation was sent by a machine which is not member in the cluster when the operation is executed.
+- `CallerNotMemberException`: Thrown when an operation was sent by a machine which is not a member in the cluster when the operation is executed.
 
-- `WrongTargetException`: Thrown when an operation is executed on the wrong machine, mostly because the partition that operation belongs is already moved to some other server.
+- `WrongTargetException`: Thrown when an operation is executed on the wrong machine, mostly because the partition that operation belongs to is already moved to some other member.
 
 
 

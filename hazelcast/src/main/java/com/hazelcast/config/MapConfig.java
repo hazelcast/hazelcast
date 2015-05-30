@@ -515,7 +515,6 @@ public class MapConfig {
      *
      * @return The Wan target replication reference.
      */
-
     public WanReplicationRef getWanReplicationRef() {
         return wanReplicationRef;
     }
