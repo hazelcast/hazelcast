@@ -9,7 +9,7 @@ public final class ${model.className} {
 
     public static final ${model.parentName}MessageType REQUEST_TYPE = ${model.parentName}MessageType.${model.parentName?upper_case}_${model.name?upper_case};
     public static final int RESPONSE_TYPE = ${model.response};
-    public static boolean RETRYABLE = <#if model.retryable == 1>true<#else>false</#if>;
+    public static final boolean RETRYABLE = <#if model.retryable == 1>true<#else>false</#if>;
 
     //************************ REQUEST *************************//
 
