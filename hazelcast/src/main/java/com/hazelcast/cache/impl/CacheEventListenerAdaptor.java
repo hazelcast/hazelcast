@@ -120,9 +120,7 @@ public class CacheEventListenerAdaptor<K, V>
             } finally {
                 ((CacheSyncListenerCompleter) source).countDownCompletionLatch(cacheEventSet.getCompletionId());
             }
-            return;
         }
-        throw new UnsupportedOperationException("Event object not supported : " + eventObject.getClass().getName());
     }
 
     private void handleEvent(int type, Collection<CacheEventData> keys) {
