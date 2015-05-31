@@ -253,7 +253,7 @@ public abstract class HazelcastTestSupport {
         stop.set(true);
     }
 
-    public static void sleepAtLeastMillis(int sleepFor) {
+    public static void sleepAtLeastMillis(long sleepFor) {
        boolean interrupted = false;
        try {
            long remainingNanos = MILLISECONDS.toNanos(sleepFor);
@@ -274,7 +274,7 @@ public abstract class HazelcastTestSupport {
        }
     }
 
-    public static void sleepAtLeastSeconds(int seconds) {
+    public static void sleepAtLeastSeconds(long seconds) {
         sleepAtLeastMillis(seconds * 1000);
     }
 
