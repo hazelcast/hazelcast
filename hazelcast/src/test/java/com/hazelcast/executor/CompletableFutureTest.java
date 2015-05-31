@@ -17,8 +17,6 @@ package com.hazelcast.executor;
 
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
-import com.hazelcast.instance.HazelcastInstanceImpl;
-import com.hazelcast.instance.HazelcastInstanceProxy;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -31,16 +29,11 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.lang.reflect.Field;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static java.util.Arrays.asList;
-import static org.hamcrest.Matchers.*;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
@@ -53,7 +46,6 @@ public class CompletableFutureTest extends HazelcastTestSupport {
 
     private ExecutionService executionService;
     private CountDownLatch startLatch, doneLatch;
-    private ExecutorService executorService;
     private AtomicReference<Object> ref1, ref2;
 
     @Before
@@ -61,14 +53,12 @@ public class CompletableFutureTest extends HazelcastTestSupport {
         NodeEngine nodeEngine = getNode(createHazelcastInstance()).getNodeEngine();
         executionService = nodeEngine.getExecutionService();
         startLatch = new CountDownLatch(1);
-        executorService = Executors.newSingleThreadExecutor();
         ref1 = new AtomicReference<Object>();
         ref2 = new AtomicReference<Object>();
     }
 
     @After
     public void tearDown() {
-        executorService.shutdown();
     }
 
     @Test
