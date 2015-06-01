@@ -95,7 +95,6 @@ class ClientMembershipListener implements EventHandler<ClientInitialMembershipEv
 
             Connection connection = connectionManager.getConnection(ownerConnectionAddress);
             if (connection == null) {
-                System.out.println("FATAL connection null " + ownerConnectionAddress);
                 throw new IllegalStateException("Can not load initial members list because owner connection is null. "
                         + "Address " + ownerConnectionAddress);
             }

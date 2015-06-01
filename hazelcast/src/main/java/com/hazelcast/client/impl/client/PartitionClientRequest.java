@@ -27,8 +27,6 @@ import com.hazelcast.spi.Operation;
  */
 public abstract class PartitionClientRequest extends ClientRequest implements ExecutionCallback {
 
-    private static final int TRY_COUNT = 100;
-
     /**
      * Called on node side, before starting any operation.
      */
@@ -55,7 +53,6 @@ public abstract class PartitionClientRequest extends ClientRequest implements Ex
         op.setCallerUuid(endpoint.getUuid());
         InvocationBuilder builder = operationService.createInvocationBuilder(getServiceName(), op, getPartition())
                 .setReplicaIndex(getReplicaIndex())
-                .setTryCount(TRY_COUNT)
                 .setResultDeserialized(false);
 
         ICompletableFuture future = builder.invoke();

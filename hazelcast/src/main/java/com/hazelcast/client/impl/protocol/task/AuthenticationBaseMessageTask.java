@@ -56,6 +56,11 @@ public abstract class AuthenticationBaseMessageTask<P>
         return null;
     }
 
+    @Override
+    protected boolean isAuthenticationMessage() {
+        return true;
+    }
+
     private void handleEndpointNotCreatedConnectionNotAlive() {
         logger.warning("Dropped: " + clientMessage + " -> endpoint not created for AuthenticationRequest, connection not alive");
     }
@@ -92,6 +97,12 @@ public abstract class AuthenticationBaseMessageTask<P>
                     nodeEngine.getOperationService().send(op, member.getAddress());
                 }
             }
+        }
+
+        boolean isMember = clientEngine.getClusterService().getMember(principal.getOwnerUuid()) == null;
+        if (isMember) {
+            throw new AuthenticationException("Invalid owner-uuid: " + principal.getOwnerUuid()
+                    + ", it's not member of this cluster!");
         }
 
         endpoint.authenticated(principal, credentials, isOwnerConnection());

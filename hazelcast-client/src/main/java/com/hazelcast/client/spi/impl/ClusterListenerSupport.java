@@ -160,6 +160,7 @@ public abstract class ClusterListenerSupport implements ConnectionListener, Conn
     }
 
     private void connectToOne() throws Exception {
+        ownerConnectionAddress = null;
         final ClientNetworkConfig networkConfig = client.getClientConfig().getNetworkConfig();
         final int connAttemptLimit = networkConfig.getConnectionAttemptLimit();
         final int connectionAttemptPeriod = networkConfig.getConnectionAttemptPeriod();

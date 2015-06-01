@@ -72,4 +72,8 @@ public interface ClientEndpoint {
 
     ClientPrincipal getPrincipal();
 
+    /**
+     * @return true if endpoint is authenticated with valid security credentials, returns false otherwise
+     */
+    boolean isAuthenticated();
 }
