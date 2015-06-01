@@ -101,3 +101,32 @@ public class MyEntryListener implements EntryListener{
 ```
 A map listener runs on the event threads that are also used by the other listeners: for example, the collection listeners and pub/sub message listeners. This means that the entry listeners can access other partitions. Consider this when you run long tasks, since listening to those tasks may cause the other map/event listeners to starve.
 
+#### MapPartitionLostListener
+
+You can listen for `MapPartitionLostEvent` instances by registering an implementation of `MapPartitionLostListener`, which is also a sub-interface of `MapListener`.
+
+Lets consider the following code sample:
+
+```java
+  public static void main(String[] args) {
+    Config config = new Config();
+    config.getMapConfig("map").setBackupCount(1); // might lose data if any node crashes
+
+    HazelcastInstance instance = HazelcastInstanceFactory.newHazelcastInstance(config);
+
+    IMap<Object, Object> map = instance1.getMap("map");
+    map.put(0, 0);
+
+    map.addPartitionLostListener(new MapPartitionLostListener() {
+      @Override
+      public void partitionLost(MapPartitionLostEvent event) {
+        System.out.println(event);
+      }
+    });
+  }
+```
+
+Within the sample code, a `MapPartitionLostListener` implementation is registered to a map that is configured with 1 backup. For this particular map and any of the partitions in the system, if the partition owner node and its first backup node crash simultaneously, the given `MapPartitionLostListener` receives a 
+corresponding `MapPartitionLostEvent`. If only a single node crashes in the cluster, there will be no `MapPartitionLostEvent` fired for this map since backups for the partitions owned by the crashed node are kept on other nodes. 
+
+Please refer to the [Distributed Events section](#distributed-events) for more information about partition lost detection and partition lost events.

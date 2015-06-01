@@ -16,6 +16,7 @@ Hazelcast offers the following event listeners:
 - **Membership Listener** for cluster membership events.
 - **Distributed Object Listener** for distributed object creation and destroy events.
 - **Migration Listener** for partition migration start and complete events.
+- **Partition Lost Listener** for partition lost events.
 - **Lifecycle Listener** for `HazelcastInstance` lifecycle events.
 - **Entry Listener** for `IMap` and `MultiMap` entry events (please refer to the [Map Listener section](#map-listener)).
 - **Item Listener** for `IQueue`, `ISet` and `IList` item events (please refer to the Event Registration and Configuration parts of the sections [Set](#set) and [List](#list)).
@@ -130,7 +131,32 @@ Started: MigrationEvent{partitionId=98, oldOwner=Member [127.0.0.1]:5701,
 newOwner=Member [127.0.0.1]:5702 this} 
 ```
 
+### Partition Lost Listener
 
+Hazelcast provides fault-tolerance by keeping multiple copies of your data. For each partition, one of your nodes become owner and some of the other nodes become replica nodes based on your configuration. Nevertheless, data loss may occur if a few nodes crash simultaneously.
+Lets consider the following example with three nodes: N1, N2, N3 for a given partition-0. N1 is owner of partition-0, N2 and N3 are first and second replicas respectively. If N1 and N2 crash simultaneously, partition-0 loses its data that is configured with less than 2 backups.
+For instance, if we configure a map with 1 backup, that map loses its data in partition-0 since both owner and first replica of partition-0 have crashed. However, if we configure our map with 2 backups, it does not lose any data since a copy of partition-0's data for the given map
+also resides in N3. 
+
+The Partition Lost Listener notifies for possible data loss occurrences with the information of how many replicas are lost for a partition. It listens `PartitionLostEvent` instances. Partition lost events are dispatched per partition. 
+Partition loss detection is done after a node crash is detected by other nodes and the crashed node is removed from the cluster. Please note that false-positive `PartitionLostEvent` instances may be fired on partial network split errors. 
+
+The following is an example of Partition Lost Listener. 
+
+```java
+    public class ConsoleLoggingPartitionLostListener implements PartitionLostListener {
+        @Override
+        public void partitionLost(PartitionLostEvent event) {
+            System.out.println(event);
+        }
+    } 
+```
+
+When a `PartitionLostEvent` is fired, the partition lost listener given above outputs the partition ID, the replica index that is lost and the node that has detected the partition loss. The following is an example output.
+
+```
+com.hazelcast.partition.PartitionLostEvent{partitionId=242, lostBackupCount=0, eventSource=Address[192.168.2.49]:5701}
+```
 
 ### Lifecycle Listener
 
