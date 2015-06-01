@@ -103,9 +103,9 @@ A map listener runs on the event threads that are also used by the other listene
 
 #### MapPartitionLostListener
 
-You can listen for `MapPartitionLostEvent` instances by registering an implementation of `MapPartitionLostListener`, which is also a sub-interface of `MapListener`.
+You can listen to `MapPartitionLostEvent` instances by registering an implementation of `MapPartitionLostListener`, which is also a sub-interface of `MapListener`.
 
-Lets consider the following code sample:
+Let`s consider the following example code:
 
 ```java
   public static void main(String[] args) {
@@ -126,7 +126,9 @@ Lets consider the following code sample:
   }
 ```
 
-Within the sample code, a `MapPartitionLostListener` implementation is registered to a map that is configured with 1 backup. For this particular map and any of the partitions in the system, if the partition owner node and its first backup node crash simultaneously, the given `MapPartitionLostListener` receives a 
+Within this example code, a `MapPartitionLostListener` implementation is registered to a map that is configured with 1 backup. For this particular map and any of the partitions in the system, if the partition owner node and its first backup node crash simultaneously, the given `MapPartitionLostListener` receives a 
 corresponding `MapPartitionLostEvent`. If only a single node crashes in the cluster, there will be no `MapPartitionLostEvent` fired for this map since backups for the partitions owned by the crashed node are kept on other nodes. 
 
-Please refer to the [Distributed Events section](#distributed-events) for more information about partition lost detection and partition lost events.
+Please refer to the [Partition Lost Listener section](#partition-lost-listener) for more information about partition lost detection and partition lost events.
+
+
