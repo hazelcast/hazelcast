@@ -181,7 +181,8 @@ The default value is *5000* milliseconds.
 
 #### Connection Attempt Limit
 
-While the client is trying to connect initially to one of the members in the `ClientNetworkConfig.addressList`, all members might be not available. Instead of giving up, throwing an exception and stopping the client, the client will retry as many as `ClientNetworkConfig.connectionAttemptLimit` times. The following are the example configurations.
+While the client is trying to connect initially to one of the members in the `ClientNetworkConfig.addressList`, all members might be not available. Instead of giving up, throwing an exception and stopping the client, the client will retry as many as `ClientNetworkConfig.
+connectionAttemptLimit` times. The following are the example configurations.
 
 **Declarative**:
 

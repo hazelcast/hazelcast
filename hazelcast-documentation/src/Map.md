@@ -47,7 +47,10 @@ Now, let's create a second node by running the above code again. This will creat
 
 As you see, when a new member joins the cluster, it takes ownership and loads some of the data in the cluster. Eventually, it will carry almost "(1/n `*` total-data) + backups" of the data, reducing the load on other nodes.
 
-`HazelcastInstance::getMap` returns an instance of `com.hazelcast.core.IMap` which extends the `java.util.concurrent.ConcurrentMap` interface. Methods like `ConcurrentMap.putIfAbsent(key,value)` and `ConcurrentMap.replace(key,value)` can be used on the distributed map, as shown in the example below.
+`HazelcastInstance::getMap` returns an instance of `com.hazelcast.core.IMap` which extends 
+the `java.util.concurrent.ConcurrentMap` interface. Methods like 
+`ConcurrentMap.putIfAbsent(key,value)` and `ConcurrentMap.replace(key,value)` can be used 
+on the distributed map, as shown in the example below.
 
 ```java
 import com.hazelcast.core.Hazelcast;
@@ -81,7 +84,7 @@ All `ConcurrentMap` operations such as `put` and `remove` might wait if the key 
 
 Also see:
 
--   [Data Affinity section](#data-affinity).
--   [Map Configuration with wildcards](#using-wildcard).
--   [Map Configuration section](#map-configuration) for a full description of Hazelcast Distributed Map configuration.
+- [Data Affinity section](#data-affinity).
+- [Map Configuration with wildcards](#using-wildcard).
+- [Map Configuration section](#map-configuration) for a full description of Hazelcast Distributed Map configuration.
 

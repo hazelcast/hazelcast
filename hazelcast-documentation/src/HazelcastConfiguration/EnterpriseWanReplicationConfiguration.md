@@ -10,7 +10,8 @@ The following are example Enterprise WAN replication configurations.
 ```xml
 <wan-replication name="my-wan-cluster">
    <target-cluster group-name="tokyo" group-password="tokyo-pass">
-      <replication-impl>com.hazelcast.enterprise.wan.replication.WanNoDelayReplication</replication-impl>
+      <replication-impl>com.hazelcast.enterprise.wan.replication.
+      WanNoDelayReplication</replication-impl>
       <end-points>
          <address>10.2.1.1:5701</address>
          <address>10.2.1.2:5701</address>
@@ -19,7 +20,8 @@ The following are example Enterprise WAN replication configurations.
 </wan-replication>
 <wan-replication name="my-wan-cluster-batch" snapshot-enabled="false">
    <target-cluster group-name="london" group-password="london-pass">
-      <replication-impl>com.hazelcast.enterprise.wan.replication.WanBatchReplication</replication-impl>
+      <replication-impl>com.hazelcast.enterprise.wan.replication.
+      WanBatchReplication</replication-impl>
       <end-points>
          <address>10.3.5.1:5701</address>
          <address>10.3.5.2:5701</address>

@@ -20,7 +20,8 @@ coordinator
 
 ### Controlling Hazelcast Declarative Configuration
 
-By default, the coordinator uses the files `SIMULATOR_HOME/conf/hazelcast.xml` and `SIMULATOR_HOME/conf/client-hazelcast.xml`
+By default, the coordinator uses the files `SIMULATOR_HOME/conf/hazelcast.xml` and `SIMULATOR_HOME/conf/
+client-hazelcast.xml`
 to generate the correct Hazelcast configuration. To use your own configuration files instead, use the following arguments:
 
 ```

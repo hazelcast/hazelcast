@@ -157,7 +157,8 @@ The following is an example of Partition Lost Listener.
 When a `PartitionLostEvent` is fired, the partition lost listener given above outputs the partition ID, the replica index that is lost and the node that has detected the partition loss. The following is an example output.
 
 ```
-com.hazelcast.partition.PartitionLostEvent{partitionId=242, lostBackupCount=0, eventSource=Address[192.168.2.49]:5701}
+com.hazelcast.partition.PartitionLostEvent{partitionId=242, lostBackupCount=0, 
+eventSource=Address[192.168.2.49]:5701}
 ```
 
 ### Lifecycle Listener

@@ -6,7 +6,9 @@
 ### Hazelcast
 
 
-You can find Hazelcast in standard Maven repositories. If your project uses Maven, you do not need to add additional repositories to your `pom.xml` or add `hazelcast-<`*version*`>.jar` file into your classpath (Maven does that for you). Just add the following lines to your `pom.xml`:
+You can find Hazelcast in standard Maven repositories. If your project uses Maven, you do not need to add 
+additional repositories to your `pom.xml` or add `hazelcast-<`*version*`>.jar` file into your 
+classpath (Maven does that for you). Just add the following lines to your `pom.xml`:
 
 ```xml
 <dependencies>

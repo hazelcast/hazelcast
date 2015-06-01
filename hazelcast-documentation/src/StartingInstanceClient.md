@@ -14,7 +14,7 @@ In this short tutorial, we:
 Let's begin.
 
 
--	The following code starts the first instance (node), and creates and uses the `customers` map and queue.
+- The following code starts the first instance (node), and creates and uses the `customers` map and queue.
 
 ```java
 import com.hazelcast.core.Hazelcast;
@@ -45,7 +45,8 @@ public class GettingStarted {
 }
 ```
 
--   Run this `GettingStarted` class a second time to get the second node started. The nodes form a cluster. You should see something like the following.
+- Run this `GettingStarted` class a second time to get the second node 
+started. The nodes form a cluster. You should see something like the following.
 
 ```
 Members [2] {
@@ -54,9 +55,11 @@ Members [2] {
 }                              
 ```
 
--   Now, add the `hazelcast-client-`*`<version>`*`.jar` library to your classpath. This is required to use a Hazelcast client.
+- Now, add the `hazelcast-client-`*`<version>`*`.jar` library to your classpath. 
+This is required to use a Hazelcast client.
 
--   The following code starts a Hazelcast Client, connects to our two node cluster, and prints the size of the `customers` map.
+- The following code starts a Hazelcast Client, connects to our two node cluster, 
+and prints the size of the `customers` map.
 
 ```java    
 package com.hazelcast.test;
@@ -75,12 +78,22 @@ public class GettingStartedClient {
     }
 }
 ```
--   When you run it, you see the client properly connecting to the cluster and printing the map size as **3**.
+- When you run it, you see the client properly connecting to the cluster 
+and printing the map size as **3**.
 
-Hazelcast also offers a tool, **Management Center**, that enables you to monitor your cluster. To use it, deploy the `mancenter-`*`<version>`*`.war` included in the ZIP file to your web server. You can use it to monitor your maps, queues, and other distributed data structures and nodes. Please see the [Management Center section](#management-center) for usage explanations.
+Hazelcast also offers a tool, **Management Center**, that enables you to monitor your cluster. 
+To use it, deploy the `mancenter-`*`<version>`*`.war` included in the ZIP file to your web server. 
+You can use it to monitor your maps, queues, and other distributed data structures and nodes. Please 
+see the [Management Center section](#management-center) for usage explanations.
 
 
-By default, Hazelcast uses Multicast to discover other nodes that can form a cluster.  If you are working with other Hazelcast developers on the same network, you may find yourself joining their clusters under the default settings.  Hazelcast provides a way to segregate clusters within the same network when using Multicast. Please see the FAQ item [How do I create separate clusters](#how-do-i-create-separate-clusters) for more information.  Alternatively, if you do not wish to use the default Multicast mechanism, you can provide a fixed list of IP addresses that are allowed to join. Please see the [Configuring TCP/IP Cluster section](#network-configuration) for more information.
+By default, Hazelcast uses Multicast to discover other nodes that can form a cluster.  If you are 
+working with other Hazelcast developers on the same network, you may find yourself joining their 
+clusters under the default settings.  Hazelcast provides a way to segregate clusters within the same 
+network when using Multicast. Please see the FAQ item [How do I create separate clusters](#how-do-i-create-separate-clusters) 
+for more information.  Alternatively, if you do not wish to use the default Multicast mechanism, 
+you can provide a fixed list of IP addresses that are allowed to join. Please see 
+the [Configuring TCP/IP Cluster section](#network-configuration) for more information.
 <br> </br>
 
 ***RELATED INFORMATION***

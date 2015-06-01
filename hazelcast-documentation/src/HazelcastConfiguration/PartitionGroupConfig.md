@@ -11,7 +11,7 @@ You can group nodes in the same JVM (or physical machine) or nodes located in th
 
 When you enable partition grouping, Hazelcast presents three choices for you to configure partition groups.
 
--   You can group nodes automatically using the IP addresses of nodes, so nodes sharing the same network interface will be grouped together. All members on the same host (IP address or domain name) will be a single partition group. This helps to avoid data loss when a physical server crashes, because multiple replicas of the same partition are not stored on the same host. But if there are multiple network interfaces or domain names per physical machine, that will make this assumption invalid.
+- You can group nodes automatically using the IP addresses of nodes, so nodes sharing the same network interface will be grouped together. All members on the same host (IP address or domain name) will be a single partition group. This helps to avoid data loss when a physical server crashes, because multiple replicas of the same partition are not stored on the same host. But if there are multiple network interfaces or domain names per physical machine, that will make this assumption invalid.
 
 ```xml
 <partition-group enabled="true" group-type="HOST_AWARE" />
@@ -24,7 +24,7 @@ partitionGroupConfig.setEnabled( true )
     .setGroupType( MemberGroupType.HOST_AWARE );
 ```
 
--   You can do custom grouping using Hazelcast's interface matching configuration. This way, you can add different and multiple interfaces to a group. You can also use wildcards in the interface addresses. For example, the users can create rack aware or data warehouse partition groups using custom partition grouping.
+- You can do custom grouping using Hazelcast's interface matching configuration. This way, you can add different and multiple interfaces to a group. You can also use wildcards in the interface addresses. For example, the users can create rack aware or data warehouse partition groups using custom partition grouping.
 
 ```xml
 <partition-group enabled="true" group-type="CUSTOM">
@@ -59,7 +59,7 @@ partitionGroupConfig.addMemberGroupConfig( memberGroupConfig );
 partitionGroupConfig.addMemberGroupConfig( memberGroupConfig2 );
 ```
 
--   You can give every member its own group. Each member is a group of its own and primary and backup partitions are distributed randomly (not on the same physical member). This gives the least amount of protection and is the default configuration for a Hazelcast cluster.
+- You can give every member its own group. Each member is a group of its own and primary and backup partitions are distributed randomly (not on the same physical member). This gives the least amount of protection and is the default configuration for a Hazelcast cluster.
 
 ```xml
 <partition-group enabled="true" group-type="PER_MEMBER" />

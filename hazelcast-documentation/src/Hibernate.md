@@ -14,7 +14,8 @@ Please see our [sample application](https://github.com/hazelcast/hazelcast-code-
 
 ### Hibernate Configuration
 
-To configure for Hibernate, add `hazelcast-hibernate3-<`*hazelcastversion*`>.jar` or `hazelcast-hibernate4-<`*hazelcastversion*`>.jar`  into your classpath depending on your Hibernate version.
+To configure for Hibernate, add `hazelcast-hibernate3-<`*hazelcastversion*`>.jar` or `hazelcast-
+hibernate4-<`*hazelcastversion*`>.jar`  into your classpath depending on your Hibernate version.
 
 Then add the following properties into your Hibernate configuration file (e.g. `hibernate.cfg.xml`).
 
@@ -64,9 +65,8 @@ Then add the following properties into your Hibernate configuration file (e.g. `
 
 ### Hazelcast Configuration for Hibernate
 
--   To configure Hazelcast for Hibernate, put the configuration file named `hazelcast.xml` into the root of your classpath. If Hazelcast cannot find `hazelcast.xml`, then it will use the default configuration from `hazelcast.jar`.
-
--   You can define a custom-named Hazelcast configuration XML file with one of these Hibernate configuration properties.
+- To configure Hazelcast for Hibernate, put the configuration file named `hazelcast.xml` into the root of your classpath. If Hazelcast cannot find `hazelcast.xml`, then it will use the default configuration from `hazelcast.jar`.
+- You can define a custom-named Hazelcast configuration XML file with one of these Hibernate configuration properties.
 
 ```xml
 <property name="hibernate.cache.provider_configuration_file_resource_path">
@@ -135,7 +135,7 @@ Eviction support is limited to maximum size of the map (defined by `max-size` co
 
 Hibernate 2nd Level Cache can use Hazelcast in two modes: Peer-to-Peer and Client/Server.
 
-##### P2P (Peer-to-Peer)
+#### P2P (Peer-to-Peer)
 
 With P2P mode, each Hibernate deployment launches its own Hazelcast Instance. You can also configure Hibernate to use an existing instance, so instead of creating a new `HazelcastInstance` for each `SessionFactory`, you can use an existing instance by setting the `hibernate.cache.hazelcast.instance_name` Hibernate property to the `HazelcastInstance`'s name. For more information, please see the [Named HazelcastInstance section](#named-hazelcastinstance).
 
@@ -144,9 +144,9 @@ With P2P mode, each Hibernate deployment launches its own Hazelcast Instance. Yo
 Shutting down `HazelcastInstance` can be disabled during `SessionFactory.close()`. To achieve this set the Hibernate property `hibernate.cache.hazelcast.shutdown_on_session_factory_close` to false. *(In this case Hazelcast property `hazelcast.shutdownhook.enabled` should not be set to false.)* Default value is `true`.
 
 
-##### Client/Server
+#### Client/Server
 
--   You can set up Hazelcast to connect to the cluster as Native Client. Native client is not a member; it connects to one of the cluster members and delegates all cluster wide operations to it. When the relied cluster member dies, client will transparently switch to another live member.
+- You can set up Hazelcast to connect to the cluster as Native Client. Native client is not a member; it connects to one of the cluster members and delegates all cluster wide operations to it. When the relied cluster member dies, client will transparently switch to another live member.
 
 ```xml   
 <property name="hibernate.cache.hazelcast.use_native_client">true</property>
@@ -166,7 +166,7 @@ To set up Native Client, add the Hazelcast **group-name**, **group-password** an
 
 Hibernate has four cache concurrency strategies: *read-only*, *read-write*, *nonstrict-read-write* and *transactional*. Hibernate does not force cache providers to support all those strategies. Hazelcast supports the first three: *read-only*, *read-write*, and *nonstrict-read-write*. It has no support for *transactional* strategy yet.
 
--   If you are using XML based class configurations, add a *cache* element into your configuration with the *usage* attribute set to one of the *read-only*, *read-write*, or *nonstrict-read-write* strategies.
+- If you are using XML based class configurations, add a *cache* element into your configuration with the *usage* attribute set to one of the *read-only*, *read-write*, or *nonstrict-read-write* strategies.
    
 ```xml
 <class name="eg.Immutable" mutable="false">
@@ -191,7 +191,7 @@ Hibernate has four cache concurrency strategies: *read-only*, *read-write*, *non
 <collection-cache collection="eg.Cat.kittens" usage="read-write"/>
 ```
 
--   Or alternatively, you can put Hibernate Annotation's *@Cache* annotation on your entities and collections.
+- Or alternatively, you can put Hibernate Annotation's *@Cache* annotation on your entities and collections.
 
 ```java    
 @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)

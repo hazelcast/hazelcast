@@ -99,21 +99,18 @@ public static int removeOrder( long customerId, long orderId ) throws Exception 
 
 There are couple of things you should consider.
 
-1.  There are four distributed operations there: lock, remove, keySet, unlock. Can you reduce 
+1. There are four distributed operations there: lock, remove, keySet, unlock. Can you reduce 
 the number of distributed operations?
-
-2.  The customer object may not be that big, but can you not have to pass that object through the 
+2. The customer object may not be that big, but can you not have to pass that object through the 
 wire? Think about a scenario where you set order count to the customer object for fast access, so you 
 should do a get and a put, and as a result, the customer object is passed through the wire twice.
 
 Instead, why not move the computation over to the member (JVM) where your customer data resides. Here is how you can do this with distributed executor service.
 
-1.  Send a `PartitionAware` `Callable` task.
-
-2.  `Callable` does the deletion of the order right there and returns with the remaining 
+1. Send a `PartitionAware` `Callable` task.
+2. `Callable` does the deletion of the order right there and returns with the remaining 
 order count.
-
-3.  Upon completion of the `Callable` task, return the result (remaining order count). You 
+3. Upon completion of the `Callable` task, return the result (remaining order count). You 
 do not have to wait until the task is completed; since distributed executions are asynchronous, you can do other things in the meantime.
 
 Here is some example code.
@@ -177,6 +174,6 @@ public static class OrderDeletionTask
 
 The benefits of doing the same operation with distributed `ExecutorService` based on the key are:
 
--   Only one distributed execution (`executorService.submit(task)`), instead of four.
--   Less data is sent over the wire.
--   Since lock/update/unlock cycle is done locally (local to the customer data), lock duration for the `Customer` entry is much less, thus enabling higher concurrency.
+- Only one distributed execution (`executorService.submit(task)`), instead of four.
+- Less data is sent over the wire.
+- Since lock/update/unlock cycle is done locally (local to the customer data), lock duration for the `Customer` entry is much less, thus enabling higher concurrency.

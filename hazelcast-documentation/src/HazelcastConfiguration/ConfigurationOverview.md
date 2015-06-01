@@ -9,25 +9,19 @@ Hazelcast can be configured declaratively (XML) or programmatically (API) or eve
 
 If you are creating new Hazelcast instance by passing the `null` parameter to `Hazelcast.newHazelcastInstance(null)` or just using an empty factory method (`Hazelcast.newHazelcastInstance()`), Hazelcast will look in two places for the configuration file.
 
--   **System property:** Hazelcast will first check if "`hazelcast.config`" system property is set to a file path. Example: `-Dhazelcast.config=C:/myhazelcast.xml`.
-
--   **Classpath:** If config file is not set as a system property, Hazelcast will check classpath for `hazelcast.xml` file.
+- **System property:** Hazelcast will first check if "`hazelcast.config`" system property is set to a file path. Example: `-Dhazelcast.config=C:/myhazelcast.xml`.
+- **Classpath:** If config file is not set as a system property, Hazelcast will check classpath for `hazelcast.xml` file.
 
 If Hazelcast does not find any configuration file, it will start with the default configuration (`hazelcast-default.xml`) located in `hazelcast.jar`. (Before configuring Hazelcast, please try to work with the default configuration to see if it works for you. Default should be just fine for most users. If not, then consider custom configuration for your environment.)
 
 If you want to specify your own configuration file to create `Config`, Hazelcast supports several ways including filesystem, classpath, InputStream, URL, etc.:
 
--   `Config cfg = new XmlConfigBuilder(xmlFileName).build();`
-
--   `Config cfg = new XmlConfigBuilder(inputStream).build();`
-
--   `Config cfg = new ClasspathXmlConfig(xmlFileName);`
-
--   `Config cfg = new FileSystemXmlConfig(configFilename);`
-
--   `Config cfg = new UrlXmlConfig(url);`
-
--   `Config cfg = new InMemoryXmlConfig(xml);`
+- `Config cfg = new XmlConfigBuilder(xmlFileName).build();`
+- `Config cfg = new XmlConfigBuilder(inputStream).build();`
+- `Config cfg = new ClasspathXmlConfig(xmlFileName);`
+- `Config cfg = new FileSystemXmlConfig(configFilename);`
+- `Config cfg = new UrlXmlConfig(url);`
+- `Config cfg = new InMemoryXmlConfig(xml);`
 
 
 
@@ -68,20 +62,20 @@ config.addMapConfig( mapConfig );
 
 After creating a `Config` object, you can use it to create a new Hazelcast instance.
 
--   `HazelcastInstance hazelcast = Hazelcast.newHazelcastInstance( config );`
-
--   To create a named `HazelcastInstance` you should set `instanceName` of `Config` object. 
+- `HazelcastInstance hazelcast = Hazelcast.newHazelcastInstance( config );`
+- To create a named `HazelcastInstance` you should set `instanceName` of `Config` object. 
 
 ```java
-    Config config = new Config();
-    config.setInstanceName( "my-instance" );
-    Hazelcast.newHazelcastInstance( config );
-    ```
--   To retrieve an existing `HazelcastInstance` using its name, use;
+Config config = new Config();
+config.setInstanceName( "my-instance" );
+Hazelcast.newHazelcastInstance( config );
+```
 
+- To retrieve an existing `HazelcastInstance` using its name, use;
+    
     `Hazelcast.getHazelcastInstanceByName( "my-instance" );`
 
--   To retrieve all existing `HazelcastInstance`s, use;
+- To retrieve all existing `HazelcastInstance`s, use;
 
     `Hazelcast.getAllHazelcastInstances();`
 

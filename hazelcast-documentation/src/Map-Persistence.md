@@ -105,11 +105,9 @@ If an entry does not exist in the memory when an application asks for it, Hazelc
 
 In this mode, when the `map.put(key,value)` call returns:
 
--   `MapStore.store(key,value)` is successfully called so the entry is persisted.
-
--   In-Memory entry is updated.
-
--   In-Memory backup copies are successfully created on other JVMs (if `backup-count` is greater than 0).
+- `MapStore.store(key,value)` is successfully called so the entry is persisted.
+- In-Memory entry is updated.
+- In-Memory backup copies are successfully created on other JVMs (if `backup-count` is greater than 0).
 
 The same behavior goes for a `map.remove(key)` call. The only difference is that  `MapStore.delete(key)` is called when the entry will be deleted.
 
@@ -126,13 +124,10 @@ You can configure `MapStore` as write-behind by setting the `write-delay-seconds
 
 In this mode, when the `map.put(key,value)` call returns:
 
--   In-Memory entry is updated.
-
--   In-Memory backup copies are successfully created on other JVMs (if `backup-count` is greater than 0).
-
--   The entry is marked as dirty so that after `write-delay-seconds`, it can be persisted with `MapStore.store(key,value)` call.
-
--   For fault tolerance dirty entries are stored in a queue on the primary member and also on a back-up member.
+- In-Memory entry is updated.
+- In-Memory backup copies are successfully created on other JVMs (if `backup-count` is greater than 0).
+- The entry is marked as dirty so that after `write-delay-seconds`, it can be persisted with `MapStore.store(key,value)` call.
+- For fault tolerance dirty entries are stored in a queue on the primary member and also on a back-up member.
 
 The same behavior goes for the `map.remove(key)`, the only difference is that  `MapStore.delete(key)` is called when the entry will be deleted.
 

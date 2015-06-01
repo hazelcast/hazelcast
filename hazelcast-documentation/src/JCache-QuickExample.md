@@ -39,7 +39,8 @@ Although the example is simple, let's go through the code lines one by one.
 #### Getting the Hazelcast JCache Implementation
 
 First of all, we retrieve the `javax.cache.spi.CachingProvider` using the static method from
-`javax.cache.Caching::getCachingManager` which automatically picks up Hazelcast as the underlying JCache implementation, if
+`javax.cache.Caching::
+getCachingManager` which automatically picks up Hazelcast as the underlying JCache implementation, if
 available in the classpath. This way the Hazelcast implementation of a `CachingProvider` will automatically start a new Hazelcast
 node or client (depending on the chosen provider type) and pick up the configuration from either the command line parameter
 or from the classpath. We will show how to use an existing `HazelcastInstance` later in this chapter, for now we keep it simple.

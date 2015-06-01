@@ -50,7 +50,8 @@ Content-Length: 0
 **Creating/Updating Entries in a Map**
 
 You can put a new `key1/value1` entry into a map by using POST call to 
-`http://10.20.17.1:5701/hazelcast/rest/maps/mapName/key1` URL. This call's content body should contain the value of the key. Also, if the call contains the MIME type, Hazelcast stores this information, too. 
+`http://10.20.17.1:5701/hazelcast/
+rest/maps/mapName/key1` URL. This call's content body should contain the value of the key. Also, if the call contains the MIME type, Hazelcast stores this information, too. 
 
 A sample POST call is shown below.
 
@@ -70,7 +71,8 @@ It will return the following response if successful:
 **Retrieving Entries from a Map**
 
 If you want to retrieve an entry, you can use a GET call to `http://10.20.17.1:5701/hazelcast/rest/maps/mapName/key1`. You can also retrieve this entry from another member of your cluster, such as 
-`http://10.20.17.3:5701/hazelcast/rest/maps/mapName/key1`.
+`http://10.20.17.3:5701/hazelcast/rest/
+maps/mapName/key1`.
 
 An example of a GET call is shown below.
 

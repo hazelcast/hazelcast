@@ -21,6 +21,7 @@ public class UserCacheEntryListenerFactory
 ```
 
 To simplify the process for the users, JCache API offers a set of helper methods collected in
-`javax.cache.configuration.FactoryBuilder`. In the above configuration example, `FactoryBuilder::factoryOf` is used to create a
+`javax.cache.
+configuration.FactoryBuilder`. In the above configuration example, `FactoryBuilder::factoryOf` is used to create a
 singleton factory for the given instance.
 

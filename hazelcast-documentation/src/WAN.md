@@ -169,7 +169,8 @@ they are sent to the target cluster after a certain amount of time is passed.
 
 Default value of for this duration is `5` seconds.
 
-To change the `WanBatchReplication` batch sending frequency, set `hazelcast.enterprise.wanrep.batchfrequency.seconds` property.
+To change the `WanBatchReplication` batch sending frequency, set `hazelcast.enterprise.wanrep.
+batchfrequency.seconds` property.
 
 You can set the property on the command line (where xxx is the batch sending frequency in seconds),
 
@@ -219,7 +220,8 @@ For huge clusters or high data mutation rates, you might need to increase the re
 size for replication queues is `100000`. This means, if you have heavy put/update/remove rates, you might exceed the queue size
 so that the oldest, not yet replicated, updates might get lost.
  
-To increase the replication queue capacity, the Hazelcast Enterprise user can use the `hazelcast.enterprise.wanrep.queue.capacity`
+To increase the replication queue capacity, the Hazelcast Enterprise user can use the `hazelcast.enterprise.
+wanrep.queue.capacity`
 property.
 
 You can do this by setting the property on the command line (where xxx is the queue size),

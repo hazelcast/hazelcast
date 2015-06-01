@@ -7,7 +7,8 @@ The example configurations are shown below.
 **Declarative:**
 
 ```xml
-<management-center enabled="true" update-interval="3">http://localhost:8080/mancenter</management-center>
+<management-center enabled="true" update-interval="3">http://localhost:8080/
+mancenter</management-center>
 ```
 
 **Programmatic:**

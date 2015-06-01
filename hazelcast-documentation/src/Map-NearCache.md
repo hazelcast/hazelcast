@@ -4,11 +4,9 @@
 
 Map entries in Hazelcast are partitioned across the cluster. Imagine that you are reading the key `k` so many times and `k` is owned by another member in your cluster. Each `map.get(k)` will be a remote operation, meaning lots of network trips. If you have a map that is read-mostly, then you should consider creating a Near Cache for the map so that reads can be much faster and consume less network traffic. All these benefits do not come free. When using Near Cache, you should consider the following issues:
 
--   JVM will have to hold extra cached data so it will increase the memory consumption.
-
--   If invalidation is turned on and entries are updated frequently, then invalidations will be costly.
-
--   Near Cache breaks the strong consistency guarantees; you might be reading stale data.
+- JVM will have to hold extra cached data so it will increase the memory consumption.
+- If invalidation is turned on and entries are updated frequently, then invalidations will be costly.
+- Near Cache breaks the strong consistency guarantees; you might be reading stale data.
 
 Near Cache is highly recommended for the maps that are read-mostly. Here is a Near Cache configuration for a map:
 
