@@ -17,6 +17,7 @@
 package com.hazelcast.client.impl.protocol.template;
 
 import com.hazelcast.annotation.GenerateCodec;
+import com.hazelcast.annotation.Nullable;
 import com.hazelcast.annotation.Request;
 import com.hazelcast.client.impl.protocol.ResponseMessageConst;
 import com.hazelcast.nio.serialization.Data;
@@ -38,25 +39,25 @@ public interface AtomicReferenceCodecTemplate {
     void getAndAlter(String name, Data function);
 
     @Request(id = 5, retryable = true, response = ResponseMessageConst.BOOLEAN)
-    void contains(String name, Data expected);
+    void contains(String name, @Nullable Data expected);
 
     @Request(id = 6, retryable = false, response = ResponseMessageConst.BOOLEAN)
-    void compareAndSet(String name, Data expected, Data updated);
+    void compareAndSet(String name, @Nullable Data expected, @Nullable Data updated);
 
     @Request(id = 8, retryable = true, response = ResponseMessageConst.DATA)
     void get(String name);
 
     @Request(id = 9, retryable = false, response = ResponseMessageConst.VOID)
-    void set(String name, Data newValue);
+    void set(String name, @Nullable Data newValue);
 
     @Request(id = 10, retryable = false, response = ResponseMessageConst.VOID)
     void clear(String name);
 
     @Request(id = 11, retryable = false, response = ResponseMessageConst.DATA)
-    void getAndSet(String name, Data newValue);
+    void getAndSet(String name, @Nullable Data newValue);
 
     @Request(id = 12, retryable = false, response = ResponseMessageConst.DATA)
-    void setAndGet(String name, Data newValue);
+    void setAndGet(String name, @Nullable Data newValue);
 
     @Request(id = 13, retryable = true, response = ResponseMessageConst.BOOLEAN)
     void isNull(String name);

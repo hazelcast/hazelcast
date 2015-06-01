@@ -710,7 +710,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
 
     @Override
     public void evictAll() {
-        clearNearCache();
+        invalidateNearCache();
         ClientMessage request = MapEvictAllCodec.encodeRequest(name);
         invoke(request);
     }
@@ -718,7 +718,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
     @Override
     public void loadAll(boolean replaceExistingValues) {
         if (replaceExistingValues) {
-            clearNearCache();
+            invalidateNearCache();
         }
         ClientMessage request = MapLoadAllCodec.encodeRequest(name, replaceExistingValues);
         invoke(request);
@@ -899,8 +899,6 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
         Set entrySet = new HashSet<Entry<K, V>>(resultParameters.map.size());
 
         for (Entry<Data, Data> entry : resultParameters.map.entrySet()) {
-
-
             K key = toObject(entry.getKey());
             V value = toObject(entry.getValue());
             entrySet.add(new AbstractMap.SimpleEntry<K, V>(key, value));
@@ -928,8 +926,6 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
 
 
         for (Entry<Data, Data> entry : resultParameters.map.entrySet()) {
-
-
             K key = toObject(entry.getKey());
             V value = toObject(entry.getValue());
             entrySet.add(new AbstractMap.SimpleEntry<K, V>(key, value));
@@ -1337,12 +1333,6 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
         }
     }
 
-    private void clearNearCache() {
-        if (nearCache != null) {
-            nearCache.clear();
-        }
-    }
-
     private void initNearCache() {
         if (nearCacheInitialized.compareAndSet(false, true)) {
             final NearCacheConfig nearCacheConfig = getContext().getClientConfig().getNearCacheConfig(name);
@@ -1374,12 +1364,12 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
 
         @Override
         public void beforeListenerRegister() {
-
+            invalidateNearCache();
         }
 
         @Override
         public void onListenerRegister() {
-
+            invalidateNearCache();
         }
 
         @Override

@@ -101,25 +101,25 @@ public interface MapCodecTemplate {
     @Request(id = 24, retryable = false, response = ResponseMessageConst.BOOLEAN)
     void removeInterceptor(String name, String id);
 
-    @Request(id = 25, retryable = false, response = ResponseMessageConst.STRING, event = EventMessageConst.EVENT_ENTRY)
+    @Request(id = 25, retryable = true, response = ResponseMessageConst.STRING, event = EventMessageConst.EVENT_ENTRY)
     void addEntryListenerToKeyWithPredicate(String name, Data key, Data predicate, boolean includeValue);
 
-    @Request(id = 26, retryable = false, response = ResponseMessageConst.STRING, event = EventMessageConst.EVENT_ENTRY)
+    @Request(id = 26, retryable = true, response = ResponseMessageConst.STRING, event = EventMessageConst.EVENT_ENTRY)
     void addEntryListenerWithPredicate(String name, Data predicate, boolean includeValue);
 
-    @Request(id = 27, retryable = false, response = ResponseMessageConst.STRING, event = EventMessageConst.EVENT_ENTRY)
+    @Request(id = 27, retryable = true, response = ResponseMessageConst.STRING, event = EventMessageConst.EVENT_ENTRY)
     void addEntryListenerToKey(String name, Data key, boolean includeValue);
 
-    @Request(id = 28, retryable = false, response = ResponseMessageConst.STRING, event = EventMessageConst.EVENT_ENTRY)
+    @Request(id = 28, retryable = true, response = ResponseMessageConst.STRING, event = EventMessageConst.EVENT_ENTRY)
     void addEntryListener(String name, boolean includeValue);
 
-    @Request(id = 29, retryable = false, response = ResponseMessageConst.STRING, event = EventMessageConst.EVENT_ENTRY)
+    @Request(id = 29, retryable = true, response = ResponseMessageConst.STRING, event = EventMessageConst.EVENT_ENTRY)
     void addNearCacheEntryListener(String name, boolean includeValue);
 
     @Request(id = 30, retryable = false, response = ResponseMessageConst.BOOLEAN)
     void removeEntryListener(String name, String registrationId);
 
-    @Request(id = 31, retryable = false, response = ResponseMessageConst.STRING,
+    @Request(id = 31, retryable = true, response = ResponseMessageConst.STRING,
             event = EventMessageConst.EVENT_MAPPARTITIONLOST)
     void addPartitionLostListener(String name);
 

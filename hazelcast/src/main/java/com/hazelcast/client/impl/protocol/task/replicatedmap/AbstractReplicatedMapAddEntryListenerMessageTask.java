@@ -22,7 +22,6 @@ import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.MapEvent;
 import com.hazelcast.instance.Node;
-import com.hazelcast.map.impl.DataAwareEntryEvent;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
@@ -79,17 +78,15 @@ public abstract class AbstractReplicatedMapAddEntryListenerMessageTask<Parameter
 
     private void handleEvent(EntryEvent<Object, Object> event) {
         if (endpoint.isAlive()) {
-            DataAwareEntryEvent dataAwareEntryEvent = (DataAwareEntryEvent) event;
-            final Data key = dataAwareEntryEvent.getKeyData();
-            final Data newValue = dataAwareEntryEvent.getNewValueData();
-            final Data oldValue = dataAwareEntryEvent.getOldValueData();
-            final Data mergingValue = dataAwareEntryEvent.getMeringValueData();
+            Data key = serializationService.toData(event.getKey());
+            Data newValue = serializationService.toData(event.getValue());
+            Data oldValue = serializationService.toData(event.getOldValue());
+            Data mergingValue = serializationService.toData(event.getMergingValue());
 
-            Data partitionKey = serializationService.toData(key);
             ClientMessage clientMessage = encodeEvent(key
                     , newValue, oldValue, mergingValue, event.getEventType().getType(),
                     event.getMember().getUuid(), 1);
-            sendClientMessage(partitionKey, clientMessage);
+            sendClientMessage(key, clientMessage);
         }
     }
 

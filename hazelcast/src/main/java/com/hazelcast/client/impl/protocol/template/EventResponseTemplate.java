@@ -55,7 +55,7 @@ public interface EventResponseTemplate {
     void Topic(Data item, long publishTime, String uuid);
 
     @EventResponse(EventMessageConst.EVENT_PARTITIONLOST)
-    void PartitionLost(int partitionId, int lostBackupCount, Address source);
+    void PartitionLost(int partitionId, int lostBackupCount, @Nullable Address source);
 
     @EventResponse(EventMessageConst.EVENT_DISTRIBUTEDOBJECT)
     void DistributedObject(String name, String serviceName, String eventType);

@@ -28,7 +28,7 @@ public interface TopicCodecTemplate {
     @Request(id = 1, retryable = false, response = ResponseMessageConst.VOID)
     void publish(String name, Data message);
 
-    @Request(id = 2, retryable = false, response = ResponseMessageConst.STRING
+    @Request(id = 2, retryable = true, response = ResponseMessageConst.STRING
             , event = {EventMessageConst.EVENT_TOPIC})
     void addMessageListener(String name);
 

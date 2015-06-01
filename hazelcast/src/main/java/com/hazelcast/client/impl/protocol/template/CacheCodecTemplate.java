@@ -29,10 +29,10 @@ import java.util.Set;
 @GenerateCodec(id = TemplateConstants.JCACHE_TEMPLATE_ID, name = "Cache", ns = "Hazelcast.Client.Protocol.Cache")
 public interface CacheCodecTemplate {
 
-    @Request(id = 1, retryable = false, response = ResponseMessageConst.STRING, event = {EventMessageConst.EVENT_CACHE})
+    @Request(id = 1, retryable = true, response = ResponseMessageConst.STRING, event = {EventMessageConst.EVENT_CACHE})
     void addEntryListener(String name);
 
-    @Request(id = 2, retryable = false, response = ResponseMessageConst.STRING,
+    @Request(id = 2, retryable = true, response = ResponseMessageConst.STRING,
             event = {EventMessageConst.EVENT_CACHEINVALIDATION})
     void addInvalidationListener(String name);
 
