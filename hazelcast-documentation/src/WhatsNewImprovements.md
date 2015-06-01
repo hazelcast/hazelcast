@@ -5,11 +5,12 @@ This section lists the enhancements performed for Hazelcast 3.5 release.
 
 - **Eventing System Improvements**: ???. For more information, please see [???](#???).
 - **Query and Indexing Improvements**: ???. For more information, please see [???](#???).
-- **XA Transactions Improvements**: ???. For more information, please see [???](#???).
+- **XA Transactions Improvements**: With this improvement, you can now obtain a Hazelcast XA Resource instance through `HazelcastInstance`. For more information, please see [XA Transactions](#xa-transactions).
  
 
-The following are the other improvements performed to solve the enhancement issues opened by the Hazelcast customers.
+The following are the other improvements performed to solve the enhancement issues opened by the Hazelcast customers/team.
  
+- While configuring JCache, duration of the `ExpiryPolicy` can be set programmatically but not declaratively [[#5347]](https://github.com/hazelcast/hazelcast/issues/5347).
 - Since near cache is not supported as embedded but only at client, at the moment, there is no need for `NearCacheConfig` in `CacheConfig` [[#5215]](https://github.com/hazelcast/hazelcast/issues/5215).
 - `SlowOperationDetector` should have an option to not to log the stacktraces to the log file. There is no need to have the stacktraces written to the normal log file if the Hazelcast Management Center or the performance monitor is being used [[#5043]](https://github.com/hazelcast/hazelcast/issues/5043).
 - There are no Spring tags available for Native Memory configuration [[#4772]](https://github.com/hazelcast/hazelcast/issues/4772).
