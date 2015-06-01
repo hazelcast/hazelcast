@@ -5,7 +5,15 @@ The `SlowOperationDetector` monitors the operation threads and collects informat
 
 The `SlowOperationDetector` stores the fully qualified classname of the operation and its stacktrace as well as operation details, start time and duration of each slow invocation. All collected data is available in the [Management Center](#members).
 
-The `SlowOperationDetector` is configured via system properties. Please refer to the [System Properties section](#system-properties) for details.
+The `SlowOperationDetector` is configured via the following system properties.
+
+- `hazelcast.slow.operation.detector.enabled`
+- `hazelcast.slow.operation.detector.log.purge.interval.seconds`
+- `hazelcast.slow.operation.detector.log.retention.seconds`
+- `hazelcast.slow.operation.detector.stacktrace.logging.enabled`
+- `hazelcast.slow.operation.detector.threshold.millis`
+
+Please refer to the [System Properties section](#system-properties) for explanations of these properties.
 
 ### Logging of Slow Operations
 
