@@ -134,12 +134,14 @@ newOwner=Member [127.0.0.1]:5702 this}
 ### Partition Lost Listener
 
 Hazelcast provides fault-tolerance by keeping multiple copies of your data. For each partition, one of your nodes become owner and some of the other nodes become replica nodes based on your configuration. Nevertheless, data loss may occur if a few nodes crash simultaneously.
-Lets consider the following example with three nodes: N1, N2, N3 for a given partition-0. N1 is owner of partition-0, N2 and N3 are first and second replicas respectively. If N1 and N2 crash simultaneously, partition-0 loses its data that is configured with less than 2 backups.
+
+Let`s consider the following example with three nodes: N1, N2, N3 for a given partition-0. N1 is owner of partition-0, N2 and N3 are the first and second replicas respectively. If N1 and N2 crash simultaneously, partition-0 loses its data that is configured with less than 2 backups.
 For instance, if we configure a map with 1 backup, that map loses its data in partition-0 since both owner and first replica of partition-0 have crashed. However, if we configure our map with 2 backups, it does not lose any data since a copy of partition-0's data for the given map
 also resides in N3. 
 
-The Partition Lost Listener notifies for possible data loss occurrences with the information of how many replicas are lost for a partition. It listens `PartitionLostEvent` instances. Partition lost events are dispatched per partition. 
-Partition loss detection is done after a node crash is detected by other nodes and the crashed node is removed from the cluster. Please note that false-positive `PartitionLostEvent` instances may be fired on partial network split errors. 
+The Partition Lost Listener notifies for possible data loss occurrences with the information of how many replicas are lost for a partition. It listens to `PartitionLostEvent` instances. Partition lost events are dispatched per partition. 
+
+Partition loss detection is done after a node crash is detected by the other nodes and the crashed node is removed from the cluster. Please note that false-positive `PartitionLostEvent` instances may be fired on partial network split errors. 
 
 The following is an example of Partition Lost Listener. 
 
@@ -254,7 +256,7 @@ public class Sample implements MessageListener<MyEvent> {
 The Client Listener is used by the Hazelcast nodes. It notifies the nodes when a client is connected to or disconnected from the cluster.
 
 
-![image](images/NoteSmall.jpg) ***NOTE:*** *You can also add event listeners to a Hazelcast client. Please refer to [Client Listenerconfig](#client-listenerconfig) for the related information.*
+![image](images/NoteSmall.jpg) ***NOTE:*** *You can also add event listeners to a Hazelcast client. Please refer to [Client Listenerconfig](#client-listener-configuration) for the related information.*
 
 ## Event Listeners for Hazelcast Clients
 
@@ -268,7 +270,7 @@ You can add event listeners to a Hazelcast Java client. You can configure the fo
 <br></br>
 ***RELATED INFORMATION***
 
-*Please refer to the [Client Listenerconfig section](#client-listenerconfig) for more information.*
+*Please refer to the [Client Listenerconfig section](#client-listener-configuration) for more information.*
 <br></br>
 
 <br></br>
