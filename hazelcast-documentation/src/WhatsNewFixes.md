@@ -5,6 +5,9 @@
 
 This section lists issues solved for **Hazelcast 3.5** release.
 
+- The method `IList::remove()` should publish the event `REMOVED` [[#5386]](https://github.com/hazelcast/hazelcast/issues/5386).
+- `IllegalStateException` with wrong partition is thrown when the method `IMap::getOperation()` is invoked [[#5341]](https://github.com/hazelcast/hazelcast/issues/5341).
+- `WrongTarget` warnings appear in the log since the operations are not sent to the replicas when a map has no backups [[#5324]](https://github.com/hazelcast/hazelcast/issues/5324).
 - When the method `finalizeCombine()` is used, Hazelcast throws `NullPointerException` [[#5283]](https://github.com/hazelcast/hazelcast/issues/5283).
 - `WanBatchReplication` causes `OutOfMemoryException` when the default value for WAN Replication Batch Size (50) is used [[#5280]](https://github.com/hazelcast/hazelcast/issues/5280).
 - When testing Hazelcast, it does not start as an OSGI bundle. After the OSGI package was refactored, the dynamic class loading of the Script engine was missed [[#5274]](https://github.com/hazelcast/hazelcast/issues/5274).
