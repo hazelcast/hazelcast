@@ -37,7 +37,6 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-import org.junit.Ignore;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -58,7 +57,6 @@ import static junit.framework.Assert.assertTrue;
  */
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-@Ignore
 public class ClientSortLimitTest extends HazelcastTestSupport {
 
     static HazelcastInstance client;

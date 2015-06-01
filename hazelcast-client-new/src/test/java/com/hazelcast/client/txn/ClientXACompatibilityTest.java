@@ -4,7 +4,6 @@ import com.atomikos.datasource.xa.XID;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
 import com.hazelcast.core.TransactionalMap;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -13,7 +12,6 @@ import com.hazelcast.transaction.HazelcastXAResource;
 import com.hazelcast.transaction.TransactionContext;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -22,8 +20,6 @@ import javax.transaction.xa.XAException;
 import javax.transaction.xa.XAResource;
 import javax.transaction.xa.Xid;
 
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 import static javax.transaction.xa.XAResource.TMNOFLAGS;
 import static javax.transaction.xa.XAResource.TMSUCCESS;
@@ -39,7 +35,7 @@ public class ClientXACompatibilityTest extends HazelcastTestSupport {
         return new XID(randomString(), "test");
     }
 
-    private HazelcastInstance instance, secondInstance, client, secondClient;
+    private HazelcastInstance instance, client, secondClient;
 
     private HazelcastXAResource xaResource, secondXaResource, instanceXaResource;
 
@@ -49,7 +45,6 @@ public class ClientXACompatibilityTest extends HazelcastTestSupport {
     public void setUp() throws Exception {
         instance = Hazelcast.newHazelcastInstance();
         instanceXaResource = instance.getXAResource();
-//        secondInstance = Hazelcast.newHazelcastInstance();
 
         client = HazelcastClient.newHazelcastClient();
         secondClient = HazelcastClient.newHazelcastClient();

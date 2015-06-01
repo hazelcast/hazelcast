@@ -61,11 +61,11 @@ public interface MultiMapCodecTemplate {
     @Request(id = 12, retryable = true, response = ResponseMessageConst.BOOLEAN)
     void count(String name, Data key, long threadId);
 
-    @Request(id = 13, retryable = false, response = ResponseMessageConst.STRING,
+    @Request(id = 13, retryable = true, response = ResponseMessageConst.STRING,
             event = {EventMessageConst.EVENT_ENTRY})
     void addEntryListenerToKey(String name, Data key, boolean includeValue);
 
-    @Request(id = 14, retryable = false, response = ResponseMessageConst.STRING,
+    @Request(id = 14, retryable = true, response = ResponseMessageConst.STRING,
             event = {EventMessageConst.EVENT_ENTRY})
     void addEntryListener(String name, boolean includeValue);
 

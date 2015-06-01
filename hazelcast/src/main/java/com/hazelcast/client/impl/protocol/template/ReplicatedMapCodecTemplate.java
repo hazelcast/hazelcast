@@ -55,19 +55,19 @@ public interface ReplicatedMapCodecTemplate {
     @Request(id = 9, retryable = false, response = ResponseMessageConst.VOID)
     void clear(String name);
 
-    @Request(id = 10, retryable = false, response = ResponseMessageConst.STRING
+    @Request(id = 10, retryable = true, response = ResponseMessageConst.STRING
             , event = {EventMessageConst.EVENT_ENTRY})
     void addEntryListenerToKeyWithPredicate(String name, Data key, Data predicate);
 
-    @Request(id = 11, retryable = false, response = ResponseMessageConst.STRING
+    @Request(id = 11, retryable = true, response = ResponseMessageConst.STRING
             , event = {EventMessageConst.EVENT_ENTRY})
     void addEntryListenerWithPredicate(String name, Data predicate);
 
-    @Request(id = 12, retryable = false, response = ResponseMessageConst.STRING
+    @Request(id = 12, retryable = true, response = ResponseMessageConst.STRING
             , event = {EventMessageConst.EVENT_ENTRY})
     void addEntryListenerToKey(String name, Data key);
 
-    @Request(id = 13, retryable = false, response = ResponseMessageConst.STRING
+    @Request(id = 13, retryable = true, response = ResponseMessageConst.STRING
             , event = {EventMessageConst.EVENT_ENTRY})
     void addEntryListener(String name);
 

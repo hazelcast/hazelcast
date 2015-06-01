@@ -45,7 +45,7 @@ public class GetDistributedObjectMessageTask
             coll.add(new DistributedObjectInfo(
                     distributedObject.getServiceName(), distributedObject.getName()));
         }
-        return distributedObjects;
+        return coll;
     }
 
     @Override

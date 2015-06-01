@@ -30,7 +30,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-import org.junit.Ignore;
 
 import javax.cache.spi.CachingProvider;
 

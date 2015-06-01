@@ -110,7 +110,7 @@ public class ClientMessage
         HEADER_SIZE = DATA_OFFSET_FIELD_OFFSET + Bits.SHORT_SIZE_IN_BYTES;
     }
 
-    private transient int valueOffset;
+    private transient int writeOffset;
     private transient boolean isRetryable;
 
     public ClientMessage() {
@@ -336,7 +336,7 @@ public class ClientMessage
         int bytesWritable = destination.remaining();
 
         // the number of bytes that need to be written.
-        int bytesNeeded = size - valueOffset;
+        int bytesNeeded = size - writeOffset;
 
         int bytesWrite;
         boolean done;
@@ -350,9 +350,13 @@ public class ClientMessage
             done = false;
         }
 
-        destination.put(byteArray, valueOffset, bytesWrite);
-        valueOffset += bytesWrite;
+        destination.put(byteArray, writeOffset, bytesWrite);
+        writeOffset += bytesWrite;
 
+        if (done) {
+            //clear the write offset so that same client message can be resend if needed.
+            writeOffset = 0;
+        }
         return done;
     }
 
@@ -419,7 +423,9 @@ public class ClientMessage
             sb.append(", messageType=").append(Integer.toHexString(getMessageType()));
             sb.append(", partitionId=").append(getPartitionId());
             sb.append(", isComplete=").append(isComplete());
+            sb.append(", isRetryable=").append(isRetryable());
             sb.append(", isEvent=").append(isFlagSet(LISTENER_EVENT_FLAG));
+            sb.append(", writeOffset=").append(writeOffset);
         }
         sb.append('}');
         return sb.toString();

@@ -8,7 +8,6 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.NightlyTest;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -19,7 +18,6 @@ import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(NightlyTest.class)
-@Ignore
 public class AtomicLongStableReadStressTest extends StressTestSupport {
 
     public static final int CLIENT_THREAD_COUNT = 5;

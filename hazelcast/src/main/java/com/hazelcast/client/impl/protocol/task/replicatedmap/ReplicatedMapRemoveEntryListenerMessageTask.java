@@ -39,8 +39,7 @@ public class ReplicatedMapRemoveEntryListenerMessageTask
     protected Object call() throws Exception {
         ReplicatedMapService replicatedMapService = getService(ReplicatedMapService.SERVICE_NAME);
         ReplicatedRecordStore recordStore = replicatedMapService.getReplicatedRecordStore(parameters.name, true);
-        final boolean success = recordStore.removeEntryListenerInternal(parameters.registrationId);
-        return ReplicatedMapRemoveEntryListenerCodec.encodeResponse(success);
+        return recordStore.removeEntryListenerInternal(parameters.registrationId);
     }
 
     @Override

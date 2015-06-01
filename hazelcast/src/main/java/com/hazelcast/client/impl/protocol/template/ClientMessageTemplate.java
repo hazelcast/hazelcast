@@ -42,16 +42,13 @@ public interface ClientMessageTemplate {
     @Request(id = 6, retryable = false, response = ResponseMessageConst.VOID)
     void destroyProxy(String name, String serviceName);
 
-    @Request(id = 7, retryable = false, response = ResponseMessageConst.STRING, event = EventMessageConst.EVENT_ITEM)
-    void itemListener(String name, boolean includeValue);
-
     @Request(id = 8, retryable = false, response = ResponseMessageConst.PARTITIONS)
     void getPartitions();
 
     @Request(id = 9, retryable = false, response = ResponseMessageConst.VOID)
     void removeAllListeners();
 
-    @Request(id = 10, retryable = false, response = ResponseMessageConst.STRING, event = {EventMessageConst.EVENT_PARTITIONLOST})
+    @Request(id = 10, retryable = true, response = ResponseMessageConst.STRING, event = {EventMessageConst.EVENT_PARTITIONLOST})
     void addPartitionLostListener();
 
     @Request(id = 11, retryable = false, response = ResponseMessageConst.BOOLEAN)
@@ -60,7 +57,7 @@ public interface ClientMessageTemplate {
     @Request(id = 12, retryable = false, response = ResponseMessageConst.DISTRIBUTED_OBJECT)
     void getDistributedObject();
 
-    @Request(id = 13, retryable = false, response = ResponseMessageConst.STRING, event = {EventMessageConst.EVENT_DISTRIBUTEDOBJECT})
+    @Request(id = 13, retryable = true, response = ResponseMessageConst.STRING, event = {EventMessageConst.EVENT_DISTRIBUTEDOBJECT})
     void addDistributedObjectListener();
 
     @Request(id = 14, retryable = false, response = ResponseMessageConst.BOOLEAN)

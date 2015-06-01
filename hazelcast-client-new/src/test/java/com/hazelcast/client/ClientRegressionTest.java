@@ -57,7 +57,6 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-import org.junit.Ignore;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -81,7 +80,6 @@ import static org.junit.Assert.fail;
  */
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-@Ignore
 public class ClientRegressionTest
         extends HazelcastTestSupport {
 

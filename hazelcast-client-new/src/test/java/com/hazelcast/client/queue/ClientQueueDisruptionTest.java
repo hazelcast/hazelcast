@@ -12,11 +12,9 @@ import com.hazelcast.test.annotation.SlowTest;
 import com.hazelcast.test.modularhelpers.SimpleClusterUtil;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-import org.junit.Ignore;
 
 import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertEquals;

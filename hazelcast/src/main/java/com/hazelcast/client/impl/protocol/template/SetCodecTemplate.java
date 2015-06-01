@@ -58,7 +58,7 @@ public interface SetCodecTemplate {
     @Request(id = 10, retryable = false, response = ResponseMessageConst.LIST_DATA)
     void getAll(String name);
 
-    @Request(id = 11, retryable = false, response = ResponseMessageConst.STRING,
+    @Request(id = 11, retryable = true, response = ResponseMessageConst.STRING,
     event = {EventMessageConst.EVENT_ITEM})
     void addListener(String name, boolean includeValue);
 
