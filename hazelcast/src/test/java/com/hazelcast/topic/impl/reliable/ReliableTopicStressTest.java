@@ -2,6 +2,7 @@ package com.hazelcast.topic.impl.reliable;
 
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.config.TopicConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ITopic;
@@ -18,13 +19,14 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static java.util.concurrent.TimeUnit.MINUTES;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(NightlyTest.class)
-@Ignore
 public class ReliableTopicStressTest extends HazelcastTestSupport {
 
     private final AtomicBoolean stop = new AtomicBoolean();
@@ -34,9 +36,12 @@ public class ReliableTopicStressTest extends HazelcastTestSupport {
     public void setup() {
         Config config = new Config();
 
+        RingbufferConfig ringbufferConfig = new RingbufferConfig("foobar");
+        ringbufferConfig.setCapacity(1000 * 1000);
+        ringbufferConfig.setTimeToLiveSeconds(5);
+
         TopicConfig topicConfig = new TopicConfig("foobar");
         config.addTopicConfig(topicConfig);
-
 
         HazelcastInstance hz = createHazelcastInstance(config);
         topic = hz.getTopic(topicConfig.getName());
@@ -53,7 +58,7 @@ public class ReliableTopicStressTest extends HazelcastTestSupport {
         produceThread.start();
 
         System.out.println("Starting test");
-        sleepAndStop(stop, 30);
+        sleepAndStop(stop, MINUTES.toSeconds(5));
         System.out.println("Completed");
 
         produceThread.assertSucceedsEventually();
