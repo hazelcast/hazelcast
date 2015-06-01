@@ -71,6 +71,7 @@
                                 </includes>
                                 <excludes>
                                     <exclude>com.hazelcast:hazelcast-all:*</exclude>
+                                    <exclude>com.hazelcast:hazelcast-client-new:*</exclude>
                                 </excludes>
                             </artifactSet>
                             <transformers>
