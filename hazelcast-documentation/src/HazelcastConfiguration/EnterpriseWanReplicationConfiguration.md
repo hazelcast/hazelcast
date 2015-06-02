@@ -109,6 +109,14 @@ wanRef.setName("my-wan-cluster");
 wanRef.setMergePolicy(PassThroughMergePolicy.class.getName());
 wanRef.setRepublishingEnabled(true);
 config.getMapConfig("testMap").setWanReplicationRef(wanRef);
+
+WanReplicationRef cacheWanRef = new WanReplicationRef();
+cacheWanRef.setName("my-wan-cluster");
+cacheWanRef.setMergePolicy("com.hazelcast.cache.merge.PassThroughCacheMergePolicy");
+cacheWanRef.setRepublishingEnabled(true);
+config.getCacheConfig("testCache").setWanReplicationRef(cacheWanRef);
+
+
 ```
 
 `wan-replication-ref` has the following elements;
