@@ -47,7 +47,7 @@ public class RemoveAllOperation extends MultiMapBackupAwareOperation {
         if (coll != null) {
             getOrCreateContainer().update();
             for (MultiMapRecord record : coll) {
-                publishEvent(EntryEventType.REMOVED, dataKey, record.getObject());
+                publishEvent(EntryEventType.REMOVED, dataKey, null, record.getObject());
             }
         }
     }
