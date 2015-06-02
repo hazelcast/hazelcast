@@ -17,7 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.mapreduce;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
+import com.hazelcast.client.impl.protocol.task.AbstractMessageTask;
 import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.config.JobTrackerConfig;
 import com.hazelcast.core.ExecutionCallback;
@@ -31,24 +31,26 @@ import com.hazelcast.mapreduce.Mapper;
 import com.hazelcast.mapreduce.ReducerFactory;
 import com.hazelcast.mapreduce.TopologyChangedStrategy;
 import com.hazelcast.mapreduce.impl.AbstractJobTracker;
-import com.hazelcast.mapreduce.impl.HashMapAdapter;
 import com.hazelcast.mapreduce.impl.MapReduceService;
 import com.hazelcast.mapreduce.impl.operation.KeyValueJobOperation;
 import com.hazelcast.mapreduce.impl.operation.StartProcessingJobOperation;
 import com.hazelcast.mapreduce.impl.task.TrackableJobFuture;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 
 import java.security.Permission;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
 import static com.hazelcast.mapreduce.impl.MapReduceUtil.executeOperation;
 
-public abstract class AbstractMapReduceTask<Parameters> extends AbstractCallableMessageTask<Parameters>
+public abstract class AbstractMapReduceTask<Parameters> extends AbstractMessageTask<Parameters>
         implements ExecutionCallback {
 
     public AbstractMapReduceTask(ClientMessage clientMessage, Node node, Connection connection) {
@@ -56,7 +58,7 @@ public abstract class AbstractMapReduceTask<Parameters> extends AbstractCallable
     }
 
     @Override
-    protected Object call() {
+    protected void processMessage() {
         MapReduceService mapReduceService = getService(MapReduceService.SERVICE_NAME);
         NodeEngine nodeEngine = mapReduceService.getNodeEngine();
         final String objectName = getDistributedObjectName();
@@ -67,8 +69,6 @@ public abstract class AbstractMapReduceTask<Parameters> extends AbstractCallable
             startSupervisionTask(jobTracker);
             jobFuture.andThen(this);
         }
-
-        return null;
     }
 
     protected abstract String getJobId();
@@ -100,8 +100,8 @@ public abstract class AbstractMapReduceTask<Parameters> extends AbstractCallable
             chunkSize = config.getChunkSize();
         }
         String topologyChangedStrategyStr = getTopologyChangedStrategy();
-        TopologyChangedStrategy topologyChangedStrategy = null;
-        if (topologyChangedStrategyStr.equals("null")) {
+        TopologyChangedStrategy topologyChangedStrategy;
+        if (topologyChangedStrategyStr == null) {
             topologyChangedStrategy = config.getTopologyChangedStrategy();
         } else {
             topologyChangedStrategy =
@@ -118,6 +118,15 @@ public abstract class AbstractMapReduceTask<Parameters> extends AbstractCallable
         CombinerFactory combinerFactory = getCombinerFactory();
         ReducerFactory reducerFactory = getReducerFactory();
         Collection keys = getKeys();
+
+        Collection<Object> keyObjects = null;
+        if (keys != null) {
+            keyObjects = new ArrayList<Object>(keys.size());
+            for (Object key : keys) {
+                keyObjects.add(serializationService.toObject(key));
+            }
+        }
+
         KeyPredicate predicate = getPredicate();
 
         for (MemberImpl member : members) {
@@ -129,19 +138,22 @@ public abstract class AbstractMapReduceTask<Parameters> extends AbstractCallable
 
         // After we prepared all the remote systems we can now start the processing
         for (MemberImpl member : members) {
-            Operation operation = new StartProcessingJobOperation(name, jobId, keys, predicate);
+            Operation operation = new StartProcessingJobOperation(name, jobId, keyObjects, predicate);
             executeOperation(operation, member.getAddress(), mapReduceService, nodeEngine);
         }
     }
 
     @Override
     public void onResponse(Object response) {
-
-        Object clientResponse = response;
-        if (clientResponse instanceof HashMap) {
-            clientResponse = new HashMapAdapter((HashMap) clientResponse);
+        Map<Object, Object> m = (Map<Object, Object>) response;
+        HashMap<Data, Data> hashMap = new HashMap<Data, Data>();
+        for (Map.Entry<Object, Object> entry : m.entrySet()) {
+            Data key = serializationService.toData(entry.getKey());
+            Data value = serializationService.toData(entry.getValue());
+            hashMap.put(key, value);
         }
-        sendResponse(clientResponse);
+        sendResponse(hashMap);
+
     }
 
     @Override

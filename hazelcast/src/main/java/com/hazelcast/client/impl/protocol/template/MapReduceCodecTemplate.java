@@ -17,6 +17,7 @@
 package com.hazelcast.client.impl.protocol.template;
 
 import com.hazelcast.annotation.GenerateCodec;
+import com.hazelcast.annotation.Nullable;
 import com.hazelcast.annotation.Request;
 import com.hazelcast.client.impl.protocol.ResponseMessageConst;
 import com.hazelcast.nio.serialization.Data;
@@ -33,28 +34,28 @@ public interface MapReduceCodecTemplate {
     void jobProcessInformation(String name, String jobId);
 
     @Request(id = 3, retryable = false, response = ResponseMessageConst.MAP_DATA_DATA)
-    void forMap(String name, String jobId, Data predicate, Data mapper, Data combinerFactory,
-                Data reducerFactory, String mapName, int chunkSize, List<Data> keys,
-                String topologyChangedStrategy);
+    void forMap(String name, String jobId, @Nullable Data predicate, Data mapper, @Nullable Data combinerFactory,
+                @Nullable Data reducerFactory, String mapName, int chunkSize, @Nullable List<Data> keys,
+                @Nullable String topologyChangedStrategy);
 
     @Request(id = 4, retryable = false, response = ResponseMessageConst.MAP_DATA_DATA)
-    void forList(String name, String jobId, Data predicate, Data mapper, Data combinerFactory,
-                 Data reducerFactory, String listName, int chunkSize, List<Data> keys,
-                 String topologyChangedStrategy);
+    void forList(String name, String jobId, @Nullable Data predicate, Data mapper, @Nullable Data combinerFactory,
+                 @Nullable Data reducerFactory, String listName, int chunkSize, @Nullable List<Data> keys,
+                 @Nullable String topologyChangedStrategy);
 
 
     @Request(id = 5, retryable = false, response = ResponseMessageConst.MAP_DATA_DATA)
-    void forSet(String name, String jobId, Data predicate, Data mapper, Data combinerFactory,
-                Data reducerFactory, String setName, int chunkSize, List<Data> keys,
-                String topologyChangedStrategy);
+    void forSet(String name, String jobId, @Nullable Data predicate, Data mapper, @Nullable Data combinerFactory,
+                @Nullable Data reducerFactory, String setName, int chunkSize, @Nullable List<Data> keys,
+                @Nullable String topologyChangedStrategy);
 
     @Request(id = 6, retryable = false, response = ResponseMessageConst.MAP_DATA_DATA)
-    void forMultiMap(String name, String jobId, Data predicate, Data mapper, Data combinerFactory,
-                     Data reducerFactory, String multiMapName, int chunkSize, List<Data> keys,
-                     String topologyChangedStrategy);
+    void forMultiMap(String name, String jobId, @Nullable Data predicate, Data mapper, @Nullable Data combinerFactory,
+                     @Nullable Data reducerFactory, String multiMapName, int chunkSize, @Nullable List<Data> keys,
+                     @Nullable String topologyChangedStrategy);
 
     @Request(id = 7, retryable = false, response = ResponseMessageConst.MAP_DATA_DATA)
-    void forCustom(String name, String jobId, Data predicate, Data mapper, Data combinerFactory,
-                   Data reducerFactory, Data keyValueSource, int chunkSize, List<Data> keys,
-                   String topologyChangedStrategy);
+    void forCustom(String name, String jobId, @Nullable Data predicate, Data mapper, @Nullable Data combinerFactory,
+                   @Nullable Data reducerFactory, Data keyValueSource, int chunkSize, @Nullable List<Data> keys,
+                   @Nullable String topologyChangedStrategy);
 }
