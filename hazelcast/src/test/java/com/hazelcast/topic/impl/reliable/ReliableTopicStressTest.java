@@ -27,7 +27,6 @@ import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(NightlyTest.class)
-@Ignore
 public class ReliableTopicStressTest extends HazelcastTestSupport {
 
     private final AtomicBoolean stop = new AtomicBoolean();
