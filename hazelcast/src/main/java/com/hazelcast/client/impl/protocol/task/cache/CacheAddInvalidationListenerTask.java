@@ -18,15 +18,20 @@ package com.hazelcast.client.impl.protocol.task.cache;
 
 import com.hazelcast.cache.impl.CacheEventListener;
 import com.hazelcast.cache.impl.CacheService;
+import com.hazelcast.cache.impl.client.CacheBatchInvalidationMessage;
 import com.hazelcast.cache.impl.client.CacheInvalidationMessage;
+import com.hazelcast.cache.impl.client.CacheSingleInvalidationMessage;
 import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CacheAddInvalidationListenerCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.nio.serialization.Data;
 
 import java.security.Permission;
+import java.util.ArrayList;
+import java.util.List;
 
 public class CacheAddInvalidationListenerTask
         extends AbstractCallableMessageTask<CacheAddInvalidationListenerCodec.RequestParameters> {
@@ -46,13 +51,24 @@ public class CacheAddInvalidationListenerTask
                     return;
                 }
                 if (eventObject instanceof CacheInvalidationMessage) {
-                    CacheInvalidationMessage message = (CacheInvalidationMessage) eventObject;
-
-                    ClientMessage eventMessage
-                            = CacheAddInvalidationListenerCodec.encodeCacheInvalidationEvent(message.getName(),
-                            message.getKey(), message.getSourceUuid());
-                    sendClientMessage(message.getKey(), eventMessage);
-
+                    if (eventObject instanceof CacheSingleInvalidationMessage) {
+                        CacheSingleInvalidationMessage message = (CacheSingleInvalidationMessage) eventObject;
+                        ClientMessage eventMessage = CacheAddInvalidationListenerCodec.
+                                    encodeCacheInvalidationEvent(message.getName(), message.getKey(), message.getSourceUuid());
+                        sendClientMessage(message.getName(), eventMessage);
+                    } else if (eventObject instanceof CacheBatchInvalidationMessage) {
+                        CacheBatchInvalidationMessage message = (CacheBatchInvalidationMessage) eventObject;
+                        List<CacheSingleInvalidationMessage> invalidationMessages = message.getInvalidationMessages();
+                        List<Data> keys = new ArrayList<Data>(invalidationMessages.size());
+                        List<String> sourceUuids = new ArrayList<String>(invalidationMessages.size());
+                        for (CacheSingleInvalidationMessage invalidationMessage : invalidationMessages) {
+                            keys.add(invalidationMessage.getKey());
+                            sourceUuids.add(invalidationMessage.getSourceUuid());
+                        }
+                        ClientMessage eventMessage = CacheAddInvalidationListenerCodec.
+                                    encodeCacheBatchInvalidationEvent(message.getName(), keys, sourceUuids);
+                        sendClientMessage(message.getName(), eventMessage);
+                    }
                 }
             }
         });
