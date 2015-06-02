@@ -248,16 +248,37 @@ public class GroupProperties {
             = "hazelcast.enterprise.wanrep.batchfrequency.seconds";
 
     /**
+     * Defines cache invalidation event batch sending is enabled or not.
+     */
+    public static final String PROP_CACHE_INVALIDATION_MESSAGE_BATCH_ENABLED
+            = "hazelcast.cache.invalidation.batch.enabled";
+
+    /**
+     * Defines the maximum number of cache invalidation events to be drained and sent to the event listeners in a batch.
+     */
+    public static final String PROP_CACHE_INVALIDATION_MESSAGE_BATCH_SIZE
+            = "hazelcast.cache.invalidation.batch.size";
+
+    /**
+     * Defines cache invalidation event batch sending frequency in seconds.
+     * When event size does not reach to {@link #PROP_CACHE_INVALIDATION_MESSAGE_BATCH_SIZE} in the given time period
+     * (which is defined by {@link #PROP_CACHE_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS}),
+     * those events are gathered into a batch and sent to target.
+     */
+    public static final String PROP_CACHE_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS
+            = "hazelcast.cache.invalidation.batchfrequency.seconds";
+
+    /**
      * Defines timeout duration (in milliseconds) for a WAN replication event before retry.
      * If confirmation is not received in the period of timeout duration, event is resent to target cluster.
      * Only valid for Hazelcast Enterprise
      */
-    public static final String PROP_ENTERPRISE_WAN_REP_OP_TIMEOUT_MILLIS = "hazelcast.enterprise.wanrep.optimeout.millis";
+    public static final String PROP_ENTERPRISE_WAN_REP_OP_TIMEOUT_MILLIS
+            = "hazelcast.enterprise.wanrep.optimeout.millis";
 
     public static final String PROP_CLIENT_MAX_NO_HEARTBEAT_SECONDS = "hazelcast.client.max.no.heartbeat.seconds";
     public static final String PROP_MIGRATION_MIN_DELAY_ON_MEMBER_REMOVED_SECONDS
             = "hazelcast.migration.min.delay.on.member.removed.seconds";
-
 
     /**
      * Using back pressure, you can prevent an overload of pending asynchronous backups. With a map with a
@@ -546,6 +567,10 @@ public class GroupProperties {
     public final GroupProperty ENTERPRISE_WAN_REP_BATCH_FREQUENCY_SECONDS;
     public final GroupProperty ENTERPRISE_WAN_REP_OP_TIMEOUT_MILLIS;
 
+    public final GroupProperty CACHE_INVALIDATION_MESSAGE_BATCH_ENABLED;
+    public final GroupProperty CACHE_INVALIDATION_MESSAGE_BATCH_SIZE;
+    public final GroupProperty CACHE_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS;
+
     public final GroupProperty CLIENT_HEARTBEAT_TIMEOUT_SECONDS;
 
     public final GroupProperty MIGRATION_MIN_DELAY_ON_MEMBER_REMOVED_SECONDS;
@@ -666,6 +691,13 @@ public class GroupProperties {
         ENTERPRISE_WAN_REP_BATCH_FREQUENCY_SECONDS
                 = new GroupProperty(config, PROP_ENTERPRISE_WAN_REP_BATCH_FREQUENCY_SECONDS, "5");
         ENTERPRISE_WAN_REP_OP_TIMEOUT_MILLIS = new GroupProperty(config, PROP_ENTERPRISE_WAN_REP_OP_TIMEOUT_MILLIS, "60000");
+
+        CACHE_INVALIDATION_MESSAGE_BATCH_ENABLED
+                = new GroupProperty(config, PROP_CACHE_INVALIDATION_MESSAGE_BATCH_ENABLED, "true");
+        CACHE_INVALIDATION_MESSAGE_BATCH_SIZE
+                = new GroupProperty(config, PROP_CACHE_INVALIDATION_MESSAGE_BATCH_SIZE, "100");
+        CACHE_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS
+                = new GroupProperty(config, PROP_CACHE_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS, "10");
 
         CLIENT_HEARTBEAT_TIMEOUT_SECONDS = new GroupProperty(config, PROP_CLIENT_MAX_NO_HEARTBEAT_SECONDS, "300");
         MIGRATION_MIN_DELAY_ON_MEMBER_REMOVED_SECONDS

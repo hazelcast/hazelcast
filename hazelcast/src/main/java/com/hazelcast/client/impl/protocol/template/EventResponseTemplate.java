@@ -27,6 +27,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -62,6 +63,9 @@ public interface EventResponseTemplate {
 
     @EventResponse(EventMessageConst.EVENT_CACHEINVALIDATION)
     void CacheInvalidation(String name, @Nullable Data key, String sourceUuid);
+
+    @EventResponse(EventMessageConst.EVENT_CACHEBATCHINVALIDATION)
+    void CacheBatchInvalidation(String name, List<Data> keys, List<String> sourceUuids);
 
     @EventResponse(EventMessageConst.EVENT_MAPPARTITIONLOST)
     void MapPartitionLost(int partitionId, String uuid);

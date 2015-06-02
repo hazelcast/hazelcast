@@ -22,6 +22,7 @@ import com.hazelcast.cache.impl.CacheProxyUtil;
 import com.hazelcast.cache.impl.CacheSyncListenerCompleter;
 import com.hazelcast.cache.impl.client.AbstractCacheRequest;
 import com.hazelcast.cache.impl.client.CacheAddInvalidationListenerRequest;
+import com.hazelcast.cache.impl.client.CacheBatchInvalidationMessage;
 import com.hazelcast.cache.impl.client.CacheClearRequest;
 import com.hazelcast.cache.impl.client.CacheGetAndRemoveRequest;
 import com.hazelcast.cache.impl.client.CacheGetAndReplaceRequest;
@@ -32,6 +33,7 @@ import com.hazelcast.cache.impl.client.CacheRemoveEntryListenerRequest;
 import com.hazelcast.cache.impl.client.CacheRemoveInvalidationListenerRequest;
 import com.hazelcast.cache.impl.client.CacheRemoveRequest;
 import com.hazelcast.cache.impl.client.CacheReplaceRequest;
+import com.hazelcast.cache.impl.client.CacheSingleInvalidationMessage;
 import com.hazelcast.cache.impl.nearcache.NearCache;
 import com.hazelcast.cache.impl.nearcache.NearCacheContext;
 import com.hazelcast.cache.impl.nearcache.NearCacheExecutor;
@@ -68,6 +70,7 @@ import javax.cache.expiry.ExpiryPolicy;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -579,11 +582,29 @@ abstract class AbstractClientInternalCacheProxy<K, V>
             if (client.getUuid().equals(message.getSourceUuid())) {
                 return;
             }
-            Data key = message.getKey();
-            if (key != null) {
-                nearCache.invalidate(key);
+            if (message instanceof CacheSingleInvalidationMessage) {
+                CacheSingleInvalidationMessage singleInvalidationMessage =
+                        (CacheSingleInvalidationMessage) message;
+                Data key = singleInvalidationMessage.getKey();
+                if (key != null) {
+                    nearCache.invalidate(key);
+                } else {
+                    nearCache.clear();
+                }
+            } else if (message instanceof CacheBatchInvalidationMessage) {
+                CacheBatchInvalidationMessage batchInvalidationMessage =
+                        (CacheBatchInvalidationMessage) message;
+                List<CacheSingleInvalidationMessage> invalidationMessages =
+                        batchInvalidationMessage.getInvalidationMessages();
+                if (invalidationMessages != null) {
+                    for (CacheSingleInvalidationMessage invalidationMessage : invalidationMessages) {
+                        if (!client.getUuid().equals(invalidationMessage.getSourceUuid())) {
+                            nearCache.invalidate(invalidationMessage.getKey());
+                        }
+                    }
+                }
             } else {
-                nearCache.clear();
+                logger.finest("Unknown invalidation message: " + message);
             }
         }
 
