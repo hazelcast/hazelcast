@@ -28,10 +28,6 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.util.Clock;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
-
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.Map;
@@ -39,6 +35,9 @@ import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -82,7 +81,7 @@ public class MultiMapTestsFrom2X extends HazelcastTestSupport {
 
             public void entryRemoved(EntryEvent<String, String> event) {
                 assertEquals("2", event.getKey());
-                assertEquals("again", event.getValue());
+                assertEquals("again", event.getOldValue());
                 latchRemoved.countDown();
             }
 

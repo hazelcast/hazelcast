@@ -39,8 +39,8 @@ public class MultiMapAddEntryListenerMessageTask
     }
 
     @Override
-    protected ClientMessage encodeEvent(Data key, Data value, int type, String uuid, int numberOfEntriesAffected) {
-        return MultiMapAddEntryListenerCodec.encodeEntryEvent(key, value, null,
+    protected ClientMessage encodeEvent(Data key, Data value, Data oldValue, int type, String uuid, int numberOfEntriesAffected) {
+        return MultiMapAddEntryListenerCodec.encodeEntryEvent(key, value, oldValue,
                 null, type, uuid, numberOfEntriesAffected);
     }
 

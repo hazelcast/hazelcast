@@ -187,8 +187,9 @@ public class MultiMapService implements ManagedService, RemoteService, Migration
 
     }
 
-    public final void publishEntryEvent(String multiMapName, EntryEventType eventType, Data key, Object value) {
-        publisher.publishEntryEvent(multiMapName, eventType, key, value);
+    public final void publishEntryEvent(String multiMapName, EntryEventType eventType, Data key, Object newValue,
+                                        Object oldValue) {
+        publisher.publishEntryEvent(multiMapName, eventType, key, newValue, oldValue);
     }
 
     public String addListener(String name, EventListener listener, Data key, boolean includeValue, boolean local) {
