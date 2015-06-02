@@ -41,7 +41,12 @@ WanTargetClusterConfig  wtcConfig = wrConfig.getWanTargetClusterConfig();
 
 wrConfig.setName("my-wan-cluster");
 wtcConfig.setGroupName("tokyo").setGroupPassword("tokyo-pass");
-wtcConfig.setReplicationImplObject("com.hazelcast.enterprise.wan.replication.WanNoDelayReplication");
+wtcConfig.setReplicationImpl("com.hazelcast.enterprise.wan.replication.WanNoDelayReplication");
+
+List<String> endpoints = new ArrayList<String>();
+endpoints.add("10.2.1.1:5701");
+endpoints.add("10.2.1.1:5701");
+wtcConfig.setEndpoints(endpoints);
 config.addWanReplicationConfig(wrConfig);
 
 //Batch Replication Config
@@ -51,7 +56,12 @@ WanTargetClusterConfig  wtcConfig = wrConfig.getWanTargetClusterConfig();
 wrConfig.setName("my-wan-cluster-batch");
 wrConfig.setSnapshotEnabled(false);
 wtcConfig.setGroupName("london").setGroupPassword("london");
-wtcConfig.setReplicationImplObject("com.hazelcast.enterprise.wan.replication.WanBatchReplication");
+wtcConfig.setReplicationImpl("com.hazelcast.enterprise.wan.replication.WanBatchReplication");
+
+List<String> batchEndpoints = new ArrayList<String>();
+batchEndpoints.add("10.3.5.1:5701");
+batchEndpoints.add("10.3.5.2:5701");
+wtcConfig.setEndpoints(batchEndpoints);
 config.addWanReplicationConfig(wrConfig);
 ```
 
@@ -59,7 +69,7 @@ Enterprise WAN replication configuration has the following elements.
 
 - `name`: Name for your WAN replication configuration.
 - `snapshot-enabled`: Only valid when used with `WanBatchReplication`. When set to `true`, only the latest events (based on key) are selected and sent in a batch. 
-- `target-cluster`: Creates a group and its password.
+- `target-cluster`: Configures target cluster's group name and password
 - `replication-impl`: Name of the class implementation for the Enterprise WAN replication.
 - `end-points`: IP addresses of the cluster members for which the Enterprise WAN replication is implemented.
 
@@ -106,5 +116,21 @@ config.getMapConfig("testMap").setWanReplicationRef(wanRef);
 - `name`: Name of `wan-replication` configuration. IMap or ICache instance uses this `wan-replication` config. Please refer to the [Enterprise WAN Replication Configuration section](#enterprise-wan-replication-configuration) for details about `wan-replication` configuration.
 - `merge-policy`: Resolve conflicts that are occurred when target cluster already has the replicated entry key.
 - `republishing-enabled`: When enabled, an incoming event to a member is forwarded to target cluster of that member.
+
+**Merge policies:**
+
+4 merge policy implementations for IMap and 2 merge policy implementations for ICache are provided
+out of the box.
+
+IMap has following merge policies.
+
+- `com.hazelcast.map.merge.PutIfAbsentMapMergePolicy` : causes the incoming entry to be merged from source to target map if it does not exist in the target map
+- `com.hazelcast.map.merge.HigherHitsMapMergePolicy` : causes the incoming entry to be merged from source to target map if source entry has more hits than the target one.
+- `com.hazelcast.map.merge.PassThroughMergePolicy` : causes the incoming entry to be merged from source to target map unless incoming entry is not null
+- `com.hazelcast.map.merge.LatestUpdateMapMergePolicy` : causes the incoming entry to be merged from source to target map if source entry has updated more recently than the target entry. Please not that this merge policy can only be used when the clocks' of the clusters are in sync.
+
+ICache has following merge policies.
  
+- `com.hazelcast.cache.merge.HigherHitCacheMergePolicy` : causes the incoming entry to be merged from source to target cache if source entry has more hits than the target one.
+- `com.hazelcast.cache.merge.PassThroughCacheMergePolicy` : causes the incoming entry to be merged from source to target cache unless incoming entry is not null
 
