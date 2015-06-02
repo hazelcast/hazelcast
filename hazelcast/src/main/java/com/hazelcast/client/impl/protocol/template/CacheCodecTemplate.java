@@ -32,7 +32,7 @@ public interface CacheCodecTemplate {
     @Request(id = 1, retryable = true, response = ResponseMessageConst.STRING, event = {EventMessageConst.EVENT_CACHE})
     void addEntryListener(String name);
 
-    @Request(id = 2, retryable = false, response = ResponseMessageConst.STRING,
+    @Request(id = 2, retryable = true, response = ResponseMessageConst.STRING,
             event = {EventMessageConst.EVENT_CACHEINVALIDATION, EventMessageConst.EVENT_CACHEBATCHINVALIDATION})
     void addInvalidationListener(String name);
 

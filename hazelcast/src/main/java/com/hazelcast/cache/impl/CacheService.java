@@ -167,7 +167,6 @@ public class CacheService extends AbstractCacheService {
         EventService eventService = nodeEngine.getEventService();
         Collection<EventRegistration> registrations = eventService.getRegistrations(SERVICE_NAME, name);
         if (!registrations.isEmpty()) {
-            //TODO Fix below for client protocol
             eventService.publishEvent(SERVICE_NAME, registrations,
                     new CacheSingleInvalidationMessage(name, key, sourceUuid), name.hashCode());
 
@@ -208,7 +207,6 @@ public class CacheService extends AbstractCacheService {
         EventService eventService = nodeEngine.getEventService();
         Collection<EventRegistration> registrations = eventService.getRegistrations(SERVICE_NAME, cacheName);
         if (!registrations.isEmpty()) {
-            // TODO fix below for client protocol
             eventService.publishEvent(SERVICE_NAME, registrations,
                     batchInvalidationMessage, cacheName.hashCode());
 
