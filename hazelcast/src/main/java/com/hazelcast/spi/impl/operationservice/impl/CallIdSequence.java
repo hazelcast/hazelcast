@@ -204,11 +204,7 @@ public abstract class CallIdSequence {
                 long delayMs = 1;
                 for (; ; ) {
                     long startMs = System.currentTimeMillis();
-                    try {
-                        Thread.sleep(delayMs);
-                    } catch (InterruptedException e) {
-                        restoreInterrupt = true;
-                    }
+                    restoreInterrupt = sleep(delayMs);
                     long durationMs = System.currentTimeMillis() - startMs;
                     remainingTimeoutMs -= durationMs;
 
@@ -227,6 +223,15 @@ public abstract class CallIdSequence {
                 if (restoreInterrupt) {
                     Thread.currentThread().interrupt();
                 }
+            }
+        }
+
+        private boolean sleep(long delayMs) {
+            try {
+                Thread.sleep(delayMs);
+                return false;
+            } catch (InterruptedException e) {
+               return true;
             }
         }
 

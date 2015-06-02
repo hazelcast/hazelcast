@@ -184,6 +184,21 @@ public class CallIdSequenceWithBackpressureTest extends HazelcastTestSupport {
         assertEquals(oldTail + 1, sequence.getTail());
     }
 
+    @Test
+    public void completeLocalCall() {
+        CallIdSequenceWithBackpressure sequence = new CallIdSequenceWithBackpressure(100, 60000);
+
+        Invocation invocation = newInvocation(new DummyOperation());
+        setCallId(invocation.op, 0);
+
+        long oldSequence = sequence.getLastCallId();
+        long oldTail = sequence.getTail();
+        sequence.complete(invocation);
+
+        assertEquals(oldSequence, sequence.getLastCallId());
+        assertEquals(oldTail, sequence.getTail());
+    }
+
     @Test(expected = AssertionError.class)
     public void complete_whenNoMatchingNext() {
         CallIdSequenceWithBackpressure sequence = new CallIdSequenceWithBackpressure(100, 60000);
