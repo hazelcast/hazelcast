@@ -1,11 +1,17 @@
 package com.hazelcast.map;
 
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import java.lang.reflect.Constructor;
 
 import static org.junit.Assert.assertEquals;
 
+@RunWith(HazelcastParallelClassRunner.class)
+@Category(QuickTest.class)
 public class QueryResultSizeExceededExceptionTest {
 
     @Test
