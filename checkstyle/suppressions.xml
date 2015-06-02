@@ -237,18 +237,23 @@
 
     <suppress checks="ClassFanOutComplexity" files="com.hazelcast.client.cache.impl.AbstractClientInternalCacheProxy"/>
 
-
     <!-- Monitor -->
     <suppress checks="JavadocMethod" files="com.hazelcast.monitor[\\/]"/>
     <suppress checks="JavadocType" files="com.hazelcast.monitor[\\/]"/>
-    <suppress checks="JavadocMethod" files="com.hazelcast.monitor[\\/]"/>
     <suppress checks="JavadocVariable" files="com.hazelcast.monitor[\\/]"/>
-    <suppress checks="NPathComplexity" files="com.hazelcast.monitor.impl.MemberStateImpl"/>
-    <suppress checks="CyclomaticComplexity" files="com.hazelcast.monitor.impl.MemberStateImpl"/>
-    <suppress checks="MethodCount" files="com.hazelcast.monitor.impl.LocalMapStatsImpl"/>
     <suppress checks="CyclomaticComplexity" files="com.hazelcast.monitor.TimedMemberState"/>
     <suppress checks="NPathComplexity" files="com.hazelcast.monitor.TimedMemberState"/>
-
+    <suppress checks="NPathComplexity" files="com.hazelcast.monitor.impl.LocalExecutorStatsImpl"/>
+    <suppress checks="CyclomaticComplexity" files="com.hazelcast.monitor.impl.LocalCacheStatsImpl"/>
+    <suppress checks="NPathComplexity" files="com.hazelcast.monitor.impl.LocalCacheStatsImpl"/>
+    <suppress checks="CyclomaticComplexity" files="com.hazelcast.monitor.impl.MemberStateImpl"/>
+    <suppress checks="NPathComplexity" files="com.hazelcast.monitor.impl.MemberStateImpl"/>
+    <suppress checks="CyclomaticComplexity" files="com.hazelcast.monitor.impl.LocalMapStatsImpl"/>
+    <suppress checks="NPathComplexity" files="com.hazelcast.monitor.impl.LocalMapStatsImpl"/>
+    <suppress checks="MethodCount" files="com.hazelcast.monitor.impl.LocalMapStatsImpl"/>
+    <suppress checks="MethodLength" files="com.hazelcast.monitor.impl.LocalMapStatsImpl"/>
+    <suppress checks="CyclomaticComplexity" files="com.hazelcast.monitor.impl.LocalQueueStatsImpl"/>
+    <suppress checks="NPathComplexity" files="com.hazelcast.monitor.impl.LocalQueueStatsImpl"/>
 
     <!-- jca -->
     <suppress checks="ClassFanOutComplexityCheck" files="HazelcastConnectionImpl.java"/>

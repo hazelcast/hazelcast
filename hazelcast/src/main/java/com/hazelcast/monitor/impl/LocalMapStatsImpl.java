@@ -74,7 +74,6 @@ public class LocalMapStatsImpl implements LocalMapStats {
     private volatile long maxPutLatency;
     private volatile long maxRemoveLatency;
 
-
     private volatile long creationTime;
     private volatile long ownedEntryCount;
     private volatile long backupEntryCount;
@@ -293,6 +292,7 @@ public class LocalMapStatsImpl implements LocalMapStats {
         this.nearCacheStats = nearCacheStats;
     }
 
+    @Override
     public JsonObject toJson() {
         JsonObject root = new JsonObject();
         root.add("getCount", getCount);
@@ -349,11 +349,127 @@ public class LocalMapStatsImpl implements LocalMapStats {
         lockedEntryCount = getLong(json, "lockedEntryCount", -1L);
         dirtyEntryCount = getLong(json, "dirtyEntryCount", -1L);
         heapCost = getLong(json, "heapCost", -1L);
-        final JsonValue jsonNearCacheStats = json.get("nearCacheStats");
+        JsonValue jsonNearCacheStats = json.get("nearCacheStats");
         if (jsonNearCacheStats != null) {
             nearCacheStats = new NearCacheStatsImpl();
             nearCacheStats.fromJson(jsonNearCacheStats.asObject());
         }
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        LocalMapStatsImpl that = (LocalMapStatsImpl) o;
+
+        if (lastAccessTime != that.lastAccessTime) {
+            return false;
+        }
+        if (lastUpdateTime != that.lastUpdateTime) {
+            return false;
+        }
+        if (hits != that.hits) {
+            return false;
+        }
+        if (numberOfOtherOperations != that.numberOfOtherOperations) {
+            return false;
+        }
+        if (numberOfEvents != that.numberOfEvents) {
+            return false;
+        }
+        if (getCount != that.getCount) {
+            return false;
+        }
+        if (putCount != that.putCount) {
+            return false;
+        }
+        if (removeCount != that.removeCount) {
+            return false;
+        }
+        if (totalGetLatencies != that.totalGetLatencies) {
+            return false;
+        }
+        if (totalPutLatencies != that.totalPutLatencies) {
+            return false;
+        }
+        if (totalRemoveLatencies != that.totalRemoveLatencies) {
+            return false;
+        }
+        if (maxGetLatency != that.maxGetLatency) {
+            return false;
+        }
+        if (maxPutLatency != that.maxPutLatency) {
+            return false;
+        }
+        if (maxRemoveLatency != that.maxRemoveLatency) {
+            return false;
+        }
+        if (creationTime != that.creationTime) {
+            return false;
+        }
+        if (ownedEntryCount != that.ownedEntryCount) {
+            return false;
+        }
+        if (backupEntryCount != that.backupEntryCount) {
+            return false;
+        }
+        if (ownedEntryMemoryCost != that.ownedEntryMemoryCost) {
+            return false;
+        }
+        if (backupEntryMemoryCost != that.backupEntryMemoryCost) {
+            return false;
+        }
+        if (heapCost != that.heapCost) {
+            return false;
+        }
+        if (lockedEntryCount != that.lockedEntryCount) {
+            return false;
+        }
+        if (dirtyEntryCount != that.dirtyEntryCount) {
+            return false;
+        }
+        if (backupCount != that.backupCount) {
+            return false;
+        }
+        if (nearCacheStats != null ? !nearCacheStats.equals(that.nearCacheStats) : that.nearCacheStats != null) {
+            return false;
+        }
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = (int) (lastAccessTime ^ (lastAccessTime >>> 32));
+        result = 31 * result + (int) (lastUpdateTime ^ (lastUpdateTime >>> 32));
+        result = 31 * result + (int) (hits ^ (hits >>> 32));
+        result = 31 * result + (int) (numberOfOtherOperations ^ (numberOfOtherOperations >>> 32));
+        result = 31 * result + (int) (numberOfEvents ^ (numberOfEvents >>> 32));
+        result = 31 * result + (int) (getCount ^ (getCount >>> 32));
+        result = 31 * result + (int) (putCount ^ (putCount >>> 32));
+        result = 31 * result + (int) (removeCount ^ (removeCount >>> 32));
+        result = 31 * result + (int) (totalGetLatencies ^ (totalGetLatencies >>> 32));
+        result = 31 * result + (int) (totalPutLatencies ^ (totalPutLatencies >>> 32));
+        result = 31 * result + (int) (totalRemoveLatencies ^ (totalRemoveLatencies >>> 32));
+        result = 31 * result + (int) (maxGetLatency ^ (maxGetLatency >>> 32));
+        result = 31 * result + (int) (maxPutLatency ^ (maxPutLatency >>> 32));
+        result = 31 * result + (int) (maxRemoveLatency ^ (maxRemoveLatency >>> 32));
+        result = 31 * result + (int) (creationTime ^ (creationTime >>> 32));
+        result = 31 * result + (int) (ownedEntryCount ^ (ownedEntryCount >>> 32));
+        result = 31 * result + (int) (backupEntryCount ^ (backupEntryCount >>> 32));
+        result = 31 * result + (int) (ownedEntryMemoryCost ^ (ownedEntryMemoryCost >>> 32));
+        result = 31 * result + (int) (backupEntryMemoryCost ^ (backupEntryMemoryCost >>> 32));
+        result = 31 * result + (int) (heapCost ^ (heapCost >>> 32));
+        result = 31 * result + (int) (lockedEntryCount ^ (lockedEntryCount >>> 32));
+        result = 31 * result + (int) (dirtyEntryCount ^ (dirtyEntryCount >>> 32));
+        result = 31 * result + backupCount;
+        result = 31 * result + (nearCacheStats != null ? nearCacheStats.hashCode() : 0);
+        return result;
     }
 
     @Override

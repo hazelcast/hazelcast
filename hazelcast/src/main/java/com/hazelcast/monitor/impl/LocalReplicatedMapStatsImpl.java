@@ -26,10 +26,9 @@ import static com.hazelcast.util.JsonUtil.getLong;
 
 /**
  * This class collects statistics about the replication map usage for management center and is
- * able to transform those between wire format and instance view
+ * able to transform those between wire format and instance view.
  */
-public class LocalReplicatedMapStatsImpl
-        implements LocalReplicatedMapStats {
+public class LocalReplicatedMapStatsImpl implements LocalReplicatedMapStats {
 
     //CHECKSTYLE:OFF
     private static final AtomicLongFieldUpdater<LocalReplicatedMapStatsImpl> LAST_ACCESS_TIME_UPDATER = AtomicLongFieldUpdater
@@ -89,50 +88,6 @@ public class LocalReplicatedMapStatsImpl
     }
 
     @Override
-    public JsonObject toJson() {
-        JsonObject root = new JsonObject();
-        root.add("getCount", getCount);
-        root.add("putCount", putCount);
-        root.add("removeCount", removeCount);
-        root.add("numberOfOtherOperations", numberOfOtherOperations);
-        root.add("numberOfEvents", numberOfEvents);
-        root.add("numberOfReplicationEvents", numberOfReplicationEvents);
-        root.add("lastAccessTime", lastAccessTime);
-        root.add("lastUpdateTime", lastUpdateTime);
-        root.add("hits", hits);
-        root.add("ownedEntryCount", ownedEntryCount);
-        root.add("creationTime", creationTime);
-        root.add("totalGetLatencies", totalGetLatencies);
-        root.add("totalPutLatencies", totalPutLatencies);
-        root.add("totalRemoveLatencies", totalRemoveLatencies);
-        root.add("maxGetLatency", maxGetLatency);
-        root.add("maxPutLatency", maxPutLatency);
-        root.add("maxRemoveLatency", maxRemoveLatency);
-        return root;
-    }
-
-    @Override
-    public void fromJson(JsonObject json) {
-        getCount = getLong(json, "getCount", -1L);
-        putCount = getLong(json, "putCount", -1L);
-        removeCount = getLong(json, "removeCount", -1L);
-        numberOfOtherOperations = getLong(json, "numberOfOtherOperations", -1L);
-        numberOfEvents = getLong(json, "numberOfEvents", -1L);
-        numberOfReplicationEvents = getLong(json, "numberOfReplicationEvents", -1L);
-        lastAccessTime = getLong(json, "lastAccessTime", -1L);
-        lastUpdateTime = getLong(json, "lastUpdateTime", -1L);
-        hits = getLong(json, "hits", -1L);
-        ownedEntryCount = getLong(json, "ownedEntryCount", -1L);
-        creationTime = getLong(json, "creationTime", -1L);
-        totalGetLatencies = getLong(json, "totalGetLatencies", -1L);
-        totalPutLatencies = getLong(json, "totalPutLatencies", -1L);
-        totalRemoveLatencies = getLong(json, "totalRemoveLatencies", -1L);
-        maxGetLatency = getLong(json, "maxGetLatency", -1L);
-        maxPutLatency = getLong(json, "maxPutLatency", -1L);
-        maxRemoveLatency = getLong(json, "maxRemoveLatency", -1L);
-    }
-
-    @Override
     public long getOwnedEntryCount() {
         return ownedEntryCount;
     }
@@ -146,7 +101,7 @@ public class LocalReplicatedMapStatsImpl
         return 0;
     }
 
-    //todo: unused.
+    // TODO: unused
     public void setBackupEntryCount(long backupEntryCount) {
     }
 
@@ -155,6 +110,7 @@ public class LocalReplicatedMapStatsImpl
         return 0;
     }
 
+    // TODO: unused
     public void setBackupCount(int backupCount) {
     }
 
@@ -163,7 +119,7 @@ public class LocalReplicatedMapStatsImpl
         return 0;
     }
 
-    //todo:unused
+    // TODO: unused
     public void setOwnedEntryMemoryCost(long ownedEntryMemoryCost) {
     }
 
@@ -172,7 +128,7 @@ public class LocalReplicatedMapStatsImpl
         return 0;
     }
 
-    //todo:unused
+    // TODO: unused
     public void setBackupEntryMemoryCost(long backupEntryMemoryCost) {
     }
 
@@ -215,6 +171,7 @@ public class LocalReplicatedMapStatsImpl
         return 0;
     }
 
+    // TODO: unused
     public void setLockedEntryCount(long lockedEntryCount) {
     }
 
@@ -223,7 +180,8 @@ public class LocalReplicatedMapStatsImpl
         return 0;
     }
 
-    public void setDirtyEntryCount(long l) {
+    // TODO: unused
+    public void setDirtyEntryCount(long dirtyEntryCount) {
     }
 
     @Override
@@ -321,13 +279,13 @@ public class LocalReplicatedMapStatsImpl
         NUMBER_OF_REPLICATION_EVENTS_UPDATER.incrementAndGet(this);
     }
 
-    //todo: unused
-    public void setHeapCost(long heapCost) {
-    }
-
     @Override
     public long getHeapCost() {
         return 0;
+    }
+
+    // TODO: unused
+    public void setHeapCost(long heapCost) {
     }
 
     @Override
@@ -335,13 +293,67 @@ public class LocalReplicatedMapStatsImpl
         throw new UnsupportedOperationException("Replicated map has no Near Cache!");
     }
 
-    public String toString() {
-        return "LocalReplicatedMapStatsImpl{" + "lastAccessTime=" + lastAccessTime + ", lastUpdateTime=" + lastUpdateTime
-                + ", hits=" + hits + ", numberOfOtherOperations=" + numberOfOtherOperations + ", numberOfEvents=" + numberOfEvents
-                + ", numberOfReplicationEvents=" + numberOfReplicationEvents + ", getCount=" + getCount + ", putCount=" + putCount
-                + ", removeCount=" + removeCount + ", totalGetLatencies=" + totalGetLatencies + ", totalPutLatencies="
-                + totalPutLatencies + ", totalRemoveLatencies=" + totalRemoveLatencies + ", ownedEntryCount=" + ownedEntryCount
-                + ", creationTime=" + creationTime + '}';
+    @Override
+    public JsonObject toJson() {
+        JsonObject root = new JsonObject();
+        root.add("getCount", getCount);
+        root.add("putCount", putCount);
+        root.add("removeCount", removeCount);
+        root.add("numberOfOtherOperations", numberOfOtherOperations);
+        root.add("numberOfEvents", numberOfEvents);
+        root.add("numberOfReplicationEvents", numberOfReplicationEvents);
+        root.add("lastAccessTime", lastAccessTime);
+        root.add("lastUpdateTime", lastUpdateTime);
+        root.add("hits", hits);
+        root.add("ownedEntryCount", ownedEntryCount);
+        root.add("creationTime", creationTime);
+        root.add("totalGetLatencies", totalGetLatencies);
+        root.add("totalPutLatencies", totalPutLatencies);
+        root.add("totalRemoveLatencies", totalRemoveLatencies);
+        root.add("maxGetLatency", maxGetLatency);
+        root.add("maxPutLatency", maxPutLatency);
+        root.add("maxRemoveLatency", maxRemoveLatency);
+        return root;
     }
 
+    @Override
+    public void fromJson(JsonObject json) {
+        getCount = getLong(json, "getCount", -1L);
+        putCount = getLong(json, "putCount", -1L);
+        removeCount = getLong(json, "removeCount", -1L);
+        numberOfOtherOperations = getLong(json, "numberOfOtherOperations", -1L);
+        numberOfEvents = getLong(json, "numberOfEvents", -1L);
+        numberOfReplicationEvents = getLong(json, "numberOfReplicationEvents", -1L);
+        lastAccessTime = getLong(json, "lastAccessTime", -1L);
+        lastUpdateTime = getLong(json, "lastUpdateTime", -1L);
+        hits = getLong(json, "hits", -1L);
+        ownedEntryCount = getLong(json, "ownedEntryCount", -1L);
+        creationTime = getLong(json, "creationTime", -1L);
+        totalGetLatencies = getLong(json, "totalGetLatencies", -1L);
+        totalPutLatencies = getLong(json, "totalPutLatencies", -1L);
+        totalRemoveLatencies = getLong(json, "totalRemoveLatencies", -1L);
+        maxGetLatency = getLong(json, "maxGetLatency", -1L);
+        maxPutLatency = getLong(json, "maxPutLatency", -1L);
+        maxRemoveLatency = getLong(json, "maxRemoveLatency", -1L);
+    }
+
+    @Override
+    public String toString() {
+        return "LocalReplicatedMapStatsImpl{"
+                + "lastAccessTime=" + lastAccessTime
+                + ", lastUpdateTime=" + lastUpdateTime
+                + ", hits=" + hits
+                + ", numberOfOtherOperations=" + numberOfOtherOperations
+                + ", numberOfEvents=" + numberOfEvents
+                + ", numberOfReplicationEvents=" + numberOfReplicationEvents
+                + ", getCount=" + getCount
+                + ", putCount=" + putCount
+                + ", removeCount=" + removeCount
+                + ", totalGetLatencies=" + totalGetLatencies
+                + ", totalPutLatencies=" + totalPutLatencies
+                + ", totalRemoveLatencies=" + totalRemoveLatencies
+                + ", ownedEntryCount=" + ownedEntryCount
+                + ", creationTime=" + creationTime
+                + '}';
+    }
 }
