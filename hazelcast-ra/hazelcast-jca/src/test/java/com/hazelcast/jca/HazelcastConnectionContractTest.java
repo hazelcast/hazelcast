@@ -10,7 +10,7 @@ import org.junit.experimental.categories.Category;
  * This test class is to ensure that lifecycle and transaction methods are not exposed in {@link com.hazelcast.jca.HazelcastConnection}
  */
 @Category(QuickTest.class)
-public class HazecastConnectionContractTest {
+public class HazelcastConnectionContractTest {
 
     static HazelcastConnectionImpl connection;
 
@@ -48,6 +48,4 @@ public class HazecastConnectionContractTest {
     public void testNewTransactionContext2() {
         connection.newTransactionContext(null);
     }
-
-
 }
