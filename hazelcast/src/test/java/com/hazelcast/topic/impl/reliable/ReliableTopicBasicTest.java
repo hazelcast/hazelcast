@@ -15,6 +15,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
+
+import org.apache.log4j.Level;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -34,6 +36,8 @@ public abstract class ReliableTopicBasicTest extends HazelcastTestSupport {
 
     @Before
     public void setup() {
+        setLogLevel(Level.DEBUG);
+
         ReliableTopicConfig topicConfig = new ReliableTopicConfig("reliableTopic*");
 
         RingbufferConfig ringbufferConfig = new RingbufferConfig(topicConfig.getName());

@@ -10,6 +10,7 @@ import com.hazelcast.test.ExpectedRuntimeException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
+import org.apache.log4j.Level;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -29,6 +30,8 @@ public class ErrorHandlingTest extends HazelcastTestSupport {
 
     @Before
     public void setup() {
+        setLogLevel(Level.DEBUG);
+
         Config config = new Config();
         config.addRingBufferConfig(new RingbufferConfig("foo")
                 .setCapacity(100)
