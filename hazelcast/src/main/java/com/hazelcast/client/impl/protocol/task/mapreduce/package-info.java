@@ -17,4 +17,6 @@
 /**
  * <p>Client protocol tasks implementations for map reduce</p>
  */
-package com.hazelcast.client.impl.protocol.task.mapreduce;
+@GenerateMessageTaskFactory package com.hazelcast.client.impl.protocol.task.mapreduce;
+
+import com.hazelcast.annotation.GenerateMessageTaskFactory;
