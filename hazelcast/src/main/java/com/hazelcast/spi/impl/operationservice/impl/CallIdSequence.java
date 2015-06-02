@@ -139,7 +139,7 @@ public abstract class CallIdSequence {
      * invocation needs to wait till there is is capacity.
      */
     public static final class CallIdSequenceWithBackpressure extends CallIdSequence {
-        private static final int MAX_DELAY_MS = 500;
+        static final int MAX_DELAY_MS = 500;
         private static final int INDEX_HEAD = 7;
         private static final int INDEX_TAIL = 15;
 
@@ -226,7 +226,7 @@ public abstract class CallIdSequence {
             }
         }
 
-        private boolean sleep(long delayMs) {
+        static boolean sleep(long delayMs) {
             try {
                 Thread.sleep(delayMs);
                 return false;
@@ -239,7 +239,7 @@ public abstract class CallIdSequence {
          * Calculates the next delay using an exponential increase in time until either the MAX_DELAY_MS is reached or
          * till the remainingTimeoutMs is reached.
          */
-        private long nextDelay(long remainingTimeoutMs, long delayMs) {
+        static long nextDelay(long remainingTimeoutMs, long delayMs) {
             delayMs *= 2;
 
             if (delayMs > MAX_DELAY_MS) {
