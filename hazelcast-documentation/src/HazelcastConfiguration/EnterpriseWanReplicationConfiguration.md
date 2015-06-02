@@ -139,6 +139,6 @@ IMap has the following merge policies:
 
 ICache has the following merge policies:
  
-- `com.hazelcast.cache.merge.HigherHitCacheMergePolicy`: Incoming entry merges from the source cache to the target cache if the source entry has more hits than the target one.
+- `com.hazelcast.cache.merge.HigherHitsCacheMergePolicy`: Incoming entry merges from the source cache to the target cache if the source entry has more hits than the target one.
 - `com.hazelcast.cache.merge.PassThroughCacheMergePolicy`: Incoming entry merges from the source cache to the target cache unless the incoming entry is not null.
 
