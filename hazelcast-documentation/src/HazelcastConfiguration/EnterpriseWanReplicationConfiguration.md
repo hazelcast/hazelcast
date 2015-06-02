@@ -69,7 +69,7 @@ Enterprise WAN replication configuration has the following elements.
 
 - `name`: Name for your WAN replication configuration.
 - `snapshot-enabled`: Only valid when used with `WanBatchReplication`. When set to `true`, only the latest events (based on key) are selected and sent in a batch. 
-- `target-cluster`: Configures target cluster's group name and password
+- `target-cluster`: Configures target cluster's group name and password.
 - `replication-impl`: Name of the class implementation for the Enterprise WAN replication.
 - `end-points`: IP addresses of the cluster members for which the Enterprise WAN replication is implemented.
 
@@ -130,15 +130,15 @@ config.getCacheConfig("testCache").setWanReplicationRef(cacheWanRef);
 4 merge policy implementations for IMap and 2 merge policy implementations for ICache are provided
 out of the box.
 
-IMap has following merge policies.
+IMap has the following merge policies:
 
-- `com.hazelcast.map.merge.PutIfAbsentMapMergePolicy` : causes the incoming entry to be merged from source to target map if it does not exist in the target map
-- `com.hazelcast.map.merge.HigherHitsMapMergePolicy` : causes the incoming entry to be merged from source to target map if source entry has more hits than the target one.
-- `com.hazelcast.map.merge.PassThroughMergePolicy` : causes the incoming entry to be merged from source to target map unless incoming entry is not null
-- `com.hazelcast.map.merge.LatestUpdateMapMergePolicy` : causes the incoming entry to be merged from source to target map if source entry has updated more recently than the target entry. Please not that this merge policy can only be used when the clocks' of the clusters are in sync.
+- `com.hazelcast.map.merge.PutIfAbsentMapMergePolicy`: Incoming entry merges from the source map to the target map if it does not exist in the target map.
+- `com.hazelcast.map.merge.HigherHitsMapMergePolicy`: Incoming entry merges from the source map to the target map if the source entry has more hits than the target one.
+- `com.hazelcast.map.merge.PassThroughMergePolicy`: Incoming entry merges from the source map to the target map unless the incoming entry is not null.
+- `com.hazelcast.map.merge.LatestUpdateMapMergePolicy`: Incoming entry merges from the source map to the target map if the source entry has been updated more recently than the target entry. Please note that this merge policy can only be used when the clusters' clocks are in sync.
 
-ICache has following merge policies.
+ICache has the following merge policies:
  
-- `com.hazelcast.cache.merge.HigherHitCacheMergePolicy` : causes the incoming entry to be merged from source to target cache if source entry has more hits than the target one.
-- `com.hazelcast.cache.merge.PassThroughCacheMergePolicy` : causes the incoming entry to be merged from source to target cache unless incoming entry is not null
+- `com.hazelcast.cache.merge.HigherHitCacheMergePolicy`: Incoming entry merges from the source cache to the target cache if the source entry has more hits than the target one.
+- `com.hazelcast.cache.merge.PassThroughCacheMergePolicy`: Incoming entry merges from the source cache to the target cache unless the incoming entry is not null.
 
