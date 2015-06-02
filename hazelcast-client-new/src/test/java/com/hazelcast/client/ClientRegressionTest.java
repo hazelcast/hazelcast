@@ -53,6 +53,7 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -155,6 +156,7 @@ public class ClientRegressionTest
      * Test for issues #267 and #493
      */
     @Test
+    @Ignore
     public void testIssue493() throws Exception {
 
         final HazelcastInstance hz1 = Hazelcast.newHazelcastInstance();
