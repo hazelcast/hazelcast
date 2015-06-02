@@ -36,8 +36,6 @@ public class CacheSingleInvalidationMessage extends CacheInvalidationMessage {
 
     public CacheSingleInvalidationMessage(String name, Data key, String sourceUuid) {
         super(name);
-        assert key == null || key.dataSize() > 0 : "Invalid invalidation key: " + key;
-        assert sourceUuid != null : "Invalid source UUID: " + sourceUuid;
         this.key = key;
         this.sourceUuid = sourceUuid;
     }
