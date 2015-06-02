@@ -24,8 +24,7 @@ import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
 import static com.hazelcast.util.JsonUtil.getLong;
 
-public class NearCacheStatsImpl
-        implements NearCacheStats {
+public class NearCacheStatsImpl implements NearCacheStats {
 
     private static final double PERCENTAGE = 100.0;
 
@@ -157,5 +156,4 @@ public class NearCacheStatsImpl
                 + ", ratio=" + String.format("%.1f%%", getRatio())
                 + '}';
     }
-
 }

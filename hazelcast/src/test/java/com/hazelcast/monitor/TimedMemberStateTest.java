@@ -1,8 +1,8 @@
-package com.hazelcast.internal.management;
+package com.hazelcast.monitor;
 
 import com.eclipsesource.json.JsonObject;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.monitor.TimedMemberState;
+import com.hazelcast.internal.management.TimedMemberStateFactory;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;

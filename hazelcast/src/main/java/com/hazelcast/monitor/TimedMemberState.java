@@ -32,6 +32,7 @@ import static com.hazelcast.util.JsonUtil.getBoolean;
 import static com.hazelcast.util.JsonUtil.getLong;
 import static com.hazelcast.util.JsonUtil.getObject;
 import static com.hazelcast.util.JsonUtil.getString;
+import static com.hazelcast.util.StringUtil.getLineSeperator;
 
 public final class TimedMemberState implements Cloneable, JsonSerializable {
 
@@ -41,6 +42,54 @@ public final class TimedMemberState implements Cloneable, JsonSerializable {
     List<String> memberList;
     Boolean master;
     String clusterName;
+
+    public List<String> getMemberList() {
+        return memberList;
+    }
+
+    public void setMemberList(List<String> memberList) {
+        this.memberList = memberList;
+    }
+
+    public Boolean getMaster() {
+        return master;
+    }
+
+    public void setMaster(Boolean master) {
+        this.master = master;
+    }
+
+    public String getClusterName() {
+        return clusterName;
+    }
+
+    public void setClusterName(String clusterName) {
+        this.clusterName = clusterName;
+    }
+
+    public void setTime(long time) {
+        this.time = time;
+    }
+
+    public long getTime() {
+        return time;
+    }
+
+    public Set<String> getInstanceNames() {
+        return instanceNames;
+    }
+
+    public void setInstanceNames(Set<String> longInstanceNames) {
+        this.instanceNames = longInstanceNames;
+    }
+
+    public MemberStateImpl getMemberState() {
+        return memberState;
+    }
+
+    public void setMemberState(MemberStateImpl memberState) {
+        this.memberState = memberState;
+    }
 
     @Override
     public TimedMemberState clone() throws CloneNotSupportedException {
@@ -54,6 +103,7 @@ public final class TimedMemberState implements Cloneable, JsonSerializable {
         return state;
     }
 
+    @Override
     public JsonObject toJson() {
         JsonObject root = new JsonObject();
         root.add("master", master);
@@ -93,55 +143,6 @@ public final class TimedMemberState implements Cloneable, JsonSerializable {
         final JsonObject jsonMemberState = getObject(json, "memberState");
         memberState = new MemberStateImpl();
         memberState.fromJson(jsonMemberState);
-    }
-
-    public List<String> getMemberList() {
-        return memberList;
-    }
-
-    public void setMemberList(List<String> memberList) {
-        this.memberList = memberList;
-    }
-
-    public Boolean getMaster() {
-        return master;
-    }
-
-    public void setMaster(Boolean master) {
-        this.master = master;
-    }
-
-    public String getClusterName() {
-        return clusterName;
-    }
-
-    public void setClusterName(String clusterName) {
-        this.clusterName = clusterName;
-    }
-
-    public void setTime(long time) {
-        this.time = time;
-    }
-
-    public long getTime() {
-        return time;
-    }
-
-    public Set<String> getInstanceNames() {
-        return instanceNames;
-    }
-
-
-    public void setInstanceNames(Set<String> longInstanceNames) {
-        this.instanceNames = longInstanceNames;
-    }
-
-    public MemberStateImpl getMemberState() {
-        return memberState;
-    }
-
-    public void setMemberState(MemberStateImpl memberState) {
-        this.memberState = memberState;
     }
 
     @Override
@@ -190,13 +191,8 @@ public final class TimedMemberState implements Cloneable, JsonSerializable {
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder("TimedMemberState{\n");
-        sb.append("\t");
-        sb.append(memberState);
-        sb.append("\n");
-        sb.append("}\n");
-        sb.append("Instances : ");
-        sb.append(instanceNames);
-        return sb.toString();
+        return "TimedMemberState{"
+                + getLineSeperator() + '\t' + memberState
+                + getLineSeperator() + "} Instances: " + instanceNames;
     }
 }
