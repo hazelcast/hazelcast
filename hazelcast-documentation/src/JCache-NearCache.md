@@ -1,8 +1,8 @@
 ### JCache Near Cache
 
 Cache entries in Hazelcast are stored as partitioned across the cluster. 
-When you try to read a record with key `k`, if the current node is not the owner of that key (not the owner of partition that the key belongs to), 
-a remote operation is sent to the owner node. So each remote operation means lots of network trips. 
+When you try to read a record with the key `k`, if the current node is not the owner of that key (i.e. not the owner of partition that the key belongs to), 
+Hazelcast sends a remote operation to the owner node. Each remote operation means lots of network trips. 
 If your cache is used for reading generally, it is advised to use a near-cache storage in front of cache itself for reading cache records faster and consume less network traffic.
 Also note that near-cache is **only available for clients** not servers.
 
@@ -68,6 +68,7 @@ Currently, the following eviction policies are supported by near-cache eviction:
 #### Configuration
 
 Here are properties of near-cache configuration:
+
 - **In Memory Format:** Defines the storage type of near cache entries. Valid values are `BINARY`, `OBJECT` and `NATIVE_MEMORY`. `NATIVE_MEMORY` is only available for enterprise module. Default value is `BINARY`.
 - **Cache Local Entries:** Defines should the local cache entries be stored eagerly (immediately) to near cache on cache put from local. Valid values are `true` and `false`. Default value is `false`.
 - **Invalidate on Change:** Defines should the cached entries be evicted if the entries are changed (updated or removed) from local and global also. Valid values are `true` and `false`. Default value is `true`.
