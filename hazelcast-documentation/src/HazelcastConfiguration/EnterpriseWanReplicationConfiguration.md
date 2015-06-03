@@ -122,7 +122,7 @@ cacheWanRef.setRepublishingEnabled(true);
 config.getCacheConfig("testCache").setWanReplicationRef(cacheWanRef);
 ```
 
-![image](images/NoteSmall.jpg) ***NOTE:*** *Dynamically created caches does not support WAN replication functionality. Cache configurations should be defined either declaratively (by xml) or programmatically on both source and target clusters.*
+![image](images/NoteSmall.jpg) ***NOTE:*** *Caches that are created dynamically do not support WAN replication functionality. Cache configurations should be defined either declaratively (by XML) or programmatically on both source and target clusters.*
 
 `wan-replication-ref` has the following elements;
 
