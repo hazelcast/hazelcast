@@ -207,6 +207,9 @@ public class WebFilter implements Filter {
                 }
 
                 public void entryUpdated(EntryEvent<String, Object> entryEvent) {
+                    if ((entryEvent.getMember() == null || !entryEvent.getMember().localMember()) && sessions.get(entryEvent.getKey()) == null) {
+                        resetLocalCache((String) entryEvent.getKey());
+                    }
                 }
 
                 public void entryEvicted(EntryEvent<String, Object> entryEvent) {
@@ -229,6 +232,20 @@ public class WebFilter implements Filter {
             LOGGER.finest("sticky:" + stickySession + ", shutdown-on-destroy: " + shutdownOnDestroy
                     + ", map-name: " + clusterMapName);
         }
+    }
+
+    private void resetLocalCache(String key) {
+
+        String sessionId = extractSessionId(key);
+        String attributeKey = extractAttributeKey(key);
+        HazelcastHttpSession hazelSession = sessions.get(sessionId);
+        if (hazelSession != null && hazelSession.localCache != null && hazelSession.localCache.get(attributeKey) != null) {
+            hazelSession.localCache.get(attributeKey).reload = true;
+        }
+    }
+
+    private String extractSessionId(String key) {
+        return key.substring(0, key.indexOf(HAZELCAST_SESSION_ATTRIBUTE_SEPARATOR));
     }
 
     private void initParams() {

@@ -4,11 +4,12 @@ import com.hazelcast.core.IMap;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.CookieStore;
 import org.apache.http.impl.client.BasicCookieStore;
+import org.junit.Test;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
-import org.junit.Test;
 
 public abstract class WebFilterSlowTests extends AbstractWebFilterTest {
 
@@ -197,5 +198,16 @@ public abstract class WebFilterSlowTests extends AbstractWebFilterTest {
         assertEquals("true", executeRequest("issue5186_remove_then_set", serverPort1, cookieStore));
         assertEquals("value-changed", executeRequest("read", serverPort1, cookieStore));
         assertEquals("value-changed", executeRequest("read", serverPort2, cookieStore));
+    }
+
+    @Test
+    public void test_update_server2_and_fetch_server1() throws Exception{
+        CookieStore cookieStore = new BasicCookieStore();
+
+        assertEquals("true", executeRequest("write", serverPort1, cookieStore));
+        assertEquals("value", executeRequest("read", serverPort2, cookieStore));
+
+        assertEquals("value-updated",executeRequest("update-and-read-same-request",serverPort2,cookieStore));
+        assertEquals("value-updated",executeRequest("update-and-read-same-request",serverPort1,cookieStore));
     }
 }
