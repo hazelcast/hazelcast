@@ -64,7 +64,7 @@ public class ClientNearCacheTest extends ClientNearCacheTestSupport {
 
     @Test
     public void putToCacheAndRemoveFromOtherNodeThenCantGetUpdatedFromClientNearCacheWithObjectInMemoryFormat() {
-        putToCacheAndRemoveFromOtherNodeThenCantGetUpdatedFromClientNearCache(InMemoryFormat.BINARY);
+        putToCacheAndRemoveFromOtherNodeThenCantGetUpdatedFromClientNearCache(InMemoryFormat.OBJECT);
     }
 
     @Test
