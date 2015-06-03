@@ -137,7 +137,7 @@ public class ClientLockProxy extends ClientProxy implements ILock {
     }
 
     @Override
-    public boolean tryLockWithLease(long leaseTime, long waitTime, TimeUnit timeunit) throws InterruptedException {
+    public boolean tryLock(long leaseTime, long waitTime, TimeUnit timeunit) throws InterruptedException {
         LockRequest request = new LockRequest(getKeyData(),
                 ThreadUtil.getThreadId(), waitTime, getTimeInMillis(leaseTime, timeunit));
         Boolean result = invoke(request);

@@ -163,7 +163,7 @@ public class LockProxy extends AbstractDistributedObject<LockServiceImpl> implem
     }
 
 	@Override
-	public boolean tryLockWithLease(long leaseTime, long waitTime,
+	public boolean tryLock(long leaseTime, long waitTime,
 			TimeUnit timeUnit) throws InterruptedException {
         checkNotNull(timeUnit, "unit can't be null");
         checkPositive(leaseTime, "leaseTime should be positive");

@@ -147,4 +147,9 @@ public class ClientLockProxy extends ClientProxy implements ILock {
     public String toString() {
         return "ILock{" + "name='" + getName() + '\'' + '}';
     }
+
+    @Override
+    public boolean tryLockWithLease(long leaseTime, long waitTime, TimeUnit timeunit) throws InterruptedException {
+        return false;
+    }
 }

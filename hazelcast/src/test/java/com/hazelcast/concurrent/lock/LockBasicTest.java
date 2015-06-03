@@ -195,7 +195,7 @@ public abstract class LockBasicTest extends HazelcastTestSupport {
 
     @Test(timeout = 60000)
     public void testTryLockWithLeaseTimeout_whenNotLocked() throws InterruptedException {
-        boolean result = lock.tryLockWithLease(1, 1, TimeUnit.SECONDS);
+        boolean result = lock.tryLock(1, 1, TimeUnit.SECONDS);
 
         assertTrue(result);
         assertTrue(lock.isLockedByCurrentThread());
@@ -206,7 +206,7 @@ public abstract class LockBasicTest extends HazelcastTestSupport {
     public void testTryLockWithLeaseTimeout_whenLockedBySelf() throws InterruptedException {
         lock.lock();
 
-        boolean result = lock.tryLockWithLease(1, 1, TimeUnit.SECONDS);
+        boolean result = lock.tryLock(1, 1, TimeUnit.SECONDS);
 
         assertTrue(result);
         assertTrue(lock.isLockedByCurrentThread());
@@ -217,7 +217,7 @@ public abstract class LockBasicTest extends HazelcastTestSupport {
     public void testTryLockWithLeaseTimeout_whenLockedByOtherAndTimeout() throws InterruptedException {
         lockByOtherThread(lock);
 
-        boolean result = lock.tryLockWithLease(1, 1, TimeUnit.SECONDS);
+        boolean result = lock.tryLock(1, 1, TimeUnit.SECONDS);
 
         assertFalse(result);
         assertFalse(lock.isLockedByCurrentThread());
@@ -238,7 +238,7 @@ public abstract class LockBasicTest extends HazelcastTestSupport {
             }
         }).start();
         latch.await();
-        assertTrue(lock.tryLockWithLease(3, 1, TimeUnit.SECONDS));
+        assertTrue(lock.tryLock(3, 1, TimeUnit.SECONDS));
 
         assertTrue(lock.isLocked());
         assertTrue(lock.isLockedByCurrentThread());

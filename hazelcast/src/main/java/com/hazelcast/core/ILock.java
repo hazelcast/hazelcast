@@ -106,8 +106,7 @@ public interface ILock extends Lock, DistributedObject {
      *
      * @throws throws InterruptedException
      */
-    boolean tryLockWithLease(long leaseTime, long waitTime, TimeUnit timeUnit) throws InterruptedException;
-
+    boolean tryLock(long leaseTime, long waitTime, TimeUnit timeUnit) throws InterruptedException;
 
     /**
      * Releases the lock regardless of the lock owner.

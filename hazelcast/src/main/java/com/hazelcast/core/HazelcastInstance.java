@@ -16,6 +16,10 @@
 
 package com.hazelcast.core;
 
+import java.util.Collection;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.TimeUnit;
+
 import com.hazelcast.config.Config;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.mapreduce.JobTracker;
@@ -26,9 +30,6 @@ import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.TransactionalTask;
-
-import java.util.Collection;
-import java.util.concurrent.ConcurrentMap;
 
 /**
  * Hazelcast instance. Each Hazelcast instance is a member (node) in a cluster.
@@ -139,6 +140,8 @@ public interface HazelcastInstance {
      * @return distributed lock instance for the specified key.
      */
     ILock getLock(String key);
+    
+    ILock tryLock(String key,long waitTime, long leaseTime, TimeUnit timeUnit);
 
     /**
      * @deprecated will be removed in Hazelcast 3.2. Use {@link #getLock(String)} instead.
