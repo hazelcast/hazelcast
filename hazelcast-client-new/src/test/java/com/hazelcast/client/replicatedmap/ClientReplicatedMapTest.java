@@ -32,7 +32,6 @@ import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-import org.junit.Ignore;
 
 import java.util.AbstractMap;
 import java.util.ArrayList;
@@ -51,7 +50,6 @@ import static org.junit.Assert.fail;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-@Ignore
 public class ClientReplicatedMapTest
         extends HazelcastTestSupport {
 
