@@ -161,4 +161,13 @@ public class LockProxy extends AbstractDistributedObject<LockServiceImpl> implem
         sb.append('}');
         return sb.toString();
     }
+
+	@Override
+	public boolean tryLockWithLease(long leaseTime, long waitTime,
+			TimeUnit timeUnit) throws InterruptedException {
+        checkNotNull(timeUnit, "unit can't be null");
+        checkPositive(leaseTime, "leaseTime should be positive");
+
+        return lockSupport.tryLockWithLeaseTime(getNodeEngine(), key, waitTime, timeUnit, timeUnit.toMillis(leaseTime));
+	}
 }
