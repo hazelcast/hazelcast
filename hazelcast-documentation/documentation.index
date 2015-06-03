@@ -119,6 +119,7 @@ src/JCache.md
 	src/JCache-CustomExpiryPolicy.md
 	src/JCache-Eviction.md
 #	src/JCache-Eviction-SPI.md
+	src/JCache-NearCache.md
 	src/JCache-AdditionalMethods.md
 	src/JCache-BackupAwareEP.md
 	src/JCache-SpecCompliance.md
