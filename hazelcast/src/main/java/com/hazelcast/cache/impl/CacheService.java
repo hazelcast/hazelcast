@@ -153,7 +153,7 @@ public class CacheService extends AbstractCacheService {
     @Override
     public void sendInvalidationEvent(String name, Data key, String sourceUuid) {
         if (key == null) {
-            sendSingleInvalidationEvent(name, key, sourceUuid);
+            sendSingleInvalidationEvent(name, null, sourceUuid);
         } else {
             if (invalidationMessageBatchEnabled) {
                 sendBatchInvalidationEvent(name, key, sourceUuid);

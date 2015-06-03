@@ -47,7 +47,6 @@ public class CacheBatchInvalidationMessage extends CacheInvalidationMessage {
     public CacheBatchInvalidationMessage(String name,
                                          List<CacheSingleInvalidationMessage> invalidationMessages) {
         super(name);
-        assert invalidationMessages != null : "Invalid invalidation messages: " + invalidationMessages;
         this.invalidationMessages = invalidationMessages;
     }
 
