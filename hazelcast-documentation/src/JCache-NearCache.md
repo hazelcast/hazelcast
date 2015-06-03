@@ -11,6 +11,19 @@ However, using near-cache comes with some trade-off for some cases:
 -   If invalidation is enabled and entries are updated frequently, there will be many invalidation events across the cluster.
 -   Near-Cache doesn't give strong consistency but gives eventual consistency guarantees. It is possible to read stale data.
 
+#### Invalidation
+
+Invalidation means that a near-cache entry is not valid anymore (its value is updated or it is removed from actual cache) so it should be removed from near-cache. Invalidation from near-cache is done eventually at whole cluster asynchronously but done at current node in real-time as synchronously. This means when an entry updated (explicitly or over entry processor) or removed (deleted explicitly or over entry processor, evicted, expired), it is invalidated from all near-caches asynchronously at whole cluster but updated/removed at/from current node synchronously. In general terms, whenever an entry state is changed in record store by updating its value in someway or removing it in someway, invalidation event is sent for that entry.
+
+There are two types of invalidation event sending as single or batch. Batch event sending is advised if there are so many mutating operations such as put and remove on cache. This reduces network traffic and keeps event system busy less. 
+
+Here are configurations for batch event sending:
+- `hazelcast.cache.invalidation.batch.enabled`: Defines cache invalidation event batch sending is enabled or not. The default value is `true`.
+- `hazelcast.cache.invalidation.batch.size`: Defines the maximum number of cache invalidation events to be drained and sent to the event listeners in a batch. The default value is `100`.
+- `hazelcast.cache.invalidation.batchfrequency.seconds`: Defines cache invalidation event batch sending frequency in seconds. When event size does not reach to `hazelcast.cache.invalidation.batch.size` in the given time period, those events are gathered into a batch and sent to target. The default value is `5` seconds.
+
+So if there are so many clients or so many mutating operation, batching should remain enabled and batch size should be configured with `hazelcast.cache.invalidation.batch.size` for a suitable value.
+
 #### Expiration
 
 Expiration means that evicting expired records. 
