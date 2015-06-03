@@ -49,9 +49,9 @@ public class NodeIOService implements IOService {
     private final NodeEngineImpl nodeEngine;
     private final PacketTransceiver packetTransceiver;
 
-    public NodeIOService(Node node) {
+    public NodeIOService(Node node, NodeEngineImpl nodeEngine) {
         this.node = node;
-        this.nodeEngine = node.nodeEngine;
+        this.nodeEngine = nodeEngine;
         this.packetTransceiver = nodeEngine.getPacketTransceiver();
     }
 
@@ -321,6 +321,9 @@ public class NodeIOService implements IOService {
             String[] portDefs = portDef.split("[,; ]");
             for (String def : portDefs) {
                 def = def.trim();
+                if (def.isEmpty()) {
+                    continue;
+                }
                 final int dashPos = def.indexOf('-');
                 if (dashPos > 0) {
                     final int start = Integer.parseInt(def.substring(0, dashPos));
