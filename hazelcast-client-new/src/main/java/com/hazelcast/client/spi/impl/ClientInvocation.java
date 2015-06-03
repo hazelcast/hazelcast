@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.spi.impl;
 
+import com.hazelcast.client.AuthenticationException;
 import com.hazelcast.client.HazelcastClientNotActiveException;
 import com.hazelcast.client.config.ClientProperties;
 import com.hazelcast.client.connection.nio.ClientConnection;
@@ -196,7 +197,9 @@ public class ClientInvocation implements Runnable {
             return;
         }
 
-        if (exception instanceof IOException || exception instanceof HazelcastInstanceNotActiveException) {
+        if (exception instanceof IOException
+                || exception instanceof HazelcastInstanceNotActiveException
+                || exception instanceof AuthenticationException) {
             if (handleRetry()) {
                 return;
             }
