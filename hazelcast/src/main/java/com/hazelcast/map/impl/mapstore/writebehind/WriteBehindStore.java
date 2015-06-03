@@ -35,7 +35,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Write behind map data store implementation.
- * Created per every record-store. So only called from one-thread.
+ * Created per every record-store. Only called from one thread.
  */
 public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
 
@@ -50,10 +50,10 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
     private final int partitionId;
 
     /**
-     * Count of issued flush operations.
-     * It may be caused from an eviction. Instead of directly flushing entries
-     * upon eviction, only counting the number of flushes and immediately process them
-     * in {@link com.hazelcast.map.impl.mapstore.writebehind.StoreWorker}.
+    * Number of issued flush operations.
+    * Flushes may be caused by an eviction. Instead of directly flushing entries
+    * upon eviction, the flushes are counted and immediately processed
+    * in {@link com.hazelcast.map.impl.mapstore.writebehind.StoreWorker}.
      */
     private final AtomicInteger flushCounter;
 
@@ -64,24 +64,24 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
     private WriteBehindProcessor writeBehindProcessor;
 
     /**
-     * A temporary living space for evicted data if we are using a write-behind map store.
-     * Because every eviction triggers a map store flush and in write-behind mode this flush operation
-     * should not cause any inconsistencies like reading a stale value from map store.
-     * To prevent reading stale value, when the time of a non-existent key requested, before loading it from map-store
-     * first we are searching for an evicted entry in this space and if it is not there,
-     * we are asking map store to load it. All read operations will use this staging area
-     * to return last set value on a specific key, since there is a possibility that
-     * {@link com.hazelcast.map.impl.mapstore.writebehind.WriteBehindQueue} may contain more than one waiting operations
-     * on a specific key.
-     * <p/>
-     * Also this space is used to control any waiting delete operations on a key or any transiently put entries to {@code IMap}.
-     * Values of any transiently put entries should not be added to this area upon eviction, otherwise subsequent
-     * {@code IMap#get} operations may return stale values.
-     * <p/>
-     * NOTE: In case of eviction we do not want to make a huge database load by flushing entries uncontrollably.
-     * And also does not want to make duplicate map-store calls for a key. This is why we do not use direct flushing option
-     * to map-store instead of staging area.
-     */
+    * {@code stagingArea} is a temporary living space for evicted data if we are using a write-behind map store.
+    * Every eviction triggers a map store flush, and in write-behind mode this flush operation
+    * should not cause any inconsistencies, such as reading a stale value from map store.
+    * To prevent reading stale values when the time of a non-existent key is requested, before loading it from map-store
+    * we search for an evicted entry in this space. If the entry is not there,
+    * we ask map store to load it. All read operations use this staging area
+    * to return the last set value on a specific key, since there is a possibility that
+    * {@link com.hazelcast.map.impl.mapstore.writebehind.WriteBehindQueue} may contain more than one waiting operations
+    * on a specific key.
+    * <p/>
+    * This space is also used to control any waiting delete operations on a key or any transiently put entries to {@code IMap}.
+    * Values of any transiently put entries should not be added to this area upon eviction, otherwise subsequent
+    * {@code IMap#get} operations may return stale values.
+    * <p/>
+    * NOTE: In case of eviction we do not want to make a huge database load by flushing entries uncontrollably.
+    * We also do not want to make duplicate map-store calls for a key. This is why we use the staging area instead of the
+    * direct flushing option to map-store.
+    */
     private final ConcurrentMap<Data, DelayedEntry> stagingArea;
 
     public WriteBehindStore(MapStoreWrapper store, SerializationService serializationService,
@@ -185,18 +185,18 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
     }
 
     /**
-     * * Used in {@link com.hazelcast.core.IMap#loadAll} calls.
-     * If write-behind map-store feature enabled, some things may lead possible data inconsistencies.
-     * These are:
-     * - calling evict/evictAll.
-     * - calling remove.
-     * - not yet stored write behind queue operation.
-     * <p/>
-     * With this method we can be sure that a key can be loadable from map-store or not.
-     *
-     * @param key to query whether loadable or not.
-     * @return <code>true</code> if loadable, otherwise false.
-     */
+    * * Used in {@link com.hazelcast.core.IMap#loadAll} calls.
+    * If the write-behind map-store feature is enabled, some things may lead to possible data inconsistencies.
+    * These are:
+    * - calling evict/evictAll,
+    * - calling remove, and
+    * - not yet stored write-behind queue operations.
+    * <p/>
+    * With this method, we can be sure if a key can be loadable from map-store or not.
+    *
+    * @param key the key to query whether it is loadable or not.
+    * @return <code>true</code> if loadable, false otherwise.
+    */
     @Override
     public boolean loadable(Data key) {
         return !writeBehindQueue.contains(DelayedEntries.createDefault(key, null, -1, -1));
