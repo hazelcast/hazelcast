@@ -80,6 +80,18 @@ public final class LockProxySupport {
             throw new IllegalStateException();
         }
     }
+    
+    public boolean tryLockWithLeaseTime(NodeEngine nodeEngine, Data key, long timeout, TimeUnit timeunit, long ttl) throws InterruptedException {
+        LockOperation operation = new LockOperation(namespace, key, getThreadId(),
+                ttl,getTimeInMillis(timeout, timeunit));
+        InternalCompletableFuture<Boolean> f = invoke(nodeEngine, operation, key);
+
+        try {
+            return f.get();
+        } catch (Throwable t) {
+            throw rethrowAllowInterrupted(t);
+        }
+    }
 
     public void lockInterruptly(NodeEngine nodeEngine, Data key) throws InterruptedException {
         lockInterruptly(nodeEngine, key, -1);
