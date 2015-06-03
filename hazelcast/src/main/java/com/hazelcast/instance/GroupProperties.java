@@ -183,6 +183,18 @@ public class GroupProperties {
     public static final String PROP_SLOW_OPERATION_DETECTOR_THRESHOLD_MILLIS
             = "hazelcast.slow.operation.detector.threshold.millis";
 
+
+    /**
+     * Defines a threshold above which a running invocations in {@link com.hazelcast.spi.OperationService} is considered
+     * to be slow. Any slow invocation will be logged.
+     *
+     * This is an experimental feature and we don't provide any backwards compatibility guarantees on it.
+     *
+     * By default it is -1, to indicate there is no detection.
+     */
+    public static final String PROP_SLOW_INVOCATION_DETECTOR_THRESHOLD_MILLIS
+            = "hazelcast.slow.invocation.detector.threshold.millis";
+
     /**
      * This value defines the retention time of invocations in slow operation logs.
      * <p/>
@@ -538,6 +550,8 @@ public class GroupProperties {
     public final GroupProperty SLOW_OPERATION_DETECTOR_LOG_PURGE_INTERVAL_SECONDS;
     public final GroupProperty SLOW_OPERATION_DETECTOR_STACK_TRACE_LOGGING_ENABLED;
 
+    public final GroupProperty SLOW_INVOCATION_DETECTOR_THRESHOLD_MILLIS;
+
     public final GroupProperty ELASTIC_MEMORY_ENABLED;
 
     public final GroupProperty ELASTIC_MEMORY_TOTAL_SIZE;
@@ -676,6 +690,8 @@ public class GroupProperties {
                 = new GroupProperty(config, PROP_SLOW_OPERATION_DETECTOR_LOG_PURGE_INTERVAL_SECONDS, "300");
         SLOW_OPERATION_DETECTOR_STACK_TRACE_LOGGING_ENABLED
                 = new GroupProperty(config, PROP_SLOW_OPERATION_DETECTOR_STACK_TRACE_LOGGING_ENABLED, "false");
+        SLOW_INVOCATION_DETECTOR_THRESHOLD_MILLIS
+                = new GroupProperty(config, PROP_SLOW_INVOCATION_DETECTOR_THRESHOLD_MILLIS, "-1");
 
         ELASTIC_MEMORY_ENABLED = new GroupProperty(config, PROP_ELASTIC_MEMORY_ENABLED, "false");
         ELASTIC_MEMORY_TOTAL_SIZE = new GroupProperty(config, PROP_ELASTIC_MEMORY_TOTAL_SIZE, "128M");
