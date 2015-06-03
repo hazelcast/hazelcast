@@ -182,7 +182,7 @@ final class TestNodeRegistry {
                     node.setJoined();
                     node.setAsMaster();
                 } else {
-                    for (int i = 0; !node.joined() && i < 1000; i++) {
+                    for (int i = 0; !node.joined() && i < 2000; i++) {
                         try {
                             node.clusterService.sendJoinRequest(node.getMasterAddress(), true);
                             Thread.sleep(50);
