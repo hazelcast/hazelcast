@@ -92,7 +92,7 @@ Each IMap and ICache instance can have different WAN replication configurations.
 </map>
 <cache name="testCache">
    <wan-replication-ref name="testWanRef">
-      <merge-policy>com.hazelcast.map.merge.PassThroughMergePolicy</merge-policy>
+      <merge-policy>com.hazelcast.cache.merge.PassThroughCacheMergePolicy</merge-policy>
    </wan-replication-ref>
 </cache>
 ```
