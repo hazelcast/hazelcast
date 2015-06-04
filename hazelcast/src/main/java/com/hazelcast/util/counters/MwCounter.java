@@ -34,7 +34,7 @@ public final class MwCounter implements Counter {
 
     private volatile long value;
 
-    private MwCounter(int initialValue) {
+    private MwCounter(long initialValue) {
         this.value = initialValue;
     }
 
@@ -49,7 +49,7 @@ public final class MwCounter implements Counter {
     }
 
     @Override
-    public void inc(int amount) {
+    public void inc(long amount) {
         COUNTER.addAndGet(this, amount);
     }
 
@@ -66,7 +66,7 @@ public final class MwCounter implements Counter {
      * @return the new MwCounter, set to 0.
      */
     public static MwCounter newMwCounter() {
-        return new MwCounter(0);
+        return newMwCounter(0);
     }
 
     /**
@@ -75,7 +75,7 @@ public final class MwCounter implements Counter {
      * @param initialValue the initial value of the counter.
      * @return the new MwCounter, set to the given initial value.
      */
-    public static MwCounter newMwCounter(int initialValue) {
+    public static MwCounter newMwCounter(long initialValue) {
         return new MwCounter(initialValue);
     }
 }

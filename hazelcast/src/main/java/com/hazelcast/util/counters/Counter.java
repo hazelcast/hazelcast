@@ -45,5 +45,5 @@ public interface Counter {
      *
      * @param amount the amount to increase or decrease the counter with.
      */
-    void inc(int amount);
+    void inc(long amount);
 }
