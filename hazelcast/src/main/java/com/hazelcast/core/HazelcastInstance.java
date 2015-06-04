@@ -140,8 +140,6 @@ public interface HazelcastInstance {
      * @return distributed lock instance for the specified key.
      */
     ILock getLock(String key);
-    
-    ILock tryLock(String key,long waitTime, long leaseTime, TimeUnit timeUnit);
 
     /**
      * @deprecated will be removed in Hazelcast 3.2. Use {@link #getLock(String)} instead.

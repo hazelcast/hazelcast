@@ -149,7 +149,7 @@ public class ClientLockProxy extends ClientProxy implements ILock {
     }
 
     @Override
-    public boolean tryLockWithLease(long leaseTime, long waitTime, TimeUnit timeunit) throws InterruptedException {
+    public boolean tryLock(long leaseTime, long waitTime, TimeUnit timeunit) throws InterruptedException {
         return false;
     }
 }
