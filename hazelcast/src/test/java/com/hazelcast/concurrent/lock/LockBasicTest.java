@@ -238,7 +238,7 @@ public abstract class LockBasicTest extends HazelcastTestSupport {
             }
         }).start();
         latch.await();
-        assertTrue(lock.tryLock(3, 1, TimeUnit.SECONDS));
+        assertTrue(lock.tryLock(1, 3, TimeUnit.SECONDS));
 
         assertTrue(lock.isLocked());
         assertTrue(lock.isLockedByCurrentThread());
