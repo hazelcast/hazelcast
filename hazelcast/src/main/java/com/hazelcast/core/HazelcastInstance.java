@@ -16,9 +16,6 @@
 
 package com.hazelcast.core;
 
-import java.util.Collection;
-import java.util.concurrent.ConcurrentMap;
-
 import com.hazelcast.config.Config;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.mapreduce.JobTracker;
@@ -29,6 +26,9 @@ import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.TransactionalTask;
+
+import java.util.Collection;
+import java.util.concurrent.ConcurrentMap;
 
 /**
  * Hazelcast instance. Each Hazelcast instance is a member (node) in a cluster.
