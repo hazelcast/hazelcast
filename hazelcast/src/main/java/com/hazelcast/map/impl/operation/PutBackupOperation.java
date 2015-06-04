@@ -50,9 +50,9 @@ public final class PutBackupOperation extends KeyBasedMapOperation implements Ba
     }
 
     public void run() {
-        ttl = recordInfo != null ? recordInfo.getTtl() : ttl;
-        final Record record = recordStore.putBackup(dataKey, dataValue, ttl);
         if (recordInfo != null) {
+            ttl = recordInfo.getTtl();
+            final Record record = recordStore.putBackup(dataKey, dataValue, ttl);
             Records.applyRecordInfo(record, recordInfo);
         }
         if (unlockKey) {
@@ -62,7 +62,9 @@ public final class PutBackupOperation extends KeyBasedMapOperation implements Ba
 
     @Override
     public void afterRun() throws Exception {
-        evict(true);
+        if (recordInfo != null) {
+            evict(true);
+        }
     }
 
     @Override

@@ -105,8 +105,11 @@ public class PutAllOperation extends AbstractMapOperation implements PartitionAw
                 }
                 entry = getProcessedValue(entry, record);
                 backupEntrySet.add(entry);
-                RecordInfo replicationInfo = Records.buildRecordInfo(recordStore.getRecord(dataKey));
-                backupRecordInfos.add(replicationInfo);
+                Record recordKey = recordStore.getRecord(dataKey);
+                if (recordKey !=  null) {
+                    RecordInfo replicationInfo = Records.buildRecordInfo(recordKey);
+                    backupRecordInfos.add(replicationInfo);
+                }
                 evict(false);
             }
         }

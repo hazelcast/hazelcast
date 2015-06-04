@@ -76,7 +76,7 @@ public class MergeOperation extends BasePutOperation {
             return new RemoveBackupOperation(name, dataKey);
         } else {
             final Record record = recordStore.getRecord(dataKey);
-            final RecordInfo replicationInfo = Records.buildRecordInfo(record);
+            final RecordInfo replicationInfo = record != null ? Records.buildRecordInfo(record) : null;
             return new PutBackupOperation(name, dataKey, dataValue, replicationInfo);
         }
     }

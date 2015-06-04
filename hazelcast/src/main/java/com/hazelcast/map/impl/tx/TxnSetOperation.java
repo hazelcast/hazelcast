@@ -112,12 +112,13 @@ public class TxnSetOperation extends BasePutOperation implements MapTxnOperation
 
     public Operation getBackupOperation() {
         final Record record = recordStore.getRecord(dataKey);
-        final RecordInfo replicationInfo = Records.buildRecordInfo(record);
+        final RecordInfo replicationInfo = record != null ? Records.buildRecordInfo(record) : null;
         MapDataStore<Data, Object> mapDataStore = recordStore.getMapDataStore();
         Data dataValueForBackup = dataValue;
         // if data-store is post processing, then we need to retrieve the 'processed' value from record
         // not the value initially provided
-        if (mapDataStore.isPostProcessingMapStore()) {
+        if ((mapDataStore.isPostProcessingMapStore())
+                && (record != null)) {
             dataValueForBackup = mapService.getMapServiceContext().toData(record.getValue());
         }
         return new PutBackupOperation(name, dataKey, dataValueForBackup, replicationInfo, true);
