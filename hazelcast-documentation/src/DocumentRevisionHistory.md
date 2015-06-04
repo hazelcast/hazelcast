@@ -16,6 +16,7 @@
 |[Chapter 8 - Distributed Computing](#distributed-computing)|[Execution Member Selector](#execution-member-selector)|Added as a new section explaining how to select a cluster member on which an execution will be performed.|
 |[Chapter 9 - Distributed Query](#distributed-query)|[Paging Predicate](#paging-predicate)|Added a note related to random page access.|
 |[Chapter 11 - Transactions](#transactions)||Added a note related to `REPEATABLE_READ` isolation level.|
+|[Chapter 12 - Hazelcast JCache](#hazelcast-jcache)|[JCache Near Cache](#jcache-near-cache)|Added as a new section explaining the invalidation concept, eviction policies and configuration of JCache's near cache feature.|
 |[Chapter 13 - Integrated Clustering](#integrated-clustering)||Added introduction paragraphs.|
 ||[Tomcat Based Web Session Replication](#tomcat-based-web-session-replication)|Updated the Overview paragraph to include the support for Tomcat 8.
 |[Chapter 14 - Storage](#storage)|[Sizing Practices](#sizing-practices)|Added as a new section.|
