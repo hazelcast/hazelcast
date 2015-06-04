@@ -93,10 +93,12 @@ public abstract class BasePutOperation extends LockAwareOperation implements Bac
     @Override
     public Operation getBackupOperation() {
         final Record record = recordStore.getRecord(dataKey);
-        final RecordInfo replicationInfo = buildRecordInfo(record);
+        final RecordInfo replicationInfo = record == null ? null : buildRecordInfo(record);
         final MapDataStore<Data, Object> mapDataStore = recordStore.getMapDataStore();
         final MapServiceContext mapServiceContext = mapService.getMapServiceContext();
-        if (mapServiceContext.hasInterceptor(name) || mapDataStore.isPostProcessingMapStore()) {
+        if ((mapServiceContext.hasInterceptor(name) || mapDataStore.isPostProcessingMapStore())
+                        && (record != null)
+                ) {
             dataValue = mapServiceContext.toData(record.getValue());
         }
         return new PutBackupOperation(name, dataKey, dataValue, replicationInfo, putTransient);
