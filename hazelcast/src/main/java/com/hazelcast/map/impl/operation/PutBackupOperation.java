@@ -72,7 +72,9 @@ public final class PutBackupOperation extends KeyBasedMapOperation implements Ba
 
     @Override
     public void afterRun() throws Exception {
-        evict(true);
+        if (recordInfo != null) {
+            evict(true);
+        }
     }
 
     @Override

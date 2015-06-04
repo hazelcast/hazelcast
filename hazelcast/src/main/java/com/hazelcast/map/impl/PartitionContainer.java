@@ -78,7 +78,7 @@ public class PartitionContainer {
     /**
      * Used when sorting partition containers in {@link com.hazelcast.map.impl.eviction.ExpirationManager}
      * A non-volatile copy of lastCleanupTime is used with two reasons.
-     * <p/>
+     * <p>
      * 1. We need an un-modified field during sorting.
      * 2. Decrease number of volatile reads.
      */
@@ -109,7 +109,7 @@ public class PartitionContainer {
         return maps.get(mapName);
     }
 
-    void destroyMap(String name) {
+    public void destroyMap(String name) {
         RecordStore recordStore = maps.remove(name);
         if (recordStore != null) {
             recordStore.clearPartition();
