@@ -83,10 +83,7 @@ public abstract class BasePutOperation extends LockAwareOperation implements Bac
     @Override
     public boolean shouldBackup() {
         Record record = recordStore.getRecord(dataKey);
-        if (record == null) {
-            return false;
-        }
-        return true;
+        return record != null;
     }
 
     @Override

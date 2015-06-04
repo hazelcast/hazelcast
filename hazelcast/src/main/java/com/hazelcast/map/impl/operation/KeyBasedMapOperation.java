@@ -19,7 +19,6 @@ package com.hazelcast.map.impl.operation;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.NearCacheProvider;
-import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.map.impl.RecordStore;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -28,6 +27,7 @@ import com.hazelcast.spi.NamedOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.util.Clock;
+
 import java.io.IOException;
 
 public abstract class KeyBasedMapOperation extends Operation implements PartitionAwareOperation, NamedOperation {
@@ -40,7 +40,6 @@ public abstract class KeyBasedMapOperation extends Operation implements Partitio
 
     protected transient MapService mapService;
     protected transient MapContainer mapContainer;
-    protected transient PartitionContainer partitionContainer;
     protected transient RecordStore recordStore;
 
     public KeyBasedMapOperation() {
@@ -103,8 +102,7 @@ public abstract class KeyBasedMapOperation extends Operation implements Partitio
     public final void beforeRun() throws Exception {
         mapService = getService();
         mapContainer = mapService.getMapServiceContext().getMapContainer(name);
-        partitionContainer = mapService.getMapServiceContext().getPartitionContainer(getPartitionId());
-        recordStore = partitionContainer.getRecordStore(name);
+        recordStore = mapService.getMapServiceContext().getPartitionContainer(getPartitionId()).getRecordStore(name);
         innerBeforeRun();
     }
 

@@ -112,7 +112,7 @@ public class TxnSetOperation extends BasePutOperation implements MapTxnOperation
 
     public Operation getBackupOperation() {
         final Record record = recordStore.getRecord(dataKey);
-        final RecordInfo replicationInfo = Records.buildRecordInfo(record);
+        final RecordInfo replicationInfo = record != null ? Records.buildRecordInfo(record) : null;
         return new PutBackupOperation(name, dataKey, dataValue, replicationInfo, true, false);
     }
 
