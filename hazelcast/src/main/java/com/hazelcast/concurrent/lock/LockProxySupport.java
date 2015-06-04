@@ -81,7 +81,7 @@ public final class LockProxySupport {
         }
     }
     
-    public boolean tryLockWithLeaseTime(NodeEngine nodeEngine, Data key, long timeout, TimeUnit timeunit, long ttl) throws InterruptedException {
+    public boolean tryLock(NodeEngine nodeEngine, Data key, long timeout, TimeUnit timeunit, long ttl) throws InterruptedException {
         LockOperation operation = new LockOperation(namespace, key, getThreadId(),
                 ttl,getTimeInMillis(timeout, timeunit));
         InternalCompletableFuture<Boolean> f = invoke(nodeEngine, operation, key);
