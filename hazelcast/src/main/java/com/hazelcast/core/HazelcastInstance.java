@@ -18,7 +18,6 @@ package com.hazelcast.core;
 
 import java.util.Collection;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.TimeUnit;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.logging.LoggingService;

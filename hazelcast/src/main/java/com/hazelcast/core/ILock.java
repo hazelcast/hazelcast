@@ -20,8 +20,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 
-import com.hazelcast.concurrent.lock.client.LockRequest;
-
 /**
  * Distributed implementation of {@link Lock}.
  *
@@ -90,7 +88,7 @@ public interface ILock extends Lock, DistributedObject {
      * hold this lock
      */
     void lock(long leaseTime, TimeUnit timeUnit);
-    
+
     /**
      * Attempts to acquire the lock for the specified lease time.
      * <p>After lease time, lock will be released..
