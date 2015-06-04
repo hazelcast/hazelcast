@@ -3,17 +3,20 @@
 Cache entries in Hazelcast are stored as partitioned across the cluster. 
 When you try to read a record with the key `k`, if the current node is not the owner of that key (i.e. not the owner of partition that the key belongs to), 
 Hazelcast sends a remote operation to the owner node. Each remote operation means lots of network trips. 
-If your cache is used for reading generally, it is advised to use a near-cache storage in front of cache itself for reading cache records faster and consume less network traffic.
-Also note that near-cache is **only available for clients** not servers.
+If your cache is used for mostly read operations, it is advised to use a near cache storage in front of the cache itself to read cache records faster and consume less network traffic.
+<br><br>
+![image](images/NoteSmall.jpg) ***NOTE:*** *Near cache for JCache is only available for clients NOT servers.*
+<br><br>
 
-However, using near-cache comes with some trade-off for some cases:
--   There will be extra the memory consumption for storing near-cache records at local.
--   If invalidation is enabled and entries are updated frequently, there will be many invalidation events across the cluster.
--   Near-Cache doesn't give strong consistency but gives eventual consistency guarantees. It is possible to read stale data.
+However, using near cache comes with some trade-off for some cases:
+
+- There will be extra memory consumption for storing near cache records at local.
+- If invalidation is enabled and entries are updated frequently, there will be many invalidation events across the cluster.
+- Near cache does not give strong consistency but gives eventual consistency guarantees. It is possible to read stale data.
 
 #### Invalidation
 
-Invalidation means that a near-cache entry is not valid anymore (its value is updated or it is removed from actual cache) so it should be removed from near-cache. Invalidation from near-cache is done eventually at whole cluster asynchronously but done at current node in real-time as synchronously. This means when an entry updated (explicitly or over entry processor) or removed (deleted explicitly or over entry processor, evicted, expired), it is invalidated from all near-caches asynchronously at whole cluster but updated/removed at/from current node synchronously. In general terms, whenever an entry state is changed in record store by updating its value in someway or removing it in someway, invalidation event is sent for that entry.
+Invalidation is the process of removing an entry from the near cache since the entry is not valid anymore (its value is updated or it is removed from actual cache). Near cache invalidation happens asynchronously at the cluster level, but synchronously in real-time at the current node. This means when an entry is updated (explicitly or via entry processor) or removed (deleted explicitly or via entry processor, evicted, expired), it is invalidated from all near caches asynchronously within the whole cluster but updated/removed at/from current node synchronously. In general terms, whenever an entry state is changed in record store by updating its value in someway or removing it in someway, invalidation event is sent for that entry.
 
 There are two types of invalidation event sending as single or batch. Batch event sending is advised if there are so many mutating operations such as put and remove on cache. This reduces network traffic and keeps event system busy less. 
 
@@ -37,7 +40,7 @@ Expiration are done in two cases:
 
 #### Eviction
 
-In Near-Cache scope, eviction means that evicting (clearing) entries selected as specified eviction policy when specified max-size policy has been reached.
+In the scope of near cache scope, eviction means that evicting (clearing) entries selected as specified eviction policy when specified max-size policy has been reached.
 Eviction is handled with max-size policy and eviction policy configurations.
 
 ##### Max-Size Policy
