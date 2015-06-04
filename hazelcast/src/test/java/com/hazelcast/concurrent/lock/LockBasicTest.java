@@ -132,7 +132,7 @@ public abstract class LockBasicTest extends HazelcastTestSupport {
         assertEquals(1, lock.getLockCount());
     }
 
-    // ======================== get lock with timeout ==============================================
+    // ======================== try lock with timeout ==============================================
 
     @Test(timeout = 60000)
     public void testTryLockTimeout_whenNotLocked() throws InterruptedException {
