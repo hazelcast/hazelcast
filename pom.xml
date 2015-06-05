@@ -220,8 +220,7 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>${maven.surefire.plugin.version}</version>
                 <configuration combine.self="override">
-                    <redirectTestOutputToFile>true</redirectTestOutputToFile>
-
+                    <redirectTestOutputToFile>false</redirectTestOutputToFile>
 
                     <!-- 1C means 1 process per cpu core -->
                     <!-- forkCount>1C</forkCount>

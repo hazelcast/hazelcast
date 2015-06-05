@@ -36,6 +36,7 @@ import java.util.*;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Semaphore;
+import java.util.logging.Logger;
 
 import static org.junit.Assert.*;
 
@@ -44,12 +45,13 @@ import static org.junit.Assert.*;
 @SuppressWarnings("unused")
 public class MapReduceTest
         extends HazelcastTestSupport {
+    final static Logger logger = Logger.getLogger("test");
 
     private static final String MAP_NAME = "default";
 
     @BeforeClass
     public static void beforeClass() {
-        System.out.println("MapReduceTest started");
+        logger.info("MapReduceTest started");
     }
 
     @Test(timeout = 60000)
