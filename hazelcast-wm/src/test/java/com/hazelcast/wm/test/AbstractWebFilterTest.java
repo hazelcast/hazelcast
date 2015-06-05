@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2014, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,6 +31,7 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpUriRequest;
+import org.apache.http.cookie.Cookie;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.util.EntityUtils;
 import org.junit.AfterClass;
@@ -49,13 +50,12 @@ import java.util.Random;
 public abstract class AbstractWebFilterTest extends HazelcastTestSupport {
 
     protected enum RequestType {
-
         GET_REQUEST,
         POST_REQUEST
-
     }
 
     static {
+
         final String logging = "hazelcast.logging.type";
         if (System.getProperty(logging) == null) {
             System.setProperty(logging, "log4j");
@@ -65,17 +65,15 @@ public abstract class AbstractWebFilterTest extends HazelcastTestSupport {
         }
         System.setProperty("hazelcast.version.check.enabled", "false");
         System.setProperty("hazelcast.mancenter.enabled", "false");
-        System.setProperty("hazelcast.wait.seconds.before.join", "1");
+        System.setProperty("hazelcast.wait.seconds.before.join", "0");
         System.setProperty("hazelcast.local.localAddress", "127.0.0.1");
         System.setProperty("java.net.preferIPv4Stack", "true");
-
         // randomize multicast group...
         Random rand = new Random();
         int g1 = rand.nextInt(255);
         int g2 = rand.nextInt(255);
         int g3 = rand.nextInt(255);
         System.setProperty("hazelcast.multicast.group", "224." + g1 + "." + g2 + "." + g3);
-
         try {
             final URL root = new URL(TestServlet.class.getResource("/"), "../test-classes");
             final String baseDir = new File(root.getFile().replaceAll("%20", " ")).toString();
@@ -140,10 +138,8 @@ public abstract class AbstractWebFilterTest extends HazelcastTestSupport {
             // For this reason, we should copy container context information (such as ports, servers, ...)
             // to current test.
             cc.copyInto(this);
-
             // Ensure that instance is up and running
             ensureInstanceIsUp();
-
             // After ensuring that system is up, new containers or instance may be created.
             // So, we should copy current information from test to current context.
             cc.copyFrom(this);
@@ -162,8 +158,7 @@ public abstract class AbstractWebFilterTest extends HazelcastTestSupport {
             if (server1 == null) {
                 serverPort1 = availablePort();
                 server1 = getServletContainer(serverPort1, sourceDir, serverXml1);
-            }
-            else if (!server1.isRunning()) {
+            } else if (!server1.isRunning()) {
                 server1.start();
             }
         }
@@ -171,8 +166,7 @@ public abstract class AbstractWebFilterTest extends HazelcastTestSupport {
             if (server2 == null) {
                 serverPort2 = availablePort();
                 server2 = getServletContainer(serverPort2, sourceDir, serverXml2);
-            }
-            else if (!server2.isRunning()) {
+            } else if (!server2.isRunning()) {
                 server2.start();
             }
         }
@@ -281,6 +275,14 @@ public abstract class AbstractWebFilterTest extends HazelcastTestSupport {
                                                             String sourceDir,
                                                             String serverXml) throws Exception;
 
+    String getHazelcastSessionId(CookieStore cookieStore) {
+        for (Cookie cookie : cookieStore.getCookies()) {
+            String name = cookie.getName();
+            if ("hazelcast.sessionId".equals(name)) return cookie.getValue();
+        }
+        return null;
+    }
+
     protected static class ContainerContext {
 
         protected AbstractWebFilterTest test;
@@ -330,7 +332,5 @@ public abstract class AbstractWebFilterTest extends HazelcastTestSupport {
             server2 = awft.server2;
             hz = awft.hz;
         }
-
     }
-
 }

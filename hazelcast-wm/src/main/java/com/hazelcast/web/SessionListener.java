@@ -36,7 +36,6 @@ public class SessionListener implements HttpSessionListener {
 
     public void sessionDestroyed(HttpSessionEvent event) {
         HttpSession session = event.getSession();
-
         ServletContext servletContext = session.getServletContext();
         WebFilter webFilter = (WebFilter) servletContext.getAttribute(WebFilter.class.getName());
         if (webFilter == null) {

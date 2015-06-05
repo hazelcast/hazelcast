@@ -86,6 +86,7 @@ import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.ringbuffer.impl.RingbufferService;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.UsernamePasswordCredentials;
+import com.hazelcast.spi.impl.SerializationServiceSupport;
 import com.hazelcast.topic.impl.TopicService;
 import com.hazelcast.transaction.HazelcastXAResource;
 import com.hazelcast.topic.impl.reliable.ReliableTopicService;
@@ -105,7 +106,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 
-public class HazelcastClientInstanceImpl implements HazelcastInstance {
+public class HazelcastClientInstanceImpl implements HazelcastInstance, SerializationServiceSupport {
 
     private static final AtomicInteger CLIENT_ID = new AtomicInteger();
     private static final ILogger LOGGER = Logger.getLogger(HazelcastClient.class);

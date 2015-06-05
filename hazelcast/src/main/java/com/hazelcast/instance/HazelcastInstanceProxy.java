@@ -45,6 +45,7 @@ import com.hazelcast.mapreduce.JobTracker;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.quorum.QuorumService;
 import com.hazelcast.ringbuffer.Ringbuffer;
+import com.hazelcast.spi.impl.SerializationServiceSupport;
 import com.hazelcast.transaction.HazelcastXAResource;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionException;
@@ -54,7 +55,7 @@ import com.hazelcast.transaction.TransactionalTask;
 import java.util.Collection;
 import java.util.concurrent.ConcurrentMap;
 
-public final class HazelcastInstanceProxy implements HazelcastInstance {
+public final class HazelcastInstanceProxy implements HazelcastInstance, SerializationServiceSupport {
 
     volatile HazelcastInstanceImpl original;
     private final String name;
