@@ -16,23 +16,27 @@
 
 package com.hazelcast.cluster;
 
+import com.hazelcast.cluster.impl.ClusterServiceImpl;
+import com.hazelcast.cluster.impl.operations.MemberInfoUpdateOperation;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.JoinConfig;
 import com.hazelcast.config.MulticastConfig;
 import com.hazelcast.config.NetworkConfig;
+import com.hazelcast.config.SerializationConfig;
+import com.hazelcast.config.SerializerConfig;
 import com.hazelcast.config.TcpIpConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.HazelcastInstanceFactory;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.StreamSerializer;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.NightlyTest;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
-
+import com.hazelcast.test.annotation.Repeat;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -45,6 +49,11 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReferenceArray;
 import java.util.concurrent.locks.LockSupport;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -60,6 +69,7 @@ public class JoinStressTest extends HazelcastTestSupport {
     @Before
     @After
     public void tearDown() {
+        System.clearProperty("hazelcast.serialization.custom.override");
         HazelcastInstanceFactory.terminateAll();
     }
 
@@ -71,6 +81,38 @@ public class JoinStressTest extends HazelcastTestSupport {
     @Test
     public void testMulticastJoinWithManyNodes() throws InterruptedException {
         testJoinWithManyNodes(true);
+    }
+
+    @Repeat(50)
+    @Test
+    public void testJoincompletesCorrectlyWhenMultipleNodesStartedParallel() {
+        int count = 10;
+        final TestHazelcastInstanceFactory factory = new TestHazelcastInstanceFactory(count);
+        final HazelcastInstance[] instances = new HazelcastInstance[count];
+        final CountDownLatch latch = new CountDownLatch(count);
+        final Config config = new Config();
+        final SerializationConfig serializationConfig = new SerializationConfig();
+        final SerializerConfig serializerConfig = new SerializerConfig();
+        serializerConfig.setTypeClassName(MemberInfoUpdateOperation.class.getName());
+        serializerConfig.setImplementation(new MemberInfoUpdateOperationSerializer());
+        serializationConfig.addSerializerConfig(serializerConfig);
+        config.setSerializationConfig(serializationConfig);
+        System.setProperty("hazelcast.serialization.custom.override", "true");
+
+        for (int i = 0; i < count; i++) {
+            final int index = i;
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    instances[index] = factory.newHazelcastInstance(config);
+                    latch.countDown();
+                }
+            }).start();
+        }
+        assertOpenEventually(latch);
+        for (int i = 0; i < count; i++) {
+            assertClusterSize(count, instances[i]);
+        }
     }
 
     public void testJoinWithManyNodes(final boolean multicast) throws InterruptedException {
@@ -176,7 +218,7 @@ public class JoinStressTest extends HazelcastTestSupport {
     }
 
     private void initNetworkConfig(NetworkConfig networkConfig, int basePort, int portSeed,
-            boolean multicast, int nodeCount) {
+                                   boolean multicast, int nodeCount) {
 
         networkConfig.setPortAutoIncrement(false);
         networkConfig.setPort(basePort + portSeed);
@@ -197,6 +239,44 @@ public class JoinStressTest extends HazelcastTestSupport {
         }
         Collections.sort(members);
         tcpIpConfig.setMembers(members);
+    }
+
+    public class MemberInfoUpdateOperationSerializer implements StreamSerializer<MemberInfoUpdateOperation> {
+        @Override
+        public void write(ObjectDataOutput out, MemberInfoUpdateOperation object) throws IOException {
+            object.writeData(out);
+        }
+
+        @Override
+        public MemberInfoUpdateOperation read(ObjectDataInput in) throws IOException {
+            final DelayedMemberInfoUpdateOperation operation = new DelayedMemberInfoUpdateOperation();
+            operation.readData(in);
+            return operation;
+        }
+
+        @Override
+        public int getTypeId() {
+            return 9999;
+        }
+
+        @Override
+        public void destroy() {
+
+        }
+    }
+
+    public static class DelayedMemberInfoUpdateOperation extends MemberInfoUpdateOperation {
+
+        public DelayedMemberInfoUpdateOperation() {
+        }
+
+        @Override
+        public void run() throws Exception {
+            if (memberInfos.size() == 3 && getNodeEngine().getThisAddress().getPort() % 3 == 0) {
+                Thread.sleep(500);
+            }
+            super.run();
+        }
     }
 
 }
