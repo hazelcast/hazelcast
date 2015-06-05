@@ -466,7 +466,7 @@ abstract class Invocation implements ResponseHandler, Runnable {
         boolean hasWaitingThreads = invocationFuture.getWaitingThreadsCount() > 0;
         boolean notExpired = maxCallTimeout == Long.MAX_VALUE
                 || expirationTime < 0
-                || expirationTime >= Clock.currentTimeMillis();
+                || expirationTime >= nodeEngine.getClusterService().getClusterClock().getClusterTime();
 
         if (hasResponse || hasWaitingThreads || notExpired) {
             return false;
@@ -533,7 +533,7 @@ abstract class Invocation implements ResponseHandler, Runnable {
 
         // If this has not yet expired (so has not been in the system for a too long period) we ignore it.
         long expirationTime = responseReceivedMillis + timeoutMillis;
-        boolean timeout = expirationTime > 0 && expirationTime < Clock.currentTimeMillis();
+        boolean timeout = expirationTime > 0 && expirationTime < nodeEngine.getClusterService().getClusterClock().getClusterTime();
 
         // If no response has yet been received, we we are done. We are only going to re-invoke an operation
         // if the response of the primary has been received, but the backups have not replied.
