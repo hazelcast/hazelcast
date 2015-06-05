@@ -14,7 +14,7 @@ However, using near cache comes with some trade-off for some cases:
 - If invalidation is enabled and entries are updated frequently, there will be many invalidation events across the cluster.
 - Near cache does not give strong consistency but gives eventual consistency guarantees. It is possible to read stale data.
 
-#### Invalidation
+#### JCache Near Cache Invalidation
 
 Invalidation is the process of removing an entry from the near cache since the entry is not valid anymore (its value is updated or it is removed from actual cache). Near cache invalidation happens asynchronously at the cluster level, but synchronously in real-time at the current node. This means when an entry is updated (explicitly or via entry processor) or removed (deleted explicitly or via entry processor, evicted, expired), it is invalidated from all near caches asynchronously within the whole cluster but updated/removed at/from the current node synchronously. Generally, whenever the state of an entry changes in the record store by updating its value or removing it, the invalidation event is sent for that entry.
 
@@ -24,104 +24,64 @@ You can use the following system properties to configure the sending of invalida
 
 - `hazelcast.cache.invalidation.batch.enabled`: Specifies whether the cache invalidation event batch sending is enabled or not. The default value is `true`.
 - `hazelcast.cache.invalidation.batch.size`: Defines the maximum number of cache invalidation events to be drained and sent to the event listeners in a batch. The default value is `100`.
-- `hazelcast.cache.invalidation.batchfrequency.seconds`: Defines cache invalidation event batch sending frequency in seconds. When event size does not reach to `hazelcast.cache.invalidation.batch.size` in the given time period, those events are gathered into a batch and sent to target. The default value is `5` seconds.
+- `hazelcast.cache.invalidation.batchfrequency.seconds`: Defines cache invalidation event batch sending frequency in seconds. When event size does not reach to `hazelcast.cache.invalidation.batch.size` in the given time period, those events are gathered into a batch and sent to the target. The default value is `5` seconds.
 
-So if there are so many clients or so many mutating operation, batching should remain enabled and batch size should be configured with `hazelcast.cache.invalidation.batch.size` for a suitable value.
+So if there are so many clients or so many mutating operations, batching should remain enabled and the batch size should be configured with the `hazelcast.cache.invalidation.batch.size` system property to a suitable value.
 
-#### Expiration
+#### JCache Near Cache Expiration
 
-Expiration means that evicting expired records. 
-So a record is expired, 
-- If it is not touched (accessed/read) during `<max-idle-seconds>`
-- `<time-to-live-seconds>` passed since it is put to near-cache
+Expiration means the eviction of expired records. A record is expired: 
+- if it is not touched (accessed/read) for `<max-idle-seconds>`,
+- `<time-to-live-seconds>` passed since it is put to near-cache.
 
-Expiration are done in two cases:
+Expiration is performed in two cases:
+
 - When a record is accessed, it is checked about if it is expired or not. If it is expired, it is evicted and returns `null` to caller.
-- At background there is an expiration task that periodically (currently 5 seconds) scans records and evicts expired records.
+- In the background, there is an expiration task that periodically (currently 5 seconds) scans records and evicts the expired records.
 
-#### Eviction
+#### JCache Near Cache Eviction
 
-In the scope of near cache scope, eviction means that evicting (clearing) entries selected as specified eviction policy when specified max-size policy has been reached.
-Eviction is handled with max-size policy and eviction policy configurations.
+In the scope of near cache, eviction means evicting (clearing) the entries selected according to the given `eviction-policy` when the specified `max-size-policy` has been reached. Eviction is handled with `max-size policy` and `eviction-policy` elements. Please see the [JCache Near Cache Configuration section](#jcache-near-cache-configuration).
 
-##### Max-Size Policy
+##### `max-size-policy`
 
-Max-Size policy defines the state when near-cache is full and eviction should be triggered.
-The following max-size policies are supported by near-cache eviction:
-- **ENTRY_COUNT:** Decides maximum based on the count of the number of entries in the near-cache. 
-Available only for `BINARY` and `OBJECT` in-memory formats.
-- **USED_NATIVE_MEMORY_SIZE:** Decides maximum used native memory size in MB of the specified near-cache to trigger eviction. 
-If used native memory size by the specified near-cache exceeds this threshold, eviction is done. 
-Available only for `NATIVE` in-memory format (supported only by Enterprise module).
-- **USED_NATIVE_MEMORY_PERCENTAGE:** Decides maximum used native memory percentage of the specified near-cache to trigger eviction. 
-If used native memory percentage (relative to maximum native memory size) by the specified near-cache exceeds this threshold, eviction is done. 
-Available only for `NATIVE` in-memory format (supported only by Enterprise module).
-- **FREE_NATIVE_MEMORY_SIZE:** Decides minimum free native memory size in MB of the specified near-cache to trigger eviction. 
-If free native memory size by the specified near-cache goes down below of this threshold, eviction is done.
-Available only for `NATIVE` in-memory format (supported only by Enterprise module).
-- **FREE_NATIVE_MEMORY_PERCENTAGE:** Decides minimum free native memory percentage of the specified near-cache to trigger eviction. 
-If free native memory percentage (relative to maximum native memory size) by the specified near-cache goes down below of this threshold, eviction is done.
-Available only for `NATIVE` in-memory format (supported only by Enterprise module).
+This element defines the state when near cache is full and whether the eviction should be triggered. The following policies for maximum cache size are supported by the near cache eviction:
 
-##### Eviction Policy 
-Once a near-cache is full (reached to its max size as specified with max-size policy), an eviction policy determines which, if any, entries must be evicted.
-Currently, the following eviction policies are supported by near-cache eviction: 
-- LRU
-- LFU
+- **ENTRY_COUNT:** Maximum size based on the entry count in the near cache. Available only for `BINARY` and `OBJECT` in-memory formats.
+- **USED_NATIVE_MEMORY_SIZE:** Maximum used native memory size of the specified near cache in MB to trigger the eviction. If the used native memory size exceeds this threshold, the eviction is triggered.  Available only for `NATIVE` in-memory format. This is supported only by Hazelcast Enterprise.
+- **USED_NATIVE_MEMORY_PERCENTAGE:** Maximum used native memory percentage of the specified near cache to trigger the eviction. If the native memory usage percentage (relative to maximum native memory size) exceeds this threshold, the eviction is triggered. Available only for `NATIVE` in-memory format. This is supported only by Hazelcast Enterprise.
+- **FREE_NATIVE_MEMORY_SIZE:** Minimum free native memory size of the specified near cache in MB to trigger the eviction.  If free native memory size goes down below of this threshold, eviction is triggered. Available only for `NATIVE` in-memory format. This is supported only by Hazelcast Enterprise.
+- **FREE_NATIVE_MEMORY_PERCENTAGE:** Minimum free native memory percentage of the specified near cache to trigger eviction. If free native memory percentage (relative to maximum native memory size) goes down below of this threshold, eviction is triggered. Available only for `NATIVE` in-memory format. This is supported only by Hazelcast Enterprise.
 
-#### Configuration
+##### `eviction-policy` 
 
-Here are properties of near-cache configuration:
+Once a near cache is full (reached to its maximum size as specified with the `max-size-policy` element), an eviction policy determines which, if any, entries must be evicted. Currently, the following eviction policies are supported by near cache eviction:
 
-- **In Memory Format:** Defines the storage type of near cache entries. Valid values are `BINARY`, `OBJECT` and `NATIVE_MEMORY`. `NATIVE_MEMORY` is only available for enterprise module. Default value is `BINARY`.
-- **Cache Local Entries:** Defines should the local cache entries be stored eagerly (immediately) to near cache on cache put from local. Valid values are `true` and `false`. Default value is `false`.
-- **Invalidate on Change:** Defines should the cached entries be evicted if the entries are changed (updated or removed) from local and global also. Valid values are `true` and `false`. Default value is `true`.
-- **Time to Live Seconds:** Maximum number of seconds for each entry to stay in the near cache. Entries that are older than `<time-to-live-seconds>` will get automatically evicted from the near cache. Any integer between `0` and `Integer.MAX_VALUE`. `0` means **infinite**. Default value is `0`.
-- **Max Idle Seconds:** Maximum number of seconds each entry can stay in the near cache as untouched (not-read). Entries that are not read (touched) more than `<max-idle-seconds>` value will get removed from the near cache. Any integer between `0` and `Integer.MAX_VALUE`. `0` means `Integer.MAX_VALUE`. Default is `0`.
-- **Eviction:** Eviction configuration about when eviction is triggered (max-size policy) and which eviction policy (`LRU` or `LFU`) will be used for selecting evicted entry. As default value, max-size policy is `ENTRY_COUNT`, size is `10000` and eviction policy is `LRU`. For HD Near-Cache since `ENTRY_COUNT` eviction policy is not supported yet, eviction must be explicitly configured with one of the supported policies `USED_NATIVE_MEMORY_SIZE`, `USED_NATIVE_MEMORY_PERCENTAGE`, `FREE_NATIVE_MEMORY_SIZE` and `FREE_NATIVE_MEMORY_PERCENTAGE`.
+- LRU (Least Recently Used)
+- LFU (Least Frequently Used)
 
-Near-Cache can be configured only at client side.
+#### JCache Near Cache Configuration
 
-Here is a declarative near-cache configuration for a cache named `myCache`:
+The following are the example configurations.
+
+**Declarative**:
 
 ```xml
 <hazelcast-client>
     ...
     <near-cache name="myCache">
-        <!--
-            Store cache entries in "BINARY" format.
-        -->
         <in-memory-format>BINARY</in-memory-format>
-        <!--
-            Invalidate near-cache entries when entries are changed (updated or removed) from local or global.
-        -->
         <invalidate-on-change>true</invalidate-on-change>
-        <!--
-            Don't put local cache entries eagerly to near-cache on local cache put.
-        -->
         <cache-local-entries>false</cache-local-entries>
- 
-        <!--
-            Evict entries these are in near-cache more than 1 hour.
-        -->
         <time-to-live-seconds>3600000</time-to-live-seconds>
- 
-        <!--
-            Evict entries these are not touched (not read) more than 10 minutes.
-        -->
         <max-idle-seconds>600000</max-idle-seconds>
- 
-        <!--
-            When entry count in near-cache reaches to 1000, 
-            select entry to be evicted as LFU eviction policy and evict it.
-        -->
         <eviction size="1000" max-size-policy="ENTRY_COUNT" eviction-policy="LFU"/>
     </near-cache>
     ...
 </hazelcast-client>
 ```
 
-Here is a programmatic near-cache configuration for a cache named `myCache`:
+**Programmatic**:
 
 ```java
 EvictionConfig evictionConfig = new EvictionConfig();
@@ -137,18 +97,37 @@ NearCacheConfig nearCacheConfig =
         .setCacheLocalEntries(false)
         .setTimeToLiveSeconds(60 * 60 * 1000) // 1 hour TTL
         .setMaxIdleSeconds(10 * 60 * 1000) // 10 minutes max idle seconds
-        .setEvictionConfig(evictionConfig);
- 
+        .setEvictionConfig(evictionConfig); 
 ...
- 
+
 clientConfig.addNearCacheConfig(nearCacheConfig);
 ```
 
-#### Notes About Client Near-Cache Configuration
-Near-Cache configuration can be defined at client side (`hazelcast-client.xml` or `ClientConfig`) as independent configuration (independent from `CacheConfig`). 
-So at client, near-cache configuration lookup is handled like this:
-- Look for near-cache configuration with name of cache at client configuration
-- If there is defined near-cache configuration found, use this near-cache configuration defined at client
-- Otherwise, 
-  * If there is defined default near-cache configuration found, use this default near-cache configuration
-  * Otherwise, this means that, there is no near-cache configuration for cache
+The following are the definitions of the configuration elements and attributes.
+
+- `in-memory-format`: Storage type of near cache entries. Available values are `BINARY`, `OBJECT` and `NATIVE_MEMORY`. `NATIVE_MEMORY` is available only for Hazelcast Enterprise. Default value is `BINARY`.
+- `invalidate-on-change`: Specifies whether the cached entries are evicted when the entries are changed (updated or removed) on the local and global. Available values are `true` and `false`. Default value is `true`.
+- `cache-local-entries`: Specifies whether the local cache entries are stored eagerly (immediately) to near cache when a put operation from the local is performed on the cache. Available values are `true` and `false`. Default value is `false`.
+- `time-to-live-seconds`: Maximum number of seconds for each entry to stay in the near cache. Entries that are older than `<time-to-live-seconds>` will be automatically evicted from the near cache. It can be any integer between `0` and `Integer.MAX_VALUE`. `0` means **infinite**. Default value is `0`.
+- `max-idle-seconds`: Maximum number of seconds each entry can stay in the near cache as untouched (not-read). Entries that are not read (touched) more than `<max-idle-seconds>` value will be removed from the near cache. It can be any integer between `0` and `Integer.MAX_VALUE`. `0` means `Integer.MAX_VALUE`. Default is `0`.
+- `eviction`: Specifies when the eviction is triggered (`max-size policy`) and which eviction policy (`LRU` or `LFU`) is used for the entries to be evicted. The default value for `max-size-policy` is `ENTRY_COUNT`, default `size` is `10000` and default `eviction-policy` is `LRU`. For High-Density Memory Store near cache, since `ENTRY_COUNT` eviction policy is not supported yet, eviction must be explicitly configured with one of the supported policies:
+	- `USED_NATIVE_MEMORY_SIZE`
+	- `USED_NATIVE_MEMORY_PERCENTAGE`
+	- `FREE_NATIVE_MEMORY_SIZE`
+	- `FREE_NATIVE_MEMORY_PERCENTAGE`.
+
+Near cache can be configured only at the client side.
+
+#### Notes About Client Near Cache Configuration
+
+Near cache configuration can be defined at the client side (using `hazelcast-client.xml` or `ClientConfig`) as independent configuration (independent from the `CacheConfig`). Near cache configuration lookup is handled as described below:
+
+- Look for near cache configuration with the name of the cache given in the client configuration.
+- If a defined near cache configuration is found, use this near cache configuration defined at the client.
+- Otherwise: 
+	- If there is a defined default near cache configuration is found, use this default near cache configuration.
+	- If there is no default near cache configuration, it means there is no near cache configuration for cache.
+	
+
+
+
