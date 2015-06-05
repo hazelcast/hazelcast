@@ -8,37 +8,31 @@ This section provides the new features introduced with Hazelcast 3.5 release.
 
 - Async Back Pressure: The Back Pressure introduced with Hazelcast 3.4 now supports async operations.
 
-- Client Configuration Import: Hazelcast now supports replacing variables with system properties in the declarative configuration of Hazelcast client. Moreover, now you can compose the Hazelcast client declarative configuration out of smaller configuration snippets. 
+- Client Configuration Import: Hazelcast now supports replacing variables with system properties in the declarative configuration of Hazelcast client. Moreover, now you can compose the Hazelcast client declarative configuration out of smaller configuration snippets.
 
-- Cluster Quorum: This feature enables you to define the minimum number of machines required in a cluster for the cluster to remain in an operational state. For more information, please see the Cluster Quorum section.
+- Cluster Quorum: This feature enables you to define the minimum number of machines required in a cluster for the cluster to remain in an operational state. 
 
 - Hazelcast Client Protocol: Starting with 3.5, Hazelcast introduces the support for different versions of clients in a cluster. Please keep in mind that this support is not valid for the releases before 3.5.
 
-- Complete Implementation of XA Transactions
+- Listener for Lost Partitions: This feature notifies you for possible data loss occurrences.
+
+- Increased Visibility of Slow Operations: With the introduction of the `SlowOperationDetector` feature, slow operations are logged and can be seen on the Hazelcast Management Center.
+
+- Enterprise WAN Replication: Hazelcast Enterprise implementation of the WAN Replication.
+
+- Sub-Listener Interfaces for Map Listener: This feature enables you to listen to map-wide or entry-based events. With this new feature, the listener formerly known as `EntryListener` has been changed to `MapListener` and `MapListener` has sub-interfaces to catch map/entry related events.
+
+- Scalable Map Loader: With this feature, you can load your keys incrementally if the number of your keys is large.
+
+- Near Cache for JCache: Now you can use a near cache with Hazelcast's JCache implementation.
 
 - Continuous Query Caching
 
 - Dynamic Selector Rebalancing
 
-- Fail Fast on Invalid Configuration 
-
-- Enterprise WAN Replication 
-
-- Hazelcast Client Protocol
-
-- Increased Visibility of Slow Operations
-
-- Listener for Lost Partitions
+- Fail Fast on Invalid Configuration
 
 - Management of Unbounded Return Values
-
-- Near Cache for JCache 
-
-- New License Management Features
-
-- One Listener Interface per Event
-
-- Scalable Map Loader
 
 
 
@@ -46,12 +40,14 @@ This section provides the new features introduced with Hazelcast 3.5 release.
 
 This section lists the enhancements performed for Hazelcast 3.5 release.
 
-- *Eventing System Improvements*: ???. For more information, please see [???](#???).
-- **Query and Indexing Improvements*: ???. For more information, please see [???](#???).
-- *XA Transactions Improvements*: ???. For more information, please see [???](#???).
+- Eventing System Improvements: ???. For more information, please see [???](#???).
+- Query and Indexing Improvements: ???. For more information, please see [???](#???).
+- XA Transactions Improvements: With this improvement, you can now obtain a Hazelcast XA Resource instance through `HazelcastInstance`. 
  
 
 The following are the other improvements performed to solve the enhancement issues opened by the Hazelcast customers.
+
+- - While configuring JCache, duration of the `ExpiryPolicy` can be set programmatically but not declaratively [#5347].
 
 - Since near cache is not supported as embedded but only at client, at the moment, there is no need for `NearCacheConfig` in `CacheConfig` [#5215].
  
@@ -87,6 +83,12 @@ resolver [#2431].
 *3.5 Fixes*
 
 This section lists issues solved for **Hazelcast 3.5** release.
+
+- The method `IList::remove()` should publish the event `REMOVED` [#5386].
+
+- `IllegalStateException` with wrong partition is thrown when the method `IMap::getOperation()` is invoked [#5341].
+
+- `WrongTarget` warnings appear in the log since the operations are not sent to the replicas when a map has no backups [#5324].
 
 - When the method `finalizeCombine()` is used, Hazelcast throws `NullPointerException` [#5283].
 
