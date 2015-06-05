@@ -15,7 +15,7 @@
  */
 package com.hazelcast.client.protocol;
 
-import com.hazelcast.client.impl.protocol.util.Int2ObjectHashMap;
+import com.hazelcast.agrona.collections.Int2ObjectHashMap;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Assert;

@@ -36,6 +36,7 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.Repeat;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -619,7 +620,7 @@ public class NearCacheTest extends HazelcastTestSupport {
         final CountDownLatch latch = new CountDownLatch(mapSize);
 
         addListener(map, latch);
-        populateMapWithExpirableEntries(map, mapSize, 3, TimeUnit.SECONDS);
+        populateMapWithExpirableEntries(map, mapSize, 3000, TimeUnit.MILLISECONDS);
         pullEntriesToNearCache(map, mapSize);
 
         waitUntilEvictionEventsReceived(latch);
@@ -640,8 +641,8 @@ public class NearCacheTest extends HazelcastTestSupport {
     }
 
     private void pullEntriesToNearCache(IMap<Integer, Integer> map, int mapSize) {
-        for (int i = 0; i < mapSize; i++) {
-            map.get(i);
+        for (int i = 0; i < mapSize * 100; i++) {
+            map.get(i % mapSize);
         }
     }
 

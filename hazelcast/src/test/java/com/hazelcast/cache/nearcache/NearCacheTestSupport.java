@@ -17,18 +17,18 @@ import static org.junit.Assert.assertTrue;
 
 public abstract class NearCacheTestSupport extends CommonNearCacheTestSupport {
 
-    protected abstract NearCache<Integer, String> createNearCache(String name,
-                                                                  NearCacheConfig nearCacheConfig,
-                                                                  ManagedNearCacheRecordStore nearCacheRecordStore);
+    protected abstract NearCache<Integer, String> createNearCache(
+            String name, NearCacheConfig nearCacheConfig, ManagedNearCacheRecordStore nearCacheRecordStore);
 
-    protected NearCache<Integer, String> createNearCache(String name,
-                                                         ManagedNearCacheRecordStore nearCacheRecordStore) {
+    protected NearCache<Integer, String> createNearCache(
+            String name, ManagedNearCacheRecordStore nearCacheRecordStore)
+    {
         return createNearCache(name,
                                createNearCacheConfig(name, NearCacheConfig.DEFAULT_MEMORY_FORMAT),
                                nearCacheRecordStore);
     }
 
-    protected class ManagedNearCacheRecordStore implements NearCacheRecordStore<Integer, String> {
+    protected static class ManagedNearCacheRecordStore implements NearCacheRecordStore<Integer, String> {
 
         protected final NearCacheStats nearCacheStats = new NearCacheStatsImpl();
 
@@ -140,7 +140,7 @@ public abstract class NearCacheTestSupport extends CommonNearCacheTestSupport {
 
     }
 
-    protected Map<Integer, String> generateRandomKeyValueMappings() {
+    protected static Map<Integer, String> generateRandomKeyValueMappings() {
         Map<Integer, String> expectedKeyValueMappings = new HashMap<Integer, String>();
         for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
             expectedKeyValueMappings.put(i, "Record-" + i);
@@ -148,12 +148,12 @@ public abstract class NearCacheTestSupport extends CommonNearCacheTestSupport {
         return expectedKeyValueMappings;
     }
 
-    protected ManagedNearCacheRecordStore createManagedNearCacheRecordStore(
+    protected static ManagedNearCacheRecordStore createManagedNearCacheRecordStore(
             Map<Integer, String> expectedKeyValueMappings) {
         return new ManagedNearCacheRecordStore(expectedKeyValueMappings);
     }
 
-    protected ManagedNearCacheRecordStore createManagedNearCacheRecordStore() {
+    protected static ManagedNearCacheRecordStore createManagedNearCacheRecordStore() {
         return new ManagedNearCacheRecordStore(generateRandomKeyValueMappings());
     }
 

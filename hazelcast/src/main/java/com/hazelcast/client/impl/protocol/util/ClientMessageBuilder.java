@@ -1,5 +1,6 @@
 package com.hazelcast.client.impl.protocol.util;
 
+import com.hazelcast.agrona.collections.Int2ObjectHashMap;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 
 import java.nio.ByteBuffer;
