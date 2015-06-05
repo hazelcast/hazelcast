@@ -70,10 +70,14 @@ public class MapIsLockedMessageTask
     }
 
     @Override
-    public final String getServiceName() {
+    public String getServiceName() {
         return LockService.SERVICE_NAME;
     }
 
+    @Override
+    public String getDistributedObjectType() {
+        return MapService.SERVICE_NAME;
+    }
 
     @Override
     public Object[] getParameters() {

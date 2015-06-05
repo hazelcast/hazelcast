@@ -74,10 +74,10 @@ public class SemaphoreTryAcquireMessageTask
 
     @Override
     public Object[] getParameters() {
-        if (parameters.timeout == -1) {
-            return new Object[]{parameters.permits};
+        if (parameters.timeout > 0) {
+            return new Object[]{parameters.permits, parameters.timeout, TimeUnit.MILLISECONDS};
         }
-        return new Object[]{parameters.permits, parameters.timeout, TimeUnit.MILLISECONDS};
+        return new Object[]{parameters.permits};
     }
 }
 

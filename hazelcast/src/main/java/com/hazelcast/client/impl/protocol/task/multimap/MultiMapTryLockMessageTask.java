@@ -65,13 +65,18 @@ public class MultiMapTryLockMessageTask
     }
 
     @Override
+    public String getDistributedObjectType() {
+        return MultiMapService.SERVICE_NAME;
+    }
+
+    @Override
     public String getMethodName() {
         return "tryLock";
     }
 
     @Override
     public Object[] getParameters() {
-        if (parameters.timeout == -1) {
+        if (parameters.timeout == 0) {
             return new Object[]{parameters.key};
         }
         return new Object[]{parameters.key, parameters.timeout, TimeUnit.MILLISECONDS};

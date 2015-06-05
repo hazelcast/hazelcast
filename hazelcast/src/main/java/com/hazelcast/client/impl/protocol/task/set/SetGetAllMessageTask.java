@@ -62,7 +62,7 @@ public class SetGetAllMessageTask
 
     @Override
     public Object[] getParameters() {
-        return new Object[]{parameters.name};
+        return null;
     }
 
     @Override

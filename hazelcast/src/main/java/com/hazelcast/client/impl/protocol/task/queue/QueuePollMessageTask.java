@@ -74,7 +74,10 @@ public class QueuePollMessageTask
 
     @Override
     public Object[] getParameters() {
-        return new Object[]{parameters.timeoutMillis, TimeUnit.MILLISECONDS};
+        if (parameters.timeoutMillis > 0) {
+            return new Object[]{parameters.timeoutMillis, TimeUnit.MILLISECONDS};
+        }
+        return null;
     }
 
     @Override

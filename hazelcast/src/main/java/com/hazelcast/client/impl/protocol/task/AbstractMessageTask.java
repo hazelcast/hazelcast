@@ -229,7 +229,7 @@ public abstract class AbstractMessageTask<P>
 
     public abstract String getServiceName();
 
-    public final String getDistributedObjectType() {
+    public String getDistributedObjectType() {
         return getServiceName();
     }
 

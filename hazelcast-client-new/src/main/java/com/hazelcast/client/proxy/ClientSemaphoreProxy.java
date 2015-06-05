@@ -56,7 +56,7 @@ public class ClientSemaphoreProxy extends ClientProxy implements ISemaphore {
 
     public void acquire(int permits) throws InterruptedException {
         checkNegative(permits);
-        ClientMessage request = SemaphoreAcquireCodec.encodeRequest(name, 1);
+        ClientMessage request = SemaphoreAcquireCodec.encodeRequest(name, permits);
         invoke(request);
     }
 

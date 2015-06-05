@@ -22,9 +22,13 @@ import com.hazelcast.client.impl.protocol.codec.AtomicLongAlterAndGetCodec;
 import com.hazelcast.client.impl.protocol.codec.AtomicLongAlterCodec;
 import com.hazelcast.client.impl.protocol.codec.AtomicLongApplyCodec;
 import com.hazelcast.client.impl.protocol.codec.AtomicLongCompareAndSetCodec;
+import com.hazelcast.client.impl.protocol.codec.AtomicLongDecrementAndGetCodec;
 import com.hazelcast.client.impl.protocol.codec.AtomicLongGetAndAddCodec;
 import com.hazelcast.client.impl.protocol.codec.AtomicLongGetAndAlterCodec;
+import com.hazelcast.client.impl.protocol.codec.AtomicLongGetAndIncrementCodec;
 import com.hazelcast.client.impl.protocol.codec.AtomicLongGetAndSetCodec;
+import com.hazelcast.client.impl.protocol.codec.AtomicLongGetCodec;
+import com.hazelcast.client.impl.protocol.codec.AtomicLongIncrementAndGetCodec;
 import com.hazelcast.client.impl.protocol.codec.AtomicLongSetCodec;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.core.IAtomicLong;
@@ -95,12 +99,18 @@ public class ClientAtomicLongProxy extends ClientProxy implements IAtomicLong {
 
     @Override
     public long decrementAndGet() {
-        return addAndGet(-1);
+        ClientMessage request = AtomicLongDecrementAndGetCodec.encodeRequest(name);
+        AtomicLongDecrementAndGetCodec.ResponseParameters resultParameters
+                = AtomicLongDecrementAndGetCodec.decodeResponse(invokeMessage(request));
+        return resultParameters.response;
     }
 
     @Override
     public long get() {
-        return getAndAdd(0);
+        ClientMessage request = AtomicLongGetCodec.encodeRequest(name);
+        AtomicLongGetCodec.ResponseParameters resultParameters
+                = AtomicLongGetCodec.decodeResponse(invokeMessage(request));
+        return resultParameters.response;
     }
 
     @Override
@@ -121,12 +131,18 @@ public class ClientAtomicLongProxy extends ClientProxy implements IAtomicLong {
 
     @Override
     public long incrementAndGet() {
-        return addAndGet(1);
+        ClientMessage request = AtomicLongIncrementAndGetCodec.encodeRequest(name);
+        AtomicLongIncrementAndGetCodec.ResponseParameters resultParameters
+                = AtomicLongIncrementAndGetCodec.decodeResponse(invokeMessage(request));
+        return resultParameters.response;
     }
 
     @Override
     public long getAndIncrement() {
-        return getAndAdd(1);
+        ClientMessage request = AtomicLongGetAndIncrementCodec.encodeRequest(name);
+        AtomicLongGetAndIncrementCodec.ResponseParameters resultParameters
+                = AtomicLongGetAndIncrementCodec.decodeResponse(invokeMessage(request));
+        return resultParameters.response;
     }
 
     @Override

@@ -64,6 +64,12 @@ public class MultiMapForceUnlockMessageTask
     }
 
     @Override
+    public String getDistributedObjectType() {
+        return MultiMapService.SERVICE_NAME;
+    }
+
+
+    @Override
     public String getMethodName() {
         return "forceUnlock";
     }

@@ -73,7 +73,7 @@ public class ListIteratorMessageTask
 
     @Override
     public String getMethodName() {
-        return "listIterator";
+        return "iterator";
     }
 
     @Override

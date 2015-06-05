@@ -72,7 +72,7 @@ public class MapEntriesWithPredicateMessageTask
 
     @Override
     public String getMethodName() {
-        return "entries";
+        return "entrySet";
     }
 
 }

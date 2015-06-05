@@ -59,6 +59,12 @@ public class MapForceUnlockMessageTask
         return LockService.SERVICE_NAME;
     }
 
+    @Override
+    public String getDistributedObjectType() {
+        return MapService.SERVICE_NAME;
+    }
+
+
     public Permission getRequiredPermission() {
         return new MapPermission(parameters.name, ActionConstants.ACTION_LOCK);
     }

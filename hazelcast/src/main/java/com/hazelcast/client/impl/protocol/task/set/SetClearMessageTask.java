@@ -61,7 +61,7 @@ public class SetClearMessageTask
 
     @Override
     public Object[] getParameters() {
-        return new Object[]{parameters.name};
+        return null;
     }
 
     @Override

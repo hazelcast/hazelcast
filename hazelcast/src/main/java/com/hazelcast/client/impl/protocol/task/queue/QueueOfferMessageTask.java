@@ -58,7 +58,10 @@ public class QueueOfferMessageTask
 
     @Override
     public Object[] getParameters() {
-        return new Object[]{parameters.value, parameters.timeoutMillis, TimeUnit.MILLISECONDS};
+        if (parameters.timeoutMillis > 0) {
+            return new Object[]{parameters.value, parameters.timeoutMillis, TimeUnit.MILLISECONDS};
+        }
+        return new Object[]{parameters.value};
     }
 
     @Override

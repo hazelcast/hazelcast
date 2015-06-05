@@ -72,7 +72,7 @@ public class MapEntriesWithPagingPredicateMessageTask
 
     @Override
     public String getMethodName() {
-        return "entries";
+        return "entrySet";
     }
 
 }

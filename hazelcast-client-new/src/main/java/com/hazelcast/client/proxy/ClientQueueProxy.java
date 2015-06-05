@@ -25,6 +25,7 @@ import com.hazelcast.client.impl.protocol.codec.QueueCompareAndRemoveAllCodec;
 import com.hazelcast.client.impl.protocol.codec.QueueCompareAndRetainAllCodec;
 import com.hazelcast.client.impl.protocol.codec.QueueContainsAllCodec;
 import com.hazelcast.client.impl.protocol.codec.QueueContainsCodec;
+import com.hazelcast.client.impl.protocol.codec.QueueDrainToCodec;
 import com.hazelcast.client.impl.protocol.codec.QueueDrainToMaxSizeCodec;
 import com.hazelcast.client.impl.protocol.codec.QueueIsEmptyCodec;
 import com.hazelcast.client.impl.protocol.codec.QueueIteratorCodec;
@@ -202,7 +203,15 @@ public final class ClientQueueProxy<E> extends ClientProxy implements IQueue<E> 
     }
 
     public int drainTo(Collection<? super E> objects) {
-        return drainTo(objects, -1);
+        ClientMessage request = QueueDrainToCodec.encodeRequest(name);
+        ClientMessage response = invoke(request);
+        QueueDrainToCodec.ResponseParameters resultParameters = QueueDrainToCodec.decodeResponse(response);
+        Collection<Data> resultCollection = resultParameters.list;
+        for (Data data : resultCollection) {
+            E e = toObject(data);
+            objects.add(e);
+        }
+        return resultCollection.size();
     }
 
     public int drainTo(Collection<? super E> c, int maxElements) {

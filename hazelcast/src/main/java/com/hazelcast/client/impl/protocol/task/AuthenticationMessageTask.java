@@ -19,13 +19,10 @@ package com.hazelcast.client.impl.protocol.task;
 import com.hazelcast.client.impl.client.ClientPrincipal;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientAuthenticationCodec;
-import com.hazelcast.config.GroupConfig;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.security.UsernamePasswordCredentials;
-
-import java.util.logging.Level;
 
 /**
  * Default Authentication with username password handling task
@@ -79,26 +76,10 @@ public class AuthenticationMessageTask
         return null;
     }
 
-    protected boolean authenticate() {
-        Connection connection = endpoint.getConnection();
-        boolean authenticated = (clientEngine.getSecurityContext() == null) && authenticateWithUserNameAndPassword();
-        logger.log((authenticated ? Level.INFO : Level.WARNING), "Received auth from " + connection + ", "
-                + (authenticated ? "successfully authenticated" : "authentication failed"));
-        return authenticated;
-    }
-
     @Override
     protected boolean isOwnerConnection() {
         return parameters.isOwnerConnection;
     }
 
-    private boolean authenticateWithUserNameAndPassword() {
-        GroupConfig groupConfig = nodeEngine.getConfig().getGroupConfig();
-        String nodeGroupName = groupConfig.getName();
-        String nodeGroupPassword = groupConfig.getPassword();
-        boolean usernameMatch = nodeGroupName.equals(parameters.username);
-        boolean passwordMatch = nodeGroupPassword.equals(parameters.password);
-        return usernameMatch && passwordMatch;
-    }
 
 }
