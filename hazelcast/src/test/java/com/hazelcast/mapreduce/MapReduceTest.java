@@ -621,12 +621,15 @@ public class MapReduceTest
         assertClusterSizeEventually(3, h2);
         assertClusterSizeEventually(3, h3);
 
+        logger.info("testAsyncMapper.3");
         try {
 
             IMap<Integer, Integer> m1 = h1.getMap(MAP_NAME);
             for (int i = 0; i < 100; i++) {
                 m1.put(i, i);
             }
+
+            logger.info("testAsyncMapper.4");
 
             final Map<String, List<Integer>> listenerResults = new HashMap<String, List<Integer>>();
             final Semaphore semaphore = new Semaphore(1);
@@ -635,6 +638,8 @@ public class MapReduceTest
             JobTracker tracker = h1.getJobTracker("default");
             Job<Integer, Integer> job = tracker.newJob(KeyValueSource.fromMap(m1));
             ICompletableFuture<Map<String, List<Integer>>> future = job.mapper(new TestMapper()).submit();
+
+            logger.info("testAsyncMapper.5");
 
             future.andThen(new ExecutionCallback<Map<String, List<Integer>>>() {
                 @Override
@@ -652,12 +657,19 @@ public class MapReduceTest
                 }
             });
 
+
+            logger.info("testAsyncMapper.6");
+
             semaphore.acquire();
+
+            logger.info("testAsyncMapper.7");
 
             assertEquals(100, listenerResults.size());
             for (List<Integer> value : listenerResults.values()) {
                 assertEquals(1, value.size());
             }
+
+            logger.info("testAsyncMapper.8");
         } finally {
             tripshutdown(h1, h2, h3);
         }
