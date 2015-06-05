@@ -319,7 +319,7 @@ public class ClusteredSessionService {
     /**
      * Internal ThreadFactory to create threads which checks hazelcast instance
      */
-    private class EnsureInstanceThreadFactory implements ThreadFactory {
+    private static final class EnsureInstanceThreadFactory implements ThreadFactory {
 
         public Thread newThread(final Runnable r) {
             final Thread thread = new EnsureInstanceThread(r, ".hazelcast-wm.ensureInstance");
