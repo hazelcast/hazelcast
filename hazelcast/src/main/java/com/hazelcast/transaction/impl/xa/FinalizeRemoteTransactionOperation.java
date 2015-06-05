@@ -129,7 +129,7 @@ public class FinalizeRemoteTransactionOperation extends Operation implements Bac
 
     @Override
     public Operation getBackupOperation() {
-        return new FinalizeRemoteTransactionBackupOperation(xid);
+        return new FinalizeRemoteTransactionBackupOperation(xidData);
     }
 
     @Override

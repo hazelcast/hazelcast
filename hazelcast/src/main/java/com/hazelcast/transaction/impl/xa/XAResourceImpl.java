@@ -19,6 +19,8 @@ package com.hazelcast.transaction.impl.xa;
 import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.InternalPartitionService;
@@ -54,12 +56,12 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 public final class XAResourceImpl extends AbstractDistributedObject<XAService> implements HazelcastXAResource {
 
     private static final int DEFAULT_TIMEOUT_SECONDS = (int) MILLISECONDS.toSeconds(TransactionOptions.DEFAULT_TIMEOUT_MILLIS);
+    private static final ILogger LOGGER = Logger.getLogger(XAResourceImpl.class);
 
     private final ConcurrentMap<Long, TransactionContext> threadContextMap = new ConcurrentHashMap<Long, TransactionContext>();
     private final ConcurrentMap<Xid, List<TransactionContext>> xidContextMap
             = new ConcurrentHashMap<Xid, List<TransactionContext>>();
     private final String groupName;
-
     private final AtomicInteger timeoutInSeconds = new AtomicInteger(DEFAULT_TIMEOUT_SECONDS);
 
     public XAResourceImpl(NodeEngine nodeEngine, XAService service) {
@@ -111,23 +113,12 @@ public final class XAResourceImpl extends AbstractDistributedObject<XAService> i
     public void end(Xid xid, int flags) throws XAException {
         long threadId = currentThreadId();
         TransactionContext threadContext = threadContextMap.remove(threadId);
-        if (threadContext == null) {
-            throw new XAException("There is no TransactionContext for the current thread: " + threadId);
+        if (threadContext == null && LOGGER.isFinestEnabled()) {
+            LOGGER.finest("There is no TransactionContext for the current thread: " + threadId);
         }
-        switch (flags) {
-            case TMFAIL:
-                List<TransactionContext> contexts = xidContextMap.remove(xid);
-                if (contexts != null) {
-                    for (TransactionContext context : contexts) {
-                        getTransaction(context).rollback();
-                    }
-                }
-                break;
-            case TMSUCCESS:
-            case TMSUSPEND:
-                break;
-            default:
-                throw new XAException("Unknown flag!!! " + flags);
+        List<TransactionContext> contexts = xidContextMap.get(xid);
+        if (contexts == null && LOGGER.isFinestEnabled()) {
+            LOGGER.finest("There is no TransactionContexts for the given xid: " + xid);
         }
     }
 
@@ -169,7 +160,7 @@ public final class XAResourceImpl extends AbstractDistributedObject<XAService> i
     public void rollback(Xid xid) throws XAException {
         List<TransactionContext> contexts = xidContextMap.remove(xid);
         if (contexts == null) {
-            finalizeTransactionRemotely(xid, true);
+            finalizeTransactionRemotely(xid, false);
             return;
         }
         for (TransactionContext context : contexts) {
@@ -251,7 +242,7 @@ public final class XAResourceImpl extends AbstractDistributedObject<XAService> i
             futureList.add(future);
         }
         HashSet<SerializableXID> xids = new HashSet<SerializableXID>();
-        xids.addAll(xaService.getXids());
+        xids.addAll(xaService.getPreparedXids());
         for (InternalCompletableFuture<SerializableCollection> future : futureList) {
             SerializableCollection xidSet = future.getSafely();
             for (Data xidData : xidSet) {

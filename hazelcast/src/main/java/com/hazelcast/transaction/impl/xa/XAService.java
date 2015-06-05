@@ -38,6 +38,7 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * Provides XAResource to the user via proxyService
@@ -51,7 +52,7 @@ public class XAService implements ManagedService, RemoteService, MigrationAwareS
 
     private final XAResourceImpl xaResource;
 
-    private final ConcurrentMap<SerializableXID, List<XATransactionImpl>> preparedTransactions =
+    private final ConcurrentMap<SerializableXID, List<XATransactionImpl>> transactions =
             new ConcurrentHashMap<SerializableXID, List<XATransactionImpl>>();
 
     public XAService(NodeEngineImpl nodeEngine) {
@@ -86,21 +87,20 @@ public class XAService implements ManagedService, RemoteService, MigrationAwareS
 
     public void putTransaction(XATransactionImpl transaction) {
         SerializableXID xid = transaction.getXid();
-        List<XATransactionImpl> list = preparedTransactions.get(xid);
+        List<XATransactionImpl> list = transactions.get(xid);
         if (list == null) {
-            list = new ArrayList<XATransactionImpl>();
-            preparedTransactions.put(xid, list);
+            list = new CopyOnWriteArrayList<XATransactionImpl>();
+            transactions.put(xid, list);
         }
-        // this method is always called from same thread for same xid, so no concurrency problem
         list.add(transaction);
     }
 
     public List<XATransactionImpl> removeTransactions(SerializableXID xid) {
-        return preparedTransactions.remove(xid);
+        return transactions.remove(xid);
     }
 
-    public Set<SerializableXID> getXids() {
-        return preparedTransactions.keySet();
+    public Set<SerializableXID> getPreparedXids() {
+        return transactions.keySet();
     }
 
     //Migration related methods
@@ -109,7 +109,7 @@ public class XAService implements ManagedService, RemoteService, MigrationAwareS
     public Operation prepareReplicationOperation(PartitionReplicationEvent event) {
         List<XATransactionHolder> migrationData = new ArrayList<XATransactionHolder>();
         InternalPartitionService partitionService = nodeEngine.getPartitionService();
-        for (Map.Entry<SerializableXID, List<XATransactionImpl>> entry : preparedTransactions.entrySet()) {
+        for (Map.Entry<SerializableXID, List<XATransactionImpl>> entry : transactions.entrySet()) {
             SerializableXID xid = entry.getKey();
             int partitionId = partitionService.getPartitionId(xid);
             List<XATransactionImpl> xaTransactionList = entry.getValue();
@@ -149,7 +149,7 @@ public class XAService implements ManagedService, RemoteService, MigrationAwareS
     @Override
     public void clearPartitionReplica(int partitionId) {
         InternalPartitionService partitionService = nodeEngine.getPartitionService();
-        Iterator<Map.Entry<SerializableXID, List<XATransactionImpl>>> iterator = preparedTransactions.entrySet().iterator();
+        Iterator<Map.Entry<SerializableXID, List<XATransactionImpl>>> iterator = transactions.entrySet().iterator();
         while (iterator.hasNext()) {
             Map.Entry<SerializableXID, List<XATransactionImpl>> entry = iterator.next();
             SerializableXID xid = entry.getKey();

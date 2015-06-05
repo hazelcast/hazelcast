@@ -82,7 +82,7 @@ public class ClearRemoteTransactionOperation extends Operation implements Backup
 
     @Override
     public Operation getBackupOperation() {
-        return new ClearRemoteTransactionBackupOperation(xid);
+        return new ClearRemoteTransactionBackupOperation(xidData);
     }
 
     @Override
