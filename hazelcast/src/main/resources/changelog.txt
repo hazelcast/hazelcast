@@ -18,6 +18,9 @@ Chapter 6 - Distributed Data Structures
 - Map Entry Listener: The content of the section, previously read as Entry Listener improved and its name changed to Map Listener
 - Map Persistence: Description of the new element `write-coalescing` added to the Write-Behind section.
 - Incremental Key Loading added as a new section.
+- Example Map Eviction Scenario added as a new section.
+- MapPartitionLostListener added as a new section.
+- A note stating the change in the return type of the method loadAllKeys() added to the Initialization On Startup section.
 - Replicated Map Configuration added as a new section explaining the configuration elements.
 
 Chapter 7 - Distributed Events
@@ -32,42 +35,57 @@ Chapter 9 - Distributed Query
 Chapter 11 - Transactions
 - Added a note related to `REPEATABLE_READ` isolation level.
 
+Chapter 12 - Hazelcast JCache
+- JCache Near Cache: Added as a new section explaining the invalidation concept, eviction policies and configuration of JCache's near cache feature.
+
 Chapter 13 - Integrated Clustering
 - Added introduction paragraphs.
 - Tomcat Based Web Session Replication: Updated the Overview paragraph to include the support for Tomcat 8.
 
-Chapter 15 - Clients
-- Added introduction paragraphs.
+Chapter 14 - Storage
+- Sizing Practices: Added as a new section.
 
-Chapter 17 - Management
+Chapter 15 - Hazelcast Java Client
+- Added introduction paragraphs.
+- Separated from the formerly known "Clients" chapter to be a chapter of its own.
+
+Chapter 16 - Other Client Implementations
+- C++, .NET, Memcache and REST client sections separated from the formerly known "Clients" chapter.
+
+Chapter 18 - Management
 - JMX API per Node: Two new bean definitions added to the Hazelcast Instance list (Cluster Safe State and LocalMember Safe State).
 
-Chapter 18 - Security
+Chapter 19 - Security
 - ClusterLoginModule: Enterprise Integration section added.
 
-Chapter 19 - Performance
+Chapter 20 - Performance
 - Hazelcast Performance on AWS added as a new section that provides best practices to improve the Hazelcast performance on Amazon Web Service.
 - Back Pressure added as a new section.
+- SlowOperationDetector: Added as a new section explaining the SlowOperationDetector, a monitoring feature that collects information of all slow operations.
 
-Chapter 20 - Hazelcast Simulator
+Chapter 21 - Hazelcast Simulator
 - Added as a new chapter providing comprehensive information on the Hazelcast Simulator feature.
 
-Chapter 21 - WAN
+Chapter 22 - WAN
 - WAN Replication Queue Capacity: The previous heading title (WAN Replication Queue Size) and the system property name (`hazelcast.enterprise.wanrep.queuesize`) changed to WAN Replication Queue Capacity and `hazelcast.enterprise.wanrep.queue.capacity`.
 - Enterprise WAN Replication added as a new section.
 
-Chapter 22 - Hazelcast Configuration
+Chapter 23 - Hazelcast Configuration
 - Improved by adding missing configuration elements and attributes. Added introduction paragraphs to the chapter.|
 - Using Variables added as a new section explaining how to use variables in declarative configuration.
 - System Properties updated by adding the new system properties.
+- Enterprise WAN Replication Configuration: Added as a new section describing the elements and attributes of Enterprise WAN Replication configuration.
 
-Chapter 24 - License Questions
+Chapter 25 - License Questions
 - Added as a new chapter describing the license information of dependencies.
 
-Chapter 25 - FAQ
+Chapter 26 - Common Exception Types
+- Added as a new chapter.
+
+Chapter 27 - FAQ
 - Added new questions/answers.
 
-Chapter 26 - Glossary
+Chapter 28 - Glossary
 Added new glossary items.
 
 
