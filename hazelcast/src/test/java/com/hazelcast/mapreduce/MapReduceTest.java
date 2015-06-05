@@ -14,14 +14,7 @@
 
 package com.hazelcast.mapreduce;
 
-import com.hazelcast.core.ExecutionCallback;
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.ICompletableFuture;
-import com.hazelcast.core.IList;
-import com.hazelcast.core.IMap;
-import com.hazelcast.core.ISet;
-import com.hazelcast.core.MultiMap;
-import com.hazelcast.mapreduce.ListSetMapReduceTest.ListSetReducerFactory;
+import com.hazelcast.core.*;
 import com.hazelcast.mapreduce.helpers.Employee;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -32,26 +25,19 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
 import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Semaphore;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
@@ -60,6 +46,11 @@ public class MapReduceTest
         extends HazelcastTestSupport {
 
     private static final String MAP_NAME = "default";
+
+    @BeforeClass
+    public static void beforeClass() {
+        System.out.println("MapReduceTest started");
+    }
 
     @Test(timeout = 60000)
     public void test_early_finalization_combiner_github_5283() throws Exception {
