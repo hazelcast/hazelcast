@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2014, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,39 +20,79 @@ import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.DataSerializerHook;
 import com.hazelcast.nio.serialization.FactoryIdHelper;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.web.entryprocessor.DeleteSessionEntryProcessor;
+import com.hazelcast.web.entryprocessor.GetAttributeEntryProcessor;
+import com.hazelcast.web.entryprocessor.GetAttributeNamesEntryProcessor;
+import com.hazelcast.web.entryprocessor.GetSessionStateEntryProcessor;
+import com.hazelcast.web.entryprocessor.SessionUpdateEntryProcessor;
 
 public class WebDataSerializerHook implements DataSerializerHook {
 
+    /**
+     * The constant F_ID.
+     */
     public static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.WEB_DS_FACTORY, F_ID_OFFSET_WEBMODULE);
 
-    public static final int SESSION_ATTRIBUTE_ID = 1;
-    public static final int ADD_SESSION_ID = 2;
-    public static final int DESTROY_SESSION_ID = 3;
-    public static final int INVALIDATE_SESSION_ATTRIBUTES_ID = 4;
-    public static final int REFERENCE_SESSION_ID = 5;
+    /**
+     * The constant SESSION_UPDATE.
+     */
+    public static final int SESSION_UPDATE = 1;
+    /**
+     * The constant SESSION_DELETE.
+     */
+    public static final int SESSION_DELETE = 2;
+    /**
+     * The constant GET_ATTRIBUTE.
+     */
+    public static final int GET_ATTRIBUTE = 3;
+    /**
+     * The constant GET_ATTRIBUTE_NAMES.
+     */
+    public static final int GET_ATTRIBUTE_NAMES = 4;
+    /**
+     * The constant GET_SESSION_STATE.
+     */
+    public static final int GET_SESSION_STATE = 5;
+    /**
+     * The constant SESSION_STATE.
+     */
+    public static final int SESSION_STATE = 6;
 
     @Override
     public DataSerializableFactory createFactory() {
         return new DataSerializableFactory() {
-
             @Override
             public IdentifiedDataSerializable create(final int typeId) {
-                switch (typeId) {
-                    case SESSION_ATTRIBUTE_ID:
-                        return new SessionAttributePredicate();
-                    case ADD_SESSION_ID:
-                        return new AddSessionEntryProcessor();
-                    case DESTROY_SESSION_ID:
-                        return new DestroySessionEntryProcessor();
-                    case INVALIDATE_SESSION_ATTRIBUTES_ID:
-                        return new InvalidateSessionAttributesEntryProcessor();
-                    case REFERENCE_SESSION_ID:
-                        return new ReferenceSessionEntryProcessor();
-                    default:
-                        throw new IllegalArgumentException();
-                }
+                return getIdentifiedDataSerializable(typeId);
             }
         };
+    }
+
+    private IdentifiedDataSerializable getIdentifiedDataSerializable(int typeId) {
+        IdentifiedDataSerializable dataSerializable;
+        switch (typeId) {
+            case SESSION_UPDATE:
+                dataSerializable = new SessionUpdateEntryProcessor();
+                break;
+            case SESSION_DELETE:
+                dataSerializable = new DeleteSessionEntryProcessor();
+                break;
+            case GET_ATTRIBUTE:
+                dataSerializable = new GetAttributeEntryProcessor();
+                break;
+            case GET_ATTRIBUTE_NAMES:
+                dataSerializable = new GetAttributeNamesEntryProcessor();
+                break;
+            case GET_SESSION_STATE:
+                dataSerializable = new GetSessionStateEntryProcessor();
+                break;
+            case SESSION_STATE:
+                dataSerializable =  new SessionState();
+                break;
+            default:
+                dataSerializable = null;
+        }
+        return dataSerializable;
     }
 
     @Override

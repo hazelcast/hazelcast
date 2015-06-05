@@ -19,10 +19,11 @@ package com.hazelcast.instance;
 import com.hazelcast.ascii.TextCommandService;
 import com.hazelcast.ascii.TextCommandServiceImpl;
 import com.hazelcast.client.impl.ClientEngineImpl;
-import com.hazelcast.cluster.impl.ConfigCheck;
-import com.hazelcast.cluster.impl.ClusterServiceImpl;
-import com.hazelcast.cluster.impl.JoinRequest;
 import com.hazelcast.cluster.Joiner;
+
+import com.hazelcast.cluster.impl.ClusterServiceImpl;
+import com.hazelcast.cluster.impl.ConfigCheck;
+import com.hazelcast.cluster.impl.JoinRequest;
 import com.hazelcast.cluster.impl.MulticastJoiner;
 import com.hazelcast.cluster.impl.MulticastService;
 import com.hazelcast.cluster.impl.NodeMulticastListener;
@@ -144,7 +145,6 @@ public class Node {
         } catch (Throwable e) {
             throw ExceptionUtil.rethrow(e);
         }
-
         final ServerSocketChannel serverSocketChannel = addressPicker.getServerSocketChannel();
         try {
             address = addressPicker.getPublicAddress();

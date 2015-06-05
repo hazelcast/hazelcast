@@ -46,6 +46,7 @@ import com.hazelcast.instance.TerminatedLifecycleService;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.mapreduce.JobTracker;
 import com.hazelcast.nio.serialization.SerializationService;
+import com.hazelcast.spi.impl.SerializationServiceSupport;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionOptions;
@@ -58,7 +59,7 @@ import java.util.concurrent.ConcurrentMap;
  * A client-side proxy {@link com.hazelcast.core.HazelcastInstance} instance.
  *
  */
-public final class HazelcastClientProxy implements HazelcastInstance {
+public final class HazelcastClientProxy implements HazelcastInstance, SerializationServiceSupport {
 
     public volatile HazelcastClientInstanceImpl client;
 
