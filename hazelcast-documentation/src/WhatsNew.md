@@ -17,10 +17,11 @@ This section provides the new features introduced with Hazelcast 3.5 release.
 - **Enterprise WAN Replication**: Hazelcast Enterprise implementation of the WAN Replication. Please see the [Enterprise WAN Replication section](#eneterprise-wan-replication).
 - **Sub-Listener Interfaces for Map Listener**: This feature enables you to listen to map-wide or entry-based events. With this new feature, the listener formerly known as `EntryListener` has been changed to `MapListener` and `MapListener` has sub-interfaces to catch map/entry related events. Please see the [Map Listener section](#map-listener) for more information.
 - **Scalable Map Loader**: With this feature, you can load your keys incrementally if the number of your keys is large. Please see the [Incremental Key Loading section](#incremental-key-loading).
+- **Near Cache for JCache**: Now you can use a near cache with Hazelcast's JCache implementation. Please see [JCache Near Cache](#jcache-near-cache) for details. 
 - Continuous Query Caching
 - Dynamic Selector Rebalancing
 - Fail Fast on Invalid Configuration
 - Management of Unbounded Return Values
-- Near Cache for JCache
+
 
 

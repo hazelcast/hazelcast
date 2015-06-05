@@ -33,7 +33,6 @@ import java.util.concurrent.TimeoutException;
 
 public class ClientDelegatingFuture<V> implements ICompletableFuture<V> {
 
-
     private final ClientInvocationFuture future;
     private final SerializationService serializationService;
     private final V defaultValue;
@@ -137,7 +136,18 @@ public class ClientDelegatingFuture<V> implements ICompletableFuture<V> {
             return defaultValue;
         }
 
-        return deserializedValue;
+        // If value is already deserialized, use it.
+        if (deserializedValue != null) {
+            return deserializedValue;
+        } else {
+            // Otherwise, it is possible that received data may not be deserialized
+            // if "shouldDeserializeData" flag is not true in any of registered "DelegatingExecutionCallback".
+            // So, be sure that value is deserialized before returning to caller.
+            if (valueData != null) {
+                deserializedValue = serializationService.toObject(valueData);
+            }
+            return deserializedValue;
+        }
     }
 
     private Data resolveMessageToValue(ClientMessage message) {

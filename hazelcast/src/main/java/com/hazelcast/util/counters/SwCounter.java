@@ -62,7 +62,7 @@ public abstract class SwCounter implements Counter {
      * @param initialValue the initial value for the SwCounter.
      * @return the created SwCounter.
      */
-    public static SwCounter newSwCounter(int initialValue) {
+    public static SwCounter newSwCounter(long initialValue) {
         if (UnsafeHelper.UNSAFE_AVAILABLE) {
             return new UnsafeSwCounter(initialValue);
         } else {
@@ -95,7 +95,7 @@ public abstract class SwCounter implements Counter {
         private long localValue;
         private volatile long value;
 
-        protected UnsafeSwCounter(int initialValue) {
+        protected UnsafeSwCounter(long initialValue) {
             this.value = initialValue;
         }
 
@@ -106,7 +106,7 @@ public abstract class SwCounter implements Counter {
         }
 
         @Override
-        public void inc(int amount) {
+        public void inc(long amount) {
             long newLocalValue = localValue += amount;
             UNSAFE.putOrderedLong(this, OFFSET, newLocalValue);
         }
@@ -134,7 +134,7 @@ public abstract class SwCounter implements Counter {
 
         private volatile long value;
 
-        protected SafeSwCounter(int initialValue) {
+        protected SafeSwCounter(long initialValue) {
             this.value = initialValue;
         }
 
@@ -144,7 +144,7 @@ public abstract class SwCounter implements Counter {
         }
 
         @Override
-        public void inc(int amount) {
+        public void inc(long amount) {
             COUNTER.lazySet(this, value + amount);
         }
 

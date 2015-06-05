@@ -2,7 +2,6 @@ package com.hazelcast.util.counters;
 
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.util.counters.SwCounter;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;

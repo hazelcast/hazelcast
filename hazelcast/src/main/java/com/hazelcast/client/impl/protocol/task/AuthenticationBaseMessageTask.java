@@ -99,8 +99,8 @@ public abstract class AuthenticationBaseMessageTask<P>
             }
         }
 
-        boolean isMember = clientEngine.getClusterService().getMember(principal.getOwnerUuid()) == null;
-        if (isMember) {
+        boolean isNotMember = clientEngine.getClusterService().getMember(principal.getOwnerUuid()) == null;
+        if (isNotMember) {
             throw new AuthenticationException("Invalid owner-uuid: " + principal.getOwnerUuid()
                     + ", it's not member of this cluster!");
         }

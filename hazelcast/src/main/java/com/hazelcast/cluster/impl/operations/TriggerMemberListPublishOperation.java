@@ -14,11 +14,22 @@
  * limitations under the License.
  */
 
+package com.hazelcast.cluster.impl.operations;
+
+import com.hazelcast.cluster.impl.ClusterServiceImpl;
+
 /**
- * This package contains classes to support the inner workings of Hazelcast
- * as well as some backports of newer Java features / data structures to
- * support older Java versions in a clean and nice way.
- *
- * This is an internal package; so we don't provide backward compatibility on these classes.
+ * Requests member list publish from master node
  */
-package com.hazelcast.util;
+public class TriggerMemberListPublishOperation extends AbstractClusterOperation {
+
+    public TriggerMemberListPublishOperation() {
+    }
+
+    @Override
+    public void run() throws Exception {
+        final ClusterServiceImpl clusterService = getService();
+        clusterService.sendMemberListToMember(getCallerAddress());
+    }
+
+}

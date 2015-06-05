@@ -41,6 +41,9 @@ Property Name | Default Value | Type | Description
 `hazelcast.backpressure.enabled`|false|bool|Enable back pressure.
 `hazelcast.backpressure.max.concurrent.invocations.per.partition`|100|int|The maximum number of concurrent invocations per partition.
 `hazelcast.backpressure.syncwindow`|1000|string|Used when back pressure is enabled. The larger the sync window value, the less frequent a asynchronous backup is converted to a sync backup.
+`hazelcast.cache.invalidation.batch.enabled`|true|bool|Specifies whether the cache invalidation event batch sending is enabled or not.
+`hazelcast.cache.invalidation.batch.size`|100|int|Defines the maximum number of cache invalidation events to be drained and sent to the event listeners in a batch.
+`hazelcast.cache.invalidation.batchfrequency.seconds`|5|int|Defines cache invalidation event batch sending frequency in seconds.
 `hazelcast.clientengine.thread.count`||int|Maximum number of threads to process non-partition-aware client requests, like `map.size()`, query, executor tasks, etc. Default count is 20 times number of cores.
 `hazelcast.client.event.queue.capacity`|1000000|string|Default value of the capacity of executor that handles incoming event packets.
 `hazelcast.client.event.thread.count`|5|string|Thread count for handling incoming event packets.
