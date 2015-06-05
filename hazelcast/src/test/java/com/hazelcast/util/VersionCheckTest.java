@@ -59,4 +59,20 @@ public class VersionCheckTest extends HazelcastTestSupport {
         assertNotEquals(parameters.get("nuptm"), "0");
         assertNotEquals(parameters.get("nuptm"), parameters.get("cuptm"));
     }
+
+    @Test
+    public void testConvertToLetter() throws Exception {
+
+        VersionCheck check = new VersionCheck();
+        assertEquals("A", check.convertToLetter(4));
+        assertEquals("B", check.convertToLetter(9));
+        assertEquals("C", check.convertToLetter(19));
+        assertEquals("D", check.convertToLetter(39));
+        assertEquals("E", check.convertToLetter(59));
+        assertEquals("F", check.convertToLetter(99));
+        assertEquals("G", check.convertToLetter(149));
+        assertEquals("H", check.convertToLetter(299));
+        assertEquals("J", check.convertToLetter(599));
+        assertEquals("I", check.convertToLetter(1000));
+    }
 }

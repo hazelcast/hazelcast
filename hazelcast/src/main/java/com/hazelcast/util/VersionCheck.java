@@ -69,7 +69,7 @@ public final class VersionCheck {
     public void shutdown() {
     }
 
-    private String convertToLetter(int size) {
+    public String convertToLetter(int size) {
         String letter;
         if (size < A_INTERVAL) {
             letter = "A";
