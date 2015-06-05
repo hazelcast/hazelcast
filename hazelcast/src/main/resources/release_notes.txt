@@ -73,6 +73,12 @@ This section lists the enhancements performed for Hazelcast 3.4 release.
 
 This section lists issues solved for Hazelcast 3.4.3 release.
 
+• Write-behind may cause reading of stale value upon migration [#5339].
+
+• Last update time of an entry should not be changed after `getAll()` is invoked [#5333].
+
+• `AtomicReference.alterAndGet()` throws `HazelcastSerializationException` [#5265].
+
 • `ICompletableFuture` callback from the method `getAsync` is not always invoked [#5133].
 
 • Warnings and exceptions are logged when closing the client connection [#4966].
