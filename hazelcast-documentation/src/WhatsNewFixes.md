@@ -5,10 +5,13 @@
 
 This section lists issues solved for Hazelcast 3.4.3 release.
 
+- Write-behind may cause reading of stale value upon migration [[#5339]](https://github.com/hazelcast/hazelcast/issues/5339).
+- Last update time of an entry should not be changed after `getAll()` is invoked [[#5333]](https://github.com/hazelcast/hazelcast/issues/5333).
+- `AtomicReference.alterAndGet()` throws `HazelcastSerializationException` [[#5265]](https://github.com/hazelcast/hazelcast/issues/5265).
 - `ICompletableFuture` callback from the method `getAsync` is not always invoked [[#5133]](https://github.com/hazelcast/hazelcast/issues/5133).
 - Warnings and exceptions are logged when closing the client connection [[#4966]](https://github.com/hazelcast/hazelcast/issues/4966).
 - `CacheConfig` is not created on the cluster if the executer of `CacheCreateConfigOperation` has already a `CacheConfig` [[#4960]](https://github.com/hazelcast/hazelcast/issues/4960).
-- The schema does not allow for an explict `hz:replicatedMap` element to be created. One can be created inside `hz:config` but not as a definition for a concrete Replicated Map. Therefore, at present it is impossible to define a Replicated Map using Spring. [[#4958]](https://github.com/hazelcast/hazelcast/issues/4958).
+- The schema does not allow for an explicit `hz:replicatedMap` element to be created. One can be created inside `hz:config` but not as a definition for a concrete Replicated Map. Therefore, at present it is impossible to define a Replicated Map using Spring. [[#4958]](https://github.com/hazelcast/hazelcast/issues/4958).
 - `ResponseThread` and `InvocationRegistry.InspectionThread` reset and retry operations. Since these threads did not implement `NIOTHread`, the `OperationExecutor` is free to execute tasks on these threads and that is not  desirable [[#4929]](https://github.com/hazelcast/hazelcast/issues/4929).
 - The method `CacheManager.getCache()` does not re-open the closed cache. It should let access to the closed cache and re-open it. Cache can be accessed by `getCache` but it is still closed [[#4631]](https://github.com/hazelcast/hazelcast/issues/4631).
 - The method `close()` of a Closeable `CacheLoader` is called without explicitly calling the method `Cache.close()` [[#4617]](https://github.com/hazelcast/hazelcast/issues/4617).
