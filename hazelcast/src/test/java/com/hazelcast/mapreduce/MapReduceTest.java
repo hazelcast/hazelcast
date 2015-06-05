@@ -267,25 +267,36 @@ public class MapReduceTest
             throws Exception {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
 
+        logger.info("testInProcessCancellation 1");
         final HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
         final HazelcastInstance h2 = nodeFactory.newHazelcastInstance();
         final HazelcastInstance h3 = nodeFactory.newHazelcastInstance();
+
+        logger.info("testInProcessCancellation 2");
 
         assertClusterSizeEventually(3, h1);
         assertClusterSizeEventually(3, h2);
         assertClusterSizeEventually(3, h3);
 
+        logger.info("testInProcessCancellation 3");
+
         try {
+            logger.info("testInProcessCancellation 4");
             IMap<Integer, Integer> m1 = h1.getMap(MAP_NAME);
             for (int i = 0; i < 100; i++) {
                 m1.put(i, i);
             }
 
+            logger.info("testInProcessCancellation 5");
+
             JobTracker tracker = h1.getJobTracker("default");
             Job<Integer, Integer> job = tracker.newJob(KeyValueSource.fromMap(m1));
             ICompletableFuture<Map<String, List<Integer>>> future = job.mapper(new TimeConsumingMapper()).submit();
 
+            logger.info("testInProcessCancellation 6");
             future.cancel(true);
+
+            logger.info("testInProcessCancellation 7");
 
             try {
                 Map<String, List<Integer>> result = future.get();
@@ -295,6 +306,7 @@ public class MapReduceTest
                 e.printStackTrace();
                 throw e;
             }
+            logger.info("testInProcessCancellation 8");
         } finally {
             tripshutdown(h1, h2, h3);
         }
