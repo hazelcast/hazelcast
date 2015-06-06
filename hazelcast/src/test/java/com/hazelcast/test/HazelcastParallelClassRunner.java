@@ -29,7 +29,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class HazelcastParallelClassRunner extends AbstractHazelcastClassRunner {
 
     private static final int MAX_THREADS = !TestEnvironment.isMockNetwork() ? 1
-                : 8;
+            : Math.max(Runtime.getRuntime().availableProcessors() / 2, 1);
 
     private final AtomicInteger numThreads = new AtomicInteger(0);
 
@@ -85,12 +85,12 @@ public class HazelcastParallelClassRunner extends AbstractHazelcastClassRunner {
             try {
                 long start = System.currentTimeMillis();
                 String testName = method.getMethod().getDeclaringClass().getSimpleName() + "." + method.getName();
-                System.out.println("Started Running Test: " + testName+" numThreads.get()="+numThreads.get());
+                System.out.println("Started Running Test: " + testName + " numThreads.get()=" + numThreads.get());
                 HazelcastParallelClassRunner.super.runChild(method, notifier);
                 numThreads.decrementAndGet();
                 float took = (float) (System.currentTimeMillis() - start) / 1000;
                 System.out.println(String.format("Finished Running Test: %s in %.3f seconds.", testName, took));
-            }finally {
+            } finally {
                 FRAMEWORK_METHOD_THREAD_LOCAL.remove();
             }
         }
