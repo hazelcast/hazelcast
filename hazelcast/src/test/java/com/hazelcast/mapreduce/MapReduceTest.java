@@ -64,6 +64,7 @@ public class MapReduceTest
 
     @Test(timeout = 60000)
     public void test_early_finalization_combiner_github_5283() throws Exception {
+        logger.info(String.valueOf(Math.max(Runtime.getRuntime().availableProcessors(), 8)));
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
 
         final HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
