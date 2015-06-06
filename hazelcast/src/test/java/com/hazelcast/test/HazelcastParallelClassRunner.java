@@ -85,7 +85,7 @@ public class HazelcastParallelClassRunner extends AbstractHazelcastClassRunner {
             try {
                 long start = System.currentTimeMillis();
                 String testName = method.getMethod().getDeclaringClass().getSimpleName() + "." + method.getName();
-                System.out.println("Started Running Test: " + testName);
+                System.out.println("Started Running Test: " + testName+" numThreads.get()="+numThreads.get());
                 HazelcastParallelClassRunner.super.runChild(method, notifier);
                 numThreads.decrementAndGet();
                 float took = (float) (System.currentTimeMillis() - start) / 1000;
