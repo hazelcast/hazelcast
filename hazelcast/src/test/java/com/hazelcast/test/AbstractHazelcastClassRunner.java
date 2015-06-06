@@ -31,6 +31,7 @@ import java.lang.management.ThreadInfo;
 import java.lang.management.ThreadMXBean;
 import java.lang.reflect.Method;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Base test runner which has base system properties and test repetition logic. The tests are run in random order.
@@ -108,9 +109,9 @@ public abstract class AbstractHazelcastClassRunner extends AbstractParameterized
             return new RunAfters(statement, afters, target);
         }
     }
+    private static final AtomicBoolean flag = new AtomicBoolean(false);
 
     protected class ThreadDumpAwareRunAfters extends Statement {
-
         private final FrameworkMethod method;
         private final Statement next;
         private final Object target;
@@ -130,11 +131,13 @@ public abstract class AbstractHazelcastClassRunner extends AbstractParameterized
             try {
                 next.evaluate();
             } catch (Throwable e) {
-                System.err.println("THREAD DUMP FOR TEST FAILURE: " +
-                        "\"" + e.getMessage() + "\" at " +
-                        "\"" + method.getName() + "\"" + "\n");
-                //System.err.println(generateThreadDump());
-                errors.add(e);
+                if (flag.compareAndSet(false,true)) {
+                    System.err.println("THREAD DUMP FOR TEST FAILURE: " +
+                            "\"" + e.getMessage() + "\" at " +
+                            "\"" + method.getName() + "\"" + "\n");
+                    System.err.println(generateThreadDump());
+                    errors.add(e);
+                }
             } finally {
                 for (FrameworkMethod each : afters) {
                     try {

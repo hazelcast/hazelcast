@@ -21,7 +21,6 @@ import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.InitializationError;
 import org.junit.runners.model.Statement;
 
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -43,15 +42,11 @@ public class HazelcastParallelClassRunner extends AbstractHazelcastClassRunner {
         super(klass, parameters, name);
     }
 
-    private static final AtomicBoolean t = new AtomicBoolean(false);
-
     @Override
     protected void runChild(final FrameworkMethod method, final RunNotifier notifier) {
         while (numThreads.get() >= MAX_THREADS) {
             try {
                 Thread.sleep(25);
-                if (t.compareAndSet(false, true))
-                    System.out.println(AbstractHazelcastClassRunner.generateThreadDump());
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 return;
