@@ -35,6 +35,8 @@ import java.util.LinkedList;
  * AddressUtil contains Address helper methods
  */
 public final class AddressUtil {
+    private static Ip4AddressMatcher matcher = new Ip4AddressMatcher();
+
 
     private static final int NUMBER_OF_ADDRESSES = 255;
     private static final int IPV4_LENGTH = 4;
