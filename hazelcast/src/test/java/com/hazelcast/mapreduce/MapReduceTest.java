@@ -51,7 +51,7 @@ public class MapReduceTest
 
     @BeforeClass
     public static void beforeClass() {
-        logger.info("MapReduceTest started");
+        logger.info("MapReduceTest started "+Runtime.getRuntime().availableProcessors());
     }
 
     private void tripshutdown(HazelcastInstance h1, HazelcastInstance h2, HazelcastInstance h3) {
