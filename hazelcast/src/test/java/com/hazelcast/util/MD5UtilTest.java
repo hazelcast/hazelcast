@@ -17,19 +17,21 @@
 package com.hazelcast.util;
 
 import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
-
 import static org.junit.Assert.assertEquals;
-
-
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class MD5UtilTest {
-
+public class MD5UtilTest extends HazelcastTestSupport {
+    @Test
+    public void testConstructorIsPrivate()  {
+        assertUtilityConstructor(MD5Util.class);
+    }
+    
     @Test
     public void testToMD5String() {
         String result = MD5Util.toMD5String("hazelcast");
