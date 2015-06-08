@@ -42,7 +42,7 @@ import static org.junit.Assert.assertTrue;
 @Category(QuickTest.class)
 public class RingbufferContainerSerializationTest extends HazelcastTestSupport {
 
-    private static final int CLOCK_DIFFERENCE_MS = 1000;
+    private static final int CLOCK_DIFFERENCE_MS = 2000;
 
     private SerializationService serializationService;
 
