@@ -19,6 +19,7 @@
 |[Chapter 13 - Integrated Clustering](#integrated-clustering)||Added introduction paragraphs.|
 |[Chapter 14 - Storage](#storage)|[High-Density Memory Store](#high-density-memory-store)|Added as a new section.|
 |[Chapter 15 - Clients](#clients)|[Java Client](#java-client)|Added information related to load balancer configuration.|
+|[Chapter 17 - Management](#management)|[Management Center](#management-center)|Added more information on the time travel data files to the [Time Travel section](#time-travel).|
 |[Chapter 19 - Performance](#performance)|[Back Pressure](#back-pressure)|Added as a new section.|
 ||[Hazelcast Performance on AWS](#hazelcast-performance-on-aws)|Added as a new section that provides best practices to improve the Hazelcast performance on Amazon Web Service.|
 |[Chapter 20 - Hazelcast Simulator](#hazelcast-simulator)||Added as a new chapter providing comprehensive information on the Hazelcast Simulator feature.

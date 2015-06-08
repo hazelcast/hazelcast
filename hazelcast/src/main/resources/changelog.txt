@@ -36,6 +36,9 @@ Chapter 14 - Storage
 Chapter 15 - Clients
 - Java Client: Added information related to load balancer configuration.
 
+Chapter 17 - Management
+- Management Center: Added more information on the time travel data files to the Time Travel section.
+
 Chapter 19 - Performance
 - Back Pressure: Added as a new section.
 - Hazelcast Performance on AWS: Added as a new section that provides best practices to improve the Hazelcast performance on Amazon Web Service.
