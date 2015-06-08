@@ -41,8 +41,7 @@ public class SetRemoveListenerMessageTask
     @Override
     protected Object call() {
         final EventService eventService = clientEngine.getEventService();
-        boolean result = eventService.deregisterListener(getServiceName(), parameters.name, parameters.registrationId);
-        return SetRemoveListenerCodec.encodeResponse(result);
+        return eventService.deregisterListener(getServiceName(), parameters.name, parameters.registrationId);
     }
 
     @Override

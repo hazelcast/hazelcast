@@ -85,7 +85,7 @@ public class MultiMapGetMessageTask
 
     @Override
     public String getDistributedObjectName() {
-        return null;
+        return parameters.name;
     }
 
     @Override

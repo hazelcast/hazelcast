@@ -195,8 +195,7 @@ public class ClientReplicatedMapProxy<K, V>
     @Override
     public void clear() {
         ClientMessage request = ReplicatedMapClearCodec.encodeRequest(getName());
-        ClientMessage response = invoke(request);
-        invoke(response);
+        invoke(request);
     }
 
     @Override

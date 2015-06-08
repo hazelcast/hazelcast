@@ -65,6 +65,11 @@ public class MultiMapLockMessageTask
     }
 
     @Override
+    public String getDistributedObjectType() {
+        return MultiMapService.SERVICE_NAME;
+    }
+
+    @Override
     public String getMethodName() {
         return "lock";
     }
@@ -72,9 +77,9 @@ public class MultiMapLockMessageTask
     @Override
     public Object[] getParameters() {
         if (parameters.ttl == -1) {
-            return new Object[]{parameters.key, parameters.ttl, TimeUnit.MILLISECONDS};
+            return new Object[]{parameters.key};
         }
-        return new Object[]{parameters.key};
+        return new Object[]{parameters.key, parameters.ttl, TimeUnit.MILLISECONDS};
     }
 
     public Permission getRequiredPermission() {

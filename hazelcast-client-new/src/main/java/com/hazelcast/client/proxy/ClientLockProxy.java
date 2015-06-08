@@ -95,11 +95,12 @@ public class ClientLockProxy extends ClientProxy implements ILock {
     }
 
     public void lock() {
-        lock(Long.MAX_VALUE, null);
+        ClientMessage request = LockLockCodec.encodeRequest(getName(), -1, ThreadUtil.getThreadId());
+        invoke(request);
     }
 
     public void lockInterruptibly() throws InterruptedException {
-        ClientMessage request = LockLockCodec.encodeRequest(getName(), Long.MAX_VALUE, ThreadUtil.getThreadId());
+        ClientMessage request = LockLockCodec.encodeRequest(getName(), -1, ThreadUtil.getThreadId());
         invokeInterruptibly(request, getKeyData());
     }
 

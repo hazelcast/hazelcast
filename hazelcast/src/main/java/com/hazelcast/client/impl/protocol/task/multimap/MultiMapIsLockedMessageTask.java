@@ -64,6 +64,11 @@ public class MultiMapIsLockedMessageTask
     }
 
     @Override
+    public String getDistributedObjectType() {
+        return MultiMapService.SERVICE_NAME;
+    }
+
+    @Override
     public String getMethodName() {
         return "isLocked";
     }

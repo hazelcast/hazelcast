@@ -77,10 +77,10 @@ public class ReplicatedMapPutMessageTask
 
     @Override
     public Object[] getParameters() {
-        if (parameters.ttl == -1) {
-            return new Object[]{parameters.key, parameters.value};
+        if (parameters.ttl > 0) {
+            return new Object[]{parameters.key, parameters.value, parameters.ttl, TimeUnit.MILLISECONDS};
         }
-        return new Object[]{parameters.key, parameters.value, parameters.ttl, TimeUnit.MILLISECONDS};
+        return new Object[]{parameters.key, parameters.value};
     }
 
 }

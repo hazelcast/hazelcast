@@ -61,7 +61,7 @@ public class SetIsEmptyMessageTask
 
     @Override
     public Object[] getParameters() {
-        return new Object[]{};
+        return null;
     }
 
     @Override

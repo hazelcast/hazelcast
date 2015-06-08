@@ -63,6 +63,11 @@ public class MapTryLockMessageTask
     }
 
     @Override
+    public String getDistributedObjectType() {
+        return MapService.SERVICE_NAME;
+    }
+
+    @Override
     public Permission getRequiredPermission() {
         return new MapPermission(parameters.name, ActionConstants.ACTION_LOCK);
     }
@@ -83,7 +88,7 @@ public class MapTryLockMessageTask
 
     @Override
     public Object[] getParameters() {
-        if (parameters.timeout == -1) {
+        if (parameters.timeout == 0) {
             return new Object[]{parameters.key};
         }
         return new Object[]{parameters.key, parameters.timeout, TimeUnit.MILLISECONDS};

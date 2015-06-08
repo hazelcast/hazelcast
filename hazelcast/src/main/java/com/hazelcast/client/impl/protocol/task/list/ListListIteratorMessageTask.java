@@ -17,42 +17,44 @@
 package com.hazelcast.client.impl.protocol.task.list;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.ListRemoveListenerCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
+import com.hazelcast.client.impl.protocol.codec.ListIteratorCodec;
+import com.hazelcast.client.impl.protocol.codec.ListListIteratorCodec;
+import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.collection.impl.list.ListService;
+import com.hazelcast.collection.impl.list.operations.ListSubOperation;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.ListPermission;
-import com.hazelcast.spi.EventService;
+import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.SerializableCollection;
 
 import java.security.Permission;
 
 /**
  * Client Protocol Task for handling messages with type id:
- * {@link com.hazelcast.client.impl.protocol.codec.ListMessageType#LIST_REMOVELISTENER}
+ * {@link com.hazelcast.client.impl.protocol.codec.ListMessageType#LIST_LISTITERATOR}
  */
-public class ListRemoveListenerMessageTask
-        extends AbstractCallableMessageTask<ListRemoveListenerCodec.RequestParameters> {
+public class ListListIteratorMessageTask
+        extends AbstractPartitionMessageTask<ListListIteratorCodec.RequestParameters> {
 
-    public ListRemoveListenerMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
+    public ListListIteratorMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected Object call() {
-        final EventService eventService = clientEngine.getEventService();
-        return eventService.deregisterListener(getServiceName(), parameters.name, parameters.registrationId);
+    protected Operation prepareOperation() {
+        return new ListSubOperation(parameters.name, parameters.index, -1);
     }
 
     @Override
-    protected ListRemoveListenerCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
-        return ListRemoveListenerCodec.decodeRequest(clientMessage);
+    protected ListListIteratorCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return ListListIteratorCodec.decodeRequest(clientMessage);
     }
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return ListRemoveListenerCodec.encodeResponse((Boolean) response);
+        return ListIteratorCodec.encodeResponse(((SerializableCollection) response).getCollection());
     }
 
     @Override
@@ -62,17 +64,20 @@ public class ListRemoveListenerMessageTask
 
     @Override
     public Object[] getParameters() {
-        return new Object[]{parameters.registrationId};
+        if (parameters.index > 0) {
+            return new Object[]{parameters.index};
+        }
+        return null;
     }
 
     @Override
     public Permission getRequiredPermission() {
-        return new ListPermission(parameters.name, ActionConstants.ACTION_LISTEN);
+        return new ListPermission(parameters.name, ActionConstants.ACTION_READ);
     }
 
     @Override
     public String getMethodName() {
-        return "removeItemListener";
+        return "listIterator";
     }
 
     @Override

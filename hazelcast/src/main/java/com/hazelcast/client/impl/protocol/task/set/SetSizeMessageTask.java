@@ -60,7 +60,7 @@ public class SetSizeMessageTask
     }
 
     public Object[] getParameters() {
-        return new Object[]{};
+        return null;
     }
 
     @Override

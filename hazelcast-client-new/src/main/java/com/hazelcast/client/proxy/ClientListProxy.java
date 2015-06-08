@@ -31,7 +31,9 @@ import com.hazelcast.client.impl.protocol.codec.ListGetAllCodec;
 import com.hazelcast.client.impl.protocol.codec.ListGetCodec;
 import com.hazelcast.client.impl.protocol.codec.ListIndexOfCodec;
 import com.hazelcast.client.impl.protocol.codec.ListIsEmptyCodec;
+import com.hazelcast.client.impl.protocol.codec.ListIteratorCodec;
 import com.hazelcast.client.impl.protocol.codec.ListLastIndexOfCodec;
+import com.hazelcast.client.impl.protocol.codec.ListListIteratorCodec;
 import com.hazelcast.client.impl.protocol.codec.ListRemoveCodec;
 import com.hazelcast.client.impl.protocol.codec.ListRemoveListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.ListRemoveWithIndexCodec;
@@ -137,7 +139,15 @@ public class ClientListProxy<E> extends ClientProxy implements IList<E> {
     }
 
     public Iterator<E> iterator() {
-        return Collections.unmodifiableCollection(getAll()).iterator();
+        ClientMessage request = ListIteratorCodec.encodeRequest(name);
+        ClientMessage response = invoke(request);
+        ListIteratorCodec.ResponseParameters resultParameters = ListIteratorCodec.decodeResponse(response);
+        Collection<Data> resultCollection = resultParameters.list;
+        final ArrayList<E> list = new ArrayList<E>(resultCollection.size());
+        for (Data value : resultCollection) {
+            list.add((E) toObject(value));
+        }
+        return Collections.unmodifiableCollection(list).iterator();
     }
 
     public Object[] toArray() {
@@ -312,7 +322,15 @@ public class ClientListProxy<E> extends ClientProxy implements IList<E> {
     }
 
     public ListIterator<E> listIterator(int index) {
-        return subList(-1, -1).listIterator(index);
+        ClientMessage request = ListListIteratorCodec.encodeRequest(name, index);
+        ClientMessage response = invoke(request);
+        ListListIteratorCodec.ResponseParameters resultParameters = ListListIteratorCodec.decodeResponse(response);
+        Collection<Data> resultCollection = resultParameters.list;
+        final List<E> list = new ArrayList<E>(resultCollection.size());
+        for (Data value : resultCollection) {
+            list.add((E) toObject(value));
+        }
+        return list.listIterator();
     }
 
     public List<E> subList(int fromIndex, int toIndex) {

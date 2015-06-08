@@ -96,4 +96,7 @@ public interface ListCodecTemplate {
 
     @Request(id = 22, retryable = true, response = ResponseMessageConst.LIST_DATA)
     void iterator(String name);
+
+    @Request(id = 23, retryable = true, response = ResponseMessageConst.LIST_DATA)
+    void listIterator(String name, int index);
 }
