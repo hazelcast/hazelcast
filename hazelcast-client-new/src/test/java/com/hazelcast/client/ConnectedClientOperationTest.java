@@ -16,8 +16,6 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -68,7 +66,7 @@ public class ConnectedClientOperationTest extends HazelcastTestSupport {
 
     @Test
     public void testGetConnectedClientsOperationWhenZeroClientConnects() throws Exception {
-        TestHazelcastInstanceFactory factory = new TestHazelcastInstanceFactory(1);;
+        TestHazelcastInstanceFactory factory = new TestHazelcastInstanceFactory(1);
         HazelcastInstance hz1 = factory.newHazelcastInstance();
         Node node = TestUtil.getNode(hz1);
         Operation clientInfoOperation = new GetConnectedClientsOperation();
@@ -79,4 +77,19 @@ public class ConnectedClientOperationTest extends HazelcastTestSupport {
         factory.shutdownAll();
     }
 
+    @Test
+    public void testGetConnectedClientsOperationWhenMoreThanZeroClientConnects() throws Exception {
+        Config config = new Config();
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
+        assertSizeEventually(1, h1.getCluster().getMembers());
+        ClientConfig clientConfig = new ClientConfig();
+        HazelcastClient.newHazelcastClient(clientConfig);
+        HazelcastClient.newHazelcastClient(clientConfig);
+        Node node1 = TestUtil.getNode(h1);
+        Operation clientInfoOperation = new GetConnectedClientsOperation();
+        OperationService operationService = node1.nodeEngine.getOperationService();
+        operationService.invokeOnTarget(ClientEngineImpl.SERVICE_NAME, clientInfoOperation, node1.address);
+        Map<String, ClientType> clients = (Map<String, ClientType>)clientInfoOperation.getResponse();
+        assertEquals(2, clients.size());
+    }
 }
