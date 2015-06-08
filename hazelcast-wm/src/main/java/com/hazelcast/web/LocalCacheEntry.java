@@ -35,6 +35,7 @@ public class LocalCacheEntry {
      */
     public LocalCacheEntry(boolean transientEntry) {
         this.transientEntry = transientEntry;
+        this.reload = true;
     }
 
     /**

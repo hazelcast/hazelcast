@@ -251,7 +251,7 @@ public class WebFilter implements Filter {
      * @return a new HazelcastHttpSession instance
      */
     protected HazelcastHttpSession createHazelcastHttpSession(String id, HttpSession originalSession, boolean deferredWrite) {
-        return new HazelcastHttpSession(this, id, originalSession, deferredWrite);
+        return new HazelcastHttpSession(this, id, originalSession, deferredWrite, stickySession);
     }
 
     private void updateSessionMaps(String sessionId, HttpSession originalSession, HazelcastHttpSession hazelcastSession) {
