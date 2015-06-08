@@ -55,15 +55,15 @@ public class MapReduceTest
     }
 
     private void tripshutdown(HazelcastInstance h1, HazelcastInstance h2, HazelcastInstance h3) {
-        try {
-            h1.shutdown();
-        } finally {
-            try {
-                h2.shutdown();
-            } finally {
-                h3.shutdown();
-            }
-        }
+//        try {
+//            h1.shutdown();
+//        } finally {
+//            try {
+//                h2.shutdown();
+//            } finally {
+//                h3.shutdown();
+//            }
+//        }
     }
 
     @Test(timeout = 60000)
