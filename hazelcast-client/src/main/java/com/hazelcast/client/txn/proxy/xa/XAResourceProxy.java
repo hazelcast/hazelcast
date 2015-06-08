@@ -19,6 +19,8 @@ package com.hazelcast.client.txn.proxy.xa;
 import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.spi.ClientTransactionManagerService;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.spi.impl.SerializableCollection;
@@ -48,6 +50,8 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 public class XAResourceProxy extends ClientProxy implements HazelcastXAResource {
 
     private static final int DEFAULT_TIMEOUT_SECONDS = (int) MILLISECONDS.toSeconds(TransactionOptions.DEFAULT_TIMEOUT_MILLIS);
+    private static final ILogger LOGGER = Logger.getLogger(XAResourceProxy.class);
+
     private final ConcurrentMap<Long, TransactionContext> threadContextMap = new ConcurrentHashMap<Long, TransactionContext>();
     private final ConcurrentMap<Xid, List<TransactionContext>> xidContextMap
             = new ConcurrentHashMap<Xid, List<TransactionContext>>();
@@ -101,23 +105,12 @@ public class XAResourceProxy extends ClientProxy implements HazelcastXAResource 
     public void end(Xid xid, int flags) throws XAException {
         long threadId = currentThreadId();
         TransactionContext threadContext = threadContextMap.remove(threadId);
-        if (threadContext == null) {
-            throw new XAException("There is no TransactionContext for the current thread: " + threadId);
+        if (threadContext == null && LOGGER.isFinestEnabled()) {
+            LOGGER.finest("There is no TransactionContext for the current thread: " + threadId);
         }
-        switch (flags) {
-            case TMFAIL:
-                List<TransactionContext> contexts = xidContextMap.remove(xid);
-                if (contexts != null) {
-                    for (TransactionContext context : contexts) {
-                        getTransaction(context).rollback();
-                    }
-                }
-                break;
-            case TMSUCCESS:
-            case TMSUSPEND:
-                break;
-            default:
-                throw new XAException("Unknown flag!!! " + flags);
+        List<TransactionContext> contexts = xidContextMap.get(xid);
+        if (contexts == null && LOGGER.isFinestEnabled()) {
+            LOGGER.finest("There is no TransactionContexts for the given xid: " + xid);
         }
     }
 
@@ -156,7 +149,7 @@ public class XAResourceProxy extends ClientProxy implements HazelcastXAResource 
     public void rollback(Xid xid) throws XAException {
         List<TransactionContext> contexts = xidContextMap.remove(xid);
         if (contexts == null) {
-            finalizeTransactionRemotely(xid, true);
+            finalizeTransactionRemotely(xid, false);
             return;
         }
         for (TransactionContext context : contexts) {

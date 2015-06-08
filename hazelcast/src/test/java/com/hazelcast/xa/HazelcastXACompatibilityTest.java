@@ -17,6 +17,7 @@ import org.junit.runner.RunWith;
 import javax.transaction.xa.XAException;
 import javax.transaction.xa.XAResource;
 import javax.transaction.xa.Xid;
+import java.util.concurrent.CountDownLatch;
 
 import static javax.transaction.xa.XAResource.TMNOFLAGS;
 import static javax.transaction.xa.XAResource.TMSUCCESS;
@@ -93,9 +94,9 @@ public class HazelcastXACompatibilityTest extends HazelcastTestSupport {
         xaResource.commit(xid, false);
     }
 
-    private void performRollbackWithXa(XAResource secondXaResource) throws XAException {
+    private void performRollbackWithXa(XAResource xaResource) throws XAException {
         try {
-            secondXaResource.rollback(xid);
+            xaResource.rollback(xid);
         } catch (XAException xaerr) {
             assertTrue("rollback of unknown xid gives unexpected errorCode: " + xaerr.errorCode, ((XAException.XA_RBBASE <= xaerr.errorCode) && (xaerr.errorCode <= XAException.XA_RBEND))
                     || xaerr.errorCode == XAException.XAER_NOTA);
@@ -169,5 +170,55 @@ public class HazelcastXACompatibilityTest extends HazelcastTestSupport {
             assertEquals(XAException.XA_RBTIMEOUT, e.errorCode);
         }
     }
+
+    @Test
+    public void testRollbackWithoutPrepare() throws Exception {
+        doSomeWorkWithXa(xaResource);
+        performRollbackWithXa(xaResource);
+    }
+
+    @Test
+    public void testRollbackWithoutPrepare_EmptyTransactionLog() throws Exception {
+        xaResource.start(xid, XAResource.TMNOFLAGS);
+        xaResource.end(xid, XAResource.TMSUCCESS);
+        performRollbackWithXa(xaResource);
+    }
+
+    @Test
+    public void testRollbackWithoutPrepare_SecondXAResource() throws Exception {
+        doSomeWorkWithXa(xaResource);
+        performRollbackWithXa(secondXaResource);
+    }
+
+    @Test
+    public void testRollbackWithoutPrepare_SecondXAResource_EmptyTransactionLog() throws Exception {
+        xaResource.start(xid, XAResource.TMNOFLAGS);
+        xaResource.end(xid, XAResource.TMSUCCESS);
+        performRollbackWithXa(secondXaResource);
+    }
+
+    @Test
+    public void testEnd_FromDifferentThread() throws Exception {
+        xaResource.start(xid, TMNOFLAGS);
+        TransactionContext context = xaResource.getTransactionContext();
+        TransactionalMap<Object, Object> map = context.getMap("map");
+        map.put("key", "value");
+
+        final CountDownLatch latch = new CountDownLatch(1);
+        new Thread() {
+            @Override
+            public void run() {
+                try {
+                    xaResource.end(xid, XAResource.TMFAIL);
+                    latch.countDown();
+                } catch (XAException e) {
+                    e.printStackTrace();
+                }
+            }
+        }.start();
+
+        assertOpenEventually(latch, 10);
+    }
+
 
 }

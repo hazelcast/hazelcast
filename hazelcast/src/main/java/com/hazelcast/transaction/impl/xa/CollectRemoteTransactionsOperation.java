@@ -42,7 +42,7 @@ public class CollectRemoteTransactionsOperation extends Operation {
     public void run() throws Exception {
         XAService xaService = getService();
         NodeEngine nodeEngine = getNodeEngine();
-        Set<SerializableXID> xids = xaService.getXids();
+        Set<SerializableXID> xids = xaService.getPreparedXids();
         HashSet<Data> xidSet = new HashSet<Data>();
         for (SerializableXID xid : xids) {
             xidSet.add(nodeEngine.toData(xid));
