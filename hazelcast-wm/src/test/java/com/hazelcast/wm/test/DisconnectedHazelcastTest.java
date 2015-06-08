@@ -77,17 +77,10 @@ public class DisconnectedHazelcastTest extends AbstractWebFilterTest {
             // So, we should copy current information from test to current context.
             cc.copyFrom(this);
         }
-        // Clear map
-//        IMap<String, Object> map = hz.getMap(DEFAULT_MAP_NAME);
-//        map.clear();
     }
 
     @Override
     protected void ensureInstanceIsUp() throws Exception {
-//        if (isInstanceNotActive(hz)) {
-//            hz = Hazelcast.newHazelcastInstance(
-//                    new FileSystemXmlConfig(new File(sourceDir + "/WEB-INF/", "hazelcast.xml")));
-//        }
         if (serverXml1 != null) {
             if (server1 == null) {
                 serverPort1 = availablePort();
