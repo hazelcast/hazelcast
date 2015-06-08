@@ -22,13 +22,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.TestUtil;
-import com.hazelcast.spi.AbstractOperation;
-import com.hazelcast.spi.AbstractWaitNotifyKey;
-import com.hazelcast.spi.ExceptionAction;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationService;
-import com.hazelcast.spi.WaitNotifyKey;
-import com.hazelcast.spi.WaitSupport;
+import com.hazelcast.spi.*;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.waitnotifyservice.impl.WaitNotifyServiceImpl;
 import com.hazelcast.test.AssertTask;
@@ -37,14 +31,15 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.EmptyStatement;
-import java.util.concurrent.Callable;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+
+import java.util.concurrent.Callable;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
@@ -102,6 +97,8 @@ public class InvocationNetworkSplitTest extends HazelcastTestSupport {
         ClusterServiceImpl clusterService3 = node3.getClusterService();
         clusterService3.prepareToMerge(node1.address);
         clusterService3.merge(node1.address);
+
+        sleepSeconds(4);
 
         assertEquals(3, node1.getClusterService().getSize());
         assertEquals(3, node2.getClusterService().getSize());

@@ -19,21 +19,19 @@ package com.hazelcast.test;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.annotation.Repeat;
-import java.lang.management.ManagementFactory;
-import java.lang.management.ThreadInfo;
-import java.lang.management.ThreadMXBean;
-import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Random;
-import java.util.Set;
 import org.junit.After;
 import org.junit.internal.runners.statements.RunAfters;
 import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.InitializationError;
 import org.junit.runners.model.MultipleFailureException;
 import org.junit.runners.model.Statement;
+
+import java.lang.management.ManagementFactory;
+import java.lang.management.ThreadInfo;
+import java.lang.management.ThreadMXBean;
+import java.lang.reflect.Method;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Base test runner which has base system properties and test repetition logic. The tests are run in random order.
@@ -111,9 +109,9 @@ public abstract class AbstractHazelcastClassRunner extends AbstractParameterized
             return new RunAfters(statement, afters, target);
         }
     }
+    private static final AtomicBoolean flag = new AtomicBoolean(false);
 
     protected class ThreadDumpAwareRunAfters extends Statement {
-
         private final FrameworkMethod method;
         private final Statement next;
         private final Object target;
@@ -133,11 +131,13 @@ public abstract class AbstractHazelcastClassRunner extends AbstractParameterized
             try {
                 next.evaluate();
             } catch (Throwable e) {
-                System.err.println("THREAD DUMP FOR TEST FAILURE: " +
-                        "\"" + e.getMessage() + "\" at " +
-                        "\"" + method.getName() + "\"" + "\n");
-                System.err.println(generateThreadDump());
-                errors.add(e);
+                if (flag.compareAndSet(false,true)) {
+                    System.err.println("THREAD DUMP FOR TEST FAILURE: " +
+                            "\"" + e.getMessage() + "\" at " +
+                            "\"" + method.getName() + "\"" + "\n");
+                    System.err.println(generateThreadDump());
+                    errors.add(e);
+                }
             } finally {
                 for (FrameworkMethod each : afters) {
                     try {
@@ -222,7 +222,7 @@ public abstract class AbstractHazelcastClassRunner extends AbstractParameterized
 
     }
 
-    protected String generateThreadDump() {
+    public static String generateThreadDump() {
         final StringBuilder dump = new StringBuilder();
         final ThreadMXBean threadMXBean = ManagementFactory.getThreadMXBean();
         final ThreadInfo[] threadInfos = threadMXBean.dumpAllThreads(true, true);
