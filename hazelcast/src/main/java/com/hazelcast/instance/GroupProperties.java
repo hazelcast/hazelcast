@@ -185,12 +185,12 @@ public class GroupProperties {
 
 
     /**
-     * Defines a threshold above which a running invocations in {@link com.hazelcast.spi.OperationService} is considered
+     * Defines a threshold above which a running invocation in {@link com.hazelcast.spi.OperationService} is considered
      * to be slow. Any slow invocation will be logged.
      *
-     * This is an experimental feature and we don't provide any backwards compatibility guarantees on it.
+     * This is an experimental feature and we do not provide any backwards compatibility guarantees on it.
      *
-     * By default it is -1, to indicate there is no detection.
+     * The default value is -1 indicating there is no detection.
      */
     public static final String PROP_SLOW_INVOCATION_DETECTOR_THRESHOLD_MILLIS
             = "hazelcast.slow.invocation.detector.threshold.millis";
