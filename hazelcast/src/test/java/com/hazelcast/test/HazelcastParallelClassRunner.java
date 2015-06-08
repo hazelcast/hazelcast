@@ -29,7 +29,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class HazelcastParallelClassRunner extends AbstractHazelcastClassRunner {
 
     private static final int MAX_THREADS = !TestEnvironment.isMockNetwork() ? 1
-                : Math.max(Runtime.getRuntime().availableProcessors(), 8);
+                : Math.max(Runtime.getRuntime().availableProcessors()/2, 1);
 
     private final AtomicInteger numThreads = new AtomicInteger(0);
 
