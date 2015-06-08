@@ -32,13 +32,14 @@ import java.io.IOException;
 public class IsStillExecutingOperation extends AbstractOperation implements UrgentSystemOperation {
 
     private long operationCallId;
+    private int operationPartitionId;
 
     IsStillExecutingOperation() {
     }
 
-    public IsStillExecutingOperation(long operationCallId, int partitionId) {
+    public IsStillExecutingOperation(long operationCallId, int operationPartitionId) {
         this.operationCallId = operationCallId;
-        setPartitionId(partitionId);
+        this.operationPartitionId = operationPartitionId;
     }
 
     @Override
@@ -46,7 +47,8 @@ public class IsStillExecutingOperation extends AbstractOperation implements Urge
         NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
         OperationServiceImpl operationService = (OperationServiceImpl) nodeEngine.getOperationService();
         IsStillRunningService isStillRunningService = operationService.getIsStillRunningService();
-        boolean executing = isStillRunningService.isOperationExecuting(getCallerAddress(), getPartitionId(), operationCallId);
+        boolean executing = isStillRunningService.isOperationExecuting(getCallerAddress(),
+                operationPartitionId, operationCallId);
         getResponseHandler().sendResponse(executing);
     }
 
@@ -59,11 +61,13 @@ public class IsStillExecutingOperation extends AbstractOperation implements Urge
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         this.operationCallId = in.readLong();
+        this.operationPartitionId = in.readInt();
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeLong(operationCallId);
+        out.writeInt(operationPartitionId);
     }
 }
