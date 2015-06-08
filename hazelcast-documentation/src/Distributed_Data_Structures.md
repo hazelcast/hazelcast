@@ -8,6 +8,7 @@ As mentioned in the [Overview section](#hazelcast-overview), Hazelcast offers di
 
 	- [Map](#map): The distributed implementation of `java.util.Map` lets you read from and write to a Hazelcast map with methods like get and put.
 	- [Queue](#queue): The distributed queue is an implementation of `java.util.concurrent.BlockingQueue`. You can add an item in one machine and remove it from another one.
+	- [RingBuffer](#ringbuffer): The distributed RingBuffer is implemented for reliable eventing system.
 	- [Set](#set): The distributed and concurrent implementation of `java.util.Set`. It does not allow duplicate elements and does not preserve their order.
 	- [List](#list): Very similar to Hazelcast List, except that it allows duplicate elements and preserves their order.
 	- [MultiMap](#multimap): This is a specialized Hazelcast map. It is distributed, where multiple values under a single key can be stored.
