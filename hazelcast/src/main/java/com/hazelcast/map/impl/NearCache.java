@@ -40,6 +40,7 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * NearCache.
@@ -63,6 +64,7 @@ public class NearCache {
     private final AtomicBoolean canCleanUp;
     private final AtomicBoolean canEvict;
     private final ConcurrentMap<Data, CacheRecord> cache;
+    private final AtomicLong invalidateCounter;
     private final NearCacheStatsImpl nearCacheStats;
     private final SerializationService serializationService;
     private final Comparator<CacheRecord> selectedComparator;
@@ -116,6 +118,7 @@ public class NearCache {
             selectedComparator = defaultComparator;
         }
         cache = new ConcurrentHashMap<Data, CacheRecord>();
+        invalidateCounter = new AtomicLong(0);
         canCleanUp = new AtomicBoolean(true);
         canEvict = new AtomicBoolean(true);
         nearCacheStats = new NearCacheStatsImpl();
@@ -123,8 +126,12 @@ public class NearCache {
         serializationService = nodeEngine.getSerializationService();
     }
 
+    public long getInvalidateCount() {
+        return invalidateCounter.get();
+    }
+
     // this operation returns the given value in near-cache memory format (data or object)
-    public Object put(Data key, Data data) {
+    public Object put(Data key, Data data, long invalidateCountBefore) {
         fireTtlCleanup();
         if (evictionPolicy == EvictionPolicy.NONE && cache.size() >= maxSize) {
             // no more space in near-cache -> return given value in near-cache format
@@ -143,9 +150,29 @@ public class NearCache {
         } else {
             value = inMemoryFormat.equals(InMemoryFormat.OBJECT) ? serializationService.toObject(data) : data;
         }
-        final CacheRecord record = new CacheRecord(key, value);
-        cache.put(key, record);
-        updateSizeEstimator(calculateCost(record));
+
+        // update near cache if no invalidate operation occurred in-between get and this put
+        CacheRecord record = cache.get(key);
+        if (record == null) {
+            CacheRecord recordNew = new CacheRecord(key, value, invalidateCounter.get());
+            CacheRecord recordPrev = cache.putIfAbsent(key, recordNew);
+            if (recordPrev == null) {
+                // good, new value added
+                updateSizeEstimator(calculateCost(recordNew));
+            } else {
+                // ignore put since someone else already updated this value
+            }
+        } else if (record.invalidateCount < invalidateCountBefore) {
+            CacheRecord recordNew = new CacheRecord(key, value, invalidateCounter.get());
+            if (cache.replace(key, record, recordNew)) {
+                // good, old value updated
+            } else {
+                // ignore update since someone else already updated this value
+            }
+        } else {
+            // ignore already invalidated value
+        }
+
         if (NULL_OBJECT.equals(value)) {
             return null;
         } else {
@@ -252,6 +279,9 @@ public class NearCache {
                 nearCacheStats.incrementMisses();
                 return null;
             }
+            if (record.invalid()) {
+                return null;
+            }
             record.access();
             return record.value;
         } else {
@@ -261,10 +291,13 @@ public class NearCache {
     }
 
     public void invalidate(Data key) {
-        final CacheRecord record = cache.remove(key);
-        // if a mapping exists for the key.
-        if (record != null) {
-            updateSizeEstimator(-calculateCost(record));
+        long invalidateCount = invalidateCounter.getAndIncrement();
+        CacheRecord record = new CacheRecord(key, null, invalidateCount);
+        record.invalid = true;
+        CacheRecord recordPrev = cache.putIfAbsent(key, record);
+        if (recordPrev != null) {
+            recordPrev.invalid = true;
+            recordPrev.value = null;
         }
     }
 
@@ -295,18 +328,22 @@ public class NearCache {
      */
     public class CacheRecord {
         final Data key;
-        final Object value;
+        Object value;
         final long creationTime;
         final AtomicInteger hit;
         volatile long lastAccessTime;
+        final long invalidateCount;
+        boolean invalid;
 
-        CacheRecord(Data key, Object value) {
+        CacheRecord(Data key, Object value, long invalidateCount) {
             this.key = key;
             this.value = value;
             long time = Clock.currentTimeMillis();
             this.lastAccessTime = time;
             this.creationTime = time;
             this.hit = new AtomicInteger(0);
+            this.invalidateCount = invalidateCount;
+            this.invalid = false;
         }
 
         void access() {
@@ -319,6 +356,10 @@ public class NearCache {
             long time = Clock.currentTimeMillis();
             return (maxIdleMillis > 0 && time > lastAccessTime + maxIdleMillis)
                     || (timeToLiveMillis > 0 && time > creationTime + timeToLiveMillis);
+        }
+
+        boolean invalid() {
+            return invalid;
         }
 
         // If you don't think instances of this class will ever be inserted into a HashMap/HashTable,
