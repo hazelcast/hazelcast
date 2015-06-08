@@ -23,6 +23,7 @@
 |[Chapter 15 - Hazelcast Java Client](#hazelcast-java-client)||Separated from the formerly known "Clients" chapter to be a chapter of its own.|
 |[Chapter 16 - Other Client Implementations](#other-client-implementations)||C++, .NET, Memcache and REST client sections separated from the formerly known "Clients" chapter.|
 |[Chapter 18 - Management](#management)|[JMX API per Node](#jmx-api-per-node)|Two new bean definitions added to the Hazelcast Instance list (Cluster Safe State and LocalMember Safe State).|
+||[Management Center](#management-center)|Added more information on the time travel data files to the [Time Travel section](#time-travel).|
 |[Chapter 19 - Security](#security)|[ClusterLoginModule](#clusterloginmodule)|The [Enterprise Integration section](#enterprise-integration) added .|
 |[Chapter 20 - Performance](#performance)|[Hazelcast Performance on AWS](#hazelcast-performance-on-aws)|Added as a new section that provides best practices to improve the Hazelcast performance on Amazon Web Service.|
 ||[Back Pressure](#back-pressure)|Added as a new section.

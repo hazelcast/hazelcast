@@ -54,6 +54,7 @@ Chapter 16 - Other Client Implementations
 
 Chapter 18 - Management
 - JMX API per Node: Two new bean definitions added to the Hazelcast Instance list (Cluster Safe State and LocalMember Safe State).
+- Management Center: Added more information on the time travel data files to the Time Travel section.
 
 Chapter 19 - Security
 - ClusterLoginModule: Enterprise Integration section added.

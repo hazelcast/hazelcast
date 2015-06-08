@@ -428,7 +428,12 @@ Once it is **ON**, the status of your cluster will be stored on your disk as lon
 
 You can go back in time using the slider and/or calendar and check your cluster's situation at the selected time. All data structures and members can be monitored as if you are using the management center normally (charts and data tables for each data structure and members). Using the arrow buttons placed at both sides of the slider, you can go back or further with steps of 5 seconds. It will show status if Time Travel has been **ON** at the selected time in past; otherwise, all the charts and tables will be shown as empty.
 
-The historical data collected with Time Travel feature are stored in a file database on the disk. These files can be found on the folder specified by `hazelcast.mancenter.home` (by default `mancenter3` folder in the user home folder).
+The historical data collected with Time Travel feature are stored in a file database on the disk. These files can be found in the folder `<User's Home Directory>/mancenter<Hazelcast version>`, e.g. `/home/mancenter3.5`. This folder can be changed using the `hazelcast.mancenter.home` property on the server where Management Center is running.
+
+Time travel data files are created monthly. Their file name format is `[group-name]-[year][month].db` and
+ `[group-name]-[year][month].lg`. Time travel data is kept in the `*.db` files. The files with the extension `lg` are temporary files created internally and you do not have to worry about them.
+ 
+Management Center has no automatic way of removing or archiving old time travel data files. They remain in the aforementioned folder until you delete or archive them.
 
 
 ### Documentation
