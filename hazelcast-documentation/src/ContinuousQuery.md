@@ -4,7 +4,7 @@
 
 ## Continuous Query
 
-Continuous query enables you to listen to the modifications performed on specific map entries. It is an entry listener with predicates. Please see the [Entry Listener section](#entry-listener) for information on how to add entry listeners to a map.
+Continuous query enables you to listen to the modifications performed on specific map entries. It is an entry listener with predicates. Please see the [Map Listener section](#map-listener) for information on how to add entry listeners to a map.
 
 As an example, let's listen to the changes made on an employee with the surname "Smith". First, let's create the `Employee` class.
 
