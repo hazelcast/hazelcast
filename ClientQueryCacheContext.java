@@ -6,7 +6,7 @@ import com.hazelcast.client.impl.querycache.subscriber.ClientQueryCacheEventServ
 import com.hazelcast.client.impl.querycache.subscriber.ClientQueryCacheScheduler;
 import com.hazelcast.client.impl.querycache.subscriber.ClientSubscriberContext;
 import com.hazelcast.client.spi.ClientContext;
-import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.core.Member;
 import com.hazelcast.map.impl.querycache.InvokerWrapper;
 import com.hazelcast.map.impl.querycache.QueryCacheConfigurator;
 import com.hazelcast.map.impl.querycache.QueryCacheContext;
@@ -65,7 +65,7 @@ public class ClientQueryCacheContext implements QueryCacheContext {
     }
 
     @Override
-    public Collection<MemberImpl> getMemberList() {
+    public Collection<Member> getMemberList() {
         return clientContext.getClusterService().getMemberList();
     }
 
