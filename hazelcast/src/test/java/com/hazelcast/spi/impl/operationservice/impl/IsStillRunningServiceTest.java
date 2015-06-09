@@ -1,6 +1,8 @@
 package com.hazelcast.spi.impl.operationservice.impl;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -11,6 +13,7 @@ import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -19,12 +22,13 @@ import org.junit.runner.RunWith;
 import java.io.IOException;
 import java.util.concurrent.ExecutionException;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
-public class IsStillRunningService_isOperationExecutingTest extends HazelcastTestSupport {
+public class IsStillRunningServiceTest extends HazelcastTestSupport {
 
     // The problem with testing a generic operation, is that it will be executed on the calling
     // thread. So to prevent this, we send the generic operation to a remote node and then we
@@ -113,6 +117,80 @@ public class IsStillRunningService_isOperationExecutingTest extends HazelcastTes
         });
     }
 
+    @Test
+    public void testTimeoutInvocationIfRemoteInvocationIsRunning() throws Exception {
+        int callTimeoutMillis = 500;
+        Config config = new Config();
+        config.setProperty(GroupProperties.PROP_OPERATION_CALL_TIMEOUT_MILLIS, String.valueOf(callTimeoutMillis));
+
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        HazelcastInstance hz1 = factory.newHazelcastInstance(config);
+        HazelcastInstance hz2 = factory.newHazelcastInstance(config);
+
+        OperationServiceImpl operationService = (OperationServiceImpl) getNode(hz1).getNodeEngine().getOperationService();
+
+        // invoke on the "remote" member
+        Address remoteAddress = getNode(hz2).getThisAddress();
+
+        final IsStillRunningService isStillRunningService = operationService.getIsStillRunningService();
+
+        final TargetInvocation invocation = new TargetInvocation(getNodeEngineImpl(hz1), null,
+                new DummyOperation(callTimeoutMillis * 10), remoteAddress, 0, 0,
+                callTimeoutMillis, null, true);
+        final InvocationFuture future = invocation.invoke();
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run()
+                    throws Exception {
+                assertTrue(isStillRunningService.isOperationExecuting(invocation));
+            }
+        });
+
+        isStillRunningService.timeoutInvocationIfNotExecuting(invocation);
+
+        assertTrueAllTheTime(new AssertTask() {
+            @Override
+            public void run()
+                    throws Exception {
+                assertFalse(future.isDone());
+            }
+        }, 2);
+    }
+
+    @Test
+    public void testTimeoutInvocationIfRemoteInvocationIsCompleted() throws Exception {
+        int callTimeoutMillis = 500;
+        Config config = new Config();
+        config.setProperty(GroupProperties.PROP_OPERATION_CALL_TIMEOUT_MILLIS, String.valueOf(callTimeoutMillis));
+
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        HazelcastInstance hz1 = factory.newHazelcastInstance(config);
+        HazelcastInstance hz2 = factory.newHazelcastInstance(config);
+
+        OperationServiceImpl operationService = (OperationServiceImpl) getNode(hz1).getNodeEngine().getOperationService();
+
+        // invoke on the "remote" member
+        Address remoteAddress = getNode(hz2).getThisAddress();
+
+        TargetInvocation invocation = new TargetInvocation(getNodeEngineImpl(hz1), null,
+                new DummyOperation(1), remoteAddress, 0, 0,
+                callTimeoutMillis, null, true);
+        final InvocationFuture future = invocation.invoke();
+        assertEquals(Boolean.TRUE, future.get());
+
+        IsStillRunningService isStillRunningService = operationService.getIsStillRunningService();
+        isStillRunningService.timeoutInvocationIfNotExecuting(invocation);
+
+        assertTrueAllTheTime(new AssertTask() {
+            @Override
+            public void run()
+                    throws Exception {
+                assertEquals(Boolean.TRUE, future.get());
+            }
+        }, 2);
+    }
+
     public static class DummyOperation extends AbstractOperation {
         private int sleepMs;
 
@@ -125,7 +203,8 @@ public class IsStillRunningService_isOperationExecutingTest extends HazelcastTes
 
         @Override
         public void run() throws Exception {
-            Thread.sleep(sleepMs);
+            sleepAtLeastMillis(sleepMs);
+            getResponseHandler().sendResponse(true);
         }
 
         @Override
@@ -139,5 +218,6 @@ public class IsStillRunningService_isOperationExecutingTest extends HazelcastTes
             super.readInternal(in);
             sleepMs = in.readInt();
         }
+
     }
 }

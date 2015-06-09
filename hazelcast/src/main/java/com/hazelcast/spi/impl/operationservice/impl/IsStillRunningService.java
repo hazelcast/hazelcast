@@ -16,6 +16,7 @@
 
 package com.hazelcast.spi.impl.operationservice.impl;
 
+import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.ExecutionTracingService;
@@ -29,6 +30,8 @@ import com.hazelcast.spi.impl.operationservice.impl.operations.TraceableIsStillE
 
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+
+import static com.hazelcast.spi.ExecutionService.SYSTEM_EXECUTOR;
 
 /**
  * Checks if an Operation is still running. This is useful when an operation isn't executed (e.g. got lost due to an
@@ -73,13 +76,29 @@ public class IsStillRunningService {
                     invocation.nodeEngine, invocation.serviceName, isStillExecuting,
                     invocation.getTarget(), 0, 0, IS_EXECUTING_CALL_TIMEOUT, null, true);
             Future f = inv.invoke();
-            invocation.logger.warning("Asking if operation execution has been started: " + toString());
+            invocation.logger.warning("Asking if operation execution has been started: " + invocation);
             executing = (Boolean) invocation.nodeEngine.toObject(f.get(IS_EXECUTING_CALL_TIMEOUT, TimeUnit.MILLISECONDS));
+        } catch (Exception e) {
+            invocation.logger.warning("While asking 'is-executing': " + invocation, e);
+        }
+        invocation.logger.warning("'is-executing': " + executing + " -> " + invocation);
+        return executing;
+    }
+
+    /**
+     * Sets operation timeout to invocation result if the operation is not running.
+     * @param invocation The invocation to check
+     */
+    public void timeoutInvocationIfNotExecuting(final Invocation invocation) {
+        try {
+            final Operation isStillExecuting = createCheckOperation(invocation);
+            final ExecutionCallback<Object> callback = new IsOperationStillRunningCallback(invocation);
+
+            nodeEngine.getExecutionService().execute(SYSTEM_EXECUTOR,
+                    new InvokeIsStillRunningOperationRunnable(invocation, isStillExecuting, callback));
         } catch (Exception e) {
             invocation.logger.warning("While asking 'is-executing': " + toString(), e);
         }
-        invocation.logger.warning("'is-executing': " + executing + " -> " + toString());
-        return executing;
     }
 
     private Operation createCheckOperation(Invocation invocation) {
@@ -175,5 +194,61 @@ public class IsStillRunningService {
         }
 
         return true;
+    }
+
+    private static class IsOperationStillRunningCallback implements ExecutionCallback<Object> {
+
+        private final Invocation invocation;
+
+        public IsOperationStillRunningCallback(Invocation invocation) {
+            this.invocation = invocation;
+        }
+
+        @Override
+        public void onResponse(Object response) {
+            boolean executing = Boolean.TRUE.equals(response);
+            invocation.logger.warning("'is-executing': " + executing + " -> " + invocation);
+            if (!executing) {
+                setOperationTimeout();
+            }
+        }
+
+        @Override
+        public void onFailure(Throwable t) {
+            invocation.logger.warning("While asking 'is-executing': " + invocation, t);
+            setOperationTimeout();
+        }
+
+        private void setOperationTimeout() {
+            InvocationFuture future = invocation.invocationFuture;
+            future.set(invocation.newOperationTimeoutException(future.getMaxCallTimeout()));
+        }
+    }
+
+    private static class InvokeIsStillRunningOperationRunnable
+            implements Runnable {
+
+        private final Invocation invocation;
+
+        private final Operation isStillRunningOperation;
+
+        private final ExecutionCallback<Object> callback;
+
+        public InvokeIsStillRunningOperationRunnable(Invocation invocation, Operation isStillRunningOperation,
+                                                     ExecutionCallback<Object> callback) {
+            this.invocation = invocation;
+            this.isStillRunningOperation = isStillRunningOperation;
+            this.callback = callback;
+        }
+
+        @Override
+        public void run() {
+            Invocation inv = new TargetInvocation(
+                    invocation.nodeEngine, invocation.serviceName, isStillRunningOperation,
+                    invocation.getTarget(), 0, 0, IS_EXECUTING_CALL_TIMEOUT, callback, true);
+
+            invocation.logger.warning("Asking if operation execution has been started: " + toString());
+            inv.invoke();
+        }
     }
 }
