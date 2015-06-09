@@ -38,7 +38,7 @@ src/Distributed_Data_Structures.md
 	src/MultiMap.md
 	src/Set.md
 	src/List.md
-	src/RingBuffer.md
+#	src/RingBuffer.md
 	src/Topic.md
 		src/TopicStatistics.md
 		src/TopicInternals.md
@@ -206,7 +206,7 @@ src/HazelcastConfiguration/HazelcastConfiguration.md
 	src/HazelcastConfiguration/TopicConfiguration.md
 	src/HazelcastConfiguration/ListConfiguration.md
 	src/HazelcastConfiguration/SetConfiguration.md
-	src/HazelcastConfiguration/RingBufferConfiguration.md
+#	src/HazelcastConfiguration/RingBufferConfiguration.md
 	src/HazelcastConfiguration/SemaphoreConfiguration.md
 	src/HazelcastConfiguration/ExecServiceConfiguration.md
 	src/HazelcastConfiguration/SerializationConfiguration.md
