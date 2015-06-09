@@ -3,7 +3,7 @@
 
 This section lists the enhancements performed for Hazelcast 3.5 release.
 
-- **Eventing System Improvements**: ???. For more information, please see [???](#???).
+- **Eventing System Improvements**: RingBuffer and Reliable Topic structures are introduced.
 - **Query and Indexing Improvements**: ???. For more information, please see [???](#???).
 - **XA Transactions Improvements**: With this improvement, you can now obtain a Hazelcast XA Resource instance through `HazelcastInstance`. For more information, please see [XA Transactions](#xa-transactions).
  
