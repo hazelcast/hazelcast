@@ -34,6 +34,7 @@
 |[Chapter 22 - WAN](#wan)|[WAN Replication Queue Capacity](#wan-replication-queue-capacity)|The previous heading title (WAN Replication Queue Size) and the system property name (`hazelcast.enterprise.wanrep.queuesize`) changed to WAN Replication Queue Capacity and `hazelcast.enterprise.wanrep.queue.capacity`.|
 ||[Enterprise WAN Replication](#enterprise-wan-replication)|Added as a new section.
 |[Chapter 23 - Hazelcast Configuration](#hazelcast-configuration)||Improved by adding missing configuration elements and attributes. Added introduction paragraphs to the chapter.|
+||[Configuration Overview](#configuration-overview)|Added a note related to the invalid configurations.
 ||[Using Variables](#using-variables)| Added as a new section explaining how to use variables in declarative configuration.|
 ||[System Properties](#system-properties)|Updated by adding the new system properties.
 ||[Enterprise WAN Replication Configuration](#enterprise-wan-replication-configuration)|Added as a new section describing the elements and attributes of Enterprise WAN Replication configuration.

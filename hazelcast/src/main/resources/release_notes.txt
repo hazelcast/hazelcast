@@ -26,6 +26,8 @@ This section provides the new features introduced with Hazelcast 3.5 release.
 
 - Near Cache for JCache: Now you can use a near cache with Hazelcast's JCache implementation.
 
+- Fail Fast on Invalid Configuration: With this feature, Hazelcast throws a meaningful exception if there is an error in the declarative or programmatic configuration.
+
 - Continuous Query Caching
 
 - Dynamic Selector Rebalancing

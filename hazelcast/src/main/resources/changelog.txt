@@ -72,7 +72,8 @@ Chapter 22 - WAN
 - Enterprise WAN Replication added as a new section.
 
 Chapter 23 - Hazelcast Configuration
-- Improved by adding missing configuration elements and attributes. Added introduction paragraphs to the chapter.|
+- Improved by adding missing configuration elements and attributes. Added introduction paragraphs to the chapter.
+- Configuration Overview: Added a note related to the invalid configurations.
 - Using Variables added as a new section explaining how to use variables in declarative configuration.
 - System Properties updated by adding the new system properties.
 - Enterprise WAN Replication Configuration: Added as a new section describing the elements and attributes of Enterprise WAN Replication configuration.
