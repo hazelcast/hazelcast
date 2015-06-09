@@ -77,17 +77,10 @@ public class DisconnectedHazelcastTest extends AbstractWebFilterTest {
             // So, we should copy current information from test to current context.
             cc.copyFrom(this);
         }
-        // Clear map
-//        IMap<String, Object> map = hz.getMap(DEFAULT_MAP_NAME);
-//        map.clear();
     }
 
     @Override
     protected void ensureInstanceIsUp() throws Exception {
-//        if (isInstanceNotActive(hz)) {
-//            hz = Hazelcast.newHazelcastInstance(
-//                    new FileSystemXmlConfig(new File(sourceDir + "/WEB-INF/", "hazelcast.xml")));
-//        }
         if (serverXml1 != null) {
             if (server1 == null) {
                 serverPort1 = availablePort();
@@ -106,7 +99,7 @@ public class DisconnectedHazelcastTest extends AbstractWebFilterTest {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test(timeout = 60000)
     public void test_setAttribute() throws Exception {
         CookieStore cookieStore = new BasicCookieStore();
         executeRequest("write", serverPort1, cookieStore);
@@ -114,7 +107,7 @@ public class DisconnectedHazelcastTest extends AbstractWebFilterTest {
         assertEquals("null", executeRequest("read", serverPort2, cookieStore));
     }
 
-    @Test(timeout = 20000)
+    @Test(timeout = 60000)
     public void test_getAttribute() throws Exception {
         CookieStore cookieStore = new BasicCookieStore();
         assertEquals("null", executeRequest("read", serverPort1, cookieStore));
@@ -123,7 +116,7 @@ public class DisconnectedHazelcastTest extends AbstractWebFilterTest {
         assertEquals("value", executeRequest("readIfExist", serverPort1, cookieStore));
         assertEquals("null", executeRequest("read", serverPort2, cookieStore));
         HazelcastInstance hz = Hazelcast.newHazelcastInstance();
-        Thread.sleep(8000);
+        Thread.sleep(9000);
         executeRequest("write", serverPort1, cookieStore);
         assertEquals("value", executeRequest("read", serverPort1, cookieStore));
         assertEquals("value", executeRequest("read", serverPort2, cookieStore));

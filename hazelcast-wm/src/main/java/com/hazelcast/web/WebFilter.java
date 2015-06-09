@@ -251,7 +251,7 @@ public class WebFilter implements Filter {
      * @return a new HazelcastHttpSession instance
      */
     protected HazelcastHttpSession createHazelcastHttpSession(String id, HttpSession originalSession, boolean deferredWrite) {
-        return new HazelcastHttpSession(this, id, originalSession, deferredWrite);
+        return new HazelcastHttpSession(this, id, originalSession, deferredWrite, stickySession);
     }
 
     private void updateSessionMaps(String sessionId, HttpSession originalSession, HazelcastHttpSession hazelcastSession) {
@@ -359,7 +359,9 @@ public class WebFilter implements Filter {
                 if (LOGGER.isFinestEnabled()) {
                     LOGGER.finest("UPDATING SESSION " + session.getId());
                 }
-                session.sessionDeferredWrite();
+                if (deferredWrite) {
+                    session.sessionDeferredWrite();
+                }
             }
         }
     }
@@ -456,11 +458,23 @@ public class WebFilter implements Filter {
 
         @Override
         public HazelcastHttpSession getSession(final boolean create) {
+            hazelcastSession = readSessionFromLocal();
+            if (hazelcastSession == null) {
+                hazelcastSession = getOrCreateHazelcastSession();
+            }
+            return hazelcastSession;
+        }
+
+        private HazelcastHttpSession readSessionFromLocal() {
+
             if (hazelcastSession != null && !hazelcastSession.isValid()) {
                 LOGGER.finest("Session is invalid!");
                 destroySession(hazelcastSession, true);
                 hazelcastSession = null;
             } else if (hazelcastSession != null) {
+                if (!hazelcastSession.isStickySession()) {
+                    hazelcastSession.updateReloadFlag();
+                }
                 return hazelcastSession;
             }
             HttpSession originalSession = getOriginalSession(false);
@@ -468,6 +482,10 @@ public class WebFilter implements Filter {
                 String hazelcastSessionId = originalSessions.get(originalSession.getId());
                 if (hazelcastSessionId != null) {
                     hazelcastSession = sessions.get(hazelcastSessionId);
+
+                    if (!hazelcastSession.isStickySession()) {
+                        hazelcastSession.updateReloadFlag();
+                    }
                     return hazelcastSession;
                 }
                 originalSessions.remove(originalSession.getId());
@@ -476,10 +494,7 @@ public class WebFilter implements Filter {
             if (requestedSessionId != null) {
                 hazelcastSession = sessions.get(requestedSessionId);
             }
-            if (hazelcastSession == null) {
-                hazelcastSession = getOrCreateHazelcastSession();
-            }
-            return hazelcastSession;
+            return null;
         }
 
         public String changeSessionId() {
