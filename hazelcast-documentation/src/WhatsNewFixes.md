@@ -5,6 +5,7 @@
 
 This section lists issues solved for Hazelcast 3.4.3 release.
 
+- Subsequent remove operations may cause reading of stale value from the map store [[#5368]](https://github.com/hazelcast/hazelcast/issues/5368).
 - Write-behind may cause reading of stale value upon migration [[#5339]](https://github.com/hazelcast/hazelcast/issues/5339).
 - Last update time of an entry should not be changed after `getAll()` is invoked [[#5333]](https://github.com/hazelcast/hazelcast/issues/5333).
 - `AtomicReference.alterAndGet()` throws `HazelcastSerializationException` [[#5265]](https://github.com/hazelcast/hazelcast/issues/5265).
