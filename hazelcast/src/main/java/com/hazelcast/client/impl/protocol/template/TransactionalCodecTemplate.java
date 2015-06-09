@@ -20,7 +20,7 @@ import com.hazelcast.annotation.GenerateCodec;
 import com.hazelcast.annotation.Request;
 import com.hazelcast.client.impl.protocol.ResponseMessageConst;
 
-@GenerateCodec(id = TemplateConstants.TRANSATION_TEMPLATE_ID, name = "Transaction", ns = "Transaction")
+@GenerateCodec(id = TemplateConstants.TRANSACTION_TEMPLATE_ID, name = "Transaction", ns = "Transaction")
 public interface TransactionalCodecTemplate {
 
     @Request(id = 1, retryable = false, response = ResponseMessageConst.VOID)

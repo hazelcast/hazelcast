@@ -146,7 +146,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static com.hazelcast.map.impl.ListenerAdapters.createListenerAdapter;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
-public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
+public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
 
     protected static final String NULL_KEY_IS_NOT_ALLOWED = "Null key is not allowed!";
     protected static final String NULL_VALUE_IS_NOT_ALLOWED = "Null value is not allowed!";

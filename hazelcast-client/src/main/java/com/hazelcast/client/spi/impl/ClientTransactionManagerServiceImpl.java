@@ -26,7 +26,7 @@ import com.hazelcast.client.txn.proxy.xa.XATransactionContextProxy;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.Member;
-import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.instance.AbstractMember;
 import com.hazelcast.nio.Address;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.transaction.TransactionContext;
@@ -125,7 +125,7 @@ public class ClientTransactionManagerServiceImpl implements ClientTransactionMan
     }
 
     private Address getRandomAddress() {
-        MemberImpl member = (MemberImpl) loadBalancer.next();
+        Member member = loadBalancer.next();
         if (member == null) {
             Set<Member> members = client.getCluster().getMembers();
             String msg;
@@ -138,7 +138,7 @@ public class ClientTransactionManagerServiceImpl implements ClientTransactionMan
             throw new IllegalStateException(msg);
         }
 
-        return member.getAddress();
+        return ((AbstractMember) member).getAddress();
     }
 
 

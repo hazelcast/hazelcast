@@ -253,6 +253,8 @@ public class CodecModel {
                         + PARAMETERS_PACKAGE + "JobPartitionStateCodec.calculateDataSize(" + name + ");");
             } else if (type.equals("javax.transaction.xa.Xid")) {
                 sizeString.append("dataSize += " + PARAMETERS_PACKAGE + "XIDCodec.calculateDataSize(" + name + ");");
+            } else if (type.equals("com.hazelcast.map.impl.querycache.event.SingleEventData")) {
+                sizeString.append("dataSize += " + PARAMETERS_PACKAGE + "SingleEventDataCodec.calculateDataSize(" + name + ");");
             } else if (type.equals("com.hazelcast.cache.impl.CacheEventData")) {
                 sizeString.append("dataSize += " + PARAMETERS_PACKAGE + "CacheEventDataCodec.calculateDataSize(" + name + ");");
             } else if (type.startsWith("java.util.Map<")) {
@@ -385,6 +387,8 @@ public class CodecModel {
                 getterString = name + " = " + PARAMETERS_PACKAGE + "XIDCodec.decode(clientMessage);";
             } else if (type.equals("com.hazelcast.cache.impl.CacheEventData")) {
                 getterString = name + " = " + PARAMETERS_PACKAGE + "CacheEventDataCodec.decode(clientMessage);";
+            } else if (type.equals("com.hazelcast.map.impl.querycache.event.SingleEventData")) {
+                getterString = name + " = " + PARAMETERS_PACKAGE + "SingleEventDataCodec.decode(clientMessage);";
             } else if (type.startsWith("java.util.Map<")) {
                 getterString = getMapGetterString(type, name);
             } else if (type.startsWith("java.util.List<") || type.startsWith("java.util.Set<")
@@ -548,6 +552,8 @@ public class CodecModel {
                 setterString.append(PARAMETERS_PACKAGE + "XIDCodec.encode(" + name + ", clientMessage);");
             } else if (type.equals("com.hazelcast.cache.impl.CacheEventData")) {
                 setterString.append(PARAMETERS_PACKAGE + "CacheEventDataCodec.encode(" + name + ", clientMessage);");
+            } else if (type.equals("com.hazelcast.map.impl.querycache.event.SingleEventData")) {
+                setterString.append(PARAMETERS_PACKAGE + "SingleEventDataCodec.encode(" + name + ", clientMessage);");
             } else if (type.startsWith("java.util.Map<")) {
                 setterString.append(getMapSetterString(type, name));
             } else if (type.startsWith("java.util.List<") || type.startsWith("java.util.Set<")

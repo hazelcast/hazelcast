@@ -20,7 +20,6 @@ import com.hazelcast.client.spi.impl.ClientClusterServiceImpl;
 import com.hazelcast.core.Cluster;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MembershipListener;
-import com.hazelcast.client.impl.MemberImpl;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -50,7 +49,7 @@ public class ClientClusterProxy implements Cluster {
 
     @Override
     public Set<Member> getMembers() {
-        final Collection<MemberImpl> members = clusterService.getMemberList();
+        final Collection<Member> members = clusterService.getMemberList();
         return members != null ? new LinkedHashSet<Member>(members) : Collections.<Member>emptySet();
     }
 

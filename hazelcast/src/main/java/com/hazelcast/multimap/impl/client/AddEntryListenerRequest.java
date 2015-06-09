@@ -68,7 +68,7 @@ public class AddEntryListenerRequest extends CallableClientRequest implements Re
                     Data key = dataAwareEntryEvent.getKeyData();
                     Data value = dataAwareEntryEvent.getNewValueData();
                     Data oldValue = dataAwareEntryEvent.getOldValueData();
-                    Data mergingValue = dataAwareEntryEvent.getMeringValueData();
+                    Data mergingValue = dataAwareEntryEvent.getMergingValueData();
                     final EntryEventType type = event.getEventType();
                     final String uuid = event.getMember().getUuid();
                     PortableEntryEvent portableEntryEvent = new PortableEntryEvent(key, value, oldValue, mergingValue

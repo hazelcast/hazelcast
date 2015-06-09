@@ -40,8 +40,9 @@ public final class TemplateConstants {
     public static final int TX_LIST_TEMPLATE_ID = 19;
     public static final int TX_QUEUE_TEMPLATE_ID = 20;
     public static final int JCACHE_TEMPLATE_ID = 21;
-    public static final int XA_TRANSATION_TEMPLATE_ID = 22;
-    public static final int TRANSATION_TEMPLATE_ID = 23;
+    public static final int XA_TRANSACTION_TEMPLATE_ID = 22;
+    public static final int TRANSACTION_TEMPLATE_ID = 23;
+    public static final int ENTERPRISE_MAP_TEMPLATE_ID = 24;
 
     private TemplateConstants() {
     }

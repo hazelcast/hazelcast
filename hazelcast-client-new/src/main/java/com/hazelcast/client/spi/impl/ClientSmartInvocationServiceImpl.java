@@ -20,9 +20,10 @@ import com.hazelcast.client.LoadBalancer;
 import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.ClusterAuthenticator;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
-import com.hazelcast.client.impl.MemberImpl;
 import com.hazelcast.client.spi.ClientClusterService;
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.core.Member;
+import com.hazelcast.instance.AbstractMember;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 
@@ -99,15 +100,15 @@ public final class ClientSmartInvocationServiceImpl extends ClientInvocationServ
     }
 
     private Address getRandomAddress() {
-        MemberImpl member = (MemberImpl) loadBalancer.next();
+        Member member = loadBalancer.next();
         if (member != null) {
-            return member.getAddress();
+            return ((AbstractMember) member).getAddress();
         }
         return null;
     }
 
     private boolean isMember(Address target) {
-        final MemberImpl member = client.getClientClusterService().getMember(target);
+        final Member member = client.getClientClusterService().getMember(target);
         return member != null;
     }
 

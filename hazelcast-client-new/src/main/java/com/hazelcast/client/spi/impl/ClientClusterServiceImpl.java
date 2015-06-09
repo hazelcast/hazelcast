@@ -21,7 +21,6 @@ import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.ClientImpl;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
-import com.hazelcast.client.impl.MemberImpl;
 import com.hazelcast.client.spi.ClientClusterService;
 import com.hazelcast.client.spi.ClientExecutionService;
 import com.hazelcast.config.ListenerConfig;
@@ -58,7 +57,7 @@ import java.util.concurrent.atomic.AtomicReference;
 public class ClientClusterServiceImpl extends ClusterListenerSupport {
 
     private static final ILogger LOGGER = Logger.getLogger(ClientClusterService.class);
-    private final AtomicReference<Map<Address, MemberImpl>> membersRef = new AtomicReference<Map<Address, MemberImpl>>();
+    private final AtomicReference<Map<Address, Member>> membersRef = new AtomicReference<Map<Address, Member>>();
     private final ConcurrentMap<String, MembershipListener> listeners = new ConcurrentHashMap<String, MembershipListener>();
 
     public ClientClusterServiceImpl(HazelcastClientInstanceImpl client) {
@@ -82,15 +81,15 @@ public class ClientClusterServiceImpl extends ClusterListenerSupport {
     }
 
     @Override
-    public MemberImpl getMember(Address address) {
-        final Map<Address, MemberImpl> members = membersRef.get();
+    public Member getMember(Address address) {
+        final Map<Address, Member> members = membersRef.get();
         return members != null ? members.get(address) : null;
     }
 
     @Override
-    public MemberImpl getMember(String uuid) {
-        final Collection<MemberImpl> memberList = getMemberList();
-        for (MemberImpl member : memberList) {
+    public Member getMember(String uuid) {
+        final Collection<Member> memberList = getMemberList();
+        for (Member member : memberList) {
             if (uuid.equals(member.getUuid())) {
                 return member;
             }
@@ -99,15 +98,15 @@ public class ClientClusterServiceImpl extends ClusterListenerSupport {
     }
 
     @Override
-    public Collection<MemberImpl> getMemberList() {
-        final Map<Address, MemberImpl> members = membersRef.get();
-        return members != null ? members.values() : Collections.<MemberImpl>emptySet();
+    public Collection<Member> getMemberList() {
+        final Map<Address, Member> members = membersRef.get();
+        return members != null ? members.values() : Collections.<Member>emptySet();
     }
 
     @Override
     public Address getMasterAddress() {
-        final Collection<MemberImpl> memberList = getMemberList();
-        return !memberList.isEmpty() ? memberList.iterator().next().getAddress() : null;
+        final Collection<Member> memberList = getMemberList();
+        return !memberList.isEmpty() ? new Address(memberList.iterator().next().getSocketAddress()) : null;
     }
 
     @Override
@@ -188,7 +187,7 @@ public class ClientClusterServiceImpl extends ClusterListenerSupport {
 
     String membersString() {
         StringBuilder sb = new StringBuilder("\n\nMembers [");
-        final Collection<MemberImpl> members = getMemberList();
+        final Collection<Member> members = getMemberList();
         sb.append(members != null ? members.size() : 0);
         sb.append("] {");
         if (members != null) {
@@ -228,11 +227,11 @@ public class ClientClusterServiceImpl extends ClusterListenerSupport {
         });
     }
 
-    Map<Address, MemberImpl> getMembersRef() {
+    Map<Address, Member> getMembersRef() {
         return membersRef.get();
     }
 
-    void setMembersRef(Map<Address, MemberImpl> map) {
+    void setMembersRef(Map<Address, Member> map) {
         membersRef.set(map);
     }
 }

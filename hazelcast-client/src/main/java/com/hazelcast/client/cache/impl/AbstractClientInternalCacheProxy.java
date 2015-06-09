@@ -56,9 +56,10 @@ import com.hazelcast.core.Member;
 import com.hazelcast.core.MemberAttributeEvent;
 import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MembershipListener;
-import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.instance.AbstractMember;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.executor.CompletedFuture;
@@ -552,13 +553,13 @@ abstract class AbstractClientInternalCacheProxy<K, V>
 
         @Override
         public void memberAdded(MembershipEvent event) {
-            MemberImpl member = (MemberImpl) event.getMember();
+            Member member = event.getMember();
             addInvalidationListener(member);
         }
 
         @Override
         public void memberRemoved(MembershipEvent event) {
-            MemberImpl member = (MemberImpl) event.getMember();
+            Member member = event.getMember();
             removeInvalidationListener(member, false);
         }
 
@@ -625,8 +626,8 @@ abstract class AbstractClientInternalCacheProxy<K, V>
             ClientClusterService clusterService = clientContext.getClusterService();
             nearCacheMembershipRegistrationId =
                     clusterService.addMembershipListener(new NearCacheMembershipListener());
-            Collection<MemberImpl> memberList = clusterService.getMemberList();
-            for (MemberImpl member : memberList) {
+            Collection<Member> memberList = clusterService.getMemberList();
+            for (Member member : memberList) {
                 addInvalidationListener(member);
             }
         }
@@ -639,14 +640,14 @@ abstract class AbstractClientInternalCacheProxy<K, V>
             if (registrationId != null) {
                 clusterService.removeMembershipListener(registrationId);
             }
-            Collection<MemberImpl> memberList = clusterService.getMemberList();
-            for (MemberImpl member : memberList) {
+            Collection<Member> memberList = clusterService.getMemberList();
+            for (Member member : memberList) {
                 removeInvalidationListener(member, true);
             }
         }
     }
 
-    private void addInvalidationListener(MemberImpl member) {
+    private void addInvalidationListener(Member member) {
         if (nearCacheInvalidationListeners.containsKey(member)) {
             return;
         }
@@ -655,7 +656,8 @@ abstract class AbstractClientInternalCacheProxy<K, V>
             Client client = clientContext.getClusterService().getLocalClient();
             EventHandler handler = new NearCacheInvalidationHandler(client);
             HazelcastClientInstanceImpl clientInstance = (HazelcastClientInstanceImpl) clientContext.getHazelcastInstance();
-            ClientInvocation invocation = new ClientInvocation(clientInstance, handler, request, member.getAddress());
+            Address address = ((AbstractMember) member).getAddress();
+            ClientInvocation invocation = new ClientInvocation(clientInstance, handler, request, address);
             Future future = invocation.invoke();
             String registrationId = clientContext.getSerializationService().toObject(future.get());
             clientContext.getListenerService().registerListener(registrationId, request.getCallId());
@@ -666,7 +668,7 @@ abstract class AbstractClientInternalCacheProxy<K, V>
         }
     }
 
-    private void removeInvalidationListener(MemberImpl member, boolean removeFromMemberAlso) {
+    private void removeInvalidationListener(Member member, boolean removeFromMemberAlso) {
         String registrationId = nearCacheInvalidationListeners.remove(member);
         if (registrationId != null) {
             try {
@@ -674,11 +676,12 @@ abstract class AbstractClientInternalCacheProxy<K, V>
                     ClientRequest request = new CacheRemoveInvalidationListenerRequest(nameWithPrefix, registrationId);
                     HazelcastClientInstanceImpl clientInstance =
                             (HazelcastClientInstanceImpl) clientContext.getHazelcastInstance();
-                    ClientInvocation invocation = new ClientInvocation(clientInstance, request, member.getAddress());
+                    Address address = ((AbstractMember) member).getAddress();
+                    ClientInvocation invocation = new ClientInvocation(clientInstance, request, address);
                     Future future = invocation.invoke();
                     Boolean result = clientContext.getSerializationService().toObject(future.get());
                     if (!result) {
-                        logger.warning("Invalidation listener couldn't be removed on member " + member.getAddress());
+                        logger.warning("Invalidation listener couldn't be removed on member " + address);
                         // TODO What we do if result is false ???
                     }
                 }
