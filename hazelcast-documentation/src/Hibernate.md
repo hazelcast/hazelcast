@@ -85,7 +85,7 @@ Hazelcast creates a separate distributed map for each Hibernate cache region. Yo
 
 - [Backup Configuration](#map-backups)
 
-- [Eviction And TTL Configuration](#eviction)
+- [Eviction And TTL Configuration](#map-eviction)
 
 - [Near Cache Configuration](#near-cache)
 
