@@ -38,3 +38,5 @@ for ( Customer customer : colCustomers ) {
 `java.util.Map` interface.
 
 The `com.hazelcast.core.ReplicatedMap` interface has some additional methods for registering entry listeners or retrieving values in an expected order.
+
+![image](images/NoteSmall.jpg) ***NOTE***: *Replicated Map is in the beta stage.*

@@ -27,7 +27,7 @@ Members [5] {
 
 ---
 
-![image](images/NoteSmall.jpg) ***NOTE***: *All of the requests below can return one of the following responses in case of a failure*
+![image](images/NoteSmall.jpg) ***NOTE***: *All of the requests below can return one of the following responses in case of a failure.*
 
 - If the HTTP request syntax is not known, the following response will be returned.
 
