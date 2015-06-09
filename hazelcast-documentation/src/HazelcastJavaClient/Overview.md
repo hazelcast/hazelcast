@@ -26,7 +26,7 @@ If you prefer to use maven, add the following lines to your `pom.xml`.
 
 ### Getting Started with Client API
 
-The first step is configuration. You can configure the Java client declaratively or programmatically. We will use the programmatic approach throughout this tutorial. Please refer to the [Java Client Declarative Configuration section](#java-client-declarative-configuration) for details.
+The first step is configuration. You can configure the Java client declaratively or programmatically. We will use the programmatic approach throughout this tutorial. Please refer to the [Java Client Declarative Configuration section](#java-client-configuration) for details.
 
 ```java
 ClientConfig clientConfig = new ClientConfig();
@@ -89,7 +89,7 @@ The client executes each operation through the already established connection to
 
 While sending the requests to related nodes, operation can fail due to various reasons. Read-only operations are retried by default. If you want to enable this for the other operations, set the `redoOperation` to `true`. Please see the [Redo Operation section](#redo-operation).
 
-The number of retries is given with the property `hazelcast.client.request.retry.count` in `ClientProperties`. The client will resend the request as many as RETRY-COUNT, then it will throw an exception. Please see the [Client Properties section](#client-properties).
+The number of retries is given with the property `hazelcast.client.request.retry.count` in `ClientProperties`. The client will resend the request as many as RETRY-COUNT, then it will throw an exception. Please see the [Client System Properties section](#client-system-properties).
 
 
 ### Supported Distributed Data Structures
@@ -239,7 +239,7 @@ lifecycleService.shutdown();
 
 ### Client Listeners
 
-You can configure listeners to listen to various event types on the client side. You can configure global events not relating to any distributed object through [Client ListenerConfig](#client-listenerconfig). You should configure distributed object listeners like map entry listeners or list item listeners through their proxies. You can refer to the related sections under each distributed data structure in this reference manual.
+You can configure listeners to listen to various event types on the client side. You can configure global events not relating to any distributed object through [Client ListenerConfig](#client-listener-configuration). You should configure distributed object listeners like map entry listeners or list item listeners through their proxies. You can refer to the related sections under each distributed data structure in this reference manual.
 
 ### Client Transactions
 

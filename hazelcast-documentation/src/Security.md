@@ -36,5 +36,5 @@ SecurityConfig securityCfg = cfg.getSecurityConfig();
 securityCfg.setEnabled( true );
 ```
 
-Also, see [Setting License Key](#setting-the-license-key-for-hazelcast-enterprise).
+Also, see [Setting License Key](#setting-the-license-key).
 
