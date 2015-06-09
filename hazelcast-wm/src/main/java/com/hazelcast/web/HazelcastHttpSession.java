@@ -38,17 +38,20 @@ public class HazelcastHttpSession implements HttpSession {
     private final String id;
     private final HttpSession originalSession;
     private final Map<String, LocalCacheEntry> localCache = new ConcurrentHashMap<String, LocalCacheEntry>();
+
+    private final boolean stickySession;
     private final boolean deferredWrite;
     // only true if session is created first time in the cluster
     private volatile boolean clusterWideNew;
     private Set<String> transientAttributes;
 
     public HazelcastHttpSession(WebFilter webFilter, final String sessionId, final HttpSession originalSession,
-                                final boolean deferredWrite) {
+                                final boolean deferredWrite, final boolean stickySession) {
         this.webFilter = webFilter;
         this.id = sessionId;
         this.originalSession = originalSession;
         this.deferredWrite = deferredWrite;
+        this.stickySession = stickySession;
         String transientAttributesParam = webFilter.getParam("transient-attributes");
         if (transientAttributesParam == null) {
             this.transientAttributes = Collections.emptySet();
@@ -60,9 +63,7 @@ public class HazelcastHttpSession implements HttpSession {
                 this.transientAttributes.add(token.trim());
             }
         }
-        if (this.deferredWrite) {
-            buildLocalCache();
-        }
+        buildLocalCache();
     }
 
     public HttpSession getOriginalSession() {
@@ -92,6 +93,7 @@ public class HazelcastHttpSession implements HttpSession {
         }
         entry.setValue(value);
         entry.setDirty(true);
+        entry.setRemoved(false);
         if (!deferredWrite && !transientEntry) {
             try {
                 webFilter.getClusteredSessionService().setAttribute(id, name, value);
@@ -103,54 +105,24 @@ public class HazelcastHttpSession implements HttpSession {
     }
 
     public Object getAttribute(final String name) {
-        boolean transientAttribute = transientAttributes.contains(name);
-        if (deferredWrite) {
-            return getAttributeWhenDeferredWrite(name, transientAttribute);
-        }
-        try {
-            Object value = null;
-            if (!transientAttribute) {
-                value = webFilter.getClusteredSessionService().getAttribute(id, name);
-            }
-            LocalCacheEntry cacheEntry = localCache.get(name);
-            if (cacheEntry == null) {
-                return value;
-            }
-            if (cacheEntry.isDirty()) {
-                return (cacheEntry.isRemoved()) ? null : cacheEntry.getValue();
-            }
-            return value;
-        } catch (Exception e) {
-            return getLocalAttribute(name);
-        }
-    }
-
-    private Object getAttributeWhenDeferredWrite(String name, boolean transientAttribute) {
         LocalCacheEntry cacheEntry = localCache.get(name);
-        if (cacheEntry == null || (cacheEntry.isReload() && !cacheEntry.isDirty())) {
-            Object value = null;
-            if (!transientAttribute) {
-                try {
-                    value = webFilter.getClusteredSessionService().getAttribute(id, name);
-                } catch (Exception ignored) {
-                    EmptyStatement.ignore(ignored);
+        Object value = null;
+
+        if (cacheEntry == null || cacheEntry.isReload()) {
+            try {
+                value = webFilter.getClusteredSessionService().getAttribute(id, name);
+                if (value == null) {
+                    return null;
+                }
+                cacheEntry = new LocalCacheEntry(false, value);
+            } catch (Exception e) {
+                WebFilter.LOGGER.warning("session could not be load so you might be dealing with stale data", e);
+                if (cacheEntry == null) {
+                    return null;
                 }
             }
-            if (value == null) {
-                cacheEntry = WebFilter.NULL_ENTRY;
-            } else {
-                cacheEntry = new LocalCacheEntry(transientAttribute);
-                cacheEntry.setValue(value);
-                cacheEntry.setReload(false);
-            }
-            localCache.put(name, cacheEntry);
         }
-        return cacheEntry != WebFilter.NULL_ENTRY ? cacheEntry.getValue() : null;
-    }
-
-    private Object getLocalAttribute(String name) {
-        LocalCacheEntry cacheEntry = localCache.get(name);
-        if (cacheEntry == null || cacheEntry.isRemoved()) {
+        if (cacheEntry.isRemoved()) {
             return null;
         }
         return cacheEntry.getValue();
@@ -218,7 +190,6 @@ public class HazelcastHttpSession implements HttpSession {
         if (entry != null && entry != WebFilter.NULL_ENTRY) {
             entry.setValue(null);
             entry.setRemoved(true);
-            // dirty needs to be set as last value for memory visibility reasons!
             entry.setDirty(true);
         }
         if (!deferredWrite) {
@@ -239,9 +210,6 @@ public class HazelcastHttpSession implements HttpSession {
      * cache is dirty; otherwise, {@code false}
      */
     public boolean sessionChanged() {
-        if (!deferredWrite) {
-            return false;
-        }
         for (Map.Entry<String, LocalCacheEntry> entry : localCache.entrySet()) {
             if (entry.getValue().isDirty()) {
                 return true;
@@ -288,6 +256,7 @@ public class HazelcastHttpSession implements HttpSession {
                 LocalCacheEntry cacheEntry = localCache.get(attributeKey);
                 if (cacheEntry == null) {
                     cacheEntry = new LocalCacheEntry(transientAttributes.contains(attributeKey));
+
                     localCache.put(attributeKey, cacheEntry);
                 }
                 if (WebFilter.LOGGER.isFinestEnabled()) {
@@ -301,35 +270,26 @@ public class HazelcastHttpSession implements HttpSession {
 
     void sessionDeferredWrite() {
         if (sessionChanged() || isNew()) {
-            if (localCache == null) {
-                return;
-            }
-            Map<String, Object> updates = new HashMap<String, Object>(1);
-            for (Map.Entry<String, LocalCacheEntry> entry : localCache.entrySet()) {
-                String name = entry.getKey();
+            Map<String, Object> updates = new HashMap<String, Object>();
+
+            Iterator<Map.Entry<String, LocalCacheEntry>> iterator = localCache.entrySet().iterator();
+            while (iterator.hasNext()) {
+                Map.Entry<String, LocalCacheEntry> entry = iterator.next();
                 LocalCacheEntry cacheEntry = entry.getValue();
-                if (!cacheEntry.isTransient() && entry.getValue().isDirty()) {
+
+                if (cacheEntry.isDirty() && !cacheEntry.isTransient()) {
                     if (cacheEntry.isRemoved()) {
-                        updates.put(name, null);
+                        updates.put(entry.getKey(), null);
                     } else {
-                        updates.put(name, cacheEntry.getValue());
+                        updates.put(entry.getKey(), cacheEntry.getValue());
                     }
+                    cacheEntry.setDirty(false);
+
                 }
             }
+
             try {
                 webFilter.getClusteredSessionService().updateAttributes(id, updates);
-                Iterator<Map.Entry<String, LocalCacheEntry>> iterator = localCache.entrySet().iterator();
-                while (iterator.hasNext()) {
-                    Map.Entry<String, LocalCacheEntry> entry = iterator.next();
-                    LocalCacheEntry cacheEntry = entry.getValue();
-                    if (cacheEntry.isDirty()) {
-                        if (cacheEntry.isRemoved()) {
-                            iterator.remove();
-                        } else {
-                            cacheEntry.setDirty(false);
-                        }
-                    }
-                }
             } catch (Exception ignored) {
                 EmptyStatement.ignore(ignored);
             }
@@ -364,5 +324,16 @@ public class HazelcastHttpSession implements HttpSession {
 
     public void setClusterWideNew(boolean clusterWideNew) {
         this.clusterWideNew = clusterWideNew;
+    }
+
+    public boolean isStickySession() {
+        return stickySession;
+    }
+
+    public void updateReloadFlag() {
+        for (Map.Entry<String, LocalCacheEntry> entry : localCache.entrySet()) {
+            entry.getValue().setReload(true);
+        }
+
     }
 } // END of HazelSession
