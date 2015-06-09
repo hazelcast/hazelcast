@@ -94,13 +94,18 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
     }
 
     @Override
-    public void loadAllFromStore(List<Data> keys, boolean replaceExistingValues, boolean lastBatch) {
+    public void loadAllFromStore(List<Data> keys, boolean replaceExistingValues) {
         if (!keys.isEmpty()) {
             Future f = recordStoreLoader.loadValues(keys, replaceExistingValues);
             loadingFutures.add(f);
         }
 
-        keyLoader.trackLoading(lastBatch);
+        keyLoader.trackLoading(false, null);
+    }
+
+    @Override
+    public void updateLoadStatus(boolean lastBatch, Throwable exception) {
+        keyLoader.trackLoading(lastBatch, exception);
 
         if (lastBatch) {
             logger.finest("Completed loading map " + name + " on partitionId=" + partitionId);
@@ -109,7 +114,6 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
 
     @Override
     public void maybeDoInitialLoad() {
-
         if (keyLoader.shouldDoInitialLoad()) {
             loadAll(false);
         }
@@ -121,10 +125,11 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
             try {
                 // check all loading futures for exceptions
                 FutureUtil.checkAllDone(loadingFutures);
-                loadingFutures.clear();
             } catch (Exception e) {
                 logger.severe("Exception while loading map " + name, e);
                 ExceptionUtil.rethrow(e);
+            } finally {
+                loadingFutures.clear();
             }
         } else {
             keyLoader.triggerLoadingWithDelay();
