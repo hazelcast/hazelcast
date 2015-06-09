@@ -99,7 +99,7 @@ public class DisconnectedHazelcastTest extends AbstractWebFilterTest {
         }
     }
 
-    @Test(timeout = 20000)
+    @Test(timeout = 60000)
     public void test_setAttribute() throws Exception {
         CookieStore cookieStore = new BasicCookieStore();
         executeRequest("write", serverPort1, cookieStore);
@@ -107,7 +107,7 @@ public class DisconnectedHazelcastTest extends AbstractWebFilterTest {
         assertEquals("null", executeRequest("read", serverPort2, cookieStore));
     }
 
-    @Test(timeout = 20000)
+    @Test(timeout = 60000)
     public void test_getAttribute() throws Exception {
         CookieStore cookieStore = new BasicCookieStore();
         assertEquals("null", executeRequest("read", serverPort1, cookieStore));
@@ -116,7 +116,7 @@ public class DisconnectedHazelcastTest extends AbstractWebFilterTest {
         assertEquals("value", executeRequest("readIfExist", serverPort1, cookieStore));
         assertEquals("null", executeRequest("read", serverPort2, cookieStore));
         HazelcastInstance hz = Hazelcast.newHazelcastInstance();
-        Thread.sleep(8000);
+        Thread.sleep(9000);
         executeRequest("write", serverPort1, cookieStore);
         assertEquals("value", executeRequest("read", serverPort1, cookieStore));
         assertEquals("value", executeRequest("read", serverPort2, cookieStore));
