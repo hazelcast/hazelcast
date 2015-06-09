@@ -143,7 +143,7 @@ public class DeferredFailoverClusterTest extends AbstractWebFilterTest {
         assertEquals(0, map.size());
         assertNull(map.get(hazelcastSessionId));
         assertEquals("null", executeRequest("read", serverPort2, cookieStore));
-        assertEquals("value", executeRequest("read", serverPort1, cookieStore));
+        assertEquals("null", executeRequest("read", serverPort1, cookieStore));
     }
 
     @Override
