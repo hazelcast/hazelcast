@@ -45,24 +45,21 @@ import static org.junit.Assert.*;
 public class MapReduceTest
         extends HazelcastTestSupport {
     final static Logger logger = Logger.getLogger("test");
-    
+
     private static final String MAP_NAME = "default";
 
-    private void tripshutdown(HazelcastInstance h1, HazelcastInstance h2, HazelcastInstance h3) {
-        try {
-            h1.shutdown();
-        } finally {
+    private void tripshutdown(HazelcastInstance... instances) {
+        for (HazelcastInstance instance : instances) {
             try {
-                h2.shutdown();
-            } finally {
-                h3.shutdown();
+                instance.shutdown();
+            } catch (Throwable ex) {
+                logger.log(java.util.logging.Level.INFO, ex.getMessage(), ex);
             }
         }
     }
 
     @Test(timeout = 60000)
     public void test_early_finalization_combiner_github_5283() throws Exception {
-        logger.info(String.valueOf(Math.max(Runtime.getRuntime().availableProcessors(), 8)));
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
 
         final HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
@@ -260,36 +257,25 @@ public class MapReduceTest
             throws Exception {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
 
-        logger.info("testInProcessCancellation 1");
         final HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
         final HazelcastInstance h2 = nodeFactory.newHazelcastInstance();
         final HazelcastInstance h3 = nodeFactory.newHazelcastInstance();
-
-        logger.info("testInProcessCancellation 2");
 
         assertClusterSizeEventually(3, h1);
         assertClusterSizeEventually(3, h2);
         assertClusterSizeEventually(3, h3);
 
-        logger.info("testInProcessCancellation 3");
-
         try {
-            logger.info("testInProcessCancellation 4");
             IMap<Integer, Integer> m1 = h1.getMap(MAP_NAME);
             for (int i = 0; i < 100; i++) {
                 m1.put(i, i);
             }
 
-            logger.info("testInProcessCancellation 5");
-
             JobTracker tracker = h1.getJobTracker("default");
             Job<Integer, Integer> job = tracker.newJob(KeyValueSource.fromMap(m1));
             ICompletableFuture<Map<String, List<Integer>>> future = job.mapper(new TimeConsumingMapper()).submit();
 
-            logger.info("testInProcessCancellation 6");
             future.cancel(true);
-
-            logger.info("testInProcessCancellation 7");
 
             try {
                 Map<String, List<Integer>> result = future.get();
@@ -299,7 +285,6 @@ public class MapReduceTest
                 e.printStackTrace();
                 throw e;
             }
-            logger.info("testInProcessCancellation 8");
         } finally {
             tripshutdown(h1, h2, h3);
         }
@@ -615,9 +600,8 @@ public class MapReduceTest
     @Test(timeout = 60000)
     public void testAsyncMapper()
             throws Exception {
-        logger.info("testAsyncMapper.1");
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
-        logger.info("testAsyncMapper.2");
+
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
         HazelcastInstance h2 = nodeFactory.newHazelcastInstance();
         HazelcastInstance h3 = nodeFactory.newHazelcastInstance();
@@ -626,15 +610,12 @@ public class MapReduceTest
         assertClusterSizeEventually(3, h2);
         assertClusterSizeEventually(3, h3);
 
-        logger.info("testAsyncMapper.3");
         try {
 
             IMap<Integer, Integer> m1 = h1.getMap(MAP_NAME);
             for (int i = 0; i < 100; i++) {
                 m1.put(i, i);
             }
-
-            logger.info("testAsyncMapper.4");
 
             final Map<String, List<Integer>> listenerResults = new HashMap<String, List<Integer>>();
             final Semaphore semaphore = new Semaphore(1);
@@ -643,8 +624,6 @@ public class MapReduceTest
             JobTracker tracker = h1.getJobTracker("default");
             Job<Integer, Integer> job = tracker.newJob(KeyValueSource.fromMap(m1));
             ICompletableFuture<Map<String, List<Integer>>> future = job.mapper(new TestMapper()).submit();
-
-            logger.info("testAsyncMapper.5");
 
             future.andThen(new ExecutionCallback<Map<String, List<Integer>>>() {
                 @Override
@@ -663,18 +642,12 @@ public class MapReduceTest
             });
 
 
-            logger.info("testAsyncMapper.6");
-
             semaphore.acquire();
-
-            logger.info("testAsyncMapper.7");
 
             assertEquals(100, listenerResults.size());
             for (List<Integer> value : listenerResults.values()) {
                 assertEquals(1, value.size());
             }
-
-            logger.info("testAsyncMapper.8");
         } finally {
             tripshutdown(h1, h2, h3);
         }
