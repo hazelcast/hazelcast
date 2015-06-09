@@ -93,7 +93,7 @@ clusters under the default settings.  Hazelcast provides a way to segregate clus
 network when using Multicast. Please see the [Creating Cluster Groups](#creating-cluster-groups) 
 for more information.  Alternatively, if you do not wish to use the default Multicast mechanism, 
 you can provide a fixed list of IP addresses that are allowed to join. Please see 
-the [Configuring TCP/IP Cluster section](#network-configuration) for more information.
+the [Join Configuration section](#join) for more information.
 <br> </br>
 
 ***RELATED INFORMATION***
