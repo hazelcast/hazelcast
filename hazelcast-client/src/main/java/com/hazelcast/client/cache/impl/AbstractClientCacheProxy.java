@@ -64,14 +64,7 @@ abstract class AbstractClientCacheProxy<K, V>
         super(cacheConfig, clientContext, cacheManager);
     }
 
-    //region ICACHE: JCACHE EXTENSION
-    @Override
-    public ICompletableFuture<V> getAsync(K key) {
-        return getAsync(key, null);
-    }
-
-    @Override
-    public ICompletableFuture<V> getAsync(K key, ExpiryPolicy expiryPolicy) {
+    protected Object getInternal(K key, ExpiryPolicy expiryPolicy, boolean async) {
         ensureOpen();
         validateNotNull(key);
         final Data keyData = toData(key);
@@ -89,17 +82,39 @@ abstract class AbstractClientCacheProxy<K, V>
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }
-        if (nearCache != null) {
-            future.andThenInternal(new ExecutionCallback<Data>() {
-                public void onResponse(Data valueData) {
-                    storeInNearCache(keyData, valueData, null);
-                }
+        if (async) {
+            if (nearCache != null) {
+                future.andThenInternal(new ExecutionCallback<Data>() {
+                    public void onResponse(Data valueData) {
+                        storeInNearCache(keyData, valueData, null);
+                    }
 
-                public void onFailure(Throwable t) {
+                    public void onFailure(Throwable t) {
+                    }
+                });
+            }
+            return new DelegatingFuture<V>(future, clientContext.getSerializationService());
+        } else {
+            try {
+                Object value = future.get();
+                if (nearCache != null) {
+                    storeInNearCache(keyData, toData(value), null);
                 }
-            });
+                return toObject(value);
+            } catch (Throwable e) {
+                throw ExceptionUtil.rethrowAllowedTypeFirst(e, CacheException.class);
+            }
         }
-        return new DelegatingFuture<V>(future, clientContext.getSerializationService());
+    }
+
+    @Override
+    public ICompletableFuture<V> getAsync(K key) {
+        return getAsync(key, null);
+    }
+
+    @Override
+    public ICompletableFuture<V> getAsync(K key, ExpiryPolicy expiryPolicy) {
+        return (ICompletableFuture<V>) getInternal(key, expiryPolicy, true);
     }
 
     @Override
@@ -179,12 +194,7 @@ abstract class AbstractClientCacheProxy<K, V>
 
     @Override
     public V get(K key, ExpiryPolicy expiryPolicy) {
-        final Future<V> f = getAsync(key, expiryPolicy);
-        try {
-            return toObject(f.get());
-        } catch (Throwable e) {
-            throw ExceptionUtil.rethrowAllowedTypeFirst(e, CacheException.class);
-        }
+        return (V) getInternal(key, expiryPolicy, false);
     }
 
     @Override
@@ -322,7 +332,5 @@ abstract class AbstractClientCacheProxy<K, V>
     public CacheStatistics getLocalCacheStatistics() {
         throw new UnsupportedOperationException("local cache Statistics are not implemented yet");
     }
-
-    //endregion ICACHE: JCACHE EXTENSION
 
 }
