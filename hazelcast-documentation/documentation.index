@@ -8,6 +8,7 @@ src/WhatsNew.md
 src/GettingStarted.md
 		src/InstallingHZEnterprise.md
 	src/StartingInstanceClient.md
+		src/DeployingOnAmazonEC2.md
 	src/ConfiguringHazelcast.md
 src/Overview.md
 	src/WhyHazelcast.md

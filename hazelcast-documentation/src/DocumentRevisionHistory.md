@@ -6,6 +6,7 @@
 |:-------|:-------|:-----------|
 |[Chapter 1 - Preface](#preface)||Added information on how to contribute to Hazelcast.|
 |[Chapter 2 - What's New in Hazelcast 3.5](#what-s-new-in-hazelcast-3-5)|[Upgrading from 3.x](#upgrading-from-3-x)|Added as a new section.|
+|[Chapter 3 - Getting Started](#getting-started)|[Deploying On Amazon EC2](#deploying-on-amazon-ec2)|Added as a new section to provide a sample deployment project.|
 |[Chapter 4 - Overview](#overview)||Separated from [Getting Started](#getting-started) as a new chapter.|
 ||[Data Partitioning](#data-partitioning)|Added as a new section explaining how the partitioning works in Hazelcast.|
 |[Chapter 5 - Hazelcast Clusters](#hazelcast-clusters)|[Creating Cluster Groups](#creating-cluster-groups)|Added as a new section explaining how to separate a Hazelcast cluster.|
