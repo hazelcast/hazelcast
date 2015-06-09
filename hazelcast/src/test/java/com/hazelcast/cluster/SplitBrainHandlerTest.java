@@ -706,7 +706,7 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
     private static class FirewallingNodeContext extends DefaultNodeContext {
         @Override
         public ConnectionManager createConnectionManager(Node node, ServerSocketChannel serverSocketChannel) {
-            NodeIOService ioService = new NodeIOService(node);
+            NodeIOService ioService = new NodeIOService(node, node.nodeEngine);
             return new FirewallingTcpIpConnectionManager(node.loggingService,
                     node.getHazelcastThreadGroup(), ioService, serverSocketChannel);
         }
