@@ -22,6 +22,7 @@ import com.hazelcast.core.IExecutorService;
 import com.hazelcast.core.ILock;
 import com.hazelcast.core.IQueue;
 import com.hazelcast.core.MemberLeftException;
+import com.hazelcast.core.Partition;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Address;
@@ -32,17 +33,17 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
-
 import java.io.IOException;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -184,7 +185,7 @@ public class InvocationTest extends HazelcastTestSupport {
 
     @Test
     public void testWaitingInfinitelyForTryLock() throws InterruptedException {
-       final Config config = new Config();
+        final Config config = new Config();
         config.setProperty(GroupProperties.PROP_OPERATION_CALL_TIMEOUT_MILLIS, "3000");
         final HazelcastInstance hz = createHazelcastInstance(config);
         final CountDownLatch latch = new CountDownLatch(1);
@@ -281,6 +282,38 @@ public class InvocationTest extends HazelcastTestSupport {
         Future<?> future = executorService.submitToMember(task, h2.getCluster().getLocalMember());
         future.get();
     }
+
+    @Test(expected = ExecutionException.class)
+    public void testInvocationThrowsOperationTimeoutExceptionWhenTimeout() throws Exception {
+        final Config config = new Config();
+        config.setProperty(GroupProperties.PROP_OPERATION_CALL_TIMEOUT_MILLIS, "300");
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        HazelcastInstance local = factory.newHazelcastInstance(config);
+        HazelcastInstance remote = factory.newHazelcastInstance(config);
+        warmUpPartitions(local, remote);
+
+        Set<Partition> partitions = remote.getPartitionService().getPartitions();
+        Partition partition = partitions.iterator().next();
+        OperationService service = getOperationService(local);
+        Operation op = new NonRespondingEmptyOperation();
+        op.setPartitionId(partition.getPartitionId());
+        Future f = service.createInvocationBuilder(null, op, partition.getPartitionId()).invoke();
+        f.get(10, TimeUnit.SECONDS);
+    }
+
+    private static class NonRespondingEmptyOperation extends AbstractOperation implements PartitionAwareOperation {
+
+        @Override
+        public void run() throws InterruptedException {
+        }
+
+        @Override
+        public boolean returnsResponse() {
+            return false;
+        }
+
+    }
+
 
     public static class Issue2509Runnable implements Callable<Integer>, DataSerializable {
 

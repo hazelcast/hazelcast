@@ -27,9 +27,7 @@ import com.hazelcast.instance.Node;
 import com.hazelcast.instance.TestUtil;
 import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.partition.InternalPartitionService;
-import org.junit.After;
-import org.junit.ComparisonFailure;
-
+import com.hazelcast.spi.impl.InternalOperationService;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Random;
@@ -38,6 +36,8 @@ import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import org.junit.After;
+import org.junit.ComparisonFailure;
 
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
@@ -298,9 +298,9 @@ public abstract class HazelcastTestSupport {
      * This method executes the normal assertEquals with expected and actual values.
      * In addition it formats the given string with those values to provide a good assert message.
      *
-     * @param message     assert message which is formatted with expected and actual values
-     * @param expected    expected value which is used for assert
-     * @param actual      actual value which is used for assert
+     * @param message  assert message which is formatted with expected and actual values
+     * @param expected expected value which is used for assert
+     * @param actual   actual value which is used for assert
      */
     public static void assertEqualsStringFormat(String message, Object expected, Object actual) {
         assertEquals(String.format(message, expected, actual), expected, actual);
@@ -356,25 +356,31 @@ public abstract class HazelcastTestSupport {
         return node.partitionService;
     }
 
-     /**
+    public static InternalOperationService getOperationService(HazelcastInstance hz) {
+        Node node = getNode(hz);
+        return (InternalOperationService) node.nodeEngine.getOperationService();
+    }
+
+
+    /**
      * Gets a partition id owned by this particular member.
-      *
+     *
      * @param hz
      * @return
      */
-     public static int getPartitionId(HazelcastInstance hz) {
-         warmUpPartitions(hz);
-         Node node = getNode(hz);
+    public static int getPartitionId(HazelcastInstance hz) {
+        warmUpPartitions(hz);
+        Node node = getNode(hz);
 
-         InternalPartitionService partitionService = getPartitionService(hz);
-         for (InternalPartition p : partitionService.getPartitions()) {
-             if (node.getThisAddress().equals(p.getOwnerOrNull())) {
-                 return p.getPartitionId();
-             }
-         }
+        InternalPartitionService partitionService = getPartitionService(hz);
+        for (InternalPartition p : partitionService.getPartitions()) {
+            if (node.getThisAddress().equals(p.getOwnerOrNull())) {
+                return p.getPartitionId();
+            }
+        }
 
-         throw new RuntimeException("No local partitions are found for hz: " + hz.getName());
-     }
+        throw new RuntimeException("No local partitions are found for hz: " + hz.getName());
+    }
 
     public static String generateKeyOwnedBy(HazelcastInstance instance) {
         return generateKeyInternal(instance, true);
