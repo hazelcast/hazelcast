@@ -80,3 +80,7 @@ Hazelcast.newHazelcastInstance( config );
     `Hazelcast.getAllHazelcastInstances();`
 
 
+<br><br>
+![image](images/NoteSmall.jpg) ***NOTE:*** *Hazelcast performs the schema validation through the `hazelcast-config-<version>.xsd` file. It throws a meaningful exception if there is an error in the declarative or programmatic configuration.*
+
+<br><br>
