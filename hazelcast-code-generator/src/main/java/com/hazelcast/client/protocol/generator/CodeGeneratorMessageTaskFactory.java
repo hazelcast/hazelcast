@@ -86,11 +86,20 @@ public class CodeGeneratorMessageTaskFactory
         if (elementsAnnotatedWith == null || elementsAnnotatedWith.size() == 0) {
             return false;
         }
+        boolean isEnterprise = false;
         for (Element element : elementsAnnotatedWith) {
+            isEnterprise = element.toString().contains("enterprise");
             map.put(element.toString(), addAllFromPackage((PackageElement) element));
         }
-        final String content = generateFromTemplate(messageFactoryTemplate, map);
-        saveClass("com.hazelcast.client.impl.protocol", "MessageTaskFactoryImpl", content);
+        String className;
+        if (isEnterprise) {
+            className = "EnterpriseMessageTaskFactoryImpl";
+        } else {
+            className = "MessageTaskFactoryImpl";
+        }
+        MessageFactoryModel model = new MessageFactoryModel(className, map);
+        final String content = generateFromTemplate(messageFactoryTemplate, model);
+        saveClass("com.hazelcast.client.impl.protocol", className, content);
         return true;
     }
 

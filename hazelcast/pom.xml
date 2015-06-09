@@ -335,7 +335,7 @@
         <dependency>
             <groupId>com.hazelcast</groupId>
             <artifactId>hazelcast-code-generator</artifactId>
-            <version>3.5-EA2-SNAPSHOT</version>
+            <version>${version}</version>
         </dependency>
     </dependencies>
 

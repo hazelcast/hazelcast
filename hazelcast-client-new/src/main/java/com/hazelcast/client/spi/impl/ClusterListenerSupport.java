@@ -25,13 +25,13 @@ import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.LifecycleServiceImpl;
-import com.hazelcast.client.impl.MemberImpl;
 import com.hazelcast.client.impl.client.ClientPrincipal;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientAuthenticationCodec;
 import com.hazelcast.client.impl.protocol.codec.ClientAuthenticationCustomCodec;
 import com.hazelcast.client.spi.ClientClusterService;
 import com.hazelcast.core.LifecycleEvent;
+import com.hazelcast.core.Member;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
@@ -153,9 +153,9 @@ public abstract class ClusterListenerSupport implements ConnectionListener, Conn
     private Collection<InetSocketAddress> getSocketAddresses() {
         final List<InetSocketAddress> socketAddresses = new LinkedList<InetSocketAddress>();
 
-        Collection<MemberImpl> memberList = getMemberList();
-        for (MemberImpl member : memberList) {
-            socketAddresses.add(member.getInetSocketAddress());
+        Collection<Member> memberList = getMemberList();
+        for (Member member : memberList) {
+            socketAddresses.add(member.getSocketAddress());
         }
 
         for (AddressProvider addressProvider : addressProviders) {

@@ -17,8 +17,8 @@
 package com.hazelcast.client.spi;
 
 import com.hazelcast.core.Client;
+import com.hazelcast.core.Member;
 import com.hazelcast.core.MembershipListener;
-import com.hazelcast.client.impl.MemberImpl;
 import com.hazelcast.nio.Address;
 
 import java.util.Collection;
@@ -39,7 +39,7 @@ public interface ClientClusterService {
      * @param address The address of the member to look up.
      * @return The member that was found, or null if not found. If address is null, null is returned.
      */
-    MemberImpl getMember(Address address);
+    Member getMember(Address address);
 
     /**
      * Gets the member with the given uuid.
@@ -47,14 +47,14 @@ public interface ClientClusterService {
      * @param uuid The uuid of the member.
      * @return The member that was found, or null if not found. If uuid is null, null is returned.
      */
-    MemberImpl getMember(String uuid);
+    Member getMember(String uuid);
 
     /**
      * Gets the collection of members.
      *
      * @return The collection of members. Null will never be returned.
      */
-    Collection<MemberImpl> getMemberList();
+    Collection<Member> getMemberList();
 
     /**
      * Returns the address of the master member.

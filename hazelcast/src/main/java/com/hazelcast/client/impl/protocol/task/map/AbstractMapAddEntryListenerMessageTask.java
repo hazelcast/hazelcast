@@ -85,7 +85,7 @@ public abstract class AbstractMapAddEntryListenerMessageTask<Parameter>
                 Data keyData = dataAwareEntryEvent.getKeyData();
                 Data newValueData = dataAwareEntryEvent.getNewValueData();
                 Data oldValueData = dataAwareEntryEvent.getOldValueData();
-                Data meringValueData = dataAwareEntryEvent.getMeringValueData();
+                Data meringValueData = dataAwareEntryEvent.getMergingValueData();
                 sendClientMessage(keyData, encodeEvent(keyData
                         , newValueData, oldValueData, meringValueData, event.getEventType().getType(),
                         event.getMember().getUuid(), 1));

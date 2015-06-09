@@ -64,7 +64,7 @@ public class DataAwareEntryEvent extends EntryEvent {
         return dataOldValue;
     }
 
-    public Data getMeringValueData() {
+    public Data getMergingValueData() {
         return dataMergingValue;
     }
 

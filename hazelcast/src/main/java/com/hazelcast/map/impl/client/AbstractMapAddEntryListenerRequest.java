@@ -78,7 +78,7 @@ public abstract class AbstractMapAddEntryListenerRequest extends CallableClientR
                     Data key = dataAwareEntryEvent.getKeyData();
                     Data value = dataAwareEntryEvent.getNewValueData();
                     Data oldValue = dataAwareEntryEvent.getOldValueData();
-                    Data mergingValue = dataAwareEntryEvent.getMeringValueData();
+                    Data mergingValue = dataAwareEntryEvent.getMergingValueData();
                     PortableEntryEvent portableEntryEvent = new PortableEntryEvent(key, value, oldValue, mergingValue,
                             event.getEventType(), event.getMember().getUuid());
                     endpoint.sendEvent(key, portableEntryEvent, getCallId());

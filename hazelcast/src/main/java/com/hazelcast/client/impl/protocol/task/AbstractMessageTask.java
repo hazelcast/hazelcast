@@ -207,7 +207,7 @@ public abstract class AbstractMessageTask<P>
         sendClientMessage(clientMessage);
     }
 
-    private void sendClientMessage(ClientMessage resultClientMessage) {
+    protected void sendClientMessage(ClientMessage resultClientMessage) {
         resultClientMessage.setCorrelationId(clientMessage.getCorrelationId());
         resultClientMessage.addFlag(ClientMessage.BEGIN_AND_END_FLAGS);
         resultClientMessage.setVersion(ClientMessage.VERSION);
