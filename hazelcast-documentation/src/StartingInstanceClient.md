@@ -90,7 +90,7 @@ see the [Management Center section](#management-center) for usage explanations.
 By default, Hazelcast uses Multicast to discover other nodes that can form a cluster.  If you are 
 working with other Hazelcast developers on the same network, you may find yourself joining their 
 clusters under the default settings.  Hazelcast provides a way to segregate clusters within the same 
-network when using Multicast. Please see the FAQ item [How do I create separate clusters](#how-do-i-create-separate-clusters) 
+network when using Multicast. Please see the [Creating Cluster Groups](#creating-cluster-groups) 
 for more information.  Alternatively, if you do not wish to use the default Multicast mechanism, 
 you can provide a fixed list of IP addresses that are allowed to join. Please see 
 the [Configuring TCP/IP Cluster section](#network-configuration) for more information.
