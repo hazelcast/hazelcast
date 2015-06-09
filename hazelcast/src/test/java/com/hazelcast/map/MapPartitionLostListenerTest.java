@@ -3,6 +3,7 @@ package com.hazelcast.map;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.Node;
 import com.hazelcast.map.MapPartitionLostListenerStressTest.EventCollectingMapPartitionLostListener;
+import com.hazelcast.map.impl.MapPartitionLostEventFilter;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.listener.EntryAddedListener;
 import com.hazelcast.nio.Address;
@@ -22,6 +23,7 @@ import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.mockito.Mockito.mock;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -55,6 +57,7 @@ public class MapPartitionLostListenerTest
                 assertEquals(1, events.size());
                 final MapPartitionLostEvent event = events.get(0);
                 assertEquals(internalEvent.getPartitionId(), event.getPartitionId());
+                assertNotNull(event.toString());
             }
         });
     }
@@ -81,6 +84,7 @@ public class MapPartitionLostListenerTest
                 assertEquals(1, events.size());
                 final MapPartitionLostEvent event = events.get(0);
                 assertEquals(internalEvent.getPartitionId(), event.getPartitionId());
+                assertNotNull(event.toString());
             }
         });
     }
@@ -120,6 +124,13 @@ public class MapPartitionLostListenerTest
                 }
             }
         });
+    }
+
+    @Test
+    public void testMapPartitionLostEventFilter() {
+        final MapPartitionLostEventFilter filter = new MapPartitionLostEventFilter();
+        assertEquals(new MapPartitionLostEventFilter(), filter);
+        assertFalse(filter.eval(null));
     }
 
 }

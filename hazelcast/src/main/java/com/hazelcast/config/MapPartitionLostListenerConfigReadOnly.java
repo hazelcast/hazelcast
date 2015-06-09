@@ -42,4 +42,8 @@ public class MapPartitionLostListenerConfigReadOnly
     public ListenerConfig setImplementation(EventListener implementation) {
         throw new UnsupportedOperationException("this config is read-only");
     }
+
+    public MapPartitionLostListenerConfig setImplementation(MapPartitionLostListener implementation) {
+        throw new UnsupportedOperationException("this config is read-only");
+    }
 }
