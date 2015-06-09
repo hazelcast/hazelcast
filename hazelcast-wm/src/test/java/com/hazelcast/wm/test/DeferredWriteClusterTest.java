@@ -127,7 +127,7 @@ public class DeferredWriteClusterTest extends AbstractWebFilterTest {
         assertEquals("value", executeRequest("read", serverPort2, cookieStore));
         assertEquals("true", executeRequest("update", serverPort2, cookieStore));
         assertEquals("value-updated", executeRequest("read", serverPort2, cookieStore));
-        assertEquals("value", executeRequest("read", serverPort1, cookieStore));
+        assertEquals("value-updated", executeRequest("read", serverPort1, cookieStore));
     }
 
     @Override
