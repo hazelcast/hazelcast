@@ -68,9 +68,32 @@
 
     <xs:complexType name="map">
         <xs:all>
-            <xs:element name="in-memory-format" type="in-memory-format" minOccurs="0" maxOccurs="1" default="BINARY"/>
-            <xs:element name="statistics-enabled" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true"/>
-            <xs:element name="optimize-queries" type="xs:boolean" minOccurs="0" maxOccurs="1" default="false"/>
+            <xs:element name="in-memory-format" type="in-memory-format" minOccurs="0" maxOccurs="1" default="BINARY">
+                <xs:annotation>
+                    <xs:documentation>
+                        Data type used to store entries.
+                        Possible values:
+                        BINARY (default): keys and values are stored as binary data.
+                        OBJECT: values are stored in their object forms.
+                        NATIVE: keys and values are stored in native memory.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="statistics-enabled" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true">
+                <xs:annotation>
+                    <xs:documentation>
+                        True (default) if statistics gathering is enabled on the map, false otherwise.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="optimize-queries" type="xs:boolean" minOccurs="0" maxOccurs="1" default="false">
+                <xs:annotation>
+                    <xs:documentation>
+                        If true, increases the speed of query processes in the map. It only works when in-memory-format
+                        is set as BINARY and performs a pre-caching on the entries queried. Default value is false.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
             <xs:element name="backup-count" type="backup-count" minOccurs="0" maxOccurs="1" default="1">
                 <xs:annotation>
                     <xs:documentation>
@@ -183,7 +206,13 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="read-backup-data" type="xs:boolean" minOccurs="0" maxOccurs="1" default="false"/>
+            <xs:element name="read-backup-data" type="xs:boolean" minOccurs="0" maxOccurs="1" default="false">
+                <xs:annotation>
+                    <xs:documentation>
+                        True if reading local backup entries is enabled, false otherwise.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
             <xs:element name="map-store" type="map-store" minOccurs="0" maxOccurs="1"/>
             <xs:element name="near-cache" type="near-cache" minOccurs="0" maxOccurs="1"/>
             <xs:element name="wan-replication-ref" type="wan-replication-ref" minOccurs="0" maxOccurs="1"/>
@@ -201,6 +230,11 @@
             <xs:element name="query-caches" type="query-caches" minOccurs="0" maxOccurs="1"/>
         </xs:all>
         <xs:attribute name="name" use="required">
+        <xs:annotation>
+            <xs:documentation>
+                Name of the map.
+            </xs:documentation>
+        </xs:annotation>
             <xs:simpleType>
                 <xs:restriction base="xs:string"/>
             </xs:simpleType>
@@ -224,8 +258,23 @@
                 </xs:complexType>
             </xs:element>
         </xs:all>
-        <xs:attribute name="old-value-required" type="xs:boolean" use="optional" default="false"/>
-        <xs:attribute name="synchronous" type="xs:boolean" use="optional" default="false"/>
+        <xs:attribute name="old-value-required" type="xs:boolean" use="optional" default="false">
+            <xs:annotation>
+                <xs:documentation>
+                    If true, previously assigned values for the affected keys will be sent to this 
+                    cache-entry-listener implementation. Setting this attribute to true 
+                    creates additional traffic. Default value is false.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="synchronous" type="xs:boolean" use="optional" default="false">
+            <xs:annotation>
+                <xs:documentation>
+                    If true, this cache-entry-listener implementation will be called 
+                    in a synchronous manner. Default value is false.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
     </xs:complexType>
     <xs:complexType name="cache">
         <xs:all>
@@ -259,14 +308,14 @@
             <xs:element name="management-enabled" type="xs:boolean" minOccurs="0" maxOccurs="1" default="false">
                 <xs:annotation>
                     <xs:documentation>
-                        True if management is enabled on the cache, false (default) othewise.
+                        True if management is enabled on the cache, false (default) otherwise.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
             <xs:element name="read-through" type="xs:boolean" minOccurs="0" maxOccurs="1" default="false">
                 <xs:annotation>
                     <xs:documentation>
-                        True if read-through caching is used, false (default) othewise.
+                        True if read-through caching is used, false (default) otherwise.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
@@ -399,8 +448,13 @@
 
     <xs:complexType name="queue">
         <xs:all>
-            <xs:element name="statistics-enabled" type="xs:boolean" minOccurs="0" maxOccurs="1"
-                        default="true"/>
+            <xs:element name="statistics-enabled" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true">
+                <xs:annotation>
+                    <xs:documentation>
+                        True (default) if statistics gathering is enabled on the queue, false otherwise.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
             <xs:element name="max-size" type="xs:unsignedInt" minOccurs="0" maxOccurs="1" default="0">
                 <xs:annotation>
                     <xs:documentation>
@@ -409,8 +463,24 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="backup-count" type="backup-count" minOccurs="0" maxOccurs="1" default="1"/>
-            <xs:element name="async-backup-count" type="backup-count" minOccurs="0" maxOccurs="1" default="0"/>
+            <xs:element name="backup-count" type="backup-count" minOccurs="0" maxOccurs="1" default="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        Number of synchronous backups. For example, if 1 is set as the backup-count,
+                        then all entries of the queue are copied to one other JVM for
+                        fail-safety.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="async-backup-count" type="backup-count" minOccurs="0" maxOccurs="1" default="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Number of asynchronous backups. For example, if 1 is set as the backup-count,
+                        then all entries of the queue are copied to one other JVM for
+                        fail-safety.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
             <xs:element name="empty-queue-ttl" type="empty-queue-ttl" minOccurs="0" maxOccurs="1" default="-1"/>
             <xs:element name="item-listeners" minOccurs="0" maxOccurs="1">
                 <xs:complexType>
@@ -429,7 +499,13 @@
     </xs:complexType>
     <xs:complexType name="list">
         <xs:all>
-            <xs:element name="statistics-enabled" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true"/>
+            <xs:element name="statistics-enabled" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true">
+                <xs:annotation>
+                    <xs:documentation>
+                        True (default) if statistics gathering is enabled on the list, false otherwise.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
             <xs:element name="max-size" type="xs:unsignedInt" minOccurs="0" maxOccurs="1" default="0">
                 <xs:annotation>
                     <xs:documentation>
@@ -438,8 +514,24 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="backup-count" type="backup-count" minOccurs="0" maxOccurs="1" default="1"/>
-            <xs:element name="async-backup-count" type="backup-count" minOccurs="0" maxOccurs="1" default="0"/>
+            <xs:element name="backup-count" type="backup-count" minOccurs="0" maxOccurs="1" default="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        Number of synchronous backups. For example, if 1 is set as the backup-count,
+                        then all entries of the list are copied to one other JVM for
+                        fail-safety.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="async-backup-count" type="backup-count" minOccurs="0" maxOccurs="1" default="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Number of asynchronous backups. For example, if 1 is set as the backup-count,
+                        then all entries of the list will be copied to one other JVM for
+                        fail-safety.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
             <xs:element name="item-listeners" minOccurs="0" maxOccurs="1">
                 <xs:complexType>
                     <xs:sequence>
@@ -456,7 +548,13 @@
     </xs:complexType>
     <xs:complexType name="set">
         <xs:all>
-            <xs:element name="statistics-enabled" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true"/>
+            <xs:element name="statistics-enabled" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true">
+                <xs:annotation>
+                    <xs:documentation>
+                        True (default) if statistics gathering is enabled on the set, false otherwise.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
             <xs:element name="max-size" type="xs:unsignedInt" minOccurs="0" maxOccurs="1" default="0">
                 <xs:annotation>
                     <xs:documentation>
@@ -465,8 +563,24 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="backup-count" type="backup-count" minOccurs="0" maxOccurs="1" default="1"/>
-            <xs:element name="async-backup-count" type="backup-count" minOccurs="0" maxOccurs="1" default="0"/>
+            <xs:element name="backup-count" type="backup-count" minOccurs="0" maxOccurs="1" default="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        Number of synchronous backups. For example, if 1 is set as the backup-count,
+                        then all entries of the set are copied to one other JVM for
+                        fail-safety.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="async-backup-count" type="backup-count" minOccurs="0" maxOccurs="1" default="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Number of asynchronous backups. For example, if 1 is set as the backup-count,
+                        then all entries of the set will be copied to one other JVM for
+                        fail-safety.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
             <xs:element name="item-listeners" minOccurs="0" maxOccurs="1">
                 <xs:complexType>
                     <xs:sequence>
@@ -483,9 +597,31 @@
     </xs:complexType>
     <xs:complexType name="multimap">
         <xs:all>
-            <xs:element name="backup-count" type="backup-count" minOccurs="0" maxOccurs="1" default="1"/>
-            <xs:element name="async-backup-count" type="backup-count" minOccurs="0" maxOccurs="1" default="0"/>
-            <xs:element name="statistics-enabled" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true"/>
+            <xs:element name="backup-count" type="backup-count" minOccurs="0" maxOccurs="1" default="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        Number of synchronous backups. For example, if 1 is set as the backup-count,
+                        then all entries of the multimap are copied to one other JVM for
+                        fail-safety.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="async-backup-count" type="backup-count" minOccurs="0" maxOccurs="1" default="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Number of asynchronous backups. For example, if 1 is set as the backup-count,
+                        then all entries of the multimap are copied to one other JVM for
+                        fail-safety.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="statistics-enabled" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true">
+                <xs:annotation>
+                    <xs:documentation>
+                        True (default) if statistics gathering is enabled on the multimap, false otherwise.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
             <xs:element name="value-collection-type" minOccurs="0" maxOccurs="1">
                 <xs:simpleType>
                     <xs:restriction base="non-space-string">
@@ -515,7 +651,17 @@
             </xs:documentation>
         </xs:annotation>
         <xs:all>
-            <xs:element name="in-memory-format" type="in-memory-format" minOccurs="0" maxOccurs="1" default="OBJECT"/>
+            <xs:element name="in-memory-format" type="in-memory-format" minOccurs="0" maxOccurs="1" default="OBJECT">
+                <xs:annotation>
+                    <xs:documentation>
+                        Data type used to store entries.
+                        Possible values:
+                        BINARY: keys and values are stored as binary data.
+                        OBJECT (default): values are stored in their object forms.
+                        NATIVE: keys and values are stored in native memory.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
             <xs:element name="concurrency-level" type="concurrency-level" minOccurs="0" maxOccurs="1" default="32">
                 <xs:annotation>
                     <xs:documentation>
@@ -546,7 +692,13 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="statistics-enabled" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true"/>
+            <xs:element name="statistics-enabled" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true">
+                <xs:annotation>
+                    <xs:documentation>
+                        True (default) if statistics gathering is enabled on the replicated map, false otherwise.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
             <xs:element name="entry-listeners" type="entry-listeners" minOccurs="0" maxOccurs="1"/>
         </xs:all>
         <xs:attribute name="name" use="required">
@@ -557,8 +709,13 @@
     </xs:complexType>
     <xs:complexType name="topic">
         <xs:all>
-            <xs:element name="statistics-enabled" type="xs:boolean" minOccurs="0" maxOccurs="1"
-                        default="true"/>
+            <xs:element name="statistics-enabled" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true">
+                <xs:annotation>
+                    <xs:documentation>
+                        True (default) if statistics gathering is enabled on the topic, false otherwise.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
             <xs:element name="global-ordering-enabled" type="xs:boolean" minOccurs="0" maxOccurs="1"
                         default="false"/>
             <xs:element name="message-listeners" minOccurs="0" maxOccurs="1">
@@ -577,8 +734,13 @@
     </xs:complexType>
     <xs:complexType name="reliable-topic">
         <xs:all>
-            <xs:element name="statistics-enabled" type="xs:boolean" minOccurs="0" maxOccurs="1"
-                        default="true"/>
+            <xs:element name="statistics-enabled" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true">
+                <xs:annotation>
+                    <xs:documentation>
+                        True (default) if statistics gathering is enabled on the reliable topic, false otherwise.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
             <xs:element name="message-listeners" minOccurs="0" maxOccurs="1">
                 <xs:complexType>
                     <xs:sequence>
@@ -633,8 +795,8 @@
                 <xs:annotation>
                     <xs:documentation>
                         The number of emitted values before a chunk is send to the reducers.
-                        If your emitted values are big, you might want to change this to a lower value. If you want to better balance your work, you might want to
-                        change this to a higher value.
+                        If your emitted values are big, you might want to change this to a lower value. If you want 
+                        to better balance your work, you might want to change this to a higher value.
                         A value of 0 means immediate transmission, but remember that low values mean higher traffic
                         costs.
                         A very high value might cause an OutOfMemoryError to occur if emitted values do not fit into
@@ -673,9 +835,32 @@
     </xs:complexType>
     <xs:complexType name="semaphore">
         <xs:all>
-            <xs:element name="initial-permits" type="xs:unsignedInt" minOccurs="0" maxOccurs="1"/>
-            <xs:element name="backup-count" type="backup-count" minOccurs="0" maxOccurs="1" default="1"/>
-            <xs:element name="async-backup-count" type="backup-count" minOccurs="0" maxOccurs="1" default="0"/>
+            <xs:element name="initial-permits" type="xs:unsignedInt" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        The thread count to which the concurrent access is limited. For example, if you set
+                        it to "3", concurrent access to the object is limited to 3 threads.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="backup-count" type="backup-count" minOccurs="0" maxOccurs="1" default="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        Number of synchronous backups. For example, if 1 is set as the backup-count,
+                        then all permits of the semaphore are copied to one other JVM for
+                        fail-safety.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="async-backup-count" type="backup-count" minOccurs="0" maxOccurs="1" default="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Number of asynchronous backups. For example, if 1 is set as the backup-count,
+                        then all permits of the semaphore are copied to one other JVM for
+                        fail-safety.
+                    </xs:documentation>
+                </xs:annotation>
+	        </xs:element>
         </xs:all>
         <xs:attribute name="name" use="required">
             <xs:simpleType>
@@ -685,11 +870,54 @@
     </xs:complexType>
     <xs:complexType name="ringbuffer">
         <xs:all>
-            <xs:element name="capacity" type="xs:unsignedInt" minOccurs="0" maxOccurs="1"/>
-            <xs:element name="time-to-live-seconds" type="xs:unsignedInt" minOccurs="0" maxOccurs="1"/>
-            <xs:element name="backup-count" type="backup-count" minOccurs="0" maxOccurs="1" default="1"/>
-            <xs:element name="async-backup-count" type="backup-count" minOccurs="0" maxOccurs="1" default="0"/>
-            <xs:element name="in-memory-format" type="in-memory-format" minOccurs="0" maxOccurs="1" default="BINARY"/>
+            <xs:element name="capacity" type="xs:unsignedInt" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        Number of items in the ringbuffer. If no time-to-live-seconds is set, the size will always 
+                        be equal to capacity after the head completed the first loop around the ring. This is 
+                        because no items are getting retired.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="time-to-live-seconds" type="xs:unsignedInt" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        Maximum number of seconds for each entry to stay in the ringbuffer. Entries that are
+                        older than &lt;time-to-live-seconds&gt; and are not updated for &lt;time-to-live-seconds&gt;
+                        are automatically evicted from the map.
+                        Any integer between 0 and Integer.MAX_VALUE. 0 means infinite. Default is 0.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="backup-count" type="backup-count" minOccurs="0" maxOccurs="1" default="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        Number of synchronous backups. For example, if 1 is set as the backup-count,
+                        then the items in the ringbuffer are copied to one other JVM for
+                        fail-safety.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="async-backup-count" type="backup-count" minOccurs="0" maxOccurs="1" default="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Number of asynchronous backups. For example, if 1 is set as the backup-count,
+                        then the items in the ringbuffer are copied to one other JVM for
+                        fail-safety.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="in-memory-format" type="in-memory-format" minOccurs="0" maxOccurs="1" default="BINARY">
+                <xs:annotation>
+                    <xs:documentation>
+                        Data type used to store entries.
+                        Possible values:
+                        BINARY (default): keys and values are stored as binary data.
+                        OBJECT: values are stored in their object forms.
+                        NATIVE: keys and values are stored in native memory.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
         </xs:all>
         <xs:attribute name="name" use="required">
             <xs:simpleType>
@@ -699,10 +927,56 @@
     </xs:complexType>
     <xs:complexType name="network">
         <xs:all>
-            <xs:element name="public-address" type="xs:string" minOccurs="0" maxOccurs="1"/>
-            <xs:element name="port" type="port" minOccurs="0" maxOccurs="1"/>
-            <xs:element name="reuse-address" type="xs:boolean" minOccurs="0" maxOccurs="1" default="false"/>
-            <xs:element name="outbound-ports" type="outbound-ports" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="public-address" type="xs:string" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        Overrides the public address of a node. By default, a node selects its socket address 
+                        as its public address. But behind a network address translation (NAT), two endpoints (nodes)
+                        may not be able to see/access each other. If both nodes set their public addresses to their 
+                        defined addresses on NAT, then they can communicate with each other. In this case, their 
+                        public addresses are not an address of a local network interface but a virtual address defined by NAT. 
+                        This is optional to set and useful when you have a private cloud.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="port" type="port" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        The ports which Hazelcast will use to communicate between cluster members. Its default value is 5701.
+						It has the following attributes.
+                            port-count: The default value is 100, meaning that Hazelcast will try to bind 100 ports. 
+                                If you set the value of port as 5701, as members join the cluster, Hazelcast tries to find 
+                                ports between 5701 and 5801. You can change the port count in cases like having large 
+                                instances on a single machine or you are willing to have only a few ports assigned.
+                            auto-increment: Default value is true. If port is set to 5701, Hazelcast will try to find free 
+                                ports between 5701 and 5801. Normally, you will not need to change this value, but it comes 
+                                in handy when needed. You may also want to choose to use only one port. In that case, you can 
+                                disable the auto-increment feature of port by setting its value as false.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="reuse-address" type="xs:boolean" minOccurs="0" maxOccurs="1" default="false">
+               <xs:annotation>
+                    <xs:documentation>
+                        When you shutdown a cluster member, the server socket port will be in the TIME_WAIT 
+                        state for the next couple of minutes. If you start the member right after shutting it down, 
+                        you may not be able to bind it to the same port because it is in the TIME_WAIT state. If you 
+                        set reuse-address to true, the TIME_WAIT state is ignored and you can bind the member to the 
+                        same port again. Default value is false.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="outbound-ports" type="outbound-ports" minOccurs="0" maxOccurs="1">
+               <xs:annotation>
+                    <xs:documentation>
+                        By default, Hazelcast lets the system pick up an ephemeral port during socket bind operation.
+                        But security policies/firewalls may require to restrict outbound ports to be used by 
+                        Hazelcast-enabled applications. To fulfill this requirement, you can configure Hazelcast to use 
+                        only defined outbound ports.
+                        outbound-ports has the ports attribute to allow you to define outbound ports.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
             <xs:element name="join" type="join" minOccurs="0" maxOccurs="1"/>
             <xs:element name="interfaces" type="interfaces" minOccurs="0" maxOccurs="1"/>
             <xs:element name="ssl" type="ssl" minOccurs="0" maxOccurs="1"/>
@@ -723,13 +997,33 @@
     </xs:complexType>
     <xs:complexType name="tcp-ip">
         <xs:choice maxOccurs="unbounded">
-            <xs:element name="required-member" type="xs:string" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="required-member" type="xs:string" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        IP address of the required member. Cluster will form only if the member with this IP 
+                        address is found.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
             <xs:sequence>
-                <xs:element name="member" type="xs:string" minOccurs="0" maxOccurs="unbounded" default="127.0.0.1"/>
+                <xs:element name="member" type="xs:string" minOccurs="0" maxOccurs="unbounded" default="127.0.0.1">
+	                <xs:annotation>
+	                    <xs:documentation>
+	                        IP address(es) of one or more well known members. Once members are connected to these
+                            well known ones, all member addresses will be communicated with each other.
+	                    </xs:documentation>
+	                </xs:annotation>
+	            </xs:element>
             </xs:sequence>
             <xs:element name="interface" type="xs:string" minOccurs="0" maxOccurs="1"
                         default="127.0.0.1"/>
-            <xs:element name="members" type="xs:string" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="members" type="xs:string" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        Comma separated IP addresses of one or more well known members.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
             <xs:element name="member-list" minOccurs="0" maxOccurs="1">
                 <xs:complexType>
                     <xs:sequence>
@@ -739,8 +1033,25 @@
                 </xs:complexType>
             </xs:element>
         </xs:choice>
-        <xs:attribute name="enabled" type="xs:boolean" use="optional" default="false"/>
-        <xs:attribute name="connection-timeout-seconds" type="xs:int" use="optional" default="5"/>
+        <xs:attribute name="enabled" type="xs:boolean" use="optional" default="false">
+            <xs:annotation>
+                <xs:documentation>
+                    Specifies whether the TCP/IP discovery is enabled or not. Default value is false.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="connection-timeout-seconds" type="xs:int" use="optional" default="5">
+            <xs:annotation>
+                <xs:documentation>
+                    The maximum amount of time Hazelcast is going to try to connect to a well known member
+                    before giving up. Setting it to a too low value could mean that a member is not able 
+                    to connect to a cluster. Setting it to a too high value means that member startup could 
+                    slow down because of longer timeouts (e.g. when a well known member is not up). Increasing 
+                    this value is recommended if you have many IPs listed and the members cannot properly 
+                    build up the cluster. Its default value is 5.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
     </xs:complexType>
     <xs:complexType name="port">
         <xs:simpleContent>
@@ -757,11 +1068,48 @@
     </xs:complexType>
     <xs:complexType name="multicast">
         <xs:all>
-            <xs:element name="multicast-group" type="xs:string" minOccurs="0" maxOccurs="1" default="224.2.2.3"/>
-            <xs:element name="multicast-port" type="xs:unsignedShort" minOccurs="0" maxOccurs="1" default="54327"/>
-            <xs:element name="multicast-timeout-seconds" type="xs:int" minOccurs="0" maxOccurs="1" default="2"/>
-            <xs:element name="multicast-time-to-live" type="xs:int" minOccurs="0" maxOccurs="1" default="32"/>
+            <xs:element name="multicast-group" type="xs:string" minOccurs="0" maxOccurs="1" default="224.2.2.3">
+	            <xs:annotation>
+	                <xs:documentation>
+	                    The multicast group IP address. Specify it when you want to create clusters within the 
+	                    same network. Values can be between 224.0.0.0 and 239.255.255.255. Default value is 224.2.2.3.
+	                </xs:documentation>
+	            </xs:annotation>
+	        </xs:element>
+            <xs:element name="multicast-port" type="xs:unsignedShort" minOccurs="0" maxOccurs="1" default="54327">
+	            <xs:annotation>
+	                <xs:documentation>
+	                    The multicast socket port through which the Hazelcast member listens and sends discovery messages. 
+	                    Default value is 54327.
+	                </xs:documentation>
+	            </xs:annotation>
+	        </xs:element>
+            <xs:element name="multicast-timeout-seconds" type="xs:int" minOccurs="0" maxOccurs="1" default="2">
+	            <xs:annotation>
+	                <xs:documentation>
+	                    Only when the nodes are starting up, this timeout (in seconds) specifies the period during 
+	                    which a node waits for a multicast response from another node. For example, if you set it 
+	                    to 60 seconds, each node will wait for 60 seconds until a leader node is selected. 
+	                    Its default value is 2 seconds.
+	                </xs:documentation>
+	            </xs:annotation>
+	        </xs:element>
+            <xs:element name="multicast-time-to-live" type="xs:int" minOccurs="0" maxOccurs="1" default="32">
+	            <xs:annotation>
+	                <xs:documentation>
+	                    Time-to-live value for multicast packets sent out to control the scope of multicasts.
+	                </xs:documentation>
+	            </xs:annotation>
+	        </xs:element>
             <xs:element name="trusted-interfaces" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        Includes IP addresses of trusted members. When a node wants to join to the cluster, 
+                        its join request will be rejected if it is not a trusted member. You can give an IP 
+                        addresses range using the wildcard (*) on the last digit of the IP address
+                        (e.g. 192.168.1.* or 192.168.1.100-110).
+                    </xs:documentation>
+                </xs:annotation>
                 <xs:complexType>
                     <xs:sequence>
                         <xs:element name="interface" type="xs:string" minOccurs="0" maxOccurs="unbounded"/>
@@ -769,21 +1117,91 @@
                 </xs:complexType>
             </xs:element>
         </xs:all>
-        <xs:attribute name="enabled" type="xs:boolean" use="optional" default="true"/>
+        <xs:attribute name="enabled" type="xs:boolean" use="optional" default="true">
+            <xs:annotation>
+                <xs:documentation>
+                    Specifies whether the multicast discovery is enabled or not. Values can be true or false.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
         <xs:attribute name="loopbackModeEnabled" type="xs:boolean" use="optional" default="true"/>
     </xs:complexType>
     <xs:complexType name="aws">
         <xs:all>
-            <xs:element name="access-key" type="xs:string" minOccurs="0" maxOccurs="1"/>
-            <xs:element name="secret-key" type="xs:string" minOccurs="0" maxOccurs="1"/>
-            <xs:element name="region" type="xs:string" minOccurs="0" maxOccurs="1"/>
-            <xs:element name="host-header" type="xs:string" minOccurs="0" maxOccurs="1"/>
-            <xs:element name="security-group-name" type="xs:string" minOccurs="0" maxOccurs="1"/>
-            <xs:element name="tag-key" type="xs:string" minOccurs="0" maxOccurs="1"/>
-            <xs:element name="tag-value" type="xs:string" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="access-key" type="xs:string" minOccurs="0" maxOccurs="1">
+	            <xs:annotation>
+	                <xs:documentation>
+	                    Access key of your account on EC2.
+	                </xs:documentation>
+	            </xs:annotation>
+	        </xs:element>
+            <xs:element name="secret-key" type="xs:string" minOccurs="0" maxOccurs="1">
+	            <xs:annotation>
+	                <xs:documentation>
+	                    Secret key of your account on EC2.
+	                </xs:documentation>
+	            </xs:annotation>
+	        </xs:element>
+            <xs:element name="region" type="xs:string" minOccurs="0" maxOccurs="1">
+	            <xs:annotation>
+	                <xs:documentation>
+	                    The region where your nodes are running. Default value is us-east-1. 
+	                    Needs to be specified if the region is other than the default one.
+	                </xs:documentation>
+	            </xs:annotation>
+	        </xs:element>
+            <xs:element name="host-header" type="xs:string" minOccurs="0" maxOccurs="1">
+	            <xs:annotation>
+	                <xs:documentation>
+	                    The URL that is the entry point for a web service. It is optional.
+	                </xs:documentation>
+	            </xs:annotation>
+	        </xs:element>
+            <xs:element name="security-group-name" type="xs:string" minOccurs="0" maxOccurs="1">
+	            <xs:annotation>
+	                <xs:documentation>
+	                    Name of the security group you specified at the EC2 management console. 
+	                    It is used to narrow the Hazelcast nodes to be within this group. 
+	                    It is optional.
+	                </xs:documentation>
+	            </xs:annotation>
+	        </xs:element>
+            <xs:element name="tag-key" type="xs:string" minOccurs="0" maxOccurs="1">
+	            <xs:annotation>
+	                <xs:documentation>
+	                    To narrow the members in the cloud down to only Hazelcast nodes, you can set
+	                    this to the one you specified in the EC2 console. It is optional.
+	                </xs:documentation>
+	            </xs:annotation>
+	        </xs:element>
+            <xs:element name="tag-value" type="xs:string" minOccurs="0" maxOccurs="1">
+	            <xs:annotation>
+	                <xs:documentation>
+	                    To narrow the members in the cloud down to only Hazelcast nodes, you can set
+	                    this to the one you specified in the EC2 console. It is optional.
+	                </xs:documentation>
+	            </xs:annotation>
+	        </xs:element>
         </xs:all>
-        <xs:attribute name="enabled" type="xs:boolean" use="optional" default="true"/>
-        <xs:attribute name="connection-timeout-seconds" type="xs:int" use="optional" default="5"/>
+        <xs:attribute name="enabled" type="xs:boolean" use="optional" default="true">
+            <xs:annotation>
+                <xs:documentation>
+                    Specifies whether the EC2 discovery is enabled or not. Value can be true or false.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="connection-timeout-seconds" type="xs:int" use="optional" default="5">
+            <xs:annotation>
+                <xs:documentation>
+                    The maximum amount of time Hazelcast is going to try to connect to a well known member 
+                    before giving up. Setting its value too low value could mean that a member is not able 
+                    to connect to a cluster. Setting it too high value means that member startup could slow 
+                    down because of longer timeouts (e.g. when a well known member is not up). Increasing 
+                    this value is recommended if you have many IPs listed and the members cannot properly 
+                    build up the cluster. Its default value is 5.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
     </xs:complexType>
     <xs:complexType name="join">
         <xs:all>
@@ -800,9 +1218,20 @@
     </xs:complexType>
     <xs:complexType name="executor-service">
         <xs:all>
-            <xs:element name="statistics-enabled" type="xs:boolean" minOccurs="0" maxOccurs="1"
-                        default="true"/>
-            <xs:element name="pool-size" type="xs:unsignedShort" minOccurs="0" maxOccurs="1" default="8"/>
+            <xs:element name="statistics-enabled" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true">
+                <xs:annotation>
+                    <xs:documentation>
+                        True (default) if statistics gathering is enabled on the executor task, false otherwise.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="pool-size" type="xs:unsignedShort" minOccurs="0" maxOccurs="1" default="8">
+                <xs:annotation>
+                    <xs:documentation>
+                        The number of executor threads per member for the executor.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
             <xs:element name="queue-capacity" type="xs:unsignedInt" minOccurs="0" maxOccurs="1" default="0">
                 <xs:annotation>
                     <xs:documentation>
@@ -843,13 +1272,46 @@
     <xs:complexType name="map-store">
         <xs:all>
             <xs:element ref="factory-or-class-name" minOccurs="0" maxOccurs="1"/>
-            <xs:element name="write-delay-seconds" type="xs:unsignedInt" minOccurs="0" maxOccurs="1" default="0"/>
-            <xs:element name="write-batch-size" type="xs:unsignedInt" minOccurs="0" maxOccurs="1" default="1"/>
-            <xs:element name="write-coalescing" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true"/>
+            <xs:element name="write-delay-seconds" type="xs:unsignedInt" minOccurs="0" maxOccurs="1" default="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        The number of seconds to delay the store writes. Default value is 0.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="write-batch-size" type="xs:unsignedInt" minOccurs="0" maxOccurs="1" default="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        The number of operations to be included in each batch processing round. Default value is 1.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="write-coalescing" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true">
+                <xs:annotation>
+                    <xs:documentation>
+                        Setting this is meaningful if you are using write behind in MapStore. When write-coalescing is true, 
+                        only the latest store operation on a key in the write-delay-seconds time-window will be 
+                        reflected to MapStore. Default value is true.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
             <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>
         </xs:all>
-        <xs:attribute name="enabled" default="true" type="xs:boolean"/>
+        <xs:attribute name="enabled" default="true" type="xs:boolean">
+            <xs:annotation>
+                <xs:documentation>
+                    True to enable this map-store, false to disable. 
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
         <xs:attribute name="initial-mode">
+            <xs:annotation>
+                <xs:documentation>
+                    Sets the initial load mode.
+		    	    LAZY: default load mode, where load is asynchronous.
+			        EAGER: load is blocked till all partitions are loaded.
+                </xs:documentation>
+            </xs:annotation>
             <xs:simpleType>
                 <xs:restriction base="non-space-string">
                     <xs:enumeration value="LAZY"/>
@@ -866,10 +1328,32 @@
     </xs:complexType>
     <xs:complexType name="query-cache">
         <xs:all>
-            <xs:element name="include-value" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true"/>
-            <xs:element name="predicate" type="predicate" minOccurs="1" maxOccurs="1"/>
+            <xs:element name="include-value" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true">
+	            <xs:annotation>
+	                <xs:documentation>
+	                    True to enable value caching, false to disable. 
+	                </xs:documentation>
+	            </xs:annotation>
+	        </xs:element>
+            <xs:element name="predicate" type="predicate" minOccurs="1" maxOccurs="1">
+	            <xs:annotation>
+	                <xs:documentation>
+	                    The predicate to filter events which will be applied to the QueryCache. 
+	                </xs:documentation>
+	            </xs:annotation>
+	        </xs:element>
             <xs:element name="entry-listeners" type="entry-listeners" minOccurs="0" maxOccurs="1"/>
-            <xs:element name="in-memory-format" type="in-memory-format" minOccurs="0" maxOccurs="1" default="BINARY"/>
+            <xs:element name="in-memory-format" type="in-memory-format" minOccurs="0" maxOccurs="1" default="BINARY">
+                <xs:annotation>
+                    <xs:documentation>
+                        Data type used to store entries.
+                        Possible values:
+                        BINARY (default): keys and values are stored as binary data.
+                        OBJECT: values are stored in their object forms.
+                        NATIVE: keys and values are stored in native memory.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
             <xs:element name="populate" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true"/>
             <xs:element name="coalesce" type="xs:boolean" minOccurs="0" maxOccurs="1" default="false"/>
             <xs:element name="delay-seconds" type="xs:unsignedInt" minOccurs="0" maxOccurs="1" default="0"/>
