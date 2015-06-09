@@ -19,6 +19,7 @@ package com.hazelcast.spi.impl;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.IQueue;
 import com.hazelcast.core.OperationTimeoutException;
@@ -341,4 +342,79 @@ public class BasicOperationServiceTest extends HazelcastTestSupport {
              }
         });
     }
+
+    @Test
+    public void testOperationTimeoutForLongRunningRemoteOperation() throws Exception {
+        int callTimeoutMillis = 500;
+        Config config = new Config();
+        config.setProperty(GroupProperties.PROP_OPERATION_CALL_TIMEOUT_MILLIS, String.valueOf(callTimeoutMillis));
+
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        HazelcastInstance hz1 = factory.newHazelcastInstance(config);
+        HazelcastInstance hz2 = factory.newHazelcastInstance(config);
+
+        // invoke on the "remote" member
+        Address remoteAddress = getNode(hz2).getThisAddress();
+        OperationService operationService = getNode(hz1).getNodeEngine().getOperationService();
+        ICompletableFuture<Boolean> future = operationService
+                .invokeOnTarget(null, new SleepingOperation(callTimeoutMillis * 5), remoteAddress);
+
+        // wait more than operation timeout
+        sleepAtLeastMillis(callTimeoutMillis * 3);
+        assertTrue(future.get());
+    }
+
+    @Test
+    public void testOperationTimeoutForLongRunningLocalOperation() throws Exception {
+        int callTimeoutMillis = 500;
+        Config config = new Config();
+        config.setProperty(GroupProperties.PROP_OPERATION_CALL_TIMEOUT_MILLIS, String.valueOf(callTimeoutMillis));
+
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
+        HazelcastInstance hz1 = factory.newHazelcastInstance(config);
+
+        // invoke on the "local" member
+        Address localAddress = getNode(hz1).getThisAddress();
+        OperationService operationService = getNode(hz1).getNodeEngine().getOperationService();
+        ICompletableFuture<Boolean> future = operationService
+                .invokeOnTarget(null, new SleepingOperation(callTimeoutMillis * 5), localAddress);
+
+        // wait more than operation timeout
+        sleepAtLeastMillis(callTimeoutMillis * 3);
+        assertTrue(future.get());
+    }
+
+    private static class SleepingOperation extends AbstractOperation {
+        private int sleepTime;
+
+        public SleepingOperation() {
+        }
+
+        public SleepingOperation(int sleepTime) {
+            this.sleepTime = sleepTime;
+        }
+
+        @Override
+        public void run() throws Exception {
+            sleepAtLeastMillis(sleepTime);
+        }
+
+        @Override
+        public Object getResponse() {
+            return Boolean.TRUE;
+        }
+
+        @Override
+        protected void writeInternal(ObjectDataOutput out) throws IOException {
+            super.writeInternal(out);
+            out.writeInt(sleepTime);
+        }
+
+        @Override
+        protected void readInternal(ObjectDataInput in) throws IOException {
+            super.readInternal(in);
+            sleepTime = in.readInt();
+        }
+    }
+
 }

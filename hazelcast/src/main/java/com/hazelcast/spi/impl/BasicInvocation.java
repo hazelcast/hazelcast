@@ -555,7 +555,7 @@ abstract class BasicInvocation implements ResponseHandler, Runnable {
             return;
         }
         if (expirationTime < Clock.currentTimeMillis()) {
-            invocationFuture.set(invocationFuture.newOperationTimeoutException(maxCallTimeout));
+            invocationFuture.timeoutInvocationIfNotExecuting();
         }
     }
 

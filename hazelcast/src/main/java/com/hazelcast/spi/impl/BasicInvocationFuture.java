@@ -21,6 +21,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
+import static com.hazelcast.spi.ExecutionService.SYSTEM_EXECUTOR;
 import static com.hazelcast.util.ExceptionUtil.fixRemoteStackTrace;
 import static com.hazelcast.util.ValidationUtil.isNotNull;
 import static java.lang.Math.min;
@@ -419,7 +420,7 @@ final class BasicInvocationFuture<E> implements InternalCompletableFuture<E> {
         return responseAvailable(response);
     }
 
-    private boolean isOperationExecuting(Address target) {
+    boolean isOperationExecuting(Address target) {
         // ask if op is still being executed?
         Boolean executing = Boolean.FALSE;
         try {
@@ -436,6 +437,21 @@ final class BasicInvocationFuture<E> implements InternalCompletableFuture<E> {
         }
         invocation.logger.warning("'is-executing': " + executing + " -> " + toString());
         return executing;
+    }
+
+    /**
+     * Sets operation timeout to invocation result if the operation is not running.
+     */
+    void timeoutInvocationIfNotExecuting() {
+        try {
+            final Operation isStillExecuting = createCheckOperation();
+            final Callback<Object> callback = new IsOperationStillRunningCallback(this);
+
+            invocation.nodeEngine.getExecutionService().execute(SYSTEM_EXECUTOR,
+                    new InvokeIsStillRunningOperationRunnable(invocation, isStillExecuting, callback));
+        } catch (Exception e) {
+            invocation.logger.warning("While asking 'is-executing': " + toString(), e);
+        }
     }
 
     private Operation createCheckOperation() {
@@ -484,6 +500,63 @@ final class BasicInvocationFuture<E> implements InternalCompletableFuture<E> {
         @Override
         public void onFailure(Throwable t) {
             callback.notify(t);
+        }
+    }
+
+    private static class IsOperationStillRunningCallback implements Callback<Object> {
+
+        private final BasicInvocationFuture future;
+
+        public IsOperationStillRunningCallback(BasicInvocationFuture future) {
+            this.future = future;
+        }
+
+        @Override
+        public void notify(Object response) {
+            boolean executing = Boolean.TRUE.equals(response);
+
+            BasicInvocation invocation = future.invocation;
+            if (response instanceof Throwable) {
+                invocation.logger.warning("While asking 'is-executing': " + invocation, (Throwable) response);
+            } else {
+                invocation.logger.warning("'is-executing': " + executing + " -> " + invocation);
+            }
+
+            if (!executing) {
+                setOperationTimeout();
+            }
+        }
+
+        private void setOperationTimeout() {
+            Object timeoutException = future.newOperationTimeoutException(future.getMaxCallTimeout());
+            future.set(timeoutException);
+        }
+    }
+
+    private static class InvokeIsStillRunningOperationRunnable
+            implements Runnable {
+
+        private final BasicInvocation invocation;
+
+        private final Operation isStillRunningOperation;
+
+        private final Callback<Object> callback;
+
+        public InvokeIsStillRunningOperationRunnable(BasicInvocation invocation, Operation isStillRunningOperation,
+                                                     Callback<Object> callback) {
+            this.invocation = invocation;
+            this.isStillRunningOperation = isStillRunningOperation;
+            this.callback = callback;
+        }
+
+        @Override
+        public void run() {
+            BasicInvocation inv = new BasicTargetInvocation(
+                    invocation.nodeEngine, invocation.serviceName, isStillRunningOperation,
+                    invocation.getTarget(), 0, 0, IS_EXECUTING_CALL_TIMEOUT, callback, null, true);
+
+            invocation.logger.warning("Asking if operation execution has been started: " + toString());
+            inv.invoke();
         }
     }
 }
