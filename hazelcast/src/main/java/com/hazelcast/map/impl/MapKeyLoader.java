@@ -21,6 +21,7 @@ import com.hazelcast.core.IFunction;
 import com.hazelcast.core.MapLoader;
 import com.hazelcast.map.impl.mapstore.MapStoreContext;
 import com.hazelcast.map.impl.operation.LoadAllOperation;
+import com.hazelcast.map.impl.operation.LoadStatusOperation;
 import com.hazelcast.map.impl.operation.PartitionCheckIfLoadedOperation;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.InternalPartitionService;
@@ -32,8 +33,6 @@ import com.hazelcast.util.StateMachine;
 import com.hazelcast.util.scheduler.CoalescingDelayedTrigger;
 
 import java.io.Closeable;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -187,10 +186,14 @@ public class MapKeyLoader {
         return sendKeys(mapStoreContext, replaceExistingValues);
     }
 
-    public void trackLoading(boolean lastBatch) {
+    public void trackLoading(boolean lastBatch, Throwable exception) {
         if (lastBatch) {
             state.nextOrStay(State.LOADED);
-            loadFinished.setResult(true);
+            if (exception != null) {
+                loadFinished.setResult(exception);
+            } else {
+                loadFinished.setResult(true);
+            }
         } else if (state.is(State.LOADED)) {
             state.next(State.LOADING);
         }
@@ -232,6 +235,7 @@ public class MapKeyLoader {
 
         int clusterSize = partitionService.getMemberPartitionsMap().size();
         Iterator<Object> keys = null;
+        Throwable loadError = null;
 
         try {
             Iterable<Object> allKeys = mapStoreContext.loadAllKeys();
@@ -250,8 +254,12 @@ public class MapKeyLoader {
                 Map<Integer, List<Data>> batch = batches.next();
                 sendBatch(batch, replaceExistingValues);
             }
+
+        } catch (Exception caught) {
+            loadError = caught;
+
         } finally {
-            sendLoadCompleted(clusterSize, partitionService.getPartitionCount(), replaceExistingValues);
+            sendLoadCompleted(clusterSize, partitionService.getPartitionCount(), replaceExistingValues, loadError);
 
             if (keys instanceof Closeable) {
                 closeResource((Closeable) keys);
@@ -263,28 +271,25 @@ public class MapKeyLoader {
         for (Entry<Integer, List<Data>> e : batch.entrySet()) {
             int partitionId = e.getKey();
             List<Data> keys = e.getValue();
-            LoadAllOperation op = new LoadAllOperation(mapName, keys, replaceExistingValues, false);
+            LoadAllOperation op = new LoadAllOperation(mapName, keys, replaceExistingValues);
             opService.invokeOnPartition(SERVICE_NAME, op, partitionId);
         }
     }
 
-    private List<Future<Object>> sendLoadCompleted(int clusterSize, int partitions, boolean replaceExistingValues) {
-
-        List<Future<Object>> futures = new ArrayList<Future<Object>>();
-        boolean lastBatch = true;
+    private void sendLoadCompleted(int clusterSize, int partitions,
+            boolean replaceExistingValues, Throwable exception) {
 
         for (int partitionId = 0; partitionId < partitions; partitionId++) {
-            LoadAllOperation op = new LoadAllOperation(mapName, Collections.<Data>emptyList(), replaceExistingValues, lastBatch);
-            futures.add(opService.invokeOnPartition(SERVICE_NAME, op, partitionId));
+            Operation op = new LoadStatusOperation(mapName, exception);
+            opService.invokeOnPartition(SERVICE_NAME, op, partitionId);
         }
 
         // notify SENDER_BACKUP
         if (hasBackup && clusterSize > 1) {
-            LoadAllOperation op = new LoadAllOperation(mapName, Collections.<Data>emptyList(), replaceExistingValues, lastBatch);
-            futures.add(opService.createInvocationBuilder(SERVICE_NAME, op, mapNamePartition).setReplicaIndex(1).invoke());
+            Operation op = new LoadStatusOperation(mapName, exception);
+            opService.createInvocationBuilder(SERVICE_NAME, op, mapNamePartition).setReplicaIndex(1).invoke();
         }
 
-        return futures;
     }
 
     public void setMaxBatch(int maxBatch) {

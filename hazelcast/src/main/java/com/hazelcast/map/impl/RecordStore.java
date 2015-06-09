@@ -265,7 +265,9 @@ public interface RecordStore {
      * @param replaceExistingValues <code>true</code> if need to replace existing values otherwise <code>false</code>
      * @param lastBatch when keys are sent is batches this indicates the last batch. Used to indicate loading is complete.
      */
-    void loadAllFromStore(List<Data> keys, boolean replaceExistingValues, boolean lastBatch);
+    void loadAllFromStore(List<Data> keys, boolean replaceExistingValues);
+
+    void updateLoadStatus(boolean lastBatch, Throwable exception);
 
     MapDataStore<Data, Object> getMapDataStore();
 

@@ -17,6 +17,7 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.Repeat;
 
 import java.io.Serializable;
 import java.util.Arrays;
@@ -38,6 +39,7 @@ import static java.util.Collections.singleton;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -156,8 +158,13 @@ public class MapLoaderTest extends HazelcastTestSupport {
         HazelcastInstance[] hz = createHazelcastInstanceFactory(2).newInstances(config, 2);
         IMap map = hz[0].getMap(mapConfig.getName());
 
-        map.get(generateKeyNotOwnedBy(hz[0]));
-        assertEquals(0, map.size());
+        Throwable exception = null;
+        try {
+            map.get(generateKeyNotOwnedBy(hz[0]));
+        } catch(Throwable e) {
+            exception = e;
+        }
+        assertNotNull("Exception wasn't propagated", exception);
 
         map.loadAll(true);
         assertEquals(1, map.size());
@@ -329,7 +336,7 @@ public class MapLoaderTest extends HazelcastTestSupport {
         public Set loadAllKeys() {
             if (first) {
                 first = false;
-                throw new IllegalStateException();
+                throw new IllegalStateException("Intentional exception");
             }
             return singleton("key");
         }
