@@ -5,6 +5,8 @@
 
 This section lists issues solved for **Hazelcast 3.5** release.
 
+- The method `XAResource.rollback()` should not need the transaction to be in the prepared state when called from another member/client [[#5401]](https://github.com/hazelcast/hazelcast/issues/5401).
+- The method `XAResource.end()` should not need to check `threadId` [[#5400]](https://github.com/hazelcast/hazelcast/issues/5400).
 - The method `IList::remove()` should publish the event `REMOVED` [[#5386]](https://github.com/hazelcast/hazelcast/issues/5386).
 - `IllegalStateException` with wrong partition is thrown when the method `IMap::getOperation()` is invoked [[#5341]](https://github.com/hazelcast/hazelcast/issues/5341).
 - `WrongTarget` warnings appear in the log since the operations are not sent to the replicas when a map has no backups [[#5324]](https://github.com/hazelcast/hazelcast/issues/5324).

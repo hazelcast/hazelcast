@@ -40,7 +40,7 @@ This section provides the new features introduced with Hazelcast 3.5 release.
 
 This section lists the enhancements performed for Hazelcast 3.5 release.
 
-- Eventing System Improvements: ???. For more information, please see [???](#???).
+- Eventing System Improvements: RingBuffer and Reliable Topic structures are introduced.
 - Query and Indexing Improvements: ???. For more information, please see [???](#???).
 - XA Transactions Improvements: With this improvement, you can now obtain a Hazelcast XA Resource instance through `HazelcastInstance`. 
  
@@ -83,6 +83,10 @@ resolver [#2431].
 *3.5 Fixes*
 
 This section lists issues solved for **Hazelcast 3.5** release.
+
+- The method `XAResource.rollback()` should not need the transaction to be in the prepared state when called from another member/client [#5401].
+
+- The method `XAResource.end()` should not need to check `threadId` [#5400].
 
 - The method `IList::remove()` should publish the event `REMOVED` [#5386].
 
