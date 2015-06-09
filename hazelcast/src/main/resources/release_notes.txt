@@ -77,6 +77,8 @@ This section lists issues solved for Hazelcast 3.4.3 release.
 
 • Write-behind may cause reading of stale value upon migration [#5339].
 
+• Hazelcast client is unresponsive. `OperationTimeoutException` is seen in the logs [#5338].
+
 • Last update time of an entry should not be changed after `getAll()` is invoked [#5333].
 
 • `AtomicReference.alterAndGet()` throws `HazelcastSerializationException` [#5265].
@@ -97,12 +99,17 @@ This section lists issues solved for Hazelcast 3.4.3 release.
 
 • The method `Cache.close()` does not call the method `close()` of registered Closeable `CacheEntryListener` [#4616].
 
+• The method `awaitNanos()` returns the wrong value for both the `ClientConditionProxy` and `ConditionImpl` classes [#4603].
+
 • The method `NotEqualPredicate` should return false if entry is null (without index) and also if index is present, it should not throw an exception with null values [#4525].
 
 • When running Hazelcast with Spring and Hibernate 4 and when an application is started, the error related to `org/hibernate/cache/QueryResultsRegion` is produced [#4519].
 
+• `OperationTimeoutException` when calling `get` on task future after `hazelcast.operation.call.timeout.millis` [#4398].
+
 • Predicates with null values throws exception for unordered indexes [#4373].
 
+• The method `queue.take()` does not get interrupted on shutdown [#4143].
 
 
 *3.4.2 Fixes*

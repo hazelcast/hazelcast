@@ -7,6 +7,7 @@ This section lists issues solved for Hazelcast 3.4.3 release.
 
 - Subsequent remove operations may cause reading of stale value from the map store [[#5368]](https://github.com/hazelcast/hazelcast/issues/5368).
 - Write-behind may cause reading of stale value upon migration [[#5339]](https://github.com/hazelcast/hazelcast/issues/5339).
+- Hazelcast client is unresponsive. `OperationTimeoutException` is seen in the logs [[#5338]](https://github.com/hazelcast/hazelcast/issues/5338).
 - Last update time of an entry should not be changed after `getAll()` is invoked [[#5333]](https://github.com/hazelcast/hazelcast/issues/5333).
 - `AtomicReference.alterAndGet()` throws `HazelcastSerializationException` [[#5265]](https://github.com/hazelcast/hazelcast/issues/5265).
 - `ICompletableFuture` callback from the method `getAsync` is not always invoked [[#5133]](https://github.com/hazelcast/hazelcast/issues/5133).
@@ -17,9 +18,12 @@ This section lists issues solved for Hazelcast 3.4.3 release.
 - The method `CacheManager.getCache()` does not re-open the closed cache. It should let access to the closed cache and re-open it. Cache can be accessed by `getCache` but it is still closed [[#4631]](https://github.com/hazelcast/hazelcast/issues/4631).
 - The method `close()` of a Closeable `CacheLoader` is called without explicitly calling the method `Cache.close()` [[#4617]](https://github.com/hazelcast/hazelcast/issues/4617).
 - The method `Cache.close()` does not call the method `close()` of registered Closeable `CacheEntryListener` [[#4616]](https://github.com/hazelcast/hazelcast/issues/4616).
+- The method `awaitNanos()` returns the wrong value for both the `ClientConditionProxy` and `ConditionImpl` classes [[#4603]](https://github.com/hazelcast/hazelcast/issues/4603).
 - The method `NotEqualPredicate` should return false if entry is null (without index) and also if index is present, it should not throw an exception with null values [[#4525]](https://github.com/hazelcast/hazelcast/issues/4525).
 - When running Hazelcast with Spring and Hibernate 4 and when an application is started, the error related to `org/hibernate/cache/QueryResultsRegion` is produced [[#4519]](https://github.com/hazelcast/hazelcast/issues/4519).
+- `OperationTimeoutException` when calling `get` on task future after `hazelcast.operation.call.timeout.millis` [[#4398]](https://github.com/hazelcast/hazelcast/issues/4398).
 - Predicates with null values throws exception for unordered indexes [[#4373]](https://github.com/hazelcast/hazelcast/issues/4373).
+- The method `queue.take()` does not get interrupted on shutdown [[#4143]](https://github.com/hazelcast/hazelcast/issues/4143).
 
 
 
