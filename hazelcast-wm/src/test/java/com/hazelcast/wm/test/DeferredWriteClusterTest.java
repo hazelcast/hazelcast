@@ -19,7 +19,6 @@ package com.hazelcast.wm.test;
 import com.hazelcast.config.FileSystemXmlConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.IMap;
-import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.web.SessionState;
@@ -119,8 +118,6 @@ public class DeferredWriteClusterTest extends AbstractWebFilterTest {
         assertEquals(1, map.size());
         SessionState sessionState = (SessionState) map.get(getHazelcastSessionId(cookieStore));
         assertEquals(2, sessionState.getAttributes().size());
-        LocalMapStats stats = map.getLocalMapStats();
-        assertEquals(1, stats.getPutOperationCount());
         assertEquals("value", executeRequest("read", serverPort1, cookieStore));
         assertEquals("value", executeRequest("read", serverPort2, cookieStore));
         assertEquals(1, map.size());
