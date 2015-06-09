@@ -37,7 +37,7 @@ Instead of providing members line by line as shown above, you also have the opti
 
 If you do not provide ports for the members, Hazelcast automatically tries the ports 5701, 5702, and so on.
 
-By default, Hazelcast binds to all local network interfaces to accept incoming traffic. You can change this behavior using the system property `hazelcast.socket.bind.any`. If you set this property to `false`, Hazelcast uses the interfaces specified in the `interfaces` element (please refer to [Specifying Network Interfaces](#specifying-network-interfaces)). If no interfaces are provided, then it will try to resolve one interface to bind from the `member` elements.
+By default, Hazelcast binds to all local network interfaces to accept incoming traffic. You can change this behavior using the system property `hazelcast.socket.bind.any`. If you set this property to `false`, Hazelcast uses the interfaces specified in the `interfaces` element (please refer to the [Interfaces Configuration section](#interfaces)). If no interfaces are provided, then it will try to resolve one interface to bind from the `member` elements.
 
 <br></br>
 ***RELATED INFORMATION***
