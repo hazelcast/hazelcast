@@ -18,7 +18,6 @@ package com.hazelcast.client.impl.client;
 
 import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.core.ExecutionCallback;
-import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.Operation;
 
@@ -53,10 +52,10 @@ public abstract class PartitionClientRequest extends ClientRequest implements Ex
         op.setCallerUuid(endpoint.getUuid());
         InvocationBuilder builder = operationService.createInvocationBuilder(getServiceName(), op, getPartition())
                 .setReplicaIndex(getReplicaIndex())
+                .setExecutionCallback(this)
                 .setResultDeserialized(false);
 
-        ICompletableFuture future = builder.invoke();
-        future.andThen(this);
+        builder.invoke();
     }
 
     protected abstract Operation prepareOperation();

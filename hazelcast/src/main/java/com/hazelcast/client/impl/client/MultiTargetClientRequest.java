@@ -37,8 +37,6 @@ import static java.util.Collections.synchronizedSet;
  */
 public abstract class MultiTargetClientRequest extends ClientRequest {
 
-    private static final int TRY_COUNT = 100;
-
     @Override
     public final void process() throws Exception {
         ClientEndpoint endpoint = getEndpoint();
@@ -54,7 +52,6 @@ public abstract class MultiTargetClientRequest extends ClientRequest {
             Operation op = operationFactory.createOperation();
             op.setCallerUuid(endpoint.getUuid());
             InvocationBuilder builder = operationService.createInvocationBuilder(getServiceName(), op, target)
-                    .setTryCount(TRY_COUNT)
                     .setResultDeserialized(false)
                     .setCallback(new SingleTargetCallback(target, callback));
             builder.invoke();

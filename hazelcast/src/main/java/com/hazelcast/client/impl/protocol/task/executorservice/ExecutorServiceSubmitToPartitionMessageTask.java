@@ -18,7 +18,7 @@ package com.hazelcast.client.impl.protocol.task.executorservice;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ExecutorServiceSubmitToPartitionCodec;
-import com.hazelcast.client.impl.protocol.task.InvocationMessageTask;
+import com.hazelcast.client.impl.protocol.task.AbstractInvocationMessageTask;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.executor.impl.DistributedExecutorService;
 import com.hazelcast.executor.impl.operations.CallableTaskOperation;
@@ -35,7 +35,7 @@ import java.security.Permission;
 import java.util.concurrent.Callable;
 
 public class ExecutorServiceSubmitToPartitionMessageTask
-        extends InvocationMessageTask<ExecutorServiceSubmitToPartitionCodec.RequestParameters>
+        extends AbstractInvocationMessageTask<ExecutorServiceSubmitToPartitionCodec.RequestParameters>
         implements ExecutionCallback {
 
     public ExecutorServiceSubmitToPartitionMessageTask(ClientMessage clientMessage, Node node, Connection connection) {

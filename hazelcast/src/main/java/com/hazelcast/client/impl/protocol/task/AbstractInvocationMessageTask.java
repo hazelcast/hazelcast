@@ -21,15 +21,12 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.Operation;
 
-public abstract class InvocationMessageTask<P> extends AbstractMessageTask<P> implements ExecutionCallback {
+public abstract class AbstractInvocationMessageTask<P> extends AbstractMessageTask<P> implements ExecutionCallback {
 
-    private static final int TRY_COUNT = 100;
-
-    protected InvocationMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
+    protected AbstractInvocationMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
@@ -40,10 +37,9 @@ public abstract class InvocationMessageTask<P> extends AbstractMessageTask<P> im
         op.setCallerUuid(endpoint.getUuid());
 
         InvocationBuilder builder = getInvocationBuilder(op)
-                .setTryCount(TRY_COUNT)
+                .setExecutionCallback(this)
                 .setResultDeserialized(false);
-        InternalCompletableFuture f = builder.invoke();
-        f.andThen(this);
+        builder.invoke();
     }
 
     protected abstract InvocationBuilder getInvocationBuilder(Operation op);

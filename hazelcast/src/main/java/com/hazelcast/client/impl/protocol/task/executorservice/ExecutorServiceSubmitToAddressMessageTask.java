@@ -18,7 +18,7 @@ package com.hazelcast.client.impl.protocol.task.executorservice;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ExecutorServiceSubmitToAddressCodec;
-import com.hazelcast.client.impl.protocol.task.InvocationMessageTask;
+import com.hazelcast.client.impl.protocol.task.AbstractInvocationMessageTask;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.executor.impl.DistributedExecutorService;
 import com.hazelcast.executor.impl.operations.MemberCallableTaskOperation;
@@ -37,7 +37,7 @@ import java.security.Permission;
 import java.util.concurrent.Callable;
 
 public class ExecutorServiceSubmitToAddressMessageTask
-        extends InvocationMessageTask<ExecutorServiceSubmitToAddressCodec.RequestParameters>
+        extends AbstractInvocationMessageTask<ExecutorServiceSubmitToAddressCodec.RequestParameters>
         implements ExecutionCallback {
 
     public ExecutorServiceSubmitToAddressMessageTask(ClientMessage clientMessage, Node node, Connection connection) {

@@ -18,13 +18,10 @@ package com.hazelcast.client.impl.client;
 
 import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.core.ExecutionCallback;
-import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.Operation;
 
 public abstract class TargetClientRequest extends ClientRequest implements ExecutionCallback {
-
-    private static final int TRY_COUNT = 100;
 
     @Override
     public final void process() throws Exception {
@@ -33,10 +30,10 @@ public abstract class TargetClientRequest extends ClientRequest implements Execu
         op.setCallerUuid(endpoint.getUuid());
 
         InvocationBuilder builder = getInvocationBuilder(op)
-                .setTryCount(TRY_COUNT)
-                .setResultDeserialized(false);
-        InternalCompletableFuture f = builder.invoke();
-        f.andThen(this);
+                .setResultDeserialized(false)
+                .setExecutionCallback(this);
+
+        builder.invoke();
     }
 
     protected abstract InvocationBuilder getInvocationBuilder(Operation op);
