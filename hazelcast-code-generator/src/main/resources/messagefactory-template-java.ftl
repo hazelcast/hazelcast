@@ -36,6 +36,7 @@ public class ${model.className} implements MessageTaskFactory {
 
     }
 
+    @edu.umd.cs.findbugs.annotations.SuppressWarnings({"MS_EXPOSE_REP", "EI_EXPOSE_REP"})
     public MessageTaskFactory[] getTasks() {
         return tasks;
     }
