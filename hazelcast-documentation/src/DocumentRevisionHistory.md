@@ -21,6 +21,7 @@
 ||[Tomcat Based Web Session Replication](#tomcat-based-web-session-replication)|Updated the Overview paragraph to include the support for Tomcat 8.
 |[Chapter 14 - Storage](#storage)|[Sizing Practices](#sizing-practices)|Added as a new section.|
 |[Chapter 15 - Hazelcast Java Client](#hazelcast-java-client)||Separated from the formerly known "Clients" chapter to be a chapter of its own.|
+|||Added an important note related to the new Java Client library in the chapter introduction.
 |[Chapter 16 - Other Client Implementations](#other-client-implementations)||C++, .NET, Memcache and REST client sections separated from the formerly known "Clients" chapter.|
 |[Chapter 18 - Management](#management)|[JMX API per Node](#jmx-api-per-node)|Two new bean definitions added to the Hazelcast Instance list (Cluster Safe State and LocalMember Safe State).|
 ||[Management Center](#management-center)|Added more information on the time travel data files to the [Time Travel section](#time-travel).|
