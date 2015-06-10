@@ -74,14 +74,18 @@ public class MapPartitionLostListenerConfig
 
         MapPartitionLostListenerConfig that = (MapPartitionLostListenerConfig) o;
 
-        return !(readOnly != null ? !readOnly.equals(that.readOnly) : that.readOnly != null);
+        if (className != null ? !className.equals(that.className) : that.className != null) {
+            return false;
+        }
+        return !(implementation != null ? !implementation.equals(that.implementation) : that.implementation != null);
 
     }
 
     @Override
     public int hashCode() {
         int result = super.hashCode();
-        result = 31 * result + (readOnly != null ? readOnly.hashCode() : 0);
+        result = 31 * result + (className != null ? className.hashCode() : 0);
+        result = 31 * result + (implementation != null ? implementation.hashCode() : 0);
         return result;
     }
 }

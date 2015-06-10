@@ -8,8 +8,11 @@ import com.hazelcast.map.MapPartitionLostEvent;
 import com.hazelcast.map.MapPartitionLostListenerStressTest.EventCollectingMapPartitionLostListener;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.listener.MapPartitionLostListener;
+import com.hazelcast.nio.serialization.PortableReader;
+import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.partition.InternalPartitionLostEvent;
 import com.hazelcast.spi.EventRegistration;
+import com.hazelcast.spi.impl.PortableMapPartitionLostEvent;
 import com.hazelcast.spi.impl.eventservice.InternalEventService;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -19,6 +22,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
 
@@ -29,6 +33,8 @@ import static com.hazelcast.test.HazelcastTestSupport.randomMapName;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
@@ -138,6 +144,30 @@ public class ClientMapPartitionLostListenerTest {
 
             }
         });
+    }
+
+    @Test
+    public void test_portableMapPartitionLostEvent_serialization()
+            throws IOException {
+        final PortableMapPartitionLostEvent event = new PortableMapPartitionLostEvent(1, "uuid");
+        final PortableWriter writer = mock(PortableWriter.class);
+        event.writePortable(writer);
+
+        verify(writer).writeInt("p", 1);
+        verify(writer).writeUTF("u", "uuid");
+    }
+
+    @Test
+    public void test_portableMapPartitionLostEvent_deserialization()
+            throws IOException {
+        final PortableMapPartitionLostEvent event = new PortableMapPartitionLostEvent();
+        final PortableReader reader = mock(PortableReader.class);
+        when(reader.readInt("p")).thenReturn(1);
+        when(reader.readUTF("u")).thenReturn("uuid");
+
+        event.readPortable(reader);
+        assertEquals(1, event.getPartitionId());
+        assertEquals("uuid", event.getUuid());
     }
 
 }
