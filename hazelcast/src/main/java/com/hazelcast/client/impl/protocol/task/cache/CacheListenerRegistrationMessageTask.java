@@ -20,7 +20,7 @@ import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.operation.CacheListenerRegistrationOperation;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CacheListenerRegistrationCodec;
-import com.hazelcast.client.impl.protocol.task.InvocationMessageTask;
+import com.hazelcast.client.impl.protocol.task.AbstractInvocationMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
@@ -38,7 +38,7 @@ import java.security.Permission;
  * @see CacheListenerRegistrationOperation
  */
 public class CacheListenerRegistrationMessageTask
-        extends InvocationMessageTask<CacheListenerRegistrationCodec.RequestParameters> {
+        extends AbstractInvocationMessageTask<CacheListenerRegistrationCodec.RequestParameters> {
 
     public CacheListenerRegistrationMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);

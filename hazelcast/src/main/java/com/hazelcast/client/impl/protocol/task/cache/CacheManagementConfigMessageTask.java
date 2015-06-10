@@ -20,7 +20,7 @@ import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.operation.CacheManagementConfigOperation;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CacheManagementConfigCodec;
-import com.hazelcast.client.impl.protocol.task.InvocationMessageTask;
+import com.hazelcast.client.impl.protocol.task.AbstractInvocationMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
@@ -37,7 +37,7 @@ import java.security.Permission;
  * @see CacheManagementConfigOperation
  */
 public class CacheManagementConfigMessageTask
-        extends InvocationMessageTask<CacheManagementConfigCodec.RequestParameters> {
+        extends AbstractInvocationMessageTask<CacheManagementConfigCodec.RequestParameters> {
 
     public CacheManagementConfigMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);

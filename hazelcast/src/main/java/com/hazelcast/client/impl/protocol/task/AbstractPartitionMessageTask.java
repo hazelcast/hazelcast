@@ -18,7 +18,6 @@ package com.hazelcast.client.impl.protocol.task;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.core.ExecutionCallback;
-import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.InvocationBuilder;
@@ -60,10 +59,10 @@ public abstract class AbstractPartitionMessageTask<P>
         op.setCallerUuid(endpoint.getUuid());
         InvocationBuilder builder = nodeEngine.getOperationService()
                 .createInvocationBuilder(getServiceName(), op, getPartitionId())
+                .setExecutionCallback(this)
                 .setResultDeserialized(false);
 
-        ICompletableFuture future = builder.invoke();
-        future.andThen(this);
+        builder.invoke();
     }
 
     protected abstract Operation prepareOperation();
