@@ -19,7 +19,7 @@ The features of C++ Clients are:
 
 ### How to Setup
 
-Hazelcast C++ Client is shipped with 32/64 bit, shared and static libraries. Compiled static libraries of dependencies are also available in the release. Dependencies are **zlib** and **shared_ptr** from the boost libraries. 
+Hazelcast C++ Client is shipped with 32/64 bit, shared and static libraries. You only shall need to include the boost *shared_ptr.hpp* header in your compilation since the API makes use of the boost shared_ptr.
 
 
 The downloaded release folder consists of:
@@ -43,13 +43,12 @@ Each of the folders above contains the following:
 	- include/ => Contains headers of client.
 
 -	external/
-	- lib/ => Contains compiled static libraries of zlib.
-	- include/ => Contains headers of dependencies. (zlib and boost::shared_ptr)
+	- include/ => Contains headers of dependencies. (boost::shared_ptr)
 
 
 
 ### Platform Specific Installation Guides
-The C++ Client is tested on Linux 32/64, Mac 64 and Windows 32/64 bit machines. For each of the headers above, it is assumed that you are in the correct folder for your platform. Folders are Mac_64, Windows_32, Windows_64, Linux_32 or Linux_64.
+The C++ Client is tested on Linux 32/64-bit, Mac 64-bit and Windows 32/64-bit machines. For each of the headers above, it is assumed that you are in the correct folder for your platform. Folders are Mac_64, Windows_32, Windows_64, Linux_32 or Linux_64.
 
 #### Linux
 
@@ -57,40 +56,41 @@ For Linux, there are two distributions: 32 bit and 64 bit.
 
 Here is an example script to build with static library:
 
-`g++ main.cpp -pthread -I./external/include -I./hazelcast/include ./hazelcast/lib/
-libHazelcastClientStatic_64.a ./external/lib/libz.a`
+`g++ main.cpp -pthread -I./external/include -I./hazelcast/include
+      ./hazelcast/lib/static/libHazelcastClientStatic_64.a`
 
 Here is an example script to build with shared library:
 
-`g++ main.cpp -lpthread -Wl,–no-as-needed -lrt -I./external/include -I./hazelcast/include -L./hazelcast/lib -lHazelcastClientShared_64 ./external/lib/libz.a`
+`g++ main.cpp -lpthread -Wl,–no-as-needed -lrt -I./external/include -I./hazelcast/include -L./hazelcast/lib/shared -lHazelcastClientShared_64`
 
 #### Mac
 For Mac, there is one distribution: 64 bit.
 
 Here is an example script to build with static library:
 
-`g++ main.cpp -I./external/include -I./hazelcast/include ./hazelcast/lib/libHazelcastClientStatic_64.a ./external/lib/darwin/libz.a`
+`g++ main.cpp -I./external/include -I./hazelcast/include ./hazelcast/lib/static/libHazelcastClientStatic_64.a`
 
 Here is an example script to build with shared library:
 
-`g++ main.cpp -I./external/include -I./hazelcast/include -L./hazelcast/lib -lHazelcastClientShared_64 ./external/lib/darwin/libz.a`
+`g++ main.cpp -I./external/include -I./hazelcast/include -L./hazelcast/lib/shared -lHazelcastClientShared_6`
 
 #### Windows
-For Windows, there are two distributions; 32 bit and 64 bit. The current release has only Visual Studio 2010 compatible libraries. For others, please contact [support@hazelcast.com](support@hazelcast.com).
+For Windows, there are two distributions; 32 bit and 64 bit.
 
 ### Code Examples
-A Hazelcast node should be running to make the example code below work.
+A Hazelcast node should be running to make the code examples work. The license key should be provided in the provided configuration as config->getGroupConfig().setLicenseKey(PROVIDED_ENTERPRISE_KEY);
 
 #### Map Example
 
 ```cpp
-#include <hazelcast/client/HazelcastAll.h>
-#include <iostream>
+\#include <hazelcast/client/HazelcastAll.h>
+\#include <iostream>
 
 using namespace hazelcast::client;
 
 int main() {
   ClientConfig clientConfig;
+  clientConfig->getGroupConfig().setLicenseKey(PROVIDED_ENTERPRISE_KEY);
   Address address( "localhost", 5701 );
   clientConfig.addAddress( address );
 
@@ -110,14 +110,15 @@ int main() {
 #### Queue Example
 
 ```cpp
-#include <hazelcast/client/HazelcastAll.h>
-#include <iostream>
-#include <string>
+\#include <hazelcast/client/HazelcastAll.h>
+\#include <iostream>
+\#include <string>
 
 using namespace hazelcast::client;
 
 int main() {
   ClientConfig clientConfig;
+  clientConfig->getGroupConfig().setLicenseKey(PROVIDED_ENTERPRISE_KEY);
   Address address( "localhost", 5701 );
   clientConfig.addAddress( address );
 
@@ -136,13 +137,13 @@ int main() {
 #### Entry Listener Example
 
 ```cpp
-#include "hazelcast/client/ClientConfig.h"
-#include "hazelcast/client/EntryEvent.h"
-#include "hazelcast/client/IMap.h"
-#include "hazelcast/client/Address.h"
-#include "hazelcast/client/HazelcastClient.h"
-#include <iostream>
-#include <string>
+\#include "hazelcast/client/ClientConfig.h"
+\#include "hazelcast/client/EntryEvent.h"
+\#include "hazelcast/client/IMap.h"
+\#include "hazelcast/client/Address.h"
+\#include "hazelcast/client/HazelcastClient.h"
+\#include <iostream>
+\#include <string>
 
 using namespace hazelcast::client;
 
@@ -171,7 +172,7 @@ class SampleEntryListener {
 };
 
 
-int main( int argc, char **argv ) {
+int main( int argc, char \*\*argv ) {
   ClientConfig clientConfig;
   Address address( "localhost", 5701 );
   clientConfig.addAddress( address );
@@ -180,9 +181,9 @@ int main( int argc, char **argv ) {
 
   IMap<std::string,std::string> myMap = hazelcastClient
       .getMap<std::string ,std::string>( "myIntMap" );
-  SampleEntryListener *  listener = new SampleEntryListener();
+  SampleEntryListener \*  listener = new SampleEntryListener();
 
-  std::string id = myMap.addEntryListener( *listener, true );
+  std::string id = myMap.addEntryListener( \*listener, true );
   // Prints entryAdded
   myMap.put( "key1", "value1" );
   // Prints updated
@@ -195,7 +196,7 @@ int main( int argc, char **argv ) {
   // WARNING: deleting listener before removing it from hazelcast leads to crashes.
   myMap.removeEntryListener( id );
   // Delete listener after remove it from hazelcast.
-  delete listener;               
+  delete listener;
   return 0;
 };
 ```
@@ -215,7 +216,7 @@ class Bar implements Serializable {
 } 
 ```
 
-**First**, let them implement `Portable` or `IdentifiedDataSerializable` as shown below.
+**First**, let them implement `Portable` or `IdentifiedDataSerializable` as shown below:
 
 ```java
 class Foo implements Portable {
@@ -269,7 +270,7 @@ class Bar implements IdentifiedDataSerializable {
 }
 ```
 
-**Then**, implement the corresponding classes in C++ with same factory and class ID as shown below.
+**Then**, implement the corresponding classes in C++ with same factory and class ID as shown below:
 
 ```cpp
 class Foo : public Portable {
