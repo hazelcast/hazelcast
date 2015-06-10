@@ -24,6 +24,7 @@ import com.hazelcast.client.impl.protocol.codec.XATransactionCreateCodec;
 import com.hazelcast.client.impl.protocol.codec.XATransactionPrepareCodec;
 import com.hazelcast.client.impl.protocol.codec.XATransactionRollbackCodec;
 import com.hazelcast.client.spi.impl.ClientInvocation;
+import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionNotActiveException;
 import com.hazelcast.transaction.impl.Transaction;
 import com.hazelcast.transaction.impl.xa.SerializableXID;
@@ -67,9 +68,6 @@ public class XATransactionProxy {
 
     void begin() {
         try {
-            if (state == ACTIVE) {
-                throw new IllegalStateException("Transaction is already active");
-            }
             startTime = Clock.currentTimeMillis();
             ClientMessage request = XATransactionCreateCodec.encodeRequest(xid, timeout);
             ClientMessage response = invoke(request);
@@ -99,10 +97,10 @@ public class XATransactionProxy {
         checkTimeout();
         try {
             if (onePhase && state != ACTIVE) {
-                throw new TransactionNotActiveException("Transaction is not active");
+                throw new TransactionException("Transaction is not active");
             }
             if (!onePhase && state != PREPARED) {
-                throw new TransactionNotActiveException("Transaction is not prepared");
+                throw new TransactionException("Transaction is not prepared");
             }
             ClientMessage request = XATransactionCommitCodec.encodeRequest(txnId, onePhase);
             invoke(request);
@@ -114,9 +112,6 @@ public class XATransactionProxy {
     }
 
     void rollback() {
-        if (state == NO_TXN || state == ROLLED_BACK) {
-            throw new IllegalStateException("Transaction is not active");
-        }
         try {
             ClientMessage request = XATransactionRollbackCodec.encodeRequest(txnId);
             invoke(request);
