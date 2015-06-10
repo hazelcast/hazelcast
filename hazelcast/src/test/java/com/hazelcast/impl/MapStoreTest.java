@@ -1839,10 +1839,110 @@ public class MapStoreTest extends TestUtil {
         }
     }
 
+    /**
+     * see zendesk ticket #916
+     */
+    @Test
+    public void test_write_behind_MapStore_should_not_load_removed_entry_with_getAll() {
+        final String name = "test";
+
+        final Config config = new Config();
+        int numberOfInitialKeys = 1111;
+        config.getMapConfig(name)
+                .setMapStoreConfig(new MapStoreConfig().setEnabled(true)
+                        .setWriteDelaySeconds((int) TimeUnit.HOURS.toSeconds(1))
+                        .setImplementation(new DeletedKeysAwareMapStore(numberOfInitialKeys)));
+
+        HazelcastInstance hz = Hazelcast.newHazelcastInstance(config);
+        IMap map = hz.getMap(name);
+
+        Set<Integer> removedKeys = new HashSet<Integer>();
+        for (int i = 0; i < 11; i++) {
+            int key = (int) (Math.random() * numberOfInitialKeys);
+            removedKeys.add(key);
+            assertNotNull(map.remove(key));
+        }
+
+        Map all = map.getAll(removedKeys);
+        assertEquals(0, all.size());
+    }
+
+    /**
+     * see zendesk ticket #916
+     */
+    @Test
+    public void test_write_behind_MapStore_should_not_load_removed_entry_when_new_node_joins() {
+        final String name = "test";
+
+        final Config config = new Config();
+        int numberOfInitialKeys = 1111;
+        config.getMapConfig(name)
+                .setMapStoreConfig(new MapStoreConfig().setEnabled(true)
+                        .setWriteDelaySeconds((int) TimeUnit.HOURS.toSeconds(1))
+                        .setImplementation(new DeletedKeysAwareMapStore(numberOfInitialKeys)));
+
+        HazelcastInstance hz = Hazelcast.newHazelcastInstance(config);
+        IMap map = hz.getMap(name);
+
+        Set<Integer> removedKeys = new HashSet<Integer>();
+        for (int i = 0; i < 11; i++) {
+            int key = (int) (Math.random() * numberOfInitialKeys);
+            removedKeys.add(key);
+            assertNotNull(map.remove(key));
+        }
+
+        HazelcastInstance hz2 = Hazelcast.newHazelcastInstance(config);
+        IMap map2 = hz2.getMap(name);
+
+        for (Integer key : removedKeys) {
+            assertNull(map2.get(key));
+        }
+    }
+
+    /**
+     * see zendesk ticket #916
+     */
+    @Test
+    public void test_write_behind_MapStore_should_not_load_removed_entry_with_getAll_when_new_node_joins() {
+        final String name = "test";
+
+        final Config config = new Config();
+        int numberOfInitialKeys = 1111;
+        config.getMapConfig(name)
+                .setMapStoreConfig(new MapStoreConfig().setEnabled(true)
+                        .setWriteDelaySeconds((int) TimeUnit.HOURS.toSeconds(1))
+                        .setImplementation(new DeletedKeysAwareMapStore(numberOfInitialKeys)));
+
+        HazelcastInstance hz = Hazelcast.newHazelcastInstance(config);
+        IMap map = hz.getMap(name);
+
+        Set<Integer> removedKeys = new HashSet<Integer>();
+        for (int i = 0; i < 11; i++) {
+            int key = (int) (Math.random() * numberOfInitialKeys);
+            removedKeys.add(key);
+            assertNotNull(map.remove(key));
+        }
+
+        HazelcastInstance hz2 = Hazelcast.newHazelcastInstance(config);
+        IMap map2 = hz2.getMap(name);
+
+        Map all = map2.getAll(removedKeys);
+        assertEquals(0, all.size());
+    }
+
     private static class DeletedKeysAwareMapStore implements MapStore {
 
+        private final int numberOfInitialKeys;
         private final Set deletedKeys = Collections.newSetFromMap(new ConcurrentHashMap<Integer, Boolean>());
         private final Random random = new Random();
+
+        public DeletedKeysAwareMapStore() {
+            this(0);
+        }
+
+        public DeletedKeysAwareMapStore(int numberOfInitialKeys) {
+            this.numberOfInitialKeys = numberOfInitialKeys;
+        }
 
         private void pause() {
             LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(2000 + random.nextInt(1000)));
@@ -1876,12 +1976,30 @@ public class MapStoreTest extends TestUtil {
             return "value";
         }
 
-        public Map loadAll(Collection collection) {
-            return Collections.emptyMap();
+        public Map loadAll(Collection keys) {
+            if (keys.isEmpty()) {
+                return Collections.emptyMap();
+            }
+
+            Map map = new HashMap(keys.size());
+            for (Object key : keys) {
+                Object value = load(key);
+                if (value != null) {
+                    map.put(key, value);
+                }
+            }
+            return map;
         }
 
         public Set loadAllKeys() {
-            return Collections.emptySet();
+            if (numberOfInitialKeys <= 0) {
+                return Collections.emptySet();
+            }
+            Set keys = new HashSet();
+            for (int i = 0; i < numberOfInitialKeys; i++) {
+                keys.add(i);
+            }
+            return keys;
         }
     }
 }

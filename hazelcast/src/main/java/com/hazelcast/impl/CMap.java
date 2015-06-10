@@ -465,7 +465,7 @@ public class CMap {
 
     public void own(DataRecordEntry dataRecordEntry) {
         Record record = storeDataRecordEntry(dataRecordEntry);
-        if (record != null) {
+        if (record != null && record.isActive()) {
             if (record.valueCount() > 0) {
                 updateIndexes(record);
             }
@@ -510,7 +510,11 @@ public class CMap {
             }
         }
         record.setVersion(dataRecordEntry.getVersion());
-        markAsActive(record);
+        if (dataRecordEntry.isActive()) {
+            markAsActive(record);
+        } else {
+            markAsRemoved(record);
+        }
         return record;
     }
 
