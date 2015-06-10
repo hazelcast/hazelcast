@@ -61,12 +61,24 @@ public class NearCacheRecord {
     private volatile long lastAccessTime;
 
     public NearCacheRecord(Object key, Object value) {
+        this(key, value, new AtomicLong());
+    }
+
+    private NearCacheRecord(Object key, Object value, AtomicLong hit) {
         this.key = key;
         this.value = value;
         long time = Clock.currentTimeMillis();
         this.lastAccessTime = time;
         this.creationTime = time;
         this.hit = new AtomicLong();
+    }
+
+    private NearCacheRecord(Object key) {
+        this(key, null, null);
+    }
+
+    public NearCacheRecord pendingValue(Object key) {
+        return new NearCacheRecord(key);
     }
 
     public Object getKey() {
@@ -104,6 +116,10 @@ public class NearCacheRecord {
         long time = Clock.currentTimeMillis();
         return (maxIdleMillis > 0 && time > lastAccessTime + maxIdleMillis)
                 || (timeToLiveMillis > 0 && time > creationTime + timeToLiveMillis);
+    }
+
+    public boolean isPending() {
+        return hit == null;
     }
 
     /**

@@ -38,6 +38,8 @@ import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.annotation.Repeat;
 import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -45,7 +47,10 @@ import org.junit.runner.RunWith;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Random;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
@@ -184,11 +189,8 @@ public class NearCacheTest extends HazelcastTestSupport {
                 stats.getMisses() > 400
         );
         long hitsAndMisses = stats.getHits() + stats.getMisses();
-        assertEquals(
-                String.format("Near cache hits + misses should be %s but were %d", mapSize * 2, hitsAndMisses),
-                mapSize * 2,
-                hitsAndMisses
-        );
+        assertEquals(String.format("Near cache hits + misses should be %s but were %d", mapSize * 2, hitsAndMisses),
+                mapSize * 2, hitsAndMisses);
     }
 
     @Test
@@ -222,14 +224,12 @@ public class NearCacheTest extends HazelcastTestSupport {
         }
         map.putAll(invalidationMap); //this should invalidate the near cache
 
-        assertTrueEventually(
-                new AssertTask() {
+        assertTrueEventually(new AssertTask() {
                     @Override
                     public void run() {
                         assertEquals("Invalidation is not working on putAll()", 0, nearCache.size());
                     }
-                }
-        );
+                });
     }
 
     @Test
@@ -283,11 +283,8 @@ public class NearCacheTest extends HazelcastTestSupport {
         }
 
         NearCache nearCache = getNearCache(mapName, instances[0]);
-        assertEquals(
-                String.format("Near cache size should be %d but was %d", mapSize, nearCache.size()),
-                mapSize,
-                nearCache.size()
-        );
+        assertEquals(String.format("Near cache size should be %d but was %d", mapSize, nearCache.size()), mapSize,
+                nearCache.size());
     }
 
     // issue 1570
@@ -310,14 +307,7 @@ public class NearCacheTest extends HazelcastTestSupport {
             assertNull(map.get("key" + i));
         }
 
-        assertTrue(
-                String.format(
-                        "NearCache operation count should be < %d but was %d",
-                        mapSize * 2,
-                        map.getLocalMapStats().getGetOperationCount()
-                ),
-                map.getLocalMapStats().getGetOperationCount() < mapSize * 2
-        );
+        assertTrue(String.format("NearCache operation count should be < %d but was %d", mapSize * 2, map.getLocalMapStats().getGetOperationCount()), map.getLocalMapStats().getGetOperationCount() < mapSize * 2);
     }
 
     @Test
@@ -389,11 +379,7 @@ public class NearCacheTest extends HazelcastTestSupport {
 
         // Check near cache hits
         NearCacheStats stats = map.getLocalMapStats().getNearCacheStats();
-        assertEquals(
-                String.format("Near cache hits should be %d but were %d", expectedNearCacheHits, stats.getHits()),
-                expectedNearCacheHits,
-                stats.getHits()
-        );
+        assertEquals(String.format("Near cache hits should be %d but were %d", expectedNearCacheHits, stats.getHits()), expectedNearCacheHits, stats.getHits());
     }
 
     @Test
@@ -424,10 +410,7 @@ public class NearCacheTest extends HazelcastTestSupport {
         }
 
         NearCacheStats stats = map.getLocalMapStats().getNearCacheStats();
-        assertTrue(
-                String.format("Near cache hits should be > %d but were %d", expectedNearCacheHits, stats.getHits()),
-                stats.getHits() > expectedNearCacheHits
-        );
+        assertTrue(String.format("Near cache hits should be > %d but were %d", expectedNearCacheHits, stats.getHits()), stats.getHits() > expectedNearCacheHits);
     }
 
     @Test
@@ -492,11 +475,7 @@ public class NearCacheTest extends HazelcastTestSupport {
         }
 
         NearCacheStats stats = map.getLocalMapStats().getNearCacheStats();
-        assertEquals(
-                String.format("Near cache hits should be %d but were %d", expectedNearCacheHits, stats.getHits()),
-                expectedNearCacheHits,
-                stats.getHits()
-        );
+        assertEquals(String.format("Near cache hits should be %d but were %d", expectedNearCacheHits, stats.getHits()), expectedNearCacheHits, stats.getHits());
     }
 
     @Test
@@ -604,6 +583,73 @@ public class NearCacheTest extends HazelcastTestSupport {
         return instance.getMap(mapName);
     }
 
+    private static final CpuConsumer cpuConsumer = new CpuConsumer();
+
+    @BeforeClass
+    public static void prepareCpuConsumer() {
+        cpuConsumer.getReady();
+    }
+
+    private static class CpuConsumer {
+        final int taskCount = 2 * Runtime.getRuntime().availableProcessors();
+        volatile CountDownLatch workerLatch = new CountDownLatch(1);
+        volatile CountDownLatch clientLatch = new CountDownLatch(0);
+
+        void pause() {
+            if (workerLatch.getCount() == 0) {
+                workerLatch = new CountDownLatch(1);
+            }
+        }
+        void play() throws InterruptedException {
+            clientLatch = new CountDownLatch(taskCount);
+            workerLatch.countDown();
+            assertOpenEventually(clientLatch);
+        }
+        void getReady() {
+            final ExecutorService ex = Executors.newFixedThreadPool(taskCount);
+            for (int i = 0; i < taskCount; i++) {
+                ex.execute(new Runnable() {
+                    double d;
+                    @Override public void run() {
+                        final Random rnd = new Random();
+                        while (true) {
+                            try {
+                                workerLatch.await();
+                                clientLatch.countDown();
+                            } catch (InterruptedException e) {
+                                System.err.println("CPU consumer interrupted: "+d);
+                                return;
+                            }
+                            d *= Math.pow(1.001, Math.sqrt(rnd.nextInt(100) + 2));
+                            if (d > 1e48) {
+                                d = 1;
+                            }
+                        }
+                    }
+                });
+            }
+        }
+    }
+
+    @Test
+    @Repeat(10)
+    @Ignore
+    public void testNearCacheFill() throws Exception {
+        final String mapName = randomMapName();
+        final Config config = createNearCachedMapConfig(mapName);
+        final HazelcastInstance instance = createHazelcastInstance(config);
+        final IMap<Integer, Integer> map = instance.getMap(mapName);
+        cpuConsumer.play();
+        final int mapSize = 3;
+        for (int i = 0; i < mapSize; i++) {
+            map.put(i, i);
+        }
+        for (int i = 0; i < mapSize; i++) {
+            map.get(i);
+        }
+        assertNearCacheSize(mapSize, mapName, map);
+    }
+
     /**
      * Near-cache has its own eviction/expiration mechanism,
      * eviction/expiration on IMap should not force any near-cache eviction/expiration.
@@ -620,7 +666,7 @@ public class NearCacheTest extends HazelcastTestSupport {
         final CountDownLatch latch = new CountDownLatch(mapSize);
 
         addListener(map, latch);
-        populateMapWithExpirableEntries(map, mapSize, 3000, TimeUnit.MILLISECONDS);
+        populateMapWithExpirableEntries(map, mapSize, 3, TimeUnit.MILLISECONDS);
         pullEntriesToNearCache(map, mapSize);
 
         waitUntilEvictionEventsReceived(latch);
