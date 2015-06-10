@@ -355,7 +355,8 @@
                                 defines the expiry policy factory from predefined ones with duration configuration.
                             </xs:documentation>
                         </xs:annotation>
-                        <xs:element name="timed-expiry-policy-factory" minOccurs="0" maxOccurs="1"/>
+                        <xs:element name="timed-expiry-policy-factory"
+                                    type="timed-expiry-policy-factory" minOccurs="0" maxOccurs="1"/>
                     </xs:all>
                     <xs:attribute name="class-name"/>
                 </xs:complexType>
