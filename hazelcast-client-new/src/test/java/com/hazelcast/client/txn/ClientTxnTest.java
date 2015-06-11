@@ -47,9 +47,9 @@ import static org.junit.Assert.fail;
 @Category(QuickTest.class)
 public class ClientTxnTest extends HazelcastTestSupport {
 
-    static HazelcastInstance hz;
-    static HazelcastInstance server;
-    static HazelcastInstance second;
+    HazelcastInstance hz;
+    HazelcastInstance server;
+    HazelcastInstance second;
 
     @Before
     public void init() {
