@@ -1355,11 +1355,42 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="populate" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true"/>
-            <xs:element name="coalesce" type="xs:boolean" minOccurs="0" maxOccurs="1" default="false"/>
-            <xs:element name="delay-seconds" type="xs:unsignedInt" minOccurs="0" maxOccurs="1" default="0"/>
-            <xs:element name="batch-size" type="xs:unsignedInt" minOccurs="0" maxOccurs="1" default="1"/>
-            <xs:element name="buffer-size" type="xs:unsignedInt" minOccurs="0" maxOccurs="1" default="16"/>
+            <xs:element name="populate" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true">
+                <xs:annotation>
+                    <xs:documentation>
+                        True to enable initial population of the query cache, false otherwise.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="coalesce" type="xs:boolean" minOccurs="0" maxOccurs="1" default="false">
+                <xs:annotation>
+                    <xs:documentation>
+                        True to enable coalescing of the query cache, false otherwise.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="delay-seconds" type="xs:unsignedInt" minOccurs="0" maxOccurs="1" default="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        The minimum number of seconds that an event waits in the node buffer.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="batch-size" type="xs:unsignedInt" minOccurs="0" maxOccurs="1" default="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        The batch size used to determine the number of events sent 
+                        in a batch to the query cache.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="buffer-size" type="xs:unsignedInt" minOccurs="0" maxOccurs="1" default="16">
+                <xs:annotation>
+                    <xs:documentation>
+                        The maximum number of events which can be stored in a partition buffer.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
             <xs:element name="eviction" type="eviction" minOccurs="0" maxOccurs="1"/>
             <xs:element name="indexes" minOccurs="0" maxOccurs="1">
                 <xs:complexType>
@@ -1411,23 +1442,59 @@
     </xs:complexType>
     <xs:complexType name="target-cluster">
         <xs:all>
-            <xs:element name="replication-impl" type="xs:string" minOccurs="1" maxOccurs="1"/>
+            <xs:element name="replication-impl" type="xs:string" minOccurs="1" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        Name of the class implementation for the WAN replication.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
             <xs:element name="end-points" type="end-points" minOccurs="1" maxOccurs="1"/>
         </xs:all>
-        <xs:attribute name="group-name" type="xs:string" use="required"/>
-        <xs:attribute name="group-password" type="xs:string" use="required"/>
+        <xs:attribute name="group-name" type="xs:string" use="required">
+            <xs:annotation>
+                <xs:documentation>
+                    The group name for the WAN replication.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="group-password" type="xs:string" use="required">
+            <xs:annotation>
+                <xs:documentation>
+                    The group password for the WAN replication.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
     </xs:complexType>
     <xs:complexType name="end-points">
         <xs:sequence>
-            <xs:element name="address" type="xs:string" minOccurs="1" maxOccurs="unbounded"/>
+            <xs:element name="address" type="xs:string" minOccurs="1" maxOccurs="unbounded">
+                <xs:annotation>
+                    <xs:documentation>
+                        IP address of a cluster member for which the WAN replication is implemented.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
         </xs:sequence>
     </xs:complexType>
     <xs:complexType name="ssl">
         <xs:all>
-            <xs:element name="factory-class-name" type="xs:string" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="factory-class-name" type="xs:string" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        The name of the com.hazelcast.nio.ssl.SSLContextFactory implementation class.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
             <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>
         </xs:all>
-        <xs:attribute name="enabled" default="false" type="xs:boolean"/>
+        <xs:attribute name="enabled" default="false" type="xs:boolean">
+            <xs:annotation>
+                <xs:documentation>
+                    True to enable this ssl configuration, false to disable. 
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
     </xs:complexType>
     <xs:complexType name="item-listener">
         <xs:simpleContent>
@@ -1490,9 +1557,29 @@
     <xs:complexType name="management-center">
         <xs:simpleContent>
             <xs:extension base="xs:string">
-                <xs:attribute name="enabled" type="xs:boolean" default="false" use="optional"/>
-                <xs:attribute name="update-interval" type="xs:integer" default="3" use="optional"/>
-                <xs:attribute name="cluster-id" type="xs:string" use="optional"/>
+                <xs:attribute name="enabled" type="xs:boolean" default="false" use="optional">
+		            <xs:annotation>
+		                <xs:documentation>
+		                    True to enable management center, false to disable. 
+		                </xs:documentation>
+		            </xs:annotation>
+		        </xs:attribute>
+                <xs:attribute name="update-interval" type="xs:integer" default="3" use="optional">
+		            <xs:annotation>
+		                <xs:documentation>
+		                    The time frequency (in seconds) for which Management Center will take 
+		                    information from the Hazelcast cluster. 
+		                </xs:documentation>
+		            </xs:annotation>
+		        </xs:attribute>
+                <xs:attribute name="cluster-id" type="xs:string" use="optional">
+		            <xs:annotation>
+		                <xs:documentation>
+		                    The Hazelcast cluster from which Management Center will take 
+		                    information. 
+		                </xs:documentation>
+		            </xs:annotation>
+		        </xs:attribute>
                 <xs:attribute name="security-token" type="xs:string" use="optional"/>
             </xs:extension>
         </xs:simpleContent>
@@ -1683,13 +1770,75 @@
 
     <xs:complexType name="near-cache">
         <xs:all>
-            <xs:element name="max-size" type="xs:unsignedInt" minOccurs="0" maxOccurs="1" default="0"/>
-            <xs:element name="time-to-live-seconds" type="xs:unsignedInt" minOccurs="0" maxOccurs="1" default="0"/>
-            <xs:element name="max-idle-seconds" type="xs:unsignedInt" minOccurs="0" maxOccurs="1" default="0"/>
-            <xs:element name="eviction-policy" type="eviction-policy" minOccurs="0" maxOccurs="1" default="LRU"/>
-            <xs:element name="invalidate-on-change" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true"/>
-            <xs:element name="in-memory-format" type="in-memory-format" minOccurs="0" maxOccurs="1" default="BINARY"/>
-            <xs:element name="cache-local-entries" type="xs:boolean" minOccurs="0" maxOccurs="1" default="false"/>
+            <xs:element name="max-size" type="xs:unsignedInt" minOccurs="0" maxOccurs="1" default="0">
+	            <xs:annotation>
+	                <xs:documentation>
+	                    Maximum size of the near cache. When max size is reached,
+						cache is evicted based on the policy defined.
+						Any integer between 0 and Integer.MAX_VALUE. 0 means
+						Integer.MAX_VALUE. Default is 0.
+	                </xs:documentation>
+	            </xs:annotation>
+	        </xs:element>
+            <xs:element name="time-to-live-seconds" type="xs:unsignedInt" minOccurs="0" maxOccurs="1" default="0">
+	            <xs:annotation>
+	                <xs:documentation>
+	                    Maximum number of seconds for each entry to stay in the near cache. Entries that are
+						older than time-to-live-seconds will get automatically evicted from the near cache.
+						Any integer between 0 and Integer.MAX_VALUE. 0 means infinite. Default is 0.
+	                </xs:documentation>
+	            </xs:annotation>
+	        </xs:element>
+            <xs:element name="max-idle-seconds" type="xs:unsignedInt" minOccurs="0" maxOccurs="1" default="0">
+	            <xs:annotation>
+	                <xs:documentation>
+	                    Maximum number of seconds each entry can stay in the near cache as untouched (not-read).
+				        Entries that are not read (touched) more than max-idle-seconds value will get removed
+				        from the near cache.
+				        Any integer between 0 and Integer.MAX_VALUE. 0 means Integer.MAX_VALUE. Default is 0.
+	                </xs:documentation>
+	            </xs:annotation>
+	        </xs:element>
+            <xs:element name="eviction-policy" type="eviction-policy" minOccurs="0" maxOccurs="1" default="LRU">
+	            <xs:annotation>
+	                <xs:documentation>
+	                    Valid values are:
+				        NONE (no extra eviction, time-to-live-seconds may still apply),
+				        LRU  (Least Recently Used),
+				        LFU  (Least Frequently Used).
+				        NONE is the default.
+				        Regardless of the eviction policy used, time-to-live-seconds will still apply.
+	                </xs:documentation>
+	            </xs:annotation>
+	        </xs:element>
+            <xs:element name="invalidate-on-change" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true">
+	            <xs:annotation>
+	                <xs:documentation>
+					True to evict the cached entries if the entries are changed (updated or removed).
+					Default value is true.
+				    </xs:documentation>
+	            </xs:annotation>
+	        </xs:element>
+            <xs:element name="in-memory-format" type="in-memory-format" minOccurs="0" maxOccurs="1" default="BINARY">
+                <xs:annotation>
+                    <xs:documentation>
+                        Data type used to store entries.
+                        Possible values:
+                        BINARY (default): keys and values are stored as binary data.
+                        OBJECT: values are stored in their object forms.
+                        NATIVE: keys and values are stored in native memory.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="cache-local-entries" type="xs:boolean" minOccurs="0" maxOccurs="1" default="false">
+                <xs:annotation>
+                    <xs:documentation>
+                        True to cache local entries also.
+						This is useful when in-memory-format for near cache is different than the map's one.
+						Default value is false.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
             <xs:element name="eviction" type="eviction" minOccurs="0" maxOccurs="1"/>
         </xs:all>
         <xs:attribute name="name" use="optional" type="xs:string" default="default"/>
@@ -1738,9 +1887,27 @@
     </xs:simpleType>
     <xs:complexType name="serialization">
         <xs:all>
-            <xs:element name="portable-version" type="xs:unsignedInt" minOccurs="0" maxOccurs="1"/>
-            <xs:element name="use-native-byte-order" type="xs:boolean" minOccurs="0" maxOccurs="1" default="false"/>
+            <xs:element name="portable-version" type="xs:unsignedInt" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        The version of the portable serialization. Portable version is used to differentiate two 
+                        same classes that have changes on it like adding/removing field or changing a type of a field.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="use-native-byte-order" type="xs:boolean" minOccurs="0" maxOccurs="1" default="false">
+                <xs:annotation>
+                    <xs:documentation>
+                        True to use native byte order of the underlying platform, false otherwise. Default value is false.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
             <xs:element name="byte-order" minOccurs="0" maxOccurs="1" default="BIG_ENDIAN">
+                <xs:annotation>
+                    <xs:documentation>
+                        Defines the byte order that the serialization will use.
+                    </xs:documentation>
+                </xs:annotation>
                 <xs:simpleType>
                     <xs:restriction base="non-space-string">
                         <xs:enumeration value="BIG_ENDIAN"/>
@@ -1748,14 +1915,41 @@
                     </xs:restriction>
                 </xs:simpleType>
             </xs:element>
-            <xs:element name="enable-compression" type="xs:boolean" minOccurs="0" maxOccurs="1" default="false"/>
-            <xs:element name="enable-shared-object" type="xs:boolean" minOccurs="0" maxOccurs="1" default="false"/>
-            <xs:element name="allow-unsafe" type="xs:boolean" minOccurs="0" maxOccurs="1" default="false"/>
+            <xs:element name="enable-compression" type="xs:boolean" minOccurs="0" maxOccurs="1" default="false">
+                <xs:annotation>
+                    <xs:documentation>
+                        True to enable compression if default Java serialization is used, false otherwise. 
+                        Default value is false.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="enable-shared-object" type="xs:boolean" minOccurs="0" maxOccurs="1" default="false">
+                <xs:annotation>
+                    <xs:documentation>
+                        True to enable shared object if default Java serialization is used, false otherwise. 
+                        Default value is false.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="allow-unsafe" type="xs:boolean" minOccurs="0" maxOccurs="1" default="false">
+                <xs:annotation>
+                    <xs:documentation>
+                        True to allow the usage of unsafe, false otherwise. 
+                        Default value is false.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
             <xs:element name="data-serializable-factories" minOccurs="0" maxOccurs="1">
                 <xs:complexType>
                     <xs:sequence>
                         <xs:element name="data-serializable-factory" type="serialization-factory" minOccurs="0"
-                                    maxOccurs="unbounded"/>
+                                    maxOccurs="unbounded">
+						    <xs:annotation>
+								<xs:documentation>
+								    PortableFactory class to be registered.
+								</xs:documentation>
+						    </xs:annotation>
+					    </xs:element>
                     </xs:sequence>
                 </xs:complexType>
             </xs:element>
@@ -1763,19 +1957,44 @@
                 <xs:complexType>
                     <xs:sequence>
                         <xs:element name="portable-factory" type="serialization-factory" minOccurs="0"
-                                    maxOccurs="unbounded"/>
+                                    maxOccurs="unbounded">
+					        <xs:annotation>
+					            <xs:documentation>
+					                PortableFactory class to be registered.
+					            </xs:documentation>
+					        </xs:annotation>
+				        </xs:element>
                     </xs:sequence>
                 </xs:complexType>
             </xs:element>
             <xs:element name="serializers" minOccurs="0" maxOccurs="1">
                 <xs:complexType>
                     <xs:choice minOccurs="1" maxOccurs="unbounded">
-                        <xs:element name="global-serializer" type="xs:string" minOccurs="0" maxOccurs="1"/>
-                        <xs:element name="serializer" type="serializer" minOccurs="0" maxOccurs="unbounded"/>
+                        <xs:element name="global-serializer" type="xs:string" minOccurs="0" maxOccurs="1">
+					        <xs:annotation>
+					            <xs:documentation>
+					                Global serializer class to be registered if no other serializer is applicable.
+					            </xs:documentation>
+					        </xs:annotation>
+				        </xs:element>
+                        <xs:element name="serializer" type="serializer" minOccurs="0" maxOccurs="unbounded">
+					        <xs:annotation>
+					            <xs:documentation>
+					                Defines the class name and the type class of the serializer implementation.
+					            </xs:documentation>
+					        </xs:annotation>
+				        </xs:element>
                     </xs:choice>
                 </xs:complexType>
             </xs:element>
-            <xs:element name="check-class-def-errors" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true"/>
+            <xs:element name="check-class-def-errors" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true">
+                <xs:annotation>
+                    <xs:documentation>
+                        If true (default), serialization system will check class definitions error at start and throw a 
+                        Serialization Exception with error definition.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
         </xs:all>
     </xs:complexType>
     <xs:complexType name="serialization-factory">
