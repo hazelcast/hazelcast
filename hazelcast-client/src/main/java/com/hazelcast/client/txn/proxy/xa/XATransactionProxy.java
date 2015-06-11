@@ -22,6 +22,7 @@ import com.hazelcast.client.impl.client.ClientRequest;
 import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.spi.impl.SerializableCollection;
+import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionNotActiveException;
 import com.hazelcast.transaction.client.CommitXATransactionRequest;
 import com.hazelcast.transaction.client.CreateXATransactionRequest;
@@ -69,9 +70,6 @@ public class XATransactionProxy {
 
     void begin() {
         try {
-            if (state == ACTIVE) {
-                throw new IllegalStateException("Transaction is already active");
-            }
             startTime = Clock.currentTimeMillis();
             txnId = invoke(new CreateXATransactionRequest(xid, timeout));
             state = ACTIVE;
@@ -99,10 +97,10 @@ public class XATransactionProxy {
         checkTimeout();
         try {
             if (onePhase && state != ACTIVE) {
-                throw new TransactionNotActiveException("Transaction is not active");
+                throw new TransactionException("Transaction is not active");
             }
             if (!onePhase && state != PREPARED) {
-                throw new TransactionNotActiveException("Transaction is not prepared");
+                throw new TransactionException("Transaction is not prepared");
             }
             invoke(new CommitXATransactionRequest(txnId, onePhase));
             state = COMMITTED;
@@ -113,9 +111,6 @@ public class XATransactionProxy {
     }
 
     void rollback() {
-        if (state == NO_TXN || state == ROLLED_BACK) {
-            throw new IllegalStateException("Transaction is not active");
-        }
         try {
             RollbackXATransactionRequest request = new RollbackXATransactionRequest(txnId);
             invoke(request);
