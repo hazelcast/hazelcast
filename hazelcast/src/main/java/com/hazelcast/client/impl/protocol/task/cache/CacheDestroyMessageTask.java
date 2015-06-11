@@ -19,7 +19,7 @@ package com.hazelcast.client.impl.protocol.task.cache;
 import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.operation.CacheDestroyOperation;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.CacheDestroyParameters;
+import com.hazelcast.client.impl.protocol.codec.CacheDestroyCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
@@ -27,13 +27,8 @@ import com.hazelcast.spi.Operation;
 
 import java.security.Permission;
 
-/**
- * This client request  specifically calls {@link CacheDestroyParameters} on the server side.
- *
- * @see CacheDestroyParameters
- */
 public class CacheDestroyMessageTask
-        extends AbstractPartitionMessageTask<CacheDestroyParameters> {
+        extends AbstractPartitionMessageTask<CacheDestroyCodec.RequestParameters> {
 
     public CacheDestroyMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -45,8 +40,13 @@ public class CacheDestroyMessageTask
     }
 
     @Override
-    protected CacheDestroyParameters decodeClientMessage(ClientMessage clientMessage) {
-        return CacheDestroyParameters.decode(clientMessage);
+    protected CacheDestroyCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return CacheDestroyCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return CacheDestroyCodec.encodeResponse(serializationService.toData(response));
     }
 
     @Override

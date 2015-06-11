@@ -2,6 +2,16 @@
 
 ### Sample Entry Processor Code
 
+The EntryProcessorTest class has the following methods.
+
+* `testMapEntryProcessor` puts one map entry and calls `executeOnKey` to process that map entry.
+* `testMapEntryProcessor` puts all the entries in a map and calls `executeOnEntries` to process 
+   all the entries.
+
+The static class `IncrementingEntryProcessor` creates an entry processor to process the map 
+entries in the EntryProcessorTest class.
+
+
 ```java
 public class EntryProcessorTest {
 

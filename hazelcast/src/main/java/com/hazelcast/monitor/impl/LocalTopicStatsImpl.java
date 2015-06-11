@@ -47,22 +47,6 @@ public class LocalTopicStatsImpl
     }
 
     @Override
-    public JsonObject toJson() {
-        JsonObject root = new JsonObject();
-        root.add("creationTime", creationTime);
-        root.add("totalPublishes", totalPublishes);
-        root.add("totalReceivedMessages", totalReceivedMessages);
-        return root;
-    }
-
-    @Override
-    public void fromJson(JsonObject json) {
-        creationTime = getLong(json, "creationTime", -1L);
-        TOTAL_PUBLISHES_UPDATER.set(this, getLong(json, "totalPublishes", -1L));
-        TOTAL_RECEIVED_MESSAGES_UPDATER.set(this, getLong(json, "totalReceivedMessages", -1L));
-    }
-
-    @Override
     public long getPublishOperationCount() {
         return totalPublishes;
     }
@@ -80,4 +64,60 @@ public class LocalTopicStatsImpl
         TOTAL_RECEIVED_MESSAGES_UPDATER.incrementAndGet(this);
     }
 
+    @Override
+    public JsonObject toJson() {
+        JsonObject root = new JsonObject();
+        root.add("creationTime", creationTime);
+        root.add("totalPublishes", totalPublishes);
+        root.add("totalReceivedMessages", totalReceivedMessages);
+        return root;
+    }
+
+    @Override
+    public void fromJson(JsonObject json) {
+        creationTime = getLong(json, "creationTime", -1L);
+        TOTAL_PUBLISHES_UPDATER.set(this, getLong(json, "totalPublishes", -1L));
+        TOTAL_RECEIVED_MESSAGES_UPDATER.set(this, getLong(json, "totalReceivedMessages", -1L));
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        LocalTopicStatsImpl that = (LocalTopicStatsImpl) o;
+
+        if (creationTime != that.creationTime) {
+            return false;
+        }
+        if (totalPublishes != that.totalPublishes) {
+            return false;
+        }
+        if (totalReceivedMessages != that.totalReceivedMessages) {
+            return false;
+        }
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = (int) (creationTime ^ (creationTime >>> 32));
+        result = 31 * result + (int) (totalPublishes ^ (totalPublishes >>> 32));
+        result = 31 * result + (int) (totalReceivedMessages ^ (totalReceivedMessages >>> 32));
+        return result;
+    }
+
+    @Override
+    public String toString() {
+        return "LocalTopicStatsImpl{"
+                + "creationTime=" + creationTime
+                + ", totalPublishes=" + totalPublishes
+                + ", totalReceivedMessages=" + totalReceivedMessages
+                + '}';
+    }
 }

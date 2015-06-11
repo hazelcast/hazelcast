@@ -16,6 +16,7 @@
 
 package com.hazelcast.util;
 
+import com.hazelcast.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.core.ClientType;
 import com.hazelcast.instance.Node;
@@ -24,8 +25,11 @@ import com.hazelcast.nio.IOUtil;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.management.ManagementFactory;
+import java.lang.management.RuntimeMXBean;
 import java.net.URL;
 import java.net.URLConnection;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
@@ -65,7 +69,7 @@ public final class VersionCheck {
     public void shutdown() {
     }
 
-    private String convertToLetter(int size) {
+    public String convertToLetter(int size) {
         String letter;
         if (size < A_INTERVAL) {
             letter = "A";
@@ -92,7 +96,8 @@ public final class VersionCheck {
 
     }
 
-    private void doCheck(Node hazelcastNode, String version, boolean isEnterprise) {
+    public Map<String, String> doCheck(Node hazelcastNode, String version, boolean isEnterprise) {
+
         String downloadId = "source";
         InputStream is = null;
         try {
@@ -110,29 +115,36 @@ public final class VersionCheck {
 
         //Calculate native memory usage from native memory config
         NativeMemoryConfig memoryConfig = hazelcastNode.getConfig().getNativeMemoryConfig();
-        long totalNativeMemorySize = hazelcastNode.getClusterService().getSize()
+        final ClusterServiceImpl clusterService = hazelcastNode.getClusterService();
+        long totalNativeMemorySize = clusterService.getSize()
                 * memoryConfig.getSize().bytes();
         String nativeMemoryParameter = (isEnterprise)
                 ? Long.toString(MemoryUnit.BYTES.toGigaBytes(totalNativeMemorySize)) : "0";
         //Calculate connected clients to the cluster.
         Map<ClientType, Integer> clusterClientStats = hazelcastNode.clientEngine.getConnectedClientStats();
+        RuntimeMXBean runtimeMxBean = ManagementFactory.getRuntimeMXBean();
 
-        UrlActionParameterCreator parameterCreator = new UrlActionParameterCreator();
+        Long clusterUpTime = clusterService.getClusterClock().getClusterUpTime();
+
+        VersionCheckParameterCreator parameterCreator = new VersionCheckParameterCreator();
         parameterCreator.addParam("version", version);
         parameterCreator.addParam("m", hazelcastNode.getLocalMember().getUuid());
         parameterCreator.addParam("e", Boolean.toString(isEnterprise));
         parameterCreator.addParam("l", MD5Util.toMD5String(hazelcastNode.getConfig().getLicenseKey()));
         parameterCreator.addParam("p", downloadId);
-        parameterCreator.addParam("c", MD5Util.toMD5String(hazelcastNode.getConfig().getGroupConfig().getName()));
-        parameterCreator.addParam("crsz", convertToLetter(hazelcastNode.getClusterService().getMembers().size()));
+        parameterCreator.addParam("c", clusterService.getClusterId());
+        parameterCreator.addParam("crsz", convertToLetter(clusterService.getMembers().size()));
         parameterCreator.addParam("cssz", convertToLetter(hazelcastNode.clientEngine.getClientEndpointCount()));
         parameterCreator.addParam("hdgb", nativeMemoryParameter);
         parameterCreator.addParam("ccpp", Integer.toString(clusterClientStats.get(ClientType.CPP)));
         parameterCreator.addParam("cdn", Integer.toString(clusterClientStats.get(ClientType.CSHARP)));
         parameterCreator.addParam("cjv", Integer.toString(clusterClientStats.get(ClientType.JAVA)));
-
+        parameterCreator.addParam("cuptm", Long.toString(clusterUpTime));
+        parameterCreator.addParam("nuptm", Long.toString(runtimeMxBean.getUptime()));
         String urlStr = BASE_VERSION_CHECK_URL + parameterCreator.build();
         fetchWebService(urlStr);
+
+        return parameterCreator.getParameters();
     }
 
     private void fetchWebService(String urlStr) {
@@ -151,23 +163,29 @@ public final class VersionCheck {
         }
     }
 
-    private static class UrlActionParameterCreator {
+    private static class VersionCheckParameterCreator {
 
         private final StringBuilder builder;
+        private final Map<String, String> parameters = new HashMap<String, String>();
         private boolean hasParameterBefore;
 
-        public UrlActionParameterCreator() {
+        public VersionCheckParameterCreator() {
             builder = new StringBuilder();
             builder.append("?");
         }
 
-        public UrlActionParameterCreator addParam(String key, String value) {
+        public Map<String, String> getParameters() {
+            return parameters;
+        }
+
+        public VersionCheckParameterCreator addParam(String key, String value) {
             if (hasParameterBefore) {
                 builder.append("&");
             } else {
                 hasParameterBefore = true;
             }
             builder.append(key).append("=").append(value);
+            parameters.put(key, value);
             return this;
         }
 

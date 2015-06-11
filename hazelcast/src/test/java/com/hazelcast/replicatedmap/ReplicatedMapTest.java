@@ -37,7 +37,10 @@ import org.junit.runner.RunWith;
 
 import java.util.AbstractMap;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -589,32 +592,45 @@ public class ReplicatedMapTest extends ReplicatedMapBaseTest {
     @Test
     public void testKeySet_notIncludes_removedKeys() throws Exception {
         HazelcastInstance node = createHazelcastInstance();
-        ReplicatedMap<Integer, Integer> map = node.getReplicatedMap("default");
+        final ReplicatedMap<Integer, Integer> map = node.getReplicatedMap("default");
         map.put(1, Integer.MAX_VALUE);
         map.put(2, Integer.MIN_VALUE);
 
         map.remove(1);
 
-        Set<Integer> keys = map.keySet();
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run()
+                    throws Exception {
 
-        assertFalse(keys.contains(1));
+                Set<Integer> keys = new HashSet<Integer>(map.keySet());
+                assertFalse(keys.contains(1));
+            }
+        }, 20);
     }
 
     @Test
     public void testEntrySet_notIncludes_removedKeys() throws Exception {
         HazelcastInstance node = createHazelcastInstance();
-        ReplicatedMap<Integer, Integer> map = node.getReplicatedMap("default");
+        final ReplicatedMap<Integer, Integer> map = node.getReplicatedMap("default");
         map.put(1, Integer.MAX_VALUE);
         map.put(2, Integer.MIN_VALUE);
 
         map.remove(1);
 
-        Set<Entry<Integer, Integer>> entries = map.entrySet();
-        for (Entry<Integer, Integer> entry : entries) {
-            if (entry.getKey().equals(1)) {
-                fail(String.format("We do not expect an entry which's key equals to %d in entry set", 1));
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run()
+                    throws Exception {
+
+                Set<Entry<Integer, Integer>> entries = map.entrySet();
+                for (Entry<Integer, Integer> entry : entries) {
+                    if (entry.getKey().equals(1)) {
+                        fail(String.format("We do not expect an entry which's key equals to %d in entry set", 1));
+                    }
+                }
             }
-        }
+        }, 20);
     }
 
     private void testRemove(Config config) throws Exception {
@@ -881,8 +897,8 @@ public class ReplicatedMapTest extends ReplicatedMapBaseTest {
             }
         }, 60, EntryEventType.ADDED, 100, 0.75, map1, map2);
 
-        List<Integer> values1 = new ArrayList<Integer>(map1.values());
-        List<Integer> values2 = new ArrayList<Integer>(map2.values());
+        List<Integer> values1 = copyToList(map1.values());
+        List<Integer> values2 = copyToList(map2.values());
 
         int map1Contains = 0;
         int map2Contains = 0;
@@ -944,8 +960,8 @@ public class ReplicatedMapTest extends ReplicatedMapBaseTest {
             }
         }, 60, EntryEventType.ADDED, 100, 0.75, map1, map2);
 
-        List<Integer> keySet1 = new ArrayList<Integer>(map1.keySet());
-        List<Integer> keySet2 = new ArrayList<Integer>(map2.keySet());
+        List<Integer> keySet1 = copyToList(map1.keySet());
+        List<Integer> keySet2 = copyToList(map2.keySet());
 
         int map1Contains = 0;
         int map2Contains = 0;
@@ -1004,11 +1020,12 @@ public class ReplicatedMapTest extends ReplicatedMapBaseTest {
             }
         }, 60, EntryEventType.ADDED, 100, 0.75, map1, map2);
 
-        List<Entry<Integer, Integer>> entrySet1 = new ArrayList<Entry<Integer, Integer>>(map1.entrySet());
-        List<Entry<Integer, Integer>> entrySet2 = new ArrayList<Entry<Integer, Integer>>(map2.entrySet());
+        List<Entry<Integer, Integer>> entrySet1 = copyToList(map1.entrySet());
+        List<Entry<Integer, Integer>> entrySet2 = copyToList(map2.entrySet());
 
         int map2Contains = 0;
         for (Entry<Integer, Integer> entry : entrySet2) {
+            System.out.println("Entry: " + entry);
             Integer value = findValue(entry.getKey(), testValues);
             if (value.equals(entry.getValue())) {
                 map2Contains++;
@@ -1190,6 +1207,22 @@ public class ReplicatedMapTest extends ReplicatedMapBaseTest {
         map.put(1, Integer.MAX_VALUE);
         map.remove(1);
         assertTrue(map.size() == 0);
+    }
+
+    /**
+     * This method works around a bug in IBM's Java 6 J9 JVM where ArrayList's copy constructor
+     * is somehow broken and either includes nulls as values or copies not all elements.
+     * This is known to happen with a CHM (which is inside the ReplicatedMap implementation)<br>
+     * http://www-01.ibm.com/support/docview.wss?uid=swg1IV45453
+     * http://www-01.ibm.com/support/docview.wss?uid=swg1IV67555
+     */
+    private <V> List<V> copyToList(Collection<V> collection) {
+        List<V> values = new ArrayList<V>();
+        Iterator<V> iterator = collection.iterator();
+        while (iterator.hasNext())  {
+            values.add(iterator.next());
+        }
+        return values;
     }
 
 }

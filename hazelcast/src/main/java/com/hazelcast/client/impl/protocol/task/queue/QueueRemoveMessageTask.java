@@ -17,8 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.queue;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.QueueRemoveParameters;
+import com.hazelcast.client.impl.protocol.codec.QueueRemoveCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.collection.impl.queue.operations.RemoveOperation;
@@ -32,11 +31,10 @@ import java.security.Permission;
 
 /**
  * Client Protocol Task for handling messages with type id:
- * {@link com.hazelcast.client.impl.protocol.parameters.QueueMessageType#QUEUE_REMOVE}
- *
+ * {@link com.hazelcast.client.impl.protocol.codec.QueueMessageType#QUEUE_REMOVE}
  */
 public class QueueRemoveMessageTask
-        extends AbstractPartitionMessageTask<QueueRemoveParameters> {
+        extends AbstractPartitionMessageTask<QueueRemoveCodec.RequestParameters> {
 
     public QueueRemoveMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -48,14 +46,14 @@ public class QueueRemoveMessageTask
     }
 
     @Override
-    protected QueueRemoveParameters decodeClientMessage(ClientMessage clientMessage) {
-        return QueueRemoveParameters.decode(clientMessage);
+    protected QueueRemoveCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return QueueRemoveCodec.decodeRequest(clientMessage);
     }
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
         final boolean result = response != null && ((Boolean) response);
-        return BooleanResultParameters.encode(result);
+        return QueueRemoveCodec.encodeResponse(result);
     }
 
     @Override

@@ -78,6 +78,13 @@
             </includes>
         </fileSet>
         <fileSet>
+            <directory>hazelcast-client-new/target</directory>
+            <outputDirectory>/lib/</outputDirectory>
+            <includes>
+                <include>hazelcast-client-new-${project.version}.jar</include>
+            </includes>
+        </fileSet>
+        <fileSet>
             <directory>hazelcast/target/</directory>
             <outputDirectory>/lib/</outputDirectory>
             <includes>

@@ -208,10 +208,10 @@ public class BasicMapTest extends HazelcastTestSupport {
         }, true);
 
         map.put("key", value1, 1, TimeUnit.SECONDS);
-        assertTrue(latch1.await(10, TimeUnit.SECONDS));
+        assertOpenEventually(latch1);
 
         map.put("key", value2, 1, TimeUnit.SECONDS);
-        assertTrue(latch2.await(10, TimeUnit.SECONDS));
+        assertOpenEventually(latch2);
 
         assertEquals(value1, newList.get(0));
         assertEquals(value2, newList.get(1));
@@ -678,26 +678,34 @@ public class BasicMapTest extends HazelcastTestSupport {
         map.lock(key1);
         final AtomicInteger counter = new AtomicInteger(6);
         final CountDownLatch latch = new CountDownLatch(1);
+        final CountDownLatch waitTryPutFailure = new CountDownLatch(1);
         Thread thread = new Thread(new Runnable() {
             public void run() {
                 try {
-                    if (map.tryPut(key1, "value1", 100, TimeUnit.MILLISECONDS) == false)
+                    if (map.tryPut(key1, "value1", 100, TimeUnit.MILLISECONDS) == false) {
                         counter.decrementAndGet();
+                        waitTryPutFailure.countDown();
+                    }
 
-                    if (map.get(key1) == null)
+                    if (map.get(key1) == null) {
                         counter.decrementAndGet();
+                    }
 
-                    if (map.tryPut(key2, "value", 100, TimeUnit.MILLISECONDS))
+                    if (map.tryPut(key2, "value", 100, TimeUnit.MILLISECONDS)) {
                         counter.decrementAndGet();
+                    }
 
-                    if (map.get(key2).equals("value"))
+                    if (map.get(key2).equals("value")) {
                         counter.decrementAndGet();
+                    }
 
-                    if (map.tryPut(key1, "value1", 5, TimeUnit.SECONDS))
+                    if (map.tryPut(key1, "value1", 5, TimeUnit.SECONDS)) {
                         counter.decrementAndGet();
+                    }
 
-                    if (map.get(key1).equals("value1"))
+                    if (map.get(key1).equals("value1")) {
                         counter.decrementAndGet();
+                    }
 
                     latch.countDown();
                 } catch (Exception e) {
@@ -706,12 +714,16 @@ public class BasicMapTest extends HazelcastTestSupport {
                 }
             }
         });
+
         thread.start();
-        Thread.sleep(1000);
+
+        assertOpenEventually(waitTryPutFailure);
+
         map.unlock("key1");
-        latch.await(10, TimeUnit.SECONDS);
+
+        assertOpenEventually(latch);
         assertEquals(0, counter.get());
-        thread.join(10000);
+        assertJoinable(thread);
     }
 
     @Test

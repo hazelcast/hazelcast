@@ -61,11 +61,13 @@ Note that this section only describes the JCache provided standard properties. F
 - `cache-loader-factory#class-name`: The fully qualified class name of the `javax.cache.configuration.Factory` implementation providing a `javax.cache.integration.CacheLoader` instance to the cache.
 - `cache-writer-factory#class-name`: The fully qualified class name of the `javax.cache.configuration.Factory` implementation providing a `javax.cache.integration.CacheWriter` instance to the cache.
 - `expiry-policy-factory#-class-name`: The fully qualified class name of the `javax.cache.configuration.Factory` implementation providing a `javax.cache.expiry.ExpiryPolicy` instance to the cache.
-- `cache-entry-listener`: A set of attributes and elements, explained below, to describe a `javax.cache.event.CacheEntryListener`.
+- `cache-entry-listener`: A set of attributes and elements, explained below, to describe a `javax.cache.event.
+CacheEntryListener`.
   - `cache-entry-listener#old-value-required`: If set to true, previously assigned values for the affected keys will be sent to the `javax.cache.event.CacheEntryListener` implementation. Setting this attribute to true creates additional traffic, defaults to false.
   - `cache-entry-listener#synchronous`: If set to true, the `javax.cache.event.CacheEntryListener` implementation will be called in a synchronous manner, defaults to false.
   - `cache-entry-listener/entry-listener-factory#class-name`: The fully qualified class name of the `javax.cache.configuration.Factory` implementation providing a `javax.cache.event.CacheEntryListener` instance.
-  - `cache-entry-listener/entry-event-filter-factory#class-name`: The fully qualified class name of the `javax.cache.configuration.Factory` implementation providing a `javax.cache.event.CacheEntryEventFilter` instance.
+  - `cache-entry-listener/entry-event-filter-factory#class-name`: The fully qualified class name of the `javax.cache.configuration.Factory` implementation providing a `javax.cache.event.
+CacheEntryEventFilter` instance.
 
 <br></br>
 ![image](images/NoteSmall.jpg) ***NOTE:*** *The JMX MBeans provided by Hazelcast JCache show statistics of the local node only.
@@ -82,7 +84,8 @@ only the JCache standard configuration,
 - or instantiate `com.hazelcast.config.CacheConfig` for a deeper Hazelcast integration.
 
 `com.hazelcast.config.CacheConfig` offers additional options that are specific to Hazelcast like asynchronous and synchronous backup counts.
-Both classes share the same supertype interface `javax.cache.configuration.CompleteConfiguration` which is part of the JCache
+Both classes share the same supertype interface `javax.cache.configuration.
+CompleteConfiguration` which is part of the JCache
 standard.
 
 <br></br>

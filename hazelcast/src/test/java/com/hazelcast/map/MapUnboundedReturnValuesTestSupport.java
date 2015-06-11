@@ -13,7 +13,7 @@ import com.hazelcast.query.TruePredicate;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.transaction.TransactionContext;
-import com.hazelcast.util.EmptyStatement;
+import com.hazelcast.util.ExceptionUtil;
 
 import java.util.Set;
 
@@ -208,6 +208,13 @@ abstract class MapUnboundedReturnValuesTestSupport extends HazelcastTestSupport 
         assertEquals("Expected map size of map to match limit " + limit, limit, map.size());
     }
 
+    private void checkException(QueryResultSizeExceededException e) {
+        String exception = ExceptionUtil.toString(e);
+        if (exception.contains("QueryPartitionOperation")) {
+            fail("QueryResultSizeExceededException was thrown by QueryPartitionOperation:\n" + exception);
+        }
+    }
+
     private void failExpectedException(String methodName) {
         fail(format("Expected QueryResultSizeExceededException while calling %s with limit %d and upperLimit %d",
                 methodName, configLimit, upperLimit));
@@ -250,7 +257,7 @@ abstract class MapUnboundedReturnValuesTestSupport extends HazelcastTestSupport 
             fail(format("Limit should have exceeded, but ran into upperLimit of %d with IMap.keySet() size of %d",
                     upperLimit, keySetSize));
         } catch (QueryResultSizeExceededException e) {
-            EmptyStatement.ignore(e);
+            checkException(e);
         }
         logger.info(format("Limit of %d exceeded at %d (%.2f)", configLimit, index, (index * 100f / configLimit)));
 
@@ -275,42 +282,42 @@ abstract class MapUnboundedReturnValuesTestSupport extends HazelcastTestSupport 
             map.values(TruePredicate.INSTANCE);
             failExpectedException("IMap.values(predicate)");
         } catch (QueryResultSizeExceededException e) {
-            EmptyStatement.ignore(e);
+            checkException(e);
         }
 
         try {
             map.keySet(TruePredicate.INSTANCE);
             failExpectedException("IMap.keySet(predicate)");
         } catch (QueryResultSizeExceededException e) {
-            EmptyStatement.ignore(e);
+            checkException(e);
         }
 
         try {
             map.entrySet(TruePredicate.INSTANCE);
             failExpectedException("IMap.entrySet(predicate)");
         } catch (QueryResultSizeExceededException e) {
-            EmptyStatement.ignore(e);
+            checkException(e);
         }
 
         try {
             map.values();
             failExpectedException("IMap.values()");
         } catch (QueryResultSizeExceededException e) {
-            EmptyStatement.ignore(e);
+            checkException(e);
         }
 
         try {
             map.keySet();
             failExpectedException("IMap.keySet()");
         } catch (QueryResultSizeExceededException e) {
-            EmptyStatement.ignore(e);
+            checkException(e);
         }
 
         try {
             map.entrySet();
             failExpectedException("IMap.entrySet()");
         } catch (QueryResultSizeExceededException e) {
-            EmptyStatement.ignore(e);
+            checkException(e);
         }
     }
 
@@ -326,14 +333,14 @@ abstract class MapUnboundedReturnValuesTestSupport extends HazelcastTestSupport 
             map.localKeySet();
             failExpectedException("IMap.localKeySet()");
         } catch (QueryResultSizeExceededException e) {
-            EmptyStatement.ignore(e);
+            checkException(e);
         }
 
         try {
             map.localKeySet(TruePredicate.INSTANCE);
             failExpectedException("IMap.localKeySet(predicate)");
         } catch (QueryResultSizeExceededException e) {
-            EmptyStatement.ignore(e);
+            checkException(e);
         }
     }
 
@@ -353,14 +360,14 @@ abstract class MapUnboundedReturnValuesTestSupport extends HazelcastTestSupport 
             txnMap.values(TruePredicate.INSTANCE);
             failExpectedException("TransactionalMap.values(predicate)");
         } catch (QueryResultSizeExceededException e) {
-            EmptyStatement.ignore(e);
+            checkException(e);
         }
 
         try {
             txnMap.keySet(TruePredicate.INSTANCE);
             failExpectedException("TransactionalMap.keySet(predicate)");
         } catch (QueryResultSizeExceededException e) {
-            EmptyStatement.ignore(e);
+            checkException(e);
         }
 
         transactionContext.rollbackTransaction();

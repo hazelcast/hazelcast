@@ -45,7 +45,7 @@ public class Activator
         // Try to start javax.scripting - JSR 223
         activateJavaxScripting(context);
 
-        if (System.getProperty(HAZELCAST_OSGI_START) != null) {
+        if (Boolean.getBoolean(HAZELCAST_OSGI_START)) {
             hazelcastInstance = Hazelcast.newHazelcastInstance();
         }
     }
@@ -53,20 +53,19 @@ public class Activator
     @Override
     public void stop(BundleContext context)
             throws Exception {
-        if (System.getProperty("hazelcast.osgi.start") != null) {
+        if (hazelcastInstance != null) {
             hazelcastInstance.shutdown();
         }
     }
 
     private void activateJavaxScripting(BundleContext context)
             throws Exception {
-
         if (!isJavaxScriptingAvailable()) {
             LOGGER.warning("javax.scripting is not available, scripts from Management Center cannot be executed!");
             return;
         }
 
-        Class<?> clazz = context.getBundle().loadClass("com.hazelcast.osgi.ScriptEngineActivator");
+        Class<?> clazz = context.getBundle().loadClass("com.hazelcast.internal.osgi.ScriptEngineActivator");
         Method register = clazz.getDeclaredMethod("registerOsgiScriptEngineManager", BundleContext.class);
         register.invoke(clazz, context);
     }

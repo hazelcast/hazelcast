@@ -21,6 +21,7 @@ import com.hazelcast.logging.LoggingService;
 import com.hazelcast.mapreduce.JobTracker;
 import com.hazelcast.quorum.QuorumService;
 import com.hazelcast.ringbuffer.Ringbuffer;
+import com.hazelcast.transaction.HazelcastXAResource;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionOptions;
@@ -152,6 +153,14 @@ public interface HazelcastInstance {
      * @return distributed RingBuffer instance with the specified name
      */
     <E> Ringbuffer<E> getRingbuffer(String name);
+
+    /**
+     * Returns the reliable ReliableTopic instance with the specified name.
+     *
+     * @param name name of the reliable ITopic
+     * @return the reliable ITopic
+     */
+    <E> ITopic<E> getReliableTopic(String name);
 
     /**
      * Returns the Cluster that this Hazelcast instance is part of.
@@ -390,6 +399,13 @@ public interface HazelcastInstance {
      * @return a ConcurrentMap that can be used to add user-context to the HazelcastInstance.
      */
     ConcurrentMap<String, Object> getUserContext();
+
+    /**
+     * Gets xaResource which will participate in XATransaction.
+     *
+     * @return the xaResource.
+     */
+    HazelcastXAResource getXAResource();
 
     /**
      * Shuts down this HazelcastInstance. For more information see {@link com.hazelcast.core.LifecycleService#shutdown()}.

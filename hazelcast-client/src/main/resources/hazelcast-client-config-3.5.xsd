@@ -253,7 +253,7 @@
     <xs:complexType name="predicate">
         <xs:simpleContent>
             <xs:extension base="xs:string">
-                <xs:attribute name="type">
+                <xs:attribute name="type" use="required">
                     <xs:simpleType>
                         <xs:restriction base="non-space-string">
                             <xs:enumeration value="class-name"/>

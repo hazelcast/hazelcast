@@ -8,21 +8,21 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestThread;
 import com.hazelcast.test.annotation.NightlyTest;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.ringbuffer.OverflowPolicy.FAIL;
-import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(NightlyTest.class)
 public class RingbufferAsyncAddWithBackoffStressTest extends HazelcastTestSupport {
-    private volatile boolean stop;
+    private final AtomicBoolean stop = new AtomicBoolean();
+
     private Ringbuffer<Long> ringbuffer;
 
     @Test
@@ -69,12 +69,13 @@ public class RingbufferAsyncAddWithBackoffStressTest extends HazelcastTestSuppor
         ConsumeThread consumer2 = new ConsumeThread(2);
         consumer2.start();
 
+        sleepSeconds(2);
+
         ProduceThread producer = new ProduceThread();
         producer.start();
 
-        SECONDS.sleep(5 * 60);
-        stop = true;
-        System.out.println("Waiting fo completion");
+        sleepAndStop(stop, 5 * 60);
+        System.out.println("Waiting for completion");
 
         producer.assertSucceedsEventually();
         consumer1.assertSucceedsEventually();
@@ -94,9 +95,14 @@ public class RingbufferAsyncAddWithBackoffStressTest extends HazelcastTestSuppor
         }
 
         @Override
+        public void onError(Throwable t) {
+            stop.set(true);
+        }
+
+        @Override
         public void doRun() throws Throwable {
             long lastMs = System.currentTimeMillis();
-            while (!stop) {
+            while (!stop.get()) {
                 long sleepMs = 100;
                 for (; ; ) {
                     long result = ringbuffer.addAsync(produced, FAIL).get();
@@ -131,9 +137,14 @@ public class RingbufferAsyncAddWithBackoffStressTest extends HazelcastTestSuppor
         }
 
         @Override
+        public void onError(Throwable t) {
+            stop.set(true);
+        }
+
+        @Override
         public void doRun() throws Throwable {
             long lastMs = System.currentTimeMillis();
-            seq = ringbuffer.headSequence() + 1;
+            seq = ringbuffer.headSequence();
 
             for (; ; ) {
                 Long item = ringbuffer.readOne(seq);

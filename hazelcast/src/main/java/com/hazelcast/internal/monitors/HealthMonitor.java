@@ -39,6 +39,7 @@ import static com.hazelcast.memory.MemoryStatsSupport.freePhysicalMemory;
 import static com.hazelcast.memory.MemoryStatsSupport.freeSwapSpace;
 import static com.hazelcast.memory.MemoryStatsSupport.totalPhysicalMemory;
 import static com.hazelcast.memory.MemoryStatsSupport.totalSwapSpace;
+import static com.hazelcast.util.OperatingSystemMXBeanSupport.getSystemLoadAverage;
 import static com.hazelcast.util.OperatingSystemMXBeanSupport.readLongAttribute;
 import static java.lang.String.format;
 
@@ -182,7 +183,7 @@ public class HealthMonitor extends Thread {
             memoryUsedOfTotalPercentage = PERCENTAGE_MULTIPLIER * memoryUsed / memoryTotal;
             memoryUsedOfMaxPercentage = PERCENTAGE_MULTIPLIER * memoryUsed / memoryMax;
             processCpuLoad = readLongAttribute("ProcessCpuLoad", -1L);
-            systemLoadAverage = readLongAttribute("SystemLoadAverage", -1L);
+            systemLoadAverage = getSystemLoadAverage();
             systemCpuLoad = readLongAttribute("SystemCpuLoad", -1L);
             threadCount = threadMxBean.getThreadCount();
             peakThreadCount = threadMxBean.getPeakThreadCount();
@@ -263,7 +264,7 @@ public class HealthMonitor extends Thread {
 
             sb.append("load.process=").append(format("%.2f", processCpuLoad)).append("%, ");
             sb.append("load.system=").append(format("%.2f", systemCpuLoad)).append("%, ");
-            sb.append("load.systemAverage=").append(format("%.2f", systemLoadAverage)).append("%, ");
+            sb.append("load.systemAverage=").append(systemLoadAverage >= 0 ? format("%.2f, ", systemLoadAverage) : "n/a, ");
             sb.append("thread.count=").append(threadCount).append(", ");
             sb.append("thread.peakCount=").append(peakThreadCount).append(", ");
             sb.append("cluster.timeDiff=").append(clusterTimeDiff).append(", ");

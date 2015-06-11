@@ -17,7 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.map;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.MapRemoveAsyncParameters;
+import com.hazelcast.client.impl.protocol.codec.MapRemoveAsyncCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.map.impl.MapContainer;
@@ -27,9 +27,11 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.Operation;
+
 import java.security.Permission;
 
-public class MapRemoveAsyncMessageTask extends AbstractPartitionMessageTask<MapRemoveAsyncParameters> {
+public class MapRemoveAsyncMessageTask
+        extends AbstractPartitionMessageTask<MapRemoveAsyncCodec.RequestParameters> {
 
     protected transient long startTime;
 
@@ -61,8 +63,13 @@ public class MapRemoveAsyncMessageTask extends AbstractPartitionMessageTask<MapR
     }
 
     @Override
-    protected MapRemoveAsyncParameters decodeClientMessage(ClientMessage clientMessage) {
-        return MapRemoveAsyncParameters.decode(clientMessage);
+    protected MapRemoveAsyncCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return MapRemoveAsyncCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return MapRemoveAsyncCodec.encodeResponse(serializationService.toData(response));
     }
 
     @Override

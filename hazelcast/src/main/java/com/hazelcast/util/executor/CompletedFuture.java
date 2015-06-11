@@ -87,10 +87,15 @@ public final class CompletedFuture<V> implements ICompletableFuture<V> {
         executor.execute(new Runnable() {
             @Override
             public void run() {
-                if (value instanceof Throwable) {
-                    callback.onFailure((Throwable) value);
+                Object object = value;
+                if (object instanceof Data) {
+                    object = serializationService.toObject(object);
+                }
+
+                if (object instanceof Throwable) {
+                    callback.onFailure((Throwable) object);
                 } else {
-                    callback.onResponse((V) value);
+                    callback.onResponse((V) object);
                 }
             }
         });

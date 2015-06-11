@@ -18,7 +18,6 @@ package com.hazelcast.client.impl.client;
 
 import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.core.ExecutionCallback;
-import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.Operation;
 
@@ -26,8 +25,6 @@ import com.hazelcast.spi.Operation;
  * Base class for partition based client request.
  */
 public abstract class PartitionClientRequest extends ClientRequest implements ExecutionCallback {
-
-    private static final int TRY_COUNT = 100;
 
     /**
      * Called on node side, before starting any operation.
@@ -55,11 +52,10 @@ public abstract class PartitionClientRequest extends ClientRequest implements Ex
         op.setCallerUuid(endpoint.getUuid());
         InvocationBuilder builder = operationService.createInvocationBuilder(getServiceName(), op, getPartition())
                 .setReplicaIndex(getReplicaIndex())
-                .setTryCount(TRY_COUNT)
+                .setExecutionCallback(this)
                 .setResultDeserialized(false);
 
-        ICompletableFuture future = builder.invoke();
-        future.andThen(this);
+        builder.invoke();
     }
 
     protected abstract Operation prepareOperation();

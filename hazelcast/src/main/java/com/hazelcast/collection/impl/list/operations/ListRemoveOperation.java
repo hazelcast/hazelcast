@@ -51,9 +51,9 @@ public class ListRemoveOperation extends CollectionBackupAwareOperation {
         return new CollectionRemoveBackupOperation(name, itemId);
     }
 
-     @Override
+    @Override
     public void beforeRun() throws Exception {
-        publishEvent(ItemEventType.ADDED, (Data) response);
+        publishEvent(ItemEventType.REMOVED, (Data) response);
     }
 
     @Override

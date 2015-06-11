@@ -49,6 +49,7 @@
 
     <!-- Exclude implementation packages from JavaDoc on public methods checkstyle enforcement -->
     <suppress checks="JavadocMethod" files="[\\/]impl[\\/]"/>
+    <suppress checks="JavadocPackage" files="[\\/]impl[\\/]"/>
 
     <!-- Cluster -->
     <suppress checks="JavadocMethod" files="com.hazelcast.cluster[\\/]"/>
@@ -88,9 +89,8 @@
     <suppress checks="NPathComplexity|CyclomaticComplexity" files="com.hazelcast.config.AbstractCacheConfig"/>
     <suppress checks="MethodCount|ParameterNumber|ClassFanOutComplexity|ClassDataAbstractionCoupling"
               files="com.hazelcast.cache.impl.AbstractCacheRecordStore"/>
-    <suppress checks="MethodCount|ParameterNumber" files="com.hazelcast.cache.impl.AbstractCacheService"/>
+    <suppress checks="MethodCount" files="com.hazelcast.cache.impl.AbstractCacheService"/>
     <suppress checks="MethodCount" files="com.hazelcast.cache.impl.nearcache.impl.store.AbstractNearCacheRecordStore"/>
-    <suppress checks="ParameterNumber" files="com.hazelcast.cache.impl.ICacheService"/>
     <suppress checks="NPathComplexity"
               files="com.hazelcast.cache.impl.eviction.impl.evaluator.AbstractEvictionPolicyEvaluator"/>
     <suppress checks="MethodCount" files="com.hazelcast.cache.impl.AbstractHazelcastCacheManager"/>
@@ -125,7 +125,7 @@
     <suppress checks="CyclomaticComplexity" files="com.hazelcast.config.XmlConfigBuilder"/>
     <suppress checks="ClassFanOutComplexity" files="com.hazelcast.config.XmlConfigBuilder"/>
     <suppress checks="ClassDataAbstractionCoupling" files="com.hazelcast.config.XmlConfigBuilder"/>
-
+    <suppress checks="MethodLength" files="com.hazelcast.config.XmlConfigBuilder"/>
 
     <!-- Exclude implementation packages from some checkstyle enforcement -->
     <suppress checks="JavadocMethod" files="com.hazelcast.concurrent[\\/]"/>
@@ -219,6 +219,10 @@
     <!--Parameters class are gonna be auto generated-->
     <suppress checks="" files="com.hazelcast.client.impl.protocol.map.*Parameters"/>
     <suppress checks="" files="com.hazelcast.client.impl.protocol.*Parameters"/>
+    <suppress checks="" files="com.hazelcast.client.impl.protocol.*Codec"/>
+    <suppress checks="" files="com.hazelcast.client.impl.protocol.template.*Template*"/>
+    <suppress checks="CyclomaticComplexity" files="com.hazelcast.client.protocol.generator.CodecModel"/>
+    <suppress checks="" files="com.hazelcast.client.impl.protocol.*Const"/>
     <suppress checks="MethodCount" files="com.hazelcast.client.impl.protocol.parameters.MapTemplate"/>
     <suppress checks="MethodCount" files="com.hazelcast.client.impl.protocol.parameters.CacheTemplate"/>
     <suppress checks="ParameterNumber" files="com.hazelcast.client.impl.protocol.parameters.MapReduceTemplate"/>
@@ -233,18 +237,23 @@
 
     <suppress checks="ClassFanOutComplexity" files="com.hazelcast.client.cache.impl.AbstractClientInternalCacheProxy"/>
 
-
     <!-- Monitor -->
     <suppress checks="JavadocMethod" files="com.hazelcast.monitor[\\/]"/>
     <suppress checks="JavadocType" files="com.hazelcast.monitor[\\/]"/>
-    <suppress checks="JavadocMethod" files="com.hazelcast.monitor[\\/]"/>
     <suppress checks="JavadocVariable" files="com.hazelcast.monitor[\\/]"/>
-    <suppress checks="NPathComplexity" files="com.hazelcast.monitor.impl.MemberStateImpl"/>
-    <suppress checks="CyclomaticComplexity" files="com.hazelcast.monitor.impl.MemberStateImpl"/>
-    <suppress checks="MethodCount" files="com.hazelcast.monitor.impl.LocalMapStatsImpl"/>
     <suppress checks="CyclomaticComplexity" files="com.hazelcast.monitor.TimedMemberState"/>
     <suppress checks="NPathComplexity" files="com.hazelcast.monitor.TimedMemberState"/>
-
+    <suppress checks="NPathComplexity" files="com.hazelcast.monitor.impl.LocalExecutorStatsImpl"/>
+    <suppress checks="CyclomaticComplexity" files="com.hazelcast.monitor.impl.LocalCacheStatsImpl"/>
+    <suppress checks="NPathComplexity" files="com.hazelcast.monitor.impl.LocalCacheStatsImpl"/>
+    <suppress checks="CyclomaticComplexity" files="com.hazelcast.monitor.impl.MemberStateImpl"/>
+    <suppress checks="NPathComplexity" files="com.hazelcast.monitor.impl.MemberStateImpl"/>
+    <suppress checks="CyclomaticComplexity" files="com.hazelcast.monitor.impl.LocalMapStatsImpl"/>
+    <suppress checks="NPathComplexity" files="com.hazelcast.monitor.impl.LocalMapStatsImpl"/>
+    <suppress checks="MethodCount" files="com.hazelcast.monitor.impl.LocalMapStatsImpl"/>
+    <suppress checks="MethodLength" files="com.hazelcast.monitor.impl.LocalMapStatsImpl"/>
+    <suppress checks="CyclomaticComplexity" files="com.hazelcast.monitor.impl.LocalQueueStatsImpl"/>
+    <suppress checks="NPathComplexity" files="com.hazelcast.monitor.impl.LocalQueueStatsImpl"/>
 
     <!-- jca -->
     <suppress checks="ClassFanOutComplexityCheck" files="HazelcastConnectionImpl.java"/>
@@ -427,7 +436,8 @@
     <suppress checks="JavadocVariable" files="com.hazelcast.multimap[\\/]"/>
     <suppress checks="ReturnCount" files="com.hazelcast.multimap.impl.operations.MultiMapOperationFactory"/>
     <!-- todo: needs to be fixed -->
-    <suppress checks="CyclomaticComplexity" files="com.hazelcast.multimap.impl.MultiMapService"/>
+    <suppress checks="CyclomaticComplexity|MethodCount|ClassFanOutComplexity"
+              files="com.hazelcast.multimap.impl.MultiMapService"/>
     <suppress checks="MethodCount" files="com.hazelcast.multimap.impl.MultiMapService"/>
 
     <!-- Util -->
@@ -447,6 +457,8 @@
 
     <suppress checks="" files="com.hazelcast.util.DebugUtil"/>
 
+    <suppress checks="IllegalImport" files="com.hazelcast.util.counters.SwCounter"/>
+    <suppress checks="InnerAssignment" files="com.hazelcast.util.counters.SwCounter"/>
 
     <suppress checks="" files="com.hazelcast.util.HashUtil"/>
     <suppress checks="MagicNumber" files="com.hazelcast.util.QuickMath"/>

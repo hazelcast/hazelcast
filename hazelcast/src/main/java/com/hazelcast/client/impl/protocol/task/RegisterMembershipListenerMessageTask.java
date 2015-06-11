@@ -18,11 +18,7 @@ package com.hazelcast.client.impl.protocol.task;
 
 import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.AddListenerResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.MemberAttributeChangeResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.MemberListResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.MemberResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.RegisterMembershipListenerParameters;
+import com.hazelcast.client.impl.protocol.codec.ClientMembershipListenerCodec;
 import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.cluster.MemberAttributeOperationType;
 import com.hazelcast.cluster.client.MemberAttributeChange;
@@ -39,26 +35,30 @@ import java.security.Permission;
 import java.util.Collection;
 
 public class RegisterMembershipListenerMessageTask
-        extends AbstractCallableMessageTask<RegisterMembershipListenerParameters> {
+        extends AbstractCallableMessageTask<ClientMembershipListenerCodec.RequestParameters> {
 
     public RegisterMembershipListenerMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected ClientMessage call() {
+    protected Object call() {
         String serviceName = ClusterServiceImpl.SERVICE_NAME;
         ClusterServiceImpl service = getService(serviceName);
         ClientEndpoint endpoint = getEndpoint();
         String registrationId = service.addMembershipListener(new MembershipListenerImpl(endpoint));
         endpoint.setListenerRegistration(serviceName, serviceName, registrationId);
-        ClientMessage clientMessage = AddListenerResultParameters.encode(registrationId);
-        return clientMessage;
+        return registrationId;
     }
 
     @Override
-    protected RegisterMembershipListenerParameters decodeClientMessage(ClientMessage clientMessage) {
-        return RegisterMembershipListenerParameters.decode(clientMessage);
+    protected ClientMembershipListenerCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return ClientMembershipListenerCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return ClientMembershipListenerCodec.encodeResponse((String) response);
     }
 
     @Override
@@ -96,8 +96,8 @@ public class RegisterMembershipListenerMessageTask
         @Override
         public void init(InitialMembershipEvent membershipEvent) {
             ClusterService service = getService(ClusterServiceImpl.SERVICE_NAME);
-            Collection<MemberImpl> memberList = service.getMemberList();
-            ClientMessage eventMessage = MemberListResultParameters.encode(memberList);
+            Collection memberList = service.getMemberList();
+            ClientMessage eventMessage = ClientMembershipListenerCodec.encodeMemberListEvent(memberList);
             sendClientMessage(endpoint.getUuid(), eventMessage);
         }
 
@@ -109,7 +109,7 @@ public class RegisterMembershipListenerMessageTask
 
             MemberImpl member = (MemberImpl) membershipEvent.getMember();
 
-            ClientMessage eventMessage = MemberResultParameters.encode(member, MemberResultParameters.MEMBER_ADDED);
+            ClientMessage eventMessage = ClientMembershipListenerCodec.encodeMemberEvent(member, MembershipEvent.MEMBER_ADDED);
             sendClientMessage(endpoint.getUuid(), eventMessage);
         }
 
@@ -120,7 +120,7 @@ public class RegisterMembershipListenerMessageTask
             }
 
             MemberImpl member = (MemberImpl) membershipEvent.getMember();
-            ClientMessage eventMessage = MemberResultParameters.encode(member, MemberResultParameters.MEMBER_REMOVED);
+            ClientMessage eventMessage = ClientMembershipListenerCodec.encodeMemberEvent(member, MembershipEvent.MEMBER_REMOVED);
             sendClientMessage(endpoint.getUuid(), eventMessage);
         }
 
@@ -136,7 +136,7 @@ public class RegisterMembershipListenerMessageTask
             String key = memberAttributeEvent.getKey();
             Object value = memberAttributeEvent.getValue();
             MemberAttributeChange memberAttributeChange = new MemberAttributeChange(uuid, op, key, value);
-            ClientMessage eventMessage = MemberAttributeChangeResultParameters.encode(member, memberAttributeChange);
+            ClientMessage eventMessage = ClientMembershipListenerCodec.encodeMemberAttributeChangeEvent(memberAttributeChange);
             sendClientMessage(endpoint.getUuid(), eventMessage);
         }
     }

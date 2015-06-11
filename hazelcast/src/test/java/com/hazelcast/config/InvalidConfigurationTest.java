@@ -252,13 +252,38 @@ public class InvalidConfigurationTest {
     }
 
     @Test
-    public void WhenValid_CacheInMemoryFormat() {
+    public void testWhenValid_CacheInMemoryFormat() {
         buildConfig("cache-in-memory-format", "OBJECT");
     }
 
     @Test(expected = InvalidConfigurationException.class)
-    public void WhenInvalid_CacheInMemoryFormat() {
+    public void testWhenInvalid_CacheInMemoryFormat() {
         buildConfig("cache-in-memory-format", "binaryyy");
+    }
+
+    @Test(expected = InvalidConfigurationException.class)
+    public void testWhenInvalid_EmptyDurationTime() {
+        buildConfig("cache-expiry-policy-duration-amount", "");
+    }
+
+    @Test(expected = InvalidConfigurationException.class)
+    public void testWhenInvalid_InvalidDurationTime() {
+        buildConfig("cache-expiry-policy-duration-amount", "asd");
+    }
+
+    @Test(expected = InvalidConfigurationException.class)
+    public void testWhenInvalid_NegativeDurationTime() {
+        buildConfig("cache-expiry-policy-duration-amount", "-1");
+    }
+
+    @Test(expected = InvalidConfigurationException.class)
+    public void testWhenInvalid_EmptyTimeUnit() {
+        buildConfig("cache-expiry-policy-time-unit", "");
+    }
+
+    @Test(expected = InvalidConfigurationException.class)
+    public void testWhenInvalid_InvalidTimeUnit() {
+        buildConfig("cache-expiry-policy-time-unit", "asd");
     }
 
     @Test(expected = InvalidConfigurationException.class)
@@ -319,6 +344,15 @@ public class InvalidConfigurationTest {
                             " eviction-policy=\"${cache-eviction-policy}\"/>\n" +
                     "</cache>\n" +
 
+                     "<cache name=\"cacheWithTimedExpiryPolicyFactory\">\n" +
+                        "<expiry-policy-factory>\n" +
+                            "<timed-expiry-policy-factory" +
+                                " expiry-policy-type=\"${cache-expiry-policy-type}\"" +
+                                " duration-amount=\"${cache-expiry-policy-duration-amount}\"" +
+                                " time-unit=\"${cache-expiry-policy-time-unit}\"/>" +
+                        "</expiry-policy-factory>\n" +
+                     "</cache>\n" +
+
                     "<multimap name=\"default\">\n" +
                         "<backup-count>${multimap-backup-count}</backup-count>\n" +
                         "<value-collection-type>${multimap-value-collection-type}</value-collection-type>\n" +
@@ -367,6 +401,9 @@ public class InvalidConfigurationTest {
         properties.setProperty("cache-eviction-size", "100");
         properties.setProperty("cache-eviction-max-size-policy", "ENTRY_COUNT");
         properties.setProperty("cache-eviction-policy", "LRU");
+        properties.setProperty("cache-expiry-policy-type", "CREATED");
+        properties.setProperty("cache-expiry-policy-duration-amount", "1");
+        properties.setProperty("cache-expiry-policy-time-unit", "DAYS");
 
         properties.setProperty("multimap-backup-count", "0");
         properties.setProperty("multimap-value-collection-type", "SET");

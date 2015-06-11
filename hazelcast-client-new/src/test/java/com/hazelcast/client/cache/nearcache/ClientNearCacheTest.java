@@ -19,14 +19,12 @@ package com.hazelcast.client.cache.nearcache;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-@Ignore
 public class ClientNearCacheTest extends ClientNearCacheTestSupport {
 
     @Test

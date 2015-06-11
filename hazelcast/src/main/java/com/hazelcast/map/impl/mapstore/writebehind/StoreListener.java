@@ -25,7 +25,7 @@ import java.util.EventListener;
  *
  * @param <E> Type of entry
  */
-public interface StoreListener<E> extends EventListener {
+interface StoreListener<E> extends EventListener {
 
     void beforeStore(StoreEvent<E> storeEvent);
 

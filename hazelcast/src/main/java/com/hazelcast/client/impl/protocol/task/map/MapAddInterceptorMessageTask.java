@@ -17,8 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.map;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.AddListenerResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.MapAddInterceptorParameters;
+import com.hazelcast.client.impl.protocol.codec.MapAddInterceptorCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractMultiTargetMessageTask;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
@@ -37,7 +36,8 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
 
-public class MapAddInterceptorMessageTask extends AbstractMultiTargetMessageTask<MapAddInterceptorParameters> {
+public class MapAddInterceptorMessageTask
+        extends AbstractMultiTargetMessageTask<MapAddInterceptorCodec.RequestParameters> {
 
     private transient String id;
 
@@ -55,13 +55,13 @@ public class MapAddInterceptorMessageTask extends AbstractMultiTargetMessageTask
     }
 
     @Override
-    protected ClientMessage reduce(Map<Address, Object> map) throws Throwable {
+    protected Object reduce(Map<Address, Object> map) throws Throwable {
         for (Object result : map.values()) {
             if (result instanceof Throwable) {
                 throw (Throwable) result;
             }
         }
-        return AddListenerResultParameters.encode(id);
+        return id;
     }
 
 
@@ -76,8 +76,13 @@ public class MapAddInterceptorMessageTask extends AbstractMultiTargetMessageTask
     }
 
     @Override
-    protected MapAddInterceptorParameters decodeClientMessage(ClientMessage clientMessage) {
-        return MapAddInterceptorParameters.decode(clientMessage);
+    protected MapAddInterceptorCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return MapAddInterceptorCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return MapAddInterceptorCodec.encodeResponse((String) response);
     }
 
     @Override

@@ -30,9 +30,9 @@ import java.util.Collection;
 
 public class MemberInfoUpdateOperation extends AbstractClusterOperation implements JoinOperation {
 
-    private Collection<MemberInfo> memberInfos;
-    private long masterTime = Clock.currentTimeMillis();
-    private boolean sendResponse;
+    protected Collection<MemberInfo> memberInfos;
+    protected long masterTime = Clock.currentTimeMillis();
+    protected boolean sendResponse;
 
     public MemberInfoUpdateOperation() {
         memberInfos = new ArrayList<MemberInfo>();

@@ -16,22 +16,20 @@
 
 package com.hazelcast.client.impl.protocol.task;
 
-import com.hazelcast.client.impl.protocol.parameters.AuthenticationCustomCredentialsParameters;
+import com.hazelcast.client.impl.client.ClientPrincipal;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.codec.ClientAuthenticationCustomCodec;
 import com.hazelcast.instance.Node;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.security.SecurityContext;
 
-import javax.security.auth.login.LoginContext;
-import javax.security.auth.login.LoginException;
 import java.security.Permission;
-import java.util.logging.Level;
 
 /**
  * Custom Authentication with custom credential impl
  */
 public class AuthenticationCustomCredentialsMessageTask
-        extends AuthenticationBaseMessageTask<AuthenticationCustomCredentialsParameters> {
+        extends AuthenticationBaseMessageTask<ClientAuthenticationCustomCodec.RequestParameters> {
 
     public AuthenticationCustomCredentialsMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -43,8 +41,27 @@ public class AuthenticationCustomCredentialsMessageTask
     }
 
     @Override
-    protected AuthenticationCustomCredentialsParameters decodeClientMessage(ClientMessage clientMessage) {
-        return AuthenticationCustomCredentialsParameters.decode(clientMessage);
+    protected ClientAuthenticationCustomCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        ClientAuthenticationCustomCodec.RequestParameters parameters =
+                ClientAuthenticationCustomCodec.decodeRequest(clientMessage);
+        String uuid = parameters.uuid;
+        String ownerUuid = parameters.ownerUuid;
+        if (uuid != null && uuid.length() > 0) {
+            principal = new ClientPrincipal(uuid, ownerUuid);
+        }
+        credentials = serializationService.toObject(parameters.credentials);
+        return parameters;
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return (ClientMessage) response;
+    }
+
+
+    @Override
+    protected ClientMessage encodeAuth(Address thisAddress, String uuid, String ownerUuid) {
+        return ClientAuthenticationCustomCodec.encodeResponse(thisAddress, uuid, ownerUuid);
     }
 
     @Override
@@ -65,29 +82,6 @@ public class AuthenticationCustomCredentialsMessageTask
     @Override
     public Object[] getParameters() {
         return null;
-    }
-
-    protected boolean authenticate() {
-        Connection connection = endpoint.getConnection();
-        boolean authenticated = (clientEngine.getSecurityContext() != null) && authenticateWithCustomCredentials(
-                clientEngine.getSecurityContext());
-        logger.log((authenticated ? Level.INFO : Level.WARNING), "Received auth from " + connection + ", "
-                + (authenticated ? "successfully authenticated" : "authentication failed"));
-        return authenticated;
-    }
-
-    private boolean authenticateWithCustomCredentials(SecurityContext securityContext) {
-        Connection connection = endpoint.getConnection();
-        credentials.setEndpoint(connection.getInetAddress().getHostAddress());
-        try {
-            LoginContext lc = securityContext.createClientLoginContext(credentials);
-            lc.login();
-            endpoint.setLoginContext(lc);
-            return true;
-        } catch (LoginException e) {
-            logger.warning(e);
-            return false;
-        }
     }
 
     @Override

@@ -7,22 +7,22 @@ import com.hazelcast.client.impl.protocol.task.MessageTask;
 import com.hazelcast.client.impl.protocol.task.NoSuchMessageTask;
 
 
-public class MessageTaskFactoryImpl implements MessageTaskFactory {
+public class ${model.className} implements MessageTaskFactory {
 
     private final MessageTaskFactory[] tasks = new MessageTaskFactory[Short.MAX_VALUE];
 
     private final Node node;
 
-    public MessageTaskFactoryImpl(Node node) {
+    public  ${model.className} (Node node) {
         this.node = node;
         initFactories();
     }
 
     public void initFactories() {
-<#assign package_keys = model?keys>
+<#assign package_keys = model.map?keys>
 <#list package_keys as package_key>
 //region ----------  REGISTRATION FOR ${package_key}
-<#assign map = model[package_key]>
+<#assign map = model.map[package_key]>
 <#assign keys = map?keys>
 <#list keys as key>
         tasks[${key}.TYPE.id()] = new MessageTaskFactory() {
@@ -34,6 +34,11 @@ public class MessageTaskFactoryImpl implements MessageTaskFactory {
 //endregion
 </#list>
 
+    }
+
+    @edu.umd.cs.findbugs.annotations.SuppressWarnings({"MS_EXPOSE_REP", "EI_EXPOSE_REP"})
+    public MessageTaskFactory[] getTasks() {
+        return tasks;
     }
 
     @Override

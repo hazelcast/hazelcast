@@ -472,7 +472,7 @@ abstract class Invocation implements ResponseHandler, Runnable {
             return false;
         }
 
-        invocationFuture.set(newOperationTimeoutException(maxCallTimeout));
+        operationService.getIsStillRunningService().timeoutInvocationIfNotExecuting(this);
         return true;
     }
 

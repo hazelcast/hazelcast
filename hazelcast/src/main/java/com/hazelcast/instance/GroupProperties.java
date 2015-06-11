@@ -68,10 +68,10 @@ public class GroupProperties {
     public static final String PROP_IO_THREAD_COUNT = "hazelcast.io.thread.count";
 
     /**
-     * The interval in seconds between {@link com.hazelcast.nio.tcp.handlermigration.IOBalancer IOBalancer}
+     * The interval in seconds between {@link com.hazelcast.nio.tcp.iobalancer.IOBalancer IOBalancer}
      * executions. The shorter intervals will catch I/O Imbalance faster, but they will cause higher overhead.
      *
-     * Please see the documentation of {@link com.hazelcast.nio.tcp.handlermigration.IOBalancer IOBalancer} for a
+     * Please see the documentation of {@link com.hazelcast.nio.tcp.iobalancer.IOBalancer IOBalancer} for a
      * detailed explanation of the problem.
      *
      * Default value is 20 seconds. A negative value disables the balancer.
@@ -178,12 +178,26 @@ public class GroupProperties {
 
     /**
      * Defines a threshold above which a running operation in {@link com.hazelcast.spi.OperationService} is considered to be slow.
-     * These operations will log a warning and will be shown in the Management Center with detailed information, e.g. stack trace.
+     * These operations will log a warning and will be shown in the Management Center with detailed information, e.g. stacktrace.
      */
     public static final String PROP_SLOW_OPERATION_DETECTOR_THRESHOLD_MILLIS
             = "hazelcast.slow.operation.detector.threshold.millis";
+
+
     /**
-     * This value defines the retention time of slow operation log invocations.
+     * Defines a threshold above which a running invocation in {@link com.hazelcast.spi.OperationService} is considered
+     * to be slow. Any slow invocation will be logged.
+     *
+     * This is an experimental feature and we do not provide any backwards compatibility guarantees on it.
+     *
+     * The default value is -1 indicating there is no detection.
+     */
+    public static final String PROP_SLOW_INVOCATION_DETECTOR_THRESHOLD_MILLIS
+            = "hazelcast.slow.invocation.detector.threshold.millis";
+
+    /**
+     * This value defines the retention time of invocations in slow operation logs.
+     * <p/>
      * If an invocation is older than this value, it will be purged from the log to prevent unlimited memory usage.
      * When all invocations are purged from a log, the log itself will be deleted.
      * <p/>
@@ -191,6 +205,7 @@ public class GroupProperties {
      */
     public static final String PROP_SLOW_OPERATION_DETECTOR_LOG_RETENTION_SECONDS
             = "hazelcast.slow.operation.detector.log.retention.seconds";
+
     /**
      * Purge interval for slow operation logs.
      * <p/>
@@ -200,7 +215,7 @@ public class GroupProperties {
             = "hazelcast.slow.operation.detector.log.purge.interval.seconds";
 
     /**
-     * Defines if the stack traces of slow operations are logged in the log file. Stack traces will always be reported to the
+     * Defines if the stacktraces of slow operations are logged in the log file. Stacktraces will always be reported to the
      * Management Center, but by default they are not printed to keep the log size small.
      */
     public static final String PROP_SLOW_OPERATION_DETECTOR_STACK_TRACE_LOGGING_ENABLED
@@ -245,16 +260,37 @@ public class GroupProperties {
             = "hazelcast.enterprise.wanrep.batchfrequency.seconds";
 
     /**
+     * Defines cache invalidation event batch sending is enabled or not.
+     */
+    public static final String PROP_CACHE_INVALIDATION_MESSAGE_BATCH_ENABLED
+            = "hazelcast.cache.invalidation.batch.enabled";
+
+    /**
+     * Defines the maximum number of cache invalidation events to be drained and sent to the event listeners in a batch.
+     */
+    public static final String PROP_CACHE_INVALIDATION_MESSAGE_BATCH_SIZE
+            = "hazelcast.cache.invalidation.batch.size";
+
+    /**
+     * Defines cache invalidation event batch sending frequency in seconds.
+     * When event size does not reach to {@link #PROP_CACHE_INVALIDATION_MESSAGE_BATCH_SIZE} in the given time period
+     * (which is defined by {@link #PROP_CACHE_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS}),
+     * those events are gathered into a batch and sent to target.
+     */
+    public static final String PROP_CACHE_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS
+            = "hazelcast.cache.invalidation.batchfrequency.seconds";
+
+    /**
      * Defines timeout duration (in milliseconds) for a WAN replication event before retry.
      * If confirmation is not received in the period of timeout duration, event is resent to target cluster.
      * Only valid for Hazelcast Enterprise
      */
-    public static final String PROP_ENTERPRISE_WAN_REP_OP_TIMEOUT_MILLIS = "hazelcast.enterprise.wanrep.optimeout.millis";
+    public static final String PROP_ENTERPRISE_WAN_REP_OP_TIMEOUT_MILLIS
+            = "hazelcast.enterprise.wanrep.optimeout.millis";
 
     public static final String PROP_CLIENT_MAX_NO_HEARTBEAT_SECONDS = "hazelcast.client.max.no.heartbeat.seconds";
     public static final String PROP_MIGRATION_MIN_DELAY_ON_MEMBER_REMOVED_SECONDS
             = "hazelcast.migration.min.delay.on.member.removed.seconds";
-
 
     /**
      * Using back pressure, you can prevent an overload of pending asynchronous backups. With a map with a
@@ -514,6 +550,8 @@ public class GroupProperties {
     public final GroupProperty SLOW_OPERATION_DETECTOR_LOG_PURGE_INTERVAL_SECONDS;
     public final GroupProperty SLOW_OPERATION_DETECTOR_STACK_TRACE_LOGGING_ENABLED;
 
+    public final GroupProperty SLOW_INVOCATION_DETECTOR_THRESHOLD_MILLIS;
+
     public final GroupProperty ELASTIC_MEMORY_ENABLED;
 
     public final GroupProperty ELASTIC_MEMORY_TOTAL_SIZE;
@@ -542,6 +580,10 @@ public class GroupProperties {
     public final GroupProperty ENTERPRISE_WAN_REP_BATCH_SIZE;
     public final GroupProperty ENTERPRISE_WAN_REP_BATCH_FREQUENCY_SECONDS;
     public final GroupProperty ENTERPRISE_WAN_REP_OP_TIMEOUT_MILLIS;
+
+    public final GroupProperty CACHE_INVALIDATION_MESSAGE_BATCH_ENABLED;
+    public final GroupProperty CACHE_INVALIDATION_MESSAGE_BATCH_SIZE;
+    public final GroupProperty CACHE_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS;
 
     public final GroupProperty CLIENT_HEARTBEAT_TIMEOUT_SECONDS;
 
@@ -648,6 +690,8 @@ public class GroupProperties {
                 = new GroupProperty(config, PROP_SLOW_OPERATION_DETECTOR_LOG_PURGE_INTERVAL_SECONDS, "300");
         SLOW_OPERATION_DETECTOR_STACK_TRACE_LOGGING_ENABLED
                 = new GroupProperty(config, PROP_SLOW_OPERATION_DETECTOR_STACK_TRACE_LOGGING_ENABLED, "false");
+        SLOW_INVOCATION_DETECTOR_THRESHOLD_MILLIS
+                = new GroupProperty(config, PROP_SLOW_INVOCATION_DETECTOR_THRESHOLD_MILLIS, "-1");
 
         ELASTIC_MEMORY_ENABLED = new GroupProperty(config, PROP_ELASTIC_MEMORY_ENABLED, "false");
         ELASTIC_MEMORY_TOTAL_SIZE = new GroupProperty(config, PROP_ELASTIC_MEMORY_TOTAL_SIZE, "128M");
@@ -662,7 +706,14 @@ public class GroupProperties {
         ENTERPRISE_WAN_REP_BATCH_SIZE = new GroupProperty(config, PROP_ENTERPRISE_WAN_REP_BATCH_SIZE, "50");
         ENTERPRISE_WAN_REP_BATCH_FREQUENCY_SECONDS
                 = new GroupProperty(config, PROP_ENTERPRISE_WAN_REP_BATCH_FREQUENCY_SECONDS, "5");
-        ENTERPRISE_WAN_REP_OP_TIMEOUT_MILLIS = new GroupProperty(config, PROP_ENTERPRISE_WAN_REP_OP_TIMEOUT_MILLIS, "-1");
+        ENTERPRISE_WAN_REP_OP_TIMEOUT_MILLIS = new GroupProperty(config, PROP_ENTERPRISE_WAN_REP_OP_TIMEOUT_MILLIS, "60000");
+
+        CACHE_INVALIDATION_MESSAGE_BATCH_ENABLED
+                = new GroupProperty(config, PROP_CACHE_INVALIDATION_MESSAGE_BATCH_ENABLED, "true");
+        CACHE_INVALIDATION_MESSAGE_BATCH_SIZE
+                = new GroupProperty(config, PROP_CACHE_INVALIDATION_MESSAGE_BATCH_SIZE, "100");
+        CACHE_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS
+                = new GroupProperty(config, PROP_CACHE_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS, "10");
 
         CLIENT_HEARTBEAT_TIMEOUT_SECONDS = new GroupProperty(config, PROP_CLIENT_MAX_NO_HEARTBEAT_SECONDS, "300");
         MIGRATION_MIN_DELAY_ON_MEMBER_REMOVED_SECONDS

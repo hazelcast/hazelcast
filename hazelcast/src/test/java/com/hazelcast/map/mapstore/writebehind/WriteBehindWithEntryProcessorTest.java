@@ -5,28 +5,124 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapStore;
 import com.hazelcast.core.MapStoreAdapter;
 import com.hazelcast.map.AbstractEntryProcessor;
+import com.hazelcast.query.SampleObjects;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
-
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
 public class WriteBehindWithEntryProcessorTest extends HazelcastTestSupport {
+
+    @Test
+    public void testAllPartialUpdatesStored_whenInMemoryFormatIsObject() throws Exception {
+        CountDownLatch pauseStoreOp = new CountDownLatch(1);
+        JournalingMapStore mapStore = new JournalingMapStore(pauseStoreOp);
+        IMap map = TestMapUsingMapStoreBuilder.create()
+                .withMapStore(mapStore)
+                .withNodeFactory(createHazelcastInstanceFactory(1))
+                .withWriteDelaySeconds(1)
+                .withWriteCoalescing(false)
+                .withInMemoryFormat(InMemoryFormat.OBJECT)
+                .build();
+
+        Double[] salaries = {73D, 111D, -23D, 99D, 12D, 77D, 33D};
+        for (int i = 0; i < salaries.length; i++) {
+            updateSalary(map, 1, salaries[i]);
+        }
+
+        pauseStoreOp.countDown();
+
+        assertStoreOperationsCompleted(salaries.length, mapStore);
+        assertArrayEquals("Map store should contain all partial updates on the object",
+                salaries, getStoredSalaries(mapStore));
+    }
+
+    private Double[] getStoredSalaries(JournalingMapStore mapStore) {
+        List<Double> salaries = new ArrayList<Double>();
+        Iterator iterator = mapStore.iterator();
+        while (iterator.hasNext()) {
+            SampleObjects.Employee storedEmployee = (SampleObjects.Employee) iterator.next();
+            double salary = storedEmployee.getSalary();
+            salaries.add(salary);
+        }
+
+        return salaries.toArray(new Double[mapStore.queue.size()]);
+    }
+
+    private void assertStoreOperationsCompleted(final int size, final JournalingMapStore mapStore) {
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertEquals(size, mapStore.queue.size());
+            }
+        });
+    }
+
+    private void updateSalary(IMap map, int key, final double value) {
+        map.executeOnKey(key, new AbstractEntryProcessor() {
+
+            @Override
+            public Object process(Map.Entry entry) {
+                SampleObjects.Employee employee = (SampleObjects.Employee) entry.getValue();
+                if (employee == null) {
+                    employee = new SampleObjects.Employee();
+                }
+                employee.setSalary(value);
+
+                entry.setValue(employee);
+
+                return null;
+            }
+        });
+    }
+
+
+    private static class JournalingMapStore<K, V> extends MapStoreAdapter<K, V> {
+
+        private final Queue<V> queue = new ConcurrentLinkedQueue<V>();
+        private final CountDownLatch pauseStoreOp;
+
+        public JournalingMapStore(CountDownLatch pauseStoreOp) {
+            this.pauseStoreOp = pauseStoreOp;
+        }
+
+        @Override
+        public void store(K key, V value) {
+            pause();
+            queue.add(value);
+        }
+
+        private void pause() {
+            try {
+                pauseStoreOp.await();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+
+        public Iterator<V> iterator() {
+            return queue.iterator();
+        }
+    }
 
     @Test
     public void updates_on_same_key_when_in_memory_format_is_object() throws Exception {

@@ -3,7 +3,8 @@
 
 ### Sample Glassfish v3 Web Application Configuration
 
-1. Place the `hazelcast-`*version*`.jar` and `hazelcast-jca-`*version*`.jar` into the `GLASSFISH_HOME/glassfish/domains/domain1/lib/ext/` folder.
+1. Place the `hazelcast-`*version*`.jar` and `hazelcast-jca-`*version*`.jar` into the `GLASSFISH_HOME/glassfish/
+domains/domain1/lib/ext/` folder.
 2. Place the `hazelcast-jca-rar-`*version*`.rar` into `GLASSFISH_HOME/glassfish/domains/domain1/autodeploy/` folder.
 3. Add the following lines to the `web.xml` file.
 

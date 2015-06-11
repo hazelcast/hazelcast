@@ -33,7 +33,6 @@ import static com.hazelcast.util.JsonUtil.getLong;
 /**
  * Hazelcast statistic implementations for local operations.
  */
-@SuppressWarnings("unused")
 public class LocalOperationStatsImpl implements LocalOperationStats {
 
     private long maxVisibleSlowOperationCount;

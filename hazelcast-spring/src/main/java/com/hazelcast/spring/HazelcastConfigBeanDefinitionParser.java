@@ -26,6 +26,7 @@ import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.InterfacesConfig;
+import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.ItemListenerConfig;
 import com.hazelcast.config.JobTrackerConfig;
 import com.hazelcast.config.JoinConfig;
@@ -73,6 +74,12 @@ import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.quorum.QuorumType;
 import com.hazelcast.spi.ServiceConfigurationParser;
 import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig;
+import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig;
+import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.DurationConfig;
+import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig.ExpiryPolicyType;
+
+import com.hazelcast.util.StringUtil;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.support.ManagedList;
@@ -87,6 +94,7 @@ import org.w3c.dom.Node;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.util.StringUtil.upperCaseInternal;
 
@@ -683,6 +691,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             for (Node childNode : new IterableNodeList(node.getChildNodes(), Node.ELEMENT_NODE)) {
                 if ("eviction".equals(cleanNodeName(childNode))) {
                     cacheConfigBuilder.addPropertyValue("evictionConfig", getEvictionConfig(childNode));
+                } else if ("expiry-policy-factory".equals(cleanNodeName(childNode))) {
+                    cacheConfigBuilder.addPropertyValue("expiryPolicyFactoryConfig", getExpiryPolicyFactoryConfig(childNode));
                 } else if ("cache-entry-listeners".equals(cleanNodeName(childNode))) {
                     ManagedList listeners = new ManagedList();
                     for (Node listenerNode : new IterableNodeList(childNode.getChildNodes(), Node.ELEMENT_NODE)) {
@@ -788,6 +798,50 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
 
         private void handleEvictionConfig(Node node, BeanDefinitionBuilder configBuilder) {
             configBuilder.addPropertyValue("evictionConfig", getEvictionConfig(node));
+        }
+
+        private ExpiryPolicyFactoryConfig getExpiryPolicyFactoryConfig(Node node) {
+            final String className = getAttribute(node, "class-name");
+            if (!StringUtil.isNullOrEmpty(className)) {
+                return new ExpiryPolicyFactoryConfig(className);
+            } else {
+                TimedExpiryPolicyFactoryConfig timedExpiryPolicyFactoryConfig = null;
+                for (org.w3c.dom.Node n : new IterableNodeList(node.getChildNodes())) {
+                    final String nodeName = cleanNodeName(n.getNodeName());
+                    if ("timed-expiry-policy-factory".equals(nodeName)) {
+                        final String expiryPolicyTypeStr = getAttribute(n, "expiry-policy-type");
+                        final String durationAmountStr = getAttribute(n, "duration-amount");
+                        final String timeUnitStr = getAttribute(n, "time-unit");
+                        final ExpiryPolicyType expiryPolicyType =
+                                ExpiryPolicyType.valueOf(upperCaseInternal(expiryPolicyTypeStr));
+                        if (expiryPolicyType != ExpiryPolicyType.ETERNAL
+                                && (StringUtil.isNullOrEmpty(durationAmountStr)
+                                || StringUtil.isNullOrEmpty(timeUnitStr))) {
+                            throw new InvalidConfigurationException(
+                                    "Both of the \"duration-amount\" or \"time-unit\" attributes "
+                                            + "are required for expiry policy factory configuration "
+                                            + "(except \"ETERNAL\" expiry policy type)");
+                        }
+                        DurationConfig durationConfig = null;
+                        if (expiryPolicyType != ExpiryPolicyType.ETERNAL) {
+                            final long durationAmount =
+                                    Long.parseLong(durationAmountStr);
+                            final TimeUnit timeUnit =
+                                    TimeUnit.valueOf(upperCaseInternal(timeUnitStr));
+                            durationConfig = new DurationConfig(durationAmount, timeUnit);
+                        }
+                        timedExpiryPolicyFactoryConfig =
+                                new TimedExpiryPolicyFactoryConfig(expiryPolicyType, durationConfig);
+                    }
+                }
+                if (timedExpiryPolicyFactoryConfig == null) {
+                    throw new InvalidConfigurationException(
+                            "One of the \"class-name\" or \"timed-expire-policy-factory\" configuration "
+                                    + "is needed for expiry policy factory configuration");
+                } else {
+                    return new ExpiryPolicyFactoryConfig(timedExpiryPolicyFactoryConfig);
+                }
+            }
         }
 
         public void handleMapStoreConfig(Node node, BeanDefinitionBuilder mapConfigBuilder) {

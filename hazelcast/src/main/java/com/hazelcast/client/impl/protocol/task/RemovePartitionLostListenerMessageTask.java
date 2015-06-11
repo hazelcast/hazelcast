@@ -17,8 +17,7 @@
 package com.hazelcast.client.impl.protocol.task;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.RemovePartitionLostListenerParameters;
+import com.hazelcast.client.impl.protocol.codec.ClientRemovePartitionLostListenerCodec;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.partition.InternalPartitionService;
@@ -26,22 +25,27 @@ import com.hazelcast.partition.InternalPartitionService;
 import java.security.Permission;
 
 public class RemovePartitionLostListenerMessageTask
-        extends AbstractCallableMessageTask<RemovePartitionLostListenerParameters> {
+        extends AbstractCallableMessageTask<ClientRemovePartitionLostListenerCodec.RequestParameters> {
 
     public RemovePartitionLostListenerMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected ClientMessage call() throws Exception {
+    protected Object call() throws Exception {
         final InternalPartitionService service = getService(InternalPartitionService.SERVICE_NAME);
         boolean success = service.removePartitionLostListener(parameters.registrationId);
-        return BooleanResultParameters.encode(success);
+        return success;
     }
 
     @Override
-    protected RemovePartitionLostListenerParameters decodeClientMessage(ClientMessage clientMessage) {
-        return RemovePartitionLostListenerParameters.decode(clientMessage);
+    protected ClientRemovePartitionLostListenerCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return ClientRemovePartitionLostListenerCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return ClientRemovePartitionLostListenerCodec.encodeResponse((Boolean) response);
     }
 
     @Override

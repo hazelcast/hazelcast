@@ -30,15 +30,15 @@ import static com.hazelcast.util.Preconditions.checkBackupCount;
 public abstract class CollectionConfig<T extends CollectionConfig> {
 
     /**
-     * Maximum size Configuration
+     * Default maximum size for the Configuration.
      */
     public static final int DEFAULT_MAX_SIZE = 0;
     /**
-     * Synchronous Backup Counter
+     * The default number of synchronous backups
      */
     public static final int DEFAULT_SYNC_BACKUP_COUNT = 1;
     /**
-     * Asynchronous Backup Counter
+     * The default number of asynchronous backups
      */
     public static final int DEFAULT_ASYNC_BACKUP_COUNT = 0;
 
@@ -61,17 +61,34 @@ public abstract class CollectionConfig<T extends CollectionConfig> {
         this.statisticsEnabled = config.statisticsEnabled;
     }
 
+
     public abstract T getAsReadOnly();
 
+    /**
+     * Gets the name of this collection.
+     *
+     * @return The name of this collection.
+     */
     public String getName() {
         return name;
     }
 
+    /**
+     * Sets the name of this collection.
+     *
+     * @param  name The name of this collection.
+     * @return The updated collection configuration.
+     */
     public T setName(String name) {
         this.name = name;
         return (T) this;
     }
 
+    /**
+     * Gets the list of ItemListenerConfigs.
+     *
+     * @return The list of ItemListenerConfigs.
+     */
     public List<ItemListenerConfig> getItemListenerConfigs() {
         if (listenerConfigs == null) {
             listenerConfigs = new ArrayList<ItemListenerConfig>();
@@ -79,23 +96,39 @@ public abstract class CollectionConfig<T extends CollectionConfig> {
         return listenerConfigs;
     }
 
+    /**
+     * Sets the list of ItemListenerConfigs.
+     *
+     * @param  listenerConfigs The list of ItemListenerConfigs to set.
+     * @return This collection configuration.
+     */
     public T setItemListenerConfigs(List<ItemListenerConfig> listenerConfigs) {
         this.listenerConfigs = listenerConfigs;
         return (T) this;
     }
 
+    /**
+     * Gets the total number of synchronous and asynchronous backups for this collection.
+     *
+     * @return The total number of synchronous and asynchronous backups for this collection.
+     */
     public int getTotalBackupCount() {
         return backupCount + asyncBackupCount;
     }
 
+    /**
+     * Gets the number of synchronous backups for this collection.
+     *
+     * @return the number of synchronous backups for this collection.
+     */
     public int getBackupCount() {
         return backupCount;
     }
 
     /**
-     * Sets the number of synchronous backups.
+     * Sets the number of synchronous backups for this collection.
      *
-     * @param backupCount the number of synchronous backups to set
+     * @param backupCount the number of synchronous backups to set for this collection.
      * @return the current CollectionConfig
      * @throws IllegalArgumentException if backupCount smaller than 0,
      *             or larger than the maximum number of backup
@@ -107,6 +140,11 @@ public abstract class CollectionConfig<T extends CollectionConfig> {
         return (T) this;
     }
 
+    /**
+     * Gets the number of asynchronous backups.
+     *
+     * @return The number of asynchronous backups.
+     */
     public int getAsyncBackupCount() {
         return asyncBackupCount;
     }
@@ -116,9 +154,9 @@ public abstract class CollectionConfig<T extends CollectionConfig> {
      *
      * @param asyncBackupCount the number of asynchronous synchronous backups to set
      * @return the updated CollectionConfig
-     * @throws IllegalArgumentException if asyncBackupCount smaller than 0,
-     *             or larger than the maximum number of backup
-     *             or the sum of the backups and async backups is larger than the maximum number of backups
+     * @throws IllegalArgumentException if asyncBackupCount is smaller than 0,
+     *             or larger than the maximum number of backups,
+     *             or the sum of the backups and async backups is larger than the maximum number of backups.
      * @see #setBackupCount(int)
      * @see #getAsyncBackupCount()
      */
@@ -127,24 +165,51 @@ public abstract class CollectionConfig<T extends CollectionConfig> {
         return (T) this;
     }
 
+    /**
+     * Gets the maximum size for the Configuration.
+     *
+     * @return The maximum size for the Configuration.
+     */
     public int getMaxSize() {
         return maxSize == 0 ? Integer.MAX_VALUE : maxSize;
     }
 
+    /**
+     * Sets the maximum size for the collection.
+     *
+     * @return The maximum size to set for the collection.
+     * @return the current CollectionConfig.
+     */
     public T setMaxSize(int maxSize) {
         this.maxSize = maxSize;
         return (T) this;
     }
 
+    /**
+     * Checks if collection statistics are enabled.
+     *
+     * @return True if collection statistics are enabled, false otherwise.
+     */
     public boolean isStatisticsEnabled() {
         return statisticsEnabled;
     }
 
+    /**
+     * Sets collection statistics to enabled or disabled.
+     *
+     * @param statisticsEnabled True to enable collection statistics, false to disable.
+     * @return The current collection config instance.
+     */
     public T setStatisticsEnabled(boolean statisticsEnabled) {
         this.statisticsEnabled = statisticsEnabled;
         return (T) this;
     }
 
+    /**
+     * Adds an item listener to this collection (listens for when items are added or removed).
+     *
+     * @param itemListenerConfig The item listener to add to this collection.
+     */
     public void addItemListenerConfig(ItemListenerConfig itemListenerConfig) {
         getItemListenerConfigs().add(itemListenerConfig);
     }

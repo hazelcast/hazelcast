@@ -77,7 +77,11 @@ public class RingbufferContainer implements DataSerializable {
     }
 
     public RingbufferContainer(RingbufferConfig config, SerializationService serializationService) {
-        this(config.getName());
+       this(config.getName(), config, serializationService);
+    }
+
+    public RingbufferContainer(String name, RingbufferConfig config, SerializationService serializationService) {
+        this(name);
         this.serializationService = serializationService;
         this.config = config;
         this.capacity = config.getCapacity();

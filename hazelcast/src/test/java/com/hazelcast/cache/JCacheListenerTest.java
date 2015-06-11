@@ -18,12 +18,11 @@ package com.hazelcast.cache;
 
 import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Assert;
+
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -43,10 +42,15 @@ import java.io.Serializable;
 import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.LockSupport;
 
-@RunWith(HazelcastParallelClassRunner.class)
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
+
+@RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class JCacheListenerTest extends HazelcastTestSupport {
 
@@ -75,25 +79,35 @@ public class JCacheListenerTest extends HazelcastTestSupport {
         final Cache<String, String> cache = cacheManager.createCache("test", config);
 
         final int threadCount = 10;
+        final int shutdownWaitTimeInSeconds = threadCount;
         final int putCount = 1000;
+        final AtomicInteger actualPutCount = new AtomicInteger(0);
         final CountDownLatch latch = new CountDownLatch(threadCount);
+        final AtomicBoolean shutdown = new AtomicBoolean(false);
         for (int i = 0; i < threadCount; i++) {
             new Thread() {
                 public void run() {
                     Random rand = new Random();
-                    for (int i = 0; i < putCount; i++) {
+                    for (int i = 0; i < putCount && !shutdown.get(); i++) {
                         String key = String.valueOf(rand.nextInt(putCount));
                         String value = UUID.randomUUID().toString();
                         cache.put(key, value);
+                        actualPutCount.incrementAndGet();
                     }
                     latch.countDown();
                 }
             }.start();
         }
 
-        HazelcastTestSupport.assertOpenEventually(latch);
-        Assert.assertEquals(threadCount * putCount, counter.get());
-        cachingProvider.close();
+        if (!latch.await(ASSERT_TRUE_EVENTUALLY_TIMEOUT, TimeUnit.SECONDS)) {
+            shutdown.set(true);
+            if (!latch.await(shutdownWaitTimeInSeconds, TimeUnit.SECONDS)) {
+                fail("Cache operations have not finished in "
+                     + (ASSERT_TRUE_EVENTUALLY_TIMEOUT + shutdownWaitTimeInSeconds)
+                     + " seconds when sync listener is present!");
+            }
+        }
+        assertEquals(actualPutCount.get(), counter.get());
     }
 
     @Test(timeout = 30000)
@@ -157,7 +171,6 @@ public class JCacheListenerTest extends HazelcastTestSupport {
         String key = randomString();
         cache.put(key, randomString());
         // there should not be any hanging due to sync listener
-
         cache.replace(key, randomString(), randomString());
     }
 
@@ -326,14 +339,12 @@ public class JCacheListenerTest extends HazelcastTestSupport {
         @Override
         public void onCreated(Iterable<CacheEntryEvent<? extends String, ? extends String>> cacheEntryEvents)
                 throws CacheEntryListenerException {
-
             onEvent(cacheEntryEvents);
         }
 
         @Override
         public void onUpdated(Iterable<CacheEntryEvent<? extends String, ? extends String>> cacheEntryEvents)
                 throws CacheEntryListenerException {
-
             onEvent(cacheEntryEvents);
         }
 

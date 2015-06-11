@@ -346,6 +346,16 @@
         </message-listeners>
     </topic>
 
+
+    <reliable-topic name="default">
+        <statistics-enabled>true</statistics-enabled>
+        <topic-overload-policy>ERROR</topic-overload-policy>
+        <read-batch-size>10</read-batch-size>
+        <message-listeners>
+            <message-listener>com.hazelcast.examples.MessageListener</message-listener>
+        </message-listeners>
+    </reliable-topic>
+
     <semaphore name="default">
         <initial-permits>10</initial-permits>
         <backup-count>1</backup-count>

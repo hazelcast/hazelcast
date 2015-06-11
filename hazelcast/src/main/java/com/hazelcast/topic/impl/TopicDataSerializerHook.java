@@ -20,6 +20,7 @@ import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.DataSerializerHook;
 import com.hazelcast.nio.serialization.FactoryIdHelper;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.topic.impl.reliable.ReliableTopicMessage;
 
 public final class TopicDataSerializerHook implements DataSerializerHook {
 
@@ -27,6 +28,7 @@ public final class TopicDataSerializerHook implements DataSerializerHook {
 
     public static final int PUBLISH = 0;
     public static final int TOPIC_EVENT = 1;
+    public static final int RELIABLE_TOPIC_MESSAGE = 2;
 
     @Override
     public int getFactoryId() {
@@ -43,6 +45,8 @@ public final class TopicDataSerializerHook implements DataSerializerHook {
                         return new PublishOperation();
                     case TOPIC_EVENT:
                         return new TopicEvent();
+                    case RELIABLE_TOPIC_MESSAGE:
+                        return new ReliableTopicMessage();
                     default:
                         return null;
                 }

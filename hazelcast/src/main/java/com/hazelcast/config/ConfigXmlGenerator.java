@@ -18,6 +18,7 @@ package com.hazelcast.config;
 
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
+import com.hazelcast.util.StringUtil;
 
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Source;
@@ -31,6 +32,10 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Properties;
 import java.util.Set;
+import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig;
+import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig;
+import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.DurationConfig;
+import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig.ExpiryPolicyType;
 
 import static com.hazelcast.util.Preconditions.isNotNull;
 
@@ -115,6 +120,8 @@ public class ConfigXmlGenerator {
 
         listenerXmlGenerator(xml, config);
 
+        reliableTopicXmlGenerator(xml, config);
+
         xml.append("</hazelcast>");
 
         return format(xml.toString(), INDENT);
@@ -183,6 +190,30 @@ public class ConfigXmlGenerator {
             xml.append("</topic>");
         }
     }
+
+    private void reliableTopicXmlGenerator(StringBuilder xml, Config config) {
+        final Collection<ReliableTopicConfig> tCfgs = config.getReliableTopicConfigs().values();
+        for (ReliableTopicConfig t : tCfgs) {
+            xml.append("<reliable-topic name=\"").append(t.getName()).append("\">");
+            xml.append("<read-batch-size>").append(t.getReadBatchSize()).append("</read-batch-size>");
+            xml.append("<statistics-enabled>").append(t.isStatisticsEnabled()).append("</statistics-enabled>");
+            xml.append("<topic-overload-policy>").append(t.getTopicOverloadPolicy().name()).append("</topic-overload-policy>");
+
+            if (!t.getMessageListenerConfigs().isEmpty()) {
+                xml.append("<message-listeners>");
+                for (ListenerConfig lc : t.getMessageListenerConfigs()) {
+                    xml.append("<message-listener>");
+                    final String clazz = lc.getImplementation()
+                            != null ? lc.getImplementation().getClass().getName() : lc.getClassName();
+                    xml.append(clazz);
+                    xml.append("</message-listener>");
+                }
+                xml.append("</message-listeners>");
+            }
+            xml.append("</reliable-topic>");
+        }
+    }
+
 
     private void multiMapXmlGenerator(StringBuilder xml, Config config) {
         final Collection<MultiMapConfig> mmCfgs = config.getMultiMapConfigs().values();
@@ -357,7 +388,29 @@ public class ConfigXmlGenerator {
             xml.append("<write-through>").append(c.isWriteThrough()).append("</write-through>");
             xml.append("<cache-loader-factory class-name=\"").append(c.getCacheLoaderFactory()).append("\"/>");
             xml.append("<cache-writer-factory class-name=\"").append(c.getCacheWriterFactory()).append("\"/>");
-            xml.append("<expiry-policy-factory class-name=\"").append(c.getExpiryPolicyFactory()).append("\"/>");
+            ExpiryPolicyFactoryConfig expiryPolicyFactoryConfig = c.getExpiryPolicyFactoryConfig();
+            if (expiryPolicyFactoryConfig != null) {
+                if (StringUtil.isNullOrEmpty(expiryPolicyFactoryConfig.getClassName())) {
+                    xml.append("<expiry-policy-factory class-name=\"")
+                       .append(expiryPolicyFactoryConfig.getClassName())
+                       .append("\"/>");
+                } else {
+                    TimedExpiryPolicyFactoryConfig timedExpiryPolicyFactoryConfig =
+                            expiryPolicyFactoryConfig.getTimedExpiryPolicyFactoryConfig();
+                    if (timedExpiryPolicyFactoryConfig != null
+                            && timedExpiryPolicyFactoryConfig.getExpiryPolicyType() != null
+                            && timedExpiryPolicyFactoryConfig.getDurationConfig() != null) {
+                        ExpiryPolicyType expiryPolicyType = timedExpiryPolicyFactoryConfig.getExpiryPolicyType();
+                        DurationConfig durationConfig = timedExpiryPolicyFactoryConfig.getDurationConfig();
+                        xml.append("<expiry-policy-factory>");
+                        xml.append("<timed-expiry-policy-factory")
+                                .append(" expiry-policy-type=\"").append(expiryPolicyType.name()).append("\"/>")
+                                .append(" duration-amount=\"").append(durationConfig.getDurationAmount()).append("\"/>")
+                                .append(" time-unit=\"").append(durationConfig.getTimeUnit().name()).append("\"/>");
+                        xml.append("</expiry-policy-factory>");
+                    }
+                }
+            }
             xml.append("<cache-entry-listeners>");
             for (CacheSimpleEntryListenerConfig el : c.getCacheEntryListeners()) {
                 xml.append("<cache-entry-listener")

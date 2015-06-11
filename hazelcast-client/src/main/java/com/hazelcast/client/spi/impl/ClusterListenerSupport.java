@@ -29,7 +29,7 @@ import com.hazelcast.client.impl.client.AuthenticationRequest;
 import com.hazelcast.client.impl.client.ClientPrincipal;
 import com.hazelcast.client.spi.ClientClusterService;
 import com.hazelcast.core.LifecycleEvent;
-import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.core.Member;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
@@ -139,9 +139,9 @@ public abstract class ClusterListenerSupport implements ConnectionListener, Conn
     private Collection<InetSocketAddress> getSocketAddresses() {
         final List<InetSocketAddress> socketAddresses = new LinkedList<InetSocketAddress>();
 
-        Collection<MemberImpl> memberList = getMemberList();
-        for (MemberImpl member : memberList) {
-            socketAddresses.add(member.getInetSocketAddress());
+        Collection<Member> memberList = getMemberList();
+        for (Member member : memberList) {
+            socketAddresses.add(member.getSocketAddress());
         }
 
         for (AddressProvider addressProvider : addressProviders) {
@@ -160,6 +160,7 @@ public abstract class ClusterListenerSupport implements ConnectionListener, Conn
     }
 
     private void connectToOne() throws Exception {
+        ownerConnectionAddress = null;
         final ClientNetworkConfig networkConfig = client.getClientConfig().getNetworkConfig();
         final int connAttemptLimit = networkConfig.getConnectionAttemptLimit();
         final int connectionAttemptPeriod = networkConfig.getConnectionAttemptPeriod();

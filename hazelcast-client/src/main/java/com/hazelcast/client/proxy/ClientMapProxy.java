@@ -646,7 +646,7 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
 
     @Override
     public void evictAll() {
-        clearNearCache();
+        invalidateNearCache();
         MapEvictAllRequest request = new MapEvictAllRequest(name);
         invoke(request);
     }
@@ -654,7 +654,7 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
     @Override
     public void loadAll(boolean replaceExistingValues) {
         if (replaceExistingValues) {
-            clearNearCache();
+            invalidateNearCache();
         }
         final MapLoadAllKeysRequest request = new MapLoadAllKeysRequest(name, replaceExistingValues);
         invoke(request);
@@ -1227,12 +1227,6 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
         }
     }
 
-    private void clearNearCache() {
-        if (nearCache != null) {
-            nearCache.clear();
-        }
-    }
-
     private void initNearCache() {
         if (nearCacheInitialized.compareAndSet(false, true)) {
             final NearCacheConfig nearCacheConfig = getContext().getClientConfig().getNearCacheConfig(name);
@@ -1273,12 +1267,12 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
 
                 @Override
                 public void beforeListenerRegister() {
-                    nearCache.clear();
+                    invalidateNearCache();
                 }
 
                 @Override
                 public void onListenerRegister() {
-                    nearCache.clear();
+                    invalidateNearCache();
                 }
             };
 

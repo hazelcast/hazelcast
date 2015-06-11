@@ -41,12 +41,6 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.util.Clock;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
-
 import java.io.IOException;
 import java.nio.channels.ServerSocketChannel;
 import java.util.Arrays;
@@ -60,9 +54,13 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import static com.hazelcast.instance.HazelcastInstanceFactory.newHazelcastInstance;
-import static com.hazelcast.test.HazelcastTestSupport.closeConnectionBetween;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -708,7 +706,7 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
     private static class FirewallingNodeContext extends DefaultNodeContext {
         @Override
         public ConnectionManager createConnectionManager(Node node, ServerSocketChannel serverSocketChannel) {
-            NodeIOService ioService = new NodeIOService(node);
+            NodeIOService ioService = new NodeIOService(node, node.nodeEngine);
             return new FirewallingTcpIpConnectionManager(node.loggingService,
                     node.getHazelcastThreadGroup(), ioService, serverSocketChannel);
         }

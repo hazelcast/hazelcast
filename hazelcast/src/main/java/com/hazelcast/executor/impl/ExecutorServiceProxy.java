@@ -39,7 +39,6 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.executor.CompletedFuture;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -445,35 +444,32 @@ public class ExecutorServiceProxy
 
         long timeoutNanos = unit.toNanos(timeout);
         List<Future<T>> futures = new ArrayList<Future<T>>(tasks.size());
-        List<Future<T>> result = new ArrayList<Future<T>>(tasks.size());
-        boolean done = true;
+        boolean done = false;
         try {
             for (Callable<T> task : tasks) {
                 long start = System.nanoTime();
                 int partitionId = getTaskPartitionId(task);
                 futures.add(submitToPartitionOwner(task, partitionId, true));
                 timeoutNanos -= System.nanoTime() - start;
-                if (timeoutNanos <= 0L) {
-                    for (Future<T> future : futures) {
-                        result.add(future);
-                    }
-                    return result;
-                }
             }
-            done = wait(timeoutNanos, futures, result);
-            return result;
+            if (timeoutNanos <= 0L) {
+                return futures;
+            }
+
+            done = wait(timeoutNanos, futures);
+            return futures;
         } catch (Throwable t) {
             logger.severe(t);
             // todo: should an exception not be thrown?
-            return result;
+            return futures;
         } finally {
             if (!done) {
-                cancelAll(result);
+                cancelAll(futures);
             }
         }
     }
 
-    private <T> boolean wait(long timeoutNanos, List<Future<T>> futures, List<Future<T>> result) throws InterruptedException {
+    private <T> boolean wait(long timeoutNanos, List<Future<T>> futures) throws InterruptedException {
         boolean done = true;
         for (int i = 0, size = futures.size(); i < size; i++) {
             long start = System.nanoTime();
@@ -487,22 +483,20 @@ public class ExecutorServiceProxy
                 done = false;
                 for (int l = i; l < size; l++) {
                     Future<T> f = futures.get(i);
-                    if (!f.isDone()) {
-                        result.add(f);
-                    } else {
+                    if (f.isDone()) {
                         Object v;
                         try {
                             v = f.get();
                         } catch (ExecutionException ex) {
                             v = ex;
                         }
-                        result.add(new CompletedFuture<T>(getNodeEngine().getSerializationService(), v, getAsyncExecutor()));
+                        futures.set(l, new CompletedFuture<T>(getNodeEngine().getSerializationService(), v, getAsyncExecutor()));
                     }
                 }
                 break;
             }
 
-            result.add(new CompletedFuture<T>(getNodeEngine().getSerializationService(), value, getAsyncExecutor()));
+            futures.set(i, new CompletedFuture<T>(getNodeEngine().getSerializationService(), value, getAsyncExecutor()));
             timeoutNanos -= System.nanoTime() - start;
         }
         return done;

@@ -21,6 +21,7 @@ import com.hazelcast.map.impl.mapstore.MapDataStore;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.exception.RetryableHazelcastException;
 
 import java.util.Collection;
 import java.util.Iterator;
@@ -226,6 +227,9 @@ public interface RecordStore {
 
     void clearPartition();
 
+    /**
+     * Resets the record store to it's initial state.
+     */
     void reset();
 
     boolean forceUnlock(Data dataKey);
@@ -234,9 +238,7 @@ public interface RecordStore {
 
     boolean isLoaded();
 
-    void checkIfLoaded();
-
-    void setLoaded(boolean loaded);
+    void checkIfLoaded() throws RetryableHazelcastException;
 
     int clear();
 
@@ -257,19 +259,15 @@ public interface RecordStore {
     boolean isExpirable();
 
     /**
-     * Loads all keys from the map store.
-     *
-     * @param replaceExistingValues <code>true</code> if need to replace existing values otherwise <code>false</code>
-     */
-    void loadAllFromStore(boolean replaceExistingValues);
-
-    /**
      * Loads all given keys from defined map store.
      *
      * @param keys                  keys to be loaded.
      * @param replaceExistingValues <code>true</code> if need to replace existing values otherwise <code>false</code>
+     * @param lastBatch when keys are sent is batches this indicates the last batch. Used to indicate loading is complete.
      */
     void loadAllFromStore(List<Data> keys, boolean replaceExistingValues);
+
+    void updateLoadStatus(boolean lastBatch, Throwable exception);
 
     MapDataStore<Data, Object> getMapDataStore();
 
@@ -286,4 +284,13 @@ public interface RecordStore {
 
     void evictEntries(long now, boolean backup);
 
+    /**
+     * Loads all keys and values
+     *
+     * @param replaceExistingValues <code>true</code> if need to replace existing values otherwise <code>false</code>
+     **/
+    void loadAll(boolean replaceExistingValues);
+
+    /** Performs initial loading from a MapLoader if it has not been done before  **/
+    void maybeDoInitialLoad();
 }

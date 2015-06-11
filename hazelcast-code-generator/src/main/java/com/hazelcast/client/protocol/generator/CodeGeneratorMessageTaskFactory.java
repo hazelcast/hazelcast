@@ -86,11 +86,20 @@ public class CodeGeneratorMessageTaskFactory
         if (elementsAnnotatedWith == null || elementsAnnotatedWith.size() == 0) {
             return false;
         }
+        boolean isEnterprise = false;
         for (Element element : elementsAnnotatedWith) {
+            isEnterprise = element.toString().contains("enterprise");
             map.put(element.toString(), addAllFromPackage((PackageElement) element));
         }
-        final String content = generateFromTemplate(messageFactoryTemplate, map);
-        saveClass("com.hazelcast.client.impl.protocol", "MessageTaskFactoryImpl", content);
+        String className;
+        if (isEnterprise) {
+            className = "EnterpriseMessageTaskFactoryImpl";
+        } else {
+            className = "MessageTaskFactoryImpl";
+        }
+        MessageFactoryModel model = new MessageFactoryModel(className, map);
+        final String content = generateFromTemplate(messageFactoryTemplate, model);
+        saveClass("com.hazelcast.client.impl.protocol", className, content);
         return true;
     }
 
@@ -104,8 +113,8 @@ public class CodeGeneratorMessageTaskFactory
             TypeElement typeElement = (TypeElement) enclosedElement;
 
             final Set<Modifier> modifiers = typeElement.getModifiers();
-            if (modifiers.contains(Modifier.ABSTRACT) || modifiers.contains(Modifier.PROTECTED) || typeElement.getKind()
-                                                                                                              .isInterface()) {
+            if (modifiers.contains(Modifier.ABSTRACT) || modifiers.contains(Modifier.PROTECTED)
+                    || typeElement.getKind().isInterface()) {
                 continue;
             }
 
@@ -115,7 +124,12 @@ public class CodeGeneratorMessageTaskFactory
             if (typeArguments.size() > 0) {
                 final TypeMirror typeMirror = typeArguments.get(0);
                 final String key = typeMirror.toString();
-                if (key.endsWith("Parameters")) {
+
+                if (key.contains("Codec")) {
+                    final String fullNameKey = key.startsWith("com.") ? key
+                            : "com.hazelcast.client.impl.protocol.codec." + key;
+                    map.put(fullNameKey, typeElement.toString());
+                } else if (key.endsWith("Parameters")) {
                     final String fullNameKey = key.startsWith("com.") ? key
                             : "com.hazelcast.client.impl.protocol.parameters." + key;
                     map.put(fullNameKey, typeElement.toString());

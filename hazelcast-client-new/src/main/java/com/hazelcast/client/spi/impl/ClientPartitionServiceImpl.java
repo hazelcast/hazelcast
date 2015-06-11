@@ -18,8 +18,7 @@ package com.hazelcast.client.spi.impl;
 
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.GetPartitionsParameters;
-import com.hazelcast.client.impl.protocol.parameters.GetPartitionsResultParameters;
+import com.hazelcast.client.impl.protocol.codec.ClientGetPartitionsCodec;
 import com.hazelcast.client.spi.ClientClusterService;
 import com.hazelcast.client.spi.ClientExecutionService;
 import com.hazelcast.client.spi.ClientPartitionService;
@@ -29,6 +28,7 @@ import com.hazelcast.core.Partition;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.util.EmptyStatement;
 
@@ -86,22 +86,27 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
 
     private boolean getPartitions() {
         ClientClusterService clusterService = client.getClientClusterService();
-        Address master = clusterService.getMasterAddress();
-        GetPartitionsResultParameters response = getPartitionsFrom(master);
+        Address ownerAddress = clusterService.getOwnerConnectionAddress();
+        if (ownerAddress == null) {
+            return false;
+        }
+        Connection connection = client.getConnectionManager().getConnection(ownerAddress);
+        ClientGetPartitionsCodec.ResponseParameters response = getPartitionsFrom(connection);
         if (response != null) {
             return processPartitionResponse(response);
         }
         return false;
     }
 
-    private GetPartitionsResultParameters getPartitionsFrom(Address address) {
+    private ClientGetPartitionsCodec.ResponseParameters getPartitionsFrom(Connection connection) {
+        if (connection == null) {
+            return null;
+        }
         try {
-            ClientMessage requestMessage = GetPartitionsParameters.encode();
-            Future<ClientMessage> future = new ClientInvocation(client, requestMessage, address).invoke();
+            ClientMessage requestMessage = ClientGetPartitionsCodec.encodeRequest();
+            Future<ClientMessage> future = new ClientInvocation(client, requestMessage, connection).invoke();
             ClientMessage responseMessage = future.get();
-            GetPartitionsResultParameters partitionsResponse = GetPartitionsResultParameters.decode(responseMessage);
-
-            return partitionsResponse;
+            return ClientGetPartitionsCodec.decodeResponse(responseMessage);
         } catch (Exception e) {
             if (client.getLifecycleService().isRunning()) {
                 LOGGER.severe("Error while fetching cluster partition table!", e);
@@ -110,7 +115,7 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
         return null;
     }
 
-    private boolean processPartitionResponse(GetPartitionsResultParameters response) {
+    private boolean processPartitionResponse(ClientGetPartitionsCodec.ResponseParameters response) {
         int[] ownerIndexes = response.ownerIndexes;
         if (ownerIndexes.length == 0) {
             return false;

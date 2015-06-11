@@ -17,8 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.map;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.MapUnlockParameters;
+import com.hazelcast.client.impl.protocol.codec.MapUnlockCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.concurrent.lock.operations.UnlockOperation;
@@ -33,7 +32,8 @@ import com.hazelcast.spi.Operation;
 
 import java.security.Permission;
 
-public class MapUnlockMessageTask extends AbstractPartitionMessageTask<MapUnlockParameters> {
+public class MapUnlockMessageTask
+        extends AbstractPartitionMessageTask<MapUnlockCodec.RequestParameters> {
 
     public MapUnlockMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -45,19 +45,25 @@ public class MapUnlockMessageTask extends AbstractPartitionMessageTask<MapUnlock
     }
 
     @Override
-    protected MapUnlockParameters decodeClientMessage(ClientMessage clientMessage) {
-        return MapUnlockParameters.decode(clientMessage);
+    protected MapUnlockCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return MapUnlockCodec.decodeRequest(clientMessage);
     }
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return BooleanResultParameters.encode((Boolean) response);
+        return MapUnlockCodec.encodeResponse();
     }
 
     @Override
     public String getServiceName() {
         return LockService.SERVICE_NAME;
     }
+
+    @Override
+    public String getDistributedObjectType() {
+        return MapService.SERVICE_NAME;
+    }
+
 
     public Permission getRequiredPermission() {
         return new MapPermission(parameters.name, ActionConstants.ACTION_LOCK);

@@ -17,8 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.multimap;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.DataCollectionResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.MultiMapGetParameters;
+import com.hazelcast.client.impl.protocol.codec.MultiMapGetCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.multimap.impl.MultiMapRecord;
@@ -39,9 +38,10 @@ import static com.hazelcast.multimap.impl.ValueCollectionFactory.createCollectio
 
 /**
  * Client Protocol Task for handling messages with type id:
- * {@link com.hazelcast.client.impl.protocol.parameters.MultiMapMessageType#MULTIMAP_GET}
+ * {@link com.hazelcast.client.impl.protocol.codec.MultiMapMessageType#MULTIMAP_GET}
  */
-public class MultiMapGetMessageTask extends AbstractPartitionMessageTask<MultiMapGetParameters> {
+public class MultiMapGetMessageTask
+        extends AbstractPartitionMessageTask<MultiMapGetCodec.RequestParameters> {
 
     public MultiMapGetMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -55,21 +55,21 @@ public class MultiMapGetMessageTask extends AbstractPartitionMessageTask<MultiMa
     }
 
     @Override
-    protected MultiMapGetParameters decodeClientMessage(ClientMessage clientMessage) {
-        return MultiMapGetParameters.decode(clientMessage);
+    protected MultiMapGetCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return MultiMapGetCodec.decodeRequest(clientMessage);
     }
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
         Collection<MultiMapRecord> responseCollection = ((MultiMapResponse) response).getCollection();
         if (responseCollection == null) {
-            return DataCollectionResultParameters.encode(Collections.EMPTY_LIST);
+            return MultiMapGetCodec.encodeResponse(Collections.EMPTY_LIST);
         }
         Collection<Data> collection = createCollection(responseCollection);
         for (MultiMapRecord record : responseCollection) {
             collection.add(serializationService.toData(record.getObject()));
         }
-        return DataCollectionResultParameters.encode(collection);
+        return MultiMapGetCodec.encodeResponse(collection);
     }
 
 
@@ -85,7 +85,7 @@ public class MultiMapGetMessageTask extends AbstractPartitionMessageTask<MultiMa
 
     @Override
     public String getDistributedObjectName() {
-        return null;
+        return parameters.name;
     }
 
     @Override

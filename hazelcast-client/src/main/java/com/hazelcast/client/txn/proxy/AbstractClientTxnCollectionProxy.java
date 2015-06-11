@@ -16,15 +16,15 @@
 
 package com.hazelcast.client.txn.proxy;
 
-import com.hazelcast.client.txn.TransactionContextProxy;
+import com.hazelcast.client.spi.ClientTransactionContext;
 
 /**
  * @ali 9/4/13
  */
 public abstract class AbstractClientTxnCollectionProxy<E> extends ClientTxnProxy {
 
-    protected AbstractClientTxnCollectionProxy(String name, TransactionContextProxy proxy) {
-        super(name, proxy);
+    protected AbstractClientTxnCollectionProxy(String name, ClientTransactionContext transactionContext) {
+        super(name, transactionContext);
     }
 
     void onDestroy() {

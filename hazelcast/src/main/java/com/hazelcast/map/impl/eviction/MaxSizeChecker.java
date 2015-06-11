@@ -89,8 +89,10 @@ public class MaxSizeChecker {
         return result;
     }
 
+
     private boolean isEvictablePerNode(MapContainer mapContainer) {
         int nodeTotalSize = 0;
+
         final MaxSizeConfig maxSizeConfig = mapContainer.getMapConfig().getMaxSizeConfig();
         final int maxSize = getApproximateMaxSize(maxSizeConfig.getSize());
         final String mapName = mapContainer.getName();

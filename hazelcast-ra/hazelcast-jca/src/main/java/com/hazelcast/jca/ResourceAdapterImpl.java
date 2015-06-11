@@ -47,7 +47,7 @@ public class ResourceAdapterImpl implements ResourceAdapter, Serializable {
     /**
      * The hazelcast instance itself
      */
-    private transient HazelcastInstance hazelcast;
+    private transient volatile HazelcastInstance hazelcastInstance;
     /**
      * The configured hazelcast configuration location
      */
@@ -92,7 +92,7 @@ public class ResourceAdapterImpl implements ResourceAdapter, Serializable {
     public void start(BootstrapContext ctx) throws ResourceAdapterInternalException {
         // Gets/creates the hazelcast instance
         ConfigBuilder config = buildConfiguration();
-        setHazelcast(Hazelcast.newHazelcastInstance(config.build()));
+        hazelcastInstance = Hazelcast.newHazelcastInstance(config.build());
     }
 
     /**
@@ -120,23 +120,32 @@ public class ResourceAdapterImpl implements ResourceAdapter, Serializable {
      * @see javax.resource.spi.ResourceAdapter#stop()
      */
     public void stop() {
-        if (getHazelcast() != null) {
-            getHazelcast().getLifecycleService().shutdown();
+        HazelcastInstance instance = hazelcastInstance;
+        if (instance != null) {
+            instance.getLifecycleService().shutdown();
         }
-    }
-
-    /**
-     * Sets the underlying hazelcast instance
-     */
-    private void setHazelcast(HazelcastInstance hazelcast) {
-        this.hazelcast = hazelcast;
     }
 
     /**
      * Provides access to the underlying hazelcast instance
      */
-    HazelcastInstance getHazelcast() {
-        return hazelcast;
+    HazelcastInstance getHazelcastInstance() {
+        return hazelcastInstance;
+    }
+
+    /**
+     * Sets the underlying hazelcast instance
+     * Used only for testing purposes
+     */
+    public void setHazelcastInstance(HazelcastInstance hazelcast) {
+        this.hazelcastInstance = hazelcast;
+    }
+
+    /**
+     * @return The configured hazelcast configuration location via RAR deployment descriptor
+     */
+    public String getConfigurationLocation() {
+        return configurationLocation;
     }
 
     /**
@@ -148,21 +157,14 @@ public class ResourceAdapterImpl implements ResourceAdapter, Serializable {
         this.configurationLocation = configurationLocation;
     }
 
-    /**
-     * @return The configured hazelcast configuration location via RAR deployment descriptor
-     */
-    public String getConfigurationLocation() {
+    @Deprecated
+    public String getConfigLocation() {
         return configurationLocation;
     }
 
     @Deprecated
     public void setConfigLocation(String configLocation) {
         this.configurationLocation = configLocation;
-    }
-
-    @Deprecated
-    public String getConfigLocation() {
-        return configurationLocation;
     }
 
     @Override

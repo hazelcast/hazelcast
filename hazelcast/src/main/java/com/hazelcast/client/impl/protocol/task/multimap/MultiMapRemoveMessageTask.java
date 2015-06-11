@@ -17,8 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.multimap;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.DataCollectionResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.MultiMapRemoveParameters;
+import com.hazelcast.client.impl.protocol.codec.MultiMapRemoveCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.multimap.impl.MultiMapRecord;
@@ -26,10 +25,10 @@ import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.multimap.impl.operations.MultiMapResponse;
 import com.hazelcast.multimap.impl.operations.RemoveAllOperation;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MultiMapPermission;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.nio.serialization.Data;
 
 import java.security.Permission;
 import java.util.ArrayList;
@@ -37,9 +36,10 @@ import java.util.Collection;
 
 /**
  * Client Protocol Task for handling messages with type id:
- * {@link com.hazelcast.client.impl.protocol.parameters.MultiMapMessageType#MULTIMAP_REMOVE}
+ * {@link com.hazelcast.client.impl.protocol.codec.MultiMapMessageType#MULTIMAP_REMOVE}
  */
-public class MultiMapRemoveMessageTask extends AbstractPartitionMessageTask<MultiMapRemoveParameters> {
+public class MultiMapRemoveMessageTask
+        extends AbstractPartitionMessageTask<MultiMapRemoveCodec.RequestParameters> {
 
     public MultiMapRemoveMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -51,8 +51,8 @@ public class MultiMapRemoveMessageTask extends AbstractPartitionMessageTask<Mult
     }
 
     @Override
-    protected MultiMapRemoveParameters decodeClientMessage(ClientMessage clientMessage) {
-        return MultiMapRemoveParameters.decode(clientMessage);
+    protected MultiMapRemoveCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return MultiMapRemoveCodec.decodeRequest(clientMessage);
     }
 
     @Override
@@ -63,7 +63,7 @@ public class MultiMapRemoveMessageTask extends AbstractPartitionMessageTask<Mult
         for (MultiMapRecord multiMapRecord : collection) {
             resultCollection.add(serializationService.toData(multiMapRecord.getObject()));
         }
-        return DataCollectionResultParameters.encode(resultCollection);
+        return MultiMapRemoveCodec.encodeResponse(resultCollection);
     }
 
     @Override

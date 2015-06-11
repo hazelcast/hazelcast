@@ -18,7 +18,6 @@
  * Client tasks associated with requests. These tasks are the actual processes that run on server side depending
  * on the request coming from clients.
  */
-@GenerateMessageTaskFactory
-package com.hazelcast.client.impl.protocol.task;
+@GenerateMessageTaskFactory package com.hazelcast.client.impl.protocol.task;
 
 import com.hazelcast.annotation.GenerateMessageTaskFactory;

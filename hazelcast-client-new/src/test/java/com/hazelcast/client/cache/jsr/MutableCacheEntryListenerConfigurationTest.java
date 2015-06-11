@@ -22,11 +22,10 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-import org.junit.Ignore;
+
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-@Ignore
 public class MutableCacheEntryListenerConfigurationTest
         extends javax.cache.configuration.MutableCacheEntryListenerConfigurationTest {
 

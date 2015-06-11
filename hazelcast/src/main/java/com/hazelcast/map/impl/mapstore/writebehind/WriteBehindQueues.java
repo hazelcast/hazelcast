@@ -29,15 +29,15 @@ public final class WriteBehindQueues {
     public static WriteBehindQueue createBoundedWriteBehindQueue(int maxCapacity, AtomicInteger counter) {
         final WriteBehindQueue queue = createCyclicWriteBehindQueue();
         final WriteBehindQueue boundedQueue = createBoundedWriteBehindQueue(maxCapacity, counter, queue);
-        return createSyncronizedWriteBehindQueue(boundedQueue);
+        return createSynchronizedWriteBehindQueue(boundedQueue);
     }
 
     public static <T> WriteBehindQueue<T> createDefaultWriteBehindQueue() {
         final WriteBehindQueue queue = createCoalescedWriteBehindQueue();
-        return createSyncronizedWriteBehindQueue(queue);
+        return createSynchronizedWriteBehindQueue(queue);
     }
 
-    private static WriteBehindQueue createSyncronizedWriteBehindQueue(WriteBehindQueue queue) {
+    private static WriteBehindQueue createSynchronizedWriteBehindQueue(WriteBehindQueue queue) {
         return new SynchronizedWriteBehindQueue(queue);
     }
 

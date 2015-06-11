@@ -18,12 +18,9 @@ package com.hazelcast.jca;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.transaction.TransactionContext;
-import com.hazelcast.transaction.TransactionOptions;
 
 import javax.resource.ResourceException;
 import javax.resource.spi.ConnectionEvent;
-import javax.transaction.xa.XAException;
-import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
 /**
@@ -79,7 +76,6 @@ public class HazelcastTransactionImpl extends JcaBase implements HazelcastTransa
             factory.logHzConnectionEvent(this, HzConnectionEvent.TX_START);
 
             this.txContext = getHazelcastInstance().newTransactionContext();
-            this.connection.getTx().setTxContext(txContext);
 
             log(Level.FINEST, "begin");
             txContext.beginTransaction();
@@ -127,16 +123,7 @@ public class HazelcastTransactionImpl extends JcaBase implements HazelcastTransa
     }
 
     public TransactionContext getTxContext() {
-        return this.txContext;
-    }
-
-    public void setTxContext(TransactionContext txContext) {
-        this.txContext = txContext;
-    }
-
-    public static TransactionContext createTransaction(int timeout, HazelcastInstance hazelcastInstance) throws XAException {
-        final TransactionOptions transactionOptions = TransactionOptions.getDefault().setTimeout(timeout, TimeUnit.SECONDS);
-        return hazelcastInstance.newTransactionContext(transactionOptions);
+        return txContext;
     }
 
 }

@@ -17,10 +17,9 @@
 package com.hazelcast.client.impl.protocol.task.cache;
 
 import com.hazelcast.cache.impl.CacheOperationProvider;
-import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.operation.CachePutOperation;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.CachePutParameters;
+import com.hazelcast.client.impl.protocol.codec.CachePutCodec;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.Operation;
@@ -33,7 +32,7 @@ import javax.cache.expiry.ExpiryPolicy;
  * @see CachePutOperation
  */
 public class CachePutMessageTask
-        extends AbstractCacheMessageTask<CachePutParameters> {
+        extends AbstractCacheMessageTask<CachePutCodec.RequestParameters> {
 
     public CachePutMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -42,15 +41,19 @@ public class CachePutMessageTask
     @Override
     protected Operation prepareOperation() {
         CacheOperationProvider operationProvider = getOperationProvider(parameters.name);
-        CacheService service = getService(getServiceName());
-        ExpiryPolicy expiryPolicy = (ExpiryPolicy) service.toObject(parameters.expiryPolicy);
-        int completionId = clientMessage.getCorrelationId();
-        return operationProvider.createPutOperation(parameters.key, parameters.value, expiryPolicy, parameters.get, completionId);
+        ExpiryPolicy expiryPolicy = (ExpiryPolicy) nodeEngine.toObject(parameters.expiryPolicy);
+        return operationProvider
+                .createPutOperation(parameters.key, parameters.value, expiryPolicy, parameters.get, parameters.completionId);
     }
 
     @Override
-    protected CachePutParameters decodeClientMessage(ClientMessage clientMessage) {
-        return CachePutParameters.decode(clientMessage);
+    protected CachePutCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return CachePutCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return CachePutCodec.encodeResponse(serializationService.toData(response));
     }
 
     @Override

@@ -17,7 +17,6 @@
 /**
  * <p>Client protocol tasks implementations for Topic</p>
  */
-@GenerateMessageTaskFactory
-package com.hazelcast.client.impl.protocol.task.topic;
+@GenerateMessageTaskFactory package com.hazelcast.client.impl.protocol.task.topic;
 
 import com.hazelcast.annotation.GenerateMessageTaskFactory;

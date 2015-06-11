@@ -58,6 +58,19 @@ public abstract class ConditionBasicTest extends HazelcastTestSupport {
         lock.newCondition(null);
     }
 
+    @Test
+    public void testAwaitNanos_remainingTime() throws InterruptedException {
+        String name = newName();
+        ILock lock = callerInstance.getLock(name);
+        ICondition condition = lock.newCondition(name);
+
+        lock.lock();
+        long timeout = 1000L;
+        long remainingTimeout = condition.awaitNanos(timeout);
+        assertTrue("Remaining timeout should be <= 0, but it's = " + remainingTimeout,
+                remainingTimeout <= 0);
+    }
+
     @Test(timeout = 60000)
     public void testMultipleConditionsForSameLock() throws InterruptedException {
         ILock lock = callerInstance.getLock(newName());

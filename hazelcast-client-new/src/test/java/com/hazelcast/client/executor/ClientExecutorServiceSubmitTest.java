@@ -41,7 +41,6 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-import org.junit.Ignore;
 
 import java.util.Collection;
 import java.util.Map;
@@ -586,7 +585,7 @@ public class ClientExecutorServiceSubmitTest {
             }
         });
 
-        assertOpenEventually("responseLatch", responseLatch, 5);
+        assertOpenEventually("responseLatch", responseLatch);
         assertEquals(msg + AppendCallable.APPENDAGE, result.get());
     }
 

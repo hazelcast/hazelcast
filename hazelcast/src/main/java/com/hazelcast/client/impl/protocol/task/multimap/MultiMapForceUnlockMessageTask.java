@@ -17,8 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.multimap;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.MultiMapForceUnlockParameters;
-import com.hazelcast.client.impl.protocol.parameters.VoidResultParameters;
+import com.hazelcast.client.impl.protocol.codec.MultiMapForceUnlockCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.concurrent.lock.operations.UnlockOperation;
@@ -34,9 +33,10 @@ import java.security.Permission;
 
 /**
  * Client Protocol Task for handling messages with type id:
- * {@link com.hazelcast.client.impl.protocol.parameters.MultiMapMessageType#MULTIMAP_FORCEUNLOCK}
+ * {@link com.hazelcast.client.impl.protocol.codec.MultiMapMessageType#MULTIMAP_FORCEUNLOCK}
  */
-public class MultiMapForceUnlockMessageTask extends AbstractPartitionMessageTask<MultiMapForceUnlockParameters> {
+public class MultiMapForceUnlockMessageTask
+        extends AbstractPartitionMessageTask<MultiMapForceUnlockCodec.RequestParameters> {
 
     public MultiMapForceUnlockMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -50,18 +50,24 @@ public class MultiMapForceUnlockMessageTask extends AbstractPartitionMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return VoidResultParameters.encode();
+        return MultiMapForceUnlockCodec.encodeResponse();
     }
 
     @Override
-    protected MultiMapForceUnlockParameters decodeClientMessage(ClientMessage clientMessage) {
-        return MultiMapForceUnlockParameters.decode(clientMessage);
+    protected MultiMapForceUnlockCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return MultiMapForceUnlockCodec.decodeRequest(clientMessage);
     }
 
     @Override
     public String getServiceName() {
         return LockService.SERVICE_NAME;
     }
+
+    @Override
+    public String getDistributedObjectType() {
+        return MultiMapService.SERVICE_NAME;
+    }
+
 
     @Override
     public String getMethodName() {

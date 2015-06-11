@@ -28,34 +28,29 @@ import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.client.BaseTransactionRequest;
 import com.hazelcast.transaction.client.CommitTransactionRequest;
 import com.hazelcast.transaction.client.CreateTransactionRequest;
-import com.hazelcast.transaction.client.PrepareTransactionRequest;
 import com.hazelcast.transaction.client.RollbackTransactionRequest;
-import com.hazelcast.transaction.impl.SerializableXID;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.transaction.impl.Transaction.State;
 import static com.hazelcast.transaction.impl.Transaction.State.ACTIVE;
 import static com.hazelcast.transaction.impl.Transaction.State.COMMITTED;
 import static com.hazelcast.transaction.impl.Transaction.State.NO_TXN;
-import static com.hazelcast.transaction.impl.Transaction.State.PREPARED;
 import static com.hazelcast.transaction.impl.Transaction.State.ROLLED_BACK;
 import static com.hazelcast.transaction.impl.Transaction.State.ROLLING_BACK;
 
 final class TransactionProxy {
 
-    private static final ThreadLocal<Boolean> THREAD_FLAG = new ThreadLocal<Boolean>();
+    private static final ThreadLocal<Boolean> TRANSACTION_EXISTS = new ThreadLocal<Boolean>();
 
     private final TransactionOptions options;
     private final HazelcastClientInstanceImpl client;
     private final long threadId = Thread.currentThread().getId();
     private final ClientConnection connection;
 
-    private SerializableXID sXid;
     private String txnId;
     private State state = NO_TXN;
     private long startTime;
@@ -74,70 +69,39 @@ final class TransactionProxy {
         return state;
     }
 
-    public long getTimeoutMillis() {
-        return options.getTimeoutMillis();
-    }
-
-    public boolean setTimeoutMillis(long timeoutMillis) {
-        if (state == NO_TXN && options.getTimeoutMillis() != timeoutMillis) {
-            options.setTimeout(timeoutMillis, TimeUnit.MILLISECONDS);
-            return true;
-        }
-        return false;
-    }
-
     void begin() {
         try {
             if (state == ACTIVE) {
                 throw new IllegalStateException("Transaction is already active");
             }
             checkThread();
-            if (THREAD_FLAG.get() != null) {
+            if (TRANSACTION_EXISTS.get() != null) {
                 throw new IllegalStateException("Nested transactions are not allowed!");
             }
-            THREAD_FLAG.set(Boolean.TRUE);
+            TRANSACTION_EXISTS.set(Boolean.TRUE);
             startTime = Clock.currentTimeMillis();
-            txnId = invoke(new CreateTransactionRequest(options, sXid));
+            txnId = invoke(new CreateTransactionRequest(options));
             state = ACTIVE;
         } catch (Exception e) {
-            closeConnection();
+            TRANSACTION_EXISTS.set(null);
             throw ExceptionUtil.rethrow(e);
         }
     }
 
-    public void prepare() {
+    void commit() {
         try {
             if (state != ACTIVE) {
                 throw new TransactionNotActiveException("Transaction is not active");
             }
             checkThread();
             checkTimeout();
-            invoke(new PrepareTransactionRequest());
-            state = PREPARED;
-        } catch (Exception e) {
-            state = ROLLING_BACK;
-            closeConnection();
-            throw ExceptionUtil.rethrow(e);
-        }
-    }
-
-    void commit(boolean prepareAndCommit) {
-        try {
-            if (prepareAndCommit && state != ACTIVE) {
-                throw new TransactionNotActiveException("Transaction is not active");
-            }
-            if (!prepareAndCommit && state != PREPARED) {
-                throw new TransactionNotActiveException("Transaction is not prepared");
-            }
-            checkThread();
-            checkTimeout();
-            invoke(new CommitTransactionRequest(prepareAndCommit));
+            invoke(new CommitTransactionRequest());
             state = COMMITTED;
         } catch (Exception e) {
             state = ROLLING_BACK;
             throw ExceptionUtil.rethrow(e);
         } finally {
-            closeConnection();
+            TRANSACTION_EXISTS.set(null);
         }
     }
 
@@ -158,25 +122,8 @@ final class TransactionProxy {
             }
             state = ROLLED_BACK;
         } finally {
-            closeConnection();
+            TRANSACTION_EXISTS.set(null);
         }
-    }
-
-    SerializableXID getXid() {
-        return sXid;
-    }
-
-    void setXid(SerializableXID xid) {
-        this.sXid = xid;
-    }
-
-    private void closeConnection() {
-        THREAD_FLAG.set(null);
-//        try {
-//            connection.release();
-//        } catch (IOException e) {
-//            IOUtil.closeResource(connection);
-//        }
     }
 
     private void checkThread() {

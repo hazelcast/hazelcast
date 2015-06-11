@@ -34,7 +34,7 @@ import com.hazelcast.ringbuffer.impl.operations.ReplicationOperation;
  */
 public class RingbufferDataSerializerHook implements DataSerializerHook {
 
-    public static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.COLLECTION_DS_FACTORY, -26);
+    public static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.COLLECTION_DS_FACTORY, -29);
 
     public static final int GENERIC_OPERATION = 1;
     public static final int ADD_BACKUP_OPERATION = 2;

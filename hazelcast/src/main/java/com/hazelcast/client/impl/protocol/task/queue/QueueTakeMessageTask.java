@@ -17,12 +17,13 @@
 package com.hazelcast.client.impl.protocol.task.queue;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.QueueTakeParameters;
+import com.hazelcast.client.impl.protocol.codec.QueueTakeCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.collection.impl.queue.operations.PollOperation;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.QueuePermission;
 import com.hazelcast.spi.Operation;
@@ -31,10 +32,10 @@ import java.security.Permission;
 
 /**
  * Client Protocol Task for handling messages with type id:
- * {@link com.hazelcast.client.impl.protocol.parameters.QueueMessageType#QUEUE_TAKE}
+ * {@link com.hazelcast.client.impl.protocol.codec.QueueMessageType#QUEUE_TAKE}
  */
 public class QueueTakeMessageTask
-        extends AbstractPartitionMessageTask<QueueTakeParameters> {
+        extends AbstractPartitionMessageTask<QueueTakeCodec.RequestParameters> {
 
     public QueueTakeMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -46,8 +47,13 @@ public class QueueTakeMessageTask
     }
 
     @Override
-    protected QueueTakeParameters decodeClientMessage(ClientMessage clientMessage) {
-        return QueueTakeParameters.decode(clientMessage);
+    protected QueueTakeCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return QueueTakeCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return QueueTakeCodec.encodeResponse((Data) response);
     }
 
     @Override

@@ -17,26 +17,26 @@
 package com.hazelcast.client.impl.protocol.task.list;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.ListContainsAllParameters;
+import com.hazelcast.client.impl.protocol.codec.ListContainsAllCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.collection.impl.collection.operations.CollectionContainsOperation;
 import com.hazelcast.collection.impl.list.ListService;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.ListPermission;
 import com.hazelcast.spi.Operation;
 
 import java.security.Permission;
+import java.util.Set;
 
 /**
  * Client Protocol Task for handling messages with type id:
- * {@link com.hazelcast.client.impl.protocol.parameters.ListMessageType#LIST_CONTAINSALL}
- *
+ * {@link com.hazelcast.client.impl.protocol.codec.ListMessageType#LIST_CONTAINSALL}
  */
 public class ListContainsAllMessageTask
-        extends AbstractPartitionMessageTask<ListContainsAllParameters> {
+        extends AbstractPartitionMessageTask<ListContainsAllCodec.RequestParameters> {
 
     public ListContainsAllMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -44,17 +44,17 @@ public class ListContainsAllMessageTask
 
     @Override
     protected Operation prepareOperation() {
-        return new CollectionContainsOperation(parameters.name, parameters.valueSet);
+        return new CollectionContainsOperation(parameters.name, (Set<Data>) parameters.valueSet);
     }
 
     @Override
-    protected ListContainsAllParameters decodeClientMessage(ClientMessage clientMessage) {
-        return ListContainsAllParameters.decode(clientMessage);
+    protected ListContainsAllCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return ListContainsAllCodec.decodeRequest(clientMessage);
     }
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return BooleanResultParameters.encode((Boolean) response);
+        return ListContainsAllCodec.encodeResponse((Boolean) response);
     }
 
     @Override

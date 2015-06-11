@@ -14,8 +14,7 @@ import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.connection.nio.ClientConnectionManagerImpl;
 import com.hazelcast.client.impl.client.DistributedObjectInfo;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.GetDistributedObjectParameters;
-import com.hazelcast.client.impl.protocol.parameters.GetDistributedObjectResultParameters;
+import com.hazelcast.client.impl.protocol.codec.ClientGetDistributedObjectCodec;
 import com.hazelcast.client.proxy.ClientClusterProxy;
 import com.hazelcast.client.proxy.PartitionServiceProxy;
 import com.hazelcast.client.spi.ClientClusterService;
@@ -23,6 +22,7 @@ import com.hazelcast.client.spi.ClientExecutionService;
 import com.hazelcast.client.spi.ClientInvocationService;
 import com.hazelcast.client.spi.ClientListenerService;
 import com.hazelcast.client.spi.ClientPartitionService;
+import com.hazelcast.client.spi.ClientTransactionManagerService;
 import com.hazelcast.client.spi.ProxyManager;
 import com.hazelcast.client.spi.impl.AwsAddressTranslator;
 import com.hazelcast.client.spi.impl.ClientClusterServiceImpl;
@@ -32,8 +32,8 @@ import com.hazelcast.client.spi.impl.ClientListenerServiceImpl;
 import com.hazelcast.client.spi.impl.ClientNonSmartInvocationServiceImpl;
 import com.hazelcast.client.spi.impl.ClientPartitionServiceImpl;
 import com.hazelcast.client.spi.impl.ClientSmartInvocationServiceImpl;
+import com.hazelcast.client.spi.impl.ClientTransactionManagerServiceImpl;
 import com.hazelcast.client.spi.impl.DefaultAddressTranslator;
-import com.hazelcast.client.txn.ClientTransactionManager;
 import com.hazelcast.client.util.RoundRobinLB;
 import com.hazelcast.collection.impl.list.ListService;
 import com.hazelcast.collection.impl.queue.QueueService;
@@ -82,13 +82,18 @@ import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.quorum.QuorumService;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.ringbuffer.Ringbuffer;
+import com.hazelcast.ringbuffer.impl.RingbufferService;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.UsernamePasswordCredentials;
+import com.hazelcast.spi.impl.SerializationServiceSupport;
 import com.hazelcast.topic.impl.TopicService;
+import com.hazelcast.topic.impl.reliable.ReliableTopicService;
+import com.hazelcast.transaction.HazelcastXAResource;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.TransactionalTask;
+import com.hazelcast.transaction.impl.xa.XAService;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.ServiceLoader;
 
@@ -100,7 +105,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 
-public class HazelcastClientInstanceImpl implements HazelcastInstance {
+public class HazelcastClientInstanceImpl implements HazelcastInstance, SerializationServiceSupport {
 
     private static final AtomicInteger CLIENT_ID = new AtomicInteger();
     private static final ILogger LOGGER = Logger.getLogger(HazelcastClient.class);
@@ -119,7 +124,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance {
     private final ClientInvocationService invocationService;
     private final ClientExecutionServiceImpl executionService;
     private final ClientListenerServiceImpl listenerService;
-    private final ClientTransactionManager transactionManager;
+    private final ClientTransactionManagerService transactionManager;
     private final NearCacheManager nearCacheManager;
     private final ProxyManager proxyManager;
     private final ConcurrentMap<String, Object> userContext;
@@ -142,7 +147,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance {
         proxyManager = new ProxyManager(this);
         executionService = initExecutorService();
         loadBalancer = initLoadBalancer(config);
-        transactionManager = new ClientTransactionManager(this, loadBalancer);
+        transactionManager = new ClientTransactionManagerServiceImpl(this, loadBalancer);
         partitionService = new ClientPartitionServiceImpl(this);
         connectionManager = initClientConnectionManager();
         clusterService = new ClientClusterServiceImpl(this);
@@ -180,11 +185,6 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance {
             c = new UsernamePasswordCredentials(groupConfig.getName(), groupConfig.getPassword());
         }
         return c;
-    }
-
-    @Override
-    public <E> Ringbuffer<E> getRingbuffer(String name) {
-        throw new UnsupportedOperationException();
     }
 
     private ClientInvocationService initInvocationService() {
@@ -259,6 +259,11 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance {
         return new ClientConnectionManagerImpl(this, addressTranslator);
     }
 
+    @Override
+    public HazelcastXAResource getXAResource() {
+        return getDistributedObject(XAService.SERVICE_NAME, XAService.SERVICE_NAME);
+    }
+
     public Config getConfig() {
         throw new UnsupportedOperationException("Client cannot access cluster config!");
     }
@@ -318,11 +323,21 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance {
     }
 
     @Override
+    public <E> ITopic<E> getReliableTopic(String name) {
+        return getDistributedObject(ReliableTopicService.SERVICE_NAME, name);
+    }
+
+    @Override
     @Deprecated
     public ILock getLock(Object key) {
         //this method will be deleted in the near future.
         String name = LockProxy.convertToStringKey(key, serializationService);
         return getDistributedObject(LockServiceImpl.SERVICE_NAME, name);
+    }
+
+    @Override
+    public <E> Ringbuffer<E> getRingbuffer(String name) {
+        return getDistributedObject(RingbufferService.SERVICE_NAME, name);
     }
 
     @Override
@@ -359,6 +374,10 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance {
         return transactionManager.newTransactionContext(options);
     }
 
+    public ClientTransactionManagerService getTransactionManager() {
+        return transactionManager;
+    }
+
     @Override
     public IdGenerator getIdGenerator(String name) {
         return getDistributedObject(IdGeneratorService.SERVICE_NAME, name);
@@ -387,11 +406,11 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance {
     @Override
     public Collection<DistributedObject> getDistributedObjects() {
         try {
-            ClientMessage request = GetDistributedObjectParameters.encode();
+            ClientMessage request = ClientGetDistributedObjectCodec.encodeRequest();
             final Future<ClientMessage> future = new ClientInvocation(this, request).invoke();
             ClientMessage response = future.get();
-            GetDistributedObjectResultParameters resultParameters =
-                    GetDistributedObjectResultParameters.decode(response);
+            ClientGetDistributedObjectCodec.ResponseParameters resultParameters =
+                    ClientGetDistributedObjectCodec.decodeResponse(response);
 
             Collection<DistributedObjectInfo> infoCollection = resultParameters.infoCollection;
             for (DistributedObjectInfo distributedObjectInfo : infoCollection) {

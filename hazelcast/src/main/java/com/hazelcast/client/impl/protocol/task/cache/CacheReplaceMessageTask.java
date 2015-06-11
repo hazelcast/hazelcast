@@ -17,10 +17,9 @@
 package com.hazelcast.client.impl.protocol.task.cache;
 
 import com.hazelcast.cache.impl.CacheOperationProvider;
-import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.operation.CachePutOperation;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.CacheReplaceParameters;
+import com.hazelcast.client.impl.protocol.codec.CacheReplaceCodec;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.Operation;
@@ -33,7 +32,7 @@ import javax.cache.expiry.ExpiryPolicy;
  * @see CachePutOperation
  */
 public class CacheReplaceMessageTask
-        extends AbstractCacheMessageTask<CacheReplaceParameters> {
+        extends AbstractCacheMessageTask<CacheReplaceCodec.RequestParameters> {
 
     public CacheReplaceMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -42,16 +41,20 @@ public class CacheReplaceMessageTask
     @Override
     protected Operation prepareOperation() {
         CacheOperationProvider operationProvider = getOperationProvider(parameters.name);
-        CacheService service = getService(getServiceName());
-        ExpiryPolicy expiryPolicy = (ExpiryPolicy) service.toObject(parameters.expiryPolicy);
-        int completionId = clientMessage.getCorrelationId();
+        ExpiryPolicy expiryPolicy = serializationService.toObject(parameters.expiryPolicy);
         return operationProvider
-                .createReplaceOperation(parameters.key, parameters.oldValue, parameters.newValue, expiryPolicy, completionId);
+                .createReplaceOperation(parameters.key, parameters.oldValue, parameters.newValue,
+                        expiryPolicy, parameters.completionId);
     }
 
     @Override
-    protected CacheReplaceParameters decodeClientMessage(ClientMessage clientMessage) {
-        return CacheReplaceParameters.decode(clientMessage);
+    protected CacheReplaceCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return CacheReplaceCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return CacheReplaceCodec.encodeResponse(serializationService.toData(response));
     }
 
     @Override

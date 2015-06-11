@@ -3,7 +3,6 @@ package com.hazelcast.spi.impl.operationservice.impl;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastOverloadException;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationAccessor;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.impl.CallIdSequence.CallIdSequenceWithBackpressure;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -15,12 +14,12 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.spi.Operation.CALL_ID_LOCAL_SKIPPED;
 import static com.hazelcast.spi.OperationAccessor.setCallId;
-import static com.hazelcast.spi.OperationAccessor.setCallTimeout;
+import static com.hazelcast.spi.impl.operationservice.impl.CallIdSequence.CallIdSequenceWithBackpressure.MAX_DELAY_MS;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -184,6 +183,21 @@ public class CallIdSequenceWithBackpressureTest extends HazelcastTestSupport {
         assertEquals(oldTail + 1, sequence.getTail());
     }
 
+    @Test
+    public void completeLocalCall() {
+        CallIdSequenceWithBackpressure sequence = new CallIdSequenceWithBackpressure(100, 60000);
+
+        Invocation invocation = newInvocation(new DummyOperation());
+        setCallId(invocation.op, 0);
+
+        long oldSequence = sequence.getLastCallId();
+        long oldTail = sequence.getTail();
+        sequence.complete(invocation);
+
+        assertEquals(oldSequence, sequence.getLastCallId());
+        assertEquals(oldTail, sequence.getTail());
+    }
+
     @Test(expected = AssertionError.class)
     public void complete_whenNoMatchingNext() {
         CallIdSequenceWithBackpressure sequence = new CallIdSequenceWithBackpressure(100, 60000);
@@ -194,6 +208,25 @@ public class CallIdSequenceWithBackpressureTest extends HazelcastTestSupport {
         sequence.complete(invocation);
 
         sequence.complete(invocation);
+    }
+
+    @Test
+    public void sleep_whenInterrupted() {
+        Thread.currentThread().interrupt();
+        assertTrue(CallIdSequence.CallIdSequenceWithBackpressure.sleep(10));
+    }
+
+    @Test
+    public void sleep_whenNotInterrupted() {
+        Thread.interrupted();//clears the flag
+        assertFalse(CallIdSequence.CallIdSequenceWithBackpressure.sleep(10));
+    }
+
+    @Test
+    public void nextDelay() {
+        assertEquals(MAX_DELAY_MS, CallIdSequenceWithBackpressure.nextDelay(10000, MAX_DELAY_MS / 2));
+        assertEquals(MAX_DELAY_MS, CallIdSequenceWithBackpressure.nextDelay(10000, MAX_DELAY_MS));
+        assertEquals(10, CallIdSequenceWithBackpressure.nextDelay(10, MAX_DELAY_MS));
     }
 
     private Invocation newInvocation(Operation op) {

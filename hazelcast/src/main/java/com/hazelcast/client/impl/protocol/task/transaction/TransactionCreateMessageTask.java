@@ -18,23 +18,20 @@ package com.hazelcast.client.impl.protocol.task.transaction;
 
 import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.TransactionCreateParameters;
-import com.hazelcast.client.impl.protocol.parameters.TransactionCreateResultParameters;
+import com.hazelcast.client.impl.protocol.codec.TransactionCreateCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractTransactionalMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.security.permission.TransactionPermission;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionOptions;
-import com.hazelcast.transaction.impl.Transaction;
-import com.hazelcast.transaction.impl.TransactionAccessor;
 import com.hazelcast.transaction.impl.TransactionManagerServiceImpl;
 
 import java.security.Permission;
 import java.util.concurrent.TimeUnit;
 
 public class TransactionCreateMessageTask
-        extends AbstractTransactionalMessageTask<TransactionCreateParameters> {
+        extends AbstractTransactionalMessageTask<TransactionCreateCodec.RequestParameters> {
 
 
     public TransactionCreateMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
@@ -42,7 +39,7 @@ public class TransactionCreateMessageTask
     }
 
     @Override
-    protected ClientMessage innerCall() throws Exception {
+    protected Object innerCall() throws Exception {
         TransactionOptions options = new TransactionOptions();
         options.setDurability(parameters.durability);
         options.setTimeout(parameters.timeout, TimeUnit.MILLISECONDS);
@@ -51,13 +48,9 @@ public class TransactionCreateMessageTask
         TransactionManagerServiceImpl transactionManager =
                 (TransactionManagerServiceImpl) clientEngine.getTransactionManagerService();
         TransactionContext context = transactionManager.newClientTransactionContext(options, endpoint.getUuid());
-        if (parameters.xid != null) {
-            Transaction transaction = TransactionAccessor.getTransaction(context);
-            transactionManager.addManagedTransaction(parameters.xid, transaction);
-        }
         context.beginTransaction();
         endpoint.setTransactionContext(context);
-        return TransactionCreateResultParameters.encode(context.getTxnId());
+        return context.getTxnId();
     }
 
     @Override
@@ -66,8 +59,13 @@ public class TransactionCreateMessageTask
     }
 
     @Override
-    protected TransactionCreateParameters decodeClientMessage(ClientMessage clientMessage) {
-        return TransactionCreateParameters.decode(clientMessage);
+    protected TransactionCreateCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return TransactionCreateCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return TransactionCreateCodec.encodeResponse((String) response);
     }
 
     @Override

@@ -17,8 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.set;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.SetAddParameters;
+import com.hazelcast.client.impl.protocol.codec.SetAddCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.collection.impl.collection.operations.CollectionAddOperation;
 import com.hazelcast.collection.impl.set.SetService;
@@ -27,13 +26,14 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.SetPermission;
 import com.hazelcast.spi.Operation;
+
 import java.security.Permission;
 
 /**
  * SetAddMessageTask
  */
 public class SetAddMessageTask
-        extends AbstractPartitionMessageTask<SetAddParameters> {
+        extends AbstractPartitionMessageTask<SetAddCodec.RequestParameters> {
 
     public SetAddMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -45,13 +45,13 @@ public class SetAddMessageTask
     }
 
     @Override
-    protected SetAddParameters decodeClientMessage(ClientMessage clientMessage) {
-        return SetAddParameters.decode(clientMessage);
+    protected SetAddCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return SetAddCodec.decodeRequest(clientMessage);
     }
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return BooleanResultParameters.encode((Boolean) response);
+        return SetAddCodec.encodeResponse((Boolean) response);
     }
 
     @Override

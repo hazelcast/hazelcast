@@ -17,8 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.set;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.IntResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.SetSizeParameters;
+import com.hazelcast.client.impl.protocol.codec.SetSizeCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.collection.impl.collection.operations.CollectionSizeOperation;
 import com.hazelcast.collection.impl.set.SetService;
@@ -27,13 +26,14 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.SetPermission;
 import com.hazelcast.spi.Operation;
+
 import java.security.Permission;
 
 /**
  * SetSizeMessageTask
  */
 public class SetSizeMessageTask
-        extends AbstractPartitionMessageTask<SetSizeParameters> {
+        extends AbstractPartitionMessageTask<SetSizeCodec.RequestParameters> {
 
     public SetSizeMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -45,13 +45,13 @@ public class SetSizeMessageTask
     }
 
     @Override
-    protected SetSizeParameters decodeClientMessage(ClientMessage clientMessage) {
-        return SetSizeParameters.decode(clientMessage);
+    protected SetSizeCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return SetSizeCodec.decodeRequest(clientMessage);
     }
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return IntResultParameters.encode((Integer) response);
+        return SetSizeCodec.encodeResponse((Integer) response);
     }
 
     @Override
@@ -60,7 +60,7 @@ public class SetSizeMessageTask
     }
 
     public Object[] getParameters() {
-        return new Object[]{};
+        return null;
     }
 
     @Override

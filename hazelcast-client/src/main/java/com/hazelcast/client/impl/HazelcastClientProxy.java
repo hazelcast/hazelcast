@@ -47,6 +47,8 @@ import com.hazelcast.mapreduce.JobTracker;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.quorum.QuorumService;
 import com.hazelcast.ringbuffer.Ringbuffer;
+import com.hazelcast.spi.impl.SerializationServiceSupport;
+import com.hazelcast.transaction.HazelcastXAResource;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionOptions;
@@ -58,7 +60,7 @@ import java.util.concurrent.ConcurrentMap;
  * A client-side proxy {@link com.hazelcast.core.HazelcastInstance} instance.
  *
  */
-public final class HazelcastClientProxy implements HazelcastInstance {
+public final class HazelcastClientProxy implements HazelcastInstance, SerializationServiceSupport {
 
     public volatile HazelcastClientInstanceImpl client;
 
@@ -89,6 +91,11 @@ public final class HazelcastClientProxy implements HazelcastInstance {
     @Override
     public <E> ITopic<E> getTopic(String name) {
         return getClient().getTopic(name);
+    }
+
+    @Override
+    public <E> ITopic<E> getReliableTopic(String name) {
+        return getClient().getReliableTopic(name);
     }
 
     @Override
@@ -251,6 +258,11 @@ public final class HazelcastClientProxy implements HazelcastInstance {
 
     public ClientConfig getClientConfig() {
         return getClient().getClientConfig();
+    }
+
+    @Override
+    public HazelcastXAResource getXAResource() {
+        return getClient().getXAResource();
     }
 
     @Override

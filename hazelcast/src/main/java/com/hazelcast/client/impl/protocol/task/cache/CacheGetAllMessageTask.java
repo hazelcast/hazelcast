@@ -20,8 +20,7 @@ import com.hazelcast.cache.impl.CacheOperationProvider;
 import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.operation.CacheGetAllOperationFactory;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.CacheGetAllParameters;
-import com.hazelcast.client.impl.protocol.parameters.DataEntryListResultParameters;
+import com.hazelcast.client.impl.protocol.codec.CacheGetAllCodec;
 import com.hazelcast.instance.Node;
 import com.hazelcast.map.impl.MapEntrySet;
 import com.hazelcast.nio.Connection;
@@ -39,15 +38,20 @@ import java.util.Set;
  * @see CacheGetAllOperationFactory
  */
 public class CacheGetAllMessageTask
-        extends AbstractCacheAllPartitionsTask<CacheGetAllParameters> {
+        extends AbstractCacheAllPartitionsTask<CacheGetAllCodec.RequestParameters> {
 
     public CacheGetAllMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected CacheGetAllParameters decodeClientMessage(ClientMessage clientMessage) {
-        return CacheGetAllParameters.decode(clientMessage);
+    protected CacheGetAllCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return CacheGetAllCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return CacheGetAllCodec.encodeResponse((Map<Data, Data>) response);
     }
 
     @Override
@@ -55,21 +59,25 @@ public class CacheGetAllMessageTask
         CacheOperationProvider operationProvider = getOperationProvider(parameters.name);
         CacheService service = getService(getServiceName());
         ExpiryPolicy expiryPolicy = (ExpiryPolicy) service.toObject(parameters.expiryPolicy);
-        return operationProvider.createGetAllOperationFactory(parameters.keys, expiryPolicy);
+        return operationProvider.createGetAllOperationFactory((Set<Data>) parameters.keys, expiryPolicy);
     }
 
     @Override
-    protected ClientMessage reduce(Map<Integer, Object> map) {
-        CacheService service = getService(getServiceName());
+    protected Object reduce(Map<Integer, Object> map) {
         Map<Data, Data> reducedMap = new HashMap<Data, Data>(map.size());
         for (Map.Entry<Integer, Object> entry : map.entrySet()) {
-            MapEntrySet mapEntrySet = (MapEntrySet) service.toObject(entry.getValue());
+            MapEntrySet mapEntrySet = (MapEntrySet) nodeEngine.toObject(entry.getValue());
             Set<Map.Entry<Data, Data>> entrySet = mapEntrySet.getEntrySet();
             for (Map.Entry<Data, Data> dataEntry : entrySet) {
                 reducedMap.put(dataEntry.getKey(), dataEntry.getValue());
             }
         }
-        return DataEntryListResultParameters.encode(reducedMap);
+        return reducedMap;
+    }
+
+    @Override
+    public String getServiceName() {
+        return CacheService.SERVICE_NAME;
     }
 
     @Override

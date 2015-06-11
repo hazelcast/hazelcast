@@ -160,22 +160,6 @@ public class LocalMemoryStatsImpl implements LocalMemoryStats {
     }
 
     @Override
-    public String toString() {
-        final StringBuilder sb = new StringBuilder("LocalMemoryStats{");
-        sb.append("totalPhysical=").append(totalPhysical);
-        sb.append(", freePhysical=").append(freePhysical);
-        sb.append(", maxNativeMemory=").append(maxNativeMemory);
-        sb.append(", committedNativeMemory=").append(committedNativeMemory);
-        sb.append(", usedNativeMemory=").append(usedNativeMemory);
-        sb.append(", maxHeap=").append(maxHeap);
-        sb.append(", committedHeap=").append(committedHeap);
-        sb.append(", usedHeap=").append(usedHeap);
-        sb.append(", gcStats=").append(gcStats);
-        sb.append('}');
-        return sb.toString();
-    }
-
-    @Override
     public long getCreationTime() {
         return creationTime;
     }
@@ -279,4 +263,18 @@ public class LocalMemoryStatsImpl implements LocalMemoryStats {
         return result;
     }
 
+    @Override
+    public String toString() {
+        return "LocalMemoryStats{"
+                + "totalPhysical=" + totalPhysical
+                + ", freePhysical=" + freePhysical
+                + ", maxNativeMemory=" + maxNativeMemory
+                + ", committedNativeMemory=" + committedNativeMemory
+                + ", usedNativeMemory=" + usedNativeMemory
+                + ", maxHeap=" + maxHeap
+                + ", committedHeap=" + committedHeap
+                + ", usedHeap=" + usedHeap
+                + ", gcStats=" + gcStats
+                + '}';
+    }
 }

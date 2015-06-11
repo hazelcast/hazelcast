@@ -1,5 +1,6 @@
 package com.hazelcast.test;
 
+import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
 import static java.lang.String.format;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -18,7 +19,7 @@ public abstract class TestThread extends Thread {
 
     @Override
     public final void run() {
-        System.out.println(getName()+" Starting");
+        System.out.println(getName() + " Starting");
         try {
             doRun();
             System.out.println(getName() + " Completed");
@@ -26,7 +27,11 @@ public abstract class TestThread extends Thread {
             System.out.println(getName()+" Completed with failure");
             t.printStackTrace();
             this.error = t;
+            onError(t);
         }
+    }
+
+    public void onError(Throwable t){
     }
 
     public Throwable getError() {
@@ -39,13 +44,12 @@ public abstract class TestThread extends Thread {
      * Asserts that the thread eventually completes, no matter if there is an error or not.
      */
     public void assertTerminates() {
-        HazelcastTestSupport.assertTrueEventually(new AssertTask() {
+        assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
                 assertFalse(format("Thread %s is still alive", getName()), isAlive());
             }
         });
-
     }
 
     /**
@@ -53,7 +57,6 @@ public abstract class TestThread extends Thread {
      */
     public void assertSucceedsEventually() {
         assertTerminates();
-
         assertNull("No error should have been thrown, but " + getName() + " completed error", error);
     }
 

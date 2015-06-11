@@ -17,28 +17,33 @@
 package com.hazelcast.client.impl.protocol.task;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.RemoveAllListenersParameters;
-import com.hazelcast.client.impl.protocol.parameters.VoidResultParameters;
+import com.hazelcast.client.impl.protocol.codec.ClientRemoveAllListenersCodec;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
 
 import java.security.Permission;
 
-public class RemoveAllListenersMessageTask extends AbstractCallableMessageTask<RemoveAllListenersParameters> {
+public class RemoveAllListenersMessageTask
+        extends AbstractCallableMessageTask<ClientRemoveAllListenersCodec.RequestParameters> {
 
     public RemoveAllListenersMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected ClientMessage call() throws Exception {
+    protected Object call() throws Exception {
         endpoint.clearAllListeners();
-        return VoidResultParameters.encode();
+        return null;
     }
 
     @Override
-    protected RemoveAllListenersParameters decodeClientMessage(ClientMessage clientMessage) {
-        return RemoveAllListenersParameters.decode(clientMessage);
+    protected ClientRemoveAllListenersCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return ClientRemoveAllListenersCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return ClientRemoveAllListenersCodec.encodeResponse();
     }
 
     @Override

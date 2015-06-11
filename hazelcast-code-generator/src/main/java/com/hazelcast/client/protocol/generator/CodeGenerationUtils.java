@@ -18,6 +18,8 @@ package com.hazelcast.client.protocol.generator;
 
 public final class CodeGenerationUtils {
 
+    private static final int BYTE_BIT_COUNT = 8;
+
     private CodeGenerationUtils() {
     }
 
@@ -25,7 +27,38 @@ public final class CodeGenerationUtils {
         return input.substring(0, 1).toUpperCase() + input.substring(1);
     }
 
+
     public static String getPackageNameFromQualifiedName(String qualifiedClassName) {
         return qualifiedClassName.substring(0, qualifiedClassName.lastIndexOf("."));
     }
+
+    public static String mergeIds(short classId, short methodId) {
+        final String s = Integer.toHexString((classId << BYTE_BIT_COUNT) + methodId);
+        return s.length() == 3 ? "0x0" + s : "0x" + s;
+    }
+
+    public static String getTypeInsideData(String type) {
+        int end = type.indexOf("[]");
+        return type.substring(0, end);
+    }
+
+    public static String getTypeInsideCollection(String type) {
+        int beg = type.indexOf("<");
+        int end = type.lastIndexOf(">");
+        return type.substring(beg + 1, end);
+    }
+
+    public static String getKeyTypeInsideMap(String type) {
+        int beg = type.indexOf("<");
+        int end = type.lastIndexOf(",");
+        return type.substring(beg + 1, end);
+    }
+
+    public static String getValueTypeInsideMap(String type) {
+        int beg = type.indexOf(",");
+        int end = type.lastIndexOf(">");
+        return type.substring(beg + 1, end);
+    }
+
+
 }

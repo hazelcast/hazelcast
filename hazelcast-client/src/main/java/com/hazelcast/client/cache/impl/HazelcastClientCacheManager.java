@@ -26,13 +26,15 @@ import com.hazelcast.cache.impl.client.CacheGetConfigRequest;
 import com.hazelcast.cache.impl.client.CacheManagementConfigRequest;
 import com.hazelcast.cache.impl.nearcache.NearCacheManager;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
+import com.hazelcast.client.impl.HazelcastClientProxy;
 import com.hazelcast.client.impl.client.ClientRequest;
 import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.core.Member;
+import com.hazelcast.instance.AbstractMember;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.impl.SerializableCollection;
 import com.hazelcast.util.ExceptionUtil;
@@ -81,12 +83,12 @@ public final class HazelcastClientCacheManager extends AbstractHazelcastCacheMan
     private void enableStatisticManagementOnNodes(String cacheName, boolean statOrMan, boolean enabled) {
         checkIfManagerNotClosed();
         checkNotNull(cacheName, "cacheName cannot be null");
-        Collection<MemberImpl> members = clientContext.getClusterService().getMemberList();
+        Collection<Member> members = clientContext.getClusterService().getMemberList();
         Collection<Future> futures = new ArrayList<Future>();
         HazelcastClientInstanceImpl client = (HazelcastClientInstanceImpl) clientContext.getHazelcastInstance();
-        for (MemberImpl member : members) {
+        for (Member member : members) {
             try {
-                Address address = member.getAddress();
+                Address address = ((AbstractMember) member).getAddress();
                 CacheManagementConfigRequest request =
                         new CacheManagementConfigRequest(getCacheNameWithPrefix(cacheName),
                                                          statOrMan, enabled, address);
@@ -206,6 +208,13 @@ public final class HazelcastClientCacheManager extends AbstractHazelcastCacheMan
     public NearCacheManager getNearCacheManager() {
         if (hazelcastInstance instanceof HazelcastClientInstanceImpl) {
             return ((HazelcastClientInstanceImpl) hazelcastInstance).getNearCacheManager();
+        } else if (hazelcastInstance instanceof HazelcastClientProxy) {
+            HazelcastClientInstanceImpl clientInstance = ((HazelcastClientProxy) hazelcastInstance).client;
+            if (clientInstance != null) {
+                return clientInstance.getNearCacheManager();
+            } else {
+                return null;
+            }
         } else {
             return null;
         }

@@ -17,8 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.map;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.MapLockParameters;
+import com.hazelcast.client.impl.protocol.codec.MapLockCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.concurrent.lock.operations.LockOperation;
@@ -34,11 +33,8 @@ import com.hazelcast.spi.Operation;
 import java.security.Permission;
 import java.util.concurrent.TimeUnit;
 
-/**
- * Client Protocol Task for handling messages with type id:
- * {@link com.hazelcast.client.impl.protocol.parameters.MapMessageType#MAP_LOCK}
- */
-public class MapLockMessageTask extends AbstractPartitionMessageTask<MapLockParameters> {
+public class MapLockMessageTask
+        extends AbstractPartitionMessageTask<MapLockCodec.RequestParameters> {
 
     public MapLockMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -51,18 +47,23 @@ public class MapLockMessageTask extends AbstractPartitionMessageTask<MapLockPara
     }
 
     @Override
-    protected MapLockParameters decodeClientMessage(ClientMessage clientMessage) {
-        return MapLockParameters.decode(clientMessage);
+    protected MapLockCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return MapLockCodec.decodeRequest(clientMessage);
     }
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return BooleanResultParameters.encode((Boolean) response);
+        return MapLockCodec.encodeResponse();
     }
 
     @Override
     public String getServiceName() {
         return LockService.SERVICE_NAME;
+    }
+
+    @Override
+    public String getDistributedObjectType() {
+        return MapService.SERVICE_NAME;
     }
 
     @Override
@@ -87,8 +88,8 @@ public class MapLockMessageTask extends AbstractPartitionMessageTask<MapLockPara
     @Override
     public Object[] getParameters() {
         if (parameters.ttl == -1) {
-            return new Object[]{parameters.key, parameters.ttl, TimeUnit.MILLISECONDS};
+            return new Object[]{parameters.key};
         }
-        return new Object[]{parameters.key};
+        return new Object[]{parameters.key, parameters.ttl, TimeUnit.MILLISECONDS};
     }
 }

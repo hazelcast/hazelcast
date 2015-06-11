@@ -4,6 +4,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.DefaultData;
 import com.hazelcast.nio.serialization.DefaultSerializationServiceBuilder;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.SerializationService;
@@ -21,6 +22,7 @@ import org.junit.runner.RunWith;
 import java.io.IOException;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
@@ -118,6 +120,25 @@ public class QueryEntryTest extends HazelcastTestSupport {
         assertEquals(0, value.serializationCount);
         assertEquals(0, key.deserializationCount);
         assertEquals(0, key.serializationCount);
+    }
+
+
+    @Test
+    public void test_init() throws Exception {
+        Data indexedKey = new DefaultData();
+
+        Data dataKey = serializationService.toData("dataKey");
+        Data dataValue = serializationService.toData("dataValue");
+        QueryEntry queryEntry = new QueryEntry(serializationService, indexedKey, dataKey, dataValue);
+
+        Object objectValue = queryEntry.getValue();
+        Object objectKey = queryEntry.getKey();
+
+        queryEntry.init(serializationService, indexedKey, objectKey, objectValue);
+
+        // compare references of objects since they should be cloned after QueryEntry#init call.
+        assertTrue("Old dataKey should not be here", dataKey != queryEntry.getKeyData());
+        assertTrue("Old dataValue should not be here", dataValue != queryEntry.getValueData());
     }
 
     private static class SerializableObject implements DataSerializable {

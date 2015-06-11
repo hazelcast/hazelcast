@@ -17,8 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.queue;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.IntResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.QueueRemainingCapacityParameters;
+import com.hazelcast.client.impl.protocol.codec.QueueRemainingCapacityCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.collection.impl.queue.operations.RemainingCapacityOperation;
@@ -32,11 +31,10 @@ import java.security.Permission;
 
 /**
  * Client Protocol Task for handling messages with type id:
- * {@link com.hazelcast.client.impl.protocol.parameters.QueueMessageType#QUEUE_REMAININGCAPACITY}
- *
+ * {@link com.hazelcast.client.impl.protocol.codec.QueueMessageType#QUEUE_REMAININGCAPACITY}
  */
 public class QueueRemainingCapacityMessageTask
-        extends AbstractPartitionMessageTask<QueueRemainingCapacityParameters> {
+        extends AbstractPartitionMessageTask<QueueRemainingCapacityCodec.RequestParameters> {
 
     public QueueRemainingCapacityMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -48,14 +46,14 @@ public class QueueRemainingCapacityMessageTask
     }
 
     @Override
-    protected QueueRemainingCapacityParameters decodeClientMessage(ClientMessage clientMessage) {
-        return QueueRemainingCapacityParameters.decode(clientMessage);
+    protected QueueRemainingCapacityCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return QueueRemainingCapacityCodec.decodeRequest(clientMessage);
     }
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
         int result = response != null ? (Integer) response : 0;
-        return IntResultParameters.encode(result);
+        return QueueRemainingCapacityCodec.encodeResponse(result);
     }
 
     @Override

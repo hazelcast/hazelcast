@@ -17,8 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.list;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.IntResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.ListIndexOfParameters;
+import com.hazelcast.client.impl.protocol.codec.ListIndexOfCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.collection.impl.list.ListService;
 import com.hazelcast.collection.impl.list.operations.ListIndexOfOperation;
@@ -32,11 +31,10 @@ import java.security.Permission;
 
 /**
  * Client Protocol Task for handling messages with type id:
- * {@link com.hazelcast.client.impl.protocol.parameters.ListMessageType#LIST_INDEXOF}
- *
+ * {@link com.hazelcast.client.impl.protocol.codec.ListMessageType#LIST_INDEXOF}
  */
 public class ListIndexOfMessageTask
-        extends AbstractPartitionMessageTask<ListIndexOfParameters> {
+        extends AbstractPartitionMessageTask<ListIndexOfCodec.RequestParameters> {
 
     public ListIndexOfMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -48,13 +46,13 @@ public class ListIndexOfMessageTask
     }
 
     @Override
-    protected ListIndexOfParameters decodeClientMessage(ClientMessage clientMessage) {
-        return ListIndexOfParameters.decode(clientMessage);
+    protected ListIndexOfCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return ListIndexOfCodec.decodeRequest(clientMessage);
     }
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return IntResultParameters.encode((Integer) response);
+        return ListIndexOfCodec.encodeResponse((Integer) response);
     }
 
     @Override

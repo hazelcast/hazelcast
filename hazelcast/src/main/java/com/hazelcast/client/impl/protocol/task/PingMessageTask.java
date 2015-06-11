@@ -17,27 +17,31 @@
 package com.hazelcast.client.impl.protocol.task;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.PingParameters;
-import com.hazelcast.client.impl.protocol.parameters.VoidResultParameters;
+import com.hazelcast.client.impl.protocol.codec.ClientPingCodec;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
 
 import java.security.Permission;
 
-public class PingMessageTask extends AbstractCallableMessageTask<PingParameters> {
+public class PingMessageTask extends AbstractCallableMessageTask<ClientPingCodec.RequestParameters> {
 
     public PingMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected PingParameters decodeClientMessage(ClientMessage clientMessage) {
-        return PingParameters.decode(clientMessage);
+    protected ClientPingCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return ClientPingCodec.decodeRequest(clientMessage);
     }
 
     @Override
-    protected ClientMessage call() throws Exception {
-        return VoidResultParameters.encode();
+    protected ClientMessage encodeResponse(Object response) {
+        return ClientPingCodec.encodeResponse();
+    }
+
+    @Override
+    protected Object call() throws Exception {
+        return null;
     }
 
     @Override

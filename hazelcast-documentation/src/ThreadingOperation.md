@@ -4,7 +4,7 @@
 There are 2 types of operations:
 
 * Operations that are aware of a certain partition, e.g. `IMap.get(key)`.
-* Operations that are not partition aware, such as the `IExecutorService.executeOnMember(command,member)` operation.
+* Operations that are not partition aware, such as the `IExecutorService.executeOnMember(command, member)` operation.
 
 Each of these operation types has a different threading model, explained below.
 
@@ -32,8 +32,8 @@ After the `threadIndex` is determined, the operation is put in the work queue of
 Because of this threading strategy, there are two forms of false sharing you need to be aware of:
 
 * false sharing of the partition: two completely independent data structures share the same partitions; e.g. if there
- is a map `employees` and a map `orders`, the method `employees.get(peter)` running on partition 25 may be blocked
- by a `map.get` of `orders.get(1234)` also running on partition 25. If independent data structure share the same partition,
+ is a map `employees` and a map `orders`, the method `employees.get("peter")` running on partition 25 may be blocked
+ by a `map.get()` of `orders.get(1234)` also running on partition 25. If independent data structure share the same partition,
  a slow operation on one data structure can slow down the other data structures.
  
 * false sharing of the partition-aware operation-thread: each operation-thread is responsible for executing
@@ -44,7 +44,7 @@ Because of this threading strategy, there are two forms of false sharing you nee
 You need to be careful with long running operations because you could starve operations of a thread. 
 As a general rule, the partition thread should be released as soon as possible because operations are not designed
 to execute long running operations. That is why, for example, it is very dangerous to execute a long running operation 
-using `AtomicReference.alter` or an `IMap.executeOnKey`, because these operations will block other operations to be executed.
+using `AtomicReference.alter()` or an `IMap.executeOnKey()`, because these operations will block other operations to be executed.
 
 Currently, there is no support for work stealing. Different partitions that map to the same thread may need to wait 
 till one of the partitions is finished, even though there are other free partition-operation threads available.
@@ -56,7 +56,7 @@ say you have one CPU and 4 cores per CPU. By default, 8 operation threads will b
 
 #### Non Partition-aware Operations
 
-To execute non partition-aware operations, e.g. `IExecutorService.executeOnMember(command,member)`, generic operation 
+To execute non partition-aware operations, e.g. `IExecutorService.executeOnMember(command, member)`, generic operation 
 threads are used. When the Hazelcast instance is started, an array of operation threads is created. The size of this array 
 has a default value of the number of cores divided by two with a minimum value of 2. It can be changed using the 
 `hazelcast.operation.generic.thread.count` property. This means that:
@@ -93,9 +93,9 @@ nothing else than trigger the worker to wake up and check the priority queue.
 When an Operation is invoked, a `Future` is returned. Let's take the example code below. 
 
 ```java
-GetOperation operation = new GetOperation( mapName, key )
-Future future = operationService.invoke( operation )
-future.get)
+GetOperation operation = new GetOperation( mapName, key );
+Future future = operationService.invoke( operation );
+future.get();
 ```
 
 The calling side blocks for a reply. In this case, `GetOperation` is set in the work queue for the partition of `key`, where
@@ -109,7 +109,6 @@ When a local partition-aware call is done, an operation is made and handed over 
 and a future is returned. When the calling thread calls get on that future, it will acquire a lock and wait for the result 
 to become available. When a response is calculated, the future is looked up, and the waiting thread is notified.  
 
-In the future, this will be optimized to reduce the amount of expensive systems calls, such as `lock.acquire`/`notify` and the expensive
+In the future, this will be optimized to reduce the amount of expensive systems calls, such as `lock.acquire()`/`notify()` and the expensive
 interaction with the operation-queue. Probably, we will add support for a caller-runs mode, so that an operation is directly executed on
 the calling thread.
-

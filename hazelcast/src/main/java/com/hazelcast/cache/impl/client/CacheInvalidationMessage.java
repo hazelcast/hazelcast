@@ -17,8 +17,6 @@
 package com.hazelcast.cache.impl.client;
 
 import com.hazelcast.cache.impl.CachePortableHook;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
@@ -26,21 +24,16 @@ import com.hazelcast.nio.serialization.PortableWriter;
 
 import java.io.IOException;
 
-public class CacheInvalidationMessage implements Portable {
+public abstract class CacheInvalidationMessage implements Portable {
 
-    private String name;
-    private Data key;
-    private String sourceUuid;
+    protected String name;
 
     public CacheInvalidationMessage() {
 
     }
 
-    public CacheInvalidationMessage(String name, Data key, String sourceUuid) {
-        assert key == null || key.dataSize() > 0 : "Invalid invalidation key: " + key;
+    public CacheInvalidationMessage(String name) {
         this.name = name;
-        this.key = key;
-        this.sourceUuid = sourceUuid;
     }
 
     public String getName() {
@@ -48,11 +41,11 @@ public class CacheInvalidationMessage implements Portable {
     }
 
     public Data getKey() {
-        return key;
+        return null;
     }
 
     public String getSourceUuid() {
-        return sourceUuid;
+        return null;
     }
 
     @Override
@@ -61,40 +54,13 @@ public class CacheInvalidationMessage implements Portable {
     }
 
     @Override
-    public int getClassId() {
-        return CachePortableHook.INVALIDATION_MESSAGE;
-    }
-
-    @Override
     public void writePortable(PortableWriter writer) throws IOException {
         writer.writeUTF("n", name);
-        writer.writeUTF("uuid", sourceUuid);
-        ObjectDataOutput out = writer.getRawDataOutput();
-        boolean hasKey = key != null;
-        out.writeBoolean(hasKey);
-        if (hasKey) {
-            out.writeData(key);
-        }
     }
 
     @Override
     public void readPortable(PortableReader reader) throws IOException {
         name = reader.readUTF("n");
-        sourceUuid = reader.readUTF("uuid");
-        ObjectDataInput in = reader.getRawDataInput();
-        if (in.readBoolean()) {
-            key = in.readData();
-        }
-    }
-
-    @Override
-    public String toString() {
-        final StringBuilder sb = new StringBuilder("CacheInvalidationMessage{");
-        sb.append("name='").append(name).append('\'');
-        sb.append(", key=").append(key);
-        sb.append(", sourceUuid='").append(sourceUuid).append('\'');
-        sb.append('}');
-        return sb.toString();
     }
 
 }

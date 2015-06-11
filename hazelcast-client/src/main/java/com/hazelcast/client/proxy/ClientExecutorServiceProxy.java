@@ -35,7 +35,7 @@ import com.hazelcast.executor.impl.client.IsShutdownRequest;
 import com.hazelcast.executor.impl.client.PartitionTargetCallableRequest;
 import com.hazelcast.executor.impl.client.ShutdownRequest;
 import com.hazelcast.executor.impl.client.SpecificTargetCallableRequest;
-import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.instance.AbstractMember;
 import com.hazelcast.monitor.LocalExecutorStats;
 import com.hazelcast.nio.Address;
 import com.hazelcast.util.Clock;
@@ -121,8 +121,8 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
     @Override
     public void executeOnAllMembers(Runnable command) {
         Callable<?> callable = createRunnableAdapter(command);
-        final Collection<MemberImpl> memberList = getContext().getClusterService().getMemberList();
-        for (MemberImpl member : memberList) {
+        final Collection<Member> memberList = getContext().getClusterService().getMemberList();
+        for (Member member : memberList) {
             submitToMember(callable, member);
         }
     }
@@ -162,10 +162,10 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
 
     @Override
     public <T> Map<Member, Future<T>> submitToAllMembers(Callable<T> task) {
-        final Collection<MemberImpl> memberList = getContext().getClusterService().getMemberList();
+        final Collection<Member> memberList = getContext().getClusterService().getMemberList();
         Map<Member, Future<T>> futureMap = new HashMap<Member, Future<T>>(memberList.size());
-        for (MemberImpl m : memberList) {
-            Future<T> f = submitToTargetInternal(task, m.getAddress(), null, true);
+        for (Member m : memberList) {
+            Future<T> f = submitToTargetInternal(task, ((AbstractMember) m).getAddress(), null, true);
             futureMap.put(m, f);
         }
         return futureMap;
@@ -241,7 +241,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
 
     @Override
     public <T> void submitToAllMembers(Callable<T> task, MultiExecutionCallback callback) {
-        final Collection<MemberImpl> memberList = getContext().getClusterService().getMemberList();
+        final Collection<Member> memberList = getContext().getClusterService().getMemberList();
         MultiExecutionCallbackWrapper multiExecutionCallbackWrapper =
                 new MultiExecutionCallbackWrapper(memberList.size(), callback);
         for (Member member : memberList) {
@@ -500,8 +500,8 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
             throw new IllegalArgumentException("memberSelector must not be null");
         }
         List<Member> selected = new ArrayList<Member>();
-        Collection<MemberImpl> members = getContext().getClusterService().getMemberList();
-        for (MemberImpl member : members) {
+        Collection<Member> members = getContext().getClusterService().getMemberList();
+        for (Member member : members) {
             if (memberSelector.select(member)) {
                 selected.add(member);
             }
@@ -580,11 +580,11 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
     }
 
     private Address getMemberAddress(Member member) {
-        MemberImpl m = getContext().getClusterService().getMember(member.getUuid());
+        Member m = getContext().getClusterService().getMember(member.getUuid());
         if (m == null) {
             throw new HazelcastException(member + " is not available!!!");
         }
-        return m.getAddress();
+        return ((AbstractMember) m).getAddress();
     }
 
     private int getPartitionId(Object key) {

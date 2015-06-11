@@ -17,13 +17,21 @@
 package com.hazelcast.map.impl;
 
 import com.hazelcast.concurrent.lock.LockService;
+import com.hazelcast.config.MapConfig;
+import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.spi.DefaultObjectNamespace;
+import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.OperationService;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+
+import static com.hazelcast.map.impl.MapKeyLoaderUtil.getMaxSizePerNode;
 
 public class PartitionContainer {
 
@@ -35,11 +43,30 @@ public class PartitionContainer {
 
     private final ConstructorFunction<String, RecordStore> recordStoreConstructor
             = new ConstructorFunction<String, RecordStore>() {
+
         public RecordStore createNew(String name) {
-            final MapContainer mapContainer = mapService.getMapServiceContext().getMapContainer(name);
-            return new DefaultRecordStore(mapContainer, partitionId);
+            MapServiceContext serviceContext = mapService.getMapServiceContext();
+            MapContainer mapContainer = serviceContext.getMapContainer(name);
+            MapConfig mapConfig = mapContainer.getMapConfig();
+            NodeEngine nodeEngine = serviceContext.getNodeEngine();
+            InternalPartitionService ps = nodeEngine.getPartitionService();
+            OperationService opService = nodeEngine.getOperationService();
+            ExecutionService execService = nodeEngine.getExecutionService();
+            GroupProperties groupProperties = nodeEngine.getGroupProperties();
+
+            MapKeyLoader keyLoader = new MapKeyLoader(name, opService, ps, execService, mapContainer.toData());
+            keyLoader.setMaxBatch(groupProperties.MAP_LOAD_CHUNK_SIZE.getInteger());
+            keyLoader.setMaxSize(getMaxSizePerNode(mapConfig.getMaxSizeConfig()));
+            keyLoader.setHasBackup(mapConfig.getBackupCount() > 0 || mapConfig.getAsyncBackupCount() > 0);
+
+            ILogger logger = nodeEngine.getLogger(DefaultRecordStore.class);
+            DefaultRecordStore recordStore = new DefaultRecordStore(mapContainer, partitionId, keyLoader, logger);
+            recordStore.startLoading();
+
+            return recordStore;
         }
     };
+
     /**
      * Flag to check if there is a {@link com.hazelcast.map.impl.operation.ClearExpiredOperation}
      * is running on this partition at this moment or not.
@@ -130,4 +157,5 @@ public class PartitionContainer {
     public void setLastCleanupTimeCopy(long lastCleanupTimeCopy) {
         this.lastCleanupTimeCopy = lastCleanupTimeCopy;
     }
+
 }

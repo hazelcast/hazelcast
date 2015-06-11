@@ -20,8 +20,11 @@ import com.hazelcast.mapreduce.Context;
 import com.hazelcast.mapreduce.KeyPredicate;
 import com.hazelcast.mapreduce.KeyValueSource;
 import com.hazelcast.mapreduce.Mapper;
+import com.hazelcast.partition.InternalPartitionService;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -38,12 +41,18 @@ public abstract class MappingPhase<KeyIn, ValueIn, KeyOut, ValueOut> {
 
     private final AtomicBoolean cancelled = new AtomicBoolean();
 
-    private final Collection<KeyIn> keys;
     private final KeyPredicate<KeyIn> predicate;
+    private final Object[] keys;
+
+    // Precalculate key set (partition based)
+    private Object[][] partitionMappedKeys;
+
+    // Cache of selected keys based on partition
+    private Object[] partitionKeys;
 
     public MappingPhase(Collection<KeyIn> keys, KeyPredicate<KeyIn> predicate) {
-        this.keys = keys;
         this.predicate = predicate;
+        this.keys = keys != null ? keys.toArray(new Object[keys.size()]) : null;
     }
 
     public void cancel() {
@@ -54,18 +63,73 @@ public abstract class MappingPhase<KeyIn, ValueIn, KeyOut, ValueOut> {
         return cancelled.get();
     }
 
-    protected boolean matches(KeyIn key) {
-        if ((keys == null || keys.isEmpty()) && predicate == null) {
+    protected boolean processingPartitionNecessary(int partitionId, InternalPartitionService partitionService) {
+        if (partitionId == -1) {
+            partitionKeys = null;
             return true;
         }
-        if (keys != null && !keys.isEmpty()) {
-            for (KeyIn matcher : keys) {
-                if (key.equals(matcher)) {
+
+        // Select correct keyset
+        partitionKeys = prepareKeys(partitionId, partitionService);
+
+        if (keys == null || keys.length == 0 || predicate != null) {
+            return true;
+        }
+        return partitionKeys != null && partitionKeys.length > 0;
+    }
+
+    protected boolean matches(KeyIn key) {
+        if (partitionKeys == null && predicate == null) {
+            return true;
+        }
+        if (partitionKeys != null && partitionKeys.length > 0) {
+            for (Object matcher : partitionKeys) {
+                if (key == matcher || key.equals(matcher)) {
                     return true;
                 }
             }
         }
         return predicate != null && predicate.evaluate(key);
+    }
+
+    private Object[] prepareKeys(int partitionId, InternalPartitionService partitionService) {
+        if (keys == null || keys.length == 0) {
+            return null;
+        }
+
+        if (partitionMappedKeys != null) {
+            // Already pre-cached
+            return partitionMappedKeys[partitionId];
+        }
+
+        partitionMappedKeys = buildCache(partitionService);
+        return partitionMappedKeys[partitionId];
+    }
+
+    private Object[][] buildCache(InternalPartitionService partitionService) {
+        List<Object>[] mapping = buildMapping(partitionService);
+        Object[][] cache = new Object[mapping.length][];
+        for (int i = 0; i < cache.length; i++) {
+            List<Object> keys = mapping[i];
+            if (keys != null) {
+                cache[i] = keys.toArray(new Object[keys.size()]);
+            }
+        }
+        return cache;
+    }
+
+    private List<Object>[] buildMapping(InternalPartitionService partitionService) {
+        List<Object>[] mapping = new List[partitionService.getPartitionCount()];
+        for (Object key : keys) {
+            int pid = partitionService.getPartitionId(key);
+            List<Object> list = mapping[pid];
+            if (list == null) {
+                list = new ArrayList<Object>();
+                mapping[pid] = list;
+            }
+            list.add(key);
+        }
+        return mapping;
     }
 
     protected abstract void executeMappingPhase(KeyValueSource<KeyIn, ValueIn> keyValueSource,

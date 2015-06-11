@@ -18,6 +18,9 @@ package com.hazelcast.map.mapstore.writebehind;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.core.Member;
+import com.hazelcast.core.Partition;
+import com.hazelcast.core.PartitionService;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.RecordStore;
@@ -35,7 +38,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.Collection;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
@@ -117,32 +120,37 @@ public class WriteBehindOnBackupsTest extends HazelcastTestSupport {
                 .build();
 
 
-        String key = generateKeyOwnedByFirstNode(factory);
+        String key = UUID.randomUUID().toString();
 
         map.putTransient(key, 1, 1, TimeUnit.DAYS);
 
-        killFirstNode(factory);
+        killKeyOwner(key, storeBuilder);
 
         sleepSeconds(10);
 
         assertEquals("There should not be any store operation on promoted replica", 0, mapStore.countStore.get());
     }
 
-    private void killFirstNode(TestHazelcastInstanceFactory factory) {
-        Collection<HazelcastInstance> nodes = factory.getAllHazelcastInstances();
-        for (HazelcastInstance node : nodes) {
-            node.shutdown();
-            return;
-        }
+    private void killKeyOwner(String key, TestMapUsingMapStoreBuilder<String, Object> storeBuilder) {
+        HazelcastInstance[] nodes = storeBuilder.getNodes();
+        HazelcastInstance ownerNode = getOwnerNode(key, nodes);
+        ownerNode.shutdown();
     }
 
-    private String generateKeyOwnedByFirstNode(TestHazelcastInstanceFactory factory) {
-        String key = null;
-        Collection<HazelcastInstance> nodes = factory.getAllHazelcastInstances();
-        for (HazelcastInstance node : nodes) {
-            return HazelcastTestSupport.generateKeyOwnedBy(node);
+    private HazelcastInstance getOwnerNode(String key, HazelcastInstance[] nodes) {
+        PartitionService partitionService = nodes[0].getPartitionService();
+        Partition partition = partitionService.getPartition(key);
+        Member owner = partition.getOwner();
+
+        for (int i = 0; i < nodes.length; i++) {
+            HazelcastInstance node = nodes[i];
+            Member localMember = node.getCluster().getLocalMember();
+            if (localMember.equals(owner)) {
+                return node;
+            }
         }
-        return key;
+
+        throw new IllegalStateException("This should not be happen...");
     }
 
     private void assertWriteBehindQueuesEmptyOnOwnerAndOnBackups(final String mapName,

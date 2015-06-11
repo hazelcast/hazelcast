@@ -25,6 +25,7 @@ import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.nio.Address;
 import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.query.impl.IndexService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.SplitBrainHandlerService;
 import com.hazelcast.util.Clock;
@@ -80,6 +81,8 @@ class MapSplitBrainHandlerService implements SplitBrainHandlerService {
                 // clear all records either owned or backup
                 recordStore.reset();
             }
+            IndexService indexService = mapContainer.getIndexService();
+            indexService.clearIndexes();
         }
         return new Merger(recordMap);
     }

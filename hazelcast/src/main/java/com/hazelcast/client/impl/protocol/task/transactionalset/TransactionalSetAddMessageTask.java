@@ -17,8 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.transactionalset;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.TransactionalSetAddParameters;
+import com.hazelcast.client.impl.protocol.codec.TransactionalSetAddCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractTransactionalMessageTask;
 import com.hazelcast.collection.impl.set.SetService;
 import com.hazelcast.core.TransactionalSet;
@@ -31,18 +30,17 @@ import com.hazelcast.transaction.TransactionContext;
 import java.security.Permission;
 
 public class TransactionalSetAddMessageTask
-        extends AbstractTransactionalMessageTask<TransactionalSetAddParameters> {
+        extends AbstractTransactionalMessageTask<TransactionalSetAddCodec.RequestParameters> {
 
     public TransactionalSetAddMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected ClientMessage innerCall() throws Exception {
+    protected Object innerCall() throws Exception {
         final TransactionContext context = endpoint.getTransactionContext(parameters.txnId);
         TransactionalSet<Object> set = context.getSet(parameters.name);
-        boolean success = set.add(parameters.item);
-        return BooleanResultParameters.encode(success);
+        return set.add(parameters.item);
     }
 
     @Override
@@ -51,8 +49,13 @@ public class TransactionalSetAddMessageTask
     }
 
     @Override
-    protected TransactionalSetAddParameters decodeClientMessage(ClientMessage clientMessage) {
-        return TransactionalSetAddParameters.decode(clientMessage);
+    protected TransactionalSetAddCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return TransactionalSetAddCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return TransactionalSetAddCodec.encodeResponse((Boolean) response);
     }
 
     @Override

@@ -17,8 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.multimap;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.DataCollectionResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.MultiMapValuesParameters;
+import com.hazelcast.client.impl.protocol.codec.MultiMapValuesCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractAllPartitionsMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.multimap.impl.MultiMapRecord;
@@ -39,9 +38,10 @@ import java.util.Map;
 
 /**
  * Client Protocol Task for handling messages with type id:
- * {@link com.hazelcast.client.impl.protocol.parameters.MultiMapMessageType#MULTIMAP_VALUES}
+ * {@link com.hazelcast.client.impl.protocol.codec.MultiMapMessageType#MULTIMAP_VALUES}
  */
-public class MultiMapValuesMessageTask extends AbstractAllPartitionsMessageTask<MultiMapValuesParameters> {
+public class MultiMapValuesMessageTask
+        extends AbstractAllPartitionsMessageTask<MultiMapValuesCodec.RequestParameters> {
 
     public MultiMapValuesMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -53,7 +53,7 @@ public class MultiMapValuesMessageTask extends AbstractAllPartitionsMessageTask<
     }
 
     @Override
-    protected ClientMessage reduce(Map<Integer, Object> map) {
+    protected Object reduce(Map<Integer, Object> map) {
         List<Data> list = new ArrayList<Data>();
         for (Object obj : map.values()) {
             if (obj == null) {
@@ -68,12 +68,17 @@ public class MultiMapValuesMessageTask extends AbstractAllPartitionsMessageTask<
                 list.add(serializationService.toData(record.getObject()));
             }
         }
-        return DataCollectionResultParameters.encode(list);
+        return list;
     }
 
     @Override
-    protected MultiMapValuesParameters decodeClientMessage(ClientMessage clientMessage) {
-        return MultiMapValuesParameters.decode(clientMessage);
+    protected MultiMapValuesCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return MultiMapValuesCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return MultiMapValuesCodec.encodeResponse((Collection<Data>) response);
     }
 
     @Override

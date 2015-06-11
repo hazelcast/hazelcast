@@ -17,6 +17,7 @@
 package com.hazelcast.jca;
 
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.transaction.TransactionContext;
 
 import javax.resource.ResourceException;
 import javax.resource.cci.Connection;
@@ -47,11 +48,11 @@ public class ManagedConnectionImpl extends JcaBase implements ManagedConnection 
     private final ManagedConnectionFactoryImpl factory;
     private final ConnectionRequestInfo cxRequestInfo;
 
-    private final XAResourceWrapper xaResource;
-    private HazelcastTransactionImpl tx;
-
+    private final HazelcastInstance hazelcastInstance;
     // Application server will always register at least one listener
     private final List<ConnectionEventListener> connectionEventListeners = new ArrayList<ConnectionEventListener>(1);
+
+    private HazelcastTransactionImpl localTransaction;
 
     public ManagedConnectionImpl(ConnectionRequestInfo cxRequestInfo, ManagedConnectionFactoryImpl factory) {
         this.setLogWriter(factory.getLogWriter());
@@ -61,8 +62,8 @@ public class ManagedConnectionImpl extends JcaBase implements ManagedConnection 
         this.cxRequestInfo = cxRequestInfo;
 
         this.id = ID_GEN.incrementAndGet();
-        this.tx = new HazelcastTransactionImpl(factory, this);
-        this.xaResource = new XAResourceWrapper(this);
+        ResourceAdapterImpl resourceAdapter = factory.getResourceAdapter();
+        hazelcastInstance = resourceAdapter.getHazelcastInstance();
 
         factory.logHzConnectionEvent(this, HzConnectionEvent.CREATE);
     }
@@ -138,31 +139,31 @@ public class ManagedConnectionImpl extends JcaBase implements ManagedConnection 
     }
 
     HazelcastInstance getHazelcastInstance() {
-        return getResourceAdapter().getHazelcast();
+        return hazelcastInstance;
     }
 
     public HazelcastTransaction getLocalTransaction() {
         log(Level.FINEST, "getLocalTransaction");
-        return new HazelcastTransactionImpl(factory, this);
-        //return tx;
+        if (localTransaction == null) {
+            localTransaction = new HazelcastTransactionImpl(factory, this);
+        }
+        return localTransaction;
+    }
+
+    public TransactionContext getTransactionContext() {
+        if (localTransaction == null) {
+            return null;
+        }
+        return localTransaction.getTxContext();
     }
 
     public HazelcastManagedConnectionMetaData getMetaData() {
         return new HazelcastManagedConnectionMetaData();
     }
 
-    private ResourceAdapterImpl getResourceAdapter() {
-        return factory.getResourceAdapter();
-    }
-
     public XAResource getXAResource() throws ResourceException {
         log(Level.FINEST, "getXAResource");
-        // must be the same per JCA spec
-        return xaResource;
-    }
-
-    public HazelcastTransactionImpl getTx() {
-        return tx;
+        return hazelcastInstance.getXAResource();
     }
 
     protected boolean isDeliverClosed() {

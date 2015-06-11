@@ -49,7 +49,6 @@ import com.hazelcast.nio.serialization.DefaultSerializers.EnumSerializer;
 import com.hazelcast.nio.serialization.DefaultSerializers.Externalizer;
 import com.hazelcast.nio.serialization.DefaultSerializers.ObjectSerializer;
 import com.hazelcast.util.ConcurrentReferenceHashMap;
-
 import java.io.Externalizable;
 import java.io.IOException;
 import java.io.InputStream;
@@ -72,6 +71,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static java.lang.Boolean.parseBoolean;
+
 public class SerializationServiceImpl implements SerializationService {
 
     protected static final PartitioningStrategy EMPTY_PARTITIONING_STRATEGY = new PartitioningStrategy() {
@@ -81,6 +82,7 @@ public class SerializationServiceImpl implements SerializationService {
     };
 
     private static final int CONSTANT_SERIALIZERS_SIZE = SerializationConstants.CONSTANT_SERIALIZERS_LENGTH;
+    private static final String SERIALIZATION_CUSTOM_OVERRIDE = "hazelcast.serialization.custom.override";
 
     protected final ManagedContext managedContext;
     protected final PortableContextImpl portableContext;
@@ -102,6 +104,8 @@ public class SerializationServiceImpl implements SerializationService {
     private final int outputBufferSize;
 
     private volatile boolean active = true;
+    private boolean overrideCustomSerialization;
+
 
     SerializationServiceImpl(InputOutputFactory inputOutputFactory, int version, ClassLoader classLoader,
                              Map<Integer, ? extends DataSerializableFactory> dataSerializableFactories,
@@ -115,6 +119,7 @@ public class SerializationServiceImpl implements SerializationService {
         this.managedContext = managedContext;
         this.globalPartitioningStrategy = partitionStrategy;
         this.outputBufferSize = initialOutputBufferSize;
+        this.overrideCustomSerialization = parseBoolean(System.getProperty(SERIALIZATION_CUSTOM_OVERRIDE, "false"));
 
         dataOutputQueue = new ThreadLocalOutputCache(this);
 
@@ -441,17 +446,24 @@ public class SerializationServiceImpl implements SerializationService {
     }
 
     protected final SerializerAdapter serializerFor(final Class type) {
+        SerializerAdapter serializer;
+        if (overrideCustomSerialization) {
+            serializer = lookupSerializer(type);
+            if (serializer != null) {
+                return serializer;
+            }
+        }
         if (DataSerializable.class.isAssignableFrom(type)) {
             return dataSerializerAdapter;
         } else if (Portable.class.isAssignableFrom(type)) {
             return portableSerializerAdapter;
         } else {
-            final SerializerAdapter serializer = constantTypesMap.get(type);
+            serializer = constantTypesMap.get(type);
             if (serializer != null) {
                 return serializer;
             }
         }
-        SerializerAdapter serializer = lookupSerializer(type);
+        serializer = lookupSerializer(type);
         if (serializer == null) {
             if (active) {
                 throw new HazelcastSerializationException("There is no suitable serializer for " + type);

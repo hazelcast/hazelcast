@@ -17,8 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.multimap;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.MultiMapTryLockParameters;
+import com.hazelcast.client.impl.protocol.codec.MultiMapTryLockCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.concurrent.lock.operations.LockOperation;
@@ -35,9 +34,10 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * Client Protocol Task for handling messages with type id:
- * {@link com.hazelcast.client.impl.protocol.parameters.MultiMapMessageType#MULTIMAP_TRYLOCK}
+ * {@link com.hazelcast.client.impl.protocol.codec.MultiMapMessageType#MULTIMAP_TRYLOCK}
  */
-public class MultiMapTryLockMessageTask extends AbstractPartitionMessageTask<MultiMapTryLockParameters> {
+public class MultiMapTryLockMessageTask
+        extends AbstractPartitionMessageTask<MultiMapTryLockCodec.RequestParameters> {
 
     public MultiMapTryLockMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -50,18 +50,23 @@ public class MultiMapTryLockMessageTask extends AbstractPartitionMessageTask<Mul
     }
 
     @Override
-    protected MultiMapTryLockParameters decodeClientMessage(ClientMessage clientMessage) {
-        return MultiMapTryLockParameters.decode(clientMessage);
+    protected MultiMapTryLockCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return MultiMapTryLockCodec.decodeRequest(clientMessage);
     }
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return BooleanResultParameters.encode((Boolean) response);
+        return MultiMapTryLockCodec.encodeResponse((Boolean) response);
     }
 
     @Override
     public String getServiceName() {
         return LockService.SERVICE_NAME;
+    }
+
+    @Override
+    public String getDistributedObjectType() {
+        return MultiMapService.SERVICE_NAME;
     }
 
     @Override
@@ -71,7 +76,7 @@ public class MultiMapTryLockMessageTask extends AbstractPartitionMessageTask<Mul
 
     @Override
     public Object[] getParameters() {
-        if (parameters.timeout == -1) {
+        if (parameters.timeout == 0) {
             return new Object[]{parameters.key};
         }
         return new Object[]{parameters.key, parameters.timeout, TimeUnit.MILLISECONDS};

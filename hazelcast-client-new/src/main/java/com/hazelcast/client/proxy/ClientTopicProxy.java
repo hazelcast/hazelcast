@@ -17,10 +17,9 @@
 package com.hazelcast.client.proxy;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.TopicAddMessageListenerParameters;
-import com.hazelcast.client.impl.protocol.parameters.TopicEventParameters;
-import com.hazelcast.client.impl.protocol.parameters.TopicPublishParameters;
-import com.hazelcast.client.impl.protocol.parameters.TopicRemoveMessageListenerParameters;
+import com.hazelcast.client.impl.protocol.codec.TopicAddMessageListenerCodec;
+import com.hazelcast.client.impl.protocol.codec.TopicPublishCodec;
+import com.hazelcast.client.impl.protocol.codec.TopicRemoveMessageListenerCodec;
 import com.hazelcast.client.spi.ClientClusterService;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.spi.EventHandler;
@@ -46,42 +45,21 @@ public class ClientTopicProxy<E> extends ClientProxy implements ITopic<E> {
     public void publish(E message) {
         SerializationService serializationService = getContext().getSerializationService();
         Data data = serializationService.toData(message);
-        ClientMessage request = TopicPublishParameters.encode(name, data);
+        ClientMessage request = TopicPublishCodec.encodeRequest(name, data);
         invoke(request);
     }
 
     @Override
     public String addMessageListener(final MessageListener<E> listener) {
-        ClientMessage request = TopicAddMessageListenerParameters.encode(name);
+        ClientMessage request = TopicAddMessageListenerCodec.encodeRequest(name);
 
-        EventHandler<ClientMessage> handler = new EventHandler<ClientMessage>() {
-            final SerializationService serializationService = getContext().getSerializationService();
-            final ClientClusterService clusterService = getContext().getClusterService();
-
-            @Override
-            public void handle(ClientMessage msg) {
-                TopicEventParameters event = TopicEventParameters.decode(msg);
-                E messageObject = serializationService.toObject(event.message);
-                Member member = clusterService.getMember(event.uuid);
-                Message<E> message = new Message<E>(name, messageObject, event.publishTime, member);
-                listener.onMessage(message);
-            }
-
-            @Override
-            public void beforeListenerRegister() {
-            }
-
-            @Override
-            public void onListenerRegister() {
-
-            }
-        };
+        EventHandler<ClientMessage> handler = new TopicItemHandler(listener);
         return listen(request, getKey(), handler);
     }
 
     @Override
     public boolean removeMessageListener(String registrationId) {
-        ClientMessage request = TopicRemoveMessageListenerParameters.encode(name, registrationId);
+        ClientMessage request = TopicRemoveMessageListenerCodec.encodeRequest(name, registrationId);
         return stopListening(request, registrationId);
     }
 
@@ -105,5 +83,35 @@ public class ClientTopicProxy<E> extends ClientProxy implements ITopic<E> {
     @Override
     public String toString() {
         return "ITopic{" + "name='" + getName() + '\'' + '}';
+    }
+
+    private final class TopicItemHandler extends TopicAddMessageListenerCodec.AbstractEventHandler
+            implements EventHandler<ClientMessage> {
+        private final MessageListener<E> listener;
+
+        private TopicItemHandler(MessageListener<E> listener) {
+            this.listener = listener;
+        }
+
+        @Override
+        public void handle(Data item, long publishTime, String uuid) {
+            final SerializationService serializationService = getContext().getSerializationService();
+            final ClientClusterService clusterService = getContext().getClusterService();
+
+            E messageObject = serializationService.toObject(item);
+            Member member = clusterService.getMember(uuid);
+            Message<E> message = new Message<E>(name, messageObject, publishTime, member);
+            listener.onMessage(message);
+        }
+
+        @Override
+        public void beforeListenerRegister() {
+
+        }
+
+        @Override
+        public void onListenerRegister() {
+
+        }
     }
 }

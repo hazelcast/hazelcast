@@ -17,20 +17,18 @@
 package com.hazelcast.client.proxy;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.AtomicReferenceAlterAndGetParameters;
-import com.hazelcast.client.impl.protocol.parameters.AtomicReferenceAlterParameters;
-import com.hazelcast.client.impl.protocol.parameters.AtomicReferenceApplyParameters;
-import com.hazelcast.client.impl.protocol.parameters.AtomicReferenceClearParameters;
-import com.hazelcast.client.impl.protocol.parameters.AtomicReferenceCompareAndSetParameters;
-import com.hazelcast.client.impl.protocol.parameters.AtomicReferenceContainsParameters;
-import com.hazelcast.client.impl.protocol.parameters.AtomicReferenceGetAndAlterParameters;
-import com.hazelcast.client.impl.protocol.parameters.AtomicReferenceGetAndSetParameters;
-import com.hazelcast.client.impl.protocol.parameters.AtomicReferenceGetParameters;
-import com.hazelcast.client.impl.protocol.parameters.AtomicReferenceIsNullParameters;
-import com.hazelcast.client.impl.protocol.parameters.AtomicReferenceSetAndGetParameters;
-import com.hazelcast.client.impl.protocol.parameters.AtomicReferenceSetParameters;
-import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.GenericResultParameters;
+import com.hazelcast.client.impl.protocol.codec.AtomicReferenceAlterAndGetCodec;
+import com.hazelcast.client.impl.protocol.codec.AtomicReferenceAlterCodec;
+import com.hazelcast.client.impl.protocol.codec.AtomicReferenceApplyCodec;
+import com.hazelcast.client.impl.protocol.codec.AtomicReferenceClearCodec;
+import com.hazelcast.client.impl.protocol.codec.AtomicReferenceCompareAndSetCodec;
+import com.hazelcast.client.impl.protocol.codec.AtomicReferenceContainsCodec;
+import com.hazelcast.client.impl.protocol.codec.AtomicReferenceGetAndAlterCodec;
+import com.hazelcast.client.impl.protocol.codec.AtomicReferenceGetAndSetCodec;
+import com.hazelcast.client.impl.protocol.codec.AtomicReferenceGetCodec;
+import com.hazelcast.client.impl.protocol.codec.AtomicReferenceIsNullCodec;
+import com.hazelcast.client.impl.protocol.codec.AtomicReferenceSetAndGetCodec;
+import com.hazelcast.client.impl.protocol.codec.AtomicReferenceSetCodec;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.core.IAtomicReference;
 import com.hazelcast.core.IFunction;
@@ -51,87 +49,89 @@ public class ClientAtomicReferenceProxy<E> extends ClientProxy implements IAtomi
     @Override
     public <R> R apply(IFunction<E, R> function) {
         isNotNull(function, "function");
-        ClientMessage request = AtomicReferenceApplyParameters.encode(name, toData(function));
-        GenericResultParameters resultParameters = GenericResultParameters.decode((ClientMessage) invoke(request));
-        return toObject(resultParameters.result);
+        ClientMessage request = AtomicReferenceApplyCodec.encodeRequest(name, toData(function));
+        ClientMessage response = invoke(request);
+        AtomicReferenceApplyCodec.ResponseParameters resultParameters =
+                AtomicReferenceApplyCodec.decodeResponse(response);
+        return toObject(resultParameters.response);
     }
 
     @Override
     public void alter(IFunction<E, E> function) {
         isNotNull(function, "function");
-        ClientMessage request = AtomicReferenceAlterParameters.encode(name, toData(function));
+        ClientMessage request = AtomicReferenceAlterCodec.encodeRequest(name, toData(function));
         invoke(request);
     }
 
     @Override
     public E alterAndGet(IFunction<E, E> function) {
         isNotNull(function, "function");
-        ClientMessage request = AtomicReferenceAlterAndGetParameters.encode(name, toData(function));
-        GenericResultParameters resultParameters = GenericResultParameters.decode((ClientMessage) invoke(request));
-        return toObject(resultParameters.result);
+        ClientMessage request = AtomicReferenceAlterAndGetCodec.encodeRequest(name, toData(function));
+        ClientMessage response = invoke(request);
+        return toObject(AtomicReferenceAlterAndGetCodec.decodeResponse(response).response);
     }
 
     @Override
     public E getAndAlter(IFunction<E, E> function) {
         isNotNull(function, "function");
-        ClientMessage request = AtomicReferenceGetAndAlterParameters.encode(name, toData(function));
-        GenericResultParameters resultParameters = GenericResultParameters.decode((ClientMessage) invoke(request));
-        return toObject(resultParameters.result);
+        ClientMessage request = AtomicReferenceGetAndAlterCodec.encodeRequest(name, toData(function));
+        ClientMessage response = invoke(request);
+        return toObject(AtomicReferenceGetAndAlterCodec.decodeResponse(response).response);
 
     }
 
     @Override
     public boolean compareAndSet(E expect, E update) {
-        ClientMessage request = AtomicReferenceCompareAndSetParameters.encode(name, toData(expect), toData(update));
-        BooleanResultParameters resultParameters = BooleanResultParameters.decode((ClientMessage) invoke(request));
-        return resultParameters.result;
+        ClientMessage request = AtomicReferenceCompareAndSetCodec.encodeRequest(name, toData(expect), toData(update));
+        ClientMessage response = invoke(request);
+        return AtomicReferenceCompareAndSetCodec.decodeResponse(response).response;
     }
 
     @Override
     public boolean contains(E expected) {
-        ClientMessage request = AtomicReferenceContainsParameters.encode(name, toData(expected));
-        BooleanResultParameters resultParameters = BooleanResultParameters.decode((ClientMessage) invoke(request));
-        return resultParameters.result;
+        ClientMessage request = AtomicReferenceContainsCodec.encodeRequest(name, toData(expected));
+        ClientMessage response = invoke(request);
+        return AtomicReferenceContainsCodec.decodeResponse(response).response;
     }
 
     @Override
     public E get() {
-        ClientMessage request = AtomicReferenceGetParameters.encode(name);
-        GenericResultParameters resultParameters = GenericResultParameters.decode((ClientMessage) invoke(request));
-        return toObject(resultParameters.result);
+        ClientMessage request = AtomicReferenceGetCodec.encodeRequest(name);
+        ClientMessage response = invoke(request);
+        return toObject(AtomicReferenceGetCodec.decodeResponse(response).response);
     }
 
     @Override
     public void set(E newValue) {
-        ClientMessage request = AtomicReferenceSetParameters.encode(name, toData(newValue));
+        ClientMessage request = AtomicReferenceSetCodec.encodeRequest(name, toData(newValue));
         invoke(request);
     }
 
     @Override
     public void clear() {
-        ClientMessage request = AtomicReferenceClearParameters.encode(name);
+        ClientMessage request = AtomicReferenceClearCodec.encodeRequest(name);
         invoke(request);
     }
 
     @Override
     public E getAndSet(E newValue) {
-        ClientMessage request = AtomicReferenceGetAndSetParameters.encode(name, toData(newValue));
-        GenericResultParameters resultParameters = GenericResultParameters.decode((ClientMessage) invoke(request));
-        return toObject(resultParameters.result);
+        ClientMessage request = AtomicReferenceGetAndSetCodec.encodeRequest(name, toData(newValue));
+        ClientMessage response = invoke(request);
+        return toObject(AtomicReferenceGetAndSetCodec.decodeResponse(response).response);
     }
 
     @Override
     public E setAndGet(E update) {
-        ClientMessage request = AtomicReferenceSetAndGetParameters.encode(name, toData(update));
-        GenericResultParameters resultParameters = GenericResultParameters.decode((ClientMessage) invoke(request));
-        return toObject(resultParameters.result);
+        ClientMessage request = AtomicReferenceSetAndGetCodec.encodeRequest(name, toData(update));
+        ClientMessage response = invoke(request);
+        return toObject(AtomicReferenceSetAndGetCodec.decodeResponse(response).response);
     }
 
     @Override
     public boolean isNull() {
-        ClientMessage request = AtomicReferenceIsNullParameters.encode(name);
-        BooleanResultParameters resultParameters = BooleanResultParameters.decode((ClientMessage) invoke(request));
-        return resultParameters.result;
+        ClientMessage request = AtomicReferenceIsNullCodec.encodeRequest(name);
+        ClientMessage response = invoke(request);
+        return AtomicReferenceIsNullCodec.decodeResponse(response).response;
     }
 
     protected <T> T invoke(ClientMessage req) {

@@ -16,18 +16,14 @@
 
 package com.hazelcast.client.mapreduce;
 
-import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.client.config.XmlClientConfigBuilder;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.XmlConfigBuilder;
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IMap;
 import com.hazelcast.test.HazelcastTestSupport;
 
 public abstract class AbstractClientMapReduceJobTest extends HazelcastTestSupport {
-
-    protected ClientConfig buildClientConfig() {
-        ClientConfig config = new XmlClientConfigBuilder().build();
-        return config;
-    }
 
     protected Config buildConfig() {
         Config config = new XmlConfigBuilder().build();
@@ -35,5 +31,26 @@ public abstract class AbstractClientMapReduceJobTest extends HazelcastTestSuppor
         config.getNetworkConfig().getJoin().getTcpIpConfig().setEnabled(true).addMember("127.0.0.1");
         return config;
     }
+
+    protected void prepareClusterNodes(int numberOfNodes) {
+        Config config = buildConfig();
+        HazelcastInstance[] instances = new HazelcastInstance[numberOfNodes];
+        for (int i = 0; i < numberOfNodes; i++) {
+            instances[i] = Hazelcast.newHazelcastInstance(config);
+        }
+
+        for (int i = 0; i < numberOfNodes; i++) {
+            assertClusterSizeEventually(numberOfNodes, instances[i]);
+        }
+    }
+
+    protected IMap<Integer, Integer> getFilledIMap(HazelcastInstance client, int numberOfEntries) {
+        IMap<Integer, Integer> m1 = client.getMap(randomMapName());
+        for (int i = 0; i < numberOfEntries; i++) {
+            m1.put(i, i);
+        }
+        return m1;
+    }
+
 
 }

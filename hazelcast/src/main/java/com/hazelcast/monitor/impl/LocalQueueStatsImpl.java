@@ -25,8 +25,7 @@ import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 import static com.hazelcast.util.JsonUtil.getInt;
 import static com.hazelcast.util.JsonUtil.getLong;
 
-public class LocalQueueStatsImpl
-        implements LocalQueueStats {
+public class LocalQueueStatsImpl implements LocalQueueStats {
 
     private static final AtomicLongFieldUpdater<LocalQueueStatsImpl> NUMBER_OF_OFFERS_UPDATER = AtomicLongFieldUpdater
             .newUpdater(LocalQueueStatsImpl.class, "numberOfOffers");
@@ -57,40 +56,6 @@ public class LocalQueueStatsImpl
 
     public LocalQueueStatsImpl() {
         creationTime = Clock.currentTimeMillis();
-    }
-
-    @Override
-    public JsonObject toJson() {
-        JsonObject root = new JsonObject();
-        root.add("ownedItemCount", ownedItemCount);
-        root.add("backupItemCount", backupItemCount);
-        root.add("minAge", minAge);
-        root.add("maxAge", maxAge);
-        root.add("aveAge", aveAge);
-        root.add("creationTime", creationTime);
-        root.add("numberOfOffers", numberOfOffers);
-        root.add("numberOfPolls", numberOfPolls);
-        root.add("numberOfRejectedOffers", numberOfRejectedOffers);
-        root.add("numberOfEmptyPolls", numberOfEmptyPolls);
-        root.add("numberOfOtherOperations", numberOfOtherOperations);
-        root.add("numberOfEvents", numberOfEvents);
-        return root;
-    }
-
-    @Override
-    public void fromJson(JsonObject json) {
-        ownedItemCount = getInt(json, "ownedItemCount", -1);
-        backupItemCount = getInt(json, "backupItemCount", -1);
-        minAge = getLong(json, "minAge", -1L);
-        maxAge = getLong(json, "maxAge", -1L);
-        aveAge = getLong(json, "aveAge", -1L);
-        creationTime = getLong(json, "creationTime", -1L);
-        NUMBER_OF_OFFERS_UPDATER.set(this, getLong(json, "numberOfOffers", -1L));
-        NUMBER_OF_POLLS_UPDATER.set(this, getLong(json, "numberOfPolls", -1L));
-        NUMBER_OF_REJECTED_OFFERS_UPDATER.set(this, getLong(json, "numberOfRejectedOffers", -1L));
-        NUMBER_OF_EMPTY_POLLS_UPDATER.set(this, getLong(json, "numberOfEmptyPolls", -1L));
-        NUMBER_OF_OTHER_OPERATIONS_UPDATER.set(this, getLong(json, "numberOfOtherOperations", -1L));
-        NUMBER_OF_EVENTS_UPDATER.set(this, getLong(json, "numberOfEvents", -1L));
     }
 
     @Override
@@ -199,5 +164,125 @@ public class LocalQueueStatsImpl
     @Override
     public long getEventOperationCount() {
         return numberOfEvents;
+    }
+
+    @Override
+    public JsonObject toJson() {
+        JsonObject root = new JsonObject();
+        root.add("ownedItemCount", ownedItemCount);
+        root.add("backupItemCount", backupItemCount);
+        root.add("minAge", minAge);
+        root.add("maxAge", maxAge);
+        root.add("aveAge", aveAge);
+        root.add("creationTime", creationTime);
+        root.add("numberOfOffers", numberOfOffers);
+        root.add("numberOfPolls", numberOfPolls);
+        root.add("numberOfRejectedOffers", numberOfRejectedOffers);
+        root.add("numberOfEmptyPolls", numberOfEmptyPolls);
+        root.add("numberOfOtherOperations", numberOfOtherOperations);
+        root.add("numberOfEvents", numberOfEvents);
+        return root;
+    }
+
+    @Override
+    public void fromJson(JsonObject json) {
+        ownedItemCount = getInt(json, "ownedItemCount", -1);
+        backupItemCount = getInt(json, "backupItemCount", -1);
+        minAge = getLong(json, "minAge", -1L);
+        maxAge = getLong(json, "maxAge", -1L);
+        aveAge = getLong(json, "aveAge", -1L);
+        creationTime = getLong(json, "creationTime", -1L);
+        NUMBER_OF_OFFERS_UPDATER.set(this, getLong(json, "numberOfOffers", -1L));
+        NUMBER_OF_POLLS_UPDATER.set(this, getLong(json, "numberOfPolls", -1L));
+        NUMBER_OF_REJECTED_OFFERS_UPDATER.set(this, getLong(json, "numberOfRejectedOffers", -1L));
+        NUMBER_OF_EMPTY_POLLS_UPDATER.set(this, getLong(json, "numberOfEmptyPolls", -1L));
+        NUMBER_OF_OTHER_OPERATIONS_UPDATER.set(this, getLong(json, "numberOfOtherOperations", -1L));
+        NUMBER_OF_EVENTS_UPDATER.set(this, getLong(json, "numberOfEvents", -1L));
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        LocalQueueStatsImpl that = (LocalQueueStatsImpl) o;
+
+        if (ownedItemCount != that.ownedItemCount) {
+            return false;
+        }
+        if (backupItemCount != that.backupItemCount) {
+            return false;
+        }
+        if (minAge != that.minAge) {
+            return false;
+        }
+        if (maxAge != that.maxAge) {
+            return false;
+        }
+        if (aveAge != that.aveAge) {
+            return false;
+        }
+        if (creationTime != that.creationTime) {
+            return false;
+        }
+        if (numberOfOffers != that.numberOfOffers) {
+            return false;
+        }
+        if (numberOfRejectedOffers != that.numberOfRejectedOffers) {
+            return false;
+        }
+        if (numberOfPolls != that.numberOfPolls) {
+            return false;
+        }
+        if (numberOfEmptyPolls != that.numberOfEmptyPolls) {
+            return false;
+        }
+        if (numberOfOtherOperations != that.numberOfOtherOperations) {
+            return false;
+        }
+        if (numberOfEvents != that.numberOfEvents) {
+            return false;
+        }
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = ownedItemCount;
+        result = 31 * result + backupItemCount;
+        result = 31 * result + (int) (minAge ^ (minAge >>> 32));
+        result = 31 * result + (int) (maxAge ^ (maxAge >>> 32));
+        result = 31 * result + (int) (aveAge ^ (aveAge >>> 32));
+        result = 31 * result + (int) (creationTime ^ (creationTime >>> 32));
+        result = 31 * result + (int) (numberOfOffers ^ (numberOfOffers >>> 32));
+        result = 31 * result + (int) (numberOfRejectedOffers ^ (numberOfRejectedOffers >>> 32));
+        result = 31 * result + (int) (numberOfPolls ^ (numberOfPolls >>> 32));
+        result = 31 * result + (int) (numberOfEmptyPolls ^ (numberOfEmptyPolls >>> 32));
+        result = 31 * result + (int) (numberOfOtherOperations ^ (numberOfOtherOperations >>> 32));
+        result = 31 * result + (int) (numberOfEvents ^ (numberOfEvents >>> 32));
+        return result;
+    }
+
+    @Override
+    public String toString() {
+        return "LocalQueueStatsImpl{"
+                + "ownedItemCount=" + ownedItemCount
+                + ", backupItemCount=" + backupItemCount
+                + ", minAge=" + minAge
+                + ", maxAge=" + maxAge
+                + ", aveAge=" + aveAge
+                + ", creationTime=" + creationTime
+                + ", numberOfOffers=" + numberOfOffers
+                + ", numberOfRejectedOffers=" + numberOfRejectedOffers
+                + ", numberOfPolls=" + numberOfPolls
+                + ", numberOfEmptyPolls=" + numberOfEmptyPolls
+                + ", numberOfOtherOperations=" + numberOfOtherOperations
+                + ", numberOfEvents=" + numberOfEvents
+                + '}';
     }
 }

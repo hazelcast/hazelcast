@@ -69,6 +69,39 @@
                                                  old-value-required="false" synchronous="false"/>
                     </hz:cache-entry-listeners>
             </hz:cache>
+            <hz:cache name="cacheWithTimedCreatedExpiryPolicyFactory">
+                <hz:expiry-policy-factory>
+                    <hz:timed-expiry-policy-factory expiry-policy-type="CREATED"
+                                                    duration-amount="1"
+                                                    time-unit="DAYS"/>
+                </hz:expiry-policy-factory>
+            </hz:cache>
+            <hz:cache name="cacheWithTimedAccessedExpiryPolicyFactory">
+                <hz:expiry-policy-factory>
+                    <hz:timed-expiry-policy-factory expiry-policy-type="ACCESSED"
+                                                    duration-amount="2"
+                                                    time-unit="HOURS"/>
+                </hz:expiry-policy-factory>
+            </hz:cache>
+            <hz:cache name="cacheWithTimedModifiedExpiryPolicyFactory">
+                <hz:expiry-policy-factory>
+                    <hz:timed-expiry-policy-factory expiry-policy-type="MODIFIED"
+                                                    duration-amount="3"
+                                                    time-unit="MINUTES"/>
+                </hz:expiry-policy-factory>
+            </hz:cache>
+            <hz:cache name="cacheWithTimedTouchedExpiryPolicyFactory">
+                <hz:expiry-policy-factory>
+                    <hz:timed-expiry-policy-factory expiry-policy-type="TOUCHED"
+                                                    duration-amount="4"
+                                                    time-unit="SECONDS"/>
+                </hz:expiry-policy-factory>
+            </hz:cache>
+            <hz:cache name="cacheWithTimedEternalExpiryPolicyFactory">
+                <hz:expiry-policy-factory>
+                    <hz:timed-expiry-policy-factory expiry-policy-type="ETERNAL"/>
+                </hz:expiry-policy-factory>
+            </hz:cache>
         </hz:config>
     </hz:hazelcast>
 

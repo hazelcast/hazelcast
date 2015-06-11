@@ -125,7 +125,7 @@ public class PredicatesTest extends HazelcastTestSupport {
         assertPredicateFalse(and2, 4);
         final Predicate and3 = and(greaterThan(null, 4), lessThan(null, 6), equal(null, 5));
         assertPredicateTrue(and3, 5);
-        final Predicate and4 = and(greaterThan(null, 3), lessThan(null, 6), equal(null, 4));
+        final Predicate and4 = Predicates.and(greaterThan(null, 3), lessThan(null, 6), equal(null, 4));
         assertPredicateFalse(and4, 5);
     }
 

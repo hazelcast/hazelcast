@@ -17,8 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.set;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.SetIsEmptyParameters;
+import com.hazelcast.client.impl.protocol.codec.SetIsEmptyCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.collection.impl.collection.operations.CollectionIsEmptyOperation;
 import com.hazelcast.collection.impl.set.SetService;
@@ -27,13 +26,14 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.SetPermission;
 import com.hazelcast.spi.Operation;
+
 import java.security.Permission;
 
 /**
  * SetIsEmptyMessageTask
  */
 public class SetIsEmptyMessageTask
-        extends AbstractPartitionMessageTask<SetIsEmptyParameters> {
+        extends AbstractPartitionMessageTask<SetIsEmptyCodec.RequestParameters> {
 
     public SetIsEmptyMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -45,13 +45,13 @@ public class SetIsEmptyMessageTask
     }
 
     @Override
-    protected SetIsEmptyParameters decodeClientMessage(ClientMessage clientMessage) {
-        return SetIsEmptyParameters.decode(clientMessage);
+    protected SetIsEmptyCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return SetIsEmptyCodec.decodeRequest(clientMessage);
     }
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return BooleanResultParameters.encode((Boolean) response);
+        return SetIsEmptyCodec.encodeResponse((Boolean) response);
     }
 
     @Override
@@ -61,7 +61,7 @@ public class SetIsEmptyMessageTask
 
     @Override
     public Object[] getParameters() {
-        return new Object[]{};
+        return null;
     }
 
     @Override

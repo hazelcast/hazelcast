@@ -18,9 +18,13 @@ package com.hazelcast.instance;
 
 import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.ICacheService;
+import com.hazelcast.client.impl.protocol.MessageTaskFactory;
+import com.hazelcast.client.impl.protocol.MessageTaskFactoryImpl;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.core.PartitioningStrategy;
+import com.hazelcast.internal.storage.DataRef;
+import com.hazelcast.internal.storage.Storage;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.memory.DefaultMemoryStats;
@@ -42,8 +46,6 @@ import com.hazelcast.partition.strategy.DefaultPartitioningStrategy;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.internal.storage.DataRef;
-import com.hazelcast.internal.storage.Storage;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.wan.WanReplicationService;
@@ -166,6 +168,11 @@ public class DefaultNodeExtension implements NodeExtension {
     @Override
     public PacketWriter createPacketWriter(final TcpIpConnection connection, final IOService ioService) {
         return new DefaultPacketWriter();
+    }
+
+    @Override
+    public MessageTaskFactory createMessageTaskFactory(Node node) {
+        return new MessageTaskFactoryImpl(node);
     }
 
     @Override

@@ -17,8 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.map;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.MapSetParameters;
+import com.hazelcast.client.impl.protocol.codec.MapSetCodec;
 import com.hazelcast.instance.Node;
 import com.hazelcast.map.impl.operation.SetOperation;
 import com.hazelcast.nio.Connection;
@@ -26,7 +25,8 @@ import com.hazelcast.spi.Operation;
 
 import java.util.concurrent.TimeUnit;
 
-public class MapSetMessageTask extends AbstractMapPutMessageTask<MapSetParameters> {
+public class MapSetMessageTask
+        extends AbstractMapPutMessageTask<MapSetCodec.RequestParameters> {
 
     public MapSetMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -40,13 +40,13 @@ public class MapSetMessageTask extends AbstractMapPutMessageTask<MapSetParameter
     }
 
     @Override
-    protected MapSetParameters decodeClientMessage(ClientMessage clientMessage) {
-        return MapSetParameters.decode(clientMessage);
+    protected MapSetCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return MapSetCodec.decodeRequest(clientMessage);
     }
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return BooleanResultParameters.encode((Boolean) response);
+        return MapSetCodec.encodeResponse();
     }
 
     @Override

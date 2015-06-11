@@ -15,6 +15,8 @@
  */
 package com.hazelcast.client.impl.protocol.util;
 
+import com.hazelcast.util.QuickMath;
+
 import java.util.Arrays;
 
 /**
@@ -23,10 +25,12 @@ import java.util.Arrays;
 public class BufferBuilder {
     public static final int INITIAL_CAPACITY = 4096;
 
-    private final MutableDirectBuffer mutableDirectBuffer;
+    private static final String PROP_HAZELCAST_PROTOCOL_UNSAFE = "hazelcast.protocol.unsafe.enabled";
+    private static final boolean USE_UNSAFE = Boolean.getBoolean(PROP_HAZELCAST_PROTOCOL_UNSAFE);
 
-    private byte[] buffer;
-    private int limit; // positition
+    private final ClientProtocolBuffer protocolBuffer;
+
+    private int position;
     private int capacity;
 
     /**
@@ -41,18 +45,14 @@ public class BufferBuilder {
      *
      * @param initialCapacity at which the capacity will start.
      */
-    public BufferBuilder(final int initialCapacity) {
-        capacity = BitUtil.findNextPositivePowerOfTwo(initialCapacity);
-        buffer = new byte[capacity];
-        mutableDirectBuffer = new UnsafeBuffer(buffer);
-    }
+    private BufferBuilder(int initialCapacity) {
+        capacity = QuickMath.nextPowerOfTwo(initialCapacity);
+        if (USE_UNSAFE) {
+            protocolBuffer = new UnsafeBuffer(new byte[capacity]);
+        } else {
+            protocolBuffer = new SafeBuffer(new byte[capacity]);
 
-    private static int findSuitableCapacity(int capacity, final int requiredCapacity) {
-        do {
-            capacity <<= 1;
-        } while (capacity < requiredCapacity);
-
-        return capacity;
+        }
     }
 
     /**
@@ -65,44 +65,21 @@ public class BufferBuilder {
     }
 
     /**
-     * The current limit of the buffer that has been used by accumulate operations.
+     * The current position of the buffer that has been used by accumulate operations.
      *
-     * @return the current limit of the buffer that has been used by accumulate operations.
+     * @return the current position of the buffer that has been used by accumulate operations.
      */
-    public int limit() {
-        return limit;
+    public int position() {
+        return position;
     }
 
     /**
-     * The {@link MutableDirectBuffer} that encapsulates the internal buffer.
+     * The {@link ClientProtocolBuffer} that encapsulates the internal buffer.
      *
-     * @return the {@link MutableDirectBuffer} that encapsulates the internal buffer.
+     * @return the {@link ClientProtocolBuffer} that encapsulates the internal buffer.
      */
-    public MutableDirectBuffer buffer() {
-        return mutableDirectBuffer;
-    }
-
-    /**
-     * Reset the builder to restart accumulate operations. The internal buffer does not shrink.
-     *
-     * @return the builder for fluent API usage.
-     */
-    public BufferBuilder reset() {
-        limit = 0;
-        return this;
-    }
-
-    /**
-     * Compact the buffer to reclaim unused space above the limit.
-     *
-     * @return the builder for fluent API usage.
-     */
-    public BufferBuilder compact() {
-        capacity = Math.max(INITIAL_CAPACITY, BitUtil.findNextPositivePowerOfTwo(limit));
-        buffer = Arrays.copyOf(buffer, capacity);
-        mutableDirectBuffer.wrap(buffer);
-
-        return this;
+    public ClientProtocolBuffer buffer() {
+        return protocolBuffer;
     }
 
     /**
@@ -113,30 +90,29 @@ public class BufferBuilder {
      * @param length    in bytes to copy from the source buffer.
      * @return the builder for fluent API usage.
      */
-    public BufferBuilder append(final DirectBuffer srcBuffer, final int srcOffset, final int length) {
+    public BufferBuilder append(ClientProtocolBuffer srcBuffer, int srcOffset, int length) {
         ensureCapacity(length);
 
-        srcBuffer.getBytes(srcOffset, buffer, limit, length);
-        limit += length;
+        srcBuffer.getBytes(srcOffset, protocolBuffer.byteArray(), position, length);
+        position += length;
 
         return this;
     }
 
-    private void ensureCapacity(final int additionalCapacity) {
-        final int requiredCapacity = limit + additionalCapacity;
+    private void ensureCapacity(int additionalCapacity) {
+        int requiredCapacity = position + additionalCapacity;
 
         if (requiredCapacity < 0) {
-            final String s = String.format("Insufficient capacity: limit=%d additional=%d", limit, additionalCapacity);
+            String s = String.format("Insufficient capacity: position=%d additional=%d", position, additionalCapacity);
             throw new IllegalStateException(s);
         }
 
         if (requiredCapacity > capacity) {
-            final int newCapacity = findSuitableCapacity(capacity, requiredCapacity);
-            final byte[] newBuffer = Arrays.copyOf(buffer, newCapacity);
+            int newCapacity = QuickMath.nextPowerOfTwo(requiredCapacity);
+            byte[] newBuffer = Arrays.copyOf(protocolBuffer.byteArray(), newCapacity);
 
             capacity = newCapacity;
-            buffer = newBuffer;
-            mutableDirectBuffer.wrap(newBuffer);
+            protocolBuffer.wrap(newBuffer);
         }
     }
 }

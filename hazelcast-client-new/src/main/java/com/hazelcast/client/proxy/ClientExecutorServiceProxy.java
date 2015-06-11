@@ -16,28 +16,30 @@
 
 package com.hazelcast.client.proxy;
 
-import com.hazelcast.client.impl.MemberImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.ExecutorServiceIsShutdownParameters;
-import com.hazelcast.client.impl.protocol.parameters.ExecutorServiceShutdownParameters;
-import com.hazelcast.client.impl.protocol.parameters.ExecutorServiceSubmitToAddressParameters;
-import com.hazelcast.client.impl.protocol.parameters.ExecutorServiceSubmitToPartitionParameters;
+import com.hazelcast.client.impl.protocol.codec.ExecutorServiceIsShutdownCodec;
+import com.hazelcast.client.impl.protocol.codec.ExecutorServiceShutdownCodec;
+import com.hazelcast.client.impl.protocol.codec.ExecutorServiceSubmitToAddressCodec;
+import com.hazelcast.client.impl.protocol.codec.ExecutorServiceSubmitToPartitionCodec;
 import com.hazelcast.client.spi.ClientPartitionService;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.spi.impl.ClientInvocation;
+import com.hazelcast.client.spi.impl.ClientInvocationFuture;
 import com.hazelcast.client.util.ClientCancellableDelegatingFuture;
+import com.hazelcast.client.util.ClientDelegatingFuture;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.IExecutorService;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MemberSelector;
 import com.hazelcast.core.MultiExecutionCallback;
 import com.hazelcast.core.PartitionAware;
 import com.hazelcast.executor.impl.RunnableAdapter;
+import com.hazelcast.instance.AbstractMember;
 import com.hazelcast.monitor.LocalExecutorStats;
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.UuidUtil;
@@ -121,8 +123,8 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
     @Override
     public void executeOnAllMembers(Runnable command) {
         Callable<?> callable = createRunnableAdapter(command);
-        final Collection<MemberImpl> memberList = getContext().getClusterService().getMemberList();
-        for (MemberImpl member : memberList) {
+        final Collection<Member> memberList = getContext().getClusterService().getMemberList();
+        for (Member member : memberList) {
             submitToMember(callable, member);
         }
     }
@@ -162,10 +164,10 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
 
     @Override
     public <T> Map<Member, Future<T>> submitToAllMembers(Callable<T> task) {
-        final Collection<MemberImpl> memberList = getContext().getClusterService().getMemberList();
+        final Collection<Member> memberList = getContext().getClusterService().getMemberList();
         Map<Member, Future<T>> futureMap = new HashMap<Member, Future<T>>(memberList.size());
-        for (MemberImpl m : memberList) {
-            Future<T> f = submitToTargetInternal(task, m.getAddress(), null, true);
+        for (Member m : memberList) {
+            Future<T> f = submitToTargetInternal(task, ((AbstractMember) m).getAddress(), null, true);
             futureMap.put(m, f);
         }
         return futureMap;
@@ -241,7 +243,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
 
     @Override
     public <T> void submitToAllMembers(Callable<T> task, MultiExecutionCallback callback) {
-        final Collection<MemberImpl> memberList = getContext().getClusterService().getMemberList();
+        final Collection<Member> memberList = getContext().getClusterService().getMemberList();
         MultiExecutionCallbackWrapper multiExecutionCallbackWrapper =
                 new MultiExecutionCallbackWrapper(memberList.size(), callback);
         for (Member member : memberList) {
@@ -279,9 +281,9 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         return submitToRandomInternal(task, null, false);
     }
 
-    public void submit(Runnable command, ExecutionCallback callback) {
+    public <T> void submit(Runnable command, ExecutionCallback<T> callback) {
         final Object partitionKey = getTaskPartitionKey(command);
-        Callable<?> callable = createRunnableAdapter(command);
+        Callable<T> callable = createRunnableAdapter(command);
         if (partitionKey != null) {
             submitToKeyOwnerInternal(callable, partitionKey, callback);
         } else {
@@ -320,7 +322,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
     }
 
     public void shutdown() {
-        ClientMessage request = ExecutorServiceShutdownParameters.encode(name);
+        ClientMessage request = ExecutorServiceShutdownCodec.encodeRequest(name);
         invoke(request);
     }
 
@@ -330,9 +332,11 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
     }
 
     public boolean isShutdown() {
-        ClientMessage request = ExecutorServiceIsShutdownParameters.encode(name);
-        BooleanResultParameters resultParameters = BooleanResultParameters.decode((ClientMessage) invoke(request));
-        return resultParameters.result;
+        ClientMessage request = ExecutorServiceIsShutdownCodec.encodeRequest(name);
+        ClientMessage response = invoke(request);
+        ExecutorServiceIsShutdownCodec.ResponseParameters resultParameters =
+                ExecutorServiceIsShutdownCodec.decodeResponse(response);
+        return resultParameters.response;
     }
 
     public boolean isTerminated() {
@@ -389,68 +393,74 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
     private <T> Future<T> submitToKeyOwnerInternal(Callable<T> task, Object key, T defaultValue, boolean preventSync) {
         checkNotNull(task, "task should not be null");
 
-        final String uuid = getUUID();
-        final int partitionId = getPartitionId(key);
+        String uuid = getUUID();
+        int partitionId = getPartitionId(key);
         ClientMessage request =
-                ExecutorServiceSubmitToPartitionParameters.encode(name, uuid, toData(task), partitionId);
-        // TODO
-        final ICompletableFuture<T> f = invokeOnPartitionOwner(request, partitionId);
+                ExecutorServiceSubmitToPartitionCodec.encodeRequest(name, uuid, toData(task), partitionId);
+        ClientInvocationFuture f = invokeOnPartitionOwner(request, partitionId);
         return checkSync(f, uuid, null, partitionId, preventSync, defaultValue);
     }
 
     private <T> void submitToKeyOwnerInternal(Callable<T> task, Object key, ExecutionCallback<T> callback) {
         checkNotNull(task, "task should not be null");
 
-        final String uuid = getUUID();
-        final int partitionId = getPartitionId(key);
+        String uuid = getUUID();
+        int partitionId = getPartitionId(key);
         ClientMessage request =
-                ExecutorServiceSubmitToPartitionParameters.encode(name, uuid, toData(task), partitionId);
-        final ICompletableFuture<T> f = invokeOnPartitionOwner(request, partitionId);
-        f.andThen(callback);
+                ExecutorServiceSubmitToPartitionCodec.encodeRequest(name, uuid, toData(task), partitionId);
+        ClientInvocationFuture f = invokeOnPartitionOwner(request, partitionId);
+        SerializationService serializationService = getContext().getSerializationService();
+        ClientDelegatingFuture<T> delegatingFuture = new ClientDelegatingFuture<T>(f, serializationService);
+        delegatingFuture.andThen(callback);
     }
 
     private <T> Future<T> submitToRandomInternal(Callable<T> task, T defaultValue, boolean preventSync) {
         checkNotNull(task, "task should not be null");
 
-        final String uuid = getUUID();
+        String uuid = getUUID();
         int partitionId = randomPartitionId();
         ClientMessage request =
-                ExecutorServiceSubmitToPartitionParameters.encode(name, uuid, toData(task), partitionId);
-        final ICompletableFuture<T> f = invokeOnPartitionOwner(request, partitionId);
+                ExecutorServiceSubmitToPartitionCodec.encodeRequest(name, uuid, toData(task), partitionId);
+        ClientInvocationFuture f = invokeOnPartitionOwner(request, partitionId);
         return checkSync(f, uuid, null, partitionId, preventSync, defaultValue);
     }
+
 
     private <T> void submitToRandomInternal(Callable<T> task, ExecutionCallback<T> callback) {
         checkNotNull(task, "task should not be null");
 
-        final String uuid = getUUID();
+        String uuid = getUUID();
         int partitionId = randomPartitionId();
         ClientMessage request =
-                ExecutorServiceSubmitToPartitionParameters.encode(name, uuid, toData(task), partitionId);
-        final ICompletableFuture<T> f = invokeOnPartitionOwner(request, partitionId);
-        f.andThen(callback);
+                ExecutorServiceSubmitToPartitionCodec.encodeRequest(name, uuid, toData(task), partitionId);
+        ClientInvocationFuture f = invokeOnPartitionOwner(request, partitionId);
+        SerializationService serializationService = getContext().getSerializationService();
+        ClientDelegatingFuture<T> delegatingFuture = new ClientDelegatingFuture<T>(f, serializationService);
+        delegatingFuture.andThen(callback);
     }
 
 
-    private <T> Future<T> submitToTargetInternal(Callable<T> task, final Address address
+    private <T> Future<T> submitToTargetInternal(Callable<T> task, Address address
             , T defaultValue, boolean preventSync) {
         checkNotNull(task, "task should not be null");
 
-        final String uuid = getUUID();
-        ClientMessage request = ExecutorServiceSubmitToAddressParameters.encode(name, uuid, toData(task),
+        String uuid = getUUID();
+        ClientMessage request = ExecutorServiceSubmitToAddressCodec.encodeRequest(name, uuid, toData(task),
                 address.getHost(), address.getPort());
-        ICompletableFuture<T> f = invokeOnTarget(request, address);
+        ClientInvocationFuture f = invokeOnTarget(request, address);
         return checkSync(f, uuid, address, -1, preventSync, defaultValue);
     }
 
-    private <T> void submitToTargetInternal(Callable<T> task, final Address address, ExecutionCallback<T> callback) {
+    private <T> void submitToTargetInternal(Callable<T> task, Address address, ExecutionCallback<T> callback) {
         checkNotNull(task, "task should not be null");
 
-        final String uuid = getUUID();
-        ClientMessage request = ExecutorServiceSubmitToAddressParameters.encode(name, uuid, toData(task),
+        String uuid = getUUID();
+        ClientMessage request = ExecutorServiceSubmitToAddressCodec.encodeRequest(name, uuid, toData(task),
                 address.getHost(), address.getPort());
-        ICompletableFuture<T> f = invokeOnTarget(request, address);
-        f.andThen(callback);
+        ClientInvocationFuture f = invokeOnTarget(request, address);
+        SerializationService serializationService = getContext().getSerializationService();
+        ClientDelegatingFuture<T> delegatingFuture = new ClientDelegatingFuture<T>(f, serializationService);
+        delegatingFuture.andThen(callback);
     }
 
 
@@ -459,11 +469,11 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         return "IExecutorService{" + "name='" + getName() + '\'' + '}';
     }
 
-    private <T> Future<T> checkSync(ICompletableFuture<T> f, String uuid,
+    private <T> Future<T> checkSync(ClientInvocationFuture f, String uuid,
                                     Address address, int partitionId, boolean preventSync, T defaultValue) {
-        final boolean sync = isSyncComputation(preventSync);
+        boolean sync = isSyncComputation(preventSync);
         if (sync) {
-            Object response = retrieveResult(f);
+            Object response = retrieveResultFromMessage(f);
             ExecutorService asyncExecutor = getContext().getExecutionService().getAsyncExecutor();
             return new CompletedFuture<T>(getContext().getSerializationService(), response, asyncExecutor);
         } else {
@@ -481,13 +491,25 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         return response;
     }
 
-    private boolean isSyncComputation(boolean preventSync) {
-        final long now = Clock.currentTimeMillis();
+    private Object retrieveResultFromMessage(ClientInvocationFuture f) {
+        Object response;
+        try {
+            SerializationService serializationService = getClient().getSerializationService();
+            Data data = ExecutorServiceSubmitToAddressCodec.decodeResponse(f.get()).response;
+            response = serializationService.toObject(data);
+        } catch (Exception e) {
+            response = e;
+        }
+        return response;
+    }
 
-        final long last = lastSubmitTime;
+    private boolean isSyncComputation(boolean preventSync) {
+        long now = Clock.currentTimeMillis();
+
+        long last = lastSubmitTime;
         lastSubmitTime = now;
 
-        final AtomicInteger consecutiveSubmits = this.consecutiveSubmits;
+        AtomicInteger consecutiveSubmits = this.consecutiveSubmits;
 
         if (last + MIN_TIME_RESOLUTION_OF_CONSECUTIVE_SUBMITS < now) {
             consecutiveSubmits.set(0);
@@ -503,8 +525,8 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
             throw new IllegalArgumentException("memberSelector must not be null");
         }
         List<Member> selected = new ArrayList<Member>();
-        Collection<MemberImpl> members = getContext().getClusterService().getMemberList();
-        for (MemberImpl member : members) {
+        Collection<Member> members = getContext().getClusterService().getMemberList();
+        for (Member member : members) {
             if (memberSelector.select(member)) {
                 selected.add(member);
             }
@@ -560,18 +582,18 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         }
     }
 
-    private <T> ICompletableFuture<T> invokeOnPartitionOwner(ClientMessage request, int partitionId) {
+    private ClientInvocationFuture invokeOnPartitionOwner(ClientMessage request, int partitionId) {
         try {
-            final ClientInvocation clientInvocation = new ClientInvocation(getClient(), request, partitionId);
+            ClientInvocation clientInvocation = new ClientInvocation(getClient(), request, partitionId);
             return clientInvocation.invoke();
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }
     }
 
-    private <T> ICompletableFuture<T> invokeOnTarget(ClientMessage request, Address target) {
+    private ClientInvocationFuture invokeOnTarget(ClientMessage request, Address target) {
         try {
-            final ClientInvocation invocation = new ClientInvocation(getClient(), request, target);
+            ClientInvocation invocation = new ClientInvocation(getClient(), request, target);
             return invocation.invoke();
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
@@ -583,20 +605,20 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
     }
 
     private Address getMemberAddress(Member member) {
-        MemberImpl m = getContext().getClusterService().getMember(member.getUuid());
+        Member m = getContext().getClusterService().getMember(member.getUuid());
         if (m == null) {
             throw new HazelcastException(member + " is not available!!!");
         }
-        return m.getAddress();
+        return ((AbstractMember) m).getAddress();
     }
 
     private int getPartitionId(Object key) {
-        final ClientPartitionService partitionService = getContext().getPartitionService();
+        ClientPartitionService partitionService = getContext().getPartitionService();
         return partitionService.getPartitionId(key);
     }
 
     private int randomPartitionId() {
-        final ClientPartitionService partitionService = getContext().getPartitionService();
+        ClientPartitionService partitionService = getContext().getPartitionService();
         return random.nextInt(partitionService.getPartitionCount());
     }
 

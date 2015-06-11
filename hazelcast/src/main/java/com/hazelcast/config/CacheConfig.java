@@ -26,7 +26,17 @@ import javax.cache.configuration.Factory;
 import javax.cache.configuration.MutableCacheEntryListenerConfiguration;
 import javax.cache.event.CacheEntryEventFilter;
 import javax.cache.event.CacheEntryListener;
+import javax.cache.expiry.AccessedExpiryPolicy;
+import javax.cache.expiry.CreatedExpiryPolicy;
+import javax.cache.expiry.Duration;
+import javax.cache.expiry.EternalExpiryPolicy;
+import javax.cache.expiry.ModifiedExpiryPolicy;
+import javax.cache.expiry.TouchedExpiryPolicy;
 import java.io.IOException;
+
+import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig;
+import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.DurationConfig;
+import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig.ExpiryPolicyType;
 
 import static com.hazelcast.config.CacheSimpleConfig.DEFAULT_BACKUP_COUNT;
 import static com.hazelcast.config.CacheSimpleConfig.DEFAULT_IN_MEMORY_FORMAT;
@@ -104,9 +114,7 @@ public class CacheConfig<K, V>
         if (simpleConfig.getCacheWriterFactory() != null) {
             this.cacheWriterFactory = ClassLoaderUtil.newInstance(null, simpleConfig.getCacheWriterFactory());
         }
-        if (simpleConfig.getExpiryPolicyFactory() != null) {
-            this.expiryPolicyFactory = ClassLoaderUtil.newInstance(null, simpleConfig.getExpiryPolicyFactory());
-        }
+        initExpiryPolicyFactoryConfig(simpleConfig);
         this.asyncBackupCount = simpleConfig.getAsyncBackupCount();
         this.backupCount = simpleConfig.getBackupCount();
         this.inMemoryFormat = simpleConfig.getInMemoryFormat();
@@ -128,35 +136,85 @@ public class CacheConfig<K, V>
             }
             boolean isOldValueRequired = simpleListener.isOldValueRequired();
             boolean synchronous = simpleListener.isSynchronous();
-            MutableCacheEntryListenerConfiguration<K, V> listenerConfiguration = new MutableCacheEntryListenerConfiguration<K, V>(
+            MutableCacheEntryListenerConfiguration<K, V> listenerConfiguration =
+                    new MutableCacheEntryListenerConfiguration<K, V>(
                     listenerFactory, filterFactory, isOldValueRequired, synchronous);
             addCacheEntryListenerConfiguration(listenerConfiguration);
         }
     }
 
+    private void initExpiryPolicyFactoryConfig(CacheSimpleConfig simpleConfig) throws Exception {
+        CacheSimpleConfig.ExpiryPolicyFactoryConfig expiryPolicyFactoryConfig =
+                simpleConfig.getExpiryPolicyFactoryConfig();
+        if (expiryPolicyFactoryConfig != null) {
+            if (expiryPolicyFactoryConfig.getClassName() != null) {
+                this.expiryPolicyFactory =
+                        ClassLoaderUtil.newInstance(null, expiryPolicyFactoryConfig.getClassName());
+            } else {
+                TimedExpiryPolicyFactoryConfig timedExpiryPolicyConfig =
+                        expiryPolicyFactoryConfig.getTimedExpiryPolicyFactoryConfig();
+                if (timedExpiryPolicyConfig != null) {
+                    DurationConfig durationConfig = timedExpiryPolicyConfig.getDurationConfig();
+                    ExpiryPolicyType expiryPolicyType = timedExpiryPolicyConfig.getExpiryPolicyType();
+                    switch (expiryPolicyType) {
+                        case CREATED:
+                            this.expiryPolicyFactory =
+                                    CreatedExpiryPolicy.factoryOf(
+                                            new Duration(durationConfig.getTimeUnit(),
+                                                         durationConfig.getDurationAmount()));
+                            break;
+                        case MODIFIED:
+                            this.expiryPolicyFactory =
+                                    ModifiedExpiryPolicy.factoryOf(
+                                            new Duration(durationConfig.getTimeUnit(),
+                                                         durationConfig.getDurationAmount()));
+                            break;
+                        case ACCESSED:
+                            this.expiryPolicyFactory =
+                                    AccessedExpiryPolicy.factoryOf(
+                                            new Duration(durationConfig.getTimeUnit(),
+                                                         durationConfig.getDurationAmount()));
+                            break;
+                        case TOUCHED:
+                            this.expiryPolicyFactory =
+                                    TouchedExpiryPolicy.factoryOf(
+                                            new Duration(durationConfig.getTimeUnit(),
+                                                         durationConfig.getDurationAmount()));
+                            break;
+                        case ETERNAL:
+                            this.expiryPolicyFactory = EternalExpiryPolicy.factoryOf();
+                            break;
+                        default:
+                            throw new IllegalArgumentException("Unsupported expiry policy type: " + expiryPolicyType);
+                    }
+                }
+            }
+        }
+    }
+
     /**
-     * Gets immutable version of this config.
+     * Gets immutable version of this cache config.
      *
-     * @return Immutable version of this config
+     * @return Immutable version of this cache config.
      */
     public CacheConfigReadOnly<K, V> getAsReadOnly() {
         return new CacheConfigReadOnly<K, V>(this);
     }
 
     /**
-     * Gets the name of the cache.
+     * Gets the name of this {@link com.hazelcast.cache.ICache}.
      *
-     * @return the name of the cache
+     * @return The name of this {@link com.hazelcast.cache.ICache}.
      */
     public String getName() {
         return name;
     }
 
     /**
-     * Sets the name of the cache.
+     * Sets the name of this {@link com.hazelcast.cache.ICache}.
      *
-     * @param name the name of the cache to set
-     * @return current cache config instance
+     * @param name The name to set for this {@link com.hazelcast.cache.ICache}.
+     * @return The current cache config instance.
      */
     public CacheConfig<K, V> setName(String name) {
         this.name = name;
@@ -164,19 +222,19 @@ public class CacheConfig<K, V>
     }
 
     /**
-     * Gets the manager prefix of the cache config such as "hz://".
+     * Gets the manager prefix of the {@link com.hazelcast.cache.ICache}, such as "hz://".
      *
-     * @return the manager prefix of this cache config
+     * @return The manager prefix of this {@link com.hazelcast.cache.ICache}.
      */
     public String getManagerPrefix() {
         return managerPrefix;
     }
 
     /**
-     * Sets the manager prefix of the cache config.
+     * Sets the manager prefix of the {@link com.hazelcast.cache.ICache}.
      *
-     * @param managerPrefix the manager prefix of the cache config to set
-     * @return current cache config instance
+     * @param managerPrefix The manager prefix to set for this {@link com.hazelcast.cache.ICache}.
+     * @return The current cache config instance.
      */
     public CacheConfig<K, V> setManagerPrefix(String managerPrefix) {
         this.managerPrefix = managerPrefix;
@@ -184,19 +242,19 @@ public class CacheConfig<K, V>
     }
 
     /**
-     * Gets the URI string which is global identifier of the cache.
+     * Gets the URI string which is the global identifier for this {@link com.hazelcast.cache.ICache}.
      *
-     * @return the URI string of this cache config
+     * @return The URI string of this {@link com.hazelcast.cache.ICache}.
      */
     public String getUriString() {
         return uriString;
     }
 
     /**
-     * Sets the URI string which is global identifier of the cache.
+     * Sets the URI string, which is the global identifier of the {@link com.hazelcast.cache.ICache}.
      *
-     * @param uriString the URI string of the cache to set
-     * @return current cache config instance
+     * @param uriString The URI string to set for this {@link com.hazelcast.cache.ICache}.
+     * @return The current cache config instance.
      */
     public CacheConfig<K, V> setUriString(String uriString) {
         this.uriString = uriString;
@@ -204,18 +262,18 @@ public class CacheConfig<K, V>
     }
 
     /**
-     * Gets the full name of cache with manager scope prefix.
+     * Gets the full name of the {@link com.hazelcast.cache.ICache}, including the manager scope prefix.
      *
-     * @return the name with manager scope prefix
+     * @return The full name of the {@link com.hazelcast.cache.ICache}, including the manager scope prefix.
      */
     public String getNameWithPrefix() {
         return managerPrefix + name;
     }
 
     /**
-     * Gets the number of synchronous backups of the cache config.
+     * Gets the number of synchronous backups for this {@link com.hazelcast.cache.ICache}.
      *
-     * @return the backupCount the number of synchronous backups of the cache config
+     * @return The number of synchronous backups (backupCount) for this {@link com.hazelcast.cache.ICache}.
      * @see #getAsyncBackupCount()
      */
     public int getBackupCount() {
@@ -223,15 +281,17 @@ public class CacheConfig<K, V>
     }
 
     /**
-     * Sets the number of synchronous backups. If 1 is set as the backup-count for example,
+     * Sets the number of synchronous backups. For example, if 1 is set as the backup count,
      * then all entries of the map will be copied to another JVM for
-     * fail-safety. 0 means no sync backup.
+     * fail-safety. 0 means no synchronous backup.
      *
-     * @param backupCount the number of synchronous backups to set
-     * @return current cache config instance
+     * @param backupCount The number of synchronous backups to set for
+     *                    this {@link com.hazelcast.cache.ICache}.
+     * @return The current cache config instance.
      * @throws IllegalArgumentException if backupCount smaller than 0,
-     *             or larger than the maximum number of backup
-     *             or the sum of the backups and async backups is larger than the maximum number of backups
+     *                                  or larger than the maximum number of backup,
+     *                                  or the sum of the synchronous and asynchonous backups is larger than
+     *                                  the maximum number of backups.
      * @see #setAsyncBackupCount(int)
      */
     public CacheConfig<K, V> setBackupCount(int backupCount) {
@@ -240,9 +300,9 @@ public class CacheConfig<K, V>
     }
 
     /**
-     * Gets the number of asynchronous backups of the cache config.
+     * Gets the number of asynchronous backups for this {@link com.hazelcast.cache.ICache}.
      *
-     * @return the number of asynchronous backups of the cache config
+     * @return the number of asynchronous backups for this {@link com.hazelcast.cache.ICache}.
      * @see #setBackupCount(int)
      */
     public int getAsyncBackupCount() {
@@ -250,13 +310,15 @@ public class CacheConfig<K, V>
     }
 
     /**
-     * Sets the number of asynchronous backups.
+     * Sets the number of asynchronous backups for this {@link com.hazelcast.cache.ICache}.
      *
-     * @param asyncBackupCount the number of asynchronous synchronous backups to set
+     * @param asyncBackupCount The number of asynchronous synchronous backups to set
+     *                         for this {@link com.hazelcast.cache.ICache}.
      * @return the updated CacheConfig
-     * @throws new IllegalArgumentException if asyncBackupCount smaller than 0,
-     *             or larger than the maximum number of backup
-     *             or the sum of the backups and async backups is larger than the maximum number of backups
+     * @throws new IllegalArgumentException if asyncBackupCount is smaller than 0,
+     *             or larger than the maximum number of backups,
+     *             or the sum of the synchronous and asynchronous backups is larger
+     *             than the maximum number of backups.
      * @see #setBackupCount(int)
      * @see #getAsyncBackupCount()
      */
@@ -266,18 +328,18 @@ public class CacheConfig<K, V>
     }
 
     /**
-     * Gets the total backup count (<code>backupCount + asyncBackupCount</code>) of the cache config.
+     * Gets the total backup count (<code>backupCount + asyncBackupCount</code>) of the cache.
      *
-     * @return the total backup count (<code>backupCount + asyncBackupCount</code>) of the cache config
+     * @return the total backup count (<code>backupCount + asyncBackupCount</code>) of the cache.
      */
     public int getTotalBackupCount() {
         return backupCount + asyncBackupCount;
     }
 
     /**
-     * Gets the {@link EvictionConfig} instance for eviction configuration of the cache config.
+     * Gets the {@link EvictionConfig} instance of the eviction configuration for this {@link com.hazelcast.cache.ICache}.
      *
-     * @return the {@link EvictionConfig} instance for eviction configuration
+     * @return The {@link EvictionConfig} instance of the eviction configuration.
      */
     // TODO Change to "EvictionConfig" instead of "CacheEvictionConfig" in the future
     // since "CacheEvictionConfig" is deprecated
@@ -286,10 +348,10 @@ public class CacheConfig<K, V>
     }
 
     /**
-     * Sets the {@link EvictionConfig} instance for eviction configuration of the cache config.
+     * Sets the {@link EvictionConfig} instance for eviction configuration for this {@link com.hazelcast.cache.ICache}.
      *
-     * @param evictionConfig the {@link EvictionConfig} instance for eviction configuration to set
-     * @return current cache config instance
+     * @param evictionConfig The {@link EvictionConfig} instance to set for the eviction configuration.
+     * @return The current cache config instance.
      */
     public CacheConfig setEvictionConfig(EvictionConfig evictionConfig) {
         isNotNull(evictionConfig, "Eviction config cannot be null !");
@@ -323,7 +385,7 @@ public class CacheConfig<K, V>
     }
 
     /**
-     * Data type that will be used for storing records.
+     * Data type that will be used for storing records in this {@link com.hazelcast.cache.ICache}.
      * Possible values:
      * BINARY (default): keys and values will be stored as binary data
      * OBJECT : values will be stored in their object forms

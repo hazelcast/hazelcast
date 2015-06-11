@@ -26,9 +26,15 @@ import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.quorum.QuorumType;
 import com.hazelcast.spi.ServiceConfigurationParser;
+import com.hazelcast.topic.TopicOverloadPolicy;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.StringUtil;
 import com.hazelcast.wan.impl.WanNoDelayReplication;
+import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig;
+import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig;
+import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.DurationConfig;
+import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig.ExpiryPolicyType;
+
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
@@ -48,6 +54,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Properties;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.config.MapStoreConfig.InitialLoadMode;
 import static com.hazelcast.config.XmlElements.CACHE;
@@ -68,6 +75,7 @@ import static com.hazelcast.config.XmlElements.PARTITION_GROUP;
 import static com.hazelcast.config.XmlElements.PROPERTIES;
 import static com.hazelcast.config.XmlElements.QUEUE;
 import static com.hazelcast.config.XmlElements.QUORUM;
+import static com.hazelcast.config.XmlElements.RELIABLE_TOPIC;
 import static com.hazelcast.config.XmlElements.REPLICATED_MAP;
 import static com.hazelcast.config.XmlElements.RINGBUFFER;
 import static com.hazelcast.config.XmlElements.SECURITY;
@@ -280,6 +288,8 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
             handleSet(node);
         } else if (TOPIC.isEqual(nodeName)) {
             handleTopic(node);
+        } else if (RELIABLE_TOPIC.isEqual(nodeName)) {
+            handleReliableTopic(node);
         } else if (CACHE.isEqual(nodeName)) {
             handleCache(node);
         } else if (NATIVE_MEMORY.isEqual(nodeName)) {
@@ -1006,7 +1016,7 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
             } else if ("cache-writer-factory".equals(nodeName)) {
                 cacheConfig.setCacheWriterFactory(getAttribute(n, "class-name"));
             } else if ("expiry-policy-factory".equals(nodeName)) {
-                cacheConfig.setExpiryPolicyFactory(getAttribute(n, "class-name"));
+                cacheConfig.setExpiryPolicyFactoryConfig(getExpiryPolicyFactoryConfig(n));
             } else if ("cache-entry-listeners".equals(nodeName)) {
                 cacheListenerHandle(n, cacheConfig);
             } else if ("in-memory-format".equals(nodeName)) {
@@ -1022,6 +1032,67 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
             }
         }
         this.config.addCacheConfig(cacheConfig);
+    }
+
+    private ExpiryPolicyFactoryConfig getExpiryPolicyFactoryConfig(final org.w3c.dom.Node node) {
+        final String className = getAttribute(node, "class-name");
+        if (!StringUtil.isNullOrEmpty(className)) {
+            return new ExpiryPolicyFactoryConfig(className);
+        } else {
+            TimedExpiryPolicyFactoryConfig timedExpiryPolicyFactoryConfig = null;
+            for (org.w3c.dom.Node n : new IterableNodeList(node.getChildNodes())) {
+                final String nodeName = cleanNodeName(n.getNodeName());
+                if ("timed-expiry-policy-factory".equals(nodeName)) {
+                    timedExpiryPolicyFactoryConfig = getTimedExpiryPolicyFactoryConfig(n);
+                }
+            }
+            if (timedExpiryPolicyFactoryConfig == null) {
+                throw new InvalidConfigurationException(
+                        "One of the \"class-name\" or \"timed-expire-policy-factory\" configuration "
+                                + "is needed for expiry policy factory configuration");
+            } else {
+                return new ExpiryPolicyFactoryConfig(timedExpiryPolicyFactoryConfig);
+            }
+        }
+    }
+
+    private TimedExpiryPolicyFactoryConfig getTimedExpiryPolicyFactoryConfig(final org.w3c.dom.Node node) {
+        final String expiryPolicyTypeStr = getAttribute(node, "expiry-policy-type");
+        final String durationAmountStr = getAttribute(node, "duration-amount");
+        final String timeUnitStr = getAttribute(node, "time-unit");
+        final ExpiryPolicyType expiryPolicyType =
+                ExpiryPolicyType.valueOf(upperCaseInternal(expiryPolicyTypeStr));
+        if (expiryPolicyType != ExpiryPolicyType.ETERNAL
+                && (StringUtil.isNullOrEmpty(durationAmountStr)
+                || StringUtil.isNullOrEmpty(timeUnitStr))) {
+            throw new InvalidConfigurationException(
+                    "Both of the \"duration-amount\" or \"time-unit\" attributes "
+                            + "are required for expiry policy factory configuration "
+                            + "(except \"ETERNAL\" expiry policy type)");
+        }
+        DurationConfig durationConfig = null;
+        if (expiryPolicyType != ExpiryPolicyType.ETERNAL) {
+            long durationAmount;
+            try {
+                durationAmount = Long.parseLong(durationAmountStr);
+            } catch (NumberFormatException e) {
+                throw new InvalidConfigurationException(
+                        "Invalid value for duration amount: " + durationAmountStr, e);
+            }
+            if (durationAmount <= 0) {
+                throw new InvalidConfigurationException(
+                        "Duration amount must be positive: " + durationAmount);
+            }
+            TimeUnit timeUnit;
+            try {
+                timeUnit = TimeUnit.valueOf(upperCaseInternal(timeUnitStr));
+            } catch (IllegalArgumentException e) {
+                throw new InvalidConfigurationException(
+                        "Invalid value for time unit: " + timeUnitStr, e);
+            }
+            durationConfig = new DurationConfig(durationAmount, timeUnit);
+        }
+        return new TimedExpiryPolicyFactoryConfig(expiryPolicyType, durationConfig);
     }
 
     private NearCacheConfig getNearCacheConfig(final org.w3c.dom.Node node) {
@@ -1377,6 +1448,32 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
             }
         }
         config.addTopicConfig(tConfig);
+    }
+
+    private void handleReliableTopic(final Node node) {
+        final Node attName = node.getAttributes().getNamedItem("name");
+        final String name = getTextContent(attName);
+        final ReliableTopicConfig topicConfig = new ReliableTopicConfig(name);
+        for (org.w3c.dom.Node n : new IterableNodeList(node.getChildNodes())) {
+            final String nodeName = cleanNodeName(n.getNodeName());
+            if ("read-batch-size".equals(cleanNodeName(nodeName))) {
+                String batchSize = getTextContent(n);
+                topicConfig.setReadBatchSize(
+                        getIntegerValue("read-batch-size", batchSize, ReliableTopicConfig.DEFAULT_READ_BATCH_SIZE));
+            } else if ("statistics-enabled".equals(nodeName)) {
+                topicConfig.setStatisticsEnabled(checkTrue(getTextContent(n)));
+            } else if ("topic-overload-policy".equals(nodeName)) {
+                TopicOverloadPolicy topicOverloadPolicy = TopicOverloadPolicy.valueOf(upperCaseInternal(getTextContent(n)));
+                topicConfig.setTopicOverloadPolicy(topicOverloadPolicy);
+            } else if ("message-listeners".equals(nodeName)) {
+                for (org.w3c.dom.Node listenerNode : new IterableNodeList(n.getChildNodes())) {
+                    if ("message-listener".equals(cleanNodeName(listenerNode))) {
+                        topicConfig.addMessageListenerConfig(new ListenerConfig(getTextContent(listenerNode)));
+                    }
+                }
+            }
+        }
+        config.addReliableTopicConfig(topicConfig);
     }
 
     private void handleJobTracker(final Node node) {

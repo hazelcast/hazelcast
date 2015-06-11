@@ -26,7 +26,7 @@ import com.hazelcast.cluster.client.RegisterMembershipListenerRequest;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MemberAttributeEvent;
 import com.hazelcast.core.MembershipEvent;
-import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.instance.AbstractMember;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
@@ -46,7 +46,7 @@ class ClientMembershipListener implements EventHandler<ClientInitialMembershipEv
 
     public static final int INITIAL_MEMBERS_TIMEOUT_SECONDS = 5;
     private static final ILogger LOGGER = com.hazelcast.logging.Logger.getLogger(ClientMembershipListener.class);
-    private final List<MemberImpl> members = new LinkedList<MemberImpl>();
+    private final List<Member> members = new LinkedList<Member>();
     private final HazelcastClientInstanceImpl client;
     private final ClientClusterServiceImpl clusterService;
     private final ClientPartitionServiceImpl partitionService;
@@ -63,7 +63,7 @@ class ClientMembershipListener implements EventHandler<ClientInitialMembershipEv
 
     @Override
     public void handle(ClientInitialMembershipEvent event) {
-        final MemberImpl member = (MemberImpl) event.getMember();
+        final Member member = event.getMember();
         if (event.getEventType() == ClientInitialMembershipEvent.INITIAL_MEMBERS) {
             initialMembers(event);
             initialListFetchedLatch.countDown();
@@ -95,7 +95,6 @@ class ClientMembershipListener implements EventHandler<ClientInitialMembershipEv
 
             Connection connection = connectionManager.getConnection(ownerConnectionAddress);
             if (connection == null) {
-                System.out.println("FATAL connection null " + ownerConnectionAddress);
                 throw new IllegalStateException("Can not load initial members list because owner connection is null. "
                         + "Address " + ownerConnectionAddress);
             }
@@ -124,10 +123,10 @@ class ClientMembershipListener implements EventHandler<ClientInitialMembershipEv
 
     void initialMembers(ClientInitialMembershipEvent event) {
 
-        Map<String, MemberImpl> prevMembers = Collections.emptyMap();
+        Map<String, Member> prevMembers = Collections.emptyMap();
         if (!members.isEmpty()) {
-            prevMembers = new HashMap<String, MemberImpl>(members.size());
-            for (MemberImpl member : members) {
+            prevMembers = new HashMap<String, Member>(members.size());
+            for (Member member : members) {
                 prevMembers.put(member.getUuid(), member);
             }
             members.clear();
@@ -143,9 +142,9 @@ class ClientMembershipListener implements EventHandler<ClientInitialMembershipEv
     }
 
 
-    private void memberRemoved(MemberImpl member) {
+    private void memberRemoved(Member member) {
         members.remove(member);
-        final Connection connection = connectionManager.getConnection(member.getAddress());
+        final Connection connection = connectionManager.getConnection(((AbstractMember) member).getAddress());
         if (connection != null) {
             connectionManager.destroyConnection(connection);
         }
@@ -158,16 +157,16 @@ class ClientMembershipListener implements EventHandler<ClientInitialMembershipEv
 
     private void memberAttributeChanged(ClientInitialMembershipEvent event) {
         MemberAttributeChange memberAttributeChange = event.getMemberAttributeChange();
-        Map<Address, MemberImpl> memberMap = clusterService.getMembersRef();
+        Map<Address, Member> memberMap = clusterService.getMembersRef();
         if (memberMap == null) {
             return;
         }
-        for (MemberImpl target : memberMap.values()) {
+        for (Member target : memberMap.values()) {
             if (target.getUuid().equals(memberAttributeChange.getUuid())) {
                 final MemberAttributeOperationType operationType = memberAttributeChange.getOperationType();
                 final String key = memberAttributeChange.getKey();
                 final Object value = memberAttributeChange.getValue();
-                target.updateAttribute(operationType, key, value);
+                ((AbstractMember) target).updateAttribute(operationType, key, value);
                 MemberAttributeEvent memberAttributeEvent = new MemberAttributeEvent(
                         client.getCluster(), target, operationType, key, value);
                 clusterService.fireMemberAttributeEvent(memberAttributeEvent);
@@ -188,19 +187,20 @@ class ClientMembershipListener implements EventHandler<ClientInitialMembershipEv
         }
     }
 
-    private List<MembershipEvent> detectMembershipEvents(Map<String, MemberImpl> prevMembers) {
+    private List<MembershipEvent> detectMembershipEvents(Map<String, Member> prevMembers) {
         final List<MembershipEvent> events = new LinkedList<MembershipEvent>();
         final Set<Member> eventMembers = Collections.unmodifiableSet(new LinkedHashSet<Member>(members));
-        for (MemberImpl member : members) {
-            final MemberImpl former = prevMembers.remove(member.getUuid());
+        for (Member member : members) {
+            final Member former = prevMembers.remove(member.getUuid());
             if (former == null) {
                 events.add(new MembershipEvent(client.getCluster(), member, MembershipEvent.MEMBER_ADDED, eventMembers));
             }
         }
-        for (MemberImpl member : prevMembers.values()) {
+        for (Member member : prevMembers.values()) {
             events.add(new MembershipEvent(client.getCluster(), member, MembershipEvent.MEMBER_REMOVED, eventMembers));
-            if (clusterService.getMember(member.getAddress()) == null) {
-                final Connection connection = connectionManager.getConnection(member.getAddress());
+            Address address = ((AbstractMember) member).getAddress();
+            if (clusterService.getMember(address) == null) {
+                final Connection connection = connectionManager.getConnection(address);
                 if (connection != null) {
                     connectionManager.destroyConnection(connection);
                 }
@@ -209,7 +209,7 @@ class ClientMembershipListener implements EventHandler<ClientInitialMembershipEv
         return events;
     }
 
-    private void memberAdded(MemberImpl member) {
+    private void memberAdded(Member member) {
         members.add(member);
         applyMemberListChanges();
         MembershipEvent event = new MembershipEvent(client.getCluster(), member,
@@ -219,9 +219,9 @@ class ClientMembershipListener implements EventHandler<ClientInitialMembershipEv
     }
 
     private void updateMembersRef() {
-        final Map<Address, MemberImpl> map = new LinkedHashMap<Address, MemberImpl>(members.size());
-        for (MemberImpl member : members) {
-            map.put(member.getAddress(), member);
+        final Map<Address, Member> map = new LinkedHashMap<Address, Member>(members.size());
+        for (Member member : members) {
+            map.put(((AbstractMember) member).getAddress(), member);
         }
         clusterService.setMembersRef(Collections.unmodifiableMap(map));
     }

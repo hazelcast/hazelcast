@@ -17,8 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.list;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.ListIsEmptyParameters;
+import com.hazelcast.client.impl.protocol.codec.ListIsEmptyCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.collection.impl.collection.operations.CollectionIsEmptyOperation;
 import com.hazelcast.collection.impl.list.ListService;
@@ -32,11 +31,10 @@ import java.security.Permission;
 
 /**
  * Client Protocol Task for handling messages with type id:
- * {@link com.hazelcast.client.impl.protocol.parameters.ListMessageType#QUEUE_ADDLISTENER}
- *
+ * {@link com.hazelcast.client.impl.protocol.codec.ListMessageType#LIST_ADDLISTENER}
  */
 public class ListIsEmptyMessageTask
-        extends AbstractPartitionMessageTask<ListIsEmptyParameters> {
+        extends AbstractPartitionMessageTask<ListIsEmptyCodec.RequestParameters> {
 
     public ListIsEmptyMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -48,13 +46,13 @@ public class ListIsEmptyMessageTask
     }
 
     @Override
-    protected ListIsEmptyParameters decodeClientMessage(ClientMessage clientMessage) {
-        return ListIsEmptyParameters.decode(clientMessage);
+    protected ListIsEmptyCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return ListIsEmptyCodec.decodeRequest(clientMessage);
     }
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return BooleanResultParameters.encode((Boolean) response);
+        return ListIsEmptyCodec.encodeResponse((Boolean) response);
     }
 
     @Override

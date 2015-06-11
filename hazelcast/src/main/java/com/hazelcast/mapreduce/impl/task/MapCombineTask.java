@@ -31,6 +31,7 @@ import com.hazelcast.mapreduce.impl.operation.RequestPartitionProcessed;
 import com.hazelcast.mapreduce.impl.operation.RequestPartitionReducing;
 import com.hazelcast.mapreduce.impl.operation.RequestPartitionResult;
 import com.hazelcast.nio.Address;
+import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.ExceptionUtil;
 
@@ -69,6 +70,7 @@ public class MapCombineTask<KeyIn, ValueIn, KeyOut, ValueOut, Chunk> {
     private final MappingPhase<KeyIn, ValueIn, KeyOut, ValueOut> mappingPhase;
     private final KeyValueSource<KeyIn, ValueIn> keyValueSource;
     private final MapReduceService mapReduceService;
+    private final InternalPartitionService partitionService;
     private final JobSupervisor supervisor;
     private final NodeEngine nodeEngine;
     private final String name;
@@ -85,6 +87,7 @@ public class MapCombineTask<KeyIn, ValueIn, KeyOut, ValueOut, Chunk> {
         this.jobId = configuration.getJobId();
         this.chunkSize = configuration.getChunkSize();
         this.nodeEngine = configuration.getNodeEngine();
+        this.partitionService = nodeEngine.getPartitionService();
         this.mapReduceService = supervisor.getMapReduceService();
         this.keyValueSource = configuration.getKeyValueSource();
     }
@@ -116,7 +119,7 @@ public class MapCombineTask<KeyIn, ValueIn, KeyOut, ValueOut, Chunk> {
     }
 
     public final void processMapping(int partitionId, DefaultContext<KeyOut, ValueOut> context,
-                                     KeyValueSource<KeyIn, ValueIn> keyValueSource)
+                                     KeyValueSource<KeyIn, ValueIn> keyValueSource, boolean partitionProcessor)
             throws Exception {
 
         context.setPartitionId(partitionId);
@@ -124,7 +127,10 @@ public class MapCombineTask<KeyIn, ValueIn, KeyOut, ValueOut, Chunk> {
         if (mapper instanceof LifecycleMapper) {
             ((LifecycleMapper) mapper).initialize(context);
         }
-        mappingPhase.executeMappingPhase(keyValueSource, mapper, context);
+        int keyPreSelectorId = partitionProcessor ? partitionId : -1;
+        if (mappingPhase.processingPartitionNecessary(keyPreSelectorId, partitionService)) {
+            mappingPhase.executeMappingPhase(keyValueSource, mapper, context);
+        }
         if (mapper instanceof LifecycleMapper) {
             ((LifecycleMapper) mapper).finalized(context);
         }
@@ -164,7 +170,8 @@ public class MapCombineTask<KeyIn, ValueIn, KeyOut, ValueOut, Chunk> {
         if (result.getResultState() == SUCCESSFUL) {
             // If we have a reducer defined just send it over
             if (supervisor.getConfiguration().getReducerFactory() != null) {
-                Map<KeyOut, Chunk> chunkMap = context.finish();
+                // Request a possible last chunk of data
+                Map<KeyOut, Chunk> chunkMap = context.requestChunk();
                 if (chunkMap.size() > 0) {
                     sendLastChunkToAssignedReducers(partitionId, chunkMap);
 
@@ -236,12 +243,12 @@ public class MapCombineTask<KeyIn, ValueIn, KeyOut, ValueOut, Chunk> {
         }
     }
 
-    private void processPartitionMapping(KeyValueSource<KeyIn, ValueIn> delegate, int partitionId)
+    private void processPartitionMapping(KeyValueSource<KeyIn, ValueIn> delegate, int partitionId, boolean partitionProcessor)
             throws Exception {
         delegate.reset();
         if (delegate.open(nodeEngine)) {
             DefaultContext<KeyOut, ValueOut> context = supervisor.getOrCreateContext(this);
-            processMapping(partitionId, context, delegate);
+            processMapping(partitionId, context, delegate, partitionProcessor);
             delegate.close();
             finalizeMapping(partitionId, context);
         } else {
@@ -293,7 +300,7 @@ public class MapCombineTask<KeyIn, ValueIn, KeyOut, ValueOut, Chunk> {
                 try {
                     // This call cannot be delegated
                     ((PartitionIdAware) keyValueSource).setPartitionId(partitionId);
-                    processPartitionMapping(delegate, partitionId);
+                    processPartitionMapping(delegate, partitionId, true);
                 } catch (Throwable t) {
                     handleProcessorThrowable(t);
                 }
@@ -351,7 +358,7 @@ public class MapCombineTask<KeyIn, ValueIn, KeyOut, ValueOut, Chunk> {
                     delegate = new KeyValueSourceFacade<KeyIn, ValueIn>(keyValueSource, supervisor);
                 }
 
-                processPartitionMapping(delegate, partitionId);
+                processPartitionMapping(delegate, partitionId, false);
             } catch (Throwable t) {
                 handleProcessorThrowable(t);
             }

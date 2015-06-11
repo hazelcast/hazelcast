@@ -90,7 +90,7 @@ public class SemaphoreConfig {
     }
 
     /**
-     * Gets the initial number of permits
+     * Gets the initial number of permits.
      *
      * @return the initial number of permits.
      */
@@ -99,8 +99,8 @@ public class SemaphoreConfig {
     }
 
     /**
-     * Sets the initial number of permits. The initial number of permits can be 0; meaning that there is no permit but
-     * it can also be negative meaning that there is a shortage of permits.
+     * Sets the initial number of permits. The initial number of permits can be 0; meaning that there is no permit.
+     * It can also be a negative number, meaning that there is a shortage of permits.
      *
      * @param initialPermits the initial number of permits.
      * @return the updated SemaphoreConfig
@@ -147,13 +147,14 @@ public class SemaphoreConfig {
     }
 
     /**
-     * Sets the number of asynchronous backups. 0 means no backups
+     * Sets the number of asynchronous backups. 0 means no backups.
      *
-     * @param asyncBackupCount the number of asynchronous synchronous backups to set
+     * @param asyncBackupCount the number of asynchronous synchronous backups to set.
      * @return the updated SemaphoreConfig
      * @throws IllegalArgumentException if asyncBackupCount smaller than 0,
-     *             or larger than the maximum number of backup
-     *             or the sum of the backups and async backups is larger than the maximum number of backups
+     *                                  or larger than the maximum number of backup
+     *                                  or the sum of the backups and async backups is larger than the maximum
+     *                                  number of backups
      * @see #setBackupCount(int)
      * @see #getAsyncBackupCount()
      */
@@ -163,9 +164,10 @@ public class SemaphoreConfig {
     }
 
     /**
-     * Returns the total number of backups; the returned value will always equal or bigger than 0.
+     * Returns the total number of backups (synchronous plus asynchronous);
+     * the returned value will always equal or bigger than 0.
      *
-     * @return the total number of backups.
+     * @return the total number of backups (synchronous plus asynchronous).
      */
     public int getTotalBackupCount() {
         return asyncBackupCount + backupCount;

@@ -17,8 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.transactionalmap;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.TransactionalMapSetParameters;
-import com.hazelcast.client.impl.protocol.parameters.VoidResultParameters;
+import com.hazelcast.client.impl.protocol.codec.TransactionalMapSetCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractTransactionalMessageTask;
 import com.hazelcast.core.TransactionalMap;
 import com.hazelcast.instance.Node;
@@ -30,18 +29,19 @@ import com.hazelcast.transaction.TransactionContext;
 
 import java.security.Permission;
 
-public class TransactionalMapSetMessageTask extends AbstractTransactionalMessageTask<TransactionalMapSetParameters> {
+public class TransactionalMapSetMessageTask
+        extends AbstractTransactionalMessageTask<TransactionalMapSetCodec.RequestParameters> {
 
     public TransactionalMapSetMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected ClientMessage innerCall() throws Exception {
+    protected Object innerCall() throws Exception {
         final TransactionContext context = getEndpoint().getTransactionContext(parameters.txnId);
         final TransactionalMap map = context.getMap(parameters.name);
         map.set(parameters.key, parameters.value);
-        return VoidResultParameters.encode();
+        return null;
     }
 
     @Override
@@ -50,8 +50,13 @@ public class TransactionalMapSetMessageTask extends AbstractTransactionalMessage
     }
 
     @Override
-    protected TransactionalMapSetParameters decodeClientMessage(ClientMessage clientMessage) {
-        return TransactionalMapSetParameters.decode(clientMessage);
+    protected TransactionalMapSetCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return TransactionalMapSetCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return TransactionalMapSetCodec.encodeResponse();
     }
 
     @Override

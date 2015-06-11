@@ -66,7 +66,7 @@ public class TxnPutOperation extends MultiMapKeyBasedOperation implements Backup
         final MultiMapService service = getService();
         service.getLocalMultiMapStatsImpl(name).incrementPuts(elapsed);
         if (Boolean.TRUE.equals(response)) {
-            publishEvent(EntryEventType.ADDED, dataKey, value);
+            publishEvent(EntryEventType.ADDED, dataKey, value, null);
         }
     }
 

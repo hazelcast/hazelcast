@@ -60,6 +60,12 @@ public class IndexService {
         return indexes.get();
     }
 
+    public void clearIndexes() {
+        indexes.set(EMPTY_INDEX);
+        mapIndexes.clear();
+        hasIndex = false;
+    }
+
     public void removeEntryIndex(Data indexKey) throws QueryException {
         Index[] indexes = getIndexes();
         for (Index index : indexes) {

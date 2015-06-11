@@ -16,17 +16,28 @@
 
 package com.hazelcast.cache.impl;
 
+import com.hazelcast.cache.impl.client.CacheBatchInvalidationMessage;
 import com.hazelcast.cache.impl.client.CacheInvalidationListener;
-import com.hazelcast.cache.impl.client.CacheInvalidationMessage;
+import com.hazelcast.cache.impl.client.CacheSingleInvalidationMessage;
 import com.hazelcast.cache.impl.operation.CacheReplicationOperation;
 import com.hazelcast.nio.serialization.Data;
 
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
+import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionReplicationEvent;
 
 import java.util.Collection;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Cache Service is the main access point of JCache implementation.
@@ -53,10 +64,37 @@ import java.util.Collection;
  * using {@link AbstractHazelcastCacheManager#cacheNamePrefix()}.
  * </p>
  */
-public class CacheService extends AbstractCacheService implements ICacheService {
+public class CacheService extends AbstractCacheService {
+
+    protected boolean invalidationMessageBatchEnabled;
+    protected int invalidationMessageBatchSize;
+    protected final ConcurrentMap<String, Queue<CacheSingleInvalidationMessage>> invalidationMessageMap =
+            new ConcurrentHashMap<String, Queue<CacheSingleInvalidationMessage>>();
+    protected ScheduledFuture cacheBatchInvalidationMessageSenderScheduler;
+    protected final AtomicBoolean cacheBatchInvalidationMessageSenderInProgress = new AtomicBoolean(false);
 
     protected ICacheRecordStore createNewRecordStore(String name, int partitionId) {
         return new CacheRecordStore(name, partitionId, nodeEngine, CacheService.this);
+    }
+
+    @Override
+    protected void postInit(NodeEngine nodeEngine, Properties properties) {
+        super.postInit(nodeEngine, properties);
+        invalidationMessageBatchEnabled =
+                nodeEngine.getGroupProperties().CACHE_INVALIDATION_MESSAGE_BATCH_ENABLED.getBoolean();
+        if (invalidationMessageBatchEnabled) {
+            invalidationMessageBatchSize =
+                    nodeEngine.getGroupProperties().CACHE_INVALIDATION_MESSAGE_BATCH_SIZE.getInteger();
+            int invalidationMessageBatchFreq =
+                    nodeEngine.getGroupProperties().CACHE_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS.getInteger();
+            cacheBatchInvalidationMessageSenderScheduler =
+                    nodeEngine.getExecutionService()
+                            .scheduleAtFixedRate(SERVICE_NAME + ":cacheBatchInvalidationMessageSender",
+                                    new CacheBatchInvalidationMessageSender(),
+                                    invalidationMessageBatchFreq,
+                                    invalidationMessageBatchFreq,
+                                    TimeUnit.SECONDS);
+        }
     }
 
     @Override
@@ -75,6 +113,9 @@ public class CacheService extends AbstractCacheService implements ICacheService 
     @Override
     public void shutdown(boolean terminate) {
         if (!terminate) {
+            if (cacheBatchInvalidationMessageSenderScheduler != null) {
+                cacheBatchInvalidationMessageSenderScheduler.cancel(true);
+            }
             reset();
         }
     }
@@ -111,14 +152,91 @@ public class CacheService extends AbstractCacheService implements ICacheService 
      */
     @Override
     public void sendInvalidationEvent(String name, Data key, String sourceUuid) {
+        if (key == null) {
+            sendSingleInvalidationEvent(name, null, sourceUuid);
+        } else {
+            if (invalidationMessageBatchEnabled) {
+                sendBatchInvalidationEvent(name, key, sourceUuid);
+            } else {
+                sendSingleInvalidationEvent(name, key, sourceUuid);
+            }
+        }
+    }
+
+    protected void sendSingleInvalidationEvent(String name, Data key, String sourceUuid) {
         EventService eventService = nodeEngine.getEventService();
         Collection<EventRegistration> registrations = eventService.getRegistrations(SERVICE_NAME, name);
         if (!registrations.isEmpty()) {
-            //TODO : fix below for client protocol
             eventService.publishEvent(SERVICE_NAME, registrations,
-                    new CacheInvalidationMessage(name, key, sourceUuid), name.hashCode());
+                    new CacheSingleInvalidationMessage(name, key, sourceUuid), name.hashCode());
 
         }
+    }
+
+    protected void sendBatchInvalidationEvent(String name, Data key, String sourceUuid) {
+        EventService eventService = nodeEngine.getEventService();
+        Collection<EventRegistration> registrations = eventService.getRegistrations(SERVICE_NAME, name);
+        if (registrations.isEmpty()) {
+            return;
+        }
+        Queue<CacheSingleInvalidationMessage> invalidationMessageQueue =
+                invalidationMessageMap.get(name);
+        if (invalidationMessageQueue == null) {
+            Queue<CacheSingleInvalidationMessage> newInvalidationMessageQueue =
+                    new ConcurrentLinkedQueue<CacheSingleInvalidationMessage>();
+            invalidationMessageQueue = invalidationMessageMap.putIfAbsent(name, newInvalidationMessageQueue);
+            if (invalidationMessageQueue == null) {
+                invalidationMessageQueue = newInvalidationMessageQueue;
+            }
+        }
+        CacheSingleInvalidationMessage invalidationMessage = new CacheSingleInvalidationMessage(name, key, sourceUuid);
+        invalidationMessageQueue.offer(invalidationMessage);
+        if (invalidationMessageQueue.size() >= invalidationMessageBatchSize) {
+            flushInvalidationMessages(name, invalidationMessageQueue);
+        }
+    }
+
+    protected void flushInvalidationMessages(String cacheName,
+                                             Queue<CacheSingleInvalidationMessage> invalidationMessageQueue) {
+        CacheBatchInvalidationMessage batchInvalidationMessage =
+                new CacheBatchInvalidationMessage(cacheName, invalidationMessageQueue.size());
+        CacheSingleInvalidationMessage invalidationMessage;
+        while ((invalidationMessage = invalidationMessageQueue.poll()) != null) {
+            batchInvalidationMessage.addInvalidationMessage(invalidationMessage);
+        }
+        EventService eventService = nodeEngine.getEventService();
+        Collection<EventRegistration> registrations = eventService.getRegistrations(SERVICE_NAME, cacheName);
+        if (!registrations.isEmpty()) {
+            eventService.publishEvent(SERVICE_NAME, registrations,
+                    batchInvalidationMessage, cacheName.hashCode());
+
+        }
+    }
+
+    protected class CacheBatchInvalidationMessageSender implements Runnable {
+
+        @Override
+        public void run() {
+            // If still in progress, no need to another attempt. So just ignore.
+            if (cacheBatchInvalidationMessageSenderInProgress.compareAndSet(false, true)) {
+                try {
+                    for (Map.Entry<String, Queue<CacheSingleInvalidationMessage>> entry
+                            : invalidationMessageMap.entrySet()) {
+                        if (Thread.currentThread().isInterrupted()) {
+                            break;
+                        }
+                        String cacheName = entry.getKey();
+                        Queue<CacheSingleInvalidationMessage> invalidationMessageQueue = entry.getValue();
+                        if (invalidationMessageQueue.size() > 0) {
+                            flushInvalidationMessages(cacheName, invalidationMessageQueue);
+                        }
+                    }
+                } finally {
+                    cacheBatchInvalidationMessageSenderInProgress.set(false);
+                }
+            }
+        }
+
     }
 
 }

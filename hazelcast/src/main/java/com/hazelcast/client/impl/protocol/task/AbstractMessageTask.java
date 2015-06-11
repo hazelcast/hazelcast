@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.impl.protocol.task;
 
+import com.hazelcast.client.AuthenticationException;
 import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.ClientEndpointManager;
 import com.hazelcast.client.impl.ClientEngineImpl;
@@ -68,6 +69,7 @@ public abstract class AbstractMessageTask<P>
         this.endpoint = getEndpoint();
     }
 
+    @SuppressWarnings("unchecked")
     public <S> S getService(String serviceName) {
         return (S) node.nodeEngine.getService(serviceName);
     }
@@ -77,6 +79,8 @@ public abstract class AbstractMessageTask<P>
     }
 
     protected abstract P decodeClientMessage(ClientMessage clientMessage);
+
+    protected abstract ClientMessage encodeResponse(Object response);
 
     @Override
     public int getPartitionId() {
@@ -88,21 +92,45 @@ public abstract class AbstractMessageTask<P>
         try {
             if (endpoint == null) {
                 handleMissingEndpoint();
-                return;
+            } else if (isAuthenticationMessage()) {
+                initializeAndProcessMessage();
+            } else if (!endpoint.isAuthenticated()) {
+                handleAuthenticationFailure();
+            } else {
+                initializeAndProcessMessage();
             }
-            //process message
-            if (!node.joined()) {
-                throw new HazelcastInstanceNotActiveException("Hazelcast instance is not ready yet!");
-            }
-            final Credentials credentials = endpoint.getCredentials();
-            interceptBefore(credentials);
-            checkPermissions(endpoint);
-            processMessage();
-            interceptAfter(credentials);
 
         } catch (Throwable e) {
+            logProcessingFailure(e);
             handleProcessingFailure(e);
         }
+    }
+
+    protected boolean isAuthenticationMessage() {
+        return false;
+    }
+
+    private void initializeAndProcessMessage() {
+        if (!node.joined()) {
+            throw new HazelcastInstanceNotActiveException("Hazelcast instance is not ready yet!");
+        }
+        Credentials credentials = endpoint.getCredentials();
+        interceptBefore(credentials);
+        checkPermissions(endpoint);
+        processMessage();
+    }
+
+    private void handleAuthenticationFailure() {
+        Exception exception;
+        if (nodeEngine.isActive()) {
+            String message = "Client " + endpoint + " must authenticate before any operation.";
+            logger.severe(message);
+            exception = new AuthenticationException(message);
+        } else {
+            exception = new HazelcastInstanceNotActiveException();
+        }
+        endpoint.sendResponse(exception, clientMessage.getCorrelationId());
+        endpointManager.removeEndpoint(endpoint);
     }
 
     private void handleMissingEndpoint() {
@@ -115,7 +143,7 @@ public abstract class AbstractMessageTask<P>
         }
     }
 
-    private void handleProcessingFailure(Throwable throwable) {
+    private void logProcessingFailure(Throwable throwable) {
         Level level = nodeEngine.isActive() ? Level.SEVERE : Level.FINEST;
         if (logger.isLoggable(level)) {
             if (parameters == null) {
@@ -124,10 +152,12 @@ public abstract class AbstractMessageTask<P>
                 logger.log(level, "While executing request: " + parameters + " -> " + throwable.getMessage(), throwable);
             }
         }
+    }
+
+    private void handleProcessingFailure(Throwable throwable) {
         if (parameters != null && endpoint != null) {
             sendClientMessage(throwable);
         }
-
     }
 
     private void interceptBefore(Credentials credentials) {
@@ -172,6 +202,11 @@ public abstract class AbstractMessageTask<P>
 
     protected abstract void processMessage();
 
+    protected void sendResponse(Object response) {
+        ClientMessage clientMessage = encodeResponse(response);
+        sendClientMessage(clientMessage);
+    }
+
     protected void sendClientMessage(ClientMessage resultClientMessage) {
         resultClientMessage.setCorrelationId(clientMessage.getCorrelationId());
         resultClientMessage.addFlag(ClientMessage.BEGIN_AND_END_FLAGS);
@@ -194,7 +229,7 @@ public abstract class AbstractMessageTask<P>
 
     public abstract String getServiceName();
 
-    public final String getDistributedObjectType() {
+    public String getDistributedObjectType() {
         return getServiceName();
     }
 

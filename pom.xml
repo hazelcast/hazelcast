@@ -23,7 +23,7 @@
     <groupId>com.hazelcast</groupId>
     <artifactId>hazelcast-root</artifactId>
     <packaging>pom</packaging>
-    <version>3.5-SNAPSHOT</version>
+    <version>3.6-SNAPSHOT</version>
     <name>Hazelcast Root</name>
     <description>Hazelcast In-Memory DataGrid</description>
     <url>http://www.hazelcast.com/</url>
@@ -72,8 +72,8 @@
         <log4j.version>1.2.12</log4j.version>
         <log4j2.version>2.0.1</log4j2.version>
         <slf4j.api.version>1.6.0</slf4j.api.version>
-       <main.basedir>${project.basedir}</main.basedir>
-         <jacoco.version>0.7.0.201403182114</jacoco.version>
+        <main.basedir>${project.basedir}</main.basedir>
+        <jacoco.version>0.7.4.201502262128</jacoco.version>
         <sonar.jacoco.jar>${basedir}/lib/jacocoagent.jar</sonar.jacoco.jar>
         <!--<sonar.phase>post-integration-test</sonar.phase>-->
         <sonar.java.coveragePlugin>jacoco</sonar.java.coveragePlugin>
@@ -378,6 +378,7 @@
                     <plugin>
                         <groupId>org.jacoco</groupId>
                         <artifactId>jacoco-maven-plugin</artifactId>
+                        <version>${jacoco.version}</version>
                         <configuration>
                             <excludes>
                                 <exclude>**DummyProperty**</exclude>
@@ -634,6 +635,13 @@
                                     <value>http://download.oracle.com/javase/1.7.0/docs/api/</value>
                                 </property>
                             </javaApiLinks>
+                            <excludePackageNames>
+                              *.impl:*.internal:*.operations:*.proxy:*.util:com.hazelcast.aws.security:
+                              *.handlermigration:*.client.connection.nio:*.client.console:*.buildutils:
+                              *.client.protocol.generator:*.cluster.client:*.concurrent:*.collection:
+                              *.nio.ascii:*.nio.ssl:*.nio.tcp:*.partition.client:*.transaction.client:
+                              *.core.server:com.hazelcast.instance:com.hazelcast.PlaceHolder
+                            </excludePackageNames>
                         </configuration>
                         <executions>
                             <execution>

@@ -17,8 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.multimap;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.DataCollectionResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.MultiMapKeySetParameters;
+import com.hazelcast.client.impl.protocol.codec.MultiMapKeySetCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractAllPartitionsMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.multimap.impl.MultiMapService;
@@ -39,9 +38,10 @@ import java.util.Map;
 
 /**
  * Client Protocol Task for handling messages with type id:
- * {@link com.hazelcast.client.impl.protocol.parameters.MultiMapMessageType#MULTIMAP_KEYSET}
+ * {@link com.hazelcast.client.impl.protocol.codec.MultiMapMessageType#MULTIMAP_KEYSET}
  */
-public class MultiMapKeySetMessageTask extends AbstractAllPartitionsMessageTask<MultiMapKeySetParameters> {
+public class MultiMapKeySetMessageTask
+        extends AbstractAllPartitionsMessageTask<MultiMapKeySetCodec.RequestParameters> {
 
     public MultiMapKeySetMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -53,7 +53,7 @@ public class MultiMapKeySetMessageTask extends AbstractAllPartitionsMessageTask<
     }
 
     @Override
-    protected ClientMessage reduce(Map<Integer, Object> map) {
+    protected Object reduce(Map<Integer, Object> map) {
         List<Data> keys = new ArrayList<Data>();
 
         for (Object obj : map.values()) {
@@ -66,12 +66,17 @@ public class MultiMapKeySetMessageTask extends AbstractAllPartitionsMessageTask<
                 keys.addAll(coll);
             }
         }
-        return DataCollectionResultParameters.encode(keys);
+        return keys;
     }
 
     @Override
-    protected MultiMapKeySetParameters decodeClientMessage(ClientMessage clientMessage) {
-        return MultiMapKeySetParameters.decode(clientMessage);
+    protected MultiMapKeySetCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return MultiMapKeySetCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return MultiMapKeySetCodec.encodeResponse((Collection<Data>) response);
     }
 
     @Override

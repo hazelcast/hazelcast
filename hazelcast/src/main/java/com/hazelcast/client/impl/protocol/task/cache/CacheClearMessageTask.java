@@ -21,8 +21,7 @@ import com.hazelcast.cache.impl.CacheOperationProvider;
 import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.operation.CacheClearOperationFactory;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.CacheClearParameters;
-import com.hazelcast.client.impl.protocol.parameters.VoidResultParameters;
+import com.hazelcast.client.impl.protocol.codec.CacheClearCodec;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.OperationFactory;
@@ -36,15 +35,20 @@ import java.util.Map;
  * @see CacheClearOperationFactory
  */
 public class CacheClearMessageTask
-        extends AbstractCacheAllPartitionsTask<CacheClearParameters> {
+        extends AbstractCacheAllPartitionsTask<CacheClearCodec.RequestParameters> {
 
     public CacheClearMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected CacheClearParameters decodeClientMessage(ClientMessage clientMessage) {
-        return CacheClearParameters.decode(clientMessage);
+    protected CacheClearCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return CacheClearCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return CacheClearCodec.encodeResponse();
     }
 
     @Override
@@ -53,17 +57,26 @@ public class CacheClearMessageTask
         return operationProvider.createClearOperationFactory();
     }
 
+
     @Override
-    protected ClientMessage reduce(Map<Integer, Object> map) {
-        CacheService service = getService(getServiceName());
+    protected Object reduce(Map<Integer, Object> map) {
         for (Map.Entry<Integer, Object> entry : map.entrySet()) {
-            CacheClearResponse cacheClearResponse = (CacheClearResponse) service.toObject(entry.getValue());
+            if (entry.getValue() == null) {
+                continue;
+            }
+            final CacheClearResponse cacheClearResponse = (CacheClearResponse) nodeEngine.toObject(entry.getValue());
             final Object response = cacheClearResponse.getResponse();
             if (response instanceof CacheException) {
                 throw (CacheException) response;
             }
         }
-        return VoidResultParameters.encode();
+        return null;
+    }
+
+
+    @Override
+    public String getServiceName() {
+        return CacheService.SERVICE_NAME;
     }
 
     @Override

@@ -21,6 +21,7 @@ import com.hazelcast.collection.impl.collection.CollectionItem;
 import com.hazelcast.config.ListConfig;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -119,6 +120,9 @@ public class ListContainer extends CollectionContainer {
         final List<CollectionItem> list;
         if (from == -1 && to == -1) {
             list = getCollection();
+        } else if (to == -1) {
+            List<CollectionItem> collection = getCollection();
+            list = collection.subList(from, collection.size());
         } else {
             list = getCollection().subList(from, to);
         }

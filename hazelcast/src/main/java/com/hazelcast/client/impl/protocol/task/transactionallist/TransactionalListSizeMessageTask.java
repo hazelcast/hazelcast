@@ -17,8 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.transactionallist;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.IntResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.TransactionalListSizeParameters;
+import com.hazelcast.client.impl.protocol.codec.TransactionalListSizeCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractTransactionalMessageTask;
 import com.hazelcast.collection.impl.list.ListService;
 import com.hazelcast.core.TransactionalList;
@@ -31,18 +30,17 @@ import com.hazelcast.transaction.TransactionContext;
 import java.security.Permission;
 
 public class TransactionalListSizeMessageTask
-        extends AbstractTransactionalMessageTask<TransactionalListSizeParameters> {
+        extends AbstractTransactionalMessageTask<TransactionalListSizeCodec.RequestParameters> {
 
     public TransactionalListSizeMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected ClientMessage innerCall() throws Exception {
+    protected Object innerCall() throws Exception {
         final TransactionContext context = endpoint.getTransactionContext(parameters.txnId);
         TransactionalList<Object> list = context.getList(parameters.name);
-        int size = list.size();
-        return IntResultParameters.encode(size);
+        return list.size();
     }
 
     @Override
@@ -51,8 +49,13 @@ public class TransactionalListSizeMessageTask
     }
 
     @Override
-    protected TransactionalListSizeParameters decodeClientMessage(ClientMessage clientMessage) {
-        return TransactionalListSizeParameters.decode(clientMessage);
+    protected TransactionalListSizeCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return TransactionalListSizeCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return TransactionalListSizeCodec.encodeResponse((Integer) response);
     }
 
     @Override

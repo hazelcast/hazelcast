@@ -17,8 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.transactionalqueue;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.TransactionalQueueOfferParameters;
+import com.hazelcast.client.impl.protocol.codec.TransactionalQueueOfferCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractTransactionalMessageTask;
 import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.core.TransactionalQueue;
@@ -32,18 +31,17 @@ import java.security.Permission;
 import java.util.concurrent.TimeUnit;
 
 public class TransactionalQueueOfferMessageTask
-        extends AbstractTransactionalMessageTask<TransactionalQueueOfferParameters> {
+        extends AbstractTransactionalMessageTask<TransactionalQueueOfferCodec.RequestParameters> {
 
     public TransactionalQueueOfferMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected ClientMessage innerCall() throws Exception {
+    protected Object innerCall() throws Exception {
         final TransactionContext context = endpoint.getTransactionContext(parameters.txnId);
         final TransactionalQueue queue = context.getQueue(parameters.name);
-        boolean success = queue.offer(parameters.item, parameters.timeout, TimeUnit.MILLISECONDS);
-        return BooleanResultParameters.encode(success);
+        return queue.offer(parameters.item, parameters.timeout, TimeUnit.MILLISECONDS);
     }
 
     @Override
@@ -52,8 +50,13 @@ public class TransactionalQueueOfferMessageTask
     }
 
     @Override
-    protected TransactionalQueueOfferParameters decodeClientMessage(ClientMessage clientMessage) {
-        return TransactionalQueueOfferParameters.decode(clientMessage);
+    protected TransactionalQueueOfferCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return TransactionalQueueOfferCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return TransactionalQueueOfferCodec.encodeResponse((Boolean) response);
     }
 
     @Override

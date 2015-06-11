@@ -17,8 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.set;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.DataCollectionResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.SetGetAllParameters;
+import com.hazelcast.client.impl.protocol.codec.SetGetAllCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.collection.impl.collection.operations.CollectionGetAllOperation;
 import com.hazelcast.collection.impl.set.SetService;
@@ -35,7 +34,7 @@ import java.security.Permission;
  * SetGetAllMessageTask
  */
 public class SetGetAllMessageTask
-        extends AbstractPartitionMessageTask<SetGetAllParameters> {
+        extends AbstractPartitionMessageTask<SetGetAllCodec.RequestParameters> {
 
     public SetGetAllMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -47,13 +46,13 @@ public class SetGetAllMessageTask
     }
 
     @Override
-    protected SetGetAllParameters decodeClientMessage(ClientMessage clientMessage) {
-        return SetGetAllParameters.decode(clientMessage);
+    protected SetGetAllCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return SetGetAllCodec.decodeRequest(clientMessage);
     }
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return DataCollectionResultParameters.encode(((SerializableCollection) response).getCollection());
+        return SetGetAllCodec.encodeResponse(((SerializableCollection) response).getCollection());
     }
 
     @Override
@@ -63,7 +62,7 @@ public class SetGetAllMessageTask
 
     @Override
     public Object[] getParameters() {
-        return new Object[]{parameters.name};
+        return null;
     }
 
     @Override

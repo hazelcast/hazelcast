@@ -78,6 +78,12 @@ public abstract class ClientNearCacheTestSupport {
         return clientConfig;
     }
 
+    protected CacheConfig createCacheConfig(InMemoryFormat inMemoryFormat) {
+        return new CacheConfig()
+                    .setName(DEFAULT_CACHE_NAME)
+                    .setInMemoryFormat(inMemoryFormat);
+    }
+
     protected NearCacheConfig createNearCacheConfig(InMemoryFormat inMemoryFormat) {
         return new NearCacheConfig()
                         .setName(DEFAULT_CACHE_NAME)
@@ -123,7 +129,7 @@ public abstract class ClientNearCacheTestSupport {
         CachingProvider provider = HazelcastClientCachingProvider.createCachingProvider(client);
         HazelcastClientCacheManager cacheManager = (HazelcastClientCacheManager) provider.getCacheManager();
 
-        CacheConfig<Integer, String> cacheConfig = new CacheConfig<Integer, String>();
+        CacheConfig<Integer, String> cacheConfig = createCacheConfig(nearCacheConfig.getInMemoryFormat());
         ICache<Integer, String> cache = cacheManager.createCache(cacheName, cacheConfig);
 
         NearCache<Data, String> nearCache =

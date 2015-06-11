@@ -63,11 +63,11 @@ public class RingbufferProxy<E> extends AbstractDistributedObject<RingbufferServ
     private final int partitionId;
     private final RingbufferConfig config;
 
-    public RingbufferProxy(NodeEngine nodeEngine, RingbufferService service, String name) {
+    public RingbufferProxy(NodeEngine nodeEngine, RingbufferService service, String name, RingbufferConfig config) {
         super(nodeEngine, service);
         this.name = name;
         this.partitionId = nodeEngine.getPartitionService().getPartitionId(getNameAsPartitionAwareData());
-        this.config = nodeEngine.getConfig().getRingbufferConfig(name);
+        this.config = config;
     }
 
     @Override

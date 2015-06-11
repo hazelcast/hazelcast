@@ -16,7 +16,7 @@
 
 package com.hazelcast.client.txn.proxy;
 
-import com.hazelcast.client.txn.TransactionContextProxy;
+import com.hazelcast.client.spi.ClientTransactionContext;
 import com.hazelcast.collection.impl.txnset.client.TxnSetAddRequest;
 import com.hazelcast.collection.impl.txnset.client.TxnSetRemoveRequest;
 import com.hazelcast.collection.impl.txnset.client.TxnSetSizeRequest;
@@ -29,8 +29,8 @@ import com.hazelcast.nio.serialization.Data;
 */
 public class ClientTxnSetProxy<E> extends AbstractClientTxnCollectionProxy<E> implements TransactionalSet<E> {
 
-    public ClientTxnSetProxy(String name, TransactionContextProxy proxy) {
-        super(name, proxy);
+    public ClientTxnSetProxy(String name, ClientTransactionContext transactionContext) {
+        super(name, transactionContext);
     }
 
     public boolean add(E e) {

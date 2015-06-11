@@ -11,7 +11,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-import org.junit.Ignore;
 
 import static org.junit.Assert.assertEquals;
 
@@ -23,7 +22,6 @@ import static org.junit.Assert.assertEquals;
  */
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(NightlyTest.class)
-@Ignore
 public class MapStableReadStressTest extends StressTestSupport {
 
     public static final int CLIENT_THREAD_COUNT = 5;

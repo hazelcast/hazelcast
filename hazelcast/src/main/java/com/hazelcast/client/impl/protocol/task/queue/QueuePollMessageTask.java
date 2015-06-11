@@ -17,12 +17,13 @@
 package com.hazelcast.client.impl.protocol.task.queue;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.QueuePollParameters;
+import com.hazelcast.client.impl.protocol.codec.QueuePollCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.collection.impl.queue.operations.PollOperation;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.QueuePermission;
 import com.hazelcast.spi.Operation;
@@ -32,10 +33,10 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * Client Protocol Task for handling messages with type id:
- * {@link com.hazelcast.client.impl.protocol.parameters.QueueMessageType#QUEUE_POLL}
+ * {@link com.hazelcast.client.impl.protocol.codec.QueueMessageType#QUEUE_POLL}
  */
 public class QueuePollMessageTask
-        extends AbstractPartitionMessageTask<QueuePollParameters> {
+        extends AbstractPartitionMessageTask<QueuePollCodec.RequestParameters> {
 
     public QueuePollMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -47,8 +48,13 @@ public class QueuePollMessageTask
     }
 
     @Override
-    protected QueuePollParameters decodeClientMessage(ClientMessage clientMessage) {
-        return QueuePollParameters.decode(clientMessage);
+    protected QueuePollCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return QueuePollCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return QueuePollCodec.encodeResponse((Data) response);
     }
 
     @Override
@@ -68,7 +74,10 @@ public class QueuePollMessageTask
 
     @Override
     public Object[] getParameters() {
-        return new Object[]{parameters.timeoutMillis, TimeUnit.MILLISECONDS};
+        if (parameters.timeoutMillis > 0) {
+            return new Object[]{parameters.timeoutMillis, TimeUnit.MILLISECONDS};
+        }
+        return null;
     }
 
     @Override

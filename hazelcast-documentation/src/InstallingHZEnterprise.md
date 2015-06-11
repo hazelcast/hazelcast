@@ -40,7 +40,7 @@ Hazelcast Enterprise customers may also define dependencies, a sample of which i
 </dependency>
 ```
 
-##### Setting the License Key for Hazelcast Enterprise
+#### Setting the License Key
 
 To use Hazelcast Enterprise, you need to set the license key in configuration.
 

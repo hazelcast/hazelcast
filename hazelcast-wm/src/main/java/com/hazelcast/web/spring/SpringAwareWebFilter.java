@@ -16,6 +16,7 @@
 
 package com.hazelcast.web.spring;
 
+import com.hazelcast.web.HazelcastHttpSession;
 import com.hazelcast.web.WebFilter;
 import org.springframework.context.ApplicationContext;
 import org.springframework.security.core.session.SessionRegistry;

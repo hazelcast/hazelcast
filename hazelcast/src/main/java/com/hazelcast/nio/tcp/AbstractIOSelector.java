@@ -27,32 +27,28 @@ import java.util.Iterator;
 import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
 public abstract class AbstractIOSelector extends Thread implements IOSelector {
 
-    private static final int SHUTDOWN_TIMEOUT_SECONDS = 3;
     private static final int SELECT_WAIT_TIME_MILLIS = 5000;
     private static final int SELECT_FAILURE_PAUSE_MILLIS = 1000;
 
-    protected final ILogger logger;
+    private final ILogger logger;
 
-    protected final Queue<Runnable> selectorQueue = new ConcurrentLinkedQueue<Runnable>();
+    private final Queue<Runnable> selectorQueue = new ConcurrentLinkedQueue<Runnable>();
 
-    protected final int waitTime;
+    private final int waitTime;
 
-    protected final Selector selector;
-
-    protected boolean live = true;
+    private final Selector selector;
 
     private final IOSelectorOutOfMemoryHandler oomeHandler;
 
-    private final CountDownLatch shutdownLatch = new CountDownLatch(1);
+    // field doesn't need to be volatile, is only accessed by the IOSelector-thread.
+    private boolean running = true;
 
-    public AbstractIOSelector(ThreadGroup threadGroup, String tname, ILogger logger,
+    public AbstractIOSelector(ThreadGroup threadGroup, String threadName, ILogger logger,
                               IOSelectorOutOfMemoryHandler oomeHandler) {
-        super(threadGroup, tname);
+        super(threadGroup, threadName);
         this.logger = logger;
         this.oomeHandler = oomeHandler;
         // WARNING: This value has significant effect on idle CPU usage!
@@ -71,8 +67,7 @@ public abstract class AbstractIOSelector extends Thread implements IOSelector {
             addTask(new Runnable() {
                 @Override
                 public void run() {
-                    live = false;
-                    shutdownLatch.countDown();
+                    running = false;
                 }
             });
             interrupt();
@@ -82,42 +77,39 @@ public abstract class AbstractIOSelector extends Thread implements IOSelector {
     }
 
     @Override
-    public final void awaitShutdown() {
-        try {
-            shutdownLatch.await(SHUTDOWN_TIMEOUT_SECONDS, TimeUnit.SECONDS);
-        } catch (InterruptedException t) {
-            Logger.getLogger(AbstractIOSelector.class).finest("Exception while waiting for shutdown", t);
-        }
+    public final void addTask(Runnable task) {
+        selectorQueue.add(task);
     }
 
     @Override
-    public final void addTask(Runnable runnable) {
-        selectorQueue.add(runnable);
+    public final void addTaskAndWakeup(Runnable task) {
+        selectorQueue.add(task);
+        selector.wakeup();
     }
 
     private void processSelectionQueue() {
         //noinspection WhileLoopSpinsOnField
-        while (live) {
-            final Runnable runnable = selectorQueue.poll();
-            if (runnable == null) {
+        while (running) {
+            final Runnable task = selectorQueue.poll();
+            if (task == null) {
                 return;
             }
-            executeTask(runnable);
+            executeTask(task);
         }
     }
 
-    private void executeTask(Runnable runnable) {
-        IOSelector target = getTargetIOSelector(runnable);
+    private void executeTask(Runnable task) {
+        IOSelector target = getTargetIOSelector(task);
         if (target == this) {
-            runnable.run();
+            task.run();
         } else {
-            target.addTask(runnable);
+            target.addTask(task);
         }
     }
 
-    private IOSelector getTargetIOSelector(Runnable runnable) {
-        if (runnable instanceof MigratableHandler) {
-            return ((MigratableHandler) runnable).getOwner();
+    private IOSelector getTargetIOSelector(Runnable task) {
+        if (task instanceof MigratableHandler) {
+            return ((MigratableHandler) task).getOwner();
         } else {
             return this;
         }
@@ -127,23 +119,23 @@ public abstract class AbstractIOSelector extends Thread implements IOSelector {
     public final void run() {
         try {
             //noinspection WhileLoopSpinsOnField
-            while (live) {
+            while (running) {
                 processSelectionQueue();
-                if (!live || isInterrupted()) {
+                if (!running || isInterrupted()) {
                     if (logger.isFinestEnabled()) {
                         logger.finest(getName() + " is interrupted!");
                     }
-                    live = false;
+                    running = false;
                     return;
                 }
-                int selectedKeyCount;
+
                 try {
-                    selectedKeyCount = selector.select(waitTime);
+                    int selectedKeyCount = selector.select(waitTime);
+                    if (selectedKeyCount == 0) {
+                        continue;
+                    }
                 } catch (Throwable e) {
                     handleSelectFailure(e);
-                    continue;
-                }
-                if (selectedKeyCount == 0) {
                     continue;
                 }
                 handleSelectionKeys();
@@ -180,9 +172,8 @@ public abstract class AbstractIOSelector extends Thread implements IOSelector {
         }
     }
 
-    public void handleSelectionKeyFailure(final Throwable e) {
-        String msg = "Selector exception at  " + getName() + ", cause= " + e.toString();
-        logger.warning(msg, e);
+    public void handleSelectionKeyFailure(Throwable e) {
+        logger.warning("Selector exception at  " + getName() + ", cause= " + e.toString(), e);
         if (e instanceof OutOfMemoryError) {
             oomeHandler.handle((OutOfMemoryError) e);
         }
@@ -191,11 +182,6 @@ public abstract class AbstractIOSelector extends Thread implements IOSelector {
     @Override
     public final Selector getSelector() {
         return selector;
-    }
-
-    @Override
-    public final void wakeup() {
-        selector.wakeup();
     }
 
     private void handleSelectFailure(Throwable e) {

@@ -48,7 +48,7 @@ public final class ServiceLoader {
     private static final ILogger LOGGER = Logger.getLogger(ServiceLoader.class);
     private static final String FILTERING_CLASS_LOADER = FilteringClassLoader.class.getCanonicalName();
 
-    //see https://github.com/hazelcast/hazelcast/issues/3922
+    // See https://github.com/hazelcast/hazelcast/issues/3922
     private static final String IGNORED_GLASSFISH_MAGIC_CLASSLOADER =
             "com.sun.enterprise.v3.server.APIClassLoaderServiceImpl$APIClassLoader";
 
@@ -57,7 +57,6 @@ public final class ServiceLoader {
 
     public static <T> T load(Class<T> clazz, String factoryId, ClassLoader classLoader)
             throws Exception {
-
         final Iterator<T> iterator = iterator(clazz, factoryId, classLoader);
         if (iterator.hasNext()) {
             return iterator.next();
@@ -67,7 +66,6 @@ public final class ServiceLoader {
 
     public static <T> Iterator<T> iterator(final Class<T> clazz, String factoryId, ClassLoader classLoader)
             throws Exception {
-
         final List<ClassLoader> classLoaders = selectClassLoaders(classLoader);
 
         final Set<URLDefinition> factoryUrls = new HashSet<URLDefinition>();
@@ -185,21 +183,22 @@ public final class ServiceLoader {
             ClassLoader parent = current.getParent();
 
             try {
-                Enumeration<URL> enumeration = parent.getResources(resourceName);
-                while (enumeration.hasMoreElements()) {
-                    URL testURL = enumeration.nextElement();
-                    if (url.toURI().equals(testURL.toURI())) {
-                        highestClassLoader = parent;
+                Enumeration<URL> resources = parent.getResources(resourceName);
+                if (resources != null) {
+                    while (resources.hasMoreElements()) {
+                        URL resourceURL = resources.nextElement();
+                        if (url.toURI().equals(resourceURL.toURI())) {
+                            highestClassLoader = parent;
+                        }
                     }
                 }
-
-                //CHECKSTYLE:OFF
             } catch (IOException ignore) {
                 // We want to ignore failures and keep searching
-            } catch (URISyntaxException e) {
+                EmptyStatement.ignore(ignore);
+            } catch (URISyntaxException ignore) {
                 // We want to ignore failures and keep searching
+                EmptyStatement.ignore(ignore);
             }
-            //CHECKSTYLE:ON
 
             // Going on with the search upwards the hierarchy
             current = current.getParent();
@@ -236,8 +235,8 @@ public final class ServiceLoader {
             }
 
         } catch (ClassNotFoundException ignore) {
+            // Ignore since we does not have HazelcastClient in classpath
             EmptyStatement.ignore(ignore);
-            // ignore since we does not have HazelcastClient in classpath
         }
 
         return classLoaders;
@@ -248,6 +247,7 @@ public final class ServiceLoader {
      * and the classname of the found service.
      */
     private static final class ServiceDefinition {
+
         private final String className;
         private final ClassLoader classLoader;
 
@@ -290,6 +290,7 @@ public final class ServiceLoader {
      * the corresponding classloaders
      */
     private static final class URLDefinition {
+
         private final URI uri;
         private final ClassLoader classLoader;
 

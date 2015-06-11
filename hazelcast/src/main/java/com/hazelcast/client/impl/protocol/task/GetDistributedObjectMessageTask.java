@@ -19,8 +19,7 @@ package com.hazelcast.client.impl.protocol.task;
 import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.client.impl.client.DistributedObjectInfo;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.GetDistributedObjectParameters;
-import com.hazelcast.client.impl.protocol.parameters.GetDistributedObjectResultParameters;
+import com.hazelcast.client.impl.protocol.codec.ClientGetDistributedObjectCodec;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
@@ -30,14 +29,15 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-public class GetDistributedObjectMessageTask extends AbstractCallableMessageTask<GetDistributedObjectParameters> {
+public class GetDistributedObjectMessageTask
+        extends AbstractCallableMessageTask<ClientGetDistributedObjectCodec.RequestParameters> {
 
     public GetDistributedObjectMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected ClientMessage call() throws Exception {
+    protected Object call() throws Exception {
         Collection<DistributedObject> distributedObjects = clientEngine.getProxyService().getAllDistributedObjects();
 
         List<DistributedObjectInfo> coll = new ArrayList<DistributedObjectInfo>(distributedObjects.size());
@@ -45,12 +45,17 @@ public class GetDistributedObjectMessageTask extends AbstractCallableMessageTask
             coll.add(new DistributedObjectInfo(
                     distributedObject.getServiceName(), distributedObject.getName()));
         }
-        return GetDistributedObjectResultParameters.encode(coll);
+        return coll;
     }
 
     @Override
-    protected GetDistributedObjectParameters decodeClientMessage(ClientMessage clientMessage) {
-        return GetDistributedObjectParameters.decode(clientMessage);
+    protected ClientGetDistributedObjectCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return ClientGetDistributedObjectCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return ClientGetDistributedObjectCodec.encodeResponse((Collection<DistributedObjectInfo>) response);
     }
 
     @Override

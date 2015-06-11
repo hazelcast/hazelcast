@@ -19,20 +19,27 @@ package com.hazelcast.client.impl.protocol.task;
 import com.hazelcast.client.AuthenticationException;
 import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.impl.ClientEndpointImpl;
+import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.client.impl.client.ClientPrincipal;
 import com.hazelcast.client.impl.operations.ClientReAuthOperation;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.AuthenticationResultParameters;
+import com.hazelcast.config.GroupConfig;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.security.Credentials;
+import com.hazelcast.security.SecurityContext;
+import com.hazelcast.security.UsernamePasswordCredentials;
 import com.hazelcast.util.UuidUtil;
 
+import javax.security.auth.login.LoginContext;
+import javax.security.auth.login.LoginException;
 import java.security.Permission;
 import java.util.Collection;
 import java.util.Set;
+import java.util.logging.Level;
 
 /**
  * Base authentication task
@@ -57,12 +64,17 @@ public abstract class AuthenticationBaseMessageTask<P>
         return null;
     }
 
+    @Override
+    protected boolean isAuthenticationMessage() {
+        return true;
+    }
+
     private void handleEndpointNotCreatedConnectionNotAlive() {
         logger.warning("Dropped: " + clientMessage + " -> endpoint not created for AuthenticationRequest, connection not alive");
     }
 
     @Override
-    public ClientMessage call() {
+    public Object call() {
         boolean authenticated = authenticate();
 
         if (authenticated) {
@@ -72,13 +84,60 @@ public abstract class AuthenticationBaseMessageTask<P>
         }
     }
 
-    protected abstract boolean authenticate();
+    private boolean authenticate() {
+        ClientEngineImpl clientEngine = getService(ClientEngineImpl.SERVICE_NAME);
+        Connection connection = endpoint.getConnection();
+        ILogger logger = clientEngine.getLogger(getClass());
+        boolean authenticated;
+        if (credentials == null) {
+            authenticated = false;
+            logger.severe("Could not retrieve Credentials object!");
+        } else if (clientEngine.getSecurityContext() != null) {
+            authenticated = authenticate(clientEngine.getSecurityContext());
+        } else if (credentials instanceof UsernamePasswordCredentials) {
+            UsernamePasswordCredentials usernamePasswordCredentials = (UsernamePasswordCredentials) credentials;
+            authenticated = authenticate(usernamePasswordCredentials);
+        } else {
+            authenticated = false;
+            logger.severe("Hazelcast security is disabled.\nUsernamePasswordCredentials or cluster "
+                    + "group-name and group-password should be used for authentication!\n"
+                    + "Current credentials type is: " + credentials.getClass().getName());
+        }
 
-    private ClientMessage handleUnauthenticated() {
+
+        logger.log((authenticated ? Level.INFO : Level.WARNING), "Received auth from " + connection
+                + ", " + (authenticated ? "successfully authenticated" : "authentication failed"));
+        return authenticated;
+    }
+
+    private boolean authenticate(SecurityContext securityContext) {
+        Connection connection = endpoint.getConnection();
+        credentials.setEndpoint(connection.getInetAddress().getHostAddress());
+        try {
+            LoginContext lc = securityContext.createClientLoginContext(credentials);
+            lc.login();
+            endpoint.setLoginContext(lc);
+            return true;
+        } catch (LoginException e) {
+            logger.warning(e);
+            return false;
+        }
+    }
+
+    private boolean authenticate(UsernamePasswordCredentials credentials) {
+        GroupConfig groupConfig = nodeEngine.getConfig().getGroupConfig();
+        String nodeGroupName = groupConfig.getName();
+        String nodeGroupPassword = groupConfig.getPassword();
+        boolean usernameMatch = nodeGroupName.equals(credentials.getUsername());
+        boolean passwordMatch = nodeGroupPassword.equals(credentials.getPassword());
+        return usernameMatch && passwordMatch;
+    }
+
+    private Object handleUnauthenticated() {
         throw new AuthenticationException("Invalid credentials!");
     }
 
-    private ClientMessage handleAuthenticated() {
+    private Object handleAuthenticated() {
         if (isOwnerConnection()) {
             final String uuid = getUuid();
             final String localMemberUUID = clientEngine.getLocalMember().getUuid();
@@ -95,14 +154,21 @@ public abstract class AuthenticationBaseMessageTask<P>
             }
         }
 
+        boolean isNotMember = clientEngine.getClusterService().getMember(principal.getOwnerUuid()) == null;
+        if (isNotMember) {
+            throw new AuthenticationException("Invalid owner-uuid: " + principal.getOwnerUuid()
+                    + ", it's not member of this cluster!");
+        }
+
         endpoint.authenticated(principal, credentials, isOwnerConnection());
         endpointManager.registerEndpoint(endpoint);
         clientEngine.bind(endpoint);
 
         final Address thisAddress = clientEngine.getThisAddress();
-        return AuthenticationResultParameters
-                .encode(thisAddress, principal.getUuid(), principal.getOwnerUuid());
+        return encodeAuth(thisAddress, principal.getUuid(), principal.getOwnerUuid());
     }
+
+    protected abstract ClientMessage encodeAuth(Address thisAddress, String uuid, String ownerUuid);
 
     protected abstract boolean isOwnerConnection();
 

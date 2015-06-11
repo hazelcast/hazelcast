@@ -16,70 +16,20 @@
 
 package com.hazelcast.client.impl.protocol.util;
 
-import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.nio.Address;
+import com.hazelcast.nio.Bits;
 import com.hazelcast.nio.serialization.Data;
-
-import java.net.UnknownHostException;
-import java.util.Collection;
 
 public class ParameterUtil {
 
     public static int calculateStringDataSize(String string) {
-        if (string == null) {
-            return BitUtil.SIZE_OF_INT * 5;
-        }
-        return BitUtil.SIZE_OF_INT + string.length() * 4;
+        return Bits.INT_SIZE_IN_BYTES + string.length() * 4;
     }
 
     public static int calculateByteArrayDataSize(byte[] bytes) {
-        if (bytes == null) {
-            return BitUtil.SIZE_OF_INT;
-        }
-        return BitUtil.SIZE_OF_INT + bytes.length;
-    }
-
-
-    public static int calculateAddressDataSize(Address address) {
-        boolean isNull = address == null;
-        if (isNull) {
-            return BitUtil.SIZE_OF_BOOLEAN;
-        }
-        int dataSize = calculateStringDataSize(address.getHost());
-        dataSize += BitUtil.SIZE_OF_INT;
-        return dataSize;
-    }
-
-    public static void encodeAddress(ClientMessage clientMessage, Address address) {
-        boolean isNull = address == null;
-        clientMessage.set(isNull);
-        if (isNull) {
-            return;
-        }
-        clientMessage.set(address.getHost()).set(address.getPort());
-
-    }
-
-    public static Address decodeAddress(ClientMessage clientMessage) throws UnknownHostException {
-        boolean isNull = clientMessage.getBoolean();
-        if (isNull) {
-            return null;
-        }
-        String host = clientMessage.getStringUtf8();
-        int port = clientMessage.getInt();
-        return new Address(host, port);
-
+        return Bits.INT_SIZE_IN_BYTES + bytes.length;
     }
 
     public static int calculateDataSize(Data key) {
         return calculateByteArrayDataSize(key.toByteArray());
-    }
-
-    public static int calculateCollectionDataSize(Collection<Data> dataCollection) {
-        int total = BitUtil.SIZE_OF_INT;
-        for (Data data : dataCollection) {
-            total += calculateDataSize(data);
-        }
-        return total;
     }
 }

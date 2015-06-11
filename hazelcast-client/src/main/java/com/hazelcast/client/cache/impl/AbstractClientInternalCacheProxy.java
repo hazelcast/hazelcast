@@ -22,6 +22,7 @@ import com.hazelcast.cache.impl.CacheProxyUtil;
 import com.hazelcast.cache.impl.CacheSyncListenerCompleter;
 import com.hazelcast.cache.impl.client.AbstractCacheRequest;
 import com.hazelcast.cache.impl.client.CacheAddInvalidationListenerRequest;
+import com.hazelcast.cache.impl.client.CacheBatchInvalidationMessage;
 import com.hazelcast.cache.impl.client.CacheClearRequest;
 import com.hazelcast.cache.impl.client.CacheGetAndRemoveRequest;
 import com.hazelcast.cache.impl.client.CacheGetAndReplaceRequest;
@@ -32,6 +33,7 @@ import com.hazelcast.cache.impl.client.CacheRemoveEntryListenerRequest;
 import com.hazelcast.cache.impl.client.CacheRemoveInvalidationListenerRequest;
 import com.hazelcast.cache.impl.client.CacheRemoveRequest;
 import com.hazelcast.cache.impl.client.CacheReplaceRequest;
+import com.hazelcast.cache.impl.client.CacheSingleInvalidationMessage;
 import com.hazelcast.cache.impl.nearcache.NearCache;
 import com.hazelcast.cache.impl.nearcache.NearCacheContext;
 import com.hazelcast.cache.impl.nearcache.NearCacheExecutor;
@@ -54,9 +56,10 @@ import com.hazelcast.core.Member;
 import com.hazelcast.core.MemberAttributeEvent;
 import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MembershipListener;
-import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.instance.AbstractMember;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.executor.CompletedFuture;
@@ -68,11 +71,13 @@ import javax.cache.expiry.ExpiryPolicy;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -191,7 +196,7 @@ abstract class AbstractClientInternalCacheProxy<K, V>
             final ClientInvocation clientInvocation = new ClientInvocation(client, req, partitionId);
             final ICompletableFuture<T> f = clientInvocation.invoke();
             if (completionOperation) {
-                waitCompletionLatch(completionId);
+                waitCompletionLatch(completionId, f);
             }
             return f;
         } catch (Throwable e) {
@@ -351,7 +356,7 @@ abstract class AbstractClientInternalCacheProxy<K, V>
                     }
                 }
             }
-            waitCompletionLatch(completionId, partitionCount - completionCount);
+            waitCompletionLatch(completionId, partitionCount - completionCount, null);
         } catch (Throwable t) {
             deregisterCompletionLatch(completionId);
             throw ExceptionUtil.rethrowAllowedTypeFirst(t, CacheException.class);
@@ -465,25 +470,28 @@ abstract class AbstractClientInternalCacheProxy<K, V>
         syncLocks.remove(countDownLatchId);
     }
 
-    protected void waitCompletionLatch(Integer countDownLatchId) {
+    protected void waitCompletionLatch(Integer countDownLatchId, ICompletableFuture future)
+            throws ExecutionException {
         final CountDownLatch countDownLatch = syncLocks.get(countDownLatchId);
         if (countDownLatch != null) {
-            awaitLatch(countDownLatch);
+            awaitLatch(countDownLatch, future);
         }
     }
 
-    protected void waitCompletionLatch(Integer countDownLatchId, int offset) {
+    protected void waitCompletionLatch(Integer countDownLatchId, int offset, ICompletableFuture future)
+            throws ExecutionException {
         //fix completion count
         final CountDownLatch countDownLatch = syncLocks.get(countDownLatchId);
         if (countDownLatch != null) {
             for (int i = 0; i < offset; i++) {
                 countDownLatch.countDown();
             }
-            awaitLatch(countDownLatch);
+            awaitLatch(countDownLatch, future);
         }
     }
 
-    private void awaitLatch(CountDownLatch countDownLatch) {
+    private void awaitLatch(CountDownLatch countDownLatch, ICompletableFuture future)
+            throws ExecutionException {
         try {
             long currentTimeoutMs = MAX_COMPLETION_LATCH_WAIT_TIME;
             // Call latch await in small steps to be able to check if node is still active.
@@ -494,6 +502,12 @@ abstract class AbstractClientInternalCacheProxy<K, V>
             // Warning: Silently ignoring if latch does not countDown in time.
             while (currentTimeoutMs > 0
                     && !countDownLatch.await(COMPLETION_LATCH_WAIT_TIME_STEP, TimeUnit.MILLISECONDS)) {
+                if (future != null && future.isDone()) {
+                    Object response = future.get();
+                    if (response instanceof Throwable) {
+                        return;
+                    }
+                }
                 currentTimeoutMs -= COMPLETION_LATCH_WAIT_TIME_STEP;
                 if (!clientContext.isActive()) {
                     throw new HazelcastInstanceNotActiveException();
@@ -502,6 +516,10 @@ abstract class AbstractClientInternalCacheProxy<K, V>
                 } else if (isDestroyed()) {
                     throw new IllegalStateException("Cache (" + nameWithPrefix + ") is destroyed !");
                 }
+            }
+            if (countDownLatch.getCount() > 0) {
+                logger.finest("Countdown latch wait timeout after "
+                        + MAX_COMPLETION_LATCH_WAIT_TIME + " milliseconds!");
             }
         } catch (InterruptedException e) {
             ExceptionUtil.sneakyThrow(e);
@@ -535,13 +553,13 @@ abstract class AbstractClientInternalCacheProxy<K, V>
 
         @Override
         public void memberAdded(MembershipEvent event) {
-            MemberImpl member = (MemberImpl) event.getMember();
+            Member member = event.getMember();
             addInvalidationListener(member);
         }
 
         @Override
         public void memberRemoved(MembershipEvent event) {
-            MemberImpl member = (MemberImpl) event.getMember();
+            Member member = event.getMember();
             removeInvalidationListener(member, false);
         }
 
@@ -565,11 +583,29 @@ abstract class AbstractClientInternalCacheProxy<K, V>
             if (client.getUuid().equals(message.getSourceUuid())) {
                 return;
             }
-            Data key = message.getKey();
-            if (key != null) {
-                nearCache.invalidate(key);
+            if (message instanceof CacheSingleInvalidationMessage) {
+                CacheSingleInvalidationMessage singleInvalidationMessage =
+                        (CacheSingleInvalidationMessage) message;
+                Data key = singleInvalidationMessage.getKey();
+                if (key != null) {
+                    nearCache.invalidate(key);
+                } else {
+                    nearCache.clear();
+                }
+            } else if (message instanceof CacheBatchInvalidationMessage) {
+                CacheBatchInvalidationMessage batchInvalidationMessage =
+                        (CacheBatchInvalidationMessage) message;
+                List<CacheSingleInvalidationMessage> invalidationMessages =
+                        batchInvalidationMessage.getInvalidationMessages();
+                if (invalidationMessages != null) {
+                    for (CacheSingleInvalidationMessage invalidationMessage : invalidationMessages) {
+                        if (!client.getUuid().equals(invalidationMessage.getSourceUuid())) {
+                            nearCache.invalidate(invalidationMessage.getKey());
+                        }
+                    }
+                }
             } else {
-                nearCache.clear();
+                logger.finest("Unknown invalidation message: " + message);
             }
         }
 
@@ -590,8 +626,8 @@ abstract class AbstractClientInternalCacheProxy<K, V>
             ClientClusterService clusterService = clientContext.getClusterService();
             nearCacheMembershipRegistrationId =
                     clusterService.addMembershipListener(new NearCacheMembershipListener());
-            Collection<MemberImpl> memberList = clusterService.getMemberList();
-            for (MemberImpl member : memberList) {
+            Collection<Member> memberList = clusterService.getMemberList();
+            for (Member member : memberList) {
                 addInvalidationListener(member);
             }
         }
@@ -604,14 +640,14 @@ abstract class AbstractClientInternalCacheProxy<K, V>
             if (registrationId != null) {
                 clusterService.removeMembershipListener(registrationId);
             }
-            Collection<MemberImpl> memberList = clusterService.getMemberList();
-            for (MemberImpl member : memberList) {
+            Collection<Member> memberList = clusterService.getMemberList();
+            for (Member member : memberList) {
                 removeInvalidationListener(member, true);
             }
         }
     }
 
-    private void addInvalidationListener(MemberImpl member) {
+    private void addInvalidationListener(Member member) {
         if (nearCacheInvalidationListeners.containsKey(member)) {
             return;
         }
@@ -620,7 +656,8 @@ abstract class AbstractClientInternalCacheProxy<K, V>
             Client client = clientContext.getClusterService().getLocalClient();
             EventHandler handler = new NearCacheInvalidationHandler(client);
             HazelcastClientInstanceImpl clientInstance = (HazelcastClientInstanceImpl) clientContext.getHazelcastInstance();
-            ClientInvocation invocation = new ClientInvocation(clientInstance, handler, request, member.getAddress());
+            Address address = ((AbstractMember) member).getAddress();
+            ClientInvocation invocation = new ClientInvocation(clientInstance, handler, request, address);
             Future future = invocation.invoke();
             String registrationId = clientContext.getSerializationService().toObject(future.get());
             clientContext.getListenerService().registerListener(registrationId, request.getCallId());
@@ -631,7 +668,7 @@ abstract class AbstractClientInternalCacheProxy<K, V>
         }
     }
 
-    private void removeInvalidationListener(MemberImpl member, boolean removeFromMemberAlso) {
+    private void removeInvalidationListener(Member member, boolean removeFromMemberAlso) {
         String registrationId = nearCacheInvalidationListeners.remove(member);
         if (registrationId != null) {
             try {
@@ -639,11 +676,12 @@ abstract class AbstractClientInternalCacheProxy<K, V>
                     ClientRequest request = new CacheRemoveInvalidationListenerRequest(nameWithPrefix, registrationId);
                     HazelcastClientInstanceImpl clientInstance =
                             (HazelcastClientInstanceImpl) clientContext.getHazelcastInstance();
-                    ClientInvocation invocation = new ClientInvocation(clientInstance, request, member.getAddress());
+                    Address address = ((AbstractMember) member).getAddress();
+                    ClientInvocation invocation = new ClientInvocation(clientInstance, request, address);
                     Future future = invocation.invoke();
                     Boolean result = clientContext.getSerializationService().toObject(future.get());
                     if (!result) {
-                        logger.warning("Invalidation listener couldn't be removed on member " + member.getAddress());
+                        logger.warning("Invalidation listener couldn't be removed on member " + address);
                         // TODO What we do if result is false ???
                     }
                 }

@@ -20,12 +20,20 @@ public interface ClusterClock {
 
     /**
      * Returns the cluster-time in milliseconds.
-     *
      * The cluster-time measures elapsed time since the cluster was created. Comparable to the {@link System#nanoTime()}.
-     *
      * @return the cluster-time (elapsed milliseconds since the cluster was created).
      */
     long getClusterTime();
 
     long getClusterTimeDiff();
+
+    /**
+     * Returns the cluster  up-time in milliseconds.
+     * When first node in cluster becomes master, its clusterTime value is saved as
+     * clusterStartTime. Up-time of cluster is calculated as
+     * ClusterClock#getClusterTime - clusterStartTime.
+     *
+     * @return the cluster-up-time
+     */
+     long getClusterUpTime();
 }

@@ -21,7 +21,7 @@
     <parent>
         <groupId>com.hazelcast</groupId>
         <artifactId>hazelcast-root</artifactId>
-        <version>3.5-SNAPSHOT</version>
+        <version>3.6-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -71,6 +71,7 @@
                                 </includes>
                                 <excludes>
                                     <exclude>com.hazelcast:hazelcast-all:*</exclude>
+                                    <exclude>com.hazelcast:hazelcast-client-new:*</exclude>
                                 </excludes>
                             </artifactSet>
                             <transformers>

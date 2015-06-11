@@ -17,8 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.transactionalset;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.TransactionalSetRemoveParameters;
+import com.hazelcast.client.impl.protocol.codec.TransactionalSetRemoveCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractTransactionalMessageTask;
 import com.hazelcast.collection.impl.set.SetService;
 import com.hazelcast.core.TransactionalSet;
@@ -31,18 +30,18 @@ import com.hazelcast.transaction.TransactionContext;
 import java.security.Permission;
 
 public class TransactionalSetRemoveMessageTask
-        extends AbstractTransactionalMessageTask<TransactionalSetRemoveParameters> {
+        extends AbstractTransactionalMessageTask<TransactionalSetRemoveCodec.RequestParameters> {
 
     public TransactionalSetRemoveMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected ClientMessage innerCall() throws Exception {
+    protected Object innerCall() throws Exception {
         final TransactionContext context = endpoint.getTransactionContext(parameters.txnId);
         TransactionalSet<Object> set = context.getSet(parameters.name);
         boolean success = set.remove(parameters.item);
-        return BooleanResultParameters.encode(success);
+        return success;
     }
 
     @Override
@@ -51,8 +50,13 @@ public class TransactionalSetRemoveMessageTask
     }
 
     @Override
-    protected TransactionalSetRemoveParameters decodeClientMessage(ClientMessage clientMessage) {
-        return TransactionalSetRemoveParameters.decode(clientMessage);
+    protected TransactionalSetRemoveCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return TransactionalSetRemoveCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return TransactionalSetRemoveCodec.encodeResponse((Boolean) response);
     }
 
     @Override

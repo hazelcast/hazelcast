@@ -17,11 +17,10 @@
 package com.hazelcast.client.proxy;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.MapReduceCancelParameters;
-import com.hazelcast.client.impl.protocol.parameters.MapReduceForCustomParameters;
-import com.hazelcast.client.impl.protocol.parameters.MapReduceForMapParameters;
-import com.hazelcast.client.impl.protocol.parameters.MapReduceJobProcessInformationParameters;
+import com.hazelcast.client.impl.protocol.codec.MapReduceCancelCodec;
+import com.hazelcast.client.impl.protocol.codec.MapReduceForCustomCodec;
+import com.hazelcast.client.impl.protocol.codec.MapReduceForMapCodec;
+import com.hazelcast.client.impl.protocol.codec.MapReduceJobProcessInformationCodec;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.client.spi.impl.ClientInvocationFuture;
@@ -45,14 +44,17 @@ import com.hazelcast.mapreduce.impl.ListKeyValueSource;
 import com.hazelcast.mapreduce.impl.MapKeyValueSource;
 import com.hazelcast.mapreduce.impl.MultiMapKeyValueSource;
 import com.hazelcast.mapreduce.impl.SetKeyValueSource;
+import com.hazelcast.mapreduce.impl.task.TransferableJobProcessInformation;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.spi.impl.AbstractCompletableFuture;
 import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.UuidUtil;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CancellationException;
@@ -60,7 +62,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
@@ -98,20 +99,12 @@ public class ClientMapReduceProxy
         return "JobTracker{" + "name='" + getName() + '\'' + '}';
     }
 
-    /*
-     * Removed for now since it is moved to Hazelcast 3.3
-    @Override
-    public <K, V> ProcessJob<K, V> newProcessJob(KeyValueSource<K, V> source) {
-        // TODO
-        return null;
-    }*/
-
-    private <T> T invoke(ClientMessage request, String jobId) throws Exception {
+    private ClientMessage invoke(ClientMessage request, String jobId) throws Exception {
         ClientTrackableJob trackableJob = trackableJobs.get(jobId);
         if (trackableJob != null) {
             Address runningMember = trackableJob.jobOwner;
             final ClientInvocation clientInvocation = new ClientInvocation(getClient(), request, runningMember);
-            final ICompletableFuture<T> future = clientInvocation.invoke();
+            ClientInvocationFuture future = clientInvocation.invoke();
             return future.get();
         }
         return null;
@@ -140,7 +133,9 @@ public class ClientMapReduceProxy
                 future.andThen(new ExecutionCallback() {
                     @Override
                     public void onResponse(Object res) {
-                        Object response = res;
+                        Map map = toObjectMap((ClientMessage) res);
+
+                        Object response = map;
                         try {
                             if (collator != null) {
                                 response = collator.collate(((Map) response).entrySet());
@@ -176,6 +171,18 @@ public class ClientMapReduceProxy
 
     }
 
+    private Map toObjectMap(ClientMessage res) {
+        SerializationService serializationService = getContext().getSerializationService();
+        Map<Data, Data> map = MapReduceForCustomCodec.decodeResponse(res).map;
+        HashMap hashMap = new HashMap();
+        for (Map.Entry<Data, Data> entry : map.entrySet()) {
+            Object key = serializationService.toObject(entry.getKey());
+            Object value = serializationService.toObject(entry.getValue());
+            hashMap.put(key, value);
+        }
+        return hashMap;
+    }
+
     private ClientMessage getRequest(String name, String jobId, Collection keys,
                                      KeyPredicate predicate, Mapper mapper,
                                      CombinerFactory combinerFactory, ReducerFactory
@@ -185,35 +192,43 @@ public class ClientMapReduceProxy
         Data mapperData = toData(mapper);
         Data combinerFactoryData = toData(combinerFactory);
         Data reducerFactoryData = toData(reducerFactory);
-        List<Data> list = new ArrayList<Data>(keys.size());
-        for (Object key : keys) {
-            list.add(toData(key));
+        List<Data> list = null;
+        if (keys != null) {
+            list = new ArrayList<Data>(keys.size());
+            for (Object key : keys) {
+                list.add(toData(key));
+            }
+        }
+
+        String topologyChangedStrategyName = null;
+        if (topologyChangedStrategy != null) {
+            topologyChangedStrategyName = topologyChangedStrategy.name();
         }
 
         if (keyValueSource instanceof MapKeyValueSource) {
             MapKeyValueSource source = (MapKeyValueSource) keyValueSource;
-            return MapReduceForMapParameters.encode(name, jobId, predicateData, mapperData,
+            return MapReduceForMapCodec.encodeRequest(name, jobId, predicateData, mapperData,
                     combinerFactoryData, reducerFactoryData, source.getMapName(), chunkSize,
-                    list, topologyChangedStrategy.name());
+                    list, topologyChangedStrategyName);
         } else if (keyValueSource instanceof ListKeyValueSource) {
             ListKeyValueSource source = (ListKeyValueSource) keyValueSource;
-            return MapReduceForMapParameters.encode(name, jobId, predicateData, mapperData,
+            return MapReduceForMapCodec.encodeRequest(name, jobId, predicateData, mapperData,
                     combinerFactoryData, reducerFactoryData, source.getListName(), chunkSize,
-                    list, topologyChangedStrategy.name());
+                    list, topologyChangedStrategyName);
         } else if (keyValueSource instanceof SetKeyValueSource) {
             SetKeyValueSource source = (SetKeyValueSource) keyValueSource;
-            return MapReduceForMapParameters.encode(name, jobId, predicateData, mapperData,
+            return MapReduceForMapCodec.encodeRequest(name, jobId, predicateData, mapperData,
                     combinerFactoryData, reducerFactoryData, source.getSetName(), chunkSize,
-                    list, topologyChangedStrategy.name());
+                    list, topologyChangedStrategyName);
         } else if (keyValueSource instanceof MultiMapKeyValueSource) {
             MultiMapKeyValueSource source = (MultiMapKeyValueSource) keyValueSource;
-            return MapReduceForMapParameters.encode(name, jobId, predicateData, mapperData,
+            return MapReduceForMapCodec.encodeRequest(name, jobId, predicateData, mapperData,
                     combinerFactoryData, reducerFactoryData, source.getMultiMapName(), chunkSize,
-                    list, topologyChangedStrategy.name());
+                    list, topologyChangedStrategyName);
         }
-        return MapReduceForCustomParameters.encode(name, jobId, predicateData, mapperData,
+        return MapReduceForCustomCodec.encodeRequest(name, jobId, predicateData, mapperData,
                 combinerFactoryData, reducerFactoryData, toData(keyValueSource), chunkSize,
-                list, topologyChangedStrategy.name());
+                list, topologyChangedStrategyName);
 
     }
 
@@ -227,7 +242,7 @@ public class ClientMapReduceProxy
         private volatile boolean cancelled;
 
         protected ClientCompletableFuture(String jobId) {
-            super(null, Logger.getLogger(ClientCompletableFuture.class));
+            super(getContext().getExecutionService().getAsyncExecutor(), Logger.getLogger(ClientCompletableFuture.class));
             this.jobId = jobId;
             this.latch = new CountDownLatch(1);
         }
@@ -240,9 +255,9 @@ public class ClientMapReduceProxy
         @Override
         public boolean cancel(boolean mayInterruptIfRunning) {
             try {
-                ClientMessage request = MapReduceCancelParameters.encode(getName(), jobId);
+                ClientMessage request = MapReduceCancelCodec.encodeRequest(getName(), jobId);
                 ClientMessage response = invoke(request, jobId);
-                cancelled = BooleanResultParameters.decode(response).result;
+                cancelled = MapReduceCancelCodec.decodeResponse(response).response;
             } catch (Exception ignore) {
                 EmptyStatement.ignore(ignore);
             }
@@ -267,11 +282,6 @@ public class ClientMapReduceProxy
                 throw new TimeoutException("timeout reached");
             }
             return getResult();
-        }
-
-        @Override
-        protected ExecutorService getAsyncExecutor() {
-            return getContext().getExecutionService().getAsyncExecutor();
         }
     }
 
@@ -312,8 +322,12 @@ public class ClientMapReduceProxy
         @Override
         public JobProcessInformation getJobProcessInformation() {
             try {
-                ClientMessage request = MapReduceJobProcessInformationParameters.encode(getName(), jobId);
-                return invoke(request, jobId);
+                ClientMessage request = MapReduceJobProcessInformationCodec.encodeRequest(getName(), jobId);
+
+                MapReduceJobProcessInformationCodec.ResponseParameters responseParameters =
+                        MapReduceJobProcessInformationCodec.decodeResponse(invoke(request, jobId));
+                return new TransferableJobProcessInformation(responseParameters.jobPartitionStates,
+                        responseParameters.processRecords);
             } catch (Exception ignore) {
                 EmptyStatement.ignore(ignore);
             }

@@ -32,9 +32,7 @@ import com.hazelcast.security.Credentials;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionException;
-import com.hazelcast.transaction.impl.Transaction;
-import com.hazelcast.transaction.impl.TransactionAccessor;
-import com.hazelcast.transaction.impl.TransactionManagerServiceImpl;
+import com.hazelcast.transaction.impl.xa.XATransactionContextImpl;
 
 import javax.security.auth.Subject;
 import javax.security.auth.login.LoginContext;
@@ -46,8 +44,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-
-import static com.hazelcast.transaction.impl.Transaction.State.PREPARED;
 
 /**
  * The {@link com.hazelcast.client.ClientEndpoint} and {@link com.hazelcast.core.Client} implementation.
@@ -122,6 +118,7 @@ public final class ClientEndpointImpl implements Client, ClientEndpoint {
         clientEngine.addOwnershipMapping(principal.getUuid(), principal.getOwnerUuid());
     }
 
+    @Override
     public boolean isAuthenticated() {
         return authenticated;
     }
@@ -210,43 +207,36 @@ public final class ClientEndpointImpl implements Client, ClientEndpoint {
 
     @Override
     public void clearAllListeners() {
-        for (Runnable removeAction : removeListenerActions) {
+        //Changed from normal iteration to copying with toArray because of ConcurrentModificationException.
+        // toArray is called under internal mutex of synchronized list.
+        Object[] actions = removeListenerActions.toArray();
+        for (Object removeAction : actions) {
             try {
-                removeAction.run();
+                ((Runnable) removeAction).run();
             } catch (Exception e) {
-                getLogger().warning("Exception during destroy action", e);
+                getLogger().warning("Exception during remove listener action", e);
             }
         }
         removeListenerActions.clear();
     }
 
     public void destroy() throws LoginException {
-        for (Runnable removeAction : removeListenerActions) {
-            try {
-                removeAction.run();
-            } catch (Exception e) {
-                getLogger().warning("Exception during destroy action", e);
-            }
-        }
+        clearAllListeners();
 
         LoginContext lc = loginContext;
         if (lc != null) {
             lc.logout();
         }
         for (TransactionContext context : transactionContextMap.values()) {
-            Transaction transaction = TransactionAccessor.getTransaction(context);
-            if (context.isXAManaged() && transaction.getState() == PREPARED) {
-                TransactionManagerServiceImpl transactionManager =
-                        (TransactionManagerServiceImpl) clientEngine.getTransactionManagerService();
-                transactionManager.addTxBackupLogForClientRecovery(transaction);
-            } else {
-                try {
-                    context.rollbackTransaction();
-                } catch (HazelcastInstanceNotActiveException e) {
-                    getLogger().finest(e);
-                } catch (Exception e) {
-                    getLogger().warning(e);
-                }
+            if (context instanceof XATransactionContextImpl) {
+                continue;
+            }
+            try {
+                context.rollbackTransaction();
+            } catch (HazelcastInstanceNotActiveException e) {
+                getLogger().finest(e);
+            } catch (Exception e) {
+                getLogger().warning(e);
             }
         }
         authenticated = false;

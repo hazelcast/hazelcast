@@ -17,8 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.map;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.DataCollectionResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.MapValuesParameters;
+import com.hazelcast.client.impl.protocol.codec.MapValuesCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractAllPartitionsMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.map.impl.MapService;
@@ -32,10 +31,12 @@ import com.hazelcast.spi.OperationFactory;
 
 import java.security.Permission;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
-public class MapValuesMessageTask extends AbstractAllPartitionsMessageTask<MapValuesParameters> {
+public class MapValuesMessageTask
+        extends AbstractAllPartitionsMessageTask<MapValuesCodec.RequestParameters> {
 
     public MapValuesMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -47,18 +48,23 @@ public class MapValuesMessageTask extends AbstractAllPartitionsMessageTask<MapVa
     }
 
     @Override
-    protected ClientMessage reduce(Map<Integer, Object> results) {
+    protected Object reduce(Map<Integer, Object> results) {
         List<Data> values = new ArrayList<Data>();
         MapService mapService = getService(MapService.SERVICE_NAME);
         for (Object result : results.values()) {
             values.addAll(((MapValueCollection) mapService.getMapServiceContext().toObject(result)).getValues());
         }
-        return DataCollectionResultParameters.encode(values);
+        return values;
     }
 
     @Override
-    protected MapValuesParameters decodeClientMessage(ClientMessage clientMessage) {
-        return MapValuesParameters.decode(clientMessage);
+    protected MapValuesCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return MapValuesCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return MapValuesCodec.encodeResponse((Collection<Data>) response);
     }
 
     @Override

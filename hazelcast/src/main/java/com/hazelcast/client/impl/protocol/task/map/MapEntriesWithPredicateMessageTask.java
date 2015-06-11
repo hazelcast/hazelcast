@@ -17,33 +17,31 @@
 package com.hazelcast.client.impl.protocol.task.map;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.DataEntryListResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.MapEntriesWithPredicateParameters;
+import com.hazelcast.client.impl.protocol.codec.MapEntriesWithPredicateCodec;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.QueryResultEntry;
 
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
-public class MapEntriesWithPredicateMessageTask extends AbstractMapQueryMessageTask<MapEntriesWithPredicateParameters> {
+public class MapEntriesWithPredicateMessageTask
+        extends AbstractMapQueryMessageTask<MapEntriesWithPredicateCodec.RequestParameters> {
 
     public MapEntriesWithPredicateMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected ClientMessage reduce(Collection<QueryResultEntry> result) {
-        List<Data> keys = new ArrayList<Data>();
-        List<Data> values = new ArrayList<Data>();
+    protected Object reduce(Collection<QueryResultEntry> result) {
+        HashMap<Data, Data> map = new HashMap<Data, Data>();
         for (QueryResultEntry resultEntry : result) {
-            keys.add(resultEntry.getKeyData());
-            values.add(resultEntry.getValueData());
+            map.put(resultEntry.getKeyData(), resultEntry.getValueData());
         }
-        return DataEntryListResultParameters.encode(keys, values);
+        return map;
     }
 
     @Override
@@ -52,8 +50,13 @@ public class MapEntriesWithPredicateMessageTask extends AbstractMapQueryMessageT
     }
 
     @Override
-    protected MapEntriesWithPredicateParameters decodeClientMessage(ClientMessage clientMessage) {
-        return MapEntriesWithPredicateParameters.decode(clientMessage);
+    protected MapEntriesWithPredicateCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return MapEntriesWithPredicateCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return MapEntriesWithPredicateCodec.encodeResponse((Map<Data, Data>) response);
     }
 
     @Override
@@ -69,7 +72,7 @@ public class MapEntriesWithPredicateMessageTask extends AbstractMapQueryMessageT
 
     @Override
     public String getMethodName() {
-        return "entries";
+        return "entrySet";
     }
 
 }

@@ -17,8 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.multimap;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.MultiMapLockParameters;
-import com.hazelcast.client.impl.protocol.parameters.VoidResultParameters;
+import com.hazelcast.client.impl.protocol.codec.MultiMapLockCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.concurrent.lock.operations.LockOperation;
@@ -35,9 +34,10 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * Client Protocol Task for handling messages with type id:
- * {@link com.hazelcast.client.impl.protocol.parameters.MultiMapMessageType#MULTIMAP_LOCK}
+ * {@link com.hazelcast.client.impl.protocol.codec.MultiMapMessageType#MULTIMAP_LOCK}
  */
-public class MultiMapLockMessageTask extends AbstractPartitionMessageTask<MultiMapLockParameters> {
+public class MultiMapLockMessageTask
+        extends AbstractPartitionMessageTask<MultiMapLockCodec.RequestParameters> {
 
     public MultiMapLockMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -51,17 +51,22 @@ public class MultiMapLockMessageTask extends AbstractPartitionMessageTask<MultiM
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return VoidResultParameters.encode();
+        return MultiMapLockCodec.encodeResponse();
     }
 
     @Override
-    protected MultiMapLockParameters decodeClientMessage(ClientMessage clientMessage) {
-        return MultiMapLockParameters.decode(clientMessage);
+    protected MultiMapLockCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return MultiMapLockCodec.decodeRequest(clientMessage);
     }
 
     @Override
     public String getServiceName() {
         return LockService.SERVICE_NAME;
+    }
+
+    @Override
+    public String getDistributedObjectType() {
+        return MultiMapService.SERVICE_NAME;
     }
 
     @Override
@@ -72,9 +77,9 @@ public class MultiMapLockMessageTask extends AbstractPartitionMessageTask<MultiM
     @Override
     public Object[] getParameters() {
         if (parameters.ttl == -1) {
-            return new Object[]{parameters.key, parameters.ttl, TimeUnit.MILLISECONDS};
+            return new Object[]{parameters.key};
         }
-        return new Object[]{parameters.key};
+        return new Object[]{parameters.key, parameters.ttl, TimeUnit.MILLISECONDS};
     }
 
     public Permission getRequiredPermission() {

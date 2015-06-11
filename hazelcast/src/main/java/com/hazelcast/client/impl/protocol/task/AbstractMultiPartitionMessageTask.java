@@ -34,7 +34,7 @@ public abstract class AbstractMultiPartitionMessageTask<P> extends AbstractCalla
     }
 
     @Override
-    protected ClientMessage call() throws Exception {
+    protected Object call() throws Exception {
         ClientEndpoint endpoint = getEndpoint();
         OperationFactory operationFactory = new OperationFactoryWrapper(createOperationFactory(), endpoint.getUuid());
 
@@ -46,7 +46,7 @@ public abstract class AbstractMultiPartitionMessageTask<P> extends AbstractCalla
 
     protected abstract OperationFactory createOperationFactory();
 
-    protected abstract ClientMessage reduce(Map<Integer, Object> map);
+    protected abstract Object reduce(Map<Integer, Object> map);
 
     public abstract Collection<Integer> getPartitions();
 

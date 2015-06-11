@@ -17,7 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.countdownlatch;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.CountDownLatchCountDownParameters;
+import com.hazelcast.client.impl.protocol.codec.CountDownLatchCountDownCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
 import com.hazelcast.concurrent.countdownlatch.operations.CountDownOperation;
@@ -29,7 +29,8 @@ import com.hazelcast.spi.Operation;
 
 import java.security.Permission;
 
-public class CountDownLatchCountDownMessageTask extends AbstractPartitionMessageTask<CountDownLatchCountDownParameters> {
+public class CountDownLatchCountDownMessageTask
+        extends AbstractPartitionMessageTask<CountDownLatchCountDownCodec.RequestParameters> {
 
     public CountDownLatchCountDownMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -41,8 +42,13 @@ public class CountDownLatchCountDownMessageTask extends AbstractPartitionMessage
     }
 
     @Override
-    protected CountDownLatchCountDownParameters decodeClientMessage(ClientMessage clientMessage) {
-        return CountDownLatchCountDownParameters.decode(clientMessage);
+    protected CountDownLatchCountDownCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return CountDownLatchCountDownCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return CountDownLatchCountDownCodec.encodeResponse();
     }
 
     @Override

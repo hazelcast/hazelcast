@@ -20,6 +20,7 @@ package com.hazelcast.map.impl;
 import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.concurrent.lock.LockStore;
 import com.hazelcast.core.EntryView;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.mapstore.MapDataStore;
 import com.hazelcast.map.impl.mapstore.MapStoreContext;
 import com.hazelcast.map.impl.mapstore.MapStoreManager;
@@ -31,6 +32,7 @@ import com.hazelcast.spi.DefaultObjectNamespace;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.util.FutureUtil;
 
 import java.util.AbstractMap;
 import java.util.ArrayList;
@@ -43,6 +45,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.Future;
 
 import static com.hazelcast.map.impl.ExpirationTimeSetter.updateExpiryTime;
 
@@ -51,50 +54,87 @@ import static com.hazelcast.map.impl.ExpirationTimeSetter.updateExpiryTime;
  */
 public class DefaultRecordStore extends AbstractEvictableRecordStore implements RecordStore {
 
+    private final ILogger logger;
     private final LockStore lockStore;
     private final MapDataStore<Data, Object> mapDataStore;
+    private final MapStoreContext mapStoreContext;
     private final RecordStoreLoader recordStoreLoader;
+    private final MapKeyLoader keyLoader;
+    private final Collection<Future> loadingFutures = new ArrayList<Future>();
 
-    public DefaultRecordStore(MapContainer mapContainer, int partitionId) {
+    public DefaultRecordStore(MapContainer mapContainer, int partitionId,
+                              MapKeyLoader keyLoader, ILogger logger) {
         super(mapContainer, partitionId);
-        this.lockStore = createLockStore();
-        final MapStoreContext mapStoreContext = mapContainer.getMapStoreContext();
-        final MapStoreManager mapStoreManager = mapStoreContext.getMapStoreManager();
-        this.mapDataStore = mapStoreManager.getMapDataStore(partitionId);
 
-        this.recordStoreLoader = createRecordStoreLoader();
-        this.recordStoreLoader.loadInitialKeys(true);
+        this.logger = logger;
+        this.keyLoader = keyLoader;
+        this.lockStore = createLockStore();
+        this.mapStoreContext = mapContainer.getMapStoreContext();
+        MapStoreManager mapStoreManager = mapStoreContext.getMapStoreManager();
+        this.mapDataStore = mapStoreManager.getMapDataStore(partitionId);
+        this.recordStoreLoader = createRecordStoreLoader(mapStoreContext);
+    }
+
+    public void startLoading() {
+        if (mapStoreContext.isMapLoader()) {
+            loadingFutures.add(keyLoader.startInitialLoad(mapStoreContext, partitionId));
+        }
     }
 
     @Override
     public boolean isLoaded() {
-        return recordStoreLoader.isLoaded();
+        return FutureUtil.allDone(loadingFutures);
     }
 
     @Override
-    public void setLoaded(boolean loaded) {
-        recordStoreLoader.setLoaded(loaded);
+    public void loadAll(boolean replaceExistingValues) {
+        logger.info("Starting to load all keys for map " + name + " on partitionId=" + partitionId);
+        Future<?> loadingKeysFuture = keyLoader.startLoading(mapStoreContext, replaceExistingValues);
+        loadingFutures.add(loadingKeysFuture);
     }
 
     @Override
-    public void loadAllFromStore(boolean replaceExisting) {
-        recordStoreLoader.setLoaded(false);
-        recordStoreLoader.loadInitialKeys(replaceExisting);
+    public void loadAllFromStore(List<Data> keys, boolean replaceExistingValues) {
+        if (!keys.isEmpty()) {
+            Future f = recordStoreLoader.loadValues(keys, replaceExistingValues);
+            loadingFutures.add(f);
+        }
+
+        keyLoader.trackLoading(false, null);
+    }
+
+    @Override
+    public void updateLoadStatus(boolean lastBatch, Throwable exception) {
+        keyLoader.trackLoading(lastBatch, exception);
+
+        if (lastBatch) {
+            logger.finest("Completed loading map " + name + " on partitionId=" + partitionId);
+        }
+    }
+
+    @Override
+    public void maybeDoInitialLoad() {
+        if (keyLoader.shouldDoInitialLoad()) {
+            loadAll(false);
+        }
     }
 
     @Override
     public void checkIfLoaded() {
-        Throwable throwable = null;
-        final RecordStoreLoader recordStoreLoader = this.recordStoreLoader;
-        final Throwable exception = recordStoreLoader.getExceptionOrNull();
-        if (exception == null && !recordStoreLoader.isLoaded()) {
-            throwable = new RetryableHazelcastException("Map "
-                    + getName() + " is still loading data from external store");
-        } else if (exception != null) {
-            throwable = exception;
-        }
-        if (throwable != null) {
-            throw ExceptionUtil.rethrow(throwable);
+        if (isLoaded()) {
+            try {
+                // check all loading futures for exceptions
+                FutureUtil.checkAllDone(loadingFutures);
+            } catch (Exception e) {
+                logger.severe("Exception while loading map " + name, e);
+                ExceptionUtil.rethrow(e);
+            } finally {
+                loadingFutures.clear();
+            }
+        } else {
+            keyLoader.triggerLoadingWithDelay();
+            throw new RetryableHazelcastException("Map " + getName()
+                    + " is still loading data from external store");
         }
     }
 
@@ -174,7 +214,6 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
         return records;
     }
 
-
     @Override
     public void clearPartition() {
         final NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
@@ -212,7 +251,6 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
         checkIfLoaded();
         return records.isEmpty();
     }
-
 
     @Override
     public boolean containsValue(Object value) {
@@ -406,6 +444,9 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
         return numOfClearedEntries;
     }
 
+    /**
+     * Resets the record store to it's initial state.
+     */
     @Override
     public void reset() {
         clearRecordsMap(Collections.<Data, Record>emptyMap());
@@ -626,17 +667,25 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
                 iterator.remove();
             }
         }
-        final Map entriesLoaded = mapDataStore.loadAll(keys);
-        addMapEntrySet(entriesLoaded, mapEntrySet);
 
-        // add loaded key-value pairs to this record-store.
-        Set<Map.Entry<Data, Data>> entrySet = mapEntrySet.getEntrySet();
-        for (Map.Entry<Data, Data> entry : entrySet) {
-            // correct TTL will be set in the put method below, when creating record.
-            // use putTransient since we already fetched entries from map-loader.
-            putTransient(entry.getKey(), entry.getValue(), DEFAULT_TTL);
-        }
+        Map loadedEntries = loadEntries(keys);
+        addMapEntrySet(loadedEntries, mapEntrySet);
+
         return mapEntrySet;
+    }
+
+    private Map loadEntries(Set<Data> keys) {
+        Map loadedEntries = mapDataStore.loadAll(keys);
+        if (loadedEntries == null || loadedEntries.isEmpty()) {
+            return Collections.emptyMap();
+        }
+        // add loaded key-value pairs to this record-store.
+        Set entrySet = loadedEntries.entrySet();
+        for (Object object : entrySet) {
+            Map.Entry entry = (Map.Entry) object;
+            putFromLoad(toData(entry.getKey()), entry.getValue());
+        }
+        return loadedEntries;
     }
 
     private void addMapEntrySet(Object key, Object value, MapEntrySet mapEntrySet) {
@@ -981,14 +1030,6 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
         return oldValue;
     }
 
-
-    @Override
-    public void loadAllFromStore(List<Data> keys, boolean replaceExistingValues) {
-        if (keys.isEmpty()) {
-            return;
-        }
-        recordStoreLoader.loadAll(keys, replaceExistingValues);
-    }
 
     @Override
     public MapDataStore<Data, Object> getMapDataStore() {

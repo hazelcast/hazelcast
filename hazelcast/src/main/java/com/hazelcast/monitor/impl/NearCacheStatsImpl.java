@@ -24,8 +24,9 @@ import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
 import static com.hazelcast.util.JsonUtil.getLong;
 
-public class NearCacheStatsImpl
-        implements NearCacheStats {
+public class NearCacheStatsImpl implements NearCacheStats {
+
+    private static final double PERCENTAGE = 100.0;
 
     private static final AtomicLongFieldUpdater<NearCacheStatsImpl> OWNED_ENTRY_COUNT_UPDATER =
             AtomicLongFieldUpdater.newUpdater(NearCacheStatsImpl.class, "ownedEntryCount");
@@ -90,7 +91,6 @@ public class NearCacheStatsImpl
         return hits;
     }
 
-
     public void incrementHits() {
         HITS_UPDATER.incrementAndGet(this);
     }
@@ -114,7 +114,15 @@ public class NearCacheStatsImpl
 
     @Override
     public double getRatio() {
-        return (double) hits / misses;
+        if (misses == 0) {
+            if (hits == 0) {
+                return Double.NaN;
+            } else {
+                return Double.POSITIVE_INFINITY;
+            }
+        } else {
+            return ((double) hits / misses) * PERCENTAGE;
+        }
     }
 
     @Override
@@ -145,8 +153,7 @@ public class NearCacheStatsImpl
                 + ", creationTime=" + creationTime
                 + ", hits=" + hits
                 + ", misses=" + misses
-                + ", ratio=" + getRatio()
+                + ", ratio=" + String.format("%.1f%%", getRatio())
                 + '}';
     }
-
 }

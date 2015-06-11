@@ -17,8 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.transactionalqueue;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.GenericResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.TransactionalQueueTakeParameters;
+import com.hazelcast.client.impl.protocol.codec.TransactionalQueueTakeCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractTransactionalMessageTask;
 import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.core.TransactionalQueue;
@@ -31,18 +30,18 @@ import com.hazelcast.transaction.TransactionContext;
 import java.security.Permission;
 
 public class TransactionalQueueTakeMessageTask
-        extends AbstractTransactionalMessageTask<TransactionalQueueTakeParameters> {
+        extends AbstractTransactionalMessageTask<TransactionalQueueTakeCodec.RequestParameters> {
 
     public TransactionalQueueTakeMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected ClientMessage innerCall() throws Exception {
+    protected Object innerCall() throws Exception {
         final TransactionContext context = endpoint.getTransactionContext(parameters.txnId);
         final TransactionalQueue queue = context.getQueue(parameters.name);
         Object item = queue.take();
-        return GenericResultParameters.encode(serializationService.toData(item));
+        return serializationService.toData(item);
     }
 
     @Override
@@ -51,8 +50,13 @@ public class TransactionalQueueTakeMessageTask
     }
 
     @Override
-    protected TransactionalQueueTakeParameters decodeClientMessage(ClientMessage clientMessage) {
-        return TransactionalQueueTakeParameters.decode(clientMessage);
+    protected TransactionalQueueTakeCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return TransactionalQueueTakeCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return TransactionalQueueTakeCodec.encodeResponse(serializationService.toData(response));
     }
 
     @Override

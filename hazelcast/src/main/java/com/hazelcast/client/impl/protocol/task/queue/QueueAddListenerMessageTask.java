@@ -18,9 +18,7 @@ package com.hazelcast.client.impl.protocol.task.queue;
 
 import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.AddListenerResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.ItemEventParameters;
-import com.hazelcast.client.impl.protocol.parameters.QueueAddListenerParameters;
+import com.hazelcast.client.impl.protocol.codec.QueueAddListenerCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.collection.common.DataAwareItemEvent;
 import com.hazelcast.collection.impl.queue.QueueService;
@@ -36,17 +34,17 @@ import java.security.Permission;
 
 /**
  * Client Protocol Task for handling messages with type id:
- * {@link com.hazelcast.client.impl.protocol.parameters.QueueMessageType#QUEUE_ADDLISTENER}
+ * {@link com.hazelcast.client.impl.protocol.codec.QueueMessageType#QUEUE_ADDLISTENER}
  */
 public class QueueAddListenerMessageTask
-        extends AbstractCallableMessageTask<QueueAddListenerParameters> {
+        extends AbstractCallableMessageTask<QueueAddListenerCodec.RequestParameters> {
 
     public QueueAddListenerMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected ClientMessage call() {
+    protected Object call() {
         final ClientEndpoint endpoint = getEndpoint();
         final QueueService service = getService(QueueService.SERVICE_NAME);
         final Data partitionKey = serializationService.toData(parameters.name);
@@ -71,21 +69,26 @@ public class QueueAddListenerMessageTask
 
                     DataAwareItemEvent dataAwareItemEvent = (DataAwareItemEvent) event;
                     Data item = dataAwareItemEvent.getItemData();
-                    ClientMessage clientMessage = ItemEventParameters
-                            .encode(item, event.getMember().getUuid(), event.getEventType());
+                    ClientMessage clientMessage = QueueAddListenerCodec.encodeItemEvent(item,
+                            event.getMember().getUuid(), event.getEventType().getType());
                     sendClientMessage(partitionKey, clientMessage);
                 }
             }
         };
         String registrationId = service.addItemListener(parameters.name, listener, parameters.includeValue);
         endpoint.setListenerRegistration(QueueService.SERVICE_NAME, parameters.name, registrationId);
-        return AddListenerResultParameters.encode(registrationId);
+        return registrationId;
 
     }
 
     @Override
-    protected QueueAddListenerParameters decodeClientMessage(ClientMessage clientMessage) {
-        return QueueAddListenerParameters.decode(clientMessage);
+    protected QueueAddListenerCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return QueueAddListenerCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return QueueAddListenerCodec.encodeResponse((String) response);
     }
 
     @Override

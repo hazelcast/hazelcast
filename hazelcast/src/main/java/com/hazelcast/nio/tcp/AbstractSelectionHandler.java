@@ -47,25 +47,6 @@ public abstract class AbstractSelectionHandler implements MigratableHandler {
         this.initialOps = initialOps;
     }
 
-    /**
-     * Migrates this handler to a new IOSelector thread.
-     * The migration logic is rather simple:
-     * <p><ul>
-     *     <li>Submit a de-registration task to a current IOSelector thread</li>
-     *     <li>The de-registration task submits a registration task to the new IOSelector thread</li>
-     * </ul></p>
-     *
-     * @param newOwner target IOSelector this handler migrates to
-     */
-    public void migrate(final IOSelector newOwner) {
-        if (ioSelector == newOwner || !socketChannel.isOpen()) {
-            return;
-        }
-
-        ioSelector.addTask(new MigrationTask(newOwner));
-        ioSelector.wakeup();
-    }
-
     protected SelectionKey getSelectionKey() {
         if (selectionKey == null) {
             try {
@@ -129,34 +110,39 @@ public abstract class AbstractSelectionHandler implements MigratableHandler {
         return ioSelector;
     }
 
-    private class MigrationTask implements Runnable {
-        private final IOSelector newOwner;
+    // This method run on the oldOwner IOSelector(thread)
+    void startMigration(final IOSelector newOwner) {
+        assert ioSelector == Thread.currentThread() : "startMigration can only run on the owning IOSelector thread";
+        assert ioSelector != newOwner : "newOwner can't be the same as the existing owner";
 
-        public MigrationTask(IOSelector newOwner) {
-            this.newOwner = newOwner;
+        if (!socketChannel.isOpen()) {
+            // if the channel is closed, we are done.
+            return;
         }
 
-        @Override
-        public void run() {
-            if (!socketChannel.isOpen()) {
-                return;
+        unregisterOp(initialOps);
+        ioSelector = newOwner;
+        selectionKey.cancel();
+        selectionKey = null;
+        selector = null;
+
+        newOwner.addTaskAndWakeup(new Runnable() {
+            @Override
+            public void run() {
+                completeMigration(newOwner);
             }
-            unregisterOp(initialOps);
-            ioSelector = newOwner;
-            selectionKey.cancel();
-            selectionKey = null;
-            newOwner.addTask(new Runnable() {
-                @Override
-                public void run() {
-                    if (!socketChannel.isOpen()) {
-                        return;
-                    }
-                    selector = newOwner.getSelector();
-                    selectionKey = getSelectionKey();
-                    registerOp(initialOps);
-                }
-            });
-            newOwner.wakeup();
+        });
+    }
+
+    private void completeMigration(IOSelector newOwner) {
+        assert ioSelector == newOwner;
+
+        if (!socketChannel.isOpen()) {
+            return;
         }
+
+        selector = newOwner.getSelector();
+        selectionKey = getSelectionKey();
+        registerOp(initialOps);
     }
 }

@@ -18,7 +18,7 @@ When you download and unzip `hazelcast-<`*version*`>.zip` you will see a `hazelc
 
 ![](images/HazelcastXML.jpg)
 
-For most users, default configuration should be fine. If not, you can tailor this XML file according to your needs by adding/removing/modifying properties (Declarative Configuration). Please refer to the [Configuration Properties section](#advanced-configuration-properties) for details.
+For most users, default configuration should be fine. If not, you can tailor this XML file according to your needs by adding/removing/modifying properties (Declarative Configuration). Please refer to the [System Properties section](#system-properties) for details.
 
 Besides declarative configuration, you can configure your cluster programmatically (Programmatic Configuration). Just instantiate a `Config` object and add/remove/modify properties.
 

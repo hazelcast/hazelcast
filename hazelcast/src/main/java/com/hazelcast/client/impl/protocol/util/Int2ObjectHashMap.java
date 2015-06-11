@@ -15,6 +15,8 @@
  */
 package com.hazelcast.client.impl.protocol.util;
 
+import com.hazelcast.util.QuickMath;
+
 import java.util.AbstractCollection;
 import java.util.AbstractSet;
 import java.util.Arrays;
@@ -61,7 +63,7 @@ public class Int2ObjectHashMap<V>
      */
     public Int2ObjectHashMap(final int initialCapacity, final double loadFactor) {
         this.loadFactor = loadFactor;
-        capacity = BitUtil.findNextPositivePowerOfTwo(initialCapacity);
+        capacity = QuickMath.nextPowerOfTwo(initialCapacity);
         mask = capacity - 1;
         resizeThreshold = (int) (capacity * loadFactor);
 
@@ -188,7 +190,7 @@ public class Int2ObjectHashMap<V>
      * Get a value for a given key, or if it does ot exist then default the value via a {@link Supplier}
      * and put it in the map.
      *
-     * @param key to search on.
+     * @param key      to search on.
      * @param supplier to provide a default if the get returns null.
      * @return the value if found otherwise the default.
      */
@@ -295,7 +297,7 @@ public class Int2ObjectHashMap<V>
      */
     public void compact() {
         final int idealCapacity = (int) Math.round(size() * (1.0d / loadFactor));
-        rehash(BitUtil.findNextPositivePowerOfTwo(idealCapacity));
+        rehash(QuickMath.nextPowerOfTwo(idealCapacity));
     }
 
     /**

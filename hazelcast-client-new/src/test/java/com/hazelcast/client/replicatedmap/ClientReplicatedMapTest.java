@@ -32,11 +32,12 @@ import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-import org.junit.Ignore;
 
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -49,7 +50,6 @@ import static org.junit.Assert.fail;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-@Ignore
 public class ClientReplicatedMapTest
         extends HazelcastTestSupport {
 
@@ -600,8 +600,8 @@ public class ClientReplicatedMapTest
             }
         }, 2, EntryEventType.ADDED, 100, 0.75, map1, map2);
 
-        List<Integer> values1 = new ArrayList<Integer>(map1.values());
-        List<Integer> values2 = new ArrayList<Integer>(map2.values());
+        List<Integer> values1 = copyToList(map1.values());
+        List<Integer> values2 = copyToList(map2.values());
 
         int map1Contains = 0;
         int map2Contains = 0;
@@ -671,8 +671,8 @@ public class ClientReplicatedMapTest
             }
         }, 2, EntryEventType.ADDED, 100, 0.75, map1, map2);
 
-        List<Integer> keySet1 = new ArrayList<Integer>(map1.keySet());
-        List<Integer> keySet2 = new ArrayList<Integer>(map2.keySet());
+        List<Integer> keySet1 = copyToList(map1.keySet());
+        List<Integer> keySet2 = copyToList(map2.keySet());
 
         int map1Contains = 0;
         int map2Contains = 0;
@@ -740,8 +740,8 @@ public class ClientReplicatedMapTest
             }
         }, 2, EntryEventType.ADDED, 100, 0.75, map1, map2);
 
-        List<Entry<Integer, Integer>> entrySet1 = new ArrayList<Entry<Integer, Integer>>(map1.entrySet());
-        List<Entry<Integer, Integer>> entrySet2 = new ArrayList<Entry<Integer, Integer>>(map2.entrySet());
+        List<Entry<Integer, Integer>> entrySet1 = copyToList(map1.entrySet());
+        List<Entry<Integer, Integer>> entrySet2 = copyToList(map2.entrySet());
 
         int map2Contains = 0;
         for (Entry<Integer, Integer> entry : entrySet2) {
@@ -854,4 +854,21 @@ public class ClientReplicatedMapTest
         }
         return testValues;
     }
+
+    /**
+     * This method works around a bug in IBM's Java 6 J9 JVM where ArrayList's copy constructor
+     * is somehow broken and either includes nulls as values or copies not all elements.
+     * This is known to happen with a CHM (which is inside the ReplicatedMap implementation)<br>
+     * http://www-01.ibm.com/support/docview.wss?uid=swg1IV45453
+     * http://www-01.ibm.com/support/docview.wss?uid=swg1IV67555
+     */
+    private <V> List<V> copyToList(Collection<V> collection) {
+        List<V> values = new ArrayList<V>();
+        Iterator<V> iterator = collection.iterator();
+        while (iterator.hasNext()) {
+            values.add(iterator.next());
+        }
+        return values;
+    }
+
 }

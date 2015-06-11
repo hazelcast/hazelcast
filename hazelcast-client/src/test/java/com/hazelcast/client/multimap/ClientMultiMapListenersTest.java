@@ -329,7 +329,7 @@ public class ClientMultiMapListenersTest {
         }
 
         public void entryRemoved(EntryEvent event) {
-            if (event.getValue() != null) {
+            if (event.getOldValue() != null) {
                 removeLatch.countDown();
             }
         }
@@ -373,7 +373,7 @@ public class ClientMultiMapListenersTest {
         }
 
         public void entryRemoved(EntryEvent event) {
-            if (event.getValue() == null) {
+            if (event.getOldValue() == null) {
                 removeLatch.countDown();
             }
         }

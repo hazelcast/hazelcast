@@ -1,10 +1,13 @@
 
 ### Jetty Based Web Session Replication
 
+![](images/enterprise-onlycopy.jpg)
+
+<br></br>
+
 ![image](images/NoteSmall.jpg) ***NOTE:*** *This feature is supported for Hazelcast Enterprise 3.4 or higher.*
 
 
-![](images/enterprise-onlycopy.jpg)
 
 
 ***Sample Code:*** *Please see our [sample application](https://github.com/hazelcast/hazelcast-code-samples/tree/master/hazelcast-integration/enterprise-session-replication) for Jetty Based Web Session Replication.*
@@ -70,7 +73,8 @@ This type of deployment is simple: just configure your Jetty and launch. There i
 - Unzip the Hazelcast Enterprise zip file into the folder `$HAZELCAST_ENTERPRISE_ROOT`.
 - Update `$HAZELCAST_ENTERPRISE_ROOT/bin/hazelcast.xml` with the provided Hazelcast Enterprise License Key. 
 - Put `hazelcast.xml` in the folder `$JETTY_HOME/etc`.
-- Put `$HAZELCAST_ENTERPRISE_ROOT/lib/hazelcast-enterprise-all-`<*version*>`.jar`,    `$HAZELCAST_ENTERPRISE_ROOT/lib/hazelcast-enterprise-`<*jettyversion*>`-`<*version*>`.jar` in the folder `$JETTY_HOME/lib/ext`.
+- Put `$HAZELCAST_ENTERPRISE_ROOT/lib/hazelcast-enterprise-all-`<*version*>`.jar`,    `$HAZELCAST_
+ENTERPRISE_ROOT/lib/hazelcast-enterprise-`<*jettyversion*>`-`<*version*>`.jar` in the folder `$JETTY_HOME/lib/ext`.
 - Configure Session ID Manager and Session Manager. Please see the following explanations for configuring these managers.
 
 *Configuring the HazelcastSessionIdManager*
@@ -151,7 +155,8 @@ In client/server deployment type, Jetty instances work as clients to an existing
 - Unzip the Hazelcast Enterprise zip file into the folder `$HAZELCAST_ENTERPRISE_ROOT`.
 - Update `$HAZELCAST_ENTERPRISE_ROOT/bin/hazelcast.xml` with the provided Hazelcast Enterprise License Key. 
 - Put `hazelcast.xml` in the folder `$JETTY_HOME/etc`.
-- Put `$HAZELCAST_ENTERPRISE_ROOT/lib/hazelcast-enterprise-all-`<*version*>`.jar`,    `$HAZELCAST_ENTERPRISE_ROOT/lib/hazelcast-enterprise-`<*jettyversion*>`-`<*version*>`.jar` in the folder `$JETTY_HOME/lib/ext`.
+- Put `$HAZELCAST_ENTERPRISE_ROOT/lib/hazelcast-enterprise-all-`<*version*>`.jar`,    `$HAZELCAST_
+ENTERPRISE_ROOT/lib/hazelcast-enterprise-`<*jettyversion*>`-`<*version*>`.jar` in the folder `$JETTY_HOME/lib/ext`.
 - Configure Session ID Manager and Session Manager. Please see below explanations for configuring these managers.
 
 *Configuring the HazelcastSessionIdManager*
@@ -210,7 +215,8 @@ The context filename must be the same as the application name, e.g. `example.war
     </Set>
 ```
 
-- Launch a Hazelcast Instance using `$HAZELCAST_ENTERPRISE_ROOT/bin/server.sh` or `$HAZELCAST_ENTERPRISE_ROOT/bin/server.bat`.
+- Launch a Hazelcast Instance using `$HAZELCAST_ENTERPRISE_ROOT/bin/server.sh` or `$HAZELCAST_
+ENTERPRISE_ROOT/bin/server.bat`.
 
 - Start Tomcat instances with a configured load balancer and deploy the web application.
 

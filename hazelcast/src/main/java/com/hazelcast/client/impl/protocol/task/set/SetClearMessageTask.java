@@ -17,7 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.set;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.SetClearParameters;
+import com.hazelcast.client.impl.protocol.codec.SetClearCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.collection.impl.collection.operations.CollectionClearOperation;
 import com.hazelcast.collection.impl.set.SetService;
@@ -26,13 +26,14 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.SetPermission;
 import com.hazelcast.spi.Operation;
+
 import java.security.Permission;
 
 /**
  * SetClearMessageTask
  */
 public class SetClearMessageTask
-        extends AbstractPartitionMessageTask<SetClearParameters> {
+        extends AbstractPartitionMessageTask<SetClearCodec.RequestParameters> {
 
     public SetClearMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -44,8 +45,13 @@ public class SetClearMessageTask
     }
 
     @Override
-    protected SetClearParameters decodeClientMessage(ClientMessage clientMessage) {
-        return SetClearParameters.decode(clientMessage);
+    protected SetClearCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return SetClearCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return SetClearCodec.encodeResponse();
     }
 
     @Override
@@ -55,7 +61,7 @@ public class SetClearMessageTask
 
     @Override
     public Object[] getParameters() {
-        return new Object[]{parameters.name};
+        return null;
     }
 
     @Override

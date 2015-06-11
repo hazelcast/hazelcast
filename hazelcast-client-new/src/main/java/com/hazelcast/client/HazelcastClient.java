@@ -21,6 +21,7 @@ import com.hazelcast.client.config.XmlClientConfigBuilder;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.HazelcastClientProxy;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.OutOfMemoryHandler;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
 import com.hazelcast.util.EmptyStatement;
 
@@ -188,6 +189,25 @@ public final class HazelcastClient {
         } finally {
             OutOfMemoryErrorDispatcher.deregisterClient(client);
         }
+    }
+
+    /**
+     * Sets <tt>OutOfMemoryHandler</tt> to be used when an <tt>OutOfMemoryError</tt>
+     * is caught by Hazelcast Client threads.
+     * <p/>
+     * <p>
+     * <b>Warning: </b> <tt>OutOfMemoryHandler</tt> may not be called although JVM throws
+     * <tt>OutOfMemoryError</tt>.
+     * Because error may be thrown from an external (user thread) thread
+     * and Hazelcast may not be informed about <tt>OutOfMemoryError</tt>.
+     * </p>
+     *
+     * @param outOfMemoryHandler set when an <tt>OutOfMemoryError</tt> is caught by HazelcastClient threads
+     * @see OutOfMemoryError
+     * @see OutOfMemoryHandler
+     */
+    public static void setOutOfMemoryHandler(OutOfMemoryHandler outOfMemoryHandler) {
+        OutOfMemoryErrorDispatcher.setClientHandler(outOfMemoryHandler);
     }
 
 }

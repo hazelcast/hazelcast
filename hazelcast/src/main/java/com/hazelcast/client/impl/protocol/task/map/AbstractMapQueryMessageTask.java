@@ -60,13 +60,12 @@ public abstract class AbstractMapQueryMessageTask<P> extends AbstractCallableMes
     }
 
     @Override
-    protected final ClientMessage call() throws Exception {
+    protected final Object call() throws Exception {
         Collection<QueryResultEntry> result = new LinkedList<QueryResultEntry>();
-
-        Predicate predicate = getPredicate();
 
         Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
         List<Future> futures = new ArrayList<Future>();
+        Predicate predicate = getPredicate();
         createInvocations(members, futures, predicate);
 
         int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
@@ -84,7 +83,7 @@ public abstract class AbstractMapQueryMessageTask<P> extends AbstractCallableMes
 
     protected abstract Predicate getPredicate();
 
-    protected abstract ClientMessage reduce(Collection<QueryResultEntry> result);
+    protected abstract Object reduce(Collection<QueryResultEntry> result);
 
     private void createInvocations(Collection<MemberImpl> members, List<Future> futures, Predicate predicate) {
         final InternalOperationService operationService = nodeEngine.getOperationService();

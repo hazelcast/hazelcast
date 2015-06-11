@@ -17,8 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.semaphore;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.SemaphoreTryAcquireParameters;
+import com.hazelcast.client.impl.protocol.codec.SemaphoreTryAcquireCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.concurrent.semaphore.SemaphoreService;
 import com.hazelcast.concurrent.semaphore.operations.AcquireOperation;
@@ -32,7 +31,7 @@ import java.security.Permission;
 import java.util.concurrent.TimeUnit;
 
 public class SemaphoreTryAcquireMessageTask
-        extends AbstractPartitionMessageTask<SemaphoreTryAcquireParameters> {
+        extends AbstractPartitionMessageTask<SemaphoreTryAcquireCodec.RequestParameters> {
 
     public SemaphoreTryAcquireMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -44,13 +43,13 @@ public class SemaphoreTryAcquireMessageTask
     }
 
     @Override
-    protected SemaphoreTryAcquireParameters decodeClientMessage(ClientMessage clientMessage) {
-        return SemaphoreTryAcquireParameters.decode(clientMessage);
+    protected SemaphoreTryAcquireCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return SemaphoreTryAcquireCodec.decodeRequest(clientMessage);
     }
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return BooleanResultParameters.encode((Boolean) response);
+        return SemaphoreTryAcquireCodec.encodeResponse((Boolean) response);
     }
 
     @Override
@@ -75,10 +74,10 @@ public class SemaphoreTryAcquireMessageTask
 
     @Override
     public Object[] getParameters() {
-        if (parameters.timeout == -1) {
-            return new Object[]{parameters.permits};
+        if (parameters.timeout > 0) {
+            return new Object[]{parameters.permits, parameters.timeout, TimeUnit.MILLISECONDS};
         }
-        return new Object[]{parameters.permits, parameters.timeout, TimeUnit.MILLISECONDS};
+        return new Object[]{parameters.permits};
     }
 }
 

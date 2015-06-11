@@ -4,19 +4,26 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ILock;
 import com.hazelcast.core.IQueue;
+import com.hazelcast.core.Partition;
 import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.map.impl.MapService;
+import com.hazelcast.spi.AbstractOperation;
+import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.OperationService;
+import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.test.annotation.Repeat;
+import java.util.Set;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -107,7 +114,6 @@ public class InvocationTimeoutTest extends HazelcastTestSupport {
             public void run() {
                 try {
                     boolean result = lock.tryLock(10, TimeUnit.SECONDS);
-                    System.out.println("result: "+result);
                     latch.countDown();
                 } catch (Exception ignored) {
                     ignored.printStackTrace();
@@ -148,6 +154,38 @@ public class InvocationTimeoutTest extends HazelcastTestSupport {
             assertTrue("Thread interrupted flag should be set! " + thread, interruptedFlag.get());
             assertTrue("Lock should be 'locked' state!", lock.isLocked());
         }
+    }
+
+
+    @Test(expected = ExecutionException.class)
+    public void testInvocationThrowsOperationTimeoutExceptionWhenTimeout() throws Exception {
+        final Config config = new Config();
+        config.setProperty(GroupProperties.PROP_OPERATION_CALL_TIMEOUT_MILLIS, "300");
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        HazelcastInstance local = factory.newHazelcastInstance(config);
+        HazelcastInstance remote = factory.newHazelcastInstance(config);
+        warmUpPartitions(local, remote);
+
+        Set<Partition> partitions = remote.getPartitionService().getPartitions();
+        Partition partition = partitions.iterator().next();
+        OperationService service = getOperationService(local);
+        Operation op = new NonRespondingEmptyOperation();
+        op.setPartitionId(partition.getPartitionId());
+        Future f = service.createInvocationBuilder(MapService.SERVICE_NAME, op, partition.getPartitionId()).invoke();
+        f.get(10, TimeUnit.SECONDS);
+    }
+
+    private static class NonRespondingEmptyOperation extends AbstractOperation implements PartitionAwareOperation {
+
+        @Override
+        public void run() throws InterruptedException {
+        }
+
+        @Override
+        public boolean returnsResponse() {
+            return false;
+        }
+
     }
 
     private abstract class OpThread extends Thread {

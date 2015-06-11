@@ -20,7 +20,7 @@ import com.hazelcast.cache.impl.CacheOperationProvider;
 import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.operation.CacheEntryProcessorOperation;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.CacheEntryProcessorParameters;
+import com.hazelcast.client.impl.protocol.codec.CacheEntryProcessorCodec;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
@@ -35,7 +35,7 @@ import java.util.ArrayList;
  * @see CacheEntryProcessorOperation
  */
 public class CacheEntryProcessorMessageTask
-        extends AbstractCacheMessageTask<CacheEntryProcessorParameters> {
+        extends AbstractCacheMessageTask<CacheEntryProcessorCodec.RequestParameters> {
 
     public CacheEntryProcessorMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -45,20 +45,24 @@ public class CacheEntryProcessorMessageTask
     protected Operation prepareOperation() {
         CacheService service = getService(getServiceName());
         CacheOperationProvider operationProvider = getOperationProvider(parameters.name);
-        //completionId now uses CorrelationId where both are non-correlated and unique
-        int completionId = clientMessage.getCorrelationId();
         EntryProcessor entryProcessor = (EntryProcessor) service.toObject(parameters.entryProcessor);
         ArrayList argumentsList = new ArrayList(parameters.arguments.size());
         for (Data data : parameters.arguments) {
             argumentsList.add(service.toObject(data));
         }
         return operationProvider
-                .createEntryProcessorOperation(parameters.key, completionId, entryProcessor, argumentsList.toArray());
+                .createEntryProcessorOperation(parameters.key, parameters.completionId, entryProcessor
+                        , argumentsList.toArray());
     }
 
     @Override
-    protected CacheEntryProcessorParameters decodeClientMessage(ClientMessage clientMessage) {
-        return CacheEntryProcessorParameters.decode(clientMessage);
+    protected CacheEntryProcessorCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return CacheEntryProcessorCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return CacheEntryProcessorCodec.encodeResponse(serializationService.toData(response));
     }
 
     @Override

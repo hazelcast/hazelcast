@@ -18,35 +18,28 @@ package com.hazelcast.client.impl.protocol.task.transaction;
 
 import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.TransactionCommitParameters;
-import com.hazelcast.client.impl.protocol.parameters.VoidResultParameters;
+import com.hazelcast.client.impl.protocol.codec.TransactionCommitCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractTransactionalMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.security.permission.TransactionPermission;
 import com.hazelcast.transaction.TransactionContext;
-import com.hazelcast.transaction.impl.Transaction;
-import com.hazelcast.transaction.impl.TransactionAccessor;
 
 import java.security.Permission;
 
-public class TransactionCommitMessageTask extends AbstractTransactionalMessageTask<TransactionCommitParameters> {
+public class TransactionCommitMessageTask
+        extends AbstractTransactionalMessageTask<TransactionCommitCodec.RequestParameters> {
 
     public TransactionCommitMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected ClientMessage innerCall() throws Exception {
+    protected Object innerCall() throws Exception {
         TransactionContext transactionContext = endpoint.getTransactionContext(parameters.transactionId);
-        if (parameters.prepareAndCommit) {
-            transactionContext.commitTransaction();
-        } else {
-            Transaction transaction = TransactionAccessor.getTransaction(transactionContext);
-            transaction.commit();
-        }
+        transactionContext.commitTransaction();
         endpoint.removeTransactionContext(parameters.transactionId);
-        return VoidResultParameters.encode();
+        return null;
     }
 
     @Override
@@ -55,8 +48,13 @@ public class TransactionCommitMessageTask extends AbstractTransactionalMessageTa
     }
 
     @Override
-    protected TransactionCommitParameters decodeClientMessage(ClientMessage clientMessage) {
-        return TransactionCommitParameters.decode(clientMessage);
+    protected TransactionCommitCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return TransactionCommitCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return TransactionCommitCodec.encodeResponse();
     }
 
     @Override

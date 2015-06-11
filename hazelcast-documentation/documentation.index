@@ -8,6 +8,7 @@ src/WhatsNew.md
 src/GettingStarted.md
 		src/InstallingHZEnterprise.md
 	src/StartingInstanceClient.md
+		src/DeployingOnAmazonEC2.md
 	src/ConfiguringHazelcast.md
 src/Overview.md
 	src/WhyHazelcast.md
@@ -38,6 +39,7 @@ src/Distributed_Data_Structures.md
 	src/MultiMap.md
 	src/Set.md
 	src/List.md
+#	src/RingBuffer.md
 	src/Topic.md
 		src/TopicStatistics.md
 		src/TopicInternals.md
@@ -119,6 +121,7 @@ src/JCache.md
 	src/JCache-CustomExpiryPolicy.md
 	src/JCache-Eviction.md
 #	src/JCache-Eviction-SPI.md
+	src/JCache-NearCache.md
 	src/JCache-AdditionalMethods.md
 	src/JCache-BackupAwareEP.md
 	src/JCache-SpecCompliance.md
@@ -129,8 +132,11 @@ src/IntegratedClustering.md
 		src/JettySessionReplication.md
 	src/SpringIntegration.md
 src/Storage.md
-src/Clients.md
-	src/JavaClient.md
+src/HazelcastJavaClient/JavaClient.md
+src/HazelcastJavaClient/Overview.md
+src/HazelcastJavaClient/Configuration.md
+src/HazelcastJavaClient/SystemProperties.md
+src/OtherClientImplementations.md
 	src/CPlusClient.md
 	src/CSharpClient.md
 	src/RestClient.md
@@ -173,6 +179,7 @@ src/Performance.md
 		src/ThreadingEvent.md
 		src/ThreadingExecutor.md
 		src/ThreadingOperation.md
+	src/SlowOperationDetector.md
 	src/HazelcastPerformanceOnAWS.md
 src/HazelcastSimulator/SimulatorOverview.md
 	src/HazelcastSimulator/InstallingSimulator.md
@@ -200,6 +207,7 @@ src/HazelcastConfiguration/HazelcastConfiguration.md
 	src/HazelcastConfiguration/TopicConfiguration.md
 	src/HazelcastConfiguration/ListConfiguration.md
 	src/HazelcastConfiguration/SetConfiguration.md
+#	src/HazelcastConfiguration/RingBufferConfiguration.md
 	src/HazelcastConfiguration/SemaphoreConfiguration.md
 	src/HazelcastConfiguration/ExecServiceConfiguration.md
 	src/HazelcastConfiguration/SerializationConfiguration.md
@@ -207,11 +215,13 @@ src/HazelcastConfiguration/HazelcastConfiguration.md
 	src/HazelcastConfiguration/ServicesConfiguration.md
 	src/HazelcastConfiguration/MgtCenterConfiguration.md
 	src/HazelcastConfiguration/WANReplConfiguration.md
-	src/PartitionGroupConfig.md
-	src/ListenerConfig.md
-	src/Logging.md
-	src/HazelcastConfiguration/AdvConfProperties.md
+	src/HazelcastConfiguration/EnterpriseWanReplicationConfiguration.md
+	src/HazelcastConfiguration/PartitionGroupConfig.md
+	src/HazelcastConfiguration/ListenerConfig.md
+	src/HazelcastConfiguration/Logging.md
+	src/HazelcastConfiguration/SystemProperties.md
 src/NetworkPartitioning.md
 src/Licenses.md
+src/CommonExceptionTypes.md
 src/FAQ.md
 src/Glossary.md

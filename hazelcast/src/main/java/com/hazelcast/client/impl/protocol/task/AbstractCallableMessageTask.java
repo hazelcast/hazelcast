@@ -33,13 +33,13 @@ public abstract class AbstractCallableMessageTask<P>
     @Override
     public final void processMessage() {
         try {
-            ClientMessage result = call();
-            sendClientMessage(result);
+            Object result = call();
+            sendResponse(result);
         } catch (Exception e) {
             clientEngine.getLogger(getClass()).warning(e);
             sendClientMessage(e);
         }
     }
 
-    protected abstract ClientMessage call() throws Exception;
+    protected abstract Object call() throws Exception;
 }

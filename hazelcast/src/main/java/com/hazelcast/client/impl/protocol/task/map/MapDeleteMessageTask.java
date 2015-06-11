@@ -17,8 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.map;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.MapDeleteParameters;
+import com.hazelcast.client.impl.protocol.codec.MapDeleteCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.map.impl.MapService;
@@ -30,7 +29,8 @@ import com.hazelcast.spi.Operation;
 
 import java.security.Permission;
 
-public class MapDeleteMessageTask extends AbstractPartitionMessageTask<MapDeleteParameters> {
+public class MapDeleteMessageTask
+        extends AbstractPartitionMessageTask<MapDeleteCodec.RequestParameters> {
 
     public MapDeleteMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -44,13 +44,13 @@ public class MapDeleteMessageTask extends AbstractPartitionMessageTask<MapDelete
     }
 
     @Override
-    protected MapDeleteParameters decodeClientMessage(ClientMessage clientMessage) {
-        return MapDeleteParameters.decode(clientMessage);
+    protected MapDeleteCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return MapDeleteCodec.decodeRequest(clientMessage);
     }
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return BooleanResultParameters.encode((Boolean) response);
+        return MapDeleteCodec.encodeResponse();
     }
 
     @Override

@@ -67,10 +67,11 @@ public class AddEntryListenerRequest extends CallableClientRequest implements Re
                     DataAwareEntryEvent dataAwareEntryEvent = (DataAwareEntryEvent) event;
                     Data key = dataAwareEntryEvent.getKeyData();
                     Data value = dataAwareEntryEvent.getNewValueData();
-                    Data mergingValue = dataAwareEntryEvent.getMeringValueData();
+                    Data oldValue = dataAwareEntryEvent.getOldValueData();
+                    Data mergingValue = dataAwareEntryEvent.getMergingValueData();
                     final EntryEventType type = event.getEventType();
                     final String uuid = event.getMember().getUuid();
-                    PortableEntryEvent portableEntryEvent = new PortableEntryEvent(key, value, null, mergingValue
+                    PortableEntryEvent portableEntryEvent = new PortableEntryEvent(key, value, oldValue, mergingValue
                             , type, uuid);
                     endpoint.sendEvent(key, portableEntryEvent, getCallId());
                 }
@@ -78,10 +79,7 @@ public class AddEntryListenerRequest extends CallableClientRequest implements Re
             @Override
             public void onMapEvent(MapEvent event) {
                 if (endpoint.isAlive()) {
-                    final EntryEventType type = event.getEventType();
-                    final String uuid = event.getMember().getUuid();
-                    PortableEntryEvent portableEntryEvent =
-                            new PortableEntryEvent(type, uuid, event.getNumberOfEntriesAffected());
+                    PortableEntryEvent portableEntryEvent = toPortableEntryEvent(event);
                     endpoint.sendEvent(null, portableEntryEvent, getCallId());
                 }
             }
@@ -89,6 +87,12 @@ public class AddEntryListenerRequest extends CallableClientRequest implements Re
         String registrationId = service.addListener(name, listener, key, includeValue, false);
         endpoint.setListenerRegistration(MultiMapService.SERVICE_NAME, name, registrationId);
         return registrationId;
+    }
+
+    private PortableEntryEvent toPortableEntryEvent(MapEvent event) {
+        final EntryEventType type = event.getEventType();
+        final String uuid = event.getMember().getUuid();
+        return new PortableEntryEvent(type, uuid, event.getNumberOfEntriesAffected());
     }
 
     public String getServiceName() {

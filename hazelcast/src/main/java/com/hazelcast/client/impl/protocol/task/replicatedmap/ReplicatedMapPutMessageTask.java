@@ -17,8 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.replicatedmap;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.GenericResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.ReplicatedMapPutParameters;
+import com.hazelcast.client.impl.protocol.codec.ReplicatedMapPutCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
@@ -30,23 +29,30 @@ import com.hazelcast.security.permission.ReplicatedMapPermission;
 import java.security.Permission;
 import java.util.concurrent.TimeUnit;
 
-public class ReplicatedMapPutMessageTask extends AbstractCallableMessageTask<ReplicatedMapPutParameters> {
+public class ReplicatedMapPutMessageTask
+        extends AbstractCallableMessageTask<ReplicatedMapPutCodec.RequestParameters> {
 
     public ReplicatedMapPutMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected ClientMessage call() throws Exception {
+    protected Object call() throws Exception {
         ReplicatedMapService replicatedMapService = getService(ReplicatedMapService.SERVICE_NAME);
         ReplicatedRecordStore recordStore = replicatedMapService.getReplicatedRecordStore(parameters.name, true);
-        Object returnValue = recordStore.put(parameters.key, parameters.value, parameters.ttl, TimeUnit.MILLISECONDS);
-        return GenericResultParameters.encode(serializationService.toData(returnValue));
+        Object returnValue = recordStore.put(serializationService.toObject(parameters.key),
+                serializationService.toObject(parameters.value), parameters.ttl, TimeUnit.MILLISECONDS);
+        return serializationService.toData(returnValue);
     }
 
     @Override
-    protected ReplicatedMapPutParameters decodeClientMessage(ClientMessage clientMessage) {
-        return ReplicatedMapPutParameters.decode(clientMessage);
+    protected ReplicatedMapPutCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return ReplicatedMapPutCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return ReplicatedMapPutCodec.encodeResponse(serializationService.toData(response));
     }
 
     @Override
@@ -71,10 +77,10 @@ public class ReplicatedMapPutMessageTask extends AbstractCallableMessageTask<Rep
 
     @Override
     public Object[] getParameters() {
-        if (parameters.ttl == -1) {
-            return new Object[]{parameters.key, parameters.value};
+        if (parameters.ttl > 0) {
+            return new Object[]{parameters.key, parameters.value, parameters.ttl, TimeUnit.MILLISECONDS};
         }
-        return new Object[]{parameters.key, parameters.value, parameters.ttl, TimeUnit.MILLISECONDS};
+        return new Object[]{parameters.key, parameters.value};
     }
 
 }

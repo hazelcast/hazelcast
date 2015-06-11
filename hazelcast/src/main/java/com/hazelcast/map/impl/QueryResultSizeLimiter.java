@@ -30,10 +30,11 @@ import static java.lang.Math.min;
  * Responsible for limiting result size of queries.
  * <p/>
  * This class defines a hard coded minimum {@link #MINIMUM_MAX_RESULT_LIMIT} as well as a factor {@link #MAX_RESULT_LIMIT_FACTOR}
- * to ensure that the actual result size limit will be a reasonable value. Due to the used hash algorithm the data of a map is not
- * distributed equally on all partitions in the cluster. Since the decision if the {@link QueryResultSizeExceededException} is
- * thrown is made on the local number of partition entries we need a reliable distribution of data. The goal is to prevent false
- * positives, since this may surprise the user. So the exception should never been thrown below the configured limit.
+ * to ensure that the actual result size limit will be a reasonable value. Due to the used hash algorithm the data of
+ * a map is not distributed equally on all partitions in the cluster. Since the decision whether of not the
+ * {@link QueryResultSizeExceededException} is thrown is made on the local number of partition entries, we need a reliable
+ * distribution of data. The goal is to prevent false positives, since those might surprise the user.
+ * So the exception should never been thrown below the configured limit.
  * <p/>
  * The minimum value of {@value #MINIMUM_MAX_RESULT_LIMIT} and the factor of {@value #MAX_RESULT_LIMIT_FACTOR} were determined by
  * testing on which limit the exception was thrown with different map key types.

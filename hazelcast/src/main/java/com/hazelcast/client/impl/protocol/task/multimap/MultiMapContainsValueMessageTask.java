@@ -17,8 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.multimap;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.BooleanResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.MultiMapContainsValueParameters;
+import com.hazelcast.client.impl.protocol.codec.MultiMapContainsValueCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractAllPartitionsMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.multimap.impl.MultiMapService;
@@ -33,9 +32,10 @@ import java.util.Map;
 
 /**
  * Client Protocol Task for handling messages with type id:
- * {@link com.hazelcast.client.impl.protocol.parameters.MultiMapMessageType#MULTIMAP_CONTAINSVALUE}
+ * {@link com.hazelcast.client.impl.protocol.codec.MultiMapMessageType#MULTIMAP_CONTAINSVALUE}
  */
-public class MultiMapContainsValueMessageTask extends AbstractAllPartitionsMessageTask<MultiMapContainsValueParameters> {
+public class MultiMapContainsValueMessageTask
+        extends AbstractAllPartitionsMessageTask<MultiMapContainsValueCodec.RequestParameters> {
 
     public MultiMapContainsValueMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -48,19 +48,24 @@ public class MultiMapContainsValueMessageTask extends AbstractAllPartitionsMessa
     }
 
     @Override
-    protected ClientMessage reduce(Map<Integer, Object> map) {
+    protected Object reduce(Map<Integer, Object> map) {
         boolean found = false;
         for (Object obj : map.values()) {
             if (Boolean.TRUE.equals(obj)) {
                 found = true;
             }
         }
-        return BooleanResultParameters.encode(found);
+        return found;
     }
 
     @Override
-    protected MultiMapContainsValueParameters decodeClientMessage(ClientMessage clientMessage) {
-        return MultiMapContainsValueParameters.decode(clientMessage);
+    protected MultiMapContainsValueCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return MultiMapContainsValueCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return MultiMapContainsValueCodec.encodeResponse((Boolean) response);
     }
 
     @Override

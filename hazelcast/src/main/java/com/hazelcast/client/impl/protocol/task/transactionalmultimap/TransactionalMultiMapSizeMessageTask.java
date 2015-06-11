@@ -17,8 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.transactionalmultimap;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.IntResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.TransactionalMultiMapSizeParameters;
+import com.hazelcast.client.impl.protocol.codec.TransactionalMultiMapSizeCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractTransactionalMessageTask;
 import com.hazelcast.core.TransactionalMultiMap;
 import com.hazelcast.instance.Node;
@@ -31,18 +30,17 @@ import com.hazelcast.transaction.TransactionContext;
 import java.security.Permission;
 
 public class TransactionalMultiMapSizeMessageTask
-        extends AbstractTransactionalMessageTask<TransactionalMultiMapSizeParameters> {
+        extends AbstractTransactionalMessageTask<TransactionalMultiMapSizeCodec.RequestParameters> {
 
     public TransactionalMultiMapSizeMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected ClientMessage innerCall() throws Exception {
+    protected Object innerCall() throws Exception {
         final TransactionContext context = endpoint.getTransactionContext(parameters.txnId);
         TransactionalMultiMap<Object, Object> multiMap = context.getMultiMap(parameters.name);
-        int size = multiMap.size();
-        return IntResultParameters.encode(size);
+        return multiMap.size();
     }
 
     @Override
@@ -51,8 +49,13 @@ public class TransactionalMultiMapSizeMessageTask
     }
 
     @Override
-    protected TransactionalMultiMapSizeParameters decodeClientMessage(ClientMessage clientMessage) {
-        return TransactionalMultiMapSizeParameters.decode(clientMessage);
+    protected TransactionalMultiMapSizeCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return TransactionalMultiMapSizeCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return TransactionalMultiMapSizeCodec.encodeResponse((Integer) response);
     }
 
     @Override

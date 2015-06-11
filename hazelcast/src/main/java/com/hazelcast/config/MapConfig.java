@@ -65,12 +65,12 @@ public class MapConfig {
     public static final long DEFAULT_MIN_EVICTION_CHECK_MILLIS = 100L;
 
     /**
-     * The number of default Time to Live seconds
+     * The number of default Time to Live in seconds
      */
     public static final int DEFAULT_TTL_SECONDS = 0;
 
     /**
-     * The number of default time to wait eviction
+     * The number of default time to wait eviction in seconds
      */
     public static final int DEFAULT_MAX_IDLE_SECONDS = 0;
 
@@ -214,7 +214,7 @@ public class MapConfig {
      * OBJECT : values will be stored in their object forms
      * NATIVE : values will be stored in non-heap region of JVM
      *
-     * @param inMemoryFormat the record type to set
+     * @param inMemoryFormat the record type to set for this {@link com.hazelcast.core.IMap}
      * @throws IllegalArgumentException if inMemoryFormat is null.
      */
     public MapConfig setInMemoryFormat(InMemoryFormat inMemoryFormat) {
@@ -233,11 +233,11 @@ public class MapConfig {
     }
 
     /**
-     * Number of synchronous backups. If 1 is set as the backup-count for example,
+     * Number of synchronous backups. For example, if 1 is set as the backup count,
      * then all entries of the map will be copied to another JVM for
      * fail-safety. 0 means no sync backup.
      *
-     * @param backupCount the backupCount to set for this {@link com.hazelcast.core.IMap}
+     * @param backupCount the number of synchronous backups to set for this {@link com.hazelcast.core.IMap}
      * @see #setAsyncBackupCount(int)
      */
     public MapConfig setBackupCount(final int backupCount) {
@@ -246,9 +246,9 @@ public class MapConfig {
     }
 
     /**
-     * Returns the asynchronous backup count.
+     * Returns the asynchronous backup count for this {@link com.hazelcast.core.IMap}.
      *
-     * @return the asyncBackupCount
+     * @return the asynchronous backup count
      * @see #setBackupCount(int)
      */
     public int getAsyncBackupCount() {
@@ -256,7 +256,7 @@ public class MapConfig {
     }
 
     /**
-     * Sets the number of asynchronous backups. 0 means no backups
+     * Sets the number of asynchronous backups. 0 means no backups.
      *
      * @param asyncBackupCount the number of asynchronous synchronous backups to set
      * @return the updated CacheConfig
@@ -274,7 +274,7 @@ public class MapConfig {
     /**
      * Returns the total number of backups: backupCount plus asyncBackupCount.
      *
-     * @return the total number of backups: backupCount plus asyncBackupCount
+     * @return the total number of backups: synchronous + asynchronous
      */
     public int getTotalBackupCount() {
         return backupCount + asyncBackupCount;
@@ -430,46 +430,101 @@ public class MapConfig {
         return this;
     }
 
+    /**
+     * Returns the near cache configuration
+     *
+     * @return the near cache configuration
+     */
     public NearCacheConfig getNearCacheConfig() {
         return nearCacheConfig;
     }
 
+    /**
+     * Sets the near cache configuration
+     *
+     * @param nearCacheConfig the near cache configuration
+     * @return the updated map configuration
+     */
     public MapConfig setNearCacheConfig(NearCacheConfig nearCacheConfig) {
         this.nearCacheConfig = nearCacheConfig;
         return this;
     }
 
+    /**
+     * Gets the map merge policy {@link com.hazelcast.map.merge.MapMergePolicy}
+     *
+     * @return the updated map configuration
+     */
     public String getMergePolicy() {
         return mergePolicy;
     }
 
+    /**
+     * Sets the map merge policy {@link com.hazelcast.map.merge.MapMergePolicy}
+     *
+     * @param mergePolicy the map merge policy to set
+     * @return the updated map configuration
+     */
     public MapConfig setMergePolicy(String mergePolicy) {
         this.mergePolicy = mergePolicy;
         return this;
     }
 
+    /**
+     * Checks if statistics are enabled for this map.
+     *
+     * @return True if statistics are enabled, false otherwise.
+     */
     public boolean isStatisticsEnabled() {
         return statisticsEnabled;
     }
 
+    /**
+     * Sets statistics to enabled or disabled for this map.
+     *
+     * @param statisticsEnabled True to enable map statistics, false to disable.
+     * @return The current map config instance.
+     */
     public MapConfig setStatisticsEnabled(boolean statisticsEnabled) {
         this.statisticsEnabled = statisticsEnabled;
         return this;
     }
 
+    /**
+     * Checks if read-backup-data (reading local backup entires) is enabled for this map.
+     *
+     * @return True if read-backup-data is enabled, false otherwise.
+     */
     public boolean isReadBackupData() {
         return readBackupData;
     }
 
+    /**
+     * Sets read-backup-data (reading local backup entires) for this map.
+     *
+     * @param readBackupData True to enable read-backup-data, false to disable.
+     * @return The current map config instance.
+     */
     public MapConfig setReadBackupData(boolean readBackupData) {
         this.readBackupData = readBackupData;
         return this;
     }
 
+    /**
+     * Gets the Wan target replication reference.
+     *
+     * @return The Wan target replication reference.
+     */
     public WanReplicationRef getWanReplicationRef() {
         return wanReplicationRef;
     }
 
+    /**
+     * Sets the Wan target replication reference.
+     *
+     * @param wanReplicationRef the Wan target replication reference.
+     * @return The current map config instance.
+     */
     public MapConfig setWanReplicationRef(WanReplicationRef wanReplicationRef) {
         this.wanReplicationRef = wanReplicationRef;
         return this;
@@ -531,7 +586,7 @@ public class MapConfig {
     /**
      * Adds a new {@code queryCacheConfig} to this {@code MapConfig}.
      *
-     * @param queryCacheConfig config to be added.
+     * @param queryCacheConfig the config to be added.
      * @return this {@code MapConfig} instance.
      * @throws java.lang.IllegalArgumentException if there is already a {@code QueryCache}
      *                                            with the same {@code QueryCacheConfig#name}.
@@ -578,6 +633,11 @@ public class MapConfig {
         return this;
     }
 
+    /**
+     * Checks if near cache is enabled
+     *
+     * @return true if near cache is enabled, false otherwise
+     */
     public boolean isNearCacheEnabled() {
         return nearCacheConfig != null;
     }

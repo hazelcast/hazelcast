@@ -25,14 +25,12 @@ import com.hazelcast.core.MapEvent;
 import com.hazelcast.core.MultiMap;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
+import java.util.concurrent.CountDownLatch;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-import org.junit.Ignore;
-
-import java.util.concurrent.CountDownLatch;
 
 import static com.hazelcast.test.HazelcastTestSupport.assertOpenEventually;
 import static com.hazelcast.test.HazelcastTestSupport.randomString;
@@ -330,7 +328,7 @@ public class ClientMultiMapListenersTest {
         }
 
         public void entryRemoved(EntryEvent event) {
-            if (event.getValue() != null) {
+            if (event.getOldValue() != null) {
                 removeLatch.countDown();
             }
         }
@@ -374,7 +372,7 @@ public class ClientMultiMapListenersTest {
         }
 
         public void entryRemoved(EntryEvent event) {
-            if (event.getValue() == null) {
+            if (event.getOldValue() == null) {
                 removeLatch.countDown();
             }
         }

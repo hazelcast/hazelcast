@@ -38,6 +38,11 @@ public class NoSuchMessageTask
     }
 
     @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return null;
+    }
+
+    @Override
     protected void processMessage() {
         logger.warning("Unrecognized client message received with type: 0x"
                 + Integer.toHexString(parameters.getMessageType()));

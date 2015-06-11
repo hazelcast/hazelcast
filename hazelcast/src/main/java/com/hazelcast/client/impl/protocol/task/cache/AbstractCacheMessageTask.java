@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.impl.protocol.task.cache;
 
+import com.hazelcast.cache.CacheNotExistsException;
 import com.hazelcast.cache.impl.CacheOperationProvider;
 import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.ICacheService;
@@ -41,6 +42,10 @@ public abstract class AbstractCacheMessageTask<P>
     protected CacheOperationProvider getOperationProvider(String name) {
         ICacheService service = getService(CacheService.SERVICE_NAME);
         final CacheConfig cacheConfig = service.getCacheConfig(name);
+        if (cacheConfig == null) {
+            throw new CacheNotExistsException("Cache is already destroyed or not created yet, on "
+                    + nodeEngine.getLocalMember());
+        }
         final InMemoryFormat inMemoryFormat = cacheConfig.getInMemoryFormat();
         return service.getCacheOperationProvider(name, inMemoryFormat);
     }

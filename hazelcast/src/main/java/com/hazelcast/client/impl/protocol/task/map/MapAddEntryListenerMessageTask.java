@@ -17,14 +17,15 @@
 package com.hazelcast.client.impl.protocol.task.map;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.MapAddEntryListenerParameters;
+import com.hazelcast.client.impl.protocol.codec.MapAddEntryListenerCodec;
 import com.hazelcast.instance.Node;
 import com.hazelcast.map.impl.EntryEventFilter;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.EventFilter;
 
 public class MapAddEntryListenerMessageTask
-        extends AbstractMapAddEntryListenerMessageTask<MapAddEntryListenerParameters> {
+        extends AbstractMapAddEntryListenerMessageTask<MapAddEntryListenerCodec.RequestParameters> {
 
     public MapAddEntryListenerMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -36,13 +37,25 @@ public class MapAddEntryListenerMessageTask
     }
 
     @Override
-    protected MapAddEntryListenerParameters decodeClientMessage(ClientMessage clientMessage) {
-        return MapAddEntryListenerParameters.decode(clientMessage);
+    protected ClientMessage encodeEvent(Data keyData, Data newValueData, Data oldValueData,
+                                        Data meringValueData, int type, String uuid, int numberOfAffectedEntries) {
+        return MapAddEntryListenerCodec.encodeEntryEvent(keyData, newValueData,
+                oldValueData, meringValueData, type, uuid, numberOfAffectedEntries);
+    }
+
+    @Override
+    protected MapAddEntryListenerCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return MapAddEntryListenerCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return MapAddEntryListenerCodec.encodeResponse((String) response);
     }
 
     @Override
     public Object[] getParameters() {
-            return new Object[]{null, parameters.includeValue};
+        return new Object[]{null, parameters.includeValue};
     }
 
 

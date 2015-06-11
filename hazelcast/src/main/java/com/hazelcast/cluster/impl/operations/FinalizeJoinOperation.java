@@ -36,6 +36,8 @@ public class FinalizeJoinOperation extends MemberInfoUpdateOperation implements 
     public static final int FINALIZE_JOIN_MAX_TIMEOUT = 60;
 
     private PostJoinOperation postJoinOp;
+    private String clusterId;
+    private long clusterStartTime;
 
     public FinalizeJoinOperation() {
     }
@@ -43,6 +45,14 @@ public class FinalizeJoinOperation extends MemberInfoUpdateOperation implements 
     public FinalizeJoinOperation(Collection<MemberInfo> members, PostJoinOperation postJoinOp, long masterTime) {
         super(members, masterTime, true);
         this.postJoinOp = postJoinOp;
+    }
+
+    public FinalizeJoinOperation(Collection<MemberInfo> members, PostJoinOperation postJoinOp,
+                                 long masterTime, String clusterId, long clusterStartTime) {
+        super(members, masterTime, true);
+        this.postJoinOp = postJoinOp;
+        this.clusterId = clusterId;
+        this.clusterStartTime  = clusterStartTime;
     }
 
     public FinalizeJoinOperation(Collection<MemberInfo> members, PostJoinOperation postJoinOp,
@@ -66,6 +76,9 @@ public class FinalizeJoinOperation extends MemberInfoUpdateOperation implements 
         final NodeEngineImpl nodeEngine = clusterService.getNodeEngine();
         final Operation[] postJoinOperations = nodeEngine.getPostJoinOperations();
         final OperationService operationService = nodeEngine.getOperationService();
+
+        clusterService.setClusterId(clusterId);
+        clusterService.getClusterClock().setClusterStartTime(clusterStartTime);
 
         if (postJoinOperations != null && postJoinOperations.length > 0) {
             final Collection<MemberImpl> members = clusterService.getMemberList();
@@ -95,6 +108,8 @@ public class FinalizeJoinOperation extends MemberInfoUpdateOperation implements 
         if (hasPJOp) {
             postJoinOp.writeData(out);
         }
+        out.writeUTF(clusterId);
+        out.writeLong(clusterStartTime);
     }
 
     @Override
@@ -105,6 +120,8 @@ public class FinalizeJoinOperation extends MemberInfoUpdateOperation implements 
             postJoinOp = new PostJoinOperation();
             postJoinOp.readData(in);
         }
+        clusterId = in.readUTF();
+        clusterStartTime = in.readLong();
     }
 
     @Override

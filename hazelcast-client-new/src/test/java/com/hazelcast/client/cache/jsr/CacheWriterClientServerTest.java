@@ -21,11 +21,10 @@ import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-import org.junit.Ignore;
+
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-@Ignore
 public class CacheWriterClientServerTest
         extends org.jsr107.tck.integration.CacheWriterClientServerTest {
 

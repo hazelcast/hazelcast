@@ -21,9 +21,8 @@ import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.ClientMessageType;
+import com.hazelcast.client.impl.protocol.codec.ClientRemoveAllListenersCodec;
 import com.hazelcast.client.impl.protocol.parameters.ExceptionResultParameters;
-import com.hazelcast.client.impl.protocol.parameters.RemoveAllListenersParameters;
 import com.hazelcast.client.spi.ClientExecutionService;
 import com.hazelcast.client.spi.ClientInvocationService;
 import com.hazelcast.client.spi.ClientPartitionService;
@@ -167,7 +166,7 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
         while (iter.hasNext()) {
             final Map.Entry<Integer, ClientInvocation> entry = iter.next();
             final ClientInvocation invocation = entry.getValue();
-            if (invocation.getSendConnection().equals(connection)) {
+            if (connection.equals(invocation.getSendConnection())) {
                 iter.remove();
                 invocation.notifyException(responseCtor.createNew(null));
                 eventHandlerMap.remove(entry.getKey());
@@ -176,7 +175,7 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
         final Iterator<ClientInvocation> iterator = eventHandlerMap.values().iterator();
         while (iterator.hasNext()) {
             final ClientInvocation invocation = iterator.next();
-            if (invocation.getSendConnection().equals(connection)) {
+            if (connection.equals(invocation.getSendConnection())) {
                 iterator.remove();
                 invocation.notifyException(responseCtor.createNew(null));
             }
@@ -191,7 +190,7 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
 
     @Override
     public void heartBeatStopped(Connection connection) {
-        ClientMessage request = RemoveAllListenersParameters.encode();
+        ClientMessage request = ClientRemoveAllListenersCodec.encodeRequest();
         ClientInvocation removeListenerInvocation = new ClientInvocation(client, request, connection);
         removeListenerInvocation.setBypassHeartbeatCheck(true);
         removeListenerInvocation.invoke();
@@ -235,6 +234,10 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
                 }
             }, connection);
         }
+    }
+
+    public boolean isShutdown() {
+        return isShutdown;
     }
 
     public void shutdown() {
@@ -364,11 +367,10 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
                 return;
             }
 
-            if (ClientMessageType.EXCEPTION.id() == clientMessage.getMessageType()) {
+            if (ExceptionResultParameters.TYPE == clientMessage.getMessageType()) {
                 ExceptionResultParameters exceptionResultParameters = ExceptionResultParameters.decode(clientMessage);
                 Throwable exception;
-                boolean hasCause = !exceptionResultParameters.causeClassName.equals("null");
-                if (hasCause) {
+                if (exceptionResultParameters.causeClassName != null) {
                     Class<?> causeClazz = Class.forName(exceptionResultParameters.causeClassName);
                     Constructor<?> causeConstructor = causeClazz.getDeclaredConstructor(new Class[]{String.class});
                     causeConstructor.setAccessible(true);

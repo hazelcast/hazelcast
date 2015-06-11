@@ -17,8 +17,7 @@
 package com.hazelcast.client.impl.protocol.task.queue;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.QueueClearParameters;
-import com.hazelcast.client.impl.protocol.parameters.VoidResultParameters;
+import com.hazelcast.client.impl.protocol.codec.QueueClearCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.collection.impl.queue.operations.ClearOperation;
@@ -32,11 +31,10 @@ import java.security.Permission;
 
 /**
  * Client Protocol Task for handling messages with type id:
- * {@link com.hazelcast.client.impl.protocol.parameters.QueueMessageType#QUEUE_CLEAR}
- *
+ * {@link com.hazelcast.client.impl.protocol.codec.QueueMessageType#QUEUE_CLEAR}
  */
 public class QueueClearMessageTask
-        extends AbstractPartitionMessageTask<QueueClearParameters> {
+        extends AbstractPartitionMessageTask<QueueClearCodec.RequestParameters> {
 
     public QueueClearMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -48,13 +46,13 @@ public class QueueClearMessageTask
     }
 
     @Override
-    protected QueueClearParameters decodeClientMessage(ClientMessage clientMessage) {
-        return QueueClearParameters.decode(clientMessage);
+    protected QueueClearCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return QueueClearCodec.decodeRequest(clientMessage);
     }
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return VoidResultParameters.encode();
+        return QueueClearCodec.encodeResponse();
     }
 
     @Override

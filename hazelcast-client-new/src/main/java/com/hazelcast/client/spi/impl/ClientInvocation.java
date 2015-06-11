@@ -16,11 +16,11 @@
 
 package com.hazelcast.client.spi.impl;
 
+import com.hazelcast.client.AuthenticationException;
 import com.hazelcast.client.HazelcastClientNotActiveException;
 import com.hazelcast.client.config.ClientProperties;
 import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
-import com.hazelcast.client.impl.client.RetryableRequest;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.spi.ClientExecutionService;
 import com.hazelcast.client.spi.ClientInvocationService;
@@ -197,13 +197,15 @@ public class ClientInvocation implements Runnable {
             return;
         }
 
-        if (exception instanceof IOException || exception instanceof HazelcastInstanceNotActiveException) {
+        if (exception instanceof IOException
+                || exception instanceof HazelcastInstanceNotActiveException
+                || exception instanceof AuthenticationException) {
             if (handleRetry()) {
                 return;
             }
         }
         if (exception instanceof RetryableHazelcastException) {
-            if (clientMessage instanceof RetryableRequest || invocationService.isRedoOperation()) {
+            if (clientMessage.isRetryable() || invocationService.isRedoOperation()) {
                 if (handleRetry()) {
                     return;
                 }

@@ -238,7 +238,7 @@ public final class SlowOperationDetector {
             } else if (!isFirstLog) {
                 logWithoutStackTrace(log, totalInvocations);
             } else {
-                logWithConfigHint(log, totalInvocations);
+                logWithConfigHint(log);
             }
         }
 
@@ -260,10 +260,10 @@ public final class SlowOperationDetector {
             }
         }
 
-        private void logWithConfigHint(SlowOperationLog log, int totalInvocations) {
-            // print a hint once how to enable logging of stack traces
+        private void logWithConfigHint(SlowOperationLog log) {
+            // print a hint once how to enable logging of stacktraces
             logger.warning(format("Slow operation detected: %s"
-                            + "%nHint: You can enable the logging of stack traces with the following config property:"
+                            + "%nHint: You can enable the logging of stacktraces with the following config property: "
                             + GroupProperties.PROP_SLOW_OPERATION_DETECTOR_STACK_TRACE_LOGGING_ENABLED,
                     log.operation));
             isFirstLog = false;

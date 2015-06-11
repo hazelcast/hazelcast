@@ -16,7 +16,6 @@
 
 package com.hazelcast.transaction.client;
 
-import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.security.permission.TransactionPermission;
 
@@ -29,8 +28,7 @@ public class RollbackTransactionRequest extends BaseTransactionRequest {
 
     @Override
     public Object innerCall() throws Exception {
-        final ClientEndpoint endpoint = getEndpoint();
-        endpoint.getTransactionContext(txnId).rollbackTransaction();
+        getTransactionContext().rollbackTransaction();
         endpoint.removeTransactionContext(txnId);
         return null;
     }

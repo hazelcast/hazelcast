@@ -17,14 +17,11 @@
 package com.hazelcast.client.impl.protocol.task.replicatedmap;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.EntryEventParameters;
-import com.hazelcast.client.impl.protocol.parameters.AddListenerResultParameters;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.MapEvent;
 import com.hazelcast.instance.Node;
-import com.hazelcast.map.impl.DataAwareEntryEvent;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
@@ -44,7 +41,7 @@ public abstract class AbstractReplicatedMapAddEntryListenerMessageTask<Parameter
     }
 
     @Override
-    protected ClientMessage call() {
+    protected Object call() {
         ReplicatedMapService replicatedMapService = getService(ReplicatedMapService.SERVICE_NAME);
         ReplicatedRecordStore recordStore = replicatedMapService.getReplicatedRecordStore(getDistributedObjectName(), true);
 
@@ -57,7 +54,7 @@ public abstract class AbstractReplicatedMapAddEntryListenerMessageTask<Parameter
             registrationId = recordStore.addEntryListener(this, predicate, getKey());
         }
         endpoint.setListenerRegistration(ReplicatedMapService.SERVICE_NAME, getDistributedObjectName(), registrationId);
-        return AddListenerResultParameters.encode(registrationId);
+        return registrationId;
     }
 
     @Override
@@ -81,19 +78,20 @@ public abstract class AbstractReplicatedMapAddEntryListenerMessageTask<Parameter
 
     private void handleEvent(EntryEvent<Object, Object> event) {
         if (endpoint.isAlive()) {
-            DataAwareEntryEvent dataAwareEntryEvent = (DataAwareEntryEvent) event;
-            final Data key = dataAwareEntryEvent.getKeyData();
-            final Data newValue = dataAwareEntryEvent.getNewValueData();
-            final Data oldValue = dataAwareEntryEvent.getOldValueData();
-            final Data mergingValue = dataAwareEntryEvent.getMeringValueData();
-            ClientMessage entryEvent = EntryEventParameters.encode(key
+            Data key = serializationService.toData(event.getKey());
+            Data newValue = serializationService.toData(event.getValue());
+            Data oldValue = serializationService.toData(event.getOldValue());
+            Data mergingValue = serializationService.toData(event.getMergingValue());
+
+            ClientMessage clientMessage = encodeEvent(key
                     , newValue, oldValue, mergingValue, event.getEventType().getType(),
                     event.getMember().getUuid(), 1);
-
-            Data partitionKey = serializationService.toData(key);
-            sendClientMessage(partitionKey, entryEvent);
+            sendClientMessage(key, clientMessage);
         }
     }
+
+    protected abstract ClientMessage encodeEvent(Data key, Data newValue, Data oldValue,
+                                                 Data mergingValue, int type, String uuid, int numberOfAffectedEntries);
 
     @Override
     public void entryAdded(EntryEvent<Object, Object> event) {

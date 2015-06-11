@@ -34,7 +34,6 @@ import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.partition.impl.InternalPartitionServiceState;
-import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
@@ -42,6 +41,8 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.ComparisonFailure;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Modifier;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -55,10 +56,13 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.test.TestPartitionUtils.getInternalPartitionServiceState;
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -75,6 +79,22 @@ public abstract class HazelcastTestSupport {
     }
 
     private TestHazelcastInstanceFactory factory;
+
+
+    public static void assertUtilityConstructor(Class clazz) {
+        Constructor[] constructors = clazz.getDeclaredConstructors();
+        assertEquals("there are more than 1 constructors", 1, constructors.length);
+
+        Constructor constructor = constructors[0];
+        int modifiers = constructor.getModifiers();
+        assertTrue("access modifier is not private", Modifier.isPrivate(modifiers));
+
+        constructor.setAccessible(true);
+        try {
+            constructor.newInstance();
+        } catch (Exception e) {
+        }
+    }
 
     public HazelcastInstance createHazelcastInstance() {
         return createHazelcastInstance(new Config());
@@ -121,7 +141,7 @@ public abstract class HazelcastTestSupport {
         return node.clusterService.getThisAddress();
     }
 
-    public static Packet toPacket(HazelcastInstance hz, Operation operation) {
+    public static Packet toPacket(HazelcastInstance hz, Operation operation){
         SerializationService serializationService = getSerializationService(hz);
         ConnectionManager connectionManager = getConnectionManager(hz);
 
@@ -132,12 +152,12 @@ public abstract class HazelcastTestSupport {
         return packet;
     }
 
-    public static ConnectionManager getConnectionManager(HazelcastInstance hz) {
+    public static ConnectionManager getConnectionManager(HazelcastInstance hz){
         Node node = getNode(hz);
         return node.connectionManager;
     }
 
-    public static ClusterService getClusterService(HazelcastInstance hz) {
+    public static ClusterService getClusterService(HazelcastInstance hz){
         Node node = getNode(hz);
         return node.clusterService;
     }
@@ -198,7 +218,7 @@ public abstract class HazelcastTestSupport {
 
     public static void sleepMillis(int millis) {
         try {
-            TimeUnit.MILLISECONDS.sleep(millis);
+            MILLISECONDS.sleep(millis);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }
@@ -212,14 +232,49 @@ public abstract class HazelcastTestSupport {
         }
     }
 
-    public static void sleepAtLeastMillis(int millis) {
-        final long targetTime = System.currentTimeMillis() + millis + 1;
-        while (System.currentTimeMillis() < targetTime) {
-            sleepMillis(1);
+    /**
+     * Sleeps for the given amount of time and after that, sets stop to true.
+     *
+     * If stop is changed to true while sleeping, the calls returns before waiting the full sleeping period.
+     *
+     * This method is very useful for stress tests that run for a certain amount of time. But if one of the stress tests
+     * runs into a failure, the test should be aborted immediately. This is done by letting the thread set stop to true.
+     *
+     * @param stop
+     * @param durationSeconds
+     */
+    public static void sleepAndStop(AtomicBoolean stop, long durationSeconds) {
+        for (int k = 0; k < durationSeconds; k++) {
+            if (stop.get()) {
+                return;
+            }
+            sleepSeconds(1);
         }
+        stop.set(true);
     }
 
-    public static void sleepAtLeastSeconds(int seconds) {
+    public static void sleepAtLeastMillis(long sleepFor) {
+       boolean interrupted = false;
+       try {
+           long remainingNanos = MILLISECONDS.toNanos(sleepFor);
+           final long sleepUntil = System.nanoTime() + remainingNanos;
+           while (remainingNanos > 0) {
+               try {
+                   NANOSECONDS.sleep(remainingNanos);
+               } catch (InterruptedException e) {
+                   interrupted = true;
+               } finally {
+                   remainingNanos = sleepUntil - System.nanoTime();
+               }
+           }
+       } finally {
+           if (interrupted) {
+               Thread.currentThread().interrupt();
+           }
+       }
+    }
+
+    public static void sleepAtLeastSeconds(long seconds) {
         sleepAtLeastMillis(seconds * 1000);
     }
 
@@ -357,6 +412,7 @@ public abstract class HazelcastTestSupport {
     protected static String generateKeyOwnedBy(HazelcastInstance instance, boolean generateOwnedKey) {
         Cluster cluster = instance.getCluster();
         checkMemberCount(generateOwnedKey, cluster);
+        checkPartitionCountGreaterOrEqualMemberCount(instance);
 
         Member localMember = cluster.getLocalMember();
         PartitionService partitionService = instance.getPartitionService();
@@ -366,6 +422,18 @@ public abstract class HazelcastTestSupport {
             if (comparePartitionOwnership(generateOwnedKey, localMember, partition)) {
                 return id;
             }
+        }
+    }
+
+    private static void checkPartitionCountGreaterOrEqualMemberCount(HazelcastInstance instance) {
+        Cluster cluster = instance.getCluster();
+        int memberCount = cluster.getMembers().size();
+
+        InternalPartitionService internalPartitionService = getPartitionService(instance);
+        int partitionCount = internalPartitionService.getPartitionCount();
+
+        if (partitionCount < memberCount) {
+            throw new UnsupportedOperationException("Partition count should be equal or greater than member count!");
         }
     }
 
@@ -492,9 +560,10 @@ public abstract class HazelcastTestSupport {
         message.append((value == null) ? "null" : value.getClass().getName()).append("<").append(valueString).append(">");
     }
 
-    public static void assertInstanceOf(Class clazz, Object o) {
+    public static <E> E assertInstanceOf(Class<E> clazz, Object o) {
         Assert.assertNotNull(o);
         assertTrue(o + " is not an instanceof " + clazz.getName(), clazz.isAssignableFrom(o.getClass()));
+        return (E)o;
     }
 
     public static void assertJoinable(Thread... threads) {
@@ -633,6 +702,10 @@ public abstract class HazelcastTestSupport {
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public static void assertTrueFiveSeconds(AssertTask task) {
+        assertTrueAllTheTime(task, 5);
     }
 
     public static void assertTrueAllTheTime(AssertTask task, long durationSeconds) {

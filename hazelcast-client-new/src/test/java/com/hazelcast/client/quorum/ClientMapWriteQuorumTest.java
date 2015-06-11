@@ -32,7 +32,6 @@ import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -362,7 +361,6 @@ public class ClientMapWriteQuorumTest {
     }
 
     @Test(expected = QuorumException.class)
-    @Ignore
     public void testExecuteOnEntriesOperationThrowsExceptionWhenQuorumSizeNotMet() throws Exception {
         map4.executeOnEntries(new LoggingEntryProcessor());
     }

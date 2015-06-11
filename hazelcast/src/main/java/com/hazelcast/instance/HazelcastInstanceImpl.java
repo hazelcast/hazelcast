@@ -70,12 +70,15 @@ import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.ringbuffer.impl.RingbufferService;
 import com.hazelcast.spi.ProxyService;
 import com.hazelcast.spi.annotation.PrivateApi;
+import com.hazelcast.topic.impl.reliable.ReliableTopicService;
 import com.hazelcast.topic.impl.TopicService;
+import com.hazelcast.transaction.HazelcastXAResource;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionManagerService;
 import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.TransactionalTask;
+import com.hazelcast.transaction.impl.xa.XAService;
 import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.ExceptionUtil;
 import java.util.Collection;
@@ -199,6 +202,12 @@ public class HazelcastInstanceImpl implements HazelcastInstance {
     public <E> ITopic<E> getTopic(String name) {
         checkNotNull(name, "Retrieving a topic instance with a null name is not allowed!");
         return getDistributedObject(TopicService.SERVICE_NAME, name);
+    }
+
+    @Override
+    public <E> ITopic<E> getReliableTopic(String name) {
+        checkNotNull(name, "Retrieving a topic instance with a null name is not allowed!");
+        return getDistributedObject(ReliableTopicService.SERVICE_NAME, name);
     }
 
     @Override
@@ -399,6 +408,11 @@ public class HazelcastInstanceImpl implements HazelcastInstance {
 
     public MemoryStats getMemoryStats() {
         return node.getNodeExtension().getMemoryStats();
+    }
+
+    @Override
+    public HazelcastXAResource getXAResource() {
+        return getDistributedObject(XAService.SERVICE_NAME, XAService.SERVICE_NAME);
     }
 
     @Override

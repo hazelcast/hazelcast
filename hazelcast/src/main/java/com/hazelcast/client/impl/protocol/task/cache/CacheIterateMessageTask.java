@@ -19,7 +19,7 @@ package com.hazelcast.client.impl.protocol.task.cache;
 import com.hazelcast.cache.impl.CacheOperationProvider;
 import com.hazelcast.cache.impl.operation.CacheKeyIteratorOperation;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.CacheIterateParameters;
+import com.hazelcast.client.impl.protocol.codec.CacheIterateCodec;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.Operation;
@@ -30,7 +30,7 @@ import com.hazelcast.spi.Operation;
  * @see CacheKeyIteratorOperation
  */
 public class CacheIterateMessageTask
-        extends AbstractCacheMessageTask<CacheIterateParameters> {
+        extends AbstractCacheMessageTask<CacheIterateCodec.RequestParameters> {
 
     public CacheIterateMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -43,8 +43,13 @@ public class CacheIterateMessageTask
     }
 
     @Override
-    protected CacheIterateParameters decodeClientMessage(ClientMessage clientMessage) {
-        return CacheIterateParameters.decode(clientMessage);
+    protected CacheIterateCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return CacheIterateCodec.decodeRequest(clientMessage);
+    }
+
+    @Override
+    protected ClientMessage encodeResponse(Object response) {
+        return CacheIterateCodec.encodeResponse(serializationService.toData(response));
     }
 
     @Override

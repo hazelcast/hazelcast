@@ -26,7 +26,7 @@
     <parent>
         <groupId>com.hazelcast</groupId>
         <artifactId>hazelcast-root</artifactId>
-        <version>3.5-SNAPSHOT</version>
+        <version>3.6-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -120,6 +120,8 @@
                                     !org.junit,
                                     !com.eclipsesource.json,
                                     sun.misc;resolution:=optional,
+                                    javax.cache;resolution:=optional,
+                                    javax.cache.*;resolution:=optional,
                                     org.apache.log4j;resolution:=optional,
                                     org.apache.logging.log4j;resolution:=optional,
                                     org.apache.logging.log4j.*;resolution:=optional,
@@ -154,6 +156,7 @@
                         <exclude>**/*.html</exclude>
                         <exclude>**/*.sh</exclude>
                         <exclude>**/*.bat</exclude>
+                        <exclude>META-INF/services/javax.annotation.processing.Processor</exclude>
                     </excludes>
                 </configuration>
                 <executions>
@@ -332,7 +335,7 @@
         <dependency>
             <groupId>com.hazelcast</groupId>
             <artifactId>hazelcast-code-generator</artifactId>
-            <version>3.5-SNAPSHOT</version>
+            <version>${version}</version>
         </dependency>
     </dependencies>
 
