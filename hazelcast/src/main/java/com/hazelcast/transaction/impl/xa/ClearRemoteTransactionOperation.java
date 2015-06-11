@@ -29,7 +29,6 @@ public class ClearRemoteTransactionOperation extends Operation implements Backup
     private Data xidData;
 
     private transient SerializableXID xid;
-    private transient boolean returnsResponse = true;
 
     public ClearRemoteTransactionOperation() {
     }
@@ -40,7 +39,6 @@ public class ClearRemoteTransactionOperation extends Operation implements Backup
 
     @Override
     public void beforeRun() throws Exception {
-        returnsResponse = false;
         xid = getNodeEngine().toObject(xidData);
     }
 
@@ -57,7 +55,7 @@ public class ClearRemoteTransactionOperation extends Operation implements Backup
 
     @Override
     public boolean returnsResponse() {
-        return returnsResponse;
+        return true;
     }
 
     @Override
