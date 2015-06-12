@@ -69,6 +69,9 @@ public class ExponentialBackoffSleeperTest
         String realSleepTime = "actual sleep time was " + time;
         assertTrue(realSleepTime, time <= 60L);
         assertTrue(realSleepTime, time >= 20L);
-        assertTrue(sleeper.isTimedOut());
+        assertTrue(realSleepTime + ", but the sleeper isn't detecting it's timed out", sleeper.isTimedOut());
+
+        // verify that no further sleeps are done after the timer has timed out
+        assertEquals(0L, sleeper.sleep());
     }
 }

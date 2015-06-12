@@ -63,7 +63,7 @@ public final class ExponentialBackoffSleeper {
      *         construction of the sleeper instance than the specified timeout.
      */
     public boolean isTimedOut() {
-        return Clock.currentTimeMillis() >  timeoutTimestamp;
+        return Clock.currentTimeMillis() >= timeoutTimestamp;
     }
 
     /**
@@ -74,6 +74,11 @@ public final class ExponentialBackoffSleeper {
      */
     public long sleep() throws InterruptedException {
         long timeToTimeout = timeoutTimestamp - Clock.currentTimeMillis();
+        if (timeToTimeout <= 0) {
+            // the sleeper has timed out already, don't sleep any longer
+            return 0L;
+        }
+
         long sleepMs = Math.min(next, timeToTimeout);
         Thread.sleep(sleepMs);
 
