@@ -66,6 +66,7 @@ public final class FactoryIdHelper {
     public static final String WEB_PORTABLE_FACTORY = "hazelcast.serialization.portable.web";
     public static final String CACHE_PORTABLE_FACTORY = "hazelcast.serialization.portable.cache";
     public static final String HIBERNATE_PORTABLE_FACTORY = "hazelcast.serialization.portable.hibernate";
+    public static final String RINGBUFFER_PORTABLE_FACTORY = "hazelcast.serialization.portable.ringbuffer";
 
     // factory id 0 is reserved for Cluster objects (Data, Address, Member etc)...
 

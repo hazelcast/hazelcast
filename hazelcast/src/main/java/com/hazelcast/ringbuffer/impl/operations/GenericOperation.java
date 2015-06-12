@@ -30,6 +30,7 @@ public class GenericOperation extends AbstractRingBufferOperation {
     public static final byte OPERATION_TAIL = 1;
     public static final byte OPERATION_HEAD = 2;
     public static final byte OPERATION_REMAINING_CAPACITY = 3;
+    public static final byte OPERATION_CAPACITY = 4;
 
     private byte operation;
     private long result;
@@ -57,6 +58,9 @@ public class GenericOperation extends AbstractRingBufferOperation {
                 break;
             case OPERATION_REMAINING_CAPACITY:
                 result = ringbuffer.remainingCapacity();
+                break;
+            case OPERATION_CAPACITY:
+                result = ringbuffer.getCapacity();
                 break;
             default:
                 throw new IllegalStateException("Unrecognized operation:" + operation);
