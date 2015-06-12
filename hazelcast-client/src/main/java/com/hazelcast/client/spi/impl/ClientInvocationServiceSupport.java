@@ -336,7 +336,7 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
                 final Data response = clientResponse.getResponse();
                 handlePacket(response, clientResponse.isError(), callId);
             } catch (Exception e) {
-                logger.severe("Failed to process task: " + packet + " on responseThread :" + getName());
+                logger.severe("Failed to process task: " + packet + " on responseThread :" + getName(), e);
             } finally {
                 conn.decrementPacketCount();
             }

@@ -20,7 +20,7 @@ import com.hazelcast.core.Message;
 import com.hazelcast.core.MessageListener;
 import com.hazelcast.topic.ReliableMessageListener;
 
-class ReliableMessageListenerAdapter<E> implements ReliableMessageListener<E> {
+public class ReliableMessageListenerAdapter<E> implements ReliableMessageListener<E> {
 
     final MessageListener<E> messageListener;
 

@@ -91,6 +91,9 @@ public class ClientConfig {
 
     private Map<String, NearCacheConfig> nearCacheConfigMap = new ConcurrentHashMap<String, NearCacheConfig>();
 
+    private Map<String, ClientReliableTopicConfig> reliableTopicConfigMap
+            = new ConcurrentHashMap<String, ClientReliableTopicConfig>();
+
     private Map<String, Map<String, QueryCacheConfig>> queryCacheConfigs;
 
     private SerializationConfig serializationConfig = new SerializationConfig();
@@ -198,6 +201,20 @@ public class ClientConfig {
     public ClientConfig setNetworkConfig(ClientNetworkConfig networkConfig) {
         this.networkConfig = networkConfig;
         return this;
+    }
+
+    public ClientConfig addReliableTopicConfig(ClientReliableTopicConfig reliableTopicConfig) {
+        reliableTopicConfigMap.put(reliableTopicConfig.getName(), reliableTopicConfig);
+        return this;
+    }
+
+    public ClientReliableTopicConfig getReliableTopicConfig(String name) {
+        ClientReliableTopicConfig nearCacheConfig = lookupByPattern(reliableTopicConfigMap, name);
+        if (nearCacheConfig == null) {
+            nearCacheConfig = new ClientReliableTopicConfig(name);
+            addReliableTopicConfig(nearCacheConfig);
+        }
+        return nearCacheConfig;
     }
 
     /**
