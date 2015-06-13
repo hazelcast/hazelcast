@@ -14,6 +14,8 @@ import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 
 import static com.hazelcast.instance.TestUtil.getHazelcastInstanceImpl;
 import static org.junit.Assert.assertEquals;
@@ -44,32 +46,41 @@ public class MemberStateImplTest extends HazelcastTestSupport {
         client.clientType = "undefined";
         clients.add(client);
 
+        Map<String, Long> runtimeProps = new HashMap<String, Long>();
+        runtimeProps.put("prop1", 598123L);
+
         TimedMemberStateFactory factory = new TimedMemberStateFactory(getHazelcastInstanceImpl(hazelcastInstance));
         TimedMemberState timedMemberState = factory.createTimedMemberState();
 
         MemberStateImpl memberState = timedMemberState.getMemberState();
+        memberState.setAddress("memberStateAddress:Port");
         memberState.putLocalMapStats("mapStats", new LocalMapStatsImpl());
         memberState.putLocalMultiMapStats("multiMapStats", new LocalMultiMapStatsImpl());
         memberState.putLocalQueueStats("queueStats", new LocalQueueStatsImpl());
         memberState.putLocalTopicStats("topicStats", new LocalTopicStatsImpl());
         memberState.putLocalExecutorStats("executorStats", new LocalExecutorStatsImpl());
         memberState.putLocalCacheStats("cacheStats", new LocalCacheStatsImpl(cacheStatistics));
+        memberState.setRuntimeProps(runtimeProps);
+        memberState.setLocalMemoryStats(new LocalMemoryStatsImpl());
+        memberState.setOperationStats(new LocalOperationStatsImpl());
         memberState.setClients(clients);
 
         MemberStateImpl deserialized = new MemberStateImpl();
         deserialized.fromJson(memberState.toJson());
 
-        assertEquals(memberState, deserialized);
-        assertEquals(memberState.hashCode(), deserialized.hashCode());
-
+        assertEquals("memberStateAddress:Port", deserialized.getAddress());
         assertNotNull(deserialized.getLocalMapStats("mapStats").toString());
         assertNotNull(deserialized.getLocalMultiMapStats("multiMapStats").toString());
         assertNotNull(deserialized.getLocalQueueStats("queueStats").toString());
         assertNotNull(deserialized.getLocalTopicStats("topicStats").toString());
         assertNotNull(deserialized.getLocalExecutorStats("executorStats").toString());
         assertNotNull(deserialized.getLocalCacheStats("cacheStats").toString());
-
         assertEquals(5, deserialized.getLocalCacheStats("cacheStats").getCacheHits());
+        assertNotNull(deserialized.getRuntimeProps());
+        assertEquals(Long.valueOf(598123L), deserialized.getRuntimeProps().get("prop1"));
+        assertNotNull(deserialized.getLocalMemoryStats());
+        assertNotNull(deserialized.getOperationStats());
+        assertNotNull(deserialized.getMXBeans());
 
         client = deserialized.getClients().iterator().next();
         assertEquals("abc123456", client.uuid);

@@ -203,67 +203,6 @@ public class LocalMemoryStatsImpl implements LocalMemoryStats {
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-
-        LocalMemoryStatsImpl that = (LocalMemoryStatsImpl) o;
-
-        if (!heapStatsEquals(that)) {
-            return false;
-        } else if (committedNativeMemory != that.committedNativeMemory) {
-            return false;
-        } else if (creationTime != that.creationTime) {
-            return false;
-        } else if (freePhysical != that.freePhysical) {
-            return false;
-        }  else if (maxNativeMemory != that.maxNativeMemory) {
-            return false;
-        } else if (totalPhysical != that.totalPhysical) {
-            return false;
-        } else if (usedNativeMemory != that.usedNativeMemory) {
-            return false;
-        } else if (!that.getGCStats().equals(gcStats)) {
-            return false;
-        }
-
-        return true;
-    }
-
-    /**
-     * Extracted reduce cyclomatic complexity of {@link com.hazelcast.monitor.impl.LocalMemoryStatsImpl#equals(Object)} method
-     */
-    private boolean heapStatsEquals(LocalMemoryStatsImpl that) {
-        if (committedHeap != that.committedHeap) {
-            return false;
-        } else if (maxHeap != that.maxHeap) {
-            return false;
-        }  else if (usedHeap != that.usedHeap) {
-            return false;
-        }
-        return true;
-    }
-
-    @Override
-    public int hashCode() {
-        int result = (int) (creationTime ^ (creationTime >>> 32));
-        result = 31 * result + (int) (totalPhysical ^ (totalPhysical >>> 32));
-        result = 31 * result + (int) (freePhysical ^ (freePhysical >>> 32));
-        result = 31 * result + (int) (maxNativeMemory ^ (maxNativeMemory >>> 32));
-        result = 31 * result + (int) (committedNativeMemory ^ (committedNativeMemory >>> 32));
-        result = 31 * result + (int) (usedNativeMemory ^ (usedNativeMemory >>> 32));
-        result = 31 * result + (int) (maxHeap ^ (maxHeap >>> 32));
-        result = 31 * result + (int) (committedHeap ^ (committedHeap >>> 32));
-        result = 31 * result + (int) (usedHeap ^ (usedHeap >>> 32));
-        result = 31 * result + (gcStats != null ? gcStats.hashCode() : 0);
-        return result;
-    }
-
-    @Override
     public String toString() {
         return "LocalMemoryStats{"
                 + "totalPhysical=" + totalPhysical

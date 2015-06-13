@@ -40,29 +40,6 @@ public class MemberPartitionStateImpl implements MemberPartitionState {
     long migrationQueueSize;
 
     @Override
-    public JsonObject toJson() {
-        JsonObject root = new JsonObject();
-        JsonArray partitionsArray = new JsonArray();
-        for (Integer lsPartition : partitions) {
-            partitionsArray.add(lsPartition);
-        }
-        root.add("partitions", partitionsArray);
-        root.add("memberStateSafe", memberStateSafe);
-        root.add("migrationQueueSize", migrationQueueSize);
-        return root;
-    }
-
-    @Override
-    public void fromJson(JsonObject json) {
-        final JsonArray jsonPartitions = getArray(json, "partitions");
-        for (JsonValue jsonPartition : jsonPartitions) {
-            partitions.add(jsonPartition.asInt());
-        }
-        memberStateSafe = getBoolean(json, "memberStateSafe");
-        migrationQueueSize = getInt(json, "migrationQueueSize");
-    }
-
-    @Override
     public List<Integer> getPartitions() {
         return partitions;
     }
@@ -86,33 +63,26 @@ public class MemberPartitionStateImpl implements MemberPartitionState {
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
+    public JsonObject toJson() {
+        JsonObject root = new JsonObject();
+        JsonArray partitionsArray = new JsonArray();
+        for (Integer lsPartition : partitions) {
+            partitionsArray.add(lsPartition);
         }
-        if (!(o instanceof MemberPartitionStateImpl)) {
-            return false;
-        }
-        MemberPartitionStateImpl that = (MemberPartitionStateImpl) o;
-
-        if (memberStateSafe != that.memberStateSafe) {
-            return false;
-        }
-        if (migrationQueueSize != that.migrationQueueSize) {
-            return false;
-        }
-        if (partitions != null ? !partitions.equals(that.partitions) : that.partitions != null) {
-            return false;
-        }
-        return true;
+        root.add("partitions", partitionsArray);
+        root.add("memberStateSafe", memberStateSafe);
+        root.add("migrationQueueSize", migrationQueueSize);
+        return root;
     }
 
     @Override
-    public int hashCode() {
-        int result = partitions != null ? partitions.hashCode() : 0;
-        result = 31 * result + (memberStateSafe ? 1 : 0);
-        result = 31 * result + (int) (migrationQueueSize ^ (migrationQueueSize >>> 32));
-        return result;
+    public void fromJson(JsonObject json) {
+        final JsonArray jsonPartitions = getArray(json, "partitions");
+        for (JsonValue jsonPartition : jsonPartitions) {
+            partitions.add(jsonPartition.asInt());
+        }
+        memberStateSafe = getBoolean(json, "memberStateSafe");
+        migrationQueueSize = getInt(json, "migrationQueueSize");
     }
 
     @Override
