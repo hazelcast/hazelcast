@@ -41,6 +41,7 @@ import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.impl.proxyservice.InternalProxyService;
 import com.hazelcast.spi.impl.proxyservice.impl.ProxyServiceImpl;
+import com.hazelcast.spi.impl.servicemanager.impl.ServiceManagerImpl;
 import com.hazelcast.spi.impl.waitnotifyservice.InternalWaitNotifyService;
 import com.hazelcast.spi.impl.waitnotifyservice.impl.WaitNotifyServiceImpl;
 import com.hazelcast.spi.impl.eventservice.InternalEventService;
@@ -73,7 +74,7 @@ public class NodeEngineImpl implements NodeEngine {
     private final OperationServiceImpl operationService;
     private final ExecutionServiceImpl executionService;
     private final WaitNotifyServiceImpl waitNotifyService;
-    private final ServiceManager serviceManager;
+    private final ServiceManagerImpl serviceManager;
     private final TransactionManagerServiceImpl transactionManagerService;
     private final ProxyServiceImpl proxyService;
     private final WanReplicationService wanReplicationService;
@@ -84,7 +85,7 @@ public class NodeEngineImpl implements NodeEngine {
         this.node = node;
         this.logger = node.getLogger(NodeEngine.class.getName());
         this.proxyService = new ProxyServiceImpl(this);
-        this.serviceManager = new ServiceManager(this);
+        this.serviceManager = new ServiceManagerImpl(this);
         this.executionService = new ExecutionServiceImpl(this);
         this.operationService = new OperationServiceImpl(this);
         this.eventService = new EventServiceImpl(this);
@@ -228,20 +229,12 @@ public class NodeEngineImpl implements NodeEngine {
     }
 
     public <T> T getService(String serviceName) {
-        final ServiceInfo serviceInfo = serviceManager.getServiceInfo(serviceName);
-        return serviceInfo != null ? (T) serviceInfo.getService() : null;
+        return serviceManager.getService(serviceName);
     }
 
     @Override
     public <T extends SharedService> T getSharedService(String serviceName) {
-        final Object service = getService(serviceName);
-        if (service == null) {
-            return null;
-        }
-        if (service instanceof SharedService) {
-            return (T) service;
-        }
-        throw new IllegalArgumentException("No SharedService registered with name: " + serviceName);
+        return serviceManager.getSharedService(serviceName);
     }
 
     /**
