@@ -65,21 +65,19 @@ public class InvocationRegistry {
 
     private final long backupTimeoutMillis;
     private final ConcurrentMap<Long, Invocation> invocations;
-    private final OperationServiceImpl operationService;
     private final NodeEngineImpl nodeEngine;
     private final ILogger logger;
     private final InspectionThread inspectionThread;
     private final CallIdSequence callIdSequence;
     private final long slowInvocationThresholdMs;
 
-    public InvocationRegistry(OperationServiceImpl operationService, int concurrencyLevel) {
-        this.operationService = operationService;
-        this.nodeEngine = operationService.nodeEngine;
-        this.logger = operationService.logger;
-        this.callIdSequence = operationService.backpressureRegulator.newCallIdSequence();
+    public InvocationRegistry(NodeEngineImpl nodeEngine, ILogger logger, BackpressureRegulator backpressureRegulator,
+                              int concurrencyLevel) {
+        this.nodeEngine = nodeEngine;
+        this.logger = logger;
+        this.callIdSequence = backpressureRegulator.newCallIdSequence();
 
-
-        GroupProperties props = operationService.nodeEngine.getGroupProperties();
+        GroupProperties props = nodeEngine.getGroupProperties();
         this.slowInvocationThresholdMs = initSlowInvocationThresholdMs(props);
         this.backupTimeoutMillis = props.OPERATION_BACKUP_TIMEOUT_MILLIS.getLong();
         this.invocations = new ConcurrentHashMap<Long, Invocation>(INITIAL_CAPACITY, LOAD_FACTOR, concurrencyLevel);
@@ -286,7 +284,7 @@ public class InvocationRegistry {
         private volatile boolean shutdown;
 
         InspectionThread() {
-            super(operationService.node.getHazelcastThreadGroup().getThreadNamePrefix("InspectInvocationsThread"));
+            super(nodeEngine.getNode().getHazelcastThreadGroup().getThreadNamePrefix("InspectInvocationsThread"));
         }
 
         public void shutdown() {
@@ -305,7 +303,7 @@ public class InvocationRegistry {
                 }
             } catch (Throwable t) {
                 inspectOutputMemoryError(t);
-                operationService.logger.severe("Failed to run", t);
+                logger.severe("Failed to run", t);
             }
         }
 
