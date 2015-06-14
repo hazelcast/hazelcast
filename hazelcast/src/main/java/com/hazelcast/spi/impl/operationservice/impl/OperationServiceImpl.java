@@ -16,8 +16,8 @@
 
 package com.hazelcast.spi.impl.operationservice.impl;
 
-import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.management.dto.SlowOperationDTO;
@@ -117,7 +117,7 @@ public final class OperationServiceImpl implements InternalOperationService {
         boolean reallyMultiCore = coreSize >= CORE_SIZE_CHECK;
         int concurrencyLevel = reallyMultiCore ? coreSize * CORE_SIZE_FACTOR : CONCURRENCY_LEVEL;
 
-        this.invocationsRegistry = new InvocationRegistry(this, concurrencyLevel);
+        this.invocationsRegistry = new InvocationRegistry(nodeEngine, logger, backpressureRegulator, concurrencyLevel);
         this.operationBackupHandler = new OperationBackupHandler(this);
 
         this.operationExecutor = new ClassicOperationExecutor(
