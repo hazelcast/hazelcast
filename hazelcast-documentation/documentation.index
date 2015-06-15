@@ -82,6 +82,7 @@ src/DistributedQuery.md
 		src/AggregatorsExample.md
 		src/AggregatorsImplementation.md
 	src/ContinuousQuery.md
+	src/ContinuousQueryCache.md
 src/UserDefinedServices.md
 		src/SPICreateClass.md
 		src/SPIEnableClass.md
