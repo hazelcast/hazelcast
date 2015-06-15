@@ -16,10 +16,10 @@ import static org.junit.Assert.assertTrue;
 @Category(QuickTest.class)
 public class LocalCacheStatsImplTest {
 
-    private LocalCacheStatsImpl localCacheStats = new LocalCacheStatsImpl();
-
     @Test
     public void testDefaultConstructor() {
+        LocalCacheStatsImpl localCacheStats = new LocalCacheStatsImpl();
+
         assertEquals(0, localCacheStats.getCacheHits());
         assertEquals(0, localCacheStats.getCacheHitPercentage(), 0.0001);
         assertEquals(0, localCacheStats.getCacheMisses());
