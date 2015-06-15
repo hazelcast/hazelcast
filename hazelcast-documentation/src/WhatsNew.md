@@ -19,9 +19,9 @@ This section provides the new features introduced with Hazelcast 3.5 release.
 - **Scalable Map Loader**: With this feature, you can load your keys incrementally if the number of your keys is large. Please see the [Incremental Key Loading section](#incremental-key-loading).
 - **Near Cache for JCache**: Now you can use a near cache with Hazelcast's JCache implementation. Please see [JCache Near Cache](#jcache-near-cache) for details. 
 - **Fail Fast on Invalid Configuration**: With this feature, Hazelcast throws a meaningful exception if there is an error in the declarative or programmatic configuration. Please see the note at the end of the [Configuration Overview section](#configuration-overview).
-- **Continuous Query Caching**: (Enterprise only, since 3.5) Provides an always up to date view of an IMap according to the given predicate. [Continuous Query Cache](#continuous-query-cache) 
+- **Continuous Query Caching**: (Enterprise only, since 3.5) Provides an always up to date view of an IMap according to the given predicate. Please see the [Continuous Query Cache section](#continuous-query-cache). 
+- **Management of Unbounded Return Values**: Introduces a `QueryResultSizeLimiter`. Please see the [OOM Prevention section](#oom-prevention).
 - Dynamic Selector Rebalancing
-- Management of Unbounded Return Values
 
 
 
