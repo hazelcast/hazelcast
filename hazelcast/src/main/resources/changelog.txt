@@ -21,6 +21,7 @@ Chapter 6 - Distributed Data Structures
 - Example Map Eviction Scenario added as a new section.
 - MapPartitionLostListener added as a new section.
 - A note stating the change in the return type of the method loadAllKeys() added to the Initialization On Startup section.
+- OOM Prevention added as a new section.
 - Replicated Map Configuration added as a new section explaining the configuration elements.
 
 Chapter 7 - Distributed Events
@@ -31,6 +32,7 @@ Chapter 8 - Distributed Computing
 
 Chapter 9 - Distributed Query
 - Paging Predicate: Added a note related to random page access.
+- Continuous Query Cache: Added as a new section.
 
 Chapter 11 - Transactions
 - Added a note related to `REPEATABLE_READ` isolation level.

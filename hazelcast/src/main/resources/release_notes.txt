@@ -28,11 +28,11 @@ This section provides the new features introduced with Hazelcast 3.5 release.
 
 - Fail Fast on Invalid Configuration: With this feature, Hazelcast throws a meaningful exception if there is an error in the declarative or programmatic configuration.
 
-- Continuous Query Caching
+- Continuous Query Caching: (Enterprise only, since 3.5) Provides an always up to date view of an IMap according to the given predicate.
+
+- Management of Unbounded Return Values: Introduces a `QueryResultSizeLimiter`.
 
 - Dynamic Selector Rebalancing
-
-- Management of Unbounded Return Values
 
 
 
