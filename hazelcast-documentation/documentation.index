@@ -31,6 +31,7 @@ src/Distributed_Data_Structures.md
 		src/Map-EntryStatistics.md
 		src/Map-MapListener.md
 		src/Map-Interceptors.md
+		src/Map-QueryResultSizeLimiter.md
 	src/Queue.md
 		src/SampleQueueCode.md
 		src/BoundedQueue.md
