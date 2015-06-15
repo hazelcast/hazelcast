@@ -23,12 +23,14 @@ import com.hazelcast.config.QuorumListenerConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.Member;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import java.util.Collection;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -66,6 +68,32 @@ public class QuorumListenerTest extends HazelcastTestSupport {
             e.printStackTrace();
         }
         assertOpenEventually(countDownLatch, 15);
+    }
+
+    @Test
+    public void testQuorumFailureEventFiredWhenNodeCountBelowThresholdFromClasspathConfiguredListener() throws Exception {
+        Config config = new Config();
+        QuorumListenerConfig listenerConfig = new QuorumListenerConfig();
+        listenerConfig.setClassName("com.hazelcast.quorum.QuorumListenerTest$QuorumListener");
+        String mapName = randomMapName();
+        String quorumName = randomString();
+        QuorumConfig quorumConfig = new QuorumConfig(quorumName, true, 3);
+        quorumConfig.addListenerConfig(listenerConfig);
+        config.getMapConfig(mapName).setQuorumName(quorumName);
+        config.addQuorumConfig(quorumConfig);
+        HazelcastInstance instance = createHazelcastInstance(config);
+        IMap<Object, Object> map = instance.getMap(mapName);
+        try {
+            map.put(generateKeyOwnedBy(instance), 1);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertEquals(1, QuorumListener.failCount.get());
+            }
+        });
     }
 
     @Test
@@ -228,5 +256,17 @@ public class QuorumListenerTest extends HazelcastTestSupport {
 
         }
         assertOpenEventually(belowLatch);
+    }
+
+    static class QuorumListener implements com.hazelcast.quorum.QuorumListener {
+
+        static AtomicInteger failCount = new AtomicInteger();
+        @Override
+        public void onChange(QuorumEvent quorumEvent) {
+            assertEquals(3, quorumEvent.getThreshold());
+            if (!quorumEvent.isPresent()) {
+                failCount.incrementAndGet();
+            }
+        }
     }
 }
