@@ -16,10 +16,12 @@ import static org.junit.Assert.assertTrue;
 @Category(QuickTest.class)
 public class LocalMultiMapStatsImplTest {
 
-    private final LocalMultiMapStatsImpl localMapStats = new LocalMultiMapStatsImpl();
+    private LocalMultiMapStatsImpl localMapStats;
 
     @Before
     public void setUp() {
+        localMapStats = new LocalMultiMapStatsImpl();
+
         localMapStats.setOwnedEntryCount(5);
         localMapStats.setBackupEntryCount(3);
         localMapStats.setBackupCount(4);

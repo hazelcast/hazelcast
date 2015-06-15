@@ -16,10 +16,12 @@ import static org.junit.Assert.assertTrue;
 @Category(QuickTest.class)
 public class LocalReplicatedMapStatsImplTest {
 
-    private LocalReplicatedMapStatsImpl localReplicatedMapStats = new LocalReplicatedMapStatsImpl();
+    private LocalReplicatedMapStatsImpl localReplicatedMapStats;
 
     @Before
     public void setUp() {
+        localReplicatedMapStats = new LocalReplicatedMapStatsImpl();
+
         localReplicatedMapStats.setOwnedEntryCount(5);
         localReplicatedMapStats.setBackupEntryCount(3);
         localReplicatedMapStats.setBackupCount(4);

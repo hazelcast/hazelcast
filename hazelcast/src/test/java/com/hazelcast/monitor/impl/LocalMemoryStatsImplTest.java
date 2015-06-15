@@ -15,10 +15,12 @@ import static org.junit.Assert.assertNotNull;
 @Category(QuickTest.class)
 public class LocalMemoryStatsImplTest {
 
-    private LocalMemoryStatsImpl localMemoryStats = new LocalMemoryStatsImpl();
+    private LocalMemoryStatsImpl localMemoryStats;
 
     @Before
     public void setUp() {
+        localMemoryStats = new LocalMemoryStatsImpl();
+
         localMemoryStats.setTotalPhysical(4196);
         localMemoryStats.setFreePhysical(2048);
         localMemoryStats.setMaxNativeMemory(1024);

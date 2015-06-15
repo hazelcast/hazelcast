@@ -16,10 +16,12 @@ import static org.junit.Assert.assertTrue;
 @Category(QuickTest.class)
 public class NearCacheStatsImplTest {
 
-    private NearCacheStatsImpl nearCacheStats = new NearCacheStatsImpl();
+    private NearCacheStatsImpl nearCacheStats;
 
     @Before
     public void setUp() {
+        nearCacheStats = new NearCacheStatsImpl();
+
         nearCacheStats.setOwnedEntryCount(501);
         nearCacheStats.incrementOwnedEntryCount();
         nearCacheStats.decrementOwnedEntryCount();

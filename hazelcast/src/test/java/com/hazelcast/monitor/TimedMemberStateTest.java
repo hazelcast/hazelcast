@@ -6,6 +6,7 @@ import com.hazelcast.internal.management.TimedMemberStateFactory;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -22,20 +23,39 @@ import static org.junit.Assert.assertTrue;
 @Category(QuickTest.class)
 public class TimedMemberStateTest extends HazelcastTestSupport {
 
-    @Test
-    public void testCloneAndSerialization() throws InterruptedException, CloneNotSupportedException {
+    private TimedMemberState timedMemberState;
+
+    @Before
+    public void setUp() {
         Set<String> instanceNames = new HashSet<String>();
         instanceNames.add("topicStats");
 
         HazelcastInstance hz = createHazelcastInstance();
         TimedMemberStateFactory timedMemberStateFactory = new TimedMemberStateFactory(getHazelcastInstanceImpl(hz));
 
-        TimedMemberState state = timedMemberStateFactory.createTimedMemberState();
-        state.setClusterName("ClusterName");
-        state.setTime(1827731);
-        state.setInstanceNames(instanceNames);
+        timedMemberState = timedMemberStateFactory.createTimedMemberState();
+        timedMemberState.setClusterName("ClusterName");
+        timedMemberState.setTime(1827731);
+        timedMemberState.setInstanceNames(instanceNames);
+    }
 
-        JsonObject serialized = state.clone().toJson();
+    @Test
+    public void testClone() throws InterruptedException, CloneNotSupportedException {
+        TimedMemberState cloned = timedMemberState.clone();
+
+        assertNotNull(cloned);
+        assertEquals("ClusterName", cloned.getClusterName());
+        assertEquals(1827731, cloned.getTime());
+        assertNotNull(cloned.getInstanceNames());
+        assertEquals(1, cloned.getInstanceNames().size());
+        assertTrue(cloned.getInstanceNames().contains("topicStats"));
+        assertNotNull(cloned.getMemberState());
+        assertNotNull(cloned.toString());
+    }
+
+    @Test
+    public void testSerialization() throws InterruptedException, CloneNotSupportedException {
+        JsonObject serialized = timedMemberState.toJson();
         TimedMemberState deserialized = new TimedMemberState();
         deserialized.fromJson(serialized);
 

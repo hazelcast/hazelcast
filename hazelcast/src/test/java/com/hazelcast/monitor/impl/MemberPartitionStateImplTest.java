@@ -16,10 +16,12 @@ import static org.junit.Assert.assertTrue;
 @Category(QuickTest.class)
 public class MemberPartitionStateImplTest {
 
-    private MemberPartitionStateImpl memberPartitionState = new MemberPartitionStateImpl();
+    private MemberPartitionStateImpl memberPartitionState;
 
     @Before
     public void setUp() {
+        memberPartitionState = new MemberPartitionStateImpl();
+
         memberPartitionState.setMemberStateSafe(true);
         memberPartitionState.setMigrationQueueSize(125342);
         memberPartitionState.getPartitions().add(5);

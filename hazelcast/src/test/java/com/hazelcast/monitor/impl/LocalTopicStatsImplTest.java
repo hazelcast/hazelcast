@@ -16,10 +16,12 @@ import static org.junit.Assert.assertTrue;
 @Category(QuickTest.class)
 public class LocalTopicStatsImplTest {
 
-    private LocalTopicStatsImpl localTopicStats = new LocalTopicStatsImpl();
+    private LocalTopicStatsImpl localTopicStats;
 
     @Before
     public void setUp() {
+        localTopicStats = new LocalTopicStatsImpl();
+
         localTopicStats.incrementPublishes();
         localTopicStats.incrementPublishes();
         localTopicStats.incrementPublishes();
