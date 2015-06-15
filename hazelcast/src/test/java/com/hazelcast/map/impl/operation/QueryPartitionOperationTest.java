@@ -3,10 +3,16 @@ package com.hazelcast.map.impl.operation;
 import com.hazelcast.map.QueryResultSizeExceededException;
 import com.hazelcast.map.impl.QueryResult;
 import com.hazelcast.query.TruePredicate;
+import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
 
+@RunWith(HazelcastSerialClassRunner.class)
+@Category(QuickTest.class)
 public class QueryPartitionOperationTest extends QueryOperationTestSupport {
 
     @Override
