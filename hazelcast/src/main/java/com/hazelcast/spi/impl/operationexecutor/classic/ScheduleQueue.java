@@ -19,7 +19,8 @@ package com.hazelcast.spi.impl.operationexecutor.classic;
 /**
  * The ScheduleQueue is a kind of priority queue where 'tasks' are queued for scheduling.
  * <p/>
- * ScheduleQueue support concurrent producers but only need to support single consumers.
+ * Implementations must support Multiple-Producer Multiple-Consumers scenario as multiple
+ * {@link GenericOperationThread} share a single queue.
  * <p/>
  * The ScheduledQueue also support priority tasks; so if a task with a priority comes in, than
  * that one is taken before any other normal operation is taken.
