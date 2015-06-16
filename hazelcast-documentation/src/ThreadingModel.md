@@ -13,6 +13,8 @@ Hazelcast uses a pool of threads for I/O. A single thread does not do all the IO
 You can configure the number of IO-threads using the `hazelcast.io.thread.count` system property. Its default value is 3 per member. 
 This means that if 3 is used, in total there are 7 IO-threads; 1 accept-IO-thread, 3 read-IO-threads, and 3 write-IO-threads. Each IO-thread has its own Selector instance and waits on `Selector.select` if there is nothing to do.
 
+Hazelcast periodically scans utilization of each IO-thread and can decide to migrate a connection to a new thread if the existing thread is servicing disproportionate number of IO events. You can customize the scanning interval by setting a System Property `hazelcast.io.balancer.interval.seconds`. The default interval is 20 seconds. You can disable the balancing process by setting the property to a negative value.          
+
 In case of the read-IO-thread, when sufficient bytes for a packet have been received, the Packet object is created. This Packet is 
 then sent to the System where it is de-multiplexed. If the Packet header signals that it is an operation/response, the Packet is handed 
 over to the operation service (please see the [Operation Threading section](#operation-threading)). If the Packet is an event, it is handed 
