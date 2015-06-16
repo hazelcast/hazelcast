@@ -20,7 +20,6 @@ import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MultiExecutionCallback;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.spi.NodeEngine;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -44,19 +43,19 @@ class ExecutionCallbackAdapterFactory {
     @SuppressWarnings("CanBeFinal")
     private volatile Boolean done = Boolean.FALSE;
 
-    ExecutionCallbackAdapterFactory(NodeEngine nodeEngine, Collection<Member> members,
+    ExecutionCallbackAdapterFactory(ILogger logger, Collection<Member> members,
                                     MultiExecutionCallback multiExecutionCallback) {
         this.multiExecutionCallback = multiExecutionCallback;
         this.responses = new ConcurrentHashMap<Member, ValueWrapper>(members.size());
         this.members = new HashSet<Member>(members);
-        this.logger = nodeEngine.getLogger(ExecutionCallbackAdapterFactory.class);
+        this.logger = logger;
     }
 
     private void onResponse(Member member, Object response) {
         assertNotDone();
         assertIsMember(member);
-        placeResponse(member, response);
         triggerOnResponse(member, response);
+        placeResponse(member, response);
         triggerOnComplete();
     }
 

@@ -402,8 +402,8 @@ public class ExecutorServiceProxy
     @Override
     public <T> void submitToMembers(Callable<T> task, Collection<Member> members, MultiExecutionCallback callback) {
         NodeEngine nodeEngine = getNodeEngine();
-        ExecutionCallbackAdapterFactory executionCallbackFactory = new ExecutionCallbackAdapterFactory(nodeEngine, members,
-                callback);
+        ExecutionCallbackAdapterFactory executionCallbackFactory = new ExecutionCallbackAdapterFactory(
+                nodeEngine.getLogger(ExecutionCallbackAdapterFactory.class), members, callback);
 
         for (Member member : members) {
             submitToMember(task, member, executionCallbackFactory.<T>callbackFor(member));
