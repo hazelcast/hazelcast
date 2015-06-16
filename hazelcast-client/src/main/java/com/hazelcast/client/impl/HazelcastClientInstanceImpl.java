@@ -31,10 +31,11 @@ import com.hazelcast.client.spi.impl.ClientListenerServiceImpl;
 import com.hazelcast.client.spi.impl.ClientNonSmartInvocationServiceImpl;
 import com.hazelcast.client.spi.impl.ClientPartitionServiceImpl;
 import com.hazelcast.client.spi.impl.ClientSmartInvocationServiceImpl;
-import com.hazelcast.client.spi.impl.DefaultAddressTranslator;
 import com.hazelcast.client.spi.impl.ClientTransactionManagerServiceImpl;
+import com.hazelcast.client.spi.impl.DefaultAddressTranslator;
 import com.hazelcast.client.util.RoundRobinLB;
 import com.hazelcast.collection.impl.list.ListService;
+import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.collection.impl.set.SetService;
 import com.hazelcast.concurrent.atomiclong.AtomicLongService;
 import com.hazelcast.concurrent.atomicreference.AtomicReferenceService;
@@ -77,7 +78,6 @@ import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
-import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.quorum.QuorumService;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.ringbuffer.Ringbuffer;
@@ -130,7 +130,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     private final ClientExtension clientExtension;
     private final Credentials credentials;
 
-    public HazelcastClientInstanceImpl(ClientConfig config) {
+    public HazelcastClientInstanceImpl(ClientConfig config, ClientServiceFactory clientServiceFactory) {
         this.config = config;
         final GroupConfig groupConfig = config.getGroupConfig();
         instanceName = "hz.client_" + id + (groupConfig != null ? "_" + groupConfig.getName() : "");
@@ -147,7 +147,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         loadBalancer = initLoadBalancer(config);
         transactionManager = new ClientTransactionManagerServiceImpl(this, loadBalancer);
         partitionService = new ClientPartitionServiceImpl(this);
-        connectionManager = initClientConnectionManager();
+        connectionManager = clientServiceFactory.createConnectionManager(config, this);
         clusterService = new ClientClusterServiceImpl(this);
         invocationService = initInvocationService();
         listenerService = initListenerService();
