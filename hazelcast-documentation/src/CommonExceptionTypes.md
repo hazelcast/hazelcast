@@ -8,7 +8,7 @@ You may see the following exceptions in any Hazelcast operation when the followi
 
 - `HazelcastOverloadException`: Thrown when the system will not handle any more load due to an overload. This exception is thrown when back pressure is enabled.
 
-- `DistributedObjectDestroyedException`: Thrown when an already destroyed `DistributedObject` (IMap, IQueue, etc.) is accessed and when a method call is done over a destroyed object.
+- `DistributedObjectDestroyedException`: Thrown when an already destroyed `DistributedObject` (IMap, IQueue, etc.) is accessed or when a method is called over a destroyed `DistributedObject`.
 
 - `MemberLeftException`: Thrown when a member leaves during an invocation or execution.
 
