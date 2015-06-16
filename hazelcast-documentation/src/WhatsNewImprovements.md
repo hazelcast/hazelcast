@@ -5,7 +5,7 @@ This section lists the enhancements performed for Hazelcast 3.5 release.
 
 - **Eventing System Improvements**: RingBuffer and Reliable Topic structures are introduced.
 - **XA Transactions Improvements**: With this improvement, you can now obtain a Hazelcast XA Resource instance through `HazelcastInstance`. For more information, please see [XA Transactions](#xa-transactions).
-- **Query and Indexing Improvements** 
+- **Query**: Predicates are now evaluated using a single thread to prevent a parallel slowdown. This has been proven to be beneficent for most of use-cases. You can revert to the old behaviour by setting a System Property `hazelcast.query.predicate.parallel.evaluation` to `true`.
 
 The following are the other improvements performed to solve the enhancement issues opened by the Hazelcast customers/team.
  
