@@ -6,7 +6,7 @@ You may see the following exceptions in any Hazelcast operation when the followi
 
 - `HazelcastInstanceNotActiveException`: Thrown when `HazelcastInstance` is not active (already shutdown or being shutdown) during an invocation. 
 
-- `HazelcastOverloadException`: Thrown when the system will not handle more load due to an overload. This exception is thrown when back pressure is enabled.
+- `HazelcastOverloadException`: Thrown when the system will not handle any more load due to an overload. This exception is thrown when back pressure is enabled.
 
 - `DistributedObjectDestroyedException`: Thrown when an already destroyed `DistributedObject` (IMap, IQueue, etc.) is accessed and when a method call is done over a destroyed object.
 
@@ -14,13 +14,13 @@ You may see the following exceptions in any Hazelcast operation when the followi
 
 Hazelcast also throws the following exceptions in the cases of overall system problems such as networking issues and long pauses:
 
-- `PartitionMigratingException`: Thrown when an operation is executed on a partition, but that partition is currently being moved around.
+- `PartitionMigratingException`: Thrown when an operation is executed on a partition, but that partition is currently being moved.
 
 - `TargetNotMemberException`: Thrown when an operation is sent to a machine that is not a member of the cluster.
 
 - `CallerNotMemberException`: Thrown when an operation was sent by a machine which is not a member in the cluster when the operation is executed.
 
-- `WrongTargetException`: Thrown when an operation is executed on the wrong machine, mostly because the partition that operation belongs to is already moved to some other member.
+- `WrongTargetException`: Thrown when an operation is executed on the wrong machine, usually because the partition that operation belongs to has been moved to some other member.
 
 
 
