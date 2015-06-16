@@ -81,12 +81,12 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
 
     private final ConcurrentMap<Address, Object> connectionLockMap = new ConcurrentHashMap<Address, Object>();
 
-    private final AtomicInteger connectionIdGen = new AtomicInteger();
+    protected final AtomicInteger connectionIdGen = new AtomicInteger();
     private final HazelcastClientInstanceImpl client;
     private final SocketInterceptor socketInterceptor;
     private final SocketOptions socketOptions;
-    private final IOSelector inSelector;
-    private final IOSelector outSelector;
+    private IOSelector inSelector;
+    private IOSelector outSelector;
 
     private final SocketChannelWrapperFactory socketChannelWrapperFactory;
     private final ClientExecutionServiceImpl executionService;
@@ -98,7 +98,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     private final Set<ConnectionHeartbeatListener> heartbeatListeners =
             new CopyOnWriteArraySet<ConnectionHeartbeatListener>();
 
-    private volatile boolean alive;
+    protected volatile boolean alive;
 
     public ClientConnectionManagerImpl(HazelcastClientInstanceImpl client,
                                        AddressTranslator addressTranslator) {
@@ -119,6 +119,15 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
 
         executionService = (ClientExecutionServiceImpl) client.getClientExecutionService();
 
+        initializeSelectors(client);
+
+        socketOptions = networkConfig.getSocketOptions();
+        ClientExtension clientExtension = client.getClientExtension();
+        socketChannelWrapperFactory = clientExtension.createSocketChannelWrapperFactory();
+        socketInterceptor = initSocketInterceptor(networkConfig.getSocketInterceptorConfig());
+    }
+
+    protected void initializeSelectors(HazelcastClientInstanceImpl client) {
         inSelector = new InSelectorImpl(
                 client.getThreadGroup(),
                 "ClientInSelector",
@@ -129,13 +138,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                 "ClientOutSelector",
                 Logger.getLogger(ClientOutSelectorImpl.class),
                 OUT_OF_MEMORY_HANDLER);
-
-        socketOptions = networkConfig.getSocketOptions();
-        ClientExtension clientExtension = client.getClientExtension();
-        socketChannelWrapperFactory = clientExtension.createSocketChannelWrapperFactory();
-        socketInterceptor = initSocketInterceptor(networkConfig.getSocketInterceptorConfig());
     }
-
 
     private SocketInterceptor initSocketInterceptor(SocketInterceptorConfig sic) {
         if (sic != null && sic.isEnabled()) {
@@ -156,10 +159,14 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
             return;
         }
         alive = true;
-        inSelector.start();
-        outSelector.start();
+        startSelectors();
         HeartBeat heartBeat = new HeartBeat();
         executionService.scheduleWithFixedDelay(heartBeat, heartBeatInterval, heartBeatInterval, TimeUnit.MILLISECONDS);
+    }
+
+    protected void startSelectors() {
+        inSelector.start();
+        outSelector.start();
     }
 
     @Override
@@ -171,11 +178,15 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         for (ClientConnection connection : connections.values()) {
             connection.close();
         }
-        inSelector.shutdown();
-        outSelector.shutdown();
+        shutdownSelectors();
         connectionLockMap.clear();
         connectionListeners.clear();
         heartbeatListeners.clear();
+    }
+
+    protected void shutdownSelectors() {
+        inSelector.shutdown();
+        outSelector.shutdown();
     }
 
     public ClientConnection getConnection(Address target) {
@@ -220,7 +231,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
         }
     }
 
-    private ClientConnection createSocketConnection(final Address address) throws IOException {
+    protected ClientConnection createSocketConnection(final Address address) throws IOException {
         if (!alive) {
             throw new HazelcastException("ConnectionManager is not active!!!");
         }

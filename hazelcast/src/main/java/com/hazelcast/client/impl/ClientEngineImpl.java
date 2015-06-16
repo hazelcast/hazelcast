@@ -535,7 +535,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
 
         @Override
         public void connectionRemoved(Connection connection) {
-            if (connection.isClient() && connection instanceof TcpIpConnection && nodeEngine.isActive()) {
+            if (connection.isClient() && nodeEngine.isActive()) {
                 ClientEndpointImpl endpoint = (ClientEndpointImpl) endpointManager.getEndpoint(connection);
                 if (endpoint == null) {
                     return;

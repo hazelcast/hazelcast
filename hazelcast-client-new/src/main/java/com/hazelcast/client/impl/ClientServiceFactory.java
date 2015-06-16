@@ -14,20 +14,12 @@
  * limitations under the License.
  */
 
-package com.hazelcast.test;
+package com.hazelcast.client.impl;
 
-/**
- * @author mdogan 5/29/13
- */
-public final class TestEnvironment {
+import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.connection.ClientConnectionManager;
 
-    public static final String HAZELCAST_TEST_USE_NETWORK = "hazelcast.test.use.network";
+public interface ClientServiceFactory {
 
-    private TestEnvironment() {
-    }
-
-    public static boolean isMockNetwork() {
-        return !Boolean.getBoolean(HAZELCAST_TEST_USE_NETWORK);
-    }
-
+    ClientConnectionManager createConnectionManager(ClientConfig config, HazelcastClientInstanceImpl client);
 }

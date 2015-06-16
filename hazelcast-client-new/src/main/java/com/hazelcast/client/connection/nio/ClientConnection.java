@@ -44,13 +44,13 @@ import static com.hazelcast.util.StringUtil.stringToBytes;
 
 public class ClientConnection implements Connection, Closeable {
 
-    private final ILogger logger = Logger.getLogger(ClientConnection.class);
+    protected final int connectionId;
     private final AtomicBoolean live = new AtomicBoolean(true);
-    private final AtomicInteger packetCount = new AtomicInteger(0);
+    private final ILogger logger = Logger.getLogger(ClientConnection.class);
 
+    private final AtomicInteger packetCount = new AtomicInteger(0);
     private final ClientWriteHandler writeHandler;
     private final ClientReadHandler readHandler;
-    private final int connectionId;
     private final SocketChannelWrapper socketChannelWrapper;
     private final ClientConnectionManager connectionManager;
     private final SerializationService serializationService;
@@ -69,6 +69,17 @@ public class ClientConnection implements Connection, Closeable {
         this.connectionId = connectionId;
         this.readHandler = new ClientReadHandler(this, in, socket.getReceiveBufferSize());
         this.writeHandler = new ClientWriteHandler(this, out, socket.getSendBufferSize());
+    }
+
+    public ClientConnection(HazelcastClientInstanceImpl client,
+                            int connectionId) throws IOException {
+        this.connectionManager = client.getConnectionManager();
+        this.serializationService = client.getSerializationService();
+        this.lifecycleService = client.getLifecycleService();
+        this.connectionId = connectionId;
+        writeHandler = null;
+        readHandler = null;
+        socketChannelWrapper = null;
     }
 
     public void incrementPacketCount() {
@@ -181,7 +192,7 @@ public class ClientConnection implements Connection, Closeable {
         return (InetSocketAddress) socketChannelWrapper.socket().getLocalSocketAddress();
     }
 
-    private void innerClose() throws IOException {
+    protected void innerClose() throws IOException {
         if (socketChannelWrapper.isOpen()) {
             socketChannelWrapper.close();
         }
@@ -193,7 +204,7 @@ public class ClientConnection implements Connection, Closeable {
         if (!live.compareAndSet(true, false)) {
             return;
         }
-        String message = "Connection [" + socketChannelWrapper.socket().getRemoteSocketAddress() + "] lost. Reason: ";
+        String message = "Connection [" + getRemoteSocketAddress() + "] lost. Reason: ";
         if (t != null) {
             message += t.getClass().getName() + "[" + t.getMessage() + "]";
         } else {
