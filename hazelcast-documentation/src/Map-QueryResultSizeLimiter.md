@@ -6,7 +6,7 @@ It is very easy to trigger an OOME with query based map methods, especially with
 
 A call of `IMap.values()` may return too much data for a single node. This can also happen with a real query and an unlucky choice of predicates, especially when the parameters are chosen by a user of your application.
 
-To prevent this, you can configure a maximum result size limit for query based operations. This is not a limit like `SELECT * FROM map LIMIT 100`, which can be achieved by a [Paging Predicate](#paging-predicate-order-limit). It is meant to be a last line of defense to prevent your nodes from retrieving more data than they can handle.
+To prevent this, you can configure a maximum result size limit for query based operations. This is not a limit like `SELECT * FROM map LIMIT 100`, which can be achieved by a [Paging Predicate](#paging-predicate-order-limit-). It is meant to be a last line of defense to prevent your nodes from retrieving more data than they can handle.
 
 The Hazelcast component which calculates this limit is the `QueryResultSizeLimiter`.
 
