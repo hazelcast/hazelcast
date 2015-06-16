@@ -24,6 +24,7 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 
 import java.util.Map;
@@ -33,6 +34,7 @@ import static org.junit.Assert.assertNull;
 
 public class ClientMapGuavaCacheTest {
 
+    @Before
     @After
     public void shutdown(){
         HazelcastClient.shutdownAll();

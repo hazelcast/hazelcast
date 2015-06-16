@@ -24,6 +24,7 @@ import com.hazelcast.core.InstanceEvent;
 import com.hazelcast.core.InstanceListener;
 import com.hazelcast.util.AssertionUtil;
 import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -41,8 +42,9 @@ import static org.junit.Assert.assertTrue;
 @RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
 public class ClientMemoryLeakTest {
 
+    @Before
     @After
-    public void teardown() {
+    public void shutdown(){
         HazelcastClient.shutdownAll();
         Hazelcast.shutdownAll();
     }
