@@ -22,7 +22,13 @@ import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.partition.MigrationInfo;
-import com.hazelcast.spi.*;
+import com.hazelcast.spi.AbstractOperation;
+import com.hazelcast.spi.Notifier;
+import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.PartitionAwareOperation;
+import com.hazelcast.spi.WaitNotifyKey;
+import com.hazelcast.spi.WaitNotifyService;
+import com.hazelcast.spi.WaitSupport;
 import com.hazelcast.spi.exception.CallTimeoutException;
 import com.hazelcast.spi.exception.PartitionMigratingException;
 import com.hazelcast.spi.exception.RetryableException;
@@ -33,7 +39,15 @@ import com.hazelcast.util.executor.SingleExecutorThreadFactory;
 
 import java.util.Iterator;
 import java.util.Queue;
-import java.util.concurrent.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.DelayQueue;
+import java.util.concurrent.Delayed;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
 class WaitNotifyServiceImpl implements WaitNotifyService {
@@ -44,6 +58,12 @@ class WaitNotifyServiceImpl implements WaitNotifyService {
     private final Future expirationTask;
     private final NodeEngineImpl nodeEngine;
     private final ILogger logger;
+    private final ConstructorFunction<WaitNotifyKey, Queue<WaitingOp>> waitQueueConstructor
+            = new ConstructorFunction<WaitNotifyKey, Queue<WaitingOp>>() {
+        public Queue<WaitingOp> createNew(WaitNotifyKey key) {
+            return new ConcurrentLinkedQueue<WaitingOp>();
+        }
+    };
 
     public WaitNotifyServiceImpl(final NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
@@ -60,13 +80,6 @@ class WaitNotifyServiceImpl implements WaitNotifyService {
     private void invalidate(final WaitingOp waitingOp) throws Exception {
         nodeEngine.getOperationService().executeOperation(waitingOp);
     }
-
-    private final ConstructorFunction<WaitNotifyKey, Queue<WaitingOp>> waitQueueConstructor
-            = new ConstructorFunction<WaitNotifyKey, Queue<WaitingOp>>() {
-        public Queue<WaitingOp> createNew(WaitNotifyKey key) {
-            return new ConcurrentLinkedQueue<WaitingOp>();
-        }
-    };
 
     // runs after queue lock
     public void await(WaitSupport waitSupport) {
@@ -106,6 +119,14 @@ class WaitNotifyServiceImpl implements WaitNotifyService {
             }
             q.poll(); // consume
             waitingOp = q.peek();
+
+            // If q.peek() returns null, we should deregister this specific
+            // key to avoid memory leak. By contract we know that await() and notify()
+            // cannot be called in parallel.
+            // We can safely remove this queue from registration map here.
+            if (waitingOp == null) {
+                mapWaitingOps.remove(key);
+            }
         }
     }
 
@@ -172,7 +193,7 @@ class WaitNotifyServiceImpl implements WaitNotifyService {
     }
 
     void shutdown() {
-        logger.finest( "Stopping tasks...");
+        logger.finest("Stopping tasks...");
         expirationTask.cancel(true);
         expirationService.shutdown();
         final Object response = new HazelcastInstanceNotActiveException();
@@ -194,6 +215,19 @@ class WaitNotifyServiceImpl implements WaitNotifyService {
             q.clear();
         }
         mapWaitingOps.clear();
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder("WaitNotifyService{");
+        sb.append("delayQueue=" + delayQueue.size());
+        sb.append(" \n[");
+        for (Queue<WaitingOp> ScheduledOps : mapWaitingOps.values()) {
+            sb.append("\t");
+            sb.append(ScheduledOps.size() + ", ");
+        }
+        sb.append("]\n}");
+        return sb.toString();
     }
 
     static class WaitingOp extends AbstractOperation implements Delayed, PartitionAwareOperation {
@@ -228,12 +262,12 @@ class WaitNotifyServiceImpl implements WaitNotifyService {
             return op;
         }
 
-        public void setValid(boolean valid) {
-            this.valid = valid;
-        }
-
         public boolean isValid() {
             return valid;
+        }
+
+        public void setValid(boolean valid) {
+            this.valid = valid;
         }
 
         public boolean needsInvalidation() {
@@ -250,7 +284,7 @@ class WaitNotifyServiceImpl implements WaitNotifyService {
 
         public boolean isCallTimedOut() {
             final NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
-            if(nodeEngine.operationService.isCallTimedOut(op)) {
+            if (nodeEngine.operationService.isCallTimedOut(op)) {
                 cancel(new CallTimeoutException(op.getClass().getName(), op.getInvocationTime(), op.getCallTimeout()));
                 return true;
             }
@@ -347,19 +381,6 @@ class WaitNotifyServiceImpl implements WaitNotifyService {
             sb.append('}');
             return sb.toString();
         }
-    }
-
-    @Override
-    public String toString() {
-        StringBuilder sb = new StringBuilder("WaitNotifyService{");
-        sb.append("delayQueue=" + delayQueue.size());
-        sb.append(" \n[");
-        for (Queue<WaitingOp> ScheduledOps : mapWaitingOps.values()) {
-            sb.append("\t");
-            sb.append(ScheduledOps.size() + ", ");
-        }
-        sb.append("]\n}");
-        return sb.toString();
     }
 
     private class ExpirationTask implements Runnable {
