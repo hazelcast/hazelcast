@@ -51,6 +51,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -58,7 +59,6 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.net.ConnectException;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -100,6 +100,7 @@ public class ManagementCenterService {
     private volatile String managementCenterUrl;
     private volatile boolean urlChanged;
     private volatile boolean manCenterConnectionLost;
+    private volatile boolean taskPollFailed;
 
     public ManagementCenterService(HazelcastInstanceImpl instance) {
         this.instance = instance;
@@ -263,11 +264,12 @@ public class ManagementCenterService {
         return isRunning.get();
     }
 
-    private void post(HttpURLConnection connection) throws IOException {
+    private boolean post(HttpURLConnection connection) throws IOException {
         int responseCode = connection.getResponseCode();
-        if (responseCode != HTTP_SUCCESS) {
+        if (responseCode != HTTP_SUCCESS && !manCenterConnectionLost) {
             logger.warning("Failed to send response, responseCode:" + responseCode + " url:" + connection.getURL());
         }
+        return responseCode == HTTP_SUCCESS;
     }
 
     /**
@@ -308,34 +310,36 @@ public class ManagementCenterService {
 
         private void sendState() throws InterruptedException, MalformedURLException {
             URL url = newCollectorUrl();
+            OutputStream outputStream = null;
+            OutputStreamWriter writer = null;
             try {
                 HttpURLConnection connection = openConnection(url);
-                OutputStream outputStream = connection.getOutputStream();
-                final OutputStreamWriter writer = new OutputStreamWriter(outputStream, "UTF-8");
-                try {
-                    JsonObject root = new JsonObject();
-                    root.add("identifier", identifier.toJson());
-                    TimedMemberState timedMemberState = timedMemberStateFactory.createTimedMemberState();
-                    root.add("timedMemberState", timedMemberState.toJson());
-                    root.writeTo(writer);
-                    writer.flush();
-                    outputStream.flush();
-                    post(connection);
-                    if (manCenterConnectionLost) {
-                        logger.info("Connection to management center restored.");
-                    }
+                outputStream = connection.getOutputStream();
+                writer = new OutputStreamWriter(outputStream, "UTF-8");
+
+                JsonObject root = new JsonObject();
+                root.add("identifier", identifier.toJson());
+                TimedMemberState timedMemberState = timedMemberStateFactory.createTimedMemberState();
+                root.add("timedMemberState", timedMemberState.toJson());
+                root.writeTo(writer);
+
+                writer.flush();
+                outputStream.flush();
+                boolean success = post(connection);
+                if (manCenterConnectionLost && success) {
+                    logger.info("Connection to management center restored.");
                     manCenterConnectionLost = false;
-                } finally {
-                    closeResource(writer);
-                    closeResource(outputStream);
+                } else if (!success) {
+                    manCenterConnectionLost = true;
                 }
-            } catch (ConnectException e) {
+            } catch (Exception e) {
                 if (!manCenterConnectionLost) {
                     manCenterConnectionLost = true;
                     log("Failed to connect to:" + url, e);
                 }
-            } catch (Exception e) {
-                logger.warning(e);
+            } finally {
+                closeResource(writer);
+                closeResource(outputStream);
             }
         }
 
@@ -442,47 +446,40 @@ public class ManagementCenterService {
                     }
                     ConsoleRequest task = requestClass.newInstance();
                     task.fromJson(getObject(innerRequest, "request"));
-                    processTaskAndSendResponse(taskId, task);
-                }
-                if (manCenterConnectionLost) {
-                    logger.info("Connection to management center restored.");
-                }
-                manCenterConnectionLost = false;
-
-            } catch (ConnectException e) {
-                if (!manCenterConnectionLost) {
-                    manCenterConnectionLost = true;
-                    log("Failed to connect to management center", e);
+                    boolean success = processTaskAndSendResponse(taskId, task);
+                    if (taskPollFailed && success) {
+                        logger.info("Management center task polling successfull.");
+                        taskPollFailed = false;
+                    }
                 }
             } catch (Exception e) {
-                logger.warning(e);
+                if (!taskPollFailed) {
+                    taskPollFailed = true;
+                    log("Failed to pull tasks from management center", e);
+                }
             } finally {
                 IOUtil.closeResource(reader);
                 IOUtil.closeResource(inputStream);
             }
         }
 
-        public void processTaskAndSendResponse(int taskId, ConsoleRequest task) {
+        public boolean processTaskAndSendResponse(int taskId, ConsoleRequest task) throws Exception {
+            HttpURLConnection connection = openPostResponseConnection();
+            OutputStream outputStream = connection.getOutputStream();
+            final OutputStreamWriter writer = new OutputStreamWriter(outputStream, "UTF-8");
             try {
-                HttpURLConnection connection = openPostResponseConnection();
-                OutputStream outputStream = connection.getOutputStream();
-                final OutputStreamWriter writer = new OutputStreamWriter(outputStream, "UTF-8");
-                try {
-                    JsonObject root = new JsonObject();
-                    root.add("identifier", identifier.toJson());
-                    root.add("taskId", taskId);
-                    root.add("type", task.getType());
-                    task.writeResponse(ManagementCenterService.this, root);
-                    root.writeTo(writer);
-                    writer.flush();
-                    outputStream.flush();
-                    post(connection);
-                } finally {
-                    closeResource(writer);
-                    closeResource(outputStream);
-                }
-            } catch (Exception e) {
-                logger.warning("Failed process task:" + task, e);
+                JsonObject root = new JsonObject();
+                root.add("identifier", identifier.toJson());
+                root.add("taskId", taskId);
+                root.add("type", task.getType());
+                task.writeResponse(ManagementCenterService.this, root);
+                root.writeTo(writer);
+                writer.flush();
+                outputStream.flush();
+                return post(connection);
+            } finally {
+                closeResource(writer);
+                closeResource(outputStream);
             }
         }
 
