@@ -17,7 +17,7 @@
 package com.hazelcast.transaction.impl.xa;
 
 import com.hazelcast.core.DistributedObject;
-import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.MigrationAwareService;

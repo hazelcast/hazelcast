@@ -8,7 +8,7 @@ import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.QueryResult;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.DefaultData;
-import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.query.TruePredicate;
 import com.hazelcast.query.impl.IndexService;
 import com.hazelcast.query.impl.QueryableEntry;

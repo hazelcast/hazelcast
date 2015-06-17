@@ -365,21 +365,28 @@
     <suppress checks="JavadocMethod" files="com.hazelcast.partition[\\/]"/>
     <suppress checks="JavadocVariable" files="com.hazelcast.partition[\\/]"/>
 
-    <suppress checks="JavadocMethod" files="com.hazelcast.partition.impl[\\/]"/>
-    <suppress checks="JavadocType" files="com.hazelcast.partition.impl[\\/]"/>
-    <suppress checks="JavadocMethod" files="com.hazelcast.partition.impl[\\/]"/>
-    <suppress checks="JavadocVariable" files="com.hazelcast.partition.impl[\\/]"/>
+    <!--- TODO: Needs to get fixed -->
+    <suppress checks="JavadocMethod" files="com.hazelcast.internal.partition[\\/]"/>
+    <suppress checks="JavadocType" files="com.hazelcast.internal.partition[\\/]"/>
+    <suppress checks="JavadocMethod" files="com.hazelcast.internal.partition[\\/]"/>
+    <suppress checks="JavadocVariable" files="com.hazelcast.internal.partition[\\/]"/>
 
-    <suppress checks="MagicNumber" files="com.hazelcast.partition.impl.InternalPartitionServiceImpl"/>
-    <suppress checks="ClassFanOutComplexity" files="com.hazelcast.partition.impl.InternalPartitionServiceImpl"/>
-    <suppress checks="ClassDataAbstractionCoupling" files="com.hazelcast.partition.impl.InternalPartitionServiceImpl"/>
-    <suppress checks="FileLengthCheck" files="com.hazelcast.partition.impl.InternalPartitionServiceImpl"/>
-    <suppress checks="MethodCount" files="com.hazelcast.partition.InternalPartitionService"/>
-    <suppress checks="MethodCount" files="com.hazelcast.partition.impl.InternalPartitionServiceImpl"/>
-    <suppress checks="ExecutableStatementCount" files="com.hazelcast.partition.impl.InternalPartitionServiceImpl"/>
+
+    <suppress checks="JavadocMethod" files="com.hazelcast.internal.partition.impl[\\/]"/>
+    <suppress checks="JavadocType" files="com.hazelcast.internal.partition.impl[\\/]"/>
+    <suppress checks="JavadocMethod" files="com.hazelcast.internal.partition.impl[\\/]"/>
+    <suppress checks="JavadocVariable" files="com.hazelcast.internal.partition.impl[\\/]"/>
+
+    <suppress checks="MagicNumber" files="com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl"/>
+    <suppress checks="ClassFanOutComplexity" files="com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl"/>
+    <suppress checks="ClassDataAbstractionCoupling" files="com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl"/>
+    <suppress checks="FileLengthCheck" files="com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl"/>
+    <suppress checks="MethodCount" files="com.hazelcast.internal.partition.InternalPartitionService"/>
+    <suppress checks="MethodCount" files="com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl"/>
+    <suppress checks="ExecutableStatementCount" files="com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl"/>
     <!-- one method left -->
-    <suppress checks="CyclomaticComplexity" files="com.hazelcast.partition.impl.PartitionStateGeneratorImpl"/>
-    <suppress checks="NPathComplexity" files="com.hazelcast.partition.impl.PartitionStateGeneratorImpl"/>
+    <suppress checks="CyclomaticComplexity" files="com.hazelcast.internal.partition.impl.PartitionStateGeneratorImpl"/>
+    <suppress checks="NPathComplexity" files="com.hazelcast.internal.partition.impl.PartitionStateGeneratorImpl"/>
 
     <!-- Topic -->
     <suppress checks="JavadocMethod" files="com.hazelcast.topic.impl[\\/]"/>

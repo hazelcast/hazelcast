@@ -17,7 +17,7 @@
 package com.hazelcast.config;
 
 import com.hazelcast.map.merge.PutIfAbsentMapMergePolicy;
-import com.hazelcast.partition.InternalPartition;
+import com.hazelcast.internal.partition.InternalPartition;
 
 import java.util.ArrayList;
 import java.util.List;

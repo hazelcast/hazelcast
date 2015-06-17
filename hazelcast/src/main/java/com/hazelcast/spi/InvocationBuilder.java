@@ -18,7 +18,7 @@ package com.hazelcast.spi;
 
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.nio.Address;
-import com.hazelcast.partition.InternalPartition;
+import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
 /**

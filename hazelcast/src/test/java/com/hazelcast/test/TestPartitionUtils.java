@@ -3,11 +3,11 @@ package com.hazelcast.test;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Address;
-import com.hazelcast.partition.InternalPartition;
-import com.hazelcast.partition.InternalPartitionService;
-import com.hazelcast.partition.impl.InternalPartitionServiceState;
-import com.hazelcast.partition.impl.InternalPartitionServiceImpl;
-import com.hazelcast.partition.impl.ReplicaSyncInfo;
+import com.hazelcast.internal.partition.InternalPartition;
+import com.hazelcast.internal.partition.InternalPartitionService;
+import com.hazelcast.internal.partition.impl.InternalPartitionServiceState;
+import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
+import com.hazelcast.internal.partition.impl.ReplicaSyncInfo;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.util.scheduler.ScheduledEntry;
 
@@ -21,7 +21,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.instance.TestUtil.getNode;
-import static com.hazelcast.partition.InternalPartition.MAX_REPLICA_COUNT;
+import static com.hazelcast.internal.partition.InternalPartition.MAX_REPLICA_COUNT;
 
 public class TestPartitionUtils {
 

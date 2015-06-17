@@ -17,7 +17,7 @@ import com.hazelcast.map.impl.eviction.EvictionOperator;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.nio.Address;
-import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;

@@ -20,7 +20,7 @@ import com.hazelcast.mapreduce.Context;
 import com.hazelcast.mapreduce.KeyPredicate;
 import com.hazelcast.mapreduce.KeyValueSource;
 import com.hazelcast.mapreduce.Mapper;
-import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.internal.partition.InternalPartitionService;
 
 import java.util.ArrayList;
 import java.util.Collection;
