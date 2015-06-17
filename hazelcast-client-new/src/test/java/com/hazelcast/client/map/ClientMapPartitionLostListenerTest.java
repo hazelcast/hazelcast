@@ -10,7 +10,7 @@ import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.listener.MapPartitionLostListener;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
-import com.hazelcast.partition.InternalPartitionLostEvent;
+import com.hazelcast.internal.partition.InternalPartitionLostEvent;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.impl.PortableMapPartitionLostEvent;
 import com.hazelcast.spi.impl.eventservice.InternalEventService;

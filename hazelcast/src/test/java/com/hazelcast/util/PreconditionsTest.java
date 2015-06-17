@@ -9,7 +9,7 @@ import org.junit.runner.RunWith;
 
 import java.math.BigInteger;
 
-import static com.hazelcast.partition.InternalPartition.MAX_BACKUP_COUNT;
+import static com.hazelcast.internal.partition.InternalPartition.MAX_BACKUP_COUNT;
 import static com.hazelcast.util.Preconditions.checkFalse;
 import static com.hazelcast.util.Preconditions.checkInstanceOf;
 import static com.hazelcast.util.Preconditions.checkNotInstanceOf;

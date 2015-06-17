@@ -24,7 +24,7 @@ import com.hazelcast.map.impl.operation.MergeOperation;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.nio.Address;
-import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.query.impl.IndexService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.SplitBrainHandlerService;

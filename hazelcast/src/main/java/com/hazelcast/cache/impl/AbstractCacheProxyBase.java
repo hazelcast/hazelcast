@@ -24,7 +24,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
-import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;

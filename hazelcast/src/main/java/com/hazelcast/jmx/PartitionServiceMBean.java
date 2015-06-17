@@ -18,7 +18,7 @@ package com.hazelcast.jmx;
 
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.nio.Address;
-import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.internal.partition.InternalPartitionService;
 import java.net.InetSocketAddress;
 import java.util.Hashtable;
 

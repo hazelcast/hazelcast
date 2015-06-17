@@ -22,7 +22,7 @@ import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
-import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.query.SampleObjects;
 import com.hazelcast.query.impl.IndexService;

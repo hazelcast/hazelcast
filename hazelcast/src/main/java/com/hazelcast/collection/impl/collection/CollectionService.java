@@ -22,7 +22,7 @@ import com.hazelcast.core.ItemEventType;
 import com.hazelcast.core.ItemListener;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.collection.common.DataAwareItemEvent;

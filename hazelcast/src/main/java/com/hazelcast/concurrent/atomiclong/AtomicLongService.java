@@ -18,7 +18,7 @@ package com.hazelcast.concurrent.atomiclong;
 
 import com.hazelcast.concurrent.atomiclong.operations.AtomicLongReplicationOperation;
 import com.hazelcast.partition.MigrationEndpoint;
-import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.MigrationAwareService;
 import com.hazelcast.spi.NodeEngine;

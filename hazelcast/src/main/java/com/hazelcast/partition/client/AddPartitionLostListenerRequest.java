@@ -20,15 +20,15 @@ import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.impl.client.CallableClientRequest;
 import com.hazelcast.client.impl.client.ClientPortableHook;
 import com.hazelcast.client.impl.client.RetryableRequest;
-import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.partition.PartitionLostEvent;
 import com.hazelcast.partition.PartitionLostListener;
 import com.hazelcast.spi.impl.PortablePartitionLostEvent;
 
 import java.security.Permission;
 
-import static com.hazelcast.partition.InternalPartitionService.PARTITION_LOST_EVENT_TOPIC;
-import static com.hazelcast.partition.InternalPartitionService.SERVICE_NAME;
+import static com.hazelcast.internal.partition.InternalPartitionService.PARTITION_LOST_EVENT_TOPIC;
+import static com.hazelcast.internal.partition.InternalPartitionService.SERVICE_NAME;
 
 public class AddPartitionLostListenerRequest
         extends CallableClientRequest

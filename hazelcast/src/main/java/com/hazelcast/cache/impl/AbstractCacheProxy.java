@@ -22,7 +22,7 @@ import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.map.impl.MapEntrySet;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
-import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;

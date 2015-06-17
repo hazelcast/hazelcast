@@ -18,7 +18,7 @@ package com.hazelcast.concurrent.atomicreference;
 
 import com.hazelcast.concurrent.atomicreference.operations.AtomicReferenceReplicationOperation;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.spi.ManagedService;

@@ -20,13 +20,13 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientAddPartitionLostListenerCodec;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.partition.PartitionLostEvent;
 import com.hazelcast.partition.PartitionLostListener;
 
 import java.security.Permission;
 
-import static com.hazelcast.partition.InternalPartitionService.PARTITION_LOST_EVENT_TOPIC;
+import static com.hazelcast.internal.partition.InternalPartitionService.PARTITION_LOST_EVENT_TOPIC;
 
 public class AddPartitionLostListenerMessageTask
         extends AbstractCallableMessageTask<ClientAddPartitionLostListenerCodec.RequestParameters> {

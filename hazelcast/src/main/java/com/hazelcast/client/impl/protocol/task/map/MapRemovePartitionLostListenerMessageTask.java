@@ -21,7 +21,7 @@ import com.hazelcast.client.impl.protocol.codec.MapRemovePartitionLostListenerCo
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.internal.partition.InternalPartitionService;
 
 import java.security.Permission;
 

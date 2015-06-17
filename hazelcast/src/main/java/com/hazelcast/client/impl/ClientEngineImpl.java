@@ -46,7 +46,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.nio.tcp.TcpIpConnection;
-import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.spi.CoreService;

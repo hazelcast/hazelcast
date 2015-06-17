@@ -16,7 +16,7 @@
 
 package com.hazelcast.client.impl.client;
 
-import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.internal.partition.InternalPartitionService;
 
 import static com.hazelcast.partition.strategy.StringPartitioningStrategy.getPartitionKey;
 

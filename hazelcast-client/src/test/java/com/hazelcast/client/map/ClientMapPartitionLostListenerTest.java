@@ -8,7 +8,7 @@ import com.hazelcast.map.MapPartitionLostEvent;
 import com.hazelcast.map.MapPartitionLostListenerStressTest.EventCollectingMapPartitionLostListener;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.listener.MapPartitionLostListener;
-import com.hazelcast.partition.InternalPartitionLostEvent;
+import com.hazelcast.internal.partition.InternalPartitionLostEvent;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.impl.eventservice.InternalEventService;
 import com.hazelcast.test.AssertTask;

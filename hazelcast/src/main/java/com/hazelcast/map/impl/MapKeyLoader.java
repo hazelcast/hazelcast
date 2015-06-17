@@ -24,7 +24,7 @@ import com.hazelcast.map.impl.operation.LoadAllOperation;
 import com.hazelcast.map.impl.operation.LoadStatusOperation;
 import com.hazelcast.map.impl.operation.PartitionCheckIfLoadedOperation;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.Operation;

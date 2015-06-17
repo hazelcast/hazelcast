@@ -26,7 +26,7 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.partition.InternalPartition;
+import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.quorum.impl.QuorumServiceImpl;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Notifier;

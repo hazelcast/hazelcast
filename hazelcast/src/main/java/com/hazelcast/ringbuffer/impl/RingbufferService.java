@@ -19,7 +19,7 @@ package com.hazelcast.ringbuffer.impl;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.core.DistributedObject;
-import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.ringbuffer.impl.operations.ReplicationOperation;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.MigrationAwareService;

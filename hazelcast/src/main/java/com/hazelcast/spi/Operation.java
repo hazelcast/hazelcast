@@ -24,7 +24,7 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
-import com.hazelcast.partition.InternalPartition;
+import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.quorum.QuorumException;
 import com.hazelcast.spi.exception.RetryableException;
 import com.hazelcast.spi.exception.RetryableHazelcastException;

@@ -18,7 +18,7 @@ package com.hazelcast.partition.client;
 
 import com.hazelcast.client.impl.client.BaseClientRemoveListenerRequest;
 import com.hazelcast.client.impl.client.ClientPortableHook;
-import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.internal.partition.InternalPartitionService;
 
 import java.security.Permission;
 

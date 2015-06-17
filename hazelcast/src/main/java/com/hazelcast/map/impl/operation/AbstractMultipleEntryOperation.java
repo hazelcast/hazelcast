@@ -34,7 +34,7 @@ import com.hazelcast.map.impl.RecordStore;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.impl.MutatingOperation;
 import com.hazelcast.util.Clock;

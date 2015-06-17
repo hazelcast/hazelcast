@@ -23,8 +23,8 @@ import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Portable;
-import com.hazelcast.partition.InternalPartition;
-import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.internal.partition.InternalPartition;
+import com.hazelcast.internal.partition.InternalPartitionService;
 
 import java.security.Permission;
 import java.util.Collection;

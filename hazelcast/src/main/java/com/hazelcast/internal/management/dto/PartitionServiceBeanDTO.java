@@ -20,7 +20,7 @@ import com.eclipsesource.json.JsonObject;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.internal.management.JsonSerializable;
 import com.hazelcast.nio.Address;
-import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.internal.partition.InternalPartitionService;
 import java.net.InetSocketAddress;
 
 import static com.hazelcast.util.JsonUtil.getInt;

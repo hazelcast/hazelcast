@@ -18,7 +18,7 @@ package com.hazelcast.map.impl;
 
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.monitor.LocalMapStats;
-import com.hazelcast.partition.InternalPartitionLostEvent;
+import com.hazelcast.internal.partition.InternalPartitionLostEvent;
 import com.hazelcast.spi.ClientAwareService;
 import com.hazelcast.spi.EventPublishingService;
 import com.hazelcast.spi.ManagedService;
