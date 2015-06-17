@@ -551,6 +551,12 @@
     <suppress checks="JavadocVariable" files="com.hazelcast.internal.management.request.ConsoleRequestConstants"/>
     <suppress checks="JavadocVariable|VisibilityModifier" files="com.hazelcast.internal.management.dto.*"/>
 
+    <!-- Agrona backport -->
+    <suppress checks="MagicNumber" files="com/hazelcast/agrona/" />
+    <suppress checks="ExecutableStatementCount" files="com/hazelcast/agrona/BitUtil" />
+    <suppress checks="JavadocType" files="com/hazelcast/agrona/collections/.*2ObjectHashMap" />
+    <suppress checks="MethodCount" files="com/hazelcast/agrona/collections/.*HashSet" />
+    <suppress checks="VisibilityModifier|JavadocVariable" files="com/hazelcast/agrona/collections/MutableInteger" />
 
     <!-- Map -->
     <suppress checks="JavadocMethod" files="com.hazelcast.map[\\/]"/>

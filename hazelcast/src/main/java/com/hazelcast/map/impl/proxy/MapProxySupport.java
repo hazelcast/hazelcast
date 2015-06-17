@@ -45,7 +45,6 @@ import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.NearCache;
 import com.hazelcast.map.impl.NearCacheProvider;
-import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.map.impl.QueryEventFilter;
 import com.hazelcast.map.impl.RecordStore;
 import com.hazelcast.map.impl.operation.AddIndexOperation;
@@ -87,10 +86,8 @@ import com.hazelcast.map.listener.MapListener;
 import com.hazelcast.map.listener.MapPartitionLostListener;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
-import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
@@ -127,6 +124,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
@@ -134,6 +132,7 @@ import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.util.IterableUtil.nullToEmpty;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static java.util.Collections.singleton;
+import static java.util.concurrent.TimeUnit.NANOSECONDS;
 
 abstract class MapProxySupport extends AbstractDistributedObject<MapService> implements InitializingObject {
 
@@ -142,17 +141,18 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
     protected static final String NULL_PREDICATE_IS_NOT_ALLOWED = "Predicate should not be null!";
     protected static final String NULL_LISTENER_IS_NOT_ALLOWED = "Null listener is not allowed!";
 
+    private static final Object FAST_GET_MISS = new Object();
+
     protected final String name;
     protected final LocalMapStatsImpl localMapStats;
     protected final LockProxySupport lockSupport;
     protected final PartitioningStrategy partitionStrategy;
-    private MapServiceContext mapServiceContext;
     private InternalPartitionService partitionService;
 
-    protected MapProxySupport(final String name, final MapService service, NodeEngine nodeEngine) {
+    protected MapProxySupport(String name, MapService service, NodeEngine nodeEngine) {
         super(nodeEngine, service);
         this.name = name;
-        this.mapServiceContext = service.getMapServiceContext();
+        final MapServiceContext mapServiceContext = service.getMapServiceContext();
         partitionStrategy = mapServiceContext.getMapContainer(name).getPartitioningStrategy();
         localMapStats = mapServiceContext.getLocalMapStatsProvider().getLocalMapStatsImpl(name);
         this.partitionService = getNodeEngine().getPartitionService();
@@ -226,74 +226,111 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         return listener;
     }
 
-    // this operation returns the object in data format except
-    // it is got from near-cache and near-cache memory format is object.
-    protected Object getInternal(Data key) {
-        // todo: why does this method not make use of getAsyncInternal and just do a get on it?
-        // now there is a lot of duplication.
+    // Unused: waiting to be tested. Unifies sync and async code paths for get.
+    private Object unifiedGetInternal(Data key) {
+        try {
+            return getAsyncInternal(key).get();
+        } catch (ExecutionException e) {
+            throw ExceptionUtil.rethrow(e.getCause());
+        } catch (InterruptedException e) {
+            throw ExceptionUtil.rethrow(e);
+        }
+    }
+
+
+    // this operation returns the object in data format except when
+    // it is retrieved from near-cache and near-cache memory format is object.
+    protected final Object getInternal(Data key) {
+        final Object fastValue = fastGet(key);
+        if (fastValue != FAST_GET_MISS) {
+            return fastValue;
+        }
+        final GetOperation operation = new GetOperation(name, key);
+        if (getMapConfig().isNearCacheEnabled() && (cachingLocalEntries() || keyIsRemotelyOwned(key))) {
+            final NearCacheProvider nearCache = getNearCacheProvider();
+            final long permit = nearCache.announcePutNearCache(name, key);
+            final Object value;
+            try {
+                value = syncInvoke(key, operation);
+            } catch (Throwable t) {
+                nearCache.cancelAnnouncement(name, permit, key);
+                throw ExceptionUtil.rethrow(t);
+            }
+            nearCache.putNearCacheAnnounced(name, permit, key, (Data) value);
+            return value;
+        } else {
+            return syncInvoke(key, operation);
+        }
+    }
+
+    protected final ICompletableFuture<Data> getAsyncInternal(final Data key) {
+        final Object fastValue = fastGet(key);
+        if (fastValue != FAST_GET_MISS) {
+            return completedFuture(fastValue);
+        }
+        final GetOperation operation = new GetOperation(name, key);
+        if (getMapConfig().isNearCacheEnabled() && (cachingLocalEntries() || keyIsRemotelyOwned(key))) {
+            final NearCacheProvider nearCache = getNearCacheProvider();
+            final long permit = nearCache.announcePutNearCache(name, key);
+            final InternalCompletableFuture<Data> future = asyncInvoke(key, operation);
+            future.andThen(new ExecutionCallback<Data>() {
+                @Override public void onResponse(Data response) {
+                    nearCache.putNearCacheAnnounced(name, permit, key, response);
+                }
+                @Override public void onFailure(Throwable t) {
+                    nearCache.cancelAnnouncement(name, permit, key);
+                }
+            });
+            return future;
+        } else {
+            return asyncInvoke(key, operation);
+        }
+    }
+
+    private Object fastGet(Data key) {
         final MapConfig mapConfig = getMapConfig();
         final boolean nearCacheEnabled = mapConfig.isNearCacheEnabled();
         if (nearCacheEnabled) {
-            final Object fromNearCache = getFromNearCache(key);
-            if (fromNearCache != null) {
-                if (isCachedAsNullInNearCache(fromNearCache)) {
-                    return null;
-                }
-                return fromNearCache;
+            final Object cached = getNearCacheProvider().getFromNearCache(name, key);
+            if (cached != null) {
+                return cached == NearCache.NULL_OBJECT ? null : cached;
             }
         }
-        // todo action for read-backup true is not well tested.
+        //TODO Racy direct access to RecordStore without involving the partition thread
         if (mapConfig.isReadBackupData()) {
             final Object fromBackup = readBackupDataOrNull(key);
             if (fromBackup != null) {
                 return fromBackup;
             }
         }
-        final GetOperation operation = new GetOperation(name, key);
-        operation.setThreadId(ThreadUtil.getThreadId());
-        final Data value = (Data) invokeOperation(key, operation);
-
-        if (nearCacheEnabled) {
-            if (notOwnerPartitionForKey(key) || cacheKeyAnyway()) {
-                return putNearCache(key, value);
-            }
-        }
-        return value;
+        return FAST_GET_MISS;
     }
 
-    private boolean notOwnerPartitionForKey(Data key) {
-        final MapService mapService = getService();
-        final MapServiceContext mapServiceContext = mapService.getMapServiceContext();
-        final NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
-        final int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
-        return !nodeEngine.getPartitionService().getPartitionOwner(partitionId)
-                .equals(nodeEngine.getClusterService().getThisAddress());
+    private CompletedFuture<Data> completedFuture(Object result) {
+        final NodeEngine nodeEngine = getNodeEngine();
+        return new CompletedFuture<Data>(
+                nodeEngine.getSerializationService(),
+                result,
+                nodeEngine.getExecutionService().getExecutor(ExecutionService.ASYNC_EXECUTOR));
     }
 
-    private boolean cacheKeyAnyway() {
+    private boolean keyIsRemotelyOwned(Data key) {
+        final NodeEngine nodeEngine = getService().getMapServiceContext().getNodeEngine();
+        final InternalPartitionService ps = nodeEngine.getPartitionService();
+        final int partitionId = ps.getPartitionId(key);
+        return !ps.getPartitionOwner(partitionId).equals(nodeEngine.getClusterService().getThisAddress());
+    }
+
+    private boolean cachingLocalEntries() {
         return getMapConfig().getNearCacheConfig().isCacheLocalEntries();
     }
 
-    private Object putNearCache(Data key, Data value) {
-        final MapService mapService = getService();
-        final MapServiceContext mapServiceContext = mapService.getMapServiceContext();
-        final NearCacheProvider nearCacheProvider = mapServiceContext.getNearCacheProvider();
-        return nearCacheProvider.putNearCache(name, key, value);
-    }
-
-
     private Object getFromNearCache(Data key) {
-        if (!getMapConfig().isNearCacheEnabled()) {
-            return null;
-        }
-        final MapService mapService = getService();
-        final MapServiceContext mapServiceContext = mapService.getMapServiceContext();
-        final NearCacheProvider nearCacheProvider = mapServiceContext.getNearCacheProvider();
-        final Object cached = nearCacheProvider.getFromNearCache(name, key);
+        final Object cached = getNearCacheProvider().getFromNearCache(name, key);
         if (cached == null) {
             return null;
         }
-        mapServiceContext.interceptAfterGet(name, cached);
+        getService().getMapServiceContext().interceptAfterGet(name, cached);
         return cached;
     }
 
@@ -305,151 +342,56 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         final Iterator<Data> iterator = keys.iterator();
         while (iterator.hasNext()) {
             Data key = iterator.next();
-            final Object fromNearCache = getFromNearCache(key);
-            if (fromNearCache == null) {
+            final Object cached = getFromNearCache(key);
+            if (cached == null) {
                 continue;
             }
-            if (!isCachedAsNullInNearCache(fromNearCache)) {
-                resultMap.put(mapService.getMapServiceContext().toObject(key),
-                        mapService.getMapServiceContext().toObject(fromNearCache));
+            if (cached != NearCache.NULL_OBJECT) {
+                final MapServiceContext ctx = mapService.getMapServiceContext();
+                resultMap.put(ctx.toObject(key), ctx.toObject(cached));
             }
             iterator.remove();
         }
     }
 
-    private boolean isCachedAsNullInNearCache(Object cached) {
-        if (cached == null) {
-            return false;
-        }
-        return NearCache.NULL_OBJECT.equals(cached);
-    }
-
     private Data readBackupDataOrNull(Data key) {
-        final MapService mapService = getService();
-        final MapServiceContext mapServiceContext = mapService.getMapServiceContext();
+        final MapServiceContext mapServiceContext = getService().getMapServiceContext();
         final NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
         final InternalPartitionService partitionService = nodeEngine.getPartitionService();
-        final Address thisAddress = nodeEngine.getThisAddress();
         final int partitionId = partitionService.getPartitionId(key);
-        final InternalPartition partition = partitionService.getPartition(partitionId, false);
-        if (!partition.isOwnerOrBackup(thisAddress)) {
+        if (!partitionService.getPartition(partitionId, false).isOwnerOrBackup(nodeEngine.getThisAddress())) {
             return null;
         }
-        final PartitionContainer partitionContainer = mapServiceContext.getPartitionContainer(partitionId);
-        final RecordStore recordStore = partitionContainer.getExistingRecordStore(name);
-        if (recordStore == null) {
-            return null;
-        }
-        return recordStore.readBackupData(key);
-    }
-
-    protected ICompletableFuture<Data> getAsyncInternal(final Data key) {
-        final NodeEngine nodeEngine = getNodeEngine();
-        final MapService mapService = getService();
-        int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
-        final boolean nearCacheEnabled = getMapConfig().isNearCacheEnabled();
-        if (nearCacheEnabled) {
-            Object cached = mapService.getMapServiceContext().getNearCacheProvider().getFromNearCache(name, key);
-            if (cached != null) {
-                if (NearCache.NULL_OBJECT.equals(cached)) {
-                    cached = null;
-                }
-                return new CompletedFuture<Data>(
-                        nodeEngine.getSerializationService(),
-                        cached,
-                        nodeEngine.getExecutionService().getExecutor(ExecutionService.ASYNC_EXECUTOR));
-            }
-        }
-
-        GetOperation operation = new GetOperation(name, key);
-        try {
-            final OperationService operationService = nodeEngine.getOperationService();
-            final InvocationBuilder invocationBuilder
-                    = operationService.createInvocationBuilder(SERVICE_NAME,
-                    operation, partitionId).setResultDeserialized(false);
-            final InternalCompletableFuture<Data> future = invocationBuilder.invoke();
-            future.andThen(new ExecutionCallback<Data>() {
-                @Override
-                public void onResponse(Data response) {
-                    if (nearCacheEnabled) {
-                        int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
-                        if (!nodeEngine.getPartitionService().getPartitionOwner(partitionId)
-                                .equals(nodeEngine.getClusterService().getThisAddress())
-                                || getMapConfig().getNearCacheConfig().isCacheLocalEntries()) {
-                            mapService.getMapServiceContext().getNearCacheProvider().putNearCache(name, key, response);
-                        }
-                    }
-                }
-
-                @Override
-                public void onFailure(Throwable t) {
-                }
-            });
-            return future;
-        } catch (Throwable t) {
-            throw ExceptionUtil.rethrow(t);
-        }
+        final RecordStore recordStore =
+                mapServiceContext.getPartitionContainer(partitionId).getExistingRecordStore(name);
+        return recordStore != null ? recordStore.readBackupData(key) : null;
     }
 
     protected Data putInternal(final Data key, final Data value, final long ttl, final TimeUnit timeunit) {
         PutOperation operation = new PutOperation(name, key, value, getTimeInMillis(ttl, timeunit));
-        Data previousValue = (Data) invokeOperation(key, operation);
+        Data previousValue = (Data) syncInvoke(key, operation);
         invalidateNearCache(key);
         return previousValue;
     }
 
     protected boolean tryPutInternal(final Data key, final Data value, final long timeout, final TimeUnit timeunit) {
         TryPutOperation operation = new TryPutOperation(name, key, value, getTimeInMillis(timeout, timeunit));
-        boolean putSuccessful = (Boolean) invokeOperation(key, operation);
+        boolean putSuccessful = (Boolean) syncInvoke(key, operation);
         invalidateNearCache(key);
         return putSuccessful;
     }
 
     protected Data putIfAbsentInternal(final Data key, final Data value, final long ttl, final TimeUnit timeunit) {
         PutIfAbsentOperation operation = new PutIfAbsentOperation(name, key, value, getTimeInMillis(ttl, timeunit));
-        Data previousValue = (Data) invokeOperation(key, operation);
+        Data previousValue = (Data) syncInvoke(key, operation);
         invalidateNearCache(key);
         return previousValue;
     }
 
     protected void putTransientInternal(final Data key, final Data value, final long ttl, final TimeUnit timeunit) {
         PutTransientOperation operation = new PutTransientOperation(name, key, value, getTimeInMillis(ttl, timeunit));
-        invokeOperation(key, operation);
+        syncInvoke(key, operation);
         invalidateNearCache(key);
-    }
-
-    private Object invokeOperation(Data key, KeyBasedMapOperation operation) {
-        final NodeEngine nodeEngine = getNodeEngine();
-        int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
-        operation.setThreadId(ThreadUtil.getThreadId());
-        try {
-            Future f;
-            Object o;
-            OperationService operationService = nodeEngine.getOperationService();
-            if (getMapConfig().isStatisticsEnabled()) {
-                long time = System.currentTimeMillis();
-                f = operationService
-                        .createInvocationBuilder(SERVICE_NAME, operation, partitionId)
-                        .setResultDeserialized(false)
-                        .invoke();
-                o = f.get();
-                if (operation instanceof BasePutOperation) {
-                    localMapStats.incrementPuts(System.currentTimeMillis() - time);
-                } else if (operation instanceof BaseRemoveOperation) {
-                    localMapStats.incrementRemoves(System.currentTimeMillis() - time);
-                } else if (operation instanceof GetOperation) {
-                    localMapStats.incrementGets(System.currentTimeMillis() - time);
-                }
-
-            } else {
-                f = operationService.createInvocationBuilder(SERVICE_NAME, operation, partitionId)
-                        .setResultDeserialized(false).invoke();
-                o = f.get();
-            }
-            return o;
-        } catch (Throwable t) {
-            throw ExceptionUtil.rethrow(t);
-        }
     }
 
     protected ICompletableFuture<Data> putAsyncInternal(final Data key, final Data value,
@@ -470,27 +412,27 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
 
     protected boolean replaceInternal(final Data key, final Data expect, final Data update) {
         ReplaceIfSameOperation operation = new ReplaceIfSameOperation(name, key, expect, update);
-        boolean replaceSuccessful = (Boolean) invokeOperation(key, operation);
+        boolean replaceSuccessful = (Boolean) syncInvoke(key, operation);
         invalidateNearCache(key);
         return replaceSuccessful;
     }
 
     protected Data replaceInternal(final Data key, final Data value) {
         ReplaceOperation operation = new ReplaceOperation(name, key, value);
-        final Data result = (Data) invokeOperation(key, operation);
+        final Data result = (Data) syncInvoke(key, operation);
         invalidateNearCache(key);
         return result;
     }
 
     protected void setInternal(final Data key, final Data value, final long ttl, final TimeUnit timeunit) {
         SetOperation operation = new SetOperation(name, key, value, timeunit.toMillis(ttl));
-        invokeOperation(key, operation);
+        syncInvoke(key, operation);
         invalidateNearCache(key);
     }
 
     protected boolean evictInternal(final Data key) {
         EvictOperation operation = new EvictOperation(name, key, false);
-        final boolean evictSuccess = (Boolean) invokeOperation(key, operation);
+        final boolean evictSuccess = (Boolean) syncInvoke(key, operation);
         invalidateNearCache(key);
         return evictSuccess;
     }
@@ -536,12 +478,8 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
 
     /**
      * Maps keys to corresponding partitions and sends operations to them.
-     *
-     * @param keys
-     * @param replaceExistingValues
      */
     protected void loadInternal(Iterable keys, boolean replaceExistingValues) {
-
         Iterable<Data> dataKeys = convertToData(keys);
         NodeEngine nodeEngine = getNodeEngine();
         Map<Integer, List<Data>> partitionIdToKeys = getPartitionIdToKeysMap(dataKeys);
@@ -553,7 +491,6 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
             final Operation operation = createLoadAllOperation(correspondingKeys, replaceExistingValues);
             nodeEngine.getOperationService().invokeOnPartition(SERVICE_NAME, operation, partitionId);
         }
-
         waitUntilLoaded();
     }
 
@@ -571,27 +508,27 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
 
     protected Data removeInternal(Data key) {
         RemoveOperation operation = new RemoveOperation(name, key);
-        Data previousValue = (Data) invokeOperation(key, operation);
+        Data previousValue = (Data) syncInvoke(key, operation);
         invalidateNearCache(key);
         return previousValue;
     }
 
     protected void deleteInternal(Data key) {
         DeleteOperation operation = new DeleteOperation(name, key);
-        invokeOperation(key, operation);
+        syncInvoke(key, operation);
         invalidateNearCache(key);
     }
 
     protected boolean removeInternal(final Data key, final Data value) {
         RemoveIfSameOperation operation = new RemoveIfSameOperation(name, key, value);
-        boolean removed = (Boolean) invokeOperation(key, operation);
+        boolean removed = (Boolean) syncInvoke(key, operation);
         invalidateNearCache(key);
         return removed;
     }
 
     protected boolean tryRemoveInternal(final Data key, final long timeout, final TimeUnit timeunit) {
         TryRemoveOperation operation = new TryRemoveOperation(name, key, getTimeInMillis(timeout, timeunit));
-        boolean removed = (Boolean) invokeOperation(key, operation);
+        boolean removed = (Boolean) syncInvoke(key, operation);
         invalidateNearCache(key);
         return removed;
     }
@@ -626,6 +563,57 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
             return (Boolean) getService().getMapServiceContext().toObject(f.get());
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
+        }
+    }
+
+
+    private Object syncInvoke(Data key, KeyBasedMapOperation operation) {
+        try {
+            final long start = System.nanoTime();
+            final Object result = doInvokeOperation(key, operation).get();
+            updateStatistics(operation, start);
+            return result;
+        } catch (Throwable t) {
+            throw ExceptionUtil.rethrow(t);
+        }
+    }
+
+    private <E> InternalCompletableFuture<E> asyncInvoke(Data key, final KeyBasedMapOperation operation) {
+        final long start = System.nanoTime();
+        final InternalCompletableFuture<E> future = doInvokeOperation(key, operation);
+        if (getMapConfig().isStatisticsEnabled()) {
+            future.andThen(new ExecutionCallback<E>() {
+                @Override public void onResponse(E response) {
+                    updateStatistics(operation, start);
+                }
+                @Override public void onFailure(Throwable t) {
+                    updateStatistics(operation, start);
+                }
+            });
+        }
+        return future;
+    }
+
+    private <E> InternalCompletableFuture<E> doInvokeOperation(Data key, final KeyBasedMapOperation operation) {
+        operation.setThreadId(ThreadUtil.getThreadId());
+        final NodeEngine nodeEngine = getNodeEngine();
+        final InvocationBuilder invocationBuilder = nodeEngine.getOperationService()
+                .createInvocationBuilder(SERVICE_NAME, operation, nodeEngine.getPartitionService().getPartitionId(key))
+                .setResultDeserialized(false);
+        return invocationBuilder.invoke();
+    }
+
+    private void updateStatistics(Operation operation, long startTimeNanos) {
+        if (!getMapConfig().isStatisticsEnabled()) {
+            return;
+        }
+        final long took = NANOSECONDS.toMillis(System.nanoTime() - startTimeNanos);
+        if (operation instanceof BasePutOperation) {
+            localMapStats.incrementPuts(took);
+        } else if (operation instanceof BaseRemoveOperation) {
+            localMapStats.incrementRemoves(took);
+        } else if (operation instanceof GetOperation) {
+            localMapStats.incrementGets(took);
         }
     }
 
@@ -764,11 +752,8 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
                 for (Entry<Data, Data> entry : entries) {
                     result.put(mapService.getMapServiceContext().toObject(entry.getKey()),
                             mapService.getMapServiceContext().toObject(entry.getValue()));
-                    if (nearCacheEnabled) {
-                        if (notOwnerPartitionForKey(entry.getKey())
-                                || cacheKeyAnyway()) {
-                            putNearCache(entry.getKey(), entry.getValue());
-                        }
+                    if (nearCacheEnabled && (cachingLocalEntries() || keyIsRemotelyOwned(entry.getKey()))) {
+                        getNearCacheProvider().putNearCache(name, entry.getKey(), entry.getValue());
                     }
                 }
             }
@@ -800,10 +785,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         }
         final InternalPartitionService partitionService = getNodeEngine().getPartitionService();
         final Map<Integer, List<Data>> idToKeys = new HashMap<Integer, List<Data>>();
-
-        final Iterator<Data> iterator = keys.iterator();
-        while (iterator.hasNext()) {
-            final Data key = iterator.next();
+        for (Data key : keys) {
             final int partitionId = partitionService.getPartitionId(key);
             List<Data> keyList = idToKeys.get(partitionId);
             if (keyList == null) {
@@ -1170,18 +1152,18 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         if (key == null) {
             return;
         }
-        getService().getMapServiceContext().getNearCacheProvider().invalidateNearCache(name, key);
+        getNearCacheProvider().invalidateNearCache(name, key);
     }
 
     private void invalidateNearCache(Collection<Data> keys) {
         if (keys == null || keys.isEmpty()) {
             return;
         }
-        getService().getMapServiceContext().getNearCacheProvider().invalidateNearCache(name, keys);
+        getNearCacheProvider().invalidateNearCache(name, keys);
     }
 
     private void clearNearCache() {
-        getService().getMapServiceContext().getNearCacheProvider().clearNearCache(name);
+        getNearCacheProvider().clearNearCache(name);
     }
 
     private void publishMapEvent(int numberOfAffectedEntries, EntryEventType eventType) {
@@ -1201,6 +1183,10 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
 
     private MapContextQuerySupport getMapQuerySupport() {
         return getService().getMapServiceContext().getMapContextQuerySupport();
+    }
+
+    private NearCacheProvider getNearCacheProvider() {
+        return getService().getMapServiceContext().getNearCacheProvider();
     }
 
     protected MapStore getMapStore() {

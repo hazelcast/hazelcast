@@ -83,16 +83,16 @@ public abstract class HazelcastTestSupport {
 
     public static void assertUtilityConstructor(Class clazz) {
         Constructor[] constructors = clazz.getDeclaredConstructors();
-        assertEquals("there are more than 1 constructors", 1, constructors.length);
+        assertEquals("There is more than one constructor in "+clazz, 1, constructors.length);
 
         Constructor constructor = constructors[0];
         int modifiers = constructor.getModifiers();
-        assertTrue("access modifier is not private", Modifier.isPrivate(modifiers));
+        assertTrue("Constructor is not private in"+clazz, Modifier.isPrivate(modifiers));
 
         constructor.setAccessible(true);
         try {
             constructor.newInstance();
-        } catch (Exception e) {
+        } catch (Exception ignored) {
         }
     }
 

@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl;
 
+import com.hazelcast.agrona.collections.Long2LongHashMap;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.InMemoryFormat;
@@ -47,9 +48,11 @@ public class NearCache {
      * Used when caching nonexistent values.
      */
     public static final Object NULL_OBJECT = new Object();
+    public static final Object NOT_ANNOUNCED = new Object();
     public static final String NEAR_CACHE_EXECUTOR_NAME = "hz:near-cache";
     private static final double EVICTION_FACTOR = 0.2;
     private static final int CLEANUP_INTERVAL = 5000;
+    private static final long NO_PERMIT = 0;
     private final int maxSize;
     private volatile long lastCleanup;
     private final long maxIdleMillis;
@@ -63,6 +66,9 @@ public class NearCache {
     private final NearCacheStatsImpl nearCacheStats;
     private final SerializationService serializationService;
     private final Comparator<NearCacheRecord> selectedComparator;
+    private final Object announcementLock = new Object();
+    private long announcementPermitSeq;
+    private final Long2LongHashMap announcements = new Long2LongHashMap(NO_PERMIT);
 
     private SizeEstimator nearCacheSizeEstimator;
 
@@ -86,6 +92,36 @@ public class NearCache {
         nearCacheStats = new NearCacheStatsImpl();
         lastCleanup = Clock.currentTimeMillis();
         serializationService = nodeEngine.getSerializationService();
+    }
+
+    public long announcePut(Data key) {
+        final long hash64 = key.hash64();
+        synchronized (announcementLock) {
+            final long permit = ++announcementPermitSeq;
+            announcements.put(hash64, permit);
+            return permit;
+        }
+    }
+
+    public Object putAnnounced(long permit, Data key, Data value) {
+        final long hash64 = key.hash64();
+        synchronized (announcementLock) {
+            final long storedPermit = announcements.get(hash64);
+            if (storedPermit == NO_PERMIT || storedPermit > permit) {
+                return NOT_ANNOUNCED;
+            }
+            announcements.remove(hash64);
+            return put(key, value);
+        }
+    }
+
+    public void cancelAnnouncement(long permit, Data key) {
+        final long hash64 = key.hash64();
+        synchronized (announcementLock) {
+            if (permit == announcements.get(hash64)) {
+                announcements.remove(hash64);
+            }
+        }
     }
 
     // this operation returns the given value in near-cache memory format (data or object)
@@ -118,8 +154,61 @@ public class NearCache {
         }
     }
 
+    public Object get(Data key) {
+        fireTtlCleanup();
+        NearCacheRecord record = cache.get(key);
+        if (record != null) {
+            if (record.isExpired(maxIdleMillis, timeToLiveMillis)) {
+                cache.remove(key);
+                updateSizeEstimator(-calculateCost(record));
+                nearCacheStats.incrementMisses();
+                return null;
+            }
+            nearCacheStats.incrementHits();
+            record.access();
+            return record.getValue();
+        } else {
+            nearCacheStats.incrementMisses();
+            return null;
+        }
+    }
+
+    public void invalidate(Data key) {
+        final long hash64 = key.hash64();
+        final NearCacheRecord invalidated;
+        synchronized (announcementLock) {
+            announcements.remove(hash64);
+            invalidated = cache.remove(key);
+        }
+        if (invalidated != null) {
+            updateSizeEstimator(-calculateCost(invalidated));
+        }
+    }
+
+    public void invalidate(Collection<Data> keys) {
+        if (keys == null || keys.isEmpty()) {
+            return;
+        }
+        for (Data key : keys) {
+            invalidate(key);
+        }
+    }
+
+    public int size() {
+        return cache.size();
+    }
+
+    public void clear() {
+        cache.clear();
+        resetSizeEstimator();
+    }
+
     public NearCacheStatsImpl getNearCacheStats() {
         return createNearCacheStats();
+    }
+
+    public Map<Data, NearCacheRecord> getReadonlyMap() {
+        return Collections.unmodifiableMap(cache);
     }
 
     private NearCacheStatsImpl createNearCacheStats() {
@@ -205,55 +294,6 @@ public class NearCache {
                 throw ExceptionUtil.rethrow(e);
             }
         }
-    }
-
-    public Object get(Data key) {
-        fireTtlCleanup();
-        NearCacheRecord record = cache.get(key);
-        if (record != null) {
-            if (record.isExpired(maxIdleMillis, timeToLiveMillis)) {
-                cache.remove(key);
-                updateSizeEstimator(-calculateCost(record));
-                nearCacheStats.incrementMisses();
-                return null;
-            }
-            nearCacheStats.incrementHits();
-            record.access();
-            return record.getValue();
-        } else {
-            nearCacheStats.incrementMisses();
-            return null;
-        }
-    }
-
-    public void invalidate(Data key) {
-        final NearCacheRecord record = cache.remove(key);
-        // if a mapping exists for the key.
-        if (record != null) {
-            updateSizeEstimator(-calculateCost(record));
-        }
-    }
-
-    public void invalidate(Collection<Data> keys) {
-        if (keys == null || keys.isEmpty()) {
-            return;
-        }
-        for (Data key : keys) {
-            invalidate(key);
-        }
-    }
-
-    public int size() {
-        return cache.size();
-    }
-
-    public void clear() {
-        cache.clear();
-        resetSizeEstimator();
-    }
-
-    public Map<Data, NearCacheRecord> getReadonlyMap() {
-        return Collections.unmodifiableMap(cache);
     }
 
     private void resetSizeEstimator() {
