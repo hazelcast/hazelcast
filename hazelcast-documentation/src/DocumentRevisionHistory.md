@@ -28,7 +28,8 @@
 |[Chapter 18 - Management](#management)|[JMX API per Node](#jmx-api-per-node)|Two new bean definitions added to the Hazelcast Instance list (Cluster Safe State and LocalMember Safe State).|
 ||[Management Center](#management-center)|Added more information on the time travel data files to the [Time Travel section](#time-travel).|
 |[Chapter 19 - Security](#security)|[ClusterLoginModule](#clusterloginmodule)|The [Enterprise Integration section](#enterprise-integration) added .|
-|[Chapter 20 - Performance](#performance)|[Hazelcast Performance on AWS](#hazelcast-performance-on-aws)|Added as a new section that provides best practices to improve the Hazelcast performance on Amazon Web Service.|
+|[Chapter 20 - Performance](#performance)||Added a paragraph about I/O balancer that guarantees the connections are distributed equally among the I/O threads. |
+||[Hazelcast Performance on AWS](#hazelcast-performance-on-aws)|Added as a new section that provides best practices to improve the Hazelcast performance on Amazon Web Service.|
 ||[Back Pressure](#back-pressure)|Added as a new section.
 ||[SlowOperationDetector](#slowoperationdetector)|Added as a new section explaining the `SlowOperationDetector`, a monitoring feature that collects information of all slow operations.
 |[Chapter 21 - Hazelcast Simulator](#hazelcast-simulator)||Added as a new chapter providing comprehensive information on the Hazelcast Simulator feature.|
