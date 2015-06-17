@@ -61,18 +61,45 @@ public class CacheSimpleEntryListenerConfig {
         this.cacheEntryEventFilterFactory = cacheEntryEventFilterFactory;
     }
 
+    /**
+     * If old value is required, previously assigned values for the affected keys 
+     * will be sent to this cache entry listener implementation.
+     *
+     * @return True if old value is required, false otherwise.
+     */
     public boolean isOldValueRequired() {
         return oldValueRequired;
     }
 
+    /**
+     * If true, previously assigned values for the affected keys will be sent to this 
+     * cache entry listener implementation. Setting this attribute to true 
+     * creates additional traffic. Default value is false.
+     *
+     * @param oldValueRequired True to have old value required, false otherwise.
+     */
     public void setOldValueRequired(boolean oldValueRequired) {
         this.oldValueRequired = oldValueRequired;
     }
 
+    /**
+     * If true, this cache entry listener implementation will be called 
+     * in a synchronous manner.
+     *
+     * @return True if this cache entry listener implementation will be called 
+     *         in a synchronous manner, false otherwise.
+     */
     public boolean isSynchronous() {
         return synchronous;
     }
 
+   /**
+     * If true, this cache entry listener implementation will be called 
+     * in a synchronous manner.
+     *
+     * @param synchronous True to have this cache entry listener implementation called 
+     *        in a synchronous manner, false otherwise.
+     */
     public void setSynchronous(boolean synchronous) {
         this.synchronous = synchronous;
     }

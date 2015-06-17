@@ -69,35 +69,88 @@ public class JobTrackerConfig {
         this.topologyChangedStrategy = source.topologyChangedStrategy;
     }
 
+    /**
+     * Sets the name of this {@link com.hazelcast.mapreduce.JobTracker}.
+     *
+     * @param name the name of the {@link com.hazelcast.mapreduce.JobTracker}.
+     * @return The current job tracker config instance.
+     */
     public JobTrackerConfig setName(String name) {
         this.name = name;
         return this;
     }
 
+    /**
+     * Gets the name of this {@link com.hazelcast.mapreduce.JobTracker}.
+     *
+     * @return the name of the {@link com.hazelcast.mapreduce.JobTracker}.
+     */
     public String getName() {
         return name;
     }
 
+    /**
+     * Gets the maximum thread pool size of this {@link com.hazelcast.mapreduce.JobTracker}.
+     *
+     * @return the maximum thread pool size of the {@link com.hazelcast.mapreduce.JobTracker}.
+     */
     public int getMaxThreadSize() {
         return maxThreadSize;
     }
 
+    /**
+     * Sets the maximum thread pool size of this {@link com.hazelcast.mapreduce.JobTracker}.
+     *
+     * @param maxThreadSize the maximum thread pool size of the {@link com.hazelcast.mapreduce.JobTracker}.
+     */
     public void setMaxThreadSize(int maxThreadSize) {
         this.maxThreadSize = maxThreadSize;
     }
 
+    /**
+     * retry count is currently not used but reserved for later use where the framework will
+     * automatically try to restart / retry operations from a available savepoint.
+     */
     public int getRetryCount() {
         return retryCount;
     }
 
+    /**
+     * retry count is currently not used but reserved for later use where the framework will
+     * automatically try to restart / retry operations from a available savepoint.
+     */
     public void setRetryCount(int retryCount) {
         this.retryCount = retryCount;
     }
 
+    /**
+     * Gets the number of emitted values before a chunk is send to the reducers.
+     * If your emitted values are big, you might want to change this to a lower value. If you want 
+     * to better balance your work, you might want to change this to a higher value.
+     * A value of 0 means immediate transmission, but remember that low values mean higher traffic
+     * costs.
+     * A very high value might cause an OutOfMemoryError to occur if emitted values do not fit into
+     * heap memory before being sent to reducers. To prevent this, you might want to use a combiner
+     * to pre-reduce values on mapping nodes.
+     *
+     * @return The number of emitted values before a chunk is sent to the reducers.
+     */
     public int getChunkSize() {
         return chunkSize;
     }
 
+    /**
+     * Sets the number of emitted values before a chunk is send to the reducers.
+     * If your emitted values are big, you might want to change this to a lower value. If you want 
+     * to better balance your work, you might want to change this to a higher value.
+     * A value of 0 means immediate transmission, but remember that low values mean higher traffic
+     * costs.
+     * A very high value might cause an OutOfMemoryError to occur if emitted values do not fit into
+     * heap memory before being sent to reducers. To prevent this, you might want to use a combiner
+     * to pre-reduce values on mapping nodes.
+     *
+     * @param chunkSize The number of emitted values before a chunk is sent to the reducers.
+     */
     public void setChunkSize(int chunkSize) {
         this.chunkSize = chunkSize;
     }
@@ -106,26 +159,74 @@ public class JobTrackerConfig {
         return new JobTrackerConfigReadOnly(this);
     }
 
+    /**
+     * Gets the maximum size of the queue; the maximum number of tasks that can wait to be processed. A
+     * value of 0 means an unbounded queue.
+     *
+     * @return The maximum size of the queue.
+     */
     public int getQueueSize() {
         return queueSize;
     }
 
+    /**
+     * Sets the maximum size of the queue; the maximum number of tasks that can wait to be processed. A
+     * value of 0 means an unbounded queue.
+     *
+     * @param queueSize The maximum size of the queue.
+     */
     public void setQueueSize(int queueSize) {
         this.queueSize = queueSize;
     }
 
+    /**
+     * True if statistics (for example, about processed entries)
+     * are transmitted to the job emitter, false otherwise. This might be used to show any kind of progress to
+     * users inside of UI systems, but this produces additional traffic. If statistics are not needed, you might
+     * want to deactivate this.
+     *
+     * @return True if statistics (for example, about processed entries) are transmitted to the job emitter, 
+     * false otherwise.
+     */
     public boolean isCommunicateStats() {
         return communicateStats;
     }
 
+    /**
+     * Set to true if statistics (for example, about processed entries)
+     * should be transmitted to the job emitter, false otherwise. This might be used to show any kind of progress to
+     * users inside of UI systems, but this produces additional traffic. If statistics are not needed, you might
+     * want to deactivate this.
+     *
+     * @param communicateStats True if statistics (for example, about processed entries) are transmitted to the job emitter, 
+     * false otherwise.
+     */
     public void setCommunicateStats(boolean communicateStats) {
         this.communicateStats = communicateStats;
     }
 
+    /**
+     * Gets how the map reduce framework will react on topology
+     * changes while executing a job.
+     * Currently only CANCEL_RUNNING_OPERATION is fully supported; it throws an exception to
+     * the job emitter (throws com.hazelcast.mapreduce.TopologyChangedException).
+     *
+     * @return How the map reduce framework will react on topology
+     * changes while executing a job.
+     */
     public TopologyChangedStrategy getTopologyChangedStrategy() {
         return topologyChangedStrategy;
     }
 
+    /**
+     * Sets how the map reduce framework will react on topology
+     * changes while executing a job.
+     * Currently only CANCEL_RUNNING_OPERATION is fully supported; it throws an exception to
+     * the job emitter (throws com.hazelcast.mapreduce.TopologyChangedException).
+     *
+     * @param topologyChangedStrategy How the map reduce framework will react on topology
+     *        changes while executing a job.
+     */
     public void setTopologyChangedStrategy(TopologyChangedStrategy topologyChangedStrategy) {
         this.topologyChangedStrategy = topologyChangedStrategy;
     }

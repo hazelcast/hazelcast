@@ -74,37 +74,103 @@ public class ReplicatedMapConfig {
         this.statisticsEnabled = replicatedMapConfig.statisticsEnabled;
     }
 
+    /**
+     * Returns the name of this {@link com.hazelcast.core.ReplicatedMap}.
+     *
+     * @return the name of the {@link com.hazelcast.core.ReplicatedMap}.
+     */
     public String getName() {
         return name;
     }
 
+    /**
+     * Sets the name of this {@link com.hazelcast.core.ReplicatedMap}.
+     *
+     * @param name the name of the {@link com.hazelcast.core.ReplicatedMap}.
+     * @return The current replicated map config instance.
+     */
     public ReplicatedMapConfig setName(String name) {
         this.name = name;
         return this;
     }
 
+    /**
+     * The number of milliseconds after a put is executed before the value is replicated
+     * to other nodes. During this time, multiple puts can be operated and cached up to be sent
+     * out all at once after the delay. This highers the latency for eventually consistency but lowers IO operations.
+     * Default value is 100ms before a replication is operated. If 0, no delay is used and
+     * all values are replicated one by one.
+     *
+     * @return the number of milliseconds after a put is executed before the value is replicated
+     * to other nodes.
+     */
     public long getReplicationDelayMillis() {
         return replicationDelayMillis;
     }
 
+    /**
+     * Sets the number of milliseconds after a put is executed before the value is replicated
+     * to other nodes. During this time, multiple puts can be operated and cached up to be sent
+     * out all at once after the delay. This highers the latency for eventually consistency but lowers IO operations.
+     * Default value is 100ms before a replication is operated. If set to 0, no delay is used and
+     * all values are replicated one by one.
+     *
+     * @param replicationDelayMillis the number of milliseconds after a put is executed before the value is replicated
+     * to other nodes.
+     * @return The current replicated map config instance.
+     */
     public ReplicatedMapConfig setReplicationDelayMillis(long replicationDelayMillis) {
         this.replicationDelayMillis = replicationDelayMillis;
         return this;
     }
 
+    /**
+     * Number of parallel mutexes to minimize contention on keys. The default value is 32 which
+     * is a good number for lots of applications. If higher contention is seen on writes to values
+     * inside of the replicated map, this value can be adjusted to the needs.
+     *
+     * @return Number of parallel mutexes to minimize contention on keys.
+     */
     public int getConcurrencyLevel() {
         return concurrencyLevel;
     }
 
+    /**
+     * Sets the number of parallel mutexes to minimize contention on keys. The default value is 32 which
+     * is a good number for lots of applications. If higher contention is seen on writes to values
+     * inside of the replicated map, this value can be adjusted to the needs.
+     *
+     * @param concurrencyLevel Number of parallel mutexes to minimize contention on keys.
+     * @return The current replicated map config instance.
+     */
     public ReplicatedMapConfig setConcurrencyLevel(int concurrencyLevel) {
         this.concurrencyLevel = concurrencyLevel;
         return this;
     }
 
+    /**
+     * Data type used to store entries.
+     * Possible values:
+     * BINARY: keys and values are stored as binary data.
+     * OBJECT (default): values are stored in their object forms.
+     * NATIVE: keys and values are stored in native memory.
+     *
+     * @return Data type used to store entries.
+     */
     public InMemoryFormat getInMemoryFormat() {
         return inMemoryFormat;
     }
 
+    /**
+     * Data type used to store entries.
+     * Possible values:
+     * BINARY: keys and values are stored as binary data.
+     * OBJECT (default): values are stored in their object forms.
+     * NATIVE: keys and values are stored in native memory.
+     *
+     * @param inMemoryFormat Data type used to store entries.
+     * @return The current replicated map config instance.
+     */
     public ReplicatedMapConfig setInMemoryFormat(InMemoryFormat inMemoryFormat) {
         this.inMemoryFormat = inMemoryFormat;
         return this;
@@ -136,10 +202,28 @@ public class ReplicatedMapConfig {
         return this;
     }
 
+    /**
+     * True if the replicated map is available for reads before the initial
+     * replication is completed, false otherwise. Default is true. If false, no Exception will be
+     * thrown when the replicated map is not yet ready, but call is blocked until
+     * the initial replication is completed.
+     *
+     * @return True if the replicated map is available for reads before the initial
+     * replication is completed, false otherwise.
+     */
     public boolean isAsyncFillup() {
         return asyncFillup;
     }
 
+    /**
+     * True if the replicated map is available for reads before the initial
+     * replication is completed, false otherwise. Default is true. If false, no Exception will be
+     * thrown when the replicated map is not yet ready, but call is blocked until
+     * the initial replication is completed.
+     *
+     * @param asyncFillup True if the replicated map is available for reads before the initial
+     * replication is completed, false otherwise.
+     */
     public void setAsyncFillup(boolean asyncFillup) {
         this.asyncFillup = asyncFillup;
     }
@@ -148,10 +232,21 @@ public class ReplicatedMapConfig {
         return new ReplicatedMapConfigReadOnly(this);
     }
 
+    /**
+     * Checks if statistics are enabled for this replicated map.
+     *
+     * @return True if statistics are enabled, false otherwise.
+     */
     public boolean isStatisticsEnabled() {
         return statisticsEnabled;
     }
 
+    /**
+     * Sets statistics to enabled or disabled for this replicated map.
+     *
+     * @param statisticsEnabled True to enable replicated map statistics, false to disable.
+     * @return The current replicated map config instance.
+     */
     public ReplicatedMapConfig setStatisticsEnabled(boolean statisticsEnabled) {
         this.statisticsEnabled = statisticsEnabled;
         return this;

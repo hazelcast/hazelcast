@@ -67,24 +67,40 @@ public class ExecutorConfig {
         return readOnly;
     }
 
+    /**
+     * Gets the name of the executor task.
+     *
+     * @return The name of the executor task.
+     */
     public String getName() {
         return name;
     }
 
+    /**
+     * Sets the name of the executor task.
+     *
+     * @param name The name of the executor task.
+     * @return This executor config instance.
+     */
     public ExecutorConfig setName(String name) {
         this.name = name;
         return this;
     }
 
     /**
-     * @return the poolSize
+     * Gets the number of executor threads per member for the executor.
+     *
+     * @return The number of executor threads per member for the executor.
      */
     public int getPoolSize() {
         return poolSize;
     }
 
     /**
-     * @param poolSize the poolSize to set
+     * Sets the number of executor threads per member for the executor.
+     *
+     * @param poolSize The number of executor threads per member for the executor.
+     * @return This executor config instance.
      */
     public ExecutorConfig setPoolSize(final int poolSize) {
         if (poolSize <= 0) {
@@ -94,19 +110,41 @@ public class ExecutorConfig {
         return this;
     }
 
+    /**
+     * Gets the queue capacity of the executor task. 0 means Integer.MAX_VALUE.
+     *
+     * @return Queue capacity of the executor task. 0 means Integer.MAX_VALUE.
+     */
     public int getQueueCapacity() {
         return queueCapacity;
     }
 
+    /**
+     * Sets the queue capacity of the executor task. 0 means Integer.MAX_VALUE.
+     *
+     * @param queueCapacity Queue capacity of the executor task. 0 means Integer.MAX_VALUE.
+     * @return This executor config instance.
+     */
     public ExecutorConfig setQueueCapacity(int queueCapacity) {
         this.queueCapacity = queueCapacity;
         return this;
     }
 
+    /**
+     * Gets if statistics gathering is enabled or disabled on the executor task.
+     *
+     * @return True (default) if statistics gathering is enabled on the executor task, false otherwise.
+     */
     public boolean isStatisticsEnabled() {
         return statisticsEnabled;
     }
 
+    /**
+     * Enables or disables statistics gathering on the executor task.
+     *
+     * @param statisticsEnabled True (default) if statistics gathering is enabled on the executor task, false otherwise.
+     * @return This executor config instance.
+     */
     public ExecutorConfig setStatisticsEnabled(boolean statisticsEnabled) {
         this.statisticsEnabled = statisticsEnabled;
         return this;

@@ -718,7 +718,13 @@
                 </xs:annotation>
             </xs:element>
             <xs:element name="global-ordering-enabled" type="xs:boolean" minOccurs="0" maxOccurs="1"
-                        default="false"/>
+                        default="false">
+			    <xs:annotation>
+			        <xs:documentation>
+			            True (default) if statistics gathering is enabled on the topic, false otherwise.
+			        </xs:documentation>
+			    </xs:annotation>
+			</xs:element>
             <xs:element name="message-listeners" minOccurs="0" maxOccurs="1">
                 <xs:complexType>
                     <xs:sequence>
@@ -799,14 +805,14 @@
                 <xs:annotation>
                     <xs:documentation>
                         retry-count is currently not used but reserved for later use where the framework will
-                        automatically try to restart / retry operations from a available savepoint.
+                        automatically try to restart / retry operations from an available savepoint.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
             <xs:element name="chunk-size" type="xs:nonNegativeInteger" minOccurs="0" maxOccurs="1" default="1000">
                 <xs:annotation>
                     <xs:documentation>
-                        The number of emitted values before a chunk is send to the reducers.
+                        The number of emitted values before a chunk is sent to the reducers.
                         If your emitted values are big, you might want to change this to a lower value. If you want 
                         to better balance your work, you might want to change this to a higher value.
                         A value of 0 means immediate transmission, but remember that low values mean higher traffic
@@ -1252,7 +1258,13 @@
                 </xs:annotation>
             </xs:element>
         </xs:all>
-        <xs:attribute name="name" type="xs:string" use="optional" default="default"/>
+        <xs:attribute name="name" type="xs:string" use="optional" default="default">
+            <xs:annotation>
+                <xs:documentation>
+                    Name of the executor task.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
     </xs:complexType>
 
     <xs:simpleType name="backup-count">
