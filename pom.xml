@@ -580,6 +580,7 @@
                                     <value>http://download.oracle.com/javase/1.7.0/docs/api/</value>
                                 </property>
                             </javaApiLinks>
+                            <maxmemory>1024</maxmemory>
                         </configuration>
                         <executions>
                             <execution>
