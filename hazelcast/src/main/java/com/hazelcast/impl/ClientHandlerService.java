@@ -240,6 +240,11 @@ public class ClientHandlerService implements ConnectionListener {
         return mapClientEndpoints.get(conn);
     }
 
+    // package-private for testing
+    Collection<ClientEndpoint> getClientEndpoints() {
+        return mapClientEndpoints.values();
+    }
+
     public void connectionAdded(Connection connection) {
     }
 

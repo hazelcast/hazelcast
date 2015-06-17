@@ -19,6 +19,8 @@ package com.hazelcast.core;
 import com.hazelcast.client.ClientConfig;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.config.Config;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -32,6 +34,13 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
 public class ClientServiceTest {
+
+    @Before
+    @After
+    public void shutdown(){
+        HazelcastClient.shutdownAll();
+        Hazelcast.shutdownAll();
+    }
 
     @Test
     public void getConnectedClients() {
@@ -47,10 +56,6 @@ public class ClientServiceTest {
         assertEquals(map.size(), h.getClientService().getConnectedClients().size());
         for (Client client : h.getClientService().getConnectedClients()) {
             assertEquals(ClientType.Native, client.getClientType());
-            System.out.println(client.getSocketAddress());
-        }
-        for (HazelcastClient client : map.values()) {
-            client.getLifecycleService().shutdown();
         }
     }
 
