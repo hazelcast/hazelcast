@@ -42,5 +42,3 @@ public class Sample implements MessageListener<MyEvent> {
   private final Executor messageExecutor = Executors.newSingleThreadExecutor();
 }
 ```
-
-
