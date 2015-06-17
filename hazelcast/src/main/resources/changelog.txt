@@ -62,6 +62,7 @@ Chapter 19 - Security
 - ClusterLoginModule: Enterprise Integration section added.
 
 Chapter 20 - Performance
+- Added a paragraph about I/O balancer that guarantees the connections are distributed equally among the I/O threads.
 - Hazelcast Performance on AWS added as a new section that provides best practices to improve the Hazelcast performance on Amazon Web Service.
 - Back Pressure added as a new section.
 - SlowOperationDetector: Added as a new section explaining the SlowOperationDetector, a monitoring feature that collects information of all slow operations.
