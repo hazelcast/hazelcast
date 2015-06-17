@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi.impl;
+package com.hazelcast.spi.impl.servicemanager.impl;
 
 import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.client.impl.ClientEngineImpl;
@@ -48,7 +48,10 @@ import com.hazelcast.spi.ConfigurableService;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.ServiceInfo;
+import com.hazelcast.spi.SharedService;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.proxyservice.impl.ProxyServiceImpl;
+import com.hazelcast.spi.impl.servicemanager.ServiceManager;
 import com.hazelcast.topic.impl.reliable.ReliableTopicService;
 import com.hazelcast.topic.impl.TopicService;
 import com.hazelcast.transaction.impl.xa.XAService;
@@ -66,18 +69,18 @@ import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.util.EmptyStatement.ignore;
 
-final class ServiceManager {
+public final class ServiceManagerImpl implements ServiceManager {
 
     private final NodeEngineImpl nodeEngine;
     private final ILogger logger;
     private final ConcurrentMap<String, ServiceInfo> services = new ConcurrentHashMap<String, ServiceInfo>(20, .75f, 1);
 
-    ServiceManager(final NodeEngineImpl nodeEngine) {
+    public ServiceManagerImpl(final NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
-        this.logger = nodeEngine.getLogger(ServiceManager.class);
+        this.logger = nodeEngine.getLogger(ServiceManagerImpl.class);
     }
 
-    synchronized void start() {
+    public synchronized void start() {
         Map<String, Properties> serviceProps = new HashMap<String, Properties>();
         Map<String, Object> serviceConfigObjects = new HashMap<String, Object>();
 
@@ -236,7 +239,7 @@ final class ServiceManager {
         return null;
     }
 
-    synchronized void shutdown(boolean terminate) {
+    public synchronized void shutdown(boolean terminate) {
         logger.finest("Stopping services...");
         final List<ManagedService> managedServices = getServices(ManagedService.class);
         // reverse order to stop CoreServices last.
@@ -277,16 +280,13 @@ final class ServiceManager {
         }
     }
 
-    ServiceInfo getServiceInfo(String serviceName) {
+    @Override
+    public ServiceInfo getServiceInfo(String serviceName) {
         return services.get(serviceName);
     }
 
-    /**
-     * Returns a list of services matching provided service class/interface.
-     * <br></br>
-     * <b>CoreServices will be placed at the beginning of the list.</b>
-     */
-    <S> List<S> getServices(Class<S> serviceClass) {
+    @Override
+    public <S> List<S> getServices(Class<S> serviceClass) {
         final LinkedList<S> result = new LinkedList<S>();
         for (ServiceInfo serviceInfo : services.values()) {
             if (serviceInfo.isInstanceOf(serviceClass)) {
@@ -301,12 +301,33 @@ final class ServiceManager {
         return result;
     }
 
+    @Override
+    public <T> T getService(String serviceName) {
+        final ServiceInfo serviceInfo = getServiceInfo(serviceName);
+        return serviceInfo != null ? (T) serviceInfo.getService() : null;
+    }
+
+    @Override
+    public <T extends SharedService> T getSharedService(String serviceName) {
+        final Object service = getService(serviceName);
+        if (service == null) {
+            return null;
+        }
+
+        if (service instanceof SharedService) {
+            return (T) service;
+        }
+
+        throw new IllegalArgumentException("No SharedService registered with name: " + serviceName);
+    }
+
     /**
      * Returns a list of services matching provided service class/interface.
      * <br></br>
      * <b>CoreServices will be placed at the beginning of the list.</b>
      */
-    List<ServiceInfo> getServiceInfos(Class serviceClass) {
+    @Override
+    public List<ServiceInfo> getServiceInfos(Class serviceClass) {
         final LinkedList<ServiceInfo> result = new LinkedList<ServiceInfo>();
         for (ServiceInfo serviceInfo : services.values()) {
             if (serviceInfo.isInstanceOf(serviceClass)) {
