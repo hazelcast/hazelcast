@@ -60,15 +60,15 @@ Quorum listeners can be configured via declarative or programmatic configuration
 ```xml
 <hazelcast>
 ....
-<quorum name="quorumRuleWithThreeNodes" enabled=true>
+<quorum name="quorumRuleWithThreeNodes" enabled="true">
   <quorum-size>3</quorum-size>
   <quorum-listeners>
-    <quorum-listener>com.company.quorum.ThreeNodeQuorumListener </quorum-listener>
+    <quorum-listener>com.company.quorum.ThreeNodeQuorumListener</quorum-listener>
   </quorum-listeners>
 </quorum>
 
 <map name="default">
-<quorum-name>quorumRuleWithThreeNodes</quorum-name>
+  <quorum-name>quorumRuleWithThreeNodes</quorum-name>
 </map>
 ....
 </hazelcast>
