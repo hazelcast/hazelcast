@@ -25,7 +25,7 @@ import com.hazelcast.map.impl.wan.MapReplicationUpdate;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.ReplicationSupportingService;
 import com.hazelcast.util.ExceptionUtil;
-import com.hazelcast.wan.WanReplicationEvent;
+import com.hazelcast.internal.wan.WanReplicationEvent;
 
 import java.util.concurrent.Future;
 

@@ -15,6 +15,6 @@
  */
 
 /**
- * This package contains the WAN replication API
+ * This package contains the opensource implementation of WAN replication
  */
-package com.hazelcast.wan;
+package com.hazelcast.internal.wan.impl;

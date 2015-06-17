@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.wan;
+package com.hazelcast.internal.wan;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;

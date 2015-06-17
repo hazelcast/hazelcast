@@ -1,4 +1,4 @@
-package com.hazelcast.wan;
+package com.hazelcast.internal.wan;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.WanReplicationConfig;
@@ -17,7 +17,7 @@ import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.NightlyTest;
-import com.hazelcast.wan.impl.WanNoDelayReplication;
+import com.hazelcast.internal.wan.impl.WanNoDelayReplication;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;

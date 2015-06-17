@@ -35,8 +35,8 @@ import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.query.impl.IndexService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.ExceptionUtil;
-import com.hazelcast.wan.WanReplicationPublisher;
-import com.hazelcast.wan.WanReplicationService;
+import com.hazelcast.internal.wan.WanReplicationPublisher;
+import com.hazelcast.internal.wan.WanReplicationService;
 
 import java.util.List;
 import java.util.Map;

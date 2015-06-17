@@ -14,10 +14,14 @@
  * limitations under the License.
  */
 
-package com.hazelcast.wan;
+package com.hazelcast.internal.wan;
 
 /**
- * Marker interface for WAN replication messages
+ * This interface offers the implementation of different kinds of replication techniques like
+ * TCP, UDP or maybe even an JMS based service
  */
-public interface ReplicationEventObject {
+public interface WanReplicationPublisher {
+
+    void publishReplicationEvent(String serviceName, ReplicationEventObject eventObject);
+
 }

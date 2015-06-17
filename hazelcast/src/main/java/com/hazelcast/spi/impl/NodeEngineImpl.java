@@ -52,7 +52,7 @@ import com.hazelcast.spi.impl.executionservice.InternalExecutionService;
 import com.hazelcast.spi.impl.executionservice.impl.ExecutionServiceImpl;
 import com.hazelcast.transaction.TransactionManagerService;
 import com.hazelcast.transaction.impl.TransactionManagerServiceImpl;
-import com.hazelcast.wan.WanReplicationService;
+import com.hazelcast.internal.wan.WanReplicationService;
 
 import java.util.Collection;
 import java.util.LinkedList;

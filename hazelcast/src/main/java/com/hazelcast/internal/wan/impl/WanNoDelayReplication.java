@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.wan.impl;
+package com.hazelcast.internal.wan.impl;
 
 import com.hazelcast.cluster.impl.operations.AuthorizationOperation;
 import com.hazelcast.instance.Node;
@@ -29,10 +29,10 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.util.AddressUtil;
 import com.hazelcast.util.AddressUtil.AddressHolder;
-import com.hazelcast.wan.ReplicationEventObject;
-import com.hazelcast.wan.WanReplicationEndpoint;
-import com.hazelcast.wan.WanReplicationEvent;
-import com.hazelcast.wan.WanReplicationService;
+import com.hazelcast.internal.wan.ReplicationEventObject;
+import com.hazelcast.internal.wan.WanReplicationEndpoint;
+import com.hazelcast.internal.wan.WanReplicationEvent;
+import com.hazelcast.internal.wan.WanReplicationService;
 
 import java.util.Arrays;
 import java.util.LinkedList;

@@ -21,7 +21,7 @@ import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
-import com.hazelcast.wan.ReplicationEventObject;
+import com.hazelcast.internal.wan.ReplicationEventObject;
 import java.io.IOException;
 
 public class MapReplicationUpdate implements ReplicationEventObject, DataSerializable {
