@@ -16,7 +16,6 @@
 
 package com.hazelcast.spi.impl.servicemanager;
 
-import com.hazelcast.spi.ServiceInfo;
 import com.hazelcast.spi.SharedService;
 
 import java.util.List;
