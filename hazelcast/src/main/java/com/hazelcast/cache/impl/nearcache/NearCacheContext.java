@@ -24,6 +24,7 @@ import com.hazelcast.nio.serialization.SerializationService;
  */
 public class NearCacheContext {
 
+    private NearCacheManager nearCacheManager;
     private SerializationService serializationService;
     private NearCacheExecutor nearCacheExecutor;
 
@@ -37,22 +38,36 @@ public class NearCacheContext {
         this.nearCacheExecutor = nearCacheExecutor;
     }
 
+    public NearCacheContext(NearCacheManager nearCacheManager,
+                            SerializationService serializationService,
+                            NearCacheExecutor nearCacheExecutor) {
+        this.nearCacheManager = nearCacheManager;
+        this.serializationService = serializationService;
+        this.nearCacheExecutor = nearCacheExecutor;
+    }
+
+    public NearCacheManager getNearCacheManager() {
+        return nearCacheManager;
+    }
+
+    public void setNearCacheManager(NearCacheManager nearCacheManager) {
+        this.nearCacheManager = nearCacheManager;
+    }
+
     public SerializationService getSerializationService() {
         return serializationService;
     }
 
-    public NearCacheContext setSerializationService(SerializationService serializationService) {
+    public void setSerializationService(SerializationService serializationService) {
         this.serializationService = serializationService;
-        return this;
     }
 
     public NearCacheExecutor getNearCacheExecutor() {
         return nearCacheExecutor;
     }
 
-    public NearCacheContext setNearCacheExecutor(NearCacheExecutor nearCacheExecutor) {
+    public void setNearCacheExecutor(NearCacheExecutor nearCacheExecutor) {
         this.nearCacheExecutor = nearCacheExecutor;
-        return this;
     }
 
 }

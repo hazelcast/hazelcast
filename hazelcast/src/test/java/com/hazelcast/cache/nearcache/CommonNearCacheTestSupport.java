@@ -11,6 +11,7 @@ import com.hazelcast.nio.serialization.DefaultSerializationServiceBuilder;
 import com.hazelcast.test.HazelcastTestSupport;
 
 import org.junit.After;
+import org.junit.Before;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -37,6 +38,7 @@ public abstract class CommonNearCacheTestSupport extends HazelcastTestSupport {
         final ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(1);
         scheduledExecutorServices.add(scheduledExecutorService);
         return new NearCacheContext(
+                null, // No need to near-cache manager
                 new DefaultSerializationServiceBuilder().build(),
                 createNearCacheExecutor());
     }
