@@ -3033,7 +3033,14 @@ public class ConcurrentMapManager extends BaseManager {
                 request.value = null;
                 request.response = Boolean.FALSE;
             } else {
-                Record record = ensureRecord(request);
+                Record record = cmap.getRecord(request);
+                if (record != null && !record.isActive() && record.getRemoveTime() > 0) {
+                    request.value = null;
+                    request.response = Boolean.FALSE;
+                    return;
+                }
+
+                record = ensureRecord(request);
                 cmap.put(request);
                 if (record != null) {
                     record.setDirty(false);

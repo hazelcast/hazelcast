@@ -217,7 +217,15 @@ public class PartitionManager {
                     : cmap.getTotalBackupCount() >= replicaIndex;
             if (includeCMap) {
                 for (final Record record : cmap.mapRecords.values()) {
-                    if (record.isActive() && record.isValid(now)) {
+                    if (record.isValid(now)) {
+                        if (!record.isActive() && record.getRemoveTime() == 0L) {
+                            continue;
+                        }
+
+                        if (replicaIndex > 0 && !record.isActive()) {
+                            continue;
+                        }
+
                         if (record.getKeyData() == null || record.getKeyData().size() == 0) {
                             throw new RuntimeException("Record.key is null or empty " + record.getKeyData());
                         }

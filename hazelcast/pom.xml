@@ -29,10 +29,6 @@
     <artifactId>hazelcast</artifactId>
     <packaging>jar</packaging>
 
-    <properties>
-        <log4j.version>1.2.12</log4j.version>
-    </properties>
-
     <build>
         <plugins>
             <!--  this create jar file of code from src/test/java so modules with tests can share code -->

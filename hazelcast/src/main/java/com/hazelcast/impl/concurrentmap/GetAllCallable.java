@@ -19,7 +19,15 @@ package com.hazelcast.impl.concurrentmap;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.MapLoader;
-import com.hazelcast.impl.*;
+import com.hazelcast.impl.CMap;
+import com.hazelcast.impl.CallContext;
+import com.hazelcast.impl.ConcurrentMapManager;
+import com.hazelcast.impl.FactoryImpl;
+import com.hazelcast.impl.Keys;
+import com.hazelcast.impl.MProxy;
+import com.hazelcast.impl.Processable;
+import com.hazelcast.impl.Record;
+import com.hazelcast.impl.ThreadContext;
 import com.hazelcast.impl.base.KeyValue;
 import com.hazelcast.impl.base.Pairs;
 import com.hazelcast.nio.Data;
@@ -60,31 +68,40 @@ public class GetAllCallable implements Callable<Pairs>, HazelcastInstanceAware, 
                 public void process() {
                     c.getOrCreateMap(mapName);
                 }
-            }, 100);
+            });
             cmap = c.getMap(mapName);
         }
+
         if (cmap != null) {
             MapLoader loader = cmap.getMapLoader();
             Collection<Object> keysToLoad = (loader != null) ? new HashSet<Object>() : null;
             Set<Data> missingKeys = new HashSet<Data>(1);
             for (Data key : keys.getKeys()) {
-                boolean exist = false;
+                boolean missing = true;
                 Record record = cmap.getRecord(key);
-                if (record != null && record.isActive() && record.isValid()) {
-                    Data value = record.getValueData();
-                    if (value != null) {
-                        pairs.addKeyValue(new KeyValue(key, value));
-                        record.setLastAccessed();
-                        exist = true;
+
+                if (record != null) {
+                    if (record.isActive() && record.isValid()) {
+                        Data value = record.getValueData();
+                        if (value != null) {
+                            pairs.addKeyValue(new KeyValue(key, value));
+                            record.setLastAccessed();
+                            missing = false;
+                        }
+                    }
+                    if (!record.isActive() && record.getRemoveTime() > 0) {
+                        missing = false;
                     }
                 }
-                if (!exist) {
+
+                if (missing) {
                     missingKeys.add(key);
                     if (keysToLoad != null) {
                         keysToLoad.add(toObject(key));
                     }
                 }
             }
+
             if (keysToLoad != null && keysToLoad.size() > 0 && loader != null) {
                 final Map<Object, Object> mapLoadedEntries = loader.loadAll(keysToLoad);
                 if (mapLoadedEntries != null) {
