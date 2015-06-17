@@ -186,8 +186,8 @@ public class NearCacheConfig
     }
 
     /**
-    * Gets the maximum size of the near cache. When max size is reached,
-    * cache is evicted based on the policy defined.
+     * Gets the maximum size of the near cache. When max size is reached,
+     * cache is evicted based on the policy defined.
      *
      * @return The maximum size of the near cache.
      */
@@ -245,8 +245,8 @@ public class NearCacheConfig
      * Entries that are not read (touched) more than max-idle-seconds value will get removed
      * from the near cache.
      *
-     * @return Maximum number of seconds each entry can stay in the near cache as 
-     *         untouched (not-read).
+     * @return Maximum number of seconds each entry can stay in the near cache as
+     * untouched (not-read).
      */
     public int getMaxIdleSeconds() {
         return maxIdleSeconds;
@@ -258,8 +258,8 @@ public class NearCacheConfig
      * from the near cache.
      * Any integer between 0 and Integer.MAX_VALUE. 0 means Integer.MAX_VALUE. Default is 0.
      *
-     * @param maxIdleSeconds Maximum number of seconds each entry can stay in the near cache as 
-     *        untouched (not-read).
+     * @param maxIdleSeconds Maximum number of seconds each entry can stay in the near cache as
+     *                       untouched (not-read).
      * @return This near cache config instance.
      */
     public NearCacheConfig setMaxIdleSeconds(int maxIdleSeconds) {
@@ -270,8 +270,6 @@ public class NearCacheConfig
     /**
      * True to evict the cached entries if the entries are changed (updated or removed).
      *
-     * @return If true, the cached entries are evicted if the entires are 
-     * changed (updated or removed), false otherwise.
      * @return This near cache config instance.
      */
     public boolean isInvalidateOnChange() {
@@ -281,8 +279,8 @@ public class NearCacheConfig
     /**
      * True to evict the cached entries if the entries are changed (updated or removed).
      *
-     * @param invalidateOnChange True to evict the cached entries if the entries are 
-     * changed (updated or removed), false otherwise.
+     * @param invalidateOnChange True to evict the cached entries if the entries are
+     *                           changed (updated or removed), false otherwise.
      * @return This near cache config instance.
      */
     public NearCacheConfig setInvalidateOnChange(boolean invalidateOnChange) {

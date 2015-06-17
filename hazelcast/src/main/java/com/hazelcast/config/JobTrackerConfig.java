@@ -17,6 +17,7 @@
 package com.hazelcast.config;
 
 import com.hazelcast.mapreduce.TopologyChangedStrategy;
+
 /**
  * Contains the configuration for an {@link com.hazelcast.mapreduce.JobTracker}.
  */
@@ -125,7 +126,7 @@ public class JobTrackerConfig {
 
     /**
      * Gets the number of emitted values before a chunk is send to the reducers.
-     * If your emitted values are big, you might want to change this to a lower value. If you want 
+     * If your emitted values are big, you might want to change this to a lower value. If you want
      * to better balance your work, you might want to change this to a higher value.
      * A value of 0 means immediate transmission, but remember that low values mean higher traffic
      * costs.
@@ -141,7 +142,7 @@ public class JobTrackerConfig {
 
     /**
      * Sets the number of emitted values before a chunk is send to the reducers.
-     * If your emitted values are big, you might want to change this to a lower value. If you want 
+     * If your emitted values are big, you might want to change this to a lower value. If you want
      * to better balance your work, you might want to change this to a higher value.
      * A value of 0 means immediate transmission, but remember that low values mean higher traffic
      * costs.
@@ -185,7 +186,7 @@ public class JobTrackerConfig {
      * users inside of UI systems, but this produces additional traffic. If statistics are not needed, you might
      * want to deactivate this.
      *
-     * @return True if statistics (for example, about processed entries) are transmitted to the job emitter, 
+     * @return True if statistics (for example, about processed entries) are transmitted to the job emitter,
      * false otherwise.
      */
     public boolean isCommunicateStats() {
@@ -198,8 +199,8 @@ public class JobTrackerConfig {
      * users inside of UI systems, but this produces additional traffic. If statistics are not needed, you might
      * want to deactivate this.
      *
-     * @param communicateStats True if statistics (for example, about processed entries) are transmitted to the job emitter, 
-     * false otherwise.
+     * @param communicateStats True if statistics (for example, about processed entries) are transmitted to the job emitter,
+     *                         false otherwise.
      */
     public void setCommunicateStats(boolean communicateStats) {
         this.communicateStats = communicateStats;
@@ -225,7 +226,7 @@ public class JobTrackerConfig {
      * the job emitter (throws com.hazelcast.mapreduce.TopologyChangedException).
      *
      * @param topologyChangedStrategy How the map reduce framework will react on topology
-     *        changes while executing a job.
+     *                                changes while executing a job.
      */
     public void setTopologyChangedStrategy(TopologyChangedStrategy topologyChangedStrategy) {
         this.topologyChangedStrategy = topologyChangedStrategy;

@@ -78,10 +78,10 @@ public class ManagementCenterConfig {
     }
 
     /**
-     * Gets the time frequency (in seconds) for which Management Center will take 
+     * Gets the time frequency (in seconds) for which Management Center will take
      * information from the Hazelcast cluster.
      *
-     * @return The time frequency (in seconds) for which Management Center will take 
+     * @return The time frequency (in seconds) for which Management Center will take
      * information from the Hazelcast cluster.
      */
     public int getUpdateInterval() {
@@ -89,11 +89,11 @@ public class ManagementCenterConfig {
     }
 
     /**
-     * Sets the time frequency (in seconds) for which Management Center will take 
+     * Sets the time frequency (in seconds) for which Management Center will take
      * information from the Hazelcast cluster.
      *
-     * @param updateInterval the time frequency (in seconds) for which Management Center will take 
-     * information from the Hazelcast cluster.
+     * @param updateInterval the time frequency (in seconds) for which Management Center will take
+     *                       information from the Hazelcast cluster.
      * @return This management center config instance.
      */
     public ManagementCenterConfig setUpdateInterval(final int updateInterval) {
