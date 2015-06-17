@@ -20,7 +20,7 @@ Assume that you have a 5-node Hazelcast Cluster and you want to set the minimum 
 ```xml
 <hazelcast>
 ....
-<quorum name="quorumRuleWithThreeNodes" enabled=true>
+<quorum name="quorumRuleWithThreeNodes" enabled="true">
   <quorum-size>3</quorum-size>
 </quorum>
 
