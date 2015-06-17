@@ -15,7 +15,7 @@
   -->
 
 <project basedir="." name="hazelcast" default="jar">
-    <property name="version" value="2.6.10"/>
+    <property name="version" value="2.6.11-SNAPSHOT"/>
 
     <property name="core.src.dir" value="hazelcast/src/main/java"/>
     <property name="core.classes.dir" value="hazelcast/target/classes"/>
