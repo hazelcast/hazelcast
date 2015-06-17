@@ -94,8 +94,8 @@ public class ReplicatedRecord<K, V> implements IdentifiedDataSerializable {
         for (;;) {
             VectorClockTimestamp vectorClockTimestamp = this.vectorClockTimestamp;
             VectorClockTimestamp vectorClockTimestampCopy = VectorClockTimestamp.copyVector(vectorClockTimestamp);
-            vectorClockTimestampCopy = vectorClockTimestampCopy.applyVector0(otherVectorClockTimestamp);
-            vectorClockTimestampCopy = vectorClockTimestampCopy.incrementClock0(member);
+            vectorClockTimestampCopy = vectorClockTimestampCopy.applyVector(otherVectorClockTimestamp);
+            vectorClockTimestampCopy = vectorClockTimestampCopy.incrementClock(member);
             if (VECTOR_CLOCK_UPDATER.compareAndSet(this, vectorClockTimestamp, vectorClockTimestampCopy)) {
                 return vectorClockTimestampCopy;
             }
@@ -106,7 +106,7 @@ public class ReplicatedRecord<K, V> implements IdentifiedDataSerializable {
         for (;;) {
             VectorClockTimestamp vectorClockTimestamp = this.vectorClockTimestamp;
             VectorClockTimestamp vectorClockTimestampCopy = VectorClockTimestamp.copyVector(vectorClockTimestamp);
-            vectorClockTimestampCopy = vectorClockTimestampCopy.applyVector0(otherVectorClockTimestamp);
+            vectorClockTimestampCopy = vectorClockTimestampCopy.applyVector(otherVectorClockTimestamp);
             if (VECTOR_CLOCK_UPDATER.compareAndSet(this, vectorClockTimestamp, vectorClockTimestampCopy)) {
                 return vectorClockTimestampCopy;
             }
@@ -117,7 +117,7 @@ public class ReplicatedRecord<K, V> implements IdentifiedDataSerializable {
         for (;;) {
             VectorClockTimestamp vectorClockTimestamp = this.vectorClockTimestamp;
             VectorClockTimestamp vectorClockTimestampCopy = VectorClockTimestamp.copyVector(vectorClockTimestamp);
-            vectorClockTimestampCopy = vectorClockTimestampCopy.incrementClock0(member);
+            vectorClockTimestampCopy = vectorClockTimestampCopy.incrementClock(member);
             if (VECTOR_CLOCK_UPDATER.compareAndSet(this, vectorClockTimestamp, vectorClockTimestampCopy)) {
                 return vectorClockTimestampCopy;
             }
