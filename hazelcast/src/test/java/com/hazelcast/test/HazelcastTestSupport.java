@@ -34,6 +34,7 @@ import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.partition.impl.InternalPartitionServiceState;
+import com.hazelcast.replicatedmap.impl.record.VectorClockTimestamp;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
@@ -64,6 +65,7 @@ import static java.util.Arrays.asList;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -94,6 +96,14 @@ public abstract class HazelcastTestSupport {
             constructor.newInstance();
         } catch (Exception e) {
         }
+    }
+
+    public static void assertHappensBefore(VectorClockTimestamp clock1, VectorClockTimestamp clock2) {
+        assertTrue(VectorClockTimestamp.happenedBefore(clock1, clock2));
+    }
+
+    public static void assertNotHappensBefore(VectorClockTimestamp clock1, VectorClockTimestamp clock2) {
+        assertFalse(VectorClockTimestamp.happenedBefore(clock1, clock2));
     }
 
     public HazelcastInstance createHazelcastInstance() {
