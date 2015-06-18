@@ -33,7 +33,7 @@ import com.hazelcast.quorum.impl.QuorumServiceImpl;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PostJoinAwareService;
-import com.hazelcast.spi.ServiceInfo;
+import com.hazelcast.spi.impl.servicemanager.ServiceInfo;
 import com.hazelcast.spi.SharedService;
 import com.hazelcast.internal.storage.DataRef;
 import com.hazelcast.internal.storage.Storage;

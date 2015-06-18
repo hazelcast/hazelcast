@@ -32,7 +32,7 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.spi.PartitionReplicationEvent;
 import com.hazelcast.spi.ResponseHandler;
-import com.hazelcast.spi.ServiceInfo;
+import com.hazelcast.spi.impl.servicemanager.ServiceInfo;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.impl.NodeEngineImpl;

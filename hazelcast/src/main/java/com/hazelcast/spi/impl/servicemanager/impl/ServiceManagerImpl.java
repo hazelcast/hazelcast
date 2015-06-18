@@ -47,7 +47,7 @@ import com.hazelcast.ringbuffer.impl.RingbufferService;
 import com.hazelcast.spi.ConfigurableService;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.ServiceInfo;
+import com.hazelcast.spi.impl.servicemanager.ServiceInfo;
 import com.hazelcast.spi.SharedService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.proxyservice.impl.ProxyServiceImpl;
