@@ -56,13 +56,25 @@ public final class UnsafeHelper {
 
     public static final int MEM_COPY_THRESHOLD = 1024 * 1024;
 
-    private static final String UNSAFE_WARNING = "sun.misc.Unsafe isn't available, some features might be not available";
+    private static final String UNSAFE_MODE_PROPERTY_NAME = "hazelcast.unsafe.mode";
+    private static final String UNSAFE_EXPLICITLY_DISABLED = "disabled";
+    private static final String UNSAFE_EXPLICITLY_ENABLED = "enforced";
+
+    private static final String UNSAFE_WARNING_WHEN_NOT_FOUND = "sun.misc.Unsafe isn't available, some features might "
+            + "be not available";
+    private static final String UNSAFE_WARNING_WHEN_EXPLICTLY_DISABLED = "sun.misc.Unsafe has been disabled "
+            + "via System Property " + UNSAFE_MODE_PROPERTY_NAME + ", some features might be not available.";
+    private static final String UNSAFE_WARNING_WHEN_UNALIGNED_ACCESS_NOT_ALLOWED = "sun.misc.Unsafe has been disabled "
+            + "because your platform does not support unaligned access to memory, some features might be not available.";
+    private static final String UNSAFE_WARNING_WHEN_ENFORCED_ON_PLATFORM_WHERE_NOT_SUPPORTED = "You platform does not "
+            + "seem to support unaligned access to memory. Unsafe usage has been enforced via System Property "
+            + UNSAFE_MODE_PROPERTY_NAME + " This is not a supported configuration and it can crash JVM or corrupt your data!";
+
 
     static {
         Unsafe unsafe;
-
         try {
-            unsafe = findUnsafe();
+            unsafe = findUnsafeIfAllowed();
         } catch (RuntimeException e) {
             unsafe = null;
         }
@@ -100,7 +112,7 @@ public final class UnsafeHelper {
                 unsafeAvailable = true;
             }
         } catch (Throwable e) {
-            Logger.getLogger(UnsafeHelper.class).warning(UNSAFE_WARNING);
+            Logger.getLogger(UnsafeHelper.class).warning(UNSAFE_WARNING_WHEN_NOT_FOUND);
         }
 
         UNSAFE_AVAILABLE = unsafeAvailable;
@@ -115,6 +127,46 @@ public final class UnsafeHelper {
 
     private static int arrayIndexScale(Class<?> type, Unsafe unsafe) {
         return unsafe == null ? -1 : unsafe.arrayIndexScale(type);
+    }
+
+    private static Unsafe findUnsafeIfAllowed() {
+        if (isUnsafeExplicitlyDisabled()) {
+            Logger.getLogger(UnsafeHelper.class).warning(UNSAFE_WARNING_WHEN_EXPLICTLY_DISABLED);
+            return null;
+        }
+        if (!isUnalignedAccessAllowed()) {
+            if (isUnsafeExplicitlyEnforced()) {
+                Logger.getLogger(UnsafeHelper.class).warning(UNSAFE_WARNING_WHEN_ENFORCED_ON_PLATFORM_WHERE_NOT_SUPPORTED);
+            } else {
+                Logger.getLogger(UnsafeHelper.class).warning(UNSAFE_WARNING_WHEN_UNALIGNED_ACCESS_NOT_ALLOWED);
+                return null;
+            }
+        }
+        Unsafe unsafe = findUnsafe();
+        if (unsafe == null) {
+            Logger.getLogger(UnsafeHelper.class).warning(UNSAFE_WARNING_WHEN_NOT_FOUND);
+        }
+        return unsafe;
+    }
+
+    private static boolean isUnsafeExplicitlyDisabled() {
+        String mode = System.getProperty(UNSAFE_MODE_PROPERTY_NAME);
+        return UNSAFE_EXPLICITLY_DISABLED.equals(mode);
+    }
+
+    private static boolean isUnsafeExplicitlyEnforced() {
+        String mode = System.getProperty(UNSAFE_MODE_PROPERTY_NAME);
+        return UNSAFE_EXPLICITLY_ENABLED.equals(mode);
+    }
+
+    private static boolean isUnalignedAccessAllowed() {
+        //we can't use Unsafe to access memory on platforms where unaligned access is not allowed
+        //see https://github.com/hazelcast/hazelcast/issues/5518 for details.
+        String arch = System.getProperty("os.arch");
+        //list of architectures copied from OpenJDK - java.nio.Bits::unaligned
+        boolean unalignedAllowed = arch.equals("i386") || arch.equals("x86")
+                || arch.equals("amd64") || arch.equals("x86_64");
+        return unalignedAllowed;
     }
 
     private static Unsafe findUnsafe() {
