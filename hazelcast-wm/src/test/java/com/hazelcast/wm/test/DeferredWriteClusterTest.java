@@ -127,6 +127,12 @@ public class DeferredWriteClusterTest extends AbstractWebFilterTest {
         assertEquals("value-updated", executeRequest("read", serverPort1, cookieStore));
     }
 
+    @Test(timeout = 20000)
+    public void test_setThenGetAttribute() throws Exception {
+        CookieStore cookieStore = new BasicCookieStore();
+        assertEquals("value",executeRequest("setGet", serverPort1, cookieStore));
+    }
+
     @Override
     protected ServletContainer getServletContainer(int port, String sourceDir, String serverXml) throws Exception {
         return new JettyServer(port, sourceDir, serverXml);
