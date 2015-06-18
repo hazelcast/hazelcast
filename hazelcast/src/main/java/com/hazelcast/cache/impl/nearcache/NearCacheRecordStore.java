@@ -94,4 +94,10 @@ public interface NearCacheRecordStore<K, V> {
      */
     void doEvictionIfRequired();
 
+    /**
+     * Does eviction as specified configuration {@link com.hazelcast.config.EvictionConfig}
+     * in {@link com.hazelcast.config.NearCacheConfig} regardless from the max-size policy.
+     */
+    void doEviction();
+
 }

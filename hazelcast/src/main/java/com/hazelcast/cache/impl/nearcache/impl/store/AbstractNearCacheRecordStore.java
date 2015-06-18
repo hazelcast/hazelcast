@@ -374,4 +374,13 @@ public abstract class AbstractNearCacheRecordStore<
         }
     }
 
+    @Override
+    public void doEviction() {
+        checkAvailable();
+
+        if (isEvictionEnabled()) {
+            evictionStrategy.evict(records, evictionPolicyEvaluator, null, this);
+        }
+    }
+
 }
