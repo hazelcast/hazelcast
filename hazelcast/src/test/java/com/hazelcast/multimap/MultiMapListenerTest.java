@@ -314,7 +314,7 @@ public class MultiMapListenerTest extends HazelcastTestSupport {
         }
 
         public void entryRemoved(EntryEvent event) {
-            if (event.getOldValue() != null) {
+            if (event.getValue() != null) {
                 removeLatch.countDown();
             }
         }
@@ -358,7 +358,7 @@ public class MultiMapListenerTest extends HazelcastTestSupport {
         }
 
         public void entryRemoved(EntryEvent event) {
-            if (event.getOldValue() == null) {
+            if (event.getValue() == null) {
                 removeLatch.countDown();
             }
         }
@@ -428,7 +428,7 @@ public class MultiMapListenerTest extends HazelcastTestSupport {
 
             public void entryRemoved(EntryEvent<String, String> event) {
                 assertEquals("2", event.getKey());
-                assertEquals("again", event.getOldValue());
+                assertEquals("again", event.getValue());
                 latchRemoved.countDown();
             }
 
