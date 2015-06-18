@@ -105,7 +105,6 @@ import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.PagingPredicate;
-import com.hazelcast.query.PagingPredicateAccessor;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.impl.PortableEntryEvent;
 import com.hazelcast.spi.impl.PortableMapPartitionLostEvent;
@@ -113,8 +112,6 @@ import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.IterationType;
 import com.hazelcast.util.Preconditions;
 import com.hazelcast.util.QueryResultSet;
-import com.hazelcast.util.SortedQueryResultSet;
-import com.hazelcast.util.SortingUtil;
 import com.hazelcast.util.ThreadUtil;
 import com.hazelcast.util.executor.CompletedFuture;
 import com.hazelcast.util.executor.DelegatingFuture;
@@ -123,7 +120,6 @@ import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -136,6 +132,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.map.impl.ListenerAdapters.createListenerAdapter;
 import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.util.SortingUtil.getSortedQueryResultSet;
 
 public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
 
@@ -777,12 +774,6 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
         if (predicate instanceof PagingPredicate) {
             pagingPredicate = (PagingPredicate) predicate;
             pagingPredicate.setIterationType(IterationType.KEY);
-
-            if (pagingPredicate.getPage() > 0 && pagingPredicate.getAnchor() == null) {
-                pagingPredicate.previousPage();
-                keySet(pagingPredicate);
-                pagingPredicate.nextPage();
-            }
         }
         MapQueryRequest request = new MapQueryRequest(name, predicate, IterationType.KEY);
         QueryResultSet result = invoke(request);
@@ -795,21 +786,14 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
             return keySet;
         }
 
-        final Comparator<Entry> comparator = SortingUtil.newComparator(pagingPredicate.getComparator(), IterationType.KEY);
-        final SortedQueryResultSet sortedResult = new SortedQueryResultSet(comparator, IterationType.KEY,
-                pagingPredicate.getPageSize());
-
-        final Iterator<Entry> iterator = result.rawIterator();
+        Iterator<Entry> iterator = result.rawIterator();
+        ArrayList<Map.Entry> resultList = new ArrayList<Map.Entry>();
         while (iterator.hasNext()) {
-            final Entry entry = iterator.next();
-            final K key = toObject(entry.getKey());
-            final V value = toObject(entry.getValue());
-            sortedResult.add(new AbstractMap.SimpleImmutableEntry<K, V>(key, value));
+            Entry entry = iterator.next();
+            K key = toObject(entry.getKey());
+            resultList.add(new AbstractMap.SimpleImmutableEntry<K, V>(key, null));
         }
-
-        PagingPredicateAccessor.setPagingPredicateAnchor(pagingPredicate, sortedResult.last());
-
-        return (Set<K>) sortedResult;
+        return (Set<K>) getSortedQueryResultSet(resultList, pagingPredicate, IterationType.KEY);
     }
 
     @Override
@@ -819,33 +803,28 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
         if (predicate instanceof PagingPredicate) {
             pagingPredicate = (PagingPredicate) predicate;
             pagingPredicate.setIterationType(IterationType.ENTRY);
-
-            if (pagingPredicate.getPage() > 0 && pagingPredicate.getAnchor() == null) {
-                pagingPredicate.previousPage();
-                entrySet(pagingPredicate);
-                pagingPredicate.nextPage();
-            }
         }
 
         MapQueryRequest request = new MapQueryRequest(name, predicate, IterationType.ENTRY);
         QueryResultSet result = invoke(request);
-        Set entrySet;
         if (pagingPredicate == null) {
-            entrySet = new HashSet<Entry<K, V>>(result.size());
-        } else {
-            entrySet = new SortedQueryResultSet(pagingPredicate.getComparator(), IterationType.ENTRY,
-                    pagingPredicate.getPageSize());
+            Set<Entry<K, V>> entrySet = new HashSet<Entry<K, V>>(result.size());
+            for (Object data : result) {
+                AbstractMap.SimpleImmutableEntry<Data, Data> dataEntry = (AbstractMap.SimpleImmutableEntry<Data, Data>) data;
+                K key = toObject(dataEntry.getKey());
+                V value = toObject(dataEntry.getValue());
+                entrySet.add(new AbstractMap.SimpleEntry<K, V>(key, value));
+            }
+            return entrySet;
         }
+        ArrayList<Map.Entry> resultList = new ArrayList<Map.Entry>();
         for (Object data : result) {
             AbstractMap.SimpleImmutableEntry<Data, Data> dataEntry = (AbstractMap.SimpleImmutableEntry<Data, Data>) data;
             K key = toObject(dataEntry.getKey());
             V value = toObject(dataEntry.getValue());
-            entrySet.add(new AbstractMap.SimpleEntry<K, V>(key, value));
+            resultList.add(new AbstractMap.SimpleEntry<K, V>(key, value));
         }
-        if (pagingPredicate != null) {
-            PagingPredicateAccessor.setPagingPredicateAnchor(pagingPredicate, ((SortedQueryResultSet) entrySet).last());
-        }
-        return entrySet;
+        return (Set) getSortedQueryResultSet(resultList, pagingPredicate, IterationType.ENTRY);
     }
 
     @Override
@@ -868,41 +847,19 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
     private Collection<V> valuesForPagingPredicate(PagingPredicate pagingPredicate) {
         pagingPredicate.setIterationType(IterationType.VALUE);
 
-        if (pagingPredicate.getPage() > 0 && pagingPredicate.getAnchor() == null) {
-            pagingPredicate.previousPage();
-            values(pagingPredicate);
-            pagingPredicate.nextPage();
-        }
-
         MapQueryRequest request = new MapQueryRequest(name, pagingPredicate, IterationType.VALUE);
         QueryResultSet result = invoke(request);
 
-        List<Entry<Object, V>> valueEntryList = new ArrayList<Entry<Object, V>>(result.size());
+        List<Entry> resultList = new ArrayList<Entry>(result.size());
         Iterator<Entry> iterator = result.rawIterator();
         while (iterator.hasNext()) {
             Entry entry = iterator.next();
             K key = toObject(entry.getKey());
             V value = toObject(entry.getValue());
-            valueEntryList.add(new AbstractMap.SimpleImmutableEntry<Object, V>(key, value));
+            resultList.add(new AbstractMap.SimpleImmutableEntry<Object, V>(key, value));
         }
 
-        Collections.sort(valueEntryList, SortingUtil.newComparator(pagingPredicate.getComparator(), IterationType.VALUE));
-        if (valueEntryList.size() > pagingPredicate.getPageSize()) {
-            valueEntryList = valueEntryList.subList(0, pagingPredicate.getPageSize());
-        }
-
-        Entry anchor = null;
-        if (valueEntryList.size() != 0) {
-            anchor = valueEntryList.get(valueEntryList.size() - 1);
-        }
-        PagingPredicateAccessor.setPagingPredicateAnchor(pagingPredicate, anchor);
-
-        ArrayList<V> values = new ArrayList<V>(valueEntryList.size());
-        for (Entry<Object, V> entry : valueEntryList) {
-            values.add(entry.getValue());
-        }
-
-        return values;
+        return (Collection) getSortedQueryResultSet(resultList, pagingPredicate, IterationType.VALUE);
     }
 
     @Override
@@ -1115,95 +1072,6 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
         return new ClientMapEventHandler(listenerAdaptor, includeValue);
     }
 
-    private class ClientMapEventHandler implements EventHandler<PortableEntryEvent> {
-
-        private final ListenerAdapter listenerAdapter;
-        private final boolean includeValue;
-
-        public ClientMapEventHandler(ListenerAdapter listenerAdapter, boolean includeValue) {
-            this.listenerAdapter = listenerAdapter;
-            this.includeValue = includeValue;
-        }
-
-        public void handle(PortableEntryEvent event) {
-            Member member = getContext().getClusterService().getMember(event.getUuid());
-            final IMapEvent iMapEvent = createIMapEvent(event, member);
-            listenerAdapter.onEvent(iMapEvent);
-        }
-
-        private IMapEvent createIMapEvent(PortableEntryEvent event, Member member) {
-            IMapEvent iMapEvent;
-            switch (event.getEventType()) {
-                case ADDED:
-                case REMOVED:
-                case UPDATED:
-                case EVICTED:
-                case MERGED:
-                    iMapEvent = createEntryEvent(event, member);
-                    break;
-                case EVICT_ALL:
-                case CLEAR_ALL:
-                    iMapEvent = createMapEvent(event, member);
-                    break;
-                default:
-                    throw new IllegalArgumentException("Not a known event type " + event.getEventType());
-            }
-
-            return iMapEvent;
-        }
-
-        private MapEvent createMapEvent(PortableEntryEvent event, Member member) {
-            return new MapEvent(name, member, event.getEventType().getType(), event.getNumberOfAffectedEntries());
-        }
-
-        private EntryEvent<K, V> createEntryEvent(PortableEntryEvent event, Member member) {
-            V value = null;
-            V oldValue = null;
-            V mergingValue = null;
-            if (includeValue) {
-                value = toObject(event.getValue());
-                oldValue = toObject(event.getOldValue());
-                mergingValue = toObject(event.getMergingValue());
-            }
-            K key = toObject(event.getKey());
-            return new EntryEvent<K, V>(name, member,
-                    event.getEventType().getType(), key, oldValue, value, mergingValue);
-        }
-
-        @Override
-        public void beforeListenerRegister() {
-        }
-
-        @Override
-        public void onListenerRegister() {
-        }
-    }
-
-    private class ClientMapPartitionLostEventHandler implements EventHandler<PortableMapPartitionLostEvent> {
-
-        private MapPartitionLostListener listener;
-
-        public ClientMapPartitionLostEventHandler(MapPartitionLostListener listener) {
-            this.listener = listener;
-        }
-
-        @Override
-        public void handle(PortableMapPartitionLostEvent event) {
-            final Member member = getContext().getClusterService().getMember(event.getUuid());
-            listener.partitionLost(new MapPartitionLostEvent(name, member, -1, event.getPartitionId()));
-        }
-
-        @Override
-        public void beforeListenerRegister() {
-
-        }
-
-        @Override
-        public void onListenerRegister() {
-
-        }
-    }
-
     private void invalidateNearCache(Data key) {
         if (nearCache != null) {
             nearCache.invalidate(key);
@@ -1295,6 +1163,95 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
     @Override
     public String toString() {
         return "IMap{" + "name='" + getName() + '\'' + '}';
+    }
+
+    private class ClientMapEventHandler implements EventHandler<PortableEntryEvent> {
+
+        private final ListenerAdapter listenerAdapter;
+        private final boolean includeValue;
+
+        public ClientMapEventHandler(ListenerAdapter listenerAdapter, boolean includeValue) {
+            this.listenerAdapter = listenerAdapter;
+            this.includeValue = includeValue;
+        }
+
+        public void handle(PortableEntryEvent event) {
+            Member member = getContext().getClusterService().getMember(event.getUuid());
+            final IMapEvent iMapEvent = createIMapEvent(event, member);
+            listenerAdapter.onEvent(iMapEvent);
+        }
+
+        private IMapEvent createIMapEvent(PortableEntryEvent event, Member member) {
+            IMapEvent iMapEvent;
+            switch (event.getEventType()) {
+                case ADDED:
+                case REMOVED:
+                case UPDATED:
+                case EVICTED:
+                case MERGED:
+                    iMapEvent = createEntryEvent(event, member);
+                    break;
+                case EVICT_ALL:
+                case CLEAR_ALL:
+                    iMapEvent = createMapEvent(event, member);
+                    break;
+                default:
+                    throw new IllegalArgumentException("Not a known event type " + event.getEventType());
+            }
+
+            return iMapEvent;
+        }
+
+        private MapEvent createMapEvent(PortableEntryEvent event, Member member) {
+            return new MapEvent(name, member, event.getEventType().getType(), event.getNumberOfAffectedEntries());
+        }
+
+        private EntryEvent<K, V> createEntryEvent(PortableEntryEvent event, Member member) {
+            V value = null;
+            V oldValue = null;
+            V mergingValue = null;
+            if (includeValue) {
+                value = toObject(event.getValue());
+                oldValue = toObject(event.getOldValue());
+                mergingValue = toObject(event.getMergingValue());
+            }
+            K key = toObject(event.getKey());
+            return new EntryEvent<K, V>(name, member,
+                    event.getEventType().getType(), key, oldValue, value, mergingValue);
+        }
+
+        @Override
+        public void beforeListenerRegister() {
+        }
+
+        @Override
+        public void onListenerRegister() {
+        }
+    }
+
+    private class ClientMapPartitionLostEventHandler implements EventHandler<PortableMapPartitionLostEvent> {
+
+        private MapPartitionLostListener listener;
+
+        public ClientMapPartitionLostEventHandler(MapPartitionLostListener listener) {
+            this.listener = listener;
+        }
+
+        @Override
+        public void handle(PortableMapPartitionLostEvent event) {
+            final Member member = getContext().getClusterService().getMember(event.getUuid());
+            listener.partitionLost(new MapPartitionLostEvent(name, member, -1, event.getPartitionId()));
+        }
+
+        @Override
+        public void beforeListenerRegister() {
+
+        }
+
+        @Override
+        public void onListenerRegister() {
+
+        }
     }
 
 }

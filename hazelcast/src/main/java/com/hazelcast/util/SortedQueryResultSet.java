@@ -17,35 +17,21 @@
 package com.hazelcast.util;
 
 import java.util.AbstractSet;
-import java.util.Comparator;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
-import java.util.TreeSet;
 
 /**
- * Collection class for results of query operations
+ * Collection class for results of query operationsgit
  */
 public class SortedQueryResultSet extends AbstractSet<Map.Entry> {
 
-    private final TreeSet<Map.Entry> entries;
+    private final List<Map.Entry> entries;
     private final IterationType iterationType;
-    private final int pageSize;
 
-    public SortedQueryResultSet(final Comparator comparator, IterationType iterationType, int pageSize) {
-        this.entries = new TreeSet<Map.Entry>(SortingUtil.newComparator(comparator, iterationType));
+    public SortedQueryResultSet(List<Map.Entry> entries, IterationType iterationType) {
+        this.entries = entries;
         this.iterationType = iterationType;
-        this.pageSize = pageSize;
-    }
-
-    @Override
-    public boolean add(Map.Entry entry) {
-        if (entries.add(entry)) {
-            if (entries.size() > pageSize) {
-                entries.pollLast();
-            }
-            return true;
-        }
-        return false;
     }
 
     @Override
@@ -53,15 +39,9 @@ public class SortedQueryResultSet extends AbstractSet<Map.Entry> {
         return new SortedIterator();
     }
 
-    /**
-     *
-     * @return Map.Entry last entry in set
-     */
-    public Map.Entry last() {
-        if (entries.isEmpty()) {
-            return null;
-        }
-        return entries.last();
+    @Override
+    public int size() {
+        return entries.size();
     }
 
     private class SortedIterator implements Iterator {
@@ -89,11 +69,6 @@ public class SortedQueryResultSet extends AbstractSet<Map.Entry> {
         public void remove() {
             throw new UnsupportedOperationException();
         }
-    }
-
-    @Override
-    public int size() {
-        return entries.size();
     }
 
 }

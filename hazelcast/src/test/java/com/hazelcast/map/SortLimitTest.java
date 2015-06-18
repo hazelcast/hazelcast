@@ -156,12 +156,10 @@ public class SortLimitTest extends HazelcastTestSupport {
         assertIterableEquals(values, 8, 7, 6, 5, 4);
 
         predicate.nextPage();
-        assertEquals(4, predicate.getAnchor().getValue());
         values = map.values(predicate);
         assertIterableEquals(values, 3, 2, 1, 0);
 
         predicate.nextPage();
-        assertEquals(0, predicate.getAnchor().getValue());
         values = map.values(predicate);
         assertEquals(0, values.size());
 
@@ -179,12 +177,10 @@ public class SortLimitTest extends HazelcastTestSupport {
         assertIterableEquals(values, 20, 19, 18, 17, 16);
 
         predicate.nextPage();
-        assertEquals(16, predicate.getAnchor().getValue());
         values = map.values(predicate);
         assertIterableEquals(values, 15, 14, 13, 12);
 
         predicate.nextPage();
-        assertEquals(12, predicate.getAnchor().getValue());
         values = map.values(predicate);
         assertEquals(0, values.size());
     }
@@ -205,12 +201,10 @@ public class SortLimitTest extends HazelcastTestSupport {
         assertIterableEquals(keySet, 42, 43, 44, 45, 46);
 
         predicate.nextPage();
-        assertEquals(46, predicate.getAnchor().getKey());
         keySet = map.keySet(predicate);
         assertIterableEquals(keySet, 47, 48, 49, 50);
 
         predicate.nextPage();
-        assertEquals(50, predicate.getAnchor().getKey());
         keySet = map.keySet(predicate);
         assertEquals(0, keySet.size());
     }
@@ -263,7 +257,7 @@ public class SortLimitTest extends HazelcastTestSupport {
         assertEquals(0, values.size());
     }
 
-    private IMap<Integer, Integer> initMap(){
+    private IMap<Integer, Integer> initMap() {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         final HazelcastInstance instance1 = nodeFactory.newHazelcastInstance();
         final HazelcastInstance instance2 = nodeFactory.newHazelcastInstance();

@@ -17,12 +17,15 @@
 package com.hazelcast.util;
 
 import com.hazelcast.query.PagingPredicate;
+import com.hazelcast.query.impl.QueryableEntry;
 
+import java.util.Collections;
 import java.util.Comparator;
+import java.util.List;
 import java.util.Map;
 
 /**
- *  Utility class for generating Comparators to be used in sort methods specific to hazelcast classes.
+ * Utility class for generating Comparators to be used in sort methods specific to hazelcast classes.
  */
 public final class SortingUtil {
 
@@ -92,32 +95,35 @@ public final class SortingUtil {
                 }
                 break;
         }
+        checkIfComparable(comparable1);
+        checkIfComparable(comparable2);
 
-        int result;
-        if (comparable1 instanceof Comparable && comparable2 instanceof Comparable) {
-            result = ((Comparable) comparable1).compareTo(comparable2);
-        } else {
-            result = compareIntegers(comparable1.hashCode(), comparable2.hashCode());
-        }
-
+        int result = ((Comparable) comparable1).compareTo(comparable2);
         if (result != 0) {
             return result;
         }
         return compareIntegers(entry1.getKey().hashCode(), entry2.getKey().hashCode());
     }
 
+    private static void checkIfComparable(Object comparable) {
+        if (comparable instanceof Comparable) {
+            return;
+        }
+        throw new IllegalArgumentException("Not comparable " + comparable);
+    }
+
     /**
      * Compares two integers by considering their signs.
-     *
+     * <p/>
      * Suppose that
-     *      i1 = -500.000.000
-     *      i2 = 2.000.000.000
-     *
+     * i1 = -500.000.000
+     * i2 = 2.000.000.000
+     * <p/>
      * Normally "i1 < i2", but if we use "i1 - i2" for comparison,
      * i1 - i2 = -500.000.000 - 2.000.000.000 and we may accept the result as "-2.500.000.000".
      * But the actual result is "1.794.967.296" because of overflow between
      * positive and negative integer bounds.
-     *
+     * <p/>
      * So, if we use "i1 - i2" for comparison, since the result is greater than 0,
      * "i1" is accepted as bigger that "i2". But in fact "i1" is smaller than "i2".
      * Therefore, "i1 - i2" is not a good method for comparison between signed integers.
@@ -153,6 +159,39 @@ public final class SortingUtil {
                         pagingPredicate.getIterationType(), entry1, entry2);
             }
         };
+    }
+
+    public static List<QueryableEntry> getSortedSubList(List<QueryableEntry> list, PagingPredicate pagingPredicate) {
+        if (pagingPredicate == null) {
+            return list;
+        }
+        Comparator<Map.Entry> comparator = SortingUtil.newComparator(pagingPredicate);
+        Collections.sort(list, comparator);
+        int pageSize = pagingPredicate.getPageSize();
+        int totalSize = pageSize * pagingPredicate.getPage() + pageSize;
+        if (list.size() > totalSize) {
+            list = list.subList(0, totalSize);
+        }
+        return list;
+    }
+
+    public static SortedQueryResultSet getSortedQueryResultSet(List<Map.Entry> list,
+                                                               PagingPredicate pagingPredicate, IterationType iterationType) {
+        Comparator<Map.Entry> comparator = SortingUtil.newComparator(pagingPredicate.getComparator(), iterationType);
+        Collections.sort(list, comparator);
+
+        int pageSize = pagingPredicate.getPageSize();
+        int begin = pageSize * pagingPredicate.getPage();
+        int size = list.size();
+        if (begin > size) {
+            List<Map.Entry> emptyList = Collections.emptyList();
+            return new SortedQueryResultSet(emptyList, iterationType);
+        }
+        int end = begin + pageSize;
+        if (end > size) {
+            end = size;
+        }
+        return new SortedQueryResultSet(list.subList(begin, end), iterationType);
     }
 
 }
