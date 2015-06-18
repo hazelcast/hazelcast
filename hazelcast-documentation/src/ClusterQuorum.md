@@ -2,18 +2,18 @@
 
 Hazelcast Cluster Quorum enables you to define the minimum number of machines required in a cluster for the cluster to remain in an operational state. If the number of machines is below the defined minimum at any time, the operations are rejected and the rejected operations return a `QuorumException` to their callers.
 
-When a network partitioning happens, by default Hazelcast chooses to be available. With Cluster Quorum, you can tune your Hazelcast instance towards to achieve better consistency, by rejecting updates with a minimum threshold, this reduces the chance that number of concurrent updates to an entry from two partitioned clusters . Note that the consistency defined here is best effort not full or strong consistency.
+When a network partitioning happens, by default Hazelcast chooses to be available. With Cluster Quorum, you can tune your Hazelcast instance towards achieving better consistency by rejecting updates with a minimum threshold. This reduces the chance that the number of concurrent will update to an entry from two partitioned clusters. Note that the consistency defined here is the best effort, not full or strong consistency.
 
 Hazelcast initiates a quorum when a change happens on the member list.
 
-![image](images/NoteSmall.jpg) ***NOTE:*** *Currently cluster quorum only applies to the Map and Transactional Map, support for other data structures will be added soon. Also lock methods in the IMap interface do not participate in a quorum.*
+![image](images/NoteSmall.jpg) ***NOTE:*** *Currently, cluster quorum only applies to the Map and Transactional Map, support for other data structures will be added soon. Also, lock methods in the IMap interface do not participate in a quorum.*
 
 
 #### Configuration
 
 You can set up Cluster Quorum using either declarative or programmatic configuration.
 
-Assume that you have a 5-node Hazelcast Cluster and you want to set the minimum number of 3 nodes for cluster to continue operating. The following are example configurations for this scenario.
+Assume that you have a 5-node Hazelcast Cluster and you want to set the minimum number of 3 nodes for the cluster to continue operating. The following examples are configurations for this scenario.
 
 ##### Declarative Configuration
 
@@ -51,9 +51,9 @@ config.addMapConfig(mapConfig);
 
 
 #### Quorum Listeners
-You can register quorum listeners to be notified about quorum results. Quorum listeners are local to the node that they are registered, so they receive only events occurred on that local node.
+You can register quorum listeners to be notified about quorum results. Quorum listeners are local to the node that they are registered, so they receive only events that occurred on that local node.
 
-Quorum listeners can be configured via declarative or programmatic configuration. The following are the example configurations.
+Quorum listeners can be configured via declarative or programmatic configuration. The following examples are such configurations.
 
 ##### Declarative Configuration
 
@@ -111,13 +111,14 @@ config.addMapConfig(mapConfig);
 
 
 #### Quorum Service
-Quorum service gives an ability to query quorum results over the `Quorum` instances.
+Quorum service gives you the ability to query quorum results over the `Quorum` instances.
 
 ##### Quorum
 
-Quorum instances let you to query quorum result of a particular quorum.
+Quorum instances lets you query the quorum result of a particular quorum.
 
-Here is the Quorum interface that you can interact with.
+Here is a Quorum interface that you can interact with.
+
 ```java
 /**
  * {@link Quorum} provides access to the current status of a quorum.
@@ -131,7 +132,7 @@ public interface Quorum {
     boolean isPresent();
 }
 ```
-You can retrieve quorum instance for a particular quorum over the quorum service. An example can be seen below
+You can retrieve the quorum instance for a particular quorum over the quorum service, as in the following example.
 
 ```java
 String quorumName = "at-least-one-storage-member";
