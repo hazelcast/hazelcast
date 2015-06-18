@@ -138,6 +138,12 @@ public abstract class NearCacheTestSupport extends CommonNearCacheTestSupport {
             doEvictionIfRequiredCalled = true;
         }
 
+        @Override
+        public void doEviction() {
+            if (expectedKeyValueMappings == null) {
+                throw new IllegalStateException("Near-Cache is already destroyed");
+            }
+        }
     }
 
     protected Map<Integer, String> generateRandomKeyValueMappings() {
