@@ -44,6 +44,7 @@ src/Distributed_Data_Structures.md
 		src/TopicStatistics.md
 		src/TopicInternals.md
 		src/TopicConfiguration.md
+	src/ReliableTopic.md
 	src/Lock.md
 		src/LockICondition.md
 	src/IAtomicLong.md
