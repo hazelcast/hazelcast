@@ -3,13 +3,19 @@ package com.hazelcast.spi.impl.operationexecutor.classic;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.test.AssertTask;
+import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.FutureTask;
 
 import static org.junit.Assert.assertTrue;
 
+@RunWith(HazelcastSerialClassRunner.class)
+@Category(QuickTest.class)
 public class RunOnCallingThreadTest extends AbstractClassicOperationExecutorTest {
 
     @Test(expected = NullPointerException.class)

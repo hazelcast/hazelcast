@@ -1,15 +1,18 @@
 package com.hazelcast.jca;
 
 
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 /**
  * This test class is to ensure that lifecycle and transaction methods are not exposed in {@link com.hazelcast.jca.HazelcastConnection}
  */
 @Category(QuickTest.class)
+@RunWith(HazelcastSerialClassRunner.class)
 public class HazelcastConnectionContractTest {
 
     static HazelcastConnectionImpl connection;

@@ -3,8 +3,10 @@ package com.hazelcast.partition.impl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
@@ -16,6 +18,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
+@Category(QuickTest.class)
 public class ResetReplicaVersionOperationTest {
 
     @Mock
