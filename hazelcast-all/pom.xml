@@ -72,6 +72,7 @@
                                 <excludes>
                                     <exclude>com.hazelcast:hazelcast-all:*</exclude>
                                     <exclude>com.hazelcast:hazelcast-client-new:*</exclude>
+                                    <exclude>com.hazelcast:hazelcast-code-generator:*</exclude>
                                 </excludes>
                             </artifactSet>
                             <transformers>
