@@ -5,7 +5,7 @@
 
 This section lists issues solved for Hazelcast 3.4.4 release.
 
-- Multimap entry listener provides incorrect null values [[#5538]](https://github.com/hazelcast/hazelcast/issues/5538).
+- MultiMap entry listener provides incorrect null values [[#5538]](https://github.com/hazelcast/hazelcast/issues/5538).
 
 
 
