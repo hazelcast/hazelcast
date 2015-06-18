@@ -76,7 +76,7 @@ public class TxnRemoveOperation extends MultiMapKeyBasedOperation implements Bac
         service.getLocalMultiMapStatsImpl(name).incrementRemoves(elapsed);
         if (Boolean.TRUE.equals(response)) {
             getOrCreateContainer().update();
-            publishEvent(EntryEventType.REMOVED, dataKey, null, value);
+            publishEvent(EntryEventType.REMOVED, dataKey, value, null);
         }
     }
 

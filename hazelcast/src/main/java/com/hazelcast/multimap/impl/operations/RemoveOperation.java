@@ -67,7 +67,7 @@ public class RemoveOperation extends MultiMapBackupAwareOperation {
     public void afterRun() throws Exception {
         if (Boolean.TRUE.equals(response)) {
             getOrCreateContainer().update();
-            publishEvent(EntryEventType.REMOVED, dataKey, null, value);
+            publishEvent(EntryEventType.REMOVED, dataKey, value, null);
         }
     }
 

@@ -89,7 +89,7 @@ public class TxnRemoveAllOperation extends MultiMapKeyBasedOperation implements 
         if (removed != null) {
             getOrCreateContainer().update();
             for (MultiMapRecord record : removed) {
-                publishEvent(EntryEventType.REMOVED, dataKey, null, record.getObject());
+                publishEvent(EntryEventType.REMOVED, dataKey, record.getObject(), null);
             }
         }
     }

@@ -81,7 +81,7 @@ public class MultiMapTestsFrom2X extends HazelcastTestSupport {
 
             public void entryRemoved(EntryEvent<String, String> event) {
                 assertEquals("2", event.getKey());
-                assertEquals("again", event.getOldValue());
+                assertEquals("again", event.getValue());
                 latchRemoved.countDown();
             }
 
