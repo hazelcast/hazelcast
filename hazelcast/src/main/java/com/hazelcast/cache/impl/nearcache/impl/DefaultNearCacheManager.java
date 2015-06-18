@@ -56,6 +56,9 @@ public class DefaultNearCacheManager implements NearCacheManager {
 
     protected <K, V> NearCache<K, V> createNearCache(String name, NearCacheConfig nearCacheConfig,
                                                      NearCacheContext nearCacheContext) {
+        if (nearCacheContext.getNearCacheManager() == null) {
+            nearCacheContext.setNearCacheManager(this);
+        }
         return new DefaultNearCache<K, V>(name, nearCacheConfig, nearCacheContext);
     }
 
