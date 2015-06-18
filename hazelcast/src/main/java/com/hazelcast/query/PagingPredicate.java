@@ -25,15 +25,12 @@ import com.hazelcast.util.IterationType;
 import com.hazelcast.util.SortingUtil;
 
 import java.io.IOException;
-import java.util.AbstractMap;
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
-import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.List;
 
 /**
  * This class is a special Predicate which helps to get a page-by-page result of a query.
@@ -79,8 +76,6 @@ public class PagingPredicate implements IndexAwarePredicate, DataSerializable {
 
     private int page;
 
-    private final Map<Integer, Map.Entry> anchorMap = new LinkedHashMap<Integer, Map.Entry>();
-
     private IterationType iterationType;
 
     /**
@@ -112,7 +107,7 @@ public class PagingPredicate implements IndexAwarePredicate, DataSerializable {
      * throws {@link IllegalArgumentException} if inner predicate is also {@link PagingPredicate}
      *
      * @param predicate the inner predicate through which results will be filtered
-     * @param pageSize the page size
+     * @param pageSize  the page size
      */
     public PagingPredicate(Predicate predicate, int pageSize) {
         this(pageSize);
@@ -126,7 +121,7 @@ public class PagingPredicate implements IndexAwarePredicate, DataSerializable {
      * throws {@link IllegalArgumentException} if pageSize is not greater than 0
      *
      * @param comparator the comparator through which results will be ordered
-     * @param pageSize the page size
+     * @param pageSize   the page size
      */
     public PagingPredicate(Comparator<Map.Entry> comparator, int pageSize) {
         this(pageSize);
@@ -140,9 +135,9 @@ public class PagingPredicate implements IndexAwarePredicate, DataSerializable {
      * throws {@link IllegalArgumentException} if pageSize is not greater than 0
      * throws {@link IllegalArgumentException} if inner predicate is also {@link PagingPredicate}
      *
-     * @param predicate the inner predicate through which results will be filtered
+     * @param predicate  the inner predicate through which results will be filtered
      * @param comparator the comparator through which results will be ordered
-     * @param pageSize the page size
+     * @param pageSize   the page size
      */
     public PagingPredicate(Predicate predicate, Comparator<Map.Entry> comparator, int pageSize) {
         this(pageSize);
@@ -172,38 +167,19 @@ public class PagingPredicate implements IndexAwarePredicate, DataSerializable {
      */
     @Override
     public Set<QueryableEntry> filter(QueryContext queryContext) {
-        if (predicate instanceof IndexAwarePredicate) {
-            Set<QueryableEntry> set = ((IndexAwarePredicate) predicate).filter(queryContext);
-            if (set == null) {
-                return null;
-            }
-            List<QueryableEntry> list = new LinkedList<QueryableEntry>();
-            Map.Entry anchor = getAnchor();
-            for (QueryableEntry entry : set) {
-                // For comparison, objects to compare must be Comparable instance
-                if (SortingUtil.isSuitableForCompare(comparator, iterationType, entry)) {
-                    if (anchor != null
-                            && SortingUtil.compare(comparator, iterationType, anchor, entry) >= 0) {
-                        continue;
-                    }
-                    list.add(entry);
-                } else {
-                    throw new IllegalArgumentException(
-                            "If there is no comparator, "
-                                    + "objects to compare (keys or values) must be comparable !");
-                }
-            }
-            if (list.isEmpty()) {
-                return null;
-            }
-            Collections.sort(list, SortingUtil.newComparator(this));
-            if (list.size() > pageSize) {
-                list = list.subList(0, pageSize);
-            }
-            return new LinkedHashSet<QueryableEntry>(list);
+        if (!(predicate instanceof IndexAwarePredicate)) {
+            return null;
         }
-        return null;
+
+        Set<QueryableEntry> set = ((IndexAwarePredicate) predicate).filter(queryContext);
+        if (set == null || set.isEmpty()) {
+            return null;
+        }
+        List<QueryableEntry> resultList = new ArrayList<QueryableEntry>(set);
+        List<QueryableEntry> sortedSubList = SortingUtil.getSortedSubList(resultList, this);
+        return new LinkedHashSet<QueryableEntry>(sortedSubList);
     }
+
 
     /**
      * Used if inner predicate is instanceof {@link IndexAwarePredicate} for checking if indexed.
@@ -234,25 +210,10 @@ public class PagingPredicate implements IndexAwarePredicate, DataSerializable {
     }
 
     /**
-     * After each query, an anchor entry is set for that page.
-     * The anchor entry is the last entry of the query.
-     *
-     * @param anchor the last entry of the query
-     */
-    void setAnchor(Map.Entry anchor) {
-        if (anchor == null) {
-            previousPage();
-            return;
-        }
-        anchorMap.put(page + 1, anchor);
-    }
-
-    /**
      * resets for reuse
      */
     public void reset() {
         iterationType = null;
-        anchorMap.clear();
         page = 0;
     }
 
@@ -284,6 +245,13 @@ public class PagingPredicate implements IndexAwarePredicate, DataSerializable {
         return page;
     }
 
+    public void setPage(int page) {
+        if (page < 0) {
+            throw new IllegalArgumentException("Page cannot be negative");
+        }
+        this.page = page;
+    }
+
     public int getPageSize() {
         return pageSize;
     }
@@ -298,12 +266,15 @@ public class PagingPredicate implements IndexAwarePredicate, DataSerializable {
 
     /**
      * Retrieve the anchor object which is the last value object on the previous page.
-     *
+     * <p/>
      * Note: This method will return `null` on the first page of the query result.
+     *
      * @return Map.Entry the anchor object which is the last value object on the previous page
+     * @deprecated since 3.5.1
      */
+    @Deprecated
     public Map.Entry getAnchor() {
-        return anchorMap.get(page);
+        throw new UnsupportedOperationException("Anchor mechanism is removed!!!");
     }
 
     @Override
@@ -313,13 +284,8 @@ public class PagingPredicate implements IndexAwarePredicate, DataSerializable {
         out.writeInt(page);
         out.writeInt(pageSize);
         out.writeUTF(iterationType.name());
-        out.writeInt(anchorMap.size());
-        for (Map.Entry<Integer, Map.Entry> entry : anchorMap.entrySet()) {
-            out.writeInt(entry.getKey());
-            final Map.Entry anchorEntry = entry.getValue();
-            out.writeObject(anchorEntry.getKey());
-            out.writeObject(anchorEntry.getValue());
-        }
+        // This is for binary compatibility, We've removed anchor-map
+        out.writeInt(0);
     }
 
     @Override
@@ -329,12 +295,12 @@ public class PagingPredicate implements IndexAwarePredicate, DataSerializable {
         page = in.readInt();
         pageSize = in.readInt();
         iterationType = IterationType.valueOf(in.readUTF());
+        // This is for binary compatibility, We've removed anchor-map
         int size = in.readInt();
         for (int i = 0; i < size; i++) {
-            final int key = in.readInt();
-            final Object anchorKey = in.readObject();
-            final Object anchorValue = in.readObject();
-            anchorMap.put(key, new AbstractMap.SimpleImmutableEntry(anchorKey, anchorValue));
+            in.readInt();
+            in.readObject();
+            in.readObject();
         }
     }
 
