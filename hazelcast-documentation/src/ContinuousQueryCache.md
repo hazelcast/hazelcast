@@ -52,7 +52,7 @@ QueryCache<Integer, Integer> cache = clientMap.getQueryCache("cache-name");
 2. Indexable and queryable.
 3. Evictable. Note that continuous query cache has a default maximum capacity of 10000. If you need a not evictable one, you should configure the eviction via `QueryCacheConfig#setEvictionConfig`.
 4. Listenable via `QueryCache#addEntryListener`.
-5. Events on `IMap` are guaranteed to be reflected to this cache in the happening order. Any loss of event can be listened via `EventLostListener` and it can be recoverable with `QueryCache#tryRecover` method. If your buffer size on the node side is big enough, you can recover from a possible event loss scenario. 
+5. Events on `IMap` are guaranteed to be reflected to this cache in the happening order. Note that this happening order is a partition order so you can only expect ordered events from the same partition. Any loss of event can be listened via `EventLostListener` and it can be recoverable with `QueryCache#tryRecover` method. If your buffer size on the node side is big enough, you can recover from a possible event loss scenario. 
 At the moment, setting the size of `QueryCacheConfig#setBufferSize` is the only option for recovery because the events which feed continuous query cache have no backups.
 Below snippet can be used for recovery case. 
 
