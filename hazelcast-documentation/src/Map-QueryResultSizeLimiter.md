@@ -20,7 +20,7 @@ This feature depends on an equal distribution of the data on the cluster nodes t
 
 In addition to the distributed result size check in the `QueryOperations`, there is a local pre-check on the calling instance. If you call the method from a client, the pre-check is executed on the member which invokes the `QueryOperations`.
 
-Since the local pre-check can increase the latency of a `QueryOperation` you can configure how many local partitions should be considered for the pre-check or deactivate the feature completely.
+Since the local pre-check can increase the latency of a `QueryOperation` you can configure how many local partitions should be considered for the pre-check or you can deactivate the feature completely.
 
 ##### Scope of Feature
 

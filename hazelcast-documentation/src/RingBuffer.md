@@ -7,10 +7,10 @@ Each element in a RingBuffer can be accessed using a sequence ID. This ID is bet
 
 The RingBuffer can sometimes be a better alternative than an IQueue.  Unlike IQueue, the RingBuffer does not remove the items, it only reads the items using a certain position. There are many advantages using this approach:
 
-* The same item can be read multiple times by the same thread; useful for realizing read at least once or read at most once semantics.
+* The same item can be read multiple times by the same thread; this is useful for realizing semantics of read at least once or read at most once.
 * The same item can be read by multiple threads. Normally you could use a IQueue per thread for the same semantic, but this is way less efficient.
-* Reads are extremely cheap since there is no change in the RingBuffer, there is no change and therefor no replication required. 
-* reads can be batched to speed up performance. Using read (and write) batching can dramatically improve performance of the RingBuffer.
+* Reads are extremely cheap since there is no change in the RingBuffer, therefore no replication is required. 
+* Reads can be batched to speed up performance. Using read (and write) batching can dramatically improve performance of the RingBuffer.
 
 
 The following are the methods included in the RingBuffer interface.
@@ -33,15 +33,15 @@ public interface Ringbuffer<E> extends DistributedObject {
 ```
 
 
-The RingBuffer can be configured with a time to live in seconds. Using this setting, you can control how long the items remain in the RingBuffer before getting deleted. By default the time to live is set to 0, meaning that unless the item is overwritten, it will remain in the RingBuffer indefinitely. If a time to live is set and an item is added, then depending on the OverwritePolicy, either the oldest item is overwritten, or the call is rejected. 
+The RingBuffer can be configured with a time to live in seconds. Using this setting, you can control how long the items remain in the RingBuffer before they are deleted. By default, the time to live is set to 0, meaning that unless the item is overwritten, it will remain in the RingBuffer indefinitely. If a time to live is set and an item is added, then depending on the OverwritePolicy, either the oldest item is overwritten, or the call is rejected. 
 
-The RingBuffer can also be configured with an InMemoryFormat which controls the format of stored items. By default `BINARY` is used; meaning that the object is stored in a serialized form. But also the `OBJECT` InMemoryFormat can be selected. This is useful when filtering is applied or when the `OBJECT` InMemoryFormat can lead to a smaller memory footprint than a `BINARY`. 
+The RingBuffer can also be configured with an InMemoryFormat which controls the format of stored items. By default, `BINARY` is used, meaning that the object is stored in a serialized form. You can select the `OBJECT` InMemoryFormat, which is useful when filtering is applied or when the `OBJECT` InMemoryFormat can lead to a smaller memory footprint than a `BINARY`. 
 
-The RingBuffer supports filtered reads. For example, when one thread only wants to see certain messages, one can filter the items after they are received from the RingBuffer. The problem is that this approach can be very inefficient since a lot of useless data needs to be sent over the line. When a filter is used, then the filtering happens at the source, which makes it a lot more efficient.
+The RingBuffer supports filtered reads. For example, when one thread only wants to see certain messages, one can filter the items after they are received from the RingBuffer. The problem is that this approach can be very inefficient since a lot of useless data needs to be sent over the line. When a filter is used, then the filtering happens at the source, which is a lot more efficient.
 
 The RingBuffer provides asynchronous methods for the more powerful methods like batched reading with filtering or batch writing. To make these methods synchronous, just call `get()` on the returned future.
 
-For more details about RingBuffer configuration check the `RingbufferConfig` class in H.
+For more details about RingBuffer configuration, check the `RingbufferConfig` class.
 
 ***RELATED INFORMATION***
 
