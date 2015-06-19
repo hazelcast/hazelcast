@@ -2,13 +2,13 @@
 
 Hazelcast Java Client can be configured declaratively (XML) or programmatically (API). 
 
-For declarative configuration, the Hazelcast client looks into the following places for the client configuration file
+For declarative configuration, the Hazelcast client looks at the following places for the client configuration file.
 
 - **System property**: The client first checks if `hazelcast.client.config` system property is set to a file path, e.g. `-Dhazelcast.client.config=C:/myhazelcast.xml`.
 
 - **Classpath**: If config file is not set as a system property, the client checks the classpath for `hazelcast-client.xml` file.
 
-If the client does not find any configuration file, it starts with the default configuration (`hazelcast-client-default.xml`) located in the `hazelcast-client.jar` library. Before configuring the client, please try to work with the default configuration to see if it works for you. Default should be just fine for most of the users. If not, then consider custom configuration for your environment.
+If the client does not find any configuration file, it starts with the default configuration (`hazelcast-client-default.xml`) located in the `hazelcast-client.jar` library. Before configuring the client, please try to work with the default configuration to see if it works for you. The default should be just fine for most users. If not, then consider custom configuration for your environment.
 
 If you want to specify your own configuration file to create a `Config` object, the Hazelcast client supports the following.
 
@@ -17,7 +17,7 @@ If you want to specify your own configuration file to create a `Config` object, 
 - `Config cfg = new XmlClientConfigBuilder(inputStream).build();`
 
 
-For programmatic configuration of the Hazelcast Java Client, just instantiate a `ClientConfig` object and configure the desired aspects, a sample of which is shown below.
+For programmatic configuration of the Hazelcast Java Client, just instantiate a `ClientConfig` object and configure the desired aspects. An example is shown below.
 
 ```java
 ClientConfig clientConfig = new ClientConfig();
@@ -30,7 +30,7 @@ clientConfig.setLoadBalancer(yourLoadBalancer);
 
 ### Client Network Configuration
 
-All network related configuration of Hazelcast Java Client is performed via the `network` element in the declarative configuration file or the class `ClientNetworkConfig` when using programmatic configuration. Let's first give the examples for these two approaches. Then we will look at its sub-elements and attributes.
+All network related configuration of Hazelcast Java Client is performed via the `network` element in the declarative configuration file, or in the class `ClientNetworkConfig` when using programmatic configuration. Let's first give the examples for these two approaches. Then we will look at its sub-elements and attributes.
 
 **Declarative**:
 
@@ -75,7 +75,7 @@ ClientNetworkConfig networkConfig = clientConfig.getNetworkConfig();
 ```
 
 #### Address List
-Address List is the initial list of cluster addresses to which the client will connect. The client uses this list to find an alive node. Although it may be enough to give only one address of a node in the cluster (since all nodes communicate with each other), it is recommended that you give all the nodes’ addresses.
+Address List is the initial list of cluster addresses to which the client will connect. The client uses this list to find an alive node. Although it may be enough to give only one address of a node in the cluster (since all nodes communicate with each other), it is recommended that you give the addresses for all the nodes.
 
 **Declarative**:
 
@@ -103,11 +103,11 @@ networkConfig().addAddress("10.1.1.21", "10.1.1.22:5703");
 
 If the port part is omitted, then 5701, 5702, and 5703 will be tried in random order.
 
-You can provide multiple addresses with ports provided or not as seen above. The provided list is shuffled and tried in random order. Default value is *localhost*.
+You can provide multiple addresses with ports provided or not, as seen above. The provided list is shuffled and tried in random order. Default value is *localhost*.
 
 #### Smart Routing
 
-It defines whether the client mode is smart or dummy. The following are the example configurations.
+Smart routing defines whether the client mode is smart or dummy. The following are example configurations.
 
 **Declarative**:
 
@@ -157,7 +157,7 @@ Default is *disabled*.
 
 #### Connection Timeout
 
-It is the timeout value in milliseconds for nodes to accept client connection requests. The following are the example configurations.
+Connection timeout is the timeout value in milliseconds for nodes to accept client connection requests. The following are the example configurations.
 
 **Declarative**:
 
@@ -182,7 +182,7 @@ The default value is *5000* milliseconds.
 #### Connection Attempt Limit
 
 While the client is trying to connect initially to one of the members in the `ClientNetworkConfig.addressList`, all members might be not available. Instead of giving up, throwing an exception and stopping the client, the client will retry as many as `ClientNetworkConfig.
-connectionAttemptLimit` times. The following are the example configurations.
+connectionAttemptLimit` times. The following are example configurations.
 
 **Declarative**:
 
@@ -206,7 +206,7 @@ Default value is *2*.
 
 #### Connection Attempt Period
 
-It is the duration in milliseconds between the connection attempts defined by `ClientNetworkConfig.connectionAttemptLimit`. The following are the example configurations.
+Connection timeout period is the duration in milliseconds between the connection attempts defined by `ClientNetworkConfig.connectionAttemptLimit`. The following are example configurations.
 
 **Declarative**:
 
@@ -357,7 +357,7 @@ HazelcastInstance client = HazelcastClient.newHazelcastClient( clientConfig );
 
 If the client is configured in smart mode, only the operations that are not key-based will be routed to the endpoint that is returned by the `LoadBalancer`. If the client is not a smart client, `LoadBalancer` will be ignored.
 
-The following are the example configurations.
+The following are example configurations.
 
 **Declarative**:
 
@@ -399,7 +399,7 @@ nearCacheConfig.setName("map*");
 nearCacheConfig.setName("*map");
 ```
 
-And, the following is an example declarative configuration for Near Cache. 
+The following is an example declarative configuration for Near Cache. 
 
 ```xml
 </hazelcast-client>
@@ -417,7 +417,7 @@ And, the following is an example declarative configuration for Near Cache.
 </hazelcast-client>
 ```
 
-Name of Near Cache on client side must be the same as the name of IMap on server for which this Near Cache is being created.
+Name of Near Cache on the client side must be the same as the name of IMap on the server for which this Near Cache is being created.
 
 Near Cache can have its own `in-memory-format` which is independent of the `in-memory-format` of the servers.
 
