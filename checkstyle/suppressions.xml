@@ -243,7 +243,6 @@
     <suppress checks="JavadocVariable" files="com.hazelcast.monitor[\\/]"/>
     <suppress checks="CyclomaticComplexity" files="com.hazelcast.monitor.TimedMemberState"/>
     <suppress checks="NPathComplexity" files="com.hazelcast.monitor.TimedMemberState"/>
-    <suppress checks="NPathComplexity" files="com.hazelcast.monitor.impl.LocalExecutorStatsImpl"/>
     <suppress checks="CyclomaticComplexity" files="com.hazelcast.monitor.impl.LocalCacheStatsImpl"/>
     <suppress checks="NPathComplexity" files="com.hazelcast.monitor.impl.LocalCacheStatsImpl"/>
     <suppress checks="CyclomaticComplexity" files="com.hazelcast.monitor.impl.MemberStateImpl"/>

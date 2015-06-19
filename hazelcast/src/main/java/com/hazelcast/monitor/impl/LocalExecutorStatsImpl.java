@@ -116,8 +116,9 @@ public class LocalExecutorStatsImpl implements LocalExecutorStats {
         root.add("creationTime", creationTime);
         root.add("pending", pending);
         root.add("started", started);
-        root.add("totalStartLatency", totalStartLatency);
         root.add("completed", completed);
+        root.add("cancelled", cancelled);
+        root.add("totalStartLatency", totalStartLatency);
         root.add("totalExecutionTime", totalExecutionTime);
         return root;
     }
@@ -127,8 +128,9 @@ public class LocalExecutorStatsImpl implements LocalExecutorStats {
         creationTime = getLong(json, "creationTime", -1L);
         PENDING_UPDATER.set(this, getLong(json, "pending", -1L));
         STARTED_UPDATER.set(this, getLong(json, "started", -1L));
-        TOTAL_START_LATENCY_UPDATER.set(this, getLong(json, "totalStartLatency", -1L));
         COMPLETED_UPDATER.set(this, getLong(json, "completed", -1L));
+        CANCELLED_UPDATER.set(this, getLong(json, "cancelled", -1L));
+        TOTAL_START_LATENCY_UPDATER.set(this, getLong(json, "totalStartLatency", -1L));
         TOTAL_EXECUTION_TIME_UPDATER.set(this, getLong(json, "totalExecutionTime", -1L));
     }
 

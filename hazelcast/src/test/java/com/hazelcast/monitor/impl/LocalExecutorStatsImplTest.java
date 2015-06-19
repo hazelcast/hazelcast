@@ -53,6 +53,6 @@ public class LocalExecutorStatsImplTest {
         assertEquals(1, deserialized.getCompletedTaskCount());
 
         assertEquals(1, localExecutorStats.getCancelledTaskCount());
-        assertEquals(0, deserialized.getCancelledTaskCount());
+        assertEquals(1, deserialized.getCancelledTaskCount());
     }
 }
