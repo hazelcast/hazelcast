@@ -94,10 +94,12 @@ public class HazelcastHttpSession implements HttpSession {
         entry.setValue(value);
         entry.setDirty(true);
         entry.setRemoved(false);
+        entry.setReload(false);
         if (!deferredWrite && !transientEntry) {
             try {
                 webFilter.getClusteredSessionService().setAttribute(id, name, value);
                 entry.setDirty(false);
+                entry.setReload(true);
             } catch (Exception ignored) {
                 EmptyStatement.ignore(ignored);
             }
@@ -191,6 +193,7 @@ public class HazelcastHttpSession implements HttpSession {
             entry.setValue(null);
             entry.setRemoved(true);
             entry.setDirty(true);
+            entry.setReload(false);
         }
         if (!deferredWrite) {
             try {
