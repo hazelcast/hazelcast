@@ -28,15 +28,15 @@ The method `isClusterSafe` checks whether the cluster is in a safe state. It ret
 
 The method `isMemberSafe` checks whether a specific node is in a safe state. This check controls if the first backups of partitions of the given node are synced with the primary ones. Once it returns `true`, the given node is safe and it can be shut down without data loss. Similarly, the method `isLocalMemberSafe` does the same check for the local member. The method `forceLocalMemberToBeSafe` forces the owned and backup partitions to be synchronized, making the local member safe.
 
-![image](images/NoteSmall.jpg) ***NOTE:*** *These methods are available from Hazelcast 3.3.*
+![image](images/NoteSmall.jpg) ***NOTE:*** *These methods are available starting with Hazelcast 3.3.*
 
 
 #### Sample Codes
 
 
 ```java
-PartitionService partitionService = hazelcastInstance.getPartitionService().isClusterSafe()
-if (partitionService().isClusterSafe()) {
+PartitionService partitionService = hazelcastInstance.getPartitionService();
+if (partitionService.isClusterSafe()) {
   hazelcastInstance.shutdown(); // or terminate
 }
 ```
@@ -44,8 +44,8 @@ if (partitionService().isClusterSafe()) {
 OR 
 
 ```java
-PartitionService partitionService = hazelcastInstance.getPartitionService().isClusterSafe()
-if (partitionService().isLocalMemberSafe()) {
+PartitionService partitionService = hazelcastInstance.getPartitionService();
+if (partitionService.isLocalMemberSafe()) {
   hazelcastInstance.shutdown(); // or terminate
 }
 ```

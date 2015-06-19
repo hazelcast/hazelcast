@@ -273,20 +273,20 @@ Client-server topology fits better if there are multiple applications sharing th
 
 ## How do I know it is safe to kill the second node?
 
-Programmatically:
+Below code snippet shuts down the cluster members if the cluster is safe for a member shutdown.
 
 ```java
-PartitionService partitionService = hazelcastInstance.getPartitionService().isClusterSafe()
-if (partitionService().isClusterSafe()) {
+PartitionService partitionService = hazelcastInstance.getPartitionService();
+if (partitionService.isClusterSafe()) {
   hazelcastInstance.shutdown(); // or terminate
 }
 ```
 
-Or declaratively:
+Below code snippet shuts down the local member if the member is safe to be shutdown.
 
 ```java
-PartitionService partitionService = hazelcastInstance.getPartitionService().isClusterSafe()
-if (partitionService().isLocalMemberSafe()) {
+PartitionService partitionService = hazelcastInstance.getPartitionService();
+if (partitionService.isLocalMemberSafe()) {
   hazelcastInstance.shutdown(); // or terminate
 }
 ```
