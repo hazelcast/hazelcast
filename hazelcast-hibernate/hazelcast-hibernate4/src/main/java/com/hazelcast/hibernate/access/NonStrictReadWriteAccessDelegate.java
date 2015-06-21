@@ -36,9 +36,38 @@ public class NonStrictReadWriteAccessDelegate<T extends HazelcastRegion> extends
         super(hazelcastRegion, props);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p/>
+     * Returns <code>false</code> since this is a non-strict read/write cache access strategy
+     */
+    public boolean afterInsert(final Object key, final Object value, final Object version) throws CacheException {
+        return false;
+    }
+
     public boolean afterUpdate(final Object key, final Object value, final Object currentVersion, final Object previousVersion,
                                final SoftLock lock) throws CacheException {
-        return update(key, value, currentVersion, lock);
+        unlockItem(key, lock);
+        return false;
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p/>
+     * Returns <code>false</code> since this is an asynchronous cache access strategy.
+     */
+    public boolean insert(final Object key, final Object value, final Object version) throws CacheException {
+        return false;
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p/>
+     * Removes the entry since this is a non-strict read/write cache strategy.
+     */
+    public boolean update(final Object key, final Object value, final Object currentVersion, final Object previousVersion) {
+        remove(key);
+        return false;
     }
 
     @Override
@@ -54,11 +83,11 @@ public class NonStrictReadWriteAccessDelegate<T extends HazelcastRegion> extends
         return null;
     }
 
-    public void unlockItem(final Object key, final SoftLock lock) throws CacheException {
-        remove(key);
+    public void removeAll() throws CacheException {
+        cache.clear();
     }
 
-    public void unlockRegion(final SoftLock lock) throws CacheException {
-        removeAll();
+    public void unlockItem(final Object key, final SoftLock lock) throws CacheException {
+        remove(key);
     }
 }

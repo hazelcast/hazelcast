@@ -53,7 +53,7 @@ public class HazelcastLocalCacheRegionFactory extends AbstractHazelcastCacheRegi
     public CollectionRegion buildCollectionRegion(final String regionName, final Properties properties,
                                                   final CacheDataDescription metadata) throws CacheException {
         final HazelcastCollectionRegion<LocalRegionCache> region = new HazelcastCollectionRegion<LocalRegionCache>(instance,
-                regionName, properties, metadata, new LocalRegionCache(regionName, instance, metadata));
+                regionName, properties, metadata, new LocalRegionCache(regionName, instance, null));
         cleanupService.registerCache(region.getCache());
         return region;
     }

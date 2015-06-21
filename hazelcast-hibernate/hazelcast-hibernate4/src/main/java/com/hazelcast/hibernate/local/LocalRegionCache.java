@@ -24,9 +24,10 @@ import com.hazelcast.core.MessageListener;
 import com.hazelcast.hibernate.CacheEnvironment;
 import com.hazelcast.hibernate.HazelcastTimestamper;
 import com.hazelcast.hibernate.RegionCache;
-import com.hazelcast.hibernate.serialization.ExpiryMarker;
 import com.hazelcast.hibernate.serialization.Expirable;
+import com.hazelcast.hibernate.serialization.ExpiryMarker;
 import com.hazelcast.hibernate.serialization.Value;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.util.Clock;
 import org.hibernate.cache.spi.CacheDataDescription;
@@ -61,6 +62,8 @@ public class LocalRegionCache implements RegionCache {
     protected final AtomicLong markerIdCounter;
     protected MapConfig config;
 
+    private final ILogger log = Logger.getLogger(LocalRegionCache.class);
+
     /**
      * @param name              the name for this region cache, which is also used to retrieve configuration/topic
      * @param hazelcastInstance the {@code HazelcastInstance} to which this region cache belongs, used to retrieve
@@ -91,7 +94,7 @@ public class LocalRegionCache implements RegionCache {
         try {
             config = hazelcastInstance != null ? hazelcastInstance.getConfig().findMapConfig(name) : null;
         } catch (UnsupportedOperationException e) {
-            Logger.getLogger(LocalRegionCache.class).finest(e);
+            log.finest(e);
         }
         versionComparator = metadata != null && metadata.isVersioned() ? metadata.getVersionComparator() : null;
         cache = new ConcurrentHashMap<Object, Expirable>();
@@ -195,18 +198,8 @@ public class LocalRegionCache implements RegionCache {
     protected MessageListener<Object> createMessageListener() {
         return new MessageListener<Object>() {
             public void onMessage(final Message<Object> message) {
-                final Invalidation invalidation = (Invalidation) message.getMessageObject();
-                if (versionComparator != null) {
-                    final Expirable value = cache.get(invalidation.getKey());
-                    if (value != null) {
-                        Object currentVersion = value.getVersion();
-                        Object newVersion = invalidation.getVersion();
-                        if (versionComparator.compare(newVersion, currentVersion) > 0) {
-                            cache.remove(invalidation.getKey(), value);
-                        }
-                    }
-                } else {
-                    cache.remove(invalidation.getKey());
+                if (!message.getPublishingMember().localMember()) {
+                    maybeInvalidate(message.getMessageObject());
                 }
             }
         };
@@ -214,11 +207,8 @@ public class LocalRegionCache implements RegionCache {
 
     public boolean remove(final Object key) {
         final Expirable value = cache.remove(key);
-        if (value != null) {
-            maybeNotifyTopic(key, null, value.getVersion());
-            return true;
-        }
-        return false;
+        maybeNotifyTopic(key, null, (value == null) ? null : value.getVersion());
+        return (value != null);
     }
 
     public SoftLock tryLock(final Object key, final Object version) {
@@ -262,6 +252,7 @@ public class LocalRegionCache implements RegionCache {
                 break;
             }
         }
+        maybeNotifyTopic(key, null, null);
     }
 
     public boolean contains(final Object key) {
@@ -270,6 +261,7 @@ public class LocalRegionCache implements RegionCache {
 
     public void clear() {
         cache.clear();
+        maybeNotifyTopic(null, null, null);
     }
 
     public long size() {
@@ -302,6 +294,39 @@ public class LocalRegionCache implements RegionCache {
             final int evictionRate = calculateEvictionRate(diff, maxSize);
             if (evictionRate > 0 && entries != null) {
                 evictEntries(entries, evictionRate);
+            }
+        }
+    }
+
+    protected void maybeInvalidate(final Object messageObject) {
+        Invalidation invalidation = (Invalidation) messageObject;
+        Object key = invalidation.getKey();
+        if (key == null) {
+            // Invalidate the entire region cache.
+            cache.clear();
+        } else if (versionComparator == null) {
+            // For an unversioned entity or collection we can only invalidate the entry.
+            cache.remove(key);
+        } else {
+            // For versioned entities we can avoid the invalidation if both we and the remote node know the version,
+            // AND our version is definitely equal or higher.  Otherwise, we have to just invalidate our entry.
+            final Expirable value = cache.get(key);
+            if (value != null) {
+                maybeInvalidateVersionedEntity(key, value, invalidation.getVersion());
+            }
+        }
+    }
+
+    private void maybeInvalidateVersionedEntity(Object key, Expirable value, Object newVersion) {
+        if (newVersion == null) {
+            // This invalidation was for an entity with unknown version.  Just invalidate the entry
+            // unconditionally.
+            cache.remove(key);
+        } else {
+            // Invalidate our entry only if it was of a lower version.
+            Object currentVersion = value.getVersion();
+            if (versionComparator.compare(currentVersion, newVersion) < 0) {
+                cache.remove(key, value);
             }
         }
     }

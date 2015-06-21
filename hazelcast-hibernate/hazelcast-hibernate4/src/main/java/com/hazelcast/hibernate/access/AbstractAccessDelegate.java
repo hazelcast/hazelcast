@@ -57,29 +57,6 @@ public abstract class AbstractAccessDelegate<T extends HazelcastRegion> implemen
         return hazelcastRegion;
     }
 
-    public boolean afterInsert(final Object key, final Object value, final Object version) throws CacheException {
-        try {
-            return cache.insert(key, value, version);
-        } catch (HazelcastException e) {
-            if (log.isFinestEnabled()) {
-                log.finest("Could not insert into Cache[" + hazelcastRegion.getName() + "]: " + e.getMessage());
-            }
-            return false;
-        }
-    }
-
-    protected boolean update(final Object key, final Object value,
-                             final Object currentVersion, final SoftLock lock) {
-        try {
-            return cache.update(key, value, currentVersion, lock);
-        } catch (HazelcastException e) {
-            if (log.isFinestEnabled()) {
-                log.finest("Could not update Cache[" + hazelcastRegion.getName() + "]: " + e.getMessage());
-            }
-            return false;
-        }
-    }
-
     public Object get(final Object key, final long txTimestamp) throws CacheException {
         try {
             return cache.get(key, txTimestamp);
@@ -108,19 +85,8 @@ public abstract class AbstractAccessDelegate<T extends HazelcastRegion> implemen
         return putFromLoad(key, value, txTimestamp, version);
     }
 
-    /**
-     * This is an asynchronous cache access strategy.
-     * NO-OP
-     */
-    public void remove(final Object key) throws CacheException {
-    }
-
-    public void removeAll() throws CacheException {
-        cache.clear();
-    }
-
     public void evict(final Object key) throws CacheException {
-        remove(key);
+        cache.remove(key);
     }
 
     public void evictAll() throws CacheException {
@@ -135,24 +101,6 @@ public abstract class AbstractAccessDelegate<T extends HazelcastRegion> implemen
     }
 
     public void unlockRegion(final SoftLock lock) throws CacheException {
-        // As a precaution
         cache.clear();
-    }
-
-    /**
-     * This is an asynchronous cache access strategy.
-     * NO-OP
-     */
-    public boolean insert(final Object key, final Object value, final Object version) throws CacheException {
-        return false;
-    }
-
-    /**
-     * This is an asynchronous cache access strategy.
-     * NO-OP
-     */
-    public boolean update(final Object key, final Object value, final Object currentVersion, final Object previousVersion)
-            throws CacheException {
-        return false;
     }
 }

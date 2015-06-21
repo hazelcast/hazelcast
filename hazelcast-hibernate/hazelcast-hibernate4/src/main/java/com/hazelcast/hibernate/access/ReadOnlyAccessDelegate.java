@@ -34,6 +34,11 @@ public class ReadOnlyAccessDelegate<T extends HazelcastRegion> extends NonStrict
         super(hazelcastRegion, props);
     }
 
+    @Override
+    public boolean afterInsert(final Object key, final Object value, final Object version) throws CacheException {
+        return cache.insert(key, value, version);
+    }
+
     /**
      * @throws UnsupportedOperationException
      */
@@ -45,12 +50,17 @@ public class ReadOnlyAccessDelegate<T extends HazelcastRegion> extends NonStrict
     }
 
     /**
-     * @throws UnsupportedOperationException
+     * {@inheritDoc}
+     * <p/>
+     * This cache is asynchronous hence a no-op
      */
+    public boolean insert(final Object key, final Object value, final Object version) throws CacheException {
+        return false;
+    }
+
     @Override
     public SoftLock lockItem(final Object key, final Object version) throws CacheException {
-        throw new UnsupportedOperationException("Attempting to lock an item in a read-only cache region: "
-                + getHazelcastRegion().getName());
+        return null;
     }
 
     /**
@@ -62,12 +72,22 @@ public class ReadOnlyAccessDelegate<T extends HazelcastRegion> extends NonStrict
                 + getHazelcastRegion().getName());
     }
 
+    public void removeAll() throws CacheException {
+        cache.clear();
+    }
+
     /**
-     * This will issue a log warning stating that an attempt was made to unlock an item from a read-only cache region.
+     * {@inheritDoc}
+     * <p/>
+     * Should be a no-op since this cache is read-only
      */
     @Override
     public void unlockItem(final Object key, final SoftLock lock) throws CacheException {
-        log.warning("Attempting to unlock an item from a read-only cache region");
+        /*
+         * To err on the safe side though, follow ReadOnlyEhcacheEntityRegionAccessStrategy which nevertheless evicts
+         * the key.
+         */
+        evict(key);
     }
 
     /**

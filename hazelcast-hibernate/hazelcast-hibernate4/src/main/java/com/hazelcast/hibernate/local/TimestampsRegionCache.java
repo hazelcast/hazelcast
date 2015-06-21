@@ -17,8 +17,6 @@
 package com.hazelcast.hibernate.local;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.Message;
-import com.hazelcast.core.MessageListener;
 import com.hazelcast.hibernate.RegionCache;
 import com.hazelcast.hibernate.serialization.Expirable;
 import com.hazelcast.hibernate.serialization.Value;
@@ -43,36 +41,29 @@ public class TimestampsRegionCache extends LocalRegionCache implements RegionCac
     }
 
     @Override
-    protected MessageListener<Object> createMessageListener() {
-        return new MessageListener<Object>() {
-            public void onMessage(final Message<Object> message) {
-                if (message.getPublishingMember().localMember()) {
+    protected void maybeInvalidate(final Object messageObject) {
+        final Timestamp ts = (Timestamp) messageObject;
+        final Object key = ts.getKey();
+
+        for (;;) {
+            final Expirable value = cache.get(key);
+            final Long current = value != null ? (Long) value.getValue() : null;
+            if (current != null) {
+                if (ts.getTimestamp() > current) {
+                    if (cache.replace(key, value, new Value(value.getVersion(),
+                            Clock.currentTimeMillis(), ts.getTimestamp()))) {
+                        return;
+                    }
+                } else {
                     return;
                 }
-                final Timestamp ts = (Timestamp) message.getMessageObject();
-                final Object key = ts.getKey();
-
-                for (;;) {
-                    final Expirable value = cache.get(key);
-                    final Long current = value != null ? (Long) value.getValue() : null;
-                    if (current != null) {
-                        if (ts.getTimestamp() > current) {
-                            if (cache.replace(key, value, new Value(value.getVersion(),
-                                    Clock.currentTimeMillis(), ts.getTimestamp()))) {
-                                return;
-                            }
-                        } else {
-                            return;
-                        }
-                    } else {
-                        if (cache.putIfAbsent(key, new Value(null, Clock.currentTimeMillis(),
-                                ts.getTimestamp())) == null) {
-                            return;
-                        }
-                    }
+            } else {
+                if (cache.putIfAbsent(key, new Value(null, Clock.currentTimeMillis(),
+                        ts.getTimestamp())) == null) {
+                    return;
                 }
             }
-        };
+        }
     }
 
     @Override
