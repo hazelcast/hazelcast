@@ -36,6 +36,7 @@ public class CountOperation extends MultiMapKeyBasedOperation implements WaitSup
         super(name, dataKey);
     }
 
+    @Override
     public void run() throws Exception {
         MultiMapContainer container = getOrCreateContainer();
         ((MultiMapService) getService()).getLocalMultiMapStatsImpl(name).incrementOtherOperations();
@@ -43,6 +44,7 @@ public class CountOperation extends MultiMapKeyBasedOperation implements WaitSup
         response = wrapper == null ? 0 : wrapper.getCollection(false).size();
     }
 
+    @Override
     public int getId() {
         return MultiMapDataSerializerHook.COUNT;
     }
@@ -63,7 +65,7 @@ public class CountOperation extends MultiMapKeyBasedOperation implements WaitSup
 
     @Override
     public void onWaitExpire() {
-        getResponseHandler().sendResponse(new OperationTimeoutException("Cannot read transactionally locked entry!"));
+        sendResponse(new OperationTimeoutException("Cannot read transactionally locked entry!"));
     }
 
 }

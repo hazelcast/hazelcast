@@ -38,7 +38,7 @@ import com.hazelcast.util.Clock;
 import java.io.IOException;
 import java.util.Arrays;
 
-import static com.hazelcast.spi.impl.ResponseHandlerFactory.createEmptyResponseHandler;
+import static com.hazelcast.spi.impl.OperationResponseHandlerFactory.createEmptyResponseHandler;
 
 public final class Backup extends Operation implements BackupOperation, IdentifiedDataSerializable {
 
@@ -95,7 +95,7 @@ public final class Backup extends Operation implements BackupOperation, Identifi
             backupOp.setCallerUuid(getCallerUuid());
             OperationAccessor.setCallerAddress(backupOp, getCallerAddress());
             OperationAccessor.setInvocationTime(backupOp, Clock.currentTimeMillis());
-            backupOp.setResponseHandler(createEmptyResponseHandler());
+            backupOp.setOperationResponseHandler(createEmptyResponseHandler());
 
             backupOp.beforeRun();
             backupOp.run();

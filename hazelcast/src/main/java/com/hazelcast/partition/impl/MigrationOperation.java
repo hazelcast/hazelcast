@@ -27,8 +27,8 @@ import com.hazelcast.partition.MigrationInfo;
 import com.hazelcast.spi.MigrationAwareService;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationAccessor;
+import com.hazelcast.spi.OperationResponseHandler;
 import com.hazelcast.spi.PartitionMigrationEvent;
-import com.hazelcast.spi.ResponseHandler;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 
 import java.io.IOException;
@@ -40,9 +40,9 @@ import java.util.logging.Level;
 @edu.umd.cs.findbugs.annotations.SuppressWarnings("EI_EXPOSE_REP")
 public final class MigrationOperation extends BaseMigrationOperation {
 
-    private static final ResponseHandler ERROR_RESPONSE_HANDLER = new ResponseHandler() {
+    private static final OperationResponseHandler ERROR_RESPONSE_HANDLER = new OperationResponseHandler() {
         @Override
-        public void sendResponse(Object obj) {
+        public void sendResponse(Operation op, Object obj) {
             throw new HazelcastException("Migration operations can not send response!");
         }
 
@@ -160,7 +160,7 @@ public final class MigrationOperation extends BaseMigrationOperation {
         op.setNodeEngine(getNodeEngine())
                 .setPartitionId(getPartitionId())
                 .setReplicaIndex(getReplicaIndex());
-        op.setResponseHandler(ERROR_RESPONSE_HANDLER);
+        op.setOperationResponseHandler(ERROR_RESPONSE_HANDLER);
         OperationAccessor.setCallerAddress(op, migrationInfo.getSource());
         MigrationAwareService service = op.getService();
         PartitionMigrationEvent event =

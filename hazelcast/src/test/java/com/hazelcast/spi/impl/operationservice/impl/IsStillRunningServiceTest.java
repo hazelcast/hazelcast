@@ -204,7 +204,7 @@ public class IsStillRunningServiceTest extends HazelcastTestSupport {
         @Override
         public void run() throws Exception {
             sleepAtLeastMillis(sleepMs);
-            getResponseHandler().sendResponse(true);
+            sendResponse(true);
         }
 
         @Override
@@ -218,6 +218,5 @@ public class IsStillRunningServiceTest extends HazelcastTestSupport {
             super.readInternal(in);
             sleepMs = in.readInt();
         }
-
     }
 }

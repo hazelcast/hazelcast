@@ -52,12 +52,11 @@ public class DeleteOperation extends BaseRemoveOperation {
 
     @Override
     public void onWaitExpire() {
-        getResponseHandler().sendResponse(false);
+        sendResponse(false);
     }
 
     @Override
     public String toString() {
         return "DeleteOperation{" + name + "}";
     }
-
 }

@@ -25,10 +25,12 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationAccessor;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.impl.ResponseHandlerFactory;
+import com.hazelcast.spi.impl.OperationResponseHandlerFactory;
 
 import java.io.IOException;
 import java.util.Collection;
+
+import static com.hazelcast.spi.impl.OperationResponseHandlerFactory.*;
 
 public class FinalizeJoinOperation extends MemberInfoUpdateOperation implements JoinOperation {
 
@@ -95,7 +97,7 @@ public class FinalizeJoinOperation extends MemberInfoUpdateOperation implements 
             postJoinOp.setNodeEngine(nodeEngine);
             OperationAccessor.setCallerAddress(postJoinOp, getCallerAddress());
             OperationAccessor.setConnection(postJoinOp, getConnection());
-            postJoinOp.setResponseHandler(ResponseHandlerFactory.createEmptyResponseHandler());
+            postJoinOp.setOperationResponseHandler(createEmptyResponseHandler());
             operationService.runOperationOnCallingThread(postJoinOp);
         }
     }

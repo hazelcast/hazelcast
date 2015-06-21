@@ -80,7 +80,7 @@ abstract class BaseCallableTaskOperation extends Operation implements TraceableO
         try {
             return getNodeEngine().toObject(callableData);
         } catch (HazelcastSerializationException e) {
-            getResponseHandler().sendResponse(e);
+            sendResponse(e);
             throw ExceptionUtil.rethrow(e);
         }
     }
@@ -95,7 +95,7 @@ abstract class BaseCallableTaskOperation extends Operation implements TraceableO
     @Override
     public final void run() throws Exception {
         DistributedExecutorService service = getService();
-        service.execute(name, uuid, callable, getResponseHandler());
+        service.execute(name, uuid, callable, this);
     }
 
     @Override

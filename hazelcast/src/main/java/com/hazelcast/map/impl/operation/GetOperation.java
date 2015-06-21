@@ -25,12 +25,11 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.DefaultObjectNamespace;
 import com.hazelcast.spi.ReadonlyOperation;
-import com.hazelcast.spi.ResponseHandler;
 import com.hazelcast.spi.WaitNotifyKey;
 import com.hazelcast.spi.WaitSupport;
 
 public final class GetOperation extends KeyBasedMapOperation
-        implements IdentifiedDataSerializable,  WaitSupport, ReadonlyOperation {
+        implements IdentifiedDataSerializable, WaitSupport, ReadonlyOperation {
 
     private Data result;
 
@@ -68,8 +67,7 @@ public final class GetOperation extends KeyBasedMapOperation
 
     @Override
     public void onWaitExpire() {
-        ResponseHandler responseHandler = getResponseHandler();
-        responseHandler.sendResponse(new OperationTimeoutException("Cannot read transactionally locked entry!"));
+        sendResponse(new OperationTimeoutException("Cannot read transactionally locked entry!"));
     }
 
     @Override

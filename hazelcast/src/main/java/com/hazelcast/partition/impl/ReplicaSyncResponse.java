@@ -25,8 +25,8 @@ import com.hazelcast.partition.ReplicaErrorLogger;
 import com.hazelcast.spi.BackupOperation;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.OperationResponseHandler;
 import com.hazelcast.spi.PartitionAwareOperation;
-import com.hazelcast.spi.ResponseHandler;
 import com.hazelcast.spi.UrgentSystemOperation;
 
 import java.io.IOException;
@@ -115,7 +115,7 @@ public class ReplicaSyncResponse extends Operation
                     op.setNodeEngine(nodeEngine)
                             .setPartitionId(partitionId)
                             .setReplicaIndex(replicaIndex)
-                            .setResponseHandler(responseHandler);
+                            .setOperationResponseHandler(responseHandler);
                     op.beforeRun();
                     op.run();
                     op.afterRun();
@@ -212,7 +212,7 @@ public class ReplicaSyncResponse extends Operation
                 + ", replicaVersions=" + Arrays.toString(replicaVersions) + '}';
     }
 
-    private static final class ErrorLoggingResponseHandler implements ResponseHandler {
+    private static final class ErrorLoggingResponseHandler implements OperationResponseHandler {
         private final ILogger logger;
 
         private ErrorLoggingResponseHandler(ILogger logger) {
@@ -220,7 +220,7 @@ public class ReplicaSyncResponse extends Operation
         }
 
         @Override
-        public void sendResponse(final Object obj) {
+        public void sendResponse(Operation op, Object obj) {
             if (obj instanceof Throwable) {
                 Throwable t = (Throwable) obj;
                 logger.severe(t);

@@ -44,7 +44,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.partition.strategy.StringPartitioningStrategy.getPartitionKey;
-import static com.hazelcast.spi.impl.ResponseHandlerFactory.createEmptyResponseHandler;
+import static com.hazelcast.spi.impl.OperationResponseHandlerFactory.createEmptyResponseHandler;
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
 
 public class SemaphoreService implements ManagedService, MigrationAwareService, MembershipAwareService,
@@ -117,7 +117,7 @@ public class SemaphoreService implements ManagedService, MigrationAwareService, 
             if (partition.isLocal()) {
                 Operation op = new SemaphoreDeadMemberOperation(name, caller)
                         .setPartitionId(partitionId)
-                        .setResponseHandler(createEmptyResponseHandler())
+                        .setOperationResponseHandler(createEmptyResponseHandler())
                         .setService(this)
                         .setNodeEngine(nodeEngine)
                         .setServiceName(SERVICE_NAME);

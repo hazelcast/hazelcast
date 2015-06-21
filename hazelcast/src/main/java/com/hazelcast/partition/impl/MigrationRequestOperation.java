@@ -30,7 +30,6 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.spi.PartitionReplicationEvent;
-import com.hazelcast.spi.ResponseHandler;
 import com.hazelcast.spi.impl.SimpleExecutionCallback;
 import com.hazelcast.spi.impl.servicemanager.ServiceInfo;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
@@ -56,6 +55,7 @@ public final class MigrationRequestOperation extends BaseMigrationOperation {
         super(migrationInfo);
     }
 
+    @Override
     public void run() {
         NodeEngine nodeEngine = getNodeEngine();
         verifyGoodMaster(nodeEngine);
@@ -144,9 +144,11 @@ public final class MigrationRequestOperation extends BaseMigrationOperation {
         NodeEngine nodeEngine = getNodeEngine();
         InternalPartitionServiceImpl partitionService = getService();
 
+
+
         nodeEngine.getOperationService()
                 .createInvocationBuilder(InternalPartitionService.SERVICE_NAME, operation, destination)
-                .setExecutionCallback(new MigrationCallback(migrationInfo, getResponseHandler()))
+                .setExecutionCallback(new MigrationCallback(migrationInfo, this))
                 .setResultDeserialized(true)
                 .setCallTimeout(partitionService.getPartitionMigrationTimeout())
                 .setTryPauseMillis(TRY_PAUSE_MILLIS)
@@ -211,17 +213,17 @@ public final class MigrationRequestOperation extends BaseMigrationOperation {
     private static final class MigrationCallback extends SimpleExecutionCallback<Object> {
 
         final MigrationInfo migrationInfo;
-        final ResponseHandler responseHandler;
+        final MigrationRequestOperation op;
 
-        private MigrationCallback(MigrationInfo migrationInfo, ResponseHandler responseHandler) {
+        private MigrationCallback(MigrationInfo migrationInfo, MigrationRequestOperation op) {
             this.migrationInfo = migrationInfo;
-            this.responseHandler = responseHandler;
+            this.op = op;
         }
 
         @Override
         public void notify(Object result) {
             migrationInfo.doneProcessing();
-            responseHandler.sendResponse(result);
+            op.sendResponse(result);
         }
     }
 }

@@ -73,7 +73,7 @@ public abstract class Operation implements DataSerializable {
     private transient Object service;
     private transient Address callerAddress;
     private transient Connection connection;
-    private transient ResponseHandler responseHandler;
+    private transient OperationResponseHandler responseHandler;
 
     public Operation() {
         setFlag(true, BITMASK_VALIDATE_TARGET);
@@ -245,13 +245,72 @@ public abstract class Operation implements DataSerializable {
         return this;
     }
 
-    public final Operation setResponseHandler(ResponseHandler responseHandler) {
+    /**
+     * Gets the OperationResponseHandler tied to this Operation. The returned value can be null.
+     *
+     * @return the OperationResponseHandler
+     */
+    public final OperationResponseHandler getOperationResponseHandler() {
+        return responseHandler;
+    }
+
+    /**
+     * Sets the OperationResponseHandler. Value is allowed to be null.
+     *
+     * @param responseHandler the OperationResponseHandler to set.
+     * @return this instance.
+     */
+    public final Operation setOperationResponseHandler(OperationResponseHandler responseHandler) {
         this.responseHandler = responseHandler;
         return this;
     }
 
+    public final void sendResponse(Object value) {
+        OperationResponseHandler operationResponseHandler = getOperationResponseHandler();
+        operationResponseHandler.sendResponse(this, value);
+    }
+
+    /**
+     * This method is deprecated since Hazelcast 3.6. Make use of the
+     * {@link #getOperationResponseHandler()}
+     */
+    @Deprecated
     public final ResponseHandler getResponseHandler() {
-        return responseHandler;
+        if (responseHandler == null) {
+            return null;
+        }
+
+        if (responseHandler instanceof ResponseHandlerAdapter) {
+            ResponseHandlerAdapter adapter = (ResponseHandlerAdapter) responseHandler;
+            return adapter.responseHandler;
+        }
+
+        return new ResponseHandler() {
+            @Override
+            public void sendResponse(Object obj) {
+                responseHandler.sendResponse(Operation.this, obj);
+            }
+
+            @Override
+            public boolean isLocal() {
+                return responseHandler.isLocal();
+            }
+        };
+    }
+
+    /**
+     * This method is deprecated since Hazelcast 3.6. Make use of the
+     * {@link #setOperationResponseHandler(OperationResponseHandler)}
+     */
+    @Deprecated
+    public final Operation setResponseHandler(final ResponseHandler responseHandler) {
+        if (responseHandler == null) {
+            this.responseHandler = null;
+            return this;
+        }
+
+        this.responseHandler = new ResponseHandlerAdapter(responseHandler);
+        return this;
     }
 
     /**
@@ -468,4 +527,21 @@ public abstract class Operation implements DataSerializable {
         return sb.toString();
     }
 
+    private static class ResponseHandlerAdapter implements OperationResponseHandler {
+        private final ResponseHandler responseHandler;
+
+        public ResponseHandlerAdapter(ResponseHandler responseHandler) {
+            this.responseHandler = responseHandler;
+        }
+
+        @Override
+        public void sendResponse(Operation op, Object obj) {
+            responseHandler.sendResponse(obj);
+        }
+
+        @Override
+        public boolean isLocal() {
+            return responseHandler.isLocal();
+        }
+    }
 }

@@ -53,11 +53,10 @@ import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.OperationResponseHandler;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.PartitionAwareService;
-import com.hazelcast.spi.ResponseHandler;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.impl.ResponseHandlerFactory;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.FutureUtil.ExceptionHandler;
@@ -97,8 +96,9 @@ import java.util.logging.Level;
 
 import static com.hazelcast.partition.impl.InternalPartitionServiceState.MIGRATION_LOCAL;
 import static com.hazelcast.partition.impl.InternalPartitionServiceState.MIGRATION_ON_MASTER;
-import static com.hazelcast.partition.impl.InternalPartitionServiceState.SAFE;
 import static com.hazelcast.partition.impl.InternalPartitionServiceState.REPLICA_NOT_SYNC;
+import static com.hazelcast.partition.impl.InternalPartitionServiceState.SAFE;
+import static com.hazelcast.spi.impl.OperationResponseHandlerFactory.createErrorLoggingResponseHandler;
 import static com.hazelcast.util.FutureUtil.logAllExceptions;
 import static com.hazelcast.util.FutureUtil.waitWithDeadline;
 
@@ -1142,8 +1142,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         final Operation op = new IsReplicaVersionSync(replicaVersion);
         op.setService(this);
         op.setNodeEngine(nodeEngine);
-        op.setResponseHandler(ResponseHandlerFactory
-                .createErrorLoggingResponseHandler(node.getLogger(IsReplicaVersionSync.class)));
+        op.setOperationResponseHandler(createErrorLoggingResponseHandler(node.getLogger(IsReplicaVersionSync.class)));
         op.setPartitionId(partitionId);
 
         return op;
@@ -1193,8 +1192,8 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
 
         int ownedCount = 0;
         ILogger responseLogger = node.getLogger(SyncReplicaVersion.class);
-        ResponseHandler responseHandler = ResponseHandlerFactory
-                .createErrorLoggingResponseHandler(responseLogger);
+        OperationResponseHandler responseHandler =
+                createErrorLoggingResponseHandler(responseLogger);
 
         for (InternalPartitionImpl partition : partitions) {
             Address owner = partition.getOwnerOrNull();
@@ -1204,7 +1203,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
                         SyncReplicaVersion op = new SyncReplicaVersion(i, callback);
                         op.setService(this);
                         op.setNodeEngine(nodeEngine);
-                        op.setResponseHandler(responseHandler);
+                        op.setOperationResponseHandler(responseHandler);
                         op.setPartitionId(partition.getPartitionId());
                         nodeEngine.getOperationService().executeOperation(op);
                     } else {
@@ -1578,7 +1577,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
             final ScheduledEntry<Integer, ReplicaSyncInfo> entry = replicaSyncScheduler.get(partitionId);
             if (entry != null) {
-               entries.add(entry);
+                entries.add(entry);
             }
         }
 
@@ -1608,8 +1607,8 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
                                 SyncReplicaVersion op = new SyncReplicaVersion(index, null);
                                 op.setService(InternalPartitionServiceImpl.this);
                                 op.setNodeEngine(nodeEngine);
-                                op.setResponseHandler(ResponseHandlerFactory
-                                        .createErrorLoggingResponseHandler(node.getLogger(SyncReplicaVersion.class)));
+                                op.setOperationResponseHandler(
+                                        createErrorLoggingResponseHandler(node.getLogger(SyncReplicaVersion.class)));
                                 op.setPartitionId(partition.getPartitionId());
                                 nodeEngine.getOperationService().executeOperation(op);
                             }
@@ -1987,7 +1986,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
             NodeEngine nodeEngine = partitionService.nodeEngine;
             ResetReplicaVersionOperation op = new ResetReplicaVersionOperation(reason, initialAssignment);
             op.setPartitionId(partitionId).setReplicaIndex(replicaIndex)
-              .setNodeEngine(nodeEngine).setService(partitionService);
+                    .setNodeEngine(nodeEngine).setService(partitionService);
             nodeEngine.getOperationService().executeOperation(op);
         }
 

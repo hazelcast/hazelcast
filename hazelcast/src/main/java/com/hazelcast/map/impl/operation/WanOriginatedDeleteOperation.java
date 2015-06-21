@@ -62,7 +62,7 @@ public class WanOriginatedDeleteOperation extends BaseRemoveOperation {
 
     @Override
     public void onWaitExpire() {
-        getResponseHandler().sendResponse(false);
+        sendResponse(false);
     }
 
     @Override

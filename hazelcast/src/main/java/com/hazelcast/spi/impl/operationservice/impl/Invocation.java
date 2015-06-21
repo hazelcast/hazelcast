@@ -26,7 +26,7 @@ import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.ResponseHandler;
+import com.hazelcast.spi.OperationResponseHandler;
 import com.hazelcast.spi.WaitSupport;
 import com.hazelcast.spi.exception.ResponseAlreadySentException;
 import com.hazelcast.spi.exception.RetryableException;
@@ -64,7 +64,7 @@ import static java.util.logging.Level.WARNING;
  * <p/>
  * Using the InvocationFuture, one can wait for the completion of a Invocation.
  */
-abstract class Invocation implements ResponseHandler, Runnable {
+abstract class Invocation implements OperationResponseHandler, Runnable {
 
     private static final AtomicReferenceFieldUpdater<Invocation, Boolean> RESPONSE_RECEIVED =
             AtomicReferenceFieldUpdater.newUpdater(Invocation.class, Boolean.class, "responseReceived");
@@ -239,7 +239,7 @@ abstract class Invocation implements ResponseHandler, Runnable {
         }
 
         responseReceived = FALSE;
-        op.setResponseHandler(this);
+        op.setOperationResponseHandler(this);
 
         OperationExecutor executor = operationService.operationExecutor;
         if (isAsync) {
@@ -317,7 +317,7 @@ abstract class Invocation implements ResponseHandler, Runnable {
     }
 
     @Override
-    public void sendResponse(Object obj) {
+    public void sendResponse(Operation op, Object obj) {
         if (!RESPONSE_RECEIVED.compareAndSet(this, FALSE, TRUE)) {
             throw new ResponseAlreadySentException("NormalResponse already responseReceived for callback: " + this
                     + ", current-response: : " + obj);

@@ -23,7 +23,6 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.ResponseHandler;
 import com.hazelcast.spi.WaitNotifyKey;
 import com.hazelcast.transaction.TransactionException;
 
@@ -76,8 +75,7 @@ public class TxnDeleteOperation extends BaseRemoveOperation implements MapTxnOpe
 
     @Override
     public void onWaitExpire() {
-        final ResponseHandler responseHandler = getResponseHandler();
-        responseHandler.sendResponse(false);
+        sendResponse(false);
     }
 
     public long getVersion() {
