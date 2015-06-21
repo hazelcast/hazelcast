@@ -166,7 +166,7 @@ public class IOBalancer {
         if (migrationIntervalSeconds < 0) {
             if (log.isFinestEnabled()) {
                 log.finest("I/O Balancer is disabled as the '"
-                        + GroupProperties.PROP_PERFORMANCE_MONITORING_ENABLED + "' property is set to "
+                        + GroupProperties.PROP_IO_BALANCER_INTERVAL_SECONDS + "' property is set to "
                         + migrationIntervalSeconds + ". Set the property to a positive value to enable I/O Balancer.");
             }
             return false;
