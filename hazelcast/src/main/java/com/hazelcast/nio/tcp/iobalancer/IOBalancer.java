@@ -151,7 +151,7 @@ public class IOBalancer {
 
     private MigrationStrategy createMigrationStrategy() {
         MigrationStrategy strategy;
-        if (Boolean.getBoolean("hazelcast.io.balancer.monkey")) {
+        if (Boolean.getBoolean(PROP_MONKEY_BALANCER)) {
             log.warning("Using Monkey IO Balancer Strategy. This is for stress tests only. Do not user in production! "
                     + "Disable by not setting the property '" + PROP_MONKEY_BALANCER + "' to true.");
             strategy = new MonkeyMigrationStrategy();
