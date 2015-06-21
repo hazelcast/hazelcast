@@ -168,7 +168,12 @@ This is useful if you want to run multiple tests sequentially, or tests in paral
 
 When you are in your working folder, execute the following command to start the test.
 
-
+Firstly, you should add simulator worker directory path to bash as an enviroment variable:
+```
+export SIMULATOR_HOME=~/hazelcast-simulator-0.5
+PATH=$SIMULATOR_HOME/bin:$PATH
+```
+Then run the script:
 ```
 ./run.sh
 ```
@@ -197,7 +202,13 @@ provisioner --download
 This script performs the following.
 
  * Start 4 EC2 instances, install Java and the agents.
- * Upload your JARs, run the test using a 2 node test cluster and 2 client machines (the clients generate the load).
+ * Upload your JARs, run the test using a 2 node test cluster(--memberWorkerCount 2) and 2 client machines (--clientWorkerCount 2) (the clients generate the load).
+ * --workerClassPath argument takes classpath of file/directory containing the classes/jars/resources that are going to be uploaded to the agents.
+ * --monitorPerformance provides get some performance numbers from suite like this:
+ ```
+62,299 ops        3,970.69 ops/s
+304,306 ops        7,767.17 ops/s
+ ```
  
  
 This test runs for 2 minutes. After it is completed, the artifacts (log files) are downloaded into the `workers` folder. Then, it terminates the 4 instances. If you do not want to start/terminate the instances for every run, just comment out the line `provisioner --terminate` in the script `run.sh`. This prevents the machines from being terminated. Please see the [Provisioner section](#provisioner) for more information.
@@ -211,79 +222,100 @@ This test runs for 2 minutes. After it is completed, the artifacts (log files) a
 The output of the test looks like the following.
 
 ```
-INFO  08:40:10 Hazelcast Simulator Provisioner
-INFO  08:40:10 Version: 0.3, Commit: 2af49f0, Build Time: 13.07.2014 @ 08:37:06 EEST
-INFO  08:40:10 SIMULATOR_HOME: /home/alarmnummer/hazelcast-simulator-0.3
-INFO  08:40:10 Loading simulator.properties: /tmp/yourproject/workdir/simulator.properties
-INFO  08:40:10 ==============================================================
-INFO  08:40:10 Provisioning 4 aws-ec2 machines
-INFO  08:40:10 ==============================================================
-INFO  08:40:10 Current number of machines: 0
-INFO  08:40:10 Desired number of machines: 4
-INFO  08:40:10 GroupName: simulator-agent
-INFO  08:40:10 JDK spec: oracle 7
-INFO  08:40:10 Hazelcast version-spec: outofthebox
-INFO  08:40:12 Created compute
-INFO  08:40:12 Machine spec: hardwareId=m3.medium,locationId=us-east-1,imageId=us-east-1/ami-fb8e9292
-INFO  08:40:19 Security group: 'simulator' is found in region 'us-east-1'
-INFO  08:40:27 Created template
-INFO  08:40:27 Loginname to the remote machines: simulator
-INFO  08:40:27 Creating machines (can take a few minutes)
-INFO  08:42:10 	54.91.98.103 LAUNCHED
-INFO  08:42:10 	54.237.144.164 LAUNCHED
-INFO  08:42:10 	54.196.60.36 LAUNCHED
-INFO  08:42:10 	54.226.58.200 LAUNCHED
-INFO  08:42:24 	54.196.60.36 JAVA INSTALLED
-INFO  08:42:25 	54.237.144.164 JAVA INSTALLED
-INFO  08:42:27 	54.91.98.103 JAVA INSTALLED
-INFO  08:42:30 	54.226.58.200 JAVA INSTALLED
-INFO  08:42:57 	54.196.60.36 SIMULATOR AGENT INSTALLED
-INFO  08:42:59 	54.237.144.164 SIMULATOR AGENT INSTALLED
-INFO  08:43:01 	54.196.60.36 SIMULATOR AGENT STARTED
-INFO  08:43:02 	54.237.144.164 SIMULATOR AGENT STARTED
-INFO  08:43:06 	54.91.98.103 SIMULATOR AGENT INSTALLED
-INFO  08:43:09 	54.91.98.103 SIMULATOR AGENT STARTED
-INFO  08:43:21 	54.226.58.200 SIMULATOR AGENT INSTALLED
-INFO  08:43:25 	54.226.58.200 SIMULATOR AGENT STARTED
-INFO  08:43:25 Duration: 00d 00h 03m 15s
-INFO  08:43:25 ==============================================================
-INFO  08:43:25 Successfully provisioned 4 aws-ec2 machines
-INFO  08:43:25 ==============================================================
-INFO  08:43:25 Pausing for Machine Warm up... (10 sec)
-INFO  08:43:36 Hazelcast Simulator Coordinator
-INFO  08:43:36 Version: 0.3, Commit: 2af49f0, Build Time: 13.07.2014 @ 08:37:06 EEST
-INFO  08:43:36 SIMULATOR_HOME: /home/alarmnummer/hazelcast-simulator-0.3
-INFO  08:43:36 Loading simulator.properties: /tmp/yourproject/workdir/simulator.properties
-INFO  08:43:36 Loading testsuite file: /tmp/yourproject/workdir/../conf/test.properties
-INFO  08:43:36 Loading Hazelcast configuration: /tmp/yourproject/workdir/../conf/hazelcast.xml
-INFO  08:43:36 Loading Hazelcast client configuration: /tmp/yourproject/workdir/../conf/client-hazelcast.xml
-INFO  08:43:36 Loading agents file: /tmp/yourproject/workdir/agents.txt
-INFO  08:43:36 --------------------------------------------------------------
-INFO  08:43:36 Waiting for agents to start
-INFO  08:43:36 --------------------------------------------------------------
-INFO  08:43:36 Connect to agent 54.91.98.103 OK
-INFO  08:43:37 Connect to agent 54.237.144.164 OK
-INFO  08:43:37 Connect to agent 54.196.60.36 OK
-INFO  08:43:37 Connect to agent 54.226.58.200 OK
-INFO  08:43:37 --------------------------------------------------------------
-INFO  08:43:37 All agents are reachable!
-INFO  08:43:37 --------------------------------------------------------------
-INFO  08:43:37 Performance monitor enabled: false
-INFO  08:43:37 Total number of agents: 4
-INFO  08:43:37 Total number of Hazelcast member workers: 2
-INFO  08:43:37 Total number of Hazelcast client workers: 2
-INFO  08:43:37 Total number of Hazelcast mixed client & member workers: 0
-INFO  08:43:38 Copying workerClasspath '../target/*.jar' to agents
-INFO  08:43:49 Finished copying workerClasspath '../target/*.jar' to agents
-INFO  08:43:49 Starting workers
-INFO  08:44:03 Finished starting a grand total of 4 Workers JVM's after 14463 ms
-INFO  08:44:04 Starting testsuite: 1405230216265
-INFO  08:44:04 Tests in testsuite: 1
-INFO  08:44:05 Running time per test: 00d 00h 05m 00s 
-INFO  08:44:05 Expected total testsuite time: 00d 00h 05m 00s
-INFO  08:44:05 Running 1 tests sequentially
-INFO  08:44:05 --------------------------------------------------------------
-Running Test : 
+INFO  13:46:12 Hazelcast Simulator Provisioner
+INFO  13:46:12 Version: 0.5, Commit: c6e82c5, Build Time: 18.06.2015 @ 11:58:06 UTC
+INFO  13:46:12 SIMULATOR_HOME: .../hasan/hazelcast-simulator-0.5
+INFO  13:46:12 Loading simulator.properties: /tmp/yourproject/workdir/simulator.properties
+INFO  13:46:13 ==============================================================
+INFO  13:46:13 Provisioning 4 aws-ec2 machines
+INFO  13:46:13 ==============================================================
+INFO  13:46:13 Current number of machines: 0
+INFO  13:46:13 Desired number of machines: 4
+INFO  13:46:13 Username: simulator
+INFO  13:46:13 Using init script:/disk1/hasan/hazelcast-simulator-0.5/conf/init.sh
+INFO  13:46:13 JDK spec: oracle 7
+INFO  13:46:13 Hazelcast version-spec: maven=3.5 (or outofthebox)
+INFO  13:46:13 Artifact: ../.m2/repository/com/hazelcast/hazelcast/3.5/hazelcast-3.5.jar is not found in local maven repository, trying online one
+INFO  13:46:13 Artifact: ../.m2/repository/com/hazelcast/hazelcast-client/3.5/hazelcast-client-3.5.jar is not found in local maven repository, trying online one
+INFO  13:46:18 Artifact: ../.m2/repository/com/hazelcast/hazelcast-wm/3.5/hazelcast-wm-3.5.jar is not found in local maven repository, trying online one
+INFO  13:46:26 Created compute
+INFO  13:46:26 Machine spec: hardwareId=m3.medium,locationId=us-east-1,imageId=us-east-1/ami-fb8e9292
+INFO  13:46:32 Created template
+INFO  13:46:32 Login name to the remote machines: simulator
+INFO  13:46:32 Security group: 'simulator' is found in region 'us-east-1'
+INFO  13:46:32 Creating machines... (can take a few minutes)
+INFO  13:47:28     54.237.60.217 LAUNCHED
+INFO  13:47:28     54.237.88.144 LAUNCHED
+INFO  13:47:28     54.157.129.67 LAUNCHED
+INFO  13:47:28     54.237.126.248 LAUNCHED
+INFO  13:47:38     54.237.60.217 JAVA INSTALLED
+INFO  13:47:39     54.237.88.144 JAVA INSTALLED
+INFO  13:47:42     54.237.126.248 JAVA INSTALLED
+INFO  13:47:43     54.157.129.67 JAVA INSTALLED
+INFO  13:47:52     54.237.60.217 SIMULATOR AGENT INSTALLED
+INFO  13:47:52 Killing Agent on: 54.237.60.217
+INFO  13:47:52 Starting Agent on: 54.237.60.217
+INFO  13:47:52     54.237.60.217 SIMULATOR AGENT STARTED
+INFO  13:47:53     54.237.88.144 SIMULATOR AGENT INSTALLED
+INFO  13:47:53 Killing Agent on: 54.237.88.144
+INFO  13:47:53 Starting Agent on: 54.237.88.144
+INFO  13:47:53     54.237.88.144 SIMULATOR AGENT STARTED
+INFO  13:47:53     54.237.126.248 SIMULATOR AGENT INSTALLED
+INFO  13:47:53 Killing Agent on: 54.237.126.248
+INFO  13:47:53 Starting Agent on: 54.237.126.248
+INFO  13:47:53     54.237.126.248 SIMULATOR AGENT STARTED
+INFO  13:47:54     54.157.129.67 SIMULATOR AGENT INSTALLED
+INFO  13:47:54 Killing Agent on: 54.157.129.67
+INFO  13:47:54 Starting Agent on: 54.157.129.67
+INFO  13:47:54     54.157.129.67 SIMULATOR AGENT STARTED
+INFO  13:47:54 Pausing for machine warmup... (10 sec)
+INFO  13:48:04 Duration: 00d 00h 01m 51s
+INFO  13:48:04 ==============================================================
+INFO  13:48:04 Successfully provisioned 4 aws-ec2 machines
+INFO  13:48:04 ==============================================================
+INFO  13:48:04 Shutting down Provisioner...
+INFO  13:48:04 Done!
+INFO  13:48:04 Hazelcast Simulator Coordinator
+INFO  13:48:04 Version: 0.5, Commit: c6e82c5, Build Time: 18.06.2015 @ 11:58:06 UTC
+INFO  13:48:04 SIMULATOR_HOME: /disk1/hasan/hazelcast-simulator-0.5
+INFO  13:48:04 Loading simulator.properties: /tmp/yourproject/workdir/simulator.properties                  
+INFO  13:48:04 Loading testsuite file: /tmp/yourproject/workdir/../conf/test.properties                     
+INFO  13:48:04 Loading Hazelcast configuration: /tmp/yourproject/workdir/../conf/hazelcast.xml              
+INFO  13:48:04 Loading Hazelcast client configuration: /tmp/yourproject/workdir/../conf/client-hazelcast.xml
+INFO  13:48:04 Loading agents file: /tmp/yourproject/workdir/agents.txt                                     
+INFO  13:48:04 HAZELCAST_VERSION_SPEC: maven=3.5
+INFO  13:48:04 --------------------------------------------------------------
+INFO  13:48:04 Waiting for agents to start
+INFO  13:48:04 --------------------------------------------------------------
+INFO  13:48:04 Connect to agent 54.237.60.217 OK
+INFO  13:48:05 Connect to agent 54.237.88.144 OK
+INFO  13:48:05 Connect to agent 54.157.129.67 OK
+INFO  13:48:05 Connect to agent 54.237.126.248 OK
+INFO  13:48:05 --------------------------------------------------------------
+INFO  13:48:05 All agents are reachable!
+INFO  13:48:05 --------------------------------------------------------------
+INFO  13:48:05 Performance monitor enabled: true
+INFO  13:48:05 Total number of agents: 4
+INFO  13:48:05 Total number of Hazelcast member workers: 2
+INFO  13:48:05 Total number of Hazelcast client workers: 2
+INFO  13:48:05     Agent 54.237.60.217 members: 1 clients: 0 mode: MIXED
+INFO  13:48:05     Agent 54.237.88.144 members: 1 clients: 0 mode: MIXED
+INFO  13:48:05     Agent 54.157.129.67 members: 0 clients: 1 mode: MIXED
+INFO  13:48:05     Agent 54.237.126.248 members: 0 clients: 1 mode: MIXED
+INFO  13:48:05 Killing all remaining workers
+INFO  13:48:05 Successfully killed all remaining workers
+INFO  13:48:05 Starting 2 member workers
+INFO  13:48:26 Successfully started member workers
+INFO  13:48:26 Starting 2 client workers
+INFO  13:48:30 Successfully started client workers
+INFO  13:48:30 Successfully started a grand total of 4 Workers JVMs after 24470 ms
+INFO  13:48:30 Starting testsuite: 2015-06-18__13_48_04
+INFO  13:48:30 Tests in testsuite: 1
+INFO  13:48:30 Running time per test: 00d 00h 05m 00s
+INFO  13:48:30 Expected total testsuite time: 00d 00h 05m 00s
+INFO  13:48:30 Running 1 tests sequentially
+INFO  13:48:30 --------------------------------------------------------------
+Running Test: example
 TestCase{
       id=
     , class=yourgroupid.ExampleTest
@@ -291,78 +323,89 @@ TestCase{
     , putProb=0.4
 }
 --------------------------------------------------------------
-INFO  08:44:06 Starting Test initialization
-INFO  08:44:07 Completed Test initialization
-INFO  08:44:08 Starting Test setup
-INFO  08:44:10 Completed Test setup
-INFO  08:44:11 Starting Test local warmup
-INFO  08:44:13 Completed Test local warmup
-INFO  08:44:14 Starting Test global warmup
-INFO  08:44:16 Completed Test global warmup
-INFO  08:44:16 Starting Test start
-INFO  08:44:18 Completed Test start
-INFO  08:44:18 Test will run for 00d 00h 05m 00s
-INFO  08:44:48 Running 00d 00h 00m 30s, 10.00 percent complete
-INFO  08:45:18 Running 00d 00h 01m 00s, 20.00 percent complete
-INFO  08:45:48 Running 00d 00h 01m 30s, 30.00 percent complete
-INFO  08:46:18 Running 00d 00h 02m 00s, 40.00 percent complete
-INFO  08:46:48 Running 00d 00h 02m 30s, 50.00 percent complete
-INFO  08:47:18 Running 00d 00h 03m 00s, 60.00 percent complete
-INFO  08:47:48 Running 00d 00h 03m 30s, 70.00 percent complete
-INFO  08:48:18 Running 00d 00h 04m 00s, 80.00 percent complete
-INFO  08:48:48 Running 00d 00h 04m 30s, 90.00 percent complete
-INFO  08:49:18 Running 00d 00h 05m 00s, 100.00 percent complete
-INFO  08:49:19 Test finished running
-INFO  08:49:19 Starting Test stop
-INFO  08:49:22 Completed Test stop
-INFO  08:49:22 Starting Test global verify
-INFO  08:49:25 Completed Test global verify
-INFO  08:49:25 Starting Test local verify
-INFO  08:49:28 Completed Test local verify
-INFO  08:49:28 Starting Test global tear down
-INFO  08:49:31 Finished Test global tear down
-INFO  08:49:31 Starting Test local tear down
-INFO  08:49:34 Completed Test local tear down
-INFO  08:49:34 Terminating workers
-INFO  08:49:35 All workers have been terminated
-INFO  08:49:35 Starting cool down (10 sec)
-INFO  08:49:45 Finished cool down
-INFO  08:49:45 Total running time: 340 seconds
-INFO  08:49:45 -----------------------------------------------------------------------------
-INFO  08:49:45 No failures have been detected!
-INFO  08:49:45 -----------------------------------------------------------------------------
-INFO  08:49:46 Hazelcast Simulator Provisioner
-INFO  08:49:46 Version: 0.3, Commit: 2af49f0, Build Time: 13.07.2014 @ 08:37:06 EEST
-INFO  08:49:46 SIMULATOR_HOME: /home/alarmnummer/hazelcast-simulator-0.3
-INFO  08:49:46 Loading simulator.properties: /tmp/yourproject/workdir/simulator.properties
-INFO  08:49:46 ==============================================================
-INFO  08:49:46 Download artifacts of 4 machines
-INFO  08:49:46 ==============================================================
-INFO  08:49:46 Downloading from 54.91.98.103
-INFO  08:49:49 Downloading from 54.237.144.164
-INFO  08:49:51 Downloading from 54.196.60.36
-INFO  08:49:53 Downloading from 54.226.58.200
-INFO  08:49:56 ==============================================================
-INFO  08:49:56 Finished Downloading Artifacts of 4 machines
-INFO  08:49:56 ==============================================================
-INFO  08:49:56 Hazelcast Simulator Provisioner
-INFO  08:49:56 Version: 0.3, Commit: 2af49f0, Build Time: 13.07.2014 @ 08:37:06 EEST
-INFO  08:49:56 SIMULATOR_HOME: /home/alarmnummer/hazelcast-simulator-0.3
-INFO  08:49:56 Loading simulator.properties: /tmp/yourproject/workdir/simulator.properties
-INFO  08:49:56 ==============================================================
-INFO  08:49:56 Terminating 4 aws-ec2 machines (can take some time)
-INFO  08:49:56 ==============================================================
-INFO  08:49:56 Current number of machines: 4
-INFO  08:49:56 Desired number of machines: 0
-INFO  08:50:29 	54.196.60.36 Terminating
-INFO  08:50:29 	54.237.144.164 Terminating
-INFO  08:50:29 	54.226.58.200 Terminating
-INFO  08:50:29 	54.91.98.103 Terminating
-INFO  08:51:16 Updating /tmp/yourproject/workdir/agents.txt
-INFO  08:51:16 Duration: 00d 00h 01m 20s
-INFO  08:51:16 ==============================================================
-INFO  08:51:16 Finished terminating 4 aws-ec2 machines, 0 machines remaining.
-INFO  08:51:16 ==============================================================
+INFO  13:48:30 example Starting Test initialization
+INFO  13:48:31 example Completed Test initialization
+INFO  13:48:31 example Starting Test setup
+INFO  13:48:33 example Waiting for setUp completion: 00d 00h 00m 00s
+INFO  13:48:39 example Completed Test setup
+INFO  13:48:39 example Starting Test local warmup
+INFO  13:48:41 example Completed Test local warmup
+INFO  13:48:41 example Starting Test global warmup
+INFO  13:48:43 example Completed Test global warmup
+INFO  13:48:43 example Starting Test start
+INFO  13:48:44 example Completed Test start
+INFO  13:48:44 example Test will run for 00d 00h 05m 00s
+INFO  13:49:14 example Running 00d 00h 00m 30s   10.00% complete         62,299 ops        3,970.69 ops/s
+INFO  13:49:44 example Running 00d 00h 01m 00s   20.00% complete        304,306 ops        7,767.17 ops/s
+INFO  13:50:14 example Running 00d 00h 01m 30s   30.00% complete        572,699 ops        8,978.22 ops/s
+INFO  13:50:44 example Running 00d 00h 02m 00s   40.00% complete        838,804 ops        9,087.42 ops/s
+INFO  13:51:14 example Running 00d 00h 02m 30s   50.00% complete      1,098,687 ops        7,745.47 ops/s
+INFO  13:51:44 example Running 00d 00h 03m 00s   60.00% complete      1,276,840 ops        8,807.83 ops/s
+INFO  13:52:14 example Running 00d 00h 03m 30s   70.00% complete      1,543,390 ops        8,702.98 ops/s
+INFO  13:52:44 example Running 00d 00h 04m 00s   80.00% complete      1,809,894 ops        7,789.35 ops/s
+INFO  13:53:14 example Running 00d 00h 04m 30s   90.00% complete      2,076,566 ops        8,077.07 ops/s
+INFO  13:53:44 example Running 00d 00h 05m 00s  100.00% complete      2,347,663 ops        8,575.74 ops/s
+INFO  13:53:44 example Test finished running
+INFO  13:53:44 example Starting Test stop
+INFO  13:53:46 example Completed Test stop
+INFO  13:53:46 Total performance        100.00%       2,347,663 ops        7,825.54 ops/s
+INFO  13:53:46   Agent 54.157.129.67     50.11%       1,176,420 ops        3,921.40 ops/s
+INFO  13:53:46   Agent 54.237.126.248    49.89%       1,171,243 ops        3,904.14 ops/s
+INFO  13:53:46   Agent 54.237.60.217      0.00%               0 ops            0.00 ops/s
+INFO  13:53:46   Agent 54.237.88.144      0.00%               0 ops            0.00 ops/s
+INFO  13:53:47 example Starting Test global verify
+INFO  13:53:48 example Waiting for globalVerify completion: 00d 00h 00m 01s
+INFO  13:53:54 example Completed Test global verify
+INFO  13:53:54 example Starting Test local verify
+INFO  13:53:56 example Completed Test local verify
+INFO  13:53:56 example Starting Test global tear down
+INFO  13:53:57 example Finished Test global tear down
+INFO  13:53:57 example Starting Test local tear down
+INFO  13:53:59 example Completed Test local tear down
+INFO  13:53:59 Terminating workers
+INFO  13:53:59 All workers have been terminated
+INFO  13:53:59 Starting cool down (10 sec)
+INFO  13:54:09 Finished cool down
+INFO  13:54:09 Total running time: 339 seconds
+INFO  13:54:09 -----------------------------------------------------------------------------
+INFO  13:54:09 No failures have been detected!
+INFO  13:54:09 -----------------------------------------------------------------------------
+INFO  13:54:10 Hazelcast Simulator Provisioner
+INFO  13:54:10 Version: 0.5, Commit: c6e82c5, Build Time: 18.06.2015 @ 11:58:06 UTC
+INFO  13:54:10 SIMULATOR_HOME: /disk1/hasan/hazelcast-simulator-0.5
+INFO  13:54:10 Loading simulator.properties: /tmp/yourproject/workdir/simulator.properties
+INFO  13:54:10 ==============================================================
+INFO  13:54:10 Download artifacts of 4 machines
+INFO  13:54:10 ==============================================================
+INFO  13:54:10 Downloading from 54.237.60.217
+INFO  13:54:10 Downloading from 54.237.88.144
+INFO  13:54:10 Downloading from 54.157.129.67
+INFO  13:54:11 Downloading from 54.237.126.248
+INFO  13:54:11 ==============================================================
+INFO  13:54:11 Finished Downloading Artifacts of 4 machines
+INFO  13:54:11 ==============================================================
+INFO  13:54:11 Shutting down Provisioner...
+INFO  13:54:11 Done!
+INFO  13:54:11 Hazelcast Simulator Provisioner
+INFO  13:54:11 Version: 0.5, Commit: c6e82c5, Build Time: 18.06.2015 @ 11:58:06 UTC
+INFO  13:54:11 SIMULATOR_HOME: .../hasan/hazelcast-simulator-0.5
+INFO  13:54:11 Loading simulator.properties: /tmp/yourproject/workdir/simulator.properties
+INFO  13:54:12 ==============================================================
+INFO  13:54:12 Terminating 4 aws-ec2 machines (can take some time)
+INFO  13:54:12 ==============================================================
+INFO  13:54:12 Current number of machines: 4
+INFO  13:54:12 Desired number of machines: 0
+INFO  13:54:35     54.237.88.144 Terminating
+INFO  13:54:35     54.157.129.67 Terminating
+INFO  13:54:35     54.237.60.217 Terminating
+INFO  13:54:35     54.237.126.248 Terminating
+INFO  13:55:40 Updating /tmp/yourproject/workdir/agents.txt
+INFO  13:55:40 Duration: 00d 00h 01m 28s
+INFO  13:55:40 ==============================================================
+INFO  13:55:40 Terminated 4 of 4, remaining=0
+INFO  13:55:40 ==============================================================
+INFO  13:55:40 Shutting down Provisioner...
+INFO  13:55:40 Done!
 ```
 
 ### Using Maven Archetypes
