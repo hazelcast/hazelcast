@@ -27,29 +27,37 @@ class IOBalancerThread extends Thread {
 
     private final IOBalancer ioBalancer;
     private final ILogger log;
-    private final int migrationIntervalSeconds;
+    private final int balancerIntervalSeconds;
+    private volatile boolean shutdown;
 
-    IOBalancerThread(IOBalancer ioBalancer, int migrationIntervalSeconds,
-                             HazelcastThreadGroup threadGroup, ILogger log) {
+    IOBalancerThread(IOBalancer ioBalancer, int balancerIntervalSeconds,
+                     HazelcastThreadGroup threadGroup, ILogger log) {
         super(threadGroup.getInternalThreadGroup(), threadGroup.getThreadNamePrefix(THREAD_NAME_PREFIX));
         this.ioBalancer = ioBalancer;
         this.log = log;
-        this.migrationIntervalSeconds = migrationIntervalSeconds;
+        this.balancerIntervalSeconds = balancerIntervalSeconds;
+    }
+
+    void shutdown() {
+        shutdown = true;
+        interrupt();
     }
 
     @Override
     public void run() {
         try {
             log.finest("Starting IOBalancer thread");
-            while (!Thread.interrupted()) {
+            while (!shutdown) {
                 ioBalancer.checkReadHandlers();
                 ioBalancer.checkWriteHandlers();
-                TimeUnit.SECONDS.sleep(migrationIntervalSeconds);
+                TimeUnit.SECONDS.sleep(balancerIntervalSeconds);
             }
         } catch (InterruptedException e) {
             log.finest("IOBalancer thread stopped");
             //this thread is about to exit, no reason restoring the interrupt flag
             EmptyStatement.ignore(e);
+        } catch (Throwable e) {
+            log.severe("IOBalancer failed", e);
         }
     }
 }

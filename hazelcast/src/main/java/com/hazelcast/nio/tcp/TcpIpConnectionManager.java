@@ -111,8 +111,6 @@ public class TcpIpConnectionManager implements ConnectionManager {
 
     private final int outboundPortCount;
 
-    private final int handlerMigrationIntervalSeconds;
-
     private final HazelcastThreadGroup hazelcastThreadGroup;
 
     // accessed only in synchronized block
@@ -137,7 +135,6 @@ public class TcpIpConnectionManager implements ConnectionManager {
         this.socketKeepAlive = ioService.getSocketKeepAlive();
         this.socketNoDelay = ioService.getSocketNoDelay();
         this.selectorThreadCount = ioService.getSelectorThreadCount();
-        this.handlerMigrationIntervalSeconds = ioService.getBalancerIntervalSeconds();
         this.inSelectors = new InSelectorImpl[selectorThreadCount];
         this.outSelectors = new OutSelectorImpl[selectorThreadCount];
         final Collection<Integer> ports = ioService.getOutboundPorts();
@@ -458,7 +455,7 @@ public class TcpIpConnectionManager implements ConnectionManager {
 
     private void startIOBalancer() {
         ioBalancer = new IOBalancer(inSelectors, outSelectors,
-                hazelcastThreadGroup, handlerMigrationIntervalSeconds, loggingService);
+                hazelcastThreadGroup, ioService.getBalancerIntervalSeconds(), loggingService);
         ioBalancer.start();
     }
 
