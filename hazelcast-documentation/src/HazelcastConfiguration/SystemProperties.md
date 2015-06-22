@@ -50,7 +50,7 @@ Property Name | Default Value | Type | Description
 `hazelcast.client.heartbeat.interval`|10000|string|The frequency of heartbeat messages sent by the clients to members.
 `hazelcast.client.heartbeat.timeout`|300000|string|Timeout for the heartbeat messages sent by the client to members. If no messages pass between client and member within the given time via this property in milliseconds, the connection will be closed.
 `hazelcast.client.invocation.timeout.seconds`|120|string|Time to give up the invocation when a member in the member list is not reachable.
-`hazelcast.client.max.no.heartbeat.seconds`|int|300|???
+`hazelcast.client.max.no.heartbeat.seconds`|int|300|Time after which the node assumes the client is dead and closes its connections to the client.
 `hazelcast.client.shuffle.member.list`|true|string|The client shuffles the given member list to prevent all clients to connect to the same node when this property is `false`. When it is set to `true`, the client tries to connect to the nodes in the given order.
 `hazelcast.connect.all.wait.seconds` | 120 | int | Timeout to connect all other cluster members when a member is joining to a cluster.
 `hazelcast.connection.monitor.interval` | 100 | int  |   Minimum interval in milliseconds to consider a connection error as critical.
