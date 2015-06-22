@@ -158,13 +158,6 @@ public class HazelcastConnectionImplTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void getDistributedObject_withObjectId() {
-        Object id =  "foo";
-        DistributedObject obj = connection.getDistributedObject(MapService.SERVICE_NAME, id);
-        assertSame(hz.getDistributedObject(MapService.SERVICE_NAME, id), obj);
-    }
-
-    @Test
     @Ignore
     public void getTransactionalQueue() {
         //todo
