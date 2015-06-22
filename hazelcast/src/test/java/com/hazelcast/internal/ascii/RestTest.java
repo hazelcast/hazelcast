@@ -173,7 +173,7 @@ public class RestTest {
 
         HTTPCommunicator(HazelcastInstance instance) {
             this.instance = instance;
-            this.address = "http:/" + instance.getCluster().getLocalMember().getInetSocketAddress().toString() + "/hazelcast/rest/";
+            this.address = "http:/" + instance.getCluster().getLocalMember().getSocketAddress().toString() + "/hazelcast/rest/";
         }
 
         public String poll(String queueName, long timeout) {

@@ -472,7 +472,7 @@ public class TestFullApplicationContext {
         final Set<Member> members = instance.getCluster().getMembers();
         assertEquals(1, members.size());
         final Member member = members.iterator().next();
-        final InetSocketAddress inetSocketAddress = member.getInetSocketAddress();
+        final InetSocketAddress inetSocketAddress = member.getSocketAddress();
         assertEquals(5700, inetSocketAddress.getPort());
         assertEquals("test-instance", config.getInstanceName());
         assertEquals("HAZELCAST_ENTERPRISE_LICENSE_KEY", config.getLicenseKey());
