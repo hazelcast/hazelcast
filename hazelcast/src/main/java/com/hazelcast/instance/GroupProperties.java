@@ -74,8 +74,7 @@ public class GroupProperties {
      * Please see the documentation of {@link com.hazelcast.nio.tcp.iobalancer.IOBalancer IOBalancer} for a
      * detailed explanation of the problem.
      *
-     * Default value is 20 seconds. A negative value disables the balancer.
-     *
+     * Default value is 20 seconds. A value smaller than 1 disables the balancer.
      */
     public static final String PROP_IO_BALANCER_INTERVAL_SECONDS = "hazelcast.io.balancer.interval.seconds";
     /**

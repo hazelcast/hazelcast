@@ -23,7 +23,6 @@ import com.hazelcast.nio.tcp.MigratableHandler;
  * and which handler to choose.
  *
  * @see IOBalancer
- *
  */
 interface MigrationStrategy {
 
