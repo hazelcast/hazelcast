@@ -51,11 +51,11 @@ QueryCache<Integer, Integer> cache = clientMap.getQueryCache("cache-name");
 
 ### Features of Continuous Query Cache
 
-* You can enable/disable the initial query run on the existing `IMap` data during the continuous query cache construction, according to the supplied predicate via `QueryCacheConfig#setPopulate`.
+* You can enable/disable the initial query that is run on the existing `IMap` data during the continuous query cache construction, according to the supplied predicate via `QueryCacheConfig#setPopulate`.
 * You can index and perform queries on a continuous query cache.
 * A continuous query cache is evictable. Note that a continuous query cache has a default maximum capacity of 10000. If you need a non-evictable cache, you should configure the eviction via `QueryCacheConfig#setEvictionConfig`.
-* You can listen a continuous query cache using `QueryCache#addEntryListener`.
-* The events on the `IMap` are reflected in a continuous query cache, with the same order of those events. Note that the order of the events implies the order in a partition. Therefore, you can only expect ordered events from the same partition. You can listen to the event losses using `EventLostListener` and events can be recoverable with the method `QueryCache#tryRecover`. If your buffer size on the node side is large enough, you can recover from a possible event loss scenario. 
+* You can listen to a continuous query cache using `QueryCache#addEntryListener`.
+* The events on the `IMap` are reflected in a continuous query cache, keeping the same order of those events. Note that the order of the events implies the order in a partition. Therefore, you can only expect ordered events from the same partition. You can listen to the event losses using `EventLostListener` and events can be recoverable with the method `QueryCache#tryRecover`. If your buffer size on the node side is large enough, you can recover from a possible event loss scenario. 
 Currently, setting the size of `QueryCacheConfig#setBufferSize` is the only option for recovery since the events which feed a continuous query cache have no backups.
 You can use the following example code for a recovery case. 
 
@@ -72,7 +72,7 @@ You can use the following example code for a recovery case.
    
 * You can perform event batching and coalescing on a continuous query cache.
 * You can configure a continuous query cache declaratively or programmatically.
-* You can populate a continuous query cache with only the keys of entries and you can retrieve the subsequent values directly via `QueryCache#get` from the underlying `IMap`. This helps decreasing the initial population time when the values are very large. 
+* You can populate a continuous query cache with only the keys of its entries and you can retrieve the subsequent values directly via `QueryCache#get` from the underlying `IMap`. This helps to decrease the initial population time when the values are very large. 
 <br></br>
 
 
