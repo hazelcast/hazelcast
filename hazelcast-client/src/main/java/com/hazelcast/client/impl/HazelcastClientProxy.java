@@ -129,11 +129,6 @@ public final class HazelcastClientProxy implements HazelcastInstance, Serializat
     }
 
     @Override
-    public ILock getLock(Object key) {
-        return getClient().getLock(key);
-    }
-
-    @Override
     public ILock getLock(String key) {
         return getClient().getLock(key);
     }

@@ -323,12 +323,6 @@ public class HazelcastConnectionImpl implements HazelcastConnection {
         return getHazelcastInstance().getLock(key);
     }
 
-    @Deprecated
-    @Override
-    public ILock getLock(Object key) {
-        return getHazelcastInstance().getLock(key);
-    }
-
     @Override
     public Cluster getCluster() {
         return getHazelcastInstance().getCluster();
