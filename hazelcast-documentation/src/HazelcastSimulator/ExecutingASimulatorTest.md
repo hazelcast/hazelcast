@@ -168,12 +168,14 @@ This is useful if you want to run multiple tests sequentially, or tests in paral
 
 When you are in your working folder, execute the following command to start the test.
 
-Firstly, you should add simulator worker directory path to bash as an enviroment variable:
+First, you should add the simulator worker directory path to bash as an enviroment variable:
 ```
 export SIMULATOR_HOME=~/hazelcast-simulator-0.5
 PATH=$SIMULATOR_HOME/bin:$PATH
 ```
-Then run the script:
+
+Then, execute the script:
+
 ```
 ./run.sh
 ```
@@ -202,10 +204,11 @@ provisioner --download
 This script performs the following.
 
  * Start 4 EC2 instances, install Java and the agents.
- * Upload your JARs, run the test using a 2 node test cluster(--memberWorkerCount 2) and 2 client machines (--clientWorkerCount 2) (the clients generate the load).
- * --workerClassPath argument takes classpath of file/directory containing the classes/jars/resources that are going to be uploaded to the agents.
- * --monitorPerformance provides get some performance numbers from suite like this:
- ```
+ * Upload your JARs, run the test using a 2 node test cluster (`--memberWorkerCount 2`) and 2 client machines (`--clientWorkerCount 2`); the clients generate the load.
+ * `--workerClassPath` argument takes the classpath of the file/directory containing the classes/JARs/resources that are going to be uploaded to the agents.
+ * `--monitorPerformance` enables getting some performance numbers from the suite as shown below:
+ 
+    ```
 62,299 ops        3,970.69 ops/s
 304,306 ops        7,767.17 ops/s
  ```
