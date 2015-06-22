@@ -265,5 +265,31 @@ public abstract class InvocationBuilder {
         return this;
     }
 
+    protected ExecutionCallback getTargetExecutionCallback() {
+        ExecutionCallback targetCallback = executionCallback;
+        if (callback != null) {
+            targetCallback = new ExecutorCallbackAdapter(callback);
+        }
+        return targetCallback;
+    }
+
+    static final class ExecutorCallbackAdapter<E> implements ExecutionCallback<E> {
+        private final Callback callback;
+
+        private ExecutorCallbackAdapter(Callback callback) {
+            this.callback = callback;
+        }
+
+        @Override
+        public void onResponse(E response) {
+            callback.notify(response);
+        }
+
+        @Override
+        public void onFailure(Throwable t) {
+            callback.notify(t);
+        }
+    }
+
     public abstract <E> InternalCompletableFuture<E> invoke();
 }

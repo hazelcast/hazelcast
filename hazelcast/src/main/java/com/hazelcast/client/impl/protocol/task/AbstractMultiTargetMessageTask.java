@@ -21,10 +21,10 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.spi.Callback;
 import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationFactory;
+import com.hazelcast.spi.impl.SimpleExecutionCallback;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 
 import java.util.Collection;
@@ -62,7 +62,7 @@ public abstract class AbstractMultiTargetMessageTask<P> extends AbstractMessageT
             InvocationBuilder builder = operationService.createInvocationBuilder(getServiceName(), op, target)
                     .setTryCount(TRY_COUNT)
                     .setResultDeserialized(false)
-                    .setCallback(new SingleTargetCallback(target, callback));
+                    .setExecutionCallback(new SingleTargetCallback(target, callback));
             builder.invoke();
         }
     }
@@ -108,7 +108,7 @@ public abstract class AbstractMultiTargetMessageTask<P> extends AbstractMessageT
         }
     }
 
-    private final class SingleTargetCallback implements Callback<Object> {
+    private final class SingleTargetCallback extends SimpleExecutionCallback<Object> {
 
         final Address target;
         final MultiTargetCallback parent;

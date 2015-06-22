@@ -16,6 +16,7 @@
 
 package com.hazelcast.spi.impl.operationservice.impl;
 
+import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.instance.MemberImpl;
@@ -108,7 +109,7 @@ abstract class Invocation implements ResponseHandler, Runnable {
     volatile int invokeCount;
 
     Invocation(NodeEngineImpl nodeEngine, String serviceName, Operation op, int partitionId,
-               int replicaIndex, int tryCount, long tryPauseMillis, long callTimeout, Object callback,
+               int replicaIndex, int tryCount, long tryPauseMillis, long callTimeout, ExecutionCallback callback,
                boolean resultDeserialized) {
         this.operationService = (OperationServiceImpl) nodeEngine.getOperationService();
         this.logger = operationService.invocationLogger;

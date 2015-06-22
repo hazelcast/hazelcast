@@ -17,6 +17,7 @@
 package com.hazelcast.partition.impl;
 
 import com.hazelcast.cluster.MemberInfo;
+import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MigrationEvent;
@@ -44,7 +45,6 @@ import com.hazelcast.partition.PartitionServiceProxy;
 import com.hazelcast.partition.membergroup.MemberGroup;
 import com.hazelcast.partition.membergroup.MemberGroupFactory;
 import com.hazelcast.partition.membergroup.MemberGroupFactoryFactory;
-import com.hazelcast.spi.Callback;
 import com.hazelcast.spi.EventPublishingService;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
@@ -1161,15 +1161,18 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         final Address thisAddress = node.getThisAddress();
         final Semaphore s = new Semaphore(0);
         final AtomicBoolean ok = new AtomicBoolean(true);
-        final Callback<Object> callback = new Callback<Object>() {
+        final ExecutionCallback<Object> callback = new ExecutionCallback<Object>() {
             @Override
-            public void notify(Object object) {
-                if (Boolean.FALSE.equals(object)) {
-                    ok.compareAndSet(true, false);
-                } else if (object instanceof Throwable) {
+            public void onResponse(Object response) {
+                if (Boolean.FALSE.equals(response)) {
                     ok.compareAndSet(true, false);
                 }
                 s.release();
+            }
+
+            @Override
+            public void onFailure(Throwable t) {
+                ok.compareAndSet(true, false);
             }
         };
         int ownedCount = submitSyncReplicaOperations(thisAddress, s, ok, callback);
@@ -1186,7 +1189,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
     }
 
     private int submitSyncReplicaOperations(Address thisAddress, Semaphore s, AtomicBoolean ok,
-                                            Callback<Object> callback) {
+                                            ExecutionCallback callback) {
 
         int ownedCount = 0;
         ILogger responseLogger = node.getLogger(SyncReplicaVersion.class);

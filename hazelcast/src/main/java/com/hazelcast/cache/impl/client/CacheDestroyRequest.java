@@ -23,9 +23,9 @@ import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.impl.client.ClientRequest;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
-import com.hazelcast.spi.Callback;
 import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.SimpleExecutionCallback;
 
 import java.io.IOException;
 import java.security.Permission;
@@ -58,11 +58,13 @@ public class CacheDestroyRequest
         final Operation op = prepareOperation();
         op.setCallerUuid(endpoint.getUuid());
         final InvocationBuilder builder = operationService.createInvocationBuilder(getServiceName(), op, partitionId);
-        builder.setTryCount(TRY_COUNT).setResultDeserialized(false).setCallback(new Callback<Object>() {
-            public void notify(Object object) {
-                endpoint.sendResponse(object, getCallId());
-            }
-        });
+        builder.setTryCount(TRY_COUNT)
+                .setResultDeserialized(false)
+                .setExecutionCallback(new SimpleExecutionCallback<Object>() {
+                    public void notify(Object object) {
+                        endpoint.sendResponse(object, getCallId());
+                    }
+                });
         builder.invoke();
     }
 
