@@ -75,6 +75,8 @@ http://svn.apache.org/repos/asf/felix/trunk/mishell/src/main/java/org/apache/fel
  * </li></ul>
  */
 public class OSGiScriptEngineManager extends ScriptEngineManager {
+    private static final String RHINO_SCRIPT_ENGINE_FACTORY = "com.sun.script.javascript.RhinoScriptEngineFactory";
+    private static final String NASHORN_SCRIPT_ENGINE_FACTORY = "jdk.nashorn.api.scripting.NashornScriptEngineFactory";
 
     private final ILogger logger = Logger.getLogger(getClass());
     private Bindings bindings;
@@ -243,7 +245,7 @@ public class OSGiScriptEngineManager extends ScriptEngineManager {
     private ClassLoader loadScriptEngineFactoryClassLoader(String factoryName) {
         //We do not really need the class, but we need the classloader
         try {
-            return Class.forName(factoryName).getClassLoader();
+            return tryLoadClass(factoryName).getClassLoader();
         } catch (ClassNotFoundException cnfe) {
             // may fail if script implementation is not in environment
             logger.warning("Found ScriptEngineFactory candidate for "
@@ -305,8 +307,46 @@ public class OSGiScriptEngineManager extends ScriptEngineManager {
                 reader.close();
             }
         }
+
         //add java built in JavaScript ScriptEngineFactory's
-        factoryCandidates.add("com.sun.script.javascript.RhinoScriptEngineFactory");
+        //Rhino is available in java < 8, Nashorn is available in java >= 8
+        if (isClassDefined(RHINO_SCRIPT_ENGINE_FACTORY)) {
+            factoryCandidates.add(RHINO_SCRIPT_ENGINE_FACTORY);
+        } else if (isClassDefined(NASHORN_SCRIPT_ENGINE_FACTORY)) {
+            factoryCandidates.add(NASHORN_SCRIPT_ENGINE_FACTORY);
+        } else {
+            logger.warning("No built-in JavaScript ScriptEngineFactory found.");
+        }
         return factoryCandidates;
+    }
+
+    /**
+     * Tries to load the given class.
+     *
+     * @param className Name of the class to load
+     * @return Loaded class
+     * @throws ClassNotFoundException when the class is not found
+     */
+    private static Class<?> tryLoadClass(String className) throws ClassNotFoundException {
+        try {
+            return Class.forName(className);
+        } catch (ClassNotFoundException e) {
+            return Thread.currentThread().getContextClassLoader().loadClass(className);
+        }
+    }
+
+    /**
+     * Indicates whether or not the given class exists
+     *
+     * @param className Name of the class
+     * @return {@code true} if the class exists, {@code false} otherwise
+     */
+    private static boolean isClassDefined(String className) {
+        try {
+            tryLoadClass(className);
+            return true;
+        } catch (ClassNotFoundException e) {
+            return false;
+        }
     }
 }
