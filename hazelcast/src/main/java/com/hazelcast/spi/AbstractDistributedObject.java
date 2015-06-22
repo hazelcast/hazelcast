@@ -114,12 +114,6 @@ public abstract class AbstractDistributedObject<S extends RemoteService> impleme
     }
 
     @Override
-    @Deprecated
-    public final Object getId() {
-        return getName();
-    }
-
-    @Override
     public boolean equals(Object o) {
         if (this == o) {
             return true;

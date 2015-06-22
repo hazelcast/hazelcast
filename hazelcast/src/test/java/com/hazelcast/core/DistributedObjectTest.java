@@ -136,7 +136,6 @@ public class DistributedObjectTest extends HazelcastTestSupport {
         DistributedObject object2 = instance.getDistributedObject(object.getServiceName(), object.getName());
         assertEquals(object.getServiceName(), object2.getServiceName());
         assertEquals(object.getName(), object2.getName());
-        assertEquals(object.getId(), object2.getId());
         assertEquals(object, object2);
         assertTrue(instance.getDistributedObjects().contains(object));
     }
@@ -247,10 +246,6 @@ public class DistributedObjectTest extends HazelcastTestSupport {
         @Override
         public String getServiceName() {
             return TestInitializingObjectService.NAME;
-        }
-        @Override
-        public Object getId() {
-            return getName();
         }
         @Override
         public String getPartitionKey() {

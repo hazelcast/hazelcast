@@ -96,10 +96,6 @@ public class ClientTxnMultiMapProxy<K, V>
         return TransactionalMultiMapSizeCodec.decodeResponse(response).response;
     }
 
-    public String getName() {
-        return (String) getId();
-    }
-
     @Override
     public String getServiceName() {
         return MultiMapService.SERVICE_NAME;
