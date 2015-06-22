@@ -84,9 +84,9 @@ public class NearCache {
         nearCacheSizeEstimator = mapContainer.getNearCacheSizeEstimator();
     }
 
-    public int getMaxSize(){
+    public int getMaxSize() {
         final int maxSize = mapContainer.getMapConfig().getNearCacheConfig().getMaxSize();
-        return maxSize <= 0 ? Integer.MAX_VALUE: maxSize;
+        return maxSize <= 0 ? Integer.MAX_VALUE : maxSize;
     }
 
     public long getMaxIdleMillis() {
