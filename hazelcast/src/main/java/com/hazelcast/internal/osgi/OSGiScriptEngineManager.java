@@ -309,6 +309,17 @@ public class OSGiScriptEngineManager extends ScriptEngineManager {
         }
 
         //add java built in JavaScript ScriptEngineFactory's
+        addJavaScriptEngine(factoryCandidates);
+
+        return factoryCandidates;
+    }
+
+    /**
+     * Adds the JDK build-in JavaScript engine into the given list of scripting engine factories.
+     *
+     * @param factoryCandidates List of scripting engine factories
+     */
+    private void addJavaScriptEngine(List<String> factoryCandidates) {
         //Rhino is available in java < 8, Nashorn is available in java >= 8
         if (isClassDefined(RHINO_SCRIPT_ENGINE_FACTORY)) {
             factoryCandidates.add(RHINO_SCRIPT_ENGINE_FACTORY);
@@ -317,7 +328,6 @@ public class OSGiScriptEngineManager extends ScriptEngineManager {
         } else {
             logger.warning("No built-in JavaScript ScriptEngineFactory found.");
         }
-        return factoryCandidates;
     }
 
     /**
@@ -331,7 +341,8 @@ public class OSGiScriptEngineManager extends ScriptEngineManager {
         try {
             return Class.forName(className);
         } catch (ClassNotFoundException e) {
-            return Thread.currentThread().getContextClassLoader().loadClass(className);
+            ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
+            return contextClassLoader.loadClass(className);
         }
     }
 
