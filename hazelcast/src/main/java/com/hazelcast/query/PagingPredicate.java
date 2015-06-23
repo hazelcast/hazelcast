@@ -29,7 +29,6 @@ import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -72,7 +71,7 @@ public class PagingPredicate implements IndexAwarePredicate, DataSerializable {
 
     private static final Map.Entry<Integer, Map.Entry> NULL_ANCHOR = new SimpleImmutableEntry(-1, null);
 
-    private final LinkedList<Map.Entry<Integer, Map.Entry>> anchorList = new LinkedList<Map.Entry<Integer, Map.Entry>>();
+    private List<Map.Entry<Integer, Map.Entry>> anchorList;
     private Predicate predicate;
     private Comparator<Map.Entry> comparator;
     private int pageSize;
@@ -98,6 +97,7 @@ public class PagingPredicate implements IndexAwarePredicate, DataSerializable {
             throw new IllegalArgumentException("pageSize should be greater than 0 !!!");
         }
         this.pageSize = pageSize;
+        anchorList = new ArrayList<Map.Entry<Integer, Map.Entry>>();
     }
 
     /**
@@ -177,13 +177,14 @@ public class PagingPredicate implements IndexAwarePredicate, DataSerializable {
             return null;
         }
         List<QueryableEntry> resultList = new ArrayList<QueryableEntry>();
+        Map.Entry<Integer, Map.Entry> nearestAnchorEntry = getNearestAnchorEntry();
         for (QueryableEntry queryableEntry : set) {
-            if (SortingUtil.compareAnchor(this, queryableEntry)) {
+            if (SortingUtil.compareAnchor(this, queryableEntry, nearestAnchorEntry)) {
                 resultList.add(queryableEntry);
             }
         }
 
-        List<QueryableEntry> sortedSubList = SortingUtil.getSortedSubList(resultList, this);
+        List<QueryableEntry> sortedSubList = SortingUtil.getSortedSubList(resultList, this, nearestAnchorEntry);
         return new LinkedHashSet<QueryableEntry>(sortedSubList);
     }
 
@@ -291,24 +292,27 @@ public class PagingPredicate implements IndexAwarePredicate, DataSerializable {
      */
     void setAnchor(int page, Map.Entry anchor) {
         SimpleImmutableEntry anchorEntry = new SimpleImmutableEntry(page, anchor);
-        if (page < anchorList.size()) {
+        int anchorCount = anchorList.size();
+        if (page < anchorCount) {
             anchorList.set(page, anchorEntry);
-        } else {
+        } else if (page == anchorCount) {
             anchorList.add(anchorEntry);
+        } else {
+            throw new IllegalArgumentException("Anchor index is not correct, expected: " + page + " found: " + anchorCount);
         }
     }
 
     Map.Entry<Integer, Map.Entry> getNearestAnchorEntry() {
-        int size = anchorList.size();
-        if (page == 0 || size == 0) {
+        int anchorCount = anchorList.size();
+        if (page == 0 || anchorCount == 0) {
             return NULL_ANCHOR;
         }
 
         Map.Entry anchoredEntry;
-        if (page <= size) {
+        if (page < anchorCount) {
             anchoredEntry = anchorList.get(page - 1);
         } else {
-            anchoredEntry = anchorList.getLast();
+            anchoredEntry = anchorList.get(anchorCount - 1);
         }
         return anchoredEntry;
     }
@@ -338,6 +342,7 @@ public class PagingPredicate implements IndexAwarePredicate, DataSerializable {
         pageSize = in.readInt();
         iterationType = IterationType.valueOf(in.readUTF());
         int size = in.readInt();
+        anchorList = new ArrayList<Map.Entry<Integer, Map.Entry>>(size);
         for (int i = 0; i < size; i++) {
             int anchorPage = in.readInt();
             Object anchorKey = in.readObject();

@@ -164,13 +164,13 @@ public final class SortingUtil {
         };
     }
 
-    public static List<QueryableEntry> getSortedSubList(List<QueryableEntry> list, PagingPredicate pagingPredicate) {
+    public static List<QueryableEntry> getSortedSubList(List<QueryableEntry> list, PagingPredicate pagingPredicate,
+                                                        Map.Entry<Integer, Map.Entry> nearestAnchorEntry) {
         if (pagingPredicate == null || list.isEmpty()) {
             return list;
         }
         Comparator<Map.Entry> comparator = SortingUtil.newComparator(pagingPredicate);
         Collections.sort(list, comparator);
-        Map.Entry<Integer, Map.Entry> nearestAnchorEntry = getNearestAnchorEntry(pagingPredicate);
         int nearestPage = nearestAnchorEntry.getKey();
         int pageSize = pagingPredicate.getPageSize();
         int page = pagingPredicate.getPage();
@@ -207,12 +207,12 @@ public final class SortingUtil {
         return new SortedQueryResultSet(subList, iterationType);
     }
 
-    public static boolean compareAnchor(PagingPredicate pagingPredicate, QueryableEntry queryEntry) {
+    public static boolean compareAnchor(PagingPredicate pagingPredicate, QueryableEntry queryEntry,
+                                        Map.Entry<Integer, Map.Entry> nearestAnchorEntry) {
         if (pagingPredicate == null) {
             return true;
         }
-        Map.Entry<Integer, Map.Entry> anchorEntry = getNearestAnchorEntry(pagingPredicate);
-        Map.Entry anchor = anchorEntry.getValue();
+        Map.Entry anchor = nearestAnchorEntry.getValue();
         if (anchor == null) {
             return true;
         }
