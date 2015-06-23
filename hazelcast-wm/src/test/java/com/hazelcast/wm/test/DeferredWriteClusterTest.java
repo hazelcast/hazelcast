@@ -24,6 +24,7 @@ import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.web.SessionState;
 import org.apache.http.client.CookieStore;
 import org.apache.http.impl.client.BasicCookieStore;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -126,9 +127,25 @@ public class DeferredWriteClusterTest extends AbstractWebFilterTest {
         assertEquals("value-updated", executeRequest("read", serverPort2, cookieStore));
         assertEquals("value-updated", executeRequest("read", serverPort1, cookieStore));
     }
+    @Test
+    public void testMultipleGetSession() throws Exception {
+        CookieStore cookieStore = new BasicCookieStore();
+        assertEquals("value", executeRequest("multiplesession", serverPort1, cookieStore));
+    }
+
+    @Test(timeout = 20000)
+    public void test_setThenGetAttribute() throws Exception {
+        CookieStore cookieStore = new BasicCookieStore();
+        assertEquals("value", executeRequest("setGet", serverPort1, cookieStore));
+    }
 
     @Override
     protected ServletContainer getServletContainer(int port, String sourceDir, String serverXml) throws Exception {
         return new JettyServer(port, sourceDir, serverXml);
+    }
+
+    @After
+    public void shutdown() throws Exception {
+        teardownClass();
     }
 }
