@@ -25,9 +25,11 @@ import com.hazelcast.util.IterationType;
 import com.hazelcast.util.SortingUtil;
 
 import java.io.IOException;
+import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -68,14 +70,13 @@ import java.util.Set;
  */
 public class PagingPredicate implements IndexAwarePredicate, DataSerializable {
 
+    private static final Map.Entry<Integer, Map.Entry> NULL_ANCHOR = new SimpleImmutableEntry(-1, null);
+
+    private final LinkedList<Map.Entry<Integer, Map.Entry>> anchorList = new LinkedList<Map.Entry<Integer, Map.Entry>>();
     private Predicate predicate;
-
     private Comparator<Map.Entry> comparator;
-
     private int pageSize;
-
     private int page;
-
     private IterationType iterationType;
 
     /**
@@ -175,7 +176,13 @@ public class PagingPredicate implements IndexAwarePredicate, DataSerializable {
         if (set == null || set.isEmpty()) {
             return null;
         }
-        List<QueryableEntry> resultList = new ArrayList<QueryableEntry>(set);
+        List<QueryableEntry> resultList = new ArrayList<QueryableEntry>();
+        for (QueryableEntry queryableEntry : set) {
+            if (SortingUtil.compareAnchor(this, queryableEntry)) {
+                resultList.add(queryableEntry);
+            }
+        }
+
         List<QueryableEntry> sortedSubList = SortingUtil.getSortedSubList(resultList, this);
         return new LinkedHashSet<QueryableEntry>(sortedSubList);
     }
@@ -214,6 +221,7 @@ public class PagingPredicate implements IndexAwarePredicate, DataSerializable {
      */
     public void reset() {
         iterationType = null;
+        anchorList.clear();
         page = 0;
     }
 
@@ -267,12 +275,41 @@ public class PagingPredicate implements IndexAwarePredicate, DataSerializable {
      * Note: This method will return `null` on the first page of the query result.
      *
      * @return Map.Entry the anchor object which is the last value object on the previous page
-     * @deprecated since 3.5.1
      */
-    @Deprecated
     public Map.Entry getAnchor() {
-        throw new UnsupportedOperationException("Anchor mechanism is removed!!!");
+        return anchorList.get(page).getValue();
     }
+
+    /**
+     * After each query, an anchor entry is set for that page.
+     * The anchor entry is the last entry of the query.
+     *
+     * @param anchor the last entry of the query
+     */
+    void setAnchor(int page, Map.Entry anchor) {
+        SimpleImmutableEntry anchorEntry = new SimpleImmutableEntry(page, anchor);
+        if (page < anchorList.size()) {
+            anchorList.set(page, anchorEntry);
+        } else {
+            anchorList.add(anchorEntry);
+        }
+    }
+
+    Map.Entry<Integer, Map.Entry> getNearestAnchorEntry() {
+        int size = anchorList.size();
+        if (page == 0 || size == 0) {
+            return NULL_ANCHOR;
+        }
+
+        Map.Entry anchoredEntry;
+        if (page <= size) {
+            anchoredEntry = anchorList.get(page - 1);
+        } else {
+            anchoredEntry = anchorList.getLast();
+        }
+        return anchoredEntry;
+    }
+
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
@@ -281,8 +318,13 @@ public class PagingPredicate implements IndexAwarePredicate, DataSerializable {
         out.writeInt(page);
         out.writeInt(pageSize);
         out.writeUTF(iterationType.name());
-        // This is for binary compatibility, We've removed anchor-map
-        out.writeInt(0);
+        out.writeInt(anchorList.size());
+        for (Map.Entry<Integer, Map.Entry> anchor : anchorList) {
+            out.writeInt(anchor.getKey());
+            Map.Entry anchorEntry = anchor.getValue();
+            out.writeObject(anchorEntry.getKey());
+            out.writeObject(anchorEntry.getValue());
+        }
     }
 
     @Override
@@ -292,12 +334,13 @@ public class PagingPredicate implements IndexAwarePredicate, DataSerializable {
         page = in.readInt();
         pageSize = in.readInt();
         iterationType = IterationType.valueOf(in.readUTF());
-        // This is for binary compatibility, We've removed anchor-map
         int size = in.readInt();
         for (int i = 0; i < size; i++) {
-            in.readInt();
-            in.readObject();
-            in.readObject();
+            int anchorPage = in.readInt();
+            Object anchorKey = in.readObject();
+            Object anchorValue = in.readObject();
+            Map.Entry anchorEntry = new SimpleImmutableEntry(anchorKey, anchorValue);
+            anchorList.add(new SimpleImmutableEntry(anchorPage, anchorEntry));
         }
     }
 

@@ -16,6 +16,7 @@
 
 package com.hazelcast.map;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.query.PagingPredicate;
@@ -171,7 +172,8 @@ public class SortLimitTest extends HazelcastTestSupport {
 
         map.addIndex("this", true);
         final Predicate lessEqual = Predicates.between("this", 12, 20);
-        final PagingPredicate predicate = new PagingPredicate(lessEqual, new TestComparator(false, IterationType.VALUE), pageSize);
+        TestComparator comparator = new TestComparator(false, IterationType.VALUE);
+        final PagingPredicate predicate = new PagingPredicate(lessEqual, comparator, pageSize);
 
         Collection<Integer> values = map.values(predicate);
         assertIterableEquals(values, 20, 19, 18, 17, 16);
@@ -259,9 +261,10 @@ public class SortLimitTest extends HazelcastTestSupport {
 
     private IMap<Integer, Integer> initMap() {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
-        final HazelcastInstance instance1 = nodeFactory.newHazelcastInstance();
-        final HazelcastInstance instance2 = nodeFactory.newHazelcastInstance();
-        final IMap<Integer, Integer> map = instance1.getMap(randomString());
+        Config config = new Config();
+        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(config);
+        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(config);
+        IMap<Integer, Integer> map = instance1.getMap(randomString());
         for (int i = 0; i < size; i++) {
             map.put(i, i);
         }

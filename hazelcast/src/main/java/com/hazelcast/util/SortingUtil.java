@@ -17,12 +17,15 @@
 package com.hazelcast.util;
 
 import com.hazelcast.query.PagingPredicate;
+import com.hazelcast.query.PagingPredicateAccessor;
 import com.hazelcast.query.impl.QueryableEntry;
 
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+
+import static com.hazelcast.query.PagingPredicateAccessor.getNearestAnchorEntry;
 
 /**
  * Utility class for generating Comparators to be used in sort methods specific to hazelcast classes.
@@ -162,13 +165,16 @@ public final class SortingUtil {
     }
 
     public static List<QueryableEntry> getSortedSubList(List<QueryableEntry> list, PagingPredicate pagingPredicate) {
-        if (pagingPredicate == null) {
+        if (pagingPredicate == null || list.isEmpty()) {
             return list;
         }
         Comparator<Map.Entry> comparator = SortingUtil.newComparator(pagingPredicate);
         Collections.sort(list, comparator);
+        Map.Entry<Integer, Map.Entry> nearestAnchorEntry = getNearestAnchorEntry(pagingPredicate);
+        int nearestPage = nearestAnchorEntry.getKey();
         int pageSize = pagingPredicate.getPageSize();
-        int totalSize = pageSize * pagingPredicate.getPage() + pageSize;
+        int page = pagingPredicate.getPage();
+        int totalSize = pageSize * (page - nearestPage);
         if (list.size() > totalSize) {
             list = list.subList(0, totalSize);
         }
@@ -177,21 +183,55 @@ public final class SortingUtil {
 
     public static SortedQueryResultSet getSortedQueryResultSet(List<Map.Entry> list,
                                                                PagingPredicate pagingPredicate, IterationType iterationType) {
+        if (list.isEmpty()) {
+            return new SortedQueryResultSet();
+        }
         Comparator<Map.Entry> comparator = SortingUtil.newComparator(pagingPredicate.getComparator(), iterationType);
         Collections.sort(list, comparator);
 
+        Map.Entry<Integer, Map.Entry> nearestAnchorEntry = getNearestAnchorEntry(pagingPredicate);
+        int nearestPage = nearestAnchorEntry.getKey();
+        int page = pagingPredicate.getPage();
         int pageSize = pagingPredicate.getPageSize();
-        int begin = pageSize * pagingPredicate.getPage();
+        int begin = pageSize * (page - nearestPage - 1);
         int size = list.size();
         if (begin > size) {
-            List<Map.Entry> emptyList = Collections.emptyList();
-            return new SortedQueryResultSet(emptyList, iterationType);
+            return new SortedQueryResultSet();
         }
         int end = begin + pageSize;
         if (end > size) {
             end = size;
         }
-        return new SortedQueryResultSet(list.subList(begin, end), iterationType);
+        setAnchor(list, pagingPredicate, nearestPage);
+        List<Map.Entry> subList = list.subList(begin, end);
+        return new SortedQueryResultSet(subList, iterationType);
+    }
+
+    public static boolean compareAnchor(PagingPredicate pagingPredicate, QueryableEntry queryEntry) {
+        if (pagingPredicate == null) {
+            return true;
+        }
+        Map.Entry<Integer, Map.Entry> anchorEntry = getNearestAnchorEntry(pagingPredicate);
+        Map.Entry anchor = anchorEntry.getValue();
+        if (anchor == null) {
+            return true;
+        }
+        Comparator<Map.Entry> comparator = pagingPredicate.getComparator();
+        IterationType iterationType = pagingPredicate.getIterationType();
+        return SortingUtil.compare(comparator, iterationType, anchor, queryEntry) < 0;
+    }
+
+    private static void setAnchor(List<Map.Entry> list, PagingPredicate pagingPredicate, int nearestPage) {
+        if (list.isEmpty()) {
+            return;
+        }
+        int size = list.size();
+        int pageSize = pagingPredicate.getPageSize();
+        for (int i = pageSize; i <= size; i += pageSize) {
+            Map.Entry anchor = list.get(i - 1);
+            nearestPage++;
+            PagingPredicateAccessor.setAnchor(pagingPredicate, nearestPage, anchor);
+        }
     }
 
 }

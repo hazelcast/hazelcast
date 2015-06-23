@@ -36,7 +36,6 @@ import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.IterationType;
 import com.hazelcast.util.QueryResultSet;
-import com.hazelcast.util.SortingUtil;
 
 import java.util.AbstractMap;
 import java.util.ArrayList;
@@ -51,7 +50,9 @@ import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
+import static com.hazelcast.util.SortingUtil.compareAnchor;
 import static com.hazelcast.util.SortingUtil.getSortedQueryResultSet;
+import static com.hazelcast.util.SortingUtil.getSortedSubList;
 
 /**
  * Support methods which are used in map specific query operations.
@@ -87,12 +88,11 @@ class BasicMapContextQuerySupport implements MapContextQuerySupport {
                 continue;
             }
             QueryEntry queryEntry = new QueryEntry(serializationService, key, key, value);
-            if (predicate.apply(queryEntry)) {
+            if (predicate.apply(queryEntry) && compareAnchor(pagingPredicate, queryEntry)) {
                 resultList.add(queryEntry);
             }
         }
-
-        return SortingUtil.getSortedSubList(resultList, pagingPredicate);
+        return getSortedSubList(resultList, pagingPredicate);
     }
 
     private Object getValueOrCachedValue(Record record) {
