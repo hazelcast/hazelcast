@@ -24,6 +24,7 @@ import com.hazelcast.core.ManagedContext;
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.UnsafeHelper;
+import com.hazelcast.nio.serialization.bufferpool.BufferPoolFactoryImpl;
 
 import java.nio.ByteOrder;
 import java.util.HashMap;
@@ -221,7 +222,7 @@ public class DefaultSerializationServiceBuilder implements SerializationServiceB
         return new SerializationServiceImpl(inputOutputFactory, version,
                     classLoader, dataSerializableFactories,
                     portableFactories, classDefinitions, checkClassDefErrors, managedContext, partitioningStrategy,
-                    initialOutputBufferSize, enableCompression, enableSharedObject);
+                    initialOutputBufferSize, enableCompression, enableSharedObject, new BufferPoolFactoryImpl());
     }
 
     private void registerSerializerHooks(SerializationServiceImpl ss) {

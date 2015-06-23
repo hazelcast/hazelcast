@@ -22,7 +22,6 @@ import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
 import com.hazelcast.nio.BufferObjectDataInput;
 import com.hazelcast.nio.BufferObjectDataOutput;
-import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.ConstantSerializers.BooleanSerializer;
@@ -48,7 +47,10 @@ import com.hazelcast.nio.serialization.DefaultSerializers.DateSerializer;
 import com.hazelcast.nio.serialization.DefaultSerializers.EnumSerializer;
 import com.hazelcast.nio.serialization.DefaultSerializers.Externalizer;
 import com.hazelcast.nio.serialization.DefaultSerializers.ObjectSerializer;
-import com.hazelcast.util.ConcurrentReferenceHashMap;
+import com.hazelcast.nio.serialization.bufferpool.BufferPool;
+import com.hazelcast.nio.serialization.bufferpool.BufferPoolFactory;
+import com.hazelcast.nio.serialization.bufferpool.BufferPoolThreadLocal;
+
 import java.io.Externalizable;
 import java.io.IOException;
 import java.io.InputStream;
@@ -57,7 +59,6 @@ import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.nio.ByteOrder;
-import java.util.ArrayDeque;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -65,7 +66,6 @@ import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
-import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -88,6 +88,7 @@ public class SerializationServiceImpl implements SerializationService {
     protected final PortableContextImpl portableContext;
     protected final InputOutputFactory inputOutputFactory;
     protected final PartitioningStrategy globalPartitioningStrategy;
+    protected final BufferPoolThreadLocal bufferPoolThreadLocal;
 
     private final IdentityHashMap<Class, SerializerAdapter> constantTypesMap
             = new IdentityHashMap<Class, SerializerAdapter>(CONSTANT_SERIALIZERS_SIZE);
@@ -96,7 +97,6 @@ public class SerializationServiceImpl implements SerializationService {
     private final ConcurrentMap<Class, SerializerAdapter> typeMap = new ConcurrentHashMap<Class, SerializerAdapter>();
     private final ConcurrentMap<Integer, SerializerAdapter> idMap = new ConcurrentHashMap<Integer, SerializerAdapter>();
     private final AtomicReference<SerializerAdapter> global = new AtomicReference<SerializerAdapter>();
-    private final ThreadLocalOutputCache dataOutputQueue;
     private final PortableSerializer portableSerializer;
     private final SerializerAdapter dataSerializerAdapter;
     private final SerializerAdapter portableSerializerAdapter;
@@ -106,13 +106,13 @@ public class SerializationServiceImpl implements SerializationService {
     private volatile boolean active = true;
     private boolean overrideCustomSerialization;
 
-
     SerializationServiceImpl(InputOutputFactory inputOutputFactory, int version, ClassLoader classLoader,
                              Map<Integer, ? extends DataSerializableFactory> dataSerializableFactories,
                              Map<Integer, ? extends PortableFactory> portableFactories,
                              Collection<ClassDefinition> classDefinitions, boolean checkClassDefErrors,
                              ManagedContext managedContext, PartitioningStrategy partitionStrategy,
-                             int initialOutputBufferSize, boolean enableCompression, boolean enableSharedObject) {
+                             int initialOutputBufferSize, boolean enableCompression, boolean enableSharedObject,
+                             BufferPoolFactory bufferPoolFactory) {
 
         this.inputOutputFactory = inputOutputFactory;
         this.classLoader = classLoader;
@@ -121,7 +121,7 @@ public class SerializationServiceImpl implements SerializationService {
         this.outputBufferSize = initialOutputBufferSize;
         this.overrideCustomSerialization = parseBoolean(System.getProperty(SERIALIZATION_CUSTOM_OVERRIDE, "false"));
 
-        dataOutputQueue = new ThreadLocalOutputCache(this);
+        this.bufferPoolThreadLocal = new BufferPoolThreadLocal(this, bufferPoolFactory);
 
         PortableHookLoader loader = new PortableHookLoader(portableFactories, classLoader);
         portableContext = new PortableContextImpl(this, version);
@@ -215,7 +215,8 @@ public class SerializationServiceImpl implements SerializationService {
             return (Data) obj;
         }
 
-        BufferObjectDataOutput out = pop();
+        BufferPool pool = bufferPoolThreadLocal.get();
+        BufferObjectDataOutput out = pool.takeOutputBuffer();
         try {
             SerializerAdapter serializer = serializerFor(obj.getClass());
             out.writeInt(serializer.getTypeId(), ByteOrder.BIG_ENDIAN);
@@ -234,7 +235,7 @@ public class SerializationServiceImpl implements SerializationService {
         } catch (Throwable e) {
             throw handleException(e);
         } finally {
-            push(out);
+            pool.returnOutputBuffer(out);
         }
     }
 
@@ -252,6 +253,7 @@ public class SerializationServiceImpl implements SerializationService {
         return partitionHash;
     }
 
+    @Override
     public final <T> T toObject(final Object object) {
         if (!(object instanceof Data)) {
             return (T) object;
@@ -262,7 +264,8 @@ public class SerializationServiceImpl implements SerializationService {
             return null;
         }
 
-        BufferObjectDataInput in = createObjectDataInput(data);
+        BufferPool pool = bufferPoolThreadLocal.get();
+        BufferObjectDataInput in = pool.takeInputBuffer(data);
         try {
             final int typeId = data.getType();
             final SerializerAdapter serializer = serializerFor(typeId);
@@ -281,7 +284,7 @@ public class SerializationServiceImpl implements SerializationService {
         } catch (Throwable e) {
             throw handleException(e);
         } finally {
-            IOUtil.closeResource(in);
+            pool.returnInputBuffer(in);
         }
     }
 
@@ -380,14 +383,6 @@ public class SerializationServiceImpl implements SerializationService {
         throw new HazelcastSerializationException(e);
     }
 
-    protected final BufferObjectDataOutput pop() {
-        return dataOutputQueue.pop();
-    }
-
-    protected final void push(BufferObjectDataOutput out) {
-        dataOutputQueue.push(out);
-    }
-
     public final BufferObjectDataInput createObjectDataInput(byte[] data) {
         return inputOutputFactory.createInput(data, this);
     }
@@ -398,6 +393,11 @@ public class SerializationServiceImpl implements SerializationService {
 
     public final BufferObjectDataOutput createObjectDataOutput(int size) {
         return inputOutputFactory.createOutput(size, this);
+    }
+
+    @Override
+    public BufferObjectDataOutput createObjectDataOutput() {
+        return inputOutputFactory.createOutput(outputBufferSize, this);
     }
 
     public final ObjectDataOutputStream createObjectDataOutputStream(OutputStream out) {
@@ -591,7 +591,7 @@ public class SerializationServiceImpl implements SerializationService {
         idMap.clear();
         global.set(null);
         constantTypesMap.clear();
-        dataOutputQueue.clear();
+        bufferPoolThreadLocal.clear();
     }
 
     public final ClassLoader getClassLoader() {
@@ -609,47 +609,5 @@ public class SerializationServiceImpl implements SerializationService {
 
     public boolean isActive() {
         return active;
-    }
-
-    private static final class ThreadLocalOutputCache {
-        static final float LOAD_FACTOR = 0.91f;
-        final ConcurrentMap<Thread, Queue<BufferObjectDataOutput>> map;
-        final SerializationServiceImpl serializationService;
-        final int bufferSize;
-
-        private ThreadLocalOutputCache(SerializationServiceImpl serializationService) {
-            this.serializationService = serializationService;
-            bufferSize = serializationService.outputBufferSize;
-            int initialCapacity = Runtime.getRuntime().availableProcessors();
-            map = new ConcurrentReferenceHashMap<Thread, Queue<BufferObjectDataOutput>>(initialCapacity, LOAD_FACTOR, 1);
-        }
-
-        BufferObjectDataOutput pop() {
-            Thread t = Thread.currentThread();
-            Queue<BufferObjectDataOutput> outputQueue = map.get(t);
-            if (outputQueue == null) {
-                outputQueue = new ArrayDeque<BufferObjectDataOutput>(3);
-                map.put(t, outputQueue);
-            }
-            BufferObjectDataOutput out = outputQueue.poll();
-            if (out == null) {
-                out = serializationService.createObjectDataOutput(bufferSize);
-            }
-            return out;
-        }
-
-        void push(BufferObjectDataOutput out) {
-            if (out != null) {
-                out.clear();
-                Queue<BufferObjectDataOutput> outputQueue = map.get(Thread.currentThread());
-                if (outputQueue == null || !outputQueue.offer(out)) {
-                    IOUtil.closeResource(out);
-                }
-            }
-        }
-
-        void clear() {
-            map.clear();
-        }
     }
 }
