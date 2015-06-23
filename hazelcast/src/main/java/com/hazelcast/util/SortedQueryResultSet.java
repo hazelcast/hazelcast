@@ -20,6 +20,7 @@ import java.util.AbstractSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 
 /**
  * Collection class for results of query operations
@@ -29,6 +30,10 @@ public class SortedQueryResultSet extends AbstractSet<Map.Entry> {
     private final List<Map.Entry> entries;
     private final IterationType iterationType;
 
+    public SortedQueryResultSet() {
+        this(null, null);
+    }
+
     public SortedQueryResultSet(List<Map.Entry> entries, IterationType iterationType) {
         this.entries = entries;
         this.iterationType = iterationType;
@@ -36,11 +41,17 @@ public class SortedQueryResultSet extends AbstractSet<Map.Entry> {
 
     @Override
     public Iterator iterator() {
+        if (entries == null) {
+            return new EmptyIterator();
+        }
         return new SortedIterator();
     }
 
     @Override
     public int size() {
+        if (entries == null) {
+            return 0;
+        }
         return entries.size();
     }
 
@@ -63,6 +74,24 @@ public class SortedQueryResultSet extends AbstractSet<Map.Entry> {
             } else {
                 return entry;
             }
+        }
+
+        @Override
+        public void remove() {
+            throw new UnsupportedOperationException();
+        }
+    }
+
+    private class EmptyIterator implements Iterator {
+
+        @Override
+        public boolean hasNext() {
+            return false;
+        }
+
+        @Override
+        public Object next() {
+            throw new NoSuchElementException();
         }
 
         @Override
