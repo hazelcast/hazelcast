@@ -214,7 +214,9 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
 
     @Override
     protected Document parse(InputStream is) throws Exception {
-        final DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+        DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+        dbf.setNamespaceAware(true);
+        final DocumentBuilder builder = dbf.newDocumentBuilder();
         Document doc;
         try {
             doc = builder.parse(is);

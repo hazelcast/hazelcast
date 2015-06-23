@@ -125,7 +125,9 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
 
     @Override
     protected Document parse(InputStream inputStream) throws Exception {
-        final DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+        DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+        dbf.setNamespaceAware(true);
+        final DocumentBuilder builder = dbf.newDocumentBuilder();
         try {
             return builder.parse(inputStream);
         } catch (final Exception e) {
