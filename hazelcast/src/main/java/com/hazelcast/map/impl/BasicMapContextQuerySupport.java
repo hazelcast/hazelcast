@@ -25,6 +25,7 @@ import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.query.PagingPredicate;
+import com.hazelcast.query.PagingPredicateAccessor;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.TruePredicate;
 import com.hazelcast.query.impl.QueryEntry;
@@ -80,6 +81,7 @@ class BasicMapContextQuerySupport implements MapContextQuerySupport {
 
         PartitionContainer container = mapServiceContext.getPartitionContainer(partitionId);
         Iterator<Record> iterator = container.getRecordStore(mapName).loadAwareIterator(getNow(), false);
+        Map.Entry<Integer, Map.Entry> nearestAnchorEntry = PagingPredicateAccessor.getNearestAnchorEntry(pagingPredicate);
         while (iterator.hasNext()) {
             Record record = iterator.next();
             Data key = record.getKey();
@@ -88,11 +90,11 @@ class BasicMapContextQuerySupport implements MapContextQuerySupport {
                 continue;
             }
             QueryEntry queryEntry = new QueryEntry(serializationService, key, key, value);
-            if (predicate.apply(queryEntry) && compareAnchor(pagingPredicate, queryEntry)) {
+            if (predicate.apply(queryEntry) && compareAnchor(pagingPredicate, queryEntry, nearestAnchorEntry)) {
                 resultList.add(queryEntry);
             }
         }
-        return getSortedSubList(resultList, pagingPredicate);
+        return getSortedSubList(resultList, pagingPredicate, nearestAnchorEntry);
     }
 
     private Object getValueOrCachedValue(Record record) {

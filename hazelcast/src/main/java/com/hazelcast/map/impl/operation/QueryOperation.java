@@ -26,6 +26,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.query.PagingPredicate;
+import com.hazelcast.query.PagingPredicateAccessor;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.spi.ExceptionAction;
@@ -41,6 +42,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -179,8 +181,8 @@ public class QueryOperation extends AbstractMapOperation implements ReadonlyOper
         for (Collection<QueryableEntry> returnedResult : returnedResults) {
             toMerge.addAll(returnedResult);
         }
-
-        List<QueryableEntry> sortedSubList = getSortedSubList(toMerge, pagingPredicate);
+        Map.Entry<Integer, Map.Entry> nearestAnchorEntry = PagingPredicateAccessor.getNearestAnchorEntry(pagingPredicate);
+        List<QueryableEntry> sortedSubList = getSortedSubList(toMerge, pagingPredicate, nearestAnchorEntry);
         result.addAll(sortedSubList);
     }
 

@@ -31,6 +31,9 @@ public final class PagingPredicateAccessor {
     }
 
     public static Map.Entry<Integer, Map.Entry> getNearestAnchorEntry(PagingPredicate predicate) {
+        if (predicate == null) {
+            return null;
+        }
         return predicate.getNearestAnchorEntry();
     }
 }
