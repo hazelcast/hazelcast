@@ -21,6 +21,8 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
+import java.util.concurrent.Executor;
+
 /**
  * The InvocationBuilder is responsible for building an invocation of an operation and invoking it.
  * <p/>
@@ -61,6 +63,7 @@ public abstract class InvocationBuilder {
     protected final Address target;
     protected Callback<Object> callback;
     protected ExecutionCallback<Object> executionCallback;
+    protected Executor callbackExecutor;
 
     protected long callTimeout = DEFAULT_CALL_TIMEOUT;
     protected int replicaIndex;
@@ -86,7 +89,7 @@ public abstract class InvocationBuilder {
         this.target = target;
     }
 
-     /**
+    /**
      * Sets the replicaIndex.
      *
      * @param replicaIndex the replica index
@@ -165,6 +168,7 @@ public abstract class InvocationBuilder {
 
     /**
      * Gets the operation to execute.
+     *
      * @return the operation to execute
      */
     public Operation getOp() {
@@ -175,7 +179,7 @@ public abstract class InvocationBuilder {
      * Gets the replicaIndex.
      *
      * @return the replicaIndex
-      */
+     */
 
     public int getReplicaIndex() {
         return replicaIndex;
@@ -202,7 +206,7 @@ public abstract class InvocationBuilder {
     /**
      * Returns the target machine.
      *
-     * @return  the target machine.
+     * @return the target machine.
      */
     public Address getTarget() {
         return target;
@@ -211,7 +215,7 @@ public abstract class InvocationBuilder {
     /**
      * Returns the partition id.
      *
-     * @return  the partition id.
+     * @return the partition id.
      */
     public int getPartitionId() {
         return partitionId;
@@ -262,6 +266,22 @@ public abstract class InvocationBuilder {
             throw new IllegalStateException("Can't set the executionCallback if callback already is set");
         }
         this.executionCallback = executionCallback;
+        return this;
+    }
+
+    /**
+     * Sets the {@code callbackExecutor} in which the {@link #executionCallback} will be run.
+     * If you don't set an executor, default executor will be used.
+     *
+     * @param callbackExecutor the callbackExecutor in which the callback will be run
+     * @return the updated InvocationBuilder.
+     * @throws java.lang.IllegalStateException if an callbackExecutor has already been set.
+     */
+    public InvocationBuilder setCallbackExecutor(Executor callbackExecutor) {
+        if (this.callbackExecutor != null) {
+            throw new IllegalStateException("Can't set the executor if an executor is already set");
+        }
+        this.callbackExecutor = callbackExecutor;
         return this;
     }
 

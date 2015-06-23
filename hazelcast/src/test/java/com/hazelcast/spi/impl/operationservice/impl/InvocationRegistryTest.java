@@ -10,14 +10,13 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.concurrent.ExecutionException;
 
-import static com.hazelcast.instance.GroupProperties.*;
+import static com.hazelcast.instance.GroupProperties.PROP_BACKPRESSURE_ENABLED;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
@@ -50,7 +49,7 @@ public class InvocationRegistryTest extends HazelcastTestSupport {
     }
 
     private Invocation newInvocation(Operation op) {
-        return new PartitionInvocation(nodeEngine, null, op, op.getPartitionId(), 0, 0, 0, 0, null, false);
+        return new PartitionInvocation(nodeEngine, null, op, op.getPartitionId(), 0, 0, 0, 0, null, null, false);
     }
 
     // ====================== register ===============================

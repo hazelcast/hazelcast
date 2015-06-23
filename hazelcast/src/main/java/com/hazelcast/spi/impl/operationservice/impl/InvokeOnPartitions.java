@@ -16,7 +16,10 @@
 
 package com.hazelcast.spi.impl.operationservice.impl;
 
+import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.nio.Address;
+import com.hazelcast.spi.InternalCompletableFuture;
+import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.impl.operations.PartitionIteratingOperation;
@@ -26,6 +29,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
 import java.util.concurrent.Future;
 
 /**
@@ -42,9 +46,16 @@ final class InvokeOnPartitions {
     private final Map<Address, List<Integer>> memberPartitions;
     private final Map<Address, Future> futures;
     private final Map<Integer, Object> partitionResults;
+    private Executor callbackExecutor;
+    private ExecutionCallback callback;
 
     InvokeOnPartitions(OperationServiceImpl operationService, String serviceName, OperationFactory operationFactory,
                        Map<Address, List<Integer>> memberPartitions) {
+        this(operationService, serviceName, operationFactory, memberPartitions, null, null);
+    }
+
+    InvokeOnPartitions(OperationServiceImpl operationService, String serviceName, OperationFactory operationFactory,
+                       Map<Address, List<Integer>> memberPartitions, ExecutionCallback callback, Executor callbackExecutor) {
         this.operationService = operationService;
         this.serviceName = serviceName;
         this.operationFactory = operationFactory;
@@ -52,6 +63,8 @@ final class InvokeOnPartitions {
         this.futures = new HashMap<Address, Future>(memberPartitions.size());
         int partitionCount = operationService.nodeEngine.getPartitionService().getPartitionCount();
         this.partitionResults = new HashMap<Integer, Object>(partitionCount);
+        this.callbackExecutor = callbackExecutor;
+        this.callback = callback;
     }
 
     /**
@@ -80,10 +93,16 @@ final class InvokeOnPartitions {
             Address address = mp.getKey();
             List<Integer> partitions = mp.getValue();
             PartitionIteratingOperation pi = new PartitionIteratingOperation(partitions, operationFactory);
-            Future future = operationService.createInvocationBuilder(serviceName, pi, address)
+            InvocationBuilder builder = operationService.createInvocationBuilder(serviceName, pi, address)
                     .setTryCount(TRY_COUNT)
-                    .setTryPauseMillis(TRY_PAUSE_MILLIS)
-                    .invoke();
+                    .setTryPauseMillis(TRY_PAUSE_MILLIS);
+
+            if (callback != null) {
+                builder.setExecutionCallback(callback).setCallbackExecutor(callbackExecutor);
+            }
+
+            InternalCompletableFuture<Object> future = builder.invoke();
+
             futures.put(address, future);
         }
     }

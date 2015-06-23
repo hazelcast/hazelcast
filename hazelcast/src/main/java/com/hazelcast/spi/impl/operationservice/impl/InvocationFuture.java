@@ -67,7 +67,7 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
     private final Invocation invocation;
     private volatile ExecutionCallbackNode<E> callbackHead;
 
-    InvocationFuture(OperationServiceImpl operationService, Invocation invocation, Object callback) {
+    InvocationFuture(OperationServiceImpl operationService, Invocation invocation, Object callback, Executor callbackExecutor) {
         this.invocation = invocation;
         this.operationService = operationService;
 
@@ -79,7 +79,8 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
                 executionCallback = new ExecutorCallbackAdapter<E>((Callback) callback);
             }
 
-            callbackHead = new ExecutionCallbackNode<E>(executionCallback, operationService.asyncExecutor, null);
+            Executor executor = callbackExecutor == null ? operationService.asyncExecutor : callbackExecutor;
+            callbackHead = new ExecutionCallbackNode<E>(executionCallback, executor, null);
         }
     }
 
@@ -401,7 +402,7 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
 
     @Override
     public boolean isDone() {
-         return responseAvailable(response);
+        return responseAvailable(response);
     }
 
     @Override

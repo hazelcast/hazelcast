@@ -50,6 +50,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -268,7 +269,7 @@ public final class OperationServiceImpl implements InternalOperationService {
         return new PartitionInvocation(
                 nodeEngine, serviceName, op, partitionId, DEFAULT_REPLICA_INDEX,
                 DEFAULT_TRY_COUNT, DEFAULT_TRY_PAUSE_MILLIS,
-                DEFAULT_CALL_TIMEOUT, null, DEFAULT_DESERIALIZE_RESULT).invoke();
+                DEFAULT_CALL_TIMEOUT, null, null, DEFAULT_DESERIALIZE_RESULT).invoke();
     }
 
     @Override
@@ -276,7 +277,7 @@ public final class OperationServiceImpl implements InternalOperationService {
     public <E> InternalCompletableFuture<E> invokeOnTarget(String serviceName, Operation op, Address target) {
         return new TargetInvocation(nodeEngine, serviceName, op, target, DEFAULT_TRY_COUNT,
                 DEFAULT_TRY_PAUSE_MILLIS,
-                DEFAULT_CALL_TIMEOUT, null, DEFAULT_DESERIALIZE_RESULT).invoke();
+                DEFAULT_CALL_TIMEOUT, null, null, DEFAULT_DESERIALIZE_RESULT).invoke();
     }
 
     @Override
@@ -284,7 +285,7 @@ public final class OperationServiceImpl implements InternalOperationService {
     public <V> void asyncInvokeOnPartition(String serviceName, Operation op, int partitionId, ExecutionCallback<V> callback) {
         new PartitionInvocation(nodeEngine, serviceName, op, partitionId, DEFAULT_REPLICA_INDEX,
                 DEFAULT_TRY_COUNT, DEFAULT_TRY_PAUSE_MILLIS,
-                DEFAULT_CALL_TIMEOUT, callback, DEFAULT_DESERIALIZE_RESULT).invokeAsync();
+                DEFAULT_CALL_TIMEOUT, callback, null, DEFAULT_DESERIALIZE_RESULT).invokeAsync();
     }
 
     @Override
@@ -292,7 +293,7 @@ public final class OperationServiceImpl implements InternalOperationService {
     public <V> void asyncInvokeOnTarget(String serviceName, Operation op, Address target, ExecutionCallback<V> callback) {
         new TargetInvocation(nodeEngine, serviceName, op, target, DEFAULT_TRY_COUNT,
                 DEFAULT_TRY_PAUSE_MILLIS,
-                DEFAULT_CALL_TIMEOUT, callback, DEFAULT_DESERIALIZE_RESULT).invokeAsync();
+                DEFAULT_CALL_TIMEOUT, callback, null, DEFAULT_DESERIALIZE_RESULT).invokeAsync();
     }
 
     // =============================== processing operation  ===============================
@@ -329,6 +330,14 @@ public final class OperationServiceImpl implements InternalOperationService {
     @Override
     public Map<Integer, Object> invokeOnPartitions(String serviceName, OperationFactory operationFactory,
                                                    Collection<Integer> partitions) throws Exception {
+        return invokeOnPartitions(serviceName, operationFactory, partitions, null, null);
+    }
+
+
+    @Override
+    public Map<Integer, Object> invokeOnPartitions(String serviceName, OperationFactory operationFactory,
+                                                   Collection<Integer> partitions, Executor callbackExecutor,
+                                                   ExecutionCallback callback) throws Exception {
         Map<Address, List<Integer>> memberPartitions = new HashMap<Address, List<Integer>>(3);
         InternalPartitionService partitionService = nodeEngine.getPartitionService();
         for (int partition : partitions) {
@@ -340,7 +349,8 @@ public final class OperationServiceImpl implements InternalOperationService {
 
             memberPartitions.get(owner).add(partition);
         }
-        InvokeOnPartitions invokeOnPartitions = new InvokeOnPartitions(this, serviceName, operationFactory, memberPartitions);
+        InvokeOnPartitions invokeOnPartitions = new InvokeOnPartitions(this, serviceName,
+                operationFactory, memberPartitions, callback, callbackExecutor);
         return invokeOnPartitions.invoke();
     }
 

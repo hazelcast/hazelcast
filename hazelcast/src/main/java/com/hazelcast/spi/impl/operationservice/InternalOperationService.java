@@ -20,11 +20,15 @@ import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.internal.management.dto.SlowOperationDTO;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.operationexecutor.OperationExecutor;
 
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.Executor;
 
 /**
  * This is the interface that needs to be implemented by actual InternalOperationService. Currently there is a single
@@ -89,4 +93,22 @@ public interface InternalOperationService extends OperationService {
     <V> void asyncInvokeOnPartition(String serviceName, Operation op, int partitionId, ExecutionCallback<V> callback);
 
     <V> void asyncInvokeOnTarget(String serviceName, Operation op, Address target, ExecutionCallback<V> callback);
+
+    /**
+     * Invokes a set of operation on selected set of partitions. Upon finish of operation executions
+     * a given callback in the given executor is run.
+     *
+     * This method blocks until all operations complete.
+     *
+     * @param serviceName      the name of the service
+     * @param operationFactory the factory responsible for creating operations
+     * @param partitions       the partitions the operation should be executed on.
+     * @param callbackExecutor the executor to run the callback
+     * @param callback         the callback which will be run after executions of operations on invoker side.
+     * @return a Map with partitionId as key and the outcome of the operation as value.
+     * @throws Exception
+     */
+    Map<Integer, Object> invokeOnPartitions(String serviceName, OperationFactory operationFactory,
+                                            Collection<Integer> partitions, Executor callbackExecutor,
+                                            ExecutionCallback callback) throws Exception;
 }

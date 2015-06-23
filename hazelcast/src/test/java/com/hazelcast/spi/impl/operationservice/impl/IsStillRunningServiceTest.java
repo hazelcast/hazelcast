@@ -53,7 +53,7 @@ public class IsStillRunningServiceTest extends HazelcastTestSupport {
             public void run() throws Exception {
                 int partitionId = operation.getPartitionId();
                 long callId = operation.getCallId();
-                OperationServiceImpl remoteOperationService = (OperationServiceImpl)getOperationService(remoteHz);
+                OperationServiceImpl remoteOperationService = (OperationServiceImpl) getOperationService(remoteHz);
                 IsStillRunningService isStillRunningService = remoteOperationService.getIsStillRunningService();
                 boolean isRunning = isStillRunningService.isOperationExecuting(localAddress, partitionId, callId);
                 assertTrue(isRunning);
@@ -136,7 +136,7 @@ public class IsStillRunningServiceTest extends HazelcastTestSupport {
 
         final TargetInvocation invocation = new TargetInvocation(getNodeEngineImpl(hz1), null,
                 new DummyOperation(callTimeoutMillis * 10), remoteAddress, 0, 0,
-                callTimeoutMillis, null, true);
+                callTimeoutMillis, null, null, true);
         final InvocationFuture future = invocation.invoke();
 
         assertTrueEventually(new AssertTask() {
@@ -175,7 +175,7 @@ public class IsStillRunningServiceTest extends HazelcastTestSupport {
 
         TargetInvocation invocation = new TargetInvocation(getNodeEngineImpl(hz1), null,
                 new DummyOperation(1), remoteAddress, 0, 0,
-                callTimeoutMillis, null, true);
+                callTimeoutMillis, null, null, true);
         final InvocationFuture future = invocation.invoke();
         assertEquals(Boolean.TRUE, future.get());
 
