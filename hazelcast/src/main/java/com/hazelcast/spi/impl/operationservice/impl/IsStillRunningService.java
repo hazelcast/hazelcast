@@ -63,6 +63,7 @@ public class IsStillRunningService {
 
     /**
      * Checks if an operation is still running.
+     *
      * @param invocation The invocation for this operation.
      * @return true if the operation is running, false otherwise.
      */
@@ -74,7 +75,7 @@ public class IsStillRunningService {
 
             Invocation inv = new TargetInvocation(
                     invocation.nodeEngine, invocation.serviceName, isStillExecuting,
-                    invocation.getTarget(), 0, 0, IS_EXECUTING_CALL_TIMEOUT, null, true);
+                    invocation.getTarget(), 0, 0, IS_EXECUTING_CALL_TIMEOUT, null, null, true);
             Future f = inv.invoke();
             invocation.logger.warning("Asking if operation execution has been started: " + invocation);
             executing = (Boolean) invocation.nodeEngine.toObject(f.get(IS_EXECUTING_CALL_TIMEOUT, TimeUnit.MILLISECONDS));
@@ -245,7 +246,7 @@ public class IsStillRunningService {
         public void run() {
             Invocation inv = new TargetInvocation(
                     invocation.nodeEngine, invocation.serviceName, isStillRunningOperation,
-                    invocation.getTarget(), 0, 0, IS_EXECUTING_CALL_TIMEOUT, callback, true);
+                    invocation.getTarget(), 0, 0, IS_EXECUTING_CALL_TIMEOUT, callback, null, true);
 
             invocation.logger.warning("Asking if operation execution has been started: " + toString());
             inv.invoke();

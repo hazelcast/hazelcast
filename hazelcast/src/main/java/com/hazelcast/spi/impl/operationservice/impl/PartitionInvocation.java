@@ -21,6 +21,8 @@ import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
+import java.util.concurrent.Executor;
+
 /**
  * A {@link Invocation} evaluates a Operation Invocation for a particular partition running on top of the
  * {@link OperationServiceImpl}.
@@ -29,9 +31,9 @@ public final class PartitionInvocation extends Invocation {
 
     public PartitionInvocation(NodeEngineImpl nodeEngine, String serviceName, Operation op, int partitionId,
                                int replicaIndex, int tryCount, long tryPauseMillis, long callTimeout,
-                               Object callback, boolean resultDeserialized) {
+                               Object callback, Executor callbackExecutor, boolean resultDeserialized) {
         super(nodeEngine, serviceName, op, partitionId, replicaIndex, tryCount, tryPauseMillis,
-                callTimeout, callback, resultDeserialized);
+                callTimeout, callback, callbackExecutor, resultDeserialized);
     }
 
     @Override
