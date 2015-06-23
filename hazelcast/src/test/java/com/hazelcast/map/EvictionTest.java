@@ -16,18 +16,18 @@
 
 package com.hazelcast.map;
 
-import com.hazelcast.config.Config;
-import com.hazelcast.config.EntryListenerConfig;
-import com.hazelcast.config.EvictionPolicy;
-import com.hazelcast.config.MapConfig;
-import com.hazelcast.config.MaxSizeConfig;
-import com.hazelcast.config.NearCacheConfig;
+import com.hazelcast.config.*;
 import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.map.impl.MapContainer;
+import com.hazelcast.map.impl.MapService;
+import com.hazelcast.map.impl.MapServiceContext;
+import com.hazelcast.map.impl.proxy.MapProxyImpl;
+import com.hazelcast.monitor.NearCacheStats;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -49,11 +49,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.hamcrest.Matchers.greaterThan;
+import static org.hamcrest.Matchers.lessThan;
+import static org.junit.Assert.*;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
@@ -105,6 +103,62 @@ public class EvictionTest extends HazelcastTestSupport {
         EntryView<Integer, String> entryView = map.getEntryView(1);
 
         assertNull(entryView);
+    }
+
+    @Test
+    public void testNearCacheEvictionOperationShouldUseNearCacheConfigMaxSize() throws InterruptedException {
+        final int size = 1000;
+        final String mapName = "issue5485";
+        final Config cfg = new Config();
+
+        final MaxSizeConfig maxSizeConfig = new MaxSizeConfig()
+                .setMaxSizePolicy(MaxSizeConfig.MaxSizePolicy.PER_NODE)
+                .setSize(size);
+
+        final NearCacheConfig nearCacheConfig = new NearCacheConfig()
+                .setInMemoryFormat(InMemoryFormat.OBJECT)
+                .setCacheLocalEntries(true)
+                .setMaxSize(size);
+
+        final MapConfig mapConfig = cfg.getMapConfig(mapName)
+                .setEvictionPolicy(EvictionPolicy.LRU)
+                .setEvictionPercentage(25)
+                .setMaxSizeConfig(maxSizeConfig)
+                .setNearCacheConfig(nearCacheConfig);
+
+        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
+        final HazelcastInstance h = factory.newHazelcastInstance(cfg);
+        final IMap<Object, Object> map = h.getMap(mapName);
+        for (Integer i = 0; i < size * 2; i++) {
+            map.put(i.toString(), i.toString());
+            map.get(i.toString());//trigger put into near cache
+        }
+        sleepSeconds(3); //wait for eviction
+
+        final NearCacheStats originalNearCacheStats = map.getLocalMapStats().getNearCacheStats();
+        assertThat(originalNearCacheStats.getOwnedEntryCount(), lessThan((long)size));
+        assertThat(originalNearCacheStats.getOwnedEntryCount(), greaterThan((long) (size/2)));
+
+        final MapProxyImpl<String, String> proxy = h.getDistributedObject(MapService.SERVICE_NAME, mapName);
+        final MapServiceContext mapServiceContext = proxy.getService().getMapServiceContext();
+        final MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);
+
+        final MaxSizeConfig halvedMaxSizeConfig = maxSizeConfig.setSize(size/2);
+        final NearCacheConfig halvedNearCacheConfig = nearCacheConfig.setMaxSize(size / 2);
+        final MapConfig halvedMapConfig = mapConfig
+                .setMaxSizeConfig(halvedMaxSizeConfig)
+                .setNearCacheConfig(halvedNearCacheConfig);
+        mapContainer.setMapConfig(halvedMapConfig);
+
+        for (Integer i = 0; i < size * 2; i++) {
+            map.put(i.toString(), i.toString());
+            map.get(i.toString());//trigger put into near cache
+        }
+        sleepSeconds(3); //wait for eviction
+
+        final NearCacheStats halvedNearCacheStats = map.getLocalMapStats().getNearCacheStats();
+        assertThat(halvedNearCacheStats.getOwnedEntryCount(), lessThan((long)size/2));
+        assertThat(halvedNearCacheStats.getOwnedEntryCount(), greaterThan((long) size/4));
     }
 
     /*
