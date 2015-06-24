@@ -328,14 +328,6 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     }
 
     @Override
-    @Deprecated
-    public ILock getLock(Object key) {
-        //this method will be deleted in the near future.
-        String name = LockProxy.convertToStringKey(key, serializationService);
-        return getDistributedObject(LockServiceImpl.SERVICE_NAME, name);
-    }
-
-    @Override
     public <E> Ringbuffer<E> getRingbuffer(String name) {
         return getDistributedObject(RingbufferService.SERVICE_NAME, name);
     }
