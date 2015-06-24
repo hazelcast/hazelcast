@@ -60,6 +60,11 @@ public class TestServlet extends HttpServlet {
         } else if (req.getRequestURI().endsWith("update")) {
             session.setAttribute("key", "value-updated");
             resp.getWriter().write("true");
+        } else if (req.getRequestURI().endsWith("multiplesession")) {
+            session.setAttribute("key", "value");
+            session = req.getSession();
+            Object value = session.getAttribute("key");
+            resp.getWriter().write(value == null ? "null" : value.toString());
         } else if (req.getRequestURI().endsWith("update-and-read-same-request")) {
             session.setAttribute("key", "value-updated");
             Object value = session.getAttribute("key");
@@ -69,6 +74,10 @@ public class TestServlet extends HttpServlet {
             String nameList = names.toString();
             // Return comma-separated list of attribute names
             resp.getWriter().write(nameList.substring(1, nameList.length() - 1).replace(", ", ","));
+        } else if (req.getRequestURI().endsWith("setGet")) {
+            session.setAttribute("key", "value");
+            Object value = session.getAttribute("key");
+            resp.getWriter().write(value == null ? "null" : value.toString());
         } else if (req.getRequestURI().endsWith("reload")) {
             session.invalidate();
             session = req.getSession();
