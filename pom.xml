@@ -176,6 +176,13 @@
                     <target>${jdk.version}</target>
                     <encoding>${project.build.sourceEncoding}</encoding>
                 </configuration>
+                <dependencies>
+                    <dependency>
+                        <groupId>com.hazelcast</groupId>
+                        <artifactId>hazelcast-code-generator</artifactId>
+                        <version>${version}</version>
+                    </dependency>
+                </dependencies>
             </plugin>
 
             <plugin>
