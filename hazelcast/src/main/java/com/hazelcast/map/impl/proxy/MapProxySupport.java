@@ -96,7 +96,6 @@ import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.TruePredicate;
 import com.hazelcast.spi.AbstractDistributedObject;
-import com.hazelcast.spi.Callback;
 import com.hazelcast.spi.DefaultObjectNamespace;
 import com.hazelcast.spi.EventFilter;
 import com.hazelcast.spi.ExecutionService;
@@ -1060,7 +1059,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
             } else {
                 ICompletableFuture future = nodeEngine.getOperationService()
                         .createInvocationBuilder(SERVICE_NAME, operation, partitionId)
-                        .setCallback(new MapExecutionCallbackAdapter(callback))
+                        .setExecutionCallback(new MapExecutionCallbackAdapter(callback))
                         .invoke();
                 invalidateNearCache(key);
                 return future;
@@ -1228,7 +1227,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         return SERVICE_NAME;
     }
 
-    private class MapExecutionCallbackAdapter implements Callback {
+    private class MapExecutionCallbackAdapter implements ExecutionCallback {
 
         private final ExecutionCallback executionCallback;
 
@@ -1237,12 +1236,14 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         }
 
         @Override
-        public void notify(Object response) {
-            if (response instanceof Throwable) {
-                executionCallback.onFailure((Throwable) response);
-            } else {
-                executionCallback.onResponse(getService().getMapServiceContext().toObject(response));
-            }
+        public void onResponse(Object response) {
+            MapServiceContext mapServiceContext = getService().getMapServiceContext();
+            executionCallback.onResponse(mapServiceContext.toObject(response));
+        }
+
+        @Override
+        public void onFailure(Throwable t) {
+            executionCallback.onFailure(t);
         }
     }
 

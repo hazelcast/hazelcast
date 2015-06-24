@@ -18,10 +18,10 @@ package com.hazelcast.client.impl.client;
 
 import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.nio.Address;
-import com.hazelcast.spi.Callback;
 import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationFactory;
+import com.hazelcast.spi.impl.SimpleExecutionCallback;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -53,7 +53,7 @@ public abstract class MultiTargetClientRequest extends ClientRequest {
             op.setCallerUuid(endpoint.getUuid());
             InvocationBuilder builder = operationService.createInvocationBuilder(getServiceName(), op, target)
                     .setResultDeserialized(false)
-                    .setCallback(new SingleTargetCallback(target, callback));
+                    .setExecutionCallback(new SingleTargetCallback(target, callback));
             builder.invoke();
         }
     }
@@ -90,7 +90,7 @@ public abstract class MultiTargetClientRequest extends ClientRequest {
         }
     }
 
-    private static final class SingleTargetCallback implements Callback<Object> {
+    private static final class SingleTargetCallback extends SimpleExecutionCallback<Object> {
 
         final Address target;
         final MultiTargetCallback parent;

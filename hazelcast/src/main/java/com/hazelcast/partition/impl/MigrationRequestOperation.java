@@ -24,7 +24,6 @@ import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.partition.MigrationInfo;
-import com.hazelcast.spi.Callback;
 import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.MigrationAwareService;
 import com.hazelcast.spi.NodeEngine;
@@ -32,6 +31,7 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.spi.PartitionReplicationEvent;
 import com.hazelcast.spi.ResponseHandler;
+import com.hazelcast.spi.impl.SimpleExecutionCallback;
 import com.hazelcast.spi.impl.servicemanager.ServiceInfo;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.exception.TargetNotMemberException;
@@ -146,7 +146,7 @@ public final class MigrationRequestOperation extends BaseMigrationOperation {
 
         nodeEngine.getOperationService()
                 .createInvocationBuilder(InternalPartitionService.SERVICE_NAME, operation, destination)
-                .setCallback(new MigrationCallback(migrationInfo, getResponseHandler()))
+                .setExecutionCallback(new MigrationCallback(migrationInfo, getResponseHandler()))
                 .setResultDeserialized(true)
                 .setCallTimeout(partitionService.getPartitionMigrationTimeout())
                 .setTryPauseMillis(TRY_PAUSE_MILLIS)
@@ -208,7 +208,7 @@ public final class MigrationRequestOperation extends BaseMigrationOperation {
         return tasks;
     }
 
-    private static final class MigrationCallback implements Callback<Object> {
+    private static final class MigrationCallback extends SimpleExecutionCallback<Object> {
 
         final MigrationInfo migrationInfo;
         final ResponseHandler responseHandler;
