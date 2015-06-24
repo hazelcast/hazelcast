@@ -1,2 +1,0 @@
-com.hazelcast.client.protocol.generator.CodecCodeGenerator
-com.hazelcast.client.protocol.generator.CodeGeneratorMessageTaskFactory
