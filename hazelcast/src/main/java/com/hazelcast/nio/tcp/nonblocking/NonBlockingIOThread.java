@@ -32,6 +32,7 @@ import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
+import static com.hazelcast.nio.tcp.nonblocking.SelectorOptimizer.optimize;
 import static java.lang.Math.max;
 import static java.lang.System.currentTimeMillis;
 
@@ -77,7 +78,7 @@ public class NonBlockingIOThread extends Thread implements OperationHostileThrea
                                ILogger logger,
                                NonBlockingIOThreadOutOfMemoryHandler oomeHandler,
                                boolean selectNow) {
-        this(threadGroup, threadName, logger, oomeHandler, selectNow, newSelector());
+        this(threadGroup, threadName, logger, oomeHandler, selectNow, newSelector(logger));
     }
 
     public NonBlockingIOThread(ThreadGroup threadGroup,
@@ -93,10 +94,14 @@ public class NonBlockingIOThread extends Thread implements OperationHostileThrea
         this.selector = selector;
     }
 
-    private static Selector newSelector() {
+    private static Selector newSelector(ILogger logger) {
         try {
-            return Selector.open();
-        } catch (IOException e) {
+            Selector selector = Selector.open();
+            if (Boolean.getBoolean("tcp.optimizedselector")) {
+                optimize(selector, logger);
+            }
+            return selector;
+        } catch (final IOException e) {
             throw new HazelcastException("Failed to open a Selector", e);
         }
     }
