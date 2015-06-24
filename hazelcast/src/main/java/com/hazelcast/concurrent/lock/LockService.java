@@ -34,4 +34,6 @@ public interface LockService extends SharedService {
     void clearLockStore(int partitionId, ObjectNamespace namespace);
 
     Collection<LockResource> getAllLocks();
+
+    long getMaxLeaseTimeInMillis();
 }

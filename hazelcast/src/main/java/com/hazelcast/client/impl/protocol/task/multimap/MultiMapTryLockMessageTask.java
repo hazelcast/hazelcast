@@ -16,17 +16,22 @@
 
 package com.hazelcast.client.impl.protocol.task.multimap;
 
+import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MultiMapTryLockCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.concurrent.lock.operations.LockOperation;
+import com.hazelcast.concurrent.lock.operations.UnlockOperation;
+import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.instance.Node;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MultiMapPermission;
 import com.hazelcast.spi.DefaultObjectNamespace;
+import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.Operation;
 
 import java.security.Permission;
@@ -45,8 +50,12 @@ public class MultiMapTryLockMessageTask
 
     @Override
     protected Operation prepareOperation() {
-        DefaultObjectNamespace namespace = new DefaultObjectNamespace(MultiMapService.SERVICE_NAME, parameters.name);
+        DefaultObjectNamespace namespace = getNamespace();
         return new LockOperation(namespace, parameters.key, parameters.threadId, parameters.timeout);
+    }
+
+    private DefaultObjectNamespace getNamespace() {
+        return new DefaultObjectNamespace(MultiMapService.SERVICE_NAME, parameters.name);
     }
 
     @Override
@@ -57,6 +66,31 @@ public class MultiMapTryLockMessageTask
     @Override
     protected ClientMessage encodeResponse(Object response) {
         return MultiMapTryLockCodec.encodeResponse((Boolean) response);
+    }
+
+    @Override
+    public void onFailure(Throwable t) {
+        if (t instanceof OperationTimeoutException) {
+            safeUnlock();
+        }
+        super.onFailure(t);
+    }
+
+    private void safeUnlock() {
+        ClientEndpoint endpoint = getEndpoint();
+        Operation op = new UnlockOperation(getNamespace(), parameters.key, parameters.threadId);
+        op.setCallerUuid(endpoint.getUuid());
+        InvocationBuilder builder = nodeEngine.getOperationService()
+                .createInvocationBuilder(getServiceName(), op, getPartitionId())
+                .setResultDeserialized(false);
+        try {
+            builder.invoke();
+        } catch (Throwable e) {
+            ILogger logger = clientEngine.getLogger(getClass());
+            if (logger.isFinestEnabled()) {
+                logger.finest("Error while unlocking because of a lock operation timeout!", e);
+            }
+        }
     }
 
     @Override

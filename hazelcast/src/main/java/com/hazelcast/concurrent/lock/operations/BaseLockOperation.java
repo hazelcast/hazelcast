@@ -29,18 +29,18 @@ import com.hazelcast.spi.PartitionAwareOperation;
 
 import java.io.IOException;
 
-abstract class BaseLockOperation extends AbstractOperation
+public abstract class BaseLockOperation extends AbstractOperation
         implements PartitionAwareOperation, IdentifiedDataSerializable {
 
-    public static final long DEFAULT_LOCK_TTL = Long.MAX_VALUE;
     public static final int ANY_THREAD = 0;
 
     protected ObjectNamespace namespace;
     protected Data key;
     protected long threadId;
-    protected long ttl = DEFAULT_LOCK_TTL;
+    protected long leaseTime = -1L;
     protected transient Object response;
     private transient boolean asyncBackup;
+    private long referenceCallId;
 
     public BaseLockOperation() {
     }
@@ -58,11 +58,11 @@ abstract class BaseLockOperation extends AbstractOperation
         setWaitTimeout(timeout);
     }
 
-    public BaseLockOperation(ObjectNamespace namespace, Data key, long threadId, long ttl, long timeout) {
+    public BaseLockOperation(ObjectNamespace namespace, Data key, long threadId, long leaseTime, long timeout) {
         this.namespace = namespace;
         this.key = key;
         this.threadId = threadId;
-        this.ttl = ttl;
+        this.leaseTime = leaseTime;
         setWaitTimeout(timeout);
     }
 
@@ -98,6 +98,21 @@ abstract class BaseLockOperation extends AbstractOperation
     }
 
     @Override
+    protected void onSetCallId() {
+        if (referenceCallId == 0L) {
+            referenceCallId = getCallId();
+        }
+    }
+
+    protected final void setReferenceCallId(long refCallId) {
+        this.referenceCallId = refCallId;
+    }
+
+    protected final long getReferenceCallId() {
+        return referenceCallId != 0 ? referenceCallId : getCallId();
+    }
+
+    @Override
     public final String getServiceName() {
         return LockServiceImpl.SERVICE_NAME;
     }
@@ -117,7 +132,8 @@ abstract class BaseLockOperation extends AbstractOperation
         out.writeObject(namespace);
         out.writeData(key);
         out.writeLong(threadId);
-        out.writeLong(ttl);
+        out.writeLong(leaseTime);
+        out.writeLong(referenceCallId);
     }
 
     @Override
@@ -126,6 +142,7 @@ abstract class BaseLockOperation extends AbstractOperation
         namespace = in.readObject();
         key = in.readData();
         threadId = in.readLong();
-        ttl = in.readLong();
+        leaseTime = in.readLong();
+        referenceCallId = in.readLong();
     }
 }
