@@ -281,7 +281,8 @@ public class PagingPredicate implements IndexAwarePredicate, DataSerializable {
      * @return Map.Entry the anchor object which is the last value object on the previous page
      */
     public Map.Entry getAnchor() {
-        return anchorList.get(page).getValue();
+        Map.Entry<Integer, Map.Entry> anchorEntry = anchorList.get(page);
+        return anchorEntry == null ? null : anchorEntry.getValue();
     }
 
     /**
@@ -302,6 +303,15 @@ public class PagingPredicate implements IndexAwarePredicate, DataSerializable {
         }
     }
 
+    /**
+     * After each query, an anchor entry is set for that page. see {@link #setAnchor(int, Map.Entry)}}
+     * For the next query user may set an arbitrary page. see {@link #setPage(int)}
+     * for example: user queried first 5 pages which means first 5 anchor is available
+     * if the next query is for the 10th page then the nearest anchor belongs to page 5
+     * but if the next query is for the 3nd page then the nearest anchor belongs to page 2
+     *
+     * @return nearest anchored entry for current page
+     */
     Map.Entry<Integer, Map.Entry> getNearestAnchorEntry() {
         int anchorCount = anchorList.size();
         if (page == 0 || anchorCount == 0) {
