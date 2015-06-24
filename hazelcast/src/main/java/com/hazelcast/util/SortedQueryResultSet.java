@@ -17,51 +17,42 @@
 package com.hazelcast.util;
 
 import java.util.AbstractSet;
-import java.util.Comparator;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
-import java.util.TreeSet;
+import java.util.NoSuchElementException;
 
 /**
  * Collection class for results of query operations
  */
 public class SortedQueryResultSet extends AbstractSet<Map.Entry> {
 
-    private final TreeSet<Map.Entry> entries;
+    private final List<Map.Entry> entries;
     private final IterationType iterationType;
-    private final int pageSize;
 
-    public SortedQueryResultSet(final Comparator comparator, IterationType iterationType, int pageSize) {
-        this.entries = new TreeSet<Map.Entry>(SortingUtil.newComparator(comparator, iterationType));
-        this.iterationType = iterationType;
-        this.pageSize = pageSize;
+    public SortedQueryResultSet() {
+        this(null, null);
     }
 
-    @Override
-    public boolean add(Map.Entry entry) {
-        if (entries.add(entry)) {
-            if (entries.size() > pageSize) {
-                entries.pollLast();
-            }
-            return true;
-        }
-        return false;
+    public SortedQueryResultSet(List<Map.Entry> entries, IterationType iterationType) {
+        this.entries = entries;
+        this.iterationType = iterationType;
     }
 
     @Override
     public Iterator iterator() {
+        if (entries == null) {
+            return new EmptyIterator();
+        }
         return new SortedIterator();
     }
 
-    /**
-     *
-     * @return Map.Entry last entry in set
-     */
-    public Map.Entry last() {
-        if (entries.isEmpty()) {
-            return null;
+    @Override
+    public int size() {
+        if (entries == null) {
+            return 0;
         }
-        return entries.last();
+        return entries.size();
     }
 
     private class SortedIterator implements Iterator {
@@ -91,9 +82,22 @@ public class SortedQueryResultSet extends AbstractSet<Map.Entry> {
         }
     }
 
-    @Override
-    public int size() {
-        return entries.size();
+    private class EmptyIterator implements Iterator {
+
+        @Override
+        public boolean hasNext() {
+            return false;
+        }
+
+        @Override
+        public Object next() {
+            throw new NoSuchElementException();
+        }
+
+        @Override
+        public void remove() {
+            throw new UnsupportedOperationException();
+        }
     }
 
 }
