@@ -19,11 +19,19 @@ package com.hazelcast.mapreduce.aggregation.impl;
 import com.hazelcast.mapreduce.aggregation.Supplier;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.query.QueryException;
+import com.hazelcast.query.impl.AttributeType;
+import com.hazelcast.query.impl.QueryableEntry;
+import com.hazelcast.query.impl.getters.ReflectionHelper;
 
 import java.io.IOException;
 import java.util.Map;
+
+import static com.hazelcast.query.QueryConstants.KEY_ATTRIBUTE_NAME;
+import static com.hazelcast.query.QueryConstants.THIS_ATTRIBUTE_NAME;
 
 /**
  * The default supplier for {@link com.hazelcast.query.Predicate}s, used
@@ -55,7 +63,14 @@ public class PredicateSupplier<KeyIn, ValueIn, ValueOut>
 
     @Override
     public ValueOut apply(Map.Entry<KeyIn, ValueIn> entry) {
-        if (predicate.apply(entry)) {
+        QueryableEntry queryableEntry;
+        if (entry instanceof QueryableEntry) {
+            queryableEntry = (QueryableEntry) entry;
+        } else {
+            queryableEntry = new SimpleQueryableEntry(entry);
+        }
+
+        if (predicate.apply(queryableEntry)) {
             ValueIn value = entry.getValue();
             if (value != null) {
                 return chainedSupplier != null ? chainedSupplier.apply(entry) : (ValueOut) value;
@@ -88,5 +103,70 @@ public class PredicateSupplier<KeyIn, ValueIn, ValueOut>
 
         predicate = in.readObject();
         chainedSupplier = in.readObject();
+    }
+
+    private static final class SimpleQueryableEntry implements QueryableEntry {
+
+        final Map.Entry entry;
+
+        private SimpleQueryableEntry(Map.Entry entry) {
+            this.entry = entry;
+        }
+
+        @Override
+        public Object getValue() {
+            return entry.getValue();
+        }
+
+        @Override
+        public Object setValue(Object value) {
+            return entry.setValue(value);
+        }
+
+        @Override
+        public Object getKey() {
+            return entry.getKey();
+        }
+
+        @Override
+        public Comparable getAttribute(String attributeName) throws QueryException {
+            if (KEY_ATTRIBUTE_NAME.equals(attributeName)) {
+                return (Comparable) getKey();
+            } else if (THIS_ATTRIBUTE_NAME.equals(attributeName)) {
+                return (Comparable) getValue();
+            }
+
+            try {
+                return ReflectionHelper.extractValue(entry.getValue(), attributeName);
+            } catch (Exception e) {
+                throw new QueryException(e);
+            }
+        }
+
+        @Override
+        public AttributeType getAttributeType(String attributeName) {
+            if (KEY_ATTRIBUTE_NAME.equals(attributeName)) {
+                return ReflectionHelper.getAttributeType(getKey().getClass());
+            } else if (THIS_ATTRIBUTE_NAME.equals(attributeName)) {
+                return ReflectionHelper.getAttributeType(getValue().getClass());
+            }
+
+            return ReflectionHelper.getAttributeType(entry.getValue(), attributeName);
+        }
+
+        @Override
+        public Data getKeyData() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public Data getValueData() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public Data getIndexKey() {
+            throw new UnsupportedOperationException();
+        }
     }
 }

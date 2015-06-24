@@ -19,6 +19,7 @@ package com.hazelcast.mapreduce.aggregation;
 import com.hazelcast.core.MultiMap;
 import com.hazelcast.mapreduce.KeyPredicate;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
@@ -131,15 +132,15 @@ public class MultiMapBaseAggregationTest
             map.put(i, values[i]);
         }
 
-        Predicate<Integer, Integer> predicate = new SelectorPredicate(values.length / 2);
+        Predicate<Integer, Integer> predicate = Predicates.greaterEqual("this", 1000);
         Supplier<Integer, Integer, Object> supplier = Supplier.fromPredicate(predicate);
         Aggregation<Integer, Object, Long> aggregation = Aggregations.count();
         long count = map.aggregate(supplier, aggregation);
-        assertEquals(values.length / 2, count);
+        assertEquals(values.length, count);
     }
 
     @Test
-    public void testPredicateAndExtractionAggregation()
+    public void testCustomPredicateAggregation()
             throws Exception {
 
         String mapName = randomMapName();
@@ -156,7 +157,32 @@ public class MultiMapBaseAggregationTest
             map.put(i, values[i]);
         }
 
-        Predicate<Integer, Integer> predicate = new SelectorPredicate(values.length / 2);
+        Predicate<Integer, Integer> predicate = new KeyLessThanPredicate(values.length / 2);
+        Supplier<Integer, Integer, Object> supplier = Supplier.fromPredicate(predicate);
+        Aggregation<Integer, Object, Long> aggregation = Aggregations.count();
+        long count = map.aggregate(supplier, aggregation);
+        assertEquals(values.length / 2, count);
+    }
+
+    @Test
+    public void testCustomPredicateAndExtractionAggregation()
+            throws Exception {
+
+        String mapName = randomMapName();
+        MultiMap<Integer, Integer> map = HAZELCAST_INSTANCE.getMultiMap(mapName);
+
+        Integer[] values = buildPlainValues(new ValueProvider<Integer>() {
+            @Override
+            public Integer provideRandom(Random random) {
+                return random(1000, 2000);
+            }
+        }, Integer.class);
+
+        for (int i = 0; i < values.length; i++) {
+            map.put(i, values[i]);
+        }
+
+        Predicate<Integer, Integer> predicate = new KeyLessThanPredicate(values.length / 2);
         Supplier<Integer, Integer, Object> extractorSupplier = Supplier.all(new Extractor());
         Supplier<Integer, Integer, Object> supplier = Supplier.fromPredicate(predicate, extractorSupplier);
         Aggregation<Integer, Object, Long> aggregation = Aggregations.count();
@@ -210,14 +236,14 @@ public class MultiMapBaseAggregationTest
         }
     }
 
-    public static class SelectorPredicate implements Predicate<Integer, Integer> {
+    public static class KeyLessThanPredicate implements Predicate<Integer, Integer> {
 
         private int maxKey;
 
-        public SelectorPredicate() {
+        public KeyLessThanPredicate() {
         }
 
-        public SelectorPredicate(int maxKey) {
+        public KeyLessThanPredicate(int maxKey) {
             this.maxKey = maxKey;
         }
 
