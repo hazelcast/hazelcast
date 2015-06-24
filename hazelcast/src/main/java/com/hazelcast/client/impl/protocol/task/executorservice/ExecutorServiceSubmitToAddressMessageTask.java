@@ -58,17 +58,16 @@ public class ExecutorServiceSubmitToAddressMessageTask
 
     @Override
     protected Operation prepareOperation() {
-        Callable callable = serializationService.toObject(parameters.callable);
         SecurityContext securityContext = clientEngine.getSecurityContext();
+        Data callableData = parameters.callable;
         if (securityContext != null) {
+            Callable callable = serializationService.toObject(parameters.callable);
             Subject subject = getEndpoint().getSubject();
             callable = securityContext.createSecureCallable(subject, callable);
+            callableData = serializationService.toData(callable);
         }
 
-        Data callableData = serializationService.toData(callable);
-
-        final MemberCallableTaskOperation op =
-                new MemberCallableTaskOperation(parameters.name, parameters.uuid, callableData);
+        MemberCallableTaskOperation op = new MemberCallableTaskOperation(parameters.name, parameters.uuid, callableData);
         op.setCallerUuid(endpoint.getUuid());
         return op;
     }

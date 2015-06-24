@@ -55,12 +55,13 @@ public class ExecutorServiceSubmitToPartitionMessageTask
     @Override
     protected Operation prepareOperation() {
         SecurityContext securityContext = clientEngine.getSecurityContext();
-        Callable callable = serializationService.toObject(parameters.callable);
+        Data callableData = parameters.callable;
         if (securityContext != null) {
             Subject subject = getEndpoint().getSubject();
+            Callable callable = serializationService.toObject(parameters.callable);
             callable = securityContext.createSecureCallable(subject, callable);
+            callableData = serializationService.toData(callable);
         }
-        Data callableData = serializationService.toData(callable);
         return new CallableTaskOperation(parameters.name, parameters.uuid, callableData);
     }
 

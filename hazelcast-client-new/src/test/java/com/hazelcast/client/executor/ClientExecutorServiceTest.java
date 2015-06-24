@@ -26,9 +26,20 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IExecutorService;
 import com.hazelcast.core.MemberSelector;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
+
+import java.io.IOException;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
@@ -36,14 +47,10 @@ import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
 import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
 import static com.hazelcast.test.HazelcastTestSupport.randomString;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -51,11 +58,12 @@ import static org.junit.Assert.assertTrue;
 @Category(QuickTest.class)
 public class ClientExecutorServiceTest {
 
+    private static HazelcastInstance instance;
     private static HazelcastInstance client;
 
     @BeforeClass
     public static void beforeClass() {
-        Hazelcast.newHazelcastInstance();
+        instance = Hazelcast.newHazelcastInstance();
         Hazelcast.newHazelcastInstance();
         Hazelcast.newHazelcastInstance();
         client = HazelcastClient.newHazelcastClient();
@@ -65,6 +73,8 @@ public class ClientExecutorServiceTest {
     public static void afterClass() {
         HazelcastClient.shutdownAll();
         Hazelcast.shutdownAll();
+        instance = null;
+        client = null;
     }
 
     @Test(expected = UnsupportedOperationException.class)
@@ -217,5 +227,46 @@ public class ClientExecutorServiceTest {
         MemberSelector selector = new SelectNoMembers();
 
         service.execute(new MapPutRunnable(mapName), selector);
+    }
+
+    @Test
+    public void testCallableSerializedOnce() throws ExecutionException, InterruptedException {
+        String name = randomString();
+        IExecutorService service = client.getExecutorService(name);
+        SerializedCounterCallable counterCallable = new SerializedCounterCallable();
+        Future future = service.submitToKeyOwner(counterCallable, name);
+        assertEquals(2, future.get());
+    }
+
+    @Test
+    public void testCallableSerializedOnce_submitToAddress() throws ExecutionException, InterruptedException {
+        String name = randomString();
+        IExecutorService service = client.getExecutorService(name);
+        SerializedCounterCallable counterCallable = new SerializedCounterCallable();
+        Future future = service.submitToMember(counterCallable, instance.getCluster().getLocalMember());
+        assertEquals(2, future.get());
+    }
+
+    static class SerializedCounterCallable implements Callable, DataSerializable {
+
+        int counter;
+
+        public SerializedCounterCallable() {
+        }
+
+        @Override
+        public Object call() throws Exception {
+            return counter;
+        }
+
+        @Override
+        public void writeData(ObjectDataOutput out) throws IOException {
+            out.writeInt(++counter);
+        }
+
+        @Override
+        public void readData(ObjectDataInput in) throws IOException {
+            counter = in.readInt() + 1;
+        }
     }
 }
