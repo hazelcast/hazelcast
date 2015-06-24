@@ -766,6 +766,13 @@ public final class UTFEncoderDecoder {
 
     private static class FastStringCreator implements StringCreator {
 
+        private static final ThreadLocal<Object[]> NEW_ARGS_THREAD_LOCAL = new ThreadLocal<Object[]>() {
+            @Override
+            protected Object[] initialValue() {
+                return new Object[]{null, Boolean.TRUE};
+            }
+        };
+
         private final Constructor<String> constructor;
         private final boolean useOldStringConstructor;
 
@@ -780,12 +787,17 @@ public final class UTFEncoderDecoder {
                 if (useOldStringConstructor) {
                     return constructor.newInstance(0, chars.length, chars);
                 } else {
-                    return constructor.newInstance(chars, Boolean.TRUE);
+                    Object[] args = NEW_ARGS_THREAD_LOCAL.get();
+                    args[0] = chars;
+                    try {
+                        return constructor.newInstance(args);
+                    } finally {
+                        args[0] = null;
+                    }
                 }
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
         }
-
     }
 }
