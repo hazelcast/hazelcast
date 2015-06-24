@@ -17,12 +17,18 @@
 package com.hazelcast.util;
 
 import com.hazelcast.query.PagingPredicate;
+import com.hazelcast.query.PagingPredicateAccessor;
+import com.hazelcast.query.impl.QueryableEntry;
 
+import java.util.Collections;
 import java.util.Comparator;
+import java.util.List;
 import java.util.Map;
 
+import static com.hazelcast.query.PagingPredicateAccessor.getNearestAnchorEntry;
+
 /**
- *  Utility class for generating Comparators to be used in sort methods specific to hazelcast classes.
+ * Utility class for generating Comparators to be used in sort methods specific to hazelcast classes.
  */
 public final class SortingUtil {
 
@@ -92,32 +98,35 @@ public final class SortingUtil {
                 }
                 break;
         }
+        checkIfComparable(comparable1);
+        checkIfComparable(comparable2);
 
-        int result;
-        if (comparable1 instanceof Comparable && comparable2 instanceof Comparable) {
-            result = ((Comparable) comparable1).compareTo(comparable2);
-        } else {
-            result = compareIntegers(comparable1.hashCode(), comparable2.hashCode());
-        }
-
+        int result = ((Comparable) comparable1).compareTo(comparable2);
         if (result != 0) {
             return result;
         }
         return compareIntegers(entry1.getKey().hashCode(), entry2.getKey().hashCode());
     }
 
+    private static void checkIfComparable(Object comparable) {
+        if (comparable instanceof Comparable) {
+            return;
+        }
+        throw new IllegalArgumentException("Not comparable " + comparable);
+    }
+
     /**
      * Compares two integers by considering their signs.
-     *
+     * <p/>
      * Suppose that
-     *      i1 = -500.000.000
-     *      i2 = 2.000.000.000
-     *
+     * i1 = -500.000.000
+     * i2 = 2.000.000.000
+     * <p/>
      * Normally "i1 < i2", but if we use "i1 - i2" for comparison,
      * i1 - i2 = -500.000.000 - 2.000.000.000 and we may accept the result as "-2.500.000.000".
      * But the actual result is "1.794.967.296" because of overflow between
      * positive and negative integer bounds.
-     *
+     * <p/>
      * So, if we use "i1 - i2" for comparison, since the result is greater than 0,
      * "i1" is accepted as bigger that "i2". But in fact "i1" is smaller than "i2".
      * Therefore, "i1 - i2" is not a good method for comparison between signed integers.
@@ -153,6 +162,76 @@ public final class SortingUtil {
                         pagingPredicate.getIterationType(), entry1, entry2);
             }
         };
+    }
+
+    public static List<QueryableEntry> getSortedSubList(List<QueryableEntry> list, PagingPredicate pagingPredicate,
+                                                        Map.Entry<Integer, Map.Entry> nearestAnchorEntry) {
+        if (pagingPredicate == null || list.isEmpty()) {
+            return list;
+        }
+        Comparator<Map.Entry> comparator = SortingUtil.newComparator(pagingPredicate);
+        Collections.sort(list, comparator);
+        int nearestPage = nearestAnchorEntry.getKey();
+        int pageSize = pagingPredicate.getPageSize();
+        int page = pagingPredicate.getPage();
+        int totalSize = pageSize * (page - nearestPage);
+        if (list.size() > totalSize) {
+            list = list.subList(0, totalSize);
+        }
+        return list;
+    }
+
+    public static SortedQueryResultSet getSortedQueryResultSet(List<Map.Entry> list,
+                                                               PagingPredicate pagingPredicate, IterationType iterationType) {
+        if (list.isEmpty()) {
+            return new SortedQueryResultSet();
+        }
+        Comparator<Map.Entry> comparator = SortingUtil.newComparator(pagingPredicate.getComparator(), iterationType);
+        Collections.sort(list, comparator);
+
+        Map.Entry<Integer, Map.Entry> nearestAnchorEntry = getNearestAnchorEntry(pagingPredicate);
+        int nearestPage = nearestAnchorEntry.getKey();
+        int page = pagingPredicate.getPage();
+        int pageSize = pagingPredicate.getPageSize();
+        int begin = pageSize * (page - nearestPage - 1);
+        int size = list.size();
+        if (begin > size) {
+            return new SortedQueryResultSet();
+        }
+        int end = begin + pageSize;
+        if (end > size) {
+            end = size;
+        }
+        setAnchor(list, pagingPredicate, nearestPage);
+        List<Map.Entry> subList = list.subList(begin, end);
+        return new SortedQueryResultSet(subList, iterationType);
+    }
+
+    public static boolean compareAnchor(PagingPredicate pagingPredicate, QueryableEntry queryEntry,
+                                        Map.Entry<Integer, Map.Entry> nearestAnchorEntry) {
+        if (pagingPredicate == null) {
+            return true;
+        }
+        Map.Entry anchor = nearestAnchorEntry.getValue();
+        if (anchor == null) {
+            return true;
+        }
+        Comparator<Map.Entry> comparator = pagingPredicate.getComparator();
+        IterationType iterationType = pagingPredicate.getIterationType();
+        return SortingUtil.compare(comparator, iterationType, anchor, queryEntry) < 0;
+    }
+
+    private static void setAnchor(List<Map.Entry> list, PagingPredicate pagingPredicate, int nearestPage) {
+        if (list.isEmpty()) {
+            return;
+        }
+        int size = list.size();
+        int pageSize = pagingPredicate.getPageSize();
+        for (int i = pageSize; i <= size; i += pageSize) {
+            Map.Entry anchor = list.get(i - 1);
+            nearestPage++;
+            PagingPredicateAccessor.setAnchor(pagingPredicate, nearestPage, anchor);
+        }
     }
 
 }

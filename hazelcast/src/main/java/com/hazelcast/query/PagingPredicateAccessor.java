@@ -26,7 +26,14 @@ public final class PagingPredicateAccessor {
     private PagingPredicateAccessor() {
     }
 
-    public static void setPagingPredicateAnchor(PagingPredicate predicate, Map.Entry anchor) {
-        predicate.setAnchor(anchor);
+    public static void setAnchor(PagingPredicate predicate, int page, Map.Entry anchor) {
+        predicate.setAnchor(page, anchor);
+    }
+
+    public static Map.Entry<Integer, Map.Entry> getNearestAnchorEntry(PagingPredicate predicate) {
+        if (predicate == null) {
+            return null;
+        }
+        return predicate.getNearestAnchorEntry();
     }
 }

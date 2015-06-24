@@ -28,11 +28,11 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
-import java.util.LinkedHashSet;
+import java.util.LinkedList;
 
 public class QueryResult implements DataSerializable {
 
-    private final Collection<QueryResultEntry> result = new LinkedHashSet<QueryResultEntry>();
+    private final Collection<QueryResultEntry> result = new LinkedList<QueryResultEntry>();
 
     private Collection<Integer> partitionIds;
 
@@ -58,12 +58,12 @@ public class QueryResult implements DataSerializable {
         }
     }
 
-    public void setPartitionIds(Collection<Integer> partitionIds) {
-        this.partitionIds = partitionIds;
-    }
-
     public Collection<Integer> getPartitionIds() {
         return partitionIds;
+    }
+
+    public void setPartitionIds(Collection<Integer> partitionIds) {
+        this.partitionIds = partitionIds;
     }
 
     public Collection<QueryResultEntry> getResult() {

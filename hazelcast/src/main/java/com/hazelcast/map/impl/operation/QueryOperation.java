@@ -26,6 +26,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.query.PagingPredicate;
+import com.hazelcast.query.PagingPredicateAccessor;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.spi.ExceptionAction;
@@ -35,10 +36,10 @@ import com.hazelcast.spi.ReadonlyOperation;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.util.FutureUtil;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -50,8 +51,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.util.FutureUtil.returnWithDeadline;
-import static com.hazelcast.util.SortingUtil.newComparator;
-import static java.util.Collections.sort;
+import static com.hazelcast.util.SortingUtil.getSortedSubList;
 
 public class QueryOperation extends AbstractMapOperation implements ReadonlyOperation {
 
@@ -71,6 +71,10 @@ public class QueryOperation extends AbstractMapOperation implements ReadonlyOper
         if (predicate instanceof PagingPredicate) {
             this.pagingPredicate = (PagingPredicate) predicate;
         }
+    }
+
+    private static Collection<Collection<QueryableEntry>> getResult(List<Future<Collection<QueryableEntry>>> lsFutures) {
+        return returnWithDeadline(lsFutures, QUERY_EXECUTION_TIMEOUT_MINUTES, TimeUnit.MINUTES, FutureUtil.RETHROW_EVERYTHING);
     }
 
     @Override
@@ -168,7 +172,6 @@ public class QueryOperation extends AbstractMapOperation implements ReadonlyOper
         List<Future<Collection<QueryableEntry>>> lsFutures = new ArrayList<Future<Collection<QueryableEntry>>>(
                 initialPartitions.size());
 
-        Comparator<Map.Entry> wrapperComparator = newComparator(pagingPredicate);
         for (Integer partitionId : initialPartitions) {
             Future<Collection<QueryableEntry>> future = executor.submit(new PartitionCallable(partitionId));
             lsFutures.add(future);
@@ -178,17 +181,9 @@ public class QueryOperation extends AbstractMapOperation implements ReadonlyOper
         for (Collection<QueryableEntry> returnedResult : returnedResults) {
             toMerge.addAll(returnedResult);
         }
-
-        sort(toMerge, wrapperComparator);
-
-        if (toMerge.size() > pagingPredicate.getPageSize()) {
-            toMerge = toMerge.subList(0, pagingPredicate.getPageSize());
-        }
-        result.addAll(toMerge);
-    }
-
-    private static Collection<Collection<QueryableEntry>> getResult(List<Future<Collection<QueryableEntry>>> lsFutures) {
-        return returnWithDeadline(lsFutures, QUERY_EXECUTION_TIMEOUT_MINUTES, TimeUnit.MINUTES, FutureUtil.RETHROW_EVERYTHING);
+        Map.Entry<Integer, Map.Entry> nearestAnchorEntry = PagingPredicateAccessor.getNearestAnchorEntry(pagingPredicate);
+        List<QueryableEntry> sortedSubList = getSortedSubList(toMerge, pagingPredicate, nearestAnchorEntry);
+        result.addAll(sortedSubList);
     }
 
     private void checkPartitionStateChanges(InternalPartitionService partitionService, int partitionStateVersion) {
