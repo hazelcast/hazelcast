@@ -51,7 +51,7 @@ public final class MapKeyLoaderUtil {
     }
 
     static Iterator<Map<Integer, List<Data>>> toBatches(final Iterator<Entry<Integer, Data>> entries,
-            final int maxBatch) {
+                                                        final int maxBatch) {
 
         return new UnmodifiableIterator<Map<Integer, List<Data>>>() {
             @Override
@@ -86,15 +86,14 @@ public final class MapKeyLoaderUtil {
     }
 
     public static int getMaxSizePerNode(MaxSizeConfig maxSizeConfig) {
-
-        int maxSizePerNode = getApproximateMaxSize(maxSizeConfig, MaxSizePolicy.PER_NODE);
+        double maxSizePerNode = getApproximateMaxSize(maxSizeConfig, MaxSizePolicy.PER_NODE);
 
         if (maxSizePerNode == MaxSizeConfig.DEFAULT_MAX_SIZE) {
             // unlimited
             return -1;
         }
 
-        return maxSizePerNode;
+        return (int) maxSizePerNode;
     }
 
     static IFunction<Data, Entry<Integer, Data>> toPartition(final InternalPartitionService partitionService) {

@@ -74,7 +74,7 @@ public class EvictionMaxSizePolicyTest extends HazelcastTestSupport {
         final String mapName = randomMapName();
         final Config config = createConfig(MaxSizeConfig.MaxSizePolicy.USED_HEAP_SIZE, perNodeHeapMaxSizeInMegaBytes, mapName);
         final Collection<IMap> maps = createMaps(mapName, config, nodeCount);
-        setTestSizeEstimator(maps, 1);
+        setTestSizeEstimator(maps, MemoryUnit.MEGABYTES.toBytes(1));
         populateMaps(maps, 100);
 
         assertUsedHeapSizePolicyWorks(maps, perNodeHeapMaxSizeInMegaBytes);
@@ -115,10 +115,30 @@ public class EvictionMaxSizePolicyTest extends HazelcastTestSupport {
         final Collection<IMap> maps = createMaps(mapName, config, nodeCount);
         // pick an enormously big heap cost for an entry for testing.
         final long oneEntryHeapCostInMegaBytes = 1 << 30;
-        setTestSizeEstimator(maps, oneEntryHeapCostInMegaBytes);
+        setTestSizeEstimator(maps, MemoryUnit.MEGABYTES.toBytes(oneEntryHeapCostInMegaBytes));
         populateMaps(maps, putCount);
 
         assertUsedHeapPercentagePolicyTriggersEviction(maps, putCount);
+    }
+
+
+    /**
+     * https://github.com/hazelcast/hazelcast/issues/5516
+     *
+     * @see com.hazelcast.map.impl.eviction.MaxSizeChecker#getApproximateMaxSize(int)
+     */
+    @Test
+    public void testUsedHeapSizePolicy_doesNotTriggerEviction_whenEntryHeapCostIsSmallerThanApproximateMaxSize() {
+        int perNodeHeapMaxSizeInMegaBytes = 1;
+        String mapName = randomMapName();
+        Config config = createConfig(MaxSizeConfig.MaxSizePolicy.USED_HEAP_PERCENTAGE,
+                perNodeHeapMaxSizeInMegaBytes, mapName);
+        HazelcastInstance node = createHazelcastInstance(config);
+        IMap map = node.getMap(mapName);
+        setTestSizeEstimator(map, 100);
+        map.put(1, 1);
+
+        assertEquals(1, map.size());
     }
 
     @Test
@@ -164,7 +184,7 @@ public class EvictionMaxSizePolicyTest extends HazelcastTestSupport {
         }
     }
 
-    private void setTestSizeEstimator(IMap map, final long oneEntryHeapCostInMegaBytes) {
+    private void setTestSizeEstimator(IMap map, final long oneEntryHeapCostInBytes) {
         final MapProxyImpl mapProxy = (MapProxyImpl) map;
         final MapService mapService = (MapService) mapProxy.getService();
         final MapServiceContext mapServiceContext = mapService.getMapServiceContext();
@@ -195,7 +215,7 @@ public class EvictionMaxSizePolicyTest extends HazelcastTestSupport {
 
                     @Override
                     public long getCost(Object record) {
-                        return MemoryUnit.MEGABYTES.toBytes(oneEntryHeapCostInMegaBytes);
+                        return oneEntryHeapCostInBytes;
                     }
 
                     @Override

@@ -91,10 +91,10 @@ public class MaxSizeChecker {
 
 
     private boolean isEvictablePerNode(MapContainer mapContainer) {
-        int nodeTotalSize = 0;
+        long nodeTotalSize = 0;
 
         final MaxSizeConfig maxSizeConfig = mapContainer.getMapConfig().getMaxSizeConfig();
-        final int maxSize = getApproximateMaxSize(maxSizeConfig.getSize());
+        final double maxSize = getApproximateMaxSize(maxSizeConfig.getSize());
         final String mapName = mapContainer.getName();
         final MapServiceContext mapServiceContext = mapContainer.getMapServiceContext();
         final List<Integer> partitionIds = findPartitionIds();
@@ -114,7 +114,7 @@ public class MaxSizeChecker {
     private boolean isEvictablePerPartition(final MapContainer mapContainer, int partitionId) {
         final MapServiceContext mapServiceContext = mapContainer.getMapServiceContext();
         final MaxSizeConfig maxSizeConfig = mapContainer.getMapConfig().getMaxSizeConfig();
-        final int maxSize = getApproximateMaxSize(maxSizeConfig.getSize());
+        final double maxSize = getApproximateMaxSize(maxSizeConfig.getSize());
         final String mapName = mapContainer.getName();
         final PartitionContainer container = mapServiceContext.getPartitionContainer(partitionId);
         if (container == null) {
@@ -130,15 +130,15 @@ public class MaxSizeChecker {
             return false;
         }
         final MaxSizeConfig maxSizeConfig = mapContainer.getMapConfig().getMaxSizeConfig();
-        final int maxSize = getApproximateMaxSize(maxSizeConfig.getSize());
-        return maxSize < (usedHeapSize / ONE_MEGABYTE);
+        final double maxSize = getApproximateMaxSize(maxSizeConfig.getSize());
+        return maxSize < (1D * usedHeapSize / ONE_MEGABYTE);
     }
 
     private boolean isEvictableFreeHeapSize(final MapContainer mapContainer) {
         final long currentFreeHeapSize = getAvailableMemory();
         final MaxSizeConfig maxSizeConfig = mapContainer.getMapConfig().getMaxSizeConfig();
-        final int minFreeHeapSize = getApproximateMaxSize(maxSizeConfig.getSize());
-        return minFreeHeapSize > (currentFreeHeapSize / ONE_MEGABYTE);
+        final double minFreeHeapSize = getApproximateMaxSize(maxSizeConfig.getSize());
+        return minFreeHeapSize > (1D * currentFreeHeapSize / ONE_MEGABYTE);
     }
 
     private boolean isEvictableHeapPercentage(final MapContainer mapContainer) {
@@ -147,7 +147,7 @@ public class MaxSizeChecker {
             return false;
         }
         final MaxSizeConfig maxSizeConfig = mapContainer.getMapConfig().getMaxSizeConfig();
-        final int maxSize = getApproximateMaxSize(maxSizeConfig.getSize());
+        final double maxSize = getApproximateMaxSize(maxSizeConfig.getSize());
         final long total = getTotalMemory();
         return maxSize < (1D * ONE_HUNDRED_PERCENT * usedHeapSize / total);
     }
@@ -155,7 +155,7 @@ public class MaxSizeChecker {
     private boolean isEvictableFreeHeapPercentage(final MapContainer mapContainer) {
         final long currentFreeHeapSize = getAvailableMemory();
         final MaxSizeConfig maxSizeConfig = mapContainer.getMapConfig().getMaxSizeConfig();
-        final int freeHeapPercentage = getApproximateMaxSize(maxSizeConfig.getSize());
+        final double freeHeapPercentage = getApproximateMaxSize(maxSizeConfig.getSize());
         final long total = getTotalMemory();
         return freeHeapPercentage > (1D * ONE_HUNDRED_PERCENT * currentFreeHeapSize / total);
     }
@@ -214,10 +214,10 @@ public class MaxSizeChecker {
     /**
      * used when deciding evictable or not.
      */
-    private static int getApproximateMaxSize(int maxSizeFromConfig) {
+    private static double getApproximateMaxSize(int maxSizeFromConfig) {
         // because not to exceed the max size much we start eviction early.
         // so decrease the max size with ratio .95 below
-        return maxSizeFromConfig * EVICTION_START_THRESHOLD_PERCENTAGE / ONE_HUNDRED_PERCENT;
+        return 1D * maxSizeFromConfig * EVICTION_START_THRESHOLD_PERCENTAGE / ONE_HUNDRED_PERCENT;
     }
 
     /**
@@ -225,11 +225,11 @@ public class MaxSizeChecker {
      *
      * @return max size or -1 if policy is different or not set
      */
-    public static int getApproximateMaxSize(MaxSizeConfig maxSizeConfig, MaxSizePolicy policy) {
+    public static double getApproximateMaxSize(MaxSizeConfig maxSizeConfig, MaxSizePolicy policy) {
         if (maxSizeConfig.getMaxSizePolicy() == policy) {
             return getApproximateMaxSize(maxSizeConfig.getSize());
         }
-        return -1;
+        return -1D;
     }
 
     private List<Integer> findPartitionIds() {
@@ -256,5 +256,6 @@ public class MaxSizeChecker {
         final Address thisAddress = nodeEngine.getThisAddress();
         return partition.isOwnerOrBackup(thisAddress);
     }
-
 }
+
+
