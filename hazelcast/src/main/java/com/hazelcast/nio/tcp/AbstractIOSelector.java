@@ -55,6 +55,7 @@ public abstract class AbstractIOSelector extends Thread implements IOSelector {
         this.waitTime = SELECT_WAIT_TIME_MILLIS;
         try {
             selector = Selector.open();
+            FastSelectionKeys.optimize(selector, logger);
         } catch (final IOException e) {
             throw new HazelcastException("Failed to open a Selector", e);
         }
