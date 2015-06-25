@@ -784,7 +784,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
             updateRecord(record, value, now);
             // then increase size.
             updateSizeEstimator(calculateRecordHeapCost(record));
-            updateExpiryTime(record, ttl, mapContainer.getMaxIdleMillis());
+            updateExpiryTime(record, ttl, mapContainer.getMapConfig());
             saveIndex(record);
         }
         return oldValue;
@@ -814,7 +814,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
             updateRecord(record, value, now);
             // then increase size.
             updateSizeEstimator(calculateRecordHeapCost(record));
-            updateExpiryTime(record, ttl, mapContainer.getMaxIdleMillis());
+            updateExpiryTime(record, ttl, mapContainer.getMapConfig());
         }
         saveIndex(record);
         return newRecord;
@@ -932,7 +932,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
             updateSizeEstimator(-calculateRecordHeapCost(record));
             updateRecord(record, value, now);
             updateSizeEstimator(calculateRecordHeapCost(record));
-            updateExpiryTime(record, ttl, mapContainer.getMaxIdleMillis());
+            updateExpiryTime(record, ttl, mapContainer.getMapConfig());
         }
         saveIndex(record);
         mapDataStore.addTransient(key, now);
@@ -965,7 +965,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
             updateSizeEstimator(-calculateRecordHeapCost(record));
             updateRecord(record, value, now);
             updateSizeEstimator(calculateRecordHeapCost(record));
-            updateExpiryTime(record, ttl, mapContainer.getMaxIdleMillis());
+            updateExpiryTime(record, ttl, mapContainer.getMapConfig());
         }
         saveIndex(record);
 
@@ -992,7 +992,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
             updateSizeEstimator(-calculateRecordHeapCost(record));
             updateRecord(record, value, now);
             updateSizeEstimator(calculateRecordHeapCost(record));
-            updateExpiryTime(record, ttl, mapContainer.getMaxIdleMillis());
+            updateExpiryTime(record, ttl, mapContainer.getMapConfig());
         }
         saveIndex(record);
         return true;
@@ -1024,7 +1024,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
             record = createRecord(key, value, ttl, now);
             records.put(key, record);
             updateSizeEstimator(calculateRecordHeapCost(record));
-            updateExpiryTime(record, ttl, mapContainer.getMaxIdleMillis());
+            updateExpiryTime(record, ttl, mapContainer.getMapConfig());
         }
         saveIndex(record);
         return oldValue;
