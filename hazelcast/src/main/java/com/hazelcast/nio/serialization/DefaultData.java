@@ -23,12 +23,11 @@ import java.util.Arrays;
 
 @edu.umd.cs.findbugs.annotations.SuppressWarnings("EI_EXPOSE_REP")
 public final class DefaultData implements Data {
-
-    // type and partition_hash are always written with BIG_ENDIAN byte-order
-    static final int TYPE_OFFSET = 0;
+  // type and partition_hash are always written with BIG_ENDIAN byte-order
+    public static final int TYPE_OFFSET = 0;
     // will use a byte to store partition_hash bit
-    static final int PARTITION_HASH_BIT_OFFSET = 4;
-    static final int DATA_OFFSET = 5;
+    public static final int PARTITION_HASH_BIT_OFFSET = 4;
+    public static final int DATA_OFFSET = 5;
 
     // array (12: array header, 4: length)
     private static final int ARRAY_HEADER_SIZE_IN_BYTES = 16;

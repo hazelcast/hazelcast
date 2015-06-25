@@ -34,7 +34,7 @@ class ByteArrayObjectDataInput extends InputStream implements BufferObjectDataIn
 
     byte[] data;
 
-    final int size;
+    int size;
 
     int pos;
 
@@ -51,12 +51,25 @@ class ByteArrayObjectDataInput extends InputStream implements BufferObjectDataIn
     }
 
     ByteArrayObjectDataInput(byte[] data, int offset, SerializationService service, ByteOrder byteOrder) {
-        super();
         this.data = data;
         this.size = data != null ? data.length : 0;
         this.service = service;
-        pos = offset;
-        bigEndian = byteOrder == ByteOrder.BIG_ENDIAN;
+        this.pos = offset;
+        this.bigEndian = byteOrder == ByteOrder.BIG_ENDIAN;
+    }
+   @Override
+    public void init(byte[] data, int offset) {
+        this.data = data;
+        this.size = data != null ? data.length : 0;
+        this.pos = offset;
+    }
+
+    @Override
+    public void clear() {
+        this.data = null;
+        this.pos = 0;
+        this.size = 0;
+        this.mark = 0;
     }
 
     public int read() throws IOException {
