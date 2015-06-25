@@ -82,7 +82,7 @@ public class SortedQueryResultSet extends AbstractSet<Map.Entry> {
         }
     }
 
-    private class EmptyIterator implements Iterator {
+    private static class EmptyIterator implements Iterator {
 
         @Override
         public boolean hasNext() {
