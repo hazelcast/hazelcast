@@ -92,7 +92,7 @@
                                         </xs:documentation>
                                     </xs:annotation>
                                 </xs:attribute>
-                                <xs:attribute name="backup-count" use="optional" type="xs:string">
+                                <xs:attribute name="backup-count" use="optional" type="parameterized-backup-count">
                                     <xs:annotation>
                                         <xs:documentation>
                                             Count of synchronous backups. Remember that, Queue is a non-partitioned
@@ -102,7 +102,7 @@
                                         </xs:documentation>
                                     </xs:annotation>
                                 </xs:attribute>
-                                <xs:attribute name="async-backup-count" use="optional" type="xs:string">
+                                <xs:attribute name="async-backup-count" use="optional" type="parameterized-backup-count">
                                     <xs:annotation>
                                         <xs:documentation>
                                             Count of asynchronous backups.
@@ -156,7 +156,7 @@
                                                     </xs:documentation>
                                                 </xs:annotation>
                                             </xs:attribute>
-                                            <xs:attribute name="write-coalescing" use="optional" type="xs:boolean"
+                                            <xs:attribute name="write-coalescing" use="optional" type="parameterized-boolean"
                                                           default="true">
                                                 <xs:annotation>
                                                     <xs:documentation>
@@ -236,7 +236,7 @@
                                         </xs:documentation>
                                     </xs:annotation>
                                 </xs:attribute>
-                                <xs:attribute name="statistics-enabled" use="optional" type="xs:boolean"
+                                <xs:attribute name="statistics-enabled" use="optional" type="parameterized-boolean"
                                               default="true">
                                     <xs:annotation>
                                         <xs:documentation>
@@ -246,7 +246,7 @@
                                         </xs:documentation>
                                     </xs:annotation>
                                 </xs:attribute>
-                                <xs:attribute name="optimize-queries" use="optional" type="xs:boolean"
+                                <xs:attribute name="optimize-queries" use="optional" type="parameterized-boolean"
                                               default="false">
                                     <xs:annotation>
                                         <xs:documentation>
@@ -256,7 +256,7 @@
                                         </xs:documentation>
                                     </xs:annotation>
                                 </xs:attribute>
-                                <xs:attribute name="backup-count" use="optional" type="xs:string">
+                                <xs:attribute name="backup-count" use="optional" type="parameterized-backup-count">
                                     <xs:annotation>
                                         <xs:documentation>
                                             Number of sync backups. If 1 is set as the backup-count for example, then
@@ -266,7 +266,7 @@
                                         </xs:documentation>
                                     </xs:annotation>
                                 </xs:attribute>
-                                <xs:attribute name="async-backup-count" use="optional" type="xs:string">
+                                <xs:attribute name="async-backup-count" use="optional" type="parameterized-backup-count">
                                     <xs:annotation>
                                         <xs:documentation>
                                             Number of async backups. If 1 is set as the backup-count for example, then
@@ -480,28 +480,28 @@
                                         </xs:documentation>
                                     </xs:annotation>
                                 </xs:attribute>
-                                <xs:attribute name="statistics-enabled" type="xs:boolean" use="optional">
+                                <xs:attribute name="statistics-enabled" type="parameterized-boolean" use="optional">
                                     <xs:annotation>
                                         <xs:documentation>
                                             Defines whether statistics gathering is enabled on a cache.
                                         </xs:documentation>
                                     </xs:annotation>
                                 </xs:attribute>
-                                <xs:attribute name="management-enabled" type="xs:boolean" use="optional">
+                                <xs:attribute name="management-enabled" type="parameterized-boolean" use="optional">
                                     <xs:annotation>
                                         <xs:documentation>
                                             Defines whether management is enabled on a cache.
                                         </xs:documentation>
                                     </xs:annotation>
                                 </xs:attribute>
-                                <xs:attribute name="read-through" type="xs:boolean" use="optional">
+                                <xs:attribute name="read-through" type="parameterized-boolean" use="optional">
                                     <xs:annotation>
                                         <xs:documentation>
                                             Set if read-through caching should be used.
                                         </xs:documentation>
                                     </xs:annotation>
                                 </xs:attribute>
-                                <xs:attribute name="write-through" type="xs:boolean" use="optional">
+                                <xs:attribute name="write-through" type="parameterized-boolean" use="optional">
                                     <xs:annotation>
                                         <xs:documentation>
                                             Set if write-through caching should be used.
@@ -539,7 +539,7 @@
                                         </xs:documentation>
                                     </xs:annotation>
                                 </xs:attribute>
-                                <xs:attribute name="backup-count" use="optional" type="xs:unsignedByte">
+                                <xs:attribute name="backup-count" use="optional" type="parameterized-backup-count">
                                     <xs:annotation>
                                         <xs:documentation>
                                             Number of sync backups. If 1 is set as the backup-count for example, then
@@ -548,7 +548,7 @@
                                         </xs:documentation>
                                     </xs:annotation>
                                 </xs:attribute>
-                                <xs:attribute name="async-backup-count" use="optional" type="xs:unsignedByte">
+                                <xs:attribute name="async-backup-count" use="optional" type="parameterized-backup-count">
                                     <xs:annotation>
                                         <xs:documentation>
                                             Number of async backups. If 1 is set as the backup-count for example, then
@@ -572,7 +572,7 @@
                                     </xs:element>
                                 </xs:sequence>
                                 <xs:attribute name="name" type="xs:string" use="optional" default="default"/>
-                                <xs:attribute name="backup-count" use="optional" type="xs:string">
+                                <xs:attribute name="backup-count" use="optional" type="parameterized-backup-count">
                                     <xs:annotation>
                                         <xs:documentation>
                                             Number of sync backups. If 1 is set as the backup-count for example, then
@@ -582,7 +582,7 @@
                                         </xs:documentation>
                                     </xs:annotation>
                                 </xs:attribute>
-                                <xs:attribute name="async-backup-count" use="optional" type="xs:string">
+                                <xs:attribute name="async-backup-count" use="optional" type="parameterized-backup-count">
                                     <xs:annotation>
                                         <xs:documentation>
                                             Number of async backups. If 1 is set as the backup-count for example, then
@@ -623,7 +623,7 @@
                                         </xs:documentation>
                                     </xs:annotation>
                                 </xs:attribute>
-                                <xs:attribute name="backup-count" use="optional" type="xs:string">
+                                <xs:attribute name="backup-count" use="optional" type="parameterized-backup-count">
                                     <xs:annotation>
                                         <xs:documentation>
                                             Count of synchronous backups. Remember that, List is a non-partitioned data
@@ -633,7 +633,7 @@
                                         </xs:documentation>
                                     </xs:annotation>
                                 </xs:attribute>
-                                <xs:attribute name="async-backup-count" use="optional" type="xs:string">
+                                <xs:attribute name="async-backup-count" use="optional" type="parameterized-backup-count">
                                     <xs:annotation>
                                         <xs:documentation>
                                             Count of asynchronous backups.
@@ -663,7 +663,7 @@
                                         </xs:documentation>
                                     </xs:annotation>
                                 </xs:attribute>
-                                <xs:attribute name="backup-count" use="optional" type="xs:string">
+                                <xs:attribute name="backup-count" use="optional" type="parameterized-backup-count">
                                     <xs:annotation>
                                         <xs:documentation>
                                             Count of synchronous backups. Remember that, Set is a non-partitioned data
@@ -673,7 +673,7 @@
                                         </xs:documentation>
                                     </xs:annotation>
                                 </xs:attribute>
-                                <xs:attribute name="async-backup-count" use="optional" type="xs:string">
+                                <xs:attribute name="async-backup-count" use="optional" type="parameterized-backup-count">
                                     <xs:annotation>
                                         <xs:documentation>
                                             Count of asynchronous backups.
@@ -685,7 +685,7 @@
                         <xs:element name="topic" minOccurs="0" maxOccurs="unbounded">
                             <xs:complexType>
                                 <xs:sequence>
-                                    <xs:element name="statistics-enabled" type="xs:boolean" minOccurs="0" maxOccurs="1"
+                                    <xs:element name="statistics-enabled" type="parameterized-boolean" minOccurs="0" maxOccurs="1"
                                                 default="true">
                                         <xs:annotation>
                                             <xs:documentation>
@@ -694,7 +694,7 @@
                                             </xs:documentation>
                                         </xs:annotation>
                                     </xs:element>
-                                    <xs:element name="global-ordering-enabled" type="xs:boolean" minOccurs="0"
+                                    <xs:element name="global-ordering-enabled" type="parameterized-boolean" minOccurs="0"
                                                 maxOccurs="1"
                                                 default="false">
                                         <xs:annotation>
@@ -771,7 +771,7 @@
                                         </xs:documentation>
                                     </xs:annotation>
                                 </xs:attribute>
-                                <xs:attribute name="communicate-stats" use="optional" type="xs:boolean" default="true">
+                                <xs:attribute name="communicate-stats" use="optional" type="parameterized-boolean" default="true">
                                     <xs:annotation>
                                         <xs:documentation>
                                             The communicate-stats setting defines if statistics (for example about
@@ -834,7 +834,7 @@
                                         </xs:documentation>
                                     </xs:annotation>
                                 </xs:attribute>
-                                <xs:attribute name="replication-delay-millis" type="xs:unsignedInt" use="optional"
+                                <xs:attribute name="replication-delay-millis" type="parameterized-unsigned-int" use="optional"
                                               default="100">
                                     <xs:annotation>
                                         <xs:documentation>
@@ -850,7 +850,7 @@
                                         </xs:documentation>
                                     </xs:annotation>
                                 </xs:attribute>
-                                <xs:attribute name="async-fillup" type="xs:boolean" use="optional" default="true">
+                                <xs:attribute name="async-fillup" type="parameterized-boolean" use="optional" default="true">
                                     <xs:annotation>
                                         <xs:documentation>
                                             This value defines it the replicated map is available for reads before the
@@ -862,7 +862,7 @@
                                         </xs:documentation>
                                     </xs:annotation>
                                 </xs:attribute>
-                                <xs:attribute name="statistics-enabled" type="xs:boolean" use="optional"
+                                <xs:attribute name="statistics-enabled" type="parameterized-boolean" use="optional"
                                               default="true"/>
                             </xs:complexType>
                         </xs:element>
@@ -1262,7 +1262,7 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="reuse-address" type="xs:boolean" minOccurs="0" maxOccurs="1" default="false"/>
+            <xs:element name="reuse-address" type="parameterized-boolean" minOccurs="0" maxOccurs="1" default="false"/>
         </xs:sequence>
         <xs:attribute name="public-address" type="xs:string" use="optional"/>
         <xs:attribute name="port" type="xs:string" use="required"/>
@@ -1560,7 +1560,7 @@
         </xs:attribute>
         <xs:attribute name="snapshot-enabled" use="optional" default="false">
             <xs:simpleType>
-                <xs:restriction base="xs:boolean"/>
+                <xs:restriction base="parameterized-boolean"/>
             </xs:simpleType>
         </xs:attribute>
     </xs:complexType>
@@ -1575,7 +1575,7 @@
                 </xs:complexType>
             </xs:element>
         </xs:sequence>
-        <xs:attribute name="enabled" type="xs:boolean" use="required"/>
+        <xs:attribute name="enabled" type="parameterized-boolean" use="required"/>
         <xs:attribute name="group-type" type="xs:string" use="optional"/>
     </xs:complexType>
 
@@ -1587,8 +1587,8 @@
     <xs:complexType name="cache-entry-listener">
         <xs:attribute name="cache-entry-listener-factory" type="non-space-string" use="optional"/>
         <xs:attribute name="cache-entry-event-filter-factory" type="non-space-string" use="optional"/>
-        <xs:attribute name="old-value-required" type="xs:boolean" use="optional" default="false"/>
-        <xs:attribute name="synchronous" type="xs:boolean" use="optional" default="false"/>
+        <xs:attribute name="old-value-required" type="parameterized-boolean" use="optional" default="false"/>
+        <xs:attribute name="synchronous" type="parameterized-boolean" use="optional" default="false"/>
     </xs:complexType>
     <xs:complexType name="listener">
         <xs:attribute name="class-name" type="xs:string" use="optional"/>
@@ -1822,18 +1822,18 @@
             <xs:element name="ssl" type="ssl" minOccurs="0" maxOccurs="1"/>
             <xs:element name="aws" type="aws-client" minOccurs="0" maxOccurs="1"/>
         </xs:sequence>
-        <xs:attribute name="smart-routing" use="optional" type="xs:boolean" default="false"/>
-        <xs:attribute name="redo-operation" use="optional" type="xs:boolean" default="false"/>
+        <xs:attribute name="smart-routing" use="optional" type="parameterized-boolean" default="false"/>
+        <xs:attribute name="redo-operation" use="optional" type="parameterized-boolean" default="false"/>
         <xs:attribute name="connection-timeout" use="optional" type="intMin1" default="60000"/>
         <xs:attribute name="connection-attempt-period" use="optional" type="intMin1" default="3000"/>
         <xs:attribute name="connection-attempt-limit" use="optional" type="intMin0" default="2"/>
     </xs:complexType>
 
     <xs:complexType name="socket-options">
-        <xs:attribute name="tcp-no-delay" type="xs:boolean" use="optional" default="false"/>
-        <xs:attribute name="keep-alive" type="xs:boolean" use="optional" default="true"/>
-        <xs:attribute name="reuse-address" type="xs:boolean" use="optional" default="true"/>
-        <xs:attribute name="linger-seconds" type="xs:unsignedInt" use="optional" default="3"/>
+        <xs:attribute name="tcp-no-delay" type="parameterized-boolean" use="optional" default="false"/>
+        <xs:attribute name="keep-alive" type="parameterized-boolean" use="optional" default="true"/>
+        <xs:attribute name="reuse-address" type="parameterized-boolean" use="optional" default="true"/>
+        <xs:attribute name="linger-seconds" type="parameterized-unsigned-int" use="optional" default="3"/>
         <xs:attribute name="buffer-size" use="optional" default="32">
             <xs:simpleType>
                 <xs:restriction base="xs:unsignedInt">
@@ -1846,7 +1846,7 @@
         <xs:sequence>
             <xs:element name="service" type="service" minOccurs="0" maxOccurs="unbounded"/>
         </xs:sequence>
-        <xs:attribute name="enable-defaults" type="xs:boolean" default="true"/>
+        <xs:attribute name="enable-defaults" type="parameterized-boolean" default="true"/>
     </xs:complexType>
     <xs:complexType name="service">
         <xs:sequence>
@@ -1862,7 +1862,7 @@
                 </xs:complexType>
             </xs:element>
         </xs:sequence>
-        <xs:attribute name="enabled" type="xs:boolean" default="true"/>
+        <xs:attribute name="enabled" type="parameterized-boolean" default="true"/>
     </xs:complexType>
 
     <xs:simpleType name="parameterizedValueType">
@@ -1871,8 +1871,23 @@
         </xs:restriction>
     </xs:simpleType>
 
+    <xs:simpleType name="parameterized-boolean">
+        <xs:union memberTypes="xs:boolean parameterizedValueType"/>
+    </xs:simpleType>
+    <xs:simpleType name="parameterized-unsigned-int">
+        <xs:union memberTypes="xs:unsignedInt parameterizedValueType"/>
+    </xs:simpleType>
     <xs:simpleType name="intMin1">
         <xs:union memberTypes="xs:positiveInteger parameterizedValueType"/>
+    </xs:simpleType>
+    <xs:simpleType name="parameterized-backup-count">
+        <xs:union memberTypes="backup-count parameterizedValueType"/>
+    </xs:simpleType>
+    <xs:simpleType name="backup-count">
+        <xs:restriction base="xs:byte">
+            <xs:minInclusive value="0"/>
+            <xs:maxInclusive value="6"/>
+        </xs:restriction>
     </xs:simpleType>
     <xs:simpleType name="intMin0">
         <xs:union memberTypes="xs:nonNegativeInteger parameterizedValueType"/>
@@ -1940,7 +1955,7 @@
     <xs:complexType name="aws-client">
         <xs:complexContent>
             <xs:extension base="aws">
-                <xs:attribute name="inside-aws" use="optional" type="xs:boolean" default="false"/>
+                <xs:attribute name="inside-aws" use="optional" type="parameterized-boolean" default="false"/>
             </xs:extension>
         </xs:complexContent>
     </xs:complexType>
@@ -1965,7 +1980,7 @@
     </xs:complexType>
     <xs:complexType name="query-cache">
         <xs:all>
-            <xs:element name="include-value" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true"/>
+            <xs:element name="include-value" type="parameterized-boolean" minOccurs="0" maxOccurs="1" default="true"/>
             <xs:element name="predicate" type="predicate" minOccurs="1" maxOccurs="1"/>
             <xs:element name="entry-listeners" minOccurs="0" maxOccurs="1">
                 <xs:annotation>
@@ -1982,11 +1997,11 @@
                 </xs:complexType>
             </xs:element>
             <xs:element name="in-memory-format" type="in-memory-format" minOccurs="0" maxOccurs="1" default="BINARY"/>
-            <xs:element name="populate" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true"/>
-            <xs:element name="coalesce" type="xs:boolean" minOccurs="0" maxOccurs="1" default="false"/>
-            <xs:element name="delay-seconds" type="xs:unsignedInt" minOccurs="0" maxOccurs="1" default="0"/>
-            <xs:element name="batch-size" type="xs:unsignedInt" minOccurs="0" maxOccurs="1" default="1"/>
-            <xs:element name="buffer-size" type="xs:unsignedInt" minOccurs="0" maxOccurs="1" default="16"/>
+            <xs:element name="populate" type="parameterized-boolean" minOccurs="0" maxOccurs="1" default="true"/>
+            <xs:element name="coalesce" type="parameterized-boolean" minOccurs="0" maxOccurs="1" default="false"/>
+            <xs:element name="delay-seconds" type="parameterized-unsigned-int" minOccurs="0" maxOccurs="1" default="0"/>
+            <xs:element name="batch-size" type="parameterized-unsigned-int" minOccurs="0" maxOccurs="1" default="1"/>
+            <xs:element name="buffer-size" type="parameterized-unsigned-int" minOccurs="0" maxOccurs="1" default="16"/>
             <xs:element name="eviction" type="eviction" minOccurs="0" maxOccurs="1"/>
             <xs:element name="indexes" minOccurs="0" maxOccurs="1">
                 <xs:annotation>
@@ -2020,15 +2035,15 @@
     </xs:complexType>
     <xs:complexType name="query-cache-client">
         <xs:all>
-            <xs:element name="include-value" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true"/>
+            <xs:element name="include-value" type="parameterized-boolean" minOccurs="0" maxOccurs="1" default="true"/>
             <xs:element name="predicate" type="predicate" minOccurs="1" maxOccurs="1"/>
             <xs:element name="entry-listeners" type="entry-listeners" minOccurs="0" maxOccurs="1"/>
             <xs:element name="in-memory-format" type="in-memory-format" minOccurs="0" maxOccurs="1" default="BINARY"/>
-            <xs:element name="populate" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true"/>
-            <xs:element name="coalesce" type="xs:boolean" minOccurs="0" maxOccurs="1" default="false"/>
-            <xs:element name="delay-seconds" type="xs:unsignedInt" minOccurs="0" maxOccurs="1" default="0"/>
-            <xs:element name="batch-size" type="xs:unsignedInt" minOccurs="0" maxOccurs="1" default="1"/>
-            <xs:element name="buffer-size" type="xs:unsignedInt" minOccurs="0" maxOccurs="1" default="16"/>
+            <xs:element name="populate" type="parameterized-boolean" minOccurs="0" maxOccurs="1" default="true"/>
+            <xs:element name="coalesce" type="parameterized-boolean" minOccurs="0" maxOccurs="1" default="false"/>
+            <xs:element name="delay-seconds" type="parameterized-unsigned-int" minOccurs="0" maxOccurs="1" default="0"/>
+            <xs:element name="batch-size" type="parameterized-unsigned-int" minOccurs="0" maxOccurs="1" default="1"/>
+            <xs:element name="buffer-size" type="parameterized-unsigned-int" minOccurs="0" maxOccurs="1" default="16"/>
             <xs:element name="eviction" type="eviction" minOccurs="0" maxOccurs="1"/>
             <xs:element name="indexes" minOccurs="0" maxOccurs="1">
                 <xs:annotation>
@@ -2077,7 +2092,7 @@
     <xs:complexType name="index">
         <xs:simpleContent>
             <xs:extension base="xs:string">
-                <xs:attribute name="ordered" type="xs:boolean" use="optional" default="false"/>
+                <xs:attribute name="ordered" type="parameterized-boolean" use="optional" default="false"/>
             </xs:extension>
         </xs:simpleContent>
     </xs:complexType>
@@ -2178,7 +2193,7 @@
     <xs:complexType name="wan-replication-ref">
         <xs:attribute name="name" use="required" type="xs:string"/>
         <xs:attribute name="merge-policy" use="required" type="xs:string"/>
-        <xs:attribute name="republishing-enabled" use="optional" type="xs:boolean" default="true"/>
+        <xs:attribute name="republishing-enabled" use="optional" type="parameterized-boolean" default="true"/>
     </xs:complexType>
     <xs:complexType name="native-memory">
         <xs:all>
@@ -2197,7 +2212,7 @@
             </xs:simpleType>
         </xs:attribute>
         <xs:attribute name="allocator-type" default="POOLED" type="memory-allocator-type"/>
-        <xs:attribute name="enabled" default="true" type="xs:boolean"/>
+        <xs:attribute name="enabled" default="true" type="parameterized-boolean"/>
     </xs:complexType>
     <xs:complexType name="memory-size">
         <xs:attribute name="value" type="xs:int" default="128"/>
@@ -2232,7 +2247,7 @@
                 </xs:complexType>
             </xs:element>
         </xs:all>
-        <xs:attribute name="enabled" type="xs:boolean" use="required"/>
+        <xs:attribute name="enabled" type="parameterized-boolean" use="required"/>
         <xs:attribute name="name" use="required">
             <xs:simpleType>
                 <xs:restriction base="xs:string"/>
