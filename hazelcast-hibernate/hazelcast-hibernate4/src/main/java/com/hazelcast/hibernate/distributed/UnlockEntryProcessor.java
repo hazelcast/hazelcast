@@ -57,7 +57,7 @@ public class UnlockEntryProcessor extends AbstractRegionCacheEntryProcessor {
                 // in-flight transactions from adding stale values to the cache
                 expirable = new ExpiryMarker(null, timestamp, nextMarkerId).expire(timestamp);
             } else {
-                // else its a different marker. Leave the it as is
+                // It's a different marker. Leave it alone.
                 return null;
             }
             entry.setValue(expirable);
