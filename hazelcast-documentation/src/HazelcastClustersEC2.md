@@ -1,12 +1,16 @@
 
-### EC2 Cloud Auto-discovery
+### Discovering Members by EC2 Cloud
 
-Hazelcast supports EC2 Auto Discovery. It is useful when you do not want or cannot provide the list of possible IP addresses. To configure your cluster to use EC2 Auto Discovery, disable join over multicast and TCP/IP, enable AWS, and provide your credentials (access and secret keys). 
+Hazelcast supports EC2 Auto Discovery. It is useful when you do not want to provide or you cannot provide the list of possible IP addresses. 
 
-You need to add the *hazelcast-cloud.jar* dependency to your project. Note that it is also bundled inside *hazelcast-all.jar*. The Hazelcast cloud module does not depend on any other third party modules.
+To configure your cluster to use EC2 Auto Discovery, set the following configuration elements. Please refer to the [aws element section](#aws-element) for the full description of the EC2 Auto Discovery configuration elements.
+
+- Add the *hazelcast-cloud.jar* dependency to your project. Note that it is also bundled inside *hazelcast-all.jar*. The Hazelcast cloud module does not depend on any other third party modules.
+- Disable join over multicast and TCP/IP: set the `enabled` attribute of the `multicast` element to "false", and set the `enabled` attribute of the `tcp-ip` element to "false".
+- Set the `enabled` attribute of the `aws` element to "true".
+- Within the `aws` element, provide your credentials (access and secret key), your region, etc.
 
 The following is an example declarative configuration.
-
 
 ```xml
 <join>
@@ -25,12 +29,6 @@ The following is an example declarative configuration.
   </aws>
 </join>
 ```  
-
-<br></br>
-***RELATED INFORMATION***
-
-*Please refer to the [aws element section](#aws-element) for the full description of EC2 auto-discovery configuration.*
-<br></br>
 
 #### Debugging
 

@@ -29,7 +29,7 @@ Once nodes are discovered, all the communication between them will be via TCP/IP
 <br></br>
 ***RELATED INFORMATION***
 
-*Please refer to the [Hazelcast Cluster Discovery section](#hazelcast-cluster-discovery) for detailed information.*
+*Please refer to the [Discovering Cluster Members section](#discovering-cluster-members) for detailed information.*
 
 <br></br>
 

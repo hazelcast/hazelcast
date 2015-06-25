@@ -3,13 +3,13 @@
 
 This chapter describes Hazelcast clusters and the ways cluster members use to form a Hazelcast cluster. 
 
-## Hazelcast Cluster Discovery
+## Discovering Cluster Members
 
 A Hazelcast cluster is a network of cluster members that run Hazelcast. Cluster members (also called nodes) automatically join together to form a cluster. This automatic joining takes place with various discovery mechanisms that the cluster members use to find each other. Hazelcast uses the following discovery mechanisms.
 
-- [Multicast Auto-discovery](#multicast-auto-discovery)
-- [Discovery by TCP](#discovery-by-tcp)
-- [EC2 Cloud Auto-discovery](#ec2-cloud-auto-discovery)
+- [Multicast](#discovering-members-by-multicast)
+- [TCP](#discovering-members-by-tcp)
+- [EC2 Cloud](#discovering-members-by-ec2-cloud)
 
 Each discovery mechanism is explained in the following sections.
 

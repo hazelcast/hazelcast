@@ -1,6 +1,6 @@
 ## Creating Cluster Groups
 
-You can create cluster groups. To do this, use the `group` configuration element. 
+You can create cluster groups. To do this, use the `group` configuration element. Please refer to the [group configuration section](#group-configuration) for the full description of the group configuration elements.
 
 By specifying a group name and group password, you can separate your clusters in a simple way. Example groupings can be by *development*, *production*, *test*, *app*, etc. The following is an example declarative configuration.
 
