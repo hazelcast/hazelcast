@@ -85,7 +85,6 @@ public class HazelcastConnectionImpl implements HazelcastConnection {
     private final int id;
 
     public HazelcastConnectionImpl(ManagedConnectionImpl managedConnectionImpl, Subject subject) {
-        super();
         this.managedConnection = managedConnectionImpl;
         id = idGen.incrementAndGet();
     }

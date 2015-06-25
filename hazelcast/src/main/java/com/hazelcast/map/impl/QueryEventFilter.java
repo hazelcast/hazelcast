@@ -34,7 +34,6 @@ public class QueryEventFilter extends EntryEventFilter {
     }
 
     public QueryEventFilter() {
-        super();
     }
 
     public Object getPredicate() {

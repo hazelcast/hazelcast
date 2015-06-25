@@ -30,11 +30,9 @@ public class LoginModuleConfig {
     private Properties properties = new Properties();
 
     public LoginModuleConfig() {
-        super();
     }
 
     public LoginModuleConfig(String className, LoginModuleUsage usage) {
-        super();
         this.className = className;
         this.usage = usage;
     }

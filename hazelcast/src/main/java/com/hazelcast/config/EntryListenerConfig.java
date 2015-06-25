@@ -30,7 +30,6 @@ public class EntryListenerConfig extends ListenerConfig {
     private EntryListenerConfigReadOnly readOnly;
 
     public EntryListenerConfig() {
-        super();
     }
 
     public EntryListenerConfig(String className, boolean local, boolean includeValue) {

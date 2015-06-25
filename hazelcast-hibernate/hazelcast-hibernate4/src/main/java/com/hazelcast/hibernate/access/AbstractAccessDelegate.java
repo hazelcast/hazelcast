@@ -41,7 +41,6 @@ public abstract class AbstractAccessDelegate<T extends HazelcastRegion> implemen
     protected final Comparator<Object> versionComparator;
 
     protected AbstractAccessDelegate(final T hazelcastRegion, final Properties props) {
-        super();
         this.hazelcastRegion = hazelcastRegion;
         log = hazelcastRegion.getLogger();
         if (hazelcastRegion instanceof AbstractTransactionalDataRegion) {

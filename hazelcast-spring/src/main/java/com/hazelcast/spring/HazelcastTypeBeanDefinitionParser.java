@@ -34,7 +34,6 @@ public class HazelcastTypeBeanDefinitionParser extends AbstractHazelcastBeanDefi
     private final String methodName;
 
     public HazelcastTypeBeanDefinitionParser(final String type) {
-        super();
         this.type = type;
         this.methodName = "get" + Character.toUpperCase(type.charAt(0)) + type.substring(1);
     }

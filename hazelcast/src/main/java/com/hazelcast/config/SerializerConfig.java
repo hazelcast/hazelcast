@@ -32,7 +32,6 @@ public class SerializerConfig {
     private String typeClassName;
 
     public SerializerConfig() {
-        super();
     }
 
     /**

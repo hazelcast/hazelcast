@@ -64,7 +64,6 @@ public class SerializationConfig {
     private Set<ClassDefinition> classDefinitions;
 
     public SerializationConfig() {
-        super();
     }
 
     /**

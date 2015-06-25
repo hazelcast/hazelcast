@@ -33,7 +33,6 @@ public class TCKMBeanServerBuilder
         extends MBeanServerBuilder {
 
     public TCKMBeanServerBuilder() {
-        super();
     }
 
     @Override

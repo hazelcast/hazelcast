@@ -51,7 +51,6 @@ class ByteArrayObjectDataInput extends InputStream implements BufferObjectDataIn
     }
 
     ByteArrayObjectDataInput(byte[] data, int offset, SerializationService service, ByteOrder byteOrder) {
-        super();
         this.data = data;
         this.size = data != null ? data.length : 0;
         this.service = service;

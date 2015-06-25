@@ -35,7 +35,6 @@ public class CombinerResultList<E> extends ArrayList<E>
         implements IdentifiedDataSerializable {
 
     public CombinerResultList() {
-        super();
     }
 
     public CombinerResultList(Collection<? extends E> c) {
