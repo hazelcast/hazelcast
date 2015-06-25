@@ -16,6 +16,7 @@
 
 package com.hazelcast.spi.impl.operationservice.impl;
 
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
@@ -31,8 +32,8 @@ import com.hazelcast.quorum.impl.QuorumServiceImpl;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Notifier;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.OperationResponseHandler;
 import com.hazelcast.spi.ReadonlyOperation;
-import com.hazelcast.spi.ResponseHandler;
 import com.hazelcast.spi.WaitSupport;
 import com.hazelcast.spi.exception.CallerNotMemberException;
 import com.hazelcast.spi.exception.PartitionMigratingException;
@@ -48,9 +49,10 @@ import com.hazelcast.util.ExceptionUtil;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 
+import static com.hazelcast.spi.Operation.CALL_ID_LOCAL_SKIPPED;
 import static com.hazelcast.spi.OperationAccessor.setCallerAddress;
 import static com.hazelcast.spi.OperationAccessor.setConnection;
-import static com.hazelcast.spi.impl.ResponseHandlerFactory.setRemoteResponseHandler;
+import static com.hazelcast.spi.impl.OperationResponseHandlerFactory.createEmptyResponseHandler;
 import static com.hazelcast.spi.impl.operationutil.Operations.isJoinOperation;
 import static com.hazelcast.spi.impl.operationutil.Operations.isMigrationOperation;
 import static com.hazelcast.spi.impl.operationutil.Operations.isWanReplicationOperation;
@@ -74,6 +76,8 @@ class OperationRunnerImpl extends OperationRunner {
     // will never be called concurrently.
     private InternalPartition internalPartition;
 
+    private final OperationResponseHandler remoteResponseHandler;
+
     // When partitionId >= 0, it is a partition specific
     // when partitionId = -1, it is generic
     // when partitionId = -2, it is ad hoc
@@ -86,6 +90,7 @@ class OperationRunnerImpl extends OperationRunner {
         this.node = operationService.node;
         this.nodeEngine = operationService.nodeEngine;
         this.executedOperationsCount = operationService.executedOperationsCount;
+        this.remoteResponseHandler = new RemoteInvocationResponseHandler(operationService);
     }
 
     @Override
@@ -151,7 +156,6 @@ class OperationRunnerImpl extends OperationRunner {
         quorumService.ensureQuorumPresent(op);
     }
 
-
     private boolean waitingNeeded(Operation op) {
         if (!(op instanceof WaitSupport)) {
             return false;
@@ -171,7 +175,8 @@ class OperationRunnerImpl extends OperationRunner {
         }
 
         CallTimeoutResponse callTimeoutResponse = new CallTimeoutResponse(op.getCallId(), op.isUrgent());
-        op.getResponseHandler().sendResponse(callTimeoutResponse);
+        OperationResponseHandler responseHandler = op.getOperationResponseHandler();
+        responseHandler.sendResponse(op, callTimeoutResponse);
         return true;
     }
 
@@ -197,11 +202,11 @@ class OperationRunnerImpl extends OperationRunner {
             response = op.getResponse();
         }
 
-        ResponseHandler responseHandler = op.getResponseHandler();
+        OperationResponseHandler responseHandler = op.getOperationResponseHandler();
         if (responseHandler == null) {
             throw new IllegalStateException("ResponseHandler should not be null! " + op);
         }
-        responseHandler.sendResponse(response);
+        responseHandler.sendResponse(op, response);
     }
 
     private void afterRun(Operation op) {
@@ -258,13 +263,13 @@ class OperationRunnerImpl extends OperationRunner {
         }
         operation.logError(e);
 
-        ResponseHandler responseHandler = operation.getResponseHandler();
+        OperationResponseHandler responseHandler = operation.getOperationResponseHandler();
         if (operation.returnsResponse() && responseHandler != null) {
             try {
                 if (node.isActive()) {
-                    responseHandler.sendResponse(e);
+                    responseHandler.sendResponse(operation, e);
                 } else if (responseHandler.isLocal()) {
-                    responseHandler.sendResponse(new HazelcastInstanceNotActiveException());
+                    responseHandler.sendResponse(operation, new HazelcastInstanceNotActiveException());
                 }
             } catch (Throwable t) {
                 logger.warning("While sending op error... op: " + operation + ", error: " + e, t);
@@ -297,7 +302,7 @@ class OperationRunnerImpl extends OperationRunner {
             setCallerAddress(op, caller);
             setConnection(op, connection);
             setCallerUuidIfNotSet(caller, op);
-            setRemoteResponseHandler(nodeEngine, op);
+            setOperationResponseHandler(op);
 
             if (!ensureValidMember(op)) {
                 return;
@@ -318,6 +323,18 @@ class OperationRunnerImpl extends OperationRunner {
                 currentTask = null;
             }
         }
+    }
+
+    private void setOperationResponseHandler(Operation op) {
+        OperationResponseHandler handler = remoteResponseHandler;
+        if (op.getCallId() == 0 || op.getCallId() == CALL_ID_LOCAL_SKIPPED) {
+            if (op.returnsResponse()) {
+                throw new HazelcastException(
+                        "Op: " + op + " can not return response without call-id!");
+            }
+            handler = createEmptyResponseHandler();
+        }
+        op.setOperationResponseHandler(handler);
     }
 
     private boolean ensureValidMember(Operation op) {

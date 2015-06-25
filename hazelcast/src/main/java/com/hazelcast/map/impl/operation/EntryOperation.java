@@ -108,9 +108,8 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
 
     @Override
     public void onWaitExpire() {
-        getResponseHandler().sendResponse(null);
+        sendResponse(null);
     }
-
 
     @Override
     public Object getResponse() {

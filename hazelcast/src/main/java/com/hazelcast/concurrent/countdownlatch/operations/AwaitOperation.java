@@ -54,7 +54,7 @@ public class AwaitOperation extends BaseCountDownLatchOperation implements WaitS
 
     @Override
     public void onWaitExpire() {
-        getResponseHandler().sendResponse(false);
+        sendResponse(false);
     }
 
     @Override

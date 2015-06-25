@@ -22,7 +22,6 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.ResponseHandler;
 
 import javax.transaction.xa.XAException;
 import java.io.IOException;
@@ -53,11 +52,10 @@ public class FinalizeRemoteTransactionOperation extends Operation implements Bac
 
     @Override
     public void run() throws Exception {
-        final ResponseHandler responseHandler = getResponseHandler();
         XAService xaService = getService();
         final List<XATransactionImpl> list = xaService.removeTransactions(xid);
         if (list == null) {
-            responseHandler.sendResponse(getNodeEngine().toData(XAException.XAER_NOTA));
+            sendResponse(getNodeEngine().toData(XAException.XAER_NOTA));
             return;
         }
         final int size = list.size();
@@ -78,7 +76,7 @@ public class FinalizeRemoteTransactionOperation extends Operation implements Bac
 
             void sendResponseIfComplete() {
                 if (size == counter.incrementAndGet()) {
-                    responseHandler.sendResponse(null);
+                    sendResponse(null);
                 }
             }
         };
@@ -86,7 +84,6 @@ public class FinalizeRemoteTransactionOperation extends Operation implements Bac
         for (XATransactionImpl xaTransaction : list) {
             finalizeTransaction(xaTransaction, callback);
         }
-
     }
 
     private void finalizeTransaction(XATransactionImpl xaTransaction, ExecutionCallback callback) {

@@ -66,7 +66,7 @@ public class TxnReserveOfferOperation extends QueueBackupAwareOperation implemen
 
     @Override
     public void onWaitExpire() {
-        getResponseHandler().sendResponse(null);
+        sendResponse(null);
     }
 
     @Override

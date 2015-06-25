@@ -25,7 +25,6 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.ResponseHandler;
 import com.hazelcast.spi.WaitSupport;
 
 import java.io.IOException;
@@ -111,9 +110,8 @@ public class AwaitOperation extends BaseLockOperation
 
         boolean locked = lockStore.lock(key, getCallerUuid(), threadId);
         if (locked) {
-            ResponseHandler responseHandler = getResponseHandler();
             // expired & acquired lock, send FALSE
-            responseHandler.sendResponse(false);
+            sendResponse(false);
         } else {
             // expired but could not acquire lock, no response atm
             lockStore.registerExpiredAwaitOp(this);

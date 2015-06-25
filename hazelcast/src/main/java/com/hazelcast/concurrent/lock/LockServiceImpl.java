@@ -35,7 +35,6 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.spi.PartitionReplicationEvent;
 import com.hazelcast.spi.RemoteService;
-import com.hazelcast.spi.impl.ResponseHandlerFactory;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.scheduler.EntryTaskScheduler;
@@ -49,6 +48,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledExecutorService;
 
+import static com.hazelcast.spi.impl.OperationResponseHandlerFactory.createEmptyResponseHandler;
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
 
 public final class LockServiceImpl implements LockService, ManagedService, RemoteService, MembershipAwareService,
@@ -207,7 +207,7 @@ public final class LockServiceImpl implements LockService, ManagedService, Remot
         op.setNodeEngine(nodeEngine);
         op.setServiceName(SERVICE_NAME);
         op.setService(LockServiceImpl.this);
-        op.setResponseHandler(ResponseHandlerFactory.createEmptyResponseHandler());
+        op.setOperationResponseHandler(createEmptyResponseHandler());
         op.setPartitionId(container.getPartitionId());
         op.setValidateTarget(false);
         nodeEngine.getOperationService().executeOperation(op);

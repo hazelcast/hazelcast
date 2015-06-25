@@ -27,7 +27,6 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.OperationService;
-import com.hazelcast.spi.ResponseHandler;
 import com.hazelcast.spi.impl.AbstractNamedOperation;
 import com.hazelcast.spi.impl.SimpleExecutionCallback;
 
@@ -95,7 +94,7 @@ public class CacheCreateConfigOperation
             if (remoteNodeCount > 0) {
                 postponeReturnResponse();
 
-                ExecutionCallback<Object> callback = new CacheConfigCreateCallback(getResponseHandler(), remoteNodeCount);
+                ExecutionCallback<Object> callback = new CacheConfigCreateCallback(this, remoteNodeCount);
                 OperationService operationService = nodeEngine.getOperationService();
                 for (MemberImpl member : members) {
                     if (!member.localMember()) {
@@ -118,18 +117,18 @@ public class CacheCreateConfigOperation
 
     private static class CacheConfigCreateCallback extends SimpleExecutionCallback<Object> {
 
-        final ResponseHandler responseHandler;
         final AtomicInteger counter;
+        final CacheCreateConfigOperation operation;
 
-        public CacheConfigCreateCallback(ResponseHandler responseHandler, int count) {
-            this.responseHandler = responseHandler;
-            counter = new AtomicInteger(count);
+        public CacheConfigCreateCallback(CacheCreateConfigOperation op, int count) {
+            this.operation = op;
+            this.counter = new AtomicInteger(count);
         }
 
         @Override
         public void notify(Object object) {
             if (counter.decrementAndGet() == 0) {
-                responseHandler.sendResponse(null);
+                operation.sendResponse(null);
             }
         }
     }

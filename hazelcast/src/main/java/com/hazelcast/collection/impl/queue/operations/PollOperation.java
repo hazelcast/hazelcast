@@ -94,7 +94,7 @@ public final class PollOperation extends QueueBackupAwareOperation
 
     @Override
     public void onWaitExpire() {
-        getResponseHandler().sendResponse(null);
+        sendResponse(null);
     }
 
     @Override

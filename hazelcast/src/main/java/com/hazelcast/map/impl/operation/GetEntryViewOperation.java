@@ -26,7 +26,6 @@ import com.hazelcast.map.impl.RecordStore;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.DefaultObjectNamespace;
-import com.hazelcast.spi.ResponseHandler;
 import com.hazelcast.spi.ReadonlyOperation;
 import com.hazelcast.spi.WaitNotifyKey;
 import com.hazelcast.spi.WaitSupport;
@@ -66,8 +65,7 @@ public class GetEntryViewOperation extends KeyBasedMapOperation implements Reado
 
     @Override
     public void onWaitExpire() {
-        ResponseHandler responseHandler = getResponseHandler();
-        responseHandler.sendResponse(new OperationTimeoutException("Cannot read transactionally locked entry!"));
+        sendResponse(new OperationTimeoutException("Cannot read transactionally locked entry!"));
     }
 
     @Override

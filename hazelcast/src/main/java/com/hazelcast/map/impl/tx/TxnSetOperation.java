@@ -29,7 +29,6 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.ResponseHandler;
 import com.hazelcast.spi.WaitNotifyKey;
 import com.hazelcast.transaction.TransactionException;
 
@@ -63,7 +62,6 @@ public class TxnSetOperation extends BasePutOperation implements MapTxnOperation
         return false;
     }
 
-
     @Override
     public void innerBeforeRun() {
         if (!recordStore.canAcquireLock(dataKey, ownerUuid, threadId)) {
@@ -87,10 +85,12 @@ public class TxnSetOperation extends BasePutOperation implements MapTxnOperation
         }
     }
 
+    @Override
     public long getVersion() {
         return version;
     }
 
+    @Override
     public void setVersion(long version) {
         this.version = version;
     }
@@ -105,6 +105,7 @@ public class TxnSetOperation extends BasePutOperation implements MapTxnOperation
         return Boolean.TRUE;
     }
 
+    @Override
     public boolean shouldNotify() {
         return true;
     }
@@ -116,8 +117,7 @@ public class TxnSetOperation extends BasePutOperation implements MapTxnOperation
     }
 
     public void onWaitExpire() {
-        final ResponseHandler responseHandler = getResponseHandler();
-        responseHandler.sendResponse(false);
+        sendResponse(false);
     }
 
     @Override
@@ -141,6 +141,5 @@ public class TxnSetOperation extends BasePutOperation implements MapTxnOperation
         super.readInternal(in);
         version = in.readLong();
         ownerUuid = in.readUTF();
-
     }
 }

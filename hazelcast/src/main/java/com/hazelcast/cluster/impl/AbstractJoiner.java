@@ -27,7 +27,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
-import com.hazelcast.spi.impl.ResponseHandlerFactory;
+import com.hazelcast.spi.impl.OperationResponseHandlerFactory;
 import com.hazelcast.util.Clock;
 
 import java.util.ArrayList;
@@ -40,6 +40,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 
+import static com.hazelcast.spi.impl.OperationResponseHandlerFactory.*;
 import static com.hazelcast.util.FutureUtil.ExceptionHandler;
 import static com.hazelcast.util.FutureUtil.logAllExceptions;
 import static com.hazelcast.util.FutureUtil.waitWithDeadline;
@@ -239,7 +240,7 @@ public abstract class AbstractJoiner implements Joiner {
 
         final PrepareMergeOperation prepareMergeOperation = new PrepareMergeOperation(targetAddress);
         prepareMergeOperation.setNodeEngine(node.nodeEngine).setService(node.getClusterService())
-                .setResponseHandler(ResponseHandlerFactory.createEmptyResponseHandler());
+                .setOperationResponseHandler(createEmptyResponseHandler());
         operationService.runOperationOnCallingThread(prepareMergeOperation);
 
 
@@ -253,7 +254,7 @@ public abstract class AbstractJoiner implements Joiner {
 
         final MergeClustersOperation mergeClustersOperation = new MergeClustersOperation(targetAddress);
         mergeClustersOperation.setNodeEngine(node.nodeEngine).setService(node.getClusterService())
-                .setResponseHandler(ResponseHandlerFactory.createEmptyResponseHandler());
+                .setOperationResponseHandler(createEmptyResponseHandler());
         operationService.runOperationOnCallingThread(mergeClustersOperation);
     }
 

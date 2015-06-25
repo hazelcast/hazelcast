@@ -25,8 +25,8 @@ import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationAccessor;
+import com.hazelcast.spi.OperationResponseHandler;
 import com.hazelcast.spi.OperationService;
-import com.hazelcast.spi.ResponseHandler;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.util.ArrayList;
@@ -218,10 +218,10 @@ class BasicRecordStoreLoader implements RecordStoreLoader {
         final NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
         final Operation operation = new PutFromLoadAllOperation(name, keyValueSequence);
         operation.setNodeEngine(nodeEngine);
-        operation.setResponseHandler(new ResponseHandler() {
+        operation.setOperationResponseHandler(new OperationResponseHandler() {
             @Override
-            public void sendResponse(Object obj) {
-                if (finishedBatchCounter.decrementAndGet() == 0) {
+            public void sendResponse(Operation op, Object obj) {
+                 if (finishedBatchCounter.decrementAndGet() == 0) {
                     loaded.set(true);
                 }
             }

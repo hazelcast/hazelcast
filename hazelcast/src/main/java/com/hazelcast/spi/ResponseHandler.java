@@ -19,7 +19,10 @@ package com.hazelcast.spi;
 /**
  * A handler for the {@link com.hazelcast.spi.OperationService} when it has calculated a response. This way you can hook
  * into the system and decide what to do with it: for example, send it to the right machine.
+ *
+ * This interface is deprecated since Hazelcast 3.6. Use {@link OperationResponseHandler} instead.
  */
+@Deprecated
 public interface ResponseHandler {
 
     void sendResponse(Object obj);

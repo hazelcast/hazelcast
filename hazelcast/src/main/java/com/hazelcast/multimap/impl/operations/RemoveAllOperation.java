@@ -28,7 +28,7 @@ import java.util.Collection;
 
 public class RemoveAllOperation extends MultiMapBackupAwareOperation {
 
-    Collection<MultiMapRecord> coll;
+    private Collection<MultiMapRecord> coll;
 
     public RemoveAllOperation() {
     }
@@ -37,12 +37,14 @@ public class RemoveAllOperation extends MultiMapBackupAwareOperation {
         super(name, dataKey, threadId);
     }
 
+    @Override
     public void run() throws Exception {
         MultiMapContainer container = getOrCreateContainer();
-        coll = remove(getResponseHandler().isLocal());
+        coll = remove(getOperationResponseHandler().isLocal());
         response = new MultiMapResponse(coll, getValueCollectionType(container));
     }
 
+    @Override
     public void afterRun() throws Exception {
         if (coll != null) {
             getOrCreateContainer().update();
@@ -52,20 +54,24 @@ public class RemoveAllOperation extends MultiMapBackupAwareOperation {
         }
     }
 
+    @Override
     public boolean shouldBackup() {
         return coll != null;
     }
 
+    @Override
     public Operation getBackupOperation() {
         return new RemoveAllBackupOperation(name, dataKey);
     }
 
+    @Override
     public void onWaitExpire() {
         MultiMapContainer container = getOrCreateContainer();
         MultiMapConfig.ValueCollectionType valueCollectionType = getValueCollectionType(container);
-        getResponseHandler().sendResponse(new MultiMapResponse(null, valueCollectionType));
+        sendResponse(new MultiMapResponse(null, valueCollectionType));
     }
 
+    @Override
     public int getId() {
         return MultiMapDataSerializerHook.REMOVE_ALL;
     }

@@ -25,6 +25,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.partition.MigrationInfo;
 import com.hazelcast.spi.Notifier;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.OperationResponseHandler;
 import com.hazelcast.spi.WaitNotifyKey;
 import com.hazelcast.spi.WaitNotifyService;
 import com.hazelcast.spi.WaitSupport;
@@ -200,7 +201,8 @@ public class WaitNotifyServiceImpl implements InternalWaitNotifyService {
                         waitingOp.setValid(false);
                         PartitionMigratingException pme = new PartitionMigratingException(thisAddress,
                                 partitionId, op.getClass().getName(), op.getServiceName());
-                        op.getResponseHandler().sendResponse(pme);
+                        OperationResponseHandler responseHandler = op.getOperationResponseHandler();
+                        responseHandler.sendResponse(op, pme);
                         it.remove();
                     }
                 }
@@ -241,7 +243,8 @@ public class WaitNotifyServiceImpl implements InternalWaitNotifyService {
                     // only for local invocations, remote ones will be expired via #onMemberLeft()
                     if (thisAddress.equals(op.getCallerAddress())) {
                         try {
-                            op.getResponseHandler().sendResponse(response);
+                            OperationResponseHandler responseHandler = op.getOperationResponseHandler();
+                            responseHandler.sendResponse(op, response);
                         } catch (Exception e) {
                             logger.finest("While sending HazelcastInstanceNotActiveException response...", e);
                         }

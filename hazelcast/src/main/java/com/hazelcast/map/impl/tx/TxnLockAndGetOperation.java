@@ -17,13 +17,13 @@
 package com.hazelcast.map.impl.tx;
 
 import com.hazelcast.map.impl.operation.LockAwareOperation;
-import com.hazelcast.spi.impl.MutatingOperation;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.ResponseHandler;
+import com.hazelcast.spi.impl.MutatingOperation;
 import com.hazelcast.transaction.TransactionException;
+
 import java.io.IOException;
 
 /**
@@ -59,8 +59,7 @@ public class TxnLockAndGetOperation extends LockAwareOperation implements Mutati
 
     @Override
     public void onWaitExpire() {
-        final ResponseHandler responseHandler = getResponseHandler();
-        responseHandler.sendResponse(null);
+        sendResponse(null);
     }
 
     @Override

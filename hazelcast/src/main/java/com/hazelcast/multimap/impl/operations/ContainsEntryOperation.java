@@ -31,11 +31,9 @@ import java.io.IOException;
 
 public class ContainsEntryOperation extends MultiMapOperation implements WaitSupport {
 
-    Data key;
-
-    Data value;
-
-    long threadId;
+    private Data key;
+    private Data value;
+    private long threadId;
 
     public ContainsEntryOperation() {
     }
@@ -53,6 +51,7 @@ public class ContainsEntryOperation extends MultiMapOperation implements WaitSup
         this.threadId = threadId;
     }
 
+    @Override
     public void run() throws Exception {
         MultiMapContainer container = getOrCreateContainer();
         ((MultiMapService) getService()).getLocalMultiMapStatsImpl(name).incrementOtherOperations();
@@ -73,6 +72,7 @@ public class ContainsEntryOperation extends MultiMapOperation implements WaitSup
         this.threadId = threadId;
     }
 
+    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeLong(threadId);
@@ -80,6 +80,7 @@ public class ContainsEntryOperation extends MultiMapOperation implements WaitSup
         out.writeData(value);
     }
 
+    @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         threadId = in.readLong();
@@ -87,6 +88,7 @@ public class ContainsEntryOperation extends MultiMapOperation implements WaitSup
         value = in.readData();
     }
 
+    @Override
     public int getId() {
         return MultiMapDataSerializerHook.CONTAINS_ENTRY;
     }
@@ -110,6 +112,6 @@ public class ContainsEntryOperation extends MultiMapOperation implements WaitSup
 
     @Override
     public void onWaitExpire() {
-        getResponseHandler().sendResponse(new OperationTimeoutException("Cannot read transactionally locked entry!"));
+        sendResponse(new OperationTimeoutException("Cannot read transactionally locked entry!"));
     }
 }
