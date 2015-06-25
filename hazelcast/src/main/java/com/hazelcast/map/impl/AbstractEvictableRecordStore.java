@@ -31,6 +31,7 @@ import java.util.NoSuchElementException;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.map.impl.ExpirationTimeSetter.calculateExpirationWithDelay;
+import static com.hazelcast.map.impl.ExpirationTimeSetter.calculateMaxIdleMillis;
 import static com.hazelcast.map.impl.ExpirationTimeSetter.setExpirationTime;
 
 /**
@@ -43,12 +44,6 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
      * A nice number such as 2^n - 1.
      */
     private static final int POST_READ_CHECK_POINT = 63;
-
-    /**
-     * Flag for checking if this record store has at least one candidate entry
-     * for expiration (idle or tll) or not.
-     */
-    private volatile boolean expirable;
 
     /**
      * Iterates over a pre-set entry count/percentage in one round.
@@ -72,27 +67,29 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
      */
     private long lastEvictionTime;
 
-    private final boolean evictionEnabled;
-
-    private final long minEvictionCheckMillis;
-
-    private final EvictionPolicy evictionPolicy;
-
-    private final long backupExpiryDelayMillis;
+    private volatile boolean hasEntryWithCustomTTL;
 
     protected AbstractEvictableRecordStore(MapContainer mapContainer, int partitionId) {
         super(mapContainer, partitionId);
-        final MapConfig mapConfig = mapContainer.getMapConfig();
-        this.minEvictionCheckMillis = mapConfig.getMinEvictionCheckMillis();
-        this.evictionPolicy = mapContainer.getMapConfig().getEvictionPolicy();
-        this.evictionEnabled = !EvictionPolicy.NONE.equals(evictionPolicy);
-        this.expirable = isRecordStoreExpirable();
-        this.backupExpiryDelayMillis = getBackupExpiryDelayMillis();
     }
 
+    public boolean isEvictionEnabled() {
+        EvictionPolicy evictionPolicy = getEvictionPolicy();
+        return !EvictionPolicy.NONE.equals(evictionPolicy);
+    }
+
+    private EvictionPolicy getEvictionPolicy() {
+        MapConfig mapConfig = mapContainer.getMapConfig();
+        return mapConfig.getEvictionPolicy();
+    }
+
+    /**
+     * Returns {@code true} if this record store has at least one candidate entry
+     * for expiration (idle or tll) otherwise returns {@code false}.
+     */
     private boolean isRecordStoreExpirable() {
         final MapConfig mapConfig = mapContainer.getMapConfig();
-        return mapConfig.getMaxIdleSeconds() > 0
+        return hasEntryWithCustomTTL || mapConfig.getMaxIdleSeconds() > 0
                 || mapConfig.getTimeToLiveSeconds() > 0;
     }
 
@@ -129,7 +126,7 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
 
     @Override
     public boolean isExpirable() {
-        return expirable;
+        return isRecordStoreExpirable();
     }
 
     /**
@@ -186,7 +183,7 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
      * @param now now in time.
      */
     public void evictEntries(long now, boolean backup) {
-        if (evictionEnabled) {
+        if (isEvictionEnabled()) {
             cleanUp(now, backup);
         }
     }
@@ -198,7 +195,7 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
      * @param now now.
      */
     protected void postReadCleanUp(long now, boolean backup) {
-        if (evictionEnabled) {
+        if (isEvictionEnabled()) {
             readCountBeforeCleanUp++;
             if ((readCountBeforeCleanUp & POST_READ_CHECK_POINT) == 0) {
                 cleanUp(now, backup);
@@ -225,7 +222,7 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
     }
 
     protected boolean shouldEvict(long now) {
-        return evictionEnabled && inEvictableTimeWindow(now) && isEvictable();
+        return isEvictionEnabled() && inEvictableTimeWindow(now) && isEvictable();
     }
 
     private void removeEvictableRecords(boolean backup) {
@@ -256,14 +253,20 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
 
 
     /**
-     * Eviction waits at least {@link #minEvictionCheckMillis} milliseconds to run.
+     * Eviction waits at least {@link MapConfig#minEvictionCheckMillis} milliseconds to run.
      *
      * @return <code>true</code> if in that time window,
      * otherwise <code>false</code>
      */
     private boolean inEvictableTimeWindow(long now) {
+        long minEvictionCheckMillis = getMinEvictionCheckMillis();
         return minEvictionCheckMillis == 0L
                 || (now - lastEvictionTime) > minEvictionCheckMillis;
+    }
+
+    private long getMinEvictionCheckMillis() {
+        MapConfig mapConfig = mapContainer.getMapConfig();
+        return mapConfig.getMinEvictionCheckMillis();
     }
 
     private boolean isEvictable() {
@@ -274,7 +277,7 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
 
     protected void markRecordStoreExpirable(long ttl) {
         if (ttl > 0L) {
-            expirable = true;
+            hasEntryWithCustomTTL = true;
         }
     }
 
@@ -288,7 +291,7 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
      * @return null if evictable.
      */
     protected Record getOrNullIfExpired(Record record, long now, boolean backup) {
-        if (!expirable) {
+        if (!isRecordStoreExpirable()) {
             return record;
         }
         if (record == null) {
@@ -321,9 +324,9 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         }
         // lastAccessTime : updates on every touch (put/get).
         final long lastAccessTime = record.getLastAccessTime();
-        final long maxIdleMillis = mapContainer.getMaxIdleMillis();
+        final long maxIdleMillis = calculateMaxIdleMillis(mapContainer.getMapConfig());
         final long idleMillis = calculateExpirationWithDelay(maxIdleMillis,
-                backupExpiryDelayMillis, backup);
+                getBackupExpiryDelayMillis(), backup);
         final long elapsedMillis = now - lastAccessTime;
         return elapsedMillis >= idleMillis ? null : record;
     }
@@ -339,7 +342,7 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         }
         final long lastUpdateTime = record.getLastUpdateTime();
         final long ttlMillis = calculateExpirationWithDelay(ttl,
-                backupExpiryDelayMillis, backup);
+                getBackupExpiryDelayMillis(), backup);
         final long elapsedMillis = now - lastUpdateTime;
         return elapsedMillis >= ttlMillis ? null : record;
     }
@@ -376,9 +379,9 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
     @Override
     protected void accessRecord(Record record, long now) {
         super.accessRecord(record, now);
-        increaseRecordEvictionCriteriaNumber(record, evictionPolicy);
+        increaseRecordEvictionCriteriaNumber(record, getEvictionPolicy());
 
-        final long maxIdleMillis = mapContainer.getMaxIdleMillis();
+        final long maxIdleMillis = calculateMaxIdleMillis(mapContainer.getMapConfig());
         setExpirationTime(record, maxIdleMillis);
     }
 
