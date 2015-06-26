@@ -19,7 +19,7 @@ We need to have all these sessions backed up somewhere if we do not want to lose
 
 -   Session objects that need to be clustered have to be Serializable.
 
--   In client-server architecture session classes doesn't have to present in server classpath.
+-   In the client/server architecture, session classes does not have to be present in the server classpath.
 
 Here are the steps to setup Hazelcast Session Clustering:
 
@@ -201,7 +201,7 @@ As before, you must also define `com.hazelcast.web.SessionListener` in your `web
 #### Client Mode vs. P2P Mode
 
 Hazelcast Session Replication works as P2P by default. To switch to Client/Server architecture, you need to set the `use-client` parameter to **true**. P2P mode is more flexible and requires no configuration in advance; in Client/Server architecture, clients need to connect to an existing Hazelcast Cluster. In case of connection problems, clients will try to reconnect to the cluster. The default retry count is 3.
-In client server architecture, if servers goes down, hazelcast web manager will keep updates in local and after servers come back, clients will update distributed map.
+In the client/server architecture, if servers goes down, Hazelcast web manager will keep the updates in the local and after servers come back, the clients will update the distributed map.
 
 #### Caching Locally with `deferred-write`
 
@@ -251,10 +251,11 @@ Hazelcast holds whole session attributes in a distributed map and in a local HTT
 
 #### transient-attributes
 
-If you have some attributes and you don't want to make distributed those attributes, you can mark those attributes as transient.
-Transient attributes are kept in and when server is shutdown you lost the attribute values.
-You can make transient attributes settings in your web.xml file.
+If you have some attributes that you do not want them to be distributed, you can mark those attributes as transient.
+Transient attributes are kept in and when the server is shutdown, you lost the attribute values.
+You can set the transient attributes in your `web.xml` file.
 Here is an example:
+
 ```
 ...
    <init-param>
