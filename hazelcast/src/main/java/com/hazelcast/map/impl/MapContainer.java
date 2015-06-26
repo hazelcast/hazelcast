@@ -77,10 +77,6 @@ public class MapContainer {
 
     private volatile MapConfig mapConfig;
 
-    private final long maxIdleMillis;
-
-    private final long ttlMillisFromConfig;
-
     private final String name;
 
     private final String quorumName;
@@ -101,8 +97,6 @@ public class MapContainer {
     public MapContainer(final String name, final MapConfig mapConfig, final MapServiceContext mapServiceContext) {
         this.name = name;
         this.mapConfig = mapConfig;
-        this.maxIdleMillis = calculateMaxIdleMillis(mapConfig);
-        this.ttlMillisFromConfig = calculateTTLMillis(mapConfig);
         this.mapServiceContext = mapServiceContext;
         this.partitioningStrategy = createPartitioningStrategy();
         this.quorumName = mapConfig.getQuorumName();
@@ -202,11 +196,11 @@ public class MapContainer {
         record.setLastUpdateTime(now);
         record.setCreationTime(now);
 
-        final long ttlMillisFromConfig = getTtlMillisFromConfig();
+        final long ttlMillisFromConfig = calculateTTLMillis(mapConfig);
         final long ttl = pickTTL(ttlMillis, ttlMillisFromConfig);
         record.setTtl(ttl);
 
-        final long maxIdleMillis = getMaxIdleMillis();
+        final long maxIdleMillis = calculateMaxIdleMillis(mapConfig);
         setExpirationTime(record, maxIdleMillis);
         return record;
     }
@@ -254,14 +248,6 @@ public class MapContainer {
 
     public void setMapConfig(MapConfig mapConfig) {
         this.mapConfig = mapConfig;
-    }
-
-    public long getMaxIdleMillis() {
-        return maxIdleMillis;
-    }
-
-    public long getTtlMillisFromConfig() {
-        return ttlMillisFromConfig;
     }
 
     public String getName() {

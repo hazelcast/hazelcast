@@ -114,7 +114,7 @@ final class ExpirationTimeSetter {
     /**
      * Updates records TTL and expiration time.
      */
-    public static void updateExpiryTime(Record record, long ttl, long maxIdleMillis) {
+    public static void updateExpiryTime(Record record, long ttl, MapConfig mapConfig) {
 
         // Preserve previously set TTL, if TTL < 0.
         if (ttl < 0) {
@@ -125,6 +125,7 @@ final class ExpirationTimeSetter {
 
         record.setTtl(ttl);
 
+        long maxIdleMillis = calculateMaxIdleMillis(mapConfig);
         setExpirationTime(record, maxIdleMillis);
     }
 
