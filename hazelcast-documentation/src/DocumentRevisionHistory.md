@@ -22,7 +22,7 @@
 |[Chapter 12 - Hazelcast JCache](#hazelcast-jcache)|[JCache Near Cache](#jcache-near-cache)|Added as a new section explaining the invalidation concept, eviction policies and configuration of JCache's near cache feature.|
 |[Chapter 13 - Integrated Clustering](#integrated-clustering)||Added introduction paragraphs.|
 ||[Tomcat Based Web Session Replication](#tomcat-based-web-session-replication)|Updated the Overview paragraph to include the support for Tomcat 8.
-||[Web Session Replication](#web-session-replication)|[transient-attributes](#transient-attributes) Added as a new section.|
+||[Web Session Replication](#web-session-replication)|[transient-attributes](#transient-attributes) added as a new section.|
 |[Chapter 14 - Storage](#storage)|[Sizing Practices](#sizing-practices)|Added as a new section.|
 |[Chapter 15 - Hazelcast Java Client](#hazelcast-java-client)||Separated from the formerly known "Clients" chapter to be a chapter of its own.|
 |||Added an important note related to the new Java Client library in the chapter introduction.
