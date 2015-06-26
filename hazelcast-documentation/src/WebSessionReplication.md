@@ -19,6 +19,8 @@ We need to have all these sessions backed up somewhere if we do not want to lose
 
 -   Session objects that need to be clustered have to be Serializable.
 
+-   In client-server architecture session classes doesn't have to present in server classpath.
+
 Here are the steps to setup Hazelcast Session Clustering:
 
 -	Put the `hazelcast` and `hazelcast-wm` jars in your `WEB-INF/lib` directory. Optionally, if you wish to connect to a cluster as a client, add `hazelcast-client` as well.
@@ -199,6 +201,7 @@ As before, you must also define `com.hazelcast.web.SessionListener` in your `web
 #### Client Mode vs. P2P Mode
 
 Hazelcast Session Replication works as P2P by default. To switch to Client/Server architecture, you need to set the `use-client` parameter to **true**. P2P mode is more flexible and requires no configuration in advance; in Client/Server architecture, clients need to connect to an existing Hazelcast Cluster. In case of connection problems, clients will try to reconnect to the cluster. The default retry count is 3.
+In client server architecture, if servers goes down, hazelcast web manager will keep updates in local and after servers come back, clients will update distributed map.
 
 #### Caching Locally with `deferred-write`
 
@@ -206,7 +209,7 @@ If the value for `deferred-write` is set as **true**, Hazelcast will cache the s
 
 **Important note about `deferred-write=false` setting**:
 
-If `deferred-write` is **false**, you will not have a local attribute cache as mentioned above. In this case, any update (i.e. `setAttribute`) on the session will directly be available in the cluster. One exception to this behavior is the changes to the session attribute objects. To update an attribute cluster-wide, `setAttribute` must be called after changes are made to the attribute object.
+If `deferred-write` is **false**, any update (i.e. `setAttribute`) on the session will directly be available in the cluster. One exception to this behavior is the changes to the session attribute objects. To update an attribute cluster-wide, `setAttribute` must be called after changes are made to the attribute object.
 
 The following example explains how to update an attribute in the case of `deferred-write=false` setting: 
 
@@ -246,6 +249,18 @@ Hazelcast holds whole session attributes in a distributed map and in a local HTT
 
 - To overcome the performance penalty of sending invalidation messages during updates, you can use sticky sessions. If Hazelcast knows sessions are sticky, invalidation will not be sent because Hazelcast assumes there is no other local session at the moment. When a server is down, requests belonging to a session hold in that server will routed to other server, and that server will fetch session data from clustered cache. That means, using sticky sessions, one will not suffer the  performance penalty of accessing clustered data and can benefit recover from a server failure.
 
+#### transient-attributes
 
-
+If you have some attributes and you don't want to make distributed those attributes, you can mark those attributes as transient.
+Transient attributes are kept in and when server is shutdown you lost the attribute values.
+You can make transient attributes settings in your web.xml file.
+Here is an example:
+```
+...
+   <init-param>
+            <param-name>transient-attributes</param-name>
+            <param-value>key1,key2,key3</param-value>
+   </init-param>
+...
+```
 <br></br>
