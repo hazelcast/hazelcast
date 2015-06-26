@@ -86,7 +86,9 @@ public class ClientConfig {
      */
     private int executorPoolSize = -1;
 
-    private ConfigPatternMatcher configPatternMatcher = new MatchingPointConfigPatternMatcher();
+    private String instanceName;
+
+	private ConfigPatternMatcher configPatternMatcher = new MatchingPointConfigPatternMatcher();
 
     private Map<String, NearCacheConfig> nearCacheConfigMap = new ConcurrentHashMap<String, NearCacheConfig>();
 
@@ -676,4 +678,13 @@ public class ClientConfig {
         }
         return null;
     }
+
+    public String getInstanceName() {
+		return instanceName;
+	}
+
+	public void setInstanceName(String instanceName) {
+		this.instanceName = instanceName;
+	}
+
 }

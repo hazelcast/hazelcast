@@ -142,9 +142,13 @@ public class ClientCacheConfigTest {
         clientConfig.getGroupConfig().setName("cluster1");
         clientConfig.getGroupConfig().setPassword("cluster1pass");
 
+        String instanceName = "ClientInstanceTest";
+        clientConfig.setInstanceName(instanceName);
+        
         HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
-        String instanceName = client.getName();
 
+        assetEquals("ClientInstanceTest", client.getName());
+        
         URI uri1 = new URI("MY-SCOPE");
         Properties properties = new Properties();
         properties.setProperty(HazelcastCachingProvider.HAZELCAST_INSTANCE_NAME, instanceName);

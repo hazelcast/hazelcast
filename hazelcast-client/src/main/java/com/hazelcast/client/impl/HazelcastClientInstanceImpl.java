@@ -133,7 +133,13 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     public HazelcastClientInstanceImpl(ClientConfig config) {
         this.config = config;
         final GroupConfig groupConfig = config.getGroupConfig();
-        instanceName = "hz.client_" + id + (groupConfig != null ? "_" + groupConfig.getName() : "");
+        
+        if(config.getInstanceName() != null) {
+        	instanceName = config.getInstanceName();
+        } else {
+            instanceName = "hz.client_" + id + (groupConfig != null ? "_" + groupConfig.getName() : "");
+        }
+
         clientExtension = createClientInitializer(config.getClassLoader());
         clientExtension.beforeStart(this);
 
