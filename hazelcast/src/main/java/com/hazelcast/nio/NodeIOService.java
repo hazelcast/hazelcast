@@ -22,7 +22,6 @@ import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.config.SymmetricEncryptionConfig;
 import com.hazelcast.instance.HazelcastThreadGroup;
-import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
 import com.hazelcast.internal.metrics.MetricsRegistry;
@@ -108,13 +107,6 @@ public class NodeIOService implements IOService {
 
     @Override
     public void handleMemberPacket(final Packet packet) {
-        final Address endPoint = packet.getConn().getEndPoint();
-        if (endPoint != null) {
-            final MemberImpl member = node.clusterService.getMember(endPoint);
-            if (member != null) {
-                member.didRead();
-            }
-        }
         packetTransceiver.receive(packet);
     }
 

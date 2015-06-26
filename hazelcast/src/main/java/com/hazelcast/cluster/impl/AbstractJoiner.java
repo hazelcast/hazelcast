@@ -17,18 +17,22 @@
 package com.hazelcast.cluster.impl;
 
 import com.hazelcast.cluster.Joiner;
+import com.hazelcast.cluster.impl.operations.JoinCheckOperation;
+import com.hazelcast.cluster.impl.operations.MemberRemoveOperation;
 import com.hazelcast.cluster.impl.operations.MergeClustersOperation;
 import com.hazelcast.cluster.impl.operations.PrepareMergeOperation;
 import com.hazelcast.config.Config;
-import com.hazelcast.core.Member;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.Connection;
+import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.impl.OperationResponseHandlerFactory;
 import com.hazelcast.util.Clock;
+import com.hazelcast.util.EmptyStatement;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -36,6 +40,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
@@ -46,6 +51,9 @@ import static com.hazelcast.util.FutureUtil.logAllExceptions;
 import static com.hazelcast.util.FutureUtil.waitWithDeadline;
 
 public abstract class AbstractJoiner implements Joiner {
+
+    private static final int SPLIT_BRAIN_CONN_TIMEOUT = 5000;
+    private static final int SPLIT_BRAIN_SLEEP_TIME = 10;
 
     private final ExceptionHandler whileWaitMergeExceptionHandler;
     private final AtomicLong joinStartTime = new AtomicLong(Clock.currentTimeMillis());
@@ -158,63 +166,121 @@ public abstract class AbstractJoiner implements Joiner {
         return (node.getGroupProperties().MAX_WAIT_SECONDS_BEFORE_JOIN.getInteger() + 10) * 1000L;
     }
 
-    boolean shouldMerge(JoinMessage joinRequest) {
-        boolean shouldMerge = false;
-        if (joinRequest != null) {
-            boolean validJoinRequest;
-            try {
-                try {
-                    validJoinRequest = node.getClusterService().validateJoinMessage(joinRequest);
-                } catch (Exception e) {
-                    logger.finest(e.getMessage());
-                    validJoinRequest = false;
-                }
-                if (validJoinRequest) {
-                    for (Member member : node.getClusterService().getMembers()) {
-                        MemberImpl memberImpl = (MemberImpl) member;
-                        if (memberImpl.getAddress().equals(joinRequest.getAddress())) {
-                            if (logger.isFinestEnabled()) {
-                                logger.finest("Should not merge to " + joinRequest.getAddress()
-                                        + ", because it is already member of this cluster.");
-                            }
-                            return false;
-                        }
-                    }
-                    int currentMemberCount = node.getClusterService().getMembers().size();
-                    if (joinRequest.getMemberCount() > currentMemberCount) {
-                        // I should join the other cluster
-                        logger.info(node.getThisAddress() + " is merging to " + joinRequest.getAddress()
-                                + ", because : joinRequest.getMemberCount() > currentMemberCount ["
-                                + (joinRequest.getMemberCount() + " > " + currentMemberCount) + "]");
-                        if (logger.isFinestEnabled()) {
-                            logger.finest(joinRequest.toString());
-                        }
-                        shouldMerge = true;
-                    } else if (joinRequest.getMemberCount() == currentMemberCount) {
-                        // compare the hashes
-                        if (node.getThisAddress().hashCode() > joinRequest.getAddress().hashCode()) {
-                            logger.info(node.getThisAddress() + " is merging to " + joinRequest.getAddress()
-                                    + ", because : node.getThisAddress().hashCode() > joinRequest.address.hashCode() "
-                                    + ", this node member count: " + currentMemberCount);
-                            if (logger.isFinestEnabled()) {
-                                logger.finest(joinRequest.toString());
-                            }
-                            shouldMerge = true;
-                        } else {
-                            if (logger.isFinestEnabled()) {
-                                logger.finest(joinRequest.getAddress() + " should merge to this node "
-                                        + ", because : node.getThisAddress().hashCode() < joinRequest.address.hashCode() "
-                                        + ", this node member count: " + currentMemberCount);
-                            }
-                        }
-                    }
-                }
-            } catch (Throwable e) {
-                logger.severe(e);
+    boolean shouldMerge(JoinMessage joinMessage) {
+        if (joinMessage == null) {
+            return false;
+        }
+
+        ClusterServiceImpl clusterService = node.getClusterService();
+        try {
+            boolean validJoinRequest = clusterService.validateJoinMessage(joinMessage);
+            if (!validJoinRequest) {
+                logger.finest("Cannot process split brain merge message from " + joinMessage.getAddress()
+                        + ", since join-message could not be validated.");
                 return false;
             }
+        } catch (Exception e) {
+            logger.finest(e.getMessage());
+            return false;
         }
-        return shouldMerge;
+
+        try {
+            if (clusterService.getMember(joinMessage.getAddress()) != null) {
+                if (logger.isFinestEnabled()) {
+                    logger.finest("Should not merge to " + joinMessage.getAddress()
+                            + ", because it is already member of this cluster.");
+                }
+                return false;
+            }
+
+            Collection<Address> targetMemberAddresses = joinMessage.getMemberAddresses();
+            if (targetMemberAddresses.contains(node.getThisAddress())) {
+                node.nodeEngine.getOperationService()
+                        .send(new MemberRemoveOperation(node.getThisAddress()), joinMessage.getAddress());
+                logger.info(node.getThisAddress() + " CANNOT merge to " + joinMessage.getAddress()
+                    + ", because it thinks this-node as its member.");
+                return false;
+            }
+
+            Collection<Address> thisMemberAddresses = clusterService.getMemberAddresses();
+            for (Address address : thisMemberAddresses) {
+                if (targetMemberAddresses.contains(address)) {
+                    logger.info(node.getThisAddress() + " CANNOT merge to " + joinMessage.getAddress()
+                            + ", because it thinks " + address + " as its member. "
+                            + "But " + address + " is member of this cluster.");
+                    return false;
+                }
+            }
+
+            int currentMemberCount = clusterService.getSize();
+            if (joinMessage.getMemberCount() > currentMemberCount) {
+                // I should join the other cluster
+                logger.info(node.getThisAddress() + " is merging to " + joinMessage.getAddress()
+                        + ", because : joinMessage.getMemberCount() > currentMemberCount ["
+                        + (joinMessage.getMemberCount() + " > " + currentMemberCount) + "]");
+                if (logger.isFinestEnabled()) {
+                    logger.finest(joinMessage.toString());
+                }
+                return true;
+            } else if (joinMessage.getMemberCount() == currentMemberCount) {
+                // compare the hashes
+                if (node.getThisAddress().hashCode() > joinMessage.getAddress().hashCode()) {
+                    logger.info(node.getThisAddress() + " is merging to " + joinMessage.getAddress()
+                            + ", because : node.getThisAddress().hashCode() > joinMessage.address.hashCode() "
+                            + ", this node member count: " + currentMemberCount);
+                    if (logger.isFinestEnabled()) {
+                        logger.finest(joinMessage.toString());
+                    }
+                    return true;
+                } else {
+                    logger.info(joinMessage.getAddress() + " should merge to this node "
+                            + ", because : node.getThisAddress().hashCode() < joinMessage.address.hashCode() "
+                            + ", this node member count: " + currentMemberCount);
+                }
+            } else {
+                logger.info(joinMessage.getAddress() + " should merge to this node "
+                        + ", because : currentMemberCount > joinMessage.getMemberCount() ["
+                        + (currentMemberCount + " > " + joinMessage.getMemberCount()) + "]");
+            }
+        } catch (Throwable e) {
+            logger.severe(e);
+        }
+        return false;
+    }
+
+    JoinMessage sendSplitBrainJoinMessage(Address target) {
+        if (logger.isFinestEnabled()) {
+            logger.finest(node.getThisAddress() + " is connecting to " + target);
+        }
+
+        Connection conn = node.connectionManager.getOrConnect(target, true);
+        int timeout = SPLIT_BRAIN_CONN_TIMEOUT;
+        while (conn == null) {
+            if ((timeout -= SPLIT_BRAIN_SLEEP_TIME) < 0) {
+                return null;
+            }
+            try {
+                //noinspection BusyWait
+                Thread.sleep(SPLIT_BRAIN_SLEEP_TIME);
+            } catch (InterruptedException e) {
+                EmptyStatement.ignore(e);
+                return null;
+            }
+            conn = node.connectionManager.getConnection(target);
+        }
+
+        NodeEngine nodeEngine = node.nodeEngine;
+        Future f = nodeEngine.getOperationService().createInvocationBuilder(ClusterServiceImpl.SERVICE_NAME,
+                new JoinCheckOperation(node.createSplitBrainJoinMessage()), target)
+                .setTryCount(1).invoke();
+        try {
+            return (JoinMessage) f.get(5, TimeUnit.SECONDS);
+        } catch (TimeoutException e) {
+            logger.finest("Timeout during join check!", e);
+        } catch (Exception e) {
+            logger.warning("Error during join check!", e);
+        }
+        return null;
     }
 
     @Override

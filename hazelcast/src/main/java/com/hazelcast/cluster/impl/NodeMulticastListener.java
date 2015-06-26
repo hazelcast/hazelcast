@@ -21,6 +21,8 @@ import com.hazelcast.core.Member;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.Packet;
+
 import java.util.Set;
 
 import static com.hazelcast.util.AddressUtil.matchAnyInterface;
@@ -69,10 +71,8 @@ public class NodeMulticastListener implements MulticastListener {
         }
 
         if (node.isMaster()) {
-            JoinRequest request = (JoinRequest) joinMessage;
-            JoinMessage response = new JoinMessage(request.getPacketVersion(), request.getBuildNumber(),
-                    node.getThisAddress(), request.getUuid(), request.getConfigCheck(),
-                    node.getClusterService().getSize());
+            JoinMessage response = new JoinMessage(Packet.VERSION, node.getBuildInfo().getBuildNumber(),
+                    node.getThisAddress(), node.localMember.getUuid(), node.createConfigCheck());
             node.multicastService.send(response);
         } else if (isMasterNode(joinMessage.getAddress()) && !checkMasterUuid(joinMessage.getUuid())) {
             logger.warning("New join request has been received from current master. "

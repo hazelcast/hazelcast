@@ -16,7 +16,6 @@
 
 package com.hazelcast.spi.impl.packettransceiver.impl;
 
-import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
@@ -65,10 +64,6 @@ public class PacketTransceiverImpl implements PacketTransceiver {
     public boolean transmit(Packet packet, Connection connection) {
         if (connection == null || !connection.isAlive()) {
             return false;
-        }
-        final MemberImpl memberImpl = node.getClusterService().getMember(connection.getEndPoint());
-        if (memberImpl != null) {
-            memberImpl.didWrite();
         }
         return connection.write(packet);
     }

@@ -21,7 +21,6 @@ import com.hazelcast.cluster.impl.AbstractJoiner;
 import com.hazelcast.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.AddressPicker;
-import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.NodeContext;
 import com.hazelcast.nio.Address;
@@ -387,10 +386,6 @@ public final class TestNodeRegistry {
             final Packet packet = (Packet) socketWritable;
             if (nodeEngine.getNode().isActive()) {
                 Packet newPacket = readFromPacket(packet);
-                MemberImpl member = nodeEngine.getClusterService().getMember(localEndpoint);
-                if (member != null) {
-                    member.didRead();
-                }
                 nodeEngine.getPacketTransceiver().receive(newPacket);
                 return true;
             }

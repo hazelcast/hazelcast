@@ -20,6 +20,7 @@ import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.cluster.Joiner;
 import com.hazelcast.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.cluster.impl.ConfigCheck;
+import com.hazelcast.cluster.impl.JoinMessage;
 import com.hazelcast.cluster.impl.JoinRequest;
 import com.hazelcast.cluster.impl.MulticastJoiner;
 import com.hazelcast.cluster.impl.MulticastService;
@@ -91,7 +92,7 @@ public class Node {
 
     public final ClientEngineImpl clientEngine;
 
-    public final InternalPartitionService partitionService;
+    public final InternalPartitionServiceImpl partitionService;
 
     public final ClusterServiceImpl clusterService;
 
@@ -389,11 +390,6 @@ public class Node {
         setMasterAddress(null);
         joined.set(false);
         joiner.reset();
-        final String uuid = createMemberUuid(address);
-        if (logger.isFinestEnabled()) {
-            logger.finest("Generated new UUID for local member: " + uuid);
-        }
-        localMember.setUuid(uuid);
     }
 
     public ILogger getLogger(String name) {
@@ -459,8 +455,9 @@ public class Node {
         joined.set(true);
     }
 
-    public JoinRequest createJoinRequest() {
-        return createJoinRequest(false);
+    public JoinMessage createSplitBrainJoinMessage() {
+        return new JoinMessage(Packet.VERSION, buildInfo.getBuildNumber(), address, localMember.getUuid(),
+                createConfigCheck(), clusterService.getMemberAddresses());
     }
 
     public JoinRequest createJoinRequest(boolean withCredentials) {
@@ -468,7 +465,7 @@ public class Node {
                 ? securityContext.getCredentialsFactory().newCredentials() : null;
 
         return new JoinRequest(Packet.VERSION, buildInfo.getBuildNumber(), address,
-                localMember.getUuid(), createConfigCheck(), credentials, clusterService.getSize(), 0,
+                localMember.getUuid(), createConfigCheck(), credentials,
                 config.getMemberAttributeConfig().getAttributes());
     }
 
