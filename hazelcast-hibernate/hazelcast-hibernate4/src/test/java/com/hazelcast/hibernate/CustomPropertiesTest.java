@@ -31,7 +31,6 @@ import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
 import org.hibernate.cfg.Environment;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -47,8 +46,6 @@ import static org.junit.Assert.assertTrue;
 public class CustomPropertiesTest extends HibernateTestSupport {
 
     @Test
-    //TODO this ignore will be removed after requests deleted
-    @Ignore
     public void testNativeClient() throws Exception {
         HazelcastInstance main = Hazelcast.newHazelcastInstance(new ClasspathXmlConfig("hazelcast-custom.xml"));
         Properties props = getDefaultProperties();
