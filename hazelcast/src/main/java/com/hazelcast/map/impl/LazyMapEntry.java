@@ -38,11 +38,10 @@ public class LazyMapEntry implements Map.Entry {
 
     private Object keyObject;
     private Object valueObject;
-    private transient Data keyData;
-    private transient Data valueData;
-
-    private transient boolean modified;
-    private transient SerializationService serializationService;
+    private Data keyData;
+    private Data valueData;
+    private boolean modified;
+    private SerializationService serializationService;
 
     public LazyMapEntry() {
     }
