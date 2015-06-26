@@ -22,10 +22,10 @@ import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
+import com.hazelcast.map.impl.LazyMapEntry;
 import com.hazelcast.map.impl.LocalMapStatsProvider;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapEntrySet;
-import com.hazelcast.map.impl.MapEntrySimple;
 import com.hazelcast.map.impl.MapEventPublisher;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
@@ -76,8 +76,8 @@ abstract class AbstractMultipleEntryOperation extends AbstractMapOperation imple
     }
 
 
-    protected Map.Entry createMapEntry(Object key, Object value) {
-        return new MapEntrySimple(key, value);
+    protected Map.Entry createMapEntry(Data key, Object value) {
+        return new LazyMapEntry(key, value, getNodeEngine().getSerializationService());
     }
 
     protected boolean hasRegisteredListenerForThisMap() {
@@ -119,7 +119,7 @@ abstract class AbstractMultipleEntryOperation extends AbstractMapOperation imple
             if (oldValue == null) {
                 return EntryEventType.ADDED;
             }
-            final MapEntrySimple mapEntrySimple = (MapEntrySimple) entry;
+            final LazyMapEntry mapEntrySimple = (LazyMapEntry) entry;
             if (mapEntrySimple.isModified()) {
                 return EntryEventType.UPDATED;
             }
@@ -132,7 +132,7 @@ abstract class AbstractMultipleEntryOperation extends AbstractMapOperation imple
      * Entry has not exist and no add operation has been done.
      */
     protected boolean noOp(Map.Entry entry, Object oldValue) {
-        final MapEntrySimple mapEntrySimple = (MapEntrySimple) entry;
+        final LazyMapEntry mapEntrySimple = (LazyMapEntry) entry;
         return !mapEntrySimple.isModified() || (oldValue == null && entry.getValue() == null);
     }
 

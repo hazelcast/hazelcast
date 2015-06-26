@@ -62,14 +62,11 @@ public class PartitionWideEntryOperation extends AbstractMultipleEntryOperation 
             final Data dataKey = record.getKey();
             final Object oldValue = record.getValue();
 
-            final Object key = toObject(dataKey);
-            final Object value = toObject(oldValue);
-
-            if (!applyPredicate(dataKey, key, value)) {
+            if (!applyPredicate(dataKey, dataKey, oldValue)) {
                 continue;
             }
 
-            final Map.Entry entry = createMapEntry(key, value);
+            final Map.Entry entry = createMapEntry(dataKey, oldValue);
 
             final Data response = process(entry);
 

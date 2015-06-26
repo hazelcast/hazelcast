@@ -620,7 +620,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
 
         public Object process(Map.Entry entry) {
             entry.setValue(null);
-            return entry;
+            return null;
         }
     }
 
