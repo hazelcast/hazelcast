@@ -168,6 +168,16 @@ public interface EventService {
      */
     void publishEvent(String serviceName, Collection<EventRegistration> registrations, Object event, int orderKey);
 
+    /**
+     * Publishes an event for multiple event registrations, excluding local ones.
+     *
+     * @param serviceName service name
+     * @param registrations multiple event registrations
+     * @param event event object
+     * @param orderKey order key
+     */
+    void publishRemoteEvent(String serviceName, Collection<EventRegistration> registrations, Object event, int orderKey);
+
 
     /**
      * Executes an event callback on a random event thread.
