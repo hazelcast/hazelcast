@@ -27,11 +27,6 @@ import static org.junit.Assert.assertTrue;
 @Category(QuickTest.class)
 public class DurableSubscriptionTest extends HazelcastTestSupport {
 
-    @Before
-    public void setup(){
-        setLogLevel(Level.DEBUG);
-    }
-
     @Test
     public void testDurableSubscription() {
         HazelcastInstance local = createHazelcastInstance();
