@@ -21,7 +21,6 @@ import com.hazelcast.config.ListConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IAtomicLong;
 import com.hazelcast.core.IList;
-import com.hazelcast.test.AbstractHazelcastClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.Before;
 import org.junit.Test;
@@ -509,6 +508,14 @@ public abstract class ListBasicTest extends HazelcastTestSupport {
             Object o = iterator.next();
             assertEquals(o, "item" + i++);
         }
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testIterator_throwsException_whenRemove() {
+        addItems(10);
+        ListIterator iterator = list.listIterator();
+        iterator.next();
+        iterator.remove();
     }
 
     @Test
