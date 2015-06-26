@@ -25,6 +25,7 @@ import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.QueryEntry;
 import com.hazelcast.spi.BackupOperation;
+
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.Map;
@@ -48,13 +49,10 @@ public class PartitionWideEntryBackupOperation extends AbstractMultipleEntryOper
             final Data dataKey = record.getKey();
             final Object oldValue = record.getValue();
 
-            final Object key = toObject(dataKey);
-            final Object value = toObject(oldValue);
-
-            if (!applyPredicate(dataKey, key, value)) {
+            if (!applyPredicate(dataKey, dataKey, oldValue)) {
                 continue;
             }
-            final Map.Entry entry = createMapEntry(key, value);
+            final Map.Entry entry = createMapEntry(dataKey, oldValue);
 
             processBackup(entry);
 
