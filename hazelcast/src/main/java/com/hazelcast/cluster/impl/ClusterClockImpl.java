@@ -47,6 +47,10 @@ public class ClusterClockImpl implements ClusterClock {
         this.clusterTimeDiff = diff;
     }
 
+    void reset() {
+        this.clusterTimeDiff = Long.MAX_VALUE;
+    }
+
     @Probe(name = "clusterTimeDiff")
     @Override
     public long getClusterTimeDiff() {

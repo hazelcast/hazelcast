@@ -20,20 +20,36 @@ import com.hazelcast.cluster.impl.ClusterDataSerializerHook;
 import com.hazelcast.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+
+import java.io.IOException;
 
 public final class HeartbeatOperation extends AbstractClusterOperation
         implements JoinOperation, IdentifiedDataSerializable {
+
+    private long timestamp;
+
+    public HeartbeatOperation() {
+    }
+
+    public HeartbeatOperation(long timestamp) {
+        this.timestamp = timestamp;
+    }
 
     @Override
     public void run() {
         ClusterServiceImpl service = getService();
         MemberImpl member = service.getMember(getCallerAddress());
-        ILogger logger = getLogger();
-        if (logger.isFinestEnabled()) {
-            logger.finest("Heartbeat received from " + (member != null ? member : getCallerAddress()));
+        if (member == null) {
+            ILogger logger = getLogger();
+            if (logger.isFinestEnabled()) {
+                logger.finest("Heartbeat received from an unknown endpoint: " + getCallerAddress());
+            }
+            return;
         }
-        service.onHeartbeat(member);
+        service.onHeartbeat(member, timestamp);
     }
 
     @Override
@@ -44,5 +60,17 @@ public final class HeartbeatOperation extends AbstractClusterOperation
     @Override
     public int getId() {
         return ClusterDataSerializerHook.HEARTBEAT;
+    }
+
+    @Override
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
+        super.writeInternal(out);
+        out.writeLong(timestamp);
+    }
+
+    @Override
+    protected void readInternal(ObjectDataInput in) throws IOException {
+        super.readInternal(in);
+        timestamp = in.readLong();
     }
 }
