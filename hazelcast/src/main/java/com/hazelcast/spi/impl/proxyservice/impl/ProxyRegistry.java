@@ -86,7 +86,7 @@ public final class ProxyRegistry {
     /**
      * Checks if the ProxyRegistry contains the given key.
      *
-     * @param name         name of the key
+     * @param name name of the key
      * @return true if the ProxyRegistry contains the key, false otherwise.
      */
     boolean contains(String name) {
@@ -101,7 +101,7 @@ public final class ProxyRegistry {
     /**
      * Gets the ProxyInfo of all proxies in this registry. The result is written into 'result'.
      *
-     * @param result  The ProxyInfo of all proxies in this registry.
+     * @param result The ProxyInfo of all proxies in this registry.
      */
     public void getProxyInfos(Collection<ProxyInfo> result) {
         for (Map.Entry<String, DistributedObjectFuture> entry : proxies.entrySet()) {
@@ -120,7 +120,7 @@ public final class ProxyRegistry {
     /**
      * Gets the DistributedObjects in this registry. The result is written into 'result'.
      *
-     * @param result  The DistributedObjects in this registry.
+     * @param result The DistributedObjects in this registry.
      */
     public void getDistributedObjects(Collection<DistributedObject> result) {
         Collection<DistributedObjectFuture> futures = proxies.values();
@@ -246,7 +246,7 @@ public final class ProxyRegistry {
         EventService eventService = proxyService.nodeEngine.getEventService();
         Collection<EventRegistration> registrations = eventService.getRegistrations(
                 ProxyServiceImpl.SERVICE_NAME, ProxyServiceImpl.SERVICE_NAME);
-        eventService.publishEvent(ProxyServiceImpl.SERVICE_NAME, registrations, event, event.getName().hashCode());
+        eventService.publishRemoteEvent(ProxyServiceImpl.SERVICE_NAME, registrations, event, event.getName().hashCode());
     }
 
     /**
