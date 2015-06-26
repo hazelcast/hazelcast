@@ -21,9 +21,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.InterfacesConfig;
 import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.TcpIpConfig;
-import com.hazelcast.core.Member;
 import com.hazelcast.instance.GroupProperties;
-import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
@@ -493,40 +491,26 @@ public class TcpIpJoiner extends AbstractJoiner {
 
     @Override
     public void searchForOtherClusters() {
-        final Collection<Address> colPossibleAddresses;
+        final Collection<Address> possibleAddresses;
         try {
-            colPossibleAddresses = getPossibleAddresses();
+            possibleAddresses = getPossibleAddresses();
         } catch (Throwable e) {
             logger.severe(e);
             return;
         }
-        colPossibleAddresses.remove(node.getThisAddress());
-        for (Member member : node.getClusterService().getMembers()) {
-            colPossibleAddresses.remove(((MemberImpl) member).getAddress());
-        }
-        if (colPossibleAddresses.isEmpty()) {
+        possibleAddresses.remove(node.getThisAddress());
+        possibleAddresses.removeAll(node.getClusterService().getMemberAddresses());
+
+        if (possibleAddresses.isEmpty()) {
             return;
         }
-        for (Address possibleAddress : colPossibleAddresses) {
-            if (logger.isFinestEnabled()) {
-                logger.finest(node.getThisAddress() + " is connecting to " + possibleAddress);
-            }
-            node.connectionManager.getOrConnect(possibleAddress, true);
-            try {
-                //noinspection BusyWait
-                Thread.sleep(1500);
-            } catch (InterruptedException e) {
+        for (Address address : possibleAddresses) {
+            JoinMessage response = sendSplitBrainJoinMessage(address);
+            if (shouldMerge(response)) {
+                logger.warning(node.getThisAddress() + " is merging [tcp/ip] to " + address);
+                setTargetAddress(address);
+                startClusterMerge(address);
                 return;
-            }
-            final Connection conn = node.connectionManager.getConnection(possibleAddress);
-            if (conn != null) {
-                final JoinRequest response = node.clusterService.checkJoinInfo(possibleAddress);
-                if (response != null && shouldMerge(response)) {
-                    logger.warning(node.getThisAddress() + " is merging [tcp/ip] to " + possibleAddress);
-                    setTargetAddress(possibleAddress);
-                    startClusterMerge(possibleAddress);
-                    return;
-                }
             }
         }
     }

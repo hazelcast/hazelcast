@@ -119,7 +119,8 @@ public class TcpIpConnectionManager implements ConnectionManager {
     // accessed only in synchronized block
     private volatile Thread socketAcceptorThread;
 
-    private IOBalancer ioBalancer;
+    private volatile IOBalancer ioBalancer;
+
     private final LoggingService loggingService;
 
     public TcpIpConnectionManager(IOService ioService, ServerSocketChannel serverSocketChannel,
@@ -325,7 +326,8 @@ public class TcpIpConnectionManager implements ConnectionManager {
 
         connection.start();
 
-        log(Level.INFO, "Established socket connection between " + channel.socket().getLocalSocketAddress());
+        log(Level.INFO, "Established socket connection between "
+                + channel.socket().getLocalSocketAddress() + " and " + channel.socket().getRemoteSocketAddress());
 
         return connection;
     }
@@ -419,6 +421,10 @@ public class TcpIpConnectionManager implements ConnectionManager {
         if (live) {
             return;
         }
+        if (!serverSocketChannel.isOpen()) {
+            throw new IllegalStateException("ConnectionManager is already shutdown. Cannot start!");
+        }
+
         live = true;
         log(Level.FINEST, "Starting ConnectionManager and IO selectors.");
         IOSelectorOutOfMemoryHandler oomeHandler = new IOSelectorOutOfMemoryHandler() {
@@ -460,17 +466,7 @@ public class TcpIpConnectionManager implements ConnectionManager {
     }
 
     @Override
-    public synchronized void restart() {
-        stop();
-        start();
-    }
-
-    @Override
     public synchronized void shutdown() {
-        if (!live) {
-            return;
-        }
-        live = false;
         shutdownSocketAcceptor();
         closeServerSocket();
         stop();
@@ -488,7 +484,11 @@ public class TcpIpConnectionManager implements ConnectionManager {
         }
     }
 
-    private void stop() {
+    @Override
+    public synchronized void stop() {
+        if (!live) {
+            return;
+        }
         live = false;
         log(Level.FINEST, "Stopping ConnectionManager");
         ioBalancer.stop();

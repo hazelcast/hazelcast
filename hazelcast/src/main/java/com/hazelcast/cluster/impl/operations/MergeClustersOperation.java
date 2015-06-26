@@ -45,7 +45,7 @@ public class MergeClustersOperation extends AbstractClusterOperation {
         final ILogger logger = node.loggingService.getLogger(this.getClass().getName());
         boolean local = caller == null;
         if (!local && !caller.equals(masterAddress)) {
-            logger.warning("Merge instruction sent from non-master endpoint: " + caller);
+            logger.warning("Ignoring merge instruction sent from non-master endpoint: " + caller);
             return;
         }
         logger.warning(node.getThisAddress() + " is merging to " + newTargetAddress
