@@ -17,7 +17,6 @@
 package com.hazelcast.nio;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.internal.ascii.TextCommandService;
 import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
@@ -27,6 +26,7 @@ import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
 import com.hazelcast.internal.metrics.MetricsRegistry;
+import com.hazelcast.internal.ascii.TextCommandService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
