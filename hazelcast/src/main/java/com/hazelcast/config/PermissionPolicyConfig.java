@@ -31,11 +31,9 @@ public class PermissionPolicyConfig {
     private Properties properties = new Properties();
 
     public PermissionPolicyConfig() {
-        super();
     }
 
     public PermissionPolicyConfig(String className) {
-        super();
         this.className = className;
     }
 

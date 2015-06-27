@@ -139,7 +139,6 @@ public static class OrderDeletionTask
   }
 
   public OrderDeletionTask(long customerId, long orderId) {
-    super();
     this.customerId = customerId;
     this.orderId = orderId;
   }

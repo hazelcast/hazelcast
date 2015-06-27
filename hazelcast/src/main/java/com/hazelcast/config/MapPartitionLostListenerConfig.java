@@ -28,7 +28,6 @@ public class MapPartitionLostListenerConfig
     private MapPartitionLostListenerConfigReadOnly readOnly;
 
     public MapPartitionLostListenerConfig() {
-        super();
     }
 
     public MapPartitionLostListenerConfig(String className) {

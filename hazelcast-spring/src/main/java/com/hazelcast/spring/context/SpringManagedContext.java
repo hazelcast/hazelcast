@@ -31,7 +31,6 @@ public class SpringManagedContext implements ManagedContext, ApplicationContextA
     private AutowireCapableBeanFactory beanFactory;
 
     public SpringManagedContext() {
-        super();
     }
 
     public Object initialize(Object obj) {

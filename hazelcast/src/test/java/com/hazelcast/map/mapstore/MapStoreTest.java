@@ -961,7 +961,6 @@ public class MapStoreTest extends HazelcastTestSupport {
         private AtomicInteger count;
 
         public WaitingOnFirstTestMapStore() {
-            super();
             this.count = new AtomicInteger(0);
         }
 

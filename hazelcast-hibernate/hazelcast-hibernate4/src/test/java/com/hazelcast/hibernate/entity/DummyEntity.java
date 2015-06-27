@@ -34,11 +34,9 @@ public class DummyEntity {
     private Set<DummyProperty> properties;
 
     public DummyEntity() {
-        super();
     }
 
     public DummyEntity(long id, String name, double value, Date date) {
-        super();
         this.id = id;
         this.name = name;
         this.value = value;

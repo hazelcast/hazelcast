@@ -30,11 +30,9 @@ public class PermissionConfig {
     private Set<String> actions;
 
     public PermissionConfig() {
-        super();
     }
 
     public PermissionConfig(PermissionType type, String name, String principal) {
-        super();
         this.type = type;
         this.name = name;
         this.principal = principal;

@@ -30,7 +30,6 @@ class NearCacheSizeEstimator
     private volatile long size;
 
     protected NearCacheSizeEstimator() {
-        super();
     }
 
     @Override

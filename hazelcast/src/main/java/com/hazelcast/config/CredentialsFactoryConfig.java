@@ -32,11 +32,9 @@ public class CredentialsFactoryConfig {
     private Properties properties = new Properties();
 
     public CredentialsFactoryConfig() {
-        super();
     }
 
     public CredentialsFactoryConfig(String className) {
-        super();
         this.className = className;
     }
 

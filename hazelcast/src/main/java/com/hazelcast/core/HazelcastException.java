@@ -22,7 +22,6 @@ package com.hazelcast.core;
 public class HazelcastException extends RuntimeException {
 
     public HazelcastException() {
-        super();
     }
 
     public HazelcastException(final String message) {

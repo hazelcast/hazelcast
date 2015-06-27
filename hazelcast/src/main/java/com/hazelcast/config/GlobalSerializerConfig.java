@@ -27,7 +27,6 @@ public class GlobalSerializerConfig {
     private Serializer implementation;
 
     public GlobalSerializerConfig() {
-        super();
     }
 
     public String getClassName() {
