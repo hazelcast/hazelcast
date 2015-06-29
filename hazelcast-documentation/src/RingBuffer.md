@@ -1,11 +1,11 @@
 ## Ringbuffer
 
 The Ringbuffer is a data structure where the data is stored in a ring-like structure. You can think of it as a circular array with a 
-certain capacity. Each Ringbuffer has a tail and a head. The tail is where the items are added and the head is where items get over
-written or expired. Each element in a Ringbuffer can be accessed using a sequence ID, which is mapped to the elements between the head 
+certain capacity. Each Ringbuffer has a tail and a head. The tail is where the items are added and the head is where items are overwritten 
+or expired. You can reach each element in a Ringbuffer using a sequence ID, which is mapped to the elements between the head 
 and tail (inclusive) of the Ringbuffer. 
 
-Reading from the ringbuffer is very simple. Just get the current head and start reading. The 'readOne' returns the item at the 
+Reading from the Ringbuffer is very simple. Just get the current head and start reading. The 'readOne' returns the item at the 
 given sequence or blocks if no item is available. To read the next item, the sequence is incremented by one.
 ```java
 Ringbuffer<String> ringbuffer = hz.getRingbuffer("rb");
