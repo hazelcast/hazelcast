@@ -2,7 +2,7 @@ package com.hazelcast.collection.impl.set;
 
 import com.hazelcast.collection.impl.collection.CollectionItem;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.DefaultSerializationServiceBuilder;
+import com.hazelcast.nio.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.nio.serialization.SerializationServiceBuilder;
 import com.hazelcast.test.HazelcastParallelClassRunner;

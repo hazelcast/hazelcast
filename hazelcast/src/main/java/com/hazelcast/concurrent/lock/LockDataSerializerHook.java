@@ -32,7 +32,7 @@ import com.hazelcast.concurrent.lock.operations.UnlockBackupOperation;
 import com.hazelcast.concurrent.lock.operations.UnlockOperation;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.DataSerializerHook;
-import com.hazelcast.nio.serialization.FactoryIdHelper;
+import com.hazelcast.nio.serialization.impl.FactoryIdHelper;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 public final class LockDataSerializerHook implements DataSerializerHook {

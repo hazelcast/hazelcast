@@ -6,7 +6,7 @@ import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.nio.BufferObjectDataInput;
 import com.hazelcast.nio.BufferObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.DefaultSerializationServiceBuilder;
+import com.hazelcast.nio.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.nio.serialization.SerializationServiceBuilder;
 import com.hazelcast.test.HazelcastParallelClassRunner;

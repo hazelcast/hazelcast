@@ -21,7 +21,7 @@ import com.hazelcast.mapreduce.impl.client.ClientJobProcessInformationRequest;
 import com.hazelcast.mapreduce.impl.client.ClientMapReduceRequest;
 import com.hazelcast.mapreduce.impl.task.TransferableJobProcessInformation;
 import com.hazelcast.nio.serialization.ClassDefinition;
-import com.hazelcast.nio.serialization.FactoryIdHelper;
+import com.hazelcast.nio.serialization.impl.FactoryIdHelper;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.nio.serialization.PortableHook;

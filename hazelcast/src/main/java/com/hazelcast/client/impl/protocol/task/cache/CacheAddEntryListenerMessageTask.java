@@ -27,7 +27,7 @@ import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.DefaultData;
+import com.hazelcast.nio.serialization.impl.DefaultData;
 
 import java.security.Permission;
 import java.util.Set;

@@ -31,7 +31,7 @@ import com.hazelcast.concurrent.atomicreference.operations.SetBackupOperation;
 import com.hazelcast.concurrent.atomicreference.operations.SetOperation;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.DataSerializerHook;
-import com.hazelcast.nio.serialization.FactoryIdHelper;
+import com.hazelcast.nio.serialization.impl.FactoryIdHelper;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 public final class AtomicReferenceDataSerializerHook implements DataSerializerHook {

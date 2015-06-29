@@ -22,7 +22,7 @@ import com.hazelcast.executor.impl.client.PartitionTargetCallableRequest;
 import com.hazelcast.executor.impl.client.ShutdownRequest;
 import com.hazelcast.executor.impl.client.SpecificTargetCallableRequest;
 import com.hazelcast.nio.serialization.ClassDefinition;
-import com.hazelcast.nio.serialization.FactoryIdHelper;
+import com.hazelcast.nio.serialization.impl.FactoryIdHelper;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.nio.serialization.PortableHook;

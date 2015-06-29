@@ -17,7 +17,7 @@
 package com.hazelcast.partition;
 
 import com.hazelcast.nio.serialization.ClassDefinition;
-import com.hazelcast.nio.serialization.FactoryIdHelper;
+import com.hazelcast.nio.serialization.impl.FactoryIdHelper;
 import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.nio.serialization.PortableHook;
 

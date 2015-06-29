@@ -5,7 +5,7 @@ import com.hazelcast.client.impl.protocol.codec.MapPutCodec;
 import com.hazelcast.client.impl.protocol.util.ClientProtocolBuffer;
 import com.hazelcast.client.impl.protocol.util.SafeBuffer;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.DefaultSerializationServiceBuilder;
+import com.hazelcast.nio.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;

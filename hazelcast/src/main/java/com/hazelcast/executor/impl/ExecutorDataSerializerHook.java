@@ -20,7 +20,7 @@ import com.hazelcast.executor.impl.operations.CallableTaskOperation;
 import com.hazelcast.executor.impl.operations.MemberCallableTaskOperation;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.DataSerializerHook;
-import com.hazelcast.nio.serialization.FactoryIdHelper;
+import com.hazelcast.nio.serialization.impl.FactoryIdHelper;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 public class ExecutorDataSerializerHook implements DataSerializerHook {

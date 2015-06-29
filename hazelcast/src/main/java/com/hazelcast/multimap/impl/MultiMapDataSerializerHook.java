@@ -45,10 +45,10 @@ import com.hazelcast.multimap.impl.txn.TxnRemoveBackupOperation;
 import com.hazelcast.multimap.impl.txn.TxnRemoveOperation;
 import com.hazelcast.multimap.impl.txn.TxnRollbackBackupOperation;
 import com.hazelcast.multimap.impl.txn.TxnRollbackOperation;
-import com.hazelcast.nio.serialization.ArrayDataSerializableFactory;
+import com.hazelcast.nio.serialization.impl.ArrayDataSerializableFactory;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.DataSerializerHook;
-import com.hazelcast.nio.serialization.FactoryIdHelper;
+import com.hazelcast.nio.serialization.impl.FactoryIdHelper;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.util.ConstructorFunction;
 

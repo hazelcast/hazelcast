@@ -40,22 +40,27 @@ public class ObjectDataOutputStream extends OutputStream implements ObjectDataOu
         this.byteOrder = serializationService.getByteOrder();
     }
 
+    @Override
     public void write(int b) throws IOException {
         dataOut.write(b);
     }
 
+    @Override
     public void write(byte[] b, int off, int len) throws IOException {
         dataOut.write(b, off, len);
     }
 
+    @Override
     public void writeBoolean(boolean v) throws IOException {
         dataOut.writeBoolean(v);
     }
 
+    @Override
     public void writeByte(int v) throws IOException {
         dataOut.writeByte(v);
     }
 
+    @Override
     public void writeShort(int v) throws IOException {
         if (bigEndian()) {
             dataOut.writeShort(v);
@@ -64,6 +69,7 @@ public class ObjectDataOutputStream extends OutputStream implements ObjectDataOu
         }
     }
 
+    @Override
     public void writeChar(int v) throws IOException {
         if (bigEndian()) {
             dataOut.writeChar(v);
@@ -72,6 +78,7 @@ public class ObjectDataOutputStream extends OutputStream implements ObjectDataOu
         }
     }
 
+    @Override
     public void writeInt(int v) throws IOException {
         if (bigEndian()) {
             dataOut.writeInt(v);
@@ -80,6 +87,7 @@ public class ObjectDataOutputStream extends OutputStream implements ObjectDataOu
         }
     }
 
+    @Override
     public void writeLong(long v) throws IOException {
         if (bigEndian()) {
             dataOut.writeLong(v);
@@ -88,6 +96,7 @@ public class ObjectDataOutputStream extends OutputStream implements ObjectDataOu
         }
     }
 
+    @Override
     public void writeFloat(float v) throws IOException {
         if (bigEndian()) {
             dataOut.writeFloat(v);
@@ -96,6 +105,7 @@ public class ObjectDataOutputStream extends OutputStream implements ObjectDataOu
         }
     }
 
+    @Override
     public void writeDouble(double v) throws IOException {
         if (bigEndian()) {
             dataOut.writeDouble(v);
@@ -104,10 +114,12 @@ public class ObjectDataOutputStream extends OutputStream implements ObjectDataOu
         }
     }
 
+    @Override
     public void writeBytes(String s) throws IOException {
         dataOut.writeBytes(s);
     }
 
+    @Override
     public void writeChars(String s) throws IOException {
         int len = s.length();
         for (int i = 0; i < len; i++) {
@@ -116,6 +128,7 @@ public class ObjectDataOutputStream extends OutputStream implements ObjectDataOu
         }
     }
 
+    @Override
     public void writeByteArray(byte[] bytes) throws IOException {
         int len = (bytes == null) ? 0 : bytes.length;
         writeInt(len);
@@ -124,6 +137,7 @@ public class ObjectDataOutputStream extends OutputStream implements ObjectDataOu
         }
     }
 
+    @Override
     public void writeCharArray(char[] chars) throws IOException {
         int len = chars != null ? chars.length : 0;
         writeInt(len);
@@ -134,6 +148,7 @@ public class ObjectDataOutputStream extends OutputStream implements ObjectDataOu
         }
     }
 
+    @Override
     public void writeIntArray(int[] ints) throws IOException {
         int len = ints != null ? ints.length : 0;
         writeInt(len);
@@ -144,6 +159,7 @@ public class ObjectDataOutputStream extends OutputStream implements ObjectDataOu
         }
     }
 
+    @Override
     public void writeLongArray(long[] longs) throws IOException {
         int len = longs != null ? longs.length : 0;
         writeInt(len);
@@ -154,6 +170,7 @@ public class ObjectDataOutputStream extends OutputStream implements ObjectDataOu
         }
     }
 
+    @Override
     public void writeDoubleArray(double[] doubles) throws IOException {
         int len = doubles != null ? doubles.length : 0;
         writeInt(len);
@@ -164,6 +181,7 @@ public class ObjectDataOutputStream extends OutputStream implements ObjectDataOu
         }
     }
 
+    @Override
     public void writeFloatArray(float[] floats) throws IOException {
         int len = floats != null ? floats.length : 0;
         writeInt(len);
@@ -174,6 +192,7 @@ public class ObjectDataOutputStream extends OutputStream implements ObjectDataOu
         }
     }
 
+    @Override
     public void writeShortArray(short[] shorts) throws IOException {
         int len = shorts != null ? shorts.length : 0;
         writeInt(len);
@@ -184,6 +203,7 @@ public class ObjectDataOutputStream extends OutputStream implements ObjectDataOu
         }
     }
 
+    @Override
     public void writeUTF(String str) throws IOException {
         if (utfBuffer == null) {
             utfBuffer = new byte[UTF_BUFFER_SIZE];
@@ -191,30 +211,37 @@ public class ObjectDataOutputStream extends OutputStream implements ObjectDataOu
         UTFEncoderDecoder.writeUTF(this, str, utfBuffer);
     }
 
+    @Override
     public void write(byte[] b) throws IOException {
         dataOut.write(b);
     }
 
+    @Override
     public void writeObject(Object object) throws IOException {
         serializationService.writeObject(this, object);
     }
 
+    @Override
     public void writeData(Data data) throws IOException {
         serializationService.writeData(this, data);
     }
 
+    @Override
     public byte[] toByteArray() {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public void flush() throws IOException {
         dataOut.flush();
     }
 
+    @Override
     public void close() throws IOException {
         dataOut.close();
     }
 
+    @Override
     public ByteOrder getByteOrder() {
         return byteOrder;
     }

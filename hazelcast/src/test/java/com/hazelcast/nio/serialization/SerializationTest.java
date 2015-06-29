@@ -29,6 +29,8 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.impl.DefaultData;
+import com.hazelcast.nio.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.spi.OperationAccessor;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;

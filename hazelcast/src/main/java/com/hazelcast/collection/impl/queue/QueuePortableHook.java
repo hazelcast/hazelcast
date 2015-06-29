@@ -16,9 +16,9 @@
 
 package com.hazelcast.collection.impl.queue;
 
-import com.hazelcast.nio.serialization.ArrayPortableFactory;
+import com.hazelcast.nio.serialization.impl.ArrayPortableFactory;
 import com.hazelcast.nio.serialization.ClassDefinition;
-import com.hazelcast.nio.serialization.FactoryIdHelper;
+import com.hazelcast.nio.serialization.impl.FactoryIdHelper;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.nio.serialization.PortableHook;

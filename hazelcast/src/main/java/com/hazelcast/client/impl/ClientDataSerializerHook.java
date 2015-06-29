@@ -19,7 +19,7 @@ package com.hazelcast.client.impl;
 import com.hazelcast.client.impl.client.ClientResponse;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.DataSerializerHook;
-import com.hazelcast.nio.serialization.FactoryIdHelper;
+import com.hazelcast.nio.serialization.impl.FactoryIdHelper;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 /**

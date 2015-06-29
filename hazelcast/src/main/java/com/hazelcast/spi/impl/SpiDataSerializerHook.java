@@ -18,7 +18,7 @@ package com.hazelcast.spi.impl;
 
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.DataSerializerHook;
-import com.hazelcast.nio.serialization.FactoryIdHelper;
+import com.hazelcast.nio.serialization.impl.FactoryIdHelper;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.eventservice.impl.EventPacket;
 import com.hazelcast.spi.impl.operationservice.impl.operations.PartitionIteratingOperation;

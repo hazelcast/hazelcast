@@ -16,6 +16,9 @@
 
 package com.hazelcast.nio.serialization;
 
+import com.hazelcast.nio.serialization.impl.ClassDefinitionImpl;
+import com.hazelcast.nio.serialization.impl.FieldDefinitionImpl;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -164,7 +167,7 @@ public final class ClassDefinitionBuilder {
         return this;
     }
 
-    ClassDefinitionBuilder addField(FieldDefinitionImpl fieldDefinition) {
+    public ClassDefinitionBuilder addField(FieldDefinitionImpl fieldDefinition) {
         check();
         if (index != fieldDefinition.getIndex()) {
             throw new IllegalArgumentException("Invalid field index");
