@@ -363,18 +363,6 @@ public interface HazelcastInstance {
     /**
      *
      * @param serviceName name of the service
-     * @param id identifier of the object
-     * @param <T> type of the DistributedObject
-     * @return DistributedObject created by the service
-     *
-     * @deprecated use {@link #getDistributedObject(String, String)} instead.
-     */
-    @Deprecated
-    <T extends DistributedObject> T getDistributedObject(String serviceName, Object id);
-
-    /**
-     *
-     * @param serviceName name of the service
      * @param name name of the object
      * @param <T> type of the DistributedObject
      * @return DistributedObject created by the service

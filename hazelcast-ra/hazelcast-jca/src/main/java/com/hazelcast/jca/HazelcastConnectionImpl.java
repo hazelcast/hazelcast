@@ -232,12 +232,6 @@ public class HazelcastConnectionImpl implements HazelcastConnection {
     }
 
     @Override
-    @Deprecated
-    public <T extends DistributedObject> T getDistributedObject(String serviceName, Object id) {
-        return getHazelcastInstance().getDistributedObject(serviceName, id);
-    }
-
-    @Override
     public <T extends DistributedObject> T getDistributedObject(String serviceName, String name) {
         return getHazelcastInstance().getDistributedObject(serviceName, name);
     }

@@ -70,8 +70,8 @@ import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.ringbuffer.impl.RingbufferService;
 import com.hazelcast.spi.ProxyService;
 import com.hazelcast.spi.annotation.PrivateApi;
-import com.hazelcast.topic.impl.reliable.ReliableTopicService;
 import com.hazelcast.topic.impl.TopicService;
+import com.hazelcast.topic.impl.reliable.ReliableTopicService;
 import com.hazelcast.transaction.HazelcastXAResource;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionException;
@@ -81,6 +81,7 @@ import com.hazelcast.transaction.TransactionalTask;
 import com.hazelcast.transaction.impl.xa.XAService;
 import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.ExceptionUtil;
+
 import java.util.Collection;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -373,15 +374,6 @@ public class HazelcastInstanceImpl implements HazelcastInstance {
     @Override
     public void shutdown() {
         getLifecycleService().shutdown();
-    }
-
-    @Override
-    @Deprecated
-    public <T extends DistributedObject> T getDistributedObject(String serviceName, Object id) {
-        if (id instanceof String) {
-            return (T) node.nodeEngine.getProxyService().getDistributedObject(serviceName, (String) id);
-        }
-        throw new IllegalArgumentException("'id' must be type of String!");
     }
 
     @Override

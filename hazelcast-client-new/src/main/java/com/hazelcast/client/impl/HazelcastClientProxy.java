@@ -236,11 +236,6 @@ public final class HazelcastClientProxy implements HazelcastInstance, Serializat
         return hz != null ? hz.getLifecycleService() : new TerminatedLifecycleService();
     }
 
-    @Deprecated
-    public <T extends DistributedObject> T getDistributedObject(String serviceName, Object id) {
-        return getClient().getDistributedObject(serviceName, id);
-    }
-
     @Override
     public <T extends DistributedObject> T getDistributedObject(String serviceName, String name) {
         return getClient().getDistributedObject(serviceName, name);

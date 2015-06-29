@@ -222,11 +222,6 @@ public final class HazelcastInstanceProxy implements HazelcastInstance, Serializ
     }
 
     @Override
-    public <S extends DistributedObject> S getDistributedObject(String serviceName, Object id) {
-        return getOriginal().getDistributedObject(serviceName, id);
-    }
-
-    @Override
     public <T extends DistributedObject> T getDistributedObject(String serviceName, String name) {
         return getOriginal().getDistributedObject(serviceName, name);
     }
