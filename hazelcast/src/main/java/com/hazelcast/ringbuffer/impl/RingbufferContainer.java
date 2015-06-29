@@ -77,7 +77,7 @@ public class RingbufferContainer implements DataSerializable {
     }
 
     public RingbufferContainer(RingbufferConfig config, SerializationService serializationService) {
-       this(config.getName(), config, serializationService);
+        this(config.getName(), config, serializationService);
     }
 
     public RingbufferContainer(String name, RingbufferConfig config, SerializationService serializationService) {
@@ -162,7 +162,8 @@ public class RingbufferContainer implements DataSerializable {
 
         if (sequence < headSequence) {
             throw new StaleSequenceException("sequence:" + sequence
-                    + " is too small. The current headSequence is:" + headSequence, headSequence);
+                    + " is too small. The current headSequence is:" + headSequence
+                    + " tailSequence is:" + tailSequence, headSequence);
         }
     }
 
@@ -174,7 +175,8 @@ public class RingbufferContainer implements DataSerializable {
 
         if (readSequence < headSequence) {
             throw new StaleSequenceException("sequence:" + readSequence
-                    + " is too small. The current headSequence is:" + headSequence, headSequence);
+                    + " is too small. The current headSequence is:" + headSequence
+                    + " tailSequence is:" + tailSequence, headSequence);
         }
     }
 
