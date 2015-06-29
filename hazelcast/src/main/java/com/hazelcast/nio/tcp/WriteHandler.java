@@ -285,7 +285,7 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
      * @throws Exception
      */
     private void fillOutputBuffer() throws Exception {
-        for (;;) {
+        for (; ; ) {
             if (!outputBuffer.hasRemaining()) {
                 // The buffer is completely filled, we are done.
                 return;
@@ -332,6 +332,11 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
     @Override
     public void requestMigration(IOSelector newOwner) {
         offer(new StartMigrationTask(newOwner));
+    }
+
+    @Override
+    public String toString() {
+        return connection + ".writeHandler";
     }
 
     /**
