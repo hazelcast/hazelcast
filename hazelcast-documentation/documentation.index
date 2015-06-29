@@ -40,7 +40,7 @@ src/Distributed_Data_Structures.md
 	src/MultiMap.md
 	src/Set.md
 	src/List.md
-	src/RingBuffer.md
+	src/Ringbuffer.md
 	src/Topic.md
 		src/TopicStatistics.md
 		src/TopicInternals.md
