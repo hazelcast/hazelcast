@@ -366,13 +366,13 @@ class DefaultWriteBehindProcessor extends AbstractWriteBehindProcessor<DelayedEn
 
     private List<DelayedEntry> retryCall(RetryTask task) {
         boolean result = false;
-        Throwable throwable = null;
+        Exception exception = null;
         int k = 0;
         for (; k < RETRY_TIMES_OF_A_FAILED_STORE_OPERATION; k++) {
             try {
                 result = task.run();
-            } catch (Throwable t) {
-                throwable = t;
+            } catch (Exception ex) {
+                exception = ex;
             }
             if (!result) {
                 sleepSeconds(RETRY_STORE_AFTER_WAIT_SECONDS);
@@ -382,11 +382,14 @@ class DefaultWriteBehindProcessor extends AbstractWriteBehindProcessor<DelayedEn
         }
         // retry occurred.
         if (k > 0) {
-            final String msg = String.format("Store operation failed and retries %s",
-                    result ? "succeeded." : "failed too.");
-            logger.warning(msg, throwable);
             if (!result) {
-                return task.failureList();
+                // List of entries which can not be stored for this round. We will readd these entries
+                // in front of the relevant partition-write-behind-queues and will indefinitely retry to
+                // store them.
+                List failureList = task.failureList();
+                logger.severe("Number of entries which could not be stored is = [" + failureList.size() + "]"
+                        + ", Hazelcast will indefinitely retry to store them", exception);
+                return failureList;
             }
         }
         return Collections.emptyList();
@@ -396,9 +399,7 @@ class DefaultWriteBehindProcessor extends AbstractWriteBehindProcessor<DelayedEn
         if (entries == null || entries.isEmpty()) {
             return;
         }
-        if (entries.size() < 2) {
-            return;
-        }
+
         Collections.sort(entries, DELAYED_ENTRY_COMPARATOR);
     }
 
