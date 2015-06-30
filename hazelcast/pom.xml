@@ -223,7 +223,6 @@
                         </goals>
                         <configuration>
                             <finalName>${project.build.finalName}</finalName>
-                            <createDependencyReducedPom>false</createDependencyReducedPom>
                             <createSourcesJar>true</createSourcesJar>
                             <shadeSourcesContent>true</shadeSourcesContent>
                             <artifactSet>
@@ -256,12 +255,6 @@
             <groupId>javax.cache</groupId>
             <artifactId>cache-tests</artifactId>
             <classifier>tests</classifier>
-            <version>1.0.0</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>javax.cache</groupId>
-            <artifactId>cache-tests</artifactId>
             <version>1.0.0</version>
             <scope>test</scope>
         </dependency>
