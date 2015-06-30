@@ -27,6 +27,8 @@ import java.util.Set;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.TimeUnit;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -148,6 +150,14 @@ public class WanReplicationTest extends HazelcastTestSupport {
         IMap m = node.getMap(mapName);
         for (; start < end; start++) {
             m.put(start, node.getConfig().getGroupConfig().getName() + start);
+        }
+    }
+
+    private void createDataIn(HazelcastInstance[] cluster, String mapName, int start, int end, long ttl, TimeUnit timeUnit) {
+        HazelcastInstance node = getNode(cluster);
+        IMap m = node.getMap(mapName);
+        for (; start < end; start++) {
+          m.put(start, node.getConfig().getGroupConfig().getName() + start, ttl, timeUnit);
         }
     }
 
@@ -302,6 +312,68 @@ public class WanReplicationTest extends HazelcastTestSupport {
         assertKeysNotIn(clusterC, "map", 0, 20);
     }
 
+    @Test
+    public void Entry_TTL_Replication_Issue() {
+        setupReplicateFrom(configA, configB, clusterB.length, "atob", PassThroughMergePolicy.class.getName());
+        setupReplicateFrom(configB, configA, clusterA.length, "btoa", PassThroughMergePolicy.class.getName());
+
+        initClusterA();
+        initClusterB();
+
+        // Create some non-TTL data to be overwritten (full invoking the merge policy),
+        // half the data range from each cluster.
+        createDataIn(clusterA, "map", 0, 5);
+        assertDataInFrom(clusterB, "map", 0, 5, clusterA);
+        createDataIn(clusterB, "map", 10, 15);
+        assertDataInFrom(clusterA, "map", 10, 15, clusterB);
+
+        createDataIn(clusterA, "map", 0, 10, 10, TimeUnit.SECONDS);
+        assertDataInFrom(clusterB, "map", 0, 10, clusterA);
+        createDataIn(clusterB, "map", 10, 20, 10, TimeUnit.SECONDS);
+        assertDataInFrom(clusterA, "map", 10, 20, clusterB);
+
+        // Create some TTL entries that overwrite to out-last the test.
+        createDataIn(clusterA, "map", 8, 10, 1, TimeUnit.HOURS);
+        assertDataInFrom(clusterB, "map", 8, 10, clusterA);
+        createDataIn(clusterB, "map", 18, 20, 1, TimeUnit.HOURS);
+        assertDataInFrom(clusterA, "map", 18, 20, clusterB);
+
+        sleepSeconds(10);
+        assertKeysNotIn(clusterA, "map", 0, 8);
+        assertKeysIn(clusterA, "map", 8, 10);
+        assertKeysNotIn(clusterA, "map", 10, 18);
+        assertKeysIn(clusterA, "map", 18, 20);
+        assertKeysNotIn(clusterB, "map", 0, 8);
+        assertKeysIn(clusterB, "map", 8, 10);
+        assertKeysNotIn(clusterB, "map", 10, 18);
+        assertKeysIn(clusterB, "map", 18, 20);
+    }
+
+    @Test
+    public void EntryWithDefault_TTL_Replication_Issue() {
+      setupReplicateFrom(configA, configB, clusterB.length, "atob", PassThroughMergePolicy.class.getName());
+      setupReplicateFrom(configB, configA, clusterA.length, "btoa", PassThroughMergePolicy.class.getName());
+
+      configA.getMapConfig("default").setTimeToLiveSeconds(5);
+      configB.getMapConfig("default").setTimeToLiveSeconds(5);
+
+      initClusterA();
+      initClusterB();
+
+      // Create some expiring data that will live longer than the default TTL
+      createDataIn(clusterA, "map", 0, 10, 10, TimeUnit.SECONDS);
+      assertDataInFrom(clusterB, "map", 0, 10, clusterA);
+      createDataIn(clusterB, "map", 10, 20, 10, TimeUnit.SECONDS);
+      assertDataInFrom(clusterA, "map", 10, 20, clusterB);
+
+      sleepSeconds(5);
+      assertKeysIn(clusterA, "map", 0, 20);
+      assertKeysIn(clusterB, "map", 0, 20);
+
+      sleepSeconds(5);
+      assertKeysNotIn(clusterA, "map", 0, 20);
+      assertKeysNotIn(clusterB, "map", 0, 20);
+    }
 
     //"Issue #1371 this topology requested hear https://groups.google.com/forum/#!msg/hazelcast/73jJo9W_v4A/5obqKMDQAnoJ")
     @Test
