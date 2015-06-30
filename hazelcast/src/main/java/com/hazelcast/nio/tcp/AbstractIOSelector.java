@@ -195,4 +195,9 @@ public abstract class AbstractIOSelector extends Thread implements IOSelector {
             Thread.currentThread().interrupt();
         }
     }
+
+    @Override
+    public String toString() {
+        return getName();
+    }
 }

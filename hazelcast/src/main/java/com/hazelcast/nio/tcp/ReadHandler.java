@@ -178,6 +178,11 @@ public final class ReadHandler extends AbstractSelectionHandler {
         });
     }
 
+    @Override
+    public String toString() {
+        return connection + ".readHandler";
+    }
+
     private class StartMigrationTask implements Runnable {
         private final IOSelector newOwner;
 
