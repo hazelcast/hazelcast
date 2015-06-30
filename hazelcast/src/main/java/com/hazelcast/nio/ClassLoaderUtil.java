@@ -132,6 +132,37 @@ public final class ClassLoaderUtil {
         return type.getClassLoader() == classLoader && name.startsWith(HAZELCAST_BASE_PACKAGE);
     }
 
+    /**
+     * Tries to load the given class.
+     *
+     * @param className Name of the class to load
+     * @return Loaded class
+     * @throws ClassNotFoundException when the class is not found
+     */
+    public static Class<?> tryLoadClass(String className) throws ClassNotFoundException {
+        try {
+            return Class.forName(className);
+        } catch (ClassNotFoundException e) {
+            ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
+            return contextClassLoader.loadClass(className);
+        }
+    }
+
+    /**
+     * Indicates whether or not the given class exists
+     *
+     * @param className Name of the class
+     * @return {@code true} if the class exists, {@code false} otherwise
+     */
+    public static boolean isClassDefined(String className) {
+        try {
+            tryLoadClass(className);
+            return true;
+        } catch (ClassNotFoundException e) {
+            return false;
+        }
+    }
+
     private static final class ConstructorCache {
         private final ConcurrentMap<ClassLoader, ConcurrentMap<String, WeakReference<Constructor>>> cache;
 

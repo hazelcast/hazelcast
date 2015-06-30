@@ -18,6 +18,7 @@ package com.hazelcast.internal.osgi;
 
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
+import com.hazelcast.nio.ClassLoaderUtil;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 
@@ -245,7 +246,7 @@ public class OSGiScriptEngineManager extends ScriptEngineManager {
     private ClassLoader loadScriptEngineFactoryClassLoader(String factoryName) {
         //We do not really need the class, but we need the classloader
         try {
-            return tryLoadClass(factoryName).getClassLoader();
+            return ClassLoaderUtil.tryLoadClass(factoryName).getClassLoader();
         } catch (ClassNotFoundException cnfe) {
             // may fail if script implementation is not in environment
             logger.warning("Found ScriptEngineFactory candidate for "
@@ -321,43 +322,12 @@ public class OSGiScriptEngineManager extends ScriptEngineManager {
      */
     private void addJavaScriptEngine(List<String> factoryCandidates) {
         //Rhino is available in java < 8, Nashorn is available in java >= 8
-        if (isClassDefined(RHINO_SCRIPT_ENGINE_FACTORY)) {
+        if (ClassLoaderUtil.isClassDefined(RHINO_SCRIPT_ENGINE_FACTORY)) {
             factoryCandidates.add(RHINO_SCRIPT_ENGINE_FACTORY);
-        } else if (isClassDefined(NASHORN_SCRIPT_ENGINE_FACTORY)) {
+        } else if (ClassLoaderUtil.isClassDefined(NASHORN_SCRIPT_ENGINE_FACTORY)) {
             factoryCandidates.add(NASHORN_SCRIPT_ENGINE_FACTORY);
         } else {
             logger.warning("No built-in JavaScript ScriptEngineFactory found.");
-        }
-    }
-
-    /**
-     * Tries to load the given class.
-     *
-     * @param className Name of the class to load
-     * @return Loaded class
-     * @throws ClassNotFoundException when the class is not found
-     */
-    private static Class<?> tryLoadClass(String className) throws ClassNotFoundException {
-        try {
-            return Class.forName(className);
-        } catch (ClassNotFoundException e) {
-            ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
-            return contextClassLoader.loadClass(className);
-        }
-    }
-
-    /**
-     * Indicates whether or not the given class exists
-     *
-     * @param className Name of the class
-     * @return {@code true} if the class exists, {@code false} otherwise
-     */
-    private static boolean isClassDefined(String className) {
-        try {
-            tryLoadClass(className);
-            return true;
-        } catch (ClassNotFoundException e) {
-            return false;
         }
     }
 }
