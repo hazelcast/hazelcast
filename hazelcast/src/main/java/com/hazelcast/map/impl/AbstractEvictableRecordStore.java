@@ -396,7 +396,7 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         final long lastUpdateTime = mergingEntry.getLastUpdateTime();
         record.setLastUpdateTime(lastUpdateTime);
 
-        final long maxIdleMillis = mapContainer.getMaxIdleMillis();
+        final long maxIdleMillis = calculateMaxIdleMillis(mapContainer.getMapConfig());
         setExpirationTime(record, maxIdleMillis);
 
         markRecordStoreExpirable(record.getTtl());
