@@ -18,6 +18,7 @@ package com.hazelcast.map.impl;
 
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.core.EntryView;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.map.impl.eviction.EvictionOperator;
 import com.hazelcast.map.impl.eviction.MaxSizeChecker;
@@ -276,7 +277,7 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
     }
 
     protected void markRecordStoreExpirable(long ttl) {
-        if (ttl > 0L) {
+        if (ttl > 0L && ttl < Long.MAX_VALUE) {
             hasEntryWithCustomTTL = true;
         }
     }
@@ -383,6 +384,22 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
 
         final long maxIdleMillis = calculateMaxIdleMillis(mapContainer.getMapConfig());
         setExpirationTime(record, maxIdleMillis);
+    }
+
+    protected void mergeRecordExpiration(Record record, EntryView mergingEntry) {
+        final long ttlMillis = mergingEntry.getTtl();
+        record.setTtl(ttlMillis);
+
+        final long lastAccessTime = mergingEntry.getLastAccessTime();
+        record.setLastAccessTime(lastAccessTime);
+
+        final long lastUpdateTime = mergingEntry.getLastUpdateTime();
+        record.setLastUpdateTime(lastUpdateTime);
+
+        final long maxIdleMillis = mapContainer.getMaxIdleMillis();
+        setExpirationTime(record, maxIdleMillis);
+
+        markRecordStoreExpirable(record.getTtl());
     }
 
 
