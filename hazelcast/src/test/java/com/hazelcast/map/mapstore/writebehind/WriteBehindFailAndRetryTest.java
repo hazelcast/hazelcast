@@ -16,8 +16,11 @@
 
 package com.hazelcast.map.mapstore.writebehind;
 
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapStoreAdapter;
+import com.hazelcast.core.OutOfMemoryHandler;
+import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -29,6 +32,7 @@ import org.junit.runner.RunWith;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
@@ -88,7 +92,7 @@ public class WriteBehindFailAndRetryTest extends HazelcastTestSupport {
         private final ConcurrentMap<K, V> store = new ConcurrentHashMap<K, V>();
 
         private final TemporarySuccessProducer temporarySuccessProducer
-                = new TemporarySuccessProducer(10);
+                = new TemporarySuccessProducer(4);
 
         @Override
         public void store(K key, V value) {
@@ -133,6 +137,44 @@ public class WriteBehindFailAndRetryTest extends HazelcastTestSupport {
 
         public TemporaryMapStoreException() {
             super("Test exception");
+        }
+    }
+
+
+    @Test
+    public void testOOMHandlerCalled_whenOOMEOccursDuringStoreOperations() throws Exception {
+        LeakyMapStore mapStore = new LeakyMapStore<Integer, Integer>();
+        IMap map = TestMapUsingMapStoreBuilder.create()
+                .withMapStore(mapStore)
+                .withNodeCount(1)
+                .withNodeFactory(createHazelcastInstanceFactory(1))
+                .withWriteDelaySeconds(1)
+                .withPartitionCount(1)
+                .build();
+
+        final CountDownLatch OOMHandlerCalled = new CountDownLatch(1);
+        OutOfMemoryErrorDispatcher.setServerHandler(new OutOfMemoryHandler() {
+            @Override
+            public void onOutOfMemory(OutOfMemoryError oome, HazelcastInstance[] hazelcastInstances) {
+                OOMHandlerCalled.countDown();
+            }
+        });
+
+        // trigger OOM exception creation in map-store call.
+        map.put(1, 2);
+
+        assertOpenEventually("OutOfMemoryHandler should be called", OOMHandlerCalled);
+    }
+
+
+    /**
+     * This map-store causes {@link OutOfMemoryError}.
+     */
+    static class LeakyMapStore<K, V> extends MapStoreAdapter<K, V> {
+
+        @Override
+        public void store(K key, V value) {
+            throw new OutOfMemoryError("Error for testing map-store when OOM exception raised");
         }
     }
 
