@@ -1,12 +1,13 @@
 ## Ringbuffer
 
-Ringbuffer is a distributed data structure where the data is stored in a ring-like structure. You can think of it as a circular array with a 
-certain capacity. Each Ringbuffer has a tail and a head. The tail is where the items are added and the head is where items are overwritten 
+Hazelcast Ringbuffer is a distributed data structure where the data is stored in a ring-like structure. You can think of it as a circular array with a 
+certain capacity. Each Ringbuffer has a tail and a head. The tail is where the items are added and the head is where the items are overwritten 
 or expired. You can reach each element in a Ringbuffer using a sequence ID, which is mapped to the elements between the head 
 and tail (inclusive) of the Ringbuffer. 
 
-Reading from the Ringbuffer is very simple. Just get the current head and start reading. The 'readOne' returns the item at the 
+Reading from Ringbuffer is very simple. Just get the current head and start reading. The method `readOne` returns the item at the 
 given sequence or blocks if no item is available. To read the next item, the sequence is incremented by one.
+
 ```java
 Ringbuffer<String> ringbuffer = hz.getRingbuffer("rb");
 long sequence = ringbuffer.headSequence();
@@ -16,46 +17,57 @@ while(true){
     ... process item
 }  
 ```
-By exposing the sequence you can now move the item from Ringbuffer as long as the item is still available. If it isn't available
-any longer, StaleSequenceException is thrown.
+
+By exposing the sequence, you can now move the item from Ringbuffer as long as the item is still available. If it is not available
+any longer, `StaleSequenceException` is thrown.
 
 Adding an item to Ringbuffer is also very easy:
+
 ```java
 Ringbuffer<String> ringbuffer = hz.getRingbuffer("rb");
 ringbuffer.add("someitem")
 ```
 
-The add method returns the sequence of the inserted item and this value will always be unique. This can sometimes be used for a 
-very cheap way of generating unique id's if you are already using Ringbuffer.
+The method `add` returns the sequence of the inserted item and this value will always be unique. This can sometimes be used as a 
+very cheap way of generating unique IDs if you are already using Ringbuffer.
 
-### IQueue vs Ringbuffer.
-Ringbuffer can sometimes be a better alternative than an IQueue. Unlike IQueue, Ringbuffer does not remove the items, it only
+
+### IQueue vs. Ringbuffer
+
+Hazelcast Ringbuffer can sometimes be a better alternative than an Hazelcast IQueue. Unlike IQueue, Ringbuffer does not remove the items, it only
 reads items using a certain position. There are many advantages using this approach:
+
 * The same item can be read multiple times by the same thread; this is useful for realizing semantics of read-at-least-once or 
 read-at-most-once.
-* The same item can be read by multiple threads. Normally you could use a IQueue per thread for the same semantic, but this is 
-less efficient because of increased remoting. A take from an IQueue is destructive, so the change needs to be applied for backup 
-also, which is why a queue.take() is more expensive than a ringBuffer.read(...)
+* The same item can be read by multiple threads. Normally you could use an IQueue per thread for the same semantic, but this is 
+less efficient because of the increased remoting. A take from an IQueue is destructive, so the change needs to be applied for backup 
+also, which is why a `queue.take()` is more expensive than a `ringBuffer.read(...)`.
 * Reads are extremely cheap since there is no change in the Ringbuffer, therefore no replication is required. 
-* Reads and writes can be batched to speed up performance. Batching can dramatically improve performance of Ringbuffer.
+* Reads and writes can be batched to speed up performance. Batching can dramatically improve the performance of Ringbuffer.
+ 
 
 ### Capacity
+
 By default, a Ringbuffer is configured with a capacity of 10000 items. Internally, an array is created with exactly that size. If 
 a time-to-live is configured, then an array of longs is also created that stores the expiration time for every item. 
-In a lot of cases you want to change this number to something that fits your needs better. 
+In a lot of cases, you may want to change this number to something that fits your needs better. 
 
-Below is a code example of a ringbuffer with a capacity of 2000 items.
+Below is a declarative configuration example of a Ringbuffer with a capacity of 2000 items.
+
 ```xml
 <ringbuffer name="rb">
     <capacity>2000</capacity>
 </ringbuffer>
 ```
-Ringbuffer is not a partitioned data structure in its current state; its data is stored in a single partition and the replicas
- are stored in another partition. So don't create larger Ringbuffer than that safely can fit in a single JVM. 
 
-### Synchronous and Asynchronous backups.
-A Ringbuffer by default has a single synchronous backup. But this can be controlled, just like most of the other Hazelcast 
-distributed data-structures by setting the sync and async backups. In the example below a ringbuffer is configured with 0
+Hazelcast Ringbuffer is not a partitioned data structure in its current state; its data is stored in a single partition and the replicas
+ are stored in another partition. Therefore, create a Ringbuffer that can safely fit in a single cluster member. 
+
+
+### Synchronous and Asynchronous Backups
+
+Hazelcast Ringbuffer has a single synchronous backup by default. This can be controlled just like most of the other Hazelcast 
+distributed data structures by setting the sync and async backups. In the example below, a Ringbuffer is configured with 0
 sync backups and 1 async backup:
 
 ```xml
@@ -64,26 +76,33 @@ sync backups and 1 async backup:
     <async-backup-count>1</async-backup-count>
 </ringbuffer>
 ```
-An async backup will probably give you better performance, but there is a chance that the item added is lost 
-when the member owning the primary crashed before the replication could complete. Probably you want to have a look at batching
-methods if you need high performance but don't want to give up on consistency.
 
-### Time to live.
-The Ringbuffer can be configured with a time-to-live seconds. Using this setting, you can control how long the items remain in 
+An async backup will probably give you better performance. However, there is a chance that the item added is lost 
+when the member owning the primary crashes before the replication could complete. You may want to consider batching
+methods if you need high performance but do not want to give up on consistency.
+
+
+### Time to live
+
+Hazelcast Ringbuffer can be configured with a time to live seconds. Using this setting, you can control how long the items remain in 
 the Ringbuffer before they are expired. By default, the time to live is set to 0, meaning that unless the item is overwritten, 
-it will remain in the Ringbuffer indefinitely. If a time to live is set and an item is added, then depending on the OverwritePolicy, 
+it will remain in the Ringbuffer indefinitely. If a time to live is set and an item is added, then depending on the Overflow Policy, 
 either the oldest item is overwritten, or the call is rejected. 
 
-In the code fragment below a ringbuffer is configured with a time to live of 180 seconds.
+In the example below, a Ringbuffer is configured with a time to live of 180 seconds.
+
 ```xml
 <ringbuffer name="rb">
     <time-to-live-seconds>180</time-to-live-seconds>
 </ringbuffer>
 ```
 
-### Overflow policy
-Using the overflow policy one can determine what to do if the oldest item in the ringbuffer is not old enough to expire when
- more items being added than the configured capacity of RingBuffer. There are currently 2 options available:
+
+### Overflow Policy
+
+Using the overflow policy, you can determine what to do if the oldest item in the Ringbuffer is not old enough to expire when
+ more items than the configured RingBuffer capacity are being added. There are currently below options available:
+ 
 * OverflowPolicy.OVERWRITE: in this case the oldest item is overwritten. 
 * OverflowPolicy.FAIL: the call is aborted. The methods that make use of the OverflowPolicy return -1 to indicate that adding
 the item has failed. 
