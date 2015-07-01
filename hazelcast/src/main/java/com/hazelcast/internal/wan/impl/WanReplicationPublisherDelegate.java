@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-package com.hazelcast.wan.impl;
+package com.hazelcast.internal.wan.impl;
 
-import com.hazelcast.wan.ReplicationEventObject;
-import com.hazelcast.wan.WanReplicationEndpoint;
-import com.hazelcast.wan.WanReplicationPublisher;
+import com.hazelcast.internal.wan.ReplicationEventObject;
+import com.hazelcast.internal.wan.WanReplicationEndpoint;
+import com.hazelcast.internal.wan.WanReplicationPublisher;
 
 /**
  * Delegating replication publisher implementation

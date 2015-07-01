@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-package com.hazelcast.wan;
+package com.hazelcast.internal.wan;
 
 import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.CoreService;
 
 /**
  * This is the WAN replications service API core interface. The WanReplicationService needs to
- * be capable of creating the actual {@link com.hazelcast.wan.WanReplicationPublisher} instances
+ * be capable of creating the actual {@link WanReplicationPublisher} instances
  * to replicate values to other clusters over the wide area network, so it has to deal with long
  * delays, slow uploads and higher latencies.
  */
@@ -34,7 +34,7 @@ public interface WanReplicationService
     String SERVICE_NAME = "hz:core:wanReplicationService";
 
     /**
-     * Creates a new {@link com.hazelcast.wan.WanReplicationPublisher} by the given name. If
+     * Creates a new {@link WanReplicationPublisher} by the given name. If
      * the name already exists, returns the previous instance.
      *
      * @param name name of the WAN replication configuration

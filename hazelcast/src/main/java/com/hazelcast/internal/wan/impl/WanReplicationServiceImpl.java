@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.wan.impl;
+package com.hazelcast.internal.wan.impl;
 
 import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.config.WanReplicationConfig;
@@ -29,17 +29,17 @@ import com.hazelcast.spi.ReplicationSupportingService;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.executor.StripedExecutor;
 import com.hazelcast.util.executor.StripedRunnable;
-import com.hazelcast.wan.WanReplicationEndpoint;
-import com.hazelcast.wan.WanReplicationEvent;
-import com.hazelcast.wan.WanReplicationPublisher;
-import com.hazelcast.wan.WanReplicationService;
+import com.hazelcast.internal.wan.WanReplicationEndpoint;
+import com.hazelcast.internal.wan.WanReplicationEvent;
+import com.hazelcast.internal.wan.WanReplicationPublisher;
+import com.hazelcast.internal.wan.WanReplicationService;
 
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Open source implementation of the {@link com.hazelcast.wan.WanReplicationService}
+ * Open source implementation of the {@link WanReplicationService}
  */
 public class WanReplicationServiceImpl implements WanReplicationService {
 

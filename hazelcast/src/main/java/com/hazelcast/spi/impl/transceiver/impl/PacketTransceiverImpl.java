@@ -28,7 +28,7 @@ import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.spi.impl.eventservice.InternalEventService;
 import com.hazelcast.spi.impl.operationexecutor.OperationExecutor;
 import com.hazelcast.spi.impl.transceiver.PacketTransceiver;
-import com.hazelcast.wan.WanReplicationService;
+import com.hazelcast.internal.wan.WanReplicationService;
 
 import java.util.concurrent.TimeUnit;
 

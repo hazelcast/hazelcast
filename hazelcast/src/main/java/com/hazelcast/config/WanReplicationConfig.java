@@ -16,6 +16,8 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.wan.WanReplicationEvent;
+
 import java.util.ArrayList;
 import java.util.List;
 /**
@@ -27,7 +29,7 @@ public class WanReplicationConfig {
     List<WanTargetClusterConfig> targetClusterConfigs;
     /**
      * This property is only valid when used with WAN Batch replication, Enterprise Only
-     * When enabled, only the latest {@link com.hazelcast.wan.WanReplicationEvent} of a key is sent to target
+     * When enabled, only the latest {@link WanReplicationEvent} of a key is sent to target
      */
     boolean snapshotEnabled;
 

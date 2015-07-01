@@ -16,7 +16,7 @@
 
 package com.hazelcast.spi;
 
-import com.hazelcast.wan.WanReplicationEvent;
+import com.hazelcast.internal.wan.WanReplicationEvent;
 
 /**
  * An interface that can be implemented by SPI services to give them the ability to listen to

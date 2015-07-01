@@ -85,7 +85,7 @@ import com.hazelcast.quorum.QuorumType;
 import com.hazelcast.spring.serialization.DummyDataSerializableFactory;
 import com.hazelcast.spring.serialization.DummyPortableFactory;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.wan.WanReplicationEndpoint;
+import com.hazelcast.internal.wan.WanReplicationEndpoint;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;

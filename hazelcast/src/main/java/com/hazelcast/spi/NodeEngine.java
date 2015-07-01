@@ -30,7 +30,7 @@ import com.hazelcast.internal.storage.DataRef;
 import com.hazelcast.internal.storage.Storage;
 import com.hazelcast.quorum.impl.QuorumServiceImpl;
 import com.hazelcast.transaction.TransactionManagerService;
-import com.hazelcast.wan.WanReplicationService;
+import com.hazelcast.internal.wan.WanReplicationService;
 
 /**
  * The NodeEngine is the 'umbrella' of services/service-method that gets injected into a {@link ManagedService}.

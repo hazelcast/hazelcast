@@ -29,8 +29,8 @@ import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.eventservice.impl.EmptyFilter;
-import com.hazelcast.wan.ReplicationEventObject;
-import com.hazelcast.wan.WanReplicationPublisher;
+import com.hazelcast.internal.wan.ReplicationEventObject;
+import com.hazelcast.internal.wan.WanReplicationPublisher;
 
 import java.util.ArrayList;
 import java.util.Collection;

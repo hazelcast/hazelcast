@@ -48,8 +48,8 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.ExceptionUtil;
-import com.hazelcast.wan.WanReplicationService;
-import com.hazelcast.wan.impl.WanReplicationServiceImpl;
+import com.hazelcast.internal.wan.WanReplicationService;
+import com.hazelcast.internal.wan.impl.WanReplicationServiceImpl;
 
 import static com.hazelcast.map.impl.MapServiceConstructor.getDefaultMapServiceConstructor;
 
