@@ -178,6 +178,21 @@ public class TcpIpConnectionManager implements ConnectionManager {
         return ioService.createPacketWriter(connection);
     }
 
+    // just for testing
+    public Set<TcpIpConnection> getActiveConnections() {
+        return activeConnections;
+    }
+
+    // just for testing
+    public InSelectorImpl[] getInSelectors() {
+        return inSelectors;
+    }
+
+    // just for testing
+    public OutSelectorImpl[] getOutSelectors() {
+        return outSelectors;
+    }
+
     @Override
     public int getActiveConnectionCount() {
         return activeConnections.size();
@@ -257,7 +272,6 @@ public class TcpIpConnectionManager implements ConnectionManager {
                 tcpConnection.setMonitor(connectionMonitor);
             }
         }
-        ioBalancer.connectionAdded(connection);
         connectionsMap.put(remoteEndPoint, connection);
         connectionsInProgress.remove(remoteEndPoint);
         ioService.getEventService().executeEventCallback(new StripedRunnable() {
@@ -327,6 +341,7 @@ public class TcpIpConnectionManager implements ConnectionManager {
         acceptedSockets.remove(channel);
 
         connection.start();
+        ioBalancer.connectionAdded(connection);
 
         log(Level.INFO, "Established socket connection between " + channel.socket().getLocalSocketAddress());
 
