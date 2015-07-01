@@ -1,16 +1,16 @@
 
 
-### OOM Prevention
+### Preventing Out of Memory Exceptions
 
-It is very easy to trigger an OOME with query based map methods, especially with large clusters or heap sizes. For example, on a 5 node cluster with 10 GB of data and 25 GB heap size per node, a single call of `IMap.entrySet()` fetches 50 GB of data and crashes the calling instance.
+It is very easy to trigger an out of memory exception (OOME) with query based map methods, especially with large clusters or heap sizes. For example, on a 5 node cluster with 10 GB of data and 25 GB heap size per node, a single call of `IMap.entrySet()` fetches 50 GB of data and crashes the calling instance.
 
 A call of `IMap.values()` may return too much data for a single node. This can also happen with a real query and an unlucky choice of predicates, especially when the parameters are chosen by a user of your application.
 
-To prevent this, you can configure a maximum result size limit for query based operations. This is not a limit like `SELECT * FROM map LIMIT 100`, which can be achieved by a [Paging Predicate](#paging-predicate-order-limit). It is meant to be a last line of defense to prevent your nodes from retrieving more data than they can handle.
+To prevent this, you can configure a maximum result size limit for query based operations. This is not a limit like `SELECT * FROM map LIMIT 100`, which you can achieve by a [Paging Predicate](#paging-predicate-order-limit). A maximum result size limit for query based operations is meant to be a last line of defense to prevent your nodes from retrieving more data than they can handle.
 
 The Hazelcast component which calculates this limit is the `QueryResultSizeLimiter`.
 
-#### QueryResultSizeLimiter
+#### Setting Query Result Size Limit
 
 If the `QueryResultSizeLimiter` is activated, it calculates a result size limit per partition. Each `QueryOperation` runs on all partitions of a node, so it collects result entries as long as the node limit is not exceeded. If that happens, a `QueryResultSizeExceededException` is thrown and propagated to the calling instance.
 
@@ -22,13 +22,13 @@ In addition to the distributed result size check in the `QueryOperations`, there
 
 Since the local pre-check can increase the latency of a `QueryOperation` you can configure how many local partitions should be considered for the pre-check or you can deactivate the feature completely.
 
-##### Scope of Feature
+##### Scope of Result Size Limit
 
 Besides the designated query operations, there are other operations which use predicates internally. Those method calls will throw the `QueryResultSizeExceededException` as well. Please see the following matrix to see the methods that are covered by the query result size limit.
 
 ![](images/Map-QueryResultSizeLimiterScope.png)
 
-##### Configuration
+##### Configuring Query Result Size
 
 The query result size limit is configured via the following system properties.
 

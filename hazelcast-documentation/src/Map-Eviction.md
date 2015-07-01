@@ -1,11 +1,11 @@
 
-### Map Eviction
+### Evicting Map Entries
 
 Unless you delete the map entries manually or use an eviction policy, they will remain in the map. Hazelcast supports policy based eviction for distributed maps. Currently supported policies are LRU (Least Recently Used) and LFU (Least Frequently Used).
 
-Map eviction works based on the size of a partition. For example, once you specify a size using the `PER_NODE` attribute for `max-size` (please see [Configuring Map Eviction](#configuring-map-eviction)), Hazelcast internally calculates the maximum size for every partition. Eviction process starts according to this calculated per-partition maximum size when you try to put an entry. Below section gives an example scenario.
+Map eviction works based on the size of a partition. For example, once you specify a size using the `PER_NODE` attribute for `max-size` (please see [Configuring Map Eviction](#configuring-map-eviction)), Hazelcast internally calculates the maximum size for every partition. The eviction process starts according to this calculated per-partition maximum size when you try to put an entry. The section below gives an example scenario.
 
-#### Example Map Eviction Scenario
+#### Understanding Map Eviction
 
 Assume that you have the following figures:
 
@@ -16,13 +16,13 @@ Assume that you have the following figures:
 
 The total number of entries here is 20000 (partition count * entry count for each partition). This means you are at the eviction threshold since you set the `max-size` to 20000. When you try to put an entry:
 
-1. Entry goes to the relevant partition.
-2. Partition checks whether the eviction threshold is reached (`max-size`).
+1. The entry goes to the relevant partition.
+2. The partition checks whether the eviction threshold is reached (`max-size`).
 3. If reached, approximately 10 (100 * 10%) entries are evicted from that particular partition.
 
 As a result of this eviction process, when you check the size of your map, it is ~19990 (20000 - ~10). After this eviction, subsequent put operations will not trigger the next eviction until the map size is again close to the `max-size`.
 
-![image](images/NoteSmall.jpg) ***NOTE:*** *Above scenario is just an example to describe how the eviction process works. Hazelcast finds the most optimum number of entries to be evicted according to your cluster size and selected policy.*
+![image](images/NoteSmall.jpg) ***NOTE:*** *The above scenario is just an example to describe how the eviction process works. Hazelcast finds the most optimum number of entries to be evicted according to your cluster size and selected policy.*
 
 
 #### Configuring Map Eviction
@@ -54,11 +54,11 @@ Let's describe each element.
 	- LFU: Least Frequently Used.	
 
 - `max-size`: Maximum size of the map. When maximum size is reached, the map is evicted based on the policy defined. Valid values are integers between 0 and `Integer.MAX VALUE`. Default value is 0. If you want `max-size` to work, set the `eviction-policy` property to a value other than NONE. Its attributes are described below.
-	- `PER_NODE`: Maximum number of map entries in each JVM. This is the default policy.	
+	- `PER_NODE`: Maximum number of map entries in each cluster member. This is the default policy.	
 	
 		`<max-size policy="PER_NODE">5000</max-size>`
 		
-	- `PER_PARTITION`: Maximum number of map entries within each partition. Storage size depends on the partition count in a JVM. This attribute should not be used often. Avoid using this attribute with a small cluster: if the cluster is small it will be hosting more partitions, and therefore map entries, than that of a larger cluster. Thus, for a small cluster, eviction of the entries will decrease performance (the number of entries is large).
+	- `PER_PARTITION`: Maximum number of map entries within each partition. Storage size depends on the partition count in a cluster member. This attribute should not be used often. Avoid using this attribute with a small cluster: if the cluster is small it will be hosting more partitions, and therefore map entries, than that of a larger cluster. Thus, for a small cluster, eviction of the entries will decrease performance (the number of entries is large).
 	
 		`<max-size policy="PER_PARTITION">27100</max-size>`
 
@@ -84,7 +84,7 @@ Let's describe each element.
 ![image](images/NoteSmall.jpg) ***NOTE:*** *When map entries are inserted frequently, the property `min-eviction-check-millis` should be set to a number lower than the insertion period in order not to let any entry escape from the eviction.*
 
 
-#### Sample Eviction Configuration
+#### Example Eviction Configuration
 
 
 ```xml
@@ -95,7 +95,7 @@ Let's describe each element.
 </map>
 ```
 
-In the above sample, `documents` map starts to evict its entries from a member when the map size exceeds 10000 in that member. Then, the entries least recently used will be evicted. The entries not used for more than 60 seconds will be evicted as well.
+In the above example, `documents` map starts to evict its entries from a member when the map size exceeds 10000 in that member. Then, the entries least recently used will be evicted. The entries not used for more than 60 seconds will be evicted as well.
 
 
 #### Evicting Specific Entries
@@ -104,7 +104,7 @@ In the above sample, `documents` map starts to evict its entries from a member w
 The eviction policies and configurations explained above apply to all the entries of a map. The entries that meet the specified eviction conditions are evicted.
 
 
-But you may want to evict some specific map entries.  In this case, you can use the `ttl` and `timeunit` parameters of the method `map.put()`. A sample code line is given below.
+But you may want to evict some specific map entries.  In this case, you can use the `ttl` and `timeunit` parameters of the method `map.put()`. An example code line is given below.
 
 `myMap.put( "1", "John", 50, TimeUnit.SECONDS )`
 
@@ -113,9 +113,9 @@ The map entry with the key "1" will be evicted 50 seconds after it is put into `
 
 #### Evicting All Entries
 
-The method `evictAll()` evicts all keys from the map except the locked ones. If a MapStore is defined for the map, `deleteAll` is not called by `evictAll`. If you want to call the method `deleteAll`, use `clear()`. 
+To evict all keys from the map except the locked ones, use the method `evictAll()`. If a MapStore is defined for the map, `deleteAll` is not called by `evictAll`. If you want to call the method `deleteAll`, use `clear()`. 
 
-A sample is given below.
+An example is given below.
 
 ```java
 public class EvictAll {

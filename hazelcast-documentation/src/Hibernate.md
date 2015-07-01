@@ -83,11 +83,11 @@ Then add the following properties into your Hibernate configuration file (e.g. `
 
 Hazelcast creates a separate distributed map for each Hibernate cache region. You can easily configure these regions via Hazelcast map configuration. You can define **backup**, **eviction**, **TTL** and **Near Cache** properties.
 
-- [Backup Configuration](#map-backups)
+- [Backup Configuration](#backing-up-maps)
 
-- [Eviction And TTL Configuration](#map-eviction)
+- [Eviction And TTL Configuration](#evicting-map-entries)
 
-- [Near Cache Configuration](#near-cache)
+- [Near Cache Configuration](#creating-near-cache-for-map)
 
 ### RegionFactory Options
 

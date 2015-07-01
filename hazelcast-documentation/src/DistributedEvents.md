@@ -18,7 +18,7 @@ Hazelcast offers the following event listeners:
 - **Migration Listener** for partition migration start and complete events.
 - **Partition Lost Listener** for partition lost events.
 - **Lifecycle Listener** for `HazelcastInstance` lifecycle events.
-- **Entry Listener** for `IMap` and `MultiMap` entry events (please refer to the [Map Listener section](#map-listener)).
+- **Entry Listener** for `IMap` and `MultiMap` entry events (please refer to the [Listening to Map Events section](#listening-to-map-events)).
 - **Item Listener** for `IQueue`, `ISet` and `IList` item events (please refer to the Event Registration and Configuration parts of the sections [Set](#set) and [List](#list)).
 - **Message Listener** for `ITopic` message events.
 - **Client Listener** for client connection events.

@@ -35,7 +35,7 @@ therefore, acts as a common super type for all compatible configuration classes 
 
 Hazelcast itself offers a special implementation (`com.hazelcast.config.CacheConfig`) of the `Configuration` interface which
 offers more options on the specific Hazelcast properties that can be set to configure features like synchronous and asynchronous
-backups counts or selecting the underlying [In Memory Format](#in-memory-format) of the cache. For more information on this
+backups counts or selecting the underlying [In Memory Format](#setting-in-memory-format) of the cache. For more information on this
 configuration class, please see the reference in [JCache Programmatic Configuration section](#jcache-programmatic-configuration).
 
 **`javax.cache.Cache`**:

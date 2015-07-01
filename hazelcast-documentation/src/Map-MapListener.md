@@ -1,21 +1,25 @@
 
 
 
-### Map Listener
+### Listening to Map Events
 
-You can listen to map-wide or entry-based events by implementing a `MapListener` sub-interface. 
+To listen to map-wide or entry-based events, implement a `MapListener` sub-interface.
+
 A map-wide event is fired as a result of a map-wide operation: for 
 example, `IMap#clear` or `IMap#evictAll`.
 An entry-based event is fired after the operations that affect a 
 specific entry: for example, `IMap#remove` or `IMap#evict`.
 
+#### Catching a Map Event
 
-Let's take a look at the following code sample. To catch an event, you should explicitly 
+To catch an event, you should explicitly 
 implement a corresponding sub-interface of a `MapListener`, 
-such as `EntryAddedListener` or `MapClearedListener`.
+such as `EntryAddedListener` or `MapClearedListener`. 
+
+Let's take a look at the following code example.
 
 ![image](images/NoteSmall.jpg) ***NOTE:*** *`EntryListener` interface still can be implemented, 
-we kept that as is due to backward compatibility reasons. However, if you need to listen to a 
+we kept that for backward compatibility reasons. However, if you need to listen to a 
 different event which is not available in the `EntryListener` interface, you should also 
 implement a relevant `MapListener` sub-interface.*
 
@@ -112,12 +116,15 @@ public class MyEntryListener implements EntryListener{
     }
 ...
 ```
+
+#### Partitions and Entry Listeners
+
 A map listener runs on the event threads that are also used by the other listeners: for 
 example, the collection listeners and pub/sub message listeners. This means that the entry 
 listeners can access other partitions. Consider this when you run long tasks, since listening 
 to those tasks may cause the other map/event listeners to starve.
 
-#### MapPartitionLostListener
+#### Listening for Lost Map Partitions
 
 You can listen to `MapPartitionLostEvent` instances by registering an implementation 
 of `MapPartitionLostListener`, which is also a sub-interface of `MapListener`.
@@ -127,7 +134,7 @@ Let`s consider the following example code:
 ```java
   public static void main(String[] args) {
     Config config = new Config();
-    config.getMapConfig("map").setBackupCount(1); // might lose data if any node crashes
+    config.getMapConfig("map").setBackupCount(1); // might lose data if any member crashes
 
     HazelcastInstance instance = HazelcastInstanceFactory.newHazelcastInstance(config);
 
@@ -145,11 +152,11 @@ Let`s consider the following example code:
 
 Within this example code, a `MapPartitionLostListener` implementation is registered to a map 
 that is configured with 1 backup. For this particular map and any of the partitions in the 
-system, if the partition owner node and its first backup node crash simultaneously, the 
+system, if the partition owner member and its first backup member crash simultaneously, the 
 given `MapPartitionLostListener` receives a 
-corresponding `MapPartitionLostEvent`. If only a single node crashes in the cluster, 
+corresponding `MapPartitionLostEvent`. If only a single member crashes in the cluster, 
 there will be no `MapPartitionLostEvent` fired for this map since backups for the partitions 
-owned by the crashed node are kept on other nodes. 
+owned by the crashed member are kept on other members. 
 
 Please refer to the [Partition Lost Listener section](#partition-lost-listener) for more 
 information about partition lost detection and partition lost events.
