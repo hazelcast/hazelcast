@@ -17,7 +17,6 @@
 package com.hazelcast.nio.tcp.iobalancer;
 
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.LoggingService;
 import com.hazelcast.nio.tcp.AbstractIOSelector;
 import com.hazelcast.nio.tcp.IOSelector;
 import com.hazelcast.nio.tcp.MigratableHandler;
@@ -37,10 +36,9 @@ import static com.hazelcast.util.StringUtil.getLineSeperator;
  * This class is not thread-safe with the exception of
  * {@link #addHandler(MigratableHandler)}   and
  * {@link #removeHandler(MigratableHandler)}
- *
  */
 class LoadTracker {
-    private final ILogger log;
+    private final ILogger logger;
 
     //all known IO selectors. we assume no. of selectors is constant during a lifespan of a member
     private final AbstractIOSelector[] selectors;
@@ -59,8 +57,8 @@ class LoadTracker {
 
     private final LoadImbalance imbalance;
 
-    LoadTracker(AbstractIOSelector[] selectors, LoggingService loggingService) {
-        this.log = loggingService.getLogger(LoadTracker.class);
+    LoadTracker(AbstractIOSelector[] selectors, ILogger logger) {
+        this.logger = logger;
 
         this.selectors = new AbstractIOSelector[selectors.length];
         System.arraycopy(selectors, 0, this.selectors, 0, selectors.length);
@@ -93,10 +91,16 @@ class LoadTracker {
         imbalance.destinationSelector = null;
         for (AbstractIOSelector selector : selectors) {
             long eventCount = selectorEvents.get(selector);
-            if (eventCount > imbalance.maximumEvents) {
+            int handlerCount = selectorToHandlers.get(selector).size();
+
+            if (eventCount > imbalance.maximumEvents && handlerCount > 1) {
+                // if a selector has only 1 handle, there is no point in making it a source selector since
+                // there is no handler that can be migrated anyway. In that case it is better to move on to
+                // the next selector.
                 imbalance.maximumEvents = eventCount;
                 imbalance.sourceSelector = selector;
             }
+
             if (eventCount < imbalance.minimumEvents) {
                 imbalance.minimumEvents = eventCount;
                 imbalance.destinationSelector = selector;
@@ -142,7 +146,7 @@ class LoadTracker {
     }
 
     private void printDebugTable() {
-        if (!log.isFinestEnabled()) {
+        if (!logger.isFinestEnabled()) {
             return;
         }
 
@@ -192,7 +196,7 @@ class LoadTracker {
         }
         sb.append("------------")
                 .append(getLineSeperator());
-        log.finest(sb.toString());
+        logger.finest(sb.toString());
     }
 
     private void appendSelectorInfo(IOSelector minSelector, Map<IOSelector,
