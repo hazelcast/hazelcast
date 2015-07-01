@@ -96,7 +96,7 @@ public final class ResponseThread extends Thread implements OperationHostileThre
             responsePacketHandler.handle(responsePacket);
         } catch (Throwable e) {
             inspectOutputMemoryError(e);
-            logger.severe("Failed to process response: " + responsePacket + " on response thread:" + getName());
+            logger.severe("Failed to process response: " + responsePacket + " on response thread:" + getName(), e);
         }
     }
 
