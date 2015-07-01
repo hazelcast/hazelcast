@@ -3,6 +3,7 @@ package com.hazelcast.hibernate.region;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MaxSizeConfig;
+import com.hazelcast.core.Cluster;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.hibernate.local.LocalRegionCache;
 import com.hazelcast.hibernate.local.LocalRegionCacheTest;
@@ -11,6 +12,8 @@ import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
@@ -36,8 +39,17 @@ public class HazelcastQueryResultsRegionTest {
         Config config = mock(Config.class);
         when(config.findMapConfig(eq(REGION_NAME))).thenReturn(mapConfig);
 
+        Cluster cluster = mock(Cluster.class);
+        when(cluster.getClusterTime()).thenAnswer(new Answer<Long>() {
+            @Override
+            public Long answer(InvocationOnMock invocation) throws Throwable {
+                return System.currentTimeMillis();
+            }
+        });
+
         HazelcastInstance instance = mock(HazelcastInstance.class);
         when(instance.getConfig()).thenReturn(config);
+        when(instance.getCluster()).thenReturn(cluster);
 
         // Create the region and verify that it retrieved the MapConfig and set its timeout from
         // the TTL. Also verify that the nested LocalRegionCache retrieved the configuration but
@@ -55,7 +67,7 @@ public class HazelcastQueryResultsRegionTest {
 
         int oversized = maxSize * 2;
         for (int i = 0; i < oversized; ++i) {
-            regionCache.put(i, i, i);
+            regionCache.put(i, i, System.currentTimeMillis(), i);
         }
         assertEquals(oversized, regionCache.size());
 

@@ -16,6 +16,7 @@
 
 package com.hazelcast.hibernate.access;
 
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.hibernate.region.HazelcastRegion;
 import org.hibernate.cache.CacheException;
 import org.hibernate.cache.spi.access.SoftLock;
@@ -36,7 +37,14 @@ public class ReadWriteAccessDelegate<T extends HazelcastRegion> extends Abstract
     }
 
     public boolean afterInsert(final Object key, final Object value, final Object version) throws CacheException {
-        return put(key, value, version);
+        try {
+            return cache.insert(key, value, version);
+        } catch (HazelcastException e) {
+            if (log.isFinestEnabled()) {
+                log.finest("Could not insert into Cache[" + hazelcastRegion.getName() + "]: " + e.getMessage());
+            }
+            return false;
+        }
     }
 
     /**
@@ -47,15 +55,21 @@ public class ReadWriteAccessDelegate<T extends HazelcastRegion> extends Abstract
     public boolean afterUpdate(final Object key, final Object value, final Object currentVersion, final Object previousVersion,
                                final SoftLock lock) throws CacheException {
         try {
-            return update(key, value, currentVersion, previousVersion, lock);
-        } finally {
-            unlockItem(key, lock);
+            return cache.update(key, value, currentVersion, lock);
+        } catch (HazelcastException e) {
+            if (log.isFinestEnabled()) {
+                log.finest("Could not update Cache[" + hazelcastRegion.getName() + "]: " + e.getMessage());
+            }
+            return false;
         }
     }
 
-    public boolean putFromLoad(final Object key, final Object value, final long txTimestamp, final Object version,
-                               final boolean minimalPutOverride) throws CacheException {
-        return put(key, value, version);
+    /**
+     * This is an asynchronous cache access strategy.
+     * NO-OP
+     */
+    public boolean insert(final Object key, final Object value, final Object version) throws CacheException {
+        return false;
     }
 
     public SoftLock lockItem(final Object key, final Object version) throws CacheException {
@@ -66,6 +80,29 @@ public class ReadWriteAccessDelegate<T extends HazelcastRegion> extends Abstract
         cache.unlock(key, lock);
     }
 
-    public void unlockRegion(SoftLock lock) throws CacheException {
+    /**
+     * {@inheritDoc}
+     * <p/>
+     * A no-op since this is an asynchronous cache access strategy.
+     */
+    @Override
+    public boolean update(Object key, Object value, Object currentVersion, Object previousVersion)
+            throws CacheException {
+        return false;
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p/>
+     * A no-op since this is an asynchronous cache access strategy.
+     */
+    public void remove(final Object key) throws CacheException {
+    }
+
+    /**
+     * This is an asynchronous cache access strategy.
+     * NO-OP
+     */
+    public void removeAll() throws CacheException {
     }
 }

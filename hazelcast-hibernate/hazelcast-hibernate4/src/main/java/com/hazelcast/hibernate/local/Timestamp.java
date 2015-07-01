@@ -16,17 +16,17 @@
 
 package com.hazelcast.hibernate.local;
 
+import com.hazelcast.hibernate.serialization.HibernateDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
 
 /**
  * Hazelcast compatible implementation of a timestamp for internal eviction
  */
-// TODO Make IdentifiedDataSerializable
-public class Timestamp implements DataSerializable {
+public class Timestamp implements IdentifiedDataSerializable {
 
     private Object key;
     private long timestamp;
@@ -47,14 +47,26 @@ public class Timestamp implements DataSerializable {
         return timestamp;
     }
 
+    @Override
     public void writeData(final ObjectDataOutput out) throws IOException {
         out.writeObject(key);
         out.writeLong(timestamp);
     }
 
+    @Override
     public void readData(final ObjectDataInput in) throws IOException {
         key = in.readObject();
         timestamp = in.readLong();
+    }
+
+    @Override
+    public int getFactoryId() {
+        return HibernateDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return HibernateDataSerializerHook.TIMESTAMP;
     }
 
     @Override
