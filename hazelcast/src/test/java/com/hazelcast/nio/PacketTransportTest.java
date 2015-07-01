@@ -1,6 +1,6 @@
 package com.hazelcast.nio;
 
-import com.hazelcast.nio.serialization.DefaultData;
+import com.hazelcast.nio.serialization.impl.DefaultData;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;

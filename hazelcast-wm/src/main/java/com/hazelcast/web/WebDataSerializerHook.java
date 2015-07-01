@@ -18,7 +18,7 @@ package com.hazelcast.web;
 
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.DataSerializerHook;
-import com.hazelcast.nio.serialization.FactoryIdHelper;
+import com.hazelcast.nio.serialization.impl.FactoryIdHelper;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.web.entryprocessor.DeleteSessionEntryProcessor;
 import com.hazelcast.web.entryprocessor.GetAttributeEntryProcessor;

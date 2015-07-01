@@ -17,10 +17,10 @@
 package com.hazelcast.collection.impl.queue;
 
 import com.hazelcast.collection.impl.txnqueue.TxQueueItem;
-import com.hazelcast.nio.serialization.ArrayDataSerializableFactory;
+import com.hazelcast.nio.serialization.impl.ArrayDataSerializableFactory;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.DataSerializerHook;
-import com.hazelcast.nio.serialization.FactoryIdHelper;
+import com.hazelcast.nio.serialization.impl.FactoryIdHelper;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.collection.impl.queue.operations.AddAllBackupOperation;
 import com.hazelcast.collection.impl.queue.operations.AddAllOperation;

@@ -485,31 +485,31 @@
     <suppress checks="JavadocVariable" files="com.hazelcast.nio[\\/]"/>
     <suppress checks="ExecutableStatementCount|ClassDataAbstractionCoupling|ClassFanOutComplexity" files="com.hazelcast.nio.tcp.TcpIpConnectionManager"/>
 
-    <suppress checks="MethodCount|MagicNumber" files="com.hazelcast.nio.serialization.ByteArrayObjectDataInput"/>
-    <suppress checks="MethodCount|MagicNumber" files="com.hazelcast.nio.serialization.ByteArrayObjectDataOutput"/>
-    <suppress checks="MethodCount|MagicNumber" files="com.hazelcast.nio.serialization.ByteBufferObjectDataInput"/>
+    <suppress checks="MethodCount|MagicNumber" files="com.hazelcast.nio.serialization.impl.ByteArrayObjectDataInput"/>
+    <suppress checks="MethodCount|MagicNumber" files="com.hazelcast.nio.serialization.impl.ByteArrayObjectDataOutput"/>
+    <suppress checks="MethodCount|MagicNumber" files="com.hazelcast.nio.serialization.impl.ByteBufferObjectDataInput"/>
     <suppress checks="MethodCount" files="com.hazelcast.nio.serialization.ObjectDataInputStream"/>
 
-    <suppress checks="MethodCount" files="com.hazelcast.nio.serialization.ByteBufferObjectDataOutput"/>
+    <suppress checks="MethodCount" files="com.hazelcast.nio.serialization.impl.ByteBufferObjectDataOutput"/>
     <suppress checks="MagicNumber" files="com.hazelcast.nio.CipherHelper"/>
     <suppress checks="MagicNumber|NPathComplexity" files="com.hazelcast.nio.ClassLoaderUtil"/>
-    <suppress checks="MagicNumber" files="com.hazelcast.nio.serialization.DefaultPortableReader"/>
-    <suppress checks="MagicNumber" files="com.hazelcast.nio.serialization.DefaultPortableWriter"/>
+    <suppress checks="MagicNumber" files="com.hazelcast.nio.serialization.impl.DefaultPortableReader"/>
+    <suppress checks="MagicNumber" files="com.hazelcast.nio.serialization.impl.DefaultPortableWriter"/>
     <suppress checks="MethodCount|MagicNumber" files="com.hazelcast.nio.DynamicByteBuffer"/>
     <suppress checks="MethodCount" files="com.hazelcast.nio.IOService"/>
     <suppress checks="MagicNumber|ReturnCount" files="com.hazelcast.nio.IOUtil"/>
-    <suppress checks="ReturnCount" files="com.hazelcast.nio.serialization.MorphingPortableReader"/>
+    <suppress checks="ReturnCount" files="com.hazelcast.nio.serialization.impl.MorphingPortableReader"/>
     <suppress checks="MethodCount" files="com.hazelcast.nio.NodeIOService"/>
     <suppress checks="MagicNumber|ReturnCount|MethodCount|NPathComplexity" files="com.hazelcast.nio.Packet"/>
     <suppress checks="NPathComplexity" files="com.hazelcast.nio.tcp.ReadHandler"/>
     <suppress checks="ClassFanOutComplexity|ClassDataAbstractionCoupling|MethodCount|ParameterNumber"
-              files="com.hazelcast.nio.serialization.SerializationServiceImpl"/>
+              files="com.hazelcast.nio.serialization.impl.SerializationServiceImpl"/>
     <suppress checks="MethodCount" files="com.hazelcast.nio.tcp.TcpIpConnectionManager"/>
     <suppress checks="ExecutableStatement" files="com.hazelcast.nio.UnsafeHelper"/>
     <suppress checks="MagicNumber" files="com.hazelcast.nio.UnsafeHelper"/>
     <suppress checks="IllegalImport" files="com.hazelcast.nio.UnsafeHelper"/>
-    <suppress checks="MagicNumber" files="com.hazelcast.nio.serialization.UnsafeObjectDataInput"/>
-    <suppress checks="MagicNumber" files="com.hazelcast.nio.serialization.UnsafeObjectDataOutput"/>
+    <suppress checks="MagicNumber" files="com.hazelcast.nio.serialization.impl.UnsafeObjectDataInput"/>
+    <suppress checks="MagicNumber" files="com.hazelcast.nio.serialization.impl.UnsafeObjectDataOutput"/>
     <suppress checks="MagicNumber|EmptyBlock" files="com.hazelcast.nio.tcp.WriteHandler"/>
     <suppress checks="MagicNumber" files="com.hazelcast.nio.UTFEncoderDecoder"/>
 

@@ -18,7 +18,7 @@ package com.hazelcast.ringbuffer.impl;
 
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.DataSerializerHook;
-import com.hazelcast.nio.serialization.FactoryIdHelper;
+import com.hazelcast.nio.serialization.impl.FactoryIdHelper;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.ringbuffer.impl.operations.AddAllBackupOperation;
 import com.hazelcast.ringbuffer.impl.operations.AddAllOperation;

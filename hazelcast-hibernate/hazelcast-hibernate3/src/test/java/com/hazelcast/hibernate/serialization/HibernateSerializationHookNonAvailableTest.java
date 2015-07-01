@@ -57,7 +57,7 @@ public class HibernateSerializationHookNonAvailableTest {
             ORIGINAL = hazelcastInstanceProxyClass.getDeclaredField("original");
             ORIGINAL.setAccessible(true);
 
-            String serializationServiceImplClassName = "com.hazelcast.nio.serialization.SerializationServiceImpl";
+            String serializationServiceImplClassName = "com.hazelcast.nio.serialization.impl.SerializationServiceImpl";
             Class<?> serializationServiceImplClass = FILTERING_CLASS_LOADER.loadClass(serializationServiceImplClassName);
             TYPE_MAP = serializationServiceImplClass.getDeclaredField("typeMap");
             TYPE_MAP.setAccessible(true);

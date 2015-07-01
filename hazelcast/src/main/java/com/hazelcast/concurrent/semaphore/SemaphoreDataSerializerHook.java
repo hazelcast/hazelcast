@@ -32,7 +32,7 @@ import com.hazelcast.concurrent.semaphore.operations.SemaphoreDeadMemberOperatio
 import com.hazelcast.concurrent.semaphore.operations.SemaphoreReplicationOperation;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.DataSerializerHook;
-import com.hazelcast.nio.serialization.FactoryIdHelper;
+import com.hazelcast.nio.serialization.impl.FactoryIdHelper;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 public class SemaphoreDataSerializerHook implements DataSerializerHook {

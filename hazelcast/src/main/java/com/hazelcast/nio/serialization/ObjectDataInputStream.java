@@ -40,6 +40,7 @@ public class ObjectDataInputStream extends InputStream implements ObjectDataInpu
         this.byteOrder = serializationService.getByteOrder();
     }
 
+    @Override
     public int read() throws IOException {
         return readByte();
     }
@@ -54,62 +55,76 @@ public class ObjectDataInputStream extends InputStream implements ObjectDataInpu
         return dataInput.available();
     }
 
+    @Override
     public int read(byte[] b) throws IOException {
         return dataInput.read(b);
     }
 
+    @Override
     public int read(byte[] b, int off, int len) throws IOException {
         return dataInput.read(b, off, len);
     }
 
+    @Override
     public void readFully(byte[] b) throws IOException {
         dataInput.readFully(b);
     }
 
+    @Override
     public void readFully(byte[] b, int off, int len) throws IOException {
         dataInput.readFully(b, off, len);
     }
 
+    @Override
     public int skipBytes(int n) throws IOException {
         return dataInput.skipBytes(n);
     }
 
+    @Override
     public boolean readBoolean() throws IOException {
         return dataInput.readBoolean();
     }
 
+    @Override
     public byte readByte() throws IOException {
         return dataInput.readByte();
     }
 
+    @Override
     public int readUnsignedByte() throws IOException {
         return dataInput.readUnsignedByte();
     }
 
+    @Override
     public short readShort() throws IOException {
         final short v = dataInput.readShort();
         return bigEndian() ? v : Short.reverseBytes(v);
     }
 
+    @Override
     public int readUnsignedShort() throws IOException {
         return readShort();
     }
 
+    @Override
     public char readChar() throws IOException {
         final char v = dataInput.readChar();
         return bigEndian() ? v : Character.reverseBytes(v);
     }
 
+    @Override
     public int readInt() throws IOException {
         final int v = dataInput.readInt();
         return bigEndian() ? v : Integer.reverseBytes(v);
     }
 
+    @Override
     public long readLong() throws IOException {
         final long v = dataInput.readLong();
         return bigEndian() ? v : Long.reverseBytes(v);
     }
 
+    @Override
     public float readFloat() throws IOException {
         if (bigEndian()) {
             return dataInput.readFloat();
@@ -118,6 +133,7 @@ public class ObjectDataInputStream extends InputStream implements ObjectDataInpu
         }
     }
 
+    @Override
     public double readDouble() throws IOException {
         if (bigEndian()) {
             return dataInput.readDouble();
@@ -126,6 +142,7 @@ public class ObjectDataInputStream extends InputStream implements ObjectDataInpu
         }
     }
 
+    @Override
     public byte[] readByteArray() throws IOException {
         int len = readInt();
         if (len > 0) {
@@ -136,6 +153,7 @@ public class ObjectDataInputStream extends InputStream implements ObjectDataInpu
         return new byte[0];
     }
 
+    @Override
     public char[] readCharArray() throws IOException {
         int len = readInt();
         if (len > 0) {
@@ -148,6 +166,7 @@ public class ObjectDataInputStream extends InputStream implements ObjectDataInpu
         return new char[0];
     }
 
+    @Override
     public int[] readIntArray() throws IOException {
         int len = readInt();
         if (len > 0) {
@@ -160,6 +179,7 @@ public class ObjectDataInputStream extends InputStream implements ObjectDataInpu
         return new int[0];
     }
 
+    @Override
     public long[] readLongArray() throws IOException {
         int len = readInt();
         if (len > 0) {
@@ -172,6 +192,7 @@ public class ObjectDataInputStream extends InputStream implements ObjectDataInpu
         return new long[0];
     }
 
+    @Override
     public double[] readDoubleArray() throws IOException {
         int len = readInt();
         if (len > 0) {
@@ -184,6 +205,7 @@ public class ObjectDataInputStream extends InputStream implements ObjectDataInpu
         return new double[0];
     }
 
+    @Override
     public float[] readFloatArray() throws IOException {
         int len = readInt();
         if (len > 0) {
@@ -196,6 +218,7 @@ public class ObjectDataInputStream extends InputStream implements ObjectDataInpu
         return new float[0];
     }
 
+    @Override
     public short[] readShortArray() throws IOException {
         int len = readInt();
         if (len > 0) {
@@ -213,6 +236,7 @@ public class ObjectDataInputStream extends InputStream implements ObjectDataInpu
         return dataInput.readLine();
     }
 
+    @Override
     public String readUTF() throws IOException {
         if (utfBuffer == null) {
             utfBuffer = new byte[UTF_BUFFER_SIZE];
@@ -220,22 +244,27 @@ public class ObjectDataInputStream extends InputStream implements ObjectDataInpu
         return UTFEncoderDecoder.readUTF(this, utfBuffer);
     }
 
+    @Override
     public void close() throws IOException {
         dataInput.close();
     }
 
+    @Override
     public void mark(int readlimit) {
         dataInput.mark(readlimit);
     }
 
+    @Override
     public void reset() throws IOException {
         dataInput.reset();
     }
 
+    @Override
     public boolean markSupported() {
         return dataInput.markSupported();
     }
 
+    @Override
     public Object readObject() throws IOException {
         return serializationService.readObject(this);
     }
@@ -245,10 +274,12 @@ public class ObjectDataInputStream extends InputStream implements ObjectDataInpu
         return serializationService.readData(this);
     }
 
+    @Override
     public ClassLoader getClassLoader() {
         return serializationService.getClassLoader();
     }
 
+    @Override
     public ByteOrder getByteOrder() {
         return byteOrder;
     }

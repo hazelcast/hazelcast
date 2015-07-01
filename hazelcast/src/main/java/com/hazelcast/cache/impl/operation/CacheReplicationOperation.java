@@ -24,7 +24,7 @@ import com.hazelcast.config.CacheConfig;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.DefaultData;
+import com.hazelcast.nio.serialization.impl.DefaultData;
 import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.util.Clock;
 

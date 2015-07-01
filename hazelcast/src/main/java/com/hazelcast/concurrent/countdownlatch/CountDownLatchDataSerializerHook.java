@@ -24,7 +24,7 @@ import com.hazelcast.concurrent.countdownlatch.operations.GetCountOperation;
 import com.hazelcast.concurrent.countdownlatch.operations.SetCountOperation;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.DataSerializerHook;
-import com.hazelcast.nio.serialization.FactoryIdHelper;
+import com.hazelcast.nio.serialization.impl.FactoryIdHelper;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 public final class CountDownLatchDataSerializerHook implements DataSerializerHook {
