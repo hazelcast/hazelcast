@@ -102,11 +102,12 @@ public class DefaultContext<KeyIn, ValueIn>
         Combiner<ValueIn, ?> combiner = combiners.get(key);
         if (combiner == null) {
             combiner = combinerFactory.newCombiner(key);
-            combiner.beginCombine();
 
             Combiner<ValueIn, ?> temp = combiners.putIfAbsent(key, combiner);
             if (temp != null) {
                 combiner = temp;
+            } else {
+                combiner.beginCombine();
             }
         }
         return combiner;
