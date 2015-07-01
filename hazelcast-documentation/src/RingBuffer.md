@@ -103,12 +103,12 @@ In the example below, a Ringbuffer is configured with a time to live of 180 seco
 Using the overflow policy, you can determine what to do if the oldest item in the Ringbuffer is not old enough to expire when
  more items than the configured RingBuffer capacity are being added. There are currently below options available:
  
-* OverflowPolicy.OVERWRITE: in this case the oldest item is overwritten. 
-* OverflowPolicy.FAIL: the call is aborted. The methods that make use of the OverflowPolicy return -1 to indicate that adding
+* `OverflowPolicy.OVERWRITE`: The oldest item is overwritten. 
+* `OverflowPolicy.FAIL`: The call is aborted. The methods that make use of the OverflowPolicy return `-1` to indicate that adding
 the item has failed. 
 
-Using the the overflow policy gives fine control on what to do if the Ringbuffer is full. The policy can also be used for making 
-a back pressure mechanism. Below a code example can be found where an exponential backoff is used.
+Overflow policy gives fine control on what to do if the Ringbuffer is full. The policy can also be used to apply 
+a back pressure mechanism. The following example code shows the usage of an exponential backoff.
 
 ```java
 long sleepMs = 100;
@@ -123,12 +123,14 @@ for (; ; ) {
 }
 ```
 
-### In Memory Format
-The Ringbuffer can also be configured with an InMemoryFormat which controls the format of stored items. By default, `BINARY` is used, 
-meaning that the object is stored in a serialized form. You can select the `OBJECT` InMemoryFormat, which is useful when filtering is 
-applied or when the `OBJECT` InMemoryFormat has a smaller memory footprint than `BINARY`. 
 
-In the example below a Ringbuffer is configured with OBJECT In Memory Format:
+### In-Memory Format
+
+Hazelcast Ringbuffer can also be configured with an in-memory format which controls the format of stored items. By default, `BINARY` is used, 
+meaning that the object is stored in a serialized form. You can select the `OBJECT` in-memory format, which is useful when filtering is 
+applied or when the `OBJECT` in-memory format has a smaller memory footprint than `BINARY`. 
+
+In the declarative configuration example below, a Ringbuffer is configured with `OBJECT` in-memory format:
 
 ```xml
 <ringbuffer name="rb">
@@ -136,29 +138,34 @@ In the example below a Ringbuffer is configured with OBJECT In Memory Format:
 </ringbuffer>
 ```
 
-### addAllAsync
 
-In the previous examples the Ringbuffer.add method was being used to add an item to the Ringbuffer. The problem with the 
-`Ringbuffer::add` is that it always overwrites and that it doesn't support batching. Batching can have a huge
-impact on performance. That is why the `addAllAsync` method was added. 
+### Adding Batched Items
 
-Example:
+In the previous examples, the method `ringBuffer.add()` is used to add an item to the Ringbuffer. The problem with this method 
+is that it always overwrites and that it does not support batching. Batching can have a huge
+impact on the performance. That is why the method `addAllAsync` is available. 
+
+Please see the following example code.
 
 ```java
-List<String> items = Arrays.asList("1","2","3")
+List<String> items = Arrays.asList("1","2","3");
 ICompletableFuture<Long> f = rb.addAllAsync(items, OverflowPolicy.OVERWRITE);
 f.get()
-```        
-In this case the 3 strings are added to the Ringbuffer using the OverflowPolicy.OVERWRITE policy. Check the OverflowPolicy
-for more details.
+```  
+      
+In the above case, three strings are added to the Ringbuffer using the policy `OverflowPolicy.OVERWRITE`. Please see the [Overflow Policy section](#overflow-policy) 
+for more information.
 
-### readManyAsync
+### Reading Batched Items
 
 In the previous example the `readOne` was being used. It is simple but not very efficient for the following reasons:
-* doesn't make use of batching
-* can't filter items at the source; they need to be retrieved before being filtered.
 
-That is why readManyAsync method was added:
+* It does not make use of batching.
+* It cannot filter items at the source; they need to be retrieved before being filtered.
+
+That is why the method `readManyAsync` is available.
+
+Please see the following example code.
 
 ```java
 ICompletableFuture<ReadResultSet<E>> readManyAsync(
@@ -167,14 +174,17 @@ ICompletableFuture<ReadResultSet<E>> readManyAsync(
    int maxCount, 
    IFunction<E, Boolean> filter);
 ```
-This call can read a batch of items and can filter items at the source. The meaning of the arguments:
-* startSequence: the sequence of the first item to read
-* minCount: the minimum number of items to read. If you don't want to block, provide 0. If you do want to block for at least one item,
-provide 1.
-* the maximum number of items to retrieve. There is a hard cap on the maxCount and that is 1000.
-* filter: a function that accept an item and checks if it should be returned. If no filtering should be applied, pass null.
 
-A full example:
+This call can read a batch of items and can filter items at the source. The meaning of the arguments are given below.
+
+* `startSequence`: Sequence of the first item to read.
+* `minCount`: Minimum number of items to read. If you do not want to block, set it to 0. If you do want to block for at least one item,
+set it to 1.
+* `maxCount`: Maximum number of the items to retrieve. Its value cannot exceed 1000.
+* `filter`: A function that accepts an item and checks if it should be returned. If no filtering should be applied, set it to null.
+
+A full example is given below.
+
 ```java
 long sequence = rb.headSequence();
 for(;;) {
@@ -185,22 +195,27 @@ for(;;) {
     }
     sequence+=rs.readCount();
 }
-```        
-Please take a careful look at how the sequence is being incremented. You can't always rely on the number of items being returned
-if items are filtered out.
+``` 
+       
+Please take a careful look at how the sequence is being incremented. You cannot always rely on the number of items being returned
+if the items are filtered out.
 
-### Async methods
-The Ringbuffer provides asynchronous methods for the more powerful methods like batched reading with filtering or batch writing. 
-To make these methods synchronous, just call `get()` on the returned future.
 
-Example:
+### Async Methods
+
+Hazelcast Ringbuffer provides asynchronous methods for more powerful operations like batched reading with filtering or batched writing. 
+To make these methods synchronous, just call the method `get()` on the returned future.
+
+Please see the following example code.
+
 ```java
 ICompletableFuture f = ringbuffer.addAsync(item, OverflowPolicy.FAIL);
 f.get();
 ```
 
-But the ICompletableFuture can also be used to get notified when the operation has completed. For example when you want to 
-get notified when a batch of reads has completed:
+However, the `ICompletableFuture` can also be used to get notified when the operation has completed. Please see the example code when you want to 
+get notified when a batch of reads has completed.
+
 ```java
 ICompletableFuture<ReadResultSet<String>> f = rb.readManyAsync(sequence, min, max, someFilter);
 f.andThen(new ExecutionCallback<ReadResultSet<String>>() {
@@ -217,11 +232,12 @@ f.andThen(new ExecutionCallback<ReadResultSet<String>>() {
    }
 });
 ```
-THe advantage of this approach is that the thread that does the call isn't blocked till the response is returned.
+
+The advantage of this approach: The thread that is used for the call is not blocked till the response is returned.
 
 ### Full Configuration examples
 
-The following snippet shows the XML configuration of a Ringbuffer called 'rb'. The configuration is modeled after Ringbuffer defaults.
+The following shows the declarative configuration of a Ringbuffer called `rb`. The configuration is modeled after Ringbuffer defaults.
 
 ```xml
 <ringbuffer name="rb">
@@ -233,8 +249,7 @@ The following snippet shows the XML configuration of a Ringbuffer called 'rb'. T
 </ringbuffer>
 ```
 
-A Ringbuffer can also be configured using programmatic API. Below is a full example of programmatic configuration of 
-the above XML version:
+You can also configure a Ringbuffer programmatically. The following is programmatic version of the above declarative configuration.
 
 ```java
 RingbufferConfig rbConfig = new RingbufferConfig("rb")
