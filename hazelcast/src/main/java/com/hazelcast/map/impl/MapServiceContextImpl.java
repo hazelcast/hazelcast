@@ -22,25 +22,33 @@ import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.impl.eviction.EvictionOperator;
 import com.hazelcast.map.impl.eviction.ExpirationManager;
+import com.hazelcast.map.impl.operation.MapPartitionDestroyOperation;
 import com.hazelcast.map.listener.MapPartitionLostListener;
 import com.hazelcast.map.merge.MergePolicyProvider;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.spi.EventFilter;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.OperationService;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
+import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.spi.Operation;
 
+import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.Collections;
+import java.util.LinkedHashSet;
 
 import static com.hazelcast.map.impl.ListenerAdapters.createListenerAdapter;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
@@ -49,6 +57,7 @@ import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
  * Default implementation of map service context.
  */
 class MapServiceContextImpl implements MapServiceContext {
+    private static final long DESTROY_TIMEOUT_SECONDS = 30;
 
     private final NodeEngine nodeEngine;
     private final PartitionContainer[] partitionContainers;
@@ -171,10 +180,29 @@ class MapServiceContextImpl implements MapServiceContext {
     @Override
     public void destroyMap(String mapName) {
         final PartitionContainer[] containers = partitionContainers;
+        final List<Future> futures = new ArrayList<Future>(containers.length);
         for (PartitionContainer container : containers) {
             if (container != null) {
-                container.destroyMap(mapName);
+                int partitionId = container.getPartitionId();
+                InternalPartition partition = nodeEngine.getPartitionService().getPartition(partitionId);
+
+                if (partition.isLocal()) {
+                    OperationService operationService = nodeEngine.getOperationService();
+                    Operation operation = new MapPartitionDestroyOperation(container, mapName);
+
+                    Future f = operationService.invokeOnPartition(SERVICE_NAME, operation, partitionId);
+                    futures.add(f);
+                }
             }
+        }
+
+        try {
+            for (Future f : futures) {
+                f.get(DESTROY_TIMEOUT_SECONDS,
+                        TimeUnit.SECONDS);
+            }
+        } catch (Throwable t) {
+            throw ExceptionUtil.rethrow(t);
         }
     }
 
