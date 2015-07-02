@@ -34,13 +34,13 @@ import java.util.Properties;
  * @param <T> implementation type of HazelcastRegion
  */
 public abstract class AbstractAccessDelegate<T extends HazelcastRegion> implements AccessDelegate<T> {
-
     protected final ILogger log;
     protected final T hazelcastRegion;
     protected final RegionCache cache;
     protected final Comparator<Object> versionComparator;
 
     protected AbstractAccessDelegate(final T hazelcastRegion, final Properties props) {
+        super();
         this.hazelcastRegion = hazelcastRegion;
         log = hazelcastRegion.getLogger();
         if (hazelcastRegion instanceof AbstractTransactionalDataRegion) {
@@ -56,30 +56,9 @@ public abstract class AbstractAccessDelegate<T extends HazelcastRegion> implemen
         return hazelcastRegion;
     }
 
-    protected boolean put(final Object key, final Object value, final Object currentVersion) {
-        try {
-            return cache.put(key, value, currentVersion);
-        } catch (HazelcastException e) {
-            log.finest("Could not put into Cache[" + hazelcastRegion.getName() + "]: " + e.getMessage());
-            return false;
-        }
-    }
-
-    protected boolean update(final Object key, final Object value,
-                             final Object currentVersion, final Object previousVersion, final SoftLock lock) {
-        try {
-            return cache.update(key, value, currentVersion, previousVersion, lock);
-        } catch (HazelcastException e) {
-            if (log.isFinestEnabled()) {
-                log.finest("Could not update Cache[" + hazelcastRegion.getName() + "]: " + e.getMessage());
-            }
-            return false;
-        }
-    }
-
     public Object get(final Object key, final long txTimestamp) throws CacheException {
         try {
-            return cache.get(key);
+            return cache.get(key, txTimestamp);
         } catch (HazelcastException e) {
             if (log.isFinestEnabled()) {
                 log.finest("Could not read from Cache[" + hazelcastRegion.getName() + "]: " + e.getMessage());
@@ -90,23 +69,23 @@ public abstract class AbstractAccessDelegate<T extends HazelcastRegion> implemen
 
     public boolean putFromLoad(final Object key, final Object value, final long txTimestamp,
                                final Object version) throws CacheException {
-        return putFromLoad(key, value, txTimestamp, version, true);
-    }
-
-    public void remove(final Object key) throws CacheException {
         try {
-            cache.remove(key);
+            return cache.put(key, value, txTimestamp, version);
         } catch (HazelcastException e) {
-            throw new CacheException("Operation timeout during remove operation from cache!", e);
+            if (log.isFinestEnabled()) {
+                log.finest("Could not put into Cache[" + hazelcastRegion.getName() + "]: " + e.getMessage());
+            }
+            return false;
         }
     }
 
-    public void removeAll() throws CacheException {
-        cache.clear();
+    public boolean putFromLoad(final Object key, final Object value, final long txTimestamp,
+                               final Object version, boolean minimalPuts) throws CacheException {
+        return putFromLoad(key, value, txTimestamp, version);
     }
 
     public void evict(final Object key) throws CacheException {
-        remove(key);
+        cache.remove(key);
     }
 
     public void evictAll() throws CacheException {
@@ -120,26 +99,7 @@ public abstract class AbstractAccessDelegate<T extends HazelcastRegion> implemen
         return null;
     }
 
-    /**
-     * NO-OP
-     */
     public void unlockRegion(final SoftLock lock) throws CacheException {
-    }
-
-    /**
-     * This is an asynchronous cache access strategy.
-     * NO-OP
-     */
-    public boolean insert(final Object key, final Object value, final Object version) throws CacheException {
-        return false;
-    }
-
-    /**
-     * This is an asynchronous cache access strategy.
-     * NO-OP
-     */
-    public boolean update(final Object key, final Object value, final Object currentVersion, final Object previousVersion)
-            throws CacheException {
-        return false;
+        cache.clear();
     }
 }
