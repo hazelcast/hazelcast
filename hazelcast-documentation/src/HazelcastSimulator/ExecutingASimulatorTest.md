@@ -1,9 +1,14 @@
 
+
 ## Executing a Simulator Test
 
 After you install and prepare the Hazelcast Simulator for your environment, it is time to perform a test.
 
-In the following sections, you are going to learn how to run a test from the scratch.
+In the following sections, you are going to verify the setup by running a simple map test with a string as key and value. You can start with create working directory.
+
+	mkdir simulator-example
+
+A path of working directory need to be visible in the output of the provisioner/coordinator.
 
 ### Creating and editing properties file
 
@@ -48,20 +53,18 @@ Copy these lines into property file and fill with your properties.
 
 ```
 CLOUD_PROVIDER=aws-ec2
-CLOUD_IDENTITY=
-CLOUD_CREDENTIAL=
-MACHINE_SPEC=hardwareId=
-JDK_FLAVOR=
-JDK_VERSION=
+CLOUD_IDENTITY=~/ec2.identity
+CLOUD_CREDENTIAL=~/ec2.credential
+MACHINE_SPEC=hardwareId=m3.medium,locationId=us-east-1,imageId=us-east-1/ami-fb8e9292
+JDK_FLAVOR=oracle
+JDK_VERSION=7
 ```
+You can get information about CLOUD_IDENTITY and CLOUD_CREDENTIAL from this [link].
+
+[link]:http://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSGettingStartedGuide/AWSCredentials.html
+
 
 ***NOTE:*** *For a full description of the file `simulator.properties`, please see the [Simulator.Properties File Description section](#simulator-properties-file-description). Also you can find sample simulator properties in the `dist/simulator-tests/simulator.properties`. You can copy the this file to working directory ,then you can edit according to your needs.*
-
-<br></br>
-***RELATED INFORMATION***
-
-*Please see the [Provisioner section](#provisioner) and the [Coordinator section](#coordinator) for the more `provisioner` and `coordinator` commands.*
-<br></br>
 
 ### Running the Test
 
@@ -87,8 +90,6 @@ INFO  09:05:07 Provisioning 4 aws-ec2 machines
 INFO  09:05:07 ==============================================================
 INFO  09:05:07 Current number of machines: 0
 INFO  09:05:07 Desired number of machines: 4
-INFO  09:05:07 GroupName: simulator-agent-hasan
-INFO  09:05:07 Username: simulator
 INFO  09:05:07 Using init script:/disk1/hasan/hazelcast-simulator-0.5/conf/init.sh
 INFO  09:05:07 JDK spec: oracle 7
 INFO  09:05:07 Hazelcast version-spec: outofthebox
@@ -135,7 +136,7 @@ Also you can see `agents.txt` was created automatically by provisioner in the wo
 
 	less agents.txt
 
-As you can see, first column of ips is a public ips, second one is a private ips.
+As you can see, first column of ips is a public ips, second one is a private ips.A public ip address is used for coordinator-agent communication. A private ip address is used for client-member and member-member communication. A private ip address can't be connected to from outside of the ec2 environment.
 
 * After the create instances and install agents to them. You just need cordinate and run your test suite via `cooordinator`.
 	
@@ -270,7 +271,7 @@ INFO  10:05:43 Done!
 After it is completed, the artifacts (log files) are downloaded into the `workers` folder in the working directory.
 
 
-* If want to terminate the instances, just run this line of command.
+* If want to terminate the instances, just run this line of command. If an ec2 machine with an agent running is not used for 2 hours, the machines will terminate themselves to prevent running into a big bill.
 
 	```provisioner --terminate```
 
@@ -323,10 +324,11 @@ Also you should make `run.sh` executable:
 
 	chmod +x run.sh
 	
-	
-### An Example Simulator Test
+<br></br>
+***RELATED INFORMATION***
 
-The following example code performs `put` and `get` operations on a Hazelcast Map and verifies the key-value ownership, and it also prints the size of the map.
+*Please see the [Provisioner section](#provisioner) and the [Coordinator section](#coordinator) for the more `provisioner` and `coordinator` commands.*
+<br></br>
 
 ### Using Maven Archetypes
 
