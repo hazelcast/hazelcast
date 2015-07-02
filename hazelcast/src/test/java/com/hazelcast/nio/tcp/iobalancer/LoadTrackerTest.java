@@ -37,6 +37,7 @@ public class LoadTrackerTest {
 
     private AbstractIOSelector selector1;
     private AbstractIOSelector selector2;
+
     private AbstractIOSelector[] selectors;
     private LoadTracker loadTracker;
 
@@ -47,41 +48,35 @@ public class LoadTrackerTest {
         selectors = new AbstractIOSelector[]{selector1, selector2};
 
         ILogger logger = mock(ILogger.class);
-        when(logger.isFinestEnabled())
-                .thenReturn(true);
+        when(logger.isFinestEnabled()).thenReturn(true);
 
-        LoggingService loggingService = mock(LoggingService.class);
-        when(loggingService.getLogger(LoadTracker.class))
-                .thenReturn(logger);
-
-        loadTracker = new LoadTracker(selectors, loggingService);
+        loadTracker = new LoadTracker(selectors, logger);
     }
 
     @Test
     public void testUpdateImbalance() throws Exception {
-        MigratableHandler handler1 = mock(MigratableHandler.class);
-        when(handler1.getEventCount())
-                .thenReturn(0l)
+        MigratableHandler selector1Handler1 = mock(MigratableHandler.class);
+        when(selector1Handler1.getEventCount()).thenReturn(0l)
                 .thenReturn(100l);
-        when(handler1.getOwner())
+        when(selector1Handler1.getOwner())
                 .thenReturn(selector1);
-        loadTracker.addHandler(handler1);
+        loadTracker.addHandler(selector1Handler1);
 
-        MigratableHandler handler2 = mock(MigratableHandler.class);
-        when(handler2.getEventCount())
+        MigratableHandler selector2Handler1 = mock(MigratableHandler.class);
+        when(selector2Handler1.getEventCount())
                 .thenReturn(0l)
                 .thenReturn(200l);
-        when(handler2.getOwner())
+        when(selector2Handler1.getOwner())
                 .thenReturn(selector2);
-        loadTracker.addHandler(handler2);
+        loadTracker.addHandler(selector2Handler1);
 
-        MigratableHandler handler3 = mock(MigratableHandler.class);
-        when(handler3.getEventCount())
+        MigratableHandler selector2Handler3 = mock(MigratableHandler.class);
+        when(selector2Handler3.getEventCount())
                 .thenReturn(0l)
                 .thenReturn(100l);
-        when(handler3.getOwner())
+        when(selector2Handler3.getOwner())
                 .thenReturn(selector2);
-        loadTracker.addHandler(handler3);
+        loadTracker.addHandler(selector2Handler3);
 
         LoadImbalance loadImbalance = loadTracker.updateImbalance();
         assertEquals(0, loadImbalance.minimumEvents);
@@ -91,6 +86,33 @@ public class LoadTrackerTest {
         assertEquals(100, loadImbalance.minimumEvents);
         assertEquals(300, loadImbalance.maximumEvents);
         assertEquals(selector1, loadImbalance.destinationSelector);
+        assertEquals(selector2, loadImbalance.sourceSelector);
+    }
+
+    // there is no point in selecting a selector with a single handler as source.
+    @Test
+    public void testUpdateImbalance_notUsingSingleHandlerSelectorAsSource() throws Exception {
+        MigratableHandler selector1Handler1 = mock(MigratableHandler.class);
+        // the first selector has a handler with a large number of events
+        when(selector1Handler1.getEventCount()).thenReturn(10000l);
+        when(selector1Handler1.getOwner()).thenReturn(selector1);
+        loadTracker.addHandler(selector1Handler1);
+
+        MigratableHandler selector2Handler = mock(MigratableHandler.class);
+        when(selector2Handler.getEventCount()).thenReturn(200l);
+        when(selector2Handler.getOwner()).thenReturn(selector2);
+        loadTracker.addHandler(selector2Handler);
+
+        MigratableHandler selector2Handler2 = mock(MigratableHandler.class);
+        when(selector2Handler2.getEventCount()).thenReturn(200l);
+        when(selector2Handler2.getOwner()).thenReturn(selector2);
+        loadTracker.addHandler(selector2Handler2);
+
+        LoadImbalance loadImbalance = loadTracker.updateImbalance();
+
+        assertEquals(400, loadImbalance.minimumEvents);
+        assertEquals(400, loadImbalance.maximumEvents);
+        assertEquals(selector2, loadImbalance.destinationSelector);
         assertEquals(selector2, loadImbalance.sourceSelector);
     }
 }

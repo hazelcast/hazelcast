@@ -144,6 +144,7 @@ public class TcpIpConnectionManager implements ConnectionManager {
         this.loggingService = loggingService;
     }
 
+
     public void interceptSocket(Socket socket, boolean onAccept) throws IOException {
         if (!isSocketInterceptorEnabled()) {
             return;
@@ -173,6 +174,21 @@ public class TcpIpConnectionManager implements ConnectionManager {
 
     public PacketWriter createPacketWriter(TcpIpConnection connection) {
         return ioService.createPacketWriter(connection);
+    }
+
+    // just for testing
+    public Set<TcpIpConnection> getActiveConnections() {
+        return activeConnections;
+    }
+
+    // just for testing
+    public InSelectorImpl[] getInSelectors() {
+        return inSelectors;
+    }
+
+    // just for testing
+    public OutSelectorImpl[] getOutSelectors() {
+        return outSelectors;
     }
 
     @Override
@@ -254,7 +270,6 @@ public class TcpIpConnectionManager implements ConnectionManager {
                 tcpConnection.setMonitor(connectionMonitor);
             }
         }
-        ioBalancer.connectionAdded(connection);
         connectionsMap.put(remoteEndPoint, connection);
         connectionsInProgress.remove(remoteEndPoint);
         ioService.getEventService().executeEventCallback(new StripedRunnable() {
@@ -324,6 +339,7 @@ public class TcpIpConnectionManager implements ConnectionManager {
         acceptedSockets.remove(channel);
 
         connection.start();
+        ioBalancer.connectionAdded(connection);
 
         log(Level.INFO, "Established socket connection between " + channel.socket().getLocalSocketAddress());
 
@@ -359,7 +375,6 @@ public class TcpIpConnectionManager implements ConnectionManager {
         }
         return connection;
     }
-
 
     private TcpIpConnectionMonitor getConnectionMonitor(Address endpoint, boolean reset) {
         TcpIpConnectionMonitor monitor = ConcurrencyUtil.getOrPutIfAbsent(monitors, endpoint, monitorConstructor);

@@ -22,9 +22,10 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.HazelcastInstanceFactory;
-import com.hazelcast.nio.Address;
 import com.hazelcast.nio.tcp.IOSelector;
+import com.hazelcast.nio.tcp.InSelectorImpl;
 import com.hazelcast.nio.tcp.MigratableHandler;
+import com.hazelcast.nio.tcp.OutSelectorImpl;
 import com.hazelcast.nio.tcp.ReadHandler;
 import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.nio.tcp.TcpIpConnectionManager;
@@ -32,6 +33,8 @@ import com.hazelcast.nio.tcp.WriteHandler;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.NightlyTest;
+import com.hazelcast.test.annotation.Repeat;
+import org.apache.log4j.Level;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -39,8 +42,13 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(NightlyTest.class)
@@ -53,6 +61,7 @@ public class IOBalancerStressTest extends HazelcastTestSupport {
         HazelcastInstanceFactory.terminateAll();
     }
 
+    @Repeat(25)
     @Test
     public void testEachConnectionUseDifferentSelectorEventually() {
         Config config = new Config();
@@ -73,47 +82,101 @@ public class IOBalancerStressTest extends HazelcastTestSupport {
             map.put(i % 1000, i);
         }
 
-        TcpIpConnectionManager manager1 = (TcpIpConnectionManager) getConnectionManager(instance1);
-        Address address1 = getAddress(instance1);
-
-        TcpIpConnectionManager manager2 = (TcpIpConnectionManager) getConnectionManager(instance2);
-        Address address2 = getAddress(instance2);
-
-        TcpIpConnectionManager manager3 = (TcpIpConnectionManager) getConnectionManager(instance3);
-        Address address3 = getAddress(instance3);
-
-        assertUseDifferentSelectors(manager1, address2, address3);
-        assertUseDifferentSelectors(manager2, address1, address3);
-        assertUseDifferentSelectors(manager3, address1, address2);
-
+        assertBalanced(instance1);
+        assertBalanced(instance2);
+        assertBalanced(instance3);
     }
 
-    private void assertUseDifferentSelectors(TcpIpConnectionManager manager, Address address1, Address address2) {
-        TcpIpConnection connection1 = (TcpIpConnection) manager.getConnection(address1);
-        TcpIpConnection connection2 = (TcpIpConnection) manager.getConnection(address2);
+    private void assertBalanced(HazelcastInstance hz) {
+        TcpIpConnectionManager connectionManager = (TcpIpConnectionManager) getConnectionManager(hz);
 
-        assertReadHandlersHaveDifferentOwners(connection1, connection2);
-        assertWriteHandlersHaveDifferentOwners(connection1, connection2);
+        Map<IOSelector, Set<MigratableHandler>> handlersPerSelector = getHandlersPerSelector(connectionManager);
+
+        try {
+            for (Map.Entry<IOSelector, Set<MigratableHandler>> entry : handlersPerSelector.entrySet()) {
+                IOSelector selector = entry.getKey();
+                Set<MigratableHandler> handlers = entry.getValue();
+                assertBalanced(selector, handlers);
+            }
+        } catch (AssertionError e) {
+            // if something fails, we want to see the debug
+            System.out.println(debug(connectionManager));
+            throw e;
+        }
     }
 
-    private void assertWriteHandlersHaveDifferentOwners(TcpIpConnection connection1, TcpIpConnection connection2) {
-        WriteHandler writeHandler1 = connection1.getWriteHandler();
-        WriteHandler writeHandler2 = connection2.getWriteHandler();
-        assertHaveDifferentOwners(writeHandler1, writeHandler2);
+    public String debug(TcpIpConnectionManager connectionManager) {
+        StringBuffer sb = new StringBuffer();
+        sb.append("in selectors\n");
+        for (InSelectorImpl in : connectionManager.getInSelectors()) {
+            sb.append(in + " :" + in.getReadEvents() + "\n");
+
+            for (TcpIpConnection connection : connectionManager.getActiveConnections()) {
+                ReadHandler readHandler = connection.getReadHandler();
+                if (readHandler.getOwner() == in) {
+                    sb.append("\t" + readHandler + " eventCount:" + readHandler.getEventCount() + "\n");
+                }
+            }
+        }
+        sb.append("out selectors\n");
+        for (OutSelectorImpl in : connectionManager.getOutSelectors()) {
+            sb.append(in + " :" + in.getWriteEvents() + "\n");
+
+            for (TcpIpConnection connection : connectionManager.getActiveConnections()) {
+                WriteHandler writeHandler = connection.getWriteHandler();
+                if (writeHandler.getOwner() == in) {
+                    sb.append("\t" + writeHandler + " eventCount:" + writeHandler.getEventCount() + "\n");
+                }
+            }
+        }
+
+        return sb.toString();
     }
 
-    private void assertReadHandlersHaveDifferentOwners(TcpIpConnection connection1, TcpIpConnection connection2) {
-        ReadHandler readHandler1 = connection1.getReadHandler();
-        ReadHandler readHandler2 = connection2.getReadHandler();
-        assertHaveDifferentOwners(readHandler1, readHandler2);
+
+    private Map<IOSelector, Set<MigratableHandler>> getHandlersPerSelector(TcpIpConnectionManager connectionManager) {
+        Map<IOSelector, Set<MigratableHandler>> handlersPerSelector = new HashMap<IOSelector, Set<MigratableHandler>>();
+        for (TcpIpConnection connection : connectionManager.getActiveConnections()) {
+            add(handlersPerSelector, connection.getReadHandler());
+            add(handlersPerSelector, connection.getWriteHandler());
+        }
+        return handlersPerSelector;
     }
 
-    private void assertHaveDifferentOwners(MigratableHandler handler1, MigratableHandler handler2) {
-        IOSelector owner1 = handler1.getOwner();
-        IOSelector owner2 = handler2.getOwner();
+    /**
+     * A selector is balanced if:
+     * - it has 1 active handler (so a high event count)
+     * - potentially 1 dead handler (duplicate connection). So event count should be low.
+     *
+     * @param selector
+     * @param handlers
+     */
+    public void assertBalanced(IOSelector selector, Set<MigratableHandler> handlers) {
+        assertTrue("no handlers were found for selector:" + selector, handlers.size() > 0);
+        assertTrue("too many handlers were found for selector:" + selector, handlers.size() <= 2);
 
-        assertNotEquals(owner1, owner2);
+        Iterator<MigratableHandler> iterator = handlers.iterator();
+        MigratableHandler activeHandler = iterator.next();
+        if (handlers.size() == 2) {
+            MigratableHandler deadHandler = iterator.next();
+            if (activeHandler.getEventCount() < deadHandler.getEventCount()) {
+                MigratableHandler tmp = deadHandler;
+                deadHandler = activeHandler;
+                activeHandler = tmp;
+            }
+
+            assertTrue("at most 2 event should have been received", deadHandler.getEventCount() < 3);
+        }
+
+        assertTrue(activeHandler.getEventCount() > 10000);
     }
 
-
+    private void add(Map<IOSelector, Set<MigratableHandler>> handlersPerSelector, MigratableHandler handler) {
+        Set<MigratableHandler> handlers = handlersPerSelector.get(handler.getOwner());
+        if (handlers == null) {
+            handlers = new HashSet<MigratableHandler>();
+            handlersPerSelector.put(handler.getOwner(), handlers);
+        }
+        handlers.add(handler);
+    }
 }

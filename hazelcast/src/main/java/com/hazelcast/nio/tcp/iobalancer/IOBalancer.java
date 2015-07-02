@@ -54,7 +54,7 @@ import static com.hazelcast.instance.GroupProperties.PROP_IO_THREAD_COUNT;
  */
 public class IOBalancer {
     private static final String PROP_MONKEY_BALANCER = "hazelcast.io.balancer.monkey";
-    private final ILogger log;
+    private final ILogger logger;
 
     private final int balancerIntervalSeconds;
     private final MigrationStrategy strategy;
@@ -68,14 +68,14 @@ public class IOBalancer {
 
     public IOBalancer(InSelectorImpl[] inSelectors, OutSelectorImpl[] outSelectors, HazelcastThreadGroup threadGroup,
                       int balancerIntervalSeconds, LoggingService loggingService) {
-        this.log = loggingService.getLogger(IOBalancer.class);
+        this.logger = loggingService.getLogger(IOBalancer.class);
         this.balancerIntervalSeconds = balancerIntervalSeconds;
 
         this.strategy = createMigrationStrategy();
         this.threadGroup = threadGroup;
 
-        this.inLoadTracker = new LoadTracker(inSelectors, loggingService);
-        this.outLoadTracker = new LoadTracker(outSelectors, loggingService);
+        this.inLoadTracker = new LoadTracker(inSelectors, logger);
+        this.outLoadTracker = new LoadTracker(outSelectors, logger);
 
         this.enabled = isEnabled(inSelectors, outSelectors);
     }
@@ -89,8 +89,9 @@ public class IOBalancer {
         ReadHandler readHandler = tcpIpConnection.getReadHandler();
         WriteHandler writeHandler = tcpIpConnection.getWriteHandler();
 
-        if (log.isFinestEnabled()) {
-            log.finest("Connection " + connection + " uses read handler " + readHandler + " and write handler " + writeHandler);
+        if (logger.isFinestEnabled()) {
+            logger.finest("Connection " + connection + " uses read handler "
+                    + readHandler + " and write handler " + writeHandler);
         }
 
         inLoadTracker.addHandler(readHandler);
@@ -104,21 +105,21 @@ public class IOBalancer {
 
         TcpIpConnection tcpIpConnection = (TcpIpConnection) connection;
         ReadHandler readHandler = tcpIpConnection.getReadHandler();
-        if (log.isFinestEnabled()) {
-            log.finest("Removing read handler " + readHandler);
+        if (logger.isFinestEnabled()) {
+            logger.finest("Removing read handler " + readHandler);
         }
         inLoadTracker.removeHandler(readHandler);
 
         WriteHandler writeHandler = tcpIpConnection.getWriteHandler();
-        if (log.isFinestEnabled()) {
-            log.finest("Removing write handler " + readHandler);
+        if (logger.isFinestEnabled()) {
+            logger.finest("Removing write handler " + readHandler);
         }
         outLoadTracker.removeHandler(writeHandler);
     }
 
     public void start() {
         if (enabled) {
-            ioBalancerThread = new IOBalancerThread(this, balancerIntervalSeconds, threadGroup, log);
+            ioBalancerThread = new IOBalancerThread(this, balancerIntervalSeconds, threadGroup, logger);
             ioBalancerThread.start();
         }
     }
@@ -142,41 +143,41 @@ public class IOBalancer {
         if (strategy.imbalanceDetected(loadImbalance)) {
             tryMigrate(loadImbalance);
         } else {
-            if (log.isFinestEnabled()) {
+            if (logger.isFinestEnabled()) {
                 long min = loadImbalance.minimumEvents;
                 long max = loadImbalance.maximumEvents;
-                log.finest("No imbalance has been detected. Max. events: " + max + " Min events: " + min + ".");
+                logger.finest("No imbalance has been detected. Max. events: " + max + " Min events: " + min + ".");
             }
         }
     }
 
     private MigrationStrategy createMigrationStrategy() {
         if (Boolean.getBoolean(PROP_MONKEY_BALANCER)) {
-            log.warning("Using Monkey IO Balancer Strategy. This is for stress tests only. Do not user in production! "
+            logger.warning("Using Monkey IO Balancer Strategy. This is for stress tests only. Do not user in production! "
                     + "Disable by not setting the property '" + PROP_MONKEY_BALANCER + "' to true.");
             return new MonkeyMigrationStrategy();
         } else {
-            log.finest("Using normal IO Balancer Strategy.");
+            logger.finest("Using normal IO Balancer Strategy.");
             return new EventCountBasicMigrationStrategy();
         }
     }
 
     private boolean isEnabled(InSelectorImpl[] inSelectors, OutSelectorImpl[] outSelectors) {
         if (balancerIntervalSeconds <= 0) {
-            log.warning("I/O Balancer is disabled as the '"
+            logger.warning("I/O Balancer is disabled as the '"
                     + PROP_IO_BALANCER_INTERVAL_SECONDS + "' property is set to "
                     + balancerIntervalSeconds + ". Set the property to a value larger than 0 to enable the I/O Balancer.");
             return false;
         }
 
         if (inSelectors.length == 1 && outSelectors.length == 1) {
-            log.finest("I/O Balancer is disabled as there is only a single a pair of I/O threads. Use the '"
+            logger.finest("I/O Balancer is disabled as there is only a single a pair of I/O threads. Use the '"
                     + PROP_IO_THREAD_COUNT + "' property to increase number of I/O Threads.");
             return false;
         }
 
-        if (log.isFinestEnabled()) {
-            log.finest("I/O Balancer is enabled. Scanning every " + balancerIntervalSeconds + " seconds for imbalances.");
+        if (logger.isFinestEnabled()) {
+            logger.finest("I/O Balancer is enabled. Scanning every " + balancerIntervalSeconds + " seconds for imbalances.");
         }
 
         return true;
@@ -185,14 +186,14 @@ public class IOBalancer {
     private void tryMigrate(LoadImbalance loadImbalance) {
         MigratableHandler handler = strategy.findHandlerToMigrate(loadImbalance);
         if (handler == null) {
-            log.finest("I/O imbalance is detected, but no suitable migration candidate is found.");
+            logger.finest("I/O imbalance is detected, but no suitable migration candidate is found.");
             return;
         }
 
         IOSelector destinationSelector = loadImbalance.destinationSelector;
-        if (log.isFinestEnabled()) {
+        if (logger.isFinestEnabled()) {
             IOSelector sourceSelector = loadImbalance.sourceSelector;
-            log.finest("Scheduling migration of handler " + handler
+            logger.finest("Scheduling migration of handler " + handler
                     + " from selector thread " + sourceSelector + " to " + destinationSelector);
         }
         handler.requestMigration(destinationSelector);
