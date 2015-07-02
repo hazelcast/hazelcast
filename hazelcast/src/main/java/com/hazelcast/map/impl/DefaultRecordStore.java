@@ -637,6 +637,11 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
         final long now = getNow();
 
         final Record record = getRecord(key);
+
+        if (record == null) {
+            return null;
+        }
+
         // expiration has delay on backups, but reading backup data should not be affected by this delay.
         // this is the reason why we are passing `false` to isExpired() method.
         final boolean expired = isExpired(record, now, false);
