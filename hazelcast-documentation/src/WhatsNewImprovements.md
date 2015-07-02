@@ -1,6 +1,22 @@
 
 ### Enhancements
 
+
+**3.5.1 Enhancements**
+
+This section lists the enhancements performed for Hazelcast 3.5.1 release.
+
+- The method `com.hazelcast.spi.impl.classicscheduler.ResponseThread::process` may catch throwables. When this occurs, it logs an unhelpful message, and ignores the actual exception. This method should be improved to additionally log the cause, or at least the exception class and message [[#5619]](https://github.com/hazelcast/hazelcast/issues/5619).
+- The element `min-eviction-check-millis` in the map configuration does not exist in documentation [[#5614]](https://github.com/hazelcast/hazelcast/issues/5614).
+
+
+<br><br>
+
+
+
+
+**3.5 Enhancements**
+
 This section lists the enhancements performed for Hazelcast 3.5 release.
 
 - **Eventing System Improvements**: RingBuffer and Reliable Topic structures are introduced.
