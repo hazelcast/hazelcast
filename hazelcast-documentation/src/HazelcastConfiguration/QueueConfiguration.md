@@ -49,6 +49,6 @@ Queue configuration has the following elements.
 - `async-backup-count`: Number of asynchronous backups.
 - `empty-queue-ttl`: Used to purge unused or empty queues. If you define a value (time in seconds) for this element, then your queue will be destroyed if it stays empty or unused for that time.
 - `item-listeners`: Lets you add listeners (listener classes) for the queue items. You can also set the attribute `include-value` to `true` if you want the item event to contain the item values, and you can set `local` to `true` if you want to listen to the items on the local node.
-- `queue-store`: Includes the queue store factory class name and the properties  *binary*, *memory limit* and *bulk load*. Please refer to [Queue Persistence](#queue-persistence).
+- `queue-store`: Includes the queue store factory class name and the properties  *binary*, *memory limit* and *bulk load*. Please refer to [Queueing with Persistent Datastore](#queueing-with-persistent-datastore).
 - `statistics-enabled`: If set to `true`, you can retrieve statistics for this Queue using the method `getLocalQueueStats()`.
 
