@@ -842,6 +842,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
             }
             newValue = mapDataStore.add(key, newValue, now);
             record = createRecord(key, newValue, now);
+            mergeRecordExpiration(record, mergingEntry);
             records.put(key, record);
             updateSizeEstimator(calculateRecordHeapCost(record));
         } else {
@@ -859,6 +860,9 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
                 //remove from map & invalidate.
                 deleteRecord(key);
                 return true;
+            }
+            if (newValue == mergingEntry.getValue()) {
+                mergeRecordExpiration(record, mergingEntry);
             }
             // same with the existing entry so no need to map-store etc operations.
             if (mapServiceContext.compare(name, newValue, oldValue)) {
