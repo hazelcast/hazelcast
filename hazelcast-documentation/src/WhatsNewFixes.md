@@ -9,7 +9,10 @@ This section lists issues solved for Hazelcast 3.5.1 release.
 - Destroying a map just after creating it produces double create/destroy events for `DistributedObjectListener` [[#5592]](https://github.com/hazelcast/hazelcast/issues/5592).
 - Map does not allow changing its maximum size, TTL and maximum idle properties. However, these fields are editable in the "Map Config" popup of Management Center. These fields should be disabled to prevent misguiding [[#5591]](https://github.com/hazelcast/hazelcast/issues/5591).
 - Map is destroyed using `IMap.destroy()` but then it is immediately recreated [[#5554]](https://github.com/hazelcast/hazelcast/issues/5554).
-- 
+- There should be a better calculation when calling the method `getApproximateMaxSize()` related to casting. Its return type is `int` and this causes the map entries to be evicted all the time when, for example, the eviction policy for an IMap is set to heap percentage with the value 1% [[#5516]](https://github.com/hazelcast/hazelcast/issues/5516).
+- All `onResponse()` calls on a `MultiExecutionCallback` should be made before the method `onComplete()` is called. There exists a race condition in `ExecutionCallbackAdapterFactory` which permits the method `onComplete()` to be called before all `onReponse()` calls are made [[#5490]](https://github.com/hazelcast/hazelcast/issues/5490).
+- Hazelcast Management Center "Scripting" tab is not refreshed when a new node joins to the cluster [[#4738]](https://github.com/hazelcast/hazelcast/issues/4738).
+- When updating a map entry which is replicated over WAN, the TTL (time to live) is not honored in the remote cluster map. When the timeout expires, the entry disappears from the cluster in which the key is owned, however it remains in the remote cluster [[#254]](https://github.com/hazelcast/hazelcast/issues/254).
 
 
 <br><br>
