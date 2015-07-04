@@ -20,7 +20,7 @@ import com.hazelcast.transaction.TransactionException;
 
 public interface Transaction {
 
-    public enum State {
+    enum State {
         NO_TXN,
         ACTIVE,
         PREPARING,

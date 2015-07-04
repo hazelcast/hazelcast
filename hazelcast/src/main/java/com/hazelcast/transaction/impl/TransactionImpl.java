@@ -150,6 +150,7 @@ public class TransactionImpl implements Transaction, TransactionSupport {
         }
     }
 
+    @Override
     public TransactionLog getTransactionLog(Object key) {
         return txLogMap.get(key);
     }
@@ -158,6 +159,7 @@ public class TransactionImpl implements Transaction, TransactionSupport {
         return txLogs;
     }
 
+    @Override
     public void removeTransactionLog(Object key) {
         TransactionLog removed = txLogMap.remove(key);
         if (removed != null) {
@@ -233,6 +235,7 @@ public class TransactionImpl implements Transaction, TransactionSupport {
         }
     }
 
+    @Override
     public void prepare() throws TransactionException {
         if (state != ACTIVE) {
             throw new TransactionNotActiveException("Transaction is not active");
@@ -381,6 +384,7 @@ public class TransactionImpl implements Transaction, TransactionSupport {
         return startTime;
     }
 
+    @Override
     public String getOwnerUuid() {
         return txOwnerUuid;
     }
