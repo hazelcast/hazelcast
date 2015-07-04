@@ -16,6 +16,7 @@
 
 package com.hazelcast.nio.tcp;
 
-public interface SelectionHandler {
-    void handle();
+public interface IOReactorOutOfMemoryHandler {
+
+    void handle(OutOfMemoryError error);
 }

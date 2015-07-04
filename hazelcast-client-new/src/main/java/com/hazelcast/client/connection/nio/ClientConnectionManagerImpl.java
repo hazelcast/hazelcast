@@ -40,9 +40,9 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionListener;
 import com.hazelcast.nio.SocketInterceptor;
-import com.hazelcast.nio.tcp.IOSelector;
-import com.hazelcast.nio.tcp.IOSelectorOutOfMemoryHandler;
-import com.hazelcast.nio.tcp.InSelectorImpl;
+import com.hazelcast.nio.tcp.IOReactor;
+import com.hazelcast.nio.tcp.IOReactorOutOfMemoryHandler;
+import com.hazelcast.nio.tcp.IOReactorImp;
 import com.hazelcast.nio.tcp.SocketChannelWrapper;
 import com.hazelcast.nio.tcp.SocketChannelWrapperFactory;
 import com.hazelcast.util.Clock;
@@ -68,7 +68,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
 
     private static final ILogger LOGGER = Logger.getLogger(ClientConnectionManagerImpl.class);
 
-    private static final IOSelectorOutOfMemoryHandler OUT_OF_MEMORY_HANDLER = new IOSelectorOutOfMemoryHandler() {
+    private static final IOReactorOutOfMemoryHandler OUT_OF_MEMORY_HANDLER = new IOReactorOutOfMemoryHandler() {
         @Override
         public void handle(OutOfMemoryError error) {
             LOGGER.severe(error);
@@ -85,8 +85,8 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     private final HazelcastClientInstanceImpl client;
     private final SocketInterceptor socketInterceptor;
     private final SocketOptions socketOptions;
-    private final IOSelector inSelector;
-    private final IOSelector outSelector;
+    private final IOReactor inSelector;
+    private final IOReactor outSelector;
 
     private final SocketChannelWrapperFactory socketChannelWrapperFactory;
     private final ClientExecutionServiceImpl executionService;
@@ -119,15 +119,15 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
 
         executionService = (ClientExecutionServiceImpl) client.getClientExecutionService();
 
-        inSelector = new InSelectorImpl(
+        inSelector = new IOReactorImp(
                 client.getThreadGroup(),
                 "ClientInSelector",
-                Logger.getLogger(InSelectorImpl.class),
+                Logger.getLogger(IOReactorImp.class),
                 OUT_OF_MEMORY_HANDLER);
-        outSelector = new ClientOutSelectorImpl(
+        outSelector = new IOReactorImp(
                 client.getThreadGroup(),
                 "ClientOutSelector",
-                Logger.getLogger(ClientOutSelectorImpl.class),
+                Logger.getLogger(IOReactorImp.class),
                 OUT_OF_MEMORY_HANDLER);
 
         socketOptions = networkConfig.getSocketOptions();

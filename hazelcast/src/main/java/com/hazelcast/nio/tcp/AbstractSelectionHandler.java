@@ -32,15 +32,15 @@ public abstract class AbstractSelectionHandler implements MigratableHandler {
     protected final TcpIpConnection connection;
     protected final TcpIpConnectionManager connectionManager;
     protected Selector selector;
-    protected IOSelector ioSelector;
+    protected IOReactor ioReactor;
 
     private SelectionKey selectionKey;
     private final int initialOps;
 
-    public AbstractSelectionHandler(TcpIpConnection connection, IOSelector ioSelector, int initialOps) {
+    public AbstractSelectionHandler(TcpIpConnection connection, IOReactor ioReactor, int initialOps) {
         this.connection = connection;
-        this.ioSelector = ioSelector;
-        this.selector = ioSelector.getSelector();
+        this.ioReactor = ioReactor;
+        this.selector = ioReactor.getSelector();
         this.socketChannel = connection.getSocketChannelWrapper();
         this.connectionManager = connection.getConnectionManager();
         this.logger = connectionManager.ioService.getLogger(this.getClass().getName());
@@ -102,18 +102,15 @@ public abstract class AbstractSelectionHandler implements MigratableHandler {
         }
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     */
-    public IOSelector getOwner() {
-        return ioSelector;
+    @Override
+    public IOReactor getOwner() {
+        return ioReactor;
     }
 
     // This method run on the oldOwner IOSelector(thread)
-    void startMigration(final IOSelector newOwner) {
-        assert ioSelector == Thread.currentThread() : "startMigration can only run on the owning IOSelector thread";
-        assert ioSelector != newOwner : "newOwner can't be the same as the existing owner";
+    void startMigration(final IOReactor newOwner) {
+        assert ioReactor == Thread.currentThread() : "startMigration can only run on the owning IOSelector thread";
+        assert ioReactor != newOwner : "newOwner can't be the same as the existing owner";
 
         if (!socketChannel.isOpen()) {
             // if the channel is closed, we are done.
@@ -121,7 +118,7 @@ public abstract class AbstractSelectionHandler implements MigratableHandler {
         }
 
         unregisterOp(initialOps);
-        ioSelector = newOwner;
+        ioReactor = newOwner;
         selectionKey.cancel();
         selectionKey = null;
         selector = null;
@@ -134,8 +131,8 @@ public abstract class AbstractSelectionHandler implements MigratableHandler {
         });
     }
 
-    private void completeMigration(IOSelector newOwner) {
-        assert ioSelector == newOwner;
+    private void completeMigration(IOReactor newOwner) {
+        assert ioReactor == newOwner;
 
         if (!socketChannel.isOpen()) {
             return;

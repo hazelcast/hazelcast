@@ -22,19 +22,16 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.HazelcastInstanceFactory;
-import com.hazelcast.nio.tcp.IOSelector;
-import com.hazelcast.nio.tcp.InSelectorImpl;
+import com.hazelcast.nio.tcp.IOReactor;
 import com.hazelcast.nio.tcp.MigratableHandler;
-import com.hazelcast.nio.tcp.OutSelectorImpl;
-import com.hazelcast.nio.tcp.ReadHandler;
+import com.hazelcast.nio.tcp.TcpConnectionReadHandler;
 import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.nio.tcp.TcpIpConnectionManager;
-import com.hazelcast.nio.tcp.WriteHandler;
+import com.hazelcast.nio.tcp.TcpConnectionWriteHandler;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.annotation.Repeat;
-import org.apache.log4j.Level;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -90,11 +87,11 @@ public class IOBalancerStressTest extends HazelcastTestSupport {
     private void assertBalanced(HazelcastInstance hz) {
         TcpIpConnectionManager connectionManager = (TcpIpConnectionManager) getConnectionManager(hz);
 
-        Map<IOSelector, Set<MigratableHandler>> handlersPerSelector = getHandlersPerSelector(connectionManager);
+        Map<IOReactor, Set<MigratableHandler>> handlersPerSelector = getHandlersPerSelector(connectionManager);
 
         try {
-            for (Map.Entry<IOSelector, Set<MigratableHandler>> entry : handlersPerSelector.entrySet()) {
-                IOSelector selector = entry.getKey();
+            for (Map.Entry<IOReactor, Set<MigratableHandler>> entry : handlersPerSelector.entrySet()) {
+                IOReactor selector = entry.getKey();
                 Set<MigratableHandler> handlers = entry.getValue();
                 assertBalanced(selector, handlers);
             }
@@ -108,22 +105,22 @@ public class IOBalancerStressTest extends HazelcastTestSupport {
     public String debug(TcpIpConnectionManager connectionManager) {
         StringBuffer sb = new StringBuffer();
         sb.append("in selectors\n");
-        for (InSelectorImpl in : connectionManager.getInSelectors()) {
+        for (IOReactor in : connectionManager.getInReactors()) {
             sb.append(in + " :" + in.getReadEvents() + "\n");
 
             for (TcpIpConnection connection : connectionManager.getActiveConnections()) {
-                ReadHandler readHandler = connection.getReadHandler();
+                TcpConnectionReadHandler readHandler = connection.getReadHandler();
                 if (readHandler.getOwner() == in) {
                     sb.append("\t" + readHandler + " eventCount:" + readHandler.getEventCount() + "\n");
                 }
             }
         }
         sb.append("out selectors\n");
-        for (OutSelectorImpl in : connectionManager.getOutSelectors()) {
+        for (IOReactor in : connectionManager.getOutReactors()) {
             sb.append(in + " :" + in.getWriteEvents() + "\n");
 
             for (TcpIpConnection connection : connectionManager.getActiveConnections()) {
-                WriteHandler writeHandler = connection.getWriteHandler();
+                TcpConnectionWriteHandler writeHandler = connection.getWriteHandler();
                 if (writeHandler.getOwner() == in) {
                     sb.append("\t" + writeHandler + " eventCount:" + writeHandler.getEventCount() + "\n");
                 }
@@ -134,8 +131,8 @@ public class IOBalancerStressTest extends HazelcastTestSupport {
     }
 
 
-    private Map<IOSelector, Set<MigratableHandler>> getHandlersPerSelector(TcpIpConnectionManager connectionManager) {
-        Map<IOSelector, Set<MigratableHandler>> handlersPerSelector = new HashMap<IOSelector, Set<MigratableHandler>>();
+    private Map<IOReactor, Set<MigratableHandler>> getHandlersPerSelector(TcpIpConnectionManager connectionManager) {
+        Map<IOReactor, Set<MigratableHandler>> handlersPerSelector = new HashMap<IOReactor, Set<MigratableHandler>>();
         for (TcpIpConnection connection : connectionManager.getActiveConnections()) {
             add(handlersPerSelector, connection.getReadHandler());
             add(handlersPerSelector, connection.getWriteHandler());
@@ -151,7 +148,7 @@ public class IOBalancerStressTest extends HazelcastTestSupport {
      * @param selector
      * @param handlers
      */
-    public void assertBalanced(IOSelector selector, Set<MigratableHandler> handlers) {
+    public void assertBalanced(IOReactor selector, Set<MigratableHandler> handlers) {
         assertTrue("no handlers were found for selector:" + selector, handlers.size() > 0);
         assertTrue("too many handlers were found for selector:" + selector, handlers.size() <= 2);
 
@@ -171,7 +168,7 @@ public class IOBalancerStressTest extends HazelcastTestSupport {
         assertTrue(activeHandler.getEventCount() > 10000);
     }
 
-    private void add(Map<IOSelector, Set<MigratableHandler>> handlersPerSelector, MigratableHandler handler) {
+    private void add(Map<IOReactor, Set<MigratableHandler>> handlersPerSelector, MigratableHandler handler) {
         Set<MigratableHandler> handlers = handlersPerSelector.get(handler.getOwner());
         if (handlers == null) {
             handlers = new HashSet<MigratableHandler>();

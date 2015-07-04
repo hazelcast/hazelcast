@@ -16,6 +16,7 @@
 
 package com.hazelcast.nio.tcp.iobalancer;
 
+import com.hazelcast.nio.tcp.IOReactor;
 import com.hazelcast.nio.tcp.MigratableHandler;
 
 /**
@@ -27,7 +28,7 @@ import com.hazelcast.nio.tcp.MigratableHandler;
 interface MigrationStrategy {
 
     /**
-     * Looks for imbalance in {@link MigratableHandler handler} to {@link com.hazelcast.nio.tcp.IOSelector ioSelector}
+     * Looks for imbalance in {@link MigratableHandler handler} to {@link IOReactor ioSelector}
      * mapping.
      *
      * @param imbalance

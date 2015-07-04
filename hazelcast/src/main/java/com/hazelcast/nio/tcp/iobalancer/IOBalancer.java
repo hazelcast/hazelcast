@@ -20,13 +20,12 @@ import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.tcp.IOSelector;
-import com.hazelcast.nio.tcp.InSelectorImpl;
+import com.hazelcast.nio.tcp.IOReactor;
+import com.hazelcast.nio.tcp.IOReactorImp;
 import com.hazelcast.nio.tcp.MigratableHandler;
-import com.hazelcast.nio.tcp.OutSelectorImpl;
-import com.hazelcast.nio.tcp.ReadHandler;
+import com.hazelcast.nio.tcp.TcpConnectionReadHandler;
 import com.hazelcast.nio.tcp.TcpIpConnection;
-import com.hazelcast.nio.tcp.WriteHandler;
+import com.hazelcast.nio.tcp.TcpConnectionWriteHandler;
 
 import static com.hazelcast.instance.GroupProperties.PROP_IO_BALANCER_INTERVAL_SECONDS;
 import static com.hazelcast.instance.GroupProperties.PROP_IO_THREAD_COUNT;
@@ -38,7 +37,7 @@ import static com.hazelcast.instance.GroupProperties.PROP_IO_THREAD_COUNT;
  * We have measured significant fluctuations of performance when the threads are not utilized equally.
  *
  * <code>com.hazelcast.nio.tcp.iobalancer.HandlerBalancer</code> tries to detect such situations and fix
- * them by moving {@link com.hazelcast.nio.tcp.ReadHandler} and {@link com.hazelcast.nio.tcp.WriteHandler} between
+ * them by moving {@link TcpConnectionReadHandler} and {@link TcpConnectionWriteHandler} between
  * threads.
  *
  * It measures number of events serviced by each handler in a given interval and if imbalance is detected then it
@@ -66,7 +65,7 @@ public class IOBalancer {
     private volatile boolean enabled;
     private IOBalancerThread ioBalancerThread;
 
-    public IOBalancer(InSelectorImpl[] inSelectors, OutSelectorImpl[] outSelectors, HazelcastThreadGroup threadGroup,
+    public IOBalancer(IOReactorImp[] inSelectors, IOReactorImp[] outSelectors, HazelcastThreadGroup threadGroup,
                       int balancerIntervalSeconds, LoggingService loggingService) {
         this.logger = loggingService.getLogger(IOBalancer.class);
         this.balancerIntervalSeconds = balancerIntervalSeconds;
@@ -86,8 +85,8 @@ public class IOBalancer {
         }
 
         TcpIpConnection tcpIpConnection = (TcpIpConnection) connection;
-        ReadHandler readHandler = tcpIpConnection.getReadHandler();
-        WriteHandler writeHandler = tcpIpConnection.getWriteHandler();
+        TcpConnectionReadHandler readHandler = tcpIpConnection.getReadHandler();
+        TcpConnectionWriteHandler writeHandler = tcpIpConnection.getWriteHandler();
 
         if (logger.isFinestEnabled()) {
             logger.finest("Connection " + connection + " uses read handler "
@@ -104,13 +103,13 @@ public class IOBalancer {
         }
 
         TcpIpConnection tcpIpConnection = (TcpIpConnection) connection;
-        ReadHandler readHandler = tcpIpConnection.getReadHandler();
+        TcpConnectionReadHandler readHandler = tcpIpConnection.getReadHandler();
         if (logger.isFinestEnabled()) {
             logger.finest("Removing read handler " + readHandler);
         }
         inLoadTracker.removeHandler(readHandler);
 
-        WriteHandler writeHandler = tcpIpConnection.getWriteHandler();
+        TcpConnectionWriteHandler writeHandler = tcpIpConnection.getWriteHandler();
         if (logger.isFinestEnabled()) {
             logger.finest("Removing write handler " + readHandler);
         }
@@ -162,7 +161,7 @@ public class IOBalancer {
         }
     }
 
-    private boolean isEnabled(InSelectorImpl[] inSelectors, OutSelectorImpl[] outSelectors) {
+    private boolean isEnabled(IOReactorImp[] inSelectors, IOReactorImp[] outSelectors) {
         if (balancerIntervalSeconds <= 0) {
             logger.warning("I/O Balancer is disabled as the '"
                     + PROP_IO_BALANCER_INTERVAL_SECONDS + "' property is set to "
@@ -190,9 +189,9 @@ public class IOBalancer {
             return;
         }
 
-        IOSelector destinationSelector = loadImbalance.destinationSelector;
+        IOReactor destinationSelector = loadImbalance.destinationSelector;
         if (logger.isFinestEnabled()) {
-            IOSelector sourceSelector = loadImbalance.sourceSelector;
+            IOReactor sourceSelector = loadImbalance.sourceSelector;
             logger.finest("Scheduling migration of handler " + handler
                     + " from selector thread " + sourceSelector + " to " + destinationSelector);
         }
