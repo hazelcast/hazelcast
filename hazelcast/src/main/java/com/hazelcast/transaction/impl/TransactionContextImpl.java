@@ -35,7 +35,6 @@ import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionNotActiveException;
 import com.hazelcast.transaction.TransactionOptions;
-import com.hazelcast.transaction.TransactionOptions.TransactionType;
 import com.hazelcast.transaction.TransactionalObject;
 import com.hazelcast.transaction.impl.xa.XAService;
 
@@ -43,7 +42,8 @@ import javax.transaction.xa.XAResource;
 import java.util.HashMap;
 import java.util.Map;
 
-import static com.hazelcast.transaction.TransactionOptions.TransactionType.*;
+import static com.hazelcast.transaction.TransactionOptions.TransactionType.TWO_PHASE;
+import static com.hazelcast.transaction.impl.Transaction.State.ACTIVE;
 
 final class TransactionContextImpl implements TransactionContext {
 
@@ -114,10 +114,8 @@ final class TransactionContextImpl implements TransactionContext {
     @SuppressWarnings("unchecked")
     @Override
     public TransactionalObject getTransactionalObject(String serviceName, String name) {
-        if (transaction.getState() != Transaction.State.ACTIVE) {
-            throw new TransactionNotActiveException("No transaction is found while accessing "
-                    + "transactional object -> " + serviceName + "[" + name + "]!");
-        }
+        checkActive(serviceName, name);
+
         TransactionalObjectKey key = new TransactionalObjectKey(serviceName, name);
         TransactionalObject obj = txnObjectMap.get(key);
         if (obj != null) {
@@ -139,6 +137,13 @@ final class TransactionContextImpl implements TransactionContext {
             throw new IllegalArgumentException("Service[" + serviceName + "] is not transactional!");
         }
         return obj;
+    }
+
+    private void checkActive(String serviceName, String name) {
+        if (transaction.getState() != ACTIVE) {
+            throw new TransactionNotActiveException("No transaction is found while accessing "
+                    + "transactional object -> " + serviceName + "[" + name + "]!");
+        }
     }
 
     Transaction getTransaction() {
