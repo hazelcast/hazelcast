@@ -18,12 +18,14 @@ package com.hazelcast.map.nearcache;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.MaxSizeConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.instance.TestUtil;
+import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.NearCache;
@@ -48,9 +50,11 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
+import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -624,6 +628,38 @@ public class NearCacheTest extends HazelcastTestSupport {
 
         waitUntilEvictionEventsReceived(latch);
         assertNearCacheSize(mapSize, mapName, map);
+    }
+
+    @Test
+    public void tesMaxSizeUpdateAtRuntimeViaMapContainer() throws Exception {
+        final String mapName = "issue5485";
+        final Config cfg = new Config();
+
+        final MaxSizeConfig maxSizeConfig = new MaxSizeConfig().setSize(1000);
+        final NearCacheConfig nearCacheConfig = new NearCacheConfig().setMaxSize(1000);
+
+        final MapConfig mapConfig = cfg.getMapConfig(mapName)
+                .setMaxSizeConfig(maxSizeConfig)
+                .setNearCacheConfig(nearCacheConfig);
+
+        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
+        final HazelcastInstance h = factory.newHazelcastInstance(cfg);
+
+        final MapProxyImpl<String, String> proxy = h.getDistributedObject(MapService.SERVICE_NAME, mapName);
+        final MapServiceContext mapServiceContext = proxy.getService().getMapServiceContext();
+        final MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);
+
+        final NearCache nearCache = mapServiceContext.getNearCacheProvider().getNearCache(mapName);
+        assertThat(nearCache.getMaxSize(), equalTo(1000));
+
+
+        final MaxSizeConfig halvedMaxSizeConfig = maxSizeConfig.setSize(100);
+        final NearCacheConfig halvedNearCacheConfig = nearCacheConfig.setMaxSize(100);
+        final MapConfig halvedMapConfig = mapConfig
+                .setMaxSizeConfig(halvedMaxSizeConfig)
+                .setNearCacheConfig(halvedNearCacheConfig);
+        mapContainer.setMapConfig(halvedMapConfig);
+        assertThat(nearCache.getMaxSize(), equalTo(100));
     }
 
     private void waitUntilEvictionEventsReceived(CountDownLatch latch) {
