@@ -17,7 +17,8 @@
 package com.hazelcast.client.connection.nio;
 
 import com.hazelcast.nio.Packet;
-import com.hazelcast.nio.tcp.IOSelector;
+import com.hazelcast.nio.tcp.IOReactor;
+import com.hazelcast.nio.tcp.ReadHandler;
 import com.hazelcast.util.Clock;
 
 import java.io.EOFException;
@@ -25,7 +26,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 
-public class ClientReadHandler extends AbstractClientSelectionHandler {
+public class ClientReadHandler extends AbstractClientSelectionHandler implements ReadHandler {
 
     private final ByteBuffer buffer;
 
@@ -33,8 +34,8 @@ public class ClientReadHandler extends AbstractClientSelectionHandler {
 
     private Packet packet;
 
-    public ClientReadHandler(ClientConnection connection, IOSelector ioSelector, int bufferSize) {
-        super(connection, ioSelector);
+    public ClientReadHandler(ClientConnection connection, IOReactor ioReactor, int bufferSize) {
+        super(connection, ioReactor);
         buffer = ByteBuffer.allocate(bufferSize);
         lastHandle = Clock.currentTimeMillis();
     }
@@ -45,7 +46,7 @@ public class ClientReadHandler extends AbstractClientSelectionHandler {
     }
 
     @Override
-    public void handle() {
+    public void handleRead() {
         lastHandle = Clock.currentTimeMillis();
         if (!connection.isAlive()) {
             if (logger.isFinestEnabled()) {

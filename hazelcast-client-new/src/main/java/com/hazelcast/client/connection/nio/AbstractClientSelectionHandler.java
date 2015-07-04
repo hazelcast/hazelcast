@@ -19,24 +19,23 @@ package com.hazelcast.client.connection.nio;
 import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.nio.tcp.IOSelector;
-import com.hazelcast.nio.tcp.SelectionHandler;
+import com.hazelcast.nio.tcp.IOReactor;
 import com.hazelcast.nio.tcp.SocketChannelWrapper;
 
 import java.nio.channels.SelectionKey;
 
-public abstract class AbstractClientSelectionHandler implements SelectionHandler, Runnable {
+public abstract class AbstractClientSelectionHandler implements Runnable {
 
     protected final ILogger logger;
     protected final SocketChannelWrapper socketChannel;
     protected final ClientConnection connection;
     protected final ClientConnectionManager connectionManager;
-    private final IOSelector ioSelector;
+    private final IOReactor ioReactor;
     private SelectionKey sk;
 
-    public AbstractClientSelectionHandler(final ClientConnection connection, IOSelector ioSelector) {
+    public AbstractClientSelectionHandler(final ClientConnection connection, IOReactor ioReactor) {
         this.connection = connection;
-        this.ioSelector = ioSelector;
+        this.ioReactor = ioReactor;
         this.socketChannel = connection.getSocketChannelWrapper();
         this.connectionManager = connection.getConnectionManager();
         this.logger = Logger.getLogger(getClass().getName());
@@ -64,10 +63,10 @@ public abstract class AbstractClientSelectionHandler implements SelectionHandler
                 return;
             }
             if (sk == null) {
-                sk = socketChannel.keyFor(ioSelector.getSelector());
+                sk = socketChannel.keyFor(ioReactor.getSelector());
             }
             if (sk == null) {
-                sk = socketChannel.register(ioSelector.getSelector(), operation, this);
+                sk = socketChannel.register(ioReactor.getSelector(), operation, this);
             } else {
                 sk.interestOps(sk.interestOps() | operation);
                 if (sk.attachment() != this) {
@@ -80,7 +79,7 @@ public abstract class AbstractClientSelectionHandler implements SelectionHandler
     }
 
     public void register() {
-        ioSelector.addTaskAndWakeup(this);
+        ioReactor.addTaskAndWakeup(this);
     }
 
 }

@@ -49,6 +49,8 @@ public interface ConnectionManager {
 
     /**
      * Dumps all kinds of performance metrics. It is up to the implementation to add anything.
+     *
+     * @deprecated will be replaced by metrics
      */
     void dumpPerformanceMetrics(StringBuffer sb);
 }

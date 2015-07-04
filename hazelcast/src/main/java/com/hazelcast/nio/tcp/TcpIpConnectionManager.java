@@ -99,11 +99,11 @@ public class TcpIpConnectionManager implements ConnectionManager {
 
     private final ServerSocketChannel serverSocketChannel;
 
-    private final int selectorThreadCount;
+    private final int ioReactorThreadCount;
 
-    private final InSelectorImpl[] inSelectors;
+    private final IOReactorImp[] inReactors;
 
-    private final OutSelectorImpl[] outSelectors;
+    private final IOReactorImp[] outReactors;
 
     private final AtomicInteger nextSelectorIndex = new AtomicInteger();
 
@@ -134,9 +134,9 @@ public class TcpIpConnectionManager implements ConnectionManager {
         this.socketConnectTimeoutSeconds = ioService.getSocketConnectTimeoutSeconds();
         this.socketKeepAlive = ioService.getSocketKeepAlive();
         this.socketNoDelay = ioService.getSocketNoDelay();
-        this.selectorThreadCount = ioService.getSelectorThreadCount();
-        this.inSelectors = new InSelectorImpl[selectorThreadCount];
-        this.outSelectors = new OutSelectorImpl[selectorThreadCount];
+        this.ioReactorThreadCount = ioService.getSelectorThreadCount();
+        this.inReactors = new IOReactorImp[ioReactorThreadCount];
+        this.outReactors = new IOReactorImp[ioReactorThreadCount];
         final Collection<Integer> ports = ioService.getOutboundPorts();
         this.outboundPortCount = ports.size();
         this.outboundPorts.addAll(ports);
@@ -182,13 +182,13 @@ public class TcpIpConnectionManager implements ConnectionManager {
     }
 
     // just for testing
-    public InSelectorImpl[] getInSelectors() {
-        return inSelectors;
+    public IOReactorImp[] getInReactors() {
+        return inReactors;
     }
 
     // just for testing
-    public OutSelectorImpl[] getOutSelectors() {
-        return outSelectors;
+    public IOReactorImp[] getOutReactors() {
+        return outReactors;
     }
 
     @Override
@@ -319,7 +319,7 @@ public class TcpIpConnectionManager implements ConnectionManager {
     }
 
     private int nextSelectorIndex() {
-        return Math.abs(nextSelectorIndex.getAndIncrement()) % selectorThreadCount;
+        return Math.abs(nextSelectorIndex.getAndIncrement()) % ioReactorThreadCount;
     }
 
     SocketChannelWrapper wrapSocketChannel(SocketChannel socketChannel, boolean client) throws Exception {
@@ -331,8 +331,8 @@ public class TcpIpConnectionManager implements ConnectionManager {
     TcpIpConnection assignSocketChannel(SocketChannelWrapper channel, Address endpoint) {
         int index = nextSelectorIndex();
 
-        final TcpIpConnection connection = new TcpIpConnection(this, inSelectors[index],
-                outSelectors[index], connectionIdGen.incrementAndGet(), channel);
+        final TcpIpConnection connection = new TcpIpConnection(this, inReactors[index],
+                outReactors[index], connectionIdGen.incrementAndGet(), channel);
 
         connection.setEndPoint(endpoint);
         activeConnections.add(connection);
@@ -435,26 +435,26 @@ public class TcpIpConnectionManager implements ConnectionManager {
             return;
         }
         live = true;
-        log(Level.FINEST, "Starting ConnectionManager and IO selectors.");
-        IOSelectorOutOfMemoryHandler oomeHandler = new IOSelectorOutOfMemoryHandler() {
+        log(Level.FINEST, "Starting ConnectionManager and IO Reactors.");
+        IOReactorOutOfMemoryHandler oomeHandler = new IOReactorOutOfMemoryHandler() {
             @Override
             public void handle(OutOfMemoryError error) {
                 ioService.onOutOfMemory(error);
             }
         };
-        for (int i = 0; i < inSelectors.length; i++) {
-            inSelectors[i] = new InSelectorImpl(
+        for (int i = 0; i < inReactors.length; i++) {
+            inReactors[i] = new IOReactorImp(
                     ioService.getThreadGroup(),
                     ioService.getThreadPrefix() + "in-" + i,
-                    ioService.getLogger(InSelectorImpl.class.getName()),
+                    ioService.getLogger(IOReactorImp.class.getName()),
                     oomeHandler);
-            outSelectors[i] = new OutSelectorImpl(
+            outReactors[i] = new IOReactorImp(
                     ioService.getThreadGroup(),
                     ioService.getThreadPrefix() + "out-" + i,
-                    ioService.getLogger(OutSelectorImpl.class.getName()),
+                    ioService.getLogger(IOReactorImp.class.getName()),
                     oomeHandler);
-            inSelectors[i].start();
-            outSelectors[i].start();
+            inReactors[i].start();
+            outReactors[i].start();
         }
         startIOBalancer();
 
@@ -469,7 +469,7 @@ public class TcpIpConnectionManager implements ConnectionManager {
     }
 
     private void startIOBalancer() {
-        ioBalancer = new IOBalancer(inSelectors, outSelectors,
+        ioBalancer = new IOBalancer(inReactors, outReactors,
                 hazelcastThreadGroup, ioService.getBalancerIntervalSeconds(), loggingService);
         ioBalancer.start();
     }
@@ -525,7 +525,7 @@ public class TcpIpConnectionManager implements ConnectionManager {
                 logger.finest(ignore);
             }
         }
-        shutdownIOSelectors();
+        shutdownIOReactors();
         acceptedSockets.clear();
         connectionsInProgress.clear();
         connectionsMap.clear();
@@ -533,22 +533,23 @@ public class TcpIpConnectionManager implements ConnectionManager {
         activeConnections.clear();
     }
 
-    private synchronized void shutdownIOSelectors() {
+    private synchronized void shutdownIOReactors() {
         if (logger.isFinestEnabled()) {
-            log(Level.FINEST, "Shutting down IO selectors... Total: " + selectorThreadCount);
+            // todo: this isn't correct since there are twice the number of reactors.
+            log(Level.FINEST, "Shutting down IO reactors... Total: " + ioReactorThreadCount);
         }
-        for (int i = 0; i < selectorThreadCount; i++) {
-            IOSelector ioSelector = inSelectors[i];
-            if (ioSelector != null) {
-                ioSelector.shutdown();
+        for (int i = 0; i < ioReactorThreadCount; i++) {
+            IOReactor ioReactor = inReactors[i];
+            if (ioReactor != null) {
+                ioReactor.shutdown();
             }
-            inSelectors[i] = null;
+            inReactors[i] = null;
 
-            ioSelector = outSelectors[i];
-            if (ioSelector != null) {
-                ioSelector.shutdown();
+            ioReactor = outReactors[i];
+            if (ioReactor != null) {
+                ioReactor.shutdown();
             }
-            outSelectors[i] = null;
+            outReactors[i] = null;
         }
     }
 
@@ -609,16 +610,16 @@ public class TcpIpConnectionManager implements ConnectionManager {
 
     @Override
     public void dumpPerformanceMetrics(StringBuffer sb) {
-        for (int k = 0; k < inSelectors.length; k++) {
-            InSelectorImpl inSelector = inSelectors[k];
-            sb.append(inSelector.getName()).append(".readEvents=")
-                    .append(inSelector.getReadEvents()).append("\n");
+        for (int k = 0; k < inReactors.length; k++) {
+            IOReactorImp ioThread = inReactors[k];
+            sb.append(ioThread.getName()).append(".readEvents=")
+                    .append(ioThread.getReadEvents()).append("\n");
         }
 
-        for (int k = 0; k < outSelectors.length; k++) {
-            OutSelectorImpl outSelector = outSelectors[k];
-            sb.append(outSelector.getName()).append(".writeEvents=")
-                    .append(outSelector.getWriteEvents()).append("\n");
+        for (int k = 0; k < outReactors.length; k++) {
+            IOReactorImp ioThread = outReactors[k];
+            sb.append(ioThread.getName()).append(".writeEvents=")
+                    .append(ioThread.getWriteEvents()).append("\n");
         }
     }
 

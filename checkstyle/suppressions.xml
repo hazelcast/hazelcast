@@ -501,7 +501,7 @@
     <suppress checks="ReturnCount" files="com.hazelcast.nio.serialization.impl.MorphingPortableReader"/>
     <suppress checks="MethodCount" files="com.hazelcast.nio.NodeIOService"/>
     <suppress checks="MagicNumber|ReturnCount|MethodCount|NPathComplexity" files="com.hazelcast.nio.Packet"/>
-    <suppress checks="NPathComplexity" files="com.hazelcast.nio.tcp.ReadHandler"/>
+    <suppress checks="NPathComplexity" files="com.hazelcast.nio.tcp.TcpConnectionReadHandler"/>
     <suppress checks="ClassFanOutComplexity|ClassDataAbstractionCoupling|MethodCount|ParameterNumber"
               files="com.hazelcast.nio.serialization.impl.SerializationServiceImpl"/>
     <suppress checks="MethodCount" files="com.hazelcast.nio.tcp.TcpIpConnectionManager"/>

@@ -17,8 +17,8 @@
 package com.hazelcast.nio.tcp.iobalancer;
 
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.tcp.AbstractIOSelector;
-import com.hazelcast.nio.tcp.IOSelector;
+import com.hazelcast.nio.tcp.IOReactorImp;
+import com.hazelcast.nio.tcp.IOReactor;
 import com.hazelcast.nio.tcp.MigratableHandler;
 import com.hazelcast.util.ItemCounter;
 
@@ -41,14 +41,14 @@ class LoadTracker {
     private final ILogger logger;
 
     //all known IO selectors. we assume no. of selectors is constant during a lifespan of a member
-    private final AbstractIOSelector[] selectors;
-    private final Map<IOSelector, Set<MigratableHandler>> selectorToHandlers;
+    private final IOReactorImp[] selectors;
+    private final Map<IOReactor, Set<MigratableHandler>> selectorToHandlers;
 
     //no. of events per handler since an instance started
     private final ItemCounter<MigratableHandler> lastEventCounter = new ItemCounter<MigratableHandler>();
 
     //no. of events per IOSelector since last calculation
-    private final ItemCounter<IOSelector> selectorEvents = new ItemCounter<IOSelector>();
+    private final ItemCounter<IOReactor> selectorEvents = new ItemCounter<IOReactor>();
     //no. of events per handler since last calculation
     private final ItemCounter<MigratableHandler> handlerEventsCounter = new ItemCounter<MigratableHandler>();
 
@@ -57,14 +57,14 @@ class LoadTracker {
 
     private final LoadImbalance imbalance;
 
-    LoadTracker(AbstractIOSelector[] selectors, ILogger logger) {
+    LoadTracker(IOReactorImp[] selectors, ILogger logger) {
         this.logger = logger;
 
-        this.selectors = new AbstractIOSelector[selectors.length];
+        this.selectors = new IOReactorImp[selectors.length];
         System.arraycopy(selectors, 0, this.selectors, 0, selectors.length);
 
-        this.selectorToHandlers = new HashMap<IOSelector, Set<MigratableHandler>>();
-        for (AbstractIOSelector selector : selectors) {
+        this.selectorToHandlers = new HashMap<IOReactor, Set<MigratableHandler>>();
+        for (IOReactorImp selector : selectors) {
             selectorToHandlers.put(selector, new HashSet<MigratableHandler>());
         }
         this.imbalance = new LoadImbalance(selectorToHandlers, handlerEventsCounter);
@@ -89,7 +89,7 @@ class LoadTracker {
         imbalance.maximumEvents = Long.MIN_VALUE;
         imbalance.sourceSelector = null;
         imbalance.destinationSelector = null;
-        for (AbstractIOSelector selector : selectors) {
+        for (IOReactorImp selector : selectors) {
             long eventCount = selectorEvents.get(selector);
             int handlerCount = selectorToHandlers.get(selector).size();
 
@@ -117,7 +117,7 @@ class LoadTracker {
     private void updateHandlerState(MigratableHandler handler) {
         long handlerEventCount = getEventCountSinceLastCheck(handler);
         handlerEventsCounter.set(handler, handlerEventCount);
-        IOSelector owner = handler.getOwner();
+        IOReactor owner = handler.getOwner();
         selectorEvents.add(owner, handlerEventCount);
         Set<MigratableHandler> handlersOwnedBy = selectorToHandlers.get(owner);
         handlersOwnedBy.add(handler);
@@ -150,8 +150,8 @@ class LoadTracker {
             return;
         }
 
-        IOSelector minSelector = imbalance.destinationSelector;
-        IOSelector maxSelector = imbalance.sourceSelector;
+        IOReactor minSelector = imbalance.destinationSelector;
+        IOReactor maxSelector = imbalance.sourceSelector;
         if (minSelector == null || maxSelector == null) {
             return;
         }
@@ -182,7 +182,7 @@ class LoadTracker {
         sb.append("Other Selectors: ")
                 .append(getLineSeperator());
 
-        for (AbstractIOSelector selector : selectors) {
+        for (IOReactorImp selector : selectors) {
             if (!selector.equals(minSelector) && !selector.equals(maxSelector)) {
                 eventCountPerSelector = selectorEvents.get(selector);
                 sb.append("Selector ")
@@ -199,7 +199,7 @@ class LoadTracker {
         logger.finest(sb.toString());
     }
 
-    private void appendSelectorInfo(IOSelector minSelector, Map<IOSelector,
+    private void appendSelectorInfo(IOReactor minSelector, Map<IOReactor,
             Set<MigratableHandler>> selectorToHandlers, StringBuilder sb) {
         Set<MigratableHandler> handlerSet = selectorToHandlers.get(minSelector);
         for (MigratableHandler selectionHandler : handlerSet) {

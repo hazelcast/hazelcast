@@ -16,7 +16,7 @@
 
 package com.hazelcast.nio.tcp.iobalancer;
 
-import com.hazelcast.nio.tcp.IOSelector;
+import com.hazelcast.nio.tcp.IOReactor;
 import com.hazelcast.nio.tcp.MigratableHandler;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -45,7 +45,7 @@ import static org.mockito.Mockito.mock;
 public class MonkeyMigrationStrategyTest extends HazelcastTestSupport {
     private MigrationStrategy strategy;
 
-    private Map<IOSelector, Set<MigratableHandler>> selectorToHandlers;
+    private Map<IOReactor, Set<MigratableHandler>> selectorToHandlers;
     private ItemCounter<MigratableHandler> handlerEventsCounter;
     private LoadImbalance imbalance;
 
@@ -59,10 +59,10 @@ public class MonkeyMigrationStrategyTest extends HazelcastTestSupport {
 
     @Before
     public void setUp() {
-        selectorToHandlers = new HashMap<IOSelector, Set<MigratableHandler>>();
+        selectorToHandlers = new HashMap<IOReactor, Set<MigratableHandler>>();
         handlerEventsCounter = new ItemCounter<MigratableHandler>();
         imbalance = new LoadImbalance(selectorToHandlers, handlerEventsCounter);
-        imbalance.sourceSelector = mock(IOSelector.class);
+        imbalance.sourceSelector = mock(IOReactor.class);
 
         this.strategy = new MonkeyMigrationStrategy();
     }

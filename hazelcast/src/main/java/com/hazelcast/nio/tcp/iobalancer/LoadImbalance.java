@@ -16,7 +16,7 @@
 
 package com.hazelcast.nio.tcp.iobalancer;
 
-import com.hazelcast.nio.tcp.IOSelector;
+import com.hazelcast.nio.tcp.IOReactor;
 import com.hazelcast.nio.tcp.MigratableHandler;
 import com.hazelcast.util.ItemCounter;
 
@@ -27,9 +27,7 @@ import java.util.Set;
  * Describes a state of IOSelector (im-)balance.
  *
  * It's used by {@link MigrationStrategy} to decide whether and what
- * {@link com.hazelcast.nio.tcp.SelectionHandler} should be migrated.
- *
- *
+ * selection handler should be migrated.
  */
 class LoadImbalance {
     //number of events recorded by the busiest IOSelector
@@ -37,14 +35,14 @@ class LoadImbalance {
     //number of events recorded by the least busy IOSelector
     long minimumEvents;
     //busiest IOSelector
-    IOSelector sourceSelector;
+    IOReactor sourceSelector;
     //least busy selector
-    IOSelector destinationSelector;
+    IOReactor destinationSelector;
 
-    private final Map<IOSelector, Set<MigratableHandler>> selectorToHandlers;
+    private final Map<IOReactor, Set<MigratableHandler>> selectorToHandlers;
     private final ItemCounter<MigratableHandler> handlerEventsCounter;
 
-    LoadImbalance(Map<IOSelector, Set<MigratableHandler>> selectorToHandlers,
+    LoadImbalance(Map<IOReactor, Set<MigratableHandler>> selectorToHandlers,
                   ItemCounter<MigratableHandler> handlerEventsCounter) {
         this.selectorToHandlers = selectorToHandlers;
         this.handlerEventsCounter = handlerEventsCounter;
@@ -54,7 +52,7 @@ class LoadImbalance {
      * @param selector
      * @return A set of Handlers owned by the selector
      */
-    Set<MigratableHandler> getHandlersOwnerBy(IOSelector selector) {
+    Set<MigratableHandler> getHandlersOwnerBy(IOReactor selector) {
         return selectorToHandlers.get(selector);
     }
 

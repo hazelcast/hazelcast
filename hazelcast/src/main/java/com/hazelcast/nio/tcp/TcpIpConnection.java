@@ -37,16 +37,16 @@ import java.net.SocketAddress;
  *     <li>the side where it sends data to the remote machine</li>
  * </ol>
  *
- * The reading side is the {@link com.hazelcast.nio.tcp.ReadHandler} and the writing side of this connection
- * is the {@link com.hazelcast.nio.tcp.WriteHandler}.
+ * The reading side is the {@link TcpConnectionReadHandler} and the writing side of this connection
+ * is the {@link TcpConnectionWriteHandler}.
  */
 public final class TcpIpConnection implements Connection {
 
     private final SocketChannelWrapper socketChannel;
 
-    private final ReadHandler readHandler;
+    private final TcpConnectionReadHandler readHandler;
 
-    private final WriteHandler writeHandler;
+    private final TcpConnectionWriteHandler writeHandler;
 
     private final TcpIpConnectionManager connectionManager;
 
@@ -62,14 +62,14 @@ public final class TcpIpConnection implements Connection {
 
     private TcpIpConnectionMonitor monitor;
 
-    public TcpIpConnection(TcpIpConnectionManager connectionManager, IOSelector in, IOSelector out,
+    public TcpIpConnection(TcpIpConnectionManager connectionManager, IOReactor in, IOReactor out,
                            int connectionId, SocketChannelWrapper socketChannel) {
         this.connectionId = connectionId;
         this.logger = connectionManager.ioService.getLogger(TcpIpConnection.class.getName());
         this.connectionManager = connectionManager;
         this.socketChannel = socketChannel;
-        this.writeHandler = new WriteHandler(this, out);
-        this.readHandler = new ReadHandler(this, in);
+        this.writeHandler = new TcpConnectionWriteHandler(this, out);
+        this.readHandler = new TcpConnectionReadHandler(this, in);
     }
 
     /**
@@ -133,11 +133,11 @@ public final class TcpIpConnection implements Connection {
         return (InetSocketAddress) socketChannel.socket().getRemoteSocketAddress();
     }
 
-    public ReadHandler getReadHandler() {
+    public TcpConnectionReadHandler getReadHandler() {
         return readHandler;
     }
 
-    public WriteHandler getWriteHandler() {
+    public TcpConnectionWriteHandler getWriteHandler() {
         return writeHandler;
     }
 

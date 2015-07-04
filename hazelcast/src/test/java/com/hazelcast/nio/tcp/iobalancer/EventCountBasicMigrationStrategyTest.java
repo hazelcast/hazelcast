@@ -16,7 +16,7 @@
 
 package com.hazelcast.nio.tcp.iobalancer;
 
-import com.hazelcast.nio.tcp.IOSelector;
+import com.hazelcast.nio.tcp.IOReactor;
 import com.hazelcast.nio.tcp.MigratableHandler;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -40,7 +40,7 @@ import static org.mockito.Mockito.mock;
 @Category(QuickTest.class)
 public class EventCountBasicMigrationStrategyTest extends HazelcastTestSupport {
 
-    private Map<IOSelector, Set<MigratableHandler>> selectorToHandlers;
+    private Map<IOReactor, Set<MigratableHandler>> selectorToHandlers;
     private ItemCounter<MigratableHandler> handlerEventsCounter;
     private LoadImbalance imbalance;
 
@@ -48,7 +48,7 @@ public class EventCountBasicMigrationStrategyTest extends HazelcastTestSupport {
 
     @Before
     public void setUp() {
-        selectorToHandlers = new HashMap<IOSelector, Set<MigratableHandler>>();
+        selectorToHandlers = new HashMap<IOReactor, Set<MigratableHandler>>();
         handlerEventsCounter = new ItemCounter<MigratableHandler>();
         imbalance = new LoadImbalance(selectorToHandlers, handlerEventsCounter);
         strategy = new EventCountBasicMigrationStrategy();
@@ -91,8 +91,8 @@ public class EventCountBasicMigrationStrategyTest extends HazelcastTestSupport {
 
     @Test
     public void testFindHandlerToMigrate() throws Exception {
-        IOSelector sourceSelector = mock(IOSelector.class);
-        IOSelector destinationSelector = mock(IOSelector.class);
+        IOReactor sourceSelector = mock(IOReactor.class);
+        IOReactor destinationSelector = mock(IOReactor.class);
         imbalance.sourceSelector = sourceSelector;
         imbalance.destinationSelector = destinationSelector;
 

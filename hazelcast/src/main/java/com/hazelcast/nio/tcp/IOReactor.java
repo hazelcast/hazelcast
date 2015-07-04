@@ -16,12 +16,16 @@
 
 package com.hazelcast.nio.tcp;
 
-import com.hazelcast.spi.impl.operationexecutor.OperationHostileThread;
-
 import java.nio.channels.Selector;
 
-public interface IOSelector extends OperationHostileThread {
+/**
+ * The name selector is not correct. A selector is a structure you can listen to certain events like
+ * data available to read, or space available to write. A selector doesn't have a thread and a selector
+ * also doesn't handle the actual logic. But the IOSelector add all that.
+ */
+public interface IOReactor {
 
+    // too: not wanted
     Selector getSelector();
 
     void addTask(Runnable runnable);
@@ -38,5 +42,16 @@ public interface IOSelector extends OperationHostileThread {
 
     void shutdown();
 
+    //todo: sucks
     void handleSelectionKeyFailure(Throwable e);
+
+    /**
+     * @deprecated will be removed when metrics are integrated
+     */
+    long getReadEvents();
+
+    /**
+     * @deprecated will be removed when metrics are integrated
+     */
+    long getWriteEvents();
 }

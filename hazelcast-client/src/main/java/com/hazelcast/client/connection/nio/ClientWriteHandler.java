@@ -17,7 +17,8 @@
 package com.hazelcast.client.connection.nio;
 
 import com.hazelcast.nio.SocketWritable;
-import com.hazelcast.nio.tcp.IOSelector;
+import com.hazelcast.nio.tcp.IOReactor;
+import com.hazelcast.nio.tcp.WriteHandler;
 import com.hazelcast.util.Clock;
 
 import java.nio.ByteBuffer;
@@ -26,7 +27,7 @@ import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class ClientWriteHandler extends AbstractClientSelectionHandler implements Runnable {
+public class ClientWriteHandler extends AbstractClientSelectionHandler implements Runnable, WriteHandler {
 
     private final Queue<SocketWritable> writeQueue = new ConcurrentLinkedQueue<SocketWritable>();
 
@@ -40,13 +41,13 @@ public class ClientWriteHandler extends AbstractClientSelectionHandler implement
 
     private volatile long lastHandle;
 
-    public ClientWriteHandler(ClientConnection connection, IOSelector ioSelector, int bufferSize) {
-        super(connection, ioSelector);
+    public ClientWriteHandler(ClientConnection connection, IOReactor ioReactor, int bufferSize) {
+        super(connection, ioReactor);
         buffer = ByteBuffer.allocate(bufferSize);
     }
 
     @Override
-    public void handle() {
+    public void handleWrite() {
         lastHandle = Clock.currentTimeMillis();
         if (!connection.isAlive()) {
             return;
@@ -115,7 +116,7 @@ public class ClientWriteHandler extends AbstractClientSelectionHandler implement
     public void run() {
         informSelector.set(true);
         if (ready) {
-            handle();
+            handleWrite();
         } else {
             registerWrite();
         }

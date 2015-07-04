@@ -17,10 +17,10 @@
 package com.hazelcast.nio.tcp;
 
 /**
- * A {@link SelectionHandler} that supports migration between {@link com.hazelcast.nio.tcp.IOSelector} instances.
+ * A selection handler that supports migration between {@link IOReactor} instances.
  * This API is called by the {@link com.hazelcast.nio.tcp.iobalancer.IOBalancer}.
  */
-public interface MigratableHandler extends SelectionHandler {
+public interface MigratableHandler {
 
     /**
      * Requests the MigratableHandler to move to the new IOSelector. This call will not wait for the
@@ -33,7 +33,7 @@ public interface MigratableHandler extends SelectionHandler {
      *
      * @param newOwner the IOSelector that is going to own this MigratableHandler
      */
-    void requestMigration(IOSelector newOwner);
+    void requestMigration(IOReactor newOwner);
 
     /**
      * Get IOSelector currently owning this handler. Handler owner is a thread running this handler.
@@ -42,11 +42,11 @@ public interface MigratableHandler extends SelectionHandler {
      *
      * @return current owner
      */
-    IOSelector getOwner();
+    IOReactor getOwner();
 
     /**
      * Get number of events recorded by the current handler. It can be used to calculate whether
-     * this handler should be migrated to a different {@link com.hazelcast.nio.tcp.IOSelector}
+     * this handler should be migrated to a different {@link IOReactor}
      *
      * @return total number of events recorded by this handler
      */
