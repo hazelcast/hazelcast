@@ -35,12 +35,15 @@ import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionNotActiveException;
 import com.hazelcast.transaction.TransactionOptions;
+import com.hazelcast.transaction.TransactionOptions.TransactionType;
 import com.hazelcast.transaction.TransactionalObject;
 import com.hazelcast.transaction.impl.xa.XAService;
 
 import javax.transaction.xa.XAResource;
 import java.util.HashMap;
 import java.util.Map;
+
+import static com.hazelcast.transaction.TransactionOptions.TransactionType.*;
 
 final class TransactionContextImpl implements TransactionContext {
 
@@ -67,7 +70,7 @@ final class TransactionContextImpl implements TransactionContext {
 
     @Override
     public void commitTransaction() throws TransactionException {
-        if (transaction.getTransactionType().equals(TransactionOptions.TransactionType.TWO_PHASE)) {
+        if (transaction.getTransactionType().equals(TWO_PHASE)) {
             transaction.prepare();
         }
         transaction.commit();
