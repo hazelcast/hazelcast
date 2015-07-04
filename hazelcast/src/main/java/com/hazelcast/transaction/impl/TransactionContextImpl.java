@@ -122,21 +122,28 @@ final class TransactionContextImpl implements TransactionContext {
             return obj;
         }
 
+        TransactionalService transactionalService = getTransactionalService(serviceName);
+        nodeEngine.getProxyService().initializeDistributedObject(serviceName, name);
+        obj = transactionalService.createTransactionalObject(name, transaction);
+        txnObjectMap.put(key, obj);
+        return obj;
+    }
+
+    private TransactionalService getTransactionalService(String serviceName) {
         final Object service = nodeEngine.getService(serviceName);
-        if (service instanceof TransactionalService) {
-            nodeEngine.getProxyService().initializeDistributedObject(serviceName, name);
-            obj = ((TransactionalService) service).createTransactionalObject(name, transaction);
-            txnObjectMap.put(key, obj);
-        } else {
-            if (service == null) {
-                if (!nodeEngine.isActive()) {
-                    throw new HazelcastInstanceNotActiveException();
-                }
-                throw new IllegalArgumentException("Unknown Service[" + serviceName + "]!");
+
+        if (service == null) {
+            if (!nodeEngine.isActive()) {
+                throw new HazelcastInstanceNotActiveException();
             }
+            throw new IllegalArgumentException("Unknown Service[" + serviceName + "]!");
+        }
+
+        if (!(service instanceof TransactionalService)) {
             throw new IllegalArgumentException("Service[" + serviceName + "] is not transactional!");
         }
-        return obj;
+
+        return (TransactionalService) service;
     }
 
     private void checkActive(String serviceName, String name) {
