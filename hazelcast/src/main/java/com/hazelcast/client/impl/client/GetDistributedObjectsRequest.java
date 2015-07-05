@@ -20,7 +20,7 @@ import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.impl.SerializableCollection;
+import com.hazelcast.spi.impl.SerializableList;
 
 import java.security.Permission;
 import java.util.ArrayList;
@@ -41,7 +41,7 @@ public class GetDistributedObjectsRequest extends ClientRequest {
             Data data = serializationService.toData(distributedObjectInfo);
             dataArrayList.add(data);
         }
-        SerializableCollection collection = new SerializableCollection(dataArrayList);
+        SerializableList collection = new SerializableList(dataArrayList);
         endpoint.sendResponse(collection, getCallId());
     }
 

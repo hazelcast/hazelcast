@@ -40,7 +40,6 @@ import com.hazelcast.concurrent.atomiclong.AtomicLongService;
 import com.hazelcast.concurrent.atomicreference.AtomicReferenceService;
 import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
 import com.hazelcast.concurrent.idgen.IdGeneratorService;
-import com.hazelcast.concurrent.lock.LockProxy;
 import com.hazelcast.concurrent.lock.LockServiceImpl;
 import com.hazelcast.concurrent.semaphore.SemaphoreService;
 import com.hazelcast.config.Config;
@@ -84,7 +83,7 @@ import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.UsernamePasswordCredentials;
-import com.hazelcast.spi.impl.SerializableCollection;
+import com.hazelcast.spi.impl.SerializableList;
 import com.hazelcast.spi.impl.SerializationServiceSupport;
 import com.hazelcast.topic.impl.TopicService;
 import com.hazelcast.transaction.HazelcastXAResource;
@@ -397,9 +396,9 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         try {
             GetDistributedObjectsRequest request = new GetDistributedObjectsRequest();
 
-            final Future<SerializableCollection> future = new ClientInvocation(this, request).invoke();
-            final SerializableCollection serializableCollection = serializationService.toObject(future.get());
-            for (Data data : serializableCollection) {
+            final Future<SerializableList> future = new ClientInvocation(this, request).invoke();
+            final SerializableList serializableList = serializationService.toObject(future.get());
+            for (Data data : serializableList) {
                 final DistributedObjectInfo o = serializationService.toObject(data);
                 getDistributedObject(o.getServiceName(), o.getName());
             }

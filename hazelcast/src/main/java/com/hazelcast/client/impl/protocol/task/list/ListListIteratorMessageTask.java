@@ -27,7 +27,7 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.ListPermission;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.impl.SerializableCollection;
+import com.hazelcast.spi.impl.SerializableList;
 
 import java.security.Permission;
 
@@ -54,7 +54,7 @@ public class ListListIteratorMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return ListIteratorCodec.encodeResponse(((SerializableCollection) response).getCollection());
+        return ListIteratorCodec.encodeResponse(((SerializableList) response).getCollection());
     }
 
     @Override

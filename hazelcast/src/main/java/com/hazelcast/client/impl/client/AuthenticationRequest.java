@@ -25,20 +25,23 @@ import com.hazelcast.config.GroupConfig;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.security.UsernamePasswordCredentials;
-import com.hazelcast.spi.impl.SerializableCollection;
+import com.hazelcast.spi.impl.SerializableList;
 import com.hazelcast.util.UuidUtil;
 
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
 import java.io.IOException;
 import java.security.Permission;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.Set;
 import java.util.logging.Level;
 
@@ -154,8 +157,10 @@ public final class AuthenticationRequest extends CallableClientRequest {
         endpoint.authenticated(principal, credentials, ownerConnection);
         clientEngine.getEndpointManager().registerEndpoint(endpoint);
         clientEngine.bind(endpoint);
-        return new SerializableCollection(serializationService.toData(clientEngine.getThisAddress())
-                , serializationService.toData(principal));
+        List<Data> list = new ArrayList<Data>();
+        list.add(serializationService.toData(clientEngine.getThisAddress()));
+        list.add(serializationService.toData(principal));
+        return new SerializableList(list);
     }
 
     private String getUuid() {

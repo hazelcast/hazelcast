@@ -27,12 +27,13 @@ import com.hazelcast.collection.impl.list.operations.ListSubOperation;
 import com.hazelcast.config.CollectionConfig;
 import com.hazelcast.core.IList;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.impl.SerializableCollection;
+import com.hazelcast.spi.impl.SerializableList;
+import com.hazelcast.spi.impl.UnmodifiableLazyList;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
@@ -133,14 +134,10 @@ public class ListProxyImpl<E> extends AbstractCollectionProxyImpl<ListService, E
     @Override
     public List<E> subList(int fromIndex, int toIndex) {
         ListSubOperation operation = new ListSubOperation(name, fromIndex, toIndex);
-        SerializableCollection result = invoke(operation);
-        Collection<Data> collection = result.getCollection();
-        List<E> list = new ArrayList<E>(collection.size());
-        final NodeEngine nodeEngine = getNodeEngine();
-        for (Data data : collection) {
-            list.add(nodeEngine.<E>toObject(data));
-        }
-        return Collections.unmodifiableList(list);
+        SerializableList result = invoke(operation);
+        List<Data> collection = result.getCollection();
+        SerializationService serializationService = getNodeEngine().getSerializationService();
+        return new UnmodifiableLazyList<E>(collection, serializationService);
     }
 
     @Override
