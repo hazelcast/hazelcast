@@ -336,15 +336,59 @@ public abstract class LockBasicTest extends HazelcastTestSupport {
         });
     }
 
-    @Test(timeout = 60000)
+    @Test
     public void testLockLeaseTime_lockIsReleasedEventually() throws InterruptedException {
         lock.lock(1000, TimeUnit.MILLISECONDS);
-        assertTrue(lock.isLocked());
-
-        lock.lock();
-        assertTrue(lock.isLocked());
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertFalse(lock.isLocked());
+            }
+        }, 30);
     }
 
+    // ========================= tryLock with lease time ==============================================
+
+    @Test(expected = NullPointerException.class, timeout = 60000)
+    public void testTryLockLeaseTime_whenNullTimeout() throws InterruptedException {
+        lock.tryLock(1000, null, 1000, TimeUnit.MILLISECONDS);
+    }
+
+    @Test(expected = NullPointerException.class, timeout = 60000)
+    public void testTryLockLeaseTime_whenNullLeaseTimeout() throws InterruptedException {
+        lock.tryLock(1000, TimeUnit.MILLISECONDS, 1000, null);
+    }
+
+    @Test(timeout = 60000)
+    public void testTryLockLeaseTime_whenLockFree() throws InterruptedException {
+        boolean isLocked = lock.tryLock(1000, TimeUnit.MILLISECONDS, 1000, TimeUnit.MILLISECONDS);
+        assertTrue(isLocked);
+    }
+
+    @Test(timeout = 60000)
+    public void testTryLockLeaseTime_whenLockAcquiredByOther() throws InterruptedException {
+        Thread thread = new Thread() {
+            public void run() {
+                lock.lock();
+            }
+        };
+        thread.start();
+        thread.join();
+
+        boolean isLocked = lock.tryLock(1000, TimeUnit.MILLISECONDS, 1000, TimeUnit.MILLISECONDS);
+        assertFalse(isLocked);
+    }
+
+    @Test
+    public void testTryLockLeaseTime_lockIsReleasedEventually() throws InterruptedException {
+        lock.tryLock(1000, TimeUnit.MILLISECONDS, 1000, TimeUnit.MILLISECONDS);
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertFalse(lock.isLocked());
+            }
+        }, 30);
+    }
 
     // =======================================================================
 

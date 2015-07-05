@@ -76,7 +76,7 @@ public interface MultiMapCodecTemplate {
     void lock(String name, Data key, long threadId, long ttl);
 
     @Request(id = 17, retryable = false, response = ResponseMessageConst.BOOLEAN)
-    void tryLock(String name, Data key, long threadId, long timeout);
+    void tryLock(String name, Data key, long threadId, long lease, long timeout);
 
     @Request(id = 18, retryable = true, response = ResponseMessageConst.BOOLEAN)
     void isLocked(String name, Data key);

@@ -52,6 +52,10 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Mul
         lockSupport = new LockProxySupport(new DefaultObjectNamespace(MultiMapService.SERVICE_NAME, name));
     }
 
+    public String getName() {
+        return name;
+    }
+
     protected Boolean putInternal(Data dataKey, Data dataValue, int index) {
         try {
             PutOperation operation = new PutOperation(name, dataKey, getThreadId(), dataValue, index);
@@ -260,9 +264,16 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Mul
         }
     }
 
-
     private long getThreadId() {
         return ThreadUtil.getThreadId();
+    }
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder("MultiMap{");
+        sb.append("name=").append(name);
+        sb.append('}');
+        return sb.toString();
     }
 
 }
