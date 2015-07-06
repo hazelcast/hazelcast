@@ -17,13 +17,17 @@
 package com.hazelcast.jca;
 
 import com.hazelcast.core.TransactionalMap;
-import org.jboss.arquillian.junit.InSequence;
-import org.junit.Before;
-import org.junit.Ignore;
+import com.hazelcast.test.annotation.SlowTest;
+import org.h2.jdbcx.JdbcConnectionPool;
+import org.jboss.arquillian.junit.Arquillian;
+import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
-import javax.annotation.Resource;
+import javax.naming.InitialContext;
 import javax.naming.NamingException;
+import javax.resource.cci.LocalTransaction;
 import javax.sql.DataSource;
 import javax.transaction.UserTransaction;
 import java.sql.Connection;
@@ -35,33 +39,34 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+
 /**
  * Arquillian tests for xa transactions
  *
  * @author asimarslan
  */
-//@RunWith(Arquillian.class)
-@Ignore
+@RunWith(Arquillian.class)
+@Category(SlowTest.class)
 public class XATransactionTest extends AbstractDeploymentTest {
 
+    private static HazelcastConnectionFactory connectionFactory;
 
-    //    @Inject
-    //    UserTransaction userTx;
+    private static UserTransaction userTx;
 
-    @Resource(mappedName = "java:jboss/UserTransaction")
-    private UserTransaction userTx;
-
-
-    @Resource(mappedName = "java:jboss/datasources/ExampleDS")
-    //    @Resource(mappedName = "java:/HazelcastDS")
-    protected DataSource h2Datasource;
+    private static DataSource h2Datasource;
 
     private static boolean isDbInit = false;
 
-    @Before
-    public void Init() throws SQLException {
+    @BeforeClass
+    public static void init() throws SQLException, NamingException {
+        InitialContext context = new InitialContext();
+        userTx = (UserTransaction) context.lookup("java:comp/UserTransaction");
+        connectionFactory = (HazelcastConnectionFactory) context.lookup ( "HazelcastCF" );
         if (!isDbInit) {
             isDbInit = true;
+
+            h2Datasource = JdbcConnectionPool.create("jdbc:h2:mem:test", "sa", "sa");
+
             Connection con = h2Datasource.getConnection();
             Statement stmt = null;
             try {
@@ -76,20 +81,14 @@ public class XATransactionTest extends AbstractDeploymentTest {
         }
     }
 
-
     @Test
-    @InSequence(2)
-    @Ignore
     public void testTransactionCommit() throws Throwable {
         userTx.begin();
         HazelcastConnection c = getConnection();
         try {
             TransactionalMap<String, String> m = c.getTransactionalMap("testTransactionCommit");
-
             m.put("key", "value");
-
             doSql();
-
             assertEquals("value", m.get("key"));
         } finally {
             c.close();
@@ -106,8 +105,6 @@ public class XATransactionTest extends AbstractDeploymentTest {
     }
 
     @Test
-    @InSequence(1)
-    @Ignore
     public void testTransactionRollback() throws Throwable {
         userTx.begin();
 
@@ -122,19 +119,46 @@ public class XATransactionTest extends AbstractDeploymentTest {
         }
 
         userTx.rollback();
-
         HazelcastConnection con2 = getConnection();
-
         try {
             assertEquals(null, con2.getMap("testTransactionRollback").get("key"));
             validateSQLdata(false);
         } finally {
             con2.close();
         }
-
     }
 
-    private void doSql() throws NamingException, SQLException {
+    @Test
+    public void testLocalTransaction() throws Throwable {
+        HazelcastConnection c = getConnection();
+        LocalTransaction lt = c.getLocalTransaction();
+        lt.begin();
+        try {
+            TransactionalMap<String, String> m = c.getTransactionalMap("testTransactionCommit");
+            m.put("key", "value");
+            doSql();
+            assertEquals("value", m.get("key"));
+        } finally {
+            c.close();
+        }
+        lt.commit();
+        HazelcastConnection con2 = getConnection();
+
+        try {
+            assertEquals("value", con2.getMap("testTransactionCommit").get("key"));
+        } finally {
+            con2.close();
+        }
+    }
+
+    protected HazelcastConnection getConnection() throws Throwable{
+        assertNotNull(connectionFactory);
+        HazelcastConnection c = connectionFactory.getConnection();
+        assertNotNull(c);
+        return c;
+    }
+
+    protected void doSql() throws NamingException, SQLException {
 
         Connection con = h2Datasource.getConnection();
         Statement stmt = null;
@@ -149,7 +173,7 @@ public class XATransactionTest extends AbstractDeploymentTest {
         }
     }
 
-    private void validateSQLdata(boolean hasdata) throws NamingException, SQLException {
+    protected void validateSQLdata(boolean hasdata) throws NamingException, SQLException {
 
         Connection con = h2Datasource.getConnection();
         Statement stmt = null;

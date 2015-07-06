@@ -39,6 +39,40 @@
     <build>
         <plugins>
             <plugin>
+                <groupId>org.glassfish</groupId>
+                <artifactId>maven-embedded-glassfish-plugin</artifactId>
+                <version>3.1.1</version>
+                <configuration>
+                    <!-- This sets the path to use the war file we have built in the target directory -->
+                    <app>target/${project.build.finalName}</app>
+                    <port>8080</port>
+                    <!-- This sets the context root, e.g. http://localhost:8080/test/ -->
+                    <contextRoot>test</contextRoot>
+                    <!-- This deletes the temporary files during GlassFish shutdown. -->
+                    <autoDelete>true</autoDelete>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>start</id>
+                        <!-- We implement the integration testing by setting up our GlassFish instance to start and deploy our application. -->
+                        <phase>pre-integration-test</phase>
+                        <goals>
+                            <goal>start</goal>
+                            <goal>deploy</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>stop</id>
+                        <!-- After integration testing we undeploy the application and shutdown GlassFish gracefully. -->
+                        <phase>post-integration-test</phase>
+                        <goals>
+                            <goal>undeploy</goal>
+                            <goal>stop</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>animal-sniffer-maven-plugin</artifactId>
                 <version>${animal.sniffer.plugin.version}</version>
@@ -83,7 +117,7 @@
             <dependency>
                 <groupId>org.jboss.arquillian</groupId>
                 <artifactId>arquillian-bom</artifactId>
-                <version>1.0.3.Final</version>
+                <version>1.1.8.Final</version>
                 <scope>import</scope>
                 <type>pom</type>
             </dependency>
@@ -100,8 +134,33 @@
     </dependencyManagement>
     <dependencies>
         <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <version>${h2.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.jboss.arquillian.container</groupId>
+            <artifactId>arquillian-glassfish-embedded-3.1</artifactId>
+            <version>1.0.0.CR4</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>javax.enterprise</groupId>
+            <artifactId>cdi-api</artifactId>
+            <version>1.0-SP1</version>
+        </dependency>
+
+        <dependency>
             <groupId>org.jboss.arquillian.junit</groupId>
             <artifactId>arquillian-junit-container</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.glassfish.extras</groupId>
+            <artifactId>glassfish-embedded-all</artifactId>
+            <version>3.1</version>
             <scope>test</scope>
         </dependency>
 
@@ -138,43 +197,6 @@
             <version>${project.parent.version}</version>
         </dependency>
 
-        <!--arquillian-jbossas-managed-->
-        <dependency>
-            <groupId>org.jboss.spec</groupId>
-            <artifactId>jboss-javaee-6.0</artifactId>
-            <version>1.0.0.Final</version>
-            <type>pom</type>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.jboss.as</groupId>
-            <artifactId>jboss-as-arquillian-container-managed</artifactId>
-            <version>7.1.1.Final</version>
-            <scope>test</scope>
-            <!-- jboss jmx dependencies include jdk tools.jar which is breaking animal sniffer plugin check goal -->
-            <exclusions>
-                <exclusion>
-                    <groupId>org.jboss.as</groupId>
-                    <artifactId>jboss-as-arquillian-protocol-jmx</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.jboss.as</groupId>
-                    <artifactId>jboss-as-jmx</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>org.jboss.arquillian.protocol</groupId>
-            <artifactId>arquillian-protocol-servlet</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <!--arquillian-jbossas-managed-->
-
-        <!--<dependency>-->
-        <!--<groupId>org.jboss.arquillian.extension</groupId>-->
-        <!--<artifactId>arquillian-transaction-api</artifactId>-->
-        <!--<scope>test</scope>-->
-        <!--</dependency>-->
 
     </dependencies>
 
