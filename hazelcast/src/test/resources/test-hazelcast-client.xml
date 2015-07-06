@@ -15,7 +15,7 @@
   ~ limitations under the License.
   -->
 
-<hazelcast-client>
+<hazelcast-client xmlns="http://www.hazelcast.com/schema/client-config">
     <group>
         <name>foobar</name>
         <password>dev-pass</password>

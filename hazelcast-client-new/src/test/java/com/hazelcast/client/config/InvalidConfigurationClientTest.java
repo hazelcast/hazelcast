@@ -190,7 +190,7 @@ public class InvalidConfigurationClientTest {
     @Test(expected = InvalidConfigurationException.class)
     public void WhenDuplicateTagsAdded() {
         String xml =
-                "<hazelcast-client>\n" +
+                "<hazelcast-client xmlns=\"http://www.hazelcast.com/schema/client-config\">\n" +
                     "<network>\n" +
                         "<cluster-members>\n" +
                             "<address>127.0.0.1</address>\n" +
@@ -207,7 +207,7 @@ public class InvalidConfigurationClientTest {
 
     String getDraftXml() {
         return
-                "<hazelcast-client>\n" +
+                "<hazelcast-client xmlns=\"http://www.hazelcast.com/schema/client-config\">\n" +
                         "<network>\n" +
                             "<cluster-members>\n" +
                                 "<address>127.0.0.1</address>\n" +
