@@ -1,3 +1,19 @@
+/*
+* Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+* http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*/
+
 package com.hazelcast.jca;
 
 import com.hazelcast.config.Config;
@@ -18,21 +34,14 @@ import com.hazelcast.core.IdGenerator;
 import com.hazelcast.core.MultiMap;
 import com.hazelcast.core.PartitionService;
 import com.hazelcast.core.ReplicatedMap;
-import com.hazelcast.core.TransactionalMap;
-import com.hazelcast.core.TransactionalQueue;
-import com.hazelcast.executor.impl.ExecutorServiceProxy;
 import com.hazelcast.logging.LoggingService;
-import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.mapreduce.JobTracker;
 import com.hazelcast.quorum.QuorumService;
-import com.hazelcast.quorum.impl.QuorumServiceImpl;
 import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.transaction.TransactionContext;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -44,7 +53,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
@@ -64,7 +72,6 @@ public class HazelcastConnectionImplTest extends HazelcastTestSupport {
         ManagedConnectionImpl managedConnection = mock(ManagedConnectionImpl.class);
         when(managedConnection.getHazelcastInstance()).thenReturn(hz);
         connection = new HazelcastConnectionImpl(managedConnection, null);
-
     }
 
     @Test
@@ -155,30 +162,6 @@ public class HazelcastConnectionImplTest extends HazelcastTestSupport {
     public void getDistributedObject() {
         DistributedObject obj = connection.getDistributedObject(MapService.SERVICE_NAME, "id");
         assertSame(hz.getDistributedObject(MapService.SERVICE_NAME, "id"), obj);
-    }
-
-    @Test
-    @Ignore
-    public void getTransactionalQueue() {
-        //todo
-    }
-
-    @Test
-    @Ignore
-    public void getTransactionalMap() {
-        //todo
-    }
-
-    @Test
-    @Ignore
-    public void getTransactionalList() {
-        //todo
-    }
-
-    @Test
-    @Ignore
-    public void getTransactionalSet() {
-        //todo
     }
 
     @Test

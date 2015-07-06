@@ -21,11 +21,7 @@ import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.EmptyAsset;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.jboss.shrinkwrap.api.spec.ResourceAdapterArchive;
-
-import javax.annotation.Resource;
-import java.util.UUID;
-
-import static org.junit.Assert.assertNotNull;
+import org.jboss.shrinkwrap.api.spec.WebArchive;
 
 /**
 * base class for jca tests
@@ -34,42 +30,26 @@ import static org.junit.Assert.assertNotNull;
 */
 public class AbstractDeploymentTest {
 
-    private final static String deploymentName="hazelcast-jca-rar";
+    @Deployment(testable = false, name = "rar-deployment", order = 1)
+    public static ResourceAdapterArchive createResourceAdapterDeployment() {
+        ResourceAdapterArchive raa = ShrinkWrap.create(ResourceAdapterArchive.class, "raa.rar");
 
-
-//    @Deployment
-//    public static JavaArchive createDeployment() {
-//        JavaArchive ja = ShrinkWrap.create(JavaArchive.class, UUID.randomUUID().toString() + ".jar");
-//        ja.addPackage(JcaBase.class.getPackage());
-//        ja.setManifest("MANIFEST.MF");
-//        ja.addAsManifestResource(EmptyAsset.INSTANCE, "beans.xml");
-//        return ja;
-//    }
-
-    @Deployment
-    public static ResourceAdapterArchive deploymentHzRar(){
-        ResourceAdapterArchive raa = ShrinkWrap.create(ResourceAdapterArchive.class, deploymentName + ".rar");
-
-        JavaArchive ja = ShrinkWrap.create(JavaArchive.class, UUID.randomUUID().toString() + ".jar");
-        ja.addPackage(JcaBase.class.getPackage());
-        ja.setManifest("MANIFEST.MF");
-//        ja.addAsManifestResource(EmptyAsset.INSTANCE, "beans.xml");
-
-        raa.addAsLibrary(ja);
-        raa.addAsManifestResource("ra.xml","ra.xml");
-        raa.addAsManifestResource("ironjacamar.xml","ironjacamar.xml");
+        raa.addAsResource("ra.xml", "META-INF/ra.xml");
+        raa.addAsResource("ironjacamar.xml", "META-INF/ironjacamar.xml");
+        raa.addAsResource("sun-ra.xml", "META-INF/sun-ra.xml");
 
         return raa;
     }
 
-    @Resource(mappedName = "java:/HazelcastCF")
-    protected HazelcastConnectionFactory connectionFactory;
+    @Deployment(name = "war-deployment", order = 2)
+    public static WebArchive createWebDeployment() {
+        WebArchive wa = ShrinkWrap.create(WebArchive.class, "waa.war");
+        wa.addAsResource("h2-xa-ds.xml","h2-xa-ds.xml");
+        wa.addClass(TestBean.class);
+        wa.addClass(ITestBean.class);
+        wa.addClass(TestInContainer.class);
+        wa.add(EmptyAsset.INSTANCE, "WEB-INF/beans.xml");
 
-    protected HazelcastConnection getConnection() throws Throwable{
-        assertNotNull(connectionFactory);
-        HazelcastConnection c = connectionFactory.getConnection();
-        assertNotNull(c);
-        return c;
+        return wa;
     }
-
 }

@@ -147,6 +147,7 @@ public class ConnectionFactoryImpl implements HazelcastConnectionFactory {
         }
         return true;
     }
+
     public void setId(int id) {
         this.id = id;
     }
