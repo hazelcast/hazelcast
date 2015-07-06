@@ -310,7 +310,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
     }
 
     @Override
-    public boolean tryLock(final K key) {
+    public boolean tryLock(K key) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
         final NodeEngine nodeEngine = getNodeEngine();
@@ -319,12 +319,22 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
     }
 
     @Override
-    public boolean tryLock(final K key, final long time, final TimeUnit timeunit) throws InterruptedException {
+    public boolean tryLock(K key, long time, TimeUnit timeunit) throws InterruptedException {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
         final NodeEngine nodeEngine = getNodeEngine();
         Data k = toData(key, partitionStrategy);
         return lockSupport.tryLock(nodeEngine, k, time, timeunit);
+    }
+
+    @Override
+    public boolean tryLock(K key, long time, TimeUnit timeunit,
+                           long leaseTime, TimeUnit leaseTimeunit) throws InterruptedException {
+        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
+
+        final NodeEngine nodeEngine = getNodeEngine();
+        Data k = toData(key, partitionStrategy);
+        return lockSupport.tryLock(nodeEngine, k, time, timeunit, leaseTime, leaseTimeunit);
     }
 
     @Override

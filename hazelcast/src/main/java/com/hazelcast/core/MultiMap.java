@@ -414,6 +414,35 @@ public interface MultiMap<K, V>
             throws InterruptedException;
 
     /**
+     * Tries to acquire the lock for the specified key for the specified lease time.
+     * <p>After lease time, the lock will be released.
+     * <p/>
+     * <p>If the lock is not available, then
+     * the current thread becomes disabled for thread scheduling
+     * purposes and lies dormant until one of two things happens:
+     * <ul>
+     * <li>the lock is acquired by the current thread, or
+     * <li>the specified waiting time elapses.
+     * </ul>
+     * <p/>
+     * <p><b>Warning:</b></p>
+     * This method uses <tt>hashCode</tt> and <tt>equals</tt> of the binary form of
+     * the <tt>key</tt>, not the actual implementations of <tt>hashCode</tt> and <tt>equals</tt>
+     * defined in the <tt>key</tt>'s class.
+     *
+     * @param key      key to lock in this map.
+     * @param time     maximum time to wait for the lock.
+     * @param timeunit time unit of the <tt>time</tt> argument.
+     * @param leaseTime time to wait before releasing the lock.
+     * @param leaseTimeunit  unit of time to specify lease time.
+     * @return <tt>true</tt> if the lock was acquired and <tt>false</tt>
+     * if the waiting time elapsed before the lock was acquired.
+     * @throws NullPointerException if the specified key is null.
+     */
+    boolean tryLock(K key, long time, TimeUnit timeunit, long leaseTime, TimeUnit leaseTimeunit)
+            throws InterruptedException;
+
+    /**
      * Releases the lock for the specified key. It never blocks and
      * returns immediately.
      * <p/>

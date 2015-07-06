@@ -348,4 +348,45 @@ public class MapLockTest extends HazelcastTestSupport {
         assertTrue("a key present in a map, should be locked after map clear", map.isLocked(key));
         assertEquals("unlocked keys not removed", 1, map.size());
     }
+
+    @Test(timeout = 60000)
+    public void testTryLockLeaseTime_whenLockFree() throws InterruptedException {
+        IMap map = getMapForLock();
+        String key = randomString();
+        boolean isLocked = map.tryLock(key, 1000, TimeUnit.MILLISECONDS, 1000, TimeUnit.MILLISECONDS);
+        assertTrue(isLocked);
+    }
+
+    @Test(timeout = 60000)
+    public void testTryLockLeaseTime_whenLockAcquiredByOther() throws InterruptedException {
+        final IMap map = getMapForLock();
+        final String key = randomString();
+        Thread thread = new Thread() {
+            public void run() {
+                map.lock(key);
+            }
+        };
+        thread.start();
+        thread.join();
+
+        boolean isLocked = map.tryLock(key, 1000, TimeUnit.MILLISECONDS, 1000, TimeUnit.MILLISECONDS);
+        Assert.assertFalse(isLocked);
+    }
+
+    @Test
+    public void testTryLockLeaseTime_lockIsReleasedEventually() throws InterruptedException {
+        final IMap map = getMapForLock();
+        final String key = randomString();
+        map.tryLock(key, 1000, TimeUnit.MILLISECONDS, 1000, TimeUnit.MILLISECONDS);
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                Assert.assertFalse(map.isLocked(key));
+            }
+        }, 30);
+    }
+
+    private IMap getMapForLock(){
+        return createHazelcastInstance().getMap(randomString());
+    }
 }

@@ -207,22 +207,6 @@ public class MultiMapTest extends HazelcastTestSupport {
     }
 
     @Test(expected = NullPointerException.class)
-    public void testLock_whenNullKey() {
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
-        MultiMap multiMap = getMultiMap(factory.newInstances(), randomString());
-
-        multiMap.lock(null);
-    }
-
-    @Test(expected = NullPointerException.class)
-    public void testUnlock_whenNullKey() {
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
-        MultiMap multiMap = getMultiMap(factory.newInstances(), randomString());
-
-        multiMap.unlock(null);
-    }
-
-    @Test(expected = NullPointerException.class)
     public void testContainsKey_whenNullKey() throws InterruptedException {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
         MultiMap multiMap = getMultiMap(factory.newInstances(), randomString());
@@ -391,49 +375,6 @@ public class MultiMapTest extends HazelcastTestSupport {
 
         aggregate = multiMap.aggregate(Supplier.all(), Aggregations.integerAvg());
         assertEquals(50, aggregate.intValue());
-    }
-
-
-    @Test
-    public void testLock() throws Exception {
-        Config config = new Config();
-        final String name = "defMM";
-        config.getMultiMapConfig(name).setValueCollectionType(MultiMapConfig.ValueCollectionType.LIST);
-        final int insCount = 4;
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(insCount);
-        final HazelcastInstance[] instances = factory.newInstances(config);
-        final CountDownLatch latch = new CountDownLatch(1);
-        final CountDownLatch latch2 = new CountDownLatch(1);
-        new Thread() {
-            public void run() {
-                instances[0].getMultiMap(name).lock("alo");
-                latch.countDown();
-                try {
-                    latch2.await(10, TimeUnit.SECONDS);
-                    instances[0].getMultiMap(name).unlock("alo");
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-        }.start();
-        assertTrue(latch.await(10, TimeUnit.SECONDS));
-        assertFalse(getMultiMap(instances, name).tryLock("alo"));
-        latch2.countDown();
-        assertTrue(instances[0].getMultiMap(name).tryLock("alo", 20, TimeUnit.SECONDS));
-
-        new Thread() {
-            public void run() {
-                try {
-                    Thread.sleep(3000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-                instances[0].shutdown();
-            }
-        }.start();
-
-        assertTrue(instances[1].getMultiMap(name).tryLock("alo", 20, TimeUnit.SECONDS));
-
     }
 
     private MultiMap getMultiMap(HazelcastInstance[] instances, String name) {
