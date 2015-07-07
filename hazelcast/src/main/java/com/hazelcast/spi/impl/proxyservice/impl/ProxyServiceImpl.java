@@ -34,7 +34,7 @@ import com.hazelcast.spi.impl.proxyservice.impl.operations.DistributedObjectDest
 import com.hazelcast.spi.impl.proxyservice.impl.operations.PostJoinProxyOperation;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.EmptyStatement;
-import com.hazelcast.util.FutureUtil;
+import com.hazelcast.util.FutureUtil.ExceptionHandler;
 import com.hazelcast.util.UuidUtil;
 
 import java.util.ArrayList;
@@ -49,6 +49,7 @@ import java.util.logging.Level;
 
 import static com.hazelcast.core.DistributedObjectEvent.EventType.CREATED;
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
+import static com.hazelcast.util.FutureUtil.logAllExceptions;
 import static com.hazelcast.util.FutureUtil.waitWithDeadline;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
@@ -57,7 +58,7 @@ public class ProxyServiceImpl
 
     public static final String SERVICE_NAME = "hz:core:proxyService";
 
-    private static final FutureUtil.ExceptionHandler DESTROY_PROXY_EXCEPTION_HANDLER = FutureUtil.logAllExceptions(Level.WARNING);
+    private static final ExceptionHandler DESTROY_PROXY_EXCEPTION_HANDLER = logAllExceptions(Level.WARNING);
 
     private static final int TRY_COUNT = 10;
     private static final long DESTROY_TIMEOUT_SECONDS = 30;
@@ -147,7 +148,7 @@ public class ProxyServiceImpl
         if (registry != null) {
             registry.destroyProxy(name, fireEvent);
         }
-        final RemoteService service = nodeEngine.getService(serviceName);
+        RemoteService service = nodeEngine.getService(serviceName);
         if (service != null) {
             service.destroyDistributedObject(name);
         }
@@ -192,7 +193,7 @@ public class ProxyServiceImpl
 
     @Override
     public String addProxyListener(DistributedObjectListener distributedObjectListener) {
-        final String id = UuidUtil.buildRandomUuidString();
+        String id = UuidUtil.buildRandomUuidString();
         listeners.put(id, distributedObjectListener);
         return id;
     }
@@ -204,7 +205,7 @@ public class ProxyServiceImpl
 
     @Override
     public void dispatchEvent(final DistributedObjectEventPacket eventPacket, Object ignore) {
-        final String serviceName = eventPacket.getServiceName();
+        String serviceName = eventPacket.getServiceName();
         if (eventPacket.getEventType() == CREATED) {
             try {
                 final ProxyRegistry registry = getOrCreateRegistry(serviceName);
