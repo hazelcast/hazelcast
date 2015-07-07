@@ -77,7 +77,9 @@ Map configuration has the following elements.
 	- `PutIfAbsentMapMergePolicy` causes the merging entry to be merged from source to destination map if it does not exist in the destination map.
 - `statistics-enabled`: You can retrieve statistics information like owned entry count, backup entry count, last update time, and locked entry count by setting `statistics-enabled` to `true`. The method for retrieving the statistics is `getLocalMapStats()`.
 - `wan-replication-ref`: Hazelcast can replicate some or all of the cluster data. For example, suppose you can have 5 different maps but you want only one of these maps to replicate across clusters. To achieve this, you mark the maps to be replicated by adding this element in the map configuration.
-- `optimize-queries`: This element is used to increase the speed of query processes in the map. It only works when `in-memory-format` is set as `BINARY` and performs a pre-caching on the entries queried.
+- `optimize-queries`: If true, increases the speed of query processes in the map. Default value is false. It only works when `in-memory-format` is set as `BINARY` and performs a pre-caching on the entries queried.
+- `min-eviction-check-millis`: The minimum time in milliseconds which should pass before checking if a partition of this map 
+   is evictable or not. Default value is 100 millis.
 
 ### Map Store
 
@@ -85,10 +87,13 @@ Map configuration has the following elements.
 - `write-delay-seconds`: Number of seconds to delay to call the MapStore.store(key, value). If the value is zero then it is write-through so MapStore.store(key, value) will be called as soon as the entry is updated. Otherwise it is write-behind so updates will be stored after write-delay-seconds value by calling Hazelcast.storeAll(map). Default value is 0.
 - `write-batch-size`: Used to create batch chunks when writing map store. In default mode, all map entries will be tried to be written in one go. To create batch chunks, the minimum meaningful value for write-batch-size is 2. For values smaller than 2, it works as in default mode.
 - `write-coalescing`: In write-behind mode, by default Hazelcast coalesces updates on a specific key, i.e. applies only the last update on it. You can set this element to `false` to store all updates performed on a key to the data store.
+- `enabled`: True to enable this map-store, false to disable. Default value is true.
+- `initial-mode`: Sets the initial load mode. LAZY is the default load mode, where load is asynchronous. EAGER means load is blocked till all partitions are loaded.
+
 
 ### Near Cache
 
-Most of the map near cache properties have the same names and tasks explained in the map properties above. Below are the ones specific to near cache.
+Most of the map near cache properties (`max-size`, `time-to-live-seconds`, `max-idle-seconds`, `eviction-policy`, `in-memory-format`) have the same names and tasks explained in the map properties above. Below are the properties specific to near cache.
 
 - `invalidate-on-change`: Determines whether the cached entries get evicted if the entries are updated or removed.
 - `cache-local-entries`: If you want the local entries to be cached, set this element's value to `true`.

@@ -26,7 +26,13 @@
             <xs:choice minOccurs="1" maxOccurs="unbounded">
                 <xs:element ref="import"/>
                 <xs:element name="group" type="cluster-group" minOccurs="0" maxOccurs="1"/>
-                <xs:element name="license-key" type="xs:string" minOccurs="0" maxOccurs="1"/>
+                <xs:element name="license-key" type="xs:string" minOccurs="0" maxOccurs="1">
+	                <xs:annotation>
+	                    <xs:documentation>
+	                        To use Hazelcast Enterprise, you need to set the license key here or programmatically.
+	                    </xs:documentation>
+	                </xs:annotation>
+	            </xs:element>
                 <xs:element name="management-center" type="management-center" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="wan-replication" type="wan-replication" minOccurs="0" maxOccurs="unbounded"/>
@@ -148,12 +154,34 @@
                     <xs:documentation>
                         Maximum size of the map.
                         Any integer between 0 and Integer.MAX_VALUE. 0 means Integer.MAX_VALUE. Default is 0.
+                        For max-size to work, set the eviction-policy property to a value other than NONE.
                     </xs:documentation>
                 </xs:annotation>
                 <xs:complexType>
                     <xs:simpleContent>
                         <xs:extension base="xs:integer">
-                            <xs:attribute name="policy" use="optional" default="PER_NODE"/>
+                            <xs:attribute name="policy" use="optional" default="PER_NODE">
+				                <xs:annotation>
+				                    <xs:documentation>
+				                        Valid values are:
+										PER_NODE: Maximum number of map entries in each JVM. This is the default policy.
+										PER_PARTITION: Maximum number of map entries within each partition. Storage size 
+										depends on the partition count in a JVM. This attribute should not be used often. 
+										Avoid using this attribute with a small cluster: if the cluster is small it will 
+										be hosting more partitions, and therefore map entries, than that of a larger 
+										cluster. Thus, for a small cluster, eviction of the entries will decrease 
+										performance (the number of entries is large).
+										USED_HEAP_SIZE: Maximum used heap size in megabytes for each JVM.
+										USED_HEAP_PERCENTAGE: Maximum used heap size percentage for each JVM. If, for 
+										example, JVM is configured to have 1000 MB and this value is 10, then the map 
+										entries will be evicted when used heap size exceeds 100 MB.
+										FREE_HEAP_SIZE: Minimum free heap size in megabytes for each JVM.
+										FREE_HEAP_PERCENTAGE: Minimum free heap size percentage for each JVM. For example, 
+										if JVM is configured to have 1000 MB and this value is 10, then the map entries will 
+										be evicted when free heap size is below 100 MB.
+				                    </xs:documentation>
+				                </xs:annotation>
+				            </xs:attribute>
                         </xs:extension>
                     </xs:simpleContent>
                 </xs:complexType>
@@ -161,8 +189,8 @@
             <xs:element name="eviction-percentage" minOccurs="0" maxOccurs="1">
                 <xs:annotation>
                     <xs:documentation>
-                        When the map reaches maximum size, this specified percentage of the map will be evicted. Set to any integer between
-                        0 and 100.
+                        When the map reaches maximum size, this specified percentage of the map will be evicted. Set to any
+                        integer between 0 and 100.
                         For example, if 25 is set, 25% of the entries are evicted.
                     </xs:documentation>
                 </xs:annotation>
@@ -230,11 +258,11 @@
             <xs:element name="query-caches" type="query-caches" minOccurs="0" maxOccurs="1"/>
         </xs:all>
         <xs:attribute name="name" use="required">
-        <xs:annotation>
-            <xs:documentation>
-                Name of the map.
-            </xs:documentation>
-        </xs:annotation>
+            <xs:annotation>
+                <xs:documentation>
+                    Name of the map.
+                </xs:documentation>
+            </xs:annotation>
             <xs:simpleType>
                 <xs:restriction base="xs:string"/>
             </xs:simpleType>
@@ -280,22 +308,24 @@
         <xs:all>
             <xs:element name="key-type" minOccurs="0" maxOccurs="1">
                 <xs:complexType>
-                    <xs:annotation>
-                        <xs:documentation>
-                            The type of the queue entry keys, provided as the full class name.
-                        </xs:documentation>
-                    </xs:annotation>
-                    <xs:attribute name="class-name" use="required"/>
+                    <xs:attribute name="class-name" use="required">
+                        <xs:annotation>
+                            <xs:documentation>
+                                The fully qualified class name of the cache key type.
+                            </xs:documentation>
+                        </xs:annotation>
+                    </xs:attribute>
                 </xs:complexType>
             </xs:element>
             <xs:element name="value-type" minOccurs="0" maxOccurs="1">
                 <xs:complexType>
-                    <xs:annotation>
-                        <xs:documentation>
-                            The type of the queue entry values, provided as the full class name.
-                        </xs:documentation>
-                    </xs:annotation>
-                    <xs:attribute name="class-name" use="required"/>
+                    <xs:attribute name="class-name" use="required">
+                        <xs:annotation>
+                            <xs:documentation>
+                                The fully qualified class name of the cache value type.
+                            </xs:documentation>
+                        </xs:annotation>
+                   </xs:attribute>
                 </xs:complexType>
             </xs:element>
             <xs:element name="statistics-enabled" type="xs:boolean" minOccurs="0" maxOccurs="1" default="false">
@@ -328,22 +358,24 @@
             </xs:element>
             <xs:element name="cache-loader-factory" minOccurs="0" maxOccurs="1">
                 <xs:complexType>
-                    <xs:annotation>
-                        <xs:documentation>
-                            The cache loader factory class name.
-                        </xs:documentation>
-                    </xs:annotation>
-                    <xs:attribute name="class-name" use="required"/>
+                    <xs:attribute name="class-name" use="required">
+                        <xs:annotation>
+                            <xs:documentation>
+                                The cache loader factory class name.
+                            </xs:documentation>
+                        </xs:annotation>
+	                </xs:attribute>
                 </xs:complexType>
             </xs:element>
             <xs:element name="cache-writer-factory" minOccurs="0" maxOccurs="1">
                 <xs:complexType>
-                    <xs:annotation>
-                        <xs:documentation>
-                            The cache writer factory class name.
-                        </xs:documentation>
-                    </xs:annotation>
-                    <xs:attribute name="class-name" use="required"/>
+                    <xs:attribute name="class-name" use="required">
+                        <xs:annotation>
+                            <xs:documentation>
+                                The cache writer factory class name.
+                            </xs:documentation>
+                        </xs:annotation>
+	                </xs:attribute>
                 </xs:complexType>
             </xs:element>
             <xs:element name="expiry-policy-factory" minOccurs="0" maxOccurs="1">
