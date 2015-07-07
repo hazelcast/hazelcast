@@ -74,9 +74,9 @@ public abstract class AbstractConfigBuilder extends AbstractXmlConfigHelper {
         if (misplacedImports.getLength() > 0) {
             throw new InvalidConfigurationException("<import> element can appear only in the top level of the XML");
         }
-        NodeList importTags = (NodeList) xpath.evaluate("/*[name()='" +
-                this.getXmlType().name + "']/*[name()='" +
-                IMPORT.name + "']", document, XPathConstants.NODESET);
+        NodeList importTags = (NodeList) xpath.evaluate("/*[name()='"
+                + this.getXmlType().name + "']/*[name()='"
+                + IMPORT.name + "']", document, XPathConstants.NODESET);
         for (Node node : new AbstractXmlConfigHelper.IterableNodeList(importTags)) {
             loadAndReplaceImportElement(root, node);
         }
