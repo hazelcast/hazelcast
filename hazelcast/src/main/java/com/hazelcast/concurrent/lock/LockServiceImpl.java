@@ -179,14 +179,14 @@ public final class LockServiceImpl implements LockService, ManagedService, Remot
     public void memberRemoved(MembershipServiceEvent event) {
         final MemberImpl member = event.getMember();
         final String uuid = member.getUuid();
-        releaseLocksOf(uuid);
+        releaseLocksOwnedBy(uuid);
     }
 
     @Override
     public void memberAttributeChanged(MemberAttributeServiceEvent event) {
     }
 
-    private void releaseLocksOf(final String uuid) {
+    private void releaseLocksOwnedBy(final String uuid) {
         final InternalOperationService operationService = (InternalOperationService) nodeEngine.getOperationService();
         for (final LockStoreContainer container : containers) {
             operationService.execute(new PartitionSpecificRunnable() {
@@ -319,6 +319,6 @@ public final class LockServiceImpl implements LockService, ManagedService, Remot
 
     @Override
     public void clientDisconnected(String clientUuid) {
-        releaseLocksOf(clientUuid);
+        releaseLocksOwnedBy(clientUuid);
     }
 }
