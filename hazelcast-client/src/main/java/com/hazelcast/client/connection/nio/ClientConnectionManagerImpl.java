@@ -47,6 +47,7 @@ import com.hazelcast.nio.tcp.SocketChannelWrapper;
 import com.hazelcast.nio.tcp.SocketChannelWrapperFactory;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
+
 import java.io.IOException;
 import java.net.Socket;
 import java.nio.channels.SocketChannel;
@@ -119,12 +120,12 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
 
         inSelector = new InSelectorImpl(
                 client.getThreadGroup(),
-                "ClientInSelector",
+                client.getName() + ".ClientInSelector",
                 Logger.getLogger(InSelectorImpl.class),
                 OUT_OF_MEMORY_HANDLER);
         outSelector = new ClientOutSelectorImpl(
                 client.getThreadGroup(),
-                "ClientOutSelector",
+                client.getName() + ".ClientOutSelector",
                 Logger.getLogger(ClientOutSelectorImpl.class),
                 OUT_OF_MEMORY_HANDLER);
 

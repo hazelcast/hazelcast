@@ -143,7 +143,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         clientProperties = new ClientProperties(config);
         serializationService = clientExtension.createSerializationService();
         proxyManager = new ProxyManager(this);
-        executionService = initExecutorService();
+        executionService = initExecutionService();
         loadBalancer = initLoadBalancer(config);
         transactionManager = new ClientTransactionManagerServiceImpl(this, loadBalancer);
         partitionService = new ClientPartitionServiceImpl(this);
@@ -221,7 +221,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         return new ClientListenerServiceImpl(this, eventThreadCount, eventQueueCapacity);
     }
 
-    private ClientExecutionServiceImpl initExecutorService() {
+    private ClientExecutionServiceImpl initExecutionService() {
         return new ClientExecutionServiceImpl(instanceName, threadGroup,
                 config.getClassLoader(), config.getExecutorPoolSize());
     }
