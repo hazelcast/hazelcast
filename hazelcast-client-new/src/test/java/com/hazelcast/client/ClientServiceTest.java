@@ -35,6 +35,7 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -229,6 +230,7 @@ public class ClientServiceTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Ignore
     public void testConnectedClientsWithReAuth() throws InterruptedException {
         final ClientConfig clientConfig = new ClientConfig();
         clientConfig.getNetworkConfig().setConnectionAttemptPeriod(1000 * 10);
