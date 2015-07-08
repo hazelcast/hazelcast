@@ -184,11 +184,13 @@ public class TcpIpConnectionManager implements ConnectionManager {
     }
 
     // just for testing
+    @edu.umd.cs.findbugs.annotations.SuppressWarnings({"EI_EXPOSE_REP" })
     public InSelectorImpl[] getInSelectors() {
         return inSelectors;
     }
 
     // just for testing
+    @edu.umd.cs.findbugs.annotations.SuppressWarnings({"EI_EXPOSE_REP" })
     public OutSelectorImpl[] getOutSelectors() {
         return outSelectors;
     }
