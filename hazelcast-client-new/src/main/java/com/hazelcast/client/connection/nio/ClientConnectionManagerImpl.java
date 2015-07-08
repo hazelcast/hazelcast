@@ -121,12 +121,12 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
 
         inSelector = new InSelectorImpl(
                 client.getThreadGroup(),
-                "ClientInSelector",
+                client.getName() + ".ClientInSelector",
                 Logger.getLogger(InSelectorImpl.class),
                 OUT_OF_MEMORY_HANDLER);
         outSelector = new ClientOutSelectorImpl(
                 client.getThreadGroup(),
-                "ClientOutSelector",
+                client.getName() + ".ClientOutSelector",
                 Logger.getLogger(ClientOutSelectorImpl.class),
                 OUT_OF_MEMORY_HANDLER);
 
