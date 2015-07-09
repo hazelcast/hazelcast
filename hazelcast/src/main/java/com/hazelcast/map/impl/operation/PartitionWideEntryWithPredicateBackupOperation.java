@@ -20,6 +20,7 @@ import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.query.Predicate;
+
 import java.io.IOException;
 
 public class PartitionWideEntryWithPredicateBackupOperation extends PartitionWideEntryBackupOperation {
@@ -30,8 +31,8 @@ public class PartitionWideEntryWithPredicateBackupOperation extends PartitionWid
     }
 
     public PartitionWideEntryWithPredicateBackupOperation(String name, EntryBackupProcessor entryProcessor,
-                                                          Predicate predicate) {
-        super(name, entryProcessor);
+                                                          Predicate predicate, int storeableEntryCount) {
+        super(name, entryProcessor, storeableEntryCount);
         this.predicate = predicate;
     }
 

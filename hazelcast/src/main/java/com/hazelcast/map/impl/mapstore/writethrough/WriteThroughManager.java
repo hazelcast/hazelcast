@@ -46,4 +46,5 @@ public class WriteThroughManager implements MapStoreManager {
     public MapDataStore getMapDataStore(int partitionId) {
         return mapDataStore;
     }
+
 }

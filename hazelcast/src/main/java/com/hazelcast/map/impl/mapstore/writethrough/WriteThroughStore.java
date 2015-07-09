@@ -89,9 +89,15 @@ public class WriteThroughStore extends AbstractMapDataStore<Data, Object> {
     }
 
     @Override
+    public boolean isWriteBehind() {
+        return false;
+    }
+
+    @Override
     public int notFinishedOperationsCount() {
         return 0;
     }
+
 
 }
 

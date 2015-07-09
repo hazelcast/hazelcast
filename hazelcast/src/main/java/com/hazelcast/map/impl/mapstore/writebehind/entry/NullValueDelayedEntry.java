@@ -55,7 +55,17 @@ class NullValueDelayedEntry<K, V> implements DelayedEntry<K, V> {
     }
 
     @Override
+    public long getSequence() {
+        return -1L;
+    }
+
+    @Override
     public void setStoreTime(long storeTime) {
+    }
+
+    @Override
+    public void setSequence(long sequence) {
+
     }
 
     @Override

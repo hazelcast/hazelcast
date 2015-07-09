@@ -58,6 +58,7 @@ public final class MapStoreManagers {
             public MapDataStore getMapDataStore(int partitionId) {
                 return MapDataStores.emptyStore();
             }
+
         };
     }
 

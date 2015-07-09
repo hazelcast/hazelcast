@@ -28,6 +28,7 @@ class DeletedDelayedEntry<K, V> implements DelayedEntry<K, V> {
     private final K key;
     private final int partitionId;
     private long storeTime;
+    private long sequence;
 
     public DeletedDelayedEntry(K key, long storeTime, int partitionId) {
         this.key = key;
@@ -56,8 +57,18 @@ class DeletedDelayedEntry<K, V> implements DelayedEntry<K, V> {
     }
 
     @Override
+    public long getSequence() {
+        return sequence;
+    }
+
+    @Override
     public void setStoreTime(long storeTime) {
         this.storeTime = storeTime;
+    }
+
+    @Override
+    public void setSequence(long sequence) {
+        this.sequence = sequence;
     }
 
     /**
@@ -75,5 +86,15 @@ class DeletedDelayedEntry<K, V> implements DelayedEntry<K, V> {
     @Override
     public int hashCode() {
         return key.hashCode();
+    }
+
+    @Override
+    public String toString() {
+        return "DeletedDelayedEntry{"
+                + "key=" + key
+                + ", partitionId=" + partitionId
+                + ", storeTime=" + storeTime
+                + ", sequence=" + sequence
+                + '}';
     }
 }

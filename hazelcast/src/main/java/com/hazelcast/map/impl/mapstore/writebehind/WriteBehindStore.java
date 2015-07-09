@@ -50,10 +50,10 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
     private final int partitionId;
 
     /**
-    * Number of issued flush operations.
-    * Flushes may be caused by an eviction. Instead of directly flushing entries
-    * upon eviction, the flushes are counted and immediately processed
-    * in {@link com.hazelcast.map.impl.mapstore.writebehind.StoreWorker}.
+     * Number of issued flush operations.
+     * Flushes may be caused by an eviction. Instead of directly flushing entries
+     * upon eviction, the flushes are counted and immediately processed
+     * in {@link com.hazelcast.map.impl.mapstore.writebehind.StoreWorker}.
      */
     private final AtomicInteger flushCounter;
 
@@ -64,24 +64,24 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
     private WriteBehindProcessor writeBehindProcessor;
 
     /**
-    * {@code stagingArea} is a temporary living space for evicted data if we are using a write-behind map store.
-    * Every eviction triggers a map store flush, and in write-behind mode this flush operation
-    * should not cause any inconsistencies, such as reading a stale value from map store.
-    * To prevent reading stale values when the time of a non-existent key is requested, before loading it from map-store
-    * we search for an evicted entry in this space. If the entry is not there,
-    * we ask map store to load it. All read operations use this staging area
-    * to return the last set value on a specific key, since there is a possibility that
-    * {@link com.hazelcast.map.impl.mapstore.writebehind.WriteBehindQueue} may contain more than one waiting operations
-    * on a specific key.
-    * <p/>
-    * This space is also used to control any waiting delete operations on a key or any transiently put entries to {@code IMap}.
-    * Values of any transiently put entries should not be added to this area upon eviction, otherwise subsequent
-    * {@code IMap#get} operations may return stale values.
-    * <p/>
-    * NOTE: In case of eviction we do not want to make a huge database load by flushing entries uncontrollably.
-    * We also do not want to make duplicate map-store calls for a key. This is why we use the staging area instead of the
-    * direct flushing option to map-store.
-    */
+     * {@code stagingArea} is a temporary living space for evicted data if we are using a write-behind map store.
+     * Every eviction triggers a map store flush, and in write-behind mode this flush operation
+     * should not cause any inconsistencies, such as reading a stale value from map store.
+     * To prevent reading stale values when the time of a non-existent key is requested, before loading it from map-store
+     * we search for an evicted entry in this space. If the entry is not there,
+     * we ask map store to load it. All read operations use this staging area
+     * to return the last set value on a specific key, since there is a possibility that
+     * {@link com.hazelcast.map.impl.mapstore.writebehind.WriteBehindQueue} may contain more than one waiting operations
+     * on a specific key.
+     * <p/>
+     * This space is also used to control any waiting delete operations on a key or any transiently put entries to {@code IMap}.
+     * Values of any transiently put entries should not be added to this area upon eviction, otherwise subsequent
+     * {@code IMap#get} operations may return stale values.
+     * <p/>
+     * NOTE: In case of eviction we do not want to make a huge database load by flushing entries uncontrollably.
+     * We also do not want to make duplicate map-store calls for a key. This is why we use the staging area instead of the
+     * direct flushing option to map-store.
+     */
     private final ConcurrentMap<Data, DelayedEntry> stagingArea;
 
     public WriteBehindStore(MapStoreWrapper store, SerializationService serializationService,
@@ -97,7 +97,6 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
 
     @Override
     public Object add(Data key, Object value, long now) {
-
         // we will be in this `if` only in case of an entry modification via entry-processor.
         // otherwise this extra serialization of value should not be happen.
         if (InMemoryFormat.OBJECT.equals(inMemoryFormat)) {
@@ -185,18 +184,18 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
     }
 
     /**
-    * * Used in {@link com.hazelcast.core.IMap#loadAll} calls.
-    * If the write-behind map-store feature is enabled, some things may lead to possible data inconsistencies.
-    * These are:
-    * - calling evict/evictAll,
-    * - calling remove, and
-    * - not yet stored write-behind queue operations.
-    * <p/>
-    * With this method, we can be sure if a key can be loadable from map-store or not.
-    *
-    * @param key the key to query whether it is loadable or not.
-    * @return <code>true</code> if loadable, false otherwise.
-    */
+     * * Used in {@link com.hazelcast.core.IMap#loadAll} calls.
+     * If the write-behind map-store feature is enabled, some things may lead to possible data inconsistencies.
+     * These are:
+     * - calling evict/evictAll,
+     * - calling remove, and
+     * - not yet stored write-behind queue operations.
+     * <p/>
+     * With this method, we can be sure if a key can be loadable from map-store or not.
+     *
+     * @param key the key to query whether it is loadable or not.
+     * @return <code>true</code> if loadable, false otherwise.
+     */
     @Override
     public boolean loadable(Data key) {
         return !writeBehindQueue.contains(DelayedEntries.createDefault(key, null, -1, -1));
@@ -225,6 +224,11 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
     }
 
     @Override
+    public boolean isWriteBehind() {
+        return true;
+    }
+
+    @Override
     public Collection<Data> flush() {
         return writeBehindProcessor.flush(writeBehindQueue);
     }
@@ -245,7 +249,7 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
         return flushCounter;
     }
 
-    void removeFromStagingArea(DelayedEntry delayedEntry) {
+    public void removeFromStagingArea(DelayedEntry delayedEntry) {
         if (delayedEntry == null) {
             return;
         }
@@ -260,5 +264,4 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
         }
         return delayedEntry;
     }
-
 }

@@ -461,7 +461,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
     }
 
     @Override
-    Object evictInternal(Data key, boolean backup) {
+    public Object evictInternal(Data key, boolean backup) {
         Record record = records.get(key);
         Object value = null;
         if (record != null) {

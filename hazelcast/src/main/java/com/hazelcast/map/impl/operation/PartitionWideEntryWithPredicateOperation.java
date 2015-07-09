@@ -22,6 +22,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.Operation;
+
 import java.io.IOException;
 
 public class PartitionWideEntryWithPredicateOperation extends PartitionWideEntryOperation {
@@ -47,7 +48,8 @@ public class PartitionWideEntryWithPredicateOperation extends PartitionWideEntry
         if (backupProcessor == null) {
             return null;
         }
-        return new PartitionWideEntryWithPredicateBackupOperation(name, backupProcessor, predicate);
+        return new PartitionWideEntryWithPredicateBackupOperation(name, backupProcessor,
+                predicate, storeableEntryCount);
     }
 
     @Override

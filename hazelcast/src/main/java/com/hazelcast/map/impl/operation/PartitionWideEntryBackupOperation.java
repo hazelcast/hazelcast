@@ -17,6 +17,9 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.map.EntryBackupProcessor;
+import com.hazelcast.map.impl.mapstore.MapDataStore;
+import com.hazelcast.map.impl.mapstore.writebehind.Sequencer;
+import com.hazelcast.map.impl.mapstore.writebehind.WriteBehindStore;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -32,27 +35,39 @@ import java.util.Map;
 
 public class PartitionWideEntryBackupOperation extends AbstractMultipleEntryOperation implements BackupOperation {
 
+    private int storeableEntryCount;
+
     public PartitionWideEntryBackupOperation() {
     }
 
-    public PartitionWideEntryBackupOperation(String name, EntryBackupProcessor backupProcessor) {
+    public PartitionWideEntryBackupOperation(String name, EntryBackupProcessor backupProcessor,
+                                             int storeableEntryCount) {
         super(name, backupProcessor);
+        this.storeableEntryCount = storeableEntryCount;
     }
 
     @Override
     public void run() {
-        final long now = getNow();
-
-        final Iterator<Record> iterator = recordStore.iterator(now, true);
+        long now = getNow();
+        Iterator<Record> iterator = recordStore.iterator(now, true);
         while (iterator.hasNext()) {
-            final Record record = iterator.next();
-            final Data dataKey = record.getKey();
-            final Object oldValue = record.getValue();
+            if (storeableEntryCount <= 0) {
+                MapDataStore<Data, Object> mapDataStore = recordStore.getMapDataStore();
+                if (mapDataStore.isWriteBehind()) {
+                    Sequencer sequencer = ((WriteBehindStore) mapDataStore).getWriteBehindQueue().getSequencer();
+                    long sequence = sequencer.tailSequence();
+                    sequencer.setTailSequence(sequence - 1);
+                }
+            }
+
+            Record record = iterator.next();
+            Data dataKey = record.getKey();
+            Object oldValue = record.getValue();
 
             if (!applyPredicate(dataKey, dataKey, oldValue)) {
                 continue;
             }
-            final Map.Entry entry = createMapEntry(dataKey, oldValue);
+            Map.Entry entry = createMapEntry(dataKey, oldValue);
 
             processBackup(entry);
 
@@ -60,9 +75,11 @@ public class PartitionWideEntryBackupOperation extends AbstractMultipleEntryOper
                 continue;
             }
             if (entryRemovedBackup(entry, dataKey)) {
+                --storeableEntryCount;
                 continue;
             }
             entryAddedOrUpdatedBackup(entry, dataKey);
+            --storeableEntryCount;
 
             evict(true);
         }
@@ -95,11 +112,13 @@ public class PartitionWideEntryBackupOperation extends AbstractMultipleEntryOper
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         backupProcessor = in.readObject();
+        storeableEntryCount = in.readInt();
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeObject(backupProcessor);
+        out.writeInt(storeableEntryCount);
     }
 }

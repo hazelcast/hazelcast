@@ -16,7 +16,6 @@
 
 package com.hazelcast.map.impl.mapstore.writebehind;
 
-import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.map.impl.RecordStore;
@@ -27,13 +26,11 @@ import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.Clock;
-import com.hazelcast.util.CollectionUtil;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.util.CollectionUtil.isEmpty;
@@ -51,23 +48,10 @@ public class StoreWorker implements Runnable {
 
     private final WriteBehindProcessor writeBehindProcessor;
 
-    /**
-     * Run on backup nodes after this interval.
-     */
-    private final long backupRunIntervalTime;
-
-    /**
-     * Last run time of this processor.
-     */
-    private long lastRunTime;
-
-
     public StoreWorker(MapStoreContext mapStoreContext, WriteBehindProcessor writeBehindProcessor) {
         this.mapName = mapStoreContext.getMapName();
         this.mapServiceContext = mapStoreContext.getMapServiceContext();
         this.writeBehindProcessor = writeBehindProcessor;
-        this.backupRunIntervalTime = getReplicaWaitTime();
-        this.lastRunTime = Clock.currentTimeMillis();
     }
 
 
@@ -93,12 +77,9 @@ public class StoreWorker implements Runnable {
 
             List<DelayedEntry> entriesToStore = getEntriesToStore(now, recordStore);
             if (!partition.isLocal()) {
-                if (now > lastRunTime + backupRunIntervalTime) {
-                    doInBackup(entriesToStore, partitionId);
-                }
-            } else {
-                entries.addAll(entriesToStore);
+                continue;
             }
+            entries.addAll(entriesToStore);
         }
 
         if (entries.isEmpty()) {
@@ -108,7 +89,6 @@ public class StoreWorker implements Runnable {
         Map<Integer, List<DelayedEntry>> failuresPerPartition = writeBehindProcessor.process(entries);
         removeFinishedStoreOperationsFromQueues(mapName, entries);
         readdFailedStoreOperationsToQueues(mapName, failuresPerPartition);
-        lastRunTime = now;
     }
 
     private List<DelayedEntry> getEntriesToStore(long now, RecordStore recordStore) {
@@ -165,35 +145,6 @@ public class StoreWorker implements Runnable {
             final WriteBehindQueue<DelayedEntry> queue = getWriteBehindQueue(recordStore);
             queue.addFirst(failures);
         }
-    }
-
-    /**
-     * Process write-behind queues on backup partitions. It is a fake processing and
-     * it only removes entries from queues and does not persist any of them.
-     *
-     * @param delayedEntries entries to be processed.
-     * @param partitionId    corresponding partition id.
-     */
-    private void doInBackup(final List<DelayedEntry> delayedEntries, final int partitionId) {
-        if (CollectionUtil.isEmpty(delayedEntries)) {
-            return;
-        }
-        final NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
-        final ClusterService clusterService = nodeEngine.getClusterService();
-        final InternalPartitionService partitionService = nodeEngine.getPartitionService();
-        final Address thisAddress = clusterService.getThisAddress();
-        final InternalPartition partition = partitionService.getPartition(partitionId, false);
-        final Address owner = partition.getOwnerOrNull();
-        if (owner != null && !owner.equals(thisAddress)) {
-            writeBehindProcessor.callBeforeStoreListeners(delayedEntries);
-            removeFinishedStoreOperationsFromQueues(mapName, delayedEntries);
-            writeBehindProcessor.callAfterStoreListeners(delayedEntries);
-        }
-    }
-
-    private long getReplicaWaitTime() {
-        return TimeUnit.SECONDS.toMillis(mapServiceContext.getNodeEngine().getGroupProperties()
-                .MAP_REPLICA_SCHEDULED_TASK_DELAY_SECONDS.getInteger());
     }
 
     private RecordStore getRecordStoreOrNull(String mapName, int partitionId) {

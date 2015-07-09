@@ -16,6 +16,8 @@
 
 package com.hazelcast.map.impl.mapstore.writebehind;
 
+import com.hazelcast.map.impl.mapstore.writebehind.entry.DelayedEntry;
+
 import java.util.Collection;
 import java.util.List;
 
@@ -56,13 +58,6 @@ class SynchronizedWriteBehindQueue<E> implements WriteBehindQueue<E> {
         }
     }
 
-    /**
-     * Removes the first occurrence of the specified element in this queue
-     * when searching it by starting from the head of this queue.
-     *
-     * @param e element to be removed.
-     * @return <code>true</code> if removed successfully, <code>false</code> otherwise
-     */
     @Override
     public boolean removeFirstOccurrence(E e) {
         synchronized (mutex) {
@@ -92,6 +87,13 @@ class SynchronizedWriteBehindQueue<E> implements WriteBehindQueue<E> {
     }
 
     @Override
+    public Sequencer getSequencer() {
+        synchronized (mutex) {
+            return queue.getSequencer();
+        }
+    }
+
+    @Override
     public int drainTo(Collection<E> collection) {
         synchronized (mutex) {
             return queue.drainTo(collection);
@@ -116,6 +118,21 @@ class SynchronizedWriteBehindQueue<E> implements WriteBehindQueue<E> {
     public void getFrontByNumber(int numberOfElements, Collection<E> collection) {
         synchronized (mutex) {
             queue.getFrontByNumber(numberOfElements, collection);
+        }
+    }
+
+    @Override
+    public void getFrontBySequence(long sequence, Collection<DelayedEntry> collection) {
+        synchronized (mutex) {
+            queue.getFrontBySequence(sequence, collection);
+        }
+
+    }
+
+    @Override
+    public void getEndBySequence(long sequence, Collection<DelayedEntry> collection) {
+        synchronized (mutex) {
+            queue.getEndBySequence(sequence, collection);
         }
     }
 

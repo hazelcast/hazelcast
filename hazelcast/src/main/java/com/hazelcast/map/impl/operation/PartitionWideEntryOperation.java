@@ -28,6 +28,7 @@ import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.QueryEntry;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
+
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.Map;
@@ -36,6 +37,8 @@ import java.util.Map;
  * GOTCHA : This operation does NOT load missing keys from map-store for now.
  */
 public class PartitionWideEntryOperation extends AbstractMultipleEntryOperation implements BackupAwareOperation {
+
+    protected transient int storeableEntryCount;
 
     public PartitionWideEntryOperation(String name, EntryProcessor entryProcessor) {
         super(name, entryProcessor);
@@ -77,12 +80,15 @@ public class PartitionWideEntryOperation extends AbstractMultipleEntryOperation 
                 continue;
             }
             if (entryRemoved(entry, dataKey, oldValue, now)) {
+                ++storeableEntryCount;
                 continue;
             }
             entryAddedOrUpdated(entry, dataKey, oldValue, now);
+            ++storeableEntryCount;
 
             evict(false);
         }
+
     }
 
     @Override
@@ -108,7 +114,7 @@ public class PartitionWideEntryOperation extends AbstractMultipleEntryOperation 
     @Override
     public Operation getBackupOperation() {
         EntryBackupProcessor backupProcessor = entryProcessor.getBackupProcessor();
-        return backupProcessor != null ? new PartitionWideEntryBackupOperation(name, backupProcessor) : null;
+        return backupProcessor != null ? new PartitionWideEntryBackupOperation(name, backupProcessor, storeableEntryCount) : null;
     }
 
     private boolean applyPredicate(Data dataKey, Object key, Object value) {
