@@ -56,8 +56,11 @@ import static java.lang.String.format;
  */
 public class RingbufferProxy<E> extends AbstractDistributedObject<RingbufferService> implements Ringbuffer<E> {
 
-    // to prevent overloading on readMany/addAll, there is a hard limit
-    static final int MAX_BATCH_SIZE = 1000;
+     /**
+     * The maximum number of items that can be retrieved in 1 go using the {@link #readManyAsync(long, int, int, IFunction)}
+     * method.
+     */
+    public static final int MAX_BATCH_SIZE = 1000;
 
     private final String name;
     private final int partitionId;
