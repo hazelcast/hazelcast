@@ -14,26 +14,23 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.impl.protocol.util;
+package com.hazelcast.util.collection;
 
-import com.hazelcast.nio.Bits;
-import com.hazelcast.nio.serialization.Data;
+/**
+ * Hashcode calculation.
+ */
+public final class Hashing {
+    private Hashing() { }
 
-public final class ParameterUtil {
-
-    private static final int UTF8_MAX_BYTES_PER_CHAR = 4;
-
-    private ParameterUtil() { }
-
-    public static int calculateStringDataSize(String string) {
-        return Bits.INT_SIZE_IN_BYTES + string.length() * UTF8_MAX_BYTES_PER_CHAR;
+    public static int intHash(final int value, final int mask) {
+        final int hash = (value << 1) - (value << 8);
+        return hash & mask;
     }
 
-    public static int calculateByteArrayDataSize(byte[] bytes) {
-        return Bits.INT_SIZE_IN_BYTES + bytes.length;
+    public static int longHash(final long value, final int mask) {
+        int hash = (int) value ^ (int) (value >>> 32);
+        hash = (hash << 1) - (hash << 8);
+        return hash & mask;
     }
 
-    public static int calculateDataSize(Data key) {
-        return calculateByteArrayDataSize(key.toByteArray());
-    }
 }

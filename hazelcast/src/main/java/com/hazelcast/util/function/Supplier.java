@@ -14,7 +14,16 @@
  * limitations under the License.
  */
 
+package com.hazelcast.util.function;
+
 /**
- * This package is currently a dummy package for collections. There is nothing interesting to find here.
+ * Represents a supplier of results.
+ *
+ * <p>There is no requirement that a new or distinct result be returned each
+ * time the supplier is invoked.
+ *
+ * @param <T> the type of results supplied by this supplier
  */
-package com.hazelcast.collection;
+public interface Supplier<T> {
+    T get();
+}

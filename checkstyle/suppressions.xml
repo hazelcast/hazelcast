@@ -213,10 +213,8 @@
     <suppress checks="JavadocMethod" files="com.hazelcast.client.impl[\\/]"/>
 
     <!--CLIENT PROTOCOL-->
-    <!--TODO: we will refactor these External utils-->
-    <suppress checks="" files="com.hazelcast.client.impl.protocol.util[\\/]"/>
-    <!--TODO we will refactor these encode-decode code-->
-    <!--Parameters class are gonna be auto generated-->
+    <suppress checks="IllegalImport" files="com/hazelcast/client/impl/protocol/util/UnsafeBuffer"/>
+    <!--Parameters classes are auto-generated-->
     <suppress checks="" files="com.hazelcast.client.impl.protocol.map.*Parameters"/>
     <suppress checks="" files="com.hazelcast.client.impl.protocol.*Parameters"/>
     <suppress checks="" files="com.hazelcast.client.impl.protocol.*Codec"/>
@@ -554,6 +552,10 @@
     <suppress checks="JavadocVariable" files="com.hazelcast.internal.management.request.ConsoleRequestConstants"/>
     <suppress checks="JavadocVariable|VisibilityModifier" files="com.hazelcast.internal.management.dto.*"/>
 
+    <!-- Agrona backport -->
+    <suppress checks="MagicNumber" files="com/hazelcast/util/collection/" />
+    <suppress checks="JavadocType" files="com/hazelcast/util/collection/.*2ObjectHashMap" />
+    <suppress checks="MethodCount" files="com/hazelcast/util/collection/.*HashSet" />
 
     <!-- Map -->
     <suppress checks="JavadocMethod" files="com.hazelcast.map[\\/]"/>

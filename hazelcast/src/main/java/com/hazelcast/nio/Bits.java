@@ -16,6 +16,8 @@
 
 package com.hazelcast.nio;
 
+import java.nio.charset.Charset;
+
 /**
  * Access and manipulate bits, bytes, primitives ...
  */
@@ -57,6 +59,15 @@ public final class Bits {
      * Length of the data blocks used by the CPU cache sub-system in bytes.
      */
     public static final int CACHE_LINE_LENGTH = 64;
+
+    /**
+     * A reusable instance of the UTF-8 charset
+     * */
+    public static final Charset UTF_8 = Charset.forName("UTF-8");
+    /**
+     * A reusable instance of the ISO Latin-1 charset
+     * */
+    public static final Charset ISO_8859_1 = Charset.forName("ISO-8859-1");
 
     private Bits() {
     }
