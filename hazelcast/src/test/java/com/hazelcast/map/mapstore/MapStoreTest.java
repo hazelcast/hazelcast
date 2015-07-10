@@ -510,35 +510,6 @@ public class MapStoreTest extends HazelcastTestSupport {
         assertEquals(1000, map2.size());
     }
 
-    private boolean checkIfMapLoaded(String mapName, HazelcastInstance instance) throws InterruptedException {
-        NodeEngineImpl nodeEngine = TestUtil.getNode(instance).nodeEngine;
-        int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
-        MapService service = nodeEngine.getService(MapService.SERVICE_NAME);
-        boolean loaded = false;
-
-        final long end = System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(1);
-
-        while (!loaded) {
-            for (int i = 0; i < partitionCount; i++) {
-                final RecordStore recordStore = service.getMapServiceContext()
-                        .getPartitionContainer(i).getRecordStore(mapName);
-                if (recordStore != null) {
-                    loaded = recordStore.isLoaded();
-                    if (!loaded) {
-                        break;
-                    }
-                }
-            }
-            if (System.currentTimeMillis() >= end) {
-                break;
-            }
-            //give a rest to cpu.
-            Thread.sleep(10);
-        }
-
-        return loaded;
-    }
-
     /*
      * Test for Issue 572
     */

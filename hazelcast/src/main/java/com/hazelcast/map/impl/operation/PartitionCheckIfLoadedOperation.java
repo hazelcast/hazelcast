@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.RecordStore;
 import com.hazelcast.nio.ObjectDataInput;
@@ -29,6 +30,7 @@ public class PartitionCheckIfLoadedOperation extends AbstractMapOperation implem
 
     private boolean isFinished;
     private boolean doLoad;
+    private boolean waitForKeyLoad;
 
     public PartitionCheckIfLoadedOperation() {
     }
@@ -42,13 +44,25 @@ public class PartitionCheckIfLoadedOperation extends AbstractMapOperation implem
         this.doLoad = doLoad;
     }
 
+    public PartitionCheckIfLoadedOperation(String name, boolean doLoad, boolean waitForKeyLoad) {
+        super(name);
+        this.doLoad = doLoad;
+        this.waitForKeyLoad = waitForKeyLoad;
+    }
+
     @Override
     public void run() {
         MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         RecordStore recordStore = mapServiceContext.getRecordStore(getPartitionId(), name);
+
         isFinished = recordStore.isLoaded();
+
         if (doLoad) {
             recordStore.maybeDoInitialLoad();
+        }
+
+        if (waitForKeyLoad) {
+           recordStore.onKeyLoad(new CallbackResponseSender());
         }
     }
 
@@ -58,14 +72,34 @@ public class PartitionCheckIfLoadedOperation extends AbstractMapOperation implem
     }
 
     @Override
+    public boolean returnsResponse() {
+        return !waitForKeyLoad;
+    }
+
+    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeBoolean(doLoad);
+        out.writeBoolean(waitForKeyLoad);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         doLoad = in.readBoolean();
+        waitForKeyLoad = in.readBoolean();
+    }
+
+    private class CallbackResponseSender implements ExecutionCallback<Boolean> {
+
+        @Override
+        public void onResponse(Boolean response) {
+            getResponseHandler().sendResponse(response);
+        }
+
+        @Override
+        public void onFailure(Throwable error) {
+            getResponseHandler().sendResponse(error);
+        }
     }
 }
