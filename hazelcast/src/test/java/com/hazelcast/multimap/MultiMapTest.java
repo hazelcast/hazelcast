@@ -16,6 +16,9 @@
 
 package com.hazelcast.multimap;
 
+import com.hazelcast.concurrent.lock.LockService;
+import com.hazelcast.concurrent.lock.LockServiceImpl;
+import com.hazelcast.concurrent.lock.LockStoreContainer;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.core.HazelcastException;
@@ -23,10 +26,15 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.MultiMap;
 import com.hazelcast.mapreduce.aggregation.Aggregations;
 import com.hazelcast.mapreduce.aggregation.Supplier;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
+
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -36,9 +44,6 @@ import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -439,5 +444,26 @@ public class MultiMapTest extends HazelcastTestSupport {
     private MultiMap getMultiMap(HazelcastInstance[] instances, String name) {
         final Random rnd = new Random();
         return instances[rnd.nextInt(instances.length)].getMultiMap(name);
+    }
+
+    /**
+     * See issue #4888
+     */
+    @Test
+    public void lockStoreShouldBeRemoved_whenMultimapIsDestroyed() {
+        HazelcastInstance hz = createHazelcastInstance();
+        MultiMap multiMap = hz.getMultiMap(randomName());
+        for (int i = 0; i < 1000; i++) {
+            multiMap.lock(i);
+        }
+        multiMap.destroy();
+
+        NodeEngineImpl nodeEngine = getNodeEngineImpl(hz);
+        LockServiceImpl lockService = nodeEngine.getService(LockService.SERVICE_NAME);
+        int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
+        for (int i = 0; i < partitionCount; i++) {
+            LockStoreContainer lockContainer = lockService.getLockContainer(i);
+            assertEquals("LockStores should be empty", 0, lockContainer.getLockStores().size());
+        }
     }
 }
