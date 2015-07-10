@@ -67,42 +67,31 @@ public final class QuickMath {
     }
 
     /**
-     * Returns the next power of two that is larger than the specified int value.
+     * Fast method of finding the next power of 2 greater than or equal to the supplied value.
+     * <p/>
+     * If the value is &lt;= 0 then 1 will be returned.
+     * <p/>
+     * This method is not suitable for {@link Integer#MIN_VALUE} or numbers greater than 2^30.
      *
-     * @param value the int value
-     * @return the next power of two that is larger than the specified int value.
+     * @param value from which to search for next power of 2
+     * @return The next power of 2 or the value itself if it is a power of 2
      */
-    public static int nextPowerOfTwo(int value) {
-        if (!isPowerOfTwo(value)) {
-            value--;
-            value |= value >> 1;
-            value |= value >> 2;
-            value |= value >> 4;
-            value |= value >> 8;
-            value |= value >> 16;
-            value++;
-        }
-        return value;
+    public static int nextPowerOfTwo(final int value) {
+        return 1 << (32 - Integer.numberOfLeadingZeros(value - 1));
     }
 
     /**
-     * Returns the next power of two that is larger than the specified long value.
+     * Fast method of finding the next power of 2 greater than or equal to the supplied value.
+     * <p/>
+     * If the value is &lt;= 0 then 1 will be returned.
+     * <p/>
+     * This method is not suitable for {@link Long#MIN_VALUE} or numbers greater than 2^62.
      *
-     * @param value the long value
-     * @return the next power of two that is larger than the specified long value
+     * @param value from which to search for next power of 2
+     * @return The next power of 2 or the value itself if it is a power of 2
      */
-    public static long nextPowerOfTwo(long value) {
-        if (!isPowerOfTwo(value)) {
-            value--;
-            value |= value >> 1;
-            value |= value >> 2;
-            value |= value >> 4;
-            value |= value >> 8;
-            value |= value >> 16;
-            value |= value >> 32;
-            value++;
-        }
-        return value;
+    public static long nextPowerOfTwo(final long value) {
+        return 1L << (64 - Long.numberOfLeadingZeros(value - 1));
     }
 
     /**
@@ -238,5 +227,4 @@ public final class QuickMath {
             return 0;
         }
     }
-
 }

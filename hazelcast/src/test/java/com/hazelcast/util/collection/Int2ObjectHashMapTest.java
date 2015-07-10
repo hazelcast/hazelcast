@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hazelcast.client.protocol;
 
-import com.hazelcast.client.impl.protocol.util.Int2ObjectHashMap;
+package com.hazelcast.util.collection;
+
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Assert;
@@ -37,22 +37,17 @@ import static org.junit.Assert.assertThat;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class Int2ObjectHashMapTest
-{
+public class Int2ObjectHashMapTest {
     private final Int2ObjectHashMap<String> intToObjectMap = new Int2ObjectHashMap<String>();
 
-    @Test
-    public void shouldDoPutAndThenGet()
-    {
+    @Test public void shouldDoPutAndThenGet() {
         final String value = "Seven";
         intToObjectMap.put(7, value);
 
         assertThat(intToObjectMap.get(7), is(value));
     }
 
-    @Test
-    public void shouldReplaceExistingValueForTheSameKey()
-    {
+    @Test public void shouldReplaceExistingValueForTheSameKey() {
         final int key = 7;
         final String value = "Seven";
         intToObjectMap.put(key, value);
@@ -65,13 +60,10 @@ public class Int2ObjectHashMapTest
         assertThat(valueOf(intToObjectMap.size()), is(valueOf(1)));
     }
 
-    @Test
-    public void shouldGrowWhenThresholdExceeded()
-    {
+    @Test public void shouldGrowWhenThresholdExceeded() {
         final double loadFactor = 0.5d;
         final Int2ObjectHashMap<String> map = new Int2ObjectHashMap<String>(32, loadFactor);
-        for (int i = 0; i < 16; i++)
-        {
+        for (int i = 0; i < 16; i++) {
             map.put(i, Integer.toString(i));
         }
 
@@ -89,9 +81,7 @@ public class Int2ObjectHashMapTest
         assertThat(loadFactor, closeTo(map.loadFactor(), 0.0));
     }
 
-    @Test
-    public void shouldHandleCollisionAndThenLinearProbe()
-    {
+    @Test public void shouldHandleCollisionAndThenLinearProbe() {
         final double loadFactor = 0.5d;
         final Int2ObjectHashMap<String> map = new Int2ObjectHashMap<String>(32, loadFactor);
         final int key = 7;
@@ -107,11 +97,8 @@ public class Int2ObjectHashMapTest
         assertThat(loadFactor, closeTo(map.loadFactor(), 0.0));
     }
 
-    @Test
-    public void shouldClearCollection()
-    {
-        for (int i = 0; i < 15; i++)
-        {
+    @Test public void shouldClearCollection() {
+        for (int i = 0; i < 15; i++) {
             intToObjectMap.put(i, Integer.toString(i));
         }
 
@@ -124,17 +111,13 @@ public class Int2ObjectHashMapTest
         Assert.assertNull(intToObjectMap.get(1));
     }
 
-    @Test
-    public void shouldCompactCollection()
-    {
+    @Test public void shouldCompactCollection() {
         final int totalItems = 50;
-        for (int i = 0; i < totalItems; i++)
-        {
+        for (int i = 0; i < totalItems; i++) {
             intToObjectMap.put(i, Integer.toString(i));
         }
 
-        for (int i = 0, limit = totalItems - 4; i < limit; i++)
-        {
+        for (int i = 0, limit = totalItems - 4; i < limit; i++) {
             intToObjectMap.remove(i);
         }
 
@@ -144,9 +127,7 @@ public class Int2ObjectHashMapTest
         assertThat(valueOf(intToObjectMap.capacity()), lessThan(valueOf(capacityBeforeCompaction)));
     }
 
-    @Test
-    public void shouldContainValue()
-    {
+    @Test public void shouldContainValue() {
         final int key = 7;
         final String value = "Seven";
 
@@ -156,9 +137,7 @@ public class Int2ObjectHashMapTest
         Assert.assertFalse(intToObjectMap.containsValue("NoKey"));
     }
 
-    @Test
-    public void shouldContainKey()
-    {
+    @Test public void shouldContainKey() {
         final int key = 7;
         final String value = "Seven";
 
@@ -168,9 +147,7 @@ public class Int2ObjectHashMapTest
         Assert.assertFalse(intToObjectMap.containsKey(0));
     }
 
-    @Test
-    public void shouldRemoveEntry()
-    {
+    @Test public void shouldRemoveEntry() {
         final int key = 7;
         final String value = "Seven";
 
@@ -183,9 +160,7 @@ public class Int2ObjectHashMapTest
         Assert.assertFalse(intToObjectMap.containsKey(key));
     }
 
-    @Test
-    public void shouldRemoveEntryAndCompactCollisionChain()
-    {
+    @Test public void shouldRemoveEntryAndCompactCollisionChain() {
         final int key = 12;
         final String value = "12";
 
@@ -201,13 +176,10 @@ public class Int2ObjectHashMapTest
         assertThat(intToObjectMap.remove(key), is(value));
     }
 
-    @Test
-    public void shouldIterateValues()
-    {
+    @Test public void shouldIterateValues() {
         final Collection<String> initialSet = new HashSet<String>();
 
-        for (int i = 0; i < 11; i++)
-        {
+        for (int i = 0; i < 11; i++) {
             final String value = Integer.toString(i);
             intToObjectMap.put(i, value);
             initialSet.add(value);
@@ -215,21 +187,17 @@ public class Int2ObjectHashMapTest
 
         final Collection<String> copyToSet = new HashSet<String>();
 
-        for (final String s : intToObjectMap.values())
-        {
+        for (final String s : intToObjectMap.values()) {
             copyToSet.add(s);
         }
 
         assertThat(copyToSet, is(initialSet));
     }
 
-    @Test
-    public void shouldIterateKeysGettingIntAsPrimitive()
-    {
+    @Test public void shouldIterateKeysGettingIntAsPrimitive() {
         final Collection<Integer> initialSet = new HashSet<Integer>();
 
-        for (int i = 0; i < 11; i++)
-        {
+        for (int i = 0; i < 11; i++) {
             final String value = Integer.toString(i);
             intToObjectMap.put(i, value);
             initialSet.add(valueOf(i));
@@ -237,21 +205,17 @@ public class Int2ObjectHashMapTest
 
         final Collection<Integer> copyToSet = new HashSet<Integer>();
 
-        for (final Int2ObjectHashMap.KeyIterator iter = intToObjectMap.keySet().iterator(); iter.hasNext();)
-        {
+        for (final Int2ObjectHashMap.KeyIterator iter = intToObjectMap.keySet().iterator(); iter.hasNext(); ) {
             copyToSet.add(valueOf(iter.nextInt()));
         }
 
         assertThat(copyToSet, is(initialSet));
     }
 
-    @Test
-    public void shouldIterateKeys()
-    {
+    @Test public void shouldIterateKeys() {
         final Collection<Integer> initialSet = new HashSet<Integer>();
 
-        for (int i = 0; i < 11; i++)
-        {
+        for (int i = 0; i < 11; i++) {
             final String value = Integer.toString(i);
             intToObjectMap.put(i, value);
             initialSet.add(valueOf(i));
@@ -259,22 +223,18 @@ public class Int2ObjectHashMapTest
 
         final Collection<Integer> copyToSet = new HashSet<Integer>();
 
-        for (final Integer aInteger : intToObjectMap.keySet())
-        {
+        for (final Integer aInteger : intToObjectMap.keySet()) {
             copyToSet.add(aInteger);
         }
 
         assertThat(copyToSet, is(initialSet));
     }
 
-    @Test
-    public void shouldIterateAndHandleRemove()
-    {
+    @Test public void shouldIterateAndHandleRemove() {
         final Collection<Integer> initialSet = new HashSet<Integer>();
 
         final int count = 11;
-        for (int i = 0; i < count; i++)
-        {
+        for (int i = 0; i < count; i++) {
             final String value = Integer.toString(i);
             intToObjectMap.put(i, value);
             initialSet.add(valueOf(i));
@@ -283,15 +243,11 @@ public class Int2ObjectHashMapTest
         final Collection<Integer> copyOfSet = new HashSet<Integer>();
 
         int i = 0;
-        for (final Iterator<Integer> iter = intToObjectMap.keySet().iterator(); iter.hasNext();)
-        {
+        for (final Iterator<Integer> iter = intToObjectMap.keySet().iterator(); iter.hasNext(); ) {
             final Integer item = iter.next();
-            if (i++ == 7)
-            {
+            if (i++ == 7) {
                 iter.remove();
-            }
-            else
-            {
+            } else {
                 copyOfSet.add(item);
             }
         }
@@ -302,23 +258,18 @@ public class Int2ObjectHashMapTest
         assertThat(valueOf(copyOfSet.size()), is(valueOf(reducedSetSize)));
     }
 
-    @Test
-    public void shouldIterateEntries()
-    {
+    @Test public void shouldIterateEntries() {
         final int count = 11;
-        for (int i = 0; i < count; i++)
-        {
+        for (int i = 0; i < count; i++) {
             final String value = Integer.toString(i);
             intToObjectMap.put(i, value);
         }
 
         final String testValue = "Wibble";
-        for (final Map.Entry<Integer, String> entry : intToObjectMap.entrySet())
-        {
+        for (final Map.Entry<Integer, String> entry : intToObjectMap.entrySet()) {
             assertThat(entry.getKey(), equalTo(valueOf(entry.getValue())));
 
-            if (entry.getKey() == 7)
-            {
+            if (entry.getKey() == 7) {
                 entry.setValue(testValue);
             }
         }
@@ -326,13 +277,10 @@ public class Int2ObjectHashMapTest
         assertThat(intToObjectMap.get(7), equalTo(testValue));
     }
 
-    @Test
-    public void shouldGenerateStringRepresentation()
-    {
+    @Test public void shouldGenerateStringRepresentation() {
         final int[] testEntries = {3, 1, 19, 7, 11, 12, 7};
 
-        for (final int testEntry : testEntries)
-        {
+        for (final int testEntry : testEntries) {
             intToObjectMap.put(testEntry, String.valueOf(testEntry));
         }
 

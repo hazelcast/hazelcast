@@ -29,6 +29,22 @@ public final class Preconditions {
 
 
     /**
+     * Tests if a string contains text.
+     *
+     * @param argument     the string tested to see if it contains text.
+     * @param errorMessage the errorMessage
+     * @return the string argument that was tested.
+     * @throws java.lang.IllegalArgumentException if the string is empty
+     */
+    public static String checkHasText(String argument, String errorMessage) {
+        if (argument == null || argument.isEmpty()) {
+            throw new IllegalArgumentException(errorMessage);
+        }
+
+        return argument;
+    }
+
+    /**
      * Tests if an argument is not null.
      *
      * @param argument     the argument tested to see if it is not null.
@@ -44,18 +60,16 @@ public final class Preconditions {
     }
 
     /**
-     * Tests if a string contains text.
+     * Tests if an argument is not null.
      *
-     * @param argument     the string tested to see if it contains text.
-     * @param errorMessage the errorMessage
-     * @return the string argument that was tested.
-     * @throws java.lang.IllegalArgumentException if the string is empty
+     * @param argument     the argument tested to see if it is not null.
+     * @return the argument that was tested.
+     * @throws java.lang.NullPointerException if argument is null
      */
-    public static String checkHasText(String argument, String errorMessage) {
-        if (argument == null || argument.isEmpty()) {
-            throw new IllegalArgumentException(errorMessage);
+    public static <T> T checkNotNull(T argument) {
+        if (argument == null) {
+            throw new NullPointerException();
         }
-
         return argument;
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2014 Real Logic Ltd.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,9 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hazelcast.client.impl.protocol.util;
+
+package com.hazelcast.util.collection;
+
 
 import com.hazelcast.util.QuickMath;
+import com.hazelcast.util.function.IntFunction;
 
 import java.util.AbstractCollection;
 import java.util.AbstractSet;
@@ -34,9 +37,8 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
  *
  * @param <V> values stored in the {@link java.util.Map}
  */
-@edu.umd.cs.findbugs.annotations.SuppressWarnings({"PZ_DONT_REUSE_ENTRY_OBJECTS_IN_ITERATORS"})
-public class Int2ObjectHashMap<V>
-        implements Map<Integer, V> {
+@edu.umd.cs.findbugs.annotations.SuppressWarnings("PZ_DONT_REUSE_ENTRY_OBJECTS_IN_ITERATORS")
+public class Int2ObjectHashMap<V> implements Map<Integer, V> {
     private final double loadFactor;
     private int resizeThreshold;
     private int capacity;
@@ -47,9 +49,9 @@ public class Int2ObjectHashMap<V>
     private Object[] values;
 
     // Cached to avoid allocation.
-    private final ValueCollection<V> valueCollection = new ValueCollection<V>();
+    private final ValueCollection valueCollection = new ValueCollection();
     private final KeySet keySet = new KeySet();
-    private final EntrySet<V> entrySet = new EntrySet<V>();
+    private final EntrySet entrySet = new EntrySet();
 
     public Int2ObjectHashMap() {
         this(8, 0.6);
@@ -186,24 +188,29 @@ public class Int2ObjectHashMap<V>
         return null;
     }
 
+
     /**
-     * Get a value for a given key, or if it does ot exist then default the value via a {@link Supplier}
+     * Get a value for a given key, or if it does ot exist then default the value via a {@link IntFunction}
      * and put it in the map.
+     * <p/>
+     * Primitive specialized version of {@link java.util.Map#computeIfAbsent}.
      *
-     * @param key      to search on.
-     * @param supplier to provide a default if the get returns null.
+     * @param key             to search on.
+     * @param mappingFunction to provide a value if the get returns null.
      * @return the value if found otherwise the default.
      */
-    public V getOrDefault(final int key, final Supplier<V> supplier) {
+    public V computeIfAbsent(final int key, final IntFunction<? extends V> mappingFunction) {
+        checkNotNull(mappingFunction, "mappingFunction cannot be null");
         V value = get(key);
         if (value == null) {
-            value = supplier.get();
-            put(key, value);
+            value = mappingFunction.apply(key);
+            if (value != null) {
+                put(key, value);
+            }
         }
 
         return value;
     }
-
 
     /**
      * {@inheritDoc}
@@ -402,8 +409,8 @@ public class Int2ObjectHashMap<V>
 
             final int hash = hash(keys[index]);
 
-            if ((index < hash && (hash <= deleteIndex || deleteIndex <= index)) || (hash <= deleteIndex
-                    && deleteIndex <= index)) {
+            if ((index < hash && (hash <= deleteIndex || deleteIndex <= index))
+                    || (hash <= deleteIndex && deleteIndex <= index)) {
                 keys[deleteIndex] = keys[index];
                 values[deleteIndex] = values[index];
 
@@ -422,8 +429,7 @@ public class Int2ObjectHashMap<V>
     // Internal Sets and Collections
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
-    public class KeySet
-            extends AbstractSet<Integer> {
+    public class KeySet extends AbstractSet<Integer> {
         public int size() {
             return Int2ObjectHashMap.this.size();
         }
@@ -457,8 +463,7 @@ public class Int2ObjectHashMap<V>
         }
     }
 
-    private class ValueCollection<V>
-            extends AbstractCollection<V> {
+    private class ValueCollection extends AbstractCollection<V> {
         public int size() {
             return Int2ObjectHashMap.this.size();
         }
@@ -480,8 +485,7 @@ public class Int2ObjectHashMap<V>
         }
     }
 
-    private class EntrySet<V>
-            extends AbstractSet<Entry<Integer, V>> {
+    private class EntrySet extends AbstractSet<Entry<Integer, V>> {
         public int size() {
             return Int2ObjectHashMap.this.size();
         }
@@ -503,13 +507,12 @@ public class Int2ObjectHashMap<V>
     // Iterators
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
-    private abstract class AbstractIterator<T>
-            implements Iterator<T> {
-        private int posCounter;
-        private int stopCounter;
-        private boolean isPositionValid = false;
+    private abstract class AbstractIterator<T> implements Iterator<T> {
         protected final int[] keys = Int2ObjectHashMap.this.keys;
         protected final Object[] values = Int2ObjectHashMap.this.values;
+        private int posCounter;
+        private int stopCounter;
+        private boolean isPositionValid;
 
         protected AbstractIterator() {
             int i = capacity;
@@ -573,8 +576,7 @@ public class Int2ObjectHashMap<V>
         }
     }
 
-    public class ValueIterator<T>
-            extends AbstractIterator<T> {
+    public class ValueIterator<T> extends AbstractIterator<T> {
         @SuppressWarnings("unchecked")
         public T next() {
             findNext();
@@ -583,8 +585,7 @@ public class Int2ObjectHashMap<V>
         }
     }
 
-    public class KeyIterator
-            extends AbstractIterator<Integer> {
+    public class KeyIterator extends AbstractIterator<Integer> {
         public Integer next() {
             return nextInt();
         }
@@ -597,9 +598,7 @@ public class Int2ObjectHashMap<V>
     }
 
     @SuppressWarnings("unchecked")
-    public class EntryIterator<V>
-            extends AbstractIterator<Entry<Integer, V>>
-            implements Entry<Integer, V> {
+    public class EntryIterator<V> extends AbstractIterator<Entry<Integer, V>> implements Entry<Integer, V> {
         public Entry<Integer, V> next() {
             findNext();
 
@@ -615,7 +614,7 @@ public class Int2ObjectHashMap<V>
         }
 
         public V setValue(final V value) {
-            checkNotNull(value, "value cannot be null");
+            checkNotNull(value, "Value must not be null");
 
             final int pos = getPosition();
             final Object oldValue = values[pos];
@@ -624,15 +623,4 @@ public class Int2ObjectHashMap<V>
             return (V) oldValue;
         }
     }
-
-    public interface Supplier<T> {
-
-        /**
-         * Gets a result.
-         *
-         * @return a result
-         */
-        T get();
-    }
-
 }

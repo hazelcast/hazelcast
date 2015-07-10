@@ -221,7 +221,7 @@
                 <version>${maven.surefire.plugin.version}</version>
                 <configuration combine.self="override">
                     <redirectTestOutputToFile>true</redirectTestOutputToFile>
-
+                    <runOrder>failedfirst</runOrder>
 
                     <!-- 1C means 1 process per cpu core -->
                     <!-- forkCount>1C</forkCount>
