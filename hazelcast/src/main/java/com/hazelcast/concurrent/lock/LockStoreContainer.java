@@ -53,7 +53,7 @@ public final class LockStoreContainer {
     }
 
     void clearLockStore(ObjectNamespace namespace) {
-        LockStoreImpl lockStore = lockStores.get(namespace);
+        LockStoreImpl lockStore = lockStores.remove(namespace);
         if (lockStore != null) {
             lockStore.clear();
         }
