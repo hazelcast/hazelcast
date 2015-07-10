@@ -16,6 +16,15 @@
 
 package com.hazelcast.map.impl.proxy;
 
+import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
+import static com.hazelcast.util.FutureUtil.logAllExceptions;
+import static com.hazelcast.util.IterableUtil.nullToEmpty;
+import static com.hazelcast.util.Preconditions.checkNotNull;
+import static java.lang.Math.min;
+import static java.util.Collections.singleton;
+import static java.util.concurrent.TimeUnit.SECONDS;
+import static java.util.logging.Level.WARNING;
+
 import com.hazelcast.concurrent.lock.LockProxySupport;
 import com.hazelcast.concurrent.lock.LockServiceImpl;
 import com.hazelcast.config.EntryListenerConfig;
@@ -67,6 +76,7 @@ import com.hazelcast.map.impl.operation.LoadMapOperation;
 import com.hazelcast.map.impl.operation.MapFlushOperation;
 import com.hazelcast.map.impl.operation.MapGetAllOperationFactory;
 import com.hazelcast.map.impl.operation.MultipleEntryOperationFactory;
+import com.hazelcast.map.impl.operation.PartitionCheckIfLoadedOperation;
 import com.hazelcast.map.impl.operation.PartitionCheckIfLoadedOperationFactory;
 import com.hazelcast.map.impl.operation.PartitionWideEntryWithPredicateOperationFactory;
 import com.hazelcast.map.impl.operation.PutAllOperation;
@@ -108,6 +118,7 @@ import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.impl.BinaryOperationFactory;
 import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.util.FutureUtil;
 import com.hazelcast.util.IterableUtil;
 import com.hazelcast.util.ThreadUtil;
 import com.hazelcast.util.executor.CompletedFuture;
@@ -126,12 +137,6 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-
-import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
-import static com.hazelcast.util.IterableUtil.nullToEmpty;
-import static com.hazelcast.util.Preconditions.checkNotNull;
-import static java.lang.Math.min;
-import static java.util.Collections.singleton;
 
 abstract class MapProxySupport extends AbstractDistributedObject<MapService> implements InitializingObject {
 
@@ -611,15 +616,15 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
 
     public void waitUntilLoaded() {
         try {
+            int mapNamePartition = partitionService.getPartitionId(name);
+
+            Operation op = new PartitionCheckIfLoadedOperation(name, false, true);
+            Future loadingFuture = operationService.invokeOnPartition(SERVICE_NAME, op, mapNamePartition);
+            // wait for keys to be loaded
+            FutureUtil.waitWithDeadline(singleton(loadingFuture), 1, SECONDS, logAllExceptions(WARNING));
+
             OperationFactory opFactory = new PartitionCheckIfLoadedOperationFactory(name);
-
-            Map<Integer, Object> results;
-            Collection<Integer> mapNamePartition = getPartitionsForKeys(singleton(toData(name)));
-
-            results = operationService.invokeOnPartitions(SERVICE_NAME, opFactory, mapNamePartition);
-            waitAllTrue(results);
-
-            results = operationService.invokeOnAllPartitions(SERVICE_NAME, opFactory);
+            Map<Integer, Object> results = operationService.invokeOnAllPartitions(SERVICE_NAME, opFactory);
             waitAllTrue(results);
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
