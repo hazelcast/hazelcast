@@ -593,12 +593,18 @@ abstract class AbstractClientInternalCacheProxy<K, V>
 
         @Override
         public void handle(String name, Collection<Data> keys, Collection<String> sourceUuids) {
-            Iterator<Data> keysIt = keys.iterator();
-            Iterator<String> sourceUuidsIt = sourceUuids.iterator();
-            while (keysIt.hasNext() && sourceUuidsIt.hasNext()) {
-                Data key = keysIt.next();
-                String sourceUuid = sourceUuidsIt.next();
-                if (!client.getUuid().equals(sourceUuid)) {
+            if (sourceUuids != null && !sourceUuids.isEmpty()) {
+                Iterator<Data> keysIt = keys.iterator();
+                Iterator<String> sourceUuidsIt = sourceUuids.iterator();
+                while (keysIt.hasNext() && sourceUuidsIt.hasNext()) {
+                    Data key = keysIt.next();
+                    String sourceUuid = sourceUuidsIt.next();
+                    if (!client.getUuid().equals(sourceUuid)) {
+                        nearCache.invalidate(key);
+                    }
+                }
+            } else {
+                for (Data key : keys) {
                     nearCache.invalidate(key);
                 }
             }
