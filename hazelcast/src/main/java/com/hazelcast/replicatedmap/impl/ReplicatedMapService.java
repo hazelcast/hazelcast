@@ -22,6 +22,7 @@ import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
+import com.hazelcast.monitor.LocalReplicatedMapStats;
 import com.hazelcast.monitor.impl.LocalReplicatedMapStatsImpl;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.replicatedmap.impl.messages.MultiReplicationMessage;
@@ -38,10 +39,13 @@ import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.RemoteService;
+import com.hazelcast.spi.StatisticsAwareService;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
+import com.hazelcast.util.MapUtil;
 
 import java.util.EventListener;
+import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -50,7 +54,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * {@link com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore}s that actually hold the data
  */
 public class ReplicatedMapService
-        implements ManagedService, RemoteService, EventPublishingService<Object, Object> {
+        implements ManagedService, RemoteService, EventPublishingService<Object, Object> , StatisticsAwareService{
 
     /**
      * Public constant for the internal service name of the ReplicatedMapService
@@ -194,6 +198,17 @@ public class ReplicatedMapService
                 return replicatedRecordStorage;
             }
         };
+    }
+
+    @Override
+    public Map<String, LocalReplicatedMapStats> getStats() {
+        Map<String, LocalReplicatedMapStats> replicatedMapStats = MapUtil.createHashMap(replicatedStorages.size());
+        for (Map.Entry<String, ReplicatedRecordStore> entry : replicatedStorages.entrySet()) {
+            String name = entry.getKey();
+            LocalReplicatedMapStats replicatedMapStat= ((AbstractReplicatedRecordStore) entry.getValue()).createReplicatedMapStats();
+            replicatedMapStats.put(name, replicatedMapStat);
+        }
+        return replicatedMapStats;
     }
 
     /**
