@@ -385,7 +385,7 @@ abstract class AbstractClientInternalCacheProxy<K, V>
     }
 
     protected void storeInNearCache(Data key, Data valueData, V value) {
-        if (nearCache != null) {
+        if (nearCache != null && valueData != null) {
             Object valueToStore = nearCache.selectToSave(value, valueData);
             nearCache.put(key, valueToStore);
         }
