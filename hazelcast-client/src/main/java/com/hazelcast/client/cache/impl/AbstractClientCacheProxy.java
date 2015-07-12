@@ -64,13 +64,21 @@ abstract class AbstractClientCacheProxy<K, V>
         super(cacheConfig, clientContext, cacheManager);
     }
 
+    protected Object getFromNearCache(Data keyData, boolean async) {
+        Object cached = nearCache != null ? nearCache.get(keyData) : null;
+        if (cached != null && NearCache.NULL_OBJECT != cached) {
+            return !async ? cached : createCompletedFuture(cached);
+        }
+        return null;
+    }
+
     protected Object getInternal(K key, ExpiryPolicy expiryPolicy, boolean async) {
         ensureOpen();
         validateNotNull(key);
         final Data keyData = toData(key);
-        Object cached = nearCache != null ? nearCache.get(keyData) : null;
-        if (cached != null && !NearCache.NULL_OBJECT.equals(cached)) {
-            return createCompletedFuture(cached);
+        Object cached = getFromNearCache(keyData, async);
+        if (cached != null) {
+            return cached;
         }
         CacheGetRequest request = new CacheGetRequest(nameWithPrefix, keyData, expiryPolicy, cacheConfig.getInMemoryFormat());
         ClientInvocationFuture future;
