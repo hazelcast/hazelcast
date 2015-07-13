@@ -34,6 +34,7 @@ public class AddAllRequest extends RingbufferRequest {
     public AddAllRequest() {
     }
 
+    @edu.umd.cs.findbugs.annotations.SuppressWarnings({"EI_EXPOSE_REP" })
     public AddAllRequest(String name, Data[] items, OverflowPolicy overflowPolicy) {
         super(name);
         this.items = items;
