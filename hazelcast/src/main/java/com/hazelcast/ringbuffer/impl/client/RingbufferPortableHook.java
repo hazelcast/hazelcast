@@ -29,7 +29,7 @@ import java.util.Collection;
  */
 public class RingbufferPortableHook implements PortableHook {
 
-    public static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.RINGBUFFER_PORTABLE_FACTORY, -25);
+    public static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.RINGBUFFER_PORTABLE_FACTORY, -29);
 
     public static final int ADD_ALL = 1;
     public static final int ADD = 2;
