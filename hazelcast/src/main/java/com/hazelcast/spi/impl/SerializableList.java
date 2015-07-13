@@ -20,39 +20,30 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.util.UnmodifiableIterator;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.Iterator;
+import java.util.List;
 
-public final class SerializableCollection implements IdentifiedDataSerializable, Iterable<Data> {
+public final class SerializableList implements IdentifiedDataSerializable, Iterable<Data> {
 
-    private Collection<Data> collection;
+    private List<Data> collection;
 
-    public SerializableCollection() {
+    public SerializableList() {
     }
 
-    public SerializableCollection(Collection<Data> collection) {
+    public SerializableList(List<Data> collection) {
         this.collection = collection;
     }
 
-    public SerializableCollection(Data... dataArray) {
-        this.collection = new ArrayList<Data>(dataArray.length);
-        Collections.addAll(collection, dataArray);
-    }
-
-    public Collection<Data> getCollection() {
+    public List<Data> getCollection() {
         return collection;
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        if (collection == null) {
-            out.writeInt(-1);
-            return;
-        }
         out.writeInt(collection.size());
         for (Data data : collection) {
             out.writeData(data);
@@ -62,9 +53,6 @@ public final class SerializableCollection implements IdentifiedDataSerializable,
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         int size = in.readInt();
-        if (size == -1) {
-            return;
-        }
         collection = new ArrayList<Data>(size);
         for (int i = 0; i < size; i++) {
             collection.add(in.readData());
@@ -83,26 +71,21 @@ public final class SerializableCollection implements IdentifiedDataSerializable,
 
     @Override
     public Iterator<Data> iterator() {
-        final Iterator<Data> iterator = collection == null ? null : collection.iterator();
-        return new Iterator<Data>() {
+        final Iterator<Data> iterator = collection.iterator();
+        return new UnmodifiableIterator<Data>() {
             @Override
             public boolean hasNext() {
-                return iterator != null && iterator.hasNext();
+                return iterator.hasNext();
             }
 
             @Override
             public Data next() {
                 return iterator.next();
             }
-
-            @Override
-            public void remove() {
-                iterator.remove();
-            }
         };
     }
 
     public int size() {
-        return collection == null ? 0 : collection.size();
+        return collection.size();
     }
 }

@@ -24,6 +24,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.transaction.TransactionException;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -35,13 +36,11 @@ import java.util.Set;
 
 public abstract class CollectionContainer implements DataSerializable {
 
+    protected final Map<Long, TxCollectionItem> txMap = new HashMap<Long, TxCollectionItem>();
     protected String name;
     protected NodeEngine nodeEngine;
     protected ILogger logger;
-
     protected Map<Long, CollectionItem> itemMap;
-    protected final Map<Long, TxCollectionItem> txMap = new HashMap<Long, TxCollectionItem>();
-
     private long idGenerator;
 
     protected CollectionContainer() {
@@ -162,8 +161,8 @@ public abstract class CollectionContainer implements DataSerializable {
         return itemIdMap;
     }
 
-    public Collection<Data> getAll() {
-        final ArrayList<Data> sub = new ArrayList<Data>(getCollection().size());
+    public List<Data> getAll() {
+        ArrayList<Data> sub = new ArrayList<Data>(getCollection().size());
         for (CollectionItem item : getCollection()) {
             sub.add((Data) item.getValue());
         }
@@ -220,7 +219,7 @@ public abstract class CollectionContainer implements DataSerializable {
         final CollectionItem item = getMap().remove(itemId);
         if (item == null) {
             throw new TransactionException("Transaction reservation failed on backup member. "
-                    +  "Reservation item id: " + itemId);
+                    + "Reservation item id: " + itemId);
         }
         txMap.put(itemId, new TxCollectionItem(item).setTransactionId(transactionId).setRemoveOperation(true));
     }

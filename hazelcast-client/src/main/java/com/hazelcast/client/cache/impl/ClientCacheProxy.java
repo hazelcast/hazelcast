@@ -36,7 +36,7 @@ import com.hazelcast.core.Member;
 import com.hazelcast.instance.AbstractMember;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.impl.SerializableCollection;
+import com.hazelcast.spi.impl.SerializableList;
 import com.hazelcast.util.ExceptionUtil;
 
 import javax.cache.CacheException;
@@ -337,7 +337,7 @@ public class ClientCacheProxy<K, V>
                 final CacheListenerRegistrationRequest request = new CacheListenerRegistrationRequest(nameWithPrefix,
                         cacheEntryListenerConfiguration, isRegister, address);
                 final ClientInvocation invocation = new ClientInvocation(client, request, address);
-                final Future<SerializableCollection> future = invocation.invoke();
+                final Future<SerializableList> future = invocation.invoke();
                 futures.add(future);
             } catch (Exception e) {
                 ExceptionUtil.sneakyThrow(e);

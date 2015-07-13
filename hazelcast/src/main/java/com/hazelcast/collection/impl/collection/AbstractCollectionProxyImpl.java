@@ -32,13 +32,15 @@ import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.ItemListener;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.InitializingObject;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.RemoteService;
-import com.hazelcast.spi.impl.SerializableCollection;
+import com.hazelcast.spi.impl.SerializableList;
+import com.hazelcast.spi.impl.UnmodifiableLazyList;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.util.ArrayList;
@@ -201,15 +203,11 @@ public abstract class AbstractCollectionProxyImpl<S extends RemoteService, E> ex
     }
 
     private Collection<E> getAll() {
-        final CollectionGetAllOperation operation = new CollectionGetAllOperation(name);
-        final SerializableCollection result = invoke(operation);
-        final Collection<Data> collection = result.getCollection();
-        final List<E> list = new ArrayList<E>(collection.size());
-        final NodeEngine nodeEngine = getNodeEngine();
-        for (Data data : collection) {
-            list.add(nodeEngine.<E>toObject(data));
-        }
-        return list;
+        CollectionGetAllOperation operation = new CollectionGetAllOperation(name);
+        SerializableList result = invoke(operation);
+        List<Data> collection = result.getCollection();
+        SerializationService serializationService = getNodeEngine().getSerializationService();
+        return new UnmodifiableLazyList<E>(collection, serializationService);
     }
 
     public String addItemListener(ItemListener<E> listener, boolean includeValue) {

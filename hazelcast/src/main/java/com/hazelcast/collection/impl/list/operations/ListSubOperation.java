@@ -22,7 +22,7 @@ import com.hazelcast.collection.impl.list.ListContainer;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.impl.SerializableCollection;
+import com.hazelcast.spi.impl.SerializableList;
 import java.io.IOException;
 import java.util.List;
 
@@ -44,7 +44,7 @@ public class ListSubOperation extends CollectionOperation {
     public void run() throws Exception {
         ListContainer listContainer = getOrCreateListContainer();
         List<Data> sub = listContainer.sub(from, to);
-        response = new SerializableCollection(sub);
+        response = new SerializableList(sub);
     }
 
     @Override

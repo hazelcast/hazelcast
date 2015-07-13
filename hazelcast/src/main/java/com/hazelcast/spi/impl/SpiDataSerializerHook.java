@@ -65,7 +65,7 @@ public final class SpiDataSerializerHook implements DataSerializerHook {
                     case EVENT_PACKET:
                         return new EventPacket();
                     case COLLECTION:
-                        return new SerializableCollection();
+                        return new SerializableList();
                     case CALL_TIMEOUT_RESPONSE:
                         return new CallTimeoutResponse();
                     case ERROR_RESPONSE:

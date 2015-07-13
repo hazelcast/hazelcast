@@ -22,13 +22,15 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.security.permission.TransactionPermission;
 import com.hazelcast.spi.OperationFactory;
-import com.hazelcast.spi.impl.SerializableCollection;
+import com.hazelcast.spi.impl.SerializableList;
 import com.hazelcast.transaction.impl.xa.CollectRemoteTransactionsOperationFactory;
 import com.hazelcast.transaction.impl.xa.XAService;
 
 import java.security.Permission;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 
 public class CollectXATransactionsRequest extends MultiTargetClientRequest {
@@ -43,12 +45,12 @@ public class CollectXATransactionsRequest extends MultiTargetClientRequest {
 
     @Override
     protected Object reduce(Map<Address, Object> map) {
-        HashSet<Data> set = new HashSet<Data>();
+        List<Data> set = new ArrayList<Data>();
         for (Object o : map.values()) {
-            SerializableCollection xidSet = (SerializableCollection) o;
+            SerializableList xidSet = (SerializableList) o;
             set.addAll(xidSet.getCollection());
         }
-        return new SerializableCollection(set);
+        return new SerializableList(set);
     }
 
     @Override

@@ -21,15 +21,16 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.impl.SerializableCollection;
+import com.hazelcast.spi.impl.SerializableList;
 
 import java.io.IOException;
-import java.util.HashSet;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
 public class CollectRemoteTransactionsOperation extends Operation {
 
-    private transient SerializableCollection xidSet;
+    private transient SerializableList xidSet;
 
     public CollectRemoteTransactionsOperation() {
     }
@@ -43,11 +44,11 @@ public class CollectRemoteTransactionsOperation extends Operation {
         XAService xaService = getService();
         NodeEngine nodeEngine = getNodeEngine();
         Set<SerializableXID> xids = xaService.getPreparedXids();
-        HashSet<Data> xidSet = new HashSet<Data>();
+        List<Data> xidSet = new ArrayList<Data>();
         for (SerializableXID xid : xids) {
             xidSet.add(nodeEngine.toData(xid));
         }
-        this.xidSet = new SerializableCollection(xidSet);
+        this.xidSet = new SerializableList(xidSet);
     }
 
     @Override

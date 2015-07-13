@@ -23,7 +23,7 @@ import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.impl.SerializableCollection;
+import com.hazelcast.spi.impl.SerializableList;
 import com.hazelcast.util.ExceptionUtil;
 
 import javax.cache.Cache;
@@ -60,7 +60,7 @@ public class ClientClusterWideIterator<K, V>
         final HazelcastClientInstanceImpl client = (HazelcastClientInstanceImpl) context.getHazelcastInstance();
         try {
             final ClientInvocation clientInvocation = new ClientInvocation(client, request);
-            final Future<SerializableCollection> f = clientInvocation.invoke();
+            final Future<SerializableList> f = clientInvocation.invoke();
             return toObject(f.get());
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
