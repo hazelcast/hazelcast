@@ -48,9 +48,9 @@ import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.logging.Logger;
+import com.hazelcast.monitor.LocalReplicatedMapStats;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
-
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -72,9 +72,7 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
  * @param <K> key type
  * @param <V> value type
  */
-public class ClientReplicatedMapProxy<K, V>
-        extends ClientProxy
-        implements ReplicatedMap<K, V> {
+public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements ReplicatedMap<K, V> {
 
     protected static final String NULL_KEY_IS_NOT_ALLOWED = "Null key is not allowed!";
     protected static final String NULL_VALUE_IS_NOT_ALLOWED = "Null value is not allowed!";
@@ -101,11 +99,11 @@ public class ClientReplicatedMapProxy<K, V>
 
         Data valueData = toData(value);
         Data keyData = toData(key);
-        ClientMessage request = ReplicatedMapPutCodec.encodeRequest(name, keyData, valueData, timeUnit.toMillis(ttl));
-        ClientMessage response = invoke(request);
+        ClientMessage request = ReplicatedMapPutCodec.encodeRequest(getName(), keyData, valueData,
+                timeUnit.toMillis(ttl));
+        ClientMessage response = invoke(request, keyData);
         ReplicatedMapPutCodec.ResponseParameters result = ReplicatedMapPutCodec.decodeResponse(response);
         return toObject(result.response);
-
     }
 
     @Override
@@ -130,7 +128,8 @@ public class ClientReplicatedMapProxy<K, V>
         Data keyData = toData(key);
         ClientMessage request = ReplicatedMapContainsKeyCodec.encodeRequest(name, keyData);
         ClientMessage response = invoke(request);
-        ReplicatedMapContainsKeyCodec.ResponseParameters result = ReplicatedMapContainsKeyCodec.decodeResponse(response);
+        ReplicatedMapContainsKeyCodec.ResponseParameters result = ReplicatedMapContainsKeyCodec
+                .decodeResponse(response);
         return result.response;
     }
 
@@ -140,7 +139,8 @@ public class ClientReplicatedMapProxy<K, V>
         Data valueData = toData(value);
         ClientMessage request = ReplicatedMapContainsValueCodec.encodeRequest(name, valueData);
         ClientMessage response = invoke(request);
-        ReplicatedMapContainsValueCodec.ResponseParameters result = ReplicatedMapContainsValueCodec.decodeResponse(response);
+        ReplicatedMapContainsValueCodec.ResponseParameters result = ReplicatedMapContainsValueCodec
+                .decodeResponse(response);
         return result.response;
     }
 
@@ -180,8 +180,8 @@ public class ClientReplicatedMapProxy<K, V>
     public V remove(Object key) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         Data keyData = toData(key);
-        ClientMessage request = ReplicatedMapRemoveCodec.encodeRequest(name, keyData);
-        ClientMessage response = invoke(request);
+        ClientMessage request = ReplicatedMapRemoveCodec.encodeRequest(getName(), keyData);
+        ClientMessage response = invoke(request, keyData);
         ReplicatedMapRemoveCodec.ResponseParameters result = ReplicatedMapRemoveCodec.decodeResponse(response);
         return toObject(result.response);
     }
@@ -291,6 +291,11 @@ public class ClientReplicatedMapProxy<K, V>
     }
 
     @Override
+    public LocalReplicatedMapStats getReplicatedMapStats() {
+        throw new UnsupportedOperationException("Replicated Map statistics are not available for client !");
+    }
+
+    @Override
     public Collection<V> values() {
         ClientMessage request = ReplicatedMapValuesCodec.encodeRequest(name);
         ClientMessage response = invoke(request);
@@ -350,7 +355,8 @@ public class ClientReplicatedMapProxy<K, V>
                     new ClientMessageDecoder() {
                         @Override
                         public <T> T decodeClientMessage(ClientMessage clientMessage) {
-                            return (T) ReplicatedMapAddNearCacheEntryListenerCodec.decodeResponse(clientMessage).response;
+                            return (T) ReplicatedMapAddNearCacheEntryListenerCodec
+                                    .decodeResponse(clientMessage).response;
                         }
                     });
             nearCache.setId(registrationId);
@@ -427,7 +433,8 @@ public class ClientReplicatedMapProxy<K, V>
         }
     }
 
-    private class ReplicatedMapAddNearCacheEventHandler extends ReplicatedMapAddNearCacheEntryListenerCodec.AbstractEventHandler
+    private class ReplicatedMapAddNearCacheEventHandler
+            extends ReplicatedMapAddNearCacheEntryListenerCodec.AbstractEventHandler
             implements EventHandler<ClientMessage> {
 
         @Override

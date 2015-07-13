@@ -113,6 +113,14 @@ public class WatchedOperationExecutor {
                 latch.countDown();
             }
         }
+
+        @Override
+        public String toString() {
+            return "WatcherListener{" +
+                    "latch=" + latch +
+                    ", eventType=" + eventType +
+                    '}';
+        }
     }
 
     private final class WatcherDefinition {
@@ -125,6 +133,13 @@ public class WatchedOperationExecutor {
 
         private void await(long timeout, TimeUnit unit) throws InterruptedException {
             latch.await(timeout, unit);
+        }
+
+        @Override
+        public String toString() {
+            return "WatcherDefinition{" +
+                    "latch=" + latch +
+                    '}';
         }
     }
 }

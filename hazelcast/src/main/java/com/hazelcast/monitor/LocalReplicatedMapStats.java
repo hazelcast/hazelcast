@@ -17,7 +17,4 @@
 package com.hazelcast.monitor;
 
 public interface LocalReplicatedMapStats extends LocalMapStats {
-
-    long getReplicationEventCount();
-
 }

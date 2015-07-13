@@ -20,39 +20,28 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
-import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
 import com.hazelcast.spi.AbstractOperation;
-
 import java.io.IOException;
 
 /**
  * This operation will execute the remote clear on replicated map if
  * {@link com.hazelcast.core.ReplicatedMap#clear()} is called.
  */
-public class ReplicatedMapClearOperation
-        extends AbstractOperation
-        implements IdentifiedDataSerializable {
+public class ReplicatedMapClearOperation extends AbstractOperation implements IdentifiedDataSerializable {
 
     private String mapName;
-    private boolean emptyReplicationQueue;
 
     public ReplicatedMapClearOperation() {
     }
 
-    public ReplicatedMapClearOperation(String mapName, boolean emptyReplicationQueue) {
+    public ReplicatedMapClearOperation(String mapName) {
         this.mapName = mapName;
-        this.emptyReplicationQueue = emptyReplicationQueue;
     }
 
     @Override
-    public void run()
-            throws Exception {
-
+    public void run() throws Exception {
         ReplicatedMapService service = getService();
-        ReplicatedRecordStore recordStore = service.getReplicatedRecordStore(mapName, false);
-        if (recordStore != null) {
-            recordStore.clear(false, emptyReplicationQueue);
-        }
+        service.clearLocalRecordStores(mapName);
     }
 
     @Override
@@ -71,20 +60,14 @@ public class ReplicatedMapClearOperation
     }
 
     @Override
-    protected void writeInternal(ObjectDataOutput out)
-            throws IOException {
-
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeUTF(mapName);
-        out.writeBoolean(emptyReplicationQueue);
     }
 
     @Override
-    protected void readInternal(ObjectDataInput in)
-            throws IOException {
-
+    protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         mapName = in.readUTF();
-        emptyReplicationQueue = in.readBoolean();
     }
 }

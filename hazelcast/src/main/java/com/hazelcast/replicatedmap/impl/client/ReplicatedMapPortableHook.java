@@ -22,7 +22,6 @@ import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.internal.serialization.PortableHook;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 import com.hazelcast.util.ConstructorFunction;
-
 import java.util.Collection;
 
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.REPLICATED_PORTABLE_FACTORY;
@@ -153,12 +152,6 @@ public class ReplicatedMapPortableHook
                     @Override
                     public Portable createNew(Integer arg) {
                         return new ReplicatedMapKeySet();
-                    }
-                };
-                constructors[GET_RESPONSE] = new ConstructorFunction<Integer, Portable>() {
-                    @Override
-                    public Portable createNew(Integer arg) {
-                        return new ReplicatedMapGetResponse();
                     }
                 };
                 constructors[ADD_LISTENER] = new ConstructorFunction<Integer, Portable>() {

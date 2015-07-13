@@ -176,12 +176,6 @@ public class ReplicatedMapMBean extends HazelcastMBean<ReplicatedMapProxy> {
         return managedObject.getReplicatedMapStats().getEventOperationCount();
     }
 
-    @ManagedAnnotation("localReplicationEventCount")
-    @ManagedDescription("number of replication events received on this member")
-    public long getLocalReplicationEventCount() {
-        return managedObject.getReplicatedMapStats().getReplicationEventCount();
-    }
-
     @ManagedAnnotation("localOtherOperationCount")
     @ManagedDescription("the total number of other operations on this member")
     public long getLocalOtherOperationCount() {

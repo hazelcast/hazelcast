@@ -14,7 +14,22 @@
  * limitations under the License.
  */
 
-/**
- * This package contains replication event classes to communicate replications to other nodes
- */
-package com.hazelcast.replicatedmap.impl.messages;
+package com.hazelcast.replicatedmap.merge;
+
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Before;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
+
+@RunWith(HazelcastParallelClassRunner.class)
+@Category({QuickTest.class, ParallelTest.class})
+public class LatestUpdateReplicatedMapMergePolicyTest extends AbstractReplicatedMapMergePolicyTest {
+
+    @Before
+    public void given() {
+        policy = new LatestUpdateMapMergePolicy();
+    }
+
+}

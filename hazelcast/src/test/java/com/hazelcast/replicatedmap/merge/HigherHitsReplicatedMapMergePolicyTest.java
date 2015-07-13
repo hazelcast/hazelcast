@@ -14,25 +14,22 @@
  * limitations under the License.
  */
 
-package com.hazelcast.replicatedmap.impl.record;
+package com.hazelcast.replicatedmap.merge;
 
-/**
- * Simple runnable task to run in the background and execute the actual replication
- *
- * @param <K> key type
- * @param <V> value type
- */
-class ReplicationCachedSenderTask<K, V>
-        implements Runnable {
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Before;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
-    private final ReplicationPublisher<K, V> replicationPublisher;
+@RunWith(HazelcastParallelClassRunner.class)
+@Category({QuickTest.class, ParallelTest.class})
+public class HigherHitsReplicatedMapMergePolicyTest extends AbstractReplicatedMapMergePolicyTest {
 
-    ReplicationCachedSenderTask(ReplicationPublisher<K, V> replicationPublisher) {
-        this.replicationPublisher = replicationPublisher;
+    @Before
+    public void given() {
+        policy = new HigherHitsMapMergePolicy();
     }
 
-    @Override
-    public void run() {
-        replicationPublisher.processMessageCache();
-    }
 }

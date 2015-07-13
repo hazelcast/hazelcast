@@ -48,11 +48,6 @@ public class LocalReplicatedMapStatsImplTest {
         localReplicatedMapStats.incrementReceivedEvents();
         localReplicatedMapStats.incrementReceivedEvents();
 
-        localReplicatedMapStats.incrementReceivedReplicationEvents();
-        localReplicatedMapStats.incrementReceivedReplicationEvents();
-        localReplicatedMapStats.incrementReceivedReplicationEvents();
-        localReplicatedMapStats.incrementReceivedReplicationEvents();
-
         localReplicatedMapStats.setHeapCost(7461762);
     }
 
@@ -82,7 +77,6 @@ public class LocalReplicatedMapStatsImplTest {
         assertEquals(1238, localReplicatedMapStats.getMaxRemoveLatency());
         assertEquals(5, localReplicatedMapStats.getOtherOperationCount());
         assertEquals(2, localReplicatedMapStats.getEventOperationCount());
-        assertEquals(4, localReplicatedMapStats.getReplicationEventCount());
 
         assertEquals(0, localReplicatedMapStats.getHeapCost());
         assertNotNull(localReplicatedMapStats.toString());
@@ -118,7 +112,6 @@ public class LocalReplicatedMapStatsImplTest {
         assertEquals(1238, deserialized.getMaxRemoveLatency());
         assertEquals(5, deserialized.getOtherOperationCount());
         assertEquals(2, deserialized.getEventOperationCount());
-        assertEquals(4, deserialized.getReplicationEventCount());
 
         assertEquals(0, deserialized.getHeapCost());
         assertNotNull(deserialized.toString());

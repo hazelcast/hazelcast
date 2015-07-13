@@ -16,28 +16,22 @@
 
 package com.hazelcast.replicatedmap.impl.record;
 
-import com.hazelcast.config.ReplicatedMapConfig;
-import com.hazelcast.core.EntryListener;
-import com.hazelcast.query.Predicate;
+import com.hazelcast.replicatedmap.merge.ReplicatedMapMergePolicy;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.util.HashUtil;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
-
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
@@ -53,20 +47,16 @@ public class LazyIteratorTest
     private static final ReplicatedRecordStore REPLICATED_RECORD_STORE = new NoOpReplicatedRecordStore();
 
     static {
-        TEST_DATA_SIMPLE = new InternalReplicatedMapStorage<String, Integer>(new ReplicatedMapConfig());
+        TEST_DATA_SIMPLE = new InternalReplicatedMapStorage<String, Integer>();
         for (int i = 0; i < 100; i++) {
             String key = "key-" + i;
-            int hash = HashUtil.hashCode(key);
-            VectorClockTimestamp timestamp = new VectorClockTimestamp();
-            TEST_DATA_SIMPLE.put(key, new ReplicatedRecord<String, Integer>(key, i, timestamp, hash, -1));
+            TEST_DATA_SIMPLE.put(key, new ReplicatedRecord<String, Integer>(key, i, -1, 0));
         }
-        TEST_DATA_TOMBS = new InternalReplicatedMapStorage<String, Integer>(new ReplicatedMapConfig());
+        TEST_DATA_TOMBS = new InternalReplicatedMapStorage<String, Integer>();
         for (int i = 0; i < 100; i++) {
             String key = "key-" + i;
-            int hash = HashUtil.hashCode(key);
-            VectorClockTimestamp timestamp = new VectorClockTimestamp();
             Integer value = i % 2 == 0 ? i : null;
-            ReplicatedRecord<String, Integer> record = new ReplicatedRecord<String, Integer>(key, value, timestamp, hash, -1);
+            ReplicatedRecord<String, Integer> record = new ReplicatedRecord<String, Integer>(key, value, -1, 0);
             TEST_DATA_TOMBS.put(key, record);
         }
     }
@@ -557,8 +547,7 @@ public class LazyIteratorTest
         assertEquals(50, array.length);
     }
 
-    private static class NoOpReplicatedRecordStore
-            implements ReplicatedRecordStore {
+    private static class NoOpReplicatedRecordStore implements ReplicatedRecordStore {
 
         @Override
         public String getName() {
@@ -591,7 +580,7 @@ public class LazyIteratorTest
         }
 
         @Override
-        public Object put(Object key, Object value, long ttl, TimeUnit timeUnit) {
+        public Object put(Object key, Object value, long ttl, TimeUnit timeUnit, boolean incrementHits) {
             return null;
         }
 
@@ -611,12 +600,12 @@ public class LazyIteratorTest
         }
 
         @Override
-        public Set keySet() {
+        public Set keySet(boolean lazy) {
             return null;
         }
 
         @Override
-        public Collection values() {
+        public Collection values(boolean lazy) {
             return null;
         }
 
@@ -626,7 +615,7 @@ public class LazyIteratorTest
         }
 
         @Override
-        public Set entrySet() {
+        public Set entrySet(boolean lazy) {
             return null;
         }
 
@@ -636,7 +625,12 @@ public class LazyIteratorTest
         }
 
         @Override
-        public void clear(boolean distribute, boolean emptyReplicationQueue) {
+        public void clear() {
+        }
+
+        @Override
+        public void reset() {
+
         }
 
         @Override
@@ -645,47 +639,57 @@ public class LazyIteratorTest
         }
 
         @Override
-        public Object unmarshallKey(Object key) {
+        public Object unmarshall(Object key) {
             return key;
         }
 
         @Override
-        public Object unmarshallValue(Object value) {
-            return value;
-        }
-
-        @Override
-        public Object marshallKey(Object key) {
+        public Object marshall(Object key) {
             return key;
-        }
-
-        @Override
-        public Object marshallValue(Object value) {
-            return value;
-        }
-
-        @Override
-        public String addEntryListener(EntryListener listener, Object key) {
-            return null;
-        }
-
-        @Override
-        public String addEntryListener(EntryListener listener, Predicate predicate, Object key) {
-            return null;
-        }
-
-        @Override
-        public boolean removeEntryListenerInternal(String id) {
-            return false;
-        }
-
-        @Override
-        public ReplicationPublisher getReplicationPublisher() {
-            return null;
         }
 
         @Override
         public void destroy() {
+        }
+
+        @Override
+        public long getVersion() {
+            return 0;
+        }
+
+        @Override
+        public void setVersion(long version) {
+
+        }
+
+        @Override
+        public Iterator<ReplicatedRecord> recordIterator() {
+            return null;
+        }
+
+        @Override
+        public void putRecord(RecordMigrationInfo record) {
+
+        }
+
+        @Override
+        public InternalReplicatedMapStorage getStorage() {
+            return null;
+        }
+
+        @Override
+        public boolean isLoaded() {
+            return false;
+        }
+
+        @Override
+        public void setLoaded(boolean loaded) {
+
+        }
+
+        @Override
+        public boolean merge(Object key, ReplicatedMapEntryView entryView, ReplicatedMapMergePolicy policy) {
+            return false;
         }
     }
 
