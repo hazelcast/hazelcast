@@ -18,7 +18,6 @@ package com.hazelcast.nio.tcp;
 
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
 
 import java.io.IOException;
 import java.nio.channels.SelectionKey;
@@ -72,7 +71,7 @@ public abstract class AbstractIOSelector extends Thread implements IOSelector {
             });
             interrupt();
         } catch (Throwable t) {
-            Logger.getLogger(AbstractIOSelector.class).finest("Exception while waiting for shutdown", t);
+            logger.finest("Exception while waiting for shutdown", t);
         }
     }
 
@@ -151,7 +150,7 @@ public abstract class AbstractIOSelector extends Thread implements IOSelector {
                 }
                 selector.close();
             } catch (final Exception e) {
-                Logger.getLogger(AbstractIOSelector.class).finest("Exception while closing selector", e);
+                logger.finest("Exception while closing selector", e);
             }
         }
     }
