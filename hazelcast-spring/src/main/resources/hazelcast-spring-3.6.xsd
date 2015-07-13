@@ -856,12 +856,11 @@
                         <xs:element name="replicatedmap" minOccurs="0" maxOccurs="unbounded">
                             <xs:annotation>
                                 <xs:documentation>
-                                    A replicated map is a fully vector clock based, eventually consistent implementation
+                                    A replicated map is a implementation
                                     of the map
-                                    interface. In difference to all other Hazelcast data structures this implementation
-                                    is not
+                                    interface which is not
                                     partitioned but fully replicates all data to all members.
-                                    Due to the nature of eventually consistency there is a chance of reading staled data
+                                    Due to the nature of weak consistency there is a chance of reading staled data
                                     and no
                                     guarantee is given to retrieve the same value on multiple get calls.
                                     ReplicatedMap was added in Hazelcast 3.2.
@@ -901,8 +900,7 @@
                                             replicated
                                             to other nodes. In this time multiple puts can be operated and are cached up
                                             to be send
-                                            at once. This highers the latency for eventually consistency but lowers IO
-                                            operations.
+                                            at once.
                                             Default value is 100ms before a replication is operated, if set to 0 no
                                             delay is used and
                                             all values are replicated one by one.

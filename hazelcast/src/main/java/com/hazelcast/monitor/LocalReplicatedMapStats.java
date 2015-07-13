@@ -18,6 +18,10 @@ package com.hazelcast.monitor;
 
 public interface LocalReplicatedMapStats extends LocalMapStats {
 
+    /**
+     * @deprecated replication is no more handled by event system.
+     */
+    @Deprecated
     long getReplicationEventCount();
 
 }

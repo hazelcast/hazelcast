@@ -23,11 +23,9 @@ import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.InitializingObject;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.impl.proxyservice.impl.DistributedObjectFuture;
 import com.hazelcast.spi.impl.proxyservice.impl.ProxyInfo;
 import com.hazelcast.spi.impl.proxyservice.impl.ProxyRegistry;
 import com.hazelcast.spi.impl.proxyservice.impl.ProxyServiceImpl;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -52,17 +50,23 @@ public class PostJoinProxyOperation extends AbstractOperation {
         NodeEngine nodeEngine = getNodeEngine();
         ProxyServiceImpl proxyService = getService();
         ExecutionService executionService = nodeEngine.getExecutionService();
-        for (ProxyInfo proxy : proxies) {
-            ProxyRegistry registry = proxyService.getOrCreateRegistry(proxy.getServiceName());
+        for (final ProxyInfo proxy : proxies) {
+            final ProxyRegistry registry = proxyService.getOrCreateRegistry(proxy.getServiceName());
 
             try {
-                DistributedObjectFuture future = registry.createProxy(proxy.getObjectName(), false, false);
-                if (future != null) {
-                    final DistributedObject object = future.get();
-                    if (object instanceof InitializingObject) {
-                        executionService.execute(ExecutionService.SYSTEM_EXECUTOR, new InitializeRunnable(object));
+                executionService.execute(ExecutionService.SYSTEM_EXECUTOR, new Runnable() {
+                    @Override
+                    public void run() {
+                        registry.createProxy(proxy.getObjectName(), false, true);
                     }
-                }
+                });
+//                DistributedObjectFuture future = registry.createProxy(proxy.getObjectName(), false, false);
+//                if (future != null) {
+//                    final DistributedObject object = future.get();
+//                    if (object instanceof InitializingObject) {
+//                        executionService.execute(ExecutionService.SYSTEM_EXECUTOR, new InitializeRunnable(object));
+//                    }
+//                }
             } catch (Throwable t) {
                 getLogger().warning("Cannot create proxy [" + proxy.getServiceName() + ":"
                         + proxy.getObjectName() + "]!", t);

@@ -16,31 +16,28 @@
 
 package com.hazelcast.replicatedmap.impl.client;
 
-import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
+import com.hazelcast.replicatedmap.impl.operation.ValuesOperation;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.ReplicatedMapPermission;
-
+import com.hazelcast.spi.Operation;
 import java.security.Permission;
 
 /**
  * Client request class for {@link java.util.Map#values()} implementation
  */
-public class ClientReplicatedMapValuesRequest
-        extends AbstractReplicatedMapClientRequest {
+public class ClientReplicatedMapValuesRequest extends AbstractReplicatedMapClientRequest {
 
     ClientReplicatedMapValuesRequest() {
         super(null);
     }
 
-    public ClientReplicatedMapValuesRequest(String mapName) {
-        super(mapName);
+    public ClientReplicatedMapValuesRequest(String mapName, int partitionId) {
+        super(mapName, partitionId);
     }
 
     @Override
-    public Object call()
-            throws Exception {
-        ReplicatedRecordStore recordStore = getReplicatedRecordStore();
-        return new ReplicatedMapValueCollection(recordStore.values());
+    protected Operation prepareOperation() {
+        return new ValuesOperation(getMapName());
     }
 
     @Override

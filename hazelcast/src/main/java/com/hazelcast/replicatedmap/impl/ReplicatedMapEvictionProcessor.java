@@ -21,14 +21,12 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.scheduler.EntryTaskScheduler;
 import com.hazelcast.util.scheduler.ScheduledEntry;
 import com.hazelcast.util.scheduler.ScheduledEntryProcessor;
-
 import java.util.Collection;
 
 /**
  * Actual eviction processor implementation to remove values to evict values from the replicated map
  */
-public class ReplicatedMapEvictionProcessor
-        implements ScheduledEntryProcessor<Object, Object> {
+public class ReplicatedMapEvictionProcessor implements ScheduledEntryProcessor<Object, Object> {
 
     final NodeEngine nodeEngine;
     final ReplicatedMapService replicatedMapService;
@@ -41,16 +39,17 @@ public class ReplicatedMapEvictionProcessor
     }
 
     public void process(EntryTaskScheduler<Object, Object> scheduler, Collection<ScheduledEntry<Object, Object>> entries) {
-        final ReplicatedRecordStore replicatedRecordStore = replicatedMapService.getReplicatedRecordStore(mapName, false);
-
-        if (replicatedRecordStore != null) {
-            for (ScheduledEntry<Object, Object> entry : entries) {
-                Object key = entry.getKey();
-                if (entry.getValue() == null) {
-                    replicatedRecordStore.removeTombstone(key);
-                } else {
-                    replicatedRecordStore.evict(key);
-                }
+        for (ScheduledEntry<Object, Object> entry : entries) {
+            Object key = entry.getKey();
+            int partitionId = replicatedMapService.getNodeEngine().getPartitionService().getPartitionId(key);
+            final ReplicatedRecordStore store = replicatedMapService.getReplicatedRecordStore(mapName, false, partitionId);
+            if (store == null) {
+                continue;
+            }
+            if (entry.getValue() == null) {
+                store.removeTombstone(key);
+            } else {
+                store.evict(key);
             }
         }
     }

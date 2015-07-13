@@ -18,39 +18,36 @@ package com.hazelcast.replicatedmap;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
-import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecord;
-import com.hazelcast.replicatedmap.impl.record.VectorClockTimestamp;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.WatchedOperationExecutor;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
-
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -62,24 +59,40 @@ import static org.junit.Assert.fail;
 @Category(value = {QuickTest.class, ParallelTest.class})
 public class ReplicatedMapTest extends ReplicatedMapBaseTest {
 
+
     @Test
-    public void testAddObjectDelay0() throws Exception {
-        testAdd(buildConfig(InMemoryFormat.OBJECT, 0));
+    public void testEmptyMapIsEmpty() throws Exception {
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
+        HazelcastInstance instance = nodeFactory.newHazelcastInstance();
+        ReplicatedMap<Integer, Integer> map = instance.getReplicatedMap(randomName());
+        assertTrue("map should be empty", map.isEmpty());
     }
 
     @Test
-    public void testAddObjectDelayDefault() throws Exception {
-        testAdd(buildConfig(InMemoryFormat.OBJECT, ReplicatedMapConfig.DEFAULT_REPLICATION_DELAY_MILLIS));
+    public void testNonEmptyMapIsNotEmpty() throws Exception {
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
+        HazelcastInstance instance = nodeFactory.newHazelcastInstance();
+        ReplicatedMap<Integer, Integer> map = instance.getReplicatedMap(randomName());
+        map.put(1, 1);
+        assertFalse("map should not be empty", map.isEmpty());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testNegativeTtlThrowsException() throws Exception {
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
+        HazelcastInstance instance = nodeFactory.newHazelcastInstance();
+        ReplicatedMap<Integer, Integer> map = instance.getReplicatedMap(randomName());
+        map.put(1, 1, -1, TimeUnit.DAYS);
     }
 
     @Test
-    public void testAddBinaryDelay0() throws Exception {
-        testAdd(buildConfig(InMemoryFormat.BINARY, 0));
+    public void testAddObject() throws Exception {
+        testAdd(buildConfig(InMemoryFormat.OBJECT));
     }
 
     @Test
-    public void testAddBinaryDelayDefault() throws Exception {
-        testAdd(buildConfig(InMemoryFormat.BINARY, ReplicatedMapConfig.DEFAULT_REPLICATION_DELAY_MILLIS));
+    public void testAddBinary() throws Exception {
+        testAdd(buildConfig(InMemoryFormat.BINARY));
     }
 
     private void testAdd(Config config) throws Exception {
@@ -100,37 +113,27 @@ public class ReplicatedMapTest extends ReplicatedMapBaseTest {
                     map1.put("foo-" + i, "bar");
                 }
             }
-        }, 60, EntryEventType.ADDED, operations, 0.75, map1, map2);
+        }, 60, EntryEventType.ADDED, operations, 1, map1, map2);
 
-        for (Map.Entry<String, String> entry : map2.entrySet()) {
+        for (Entry<String, String> entry : map2.entrySet()) {
             assertStartsWith("foo-", entry.getKey());
             assertEquals("bar", entry.getValue());
         }
 
-        for (Map.Entry<String, String> entry : map1.entrySet()) {
+        for (Entry<String, String> entry : map1.entrySet()) {
             assertStartsWith("foo-", entry.getKey());
             assertEquals("bar", entry.getValue());
         }
     }
 
     @Test
-    public void testPutAllObjectDelay0() throws Exception {
-        testPutAll(buildConfig(InMemoryFormat.OBJECT, 0));
+    public void testPutAllObject() throws Exception {
+        testPutAll(buildConfig(InMemoryFormat.OBJECT));
     }
 
     @Test
-    public void testPutAllObjectDelayDefault() throws Exception {
-        testPutAll(buildConfig(InMemoryFormat.OBJECT, ReplicatedMapConfig.DEFAULT_REPLICATION_DELAY_MILLIS));
-    }
-
-    @Test
-    public void testPutAllBinaryDelay0() throws Exception {
-        testPutAll(buildConfig(InMemoryFormat.BINARY, 0));
-    }
-
-    @Test
-    public void testPutAllBinaryDelayDefault() throws Exception {
-        testPutAll(buildConfig(InMemoryFormat.BINARY, ReplicatedMapConfig.DEFAULT_REPLICATION_DELAY_MILLIS));
+    public void testPutAllBinary() throws Exception {
+        testPutAll(buildConfig(InMemoryFormat.BINARY));
     }
 
     private void testPutAll(Config config) throws TimeoutException {
@@ -153,34 +156,24 @@ public class ReplicatedMapTest extends ReplicatedMapBaseTest {
             }
         }, 60, EntryEventType.ADDED, map1, map2);
 
-        for (Map.Entry<String, String> entry : map2.entrySet()) {
+        for (Entry<String, String> entry : map2.entrySet()) {
             assertStartsWith("foo-", entry.getKey());
             assertEquals("bar", entry.getValue());
         }
-        for (Map.Entry<String, String> entry : map1.entrySet()) {
+        for (Entry<String, String> entry : map1.entrySet()) {
             assertStartsWith("foo-", entry.getKey());
             assertEquals("bar", entry.getValue());
         }
     }
 
     @Test
-    public void testClearObjectDelay0() throws Exception {
-        testClear(buildConfig(InMemoryFormat.OBJECT, 0));
+    public void testClearObject() throws Exception {
+        testClear(buildConfig(InMemoryFormat.OBJECT));
     }
 
     @Test
-    public void testClearObjectDelayDefault() throws Exception {
-        testClear(buildConfig(InMemoryFormat.OBJECT, ReplicatedMapConfig.DEFAULT_REPLICATION_DELAY_MILLIS));
-    }
-
-    @Test
-    public void testClearBinaryDelay0() throws Exception {
-        testClear(buildConfig(InMemoryFormat.BINARY, 0));
-    }
-
-    @Test
-    public void testClearBinaryDelayDefault() throws Exception {
-        testClear(buildConfig(InMemoryFormat.BINARY, ReplicatedMapConfig.DEFAULT_REPLICATION_DELAY_MILLIS));
+    public void testClearBinary() throws Exception {
+        testClear(buildConfig(InMemoryFormat.BINARY));
     }
 
     private void testClear(Config config) throws Exception {
@@ -201,14 +194,14 @@ public class ReplicatedMapTest extends ReplicatedMapBaseTest {
                     map1.put("foo-" + i, "bar");
                 }
             }
-        }, 60, EntryEventType.ADDED, operations, 0.75, map1, map2);
+        }, 60, EntryEventType.ADDED, operations, 1, map1, map2);
 
-        for (Map.Entry<String, String> entry : map2.entrySet()) {
+        for (Entry<String, String> entry : map2.entrySet()) {
             assertStartsWith("foo-", entry.getKey());
             assertEquals("bar", entry.getValue());
         }
 
-        for (Map.Entry<String, String> entry : map1.entrySet()) {
+        for (Entry<String, String> entry : map1.entrySet()) {
             assertStartsWith("foo-", entry.getKey());
             assertEquals("bar", entry.getValue());
         }
@@ -231,23 +224,13 @@ public class ReplicatedMapTest extends ReplicatedMapBaseTest {
     }
 
     @Test
-    public void testAddTtlObjectDelay0() throws Exception {
-        testAddTtl(buildConfig(InMemoryFormat.OBJECT, 0));
+    public void testAddTtlObject() throws Exception {
+        testAddTtl(buildConfig(InMemoryFormat.OBJECT));
     }
 
     @Test
-    public void testAddTtlObjectDelayDefault() throws Exception {
-        testAddTtl(buildConfig(InMemoryFormat.OBJECT, ReplicatedMapConfig.DEFAULT_REPLICATION_DELAY_MILLIS));
-    }
-
-    @Test
-    public void testAddTtlBinaryDelay0() throws Exception {
-        testAddTtl(buildConfig(InMemoryFormat.BINARY, 0));
-    }
-
-    @Test
-    public void testAddTtlBinaryDelayDefault() throws Exception {
-        testAddTtl(buildConfig(InMemoryFormat.BINARY, ReplicatedMapConfig.DEFAULT_REPLICATION_DELAY_MILLIS));
+    public void testAddTtlBinary() throws Exception {
+        testAddTtl(buildConfig(InMemoryFormat.BINARY));
     }
 
     private void testAddTtl(Config config) throws Exception {
@@ -268,17 +251,13 @@ public class ReplicatedMapTest extends ReplicatedMapBaseTest {
                     map1.put("foo-" + i, "bar", 10, TimeUnit.MINUTES);
                 }
             }
-        }, 60, EntryEventType.ADDED, operations, 0.75, map1, map2);
-
-        // Prevent further updates
-        getReplicationPublisher(map2).emptyReplicationQueue();
-        getReplicationPublisher(map1).emptyReplicationQueue();
+        }, 60, EntryEventType.ADDED, operations, 1, map1, map2);
 
         // Give a bit of time to process last batch of updates
         TimeUnit.SECONDS.sleep(2);
 
         Set<Entry<String, String>> map2entries = map2.entrySet();
-        for (Map.Entry<String, String> entry : map2entries) {
+        for (Entry<String, String> entry : map2entries) {
             assertStartsWith("foo-", entry.getKey());
             assertEquals("bar", entry.getValue());
 
@@ -286,11 +265,11 @@ public class ReplicatedMapTest extends ReplicatedMapBaseTest {
             assertNotEquals(0, record.getTtlMillis());
 
             // Kill the record by setting timeout
-            record.setValue(record.getValue(), record.getLatestUpdateHash(), 1);
+            record.setValue(record.getValue(), 1);
         }
 
         Set<Entry<String, String>> map1entries = map1.entrySet();
-        for (Map.Entry<String, String> entry : map1entries) {
+        for (Entry<String, String> entry : map1entries) {
             assertStartsWith("foo-", entry.getKey());
             assertEquals("bar", entry.getValue());
 
@@ -298,119 +277,36 @@ public class ReplicatedMapTest extends ReplicatedMapBaseTest {
             assertNotEquals(0, record.getTtlMillis());
 
             // Kill the record by setting timeout
-            record.setValue(record.getValue(), record.getLatestUpdateHash(), 1);
+            record.setValue(record.getValue(), 1);
         }
 
         TimeUnit.SECONDS.sleep(1);
 
         int map2Updated = 0;
-        for (Map.Entry<String, String> entry : map2entries) {
+        for (Entry<String, String> entry : map2entries) {
             if (map2.get(entry.getKey()) == null) {
                 map2Updated++;
             }
         }
 
         int map1Updated = 0;
-        for (Map.Entry<String, String> entry : map1entries) {
+        for (Entry<String, String> entry : map1entries) {
             if (map1.get(entry.getKey()) == null) {
                 map1Updated++;
             }
         }
 
-        assertMatchSuccessfulOperationQuota(0.75, operations, map1Updated, map2Updated);
+        assertMatchSuccessfulOperationQuota(1, operations, map1Updated, map2Updated);
     }
 
     @Test
-    public void testUpdateObjectDelay0() throws Exception {
-        testUpdate(buildConfig(InMemoryFormat.OBJECT, 0));
+    public void testUpdateObject() throws Exception {
+        testUpdate(buildConfig(InMemoryFormat.OBJECT));
     }
 
     @Test
-    public void testUpdateObjectDelayDefault() throws Exception {
-        testUpdate(buildConfig(InMemoryFormat.OBJECT, ReplicatedMapConfig.DEFAULT_REPLICATION_DELAY_MILLIS));
-    }
-
-    @Test
-    public void testUpdateBinaryDelay0() throws Exception {
-        testUpdate(buildConfig(InMemoryFormat.BINARY, 0));
-    }
-
-    @Test
-    public void testUpdateBinaryDelayDefault() throws Exception {
-        testUpdate(buildConfig(InMemoryFormat.BINARY, ReplicatedMapConfig.DEFAULT_REPLICATION_DELAY_MILLIS));
-    }
-
-    @Test
-    public void testVectorClocksAreSameAfterConflictResolutionBinaryDelay0() throws Exception {
-        Config config = buildConfig(InMemoryFormat.BINARY, 0);
-        testVectorClocksAreSameAfterConflictResolution(config);
-    }
-
-    @Test
-    public void testVectorClocksAreSameAfterConflictResolutionBinaryDelayDefault() throws Exception {
-        Config config = buildConfig(InMemoryFormat.BINARY, ReplicatedMapConfig.DEFAULT_REPLICATION_DELAY_MILLIS);
-        testVectorClocksAreSameAfterConflictResolution(config);
-    }
-
-    @Test
-    public void testVectorClocksAreSameAfterConflictResolutionObjectDelay0() throws Exception {
-        Config config = buildConfig(InMemoryFormat.OBJECT, 0);
-        testVectorClocksAreSameAfterConflictResolution(config);
-    }
-
-    @Test
-    public void testVectorClocksAreSameAfterConflictResolutionObjectDelayDefault() throws Exception {
-        Config config = buildConfig(InMemoryFormat.OBJECT, ReplicatedMapConfig.DEFAULT_REPLICATION_DELAY_MILLIS);
-        testVectorClocksAreSameAfterConflictResolution(config);
-    }
-
-    private void testVectorClocksAreSameAfterConflictResolution(Config config) throws InterruptedException {
-        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
-        final HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(config);
-        final HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(config);
-        final String replicatedMapName = randomMapName();
-        final ReplicatedMap<String, String> map1 = instance1.getReplicatedMap(replicatedMapName);
-        final ReplicatedMap<String, String> map2 = instance2.getReplicatedMap(replicatedMapName);
-
-        final int collidingKeyCount = 15;
-        final int operations = 1000;
-        final Random random = new Random();
-        Thread thread1 = createPutOperationThread(map1, collidingKeyCount, operations, random);
-        Thread thread2 = createPutOperationThread(map2, collidingKeyCount, operations, random);
-        thread1.start();
-        thread2.start();
-        thread1.join();
-        thread2.join();
-
-        for (int i = 0; i < collidingKeyCount; i++) {
-            final String key = "foo-" + i;
-            assertTrueEventually(new AssertTask() {
-                @Override
-                public void run() throws Exception {
-                    VectorClockTimestamp v1 = getVectorClockForKey(map1, key);
-                    VectorClockTimestamp v2 = getVectorClockForKey(map2, key);
-                    assertEquals(v1, v2);
-                    assertEquals(map1.get(key), map2.get(key));
-                }
-            });
-        }
-    }
-
-    private Thread createPutOperationThread(final ReplicatedMap<String, String> map, final int collidingKeyCount,
-                                            final int operations, final Random random) {
-        return new Thread(new Runnable() {
-            @Override
-            public void run() {
-                for (int i = 0; i < operations; i++) {
-                    map.put("foo-" + random.nextInt(collidingKeyCount), "bar");
-                }
-            }
-        });
-    }
-
-    private VectorClockTimestamp getVectorClockForKey(ReplicatedMap map, Object key) throws Exception {
-        ReplicatedRecord foo = getReplicatedRecord(map, key);
-        return foo.getVectorClockTimestamp();
+    public void testUpdateBinary() throws Exception {
+        testUpdate(buildConfig(InMemoryFormat.BINARY));
     }
 
     private void testUpdate(Config config) throws Exception {
@@ -431,13 +327,13 @@ public class ReplicatedMapTest extends ReplicatedMapBaseTest {
                     map1.put("foo-" + i, "bar");
                 }
             }
-        }, 60, EntryEventType.ADDED, operations, 0.75, map1, map2);
+        }, 60, EntryEventType.ADDED, operations, 1, map1, map2);
 
-        for (Map.Entry<String, String> entry : map2.entrySet()) {
+        for (Entry<String, String> entry : map2.entrySet()) {
             assertStartsWith("foo-", entry.getKey());
             assertEquals("bar", entry.getValue());
         }
-        for (Map.Entry<String, String> entry : map1.entrySet()) {
+        for (Entry<String, String> entry : map1.entrySet()) {
             assertStartsWith("foo-", entry.getKey());
             assertEquals("bar", entry.getValue());
         }
@@ -449,42 +345,32 @@ public class ReplicatedMapTest extends ReplicatedMapBaseTest {
                     map2.put("foo-" + i, "bar2");
                 }
             }
-        }, 60, EntryEventType.UPDATED, operations, 0.75, map1, map2);
+        }, 60, EntryEventType.UPDATED, operations, 1, map1, map2);
 
         int map2Updated = 0;
-        for (Map.Entry<String, String> entry : map2.entrySet()) {
+        for (Entry<String, String> entry : map2.entrySet()) {
             if ("bar2".equals(entry.getValue())) {
                 map2Updated++;
             }
         }
         int map1Updated = 0;
-        for (Map.Entry<String, String> entry : map1.entrySet()) {
+        for (Entry<String, String> entry : map1.entrySet()) {
             if ("bar2".equals(entry.getValue())) {
                 map1Updated++;
             }
         }
 
-        assertMatchSuccessfulOperationQuota(0.75, operations, map1Updated, map2Updated);
+        assertMatchSuccessfulOperationQuota(1, operations, map1Updated, map2Updated);
     }
 
     @Test
-    public void testUpdateTtlObjectDelay0() throws Exception {
-        testUpdateTtl(buildConfig(InMemoryFormat.OBJECT, 0));
+    public void testUpdateTtlObject() throws Exception {
+        testUpdateTtl(buildConfig(InMemoryFormat.OBJECT));
     }
 
     @Test
-    public void testUpdateTtlObjectDelayDefault() throws Exception {
-        testUpdateTtl(buildConfig(InMemoryFormat.OBJECT, ReplicatedMapConfig.DEFAULT_REPLICATION_DELAY_MILLIS));
-    }
-
-    @Test
-    public void testUpdateTtlBinaryDelay0() throws Exception {
-        testUpdateTtl(buildConfig(InMemoryFormat.BINARY, 0));
-    }
-
-    @Test
-    public void testUpdateTtlBinaryDelayDefault() throws Exception {
-        testUpdateTtl(buildConfig(InMemoryFormat.BINARY, ReplicatedMapConfig.DEFAULT_REPLICATION_DELAY_MILLIS));
+    public void testUpdateTtlBinary() throws Exception {
+        testUpdateTtl(buildConfig(InMemoryFormat.BINARY));
     }
 
     private void testUpdateTtl(Config config) throws Exception {
@@ -505,13 +391,13 @@ public class ReplicatedMapTest extends ReplicatedMapBaseTest {
                     map1.put("foo-" + i, "bar");
                 }
             }
-        }, 60, EntryEventType.ADDED, operations, 0.75, map1, map2);
+        }, 60, EntryEventType.ADDED, operations, 1, map1, map2);
 
-        for (Map.Entry<String, String> entry : map2.entrySet()) {
+        for (Entry<String, String> entry : map2.entrySet()) {
             assertStartsWith("foo-", entry.getKey());
             assertEquals("bar", entry.getValue());
         }
-        for (Map.Entry<String, String> entry : map1.entrySet()) {
+        for (Entry<String, String> entry : map1.entrySet()) {
             assertStartsWith("foo-", entry.getKey());
             assertEquals("bar", entry.getValue());
         }
@@ -523,44 +409,34 @@ public class ReplicatedMapTest extends ReplicatedMapBaseTest {
                     map2.put("foo-" + i, "bar", 10, TimeUnit.MINUTES);
                 }
             }
-        }, 60, EntryEventType.UPDATED, operations, 0.75, map1, map2);
+        }, 60, EntryEventType.UPDATED, operations, 1, map1, map2);
 
         int map2Updated = 0;
-        for (Map.Entry<String, String> entry : map2.entrySet()) {
+        for (Entry<String, String> entry : map2.entrySet()) {
             ReplicatedRecord record = getReplicatedRecord(map2, entry.getKey());
             if (record.getTtlMillis() > 0) {
                 map2Updated++;
             }
         }
         int map1Updated = 0;
-        for (Map.Entry<String, String> entry : map1.entrySet()) {
+        for (Entry<String, String> entry : map1.entrySet()) {
             ReplicatedRecord record = getReplicatedRecord(map1, entry.getKey());
             if (record.getTtlMillis() > 0) {
                 map1Updated++;
             }
         }
 
-        assertMatchSuccessfulOperationQuota(0.75, operations, map1Updated, map2Updated);
+        assertMatchSuccessfulOperationQuota(1, operations, map1Updated, map2Updated);
     }
 
     @Test
-    public void testRemoveObjectDelay0() throws Exception {
-        testRemove(buildConfig(InMemoryFormat.OBJECT, 0));
+    public void testRemoveObject() throws Exception {
+        testRemove(buildConfig(InMemoryFormat.OBJECT));
     }
 
     @Test
-    public void testRemoveObjectDelayDefault() throws Exception {
-        testRemove(buildConfig(InMemoryFormat.OBJECT, ReplicatedMapConfig.DEFAULT_REPLICATION_DELAY_MILLIS));
-    }
-
-    @Test
-    public void testRemoveBinaryDelay0() throws Exception {
-        testRemove(buildConfig(InMemoryFormat.BINARY, 0));
-    }
-
-    @Test
-    public void testRemoveBinaryDelayDefault() throws Exception {
-        testRemove(buildConfig(InMemoryFormat.BINARY, ReplicatedMapConfig.DEFAULT_REPLICATION_DELAY_MILLIS));
+    public void testRemoveBinary() throws Exception {
+        testRemove(buildConfig(InMemoryFormat.BINARY));
     }
 
     @Test
@@ -652,13 +528,13 @@ public class ReplicatedMapTest extends ReplicatedMapBaseTest {
                     map1.put("foo-" + i, "bar");
                 }
             }
-        }, 60, EntryEventType.ADDED, operations, 0.75, map1, map2);
+        }, 60, EntryEventType.ADDED, operations, 1, map1, map2);
 
-        for (Map.Entry<String, String> entry : map2.entrySet()) {
+        for (Entry<String, String> entry : map2.entrySet()) {
             assertStartsWith("foo-", entry.getKey());
             assertEquals("bar", entry.getValue());
         }
-        for (Map.Entry<String, String> entry : map1.entrySet()) {
+        for (Entry<String, String> entry : map1.entrySet()) {
             assertStartsWith("foo-", entry.getKey());
             assertEquals("bar", entry.getValue());
         }
@@ -669,7 +545,7 @@ public class ReplicatedMapTest extends ReplicatedMapBaseTest {
                     map2.remove("foo-" + i);
                 }
             }
-        }, 60, EntryEventType.REMOVED, operations, 0.75, map1, map2);
+        }, 60, EntryEventType.REMOVED, operations, 1, map1, map2);
 
         int map2Updated = 0;
         for (int i = 0; i < operations; i++) {
@@ -686,28 +562,19 @@ public class ReplicatedMapTest extends ReplicatedMapBaseTest {
             }
         }
 
-        assertMatchSuccessfulOperationQuota(0.75, operations, map1Updated, map2Updated);
+        assertMatchSuccessfulOperationQuota(1, operations, map1Updated, map2Updated);
     }
 
     @Test
-    public void testSizeObjectDelay0() throws Exception {
-        testSize(buildConfig(InMemoryFormat.OBJECT, 0));
+    public void testSizeObject() throws Exception {
+        testSize(buildConfig(InMemoryFormat.OBJECT));
     }
 
     @Test
-    public void testSizeObjectDelayDefault() throws Exception {
-        testSize(buildConfig(InMemoryFormat.OBJECT, ReplicatedMapConfig.DEFAULT_REPLICATION_DELAY_MILLIS));
+    public void testSizeBinary() throws Exception {
+        testSize(buildConfig(InMemoryFormat.BINARY));
     }
 
-    @Test
-    public void testSizeBinaryDelay0() throws Exception {
-        testSize(buildConfig(InMemoryFormat.BINARY, 0));
-    }
-
-    @Test
-    public void testSizeBinaryDelayDefault() throws Exception {
-        testSize(buildConfig(InMemoryFormat.BINARY, ReplicatedMapConfig.DEFAULT_REPLICATION_DELAY_MILLIS));
-    }
 
     private void testSize(Config config) throws Exception {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
@@ -731,29 +598,19 @@ public class ReplicatedMapTest extends ReplicatedMapBaseTest {
                     map.put(entry.getKey(), entry.getValue());
                 }
             }
-        }, 60, EntryEventType.ADDED, 100, 0.75, map1, map2);
+        }, 60, EntryEventType.ADDED, 100, 1, map1, map2);
 
-        assertMatchSuccessfulOperationQuota(0.75, map1.size(), map2.size());
+        assertMatchSuccessfulOperationQuota(1, map1.size(), map2.size());
     }
 
     @Test
-    public void testContainsKeyObjectDelay0() throws Exception {
-        testContainsKey(buildConfig(InMemoryFormat.OBJECT, 0));
+    public void testContainsKeyObject() throws Exception {
+        testContainsKey(buildConfig(InMemoryFormat.OBJECT));
     }
 
     @Test
-    public void testContainsKeyObjectDelayDefault() throws Exception {
-        testContainsKey(buildConfig(InMemoryFormat.OBJECT, ReplicatedMapConfig.DEFAULT_REPLICATION_DELAY_MILLIS));
-    }
-
-    @Test
-    public void testContainsKeyBinaryDelay0() throws Exception {
-        testContainsKey(buildConfig(InMemoryFormat.BINARY, 0));
-    }
-
-    @Test
-    public void testContainsKeyBinaryDelayDefault() throws Exception {
-        testContainsKey(buildConfig(InMemoryFormat.BINARY, ReplicatedMapConfig.DEFAULT_REPLICATION_DELAY_MILLIS));
+    public void testContainsKeyBinary() throws Exception {
+        testContainsKey(buildConfig(InMemoryFormat.BINARY));
     }
 
     private void testContainsKey(Config config) throws Exception {
@@ -774,7 +631,7 @@ public class ReplicatedMapTest extends ReplicatedMapBaseTest {
                     map1.put("foo-" + i, "bar");
                 }
             }
-        }, 60, EntryEventType.ADDED, operations, 0.75, map1, map2);
+        }, 60, EntryEventType.ADDED, operations, 1, map1, map2);
 
         int map2Contains = 0;
         for (int i = 0; i < operations; i++) {
@@ -789,27 +646,25 @@ public class ReplicatedMapTest extends ReplicatedMapBaseTest {
             }
         }
 
-        assertMatchSuccessfulOperationQuota(0.75, operations, map1Contains, map2Contains);
+        assertMatchSuccessfulOperationQuota(1, operations, map1Contains, map2Contains);
     }
 
     @Test
-    public void testContainsValueObjectDelay0() throws Exception {
-        testContainsValue(buildConfig(InMemoryFormat.OBJECT, 0));
+    public void testContainsValue_returnsFalse_onNonexistentValue() throws Exception {
+        HazelcastInstance node = createHazelcastInstance();
+        ReplicatedMap<Integer, Integer> map = node.getReplicatedMap("default");
+        assertFalse(map.containsValue(1));
+    }
+
+
+    @Test
+    public void testContainsValueObject() throws Exception {
+        testContainsValue(buildConfig(InMemoryFormat.OBJECT));
     }
 
     @Test
-    public void testContainsValueObjectDelayDefault() throws Exception {
-        testContainsValue(buildConfig(InMemoryFormat.OBJECT, ReplicatedMapConfig.DEFAULT_REPLICATION_DELAY_MILLIS));
-    }
-
-    @Test
-    public void testContainsValueBinaryDelay0() throws Exception {
-        testContainsValue(buildConfig(InMemoryFormat.BINARY, 0));
-    }
-
-    @Test
-    public void testContainsValueBinaryDelayDefault() throws Exception {
-        testContainsValue(buildConfig(InMemoryFormat.BINARY, ReplicatedMapConfig.DEFAULT_REPLICATION_DELAY_MILLIS));
+    public void testContainsValueBinary() throws Exception {
+        testContainsValue(buildConfig(InMemoryFormat.BINARY));
     }
 
     private void testContainsValue(Config config) throws Exception {
@@ -834,7 +689,7 @@ public class ReplicatedMapTest extends ReplicatedMapBaseTest {
                     map.put(entry.getKey(), entry.getValue());
                 }
             }
-        }, 60, EntryEventType.ADDED, testValues.length, 0.75, map1, map2);
+        }, 60, EntryEventType.ADDED, testValues.length, 1, map1, map2);
 
         int map2Contains = 0;
         for (AbstractMap.SimpleEntry<Integer, Integer> testValue : testValues) {
@@ -849,27 +704,32 @@ public class ReplicatedMapTest extends ReplicatedMapBaseTest {
             }
         }
 
-        assertMatchSuccessfulOperationQuota(0.75, testValues.length, map1Contains, map2Contains);
+        assertMatchSuccessfulOperationQuota(1, testValues.length, map1Contains, map2Contains);
     }
 
     @Test
-    public void testValuesObjectDelay0() throws Exception {
-        testValues(buildConfig(InMemoryFormat.OBJECT, 0));
+    public void testValuesWithComparator() throws Exception {
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
+        HazelcastInstance instance = nodeFactory.newHazelcastInstance();
+        ReplicatedMap<Integer, Integer> map = instance.getReplicatedMap(randomName());
+        for (int i = 0; i < 100; i++) {
+            map.put(i, i);
+        }
+        Collection<Integer> values = map.values(new DescendingComparator());
+        int v = 100;
+        for (Integer value : values) {
+            assertEquals(--v, (int) value);
+        }
     }
 
     @Test
-    public void testValuesObjectDelayDefault() throws Exception {
-        testValues(buildConfig(InMemoryFormat.OBJECT, ReplicatedMapConfig.DEFAULT_REPLICATION_DELAY_MILLIS));
+    public void testValuesObject() throws Exception {
+        testValues(buildConfig(InMemoryFormat.OBJECT));
     }
 
     @Test
-    public void testValuesBinaryDelay0() throws Exception {
-        testValues(buildConfig(InMemoryFormat.BINARY, 0));
-    }
-
-    @Test
-    public void testValuesBinaryDefault() throws Exception {
-        testValues(buildConfig(InMemoryFormat.BINARY, ReplicatedMapConfig.DEFAULT_REPLICATION_DELAY_MILLIS));
+    public void testValuesBinary() throws Exception {
+        testValues(buildConfig(InMemoryFormat.BINARY));
     }
 
     private void testValues(Config config) throws Exception {
@@ -896,7 +756,7 @@ public class ReplicatedMapTest extends ReplicatedMapBaseTest {
                     valuesTestValues.add(entry.getValue());
                 }
             }
-        }, 60, EntryEventType.ADDED, 100, 0.75, map1, map2);
+        }, 60, EntryEventType.ADDED, 100, 1, map1, map2);
 
         List<Integer> values1 = copyToList(map1.values());
         List<Integer> values2 = copyToList(map2.values());
@@ -912,27 +772,17 @@ public class ReplicatedMapTest extends ReplicatedMapBaseTest {
             }
         }
 
-        assertMatchSuccessfulOperationQuota(0.75, testValues.length, map1Contains, map2Contains);
+        assertMatchSuccessfulOperationQuota(1, testValues.length, map1Contains, map2Contains);
     }
 
     @Test
-    public void testKeySetObjectDelay0() throws Exception {
-        testKeySet(buildConfig(InMemoryFormat.OBJECT, 0));
+    public void testKeySetObject() throws Exception {
+        testKeySet(buildConfig(InMemoryFormat.OBJECT));
     }
 
     @Test
-    public void testKeySetObjectDelayDefault() throws Exception {
-        testKeySet(buildConfig(InMemoryFormat.OBJECT, ReplicatedMapConfig.DEFAULT_REPLICATION_DELAY_MILLIS));
-    }
-
-    @Test
-    public void testKeySetBinaryDelay0() throws Exception {
-        testKeySet(buildConfig(InMemoryFormat.BINARY, 0));
-    }
-
-    @Test
-    public void testKeySetBinaryDelayDefault() throws Exception {
-        testKeySet(buildConfig(InMemoryFormat.BINARY, ReplicatedMapConfig.DEFAULT_REPLICATION_DELAY_MILLIS));
+    public void testKeySetBinary() throws Exception {
+        testKeySet(buildConfig(InMemoryFormat.BINARY));
     }
 
     private void testKeySet(Config config) throws Exception {
@@ -959,7 +809,7 @@ public class ReplicatedMapTest extends ReplicatedMapBaseTest {
                     keySetTestValues.add(entry.getKey());
                 }
             }
-        }, 60, EntryEventType.ADDED, 100, 0.75, map1, map2);
+        }, 60, EntryEventType.ADDED, 100, 1, map1, map2);
 
         List<Integer> keySet1 = copyToList(map1.keySet());
         List<Integer> keySet2 = copyToList(map2.keySet());
@@ -975,27 +825,17 @@ public class ReplicatedMapTest extends ReplicatedMapBaseTest {
             }
         }
 
-        assertMatchSuccessfulOperationQuota(0.75, testValues.length, map1Contains, map2Contains);
+        assertMatchSuccessfulOperationQuota(1, testValues.length, map1Contains, map2Contains);
     }
 
     @Test
-    public void testEntrySetObjectDelay0() throws Exception {
-        testEntrySet(buildConfig(InMemoryFormat.OBJECT, 0));
+    public void testEntrySetObject() throws Exception {
+        testEntrySet(buildConfig(InMemoryFormat.OBJECT));
     }
 
     @Test
-    public void testEntrySetObjectDelayDefault() throws Exception {
-        testEntrySet(buildConfig(InMemoryFormat.OBJECT, ReplicatedMapConfig.DEFAULT_REPLICATION_DELAY_MILLIS));
-    }
-
-    @Test
-    public void testEntrySetBinaryDelay0() throws Exception {
-        testEntrySet(buildConfig(InMemoryFormat.BINARY, 0));
-    }
-
-    @Test
-    public void testEntrySetBinaryDelayDefault() throws Exception {
-        testEntrySet(buildConfig(InMemoryFormat.BINARY, ReplicatedMapConfig.DEFAULT_REPLICATION_DELAY_MILLIS));
+    public void testEntrySetBinary() throws Exception {
+        testEntrySet(buildConfig(InMemoryFormat.BINARY));
     }
 
     private void testEntrySet(Config config) throws Exception {
@@ -1019,7 +859,7 @@ public class ReplicatedMapTest extends ReplicatedMapBaseTest {
                     map.put(entry.getKey(), entry.getValue());
                 }
             }
-        }, 60, EntryEventType.ADDED, 100, 0.75, map1, map2);
+        }, 60, EntryEventType.ADDED, 100, 1, map1, map2);
 
         List<Entry<Integer, Integer>> entrySet1 = copyToList(map1.entrySet());
         List<Entry<Integer, Integer>> entrySet2 = copyToList(map2.entrySet());
@@ -1041,7 +881,7 @@ public class ReplicatedMapTest extends ReplicatedMapBaseTest {
             }
         }
 
-        assertMatchSuccessfulOperationQuota(0.75, testValues.length, map1Contains, map2Contains);
+        assertMatchSuccessfulOperationQuota(1, testValues.length, map1Contains, map2Contains);
     }
 
     private Integer findValue(int key, AbstractMap.SimpleEntry<Integer, Integer>[] values) {
@@ -1054,23 +894,13 @@ public class ReplicatedMapTest extends ReplicatedMapBaseTest {
     }
 
     @Test
-    public void testAddListenerObjectDelay0() throws Exception {
-        testAddEntryListener(buildConfig(InMemoryFormat.OBJECT, 0));
+    public void testAddListenerObject() throws Exception {
+        testAddEntryListener(buildConfig(InMemoryFormat.OBJECT));
     }
 
     @Test
-    public void testAddListenerObjectDelayDefault() throws Exception {
-        testAddEntryListener(buildConfig(InMemoryFormat.OBJECT, ReplicatedMapConfig.DEFAULT_REPLICATION_DELAY_MILLIS));
-    }
-
-    @Test
-    public void testAddListenerBinaryDelay0() throws Exception {
-        testAddEntryListener(buildConfig(InMemoryFormat.BINARY, 0));
-    }
-
-    @Test
-    public void testAddListenerBinaryDelayDefault() throws Exception {
-        testAddEntryListener(buildConfig(InMemoryFormat.BINARY, ReplicatedMapConfig.DEFAULT_REPLICATION_DELAY_MILLIS));
+    public void testAddListenerBinary() throws Exception {
+        testAddEntryListener(buildConfig(InMemoryFormat.BINARY));
     }
 
     private void testAddEntryListener(Config config) throws TimeoutException {
@@ -1100,23 +930,12 @@ public class ReplicatedMapTest extends ReplicatedMapBaseTest {
     }
 
     @Test
-    public void testEvictionObjectDelay0() throws Exception {
-        testEviction(buildConfig(InMemoryFormat.OBJECT, 0));
+    public void testEvictionObject() throws Exception {
+        testEviction(buildConfig(InMemoryFormat.OBJECT));
     }
 
-    @Test
-    public void testEvictionObjectDelayDefault() throws Exception {
-        testEviction(buildConfig(InMemoryFormat.OBJECT, ReplicatedMapConfig.DEFAULT_REPLICATION_DELAY_MILLIS));
-    }
-
-    @Test
-    public void testEvictionBinaryDelay0() throws Exception {
-        testEviction(buildConfig(InMemoryFormat.BINARY, 0));
-    }
-
-    @Test
-    public void testEvictionBinaryDelayDefault() throws Exception {
-        testEviction(buildConfig(InMemoryFormat.BINARY, ReplicatedMapConfig.DEFAULT_REPLICATION_DELAY_MILLIS));
+    public void testEvictionBinary() throws Exception {
+        testEviction(buildConfig(InMemoryFormat.BINARY));
     }
 
     private void testEviction(Config config) throws TimeoutException {
@@ -1220,10 +1039,18 @@ public class ReplicatedMapTest extends ReplicatedMapBaseTest {
     private <V> List<V> copyToList(Collection<V> collection) {
         List<V> values = new ArrayList<V>();
         Iterator<V> iterator = collection.iterator();
-        while (iterator.hasNext())  {
+        while (iterator.hasNext()) {
             values.add(iterator.next());
         }
         return values;
+    }
+
+    class DescendingComparator implements Comparator<Integer> {
+
+        @Override
+        public int compare(Integer o1, Integer o2) {
+            return o1 == o2 ? 0 : o1 > o2 ? -1 : 1;
+        }
     }
 
 }

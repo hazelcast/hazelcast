@@ -21,11 +21,10 @@ import com.hazelcast.client.impl.protocol.codec.ReplicatedMapRemoveEntryListener
 import com.hazelcast.client.impl.protocol.task.AbstractRemoveListenerMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.replicatedmap.impl.ReplicatedMapEventPublishingService;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
-import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.ReplicatedMapPermission;
-
 import java.security.Permission;
 
 public class ReplicatedMapRemoveEntryListenerMessageTask
@@ -37,9 +36,9 @@ public class ReplicatedMapRemoveEntryListenerMessageTask
 
     @Override
     protected boolean deRegisterListener() {
-        ReplicatedMapService replicatedMapService = getService(ReplicatedMapService.SERVICE_NAME);
-        ReplicatedRecordStore recordStore = replicatedMapService.getReplicatedRecordStore(parameters.name, true);
-        return recordStore.removeEntryListenerInternal(parameters.registrationId);
+        ReplicatedMapService service = getService(ReplicatedMapService.SERVICE_NAME);
+        ReplicatedMapEventPublishingService eventPublishingService = service.getEventPublishingService();
+        return eventPublishingService.removeEventListener(parameters.name, parameters.registrationId);
     }
 
     @Override

@@ -988,6 +988,8 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
                         replicatedMapConfig.addEntryListenerConfig(new EntryListenerConfig(listenerClass, local, incValue));
                     }
                 }
+            } else if ("merge-policy".equals(nodeName)) {
+                replicatedMapConfig.setMergePolicy(value);
             }
         }
         this.config.addReplicatedMapConfig(replicatedMapConfig);

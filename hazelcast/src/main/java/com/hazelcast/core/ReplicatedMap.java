@@ -16,9 +16,8 @@
 
 package com.hazelcast.core;
 
+import com.hazelcast.monitor.LocalReplicatedMapStats;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.spi.annotation.Beta;
-
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.Map;
@@ -26,14 +25,11 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 /**
- * <p>A ReplicatedMap is a map-like data structure with non-strong consistency
- * (so-called eventually consistent) and values locally stored on every
- * node of the cluster. When accessing values, due to the eventually
- * consistency, it is possible to read stale data since replication
- * is not handled in a synchronous way.</p>
+ * <p>A ReplicatedMap is a map-like data structure with weak consistency
+ * and values locally stored on every node of the cluster. </p>
  * <p>Whenever a value is written asynchronously, the new value will be internally
  * distributed to all existing cluster members, and eventually every node will have
- * the new value and the cluster again is in a consistent state.</p>
+ * the new value.</p>
  * <p>When a new node joins the cluster, the new node initially will request existing
  * values from older nodes and replicate them locally.</p>
  *
@@ -41,9 +37,7 @@ import java.util.concurrent.TimeUnit;
  * @param <V> the type of mapped values
  * @since 3.2
  */
-@Beta
-public interface ReplicatedMap<K, V>
-        extends Map<K, V>, DistributedObject {
+public interface ReplicatedMap<K, V> extends Map<K, V>, DistributedObject {
 
     /**
      * <p>Associates a given value to the specified key and replicates it to the
@@ -233,4 +227,16 @@ public interface ReplicatedMap<K, V>
      * @return A lazy {@link Set} view of the keys contained in this map.
      */
     Set<K> keySet();
+
+    /**
+     * Returns LocalReplicatedMapStats for this replicated map.
+     * LocalReplicatedMapStats is the statistics for the local
+     * replicated map and contains information such as getCount
+     * putCount, hits, lastUpdateTime etc.
+     * <p/>
+     *
+     * @return this replicated map's statistics.
+     */
+    LocalReplicatedMapStats getReplicatedMapStats();
+
 }

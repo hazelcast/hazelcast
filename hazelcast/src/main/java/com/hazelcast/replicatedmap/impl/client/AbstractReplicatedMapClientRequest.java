@@ -16,30 +16,33 @@
 
 package com.hazelcast.replicatedmap.impl.client;
 
-import com.hazelcast.client.impl.client.CallableClientRequest;
+import com.hazelcast.client.impl.client.PartitionClientRequest;
 import com.hazelcast.client.impl.client.RetryableRequest;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
-import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
-
 import java.io.IOException;
 
 /**
  * Base class for all ReplicatedMap client request.
  */
-public abstract class AbstractReplicatedMapClientRequest
-        extends CallableClientRequest
+public abstract class AbstractReplicatedMapClientRequest extends PartitionClientRequest
         implements RetryableRequest, Portable {
 
     private String mapName;
+    private int partitionId;
 
     protected AbstractReplicatedMapClientRequest() {
     }
 
     public AbstractReplicatedMapClientRequest(String mapName) {
         this.mapName = mapName;
+    }
+
+    public AbstractReplicatedMapClientRequest(String mapName, int partitionId) {
+        this.mapName = mapName;
+        this.partitionId = partitionId;
     }
 
     public String getMapName() {
@@ -56,15 +59,15 @@ public abstract class AbstractReplicatedMapClientRequest
     }
 
     @Override
-    public void write(PortableWriter writer)
-            throws IOException {
+    public void write(PortableWriter writer) throws IOException {
         writer.writeUTF("mapName", mapName);
+        writer.writeInt("pid", partitionId);
     }
 
     @Override
-    public void read(PortableReader reader)
-            throws IOException {
+    public void read(PortableReader reader) throws IOException {
         mapName = reader.readUTF("mapName");
+        partitionId = reader.readInt("pid");
     }
 
     @Override
@@ -72,9 +75,9 @@ public abstract class AbstractReplicatedMapClientRequest
         return ReplicatedMapPortableHook.F_ID;
     }
 
-    protected ReplicatedRecordStore getReplicatedRecordStore() {
-        ReplicatedMapService replicatedMapService = getService();
-        return replicatedMapService.getReplicatedRecordStore(mapName, true);
+    @Override
+    protected int getPartition() {
+        return partitionId;
     }
 
     @Override

@@ -5,35 +5,27 @@ import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.client.config.ClientProperties;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
-import com.hazelcast.core.EntryEvent;
-import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.MapEvent;
 import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.replicatedmap.ReplicatedMapCantBeCreatedOnLiteMemberException;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import java.net.InetSocketAddress;
+import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.List;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.net.InetSocketAddress;
-import java.net.UnknownHostException;
-import java.util.ArrayList;
-import java.util.List;
-
 import static com.hazelcast.test.HazelcastTestSupport.assertClusterSizeEventually;
-import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
 import static com.hazelcast.test.HazelcastTestSupport.getAddress;
 import static com.hazelcast.test.HazelcastTestSupport.randomMapName;
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -106,7 +98,7 @@ public class ClientReplicatedMapLiteMemberTest {
         assertNull(map.put(1, 2));
     }
 
-    @Test(expected = ReplicatedMapCantBeCreatedOnLiteMemberException.class)
+    @Test
     public void testReplicatedMapPutByDummyClient()
             throws UnknownHostException {
         final List<HazelcastInstance> instances = createNodes(3, 1);
@@ -116,96 +108,6 @@ public class ClientReplicatedMapLiteMemberTest {
 
         final ReplicatedMap<Object, Object> map = client.getReplicatedMap(randomMapName());
         map.put(1, 2);
-    }
-
-    @Test
-    public void testReplicatedMapEntryListenerRegisteredBySmartClient() {
-        createNodes(3, 1);
-
-        final HazelcastInstance client = factory.newHazelcastClient();
-        final ReplicatedMap<Object, Object> map = client.getReplicatedMap(randomMapName());
-        assertNotNull(map.addEntryListener(new DummyEntryAddedListener()));
-    }
-
-    @Test(expected = ReplicatedMapCantBeCreatedOnLiteMemberException.class)
-    public void testReplicatedMapEntryListenerRegisteredByDummyClient()
-            throws UnknownHostException {
-        final List<HazelcastInstance> instances = createNodes(3, 1);
-        configureDummyClientConnection(instances.get(0));
-
-        final HazelcastInstance client = factory.newHazelcastClient(dummyClientConfig);
-        final ReplicatedMap<Object, Object> map = client.getReplicatedMap(randomMapName());
-        assertNotNull(map.addEntryListener(new DummyEntryAddedListener()));
-    }
-
-    @Test
-    public void testReplicatedMapEntryListenerInvokedBySmartClient() {
-        createNodes(3, 1);
-
-        final HazelcastInstance client = factory.newHazelcastClient();
-        final ReplicatedMap<Object, Object> map = client.getReplicatedMap(randomMapName());
-        final DummyEntryAddedListener listener = new DummyEntryAddedListener();
-        map.addEntryListener(listener);
-
-        map.put(1, 2);
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run()
-                    throws Exception {
-                assertEquals(1, listener.key);
-                assertEquals(2, listener.value);
-            }
-        });
-    }
-
-    @Test
-    public void testReplicatedMapEntryListenerDeregisteredBySmartClient() {
-        createNodes(3, 1);
-
-        final HazelcastInstance client = factory.newHazelcastClient();
-        final ReplicatedMap<Object, Object> map = client.getReplicatedMap(randomMapName());
-        final DummyEntryAddedListener listener = new DummyEntryAddedListener();
-        final String registrationId = map.addEntryListener(listener);
-
-        assertTrue(map.removeEntryListener(registrationId));
-    }
-
-    private static class DummyEntryAddedListener implements EntryListener<Object, Object> {
-
-        private volatile Object key;
-
-        private volatile Object value;
-
-        @Override
-        public void entryAdded(EntryEvent<Object, Object> event) {
-            key = event.getKey();
-            value = event.getValue();
-        }
-
-        @Override
-        public void entryEvicted(EntryEvent<Object, Object> event) {
-
-        }
-
-        @Override
-        public void entryRemoved(EntryEvent<Object, Object> event) {
-
-        }
-
-        @Override
-        public void entryUpdated(EntryEvent<Object, Object> event) {
-
-        }
-
-        @Override
-        public void mapCleared(MapEvent event) {
-
-        }
-
-        @Override
-        public void mapEvicted(MapEvent event) {
-
-        }
     }
 
     private void configureDummyClientConnection(final HazelcastInstance instance)
@@ -220,11 +122,11 @@ public class ClientReplicatedMapLiteMemberTest {
         final List<HazelcastInstance> instances = new ArrayList<HazelcastInstance>();
 
         final Config liteConfig = new Config().setLiteMember(true);
-        for (int i = 0;  i < numberOfLiteNodes; i++) {
+        for (int i = 0; i < numberOfLiteNodes; i++) {
             instances.add(factory.newHazelcastInstance(liteConfig));
         }
 
-        for (int i = 0;  i < numberOfDataNodes; i++) {
+        for (int i = 0; i < numberOfDataNodes; i++) {
             instances.add(factory.newHazelcastInstance());
         }
 

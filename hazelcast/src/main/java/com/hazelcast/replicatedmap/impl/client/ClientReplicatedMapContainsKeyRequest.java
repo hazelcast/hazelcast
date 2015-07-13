@@ -18,53 +18,54 @@ package com.hazelcast.replicatedmap.impl.client;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
-import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
+import com.hazelcast.replicatedmap.impl.operation.ContainsKeyOperation;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.ReplicatedMapPermission;
-
+import com.hazelcast.spi.Operation;
 import java.io.IOException;
 import java.security.Permission;
 
 /**
  * Client request class for {@link java.util.Map#containsKey(Object)} implementation
  */
-public class ClientReplicatedMapContainsKeyRequest
-        extends AbstractReplicatedMapClientRequest {
+public class ClientReplicatedMapContainsKeyRequest extends AbstractReplicatedMapClientRequest {
 
-    private Object key;
+    private Data key;
 
     ClientReplicatedMapContainsKeyRequest() {
         super(null);
     }
 
-    public ClientReplicatedMapContainsKeyRequest(String mapName, Object key) {
+    public ClientReplicatedMapContainsKeyRequest(String mapName, Data key) {
         super(mapName);
         this.key = key;
     }
 
     @Override
-    public Object call()
-            throws Exception {
-        ReplicatedRecordStore recordStore = getReplicatedRecordStore();
-        return recordStore.containsKey(key);
+    protected Operation prepareOperation() {
+        return new ContainsKeyOperation(getMapName(), key);
     }
 
     @Override
-    public void write(PortableWriter writer)
-            throws IOException {
+    protected int getPartition() {
+        return getClientEngine().getPartitionService().getPartitionId(key);
+    }
+
+    @Override
+    public void write(PortableWriter writer) throws IOException {
         super.write(writer);
         ObjectDataOutput out = writer.getRawDataOutput();
-        out.writeObject(key);
+        out.writeData(key);
     }
 
     @Override
-    public void read(PortableReader reader)
-            throws IOException {
+    public void read(PortableReader reader) throws IOException {
         super.read(reader);
         ObjectDataInput in = reader.getRawDataInput();
-        key = in.readObject();
+        key = in.readData();
     }
 
     @Override
@@ -86,4 +87,5 @@ public class ClientReplicatedMapContainsKeyRequest
     public Object[] getParameters() {
         return new Object[]{key};
     }
+
 }

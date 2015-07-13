@@ -16,11 +16,10 @@
 
 package com.hazelcast.replicatedmap.impl.record;
 
-import com.hazelcast.core.EntryListener;
-import com.hazelcast.query.Predicate;
-
+import com.hazelcast.replicatedmap.merge.ReplicatedMapMergePolicy;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.Iterator;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
@@ -41,7 +40,7 @@ public interface ReplicatedRecordStore {
 
     Object put(Object key, Object value);
 
-    Object put(Object key, Object value, long ttl, TimeUnit timeUnit);
+    Object put(Object key, Object value, long ttl, TimeUnit timeUnit, boolean incrementHits);
 
     boolean containsKey(Object key);
 
@@ -49,36 +48,41 @@ public interface ReplicatedRecordStore {
 
     ReplicatedRecord getReplicatedRecord(Object key);
 
-    Set keySet();
+    Set keySet(boolean lazy);
 
-    Collection values();
+    Collection values(boolean lazy);
 
     Collection values(Comparator comparator);
 
-    Set entrySet();
+    Set entrySet(boolean lazy);
 
     int size();
 
-    void clear(boolean distribute, boolean emptyReplicationQueue);
+    void clear();
+
+    void reset();
 
     boolean isEmpty();
 
-    Object unmarshallKey(Object key);
+    Object unmarshall(Object key);
 
-    Object unmarshallValue(Object value);
-
-    Object marshallKey(Object key);
-
-    Object marshallValue(Object value);
-
-    String addEntryListener(EntryListener listener, Object key);
-
-    String addEntryListener(EntryListener listener, Predicate predicate, Object key);
-
-    boolean removeEntryListenerInternal(String id);
-
-    ReplicationPublisher getReplicationPublisher();
+    Object marshall(Object key);
 
     void destroy();
 
+    long getVersion();
+
+    void setVersion(long version);
+
+    Iterator<ReplicatedRecord> recordIterator();
+
+    void putRecord(RecordMigrationInfo record);
+
+    InternalReplicatedMapStorage getStorage();
+
+    boolean isLoaded();
+
+    void setLoaded(boolean loaded);
+
+    boolean merge(Object key, ReplicatedMapEntryView entryView, ReplicatedMapMergePolicy policy);
 }

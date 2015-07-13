@@ -22,6 +22,7 @@ import com.hazelcast.client.impl.protocol.EventMessageConst;
 import com.hazelcast.client.impl.protocol.ResponseMessageConst;
 import com.hazelcast.nio.serialization.Data;
 
+import java.util.List;
 import java.util.Map;
 
 @GenerateCodec(id = TemplateConstants.REPLICATED_MAP_TEMPLATE_ID,
@@ -118,7 +119,7 @@ public interface ReplicatedMapCodecTemplate {
      * @param map Mappings to be stored in this map
      */
     @Request(id = 8, retryable = false, response = ResponseMessageConst.VOID)
-    void putAll(String name, Map<Data, Data> map);
+    void putAll(String name, List<Map.Entry<Data,Data>> entries);
 
     /**
      * The clear operation wipes data out of the replicated maps.It is the only synchronous remote operation in this
@@ -199,7 +200,7 @@ public interface ReplicatedMapCodecTemplate {
      * @param name Name of the ReplicatedMap
      * @return A lazy set view of the keys contained in this map.
      */
-    @Request(id = 15, retryable = true, response = ResponseMessageConst.SET_DATA)
+    @Request(id = 15, retryable = true, response = ResponseMessageConst.LIST_DATA)
     Object keySet(String name);
 
     /**
@@ -215,7 +216,7 @@ public interface ReplicatedMapCodecTemplate {
      * @param name Name of the ReplicatedMap
      * @return A lazy set view of the mappings contained in this map.
      */
-    @Request(id = 17, retryable = true, response = ResponseMessageConst.SET_ENTRY)
+    @Request(id = 17, retryable = true, response = ResponseMessageConst.LIST_ENTRY)
     Object entrySet(String name);
 
     /**

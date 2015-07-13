@@ -16,9 +16,11 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.replicatedmap.merge.PutIfAbsentMapMergePolicy;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ScheduledExecutorService;
+
 /**
  * Contains the configuration for an {@link com.hazelcast.core.ReplicatedMap}
  */
@@ -40,6 +42,11 @@ public class ReplicatedMapConfig {
      * Default value of asynchronous fill up
      */
     public static final boolean DEFAULT_ASNYC_FILLUP = true;
+    /**
+     * Default policy for merging
+     */
+    public static final String DEFAULT_MERGE_POLICY = PutIfAbsentMapMergePolicy.class.getName();
+
 
     private String name;
     private int concurrencyLevel = DEFAULT_CONCURRENCY_LEVEL;
@@ -48,6 +55,8 @@ public class ReplicatedMapConfig {
     private ScheduledExecutorService replicatorExecutorService;
     private boolean asyncFillup = DEFAULT_ASNYC_FILLUP;
     private boolean statisticsEnabled = true;
+    private String mergePolicy = DEFAULT_MERGE_POLICY;
+
 
     private List<ListenerConfig> listenerConfigs;
 
@@ -72,6 +81,7 @@ public class ReplicatedMapConfig {
         this.listenerConfigs = new ArrayList<ListenerConfig>(replicatedMapConfig.getListenerConfigs());
         this.asyncFillup = replicatedMapConfig.asyncFillup;
         this.statisticsEnabled = replicatedMapConfig.statisticsEnabled;
+        this.mergePolicy = replicatedMapConfig.mergePolicy;
     }
 
     /**
@@ -97,13 +107,16 @@ public class ReplicatedMapConfig {
     /**
      * The number of milliseconds after a put is executed before the value is replicated
      * to other nodes. During this time, multiple puts can be operated and cached up to be sent
-     * out all at once after the delay. This highers the latency for eventually consistency but lowers IO operations.
+     * out all at once after the delay.
      * Default value is 100ms before a replication is operated. If 0, no delay is used and
      * all values are replicated one by one.
      *
      * @return the number of milliseconds after a put is executed before the value is replicated
      * to other nodes.
+     * @deprecated since new implementation will route puts to the partition owner nodes,
+     * caching won't help replication speed because most of the time subsequent puts will end up in different nodes.
      */
+    @Deprecated
     public long getReplicationDelayMillis() {
         return replicationDelayMillis;
     }
@@ -111,14 +124,17 @@ public class ReplicatedMapConfig {
     /**
      * Sets the number of milliseconds after a put is executed before the value is replicated
      * to other nodes. During this time, multiple puts can be operated and cached up to be sent
-     * out all at once after the delay. This highers the latency for eventually consistency but lowers IO operations.
+     * out all at once after the delay.
      * Default value is 100ms before a replication is operated. If set to 0, no delay is used and
      * all values are replicated one by one.
      *
      * @param replicationDelayMillis the number of milliseconds after a put is executed before the value is replicated
-     * to other nodes.
+     *                               to other nodes.
      * @return The current replicated map config instance.
+     * @deprecated since new implementation will route puts to the partition owner nodes,
+     * caching won't help replication speed because most of the time subsequent puts will end up in different nodes.
      */
+    @Deprecated
     public ReplicatedMapConfig setReplicationDelayMillis(long replicationDelayMillis) {
         this.replicationDelayMillis = replicationDelayMillis;
         return this;
@@ -130,7 +146,9 @@ public class ReplicatedMapConfig {
      * inside of the replicated map, this value can be adjusted to the needs.
      *
      * @return Number of parallel mutexes to minimize contention on keys.
+     * @deprecated new implementation doesn't use mutexes
      */
+    @Deprecated
     public int getConcurrencyLevel() {
         return concurrencyLevel;
     }
@@ -142,7 +160,9 @@ public class ReplicatedMapConfig {
      *
      * @param concurrencyLevel Number of parallel mutexes to minimize contention on keys.
      * @return The current replicated map config instance.
+     * @deprecated new implementation doesn't use mutexes
      */
+    @Deprecated
     public ReplicatedMapConfig setConcurrencyLevel(int concurrencyLevel) {
         this.concurrencyLevel = concurrencyLevel;
         return this;
@@ -176,10 +196,18 @@ public class ReplicatedMapConfig {
         return this;
     }
 
+    /**
+     * @deprecated new implementation doesn't use executor service for replication.
+     */
+    @Deprecated
     public ScheduledExecutorService getReplicatorExecutorService() {
         return replicatorExecutorService;
     }
 
+    /**
+     * @deprecated new implementation doesn't use executor service for replication.
+     */
+    @Deprecated
     public ReplicatedMapConfig setReplicatorExecutorService(ScheduledExecutorService replicatorExecutorService) {
         this.replicatorExecutorService = replicatorExecutorService;
         return this;
@@ -205,7 +233,7 @@ public class ReplicatedMapConfig {
     /**
      * True if the replicated map is available for reads before the initial
      * replication is completed, false otherwise. Default is true. If false, no Exception will be
-     * thrown when the replicated map is not yet ready, but call is blocked until
+     * thrown when the replicated map is not yet ready, but `null` values can be seen until
      * the initial replication is completed.
      *
      * @return True if the replicated map is available for reads before the initial
@@ -218,7 +246,7 @@ public class ReplicatedMapConfig {
     /**
      * True if the replicated map is available for reads before the initial
      * replication is completed, false otherwise. Default is true. If false, no Exception will be
-     * thrown when the replicated map is not yet ready, but call is blocked until
+     * thrown when the replicated map is not yet ready, but `null` values can be seen until
      * the initial replication is completed.
      *
      * @param asyncFillup True if the replicated map is available for reads before the initial
@@ -251,5 +279,27 @@ public class ReplicatedMapConfig {
         this.statisticsEnabled = statisticsEnabled;
         return this;
     }
+
+
+    /**
+     * Gets the replicated map merge policy {@link com.hazelcast.replicatedmap.merge.ReplicatedMapMergePolicy}
+     *
+     * @return the updated replicated map configuration
+     */
+    public String getMergePolicy() {
+        return mergePolicy;
+    }
+
+    /**
+     * Sets the replicated map merge policy {@link com.hazelcast.replicatedmap.merge.ReplicatedMapMergePolicy}
+     *
+     * @param mergePolicy the replicated map merge policy to set
+     * @return the updated replicated map configuration
+     */
+    public ReplicatedMapConfig setMergePolicy(String mergePolicy) {
+        this.mergePolicy = mergePolicy;
+        return this;
+    }
+
 
 }
