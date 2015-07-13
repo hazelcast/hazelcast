@@ -144,14 +144,19 @@ public abstract class AbstractIOSelector extends Thread implements IOSelector {
         } catch (Throwable e) {
             logger.warning("Unhandled exception in " + getName(), e);
         } finally {
-            try {
-                if (logger.isFinestEnabled()) {
-                    logger.finest("Closing selector " + getName());
-                }
-                selector.close();
-            } catch (final Exception e) {
-                logger.finest("Exception while closing selector", e);
-            }
+            closeSelector();
+        }
+    }
+
+    private void closeSelector() {
+        if (logger.isFinestEnabled()) {
+            logger.finest("Closing selector " + getName());
+        }
+
+        try {
+            selector.close();
+        } catch (Exception e) {
+            logger.finest("Exception while closing selector", e);
         }
     }
 
