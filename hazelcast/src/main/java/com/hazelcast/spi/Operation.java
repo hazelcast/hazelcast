@@ -186,6 +186,18 @@ public abstract class Operation implements DataSerializable {
         return this;
     }
 
+    /**
+     * This method is called every time a new <tt>callId</tt> is set to the operation.
+     * A new <tt>callId</tt> is set to an operation before initial invocation
+     * and before every invocation retry.
+     * <p/>
+     * By default this is a no-op method. Operation implementations which are willing to
+     * get notified on <tt>callId</tt> changes can override this method. New <tt>callId</tt>
+     * can be accessed by calling {@link #getCallId()}.
+     * <p/>
+     * For example an operation can distinguish the first invocation and invocation retries by keeping
+     * the initial <tt>callId</tt>.
+     */
     protected void onSetCallId() {
     }
 
