@@ -24,7 +24,9 @@ import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.EntryEvent;
+import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryListener;
+import com.hazelcast.core.MapEvent;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.logging.Logger;
@@ -355,6 +357,11 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
                 case EVICTED:
                     listener.entryEvicted(entryEvent);
                     break;
+                case CLEAR_ALL:
+                    MapEvent mapEvent = new MapEvent(getName(), member, EntryEventType.CLEAR_ALL.getType(),
+                            event.getNumberOfAffectedEntries());
+                    listener.mapCleared(mapEvent);
+                    break;
                 default:
                     throw new IllegalArgumentException("Not a known event type " + event.getEventType());
             }
@@ -398,6 +405,9 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
                 case UPDATED:
                 case EVICTED:
                     nearCache.remove(toObject(event.getKey()));
+                    break;
+                case CLEAR_ALL:
+                    nearCache.clear();
                     break;
                 default:
                     throw new IllegalArgumentException("Not a known event type " + event.getEventType());

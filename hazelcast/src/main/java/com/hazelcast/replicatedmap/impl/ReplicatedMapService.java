@@ -67,7 +67,6 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
-import static com.hazelcast.cluster.memberselector.MemberSelectors.and;
 
 /**
  * This is the main service implementation to handle proxy creation, event publishing, migration, anti-entropy and
@@ -274,17 +273,24 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
         return stores;
     }
 
-    public void clearLocalRecordStores(String name) {
+    public int clearLocalRecordStores(String name) {
+        int deletedEntrySize = 0;
         for (int i = 0; i < nodeEngine.getPartitionService().getPartitionCount(); i++) {
             ReplicatedRecordStore recordStore = partitionContainers[i].getRecordStore(name);
             if (recordStore != null) {
+                deletedEntrySize += recordStore.size();
                 recordStore.clear();
             }
         }
+        return deletedEntrySize;
     }
 
     public void clearLocalAndRemoteRecordStores(String name) {
-        Collection<Address> failedMembers = getMemberAddresses(and(DATA_MEMBER_SELECTOR));
+        Operation operation = new ClearLocalOperation(name);
+        InternalCompletableFuture<Object> result = operationService
+                .invokeOnTarget(SERVICE_NAME, operation, nodeEngine.getThisAddress());
+        Integer deletedEntrySize = (Integer) result.getSafely();
+        Collection<Address> failedMembers = getMemberAddresses(DATA_MEMBER_SELECTOR);
         for (int i = 0; i < MAX_CLEAR_EXECUTION_RETRY; i++) {
             Map<Address, InternalCompletableFuture> futures = executeClearOnMembers(failedMembers, name);
             // Clear to collect new failing members
@@ -299,6 +305,7 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
             }
 
             if (failedMembers.size() == 0) {
+                eventPublishingService.fireMapClearedEvent(deletedEntrySize, name);
                 return;
             }
         }
@@ -318,6 +325,9 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
     private Map executeClearOnMembers(Collection<Address> members, String name) {
         Map<Address, InternalCompletableFuture> futures = new HashMap<Address, InternalCompletableFuture>(members.size());
         for (Address address : members) {
+            if (address.equals(nodeEngine.getThisAddress())) {
+                continue;
+            }
             Operation operation = new ClearLocalOperation(name);
             InvocationBuilder ib = operationService.createInvocationBuilder(SERVICE_NAME, operation, address);
             futures.put(address, ib.invoke());
