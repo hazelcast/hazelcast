@@ -16,12 +16,15 @@
 
 package com.hazelcast.mapreduce.aggregation.impl;
 
-import com.hazelcast.nio.serialization.impl.ArrayDataSerializableFactory;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.DataSerializerHook;
-import com.hazelcast.nio.serialization.impl.FactoryIdHelper;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.impl.ArrayDataSerializableFactory;
+import com.hazelcast.nio.serialization.impl.FactoryIdHelper;
 import com.hazelcast.util.ConstructorFunction;
+
+import static com.hazelcast.nio.serialization.impl.FactoryIdHelper.AGGREGATIONS_DS_FACTORY;
+import static com.hazelcast.nio.serialization.impl.FactoryIdHelper.AGGREGATIONS_DS_FACTORY_ID;
 
 /**
  * This class contains all the ID hooks for IdentifiedDataSerializable classes used for aggregations.
@@ -31,7 +34,7 @@ import com.hazelcast.util.ConstructorFunction;
 public class AggregationsDataSerializerHook
         implements DataSerializerHook {
 
-    public static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.AGGREGATIONS_DS_FACTORY, -24);
+    public static final int F_ID = FactoryIdHelper.getFactoryId(AGGREGATIONS_DS_FACTORY, AGGREGATIONS_DS_FACTORY_ID);
 
     public static final int SUPPLIER_CONSUMING_MAPPER = 0;
     public static final int ACCEPT_ALL_SUPPLIER = 1;

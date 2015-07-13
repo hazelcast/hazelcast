@@ -31,12 +31,15 @@ import com.hazelcast.concurrent.atomiclong.operations.SetBackupOperation;
 import com.hazelcast.concurrent.atomiclong.operations.SetOperation;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.DataSerializerHook;
-import com.hazelcast.nio.serialization.impl.FactoryIdHelper;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.impl.FactoryIdHelper;
+
+import static com.hazelcast.nio.serialization.impl.FactoryIdHelper.ATOMIC_LONG_DS_FACTORY;
+import static com.hazelcast.nio.serialization.impl.FactoryIdHelper.ATOMIC_LONG_DS_FACTORY_ID;
 
 public final class AtomicLongDataSerializerHook implements DataSerializerHook {
 
-    public static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.ATOMIC_LONG_DS_FACTORY, -17);
+    public static final int F_ID = FactoryIdHelper.getFactoryId(ATOMIC_LONG_DS_FACTORY, ATOMIC_LONG_DS_FACTORY_ID);
 
     public static final int ADD_BACKUP = 0;
     public static final int ADD_AND_GET = 1;

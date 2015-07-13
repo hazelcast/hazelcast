@@ -20,12 +20,15 @@ import com.hazelcast.executor.impl.operations.CallableTaskOperation;
 import com.hazelcast.executor.impl.operations.MemberCallableTaskOperation;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.DataSerializerHook;
-import com.hazelcast.nio.serialization.impl.FactoryIdHelper;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.impl.FactoryIdHelper;
+
+import static com.hazelcast.nio.serialization.impl.FactoryIdHelper.EXECUTOR_DS_FACTORY;
+import static com.hazelcast.nio.serialization.impl.FactoryIdHelper.EXECUTOR_DS_FACTORY_ID;
 
 public class ExecutorDataSerializerHook implements DataSerializerHook {
 
-    public static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.EXECUTOR_DS_FACTORY, -13);
+    public static final int F_ID = FactoryIdHelper.getFactoryId(EXECUTOR_DS_FACTORY, EXECUTOR_DS_FACTORY_ID);
 
     public static final int CALLABLE_TASK = 0;
     public static final int MEMBER_CALLABLE_TASK = 1;

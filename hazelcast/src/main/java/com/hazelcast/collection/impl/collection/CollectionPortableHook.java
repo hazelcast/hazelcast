@@ -40,19 +40,22 @@ import com.hazelcast.collection.impl.txnlist.client.TxnListSizeRequest;
 import com.hazelcast.collection.impl.txnset.client.TxnSetAddRequest;
 import com.hazelcast.collection.impl.txnset.client.TxnSetRemoveRequest;
 import com.hazelcast.collection.impl.txnset.client.TxnSetSizeRequest;
-import com.hazelcast.nio.serialization.impl.ArrayPortableFactory;
 import com.hazelcast.nio.serialization.ClassDefinition;
-import com.hazelcast.nio.serialization.impl.FactoryIdHelper;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.nio.serialization.PortableHook;
+import com.hazelcast.nio.serialization.impl.ArrayPortableFactory;
+import com.hazelcast.nio.serialization.impl.FactoryIdHelper;
 import com.hazelcast.util.ConstructorFunction;
 
 import java.util.Collection;
 
+import static com.hazelcast.nio.serialization.impl.FactoryIdHelper.COLLECTION_PORTABLE_FACTORY;
+import static com.hazelcast.nio.serialization.impl.FactoryIdHelper.COLLECTION_PORTABLE_FACTORY_ID;
+
 public class CollectionPortableHook implements PortableHook {
 
-    public static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.COLLECTION_PORTABLE_FACTORY, -20);
+    public static final int F_ID = FactoryIdHelper.getFactoryId(COLLECTION_PORTABLE_FACTORY, COLLECTION_PORTABLE_FACTORY_ID);
 
     public static final int COLLECTION_SIZE = 1;
     public static final int COLLECTION_CONTAINS = 2;

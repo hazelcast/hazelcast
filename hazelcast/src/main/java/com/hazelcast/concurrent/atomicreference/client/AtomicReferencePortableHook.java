@@ -17,16 +17,19 @@
 package com.hazelcast.concurrent.atomicreference.client;
 
 import com.hazelcast.nio.serialization.ClassDefinition;
-import com.hazelcast.nio.serialization.impl.FactoryIdHelper;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.nio.serialization.PortableHook;
+import com.hazelcast.nio.serialization.impl.FactoryIdHelper;
 
 import java.util.Collection;
 
+import static com.hazelcast.nio.serialization.impl.FactoryIdHelper.ATOMIC_REFERENCE_PORTABLE_FACTORY;
+import static com.hazelcast.nio.serialization.impl.FactoryIdHelper.ATOMIC_REFERENCE_PORTABLE_FACTORY_ID;
+
 public class AtomicReferencePortableHook implements PortableHook {
 
-    static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.ATOMIC_REFERENCE_PORTABLE_FACTORY, -21);
+    static final int F_ID = FactoryIdHelper.getFactoryId(ATOMIC_REFERENCE_PORTABLE_FACTORY, ATOMIC_REFERENCE_PORTABLE_FACTORY_ID);
 
     static final int GET = 1;
     static final int SET = 2;

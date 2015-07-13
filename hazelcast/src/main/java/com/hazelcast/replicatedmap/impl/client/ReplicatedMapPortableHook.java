@@ -17,13 +17,16 @@
 package com.hazelcast.replicatedmap.impl.client;
 
 import com.hazelcast.nio.serialization.ClassDefinition;
-import com.hazelcast.nio.serialization.impl.FactoryIdHelper;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.nio.serialization.PortableHook;
+import com.hazelcast.nio.serialization.impl.FactoryIdHelper;
 import com.hazelcast.util.ConstructorFunction;
 
 import java.util.Collection;
+
+import static com.hazelcast.nio.serialization.impl.FactoryIdHelper.REPLICATED_PORTABLE_FACTORY;
+import static com.hazelcast.nio.serialization.impl.FactoryIdHelper.REPLICATED_PORTABLE_FACTORY_ID;
 
 /**
  * This class registers all Portable serializers that are needed for communication between nodes and clients
@@ -32,7 +35,7 @@ import java.util.Collection;
 public class ReplicatedMapPortableHook
         implements PortableHook {
 
-    public static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.REPLICATED_PORTABLE_FACTORY, -22);
+    public static final int F_ID = FactoryIdHelper.getFactoryId(REPLICATED_PORTABLE_FACTORY, REPLICATED_PORTABLE_FACTORY_ID);
 
     public static final int SIZE = 1;
     public static final int IS_EMPTY = 2;

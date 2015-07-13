@@ -16,8 +16,8 @@
 
 package com.hazelcast.concurrent.lock;
 
-import com.hazelcast.concurrent.lock.operations.AwaitOperation;
 import com.hazelcast.concurrent.lock.operations.AwaitBackupOperation;
+import com.hazelcast.concurrent.lock.operations.AwaitOperation;
 import com.hazelcast.concurrent.lock.operations.BeforeAwaitBackupOperation;
 import com.hazelcast.concurrent.lock.operations.BeforeAwaitOperation;
 import com.hazelcast.concurrent.lock.operations.GetLockCountOperation;
@@ -32,12 +32,15 @@ import com.hazelcast.concurrent.lock.operations.UnlockBackupOperation;
 import com.hazelcast.concurrent.lock.operations.UnlockOperation;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.DataSerializerHook;
-import com.hazelcast.nio.serialization.impl.FactoryIdHelper;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.impl.FactoryIdHelper;
+
+import static com.hazelcast.nio.serialization.impl.FactoryIdHelper.LOCK_DS_FACTORY;
+import static com.hazelcast.nio.serialization.impl.FactoryIdHelper.LOCK_DS_FACTORY_ID;
 
 public final class LockDataSerializerHook implements DataSerializerHook {
 
-    public static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.LOCK_DS_FACTORY, -15);
+    public static final int F_ID = FactoryIdHelper.getFactoryId(LOCK_DS_FACTORY, LOCK_DS_FACTORY_ID);
 
     public static final int AWAIT_BACKUP = 0;
     public static final int AWAIT = 1;

@@ -24,12 +24,15 @@ import com.hazelcast.nio.serialization.impl.FactoryIdHelper;
 
 import java.util.Collection;
 
+import static com.hazelcast.nio.serialization.impl.FactoryIdHelper.RINGBUFFER_PORTABLE_FACTORY;
+import static com.hazelcast.nio.serialization.impl.FactoryIdHelper.RINGBUFFER_PORTABLE_FACTORY_ID;
+
 /**
  * Provides a Portable hook for the ringbuffer operations.
  */
 public class RingbufferPortableHook implements PortableHook {
 
-    public static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.RINGBUFFER_PORTABLE_FACTORY, -29);
+    public static final int F_ID = FactoryIdHelper.getFactoryId(RINGBUFFER_PORTABLE_FACTORY, RINGBUFFER_PORTABLE_FACTORY_ID);
 
     public static final int ADD_ALL = 1;
     public static final int ADD = 2;
