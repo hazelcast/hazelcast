@@ -3,7 +3,11 @@ package com.hazelcast.hibernate.distributed;
 import com.hazelcast.hibernate.serialization.Expirable;
 import com.hazelcast.hibernate.serialization.ExpiryMarker;
 import com.hazelcast.hibernate.serialization.Value;
+import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 
 import java.util.Map;
@@ -17,6 +21,8 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+@RunWith(HazelcastSerialClassRunner.class)
+@Category(QuickTest.class)
 public class LockEntryProcessorTest {
 
     @Test
