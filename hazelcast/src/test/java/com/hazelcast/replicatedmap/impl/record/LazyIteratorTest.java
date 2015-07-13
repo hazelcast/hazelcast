@@ -24,20 +24,17 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.HashUtil;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
-
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
@@ -57,16 +54,14 @@ public class LazyIteratorTest
         for (int i = 0; i < 100; i++) {
             String key = "key-" + i;
             int hash = HashUtil.hashCode(key);
-            VectorClockTimestamp timestamp = new VectorClockTimestamp();
-            TEST_DATA_SIMPLE.put(key, new ReplicatedRecord<String, Integer>(key, i, timestamp, hash, -1));
+            TEST_DATA_SIMPLE.put(key, new ReplicatedRecord<String, Integer>(key, i, hash, -1));
         }
         TEST_DATA_TOMBS = new InternalReplicatedMapStorage<String, Integer>(new ReplicatedMapConfig());
         for (int i = 0; i < 100; i++) {
             String key = "key-" + i;
             int hash = HashUtil.hashCode(key);
-            VectorClockTimestamp timestamp = new VectorClockTimestamp();
             Integer value = i % 2 == 0 ? i : null;
-            ReplicatedRecord<String, Integer> record = new ReplicatedRecord<String, Integer>(key, value, timestamp, hash, -1);
+            ReplicatedRecord<String, Integer> record = new ReplicatedRecord<String, Integer>(key, value, hash, -1);
             TEST_DATA_TOMBS.put(key, record);
         }
     }

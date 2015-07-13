@@ -25,7 +25,6 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.monitor.impl.LocalReplicatedMapStatsImpl;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.replicatedmap.impl.PreReplicationHook;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.replicatedmap.impl.ReplicationChannel;
@@ -41,8 +40,6 @@ import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
-import com.hazelcast.util.Clock;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -318,63 +315,17 @@ public class ReplicationPublisher<K, V>
             if (localEntry == null) {
                 createLocalEntry(update, marshalledKey);
             } else {
-                updateLocalEntry(localEntry, update);
+                updateLocalEntry(update, localEntry);
             }
         }
-    }
-
-    private void updateLocalEntry(ReplicatedRecord<K, V> localEntry, ReplicationMessage update) {
-        final VectorClockTimestamp currentVectorClockTimestamp = localEntry.getVectorClockTimestamp();
-        final VectorClockTimestamp updateVectorClockTimestamp = update.getVectorClockTimestamp();
-        if (isOldTombstone(localEntry)) {
-            // the tombstone has been created quite some ago. we are going to accept the update regardless of its clock
-            // chances are the tombstone on a source node already expired and its clocked were reset
-            applyTheUpdate(update, localEntry);
-        } else if (VectorClockTimestamp.happenedBefore(currentVectorClockTimestamp, updateVectorClockTimestamp)) {
-            // A new update happened
-            applyTheUpdate(update, localEntry);
-        } else if (VectorClockTimestamp.happenedBefore(updateVectorClockTimestamp, currentVectorClockTimestamp)) {
-            // ignore the update. This is an old update
-            return;
-        } else if (!updateVectorClockTimestamp.equals(currentVectorClockTimestamp)) {
-            if (localEntry.getLatestUpdateHash() >= update.getUpdateHash()) {
-                applyTheUpdate(update, localEntry);
-            } else {
-                VectorClockTimestamp newTimestamp = localEntry
-                        .applyAndIncrementVectorClock(updateVectorClockTimestamp, localMember);
-
-                Object key = update.getKey();
-                V v = localEntry.getValueInternal();
-                V value = v instanceof Data ? (V) nodeEngine.toObject(v) : v;
-                long ttlMillis = update.getTtlMillis();
-                int latestUpdateHash = localEntry.getLatestUpdateHash();
-                ReplicationMessage message = new ReplicationMessage(name, key, value, newTimestamp, localMember,
-                        latestUpdateHash, ttlMillis);
-
-                distributeReplicationMessage(message, true);
-            }
-        } else {
-            LOGGER.finest("Received an update with the same state of vector clock I currently have. "
-                    + "This can happened during initialization. Ignoring the update.");
-        }
-    }
-
-    private boolean isOldTombstone(ReplicatedRecord<K, V> localEntry) {
-        if (!localEntry.isTombstone()) {
-            return false;
-        }
-        long updateTime = localEntry.getUpdateTime();
-        long threshold = updateTime + (AbstractReplicatedRecordStore.TOMBSTONE_REMOVAL_PERIOD_MS / 2);
-        return Clock.currentTimeMillis() > threshold;
     }
 
     private void createLocalEntry(ReplicationMessage update, K marshalledKey) {
         V marshalledValue = (V) replicatedRecordStore.marshallValue(update.getValue());
-        VectorClockTimestamp timestamp = update.getVectorClockTimestamp();
         int updateHash = update.getUpdateHash();
         long ttlMillis = update.getTtlMillis();
         storage.put(marshalledKey,
-                new ReplicatedRecord<K, V>(marshalledKey, marshalledValue, timestamp, updateHash, ttlMillis));
+                new ReplicatedRecord<K, V>(marshalledKey, marshalledValue, updateHash, ttlMillis));
         if (ttlMillis > 0) {
             replicatedRecordStore.scheduleTtlEntry(ttlMillis, marshalledKey, marshalledValue);
         } else {
@@ -383,15 +334,13 @@ public class ReplicationPublisher<K, V>
         replicatedRecordStore.fireEntryListenerEvent(update.getKey(), null, update.getValue());
     }
 
-    private void applyTheUpdate(ReplicationMessage<K, V> update, ReplicatedRecord<K, V> localEntry) {
-        VectorClockTimestamp remoteVectorClockTimestamp = update.getVectorClockTimestamp();
+    private void updateLocalEntry(ReplicationMessage<K, V> update, ReplicatedRecord<K, V> localEntry) {
         K marshalledKey = (K) replicatedRecordStore.marshallKey(update.getKey());
         V marshalledValue = (V) replicatedRecordStore.marshallValue(update.getValue());
         long ttlMillis = update.getTtlMillis();
         long oldTtlMillis = localEntry.getTtlMillis();
         Object oldValue = localEntry.setValueInternal(marshalledValue, update.getUpdateHash(), ttlMillis);
 
-        localEntry.applyVectorClock(remoteVectorClockTimestamp);
         if (ttlMillis > 0 || update.isRemove()) {
             replicatedRecordStore.scheduleTtlEntry(ttlMillis, marshalledKey, null);
         } else {

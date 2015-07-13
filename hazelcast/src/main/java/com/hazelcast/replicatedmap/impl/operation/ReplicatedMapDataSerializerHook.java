@@ -24,7 +24,6 @@ import com.hazelcast.nio.serialization.impl.FactoryIdHelper;
 import com.hazelcast.replicatedmap.impl.messages.MultiReplicationMessage;
 import com.hazelcast.replicatedmap.impl.messages.ReplicationMessage;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecord;
-import com.hazelcast.replicatedmap.impl.record.VectorClockTimestamp;
 import com.hazelcast.util.ConstructorFunction;
 
 import static com.hazelcast.nio.serialization.impl.FactoryIdHelper.REPLICATED_MAP_DS_FACTORY;
@@ -40,7 +39,6 @@ public class ReplicatedMapDataSerializerHook
 
     public static final int F_ID = FactoryIdHelper.getFactoryId(REPLICATED_MAP_DS_FACTORY, REPLICATED_MAP_DS_FACTORY_ID);
 
-    public static final int VECTOR = 0;
     public static final int RECORD = 1;
     public static final int REPL_UPDATE_MESSAGE = 2;
     public static final int REPL_CLEAR_MESSAGE = 3;
@@ -60,11 +58,6 @@ public class ReplicatedMapDataSerializerHook
     @Override
     public DataSerializableFactory createFactory() {
         ConstructorFunction<Integer, IdentifiedDataSerializable>[] constructors = new ConstructorFunction[LEN];
-        constructors[VECTOR] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new VectorClockTimestamp();
-            }
-        };
         constructors[RECORD] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new ReplicatedRecord();
@@ -73,11 +66,6 @@ public class ReplicatedMapDataSerializerHook
         constructors[REPL_UPDATE_MESSAGE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new ReplicationMessage();
-            }
-        };
-        constructors[REPL_CLEAR_MESSAGE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new VectorClockTimestamp();
             }
         };
         constructors[REPL_MULTI_UPDATE_MESSAGE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {

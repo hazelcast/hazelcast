@@ -80,11 +80,10 @@ final class RemoteProvisionTask<K, V>
         int hash = replicatedRecord.getLatestUpdateHash();
         Object key = replicatedRecordStore.unmarshallKey(replicatedRecord.getKeyInternal());
         Object value = replicatedRecordStore.unmarshallValue(replicatedRecord.getValueInternal());
-        VectorClockTimestamp vectorClockTimestamp = replicatedRecord.getVectorClockTimestamp();
         long originalTtlMillis = replicatedRecord.getTtlMillis();
         long remainingTtlMillis = getRemainingTtl(replicatedRecord);
         if (originalTtlMillis == 0 || remainingTtlMillis > 0) {
-            recordCache[recordCachePos++] = new ReplicatedRecord(key, value, vectorClockTimestamp, hash, remainingTtlMillis);
+            recordCache[recordCachePos++] = new ReplicatedRecord(key, value, hash, remainingTtlMillis);
         }
 
         if (finalRecord) {

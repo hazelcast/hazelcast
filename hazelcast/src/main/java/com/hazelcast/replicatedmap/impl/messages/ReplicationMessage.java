@@ -22,8 +22,6 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.replicatedmap.impl.operation.ReplicatedMapDataSerializerHook;
-import com.hazelcast.replicatedmap.impl.record.VectorClockTimestamp;
-
 import java.io.IOException;
 
 /**
@@ -32,13 +30,11 @@ import java.io.IOException;
  * @param <K> key type
  * @param <V> value type
  */
-public class ReplicationMessage<K, V>
-        implements IdentifiedDataSerializable {
+public class ReplicationMessage<K, V> implements IdentifiedDataSerializable {
 
     private String name;
     private K key;
     private V value;
-    private VectorClockTimestamp vectorClockTimestamp;
     private Member origin;
     private int updateHash;
     private long ttlMillis;
@@ -46,11 +42,10 @@ public class ReplicationMessage<K, V>
     public ReplicationMessage() {
     }
 
-    public ReplicationMessage(String name, K key, V v, VectorClockTimestamp timestamp, Member origin, int hash, long ttlMillis) {
+    public ReplicationMessage(String name, K key, V v, Member origin, int hash, long ttlMillis) {
         this.name = name;
         this.key = key;
         this.value = v;
-        this.vectorClockTimestamp = timestamp;
         this.origin = origin;
         this.updateHash = hash;
         this.ttlMillis = ttlMillis;
@@ -66,10 +61,6 @@ public class ReplicationMessage<K, V>
 
     public V getValue() {
         return value;
-    }
-
-    public VectorClockTimestamp getVectorClockTimestamp() {
-        return vectorClockTimestamp;
     }
 
     public Member getOrigin() {
@@ -93,7 +84,6 @@ public class ReplicationMessage<K, V>
         out.writeUTF(name);
         out.writeObject(key);
         out.writeObject(value);
-        vectorClockTimestamp.writeData(out);
         origin.writeData(out);
         out.writeInt(updateHash);
         out.writeLong(ttlMillis);
@@ -104,8 +94,6 @@ public class ReplicationMessage<K, V>
         name = in.readUTF();
         key = (K) in.readObject();
         value = (V) in.readObject();
-        vectorClockTimestamp = new VectorClockTimestamp();
-        vectorClockTimestamp.readData(in);
         origin = new MemberImpl();
         origin.readData(in);
         updateHash = in.readInt();
@@ -124,8 +112,8 @@ public class ReplicationMessage<K, V>
 
     @Override
     public String toString() {
-        return "ReplicationMessage{" + "key=" + key + ", value=" + value + ", vectorClockTimestamp=" + vectorClockTimestamp
-                + ", origin=" + origin + ", updateHash=" + updateHash + ", ttlMillis=" + ttlMillis + '}';
+        return "ReplicationMessage{" + "key=" + key + ", value=" + value + ", origin=" + origin
+                + ", updateHash=" + updateHash + ", ttlMillis=" + ttlMillis + '}';
     }
 
 }

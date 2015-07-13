@@ -16,16 +16,13 @@
 
 package com.hazelcast.replicatedmap.impl.record;
 
-import com.hazelcast.core.Member;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.replicatedmap.impl.operation.ReplicatedMapDataSerializerHook;
 import com.hazelcast.util.Clock;
-
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
-import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
 /**
  * A ReplicatedRecord is the actual data holding entity. It also collects statistic metadata.
@@ -37,9 +34,6 @@ public class ReplicatedRecord<K, V> implements IdentifiedDataSerializable {
 
     private static final AtomicLongFieldUpdater<ReplicatedRecord> HITS_UPDATER = AtomicLongFieldUpdater
             .newUpdater(ReplicatedRecord.class, "hits");
-    private static final AtomicReferenceFieldUpdater<ReplicatedRecord, VectorClockTimestamp> VECTOR_CLOCK_UPDATER =
-            AtomicReferenceFieldUpdater.newUpdater(ReplicatedRecord.class, VectorClockTimestamp.class, "vectorClockTimestamp");
-
     // These fields are only accessed through the updaters
     @SuppressWarnings("unused")
     private volatile long hits;
@@ -48,7 +42,6 @@ public class ReplicatedRecord<K, V> implements IdentifiedDataSerializable {
 
     private K key;
     private V value;
-    private volatile VectorClockTimestamp vectorClockTimestamp;
     private int latestUpdateHash;
     private long ttlMillis;
     private volatile long updateTime = Clock.currentTimeMillis();
@@ -56,10 +49,9 @@ public class ReplicatedRecord<K, V> implements IdentifiedDataSerializable {
     public ReplicatedRecord() {
     }
 
-    public ReplicatedRecord(K key, V value, VectorClockTimestamp vectorClockTimestamp, int hash, long ttlMillis) {
+    public ReplicatedRecord(K key, V value, int hash, long ttlMillis) {
         this.key = key;
         this.value = value;
-        this.vectorClockTimestamp = vectorClockTimestamp;
         this.latestUpdateHash = hash;
         this.ttlMillis = ttlMillis;
     }
@@ -84,44 +76,6 @@ public class ReplicatedRecord<K, V> implements IdentifiedDataSerializable {
 
     public boolean isTombstone() {
         return value == null;
-    }
-
-    public VectorClockTimestamp getVectorClockTimestamp() {
-        return vectorClockTimestamp;
-    }
-
-    public VectorClockTimestamp applyAndIncrementVectorClock(VectorClockTimestamp otherVectorClockTimestamp, Member member) {
-        for (;;) {
-            VectorClockTimestamp vectorClockTimestamp = this.vectorClockTimestamp;
-            VectorClockTimestamp vectorClockTimestampCopy = VectorClockTimestamp.copyVector(vectorClockTimestamp);
-            vectorClockTimestampCopy = vectorClockTimestampCopy.applyVector(otherVectorClockTimestamp);
-            vectorClockTimestampCopy = vectorClockTimestampCopy.incrementClock(member);
-            if (VECTOR_CLOCK_UPDATER.compareAndSet(this, vectorClockTimestamp, vectorClockTimestampCopy)) {
-                return vectorClockTimestampCopy;
-            }
-        }
-    }
-
-    public VectorClockTimestamp applyVectorClock(VectorClockTimestamp otherVectorClockTimestamp) {
-        for (;;) {
-            VectorClockTimestamp vectorClockTimestamp = this.vectorClockTimestamp;
-            VectorClockTimestamp vectorClockTimestampCopy = VectorClockTimestamp.copyVector(vectorClockTimestamp);
-            vectorClockTimestampCopy = vectorClockTimestampCopy.applyVector(otherVectorClockTimestamp);
-            if (VECTOR_CLOCK_UPDATER.compareAndSet(this, vectorClockTimestamp, vectorClockTimestampCopy)) {
-                return vectorClockTimestampCopy;
-            }
-        }
-    }
-
-    public VectorClockTimestamp incrementVectorClock(Member member) {
-        for (;;) {
-            VectorClockTimestamp vectorClockTimestamp = this.vectorClockTimestamp;
-            VectorClockTimestamp vectorClockTimestampCopy = VectorClockTimestamp.copyVector(vectorClockTimestamp);
-            vectorClockTimestampCopy = vectorClockTimestampCopy.incrementClock(member);
-            if (VECTOR_CLOCK_UPDATER.compareAndSet(this, vectorClockTimestamp, vectorClockTimestampCopy)) {
-                return vectorClockTimestampCopy;
-            }
-        }
     }
 
     public long getTtlMillis() {
@@ -178,7 +132,6 @@ public class ReplicatedRecord<K, V> implements IdentifiedDataSerializable {
             throws IOException {
         out.writeObject(key);
         out.writeObject(value);
-        vectorClockTimestamp.writeData(out);
         out.writeInt(latestUpdateHash);
         out.writeLong(ttlMillis);
     }
@@ -188,8 +141,6 @@ public class ReplicatedRecord<K, V> implements IdentifiedDataSerializable {
             throws IOException {
         key = in.readObject();
         value = in.readObject();
-        vectorClockTimestamp = new VectorClockTimestamp();
-        vectorClockTimestamp.readData(in);
         latestUpdateHash = in.readInt();
         ttlMillis = in.readLong();
     }
@@ -238,7 +189,6 @@ public class ReplicatedRecord<K, V> implements IdentifiedDataSerializable {
         final StringBuilder sb = new StringBuilder("ReplicatedRecord{");
         sb.append("key=").append(key);
         sb.append(", value=").append(value);
-        sb.append(", vector=").append(vectorClockTimestamp);
         sb.append(", latestUpdateHash=").append(latestUpdateHash);
         sb.append(", ttlMillis=").append(ttlMillis);
         sb.append('}');

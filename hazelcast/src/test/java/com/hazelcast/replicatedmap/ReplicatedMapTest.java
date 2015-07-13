@@ -25,17 +25,12 @@ import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecord;
-import com.hazelcast.replicatedmap.impl.record.VectorClockTimestamp;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.WatchedOperationExecutor;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
-
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -45,12 +40,14 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -338,79 +335,6 @@ public class ReplicatedMapTest extends ReplicatedMapBaseTest {
     @Test
     public void testUpdateBinaryDelayDefault() throws Exception {
         testUpdate(buildConfig(InMemoryFormat.BINARY, ReplicatedMapConfig.DEFAULT_REPLICATION_DELAY_MILLIS));
-    }
-
-    @Test
-    public void testVectorClocksAreSameAfterConflictResolutionBinaryDelay0() throws Exception {
-        Config config = buildConfig(InMemoryFormat.BINARY, 0);
-        testVectorClocksAreSameAfterConflictResolution(config);
-    }
-
-    @Test
-    public void testVectorClocksAreSameAfterConflictResolutionBinaryDelayDefault() throws Exception {
-        Config config = buildConfig(InMemoryFormat.BINARY, ReplicatedMapConfig.DEFAULT_REPLICATION_DELAY_MILLIS);
-        testVectorClocksAreSameAfterConflictResolution(config);
-    }
-
-    @Test
-    public void testVectorClocksAreSameAfterConflictResolutionObjectDelay0() throws Exception {
-        Config config = buildConfig(InMemoryFormat.OBJECT, 0);
-        testVectorClocksAreSameAfterConflictResolution(config);
-    }
-
-    @Test
-    public void testVectorClocksAreSameAfterConflictResolutionObjectDelayDefault() throws Exception {
-        Config config = buildConfig(InMemoryFormat.OBJECT, ReplicatedMapConfig.DEFAULT_REPLICATION_DELAY_MILLIS);
-        testVectorClocksAreSameAfterConflictResolution(config);
-    }
-
-    private void testVectorClocksAreSameAfterConflictResolution(Config config) throws InterruptedException {
-        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
-        final HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(config);
-        final HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(config);
-        final String replicatedMapName = randomMapName();
-        final ReplicatedMap<String, String> map1 = instance1.getReplicatedMap(replicatedMapName);
-        final ReplicatedMap<String, String> map2 = instance2.getReplicatedMap(replicatedMapName);
-
-        final int collidingKeyCount = 15;
-        final int operations = 1000;
-        final Random random = new Random();
-        Thread thread1 = createPutOperationThread(map1, collidingKeyCount, operations, random);
-        Thread thread2 = createPutOperationThread(map2, collidingKeyCount, operations, random);
-        thread1.start();
-        thread2.start();
-        thread1.join();
-        thread2.join();
-
-        for (int i = 0; i < collidingKeyCount; i++) {
-            final String key = "foo-" + i;
-            assertTrueEventually(new AssertTask() {
-                @Override
-                public void run() throws Exception {
-                    VectorClockTimestamp v1 = getVectorClockForKey(map1, key);
-                    VectorClockTimestamp v2 = getVectorClockForKey(map2, key);
-                    assertEquals(v1, v2);
-                    assertEquals(map1.get(key), map2.get(key));
-                }
-            });
-        }
-    }
-
-    private Thread createPutOperationThread(final ReplicatedMap<String, String> map, final int collidingKeyCount,
-                                            final int operations, final Random random) {
-        return new Thread(new Runnable() {
-            @Override
-            public void run() {
-                for (int i = 0; i < operations; i++) {
-                    map.put("foo-" + random.nextInt(collidingKeyCount), "bar");
-                }
-            }
-        });
-    }
-
-    private VectorClockTimestamp getVectorClockForKey(ReplicatedMap map, Object key) throws Exception {
-        ReplicatedRecord foo = getReplicatedRecord(map, key);
-        return foo.getVectorClockTimestamp();
     }
 
     private void testUpdate(Config config) throws Exception {
@@ -1220,7 +1144,7 @@ public class ReplicatedMapTest extends ReplicatedMapBaseTest {
     private <V> List<V> copyToList(Collection<V> collection) {
         List<V> values = new ArrayList<V>();
         Iterator<V> iterator = collection.iterator();
-        while (iterator.hasNext())  {
+        while (iterator.hasNext()) {
             values.add(iterator.next());
         }
         return values;
