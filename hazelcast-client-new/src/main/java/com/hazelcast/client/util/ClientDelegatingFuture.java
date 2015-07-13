@@ -86,6 +86,10 @@ public class ClientDelegatingFuture<V> implements ICompletableFuture<V> {
         return done ? done : future.isDone();
     }
 
+    public Data getValueData() {
+        return valueData;
+    }
+
     @Override
     public V get() throws InterruptedException, ExecutionException {
         try {
