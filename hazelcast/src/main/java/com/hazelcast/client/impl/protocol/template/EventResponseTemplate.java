@@ -62,10 +62,10 @@ public interface EventResponseTemplate {
     void DistributedObject(String name, String serviceName, String eventType);
 
     @EventResponse(EventMessageConst.EVENT_CACHEINVALIDATION)
-    void CacheInvalidation(String name, @Nullable Data key, String sourceUuid);
+    void CacheInvalidation(String name, @Nullable Data key, @Nullable String sourceUuid);
 
     @EventResponse(EventMessageConst.EVENT_CACHEBATCHINVALIDATION)
-    void CacheBatchInvalidation(String name, List<Data> keys, List<String> sourceUuids);
+    void CacheBatchInvalidation(String name, List<Data> keys, @Nullable List<String> sourceUuids);
 
     @EventResponse(EventMessageConst.EVENT_MAPPARTITIONLOST)
     void MapPartitionLost(int partitionId, String uuid);
