@@ -21,6 +21,7 @@ import com.hazelcast.nio.SocketWritable;
 import com.hazelcast.nio.ascii.SocketTextWriter;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.EmptyStatement;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -210,7 +211,7 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
 
     @Override
     @SuppressWarnings("unchecked")
-    @edu.umd.cs.findbugs.annotations.SuppressWarnings(value = "VO_VOLATILE_INCREMENT",
+    @SuppressFBWarnings(value = "VO_VOLATILE_INCREMENT",
             justification = "eventCount is accessed by a single thread only.")
     public void handle() {
         eventCount++;

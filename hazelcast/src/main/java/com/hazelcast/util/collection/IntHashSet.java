@@ -1,4 +1,5 @@
 /*
+ * Copyright 2014 Real Logic Ltd.
  * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,6 +20,7 @@ package com.hazelcast.util.collection;
 import com.hazelcast.util.QuickMath;
 import com.hazelcast.util.function.Predicate;
 
+import java.lang.reflect.Array;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Set;
@@ -181,14 +183,6 @@ public final class IntHashSet implements Set<Integer> {
     /**
      * {@inheritDoc}
      */
-    @SuppressWarnings("unchecked")
-    public <T> T[] toArray(final T[] ignore) {
-        return (T[]) (Object) Arrays.copyOf(values, values.length);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
     public boolean addAll(final Collection<? extends Integer> coll) {
         return addAllCapture(coll);
     }
@@ -212,8 +206,7 @@ public final class IntHashSet implements Set<Integer> {
 
     private <E> boolean containsAllCapture(Collection<E> coll) {
         return conjunction(coll, new Predicate<E>() {
-            @Override
-            public boolean test(E value) {
+            @Override public boolean test(E value) {
                 return contains(value);
             }
         });
@@ -273,8 +266,7 @@ public final class IntHashSet implements Set<Integer> {
 
     private <E> boolean removeAllCapture(final Collection<E> coll) {
         return conjunction(coll, new Predicate<E>() {
-            @Override
-            public boolean test(E value) {
+            @Override public boolean test(E value) {
                 return remove(value);
             }
         });
@@ -336,11 +328,38 @@ public final class IntHashSet implements Set<Integer> {
      */
     public Object[] toArray() {
         final int[] values = this.values;
-        final Object[] array = new Object[values.length];
-        for (int i = 0; i < values.length; i++) {
-            array[i] = values[i];
+        final Object[] ret = new Object[size];
+        for (int from = 0, to = 0; from < values.length; from++) {
+            final int val = values[from];
+            if (val != missingValue) {
+                ret[to++] = val;
+            }
         }
-        return array;
+        return ret;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @SuppressWarnings("unchecked")
+    public <T> T[] toArray(T[] into) {
+        checkNotNull(into);
+        final Class<?> aryType = into.getClass().getComponentType();
+        if (!aryType.isAssignableFrom(Integer.class)) {
+            throw new ArrayStoreException("Cannot store Integers in array of type " + aryType);
+        }
+        final int[] values = this.values;
+        final Object[] ret = into.length >= this.size ? into : (T[]) Array.newInstance(aryType, this.size);
+        for (int from = 0, to = 0; from < values.length; from++) {
+            final int val = values[from];
+            if (val != missingValue) {
+                ret[to++] = val;
+            }
+        }
+        if (ret.length > values.length) {
+            ret[values.length] = null;
+        }
+        return (T[]) ret;
     }
 
     /**

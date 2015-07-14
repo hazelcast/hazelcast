@@ -27,7 +27,7 @@ import com.hazelcast.replicatedmap.impl.record.AbstractReplicatedRecordStore;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecord;
 import com.hazelcast.replicatedmap.impl.record.ReplicationPublisher;
 import com.hazelcast.replicatedmap.impl.record.VectorClockTimestamp;
-import edu.umd.cs.findbugs.annotations.SuppressWarnings;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 
@@ -53,8 +53,8 @@ public class ReplicatedMapInitChunkOperation
         this.notYetReadyChooseSomeoneElse = true;
     }
 
-    // Findbugs warning suppressed since the array is serialized anyways and is never about to be changed
-    @SuppressWarnings("EI_EXPOSE_REP")
+    @SuppressFBWarnings(value = "EI_EXPOSE_REP", justification =
+            "array is serialized anyways and is never about to be changed")
     public ReplicatedMapInitChunkOperation(String name, Member origin, ReplicatedRecord[] replicatedRecords, int recordCount,
                                            boolean finalChunk) {
         this.name = name;

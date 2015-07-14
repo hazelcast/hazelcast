@@ -34,6 +34,7 @@ import com.hazelcast.nio.tcp.iobalancer.IOBalancer;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.executor.StripedRunnable;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 import java.net.Socket;
@@ -181,14 +182,12 @@ public class TcpIpConnectionManager implements ConnectionManager {
         return activeConnections;
     }
 
-    // just for testing
-    @edu.umd.cs.findbugs.annotations.SuppressWarnings({"EI_EXPOSE_REP" })
+    @SuppressFBWarnings(value = "EI_EXPOSE_REP", justification = "used only for testing")
     public InSelectorImpl[] getInSelectors() {
         return inSelectors;
     }
 
-    // just for testing
-    @edu.umd.cs.findbugs.annotations.SuppressWarnings({"EI_EXPOSE_REP" })
+    @SuppressFBWarnings(value = "EI_EXPOSE_REP", justification = "used only for testing")
     public OutSelectorImpl[] getOutSelectors() {
         return outSelectors;
     }

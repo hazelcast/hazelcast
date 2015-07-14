@@ -30,6 +30,7 @@ import com.hazelcast.spi.impl.operationexecutor.OperationHostileThread;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunner;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunnerFactory;
 import com.hazelcast.spi.impl.operationexecutor.ResponsePacketHandler;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.concurrent.TimeUnit;
 
@@ -189,13 +190,13 @@ public final class ClassicOperationExecutor implements OperationExecutor {
         return thread;
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressWarnings({"EI_EXPOSE_REP" })
+    @SuppressFBWarnings({"EI_EXPOSE_REP" })
     @Override
     public OperationRunner[] getPartitionOperationRunners() {
         return partitionOperationRunners;
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressWarnings({"EI_EXPOSE_REP" })
+    @SuppressFBWarnings({"EI_EXPOSE_REP" })
     @Override
     public OperationRunner[] getGenericOperationRunners() {
         return genericOperationRunners;

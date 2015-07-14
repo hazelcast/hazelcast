@@ -19,7 +19,7 @@ package com.hazelcast.mapreduce.impl.task;
 import com.hazelcast.mapreduce.JobPartitionState;
 import com.hazelcast.mapreduce.JobProcessInformation;
 import com.hazelcast.nio.Address;
-import edu.umd.cs.findbugs.annotations.SuppressWarnings;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
@@ -35,12 +35,11 @@ import static com.hazelcast.util.Preconditions.isNotNull;
 public class JobProcessInformationImpl
         implements JobProcessInformation {
 
-    //CHECKSTYLE:OFF
-    private static final AtomicReferenceFieldUpdater<JobProcessInformationImpl, JobPartitionState[]> PARTITION_STATE_UPDATER = //
-            AtomicReferenceFieldUpdater.newUpdater(JobProcessInformationImpl.class, JobPartitionState[].class, "partitionStates");
-    private static final AtomicIntegerFieldUpdater<JobProcessInformationImpl> PROCESSED_RECORDS_UPDATER = AtomicIntegerFieldUpdater
-            .newUpdater(JobProcessInformationImpl.class, "processedRecords");
-    //CHECKSTYLE:ON
+    private static final AtomicReferenceFieldUpdater<JobProcessInformationImpl, JobPartitionState[]>
+            PARTITION_STATE_UPDATER = AtomicReferenceFieldUpdater.newUpdater(JobProcessInformationImpl.class,
+            JobPartitionState[].class, "partitionStates");
+    private static final AtomicIntegerFieldUpdater<JobProcessInformationImpl> PROCESSED_RECORDS_UPDATER =
+            AtomicIntegerFieldUpdater.newUpdater(JobProcessInformationImpl.class, "processedRecords");
 
     private final JobSupervisor supervisor;
 
@@ -55,11 +54,10 @@ public class JobProcessInformationImpl
     }
 
     @Override
-    // Expose warning suppressed, this exposed array is used a lot on internals
-    // and is explicitly exposed for speed / object creation reasons.
-    // It is never exposed to the end user (either through serialization cycle
-    // or by hiding in through a wrapper class
-    @SuppressWarnings("EI_EXPOSE_REP")
+    @SuppressFBWarnings(value = "EI_EXPOSE_REP", justification = "Exposed array is used a lot on internals"
+            + " and is explicitly exposed for speed / object creation reasons."
+            + " It is never exposed to the end user (either through serialization cycle"
+            + " or by hiding in through a wrapper class")
     public JobPartitionState[] getPartitionStates() {
         return partitionStates;
     }

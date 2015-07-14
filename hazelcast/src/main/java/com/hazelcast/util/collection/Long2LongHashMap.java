@@ -1,4 +1,5 @@
 /*
+ * Copyright 2014 Real Logic Ltd.
  * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -21,11 +22,13 @@ import com.hazelcast.util.function.BiConsumer;
 import com.hazelcast.util.function.LongLongConsumer;
 import com.hazelcast.util.function.Predicate;
 import com.hazelcast.util.function.Supplier;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Set;
 
 /**
@@ -264,6 +267,11 @@ public class Long2LongHashMap implements Map<Long, Long> {
 
     /**
      * {@inheritDoc}
+     * This set's iterator also implements <code>Map.Entry</code>
+     * so the <code>next()</code> method can just return the iterator
+     * instance itself with no heap allocation. This characteristic
+     * makes the set unusable wherever the returned entries are
+     * retained (such as <code>coll.addAll(entrySet)</code>.
      */
     public Set<Entry<Long, Long>> entrySet() {
         return entrySet;
@@ -366,21 +374,23 @@ public class Long2LongHashMap implements Map<Long, Long> {
     // ---------------- Utility Classes ----------------
 
     private abstract class AbstractIterator {
-        protected final int startIndex;
+        protected final int firstIndex;
 
         protected int index;
 
-        protected AbstractIterator(final int startIndex) {
-            this.startIndex = startIndex;
-            index = startIndex;
+        protected AbstractIterator(final int firstIndex) {
+            this.firstIndex = firstIndex;
+            index = firstIndex - 2;
         }
 
         public boolean hasNext() {
-            while (entries[index] == missingValue) {
+            boolean beforeFirst = index < 0;
+            while (beforeFirst || entries[index] == missingValue) {
                 nextIndex();
-                if (index == startIndex) {
+                if (index == firstIndex && !beforeFirst) {
                     return false;
                 }
+                beforeFirst = false;
             }
             return true;
         }
@@ -395,12 +405,12 @@ public class Long2LongHashMap implements Map<Long, Long> {
     }
 
     private final class LongIterator extends AbstractIterator implements Iterator<Long> {
-        private LongIterator(final int startIndex) {
-            super(startIndex);
+        private LongIterator(final int firstIndex) {
+            super(firstIndex);
         }
 
-        private LongIterator reset() {
-            index = startIndex;
+        LongIterator reset() {
+            index = firstIndex - 2;
             return this;
         }
 
@@ -409,23 +419,40 @@ public class Long2LongHashMap implements Map<Long, Long> {
         }
 
         public long nextValue() {
-            final long entry = entries[index];
+            if (!hasNext()) {
+                throw new NoSuchElementException();
+            }
+            final long ret = entries[index];
             nextIndex();
-            return entry;
+            return ret;
         }
     }
 
-    private final class EntryIterator extends AbstractIterator implements Iterator<Entry<Long, Long>>, Entry<Long,
-            Long> {
+    @SuppressFBWarnings(value = "PZ_DONT_REUSE_ENTRY_OBJECTS_IN_ITERATORS",
+            justification = "deliberate, documented choice")
+    private final class EntryIterator
+            extends AbstractIterator
+            implements Iterator<Entry<Long, Long>>, Entry<Long, Long> {
+
         private long key;
         private long value;
 
-        private EntryIterator() {
+        EntryIterator() {
             super(0);
         }
 
-        private EntryIterator reset() {
-            index = startIndex;
+        EntryIterator reset() {
+            index = firstIndex - 2;
+            return this;
+        }
+
+        public Entry<Long, Long> next() {
+            if (!hasNext()) {
+                throw new NoSuchElementException();
+            }
+            key = entries[index];
+            value = entries[index + 1];
+            nextIndex();
             return this;
         }
 
@@ -437,15 +464,8 @@ public class Long2LongHashMap implements Map<Long, Long> {
             return value;
         }
 
-        public Long setValue(final Long value) {
+        public Long setValue(final Long ignored) {
             throw new UnsupportedOperationException();
-        }
-
-        public Entry<Long, Long> next() {
-            key = entries[index];
-            value = entries[index + 1];
-            nextIndex();
-            return this;
         }
     }
 

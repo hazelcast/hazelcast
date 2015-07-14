@@ -40,6 +40,7 @@ import com.hazelcast.core.MessageListener;
 import com.hazelcast.core.MultiMap;
 import com.hazelcast.core.Partition;
 import com.hazelcast.util.Clock;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -215,7 +216,7 @@ public class ConsoleApp implements EntryListener, ItemListener, MessageListener 
      *
      * @param commandInputted
      */
-    @edu.umd.cs.findbugs.annotations.SuppressWarnings("DM_EXIT")
+    @SuppressFBWarnings("DM_EXIT")
     protected void handleCommand(String commandInputted) {
 
         String command = commandInputted;
@@ -545,7 +546,7 @@ public class ConsoleApp implements EntryListener, ItemListener, MessageListener 
         }
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressWarnings("DM_GC")
+    @SuppressFBWarnings("DM_GC")
     private void handleJvm() {
         System.gc();
         println("Memory max: " + Runtime.getRuntime().maxMemory() / ONE_KB / ONE_KB

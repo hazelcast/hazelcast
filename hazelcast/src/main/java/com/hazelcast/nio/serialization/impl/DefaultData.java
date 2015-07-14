@@ -19,10 +19,11 @@ package com.hazelcast.nio.serialization.impl;
 import com.hazelcast.nio.Bits;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.util.HashUtil;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.Arrays;
 
-@edu.umd.cs.findbugs.annotations.SuppressWarnings("EI_EXPOSE_REP")
+@SuppressFBWarnings("EI_EXPOSE_REP")
 public final class DefaultData implements Data {
   // type and partition_hash are always written with BIG_ENDIAN byte-order
     public static final int TYPE_OFFSET = 0;

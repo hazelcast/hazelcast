@@ -24,6 +24,7 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunner;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.util.executor.HazelcastManagedThread;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.concurrent.TimeUnit;
 
@@ -102,7 +103,7 @@ public abstract class OperationThread extends HazelcastManagedThread {
         }
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressWarnings({"VO_VOLATILE_INCREMENT" })
+    @SuppressFBWarnings({"VO_VOLATILE_INCREMENT" })
     private void process(Object task) {
         processedCount++;
 

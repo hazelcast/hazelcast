@@ -20,6 +20,7 @@ import com.hazelcast.core.Member;
 import com.hazelcast.instance.AbstractMember;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.Map;
 
@@ -72,7 +73,7 @@ public final class MemberImpl
         notSupportedOnClient();
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressWarnings("NP_BOOLEAN_RETURN_NULL")
+    @SuppressFBWarnings(value = "NP_BOOLEAN_RETURN_NULL", justification = "null means 'missing'")
     @Override
     public Boolean getBooleanAttribute(String key) {
         final Object attribute = getAttribute(key);

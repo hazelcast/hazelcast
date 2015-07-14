@@ -21,6 +21,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.StreamSerializer;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.Externalizable;
 import java.io.IOException;
@@ -220,7 +221,7 @@ public final class DefaultSerializers {
             return result;
         }
 
-        @edu.umd.cs.findbugs.annotations.SuppressWarnings({"OS_OPEN_STREAM" })
+        @SuppressFBWarnings({"OS_OPEN_STREAM" })
         @Override
         public void write(final ObjectDataOutput out, final Object obj) throws IOException {
             final ObjectOutputStream objectOutputStream;

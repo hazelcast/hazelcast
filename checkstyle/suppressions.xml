@@ -553,7 +553,7 @@
     <suppress checks="JavadocVariable|VisibilityModifier" files="com.hazelcast.internal.management.dto.*"/>
 
     <!-- Agrona backport -->
-    <suppress checks="MagicNumber" files="com/hazelcast/util/collection/" />
+    <suppress checks="MagicNumber|Header" files="com/hazelcast/util/collection/" />
     <suppress checks="JavadocType" files="com/hazelcast/util/collection/.*2ObjectHashMap" />
     <suppress checks="MethodCount" files="com/hazelcast/util/collection/.*HashSet" />
 

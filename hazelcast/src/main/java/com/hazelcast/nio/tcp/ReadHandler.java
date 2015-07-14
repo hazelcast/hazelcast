@@ -20,6 +20,7 @@ import com.hazelcast.nio.ConnectionType;
 import com.hazelcast.nio.Protocols;
 import com.hazelcast.nio.ascii.SocketTextReader;
 import com.hazelcast.util.Clock;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.EOFException;
 import java.io.IOException;
@@ -79,7 +80,7 @@ public final class ReadHandler extends AbstractSelectionHandler {
     }
 
     @Override
-    @edu.umd.cs.findbugs.annotations.SuppressWarnings(value = "VO_VOLATILE_INCREMENT",
+    @SuppressFBWarnings(value = "VO_VOLATILE_INCREMENT",
             justification = "eventCount is accessed by a single thread only.")
     public void handle() {
         eventCount++;

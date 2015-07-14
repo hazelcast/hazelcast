@@ -33,7 +33,6 @@ public class ReadManyRequest extends RingbufferRequest {
     private long startSequence;
     private int minCount;
     private int maxCount;
-    private Data filter;
 
     public ReadManyRequest() {
     }
@@ -43,7 +42,6 @@ public class ReadManyRequest extends RingbufferRequest {
         this.startSequence = startSequence;
         this.minCount = minCount;
         this.maxCount = maxCount;
-        this.filter = filter;
     }
 
     @Override

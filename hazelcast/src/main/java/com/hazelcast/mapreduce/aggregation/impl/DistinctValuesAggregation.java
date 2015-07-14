@@ -27,6 +27,7 @@ import com.hazelcast.mapreduce.aggregation.Supplier;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 import java.util.HashSet;
@@ -166,7 +167,7 @@ public class DistinctValuesAggregation<Key, Value, DistinctType>
      * @param <Value>        the input value type
      * @param <DistinctType> the type of distinct values
      */
-    @edu.umd.cs.findbugs.annotations.SuppressWarnings("SE_NO_SERIALVERSIONID")
+    @SuppressFBWarnings("SE_NO_SERIALVERSIONID")
     static class DistinctValueMapper<Key, Value, DistinctType>
             implements Mapper<Key, Value, Integer, DistinctType>, IdentifiedDataSerializable {
 

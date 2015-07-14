@@ -1,5 +1,6 @@
 /*
- * Copyright 2015 Real Logic Ltd.
+ * Copyright 2014 Real Logic Ltd.
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +23,10 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Set;
 
 import static org.hamcrest.Matchers.contains;
 import static org.junit.Assert.assertEquals;
@@ -226,5 +230,23 @@ public class IntHashSetTest {
         assertTrue(iter.hasNext());
         assertEquals(Integer.valueOf(2), iter.next());
         assertFalse(iter.hasNext());
+    }
+
+    @Test public void toArrayReturnsArrayOfAllElements() {
+        final IntHashSet initial = new IntHashSet(100, -1);
+        initial.add(1);
+        initial.add(13);
+        final Object[] ary = initial.toArray();
+        final Set<Object> fromArray = new HashSet<Object>(Arrays.asList(ary));
+        assertEquals(new HashSet<Object>(initial), fromArray);
+    }
+
+    @Test public void intoArrayReturnsArrayOfAllElements() {
+        final IntHashSet initial = new IntHashSet(100, -1);
+        initial.add(1);
+        initial.add(13);
+        final Object[] ary = initial.toArray(new Integer[2]);
+        final Set<Object> fromArray = new HashSet<Object>(Arrays.asList(ary));
+        assertEquals(new HashSet<Object>(initial), fromArray);
     }
 }
