@@ -54,9 +54,13 @@ public class TcpIpConnectionManager implements ConnectionManager {
 
     final int socketReceiveBufferSize;
 
+    final int socketClientReceiveBufferSize;
+
     final IOService ioService;
 
     final int socketSendBufferSize;
+
+    final int socketClientSendBufferSize;
 
     private final ConstructorFunction<Address, TcpIpConnectionMonitor> monitorConstructor
             = new ConstructorFunction<Address, TcpIpConnectionMonitor>() {
@@ -132,6 +136,8 @@ public class TcpIpConnectionManager implements ConnectionManager {
         this.logger = loggingService.getLogger(TcpIpConnectionManager.class.getName());
         this.socketReceiveBufferSize = ioService.getSocketReceiveBufferSize() * IOService.KILO_BYTE;
         this.socketSendBufferSize = ioService.getSocketSendBufferSize() * IOService.KILO_BYTE;
+        this.socketClientReceiveBufferSize = ioService.getSocketClientReceiveBufferSize() * IOService.KILO_BYTE;
+        this.socketClientSendBufferSize = ioService.getSocketClientSendBufferSize() * IOService.KILO_BYTE;
         this.socketLingerSeconds = ioService.getSocketLingerSeconds();
         this.socketConnectTimeoutSeconds = ioService.getSocketConnectTimeoutSeconds();
         this.socketKeepAlive = ioService.getSocketKeepAlive();

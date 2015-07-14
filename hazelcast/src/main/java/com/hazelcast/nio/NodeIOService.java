@@ -201,6 +201,18 @@ public class NodeIOService implements IOService {
     }
 
     @Override
+    public int getSocketClientReceiveBufferSize() {
+        int clientSendBuffer = this.node.getGroupProperties().SOCKET_CLIENT_RECEIVE_BUFFER_SIZE.getInteger();
+        return clientSendBuffer != -1 ? clientSendBuffer : getSocketReceiveBufferSize();
+    }
+
+    @Override
+    public int getSocketClientSendBufferSize() {
+        int clientReceiveBuffer = this.node.getGroupProperties().SOCKET_CLIENT_SEND_BUFFER_SIZE.getInteger();
+        return clientReceiveBuffer != -1 ? clientReceiveBuffer : getSocketReceiveBufferSize();
+    }
+
+    @Override
     public int getSocketLingerSeconds() {
         return this.node.getGroupProperties().SOCKET_LINGER_SECONDS.getInteger();
     }
