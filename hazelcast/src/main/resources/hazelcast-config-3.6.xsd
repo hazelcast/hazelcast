@@ -757,7 +757,7 @@
                <xs:documentation>
                    Name of the multimap.
                </xs:documentation>
-           </xs:annotation> 
+           </xs:annotation>
            <xs:simpleType>
                 <xs:restriction base="xs:string"/>
             </xs:simpleType>
@@ -971,7 +971,7 @@
                 <xs:annotation>
                     <xs:documentation>
                         The number of emitted values before a chunk is sent to the reducers.
-                        If your emitted values are big, you might want to change this to a lower value. If you want 
+                        If your emitted values are big, you might want to change this to a lower value. If you want
                         to better balance your work, you might want to change this to a higher value.
                         A value of 0 means immediate transmission, but remember that low values mean higher traffic
                         costs.
@@ -1707,8 +1707,22 @@
         <xs:sequence>
             <xs:element name="target-cluster" type="target-cluster" minOccurs="1" maxOccurs="unbounded"/>
         </xs:sequence>
-        <xs:attribute name="name" type="xs:string" use="required"/>
-        <xs:attribute name="snapshot-enabled" type="xs:boolean" use="optional" default="false"/>
+        <xs:attribute name="name" type="xs:string" use="required">
+            <xs:annotation>
+                <xs:documentation>
+                    Name for your WAN replication configuration.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="snapshot-enabled" type="xs:boolean" use="optional" default="false">
+            <xs:annotation>
+                <xs:documentation>
+                    Only valid when used with WanBatchReplication (enterprise only: target-cluster
+                    replication-impl). When set to true, only the latest events (based on key) are
+                    selected and sent in a batch.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
     </xs:complexType>
     <xs:complexType name="target-cluster">
         <xs:all>
@@ -1815,6 +1829,19 @@
         </xs:sequence>
         <xs:attribute name="enabled" type="xs:boolean" default="false"/>
         <xs:attribute name="group-type">
+            <xs:annotation>
+                <xs:documentation>
+                    When you enable partition grouping, Hazelcast presents three choices for you to configure
+                    partition groups.
+                    HOST_AWARE: You can group nodes automatically using the IP addresses of nodes, so nodes
+                    sharing the same network interface will be grouped together. All members on the same host
+                    (IP address or domain name) will be a single partition group.
+                    CUSTOM: You can do custom grouping using Hazelcast's interface matching configuration.
+                    This way, you can add different and multiple interfaces to a group.
+                    PER_MEMBER: You can give every member its own group. Each member is a group of its own
+                    and primary and backup partitions are distributed randomly (not on the same physical member).
+                </xs:documentation>
+            </xs:annotation>
             <xs:simpleType>
                 <xs:restriction base="non-space-string">
                     <xs:enumeration value="HOST_AWARE"/>
@@ -1862,10 +1889,35 @@
     </xs:complexType>
     <xs:complexType name="service">
         <xs:all>
-            <xs:element name="name" type="xs:string" minOccurs="1" maxOccurs="1"/>
-            <xs:element name="class-name" type="xs:string" minOccurs="0" maxOccurs="1"/>
-            <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="name" type="xs:string" minOccurs="1" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        Name of the service to be registered.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="class-name" type="xs:string" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        Name of the class that you develop for your service.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        The custom properties that you can add to your service. You enable/disable
+                        these properties and set their values using this element.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
             <xs:element name="configuration" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        You can include configuration items which you develop using the Config object
+                        in your code.
+                    </xs:documentation>
+                </xs:annotation>
                 <xs:complexType>
                     <xs:sequence>
                         <xs:any minOccurs="0" maxOccurs="unbounded"/>
@@ -2017,8 +2069,20 @@
     </xs:complexType>
     <xs:complexType name="cluster-group">
         <xs:all>
-            <xs:element name="name" type="xs:string" minOccurs="0" maxOccurs="1" default="dev"/>
-            <xs:element name="password" type="xs:string" minOccurs="0" maxOccurs="1" default="dev-pass"/>
+            <xs:element name="name" type="xs:string" minOccurs="0" maxOccurs="1" default="dev">
+                <xs:annotation>
+                    <xs:documentation>
+                        Name of the group to be created.
+	                </xs:documentation>
+	            </xs:annotation>
+	        </xs:element>
+            <xs:element name="password" type="xs:string" minOccurs="0" maxOccurs="1" default="dev-pass">
+                <xs:annotation>
+                    <xs:documentation>
+                        Password of the group to be created.
+	                </xs:documentation>
+	            </xs:annotation>
+	        </xs:element>
         </xs:all>
     </xs:complexType>
     <xs:complexType name="listeners">
@@ -2029,7 +2093,8 @@
 
     <xs:complexType name="listener-base">
         <xs:annotation>
-            <xs:documentation>One of the following: membership-listener, instance-listener, migration-listener or
+            <xs:documentation>
+                One of the following: membership-listener, instance-listener, migration-listener or
                 partition-lost-listener.
             </xs:documentation>
         </xs:annotation>
@@ -2435,18 +2500,75 @@
 
     <xs:complexType name="wan-replication-ref">
         <xs:all>
-            <xs:element name="merge-policy" type="xs:string" minOccurs="1" maxOccurs="1"/>
-            <xs:element name="republishing-enabled" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true"/>
+            <xs:element name="merge-policy" type="xs:string" minOccurs="1" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        Resolve conflicts that occurred when target cluster already has the replicated
+                        entry key.
+
+						4 merge policy implementations for IMap and 2 merge policy implementations for
+						ICache are provided out of the box.
+						
+						IMap has the following merge policies:
+						com.hazelcast.map.merge.PutIfAbsentMapMergePolicy: Incoming entry merges from the
+                        source map to the target map if it does not exist in the target map.
+						com.hazelcast.map.merge.HigherHitsMapMergePolicy: Incoming entry merges from the
+						source map to the target map if the source entry has more hits than the target one.
+						com.hazelcast.map.merge.PassThroughMergePolicy: Incoming entry merges from the
+						source map to the target map unless the incoming entry is not null.
+						com.hazelcast.map.merge.LatestUpdateMapMergePolicy: Incoming entry merges from the
+						source map to the target map if the source entry has been updated more recently
+						than the target entry. Please note that this merge policy can only be used when the
+						clusters' clocks are in sync.
+						
+						ICache has the following merge policies:
+						com.hazelcast.cache.merge.HigherHitsCacheMergePolicy: Incoming entry merges from
+						the source cache to the target cache if the source entry has more hits than the
+						target one.
+						com.hazelcast.cache.merge.PassThroughCacheMergePolicy: Incoming entry merges from
+						the source cache to the target cache unless the incoming entry is not null.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="republishing-enabled" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true">
+                <xs:annotation>
+                    <xs:documentation>
+                        When enabled, an incoming event to a member is forwarded to the target cluster of that member.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
         </xs:all>
-        <xs:attribute name="name" type="xs:string" use="required"/>
+        <xs:attribute name="name" type="xs:string" use="required">
+            <xs:annotation>
+                <xs:documentation>
+                    Name of the wan-replication configuration. IMap or ICache instance uses this wan-replication config.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
     </xs:complexType>
 
     <xs:complexType name="quorum">
         <xs:all>
-            <xs:element name="quorum-size" type="quorum-size" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="quorum-size" type="quorum-size" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+	                <xs:documentation>
+	                    The minimum number of members required in a cluster for the cluster to remain in an
+	                    operational state. If the number of members is below the defined minimum at any time,
+	                    the operations are rejected and the rejected operations return a QuorumException to
+	                    their callers.
+	                </xs:documentation>
+	            </xs:annotation>
+	        </xs:element>
             <xs:element name="quorum-type" type="quorum-type" minOccurs="0" maxOccurs="1"/>
             <xs:element name="quorum-function-class-name" type="xs:string" minOccurs="0" maxOccurs="1"/>
             <xs:element name="quorum-listeners" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+	                <xs:documentation>
+	                    You can register quorum listeners to be notified about quorum results. Quorum listeners
+	                    are local to the member that they are registered, so they receive only events occurred on
+	                    that local member.
+	                </xs:documentation>
+	            </xs:annotation>
                 <xs:complexType>
                     <xs:sequence>
                         <xs:element name="quorum-listener" type="quorum-listener" maxOccurs="unbounded"/>
