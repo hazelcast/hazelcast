@@ -75,7 +75,6 @@ public class TestInContainer extends AbstractDeploymentTest {
 
     @Test
     @OperateOnDeployment("war-deployment")
-    @Ignore
     public void testTransactionalList() throws ResourceException {
         String listname = "txlist";
         String key = "key";

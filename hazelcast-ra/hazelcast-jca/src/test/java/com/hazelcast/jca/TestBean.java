@@ -128,7 +128,7 @@ public class TestBean implements ITestBean {
         try {
             hzConn = getConnection();
             TransactionalList<String> txlist = hzConn.getTransactionalList(listname);
-            txlist.add(listname);
+            txlist.add(key);
         } finally {
             closeConnection(hzConn);
         }
