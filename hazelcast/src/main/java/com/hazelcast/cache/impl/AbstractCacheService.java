@@ -17,7 +17,6 @@
 package com.hazelcast.cache.impl;
 
 import com.hazelcast.cache.impl.operation.CacheDestroyOperation;
-import com.hazelcast.cache.impl.operation.CacheGetConfigOperation;
 import com.hazelcast.cache.impl.operation.PostJoinCacheOperation;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.CacheSimpleConfig;
@@ -29,7 +28,6 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
-import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
@@ -38,6 +36,7 @@ import com.hazelcast.spi.PostJoinAwareService;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 
+import javax.cache.configuration.CacheEntryListenerConfiguration;
 import javax.cache.event.CacheEntryListener;
 import java.io.Closeable;
 import java.util.Collection;
@@ -52,11 +51,19 @@ public abstract class AbstractCacheService
         implements ICacheService, PostJoinAwareService {
 
     protected final ConcurrentMap<String, CacheConfig> configs = new ConcurrentHashMap<String, CacheConfig>();
+    protected final ConcurrentMap<String, CacheContext> cacheContexes = new ConcurrentHashMap<String, CacheContext>();
     protected final ConcurrentMap<String, CacheStatisticsImpl> statistics = new ConcurrentHashMap<String, CacheStatisticsImpl>();
     protected final ConcurrentMap<String, Set<Closeable>> resources = new ConcurrentHashMap<String, Set<Closeable>>();
     protected final ConcurrentMap<String, Closeable> closeableListeners = new ConcurrentHashMap<String, Closeable>();
     protected final ConcurrentMap<String, CacheOperationProvider> operationProviderCache =
             new ConcurrentHashMap<String, CacheOperationProvider>();
+    protected final ConstructorFunction<String, CacheContext> cacheContexesConstructorFunction =
+            new ConstructorFunction<String, CacheContext>() {
+                @Override
+                public CacheContext createNew(String name) {
+                    return new CacheContext();
+                }
+            };
     protected final ConstructorFunction<String, CacheStatisticsImpl> cacheStatisticsConstructorFunction =
             new ConstructorFunction<String, CacheStatisticsImpl>() {
                 @Override
@@ -130,37 +137,38 @@ public abstract class AbstractCacheService
         return segments[partitionId];
     }
 
-    protected void destroySegments(String objectName) {
+    protected void destroySegments(String name) {
         for (CachePartitionSegment segment : segments) {
-            segment.deleteCache(objectName);
+            segment.deleteCache(name);
         }
     }
 
     @Override
-    public void destroyCache(String objectName, boolean isLocal, String callerUuid) {
-        CacheConfig config = deleteCacheConfig(objectName);
-        destroySegments(objectName);
+    public void destroyCache(String name, boolean isLocal, String callerUuid) {
+        CacheConfig config = deleteCacheConfig(name);
+        destroySegments(name);
 
         if (!isLocal) {
-            deregisterAllListener(objectName);
+            deregisterAllListener(name);
+            cacheContexes.remove(name);
         }
-        operationProviderCache.remove(objectName);
-        setStatisticsEnabled(config, objectName, false);
-        setManagementEnabled(config, objectName, false);
-        deleteCacheConfig(objectName);
-        deleteCacheStat(objectName);
-        deleteCacheResources(objectName);
+        operationProviderCache.remove(name);
+        setStatisticsEnabled(config, name, false);
+        setManagementEnabled(config, name, false);
+        deleteCacheConfig(name);
+        deleteCacheStat(name);
+        deleteCacheResources(name);
         if (!isLocal) {
-            destroyCacheOnAllMembers(objectName, callerUuid);
+            destroyCacheOnAllMembers(name, callerUuid);
         }
     }
 
-    protected void destroyCacheOnAllMembers(String objectName, String callerUuid) {
+    protected void destroyCacheOnAllMembers(String name, String callerUuid) {
         final OperationService operationService = nodeEngine.getOperationService();
         final Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
         for (MemberImpl member : members) {
             if (!member.localMember() && !member.getUuid().equals(callerUuid)) {
-                final CacheDestroyOperation op = new CacheDestroyOperation(objectName, true);
+                final CacheDestroyOperation op = new CacheDestroyOperation(name, true);
                 operationService.invokeOnTarget(AbstractCacheService.SERVICE_NAME, op, member.getAddress());
             }
         }
@@ -188,6 +196,10 @@ public abstract class AbstractCacheService
     @Override
     public CacheStatisticsImpl createCacheStatIfAbsent(String name) {
         return ConcurrencyUtil.getOrPutIfAbsent(statistics, name, cacheStatisticsConstructorFunction);
+    }
+
+    public CacheContext getOrCreateCacheContext(String name) {
+        return ConcurrencyUtil.getOrPutIfAbsent(cacheContexes, name, cacheContexesConstructorFunction);
     }
 
     @Override
@@ -241,16 +253,6 @@ public abstract class AbstractCacheService
         return nodeEngine.getConfig().findCacheConfig(simpleName);
     }
 
-    protected <K, V> CacheConfig<K, V> getCacheConfigFromPartition(String cacheNameWithPrefix, String cacheName) {
-        //remote check
-        final CacheGetConfigOperation op = new CacheGetConfigOperation(cacheNameWithPrefix, cacheName);
-        int partitionId = nodeEngine.getPartitionService().getPartitionId(cacheNameWithPrefix);
-        final InternalCompletableFuture<CacheConfig> f =
-                nodeEngine.getOperationService()
-                    .invokeOnPartition(CacheService.SERVICE_NAME, op, partitionId);
-        return f.getSafely();
-    }
-
     public Collection<CacheConfig> getCacheConfigs() {
         return configs.values();
     }
@@ -295,7 +297,7 @@ public abstract class AbstractCacheService
             case EXPIRED:
                 final CacheEventData cacheEventData =
                         new CacheEventDataImpl(cacheName, eventType, cacheEventContext.getDataKey(),
-                                cacheEventContext.getDataValue(), cacheEventContext.getDataOldValue(),
+                                               cacheEventContext.getDataValue(), cacheEventContext.getDataOldValue(),
                                                cacheEventContext.isOldValueAvailable());
                 CacheEventSet eventSet = new CacheEventSet(eventType, cacheEventContext.getCompletionId());
                 eventSet.addEventData(cacheEventData);
@@ -303,16 +305,16 @@ public abstract class AbstractCacheService
                 break;
             case EVICTED:
                 eventData = new CacheEventDataImpl(cacheName, CacheEventType.EVICTED,
-                        cacheEventContext.getDataKey(), null, null, false);
+                                                   cacheEventContext.getDataKey(), null, null, false);
                 break;
             case INVALIDATED:
                 eventData = new CacheEventDataImpl(cacheName, CacheEventType.INVALIDATED,
-                        cacheEventContext.getDataKey(), null, null, false);
+                                                   cacheEventContext.getDataKey(), null, null, false);
                 break;
             case COMPLETED:
                 CacheEventData completedEventData =
-                        new CacheEventDataImpl(cacheName, CacheEventType.COMPLETED,
-                                cacheEventContext.getDataKey(), cacheEventContext.getDataValue(), null, false);
+                        new CacheEventDataImpl(cacheName, CacheEventType.COMPLETED, cacheEventContext.getDataKey(),
+                                               cacheEventContext.getDataValue(), null, false);
                 eventSet = new CacheEventSet(eventType, cacheEventContext.getCompletionId());
                 eventSet.addEventData(completedEventData);
                 eventData = eventSet;
@@ -349,8 +351,8 @@ public abstract class AbstractCacheService
         final EventService eventService = getNodeEngine().getEventService();
         final EventRegistration registration =
                 eventService.registerListener(AbstractCacheService.SERVICE_NAME,
-                                              distributedObjectName,
-                                              listener);
+                        distributedObjectName,
+                        listener);
         final String id = registration.getId();
         if (listener instanceof Closeable) {
             closeableListeners.put(id, (Closeable) listener);
@@ -387,6 +389,11 @@ public abstract class AbstractCacheService
             }
         }
         eventService.deregisterAllListeners(AbstractCacheService.SERVICE_NAME, name);
+        CacheContext cacheContext = cacheContexes.get(name);
+        if (cacheContext != null) {
+            cacheContext.resetCacheEntryListenerCount();
+            cacheContext.resetInvalidationListenerCount();
+        }
     }
 
     @Override
@@ -447,6 +454,24 @@ public abstract class AbstractCacheService
             postJoinCacheOperation.addCacheConfig(cacheConfigEntry.getValue());
         }
         return postJoinCacheOperation;
+    }
+
+    public void cacheEntryListenerRegistered(String name,
+                                             CacheEntryListenerConfiguration cacheEntryListenerConfiguration) {
+        CacheConfig cacheConfig = getCacheConfig(name);
+        if (cacheConfig == null) {
+            throw new IllegalStateException("CacheConfig does not exist for cache " + name);
+        }
+        cacheConfig.addCacheEntryListenerConfiguration(cacheEntryListenerConfiguration);
+    }
+
+    public void cacheEntryListenerDeregistered(String name,
+                                               CacheEntryListenerConfiguration cacheEntryListenerConfiguration) {
+        CacheConfig cacheConfig = getCacheConfig(name);
+        if (cacheConfig == null) {
+            throw new IllegalStateException("CacheConfig does not exist for cache " + name);
+        }
+        cacheConfig.removeCacheEntryListenerConfiguration(cacheEntryListenerConfiguration);
     }
 
 }

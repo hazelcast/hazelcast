@@ -38,6 +38,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Cache Service is the main access point of JCache implementation.
@@ -183,7 +184,7 @@ public class CacheService extends AbstractCacheService {
                 invalidationMessageMap.get(name);
         if (invalidationMessageQueue == null) {
             Queue<CacheSingleInvalidationMessage> newInvalidationMessageQueue =
-                    new ConcurrentLinkedQueue<CacheSingleInvalidationMessage>();
+                    new InvalidationEventQueue();
             invalidationMessageQueue = invalidationMessageMap.putIfAbsent(name, newInvalidationMessageQueue);
             if (invalidationMessageQueue == null) {
                 invalidationMessageQueue = newInvalidationMessageQueue;
@@ -235,6 +236,88 @@ public class CacheService extends AbstractCacheService {
                     cacheBatchInvalidationMessageSenderInProgress.set(false);
                 }
             }
+        }
+
+    }
+
+    protected class InvalidationEventQueue extends ConcurrentLinkedQueue<CacheSingleInvalidationMessage> {
+
+        private final AtomicInteger elementCount = new AtomicInteger(0);
+
+        @Override
+        public int size() {
+            return elementCount.get();
+        }
+
+        @Override
+        public boolean offer(CacheSingleInvalidationMessage invalidationMessage) {
+            boolean offered = super.offer(invalidationMessage);
+            if (offered) {
+                elementCount.incrementAndGet();
+            }
+            return offered;
+        }
+
+        @Override
+        public boolean add(CacheSingleInvalidationMessage invalidationMessage) {
+            // We don't support this at the moment, because
+            //   - It is not used at the moment
+            //   - It may or may not use "offer" method internally and this depends on the implementation
+            //     so it may change between different version of Java
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public CacheSingleInvalidationMessage poll() {
+            CacheSingleInvalidationMessage polledItem = super.poll();
+            if (polledItem != null) {
+                elementCount.decrementAndGet();
+            }
+            return polledItem;
+        }
+
+        @Override
+        public CacheSingleInvalidationMessage remove() {
+            // We don't support this at the moment, because
+            //   - It is not used at the moment
+            //   - It may or may not use "poll" method internally and this depends on the implementation
+            //     so it may change between different version of Java
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean remove(Object o) {
+            boolean removed = super.remove(o);
+            if (removed) {
+                elementCount.decrementAndGet();
+            }
+            return removed;
+        }
+
+        @Override
+        public boolean addAll(Collection<? extends CacheSingleInvalidationMessage> c) {
+            // We don't support this at the moment, because it is not used at the moment
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean removeAll(Collection<?> c) {
+            // We don't support this at the moment, because it is not used at the moment
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean retainAll(Collection<?> c) {
+            // We don't support this at the moment, because it is not used at the moment
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void clear() {
+            // We don't support this at the moment, because
+            //   - It is not used at the moment
+            //   - It may or may not use "poll" method internally and this depends on the implementation
+            //     so it may change between different version of Java
         }
 
     }

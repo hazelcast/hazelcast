@@ -54,14 +54,9 @@ public class CacheListenerRegistrationOperation
         final CacheService service = getService();
         CacheConfig cacheConfig = service.getCacheConfig(name);
         if (register) {
-            //REGISTER
-            if (cacheConfig == null) {
-                throw new IllegalStateException("CacheConfig does not exist!!! name: " + name);
-            }
-            cacheConfig.addCacheEntryListenerConfiguration(cacheEntryListenerConfiguration);
+            service.cacheEntryListenerRegistered(name, cacheEntryListenerConfiguration);
         } else if (cacheConfig != null) {
-            //UNREGISTER
-            cacheConfig.removeCacheEntryListenerConfiguration(cacheEntryListenerConfiguration);
+            service.cacheEntryListenerDeregistered(name, cacheEntryListenerConfiguration);
         }
     }
 
