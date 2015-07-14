@@ -16,6 +16,9 @@
 
 package com.hazelcast.multimap;
 
+import com.hazelcast.concurrent.lock.LockService;
+import com.hazelcast.spi.DefaultObjectNamespace;
+import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 
@@ -68,6 +71,21 @@ public class MultiMapPartitionContainer {
         final MultiMapContainer container = containerMap.remove(name);
         if (container != null) {
             container.destroy();
+        } else {
+            // It can be that, multimap is used only for locking,
+            // because of that MultiMapContainer is not created.
+            // We will try to remove/clear LockStore belonging to
+            // this MultiMap partition.
+            clearLockStore(name);
+        }
+    }
+
+    private void clearLockStore(String name) {
+        NodeEngine nodeEngine = service.getNodeEngine();
+        LockService lockService = nodeEngine.getSharedService(LockService.SERVICE_NAME);
+        if (lockService != null) {
+            DefaultObjectNamespace namespace = new DefaultObjectNamespace(MultiMapService.SERVICE_NAME, name);
+            lockService.clearLockStore(partitionId, namespace);
         }
     }
 

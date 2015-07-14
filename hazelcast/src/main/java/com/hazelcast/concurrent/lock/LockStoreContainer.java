@@ -28,7 +28,7 @@ import java.util.concurrent.ConcurrentMap;
 /**
  * @author mdogan 2/12/13
  */
-final class LockStoreContainer {
+public final class LockStoreContainer {
 
     private final LockServiceImpl lockService;
     private final int partitionId;
@@ -52,7 +52,7 @@ final class LockStoreContainer {
     }
 
     void clearLockStore(ObjectNamespace namespace) {
-        final LockStoreImpl lockStore = lockStores.get(namespace);
+        final LockStoreImpl lockStore = lockStores.remove(namespace);
         if (lockStore != null) {
             lockStore.clear();
         }
@@ -66,7 +66,7 @@ final class LockStoreContainer {
         return lockStores.get(namespace);
     }
 
-    Collection<LockStoreImpl> getLockStores() {
+    public Collection<LockStoreImpl> getLockStores() {
         return Collections.unmodifiableCollection(lockStores.values());
     }
 
