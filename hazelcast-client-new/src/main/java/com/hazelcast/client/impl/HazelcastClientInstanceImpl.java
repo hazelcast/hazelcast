@@ -132,7 +132,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     private final ClientExtension clientExtension;
     private final Credentials credentials;
 
-    public HazelcastClientInstanceImpl(ClientConfig config) {
+    public HazelcastClientInstanceImpl(ClientConfig config, ClientConnectionManagerFactory clientConnectionManagerFactory) {
         this.config = config;
         final GroupConfig groupConfig = config.getGroupConfig();
         instanceName = "hz.client_" + id + (groupConfig != null ? "_" + groupConfig.getName() : "");
@@ -149,7 +149,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         loadBalancer = initLoadBalancer(config);
         transactionManager = new ClientTransactionManagerServiceImpl(this, loadBalancer);
         partitionService = new ClientPartitionServiceImpl(this);
-        connectionManager = initClientConnectionManager();
+        connectionManager = clientConnectionManagerFactory.createConnectionManager(config, this);
         clusterService = new ClientClusterServiceImpl(this);
         invocationService = initInvocationService();
         listenerService = initListenerService();

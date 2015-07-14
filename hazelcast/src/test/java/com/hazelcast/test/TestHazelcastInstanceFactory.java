@@ -25,44 +25,46 @@ import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.instance.NodeContext;
 import com.hazelcast.nio.Address;
 
-import java.lang.reflect.Method;
 import java.net.UnknownHostException;
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
-public final class TestHazelcastInstanceFactory {
+public class TestHazelcastInstanceFactory {
 
-    private final static String HAZELCAST_CLIENT = "com.hazelcast.client.HazelcastClient";
-    private final static String HAZELCAST_CLIENT_CONFIG = "com.hazelcast.client.config.ClientConfig";
-    private final static AtomicInteger PORTS = new AtomicInteger(5000);
-
-    public final boolean mockNetwork = TestEnvironment.isMockNetwork();
-    public final boolean useClient = TestEnvironment.isUseClient();
-
-    private final Address[] addresses;
-    private final TestNodeRegistry registry;
+    private static final AtomicInteger ports = new AtomicInteger(5000);
+    private final boolean mockNetwork = TestEnvironment.isMockNetwork();
     private final AtomicInteger nodeIndex = new AtomicInteger();
-    private final int count;
+
+    protected TestNodeRegistry registry;
+    protected CopyOnWriteArrayList<Address> addresses;
+    private int count;
 
     public TestHazelcastInstanceFactory(int count) {
-        this(createAddresses(count));
+        this.count = count;
+        if (mockNetwork) {
+            this.addresses = new CopyOnWriteArrayList<Address>();
+            this.addresses.addAll(createAddresses(ports, count));
+            this.registry = new TestNodeRegistry(addresses);
+        }
+    }
+
+    public TestHazelcastInstanceFactory() {
+        this.count = 0;
+        this.addresses = new CopyOnWriteArrayList<Address>();
+        this.registry = new TestNodeRegistry(addresses);
     }
 
     public TestHazelcastInstanceFactory(String... addresses) {
-        this(createAddresses(addresses));
-    }
-
-    private TestHazelcastInstanceFactory(Address[] addresses) {
         this.count = addresses.length;
         if (mockNetwork) {
-            this.addresses = addresses;
+            this.addresses = new CopyOnWriteArrayList<Address>();
+            this.addresses.addAll(createAddresses(ports, addresses));
             this.registry = new TestNodeRegistry(this.addresses);
-        } else {
-            this.addresses = null;
-            this.registry = null;
         }
     }
 
@@ -72,18 +74,21 @@ public final class TestHazelcastInstanceFactory {
 
     public HazelcastInstance newHazelcastInstance(Config config) {
         if (mockNetwork) {
-            if (nodeIndex.get() >= addresses.length) {
-                throw new IndexOutOfBoundsException("Max " + addresses.length + " instances can be created!");
-            }
             init(config);
-            NodeContext nodeContext = registry.createNodeContext(addresses[nodeIndex.getAndIncrement()]);
+            NodeContext nodeContext = registry.createNodeContext(pickAddress());
             return HazelcastInstanceFactory.newHazelcastInstance(config, null, nodeContext);
         }
-        if (useClient) {
-            return newHazelcastClient();
-        } else {
-            return HazelcastInstanceFactory.newHazelcastInstance(config);
+        return HazelcastInstanceFactory.newHazelcastInstance(config);
+    }
+
+    private Address pickAddress() {
+        int id = nodeIndex.getAndIncrement();
+        if (addresses.size() > id) {
+            return addresses.get(id);
         }
+        Address address = createAddress("127.0.0.1", ports.incrementAndGet());
+        addresses.add(address);
+        return address;
     }
 
     public HazelcastInstance[] newInstances() {
@@ -111,7 +116,6 @@ public final class TestHazelcastInstanceFactory {
 
     public void shutdownAll() {
         if (mockNetwork) {
-            nodeIndex.set(Integer.MAX_VALUE);
             registry.shutdown();
         } else {
             Hazelcast.shutdownAll();
@@ -120,51 +124,38 @@ public final class TestHazelcastInstanceFactory {
 
     public void terminateAll() {
         if (mockNetwork) {
-            nodeIndex.set(Integer.MAX_VALUE);
             registry.terminate();
         } else {
             HazelcastInstanceFactory.terminateAll();
         }
     }
 
-    private static HazelcastInstance newHazelcastClient() {
-        Class clazz = null;
-        try {
-            clazz = Class.forName(HAZELCAST_CLIENT);
-            Class clientConfig = Class.forName(HAZELCAST_CLIENT_CONFIG);
-            Method method = clazz.getMethod("newHazelcastClient", clientConfig);
-            HazelcastInstance hazelcastInstance = (HazelcastInstance) method.invoke(null, clientConfig.newInstance());
-            return hazelcastInstance;
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private static Address[] createAddresses(int count) {
-        Address[] addresses = new Address[count];
+    private static List<Address> createAddresses(AtomicInteger ports, int count) {
+        List<Address> addresses = new ArrayList<Address>(count);
         for (int i = 0; i < count; i++) {
-            try {
-                addresses[i] = new Address("127.0.0.1", PORTS.incrementAndGet());
-            } catch (UnknownHostException e) {
-                e.printStackTrace();
-            }
+            addresses.add(createAddress("127.0.0.1", ports.incrementAndGet()));
         }
         return addresses;
     }
 
-    private static Address[] createAddresses(String...addressArray) {
+    private static List<Address> createAddresses(AtomicInteger ports, String... addressArray) {
         checkElementsNotNull(addressArray);
 
         final int count = addressArray.length;
-        Address[] addresses = new Address[count];
+        List<Address> addresses = new ArrayList<Address>(count);
         for (int i = 0; i < count; i++) {
-            try {
-                addresses[i] = new Address(addressArray[i], PORTS.incrementAndGet());
-            } catch (UnknownHostException e) {
-                e.printStackTrace();
-            }
+            addresses.add(createAddress(addressArray[i], ports.incrementAndGet()));
         }
         return addresses;
+    }
+
+    protected static Address createAddress(String host, int port) {
+        try {
+            return new Address(host, port);
+        } catch (UnknownHostException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
     private static <T> void checkElementsNotNull(T[] array) {
@@ -188,7 +179,7 @@ public final class TestHazelcastInstanceFactory {
     @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder("TestHazelcastInstanceFactory{");
-        sb.append("addresses=").append(Arrays.toString(addresses));
+        sb.append("addresses=").append(addresses);
         sb.append('}');
         return sb.toString();
     }

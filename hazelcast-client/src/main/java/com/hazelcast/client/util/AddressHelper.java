@@ -46,22 +46,26 @@ public final class AddressHelper {
         final String scopedAddress = addressHolder.getScopeId() != null
                 ? addressHolder.getAddress() + "%" + addressHolder.getScopeId()
                 : addressHolder.getAddress();
+
+        int port = addressHolder.getPort();
+        int maxPortTryCount = 1;
+        if (port == -1) {
+            maxPortTryCount = MAX_PORT_TRIES;
+        }
+        return getPossibleSocketAddresses(port, scopedAddress, maxPortTryCount);
+    }
+
+    public static Collection<InetSocketAddress> getPossibleSocketAddresses(int port, String scopedAddress,
+                                                                           int portTryCount) {
         InetAddress inetAddress = null;
         try {
             inetAddress = InetAddress.getByName(scopedAddress);
         } catch (UnknownHostException ignored) {
             Logger.getLogger(AddressHelper.class).finest("Address not available", ignored);
         }
-        return getPossibleSocketAddresses(inetAddress, addressHolder.getPort(), scopedAddress);
-    }
-
-    public static Collection<InetSocketAddress> getPossibleSocketAddresses(
-            InetAddress inetAddress, int port, String scopedAddress) {
 
         int possiblePort = port;
-        int portTryCount = 1;
         if (possiblePort == -1) {
-            portTryCount = MAX_PORT_TRIES;
             possiblePort = INITIAL_FIRST_PORT;
         }
         final Collection<InetSocketAddress> socketAddresses = new LinkedList<InetSocketAddress>();

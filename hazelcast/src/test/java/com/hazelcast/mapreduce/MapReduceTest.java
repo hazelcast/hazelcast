@@ -48,10 +48,10 @@ public class MapReduceTest
 
     private static final String MAP_NAME = "default";
 
-    private void tripshutdown(HazelcastInstance... instances) {
+    private void tripTerminate(HazelcastInstance... instances) {
         for (HazelcastInstance instance : instances) {
             try {
-                instance.shutdown();
+                instance.getLifecycleService().terminate();
             } catch (Throwable ex) {
                 logger.log(java.util.logging.Level.INFO, ex.getMessage(), ex);
             }
@@ -93,7 +93,7 @@ public class MapReduceTest
                 assertEquals(1, value.size());
             }
         } finally {
-            tripshutdown(h1, h2, h3);
+            tripTerminate(h1, h2, h3);
         }
     }
 
@@ -129,7 +129,7 @@ public class MapReduceTest
                 assertEquals(1, value.size());
             }
         } finally {
-            tripshutdown(h1, h2, h3);
+            tripTerminate(h1, h2, h3);
         }
     }
 
@@ -167,7 +167,7 @@ public class MapReduceTest
                 assertEquals(1, value.size());
             }
         } finally {
-            tripshutdown(h1, h2, h3);
+            tripTerminate(h1, h2, h3);
         }
     }
 
@@ -211,7 +211,7 @@ public class MapReduceTest
                 throw e;
             }
         } finally {
-            tripshutdown(h1, h2, h3);
+            tripTerminate(h1, h2, h3);
         }
     }
 
@@ -248,7 +248,7 @@ public class MapReduceTest
                 throw e;
             }
         } finally {
-            tripshutdown(h1, h2, h3);
+            tripTerminate(h1, h2, h3);
         }
     }
 
@@ -286,7 +286,7 @@ public class MapReduceTest
                 throw e;
             }
         } finally {
-            tripshutdown(h1, h2, h3);
+            tripTerminate(h1, h2, h3);
         }
     }
 
@@ -321,7 +321,7 @@ public class MapReduceTest
                 assertEquals(1, value.size());
             }
         } finally {
-            tripshutdown(h1, h2, h3);
+            tripTerminate(h1, h2, h3);
         }
     }
 
@@ -353,7 +353,7 @@ public class MapReduceTest
 
             assertEquals(50, result);
         } finally {
-            tripshutdown(h1, h2, h3);
+            tripTerminate(h1, h2, h3);
         }
     }
 
@@ -385,7 +385,7 @@ public class MapReduceTest
 
             assertEquals(50, result);
         } finally {
-            tripshutdown(h1, h2, h3);
+            tripTerminate(h1, h2, h3);
         }
     }
 
@@ -417,7 +417,7 @@ public class MapReduceTest
             assertEquals(1, result.size());
             assertEquals(25, result.values().iterator().next().size());
         } finally {
-            tripshutdown(h1, h2, h3);
+            tripTerminate(h1, h2, h3);
         }
     }
 
@@ -459,7 +459,7 @@ public class MapReduceTest
                 assertEquals(expectedResults[i], (int) result.get(String.valueOf(i)));
             }
         } finally {
-            tripshutdown(h1, h2, h3);
+            tripTerminate(h1, h2, h3);
         }
     }
 
@@ -513,7 +513,7 @@ public class MapReduceTest
                 }
             });
         } finally {
-            tripshutdown(h1, h2, h3);
+            tripTerminate(h1, h2, h3);
         }
     }
 
@@ -553,7 +553,7 @@ public class MapReduceTest
                 assertEquals(expectedResult, result);
             }
         } finally {
-            tripshutdown(h1, h2, h3);
+            tripTerminate(h1, h2, h3);
         }
     }
 
@@ -593,7 +593,7 @@ public class MapReduceTest
                 assertEquals(expectedResult, result);
             }
         } finally {
-            tripshutdown(h1, h2, h3);
+            tripTerminate(h1, h2, h3);
         }
     }
 
@@ -649,7 +649,7 @@ public class MapReduceTest
                 assertEquals(1, value.size());
             }
         } finally {
-            tripshutdown(h1, h2, h3);
+            tripTerminate(h1, h2, h3);
         }
     }
 
@@ -704,7 +704,7 @@ public class MapReduceTest
                 assertEquals(1, value.size());
             }
         } finally {
-            tripshutdown(h1, h2, h3);
+            tripTerminate(h1, h2, h3);
         }
     }
 
@@ -766,7 +766,7 @@ public class MapReduceTest
                 assertEquals(expectedResults[i], (int) listenerResults.get(String.valueOf(i)));
             }
         } finally {
-            tripshutdown(h1, h2, h3);
+            tripTerminate(h1, h2, h3);
         }
     }
 
@@ -826,7 +826,7 @@ public class MapReduceTest
                 assertEquals(expectedResult, result[0]);
             }
         } finally {
-            tripshutdown(h1, h2, h3);
+            tripTerminate(h1, h2, h3);
         }
     }
 
@@ -887,7 +887,7 @@ public class MapReduceTest
                 assertEquals(expectedResult, result[0]);
             }
         } finally {
-            tripshutdown(h1, h2, h3);
+            tripTerminate(h1, h2, h3);
         }
     }
 
@@ -927,7 +927,7 @@ public class MapReduceTest
                 assertEquals(BigInteger.valueOf(expectedResults[i]), map.get(String.valueOf(i)));
             }
         } finally {
-            tripshutdown(h1, h2, h3);
+            tripTerminate(h1, h2, h3);
         }
     }
 
@@ -960,7 +960,7 @@ public class MapReduceTest
             Map<String, BigInteger> map = future.get();
             assertEquals(0, map.size());
         } finally {
-            tripshutdown(h1, h2, h3);
+            tripTerminate(h1, h2, h3);
         }
     }
 
@@ -1028,7 +1028,7 @@ public class MapReduceTest
 
             assertEquals("expected 8 Employees with id's ending 2, 4, 6, 8", 8, result.size());
         } finally {
-            tripshutdown(h1, h2, h3);
+            tripTerminate(h1, h2, h3);
         }
     }
 
