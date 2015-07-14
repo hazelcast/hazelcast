@@ -318,6 +318,7 @@ public class CacheService extends AbstractCacheService {
             //   - It is not used at the moment
             //   - It may or may not use "poll" method internally and this depends on the implementation
             //     so it may change between different version of Java
+            throw new UnsupportedOperationException();
         }
 
     }

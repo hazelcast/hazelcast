@@ -17,6 +17,8 @@
 package com.hazelcast.spi.impl.eventservice.impl;
 
 import com.hazelcast.nio.Address;
+import com.hazelcast.spi.EventFilter;
+import com.hazelcast.spi.ListenerWrapperEventFilter;
 import com.hazelcast.spi.NotifiableEventListener;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
@@ -44,6 +46,24 @@ public class EventServiceSegment<S> {
         this.service = service;
     }
 
+    private void pingNotifiableEventListenerIfAvailable(String topic, Registration registration, boolean register) {
+        Object listener = registration.getListener();
+        if (!(listener instanceof NotifiableEventListener)) {
+            EventFilter filter = registration.getFilter();
+            if (filter instanceof ListenerWrapperEventFilter) {
+                listener = ((ListenerWrapperEventFilter) filter).getListener();
+            }
+        }
+        if (listener instanceof NotifiableEventListener) {
+            NotifiableEventListener notifiableEventListener = (NotifiableEventListener) listener;
+            if (register) {
+                notifiableEventListener.onRegister(service, serviceName, topic, registration);
+            } else {
+                notifiableEventListener.onDeregister(service, serviceName, topic, registration);
+            }
+        }
+    }
+
     public Collection<Registration> getRegistrations(String topic, boolean forceCreate) {
         Collection<Registration> listenerList = registrations.get(topic);
         if (listenerList == null && forceCreate) {
@@ -66,11 +86,7 @@ public class EventServiceSegment<S> {
         final Collection<Registration> registrations = getRegistrations(topic, true);
         if (registrations.add(registration)) {
             registrationIdMap.put(registration.getId(), registration);
-            Object listener = registration.getListener();
-            if (listener instanceof NotifiableEventListener) {
-                ((NotifiableEventListener) listener).
-                        onRegister(service, serviceName, topic, registration);
-            }
+            pingNotifiableEventListenerIfAvailable(topic, registration, true);
             return true;
         }
         return false;
@@ -83,11 +99,7 @@ public class EventServiceSegment<S> {
             if (all != null) {
                 all.remove(registration);
                 for (Registration reg : all) {
-                    Object listener = reg.getListener();
-                    if (listener instanceof NotifiableEventListener) {
-                        ((NotifiableEventListener) listener).
-                                onDeregister(service, serviceName, topic, reg);
-                    }
+                    pingNotifiableEventListenerIfAvailable(topic, reg, false);
                 }
             }
         }
@@ -99,11 +111,7 @@ public class EventServiceSegment<S> {
         if (all != null) {
             for (Registration reg : all) {
                 registrationIdMap.remove(reg.getId());
-                Object listener = reg.getListener();
-                if (listener instanceof NotifiableEventListener) {
-                    ((NotifiableEventListener) listener).
-                            onDeregister(service, serviceName, topic, reg);
-                }
+                pingNotifiableEventListenerIfAvailable(topic, reg, false);
             }
         }
     }
@@ -115,11 +123,7 @@ public class EventServiceSegment<S> {
                 Registration reg = iter.next();
                 iter.remove();
                 registrationIdMap.remove(reg.getId());
-                Object listener = reg.getListener();
-                if (listener instanceof NotifiableEventListener) {
-                    ((NotifiableEventListener) listener).
-                            onDeregister(service, serviceName, reg.getTopic(), reg);
-                }
+                pingNotifiableEventListenerIfAvailable(reg.getTopic(), reg, false);
             }
         }
     }
@@ -132,11 +136,7 @@ public class EventServiceSegment<S> {
                 if (address.equals(reg.getSubscriber())) {
                     iter.remove();
                     registrationIdMap.remove(reg.getId());
-                    Object listener = reg.getListener();
-                    if (listener instanceof NotifiableEventListener) {
-                        ((NotifiableEventListener) listener).
-                                onDeregister(service, serviceName, reg.getTopic(), reg);
-                    }
+                    pingNotifiableEventListenerIfAvailable(reg.getTopic(), reg, false);
                 }
             }
         }

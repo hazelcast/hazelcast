@@ -456,4 +456,5 @@ public class EventServiceImpl implements InternalEventService {
             logger.log(level, String.format(message, args));
         }
     }
+
 }

@@ -20,6 +20,7 @@ import com.hazelcast.cache.ICache;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.spi.EventRegistration;
+import com.hazelcast.spi.ListenerWrapperEventFilter;
 import com.hazelcast.spi.NotifiableEventListener;
 
 import javax.cache.configuration.CacheEntryListenerConfiguration;
@@ -32,6 +33,7 @@ import javax.cache.event.CacheEntryListener;
 import javax.cache.event.CacheEntryRemovedListener;
 import javax.cache.event.CacheEntryUpdatedListener;
 import javax.cache.event.EventType;
+import java.io.Serializable;
 import java.util.Collection;
 import java.util.HashSet;
 
@@ -55,7 +57,9 @@ import java.util.HashSet;
 public class CacheEventListenerAdaptor<K, V>
         implements CacheEventListener,
                    CacheEntryListenerProvider<K, V>,
-                   NotifiableEventListener<CacheService> {
+                   NotifiableEventListener<CacheService>,
+                   ListenerWrapperEventFilter,
+                   Serializable {
 
     private final CacheEntryListener<K, V> cacheEntryListener;
     private final CacheEntryCreatedListener cacheEntryCreatedListener;
@@ -203,6 +207,16 @@ public class CacheEventListenerAdaptor<K, V>
                              String topic, EventRegistration registration) {
         CacheContext cacheContext = cacheService.getOrCreateCacheContext(topic);
         cacheContext.decreaseCacheEntryListenerCount();
+    }
+
+    @Override
+    public boolean eval(Object event) {
+        return true;
+    }
+
+    @Override
+    public Object getListener() {
+        return this;
     }
 
 }

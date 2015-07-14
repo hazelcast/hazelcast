@@ -26,6 +26,7 @@ import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.MigrationEndpoint;
+import com.hazelcast.spi.EventFilter;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.NodeEngine;
@@ -51,7 +52,7 @@ public abstract class AbstractCacheService
         implements ICacheService, PostJoinAwareService {
 
     protected final ConcurrentMap<String, CacheConfig> configs = new ConcurrentHashMap<String, CacheConfig>();
-    protected final ConcurrentMap<String, CacheContext> cacheContexes = new ConcurrentHashMap<String, CacheContext>();
+    protected final ConcurrentMap<String, CacheContext> cacheContexts = new ConcurrentHashMap<String, CacheContext>();
     protected final ConcurrentMap<String, CacheStatisticsImpl> statistics = new ConcurrentHashMap<String, CacheStatisticsImpl>();
     protected final ConcurrentMap<String, Set<Closeable>> resources = new ConcurrentHashMap<String, Set<Closeable>>();
     protected final ConcurrentMap<String, Closeable> closeableListeners = new ConcurrentHashMap<String, Closeable>();
@@ -150,7 +151,7 @@ public abstract class AbstractCacheService
 
         if (!isLocal) {
             deregisterAllListener(name);
-            cacheContexes.remove(name);
+            cacheContexts.remove(name);
         }
         operationProviderCache.remove(name);
         setStatisticsEnabled(config, name, false);
@@ -199,7 +200,7 @@ public abstract class AbstractCacheService
     }
 
     public CacheContext getOrCreateCacheContext(String name) {
-        return ConcurrencyUtil.getOrPutIfAbsent(cacheContexes, name, cacheContexesConstructorFunction);
+        return ConcurrencyUtil.getOrPutIfAbsent(cacheContexts, name, cacheContexesConstructorFunction);
     }
 
     @Override
@@ -347,12 +348,23 @@ public abstract class AbstractCacheService
     }
 
     @Override
-    public String registerListener(String distributedObjectName, CacheEventListener listener) {
+    public String registerListener(String name, CacheEventListener listener) {
+        return registerListenerInternal(name, listener, null);
+    }
+
+    @Override
+    public String registerListener(String name, CacheEventListener listener, EventFilter eventFilter) {
+        return registerListenerInternal(name, listener, eventFilter);
+    }
+
+    protected String registerListenerInternal(String name, CacheEventListener listener, EventFilter eventFilter) {
         final EventService eventService = getNodeEngine().getEventService();
-        final EventRegistration registration =
-                eventService.registerListener(AbstractCacheService.SERVICE_NAME,
-                        distributedObjectName,
-                        listener);
+        final EventRegistration registration;
+        if (eventFilter == null) {
+            registration = eventService.registerListener(AbstractCacheService.SERVICE_NAME, name, listener);
+        } else {
+            registration = eventService.registerListener(AbstractCacheService.SERVICE_NAME, name, eventFilter, listener);
+        }
         final String id = registration.getId();
         if (listener instanceof Closeable) {
             closeableListeners.put(id, (Closeable) listener);
@@ -389,7 +401,7 @@ public abstract class AbstractCacheService
             }
         }
         eventService.deregisterAllListeners(AbstractCacheService.SERVICE_NAME, name);
-        CacheContext cacheContext = cacheContexes.get(name);
+        CacheContext cacheContext = cacheContexts.get(name);
         if (cacheContext != null) {
             cacheContext.resetCacheEntryListenerCount();
             cacheContext.resetInvalidationListenerCount();
