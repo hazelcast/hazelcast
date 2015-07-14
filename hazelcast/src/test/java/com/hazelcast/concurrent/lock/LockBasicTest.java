@@ -190,6 +190,60 @@ public abstract class LockBasicTest extends HazelcastTestSupport {
     public void testTryLockTimeout_whenNullTimeout() throws InterruptedException {
         lock.tryLock(1, null);
     }
+    
+    // ======================== try lock with lease ==============================================
+
+    @Test(timeout = 60000)
+    public void testTryLockWithLeaseTimeout_whenNotLocked() throws InterruptedException {
+        boolean result = lock.tryLock(1, 1, TimeUnit.SECONDS);
+
+        assertTrue(result);
+        assertTrue(lock.isLockedByCurrentThread());
+        assertEquals(1, lock.getLockCount());
+    }
+
+    @Test(timeout = 60000)
+    public void testTryLockWithLeaseTimeout_whenLockedBySelf() throws InterruptedException {
+        lock.lock();
+
+        boolean result = lock.tryLock(1, 1, TimeUnit.SECONDS);
+
+        assertTrue(result);
+        assertTrue(lock.isLockedByCurrentThread());
+        assertEquals(2, lock.getLockCount());
+    }
+
+    @Test(timeout = 60000)
+    public void testTryLockWithLeaseTimeout_whenLockedByOtherAndTimeout() throws InterruptedException {
+        lockByOtherThread(lock);
+
+        boolean result = lock.tryLock(1, 1, TimeUnit.SECONDS);
+
+        assertFalse(result);
+        assertFalse(lock.isLockedByCurrentThread());
+        assertTrue(lock.isLocked());
+        assertEquals(1, lock.getLockCount());
+    }
+
+    @Test
+    public void testTryLockTimeoutWithLease_whenLockedByOtherAndEventuallyAvailable() throws InterruptedException {
+        final CountDownLatch latch = new CountDownLatch(1);
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                lock.lock();
+                latch.countDown();
+                sleepSeconds(1);
+                lock.unlock();
+            }
+        }).start();
+        latch.await();
+        assertTrue(lock.tryLock(1, 3, TimeUnit.SECONDS));
+
+        assertTrue(lock.isLocked());
+        assertTrue(lock.isLockedByCurrentThread());
+
+    }
 
     // ======================== unlock ==============================================
 
