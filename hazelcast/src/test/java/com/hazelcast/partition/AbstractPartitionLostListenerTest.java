@@ -41,13 +41,13 @@ public abstract class AbstractPartitionLostListenerTest
     }
 
     @Before
-    public void createHazelcastInstanceFactory()
+    public void setup()
             throws IOException {
         hazelcastInstanceFactory = createHazelcastInstanceFactory(getNodeCount());
     }
 
     @After
-    public void terminateAllInstances() {
+    public void tearDown() {
         hazelcastInstanceFactory.terminateAll();
     }
 
