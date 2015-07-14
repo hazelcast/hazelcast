@@ -29,11 +29,11 @@ import com.hazelcast.logging.Logger;
 
 import java.util.logging.Level;
 
-public class DefaultClientServiceFactory implements ClientServiceFactory {
+public class DefaultClientConnectionManagerFactory implements ClientConnectionManagerFactory {
 
     private static final ILogger LOGGER = Logger.getLogger(HazelcastClient.class);
 
-    public DefaultClientServiceFactory() {
+    public DefaultClientConnectionManagerFactory() {
     }
 
     @Override

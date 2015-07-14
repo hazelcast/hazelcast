@@ -19,7 +19,7 @@ package com.hazelcast.client.impl;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.connection.ClientConnectionManager;
 
-public interface ClientServiceFactory {
+public interface ClientConnectionManagerFactory {
 
     ClientConnectionManager createConnectionManager(ClientConfig config, HazelcastClientInstanceImpl client);
 }

@@ -124,6 +124,13 @@ public abstract class HazelcastTestSupport {
         return factory = new TestHazelcastInstanceFactory(addresses);
     }
 
+    protected final TestHazelcastInstanceFactory createHazelcastInstanceFactory() {
+        if (factory != null) {
+            throw new IllegalStateException("Node factory is already created!");
+        }
+        return factory = new TestHazelcastInstanceFactory();
+    }
+
     public static Future spawn(Runnable task) {
         FutureTask<Runnable> futureTask = new FutureTask<Runnable>(task, null);
         new Thread(futureTask).start();
