@@ -27,11 +27,6 @@ import static org.junit.Assert.assertTrue;
 @Category(QuickTest.class)
 public class DurableSubscriptionTest extends HazelcastTestSupport {
 
-    @Before
-    public void setup(){
-        setLogLevel(Level.DEBUG);
-    }
-
     @Test
     public void testDurableSubscription() {
         HazelcastInstance local = createHazelcastInstance();
@@ -64,11 +59,6 @@ public class DurableSubscriptionTest extends HazelcastTestSupport {
                 assertEquals(asList(0l, 1l, 2l), listener.sequences);
             }
         });
-    }
-
-    @Test
-    public void beginFromStart() {
-
     }
 
     public class DurableMessageListener<String> implements ReliableMessageListener<String> {

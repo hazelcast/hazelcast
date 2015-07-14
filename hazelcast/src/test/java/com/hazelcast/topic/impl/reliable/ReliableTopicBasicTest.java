@@ -36,8 +36,6 @@ public abstract class ReliableTopicBasicTest extends HazelcastTestSupport {
 
     @Before
     public void setup() {
-        setLogLevel(Level.DEBUG);
-
         ReliableTopicConfig topicConfig = new ReliableTopicConfig("reliableTopic*");
 
         RingbufferConfig ringbufferConfig = new RingbufferConfig(topicConfig.getName());

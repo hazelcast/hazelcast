@@ -27,7 +27,6 @@ public class LossToleranceTest extends HazelcastTestSupport {
 
     @Before
     public void setup() {
-        setLogLevel(Level.DEBUG);
         Config config = new Config();
         config.addRingBufferConfig(new RingbufferConfig("foo")
                 .setCapacity(100)
