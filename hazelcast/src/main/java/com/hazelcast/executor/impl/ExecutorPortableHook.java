@@ -22,16 +22,19 @@ import com.hazelcast.executor.impl.client.PartitionTargetCallableRequest;
 import com.hazelcast.executor.impl.client.ShutdownRequest;
 import com.hazelcast.executor.impl.client.SpecificTargetCallableRequest;
 import com.hazelcast.nio.serialization.ClassDefinition;
-import com.hazelcast.nio.serialization.impl.FactoryIdHelper;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.nio.serialization.PortableHook;
+import com.hazelcast.nio.serialization.impl.FactoryIdHelper;
 
 import java.util.Collection;
 
+import static com.hazelcast.nio.serialization.impl.FactoryIdHelper.EXECUTOR_PORTABLE_FACTORY;
+import static com.hazelcast.nio.serialization.impl.FactoryIdHelper.EXECUTOR_PORTABLE_FACTORY_ID;
+
 public final class ExecutorPortableHook implements PortableHook {
 
-    public static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.EXECUTOR_PORTABLE_FACTORY, -13);
+    public static final int F_ID = FactoryIdHelper.getFactoryId(EXECUTOR_PORTABLE_FACTORY, EXECUTOR_PORTABLE_FACTORY_ID);
 
     public static final int IS_SHUTDOWN_REQUEST = 1;
     public static final int CANCELLATION_REQUEST = 2;

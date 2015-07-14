@@ -17,17 +17,20 @@
 package com.hazelcast.spi.impl;
 
 import com.hazelcast.nio.serialization.ClassDefinition;
-import com.hazelcast.nio.serialization.impl.FactoryIdHelper;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.nio.serialization.PortableHook;
+import com.hazelcast.nio.serialization.impl.FactoryIdHelper;
 import com.hazelcast.security.UsernamePasswordCredentials;
 
 import java.util.Collection;
 
+import static com.hazelcast.nio.serialization.impl.FactoryIdHelper.SPI_PORTABLE_FACTORY;
+import static com.hazelcast.nio.serialization.impl.FactoryIdHelper.SPI_PORTABLE_FACTORY_ID;
+
 public final class SpiPortableHook implements PortableHook {
 
-    public static final int ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.SPI_PORTABLE_FACTORY, -1);
+    public static final int ID = FactoryIdHelper.getFactoryId(SPI_PORTABLE_FACTORY, SPI_PORTABLE_FACTORY_ID);
 
     public static final int USERNAME_PWD_CRED = 1;
     public static final int COLLECTION = 2;

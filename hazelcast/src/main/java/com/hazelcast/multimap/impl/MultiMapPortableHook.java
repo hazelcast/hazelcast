@@ -40,18 +40,22 @@ import com.hazelcast.multimap.impl.client.TxnMultiMapRemoveRequest;
 import com.hazelcast.multimap.impl.client.TxnMultiMapSizeRequest;
 import com.hazelcast.multimap.impl.client.TxnMultiMapValueCountRequest;
 import com.hazelcast.multimap.impl.client.ValuesRequest;
-import com.hazelcast.nio.serialization.impl.ArrayPortableFactory;
 import com.hazelcast.nio.serialization.ClassDefinition;
-import com.hazelcast.nio.serialization.impl.FactoryIdHelper;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.nio.serialization.PortableHook;
+import com.hazelcast.nio.serialization.impl.ArrayPortableFactory;
+import com.hazelcast.nio.serialization.impl.FactoryIdHelper;
 import com.hazelcast.util.ConstructorFunction;
+
 import java.util.Collection;
+
+import static com.hazelcast.nio.serialization.impl.FactoryIdHelper.MULTIMAP_PORTABLE_FACTORY;
+import static com.hazelcast.nio.serialization.impl.FactoryIdHelper.MULTIMAP_PORTABLE_FACTORY_ID;
 
 public class MultiMapPortableHook implements PortableHook {
 
-    public static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.MULTIMAP_PORTABLE_FACTORY, -12);
+    public static final int F_ID = FactoryIdHelper.getFactoryId(MULTIMAP_PORTABLE_FACTORY, MULTIMAP_PORTABLE_FACTORY_ID);
 
     public static final int CLEAR = 1;
     public static final int CONTAINS_ENTRY = 2;

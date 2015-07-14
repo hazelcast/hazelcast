@@ -45,16 +45,19 @@ import com.hazelcast.multimap.impl.txn.TxnRemoveBackupOperation;
 import com.hazelcast.multimap.impl.txn.TxnRemoveOperation;
 import com.hazelcast.multimap.impl.txn.TxnRollbackBackupOperation;
 import com.hazelcast.multimap.impl.txn.TxnRollbackOperation;
-import com.hazelcast.nio.serialization.impl.ArrayDataSerializableFactory;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.DataSerializerHook;
-import com.hazelcast.nio.serialization.impl.FactoryIdHelper;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.impl.ArrayDataSerializableFactory;
+import com.hazelcast.nio.serialization.impl.FactoryIdHelper;
 import com.hazelcast.util.ConstructorFunction;
+
+import static com.hazelcast.nio.serialization.impl.FactoryIdHelper.MULTIMAP_DS_FACTORY;
+import static com.hazelcast.nio.serialization.impl.FactoryIdHelper.MULTIMAP_DS_FACTORY_ID;
 
 public class MultiMapDataSerializerHook implements DataSerializerHook {
 
-    public static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.MULTIMAP_DS_FACTORY, -12);
+    public static final int F_ID = FactoryIdHelper.getFactoryId(MULTIMAP_DS_FACTORY, MULTIMAP_DS_FACTORY_ID);
 
     public static final int ADD_ALL_BACKUP = 0;
     public static final int ADD_ALL = 1;
