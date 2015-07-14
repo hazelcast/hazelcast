@@ -19,25 +19,28 @@ package com.hazelcast.client.test;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.XmlClientConfigBuilder;
-import com.hazelcast.client.impl.ClientServiceFactory;
+import com.hazelcast.client.impl.ClientConnectionManagerFactory;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.HazelcastClientProxy;
+import com.hazelcast.client.util.AddressHelper;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
 import com.hazelcast.nio.Address;
 import com.hazelcast.test.TestEnvironment;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 
+import java.net.InetSocketAddress;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class TestHazelcastFactory extends TestHazelcastInstanceFactory {
 
+    private static final AtomicInteger clientPorts = new AtomicInteger(6000);
     private final boolean mockNetwork = TestEnvironment.isMockNetwork();
     private final List<HazelcastClientInstanceImpl> clients = new ArrayList<HazelcastClientInstanceImpl>(10);
     private final TestClientRegistry clientRegistry;
-    private final AtomicInteger clientPorts = new AtomicInteger(6000);
 
     public TestHazelcastFactory() {
         super(0);
@@ -56,17 +59,16 @@ public class TestHazelcastFactory extends TestHazelcastInstanceFactory {
         if (config == null) {
             config = new XmlClientConfigBuilder().build();
         }
-        for (Address address : addresses) {
-            config.getNetworkConfig().addAddress(address.getHost() + ":" + address.getPort());
-        }
+
+        insertAddressesToEmulateLocalhost(config);
 
         final ClassLoader tccl = Thread.currentThread().getContextClassLoader();
         HazelcastClientProxy proxy;
         try {
             Thread.currentThread().setContextClassLoader(HazelcastClient.class.getClassLoader());
-            ClientServiceFactory clientServiceFactory =
+            ClientConnectionManagerFactory clientConnectionManagerFactory =
                     clientRegistry.createClientServiceFactory(createAddress("127.0.0.1", clientPorts.incrementAndGet()));
-            final HazelcastClientInstanceImpl client = new HazelcastClientInstanceImpl(config, clientServiceFactory);
+            final HazelcastClientInstanceImpl client = new HazelcastClientInstanceImpl(config, clientConnectionManagerFactory);
             client.start();
             clients.add(client);
             OutOfMemoryErrorDispatcher.registerClient(client);
@@ -75,6 +77,20 @@ public class TestHazelcastFactory extends TestHazelcastInstanceFactory {
             Thread.currentThread().setContextClassLoader(tccl);
         }
         return proxy;
+    }
+
+    private void insertAddressesToEmulateLocalhost(ClientConfig config) {
+        List<String> userConfiguredAddresses = config.getNetworkConfig().getAddresses();
+        if (!userConfiguredAddresses.contains("localhost")) {
+            return;
+        }
+        for (Address address : this.addresses) {
+            Collection<InetSocketAddress> addresses = AddressHelper.getPossibleSocketAddresses(address.getPort(),
+                    address.getHost(), 10);
+            for (InetSocketAddress inetSocketAddress : addresses) {
+                config.getNetworkConfig().addAddress(inetSocketAddress.getHostName() + ":" + inetSocketAddress.getPort());
+            }
+        }
     }
 
     @Override

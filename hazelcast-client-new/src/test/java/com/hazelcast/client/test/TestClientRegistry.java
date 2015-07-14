@@ -23,10 +23,9 @@ import com.hazelcast.client.connection.AddressTranslator;
 import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.client.connection.nio.ClientConnectionManagerImpl;
-import com.hazelcast.client.impl.ClientServiceFactory;
+import com.hazelcast.client.impl.ClientConnectionManagerFactory;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.MapMessageType;
 import com.hazelcast.client.spi.impl.AwsAddressTranslator;
 import com.hazelcast.client.spi.impl.DefaultAddressTranslator;
 import com.hazelcast.core.HazelcastException;
@@ -60,15 +59,15 @@ public class TestClientRegistry {
     }
 
 
-    ClientServiceFactory createClientServiceFactory(Address clientAddress) {
-        return new MockClientServiceFactory(clientAddress);
+    ClientConnectionManagerFactory createClientServiceFactory(Address clientAddress) {
+        return new MockClientConnectionManagerFactory(clientAddress);
     }
 
-    private class MockClientServiceFactory implements ClientServiceFactory {
+    private class MockClientConnectionManagerFactory implements ClientConnectionManagerFactory {
 
         private final Address clientAddress;
 
-        public MockClientServiceFactory(Address clientAddress) {
+        public MockClientConnectionManagerFactory(Address clientAddress) {
             this.clientAddress = clientAddress;
         }
 
@@ -287,7 +286,8 @@ public class TestClientRegistry {
         @Override
         public void close() {
             super.close();
-            responseConnection.close();
+            ClientConnectionManager connectionManager = responseConnection.getConnectionManager();
+            connectionManager.destroyConnection(responseConnection);
         }
 
         @Override

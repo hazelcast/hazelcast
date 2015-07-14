@@ -29,42 +29,42 @@ import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 public class TestHazelcastInstanceFactory {
 
-    private final AtomicInteger ports = new AtomicInteger(5000);
+    private static final AtomicInteger ports = new AtomicInteger(5000);
     private final boolean mockNetwork = TestEnvironment.isMockNetwork();
     private final AtomicInteger nodeIndex = new AtomicInteger();
 
     protected TestNodeRegistry registry;
-    protected List<Address> addresses;
+    protected CopyOnWriteArrayList<Address> addresses;
     private int count;
 
     public TestHazelcastInstanceFactory(int count) {
-        init(count);
+        this.count = count;
         if (mockNetwork) {
+            this.addresses = new CopyOnWriteArrayList<Address>();
             this.addresses.addAll(createAddresses(ports, count));
+            this.registry = new TestNodeRegistry(addresses);
         }
+    }
+
+    public TestHazelcastInstanceFactory() {
+        this.count = 0;
+        this.addresses = new CopyOnWriteArrayList<Address>();
+        this.registry = new TestNodeRegistry(addresses);
     }
 
     public TestHazelcastInstanceFactory(String... addresses) {
-        init(addresses.length);
+        this.count = addresses.length;
         if (mockNetwork) {
+            this.addresses = new CopyOnWriteArrayList<Address>();
             this.addresses.addAll(createAddresses(ports, addresses));
-        }
-    }
-
-    private void init(int initialNodeCount) {
-        this.count = initialNodeCount;
-        if (mockNetwork) {
-            this.addresses = new ArrayList<Address>(initialNodeCount);
-            this.registry = new TestNodeRegistry();
-        } else {
-            this.addresses = null;
-            this.registry = null;
+            this.registry = new TestNodeRegistry(this.addresses);
         }
     }
 

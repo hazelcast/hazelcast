@@ -50,15 +50,21 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
 
 public final class TestNodeRegistry {
 
     private final ConcurrentMap<Address, NodeEngineImpl> nodes = new ConcurrentHashMap<Address, NodeEngineImpl>(10);
     private final Object joinerLock = new Object();
+    private final CopyOnWriteArrayList<Address> joinAddresses;
+
+    TestNodeRegistry(CopyOnWriteArrayList<Address> addresses) {
+        this.joinAddresses = addresses;
+    }
 
     public NodeContext createNodeContext(Address address) {
-        return new MockNodeContext(nodes, address, joinerLock);
+        return new MockNodeContext(joinAddresses, nodes, address, joinerLock);
     }
 
     public HazelcastInstance getInstance(Address address) {
@@ -95,11 +101,13 @@ public final class TestNodeRegistry {
 
     private static class MockNodeContext implements NodeContext {
 
+        final CopyOnWriteArrayList<Address> joinAddresses;
         final ConcurrentMap<Address, NodeEngineImpl> nodes;
         final Address thisAddress;
         final Object joinerLock;
 
-        public MockNodeContext(ConcurrentMap<Address, NodeEngineImpl> nodes, Address thisAddress, Object joinerLock) {
+        public MockNodeContext(CopyOnWriteArrayList<Address> addresses, ConcurrentMap<Address, NodeEngineImpl> nodes, Address thisAddress, Object joinerLock) {
+            this.joinAddresses = addresses;
             this.nodes = nodes;
             this.thisAddress = thisAddress;
             this.joinerLock = joinerLock;
@@ -110,7 +118,7 @@ public final class TestNodeRegistry {
         }
 
         public Joiner createJoiner(Node node) {
-            return new MockJoiner(node, nodes, joinerLock);
+            return new MockJoiner(node, joinAddresses, nodes, joinerLock);
         }
 
         public ConnectionManager createConnectionManager(Node node, ServerSocketChannel serverSocketChannel) {
@@ -144,11 +152,13 @@ public final class TestNodeRegistry {
 
     private static class MockJoiner extends AbstractJoiner {
 
+        final CopyOnWriteArrayList<Address> joinAddresses;
         final ConcurrentMap<Address, NodeEngineImpl> nodes;
         final Object joinerLock;
 
-        MockJoiner(Node node, ConcurrentMap<Address, NodeEngineImpl> nodes, Object joinerLock) {
+        MockJoiner(Node node, CopyOnWriteArrayList<Address> addresses, ConcurrentMap<Address, NodeEngineImpl> nodes, Object joinerLock) {
             super(node);
+            this.joinAddresses = addresses;
             this.nodes = nodes;
             this.joinerLock = joinerLock;
         }
@@ -156,7 +166,7 @@ public final class TestNodeRegistry {
         public void doJoin() {
             NodeEngineImpl nodeEngine = null;
             synchronized (joinerLock) {
-                for (Address address : nodes.keySet()) {
+                for (Address address : joinAddresses) {
                     NodeEngineImpl ne = nodes.get(address);
                     if (ne != null && ne.getNode().isActive() && ne.getNode().joined()) {
                         nodeEngine = ne;

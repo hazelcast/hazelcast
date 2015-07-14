@@ -18,8 +18,8 @@ package com.hazelcast.client;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.XmlClientConfigBuilder;
-import com.hazelcast.client.impl.ClientServiceFactory;
-import com.hazelcast.client.impl.DefaultClientServiceFactory;
+import com.hazelcast.client.impl.ClientConnectionManagerFactory;
+import com.hazelcast.client.impl.DefaultClientConnectionManagerFactory;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.HazelcastClientProxy;
 import com.hazelcast.core.HazelcastInstance;
@@ -80,8 +80,8 @@ public final class HazelcastClient {
         HazelcastClientProxy proxy;
         try {
             Thread.currentThread().setContextClassLoader(HazelcastClient.class.getClassLoader());
-            ClientServiceFactory clientServiceFactory = new DefaultClientServiceFactory();
-            final HazelcastClientInstanceImpl client = new HazelcastClientInstanceImpl(config, clientServiceFactory);
+            ClientConnectionManagerFactory clientConnectionManagerFactory = new DefaultClientConnectionManagerFactory();
+            final HazelcastClientInstanceImpl client = new HazelcastClientInstanceImpl(config, clientConnectionManagerFactory);
             client.start();
             OutOfMemoryErrorDispatcher.registerClient(client);
             proxy = new HazelcastClientProxy(client);
