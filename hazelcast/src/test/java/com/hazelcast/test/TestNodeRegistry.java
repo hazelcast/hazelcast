@@ -466,7 +466,6 @@ public final class TestNodeRegistry {
         public String toString() {
             return "MockConnection{" +
                     "localEndpoint=" + localEndpoint +
-                    ", localConnection=" + localConnection +
                     ", remoteEndpoint=" + remoteEndpoint +
                     '}';
         }
