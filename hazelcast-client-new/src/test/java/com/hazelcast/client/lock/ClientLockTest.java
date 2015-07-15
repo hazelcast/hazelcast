@@ -17,14 +17,15 @@
 package com.hazelcast.client.lock;
 
 import com.hazelcast.client.test.TestHazelcastFactory;
+import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ILock;
+import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -40,24 +41,19 @@ import static org.junit.Assert.assertTrue;
 @Category(QuickTest.class)
 public class ClientLockTest extends HazelcastTestSupport {
 
-    private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
-    private ILock lock;
-
-    @Before
-    public void setup() {
-        hazelcastFactory.newHazelcastInstance();
-        HazelcastInstance client = hazelcastFactory.newHazelcastClient();
-        lock = client.getLock(randomString());
-    }
+    private TestHazelcastFactory factory = new TestHazelcastFactory();
 
     @After
-    public void tearDown() {
-        lock.forceUnlock();
-        hazelcastFactory.terminateAll();
+    public void teardown() {
+        factory.terminateAll();
     }
 
     @Test
     public void testLock() throws Exception {
+        factory.newHazelcastInstance();
+        HazelcastInstance hz = factory.newHazelcastClient();
+        final ILock lock = hz.getLock(randomName());
+
         lock.lock();
         final CountDownLatch latch = new CountDownLatch(1);
         new Thread() {
@@ -73,6 +69,10 @@ public class ClientLockTest extends HazelcastTestSupport {
 
     @Test
     public void testLockTtl() throws Exception {
+        factory.newHazelcastInstance();
+        HazelcastInstance hz = factory.newHazelcastClient();
+        final ILock lock = hz.getLock(randomName());
+
         lock.lock(3, TimeUnit.SECONDS);
         final CountDownLatch latch = new CountDownLatch(2);
         new Thread() {
@@ -95,6 +95,9 @@ public class ClientLockTest extends HazelcastTestSupport {
 
     @Test
     public void testTryLock() throws Exception {
+        factory.newHazelcastInstance();
+        HazelcastInstance hz = factory.newHazelcastClient();
+        final ILock lock = hz.getLock(randomName());
 
         assertTrue(lock.tryLock(2, TimeUnit.SECONDS));
         final CountDownLatch latch = new CountDownLatch(1);
@@ -135,14 +138,19 @@ public class ClientLockTest extends HazelcastTestSupport {
 
     @Test
     public void testTryLockwithZeroTTL() throws Exception {
+        factory.newHazelcastInstance();
+        HazelcastInstance hz = factory.newHazelcastClient();
+        final ILock lock = hz.getLock(randomName());
 
         boolean lockWithZeroTTL = lock.tryLock(0, TimeUnit.SECONDS);
         assertTrue(lockWithZeroTTL);
-
     }
 
     @Test
     public void testTryLockwithZeroTTLWithExistingLock() throws Exception {
+        factory.newHazelcastInstance();
+        HazelcastInstance hz = factory.newHazelcastClient();
+        final ILock lock = hz.getLock(randomName());
 
         lock.lock();
         final CountDownLatch latch = new CountDownLatch(1);
@@ -158,12 +166,14 @@ public class ClientLockTest extends HazelcastTestSupport {
         }.start();
         assertOpenEventually(latch);
         lock.forceUnlock();
-
     }
-
 
     @Test
     public void testForceUnlock() throws Exception {
+        factory.newHazelcastInstance();
+        HazelcastInstance hz = factory.newHazelcastClient();
+        final ILock lock = hz.getLock(randomName());
+
         lock.lock();
         final CountDownLatch latch = new CountDownLatch(1);
         new Thread() {
@@ -178,6 +188,10 @@ public class ClientLockTest extends HazelcastTestSupport {
 
     @Test
     public void testStats() throws InterruptedException {
+        factory.newHazelcastInstance();
+        HazelcastInstance hz = factory.newHazelcastClient();
+        final ILock lock = hz.getLock(randomName());
+
         lock.lock();
         assertTrue(lock.isLocked());
         assertTrue(lock.isLockedByCurrentThread());
@@ -208,14 +222,16 @@ public class ClientLockTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testObtainLock_FromDiffClients() throws InterruptedException {
+    public void testObtainLock_FromDifferentClients() throws InterruptedException {
+        factory.newHazelcastInstance();
+        String name = randomName();
 
-        HazelcastInstance clientA = hazelcastFactory.newHazelcastClient();
-        ILock lockA = clientA.getLock(lock.getName());
+        HazelcastInstance clientA = factory.newHazelcastClient();
+        ILock lockA = clientA.getLock(name);
         lockA.lock();
 
-        HazelcastInstance clientB = hazelcastFactory.newHazelcastClient();
-        ILock lockB = clientB.getLock(lock.getName());
+        HazelcastInstance clientB = factory.newHazelcastClient();
+        ILock lockB = clientB.getLock(name);
         boolean lockObtained = lockB.tryLock();
 
         assertFalse("Lock obtained by 2 client ", lockObtained);
@@ -223,12 +239,20 @@ public class ClientLockTest extends HazelcastTestSupport {
 
     @Test(timeout = 60000)
     public void testTryLockLeaseTime_whenLockFree() throws InterruptedException {
+        factory.newHazelcastInstance();
+        HazelcastInstance hz = factory.newHazelcastClient();
+        final ILock lock = hz.getLock(randomName());
+
         boolean isLocked = lock.tryLock(1000, TimeUnit.MILLISECONDS, 1000, TimeUnit.MILLISECONDS);
         assertTrue(isLocked);
     }
 
     @Test(timeout = 60000)
     public void testTryLockLeaseTime_whenLockAcquiredByOther() throws InterruptedException {
+        factory.newHazelcastInstance();
+        HazelcastInstance hz = factory.newHazelcastClient();
+        final ILock lock = hz.getLock(randomName());
+
         Thread thread = new Thread() {
             public void run() {
                 lock.lock();
@@ -243,6 +267,10 @@ public class ClientLockTest extends HazelcastTestSupport {
 
     @Test
     public void testTryLockLeaseTime_lockIsReleasedEventually() throws InterruptedException {
+        factory.newHazelcastInstance();
+        HazelcastInstance hz = factory.newHazelcastClient();
+        final ILock lock = hz.getLock(randomName());
+
         lock.tryLock(1000, TimeUnit.MILLISECONDS, 1000, TimeUnit.MILLISECONDS);
         assertTrueEventually(new AssertTask() {
             @Override
@@ -250,5 +278,38 @@ public class ClientLockTest extends HazelcastTestSupport {
                 assertFalse(lock.isLocked());
             }
         }, 30);
+    }
+
+    @Test
+    public void testMaxLockLeaseTime() {
+        Config config = new Config();
+        config.setProperty(GroupProperties.PROP_LOCK_MAX_LEASE_TIME_SECONDS, "1");
+
+        factory.newHazelcastInstance(config);
+
+        HazelcastInstance hz = factory.newHazelcastClient();
+        final ILock lock = hz.getLock(randomName());
+
+        lock.lock();
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertFalse("Lock should be released after lease expires!", lock.isLocked());
+            }
+        }, 30);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testLockFail_whenGreaterThanMaxLeaseTimeUsed() {
+        Config config = new Config();
+        config.setProperty(GroupProperties.PROP_LOCK_MAX_LEASE_TIME_SECONDS, "1");
+
+        factory.newHazelcastInstance(config);
+
+        HazelcastInstance hz = factory.newHazelcastClient();
+        ILock lock = hz.getLock(randomName());
+
+        lock.lock(10, TimeUnit.SECONDS);
     }
 }
