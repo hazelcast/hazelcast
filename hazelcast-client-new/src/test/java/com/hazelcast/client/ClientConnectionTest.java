@@ -21,17 +21,16 @@ import com.hazelcast.client.config.ClientProperties;
 import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.impl.ClientTestUtil;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
+import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.Client;
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionListener;
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -42,36 +41,37 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.assertEquals;
 
-@RunWith(HazelcastSerialClassRunner.class)
+@RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
 public class ClientConnectionTest extends HazelcastTestSupport {
 
+    private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
+
     @After
-    @Before
     public void cleanup() {
-        HazelcastClient.shutdownAll();
-        Hazelcast.shutdownAll();
+        hazelcastFactory.terminateAll();
     }
 
     @Test(expected = IllegalStateException.class)
     public void testWithIllegalAddress() {
         String illegalAddress = randomString();
 
-        Hazelcast.newHazelcastInstance();
+        hazelcastFactory.newHazelcastInstance();
         ClientConfig config = new ClientConfig();
+        config.getNetworkConfig().setConnectionAttemptPeriod(1);
         config.getNetworkConfig().addAddress(illegalAddress);
-        HazelcastClient.newHazelcastClient(config);
+        hazelcastFactory.newHazelcastClient(config);
     }
 
     @Test
     public void testWithLegalAndIllegalAddressTogether() {
         String illegalAddress = randomString();
 
-        HazelcastInstance server = Hazelcast.newHazelcastInstance();
+        HazelcastInstance server = hazelcastFactory.newHazelcastInstance();
         ClientConfig config = new ClientConfig();
         config.setProperty(ClientProperties.PROP_SHUFFLE_MEMBER_LIST, "false");
         config.getNetworkConfig().addAddress(illegalAddress).addAddress("localhost");
-        HazelcastInstance client = HazelcastClient.newHazelcastClient(config);
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient(config);
 
         Collection<Client> connectedClients = server.getClientService().getConnectedClients();
         assertEquals(connectedClients.size(), 1);
@@ -83,8 +83,8 @@ public class ClientConnectionTest extends HazelcastTestSupport {
     @Test
     public void testMemberConnectionOrder() {
 
-        HazelcastInstance server1 = Hazelcast.newHazelcastInstance();
-        HazelcastInstance server2 = Hazelcast.newHazelcastInstance();
+        HazelcastInstance server1 = hazelcastFactory.newHazelcastInstance();
+        HazelcastInstance server2 = hazelcastFactory.newHazelcastInstance();
 
         ClientConfig config = new ClientConfig();
         config.setProperty(ClientProperties.PROP_SHUFFLE_MEMBER_LIST, "false");
@@ -97,7 +97,7 @@ public class ClientConnectionTest extends HazelcastTestSupport {
                 addAddress(socketAddress1.getHostName() + ":" + socketAddress1.getPort()).
                 addAddress(socketAddress2.getHostName() + ":" + socketAddress2.getPort());
 
-        HazelcastClient.newHazelcastClient(config);
+        hazelcastFactory.newHazelcastClient(config);
 
         Collection<Client> connectedClients1 = server1.getClientService().getConnectedClients();
         assertEquals(connectedClients1.size(), 1);
@@ -108,8 +108,8 @@ public class ClientConnectionTest extends HazelcastTestSupport {
 
     @Test
     public void destroyConnection_whenDestroyedMultipleTimes_thenListenerRemoveCalledOnce() {
-        HazelcastInstance server = Hazelcast.newHazelcastInstance();
-        HazelcastInstance client = HazelcastClient.newHazelcastClient();
+        HazelcastInstance server = hazelcastFactory.newHazelcastInstance();
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient();
         HazelcastClientInstanceImpl clientImpl = ClientTestUtil.getHazelcastClientInstanceImpl(client);
         ClientConnectionManager connectionManager = clientImpl.getConnectionManager();
 

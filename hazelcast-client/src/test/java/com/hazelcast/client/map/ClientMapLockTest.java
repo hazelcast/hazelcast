@@ -16,53 +16,44 @@
 
 package com.hazelcast.client.map;
 
-import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.config.Config;
-import com.hazelcast.config.MapStoreConfig;
-import com.hazelcast.core.*;
-import com.hazelcast.map.AbstractEntryProcessor;
-import com.hazelcast.monitor.LocalMapStats;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
-import com.hazelcast.nio.serialization.HazelcastSerializationException;
-import com.hazelcast.query.Predicate;
-import com.hazelcast.query.SqlPredicate;
+import com.hazelcast.client.test.TestHazelcastFactory;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IMap;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.io.IOException;
-import java.io.Serializable;
-import java.util.*;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.test.HazelcastTestSupport.*;
-import static org.junit.Assert.*;
+import static com.hazelcast.test.HazelcastTestSupport.assertOpenEventually;
+import static com.hazelcast.test.HazelcastTestSupport.randomString;
+import static com.hazelcast.test.HazelcastTestSupport.sleepSeconds;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
 public class ClientMapLockTest {
 
-    static HazelcastInstance client;
-    static HazelcastInstance server;
+    private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
+    private HazelcastInstance client;
 
-    @BeforeClass
-    public static void init() {
-        server = Hazelcast.newHazelcastInstance();
-        client = HazelcastClient.newHazelcastClient();
+    @Before
+    public void setup() {
+        hazelcastFactory.newHazelcastInstance();
+        client = hazelcastFactory.newHazelcastClient();
     }
 
-    @AfterClass
-    public static void destroy() {
-        HazelcastClient.shutdownAll();
-        Hazelcast.shutdownAll();
+    @After
+    public void tearDown() {
+        hazelcastFactory.terminateAll();
     }
 
     @Test(expected = NullPointerException.class)
@@ -81,7 +72,7 @@ public class ClientMapLockTest {
     @Test
     public void testisLocked_whenKeyPresent_fromSameThread() {
         final IMap map = client.getMap(randomString());
-        final Object key ="key";
+        final Object key = "key";
         map.put(key, "value");
         final boolean isLocked = map.isLocked(key);
         assertFalse(isLocked);
@@ -104,7 +95,7 @@ public class ClientMapLockTest {
     @Test
     public void testLock_whenKeyPresent_fromSameThread() {
         final IMap map = client.getMap(randomString());
-        final Object key ="key";
+        final Object key = "key";
         map.put(key, "value");
         map.lock(key);
         assertTrue(map.isLocked(key));
@@ -113,7 +104,7 @@ public class ClientMapLockTest {
     @Test
     public void testLock_whenLockedRepeatedly_fromSameThread() {
         final IMap map = client.getMap(randomString());
-        final Object key ="key";
+        final Object key = "key";
 
         map.lock(key);
         map.lock(key);
@@ -150,7 +141,7 @@ public class ClientMapLockTest {
     }
 
     @Test
-    public void testUnLock_whenKeyLockedRepeatedly_fromSameThread()  {
+    public void testUnLock_whenKeyLockedRepeatedly_fromSameThread() {
         final IMap map = client.getMap(randomString());
         final String key = "key";
         map.lock(key);
@@ -160,7 +151,7 @@ public class ClientMapLockTest {
     }
 
     @Test(expected = NullPointerException.class)
-    public void testForceUnlock_whenKeyNull_fromSameThread()  {
+    public void testForceUnlock_whenKeyNull_fromSameThread() {
         final IMap map = client.getMap(randomString());
         map.forceUnlock(null);
     }
@@ -180,7 +171,7 @@ public class ClientMapLockTest {
     }
 
     @Test
-    public void testForceUnlock_fromSameThread(){
+    public void testForceUnlock_fromSameThread() {
         final IMap map = client.getMap(randomString());
         final String key = "key";
         map.lock(key);
@@ -329,7 +320,8 @@ public class ClientMapLockTest {
                     putWhileLocked.countDown();
                     checkingKeySet.await();
                     map.unlock(key);
-                }catch(Exception e){}
+                } catch (Exception e) {
+                }
             }
         }.start();
 
@@ -356,7 +348,8 @@ public class ClientMapLockTest {
                     putWhileLocked.countDown();
                     checkingKeySet.await();
                     map.unlock(key);
-                }catch(Exception e){}
+                } catch (Exception e) {
+                }
             }
         }.start();
 
@@ -383,7 +376,8 @@ public class ClientMapLockTest {
                     removeWhileLocked.countDown();
                     checkingKey.await();
                     map.unlock(key);
-                }catch(Exception e){}
+                } catch (Exception e) {
+                }
             }
         }.start();
 

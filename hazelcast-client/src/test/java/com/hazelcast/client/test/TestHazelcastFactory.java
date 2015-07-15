@@ -28,6 +28,7 @@ import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
 import com.hazelcast.nio.Address;
 import com.hazelcast.test.TestEnvironment;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
+import com.hazelcast.util.AddressUtil;
 
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
@@ -86,7 +87,7 @@ public class TestHazelcastFactory extends TestHazelcastInstanceFactory {
         }
         for (Address address : this.addresses) {
             Collection<InetSocketAddress> addresses = AddressHelper.getPossibleSocketAddresses(address.getPort(),
-                    address.getHost(), 10);
+                    address.getScopedHost(), 10);
             for (InetSocketAddress inetSocketAddress : addresses) {
                 config.getNetworkConfig().addAddress(inetSocketAddress.getHostName() + ":" + inetSocketAddress.getPort());
             }

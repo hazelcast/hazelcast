@@ -1,23 +1,31 @@
 package com.hazelcast.client;
 
+import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.core.Client;
 import com.hazelcast.core.ClientListener;
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.concurrent.CountDownLatch;
 
-@RunWith(HazelcastSerialClassRunner.class)
+@RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
 public class ClientConnectionListenerTest extends HazelcastTestSupport {
+
+    private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
+
+    @After
+    public void cleanup() {
+        hazelcastFactory.terminateAll();
+    }
 
     @Test
     public void testClientListener() {
@@ -37,8 +45,8 @@ public class ClientConnectionListenerTest extends HazelcastTestSupport {
 
         config.addListenerConfig(listenerConfig);
 
-        HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
-        HazelcastInstance client = HazelcastClient.newHazelcastClient();
+        HazelcastInstance instance = hazelcastFactory.newHazelcastInstance(config);
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient();
         client.shutdown();
         assertOpenEventually(latch);
         instance.shutdown();

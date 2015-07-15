@@ -16,50 +16,45 @@
 
 package com.hazelcast.client.idgenerator;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-
+import com.hazelcast.client.test.TestHazelcastFactory;
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IdGenerator;
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.core.Hazelcast;
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IdGenerator;
-import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
-/**
- * @author ali 5/28/13
- */
-@RunWith(HazelcastSerialClassRunner.class)
+@RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
-public class ClientIdGeneratorTest {
+public class ClientIdGeneratorTest extends HazelcastTestSupport {
 
-    private final String name = "test";
-    private HazelcastInstance hz;
+    private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
     private IdGenerator i;
 
     @Before
-    public void init() {
-        Hazelcast.newHazelcastInstance();
-        hz = HazelcastClient.newHazelcastClient(null);
-        i = hz.getIdGenerator(name);
+    public void setup() {
+        hazelcastFactory.newHazelcastInstance();
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient();
+        i = client.getIdGenerator(randomString());
     }
 
     @After
-    public void destroy() {
-        hz.shutdown();
-        Hazelcast.shutdownAll();
+    public void tearDown() {
+        hazelcastFactory.terminateAll();
     }
 
     @Test
     public void testInit0_GivesId1() throws Exception {
-        assertTrue( i.init(0) );
+        assertTrue(i.init(0));
         assertEquals(1, i.newId());
     }
 

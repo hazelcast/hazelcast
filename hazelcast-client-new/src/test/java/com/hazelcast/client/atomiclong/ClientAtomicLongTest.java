@@ -16,58 +16,43 @@
 
 package com.hazelcast.client.atomiclong;
 
-import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.core.Hazelcast;
+import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IAtomicLong;
 import com.hazelcast.core.IFunction;
 import com.hazelcast.test.ExpectedRuntimeException;
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
-import org.junit.AfterClass;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-
-import java.io.IOException;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-/**
- * @author ali 5/24/13
- */
-@RunWith(HazelcastSerialClassRunner.class)
+@RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
-public class ClientAtomicLongTest {
+public class ClientAtomicLongTest extends HazelcastTestSupport {
 
-    static final String name = "test1";
-    static HazelcastInstance client;
-    static HazelcastInstance server;
-    static IAtomicLong l;
-
-    @BeforeClass
-    public static void init(){
-        server = Hazelcast.newHazelcastInstance();
-        client = HazelcastClient.newHazelcastClient();
-        l = client.getAtomicLong(name);
-    }
-
-    @AfterClass
-    public static void destroy() {
-        client.shutdown();
-        Hazelcast.shutdownAll();
-    }
+    private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
+    private HazelcastInstance client;
+    private IAtomicLong l;
 
     @Before
+    public void setup() {
+        hazelcastFactory.newHazelcastInstance();
+        client = hazelcastFactory.newHazelcastClient();
+        l = client.getAtomicLong(randomString());
+    }
+
     @After
-    public void clear() throws IOException {
-        l.set(0);
+    public void tearDown() {
+        hazelcastFactory.terminateAll();
     }
 
     @Test
@@ -212,7 +197,7 @@ public class ClientAtomicLongTest {
     private static class AddOneFunction implements IFunction<Long, Long> {
         @Override
         public Long apply(Long input) {
-            return input+1;
+            return input + 1;
         }
     }
 

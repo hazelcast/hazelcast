@@ -1,8 +1,7 @@
 package com.hazelcast.client.txn;
 
 import com.atomikos.datasource.xa.XID;
-import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.core.Hazelcast;
+import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.TransactionalList;
@@ -10,7 +9,7 @@ import com.hazelcast.core.TransactionalMap;
 import com.hazelcast.core.TransactionalMultiMap;
 import com.hazelcast.core.TransactionalQueue;
 import com.hazelcast.core.TransactionalSet;
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.topic.impl.TopicService;
@@ -36,9 +35,16 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-@RunWith(HazelcastSerialClassRunner.class)
+@RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
 public class ClientXACompatibilityTest extends HazelcastTestSupport {
+
+    private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
+
+    @After
+    public void tearDown() {
+        hazelcastFactory.terminateAll();
+    }
 
     private HazelcastInstance instance, secondInstance, client, secondClient;
     private HazelcastXAResource xaResource, secondXaResource, instanceXaResource;
@@ -50,21 +56,15 @@ public class ClientXACompatibilityTest extends HazelcastTestSupport {
 
     @Before
     public void setUp() throws Exception {
-        instance = Hazelcast.newHazelcastInstance();
+        instance = hazelcastFactory.newHazelcastInstance();
         instanceXaResource = instance.getXAResource();
 //        secondInstance = Hazelcast.newHazelcastInstance();
 
-        client = HazelcastClient.newHazelcastClient();
-        secondClient = HazelcastClient.newHazelcastClient();
+        client = hazelcastFactory.newHazelcastClient();
+        secondClient = hazelcastFactory.newHazelcastClient();
         xaResource = client.getXAResource();
         secondXaResource = secondClient.getXAResource();
         xid = createXid();
-    }
-
-    @After
-    public void tearDown() {
-        HazelcastClient.shutdownAll();
-        Hazelcast.shutdownAll();
     }
 
     @Test

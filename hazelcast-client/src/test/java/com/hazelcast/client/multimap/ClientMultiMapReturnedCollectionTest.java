@@ -16,16 +16,15 @@
 
 package com.hazelcast.client.multimap;
 
-import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MultiMapConfig;
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.MultiMap;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -40,28 +39,26 @@ import static org.junit.Assert.assertTrue;
 @Category(QuickTest.class)
 public class ClientMultiMapReturnedCollectionTest {
 
-    static HazelcastInstance server;
-    static HazelcastInstance client;
-
     private static final String SET_MAP = "set-map";
     private static final String LIST_MAP = "list-map";
+    private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
 
-    @BeforeClass
-    public static void init() {
+    private HazelcastInstance client;
+
+    @After
+    public void tearDown() {
+        hazelcastFactory.terminateAll();
+    }
+
+    @Before
+    public void setup() {
         Config config = new Config();
         config.getMultiMapConfig(SET_MAP).setValueCollectionType(MultiMapConfig.ValueCollectionType.SET);
         config.getMultiMapConfig(LIST_MAP).setValueCollectionType(MultiMapConfig.ValueCollectionType.LIST);
 
-        server = Hazelcast.newHazelcastInstance(config);
-        client = HazelcastClient.newHazelcastClient();
+        hazelcastFactory.newHazelcastInstance(config);
+        client = hazelcastFactory.newHazelcastClient();
     }
-
-    @AfterClass
-    public static void destroy() {
-        HazelcastClient.shutdownAll();
-        Hazelcast.shutdownAll();
-    }
-
 
     @Test
     public void testGet_withSetBackedValueCollection() throws Exception {

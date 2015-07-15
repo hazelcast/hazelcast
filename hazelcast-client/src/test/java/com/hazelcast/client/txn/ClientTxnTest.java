@@ -16,17 +16,16 @@
 
 package com.hazelcast.client.txn;
 
-import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.client.util.AbstractLoadBalancer;
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IQueue;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MembershipAdapter;
 import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.TransactionalQueue;
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.transaction.TransactionContext;
@@ -43,17 +42,17 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 
-@RunWith(HazelcastSerialClassRunner.class)
+@RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
 public class ClientTxnTest extends HazelcastTestSupport {
 
-    HazelcastInstance hz;
-    HazelcastInstance server;
-    HazelcastInstance second;
+    private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
+    private HazelcastInstance hz;
+    private HazelcastInstance server;
 
     @Before
-    public void init() {
-        server = Hazelcast.newHazelcastInstance();
+    public void setup() {
+        server = hazelcastFactory.newHazelcastInstance();
         final ClientConfig config = new ClientConfig();
         config.getNetworkConfig().setRedoOperation(true);
         //always start the txn on first member
@@ -67,14 +66,13 @@ public class ClientTxnTest extends HazelcastTestSupport {
                 return members[0];
             }
         });
-        hz = HazelcastClient.newHazelcastClient(config);
-        second = Hazelcast.newHazelcastInstance();
+        hz = hazelcastFactory.newHazelcastClient(config);
+        hazelcastFactory.newHazelcastInstance();
     }
 
     @After
-    public void destroy() {
-        hz.shutdown();
-        Hazelcast.shutdownAll();
+    public void tearDown() {
+        hazelcastFactory.terminateAll();
     }
 
     @Test

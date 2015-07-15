@@ -1,15 +1,12 @@
 package com.hazelcast.client.queue;
 
 import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.config.GroupConfig;
-import com.hazelcast.core.Hazelcast;
+import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.AssertTask;
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.SlowTest;
-import com.hazelcast.test.modularhelpers.SimpleClusterUtil;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -17,33 +14,41 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
+
 import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertEquals;
 
-@RunWith(HazelcastSerialClassRunner.class)
+@RunWith(HazelcastParallelClassRunner.class)
 @Category(SlowTest.class)
 public class ClientQueueDisruptionTest extends HazelcastTestSupport {
 
-    HazelcastInstance client1;
-    HazelcastInstance client2;
+    private static final int CLUSTER_SIZE = 3;
+    private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
 
-    SimpleClusterUtil cluster;
+    private Random random = new Random();
+    private List<HazelcastInstance> cluster;
+
+    private HazelcastInstance client1;
+    private HazelcastInstance client2;
+
 
     @Before
-    public void init() {
-        cluster = new SimpleClusterUtil("A", 3);
-        cluster.initCluster();
+    public void setup() {
+        cluster = new ArrayList<HazelcastInstance>(CLUSTER_SIZE);
+        for (int i = 0; i < CLUSTER_SIZE; i++) {
+            cluster.add(hazelcastFactory.newHazelcastInstance());
+        }
 
-        ClientConfig clientConfig = new ClientConfig();
-        clientConfig.setGroupConfig(new GroupConfig(cluster.getName()));
-        client1 = HazelcastClient.newHazelcastClient(clientConfig);
-        client2 = HazelcastClient.newHazelcastClient(clientConfig);
+        client1 = HazelcastClient.newHazelcastClient();
+        client2 = HazelcastClient.newHazelcastClient();
     }
 
     @After
     public void cleanup() {
-        HazelcastClient.shutdownAll();
-        Hazelcast.shutdownAll();
+        hazelcastFactory.terminateAll();
     }
 
     @Test
@@ -53,29 +58,29 @@ public class ClientQueueDisruptionTest extends HazelcastTestSupport {
         final int initial = 2000, max = 8000;
 
         for (int i = 0; i < initial; i++) {
-            cluster.getRandomNode().getQueue("Q1").offer(i);
-            cluster.getRandomNode().getQueue("Q2").offer(i);
+            getRandomNode().getQueue("Q1").offer(i);
+            getRandomNode().getQueue("Q2").offer(i);
         }
 
         int expectCount = 0;
         for (int i = initial; i < max; i++) {
 
             if (i == max / 2) {
-                cluster.shutdownRandomNode();
+                shutdownRandomNode();
             }
             final int index = i;
 
             assertExactlyOneSuccessfulRun(new AssertTask() {
                 @Override
                 public void run() throws Exception {
-                    assertTrue(cluster.getRandomNode().getQueue("Q1").offer(index));
+                    assertTrue(getRandomNode().getQueue("Q1").offer(index));
                 }
             });
 
             assertExactlyOneSuccessfulRun(new AssertTask() {
                 @Override
                 public void run() throws Exception {
-                    assertTrue(cluster.getRandomNode().getQueue("Q2").offer(index));
+                    assertTrue(getRandomNode().getQueue("Q2").offer(index));
                 }
             });
 
@@ -103,5 +108,16 @@ public class ClientQueueDisruptionTest extends HazelcastTestSupport {
             assertEquals(i, client1.getQueue("Q1").poll());
             assertEquals(i, client2.getQueue("Q2").poll());
         }
+    }
+
+    private HazelcastInstance getRandomNode() {
+        int index = random.nextInt(CLUSTER_SIZE);
+        return cluster.get(index);
+    }
+
+    private void shutdownRandomNode() {
+        HazelcastInstance node = getRandomNode();
+        node.getLifecycleService().shutdown();
+        cluster.remove(node);
     }
 }

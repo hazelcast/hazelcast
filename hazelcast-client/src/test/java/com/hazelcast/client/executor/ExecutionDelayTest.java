@@ -16,22 +16,21 @@
 
 package com.hazelcast.client.executor;
 
-import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.core.Hazelcast;
+import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IExecutorService;
 import com.hazelcast.test.AssertTask;
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.NightlyTest;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
@@ -45,27 +44,26 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.assertTrue;
 
-@RunWith(HazelcastSerialClassRunner.class)
+@RunWith(HazelcastParallelClassRunner.class)
 @Category(NightlyTest.class)
 public class ExecutionDelayTest extends HazelcastTestSupport {
 
     private static final int CLUSTER_SIZE = 3;
     private static final AtomicInteger COUNTER = new AtomicInteger();
-
     private final List<HazelcastInstance> instances = new ArrayList<HazelcastInstance>(CLUSTER_SIZE);
-
-    @Before
-    public void setUp() {
-        for (int i = 0; i < CLUSTER_SIZE; i++) {
-            instances.add(Hazelcast.newHazelcastInstance());
-        }
-        COUNTER.set(0);
-    }
+    private TestHazelcastFactory hazelcastFactory;
 
     @After
     public void tearDown() {
-        HazelcastClient.shutdownAll();
-        Hazelcast.shutdownAll();
+        hazelcastFactory.shutdownAll();
+    }
+
+    @Before
+    public void setup() throws IOException {
+        hazelcastFactory = new TestHazelcastFactory();
+        for (int i = 0; i < CLUSTER_SIZE; i++) {
+            instances.add(hazelcastFactory.newHazelcastInstance());
+        }
     }
 
     @Test
@@ -125,7 +123,7 @@ public class ExecutionDelayTest extends HazelcastTestSupport {
     private void runClient(Task task, int executions) throws InterruptedException, ExecutionException {
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.getNetworkConfig().setRedoOperation(true);
-        HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
         IExecutorService executor = client.getExecutorService("executor");
         for (int i = 0; i < executions; i++) {
             Future future = executor.submitToKeyOwner(task, i);

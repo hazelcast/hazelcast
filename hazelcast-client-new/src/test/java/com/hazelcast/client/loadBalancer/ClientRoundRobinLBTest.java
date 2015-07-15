@@ -16,17 +16,14 @@
 
 package com.hazelcast.client.loadBalancer;
 
-import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.util.RoundRobinLB;
 import com.hazelcast.core.Cluster;
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.Member;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.AfterClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -38,12 +35,6 @@ import static org.junit.Assert.assertNull;
 @Category(QuickTest.class)
 public class ClientRoundRobinLBTest {
 
-    @AfterClass
-    public static void destroy() {
-        HazelcastClient.shutdownAll();
-        Hazelcast.shutdownAll();
-    }
-
     @Test
     public void testRoundRobinLB_withoutMembers() {
         RoundRobinLB lb = new RoundRobinLB();
@@ -54,7 +45,7 @@ public class ClientRoundRobinLBTest {
     @Test
     public void testRoundRobinLB_withMembers() {
         RoundRobinLB roundRobinLB = new RoundRobinLB();
-        TestHazelcastInstanceFactory factory = new TestHazelcastInstanceFactory(1);
+        TestHazelcastInstanceFactory factory = new TestHazelcastInstanceFactory();
         final HazelcastInstance server = factory.newHazelcastInstance();
 
         Cluster cluster = server.getCluster();
@@ -68,5 +59,6 @@ public class ClientRoundRobinLBTest {
         Member nextMember = roundRobinLB.next();
 
         assertEquals(member, nextMember);
+        factory.terminateAll();
     }
 }

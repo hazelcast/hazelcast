@@ -16,15 +16,12 @@
 
 package com.hazelcast.client.loadBalancer;
 
-import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.util.StaticLB;
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.Member;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.AfterClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -35,19 +32,14 @@ import static org.junit.Assert.assertEquals;
 @Category(QuickTest.class)
 public class ClientStaticLBTest {
 
-    @AfterClass
-    public static void destroy() {
-        HazelcastClient.shutdownAll();
-        Hazelcast.shutdownAll();
-    }
-
     @Test
     public void testStaticLB_withMembers() {
-        TestHazelcastInstanceFactory factory = new TestHazelcastInstanceFactory(1);
+        TestHazelcastInstanceFactory factory = new TestHazelcastInstanceFactory();
         HazelcastInstance server = factory.newHazelcastInstance();
         Member member = server.getCluster().getLocalMember();
         StaticLB lb = new StaticLB(member);
         Member nextMember = lb.next();
         assertEquals(member, nextMember);
+        factory.terminateAll();
     }
 }

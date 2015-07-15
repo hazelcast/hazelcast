@@ -1,16 +1,15 @@
 package com.hazelcast.client.proxy;
 
-import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.spi.ClientProxy;
+import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.GroupConfig;
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -23,45 +22,44 @@ import static org.junit.Assert.assertSame;
 @Category(QuickTest.class)
 public class ProxyEqualityTest {
 
-    private static final String atomicName = "foo";
+    private final TestHazelcastFactory hazelcastFactoryGroupA = new TestHazelcastFactory();
+    private final TestHazelcastFactory hazelcastFactoryGroupB = new TestHazelcastFactory();
 
-    private static final String groupAName = "GroupA";
-    private static final String groupBName = "GroupB";
+    private final String atomicName = "foo";
+
+    private HazelcastInstance client1GroupA;
+    private HazelcastInstance client2GroupA;
+
+    private HazelcastInstance client1GroupB;
+
+    @After
+    public void tearDown() {
+        hazelcastFactoryGroupA.terminateAll();
+        hazelcastFactoryGroupB.terminateAll();
+    }
 
 
-    static HazelcastInstance client1GroupA;
-    static HazelcastInstance client2GroupA;
-    static HazelcastInstance server1GroupA;
-
-    static HazelcastInstance client1GroupB;
-    static HazelcastInstance server1GroupB;
-
-
-    @BeforeClass
-    public static void setup() throws Exception {
+    @Before
+    public void setup() throws Exception {
         Config config = new Config();
+        String groupAName = "GroupA";
         config.getGroupConfig().setName(groupAName);
-        server1GroupA = Hazelcast.newHazelcastInstance(config);
+        hazelcastFactoryGroupA.newHazelcastInstance(config);
 
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.setGroupConfig(new GroupConfig(config.getGroupConfig().getName()));
-        client1GroupA = HazelcastClient.newHazelcastClient(clientConfig);
-        client2GroupA = HazelcastClient.newHazelcastClient(clientConfig);
+        client1GroupA = hazelcastFactoryGroupA.newHazelcastClient(clientConfig);
+        client2GroupA = hazelcastFactoryGroupA.newHazelcastClient(clientConfig);
 
         //setup Group B
         config = new Config();
+        String groupBName = "GroupB";
         config.getGroupConfig().setName(groupBName);
-        server1GroupB = Hazelcast.newHazelcastInstance(config);
+        hazelcastFactoryGroupB.newHazelcastInstance(config);
 
         clientConfig = new ClientConfig();
         clientConfig.setGroupConfig(new GroupConfig(config.getGroupConfig().getName()));
-        client1GroupB = HazelcastClient.newHazelcastClient(clientConfig);
-    }
-
-    @AfterClass
-    public static void cleanup() throws Exception {
-        HazelcastClient.shutdownAll();
-        Hazelcast.shutdownAll();
+        client1GroupB = hazelcastFactoryGroupB.newHazelcastClient(clientConfig);
     }
 
     @Test

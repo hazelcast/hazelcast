@@ -16,14 +16,13 @@
 
 package com.hazelcast.client.semaphore;
 
-import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.core.Hazelcast;
+import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ISemaphore;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -32,31 +31,29 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.test.HazelcastTestSupport.randomString;
-import static com.hazelcast.test.HazelcastTestSupport.sleepSeconds;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-/**
- * @author ali 5/24/13
- */
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
 public class ClientSemaphoreTest {
-    static HazelcastInstance client;
-    static HazelcastInstance server;
 
-    @BeforeClass
-    public static void init(){
-        server = Hazelcast.newHazelcastInstance();
-        client = HazelcastClient.newHazelcastClient();
+    private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
+
+    private HazelcastInstance client;
+
+    @After
+    public void tearDown() {
+        hazelcastFactory.terminateAll();
     }
 
-    @AfterClass
-    public static void destroy() {
-        client.shutdown();
-        Hazelcast.shutdownAll();
+    @Before
+    public void setup() {
+        hazelcastFactory.newHazelcastInstance();
+        client = hazelcastFactory.newHazelcastClient();
     }
+
 
     @Test
     public void testSemaphoreInit() throws Exception {
@@ -212,11 +209,10 @@ public class ClientSemaphoreTest {
                 }
             }
         }.start();
-
-        sleepSeconds(1);
+        Thread.sleep(1000);
         semaphore.release(2);
 
-        assertTrue(latch.await(10, TimeUnit.SECONDS));
+        assertTrue(latch.await(5, TimeUnit.SECONDS));
         assertEquals(1, semaphore.availablePermits());
     }
 
@@ -229,7 +225,7 @@ public class ClientSemaphoreTest {
         new Thread() {
             public void run() {
                 try {
-                    if (semaphore.tryAcquire(1, 10, TimeUnit.SECONDS)) {
+                    if (semaphore.tryAcquire(1, 5, TimeUnit.SECONDS)) {
                         latch.countDown();
                     }
                 } catch (InterruptedException e) {
@@ -238,10 +234,8 @@ public class ClientSemaphoreTest {
             }
         }.start();
 
-        sleepSeconds(1);
         semaphore.release(2);
-
-        assertTrue(latch.await(10, TimeUnit.SECONDS));
+        assertTrue(latch.await(5, TimeUnit.SECONDS));
         assertEquals(1, semaphore.availablePermits());
     }
 }
