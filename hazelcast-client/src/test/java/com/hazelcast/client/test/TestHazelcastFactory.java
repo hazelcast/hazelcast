@@ -19,6 +19,7 @@ package com.hazelcast.client.test;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.XmlClientConfigBuilder;
+import com.hazelcast.client.connection.AddressProvider;
 import com.hazelcast.client.impl.ClientConnectionManagerFactory;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.HazelcastClientProxy;
@@ -28,7 +29,6 @@ import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
 import com.hazelcast.nio.Address;
 import com.hazelcast.test.TestEnvironment;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.util.AddressUtil;
 
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
@@ -61,15 +61,15 @@ public class TestHazelcastFactory extends TestHazelcastInstanceFactory {
             config = new XmlClientConfigBuilder().build();
         }
 
-        insertAddressesToEmulateLocalhost(config);
-
         final ClassLoader tccl = Thread.currentThread().getContextClassLoader();
         HazelcastClientProxy proxy;
         try {
             Thread.currentThread().setContextClassLoader(HazelcastClient.class.getClassLoader());
             ClientConnectionManagerFactory clientConnectionManagerFactory =
                     clientRegistry.createClientServiceFactory(createAddress("127.0.0.1", clientPorts.incrementAndGet()));
-            final HazelcastClientInstanceImpl client = new HazelcastClientInstanceImpl(config, clientConnectionManagerFactory);
+            AddressProvider testAddressProvider = createAddressProvider(config);
+            HazelcastClientInstanceImpl client =
+                    new HazelcastClientInstanceImpl(config, clientConnectionManagerFactory, testAddressProvider);
             client.start();
             clients.add(client);
             OutOfMemoryErrorDispatcher.registerClient(client);
@@ -80,18 +80,28 @@ public class TestHazelcastFactory extends TestHazelcastInstanceFactory {
         return proxy;
     }
 
-    private void insertAddressesToEmulateLocalhost(ClientConfig config) {
+    private AddressProvider createAddressProvider(ClientConfig config) {
+
         List<String> userConfiguredAddresses = config.getNetworkConfig().getAddresses();
         if (!userConfiguredAddresses.contains("localhost")) {
-            return;
+            //Addresses are set explicitly. Dont add more addresses
+            return null;
         }
-        for (Address address : this.addresses) {
-            Collection<InetSocketAddress> addresses = AddressHelper.getPossibleSocketAddresses(address.getPort(),
-                    address.getScopedHost(), 10);
-            for (InetSocketAddress inetSocketAddress : addresses) {
-                config.getNetworkConfig().addAddress(inetSocketAddress.getHostName() + ":" + inetSocketAddress.getPort());
+
+        return new AddressProvider() {
+            @Override
+            public Collection<InetSocketAddress> loadAddresses() {
+                Collection<InetSocketAddress> inetAddresses = new ArrayList<InetSocketAddress>();
+                for (Address address : addresses) {
+                    Collection<InetSocketAddress> addresses = AddressHelper.getPossibleSocketAddresses(address.getPort(),
+                            address.getHost(), 3);
+                    inetAddresses.addAll(addresses);
+                }
+
+                return inetAddresses;
+
             }
-        }
+        };
     }
 
     @Override

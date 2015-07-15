@@ -81,7 +81,8 @@ public final class HazelcastClient {
         try {
             Thread.currentThread().setContextClassLoader(HazelcastClient.class.getClassLoader());
             ClientConnectionManagerFactory clientConnectionManagerFactory = new DefaultClientConnectionManagerFactory();
-            final HazelcastClientInstanceImpl client = new HazelcastClientInstanceImpl(config, clientConnectionManagerFactory);
+            final HazelcastClientInstanceImpl client =
+                    new HazelcastClientInstanceImpl(config, clientConnectionManagerFactory, null);
             client.start();
             OutOfMemoryErrorDispatcher.registerClient(client);
             proxy = new HazelcastClientProxy(client);
@@ -95,6 +96,7 @@ public final class HazelcastClient {
     /**
      * Returns an existing HazelcastClient with instanceName.
      * <p/>
+     *
      * @param instanceName Name of the HazelcastInstance (client) which can be retrieved by {@link HazelcastInstance#getName()}
      * @return HazelcastInstance
      */
@@ -125,7 +127,7 @@ public final class HazelcastClient {
      * <p/>
      * To be more precise it shuts down the HazelcastInstances loaded using the same classloader this HazelcastClient has been
      * loaded with.
-     *
+     * <p/>
      * This method is mostly used for testing purposes.
      *
      * @see #getAllHazelcastClients()
@@ -149,6 +151,7 @@ public final class HazelcastClient {
 
     /**
      * Shutdown the provided client and remove it from the managed list
+     *
      * @param instance the hazelcast client instance
      */
     public static void shutdown(HazelcastInstance instance) {
@@ -173,6 +176,7 @@ public final class HazelcastClient {
 
     /**
      * Shutdown the provided client and remove it from the managed list
+     *
      * @param instanceName the hazelcast client instance name
      */
     public static void shutdown(String instanceName) {
