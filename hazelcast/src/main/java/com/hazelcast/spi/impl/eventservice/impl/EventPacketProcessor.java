@@ -21,6 +21,7 @@ import com.hazelcast.spi.EventPublishingService;
 import com.hazelcast.util.executor.StripedRunnable;
 
 public class EventPacketProcessor implements StripedRunnable {
+
     private final EventServiceImpl eventService;
     private final int orderKey;
     private final EventPacket eventPacket;
@@ -73,7 +74,7 @@ public class EventPacketProcessor implements StripedRunnable {
         }
 
         String id = eventPacket.getEventId();
-        Registration registration = segment.getRegistrationIdMap().get(id);
+        Registration registration = (Registration) segment.getRegistrationIdMap().get(id);
         if (registration == null) {
             if (eventService.nodeEngine.isActive()) {
                 if (eventService.logger.isFinestEnabled()) {

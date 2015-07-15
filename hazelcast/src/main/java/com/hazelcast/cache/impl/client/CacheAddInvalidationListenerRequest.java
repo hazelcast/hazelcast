@@ -16,6 +16,7 @@
 
 package com.hazelcast.cache.impl.client;
 
+import com.hazelcast.cache.impl.CacheContext;
 import com.hazelcast.cache.impl.CachePortableHook;
 import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.client.ClientEndpoint;
@@ -45,7 +46,8 @@ public class CacheAddInvalidationListenerRequest
     public Object call() {
         ClientEndpoint endpoint = getEndpoint();
         CacheService cacheService = getService();
-        CacheInvalidationListener listener = new CacheInvalidationListener(endpoint, getCallId());
+        CacheContext cacheContext = cacheService.getOrCreateCacheContext(name);
+        CacheInvalidationListener listener = new CacheInvalidationListener(endpoint, getCallId(), cacheContext);
         String registrationId = cacheService.addInvalidationListener(name, listener);
         endpoint.setListenerRegistration(CacheService.SERVICE_NAME, name, registrationId);
         return registrationId;

@@ -20,6 +20,7 @@ import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.EventFilter;
 import com.hazelcast.spi.EventPublishingService;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.MigrationAwareService;
@@ -68,7 +69,9 @@ public interface ICacheService extends ManagedService, RemoteService, MigrationA
 
     NodeEngine getNodeEngine();
 
-    String registerListener(String distributedObjectName, CacheEventListener listener);
+    String registerListener(String name, CacheEventListener listener);
+
+    String registerListener(String name, CacheEventListener listener, EventFilter eventFilter);
 
     boolean deregisterListener(String name, String registrationId);
 

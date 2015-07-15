@@ -358,4 +358,18 @@ public class JCacheListenerTest extends HazelcastTestSupport {
             counter.addAndGet(count);
         }
     }
+
+    @Test
+    public void cacheEntryListenerCountIncreasedAndDecreasedCorrectly() {
+        final CachingProvider provider = getCachingProvider();
+        CacheManager cacheManager = provider.getCacheManager();
+
+        CompleteConfiguration<String, String> config = new MutableConfiguration<String, String>()
+                .addCacheEntryListenerConfiguration(new MutableCacheEntryListenerConfiguration<String, String>(
+                        FactoryBuilder.factoryOf(new TestListener(new AtomicInteger())), null, true,
+                        true));
+
+        final Cache<String, String> cache = cacheManager.createCache("MyCache", config);
+    }
+
 }

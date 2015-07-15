@@ -17,6 +17,9 @@
 package com.hazelcast.spi.impl.eventservice.impl;
 
 import com.hazelcast.nio.Address;
+import com.hazelcast.spi.EventFilter;
+import com.hazelcast.spi.ListenerWrapperEventFilter;
+import com.hazelcast.spi.NotifiableEventListener;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 
@@ -27,23 +30,42 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
 
-public class EventServiceSegment {
+public class EventServiceSegment<S> {
+
     private final String serviceName;
+    private final S service;
 
     private final ConcurrentMap<String, Collection<Registration>> registrations
             = new ConcurrentHashMap<String, Collection<Registration>>();
-
-    private final ConcurrentMap<String, Registration> registrationIdMap = new ConcurrentHashMap<String, Registration>();
-
+    private final ConcurrentMap<String, Registration> registrationIdMap
+            = new ConcurrentHashMap<String, Registration>();
     private final AtomicLong totalPublishes = new AtomicLong();
 
-    public EventServiceSegment(String serviceName) {
+    public EventServiceSegment(String serviceName, S service) {
         this.serviceName = serviceName;
+        this.service = service;
+    }
+
+    private void pingNotifiableEventListenerIfAvailable(String topic, Registration registration, boolean register) {
+        Object listener = registration.getListener();
+        if (!(listener instanceof NotifiableEventListener)) {
+            EventFilter filter = registration.getFilter();
+            if (filter instanceof ListenerWrapperEventFilter) {
+                listener = ((ListenerWrapperEventFilter) filter).getListener();
+            }
+        }
+        if (listener instanceof NotifiableEventListener) {
+            NotifiableEventListener notifiableEventListener = (NotifiableEventListener) listener;
+            if (register) {
+                notifiableEventListener.onRegister(service, serviceName, topic, registration);
+            } else {
+                notifiableEventListener.onDeregister(service, serviceName, topic, registration);
+            }
+        }
     }
 
     public Collection<Registration> getRegistrations(String topic, boolean forceCreate) {
         Collection<Registration> listenerList = registrations.get(topic);
-
         if (listenerList == null && forceCreate) {
             ConstructorFunction<String, Collection<Registration>> func
                     = new ConstructorFunction<String, Collection<Registration>>() {
@@ -51,7 +73,6 @@ public class EventServiceSegment {
                     return Collections.newSetFromMap(new ConcurrentHashMap<Registration, Boolean>());
                 }
             };
-
             return ConcurrencyUtil.getOrPutIfAbsent(registrations, topic, func);
         }
         return listenerList;
@@ -65,6 +86,7 @@ public class EventServiceSegment {
         final Collection<Registration> registrations = getRegistrations(topic, true);
         if (registrations.add(registration)) {
             registrationIdMap.put(registration.getId(), registration);
+            pingNotifiableEventListenerIfAvailable(topic, registration, true);
             return true;
         }
         return false;
@@ -77,6 +99,7 @@ public class EventServiceSegment {
             if (all != null) {
                 all.remove(registration);
             }
+            pingNotifiableEventListenerIfAvailable(topic, registration, false);
         }
         return registration;
     }
@@ -86,13 +109,21 @@ public class EventServiceSegment {
         if (all != null) {
             for (Registration reg : all) {
                 registrationIdMap.remove(reg.getId());
+                pingNotifiableEventListenerIfAvailable(topic, reg, false);
             }
         }
     }
 
     void clear() {
-        registrations.clear();
-        registrationIdMap.clear();
+        for (Collection<Registration> all : registrations.values()) {
+            Iterator<Registration> iter = all.iterator();
+            while (iter.hasNext()) {
+                Registration reg = iter.next();
+                iter.remove();
+                registrationIdMap.remove(reg.getId());
+                pingNotifiableEventListenerIfAvailable(reg.getTopic(), reg, false);
+            }
+        }
     }
 
     void onMemberLeft(Address address) {
@@ -103,6 +134,7 @@ public class EventServiceSegment {
                 if (address.equals(reg.getSubscriber())) {
                     iter.remove();
                     registrationIdMap.remove(reg.getId());
+                    pingNotifiableEventListenerIfAvailable(reg.getTopic(), reg, false);
                 }
             }
         }

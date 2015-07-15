@@ -19,6 +19,9 @@ package com.hazelcast.cache.impl;
 import com.hazelcast.cache.ICache;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
+import com.hazelcast.spi.EventRegistration;
+import com.hazelcast.spi.ListenerWrapperEventFilter;
+import com.hazelcast.spi.NotifiableEventListener;
 
 import javax.cache.configuration.CacheEntryListenerConfiguration;
 import javax.cache.configuration.Factory;
@@ -30,6 +33,7 @@ import javax.cache.event.CacheEntryListener;
 import javax.cache.event.CacheEntryRemovedListener;
 import javax.cache.event.CacheEntryUpdatedListener;
 import javax.cache.event.EventType;
+import java.io.Serializable;
 import java.util.Collection;
 import java.util.HashSet;
 
@@ -51,7 +55,11 @@ import java.util.HashSet;
  * @see javax.cache.event.CacheEntryEventFilter
  */
 public class CacheEventListenerAdaptor<K, V>
-        implements CacheEventListener, CacheEntryListenerProvider<K, V> {
+        implements CacheEventListener,
+                   CacheEntryListenerProvider<K, V>,
+                   NotifiableEventListener<CacheService>,
+                   ListenerWrapperEventFilter,
+                   Serializable {
 
     private final CacheEntryListener<K, V> cacheEntryListener;
     private final CacheEntryCreatedListener cacheEntryCreatedListener;
@@ -61,17 +69,17 @@ public class CacheEventListenerAdaptor<K, V>
     private final CacheEntryEventFilter<? super K, ? super V> filter;
     private final boolean isOldValueRequired;
 
-    private SerializationService serializationService;
-
+    private transient SerializationService serializationService;
     private transient ICache<K, V> source;
 
-    public CacheEventListenerAdaptor(ICache<K, V> source, CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration,
+    public CacheEventListenerAdaptor(ICache<K, V> source,
+                                     CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration,
                                      SerializationService serializationService) {
         this.source = source;
         this.serializationService = serializationService;
 
-        final CacheEntryListener<? super K, ? super V> cacheEntryListener = cacheEntryListenerConfiguration
-                .getCacheEntryListenerFactory().create();
+        final CacheEntryListener<? super K, ? super V> cacheEntryListener =
+                cacheEntryListenerConfiguration.getCacheEntryListenerFactory().create();
 
         this.cacheEntryListener = (CacheEntryListener<K, V>) cacheEntryListener;
         if (cacheEntryListener instanceof CacheEntryCreatedListener) {
@@ -94,8 +102,8 @@ public class CacheEventListenerAdaptor<K, V>
         } else {
             this.cacheEntryExpiredListener = null;
         }
-        final Factory<CacheEntryEventFilter<? super K, ? super V>> filterFactory = cacheEntryListenerConfiguration
-                .getCacheEntryEventFilterFactory();
+        final Factory<CacheEntryEventFilter<? super K, ? super V>> filterFactory =
+                cacheEntryListenerConfiguration.getCacheEntryEventFilterFactory();
         if (filterFactory != null) {
             this.filter = filterFactory.create();
         } else {
@@ -164,7 +172,8 @@ public class CacheEventListenerAdaptor<K, V>
             } else {
                 oldValue = null;
             }
-            final CacheEntryEventImpl<K, V> event = new CacheEntryEventImpl<K, V>(source, eventType, key, newValue, oldValue);
+            final CacheEntryEventImpl<K, V> event =
+                    new CacheEntryEventImpl<K, V>(source, eventType, key, newValue, oldValue);
             if (filter == null || filter.evaluate(event)) {
                 evt.add(event);
             }
@@ -184,6 +193,30 @@ public class CacheEventListenerAdaptor<K, V>
         } finally {
             ((CacheSyncListenerCompleter) source).countDownCompletionLatch(completionId);
         }
-
     }
+
+    @Override
+    public void onRegister(CacheService cacheService, String serviceName,
+                           String topic, EventRegistration registration) {
+        CacheContext cacheContext = cacheService.getOrCreateCacheContext(topic);
+        cacheContext.increaseCacheEntryListenerCount();
+    }
+
+    @Override
+    public void onDeregister(CacheService cacheService, String serviceName,
+                             String topic, EventRegistration registration) {
+        CacheContext cacheContext = cacheService.getOrCreateCacheContext(topic);
+        cacheContext.decreaseCacheEntryListenerCount();
+    }
+
+    @Override
+    public boolean eval(Object event) {
+        return true;
+    }
+
+    @Override
+    public Object getListener() {
+        return this;
+    }
+
 }
