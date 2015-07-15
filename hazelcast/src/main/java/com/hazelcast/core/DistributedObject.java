@@ -35,15 +35,6 @@ package com.hazelcast.core;
 public interface DistributedObject {
 
     /**
-     * Returns the unique id for this object.
-     *
-     * @deprecated use {@link #getName()} instead
-     * @return id the of this instance
-     */
-    @Deprecated
-    Object getId();
-
-    /**
      * Returns the key of the partition that this DistributedObject is assigned to. The returned value only has meaning
      * for a non-partitioned data structure like an {@link IAtomicLong}. For a partitioned data structure like an {@link IMap},
      * the returned value will not be null, but otherwise undefined.

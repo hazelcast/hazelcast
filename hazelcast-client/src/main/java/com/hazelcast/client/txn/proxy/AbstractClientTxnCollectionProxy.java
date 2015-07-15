@@ -27,11 +27,8 @@ public abstract class AbstractClientTxnCollectionProxy<E> extends ClientTxnProxy
         super(name, transactionContext);
     }
 
+    @Override
     void onDestroy() {
-    }
-
-    public String getName() {
-        return (String) getId();
     }
 
     protected void throwExceptionIfNull(Object o) {

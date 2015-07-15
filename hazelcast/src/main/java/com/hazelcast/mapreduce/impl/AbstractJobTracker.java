@@ -56,11 +56,6 @@ public abstract class AbstractJobTracker
     }
 
     @Override
-    public Object getId() {
-        return getName();
-    }
-
-    @Override
     public String getPartitionKey() {
         return getName();
     }

@@ -298,11 +298,6 @@ public class MapTransactionStressTest extends HazelcastTestSupport {
         }
 
         @Override
-        public Object getId() {
-            return name;
-        }
-
-        @Override
         public String getPartitionKey() {
             return null;
         }

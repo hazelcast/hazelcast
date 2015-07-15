@@ -91,10 +91,6 @@ public class ClientTxnQueueProxy<E> extends ClientTxnProxy implements Transactio
         return result;
     }
 
-    public String getName() {
-        return (String) getId();
-    }
-
     @Override
     public String getServiceName() {
         return QueueService.SERVICE_NAME;

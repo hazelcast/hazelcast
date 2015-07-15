@@ -30,10 +30,6 @@ public abstract class AbstractClientTxnCollectionProxy<E> extends ClientTxnProxy
     void onDestroy() {
     }
 
-    public String getName() {
-        return (String) getId();
-    }
-
     protected void throwExceptionIfNull(Object o) {
         if (o == null) {
             throw new NullPointerException("Object is null");

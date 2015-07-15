@@ -223,11 +223,6 @@ public class ClientTxnMapProxy<K, V> extends ClientTxnProxy implements Transacti
     }
 
     @Override
-    public String getName() {
-        return (String) getId();
-    }
-
-    @Override
     public String getServiceName() {
         return MapService.SERVICE_NAME;
     }
