@@ -114,6 +114,10 @@ public class PartitionContainer {
         if (recordStore != null) {
             recordStore.clearPartition();
         } else {
+            // It can be that, map is used only for locking,
+            // because of that RecordStore is not created.
+            // We will try to remove/clear LockStore belonging to
+            // this IMap partition.
             clearLockStore(name);
         }
     }

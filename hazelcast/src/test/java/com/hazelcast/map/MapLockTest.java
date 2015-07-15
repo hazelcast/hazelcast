@@ -16,9 +16,13 @@
 
 package com.hazelcast.map;
 
+import com.hazelcast.concurrent.lock.LockService;
+import com.hazelcast.concurrent.lock.LockServiceImpl;
+import com.hazelcast.concurrent.lock.LockStoreContainer;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -384,6 +388,27 @@ public class MapLockTest extends HazelcastTestSupport {
                 Assert.assertFalse(map.isLocked(key));
             }
         }, 30);
+    }
+
+    /**
+     * See issue #4888
+     */
+    @Test
+    public void lockStoreShouldBeRemoved_whenMapIsDestroyed() {
+        HazelcastInstance hz = createHazelcastInstance();
+        IMap map = hz.getMap(randomName());
+        for (int i = 0; i < 1000; i++) {
+            map.lock(i);
+        }
+        map.destroy();
+
+        NodeEngineImpl nodeEngine = getNodeEngineImpl(hz);
+        LockServiceImpl lockService = nodeEngine.getService(LockService.SERVICE_NAME);
+        int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
+        for (int i = 0; i < partitionCount; i++) {
+            LockStoreContainer lockContainer = lockService.getLockContainer(i);
+            Assert.assertEquals("LockStores should be empty", 0, lockContainer.getLockStores().size());
+        }
     }
 
     private IMap getMapForLock(){
