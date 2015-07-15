@@ -1,9 +1,8 @@
 package com.hazelcast.client.map;
 
-import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.TransactionalMap;
@@ -31,21 +30,23 @@ public abstract class ClientMapUnboundReturnValuesTestSupport {
     protected static final int PRE_CHECK_TRIGGER_LIMIT_INACTIVE = -1;
     protected static final int PRE_CHECK_TRIGGER_LIMIT_ACTIVE = Integer.MAX_VALUE;
 
+    private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
+
     private HazelcastInstance instance;
     private IMap<Integer, Integer> serverMap;
     private IMap<Integer, Integer> clientMap;
-
     private int configLimit;
+
     private int upperLimit;
 
     @After
     public void tearDown() {
+        hazelcastFactory.terminateAll();
         if (serverMap != null) {
             serverMap.destroy();
         }
-        HazelcastClient.shutdownAll();
-        Hazelcast.shutdownAll();
     }
+
 
     /**
      * This test calls {@link IMap} methods once which are expected to throw {@link QueryResultSizeExceededException}.
@@ -138,7 +139,7 @@ public abstract class ClientMapUnboundReturnValuesTestSupport {
         Config config = createConfig(partitionCount, limit, preCheckTrigger);
         serverMap = getMapWithNodeCount(clusterSize, config);
 
-        instance = HazelcastClient.newHazelcastClient();
+        instance = hazelcastFactory.newHazelcastClient();
         clientMap = instance.getMap(serverMap.getName());
 
         configLimit = limit;
@@ -163,11 +164,11 @@ public abstract class ClientMapUnboundReturnValuesTestSupport {
         config.addMapConfig(mapConfig);
 
         while (nodeCount > 1) {
-            Hazelcast.newHazelcastInstance(config);
+            hazelcastFactory.newHazelcastInstance(config);
             nodeCount--;
         }
 
-        HazelcastInstance node = Hazelcast.newHazelcastInstance(config);
+        HazelcastInstance node = hazelcastFactory.newHazelcastInstance(config);
         return node.getMap(mapName);
     }
 

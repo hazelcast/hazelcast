@@ -1,28 +1,23 @@
 package com.hazelcast.client.map;
 
-import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.MapPartitionLostEvent;
 import com.hazelcast.map.MapPartitionLostListenerStressTest.EventCollectingMapPartitionLostListener;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.listener.MapPartitionLostListener;
-import com.hazelcast.nio.serialization.PortableReader;
-import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.partition.InternalPartitionLostEvent;
 import com.hazelcast.spi.EventRegistration;
-import com.hazelcast.spi.impl.PortableMapPartitionLostEvent;
 import com.hazelcast.spi.impl.eventservice.InternalEventService;
 import com.hazelcast.test.AssertTask;
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
 
@@ -33,23 +28,22 @@ import static com.hazelcast.test.HazelcastTestSupport.randomMapName;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
-@RunWith(HazelcastSerialClassRunner.class)
+@RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
 public class ClientMapPartitionLostListenerTest {
 
+    private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
+
     @After
-    public void destroy() {
-        HazelcastClient.shutdownAll();
-        Hazelcast.shutdownAll();
+    public void tearDown() {
+        hazelcastFactory.terminateAll();
     }
 
     @Test
     public void test_mapPartitionLostListener_registered() {
-        final HazelcastInstance instance = Hazelcast.newHazelcastInstance();
-        final HazelcastInstance client = HazelcastClient.newHazelcastClient();
+        final HazelcastInstance instance = hazelcastFactory.newHazelcastInstance();
+        final HazelcastInstance client = hazelcastFactory.newHazelcastClient();
 
         final String mapName = randomMapName();
 
@@ -60,8 +54,8 @@ public class ClientMapPartitionLostListenerTest {
 
     @Test
     public void test_mapPartitionLostListener_removed() {
-        final HazelcastInstance instance = Hazelcast.newHazelcastInstance();
-        final HazelcastInstance client = HazelcastClient.newHazelcastClient();
+        final HazelcastInstance instance = hazelcastFactory.newHazelcastInstance();
+        final HazelcastInstance client = hazelcastFactory.newHazelcastClient();
 
         final String mapName = randomMapName();
 
@@ -78,39 +72,13 @@ public class ClientMapPartitionLostListenerTest {
         final Config config = new Config();
         config.getMapConfig(mapName).setBackupCount(0);
 
-        final HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
-
-        final HazelcastInstance client = HazelcastClient.newHazelcastClient();
-
-        final EventCollectingMapPartitionLostListener listener = new EventCollectingMapPartitionLostListener(0);
-        client.getMap(mapName).addPartitionLostListener(listener);
-
-        assertRegistrationsSizeEventually(instance, mapName, 1);
-
-        final MapService mapService = getNode(instance).getNodeEngine().getService(SERVICE_NAME);
-        final int partitionId = 5;
-        mapService.onPartitionLost(new InternalPartitionLostEvent(partitionId, 0, null));
-
-        assertMapPartitionLostEventEventually(listener, partitionId);
-    }
-
-    @Test
-    public void test_mapPartitionLostListener_invoked_fromOtherNode() {
-        final String mapName = randomMapName();
-        final Config config = new Config();
-        config.getMapConfig(mapName).setBackupCount(0);
-
-        final HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(config);
-        final HazelcastInstance instance2 = Hazelcast.newHazelcastInstance(config);
-        final HazelcastInstance client = HazelcastClient.newHazelcastClient();
+        final HazelcastInstance instance = hazelcastFactory.newHazelcastInstance(config);
+        final HazelcastInstance client = hazelcastFactory.newHazelcastClient();
 
         final EventCollectingMapPartitionLostListener listener = new EventCollectingMapPartitionLostListener(0);
         client.getMap(mapName).addPartitionLostListener(listener);
 
-        assertRegistrationsSizeEventually(instance1, mapName, 1);
-        assertRegistrationsSizeEventually(instance2, mapName, 1);
-
-        final MapService mapService = getNode(instance2).getNodeEngine().getService(SERVICE_NAME);
+        final MapService mapService = getNode(instance).getNodeEngine().getService(MapService.SERVICE_NAME);
         final int partitionId = 5;
         mapService.onPartitionLost(new InternalPartitionLostEvent(partitionId, 0, null));
 
@@ -132,6 +100,29 @@ public class ClientMapPartitionLostListenerTest {
         });
     }
 
+    @Test
+    public void test_mapPartitionLostListener_invoked_fromOtherNode() {
+        final String mapName = randomMapName();
+        final Config config = new Config();
+        config.getMapConfig(mapName).setBackupCount(0);
+
+        final HazelcastInstance instance1 = hazelcastFactory.newHazelcastInstance(config);
+        final HazelcastInstance instance2 = hazelcastFactory.newHazelcastInstance(config);
+        final HazelcastInstance client = hazelcastFactory.newHazelcastClient();
+
+        final EventCollectingMapPartitionLostListener listener = new EventCollectingMapPartitionLostListener(0);
+        client.getMap(mapName).addPartitionLostListener(listener);
+
+        assertRegistrationsSizeEventually(instance1, mapName, 1);
+        assertRegistrationsSizeEventually(instance2, mapName, 1);
+
+        final MapService mapService = getNode(instance2).getNodeEngine().getService(SERVICE_NAME);
+        final int partitionId = 5;
+        mapService.onPartitionLost(new InternalPartitionLostEvent(partitionId, 0, null));
+
+        assertMapPartitionLostEventEventually(listener, partitionId);
+    }
+
     private void assertRegistrationsSizeEventually(final HazelcastInstance instance, final String mapName, final int size) {
         assertTrueEventually(new AssertTask() {
             @Override
@@ -144,30 +135,6 @@ public class ClientMapPartitionLostListenerTest {
 
             }
         });
-    }
-
-    @Test
-    public void test_portableMapPartitionLostEvent_serialization()
-            throws IOException {
-        final PortableMapPartitionLostEvent event = new PortableMapPartitionLostEvent(1, "uuid");
-        final PortableWriter writer = mock(PortableWriter.class);
-        event.writePortable(writer);
-
-        verify(writer).writeInt("p", 1);
-        verify(writer).writeUTF("u", "uuid");
-    }
-
-    @Test
-    public void test_portableMapPartitionLostEvent_deserialization()
-            throws IOException {
-        final PortableMapPartitionLostEvent event = new PortableMapPartitionLostEvent();
-        final PortableReader reader = mock(PortableReader.class);
-        when(reader.readInt("p")).thenReturn(1);
-        when(reader.readUTF("u")).thenReturn("uuid");
-
-        event.readPortable(reader);
-        assertEquals(1, event.getPartitionId());
-        assertEquals("uuid", event.getUuid());
     }
 
 }

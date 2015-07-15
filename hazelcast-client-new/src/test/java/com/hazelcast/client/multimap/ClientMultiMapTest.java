@@ -16,14 +16,13 @@
 
 package com.hazelcast.client.multimap;
 
-import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.core.Hazelcast;
+import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.MultiMap;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -42,19 +41,19 @@ import static org.junit.Assert.assertTrue;
 @Category(QuickTest.class)
 public class ClientMultiMapTest {
 
-    static HazelcastInstance server;
-    static HazelcastInstance client;
+    private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
 
-    @BeforeClass
-    public static void init() {
-        server = Hazelcast.newHazelcastInstance();
-        client = HazelcastClient.newHazelcastClient();
+    private HazelcastInstance client;
+
+    @After
+    public void tearDown() {
+        hazelcastFactory.terminateAll();
     }
 
-    @AfterClass
-    public static void destroy() {
-        HazelcastClient.shutdownAll();
-        Hazelcast.shutdownAll();
+    @Before
+    public void setup() {
+        hazelcastFactory.newHazelcastInstance();
+        client = hazelcastFactory.newHazelcastClient();
     }
 
     @Test
@@ -67,14 +66,14 @@ public class ClientMultiMapTest {
 
     @Test(expected = NullPointerException.class)
     public void testPut_withNullValue() {
-        Object key ="key";
+        Object key = "key";
         final MultiMap mm = client.getMultiMap(randomString());
         mm.put(key, null);
     }
 
     @Test(expected = NullPointerException.class)
     public void testPut_withNullKey() {
-        Object value ="value";
+        Object value = "value";
         final MultiMap mm = client.getMultiMap(randomString());
         mm.put(null, value);
     }
@@ -111,6 +110,7 @@ public class ClientMultiMapTest {
 
     @Test
     public void testValueCount_whenKeyNotThere() {
+        final Object key = "key1";
         final MultiMap mm = client.getMultiMap(randomString());
 
         assertEquals(0, mm.valueCount("NOT_THERE"));
@@ -154,12 +154,12 @@ public class ClientMultiMapTest {
         final MultiMap mm = client.getMultiMap(randomString());
 
         Set expected = new TreeSet();
-        for ( int i=0; i< maxItemsPerKey; i++ ){
+        for (int i = 0; i < maxItemsPerKey; i++) {
             mm.put(key, i);
             expected.add(i);
         }
 
-        Collection resultSet = new TreeSet( mm.get(key) );
+        Collection resultSet = new TreeSet(mm.get(key));
 
         assertEquals(expected, resultSet);
     }
@@ -179,11 +179,11 @@ public class ClientMultiMapTest {
         final MultiMap mm = client.getMultiMap(randomString());
 
         Set expeted = new TreeSet();
-        for ( int i=0; i< maxItemsPerKey; i++ ){
+        for (int i = 0; i < maxItemsPerKey; i++) {
             mm.put(key, i);
             expeted.add(i);
         }
-        Set resultSet  = new TreeSet( mm.remove(key) );
+        Set resultSet = new TreeSet(mm.remove(key));
 
         assertEquals(expeted, resultSet);
         assertEquals(0, mm.size());
@@ -195,7 +195,7 @@ public class ClientMultiMapTest {
         final int maxItemsPerKey = 4;
         final MultiMap mm = client.getMultiMap(randomString());
 
-        for ( int i=0; i< maxItemsPerKey; i++ ){
+        for (int i = 0; i < maxItemsPerKey; i++) {
             mm.put(key, i);
         }
         boolean result = mm.remove(key, "NOT_THERE");
@@ -209,11 +209,11 @@ public class ClientMultiMapTest {
         final int maxItemsPerKey = 4;
         final MultiMap mm = client.getMultiMap(randomString());
 
-        for ( int i=0; i< maxItemsPerKey; i++ ){
+        for (int i = 0; i < maxItemsPerKey; i++) {
             mm.put(key, i);
         }
 
-        for ( int i=0; i< maxItemsPerKey; i++ ){
+        for (int i = 0; i < maxItemsPerKey; i++) {
             boolean result = mm.remove(key, i);
             assertTrue(result);
         }
@@ -237,7 +237,7 @@ public class ClientMultiMapTest {
         final MultiMap mm = client.getMultiMap(randomString());
 
         Set expected = new TreeSet();
-        for ( int key=0; key< maxKeys; key++ ){
+        for (int key = 0; key < maxKeys; key++) {
             mm.put(key, 1);
             expected.add(key);
         }
@@ -258,14 +258,14 @@ public class ClientMultiMapTest {
         final MultiMap mm = client.getMultiMap(randomString());
 
         Set expected = new TreeSet();
-        for ( int key=0; key< maxKeys; key++ ){
-            for ( int val=0; val< maxValues; val++ ){
+        for (int key = 0; key < maxKeys; key++) {
+            for (int val = 0; val < maxValues; val++) {
                 mm.put(key, val);
                 expected.add(val);
             }
         }
 
-        Set resultSet = new TreeSet( mm.values() );
+        Set resultSet = new TreeSet(mm.values());
 
         assertEquals(expected, resultSet);
     }
@@ -282,8 +282,8 @@ public class ClientMultiMapTest {
         final int maxValues = 3;
         final MultiMap mm = client.getMultiMap(randomString());
 
-        for ( int key=0; key< maxKeys; key++ ){
-            for ( int val=0; val< maxValues; val++ ){
+        for (int key = 0; key < maxKeys; key++) {
+            for (int val = 0; val < maxValues; val++) {
                 mm.put(key, val);
             }
         }
@@ -357,8 +357,8 @@ public class ClientMultiMapTest {
         final int maxKeys = 9;
         final int maxValues = 3;
 
-        for ( int key=0; key< maxKeys; key++ ){
-            for ( int val=0; val< maxValues; val++ ){
+        for (int key = 0; key < maxKeys; key++) {
+            for (int val = 0; val < maxValues; val++) {
                 mm.put(key, val);
             }
         }

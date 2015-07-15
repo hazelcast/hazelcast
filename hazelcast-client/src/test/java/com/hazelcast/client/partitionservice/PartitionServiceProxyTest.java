@@ -16,42 +16,43 @@
 
 package com.hazelcast.client.partitionservice;
 
-import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.core.*;
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.client.test.TestHazelcastFactory;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.MigrationEvent;
+import com.hazelcast.core.MigrationListener;
+import com.hazelcast.core.Partition;
+import com.hazelcast.core.PartitionService;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.transaction.TransactionContext;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-
-import javax.transaction.xa.XAResource;
 
 import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
 
-@RunWith(HazelcastSerialClassRunner.class)
+@RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
 public class PartitionServiceProxyTest {
 
-    static HazelcastInstance client;
-    static HazelcastInstance server;
+    private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
 
-    @BeforeClass
-    public static void init(){
-        server = Hazelcast.newHazelcastInstance();
-        client = HazelcastClient.newHazelcastClient(null);
+    private HazelcastInstance server;
+    private HazelcastInstance client;
+
+    @After
+    public void tearDown() {
+        hazelcastFactory.terminateAll();
     }
 
-    @AfterClass
-    public static void destroy(){
-        client.shutdown();
-        server.shutdown();
+    @Before
+    public void setup() {
+        server = hazelcastFactory.newHazelcastInstance();
+        client = hazelcastFactory.newHazelcastClient();
     }
 
     @Test(expected = UnsupportedOperationException.class)
@@ -78,7 +79,7 @@ public class PartitionServiceProxyTest {
         String key = "Key";
 
         PartitionService clientPartitionService = client.getPartitionService();
-        Partition clientPartition  = clientPartitionService.getPartition(key);
+        Partition clientPartition = clientPartitionService.getPartition(key);
 
         PartitionService serverPartitionService = server.getPartitionService();
         Partition serverPartition = serverPartitionService.getPartition(key);

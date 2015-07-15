@@ -16,16 +16,12 @@
 
 package com.hazelcast.client.mapreduce.aggregation;
 
-import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.core.DistributedObject;
-import com.hazelcast.core.Hazelcast;
+import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
 import com.hazelcast.mapreduce.aggregation.PropertyExtractor;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
+import org.junit.Before;
 
 import java.io.Serializable;
 import java.lang.reflect.Array;
@@ -37,33 +33,25 @@ public class AbstractAggregationTest
     private static final int VALUES_COUNT = 100;
     private static final Random RANDOM = new Random();
 
-    protected static HazelcastInstance HAZELCAST_INSTANCE;
+    private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
+    protected HazelcastInstance client;
 
-    @BeforeClass
-    public static void startup() {
-        HazelcastInstance h1 = Hazelcast.newHazelcastInstance();
-        HazelcastInstance h2 = Hazelcast.newHazelcastInstance();
+    @Before
+    public void startup() {
+        HazelcastInstance h1 = hazelcastFactory.newHazelcastInstance();
+        HazelcastInstance h2 = hazelcastFactory.newHazelcastInstance();
 
         assertClusterSizeEventually(2, h1);
         assertClusterSizeEventually(2, h2);
 
-        HAZELCAST_INSTANCE = HazelcastClient.newHazelcastClient();
-    }
-
-    @AfterClass
-    public static void teardown() {
-        HazelcastClient.shutdownAll();
-        Hazelcast.shutdownAll();
+        client = hazelcastFactory.newHazelcastClient();
     }
 
     @After
-    public void cleanup() {
-        for (DistributedObject object : HAZELCAST_INSTANCE.getDistributedObjects()) {
-            if (object instanceof IMap) {
-                ((IMap) object).destroy();
-            }
-        }
+    public void tearDown() {
+        hazelcastFactory.terminateAll();
     }
+
 
     protected static int random(int min, int max) {
         int delta = max - min;
@@ -91,7 +79,7 @@ public class AbstractAggregationTest
         return new Value<T>(value);
     }
 
-    protected static interface ValueProvider<T> {
+    protected interface ValueProvider<T> {
         T provideRandom(Random random);
     }
 

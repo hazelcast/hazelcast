@@ -17,25 +17,24 @@
 package com.hazelcast.client;
 
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.core.Client;
 import com.hazelcast.core.ClientListener;
 import com.hazelcast.core.ClientService;
 import com.hazelcast.core.EntryAdapter;
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.test.AssertTask;
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -53,36 +52,37 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
-@RunWith(HazelcastSerialClassRunner.class)
+@RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
 public class ClientServiceTest extends HazelcastTestSupport {
 
-    @Before
+    private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
+
     @After
     public void cleanup() {
-        HazelcastClient.shutdownAll();
-        Hazelcast.shutdownAll();
+        hazelcastFactory.terminateAll();
     }
 
+
     @Test(expected = NullPointerException.class)
-    public void testAddClientListener_whenListenerIsNull(){
-        HazelcastInstance instance = Hazelcast.newHazelcastInstance();
+    public void testAddClientListener_whenListenerIsNull() {
+        HazelcastInstance instance = hazelcastFactory.newHazelcastInstance();
 
         ClientService clientService = instance.getClientService();
         clientService.addClientListener(null);
     }
 
     @Test(expected = NullPointerException.class)
-    public void testRemoveClientListener_whenIdIsNull(){
-        HazelcastInstance instance = Hazelcast.newHazelcastInstance();
+    public void testRemoveClientListener_whenIdIsNull() {
+        HazelcastInstance instance = hazelcastFactory.newHazelcastInstance();
 
         ClientService clientService = instance.getClientService();
         clientService.removeClientListener(null);
     }
 
     @Test
-    public void testRemoveClientListener_whenListenerAlreadyRemoved(){
-        HazelcastInstance instance = Hazelcast.newHazelcastInstance();
+    public void testRemoveClientListener_whenListenerAlreadyRemoved() {
+        HazelcastInstance instance = hazelcastFactory.newHazelcastInstance();
 
         ClientService clientService = instance.getClientService();
         ClientListener clientListener = mock(ClientListener.class);
@@ -96,8 +96,8 @@ public class ClientServiceTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testRemoveClientListener_whenNonExistingId(){
-        HazelcastInstance instance = Hazelcast.newHazelcastInstance();
+    public void testRemoveClientListener_whenNonExistingId() {
+        HazelcastInstance instance = hazelcastFactory.newHazelcastInstance();
 
         ClientService clientService = instance.getClientService();
 
@@ -106,12 +106,12 @@ public class ClientServiceTest extends HazelcastTestSupport {
 
     @Test
     public void testNumberOfClients_afterUnAuthenticatedClient() {
-        final HazelcastInstance instance = Hazelcast.newHazelcastInstance();
+        final HazelcastInstance instance = hazelcastFactory.newHazelcastInstance();
         final ClientConfig clientConfig = new ClientConfig();
         clientConfig.getGroupConfig().setPassword("wrongPassword");
 
         try {
-            HazelcastClient.newHazelcastClient(clientConfig);
+            hazelcastFactory.newHazelcastClient(clientConfig);
         } catch (IllegalStateException ignored) {
 
         }
@@ -121,13 +121,13 @@ public class ClientServiceTest extends HazelcastTestSupport {
 
     @Test
     public void testNumberOfClients_afterUnAuthenticatedClient_withTwoNode() {
-        final HazelcastInstance instance1 = Hazelcast.newHazelcastInstance();
-        final HazelcastInstance instance2 = Hazelcast.newHazelcastInstance();
+        final HazelcastInstance instance1 = hazelcastFactory.newHazelcastInstance();
+        final HazelcastInstance instance2 = hazelcastFactory.newHazelcastInstance();
         final ClientConfig clientConfig = new ClientConfig();
         clientConfig.getGroupConfig().setPassword("wrongPassword");
 
         try {
-            HazelcastClient.newHazelcastClient(clientConfig);
+            hazelcastFactory.newHazelcastClient(clientConfig);
         } catch (IllegalStateException ignored) {
 
         }
@@ -140,18 +140,18 @@ public class ClientServiceTest extends HazelcastTestSupport {
     @Test
     @Category(NightlyTest.class)
     public void testNumberOfClients_afterUnAuthenticatedClient_withTwoNode_twoClient() {
-        final HazelcastInstance instance1 = Hazelcast.newHazelcastInstance();
-        final HazelcastInstance instance2 = Hazelcast.newHazelcastInstance();
+        final HazelcastInstance instance1 = hazelcastFactory.newHazelcastInstance();
+        final HazelcastInstance instance2 = hazelcastFactory.newHazelcastInstance();
         final ClientConfig clientConfig = new ClientConfig();
         clientConfig.getGroupConfig().setPassword("wrongPassword");
 
         try {
-            HazelcastClient.newHazelcastClient(clientConfig);
+            hazelcastFactory.newHazelcastClient(clientConfig);
         } catch (IllegalStateException ignored) {
 
         }
         try {
-            HazelcastClient.newHazelcastClient(clientConfig);
+            hazelcastFactory.newHazelcastClient(clientConfig);
         } catch (IllegalStateException ignored) {
 
         }
@@ -163,10 +163,10 @@ public class ClientServiceTest extends HazelcastTestSupport {
 
     @Test
     public void testConnectedClients() {
-        final HazelcastInstance instance = Hazelcast.newHazelcastInstance();
+        final HazelcastInstance instance = hazelcastFactory.newHazelcastInstance();
 
-        final HazelcastInstance client1 = HazelcastClient.newHazelcastClient();
-        final HazelcastInstance client2 = HazelcastClient.newHazelcastClient();
+        final HazelcastInstance client1 = hazelcastFactory.newHazelcastClient();
+        final HazelcastInstance client2 = hazelcastFactory.newHazelcastClient();
 
         final ClientService clientService = instance.getClientService();
         final Collection<Client> connectedClients = clientService.getConnectedClients();
@@ -183,7 +183,7 @@ public class ClientServiceTest extends HazelcastTestSupport {
 
     @Test
     public void testClientListener() throws InterruptedException {
-        final HazelcastInstance instance = Hazelcast.newHazelcastInstance();
+        final HazelcastInstance instance = hazelcastFactory.newHazelcastInstance();
         final ClientService clientService = instance.getClientService();
         final CountDownLatch latchAdd = new CountDownLatch(2);
         final CountDownLatch latchRemove = new CountDownLatch(2);
@@ -203,8 +203,8 @@ public class ClientServiceTest extends HazelcastTestSupport {
         };
         final String id = clientService.addClientListener(clientListener);
 
-        final HazelcastInstance client1 = HazelcastClient.newHazelcastClient();
-        final HazelcastInstance client2 = HazelcastClient.newHazelcastClient();
+        final HazelcastInstance client1 = hazelcastFactory.newHazelcastClient();
+        final HazelcastInstance client2 = hazelcastFactory.newHazelcastClient();
 
         client1.getLifecycleService().shutdown();
         client2.getLifecycleService().shutdown();
@@ -218,7 +218,7 @@ public class ClientServiceTest extends HazelcastTestSupport {
 
         assertEquals(0, clientService.getConnectedClients().size());
 
-        final HazelcastInstance client3 = HazelcastClient.newHazelcastClient();
+        final HazelcastInstance client3 = hazelcastFactory.newHazelcastClient();
 
         assertTrueEventually(new AssertTask() {
             @Override
@@ -248,12 +248,12 @@ public class ClientServiceTest extends HazelcastTestSupport {
 
             }
         }));
-        HazelcastInstance instance = Hazelcast.newHazelcastInstance();
-        final HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
+        HazelcastInstance instance = hazelcastFactory.newHazelcastInstance();
+        final HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
 
         //restart the node
         instance.shutdown();
-        final HazelcastInstance restartedInstance = Hazelcast.newHazelcastInstance();
+        final HazelcastInstance restartedInstance = hazelcastFactory.newHazelcastInstance();
 
         client.getMap(randomMapName()).size(); // do any operation
 
@@ -268,8 +268,8 @@ public class ClientServiceTest extends HazelcastTestSupport {
 
     @Test
     public void testClientListenerForBothNodes() {
-        final HazelcastInstance instance1 = Hazelcast.newHazelcastInstance();
-        final HazelcastInstance instance2 = Hazelcast.newHazelcastInstance();
+        final HazelcastInstance instance1 = hazelcastFactory.newHazelcastInstance();
+        final HazelcastInstance instance2 = hazelcastFactory.newHazelcastInstance();
         final ClientConnectedListenerLatch clientListenerLatch = new ClientConnectedListenerLatch(2);
 
         final ClientService clientService1 = instance1.getClientService();
@@ -277,7 +277,7 @@ public class ClientServiceTest extends HazelcastTestSupport {
         final ClientService clientService2 = instance2.getClientService();
         clientService2.addClientListener(clientListenerLatch);
 
-        final HazelcastInstance client = HazelcastClient.newHazelcastClient();
+        final HazelcastInstance client = hazelcastFactory.newHazelcastClient();
         final String instance1Key = generateKeyOwnedBy(instance1);
         final String instance2Key = generateKeyOwnedBy(instance2);
 
@@ -294,8 +294,8 @@ public class ClientServiceTest extends HazelcastTestSupport {
         Config config = new Config();
         config.setProperty(GroupProperties.PROP_IO_THREAD_COUNT, "1");
 
-        final HazelcastInstance hz = Hazelcast.newHazelcastInstance(config);
-        final HazelcastInstance hz2 = Hazelcast.newHazelcastInstance(config);
+        final HazelcastInstance hz = hazelcastFactory.newHazelcastInstance(config);
+        final HazelcastInstance hz2 = hazelcastFactory.newHazelcastInstance(config);
 
         int clientCount = 10;
         ClientDisconnectedListenerLatch listenerLatch = new ClientDisconnectedListenerLatch(2 * clientCount);
@@ -304,7 +304,7 @@ public class ClientServiceTest extends HazelcastTestSupport {
 
         Collection<HazelcastInstance> clients = new LinkedList<HazelcastInstance>();
         for (int i = 0; i < clientCount; i++) {
-            HazelcastInstance client = HazelcastClient.newHazelcastClient();
+            HazelcastInstance client = hazelcastFactory.newHazelcastClient();
             IMap<Object, Object> map = client.getMap(randomMapName());
 
             map.addEntryListener(new EntryAdapter<Object, Object>(), true);

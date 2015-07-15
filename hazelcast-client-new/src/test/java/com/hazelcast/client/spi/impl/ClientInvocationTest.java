@@ -16,21 +16,18 @@
 
 package com.hazelcast.client.spi.impl;
 
-import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.ExecutionCallback;
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
-import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.instance.TestUtil;
 import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -41,16 +38,17 @@ import java.util.concurrent.locks.LockSupport;
 
 import static org.junit.Assert.assertTrue;
 
-@RunWith(HazelcastSerialClassRunner.class)
+@RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
 public class ClientInvocationTest extends HazelcastTestSupport {
 
-    @Before
+    private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
+
     @After
     public void cleanup() {
-        HazelcastClient.shutdownAll();
-        HazelcastInstanceFactory.terminateAll();
+        hazelcastFactory.terminateAll();
     }
+
 
     /**
      * When a async operation fails because of a node termination,
@@ -63,9 +61,9 @@ public class ClientInvocationTest extends HazelcastTestSupport {
         Config config = new Config();
         config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
         config.getNetworkConfig().getJoin().getTcpIpConfig().setEnabled(true);
-        HazelcastInstance server = Hazelcast.newHazelcastInstance(config);
+        HazelcastInstance server = hazelcastFactory.newHazelcastInstance(config);
 
-        HazelcastInstance client = HazelcastClient.newHazelcastClient();
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient();
         IMap<Object, Object> map = client.getMap(randomMapName());
 
         DummyEntryProcessor ep = new DummyEntryProcessor();

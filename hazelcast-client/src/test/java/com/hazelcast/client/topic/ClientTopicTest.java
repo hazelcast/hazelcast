@@ -16,11 +16,16 @@
 
 package com.hazelcast.client.topic;
 
-import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.core.*;
+import com.hazelcast.client.test.TestHazelcastFactory;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.ITopic;
+import com.hazelcast.core.Message;
+import com.hazelcast.core.MessageListener;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.*;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
@@ -34,23 +39,23 @@ import static org.junit.Assert.assertTrue;
 @Category(QuickTest.class)
 public class ClientTopicTest {
 
-    static HazelcastInstance client;
-    static HazelcastInstance server;
+    private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
 
-    @BeforeClass
-    public static void init(){
-        server = Hazelcast.newHazelcastInstance();
-        client = HazelcastClient.newHazelcastClient(null);
+    private HazelcastInstance client;
+
+    @After
+    public void tearDown() {
+        hazelcastFactory.terminateAll();
     }
 
-    @AfterClass
-    public static void stop(){
-        HazelcastClient.shutdownAll();
-        Hazelcast.shutdownAll();
+    @Before
+    public void setup() {
+        hazelcastFactory.newHazelcastInstance();
+        client = hazelcastFactory.newHazelcastClient();
     }
 
     @Test
-    public void testListener() throws InterruptedException{
+    public void testListener() throws InterruptedException {
         ITopic topic = client.getTopic(randomString());
 
         final CountDownLatch latch = new CountDownLatch(10);
@@ -61,7 +66,7 @@ public class ClientTopicTest {
         };
         topic.addMessageListener(listener);
 
-        for (int i=0; i<10; i++){
+        for (int i = 0; i < 10; i++) {
             topic.publish(i);
         }
         assertTrue(latch.await(20, TimeUnit.SECONDS));

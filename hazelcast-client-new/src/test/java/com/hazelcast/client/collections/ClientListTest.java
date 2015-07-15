@@ -16,19 +16,16 @@
 
 package com.hazelcast.client.collections;
 
-import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.config.Config;
-import com.hazelcast.core.Hazelcast;
+import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IList;
 import com.hazelcast.core.ItemEvent;
 import com.hazelcast.core.ItemListener;
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
-import org.junit.AfterClass;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -45,32 +42,24 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-@RunWith(HazelcastSerialClassRunner.class)
+@RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
-public class ClientListTest {
+public class ClientListTest extends HazelcastTestSupport {
 
-    static final String name = "test";
-    static HazelcastInstance hz;
-    static IList list;
-
-    @BeforeClass
-    public static void init(){
-        Config config = new Config();
-        Hazelcast.newHazelcastInstance(config);
-        hz = HazelcastClient.newHazelcastClient();
-        list = hz.getList(name);
-    }
-
-    @AfterClass
-    public static void destroy() {
-        hz.shutdown();
-        Hazelcast.shutdownAll();
-    }
+    private TestHazelcastFactory hazelcastFactory;
+    private IList list;
 
     @Before
+    public void setup() throws IOException {
+        hazelcastFactory = new TestHazelcastFactory();
+        hazelcastFactory.newHazelcastInstance();
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient();
+        list = client.getList(randomString());
+    }
+
     @After
-    public void clear() throws IOException {
-        list.clear();
+    public void tearDown() {
+        hazelcastFactory.shutdownAll();
     }
 
     @Test
@@ -116,7 +105,7 @@ public class ClientListTest {
     }
 
     @Test
-    public void testIndexOf(){
+    public void testIndexOf() {
         assertTrue(list.add("item1"));
         assertTrue(list.add("item2"));
         assertTrue(list.add("item1"));
@@ -130,22 +119,22 @@ public class ClientListTest {
     }
 
     @Test
-    public void testIterator(){
+    public void testIterator() {
         assertTrue(list.add("item1"));
         assertTrue(list.add("item2"));
         assertTrue(list.add("item1"));
         assertTrue(list.add("item4"));
 
         Iterator iter = list.iterator();
-        assertEquals("item1",iter.next());
-        assertEquals("item2",iter.next());
-        assertEquals("item1",iter.next());
-        assertEquals("item4",iter.next());
+        assertEquals("item1", iter.next());
+        assertEquals("item2", iter.next());
+        assertEquals("item1", iter.next());
+        assertEquals("item4", iter.next());
         assertFalse(iter.hasNext());
 
         ListIterator listIterator = list.listIterator(2);
-        assertEquals("item1",listIterator.next());
-        assertEquals("item4",listIterator.next());
+        assertEquals("item1", listIterator.next());
+        assertEquals("item4", listIterator.next());
         assertFalse(listIterator.hasNext());
 
         List l = list.subList(1, 3);
@@ -155,7 +144,7 @@ public class ClientListTest {
     }
 
     @Test
-    public void testContains(){
+    public void testContains() {
         assertTrue(list.add("item1"));
         assertTrue(list.add("item2"));
         assertTrue(list.add("item1"));
@@ -174,7 +163,7 @@ public class ClientListTest {
     }
 
     @Test
-    public void removeRetainAll(){
+    public void removeRetainAll() {
         assertTrue(list.add("item1"));
         assertTrue(list.add("item2"));
         assertTrue(list.add("item1"));
@@ -204,9 +193,6 @@ public class ClientListTest {
     @Test
     public void testListener() throws Exception {
 
-//        final ISet tempSet = server.getSet(name);
-        final IList tempList = list;
-
         final CountDownLatch latch = new CountDownLatch(6);
 
         ItemListener listener = new ItemListener() {
@@ -218,30 +204,31 @@ public class ClientListTest {
             public void itemRemoved(ItemEvent item) {
             }
         };
-        String registrationId = tempList.addItemListener(listener, true);
+        String registrationId = list.addItemListener(listener, true);
 
-        new Thread(){
+        new Thread() {
             public void run() {
-                for (int i=0; i<5; i++){
-                    tempList.add("item" + i);
+                for (int i = 0; i < 5; i++) {
+                    list.add("item" + i);
                 }
-                tempList.add("done");
+                list.add("done");
             }
         }.start();
         assertTrue(latch.await(20, TimeUnit.SECONDS));
+        list.removeItemListener(registrationId);
 
     }
 
     @Test
     public void testIsEmpty_whenEmpty() {
         assertTrue(list.isEmpty());
-        assertEquals(0,list.size());
+        assertEquals(0, list.size());
     }
 
     @Test
     public void testIsEmpty_whenNotEmpty() {
         list.add("item");
         assertFalse(list.isEmpty());
-        assertEquals(1,list.size());
+        assertEquals(1, list.size());
     }
 }

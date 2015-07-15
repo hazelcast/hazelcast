@@ -16,18 +16,11 @@
 
 package com.hazelcast.client.mapreduce;
 
-import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.client.config.XmlClientConfigBuilder;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.test.HazelcastTestSupport;
 
 public abstract class AbstractClientMapReduceJobTest extends HazelcastTestSupport {
-
-    protected ClientConfig buildClientConfig() {
-        ClientConfig config = new XmlClientConfigBuilder().build();
-        return config;
-    }
 
     protected Config buildConfig() {
         Config config = new XmlConfigBuilder().build();

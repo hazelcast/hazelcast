@@ -16,11 +16,10 @@
 
 package com.hazelcast.client.map;
 
-import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientProperties;
+import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.EntryAdapter;
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.instance.TestUtil;
@@ -29,7 +28,7 @@ import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.test.AssertTask;
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -45,32 +44,30 @@ import java.util.concurrent.CountDownLatch;
 
 import static org.junit.Assert.assertEquals;
 
-/**
- * @ali 24/10/13
- */
-@RunWith(HazelcastSerialClassRunner.class)
+@RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
 public class ClientMapIssueTest extends HazelcastTestSupport {
 
+    private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
+
     @After
-    public void reset() {
-        HazelcastClient.shutdownAll();
-        Hazelcast.shutdownAll();
+    public void tearDown() {
+        hazelcastFactory.terminateAll();
     }
 
     @Test
     public void testListenerRegistrations() throws Exception {
-        HazelcastInstance instance1 = Hazelcast.newHazelcastInstance();
-        HazelcastInstance client = HazelcastClient.newHazelcastClient();
+        HazelcastInstance instance1 = hazelcastFactory.newHazelcastInstance();
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient();
 
         final String mapName = randomMapName();
         IMap<Object, Object> map = client.getMap(mapName);
         map.addEntryListener(new EntryAdapter<Object, Object>(), true);
 
-        HazelcastInstance instance2 = Hazelcast.newHazelcastInstance();
+        HazelcastInstance instance2 = hazelcastFactory.newHazelcastInstance();
 
         instance1.getLifecycleService().terminate();
-        instance1 = Hazelcast.newHazelcastInstance();
+        instance1 = hazelcastFactory.newHazelcastInstance();
 
         final EventService eventService1 = TestUtil.getNode(instance1).nodeEngine.getEventService();
         final EventService eventService2 = TestUtil.getNode(instance2).nodeEngine.getEventService();
@@ -90,15 +87,15 @@ public class ClientMapIssueTest extends HazelcastTestSupport {
     @Test
     @Category(NightlyTest.class)
     public void testOperationNotBlockingAfterClusterShutdown() throws InterruptedException {
-        HazelcastInstance instance1 = Hazelcast.newHazelcastInstance();
-        HazelcastInstance instance2 = Hazelcast.newHazelcastInstance();
+        HazelcastInstance instance1 = hazelcastFactory.newHazelcastInstance();
+        HazelcastInstance instance2 = hazelcastFactory.newHazelcastInstance();
 
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.setExecutorPoolSize(1);
         clientConfig.getNetworkConfig().setConnectionAttemptLimit(Integer.MAX_VALUE);
         clientConfig.setProperty(ClientProperties.PROP_INVOCATION_TIMEOUT_SECONDS, "10");
 
-        HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
         final IMap<String, String> map = client.getMap(randomMapName());
 
         map.put(randomString(), randomString());
@@ -119,21 +116,20 @@ public class ClientMapIssueTest extends HazelcastTestSupport {
         }.start();
 
         assertOpenEventually(latch);
-
     }
 
     @Test
     @Category(NightlyTest.class)
     public void testOperationNotBlockingAfterClusterShutdown_withOneExecutorPoolSize() throws InterruptedException {
-        HazelcastInstance instance1 = Hazelcast.newHazelcastInstance();
-        HazelcastInstance instance2 = Hazelcast.newHazelcastInstance();
+        HazelcastInstance instance1 = hazelcastFactory.newHazelcastInstance();
+        HazelcastInstance instance2 = hazelcastFactory.newHazelcastInstance();
 
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.setExecutorPoolSize(1);
         clientConfig.getNetworkConfig().setConnectionAttemptLimit(Integer.MAX_VALUE);
         clientConfig.setProperty(ClientProperties.PROP_INVOCATION_TIMEOUT_SECONDS, "10");
 
-        HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
         final IMap<String, String> map = client.getMap(randomMapName());
 
         map.put(randomString(), randomString());
@@ -158,11 +154,11 @@ public class ClientMapIssueTest extends HazelcastTestSupport {
 
     @Test
     public void testMapPagingEntries() {
-        final HazelcastInstance instance1 = Hazelcast.newHazelcastInstance();
-        final HazelcastInstance instance2 = Hazelcast.newHazelcastInstance();
+        hazelcastFactory.newHazelcastInstance();
+        hazelcastFactory.newHazelcastInstance();
 
         final ClientConfig clientConfig = new ClientConfig();
-        final HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
+        final HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
 
         final IMap<Integer, Integer> map = client.getMap("map");
 
@@ -177,17 +173,15 @@ public class ClientMapIssueTest extends HazelcastTestSupport {
 
         final Set<Map.Entry<Integer, Integer>> entries = map.entrySet(predicate);
         assertEquals(pageSize, entries.size());
-
-
     }
 
     @Test
     public void testMapPagingValues() {
-        final HazelcastInstance instance1 = Hazelcast.newHazelcastInstance();
-        final HazelcastInstance instance2 = Hazelcast.newHazelcastInstance();
+        hazelcastFactory.newHazelcastInstance();
+        hazelcastFactory.newHazelcastInstance();
 
         final ClientConfig clientConfig = new ClientConfig();
-        final HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
+        final HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
 
         final IMap<Integer, Integer> map = client.getMap("map");
 
@@ -202,17 +196,15 @@ public class ClientMapIssueTest extends HazelcastTestSupport {
 
         final Collection<Integer> values = map.values(predicate);
         assertEquals(pageSize, values.size());
-
-
     }
 
     @Test
     public void testMapPagingKeySet() {
-        final HazelcastInstance instance1 = Hazelcast.newHazelcastInstance();
-        final HazelcastInstance instance2 = Hazelcast.newHazelcastInstance();
+        hazelcastFactory.newHazelcastInstance();
+        hazelcastFactory.newHazelcastInstance();
 
         final ClientConfig clientConfig = new ClientConfig();
-        final HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
+        final HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
 
         final IMap<Integer, Integer> map = client.getMap("map");
 
@@ -227,9 +219,6 @@ public class ClientMapIssueTest extends HazelcastTestSupport {
 
         final Set<Integer> values = map.keySet(predicate);
         assertEquals(pageSize, values.size());
-
-
     }
-
 
 }

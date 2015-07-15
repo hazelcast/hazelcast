@@ -4,14 +4,14 @@ package com.hazelcast.client;
  * User: danny Date: 11/28/13
  */
 
-import com.hazelcast.core.Hazelcast;
+import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MemberAttributeEvent;
 import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MembershipListener;
 import com.hazelcast.test.AssertTask;
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
@@ -29,25 +29,26 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 
 
-@RunWith(HazelcastSerialClassRunner.class)
+@RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
 public class MembershipListenerTest extends HazelcastTestSupport {
 
-    private HazelcastInstance server1 = null;
-    private HazelcastInstance client = null;
+    private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
 
-    @Before
-    public void setup() {
-        server1 = Hazelcast.newHazelcastInstance();
-        client = HazelcastClient.newHazelcastClient();
-
-    }
+    private HazelcastInstance client;
+    private HazelcastInstance server1;
 
     @After
     public void tearDown() {
-        HazelcastClient.shutdownAll();
-        Hazelcast.shutdownAll();
+        hazelcastFactory.terminateAll();
     }
+
+    @Before
+    public void setup() {
+        server1 = hazelcastFactory.newHazelcastInstance();
+        client = hazelcastFactory.newHazelcastClient();
+    }
+
 
     @Test
     public void whenMemberAdded_thenMemberAddedEvent() throws Exception {
@@ -56,7 +57,7 @@ public class MembershipListenerTest extends HazelcastTestSupport {
         client.getCluster().addMembershipListener(listener);
 
         //start a second server and verify that the listener receives it.
-        final HazelcastInstance server2 = Hazelcast.newHazelcastInstance();
+        final HazelcastInstance server2 = hazelcastFactory.newHazelcastInstance();
 
         //verify that the listener receives member added event.
         assertTrueEventually(new AssertTask() {
@@ -75,8 +76,8 @@ public class MembershipListenerTest extends HazelcastTestSupport {
     public void whenMemberRemoved_thenMemberRemovedEvent() throws Exception {
         final MemberShipEventLogger listener = new MemberShipEventLogger();
 
-        //start a second server and verify that the listener receives it.
-        final HazelcastInstance server2 = Hazelcast.newHazelcastInstance();
+        //start a second server and verify that hazelcastFactory listener receives it.
+        final HazelcastInstance server2 = hazelcastFactory.newHazelcastInstance();
 
         client.getCluster().addMembershipListener(listener);
 

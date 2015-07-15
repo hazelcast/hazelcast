@@ -16,43 +16,41 @@
 
 package com.hazelcast.client.countdownlatch;
 
-import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.core.Hazelcast;
+import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ICountDownLatch;
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.*;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
-/**
- * @author ali 5/28/13
- */
-@RunWith(HazelcastSerialClassRunner.class)
+@RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
 public class ClientCountDownLatchTest extends HazelcastTestSupport {
 
-    static final String name = "test";
-    static HazelcastInstance hz;
-    static ICountDownLatch l;
-
-    @Before
-    public void init() {
-        Hazelcast.newHazelcastInstance();
-        hz = HazelcastClient.newHazelcastClient();
-        l = hz.getCountDownLatch(name);
-    }
+    private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
+    private ICountDownLatch l;
 
     @After
-    public void stop() {
-        hz.shutdown();
-        Hazelcast.shutdownAll();
+    public void tearDown() {
+        hazelcastFactory.terminateAll();
+    }
+
+    @Before
+    public void setup() {
+        hazelcastFactory.newHazelcastInstance();
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient();
+        l = client.getCountDownLatch(randomString());
     }
 
     @Test
@@ -81,16 +79,14 @@ public class ClientCountDownLatchTest extends HazelcastTestSupport {
 
     @Test(expected = IllegalArgumentException.class)
     public void testTrySetCount_whenArgumentNegative() {
-        ICountDownLatch latch = hz.getCountDownLatch(randomString());
-        latch.trySetCount(-20);
+        l.trySetCount(-20);
     }
 
     @Test
     public void testTrySetCount_whenCountIsNotZero() {
-        ICountDownLatch latch = hz.getCountDownLatch(randomString());
-        latch.trySetCount(10);
-        assertFalse(latch.trySetCount(20));
-        assertFalse(latch.trySetCount(0));
-        assertEquals(10, latch.getCount());
+        l.trySetCount(10);
+        assertFalse(l.trySetCount(20));
+        assertFalse(l.trySetCount(0));
+        assertEquals(10, l.getCount());
     }
 }
