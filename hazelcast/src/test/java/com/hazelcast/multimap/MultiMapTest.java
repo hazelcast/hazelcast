@@ -16,24 +16,39 @@
 
 package com.hazelcast.multimap;
 
+import com.hazelcast.concurrent.lock.LockService;
+import com.hazelcast.concurrent.lock.LockServiceImpl;
+import com.hazelcast.concurrent.lock.LockStoreContainer;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.MultiMapConfig;
-import com.hazelcast.core.*;
-import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.core.EntryAdapter;
+import com.hazelcast.core.EntryEvent;
+import com.hazelcast.core.EntryListener;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.MultiMap;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.HazelcastJUnit4ClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Random;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author ali 1/17/13
@@ -179,8 +194,8 @@ public class MultiMapTest extends HazelcastTestSupport {
 
         getMultiMap(instances, name).put("key3","key3_val1");
         getMultiMap(instances, name).put("key3","key3_val2");
-        getMultiMap(instances, name).put("key3","key3_val3");
-        getMultiMap(instances, name).put("key3","key3_val4");
+        getMultiMap(instances, name).put("key3", "key3_val3");
+        getMultiMap(instances, name).put("key3", "key3_val4");
 
 
         Set totalKeySet = new HashSet();
@@ -218,9 +233,9 @@ public class MultiMapTest extends HazelcastTestSupport {
         assertTrue(getMultiMap(instances, name).containsKey("key2"));
         assertFalse(getMultiMap(instances, name).containsKey("key4"));
 
-        assertTrue(getMultiMap(instances, name).containsEntry("key3","key3_val3"));
-        assertFalse(getMultiMap(instances, name).containsEntry("key3","key3_val7"));
-        assertFalse(getMultiMap(instances, name).containsEntry("key2","key3_val3"));
+        assertTrue(getMultiMap(instances, name).containsEntry("key3", "key3_val3"));
+        assertFalse(getMultiMap(instances, name).containsEntry("key3", "key3_val7"));
+        assertFalse(getMultiMap(instances, name).containsEntry("key2", "key3_val3"));
 
         assertTrue(getMultiMap(instances, name).containsValue("key2_val2"));
         assertFalse(getMultiMap(instances, name).containsValue("key2_val4"));
@@ -274,10 +289,10 @@ public class MultiMapTest extends HazelcastTestSupport {
         keys.clear();
 
         final String id2 = instances[0].getMultiMap(name).addEntryListener(listener, true);
-        getMultiMap(instances, name).put("key3","val3");
+        getMultiMap(instances, name).put("key3", "val3");
         getMultiMap(instances, name).put("key3","val33");
-        getMultiMap(instances, name).put("key4","val4");
-        getMultiMap(instances, name).remove("key3","val33");
+        getMultiMap(instances, name).put("key4", "val4");
+        getMultiMap(instances, name).remove("key3", "val33");
         Thread.sleep(1500);
         assertEquals(1, keys.size());
         getMultiMap(instances, name).clear();
@@ -286,9 +301,9 @@ public class MultiMapTest extends HazelcastTestSupport {
 
         instances[0].getMultiMap(name).removeEntryListener(id2);
         instances[0].getMultiMap(name).addEntryListener(listener, "key7", true);
-        getMultiMap(instances, name).put("key2","val2");
-        getMultiMap(instances, name).put("key3","val3");
-        getMultiMap(instances, name).put("key7","val7");
+        getMultiMap(instances, name).put("key2", "val2");
+        getMultiMap(instances, name).put("key3", "val3");
+        getMultiMap(instances, name).put("key7", "val7");
         Thread.sleep(1500);
         assertEquals(1, keys.size());
     }
@@ -298,11 +313,12 @@ public class MultiMapTest extends HazelcastTestSupport {
         Config config = new Config();
         final String name = "default";
         final CountDownLatch latch = new CountDownLatch(1);
-        config.getMultiMapConfig(name).addEntryListenerConfig(new EntryListenerConfig().setImplementation(new EntryAdapter() {
-            public void entryAdded(EntryEvent event) {
-                latch.countDown();
-            }
-        }));
+        config.getMultiMapConfig(name).addEntryListenerConfig(
+                new EntryListenerConfig().setImplementation(new EntryAdapter() {
+                    public void entryAdded(EntryEvent event) {
+                        latch.countDown();
+                    }
+                }));
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
         final HazelcastInstance hz = factory.newHazelcastInstance(config);
         hz.getMultiMap(name).put(1, 1);
@@ -354,5 +370,27 @@ public class MultiMapTest extends HazelcastTestSupport {
     private MultiMap getMultiMap(HazelcastInstance[] instances, String name){
         final Random rnd = new Random(System.currentTimeMillis());
         return instances[rnd.nextInt(instances.length)].getMultiMap(name);
+    }
+
+    /**
+     * See issue #4888
+     */
+    @Test
+    public void lockStoreShouldBeRemoved_whenMultimapIsDestroyed() {
+        HazelcastInstance hz = createHazelcastInstance();
+        MultiMap multiMap = hz.getMultiMap("lockStoreShouldBeRemoved_whenMultimapIsDestroyed");
+        for (int i = 0; i < 1000; i++) {
+            multiMap.lock(i);
+            multiMap.unlock(i);
+        }
+        multiMap.destroy();
+
+        NodeEngineImpl nodeEngine = getNode(hz).nodeEngine;
+        LockServiceImpl lockService = nodeEngine.getService(LockService.SERVICE_NAME);
+        int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
+        for (int i = 0; i < partitionCount; i++) {
+            LockStoreContainer lockContainer = lockService.getLockContainer(i);
+            assertEquals("LockStores should be empty", 0, lockContainer.getLockStores().size());
+        }
     }
 }
