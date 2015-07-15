@@ -16,6 +16,7 @@
 
 package com.hazelcast.cache.impl.client;
 
+import com.hazelcast.cache.impl.CacheContext;
 import com.hazelcast.cache.impl.CacheEventData;
 import com.hazelcast.cache.impl.CacheEventListener;
 import com.hazelcast.cache.impl.CacheEventSet;
@@ -28,8 +29,12 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.impl.DefaultData;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
+import com.hazelcast.spi.EventRegistration;
+import com.hazelcast.spi.ListenerWrapperEventFilter;
+import com.hazelcast.spi.NotifiableEventListener;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.security.Permission;
 import java.util.Set;
 
@@ -56,31 +61,71 @@ public class CacheAddEntryListenerRequest
     public Object call() {
         final ClientEndpoint endpoint = getEndpoint();
         final CacheService service = getService();
-        CacheEventListener entryListener = new CacheEventListener() {
-            @Override
-            public void handleEvent(Object eventObject) {
-                if (endpoint.isAlive()) {
-                    Data partitionKey = getPartitionKey(eventObject);
-                    endpoint.sendEvent(partitionKey, eventObject, getCallId());
-                }
-            }
-        };
-        return service.registerListener(name, entryListener);
+        CacheEntryListener cacheEntryListener = new CacheEntryListener(getCallId(), endpoint);
+        return service.registerListener(name, cacheEntryListener, cacheEntryListener);
     }
 
-    private Data getPartitionKey(Object eventObject) {
-        Data partitionKey = null;
-        if (eventObject instanceof CacheEventSet) {
-            Set<CacheEventData> events = ((CacheEventSet) eventObject).getEvents();
-            if (events.size() > 1) {
-                partitionKey = new DefaultData();
-            } else if (events.size() == 1) {
-                partitionKey = events.iterator().next().getDataKey();
-            }
-        } else if (eventObject instanceof CacheEventData) {
-            partitionKey = ((CacheEventData) eventObject).getDataKey();
+    private static final class CacheEntryListener
+            implements CacheEventListener,
+                       NotifiableEventListener<CacheService>,
+                       ListenerWrapperEventFilter,
+                       Serializable {
+
+        private final transient int callId;
+        private final transient ClientEndpoint endpoint;
+
+        private CacheEntryListener(int callId, ClientEndpoint endpoint) {
+            this.callId = callId;
+            this.endpoint = endpoint;
         }
-        return partitionKey;
+
+        private Data getPartitionKey(Object eventObject) {
+            Data partitionKey = null;
+            if (eventObject instanceof CacheEventSet) {
+                Set<CacheEventData> events = ((CacheEventSet) eventObject).getEvents();
+                if (events.size() > 1) {
+                    partitionKey = new DefaultData();
+                } else if (events.size() == 1) {
+                    partitionKey = events.iterator().next().getDataKey();
+                }
+            } else if (eventObject instanceof CacheEventData) {
+                partitionKey = ((CacheEventData) eventObject).getDataKey();
+            }
+            return partitionKey;
+        }
+
+        @Override
+        public void handleEvent(Object eventObject) {
+            if (endpoint.isAlive()) {
+                Data partitionKey = getPartitionKey(eventObject);
+                endpoint.sendEvent(partitionKey, eventObject, callId);
+            }
+        }
+
+        @Override
+        public void onRegister(CacheService service, String serviceName,
+                               String topic, EventRegistration registration) {
+            CacheContext cacheContext = service.getOrCreateCacheContext(topic);
+            cacheContext.increaseCacheEntryListenerCount();
+        }
+
+        @Override
+        public void onDeregister(CacheService service, String serviceName,
+                                 String topic, EventRegistration registration) {
+            CacheContext cacheContext = service.getOrCreateCacheContext(topic);
+            cacheContext.decreaseCacheEntryListenerCount();
+        }
+
+        @Override
+        public Object getListener() {
+            return this;
+        }
+
+        @Override
+        public boolean eval(Object event) {
+            return true;
+        }
+
     }
 
     @Override
