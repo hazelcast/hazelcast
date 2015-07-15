@@ -30,6 +30,7 @@ import com.hazelcast.query.impl.QueryContext;
 import com.hazelcast.query.impl.QueryableEntry;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -465,6 +466,11 @@ public final class Predicates {
 
         @Override
         public Set<QueryableEntry> filter(QueryContext queryContext) {
+            Set<QueryableEntry> optoResult = tryOptimizedFiltering(queryContext);
+            if (optoResult != null) {
+                return optoResult;
+            }
+
             Set<QueryableEntry> smallestIndexedResult = null;
             List<Set<QueryableEntry>> otherIndexedResults = new LinkedList<Set<QueryableEntry>>();
             List<Predicate> lsNoIndexPredicates = null;
@@ -474,15 +480,8 @@ public final class Predicates {
                     IndexAwarePredicate iap = (IndexAwarePredicate) predicate;
                     if (iap.isIndexed(queryContext)) {
                         indexed = true;
-                        Set<QueryableEntry> s = iap.filter(queryContext);
-                        if (smallestIndexedResult == null) {
-                            smallestIndexedResult = s;
-                        } else if (s.size() < smallestIndexedResult.size()) {
-                            otherIndexedResults.add(smallestIndexedResult);
-                            smallestIndexedResult = s;
-                        } else {
-                            otherIndexedResults.add(s);
-                        }
+                        smallestIndexedResult =
+                                filterOnSinglePredicate(iap, queryContext, smallestIndexedResult, otherIndexedResults);
                     }
                 }
                 if (!indexed) {
@@ -496,6 +495,82 @@ public final class Predicates {
                 return null;
             }
             return new AndResultSet(smallestIndexedResult, otherIndexedResults, lsNoIndexPredicates);
+        }
+
+        private Set<QueryableEntry> filterOnSinglePredicate(IndexAwarePredicate predicate,
+                                                            QueryContext queryContext,
+                                                            Set<QueryableEntry> smallestIndexedResult,
+                                                            List<Set<QueryableEntry>> otherIndexedResults) {
+            Set<QueryableEntry> currentResult = predicate.filter(queryContext);
+            if (smallestIndexedResult == null) {
+                return currentResult;
+            }
+
+            if (currentResult.size() < smallestIndexedResult.size()) {
+                otherIndexedResults.add(smallestIndexedResult);
+                return currentResult;
+            }
+            otherIndexedResults.add(currentResult);
+            return smallestIndexedResult;
+        }
+
+        private Set<QueryableEntry> tryOptimizedFiltering(QueryContext queryContext) {
+            if (!shouldOptimize()) {
+                return null;
+            }
+            return filterOptimized(queryContext);
+        }
+
+        private boolean shouldOptimize() {
+            //currently we have only a very simple optimization for the case when:
+            //attribute >= from AND attribute <= to
+            if (predicates.length != 2) {
+                return false;
+            }
+
+            if (!(predicates[0] instanceof GreaterLessPredicate) || !(predicates[1] instanceof GreaterLessPredicate)) {
+                return false;
+            }
+
+            GreaterLessPredicate firstPredicate = (GreaterLessPredicate) predicates[0];
+            GreaterLessPredicate secondPredicate = (GreaterLessPredicate) predicates[1];
+            if (!firstPredicate.attribute.equals(secondPredicate.attribute)) {
+                return false;
+            }
+
+            if (!firstPredicate.equal || !secondPredicate.equal) {
+                return false;
+            }
+
+            return true;
+        }
+
+        private Set<QueryableEntry> filterOptimized(QueryContext queryContext) {
+            GreaterLessPredicate firstPredicate = (GreaterLessPredicate) predicates[0];
+            GreaterLessPredicate secondPredicate = (GreaterLessPredicate) predicates[1];
+            Comparable from;
+            Comparable to;
+            if (!firstPredicate.less && secondPredicate.less) {
+                from = firstPredicate.value;
+                to = secondPredicate.value;
+            } else if (firstPredicate.less && !secondPredicate.less) {
+                from = secondPredicate.value;
+                to = firstPredicate.value;
+            } else {
+                return null;
+            }
+
+            if (from.compareTo(to) > 0) {
+                // Case: attribute >= FROM && attribute <= TO
+                // Where: FROM > TO
+                // Example: age >= 10 && age <= 9
+                // We can safely return an empty set
+                return Collections.emptySet();
+            }
+
+            String attribute = firstPredicate.attribute;
+            Index index = queryContext.getIndex(attribute);
+            return index.getSubRecordsBetween(from, to);
         }
 
         @Override
