@@ -31,7 +31,6 @@ import com.hazelcast.spi.PartitionReplicationEvent;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Properties;
-import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
@@ -69,10 +68,9 @@ public class CacheService extends AbstractCacheService {
 
     protected boolean invalidationMessageBatchEnabled;
     protected int invalidationMessageBatchSize;
-    protected final ConcurrentMap<String, Queue<CacheSingleInvalidationMessage>> invalidationMessageMap =
-            new ConcurrentHashMap<String, Queue<CacheSingleInvalidationMessage>>();
+    protected final ConcurrentMap<String, InvalidationEventQueue> invalidationMessageMap =
+            new ConcurrentHashMap<String, InvalidationEventQueue>();
     protected ScheduledFuture cacheBatchInvalidationMessageSenderScheduler;
-    protected final AtomicBoolean cacheBatchInvalidationMessageSenderInProgress = new AtomicBoolean(false);
 
     protected ICacheRecordStore createNewRecordStore(String name, int partitionId) {
         return new CacheRecordStore(name, partitionId, nodeEngine, CacheService.this);
@@ -169,7 +167,7 @@ public class CacheService extends AbstractCacheService {
         Collection<EventRegistration> registrations = eventService.getRegistrations(SERVICE_NAME, name);
         if (!registrations.isEmpty()) {
             eventService.publishEvent(SERVICE_NAME, registrations,
-                    new CacheSingleInvalidationMessage(name, key, sourceUuid), name.hashCode());
+                                      new CacheSingleInvalidationMessage(name, key, sourceUuid), name.hashCode());
 
         }
     }
@@ -180,11 +178,9 @@ public class CacheService extends AbstractCacheService {
         if (registrations.isEmpty()) {
             return;
         }
-        Queue<CacheSingleInvalidationMessage> invalidationMessageQueue =
-                invalidationMessageMap.get(name);
+        InvalidationEventQueue invalidationMessageQueue =  invalidationMessageMap.get(name);
         if (invalidationMessageQueue == null) {
-            Queue<CacheSingleInvalidationMessage> newInvalidationMessageQueue =
-                    new InvalidationEventQueue();
+            InvalidationEventQueue newInvalidationMessageQueue = new InvalidationEventQueue();
             invalidationMessageQueue = invalidationMessageMap.putIfAbsent(name, newInvalidationMessageQueue);
             if (invalidationMessageQueue == null) {
                 invalidationMessageQueue = newInvalidationMessageQueue;
@@ -197,43 +193,40 @@ public class CacheService extends AbstractCacheService {
         }
     }
 
-    protected void flushInvalidationMessages(String cacheName,
-                                             Queue<CacheSingleInvalidationMessage> invalidationMessageQueue) {
-        CacheBatchInvalidationMessage batchInvalidationMessage =
-                new CacheBatchInvalidationMessage(cacheName, invalidationMessageQueue.size());
-        CacheSingleInvalidationMessage invalidationMessage;
-        while ((invalidationMessage = invalidationMessageQueue.poll()) != null) {
-            batchInvalidationMessage.addInvalidationMessage(invalidationMessage);
-        }
-        EventService eventService = nodeEngine.getEventService();
-        Collection<EventRegistration> registrations = eventService.getRegistrations(SERVICE_NAME, cacheName);
-        if (!registrations.isEmpty()) {
-            eventService.publishEvent(SERVICE_NAME, registrations,
-                    batchInvalidationMessage, cacheName.hashCode());
-
-        }
+    protected void flushInvalidationMessages(String cacheName, InvalidationEventQueue invalidationMessageQueue) {
+         // If still in progress, no need to another attempt. So just ignore.
+         if (invalidationMessageQueue.flushingInProgress.compareAndSet(false, true)) {
+             try {
+                 CacheBatchInvalidationMessage batchInvalidationMessage =
+                         new CacheBatchInvalidationMessage(cacheName, invalidationMessageQueue.size());
+                 CacheSingleInvalidationMessage invalidationMessage;
+                 while ((invalidationMessage = invalidationMessageQueue.poll()) != null) {
+                     batchInvalidationMessage.addInvalidationMessage(invalidationMessage);
+                 }
+                 EventService eventService = nodeEngine.getEventService();
+                 Collection<EventRegistration> registrations = eventService.getRegistrations(SERVICE_NAME, cacheName);
+                 if (!registrations.isEmpty()) {
+                     eventService.publishEvent(SERVICE_NAME, registrations,
+                                               batchInvalidationMessage, cacheName.hashCode());
+                 }
+             } finally {
+                 invalidationMessageQueue.flushingInProgress.set(false);
+             }
+         }
     }
 
     protected class CacheBatchInvalidationMessageSender implements Runnable {
 
         @Override
         public void run() {
-            // If still in progress, no need to another attempt. So just ignore.
-            if (cacheBatchInvalidationMessageSenderInProgress.compareAndSet(false, true)) {
-                try {
-                    for (Map.Entry<String, Queue<CacheSingleInvalidationMessage>> entry
-                            : invalidationMessageMap.entrySet()) {
-                        if (Thread.currentThread().isInterrupted()) {
-                            break;
-                        }
-                        String cacheName = entry.getKey();
-                        Queue<CacheSingleInvalidationMessage> invalidationMessageQueue = entry.getValue();
-                        if (invalidationMessageQueue.size() > 0) {
-                            flushInvalidationMessages(cacheName, invalidationMessageQueue);
-                        }
-                    }
-                } finally {
-                    cacheBatchInvalidationMessageSenderInProgress.set(false);
+            for (Map.Entry<String, InvalidationEventQueue> entry : invalidationMessageMap.entrySet()) {
+                if (Thread.currentThread().isInterrupted()) {
+                    break;
+                }
+                String cacheName = entry.getKey();
+                InvalidationEventQueue invalidationMessageQueue = entry.getValue();
+                if (invalidationMessageQueue.size() > 0) {
+                    flushInvalidationMessages(cacheName, invalidationMessageQueue);
                 }
             }
         }
@@ -243,6 +236,7 @@ public class CacheService extends AbstractCacheService {
     protected class InvalidationEventQueue extends ConcurrentLinkedQueue<CacheSingleInvalidationMessage> {
 
         private final AtomicInteger elementCount = new AtomicInteger(0);
+        private final AtomicBoolean flushingInProgress = new AtomicBoolean(false);
 
         @Override
         public int size() {

@@ -98,10 +98,8 @@ public class EventServiceSegment<S> {
             final Collection<Registration> all = registrations.get(topic);
             if (all != null) {
                 all.remove(registration);
-                for (Registration reg : all) {
-                    pingNotifiableEventListenerIfAvailable(topic, reg, false);
-                }
             }
+            pingNotifiableEventListenerIfAvailable(topic, registration, false);
         }
         return registration;
     }

@@ -199,6 +199,10 @@ public abstract class AbstractCacheService
         return ConcurrencyUtil.getOrPutIfAbsent(statistics, name, cacheStatisticsConstructorFunction);
     }
 
+    public CacheContext getCacheContext(String name) {
+        return cacheContexts.get(name);
+    }
+
     public CacheContext getOrCreateCacheContext(String name) {
         return ConcurrencyUtil.getOrPutIfAbsent(cacheContexts, name, cacheContexesConstructorFunction);
     }

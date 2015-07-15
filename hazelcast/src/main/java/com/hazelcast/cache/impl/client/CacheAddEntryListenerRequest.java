@@ -30,9 +30,11 @@ import com.hazelcast.nio.serialization.DefaultData;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.spi.EventRegistration;
+import com.hazelcast.spi.ListenerWrapperEventFilter;
 import com.hazelcast.spi.NotifiableEventListener;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.security.Permission;
 import java.util.Set;
 
@@ -59,56 +61,71 @@ public class CacheAddEntryListenerRequest
     public Object call() {
         final ClientEndpoint endpoint = getEndpoint();
         final CacheService service = getService();
-        final CacheContext cacheContext = service.getOrCreateCacheContext(name);
-        return service.registerListener(name, new CacheEntryListener(endpoint, cacheContext));
+        CacheEntryListener cacheEntryListener = new CacheEntryListener(getCallId(), endpoint);
+        return service.registerListener(name, cacheEntryListener, cacheEntryListener);
     }
 
-    private final class CacheEntryListener
-            implements CacheEventListener, NotifiableEventListener<CacheService> {
+    private static final class CacheEntryListener
+            implements CacheEventListener,
+                       NotifiableEventListener<CacheService>,
+                       ListenerWrapperEventFilter,
+                       Serializable {
 
-        private final ClientEndpoint endpoint;
-        private final CacheContext cacheContext;
+        private final transient int callId;
+        private final transient ClientEndpoint endpoint;
 
-        private CacheEntryListener(ClientEndpoint endpoint, CacheContext cacheContext) {
+        private CacheEntryListener(int callId, ClientEndpoint endpoint) {
+            this.callId = callId;
             this.endpoint = endpoint;
-            this.cacheContext = cacheContext;
+        }
+
+        private Data getPartitionKey(Object eventObject) {
+            Data partitionKey = null;
+            if (eventObject instanceof CacheEventSet) {
+                Set<CacheEventData> events = ((CacheEventSet) eventObject).getEvents();
+                if (events.size() > 1) {
+                    partitionKey = new DefaultData();
+                } else if (events.size() == 1) {
+                    partitionKey = events.iterator().next().getDataKey();
+                }
+            } else if (eventObject instanceof CacheEventData) {
+                partitionKey = ((CacheEventData) eventObject).getDataKey();
+            }
+            return partitionKey;
         }
 
         @Override
         public void handleEvent(Object eventObject) {
             if (endpoint.isAlive()) {
                 Data partitionKey = getPartitionKey(eventObject);
-                endpoint.sendEvent(partitionKey, eventObject, getCallId());
+                endpoint.sendEvent(partitionKey, eventObject, callId);
             }
         }
 
         @Override
         public void onRegister(CacheService service, String serviceName,
                                String topic, EventRegistration registration) {
+            CacheContext cacheContext = service.getOrCreateCacheContext(topic);
             cacheContext.increaseCacheEntryListenerCount();
         }
 
         @Override
         public void onDeregister(CacheService service, String serviceName,
                                  String topic, EventRegistration registration) {
+            CacheContext cacheContext = service.getOrCreateCacheContext(topic);
             cacheContext.decreaseCacheEntryListenerCount();
         }
 
-    }
-
-    private Data getPartitionKey(Object eventObject) {
-        Data partitionKey = null;
-        if (eventObject instanceof CacheEventSet) {
-            Set<CacheEventData> events = ((CacheEventSet) eventObject).getEvents();
-            if (events.size() > 1) {
-                partitionKey = new DefaultData();
-            } else if (events.size() == 1) {
-                partitionKey = events.iterator().next().getDataKey();
-            }
-        } else if (eventObject instanceof CacheEventData) {
-            partitionKey = ((CacheEventData) eventObject).getDataKey();
+        @Override
+        public Object getListener() {
+            return this;
         }
-        return partitionKey;
+
+        @Override
+        public boolean eval(Object event) {
+            return true;
+        }
+
     }
 
     @Override
