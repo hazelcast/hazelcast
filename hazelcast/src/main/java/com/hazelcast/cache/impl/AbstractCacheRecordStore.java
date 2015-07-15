@@ -294,7 +294,8 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         }
         doRemoveRecord(key, source);
         if (isEventsEnabled()) {
-            publishEvent(createCacheExpiredEvent(key, toEventData(record), CacheRecord.EXPIRATION_TIME_NOT_AVAILABLE,
+            publishEvent(createCacheExpiredEvent(toEventData(key), toEventData(record),
+                                                 CacheRecord.EXPIRATION_TIME_NOT_AVAILABLE,
                                                  origin, IGNORE_COMPLETION));
         }
         return true;
@@ -318,7 +319,8 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         }
         doRemoveRecord(key, source);
         if (isEventsEnabled()) {
-            publishEvent(createCacheExpiredEvent(key, toEventData(record), CacheRecord.EXPIRATION_TIME_NOT_AVAILABLE,
+            publishEvent(createCacheExpiredEvent(toEventData(key), toEventData(record),
+                                                 CacheRecord.EXPIRATION_TIME_NOT_AVAILABLE,
                                                  origin, IGNORE_COMPLETION));
         }
         return null;
@@ -378,7 +380,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
                 record.setExpirationTime(expiryTime);
                 if (isEventsEnabled()) {
                     CacheEventContext cacheEventContext =
-                            createBaseEventContext(CacheEventType.EXPIRATION_TIME_UPDATED, toHeapData(key),
+                            createBaseEventContext(CacheEventType.EXPIRATION_TIME_UPDATED, toEventData(key),
                                                    toEventData(record.getValue()), expiryTime, null, IGNORE_COMPLETION);
                     cacheEventContext.setAccessHit(record.getAccessHit());
                     publishEvent(cacheEventContext);
@@ -493,7 +495,8 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         final R record = createRecord(value, expirationTime);
         updateHasExpiringEntry(record);
         if (isEventsEnabled()) {
-            publishEvent(createCacheCreatedEvent(keyData, toEventData(value), expirationTime, origin, completionId));
+            publishEvent(createCacheCreatedEvent(toEventData(keyData), toEventData(value),
+                                                 expirationTime, origin, completionId));
         }
         return record;
     }
@@ -514,7 +517,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
             return record;
         }
         if (isEventsEnabled()) {
-            publishEvent(createCacheCompleteEvent(key, CacheRecord.EXPIRATION_TIME_NOT_AVAILABLE,
+            publishEvent(createCacheCompleteEvent(toEventData(key), CacheRecord.EXPIRATION_TIME_NOT_AVAILABLE,
                                                   origin, completionId));
         }
         return null;
@@ -1002,7 +1005,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
             } else {
                 result = false;
                 if (isEventsEnabled()) {
-                    publishEvent(createCacheCompleteEvent(key, completionId));
+                    publishEvent(createCacheCompleteEvent(toEventData(key), completionId));
                 }
             }
             onPutIfAbsent(key, value, expiryPolicy, source, disableWriteThrough,
@@ -1046,7 +1049,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
             if (record == null || isExpired) {
                 replaced = false;
                 if (isEventsEnabled()) {
-                    publishEvent(createCacheCompleteEvent(key, completionId));
+                    publishEvent(createCacheCompleteEvent(toEventData(key), completionId));
                 }
             } else {
                 replaced = updateRecordWithExpiry(key, value, record, expiryPolicy,
@@ -1099,7 +1102,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
             }
             if (!replaced) {
                 if (isEventsEnabled()) {
-                    publishEvent(createCacheCompleteEvent(key, completionId));
+                    publishEvent(createCacheCompleteEvent(toEventData(key), completionId));
                 }
             }
             onReplace(key, oldValue, newValue, expiryPolicy, source, false, record, isExpired, replaced);
@@ -1131,7 +1134,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
                 obj = null;
                 replaced = false;
                 if (isEventsEnabled()) {
-                    publishEvent(createCacheCompleteEvent(key, completionId));
+                    publishEvent(createCacheCompleteEvent(toEventData(key), completionId));
                 }
             } else {
                 replaced = updateRecordWithExpiry(key, value, record, expiryPolicy,
@@ -1182,7 +1185,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
             if (record == null || isExpired) {
                 removed = false;
                 if (isEventsEnabled()) {
-                    publishEvent(createCacheCompleteEvent(key, CacheRecord.EXPIRATION_TIME_NOT_AVAILABLE,
+                    publishEvent(createCacheCompleteEvent(toEventData(key), CacheRecord.EXPIRATION_TIME_NOT_AVAILABLE,
                                                           origin, completionId));
                 }
             } else {
@@ -1235,7 +1238,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
             }
             if (!removed) {
                 if (isEventsEnabled()) {
-                    publishEvent(createCacheCompleteEvent(key, CacheRecord.EXPIRATION_TIME_NOT_AVAILABLE,
+                    publishEvent(createCacheCompleteEvent(toEventData(key), CacheRecord.EXPIRATION_TIME_NOT_AVAILABLE,
                                                           origin, completionId));
                 }
             }
@@ -1284,7 +1287,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
                 obj = null;
                 removed = false;
                 if (isEventsEnabled()) {
-                    publishEvent(createCacheCompleteEvent(key, CacheRecord.EXPIRATION_TIME_NOT_AVAILABLE,
+                    publishEvent(createCacheCompleteEvent(toEventData(key), CacheRecord.EXPIRATION_TIME_NOT_AVAILABLE,
                                                           origin, completionId));
                 }
             } else {
