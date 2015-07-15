@@ -1,4 +1,5 @@
 /*
+ * Copyright 2014 Real Logic Ltd.
  * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,6 +20,7 @@ package com.hazelcast.util.collection;
 
 import com.hazelcast.util.QuickMath;
 import com.hazelcast.util.function.IntFunction;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.AbstractCollection;
 import java.util.AbstractSet;
@@ -37,7 +39,6 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
  *
  * @param <V> values stored in the {@link java.util.Map}
  */
-@edu.umd.cs.findbugs.annotations.SuppressWarnings("PZ_DONT_REUSE_ENTRY_OBJECTS_IN_ITERATORS")
 public class Int2ObjectHashMap<V> implements Map<Integer, V> {
     private final double loadFactor;
     private int resizeThreshold;
@@ -192,8 +193,6 @@ public class Int2ObjectHashMap<V> implements Map<Integer, V> {
     /**
      * Get a value for a given key, or if it does ot exist then default the value via a {@link IntFunction}
      * and put it in the map.
-     * <p/>
-     * Primitive specialized version of {@link java.util.Map#computeIfAbsent}.
      *
      * @param key             to search on.
      * @param mappingFunction to provide a value if the get returns null.
@@ -229,30 +228,23 @@ public class Int2ObjectHashMap<V> implements Map<Integer, V> {
     @SuppressWarnings("unchecked")
     public V put(final int key, final V value) {
         checkNotNull(value, "Value cannot be null");
-
         V oldValue = null;
         int index = hash(key);
-
         while (null != values[index]) {
             if (key == keys[index]) {
                 oldValue = (V) values[index];
                 break;
             }
-
             index = ++index & mask;
         }
-
         if (null == oldValue) {
             ++size;
             keys[index] = key;
         }
-
         values[index] = value;
-
         if (size > resizeThreshold) {
             increaseCapacity();
         }
-
         return oldValue;
     }
 
@@ -272,21 +264,16 @@ public class Int2ObjectHashMap<V> implements Map<Integer, V> {
     @SuppressWarnings("unchecked")
     public V remove(final int key) {
         int index = hash(key);
-
         Object value;
         while (null != (value = values[index])) {
             if (key == keys[index]) {
                 values[index] = null;
                 --size;
-
                 compactChain(index);
-
                 return (V) value;
             }
-
             index = ++index & mask;
         }
-
         return null;
     }
 
@@ -332,6 +319,11 @@ public class Int2ObjectHashMap<V> implements Map<Integer, V> {
 
     /**
      * {@inheritDoc}
+     * This set's iterator also implements <code>Map.Entry</code>
+     * so the <code>next()</code> method can just return the iterator
+     * instance itself with no heap allocation. This characteristic
+     * makes the set unusable wherever the returned entries are
+     * retained (such as <code>coll.addAll(entrySet)</code>.
      */
     public Set<Entry<Integer, V>> entrySet() {
         return entrySet;
@@ -389,12 +381,10 @@ public class Int2ObjectHashMap<V> implements Map<Integer, V> {
                 while (null != tempValues[newHash]) {
                     newHash = ++newHash & mask;
                 }
-
                 tempKeys[newHash] = key;
                 tempValues[newHash] = value;
             }
         }
-
         keys = tempKeys;
         values = tempValues;
     }
@@ -406,14 +396,11 @@ public class Int2ObjectHashMap<V> implements Map<Integer, V> {
             if (null == values[index]) {
                 return;
             }
-
             final int hash = hash(keys[index]);
-
             if ((index < hash && (hash <= deleteIndex || deleteIndex <= index))
                     || (hash <= deleteIndex && deleteIndex <= index)) {
                 keys[deleteIndex] = keys[index];
                 values[deleteIndex] = values[index];
-
                 values[index] = null;
                 deleteIndex = index;
             }
@@ -524,7 +511,6 @@ public class Int2ObjectHashMap<V> implements Map<Integer, V> {
                     }
                 }
             }
-
             stopCounter = i;
             posCounter = i + capacity;
         }
@@ -540,13 +526,11 @@ public class Int2ObjectHashMap<V> implements Map<Integer, V> {
                     return true;
                 }
             }
-
             return false;
         }
 
         protected void findNext() {
             isPositionValid = false;
-
             for (int i = posCounter - 1; i >= stopCounter; i--) {
                 final int index = i & mask;
                 if (null != values[index]) {
@@ -555,7 +539,6 @@ public class Int2ObjectHashMap<V> implements Map<Integer, V> {
                     return;
                 }
             }
-
             throw new NoSuchElementException();
         }
 
@@ -566,9 +549,7 @@ public class Int2ObjectHashMap<V> implements Map<Integer, V> {
                 final int position = getPosition();
                 values[position] = null;
                 --size;
-
                 compactChain(position);
-
                 isPositionValid = false;
             } else {
                 throw new IllegalStateException();
@@ -580,7 +561,6 @@ public class Int2ObjectHashMap<V> implements Map<Integer, V> {
         @SuppressWarnings("unchecked")
         public T next() {
             findNext();
-
             return (T) values[getPosition()];
         }
     }
@@ -592,16 +572,19 @@ public class Int2ObjectHashMap<V> implements Map<Integer, V> {
 
         public int nextInt() {
             findNext();
-
             return keys[getPosition()];
         }
     }
 
     @SuppressWarnings("unchecked")
-    public class EntryIterator<V> extends AbstractIterator<Entry<Integer, V>> implements Entry<Integer, V> {
+    @SuppressFBWarnings(value = "PZ_DONT_REUSE_ENTRY_OBJECTS_IN_ITERATORS",
+            justification = "deliberate, documented choice")
+    public class EntryIterator<V>
+            extends AbstractIterator<Entry<Integer, V>>
+            implements Entry<Integer, V> {
+
         public Entry<Integer, V> next() {
             findNext();
-
             return this;
         }
 
@@ -614,12 +597,10 @@ public class Int2ObjectHashMap<V> implements Map<Integer, V> {
         }
 
         public V setValue(final V value) {
-            checkNotNull(value, "Value must not be null");
-
+            checkNotNull(value);
             final int pos = getPosition();
             final Object oldValue = values[pos];
             values[pos] = value;
-
             return (V) oldValue;
         }
     }

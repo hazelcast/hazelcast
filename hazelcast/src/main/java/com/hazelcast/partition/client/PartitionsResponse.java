@@ -21,11 +21,11 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.partition.PartitionDataSerializerHook;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 
-//This is an internal structure, so doesn't matter if we expose arrays.
-@edu.umd.cs.findbugs.annotations.SuppressWarnings("EI_EXPOSE_REP")
+@SuppressFBWarnings(value = "EI_EXPOSE_REP", justification = "internal structure")
 public final class PartitionsResponse implements IdentifiedDataSerializable {
 
     private Address[] members;

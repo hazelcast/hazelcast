@@ -34,6 +34,7 @@ import com.hazelcast.spi.impl.SpiDataSerializerHook;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.impl.operationservice.impl.responses.BackupResponse;
 import com.hazelcast.util.Clock;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -53,7 +54,7 @@ public final class Backup extends Operation implements BackupOperation, Identifi
     public Backup() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressWarnings("EI_EXPOSE_REP")
+    @SuppressFBWarnings("EI_EXPOSE_REP")
     public Backup(Data backupOp, Address originalCaller, long[] replicaVersions, boolean sync) {
         this.backupOpData = backupOp;
         this.originalCaller = originalCaller;

@@ -21,6 +21,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.operationexecutor.OperationHostileThread;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.impl.operationexecutor.ResponsePacketHandler;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -89,7 +90,7 @@ public final class ResponseThread extends Thread implements OperationHostileThre
         }
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressWarnings({ "VO_VOLATILE_INCREMENT" })
+    @SuppressFBWarnings({ "VO_VOLATILE_INCREMENT" })
     private void process(Packet responsePacket) {
         processedResponses++;
         try {

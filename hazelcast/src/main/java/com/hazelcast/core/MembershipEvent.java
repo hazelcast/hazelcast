@@ -16,6 +16,8 @@
 
 package com.hazelcast.core;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 import java.util.EventObject;
 import java.util.Set;
 
@@ -27,7 +29,7 @@ import static java.lang.String.format;
  *
  * @see MembershipListener
  */
-@edu.umd.cs.findbugs.annotations.SuppressWarnings("SE_BAD_FIELD")
+@SuppressFBWarnings("SE_BAD_FIELD")
 public class MembershipEvent extends EventObject {
 
     /**

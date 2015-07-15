@@ -17,6 +17,7 @@
 package com.hazelcast.nio.tcp;
 
 import com.hazelcast.logging.ILogger;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.nio.channels.SelectionKey;
 
@@ -41,7 +42,7 @@ public final class InSelectorImpl extends AbstractIOSelector {
     }
 
     @Override
-    @edu.umd.cs.findbugs.annotations.SuppressWarnings({"VO_VOLATILE_INCREMENT" })
+    @SuppressFBWarnings({"VO_VOLATILE_INCREMENT" })
     protected void handleSelectionKey(SelectionKey sk) {
         if (sk.isValid() && sk.isReadable()) {
             readEvents++;

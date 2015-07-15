@@ -16,9 +16,11 @@
 
 package com.hazelcast.internal.ascii;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 import static com.hazelcast.util.StringUtil.stringToBytes;
 
-@edu.umd.cs.findbugs.annotations.SuppressWarnings("MS_MUTABLE_ARRAY")
+@SuppressFBWarnings("MS_MUTABLE_ARRAY")
 public final class TextCommandConstants {
 
     public static final byte[] SPACE = stringToBytes(" ");

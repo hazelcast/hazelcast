@@ -23,7 +23,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
-import edu.umd.cs.findbugs.annotations.SuppressWarnings;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 
@@ -52,7 +52,9 @@ public class TransferableJobProcessInformation
     // This field is explicitly exposed since it is guarded by a serialization cycle
     // or by a copy inside the constructor. This class is only used for transfer of
     // the states and user can change it without breaking anything.
-    @SuppressWarnings("EI_EXPOSE_REP")
+    @SuppressFBWarnings(value = "EI_EXPOSE_REP", justification = "exposed since it is guarded by serialization cycle"
+            + " or by copy inside the constructor. This class is only used for transfer of"
+            + " the states and user can change it without breaking anything.")
     public JobPartitionState[] getPartitionStates() {
         return partitionStates;
     }

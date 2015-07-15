@@ -1,4 +1,5 @@
 /*
+ * Copyright 2014 Real Logic Ltd.
  * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,6 +19,7 @@ package com.hazelcast.util.collection;
 
 import com.hazelcast.util.QuickMath;
 import com.hazelcast.util.function.LongFunction;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.AbstractCollection;
 import java.util.AbstractSet;
@@ -181,7 +183,6 @@ public class Long2ObjectHashMap<V> implements Map<Long, V> {
      * Get a value for a given key, or if it does ot exist then default the value via a {@link LongFunction}
      * and put it in the map.
      * <p/>
-     * Primitive specialized version of {@link java.util.Map#computeIfAbsent}.
      *
      * @param key             to search on.
      * @param mappingFunction to provide a value if the get returns null.
@@ -307,6 +308,11 @@ public class Long2ObjectHashMap<V> implements Map<Long, V> {
 
     /**
      * {@inheritDoc}
+     * This set's iterator also implements <code>Map.Entry</code>
+     * so the <code>next()</code> method can just return the iterator
+     * instance itself with no heap allocation. This characteristic
+     * makes the set unusable wherever the returned entries are
+     * retained (such as <code>coll.addAll(entrySet)</code>.
      */
     public Set<Entry<Long, V>> entrySet() {
         return entrySet;
@@ -554,7 +560,12 @@ public class Long2ObjectHashMap<V> implements Map<Long, V> {
     }
 
     @SuppressWarnings("unchecked")
-    public class EntryIterator<V> extends AbstractIterator<Entry<Long, V>> implements Entry<Long, V> {
+    @SuppressFBWarnings(value = "PZ_DONT_REUSE_ENTRY_OBJECTS_IN_ITERATORS",
+            justification = "deliberate, documented choice")
+    public class EntryIterator<V>
+            extends AbstractIterator<Entry<Long, V>>
+            implements Entry<Long, V> {
+
         public Entry<Long, V> next() {
             findNext();
             return this;

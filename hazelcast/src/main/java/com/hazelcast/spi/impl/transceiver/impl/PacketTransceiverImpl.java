@@ -29,6 +29,7 @@ import com.hazelcast.spi.impl.eventservice.InternalEventService;
 import com.hazelcast.spi.impl.operationexecutor.OperationExecutor;
 import com.hazelcast.spi.impl.transceiver.PacketTransceiver;
 import com.hazelcast.wan.WanReplicationService;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.concurrent.TimeUnit;
 
@@ -125,8 +126,7 @@ public class PacketTransceiverImpl implements PacketTransceiver {
             this.target = target;
         }
 
-        //retries is incremented by a single thread, but will be read by multiple. So there is no problem.
-        @edu.umd.cs.findbugs.annotations.SuppressWarnings("VO_VOLATILE_INCREMENT")
+        @SuppressFBWarnings(value = "VO_VOLATILE_INCREMENT", justification = "single-writer, many-reader")
         @Override
         public void run() {
             retries++;

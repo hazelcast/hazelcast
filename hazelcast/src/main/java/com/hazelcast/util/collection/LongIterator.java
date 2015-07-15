@@ -1,4 +1,5 @@
 /*
+ * Copyright 2014 Real Logic Ltd.
  * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,11 +17,14 @@
 
 package com.hazelcast.util.collection;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 import java.util.Iterator;
 
 /**
  * An iterator for a sequence of primitive integers.
  */
+@SuppressFBWarnings("EI2")
 public class LongIterator implements Iterator<Long> {
     private final long missingValue;
     private final long[] values;

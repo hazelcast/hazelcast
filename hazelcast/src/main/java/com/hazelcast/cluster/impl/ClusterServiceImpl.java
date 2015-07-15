@@ -70,6 +70,7 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.executor.ExecutorType;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
@@ -1411,7 +1412,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         return eventService.deregisterListener(SERVICE_NAME, SERVICE_NAME, registrationId);
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressWarnings("BC_UNCONFIRMED_CAST")
+    @SuppressFBWarnings("BC_UNCONFIRMED_CAST")
     @Override
     public void dispatchEvent(MembershipEvent event, MembershipListener listener) {
         switch (event.getEventType()) {

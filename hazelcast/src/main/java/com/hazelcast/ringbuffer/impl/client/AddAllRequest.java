@@ -22,6 +22,7 @@ import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.ringbuffer.OverflowPolicy;
 import com.hazelcast.ringbuffer.impl.operations.AddAllOperation;
 import com.hazelcast.spi.Operation;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 import java.security.Permission;
@@ -34,7 +35,7 @@ public class AddAllRequest extends RingbufferRequest {
     public AddAllRequest() {
     }
 
-    @edu.umd.cs.findbugs.annotations.SuppressWarnings({"EI_EXPOSE_REP" })
+    @SuppressFBWarnings("EI_EXPOSE_REP")
     public AddAllRequest(String name, Data[] items, OverflowPolicy overflowPolicy) {
         super(name);
         this.items = items;

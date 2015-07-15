@@ -5,6 +5,7 @@ target/
 .settings/
 .idea/
 .patch
+.surefire-*
 *.iml
 *.ipr
 *.iws

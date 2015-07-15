@@ -28,6 +28,7 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationResponseHandler;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.UrgentSystemOperation;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -35,7 +36,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Level;
 
-@edu.umd.cs.findbugs.annotations.SuppressWarnings("EI_EXPOSE_REP")
+@SuppressFBWarnings("EI_EXPOSE_REP")
 public class ReplicaSyncResponse extends Operation
         implements PartitionAwareOperation, BackupOperation, UrgentSystemOperation {
 

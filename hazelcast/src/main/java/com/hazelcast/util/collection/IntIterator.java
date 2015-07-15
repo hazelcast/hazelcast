@@ -1,4 +1,5 @@
 /*
+ * Copyright 2014 Real Logic Ltd.
  * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,7 +17,10 @@
 
 package com.hazelcast.util.collection;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 import java.util.Iterator;
+import java.util.NoSuchElementException;
 
 /**
  * An iterator for a sequence of primitive integers.
@@ -33,21 +37,22 @@ public class IntIterator implements Iterator<Integer> {
      * @param missingValue to indicate the value is missing, i.e. not present or null.
      * @param values       to iterate over.
      */
+    @SuppressFBWarnings(value = "EI2", justification =
+            "This is flyweight over caller's array, so no copying")
     public IntIterator(final int missingValue, final int[] values) {
         this.missingValue = missingValue;
         this.values = values;
+        this.position = -1;
     }
 
     public boolean hasNext() {
         final int[] values = this.values;
         while (position < values.length) {
-            if (values[position] != missingValue) {
+            if (position >= 0 && values[position] != missingValue) {
                 return true;
             }
-
             position++;
         }
-
         return false;
     }
 
@@ -65,6 +70,9 @@ public class IntIterator implements Iterator<Integer> {
      * @return the next int value.
      */
     public int nextValue() {
+        if (!hasNext()) {
+            throw new NoSuchElementException();
+        }
         final int value = values[position];
         position++;
         return value;

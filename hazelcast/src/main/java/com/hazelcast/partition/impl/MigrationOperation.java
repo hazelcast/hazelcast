@@ -30,6 +30,7 @@ import com.hazelcast.spi.OperationAccessor;
 import com.hazelcast.spi.OperationResponseHandler;
 import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -37,7 +38,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.logging.Level;
 
-@edu.umd.cs.findbugs.annotations.SuppressWarnings("EI_EXPOSE_REP")
+@SuppressFBWarnings("EI_EXPOSE_REP")
 public final class MigrationOperation extends BaseMigrationOperation {
 
     private static final OperationResponseHandler ERROR_RESPONSE_HANDLER = new OperationResponseHandler() {

@@ -17,12 +17,13 @@
 package com.hazelcast.util;
 
 import com.hazelcast.nio.UnsafeHelper;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import sun.misc.Unsafe;
 
 import java.nio.ByteOrder;
 import java.util.Arrays;
 
-@edu.umd.cs.findbugs.annotations.SuppressWarnings({"SF_SWITCH_FALLTHROUGH", "SF_SWITCH_NO_DEFAULT"})
+@SuppressFBWarnings({"SF_SWITCH_FALLTHROUGH", "SF_SWITCH_NO_DEFAULT"})
 public final class HashUtil {
 
     private static final boolean LITTLE_ENDIAN = ByteOrder.LITTLE_ENDIAN == ByteOrder.nativeOrder();

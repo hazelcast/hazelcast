@@ -17,6 +17,7 @@
 package com.hazelcast.partition;
 
 import com.hazelcast.nio.Address;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.Arrays;
 
@@ -38,8 +39,7 @@ public class PartitionInfo {
         return addresses[index];
     }
 
-    //Internal structure, so it doesn't matter if we expose this array.
-    @edu.umd.cs.findbugs.annotations.SuppressWarnings("EI_EXPOSE_REP")
+    @SuppressFBWarnings(value = "EI_EXPOSE_REP", justification = "internal structure")
     public Address[] getReplicaAddresses() {
         return addresses;
     }
