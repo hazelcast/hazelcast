@@ -18,6 +18,7 @@ package com.hazelcast.nio.tcp;
 
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.spi.impl.operationexecutor.OperationHostileThread;
 
 import java.io.IOException;
 import java.nio.channels.SelectionKey;
@@ -27,7 +28,7 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-public abstract class AbstractIOSelector extends Thread implements IOSelector {
+public abstract class AbstractIOSelector implements IOSelector {
 
     private static final int SELECT_WAIT_TIME_MILLIS = 5000;
     private static final int SELECT_FAILURE_PAUSE_MILLIS = 1000;
@@ -41,15 +42,16 @@ public abstract class AbstractIOSelector extends Thread implements IOSelector {
     private final Selector selector;
 
     private final IOSelectorOutOfMemoryHandler oomeHandler;
+    private final IOThread ioThread;
 
     // field doesn't need to be volatile, is only accessed by the IOSelector-thread.
     private boolean running = true;
 
     public AbstractIOSelector(ThreadGroup threadGroup, String threadName, ILogger logger,
                               IOSelectorOutOfMemoryHandler oomeHandler) {
-        super(threadGroup, threadName);
         this.logger = logger;
         this.oomeHandler = oomeHandler;
+        this.ioThread = new IOThread(threadGroup, threadName);
         // WARNING: This value has significant effect on idle CPU usage!
         this.waitTime = SELECT_WAIT_TIME_MILLIS;
         try {
@@ -57,6 +59,11 @@ public abstract class AbstractIOSelector extends Thread implements IOSelector {
         } catch (final IOException e) {
             throw new HazelcastException("Failed to open a Selector", e);
         }
+    }
+
+    @Override
+    public void start() {
+        ioThread.start();
     }
 
     @Override
@@ -69,10 +76,14 @@ public abstract class AbstractIOSelector extends Thread implements IOSelector {
                     running = false;
                 }
             });
-            interrupt();
+            ioThread.interrupt();
         } catch (Throwable t) {
             logger.finest("Exception while waiting for shutdown", t);
         }
+    }
+
+    public String getName() {
+        return ioThread.getName();
     }
 
     @Override
@@ -114,52 +125,6 @@ public abstract class AbstractIOSelector extends Thread implements IOSelector {
         }
     }
 
-    @Override
-    public final void run() {
-        try {
-            //noinspection WhileLoopSpinsOnField
-            while (running) {
-                processSelectionQueue();
-                if (!running || isInterrupted()) {
-                    if (logger.isFinestEnabled()) {
-                        logger.finest(getName() + " is interrupted!");
-                    }
-                    running = false;
-                    return;
-                }
-
-                try {
-                    int selectedKeyCount = selector.select(waitTime);
-                    if (selectedKeyCount == 0) {
-                        continue;
-                    }
-                } catch (Throwable e) {
-                    handleSelectFailure(e);
-                    continue;
-                }
-                handleSelectionKeys();
-            }
-        } catch (OutOfMemoryError e) {
-            oomeHandler.handle(e);
-        } catch (Throwable e) {
-            logger.warning("Unhandled exception in " + getName(), e);
-        } finally {
-            closeSelector();
-        }
-    }
-
-    private void closeSelector() {
-        if (logger.isFinestEnabled()) {
-            logger.finest("Closing selector " + getName());
-        }
-
-        try {
-            selector.close();
-        } catch (Exception e) {
-            logger.finest("Exception while closing selector", e);
-        }
-    }
-
     protected abstract void handleSelectionKey(SelectionKey sk);
 
     private void handleSelectionKeys() {
@@ -177,7 +142,7 @@ public abstract class AbstractIOSelector extends Thread implements IOSelector {
     }
 
     public void handleSelectionKeyFailure(Throwable e) {
-        logger.warning("Selector exception at  " + getName() + ", cause= " + e.toString(), e);
+        logger.warning("Selector exception at  " + ioThread.getName() + ", cause= " + e.toString(), e);
         if (e instanceof OutOfMemoryError) {
             oomeHandler.handle((OutOfMemoryError) e);
         }
@@ -202,6 +167,61 @@ public abstract class AbstractIOSelector extends Thread implements IOSelector {
 
     @Override
     public String toString() {
-        return getName();
+        return ioThread.getName();
+    }
+
+    // The IOThread is an OperationHostileThread because we don't want to allow operations running on this
+    // thread. It will block the IO system.
+    private final class IOThread extends Thread implements OperationHostileThread {
+
+        private IOThread(ThreadGroup threadGroup, String threadName) {
+            super(threadGroup, threadName);
+        }
+
+        @Override
+        public void run() {
+            try {
+                //noinspection WhileLoopSpinsOnField
+                while (running) {
+                    processSelectionQueue();
+                    if (!running || isInterrupted()) {
+                        if (logger.isFinestEnabled()) {
+                            logger.finest(getName() + " is interrupted!");
+                        }
+                        running = false;
+                        return;
+                    }
+
+                    try {
+                        int selectedKeyCount = selector.select(waitTime);
+                        if (selectedKeyCount == 0) {
+                            continue;
+                        }
+                    } catch (Throwable e) {
+                        handleSelectFailure(e);
+                        continue;
+                    }
+                    handleSelectionKeys();
+                }
+            } catch (OutOfMemoryError e) {
+                oomeHandler.handle(e);
+            } catch (Throwable e) {
+                logger.warning("Unhandled exception in " + getName(), e);
+            } finally {
+                closeSelector();
+            }
+        }
+
+        private void closeSelector() {
+            if (logger.isFinestEnabled()) {
+                logger.finest("Closing selector " + getName());
+            }
+
+            try {
+                selector.close();
+            } catch (Exception e) {
+                logger.finest("Exception while closing selector", e);
+            }
+        }
     }
 }

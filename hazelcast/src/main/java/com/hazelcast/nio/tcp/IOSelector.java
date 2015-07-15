@@ -16,11 +16,9 @@
 
 package com.hazelcast.nio.tcp;
 
-import com.hazelcast.spi.impl.operationexecutor.OperationHostileThread;
-
 import java.nio.channels.Selector;
 
-public interface IOSelector extends OperationHostileThread {
+public interface IOSelector {
 
     Selector getSelector();
 
