@@ -60,7 +60,6 @@ import java.util.Map;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -147,15 +146,14 @@ public class XmlClientConfigBuilderTest {
 
     @Test
     public void testProperties() {
-        assertEquals(2, clientConfig.getProperties().size());
-        assertEquals("10000", clientConfig.getProperty("hazelcast.client.connection.timeout"));
-        assertEquals("6", clientConfig.getProperty("hazelcast.client.retry.count"));
+        assertEquals(6, clientConfig.getProperties().size());
+        assertEquals("60000", clientConfig.getProperty("hazelcast.client.heartbeat.timeout"));
     }
 
     @Test
     public void testNetworkConfig() {
         final ClientNetworkConfig networkConfig = clientConfig.getNetworkConfig();
-        assertEquals(0, networkConfig.getConnectionAttemptLimit());
+        assertEquals(2, networkConfig.getConnectionAttemptLimit());
         assertEquals(2, networkConfig.getAddresses().size());
         assertTrue(networkConfig.getAddresses().contains("127.0.0.1"));
         assertTrue(networkConfig.getAddresses().contains("127.0.0.2"));
@@ -223,7 +221,6 @@ public class XmlClientConfigBuilderTest {
 
     @Test
     public void testNearCacheConfigs() {
-        assertNull(clientConfig.getNearCacheConfig("undefined"));
         assertEquals(1, clientConfig.getNearCacheConfigMap().size());
         final NearCacheConfig nearCacheConfig = clientConfig.getNearCacheConfig("asd");
 
