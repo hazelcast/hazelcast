@@ -295,7 +295,8 @@ public class CacheProxy<K, V>
         final ICacheService service = getService();
         final CacheEventListenerAdaptor<K, V> entryListener = new CacheEventListenerAdaptor<K, V>(this,
                 cacheEntryListenerConfiguration, getNodeEngine().getSerializationService());
-        final String regId = service.registerListener(getDistributedObjectName(), entryListener);
+        final String regId =
+                service.registerListener(getDistributedObjectName(), entryListener, entryListener);
         if (regId != null) {
             cacheConfig.addCacheEntryListenerConfiguration(cacheEntryListenerConfiguration);
             addListenerLocally(regId, cacheEntryListenerConfiguration);
