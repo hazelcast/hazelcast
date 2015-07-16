@@ -32,6 +32,7 @@ import com.hazelcast.nio.serialization.DefaultData;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.ListenerWrapperEventFilter;
 import com.hazelcast.spi.NotifiableEventListener;
+import edu.umd.cs.findbugs.annotations.SuppressWarnings;
 
 import java.io.Serializable;
 import java.security.Permission;
@@ -58,6 +59,8 @@ public class CacheAddEntryListenerMessageTask
         return service.registerListener(parameters.name, cacheEntryListener, cacheEntryListener);
     }
 
+    @SuppressWarnings(value = "SE_NO_SERIALVERSIONID",
+            justification = "Class is Serializable, but doesn't define serialVersionUID")
     private static final class CacheEntryListener
             implements CacheEventListener,
                        NotifiableEventListener<CacheService>,
