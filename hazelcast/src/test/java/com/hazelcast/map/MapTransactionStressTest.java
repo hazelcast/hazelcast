@@ -25,8 +25,8 @@ import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionalObject;
 import com.hazelcast.transaction.TransactionalTask;
 import com.hazelcast.transaction.TransactionalTaskContext;
-import com.hazelcast.transaction.impl.TransactionLog;
-import com.hazelcast.transaction.impl.TransactionSupport;
+import com.hazelcast.transaction.impl.TransactionRecord;
+import com.hazelcast.transaction.impl.InternalTransaction;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -263,7 +263,7 @@ public class MapTransactionStressTest extends HazelcastTestSupport {
 
         @Override
         public TransactionalObject createTransactionalObject(String name,
-                                                             TransactionSupport transaction) {
+                                                             InternalTransaction transaction) {
             return new DummyTransactionalObject(serviceName, name, transaction);
         }
 
@@ -285,16 +285,16 @@ public class MapTransactionStressTest extends HazelcastTestSupport {
 
         final String serviceName;
         final String name;
-        final TransactionSupport transaction;
+        final InternalTransaction transaction;
 
-        DummyTransactionalObject(String serviceName, String name, TransactionSupport transaction) {
+        DummyTransactionalObject(String serviceName, String name, InternalTransaction transaction) {
             this.serviceName = serviceName;
             this.name = name;
             this.transaction = transaction;
         }
 
         public void doSomethingTxnal() {
-            transaction.addTransactionLog(new SleepyTransactionLog());
+            transaction.add(new SleepyTransactionRecord());
         }
 
         @Override
@@ -318,7 +318,7 @@ public class MapTransactionStressTest extends HazelcastTestSupport {
         }
     }
 
-    public static class SleepyTransactionLog implements TransactionLog {
+    public static class SleepyTransactionRecord implements TransactionRecord {
         @Override
         public Future prepare(NodeEngine nodeEngine) {
             return new EmptyFuture();

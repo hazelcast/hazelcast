@@ -25,12 +25,12 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
-import com.hazelcast.transaction.impl.KeyAwareTransactionLog;
+import com.hazelcast.transaction.impl.KeyAwareTransactionRecord;
 import com.hazelcast.util.ExceptionUtil;
 import java.io.IOException;
 import java.util.concurrent.Future;
 
-public class CollectionTransactionLog implements KeyAwareTransactionLog {
+public class CollectionTransactionRecord implements KeyAwareTransactionRecord {
 
     String transactionId;
     private long itemId;
@@ -39,15 +39,15 @@ public class CollectionTransactionLog implements KeyAwareTransactionLog {
     private int partitionId;
     private String serviceName;
 
-    public CollectionTransactionLog() {
+    public CollectionTransactionRecord() {
     }
 
-    public CollectionTransactionLog(long itemId,
-                                    String name,
-                                    int partitionId,
-                                    String serviceName,
-                                    String transactionId,
-                                    Operation op) {
+    public CollectionTransactionRecord(long itemId,
+                                       String name,
+                                       int partitionId,
+                                       String serviceName,
+                                       String transactionId,
+                                       Operation op) {
         this.itemId = itemId;
         this.name = name;
         this.op = op;
@@ -58,7 +58,7 @@ public class CollectionTransactionLog implements KeyAwareTransactionLog {
 
     @Override
     public Object getKey() {
-        return new TransactionLogKey(name, itemId, serviceName);
+        return new TransactionRecordKey(name, itemId, serviceName);
     }
 
     @Override
@@ -128,7 +128,7 @@ public class CollectionTransactionLog implements KeyAwareTransactionLog {
 
     @Override
     public String toString() {
-        return "CollectionTransactionLog{"
+        return "CollectionTransactionRecord{"
                 + "transactionId='" + transactionId + '\''
                 + ", itemId=" + itemId
                 + ", name='" + name + '\''

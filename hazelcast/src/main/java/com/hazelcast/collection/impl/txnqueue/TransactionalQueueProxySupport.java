@@ -35,7 +35,7 @@ import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionNotActiveException;
 import com.hazelcast.transaction.TransactionalObject;
 import com.hazelcast.transaction.impl.Transaction;
-import com.hazelcast.transaction.impl.TransactionSupport;
+import com.hazelcast.transaction.impl.InternalTransaction;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.util.HashSet;
@@ -50,14 +50,14 @@ public abstract class TransactionalQueueProxySupport extends AbstractDistributed
         implements TransactionalObject {
 
     protected final String name;
-    protected final TransactionSupport tx;
+    protected final InternalTransaction tx;
     protected final int partitionId;
     protected final QueueConfig config;
     private final LinkedList<QueueItem> offeredQueue = new LinkedList<QueueItem>();
     private final Set<Long> itemIdSet = new HashSet<Long>();
 
     protected TransactionalQueueProxySupport(NodeEngine nodeEngine, QueueService service, String name,
-                                             TransactionSupport tx) {
+                                             InternalTransaction tx) {
         super(nodeEngine, service);
         this.name = name;
         this.tx = tx;
@@ -83,9 +83,9 @@ public abstract class TransactionalQueueProxySupport extends AbstractDistributed
                 }
                 offeredQueue.offer(new QueueItem(null, itemId, data));
                 TxnOfferOperation txnOfferOperation = new TxnOfferOperation(name, itemId, data);
-                QueueTransactionLog transactionLog = new QueueTransactionLog(
+                QueueTransactionRecord record = new QueueTransactionRecord(
                         tx.getTxnId(), itemId, name, partitionId, txnOfferOperation);
-                tx.addTransactionLog(transactionLog);
+                tx.add(record);
                 return true;
             }
         } catch (Throwable t) {
@@ -104,7 +104,7 @@ public abstract class TransactionalQueueProxySupport extends AbstractDistributed
             if (item != null) {
                 if (reservedOffer != null && item.getItemId() == reservedOffer.getItemId()) {
                     offeredQueue.poll();
-                    tx.removeTransactionLog(new TransactionLogKey(reservedOffer.getItemId(), name));
+                    tx.remove(new TransactionRecordKey(reservedOffer.getItemId(), name));
                     itemIdSet.remove(reservedOffer.getItemId());
                     return reservedOffer.getData();
                 }
@@ -113,9 +113,9 @@ public abstract class TransactionalQueueProxySupport extends AbstractDistributed
                     throw new TransactionException("Duplicate itemId: " + item.getItemId());
                 }
                 TxnPollOperation op = new TxnPollOperation(name, item.getItemId());
-                QueueTransactionLog transactionLog
-                        = new QueueTransactionLog(tx.getTxnId(), item.getItemId(), name, partitionId, op);
-                tx.addTransactionLog(transactionLog);
+                QueueTransactionRecord record
+                        = new QueueTransactionRecord(tx.getTxnId(), item.getItemId(), name, partitionId, op);
+                tx.add(record);
                 return item.getData();
             }
         } catch (Throwable t) {

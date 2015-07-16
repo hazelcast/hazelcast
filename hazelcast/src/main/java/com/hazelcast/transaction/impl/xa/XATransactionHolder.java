@@ -19,7 +19,7 @@ package com.hazelcast.transaction.impl.xa;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
-import com.hazelcast.transaction.impl.TransactionLog;
+import com.hazelcast.transaction.impl.TransactionRecord;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -31,7 +31,7 @@ public class XATransactionHolder implements DataSerializable {
     String ownerUuid;
     long timeoutMilis;
     long startTime;
-    List<TransactionLog> txLogs;
+    List<TransactionRecord> txLogs;
 
     public XATransactionHolder() {
 
@@ -47,7 +47,7 @@ public class XATransactionHolder implements DataSerializable {
     }
 
     public XATransactionHolder(String txnId, SerializableXID xid, String ownerUuid, long timeoutMilis,
-                               long startTime, List<TransactionLog> txLogs) {
+                               long startTime, List<TransactionRecord> txLogs) {
         this.txnId = txnId;
         this.xid = xid;
         this.ownerUuid = ownerUuid;
@@ -66,7 +66,7 @@ public class XATransactionHolder implements DataSerializable {
         int len = txLogs.size();
         out.writeInt(len);
         if (len > 0) {
-            for (TransactionLog txLog : txLogs) {
+            for (TransactionRecord txLog : txLogs) {
                 out.writeObject(txLog);
             }
         }
@@ -80,9 +80,9 @@ public class XATransactionHolder implements DataSerializable {
         timeoutMilis = in.readLong();
         startTime = in.readLong();
         int size = in.readInt();
-        txLogs = new ArrayList<TransactionLog>(size);
+        txLogs = new ArrayList<TransactionRecord>(size);
         for (int i = 0; i < size; i++) {
-            TransactionLog txLog = in.readObject();
+            TransactionRecord txLog = in.readObject();
             txLogs.add(txLog);
         }
     }

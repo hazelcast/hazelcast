@@ -30,7 +30,7 @@ import com.hazelcast.spi.RemoteService;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionNotActiveException;
 import com.hazelcast.transaction.impl.Transaction;
-import com.hazelcast.transaction.impl.TransactionSupport;
+import com.hazelcast.transaction.impl.InternalTransaction;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.util.Collection;
@@ -44,11 +44,11 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
 public abstract class AbstractTransactionalCollectionProxy<S extends RemoteService, E> extends AbstractDistributedObject<S> {
 
     protected final String name;
-    protected final TransactionSupport tx;
+    protected final InternalTransaction tx;
     protected final int partitionId;
     protected final Set<Long> itemIdSet = new HashSet<Long>();
 
-    public AbstractTransactionalCollectionProxy(String name, TransactionSupport tx, NodeEngine nodeEngine, S service) {
+    public AbstractTransactionalCollectionProxy(String name, InternalTransaction tx, NodeEngine nodeEngine, S service) {
         super(nodeEngine, service);
         this.name = name;
         this.tx = tx;
@@ -80,7 +80,7 @@ public abstract class AbstractTransactionalCollectionProxy<S extends RemoteServi
                 CollectionTxnAddOperation op = new CollectionTxnAddOperation(name, itemId, value);
                 final String serviceName = getServiceName();
                 final String txnId = tx.getTxnId();
-                tx.addTransactionLog(new CollectionTransactionLog(itemId, name, partitionId, serviceName, txnId, op));
+                tx.add(new CollectionTransactionRecord(itemId, name, partitionId, serviceName, txnId, op));
                 return true;
             }
         } catch (Throwable t) {
@@ -116,7 +116,7 @@ public abstract class AbstractTransactionalCollectionProxy<S extends RemoteServi
             if (item != null) {
                 if (reservedItemId == item.getItemId()) {
                     iterator.remove();
-                    tx.removeTransactionLog(reservedItemId);
+                    tx.remove(reservedItemId);
                     itemIdSet.remove(reservedItemId);
                     return true;
                 }
@@ -124,7 +124,7 @@ public abstract class AbstractTransactionalCollectionProxy<S extends RemoteServi
                     throw new TransactionException("Duplicate itemId: " + item.getItemId());
                 }
                 CollectionTxnRemoveOperation op = new CollectionTxnRemoveOperation(name, item.getItemId());
-                tx.addTransactionLog(new CollectionTransactionLog(
+                tx.add(new CollectionTransactionRecord(
                         item.getItemId(),
                         name,
                         partitionId,

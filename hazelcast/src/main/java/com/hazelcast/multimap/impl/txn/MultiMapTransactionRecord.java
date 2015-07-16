@@ -25,7 +25,7 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
-import com.hazelcast.transaction.impl.KeyAwareTransactionLog;
+import com.hazelcast.transaction.impl.KeyAwareTransactionRecord;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.io.IOException;
@@ -35,7 +35,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.Future;
 
-public class MultiMapTransactionLog implements KeyAwareTransactionLog {
+public class MultiMapTransactionRecord implements KeyAwareTransactionRecord {
 
     final List<Operation> opList = new LinkedList<Operation>();
     String name;
@@ -43,10 +43,10 @@ public class MultiMapTransactionLog implements KeyAwareTransactionLog {
     long ttl;
     long threadId;
 
-    public MultiMapTransactionLog() {
+    public MultiMapTransactionRecord() {
     }
 
-    public MultiMapTransactionLog(Data key, String name, long ttl, long threadId) {
+    public MultiMapTransactionRecord(Data key, String name, long ttl, long threadId) {
         this.key = key;
         this.name = name;
         this.ttl = ttl;
@@ -125,7 +125,7 @@ public class MultiMapTransactionLog implements KeyAwareTransactionLog {
     }
 
     public Object getKey() {
-        return new TransactionLogKey(name, key);
+        return new TransactionRecordKey(name, key);
     }
 
     public void addOperation(Operation op) {
@@ -179,7 +179,7 @@ public class MultiMapTransactionLog implements KeyAwareTransactionLog {
 
     @Override
     public String toString() {
-        return "MultiMapTransactionLog{"
+        return "MultiMapTransactionRecord{"
                 + "name='" + name + '\''
                 + ", opList=" + opList
                 + ", key=" + key

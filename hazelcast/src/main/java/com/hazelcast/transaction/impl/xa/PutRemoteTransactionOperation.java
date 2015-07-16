@@ -21,7 +21,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.transaction.impl.TransactionLog;
+import com.hazelcast.transaction.impl.TransactionRecord;
 
 import java.io.IOException;
 import java.util.LinkedList;
@@ -29,7 +29,7 @@ import java.util.List;
 
 public class PutRemoteTransactionOperation extends Operation implements BackupAwareOperation {
 
-    private final List<TransactionLog> txLogs = new LinkedList<TransactionLog>();
+    private final List<TransactionRecord> txLogs = new LinkedList<TransactionRecord>();
 
     private SerializableXID xid;
     private String txnId;
@@ -40,7 +40,7 @@ public class PutRemoteTransactionOperation extends Operation implements BackupAw
     public PutRemoteTransactionOperation() {
     }
 
-    public PutRemoteTransactionOperation(List<TransactionLog> logs, String txnId, SerializableXID xid,
+    public PutRemoteTransactionOperation(List<TransactionRecord> logs, String txnId, SerializableXID xid,
                                          String txOwnerUuid, long timeoutMillis, long startTime) {
         txLogs.addAll(logs);
         this.txnId = txnId;
@@ -112,7 +112,7 @@ public class PutRemoteTransactionOperation extends Operation implements BackupAw
         int len = txLogs.size();
         out.writeInt(len);
         if (len > 0) {
-            for (TransactionLog txLog : txLogs) {
+            for (TransactionRecord txLog : txLogs) {
                 out.writeObject(txLog);
             }
         }
@@ -128,7 +128,7 @@ public class PutRemoteTransactionOperation extends Operation implements BackupAw
         int len = in.readInt();
         if (len > 0) {
             for (int i = 0; i < len; i++) {
-                TransactionLog txLog = in.readObject();
+                TransactionRecord txLog = in.readObject();
                 txLogs.add(txLog);
             }
         }

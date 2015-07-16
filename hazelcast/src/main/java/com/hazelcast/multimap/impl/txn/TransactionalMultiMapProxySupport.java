@@ -30,7 +30,7 @@ import com.hazelcast.spi.OperationService;
 import com.hazelcast.transaction.TransactionNotActiveException;
 import com.hazelcast.transaction.TransactionalObject;
 import com.hazelcast.transaction.impl.Transaction;
-import com.hazelcast.transaction.impl.TransactionSupport;
+import com.hazelcast.transaction.impl.InternalTransaction;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.ThreadUtil;
 
@@ -50,7 +50,7 @@ public abstract class TransactionalMultiMapProxySupport extends AbstractDistribu
 
     private static final double TIMEOUT_EXTEND_MULTIPLIER = 1.5;
     protected final String name;
-    protected final TransactionSupport tx;
+    protected final InternalTransaction tx;
     protected final MultiMapConfig config;
 
     private final Map<Data, Collection<MultiMapRecord>> txMap = new HashMap<Data, Collection<MultiMapRecord>>();
@@ -58,7 +58,7 @@ public abstract class TransactionalMultiMapProxySupport extends AbstractDistribu
     protected TransactionalMultiMapProxySupport(NodeEngine nodeEngine,
                                                 MultiMapService service,
                                                 String name,
-                                                TransactionSupport tx) {
+                                                InternalTransaction tx) {
         super(nodeEngine, service);
         this.name = name;
         this.tx = tx;
@@ -79,7 +79,7 @@ public abstract class TransactionalMultiMapProxySupport extends AbstractDistribu
         long recordId = -1;
         long timeout = tx.getTimeoutMillis();
         long ttl = extendTimeout(timeout);
-        final MultiMapTransactionLog log;
+        final MultiMapTransactionRecord log;
         if (coll == null) {
             MultiMapResponse response = lockAndGet(key, timeout, ttl);
             if (response == null) {
@@ -88,10 +88,10 @@ public abstract class TransactionalMultiMapProxySupport extends AbstractDistribu
             recordId = response.getNextRecordId();
             coll = createCollection(response.getRecordCollection(getNodeEngine()));
             txMap.put(key, coll);
-            log = new MultiMapTransactionLog(key, name, ttl, getThreadId());
-            tx.addTransactionLog(log);
+            log = new MultiMapTransactionRecord(key, name, ttl, getThreadId());
+            tx.add(log);
         } else {
-            log = (MultiMapTransactionLog) tx.getTransactionLog(getTxLogKey(key));
+            log = (MultiMapTransactionRecord) tx.get(getTxLogKey(key));
         }
         MultiMapRecord record = new MultiMapRecord(config.isBinary() ? value : getNodeEngine().toObject(value));
         if (coll.add(record)) {
@@ -113,7 +113,7 @@ public abstract class TransactionalMultiMapProxySupport extends AbstractDistribu
         Collection<MultiMapRecord> coll = txMap.get(key);
         long timeout = tx.getTimeoutMillis();
         long ttl = extendTimeout(timeout);
-        final MultiMapTransactionLog log;
+        final MultiMapTransactionRecord log;
         if (coll == null) {
             MultiMapResponse response = lockAndGet(key, timeout, ttl);
             if (response == null) {
@@ -121,10 +121,10 @@ public abstract class TransactionalMultiMapProxySupport extends AbstractDistribu
             }
             coll = createCollection(response.getRecordCollection(getNodeEngine()));
             txMap.put(key, coll);
-            log = new MultiMapTransactionLog(key, name, ttl, getThreadId());
-            tx.addTransactionLog(log);
+            log = new MultiMapTransactionRecord(key, name, ttl, getThreadId());
+            tx.add(log);
         } else {
-            log = (MultiMapTransactionLog) tx.getTransactionLog(getTxLogKey(key));
+            log = (MultiMapTransactionRecord) tx.get(getTxLogKey(key));
         }
         MultiMapRecord record = new MultiMapRecord(config.isBinary() ? value : getNodeEngine().toObject(value));
         Iterator<MultiMapRecord> iterator = coll.iterator();
@@ -151,17 +151,17 @@ public abstract class TransactionalMultiMapProxySupport extends AbstractDistribu
         long timeout = tx.getTimeoutMillis();
         long ttl = extendTimeout(timeout);
         Collection<MultiMapRecord> coll = txMap.get(key);
-        final MultiMapTransactionLog log;
+        final MultiMapTransactionRecord log;
         if (coll == null) {
             MultiMapResponse response = lockAndGet(key, timeout, ttl);
             if (response == null) {
                 throw new ConcurrentModificationException("Transaction couldn't obtain lock " + getThreadId());
             }
             coll = createCollection(response.getRecordCollection(getNodeEngine()));
-            log = new MultiMapTransactionLog(key, name, ttl, getThreadId());
-            tx.addTransactionLog(log);
+            log = new MultiMapTransactionRecord(key, name, ttl, getThreadId());
+            tx.add(log);
         } else {
-            log = (MultiMapTransactionLog) tx.getTransactionLog(getTxLogKey(key));
+            log = (MultiMapTransactionRecord) tx.get(getTxLogKey(key));
         }
         txMap.put(key, createCollection());
         TxnRemoveAllOperation operation = new TxnRemoveAllOperation(name, key, coll);
@@ -230,7 +230,7 @@ public abstract class TransactionalMultiMapProxySupport extends AbstractDistribu
                 size += result;
             }
             for (Data key : txMap.keySet()) {
-                MultiMapTransactionLog log = (MultiMapTransactionLog) tx.getTransactionLog(getTxLogKey(key));
+                MultiMapTransactionRecord log = (MultiMapTransactionRecord) tx.get(getTxLogKey(key));
                 if (log != null) {
                     size += log.size();
                 }
@@ -242,8 +242,8 @@ public abstract class TransactionalMultiMapProxySupport extends AbstractDistribu
         }
     }
 
-    private TransactionLogKey getTxLogKey(Data key) {
-        return new TransactionLogKey(name, key);
+    private TransactionRecordKey getTxLogKey(Data key) {
+        return new TransactionRecordKey(name, key);
     }
 
     public final String getServiceName() {

@@ -16,20 +16,8 @@
 
 package com.hazelcast.transaction.impl;
 
-public interface TransactionSupport {
+public interface KeyAwareTransactionRecord extends TransactionRecord {
 
-    void addTransactionLog(TransactionLog transactionLog);
-
-    void removeTransactionLog(Object key);
-
-    TransactionLog getTransactionLog(Object key);
-
-    String getTxnId();
-
-    long getTimeoutMillis();
-
-    Transaction.State getState();
-
-    String getOwnerUuid();
+    Object getKey();
 
 }

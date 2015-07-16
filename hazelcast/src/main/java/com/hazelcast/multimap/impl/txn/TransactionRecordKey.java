@@ -14,51 +14,44 @@
  * limitations under the License.
  */
 
-package com.hazelcast.collection.impl.txncollection;
+package com.hazelcast.multimap.impl.txn;
 
-class TransactionLogKey {
+import com.hazelcast.nio.serialization.Data;
 
-    private final String name;
+class TransactionRecordKey {
 
-    private final long itemId;
+    final String name;
 
-    private final String serviceName;
+    final Data key;
 
-    TransactionLogKey(String name, long itemId, String serviceName) {
+    public TransactionRecordKey(String name, Data key) {
         this.name = name;
-        this.itemId = itemId;
-        this.serviceName = serviceName;
+        this.key = key;
     }
 
-    @Override
     public boolean equals(Object o) {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof TransactionLogKey)) {
+        if (!(o instanceof TransactionRecordKey)) {
             return false;
         }
 
-        TransactionLogKey that = (TransactionLogKey) o;
+        TransactionRecordKey that = (TransactionRecordKey) o;
 
-        if (itemId != that.itemId) {
+        if (!key.equals(that.key)) {
             return false;
         }
         if (!name.equals(that.name)) {
-            return false;
-        }
-        if (!serviceName.equals(that.serviceName)) {
             return false;
         }
 
         return true;
     }
 
-    @Override
     public int hashCode() {
         int result = name.hashCode();
-        result = 31 * result + (int) (itemId ^ (itemId >>> 32));
-        result = 31 * result + serviceName.hashCode();
+        result = 31 * result + key.hashCode();
         return result;
     }
 }

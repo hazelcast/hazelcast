@@ -21,7 +21,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.BackupOperation;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.transaction.impl.TransactionLog;
+import com.hazelcast.transaction.impl.TransactionRecord;
 
 import java.io.IOException;
 import java.util.LinkedList;
@@ -29,7 +29,7 @@ import java.util.List;
 
 public class PutRemoteTransactionBackupOperation extends Operation implements BackupOperation {
 
-    private final List<TransactionLog> txLogs = new LinkedList<TransactionLog>();
+    private final List<TransactionRecord> txLogs = new LinkedList<TransactionRecord>();
 
     private SerializableXID xid;
     private String txnId;
@@ -40,7 +40,7 @@ public class PutRemoteTransactionBackupOperation extends Operation implements Ba
     public PutRemoteTransactionBackupOperation() {
     }
 
-    public PutRemoteTransactionBackupOperation(List<TransactionLog> logs, String txnId, SerializableXID xid,
+    public PutRemoteTransactionBackupOperation(List<TransactionRecord> logs, String txnId, SerializableXID xid,
                                                String txOwnerUuid, long timeoutMillis, long startTime) {
         txLogs.addAll(logs);
         this.txnId = txnId;
@@ -92,7 +92,7 @@ public class PutRemoteTransactionBackupOperation extends Operation implements Ba
         int len = txLogs.size();
         out.writeInt(len);
         if (len > 0) {
-            for (TransactionLog txLog : txLogs) {
+            for (TransactionRecord txLog : txLogs) {
                 out.writeObject(txLog);
             }
         }
@@ -108,7 +108,7 @@ public class PutRemoteTransactionBackupOperation extends Operation implements Ba
         int len = in.readInt();
         if (len > 0) {
             for (int i = 0; i < len; i++) {
-                TransactionLog txLog = in.readObject();
+                TransactionRecord txLog = in.readObject();
                 txLogs.add(txLog);
             }
         }

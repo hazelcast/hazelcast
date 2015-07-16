@@ -25,7 +25,7 @@ import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.QueryEntry;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.transaction.impl.TransactionSupport;
+import com.hazelcast.transaction.impl.InternalTransaction;
 import com.hazelcast.util.IterationType;
 import com.hazelcast.util.QueryResultSet;
 
@@ -49,7 +49,7 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
 
     private final Map<Data, TxnValueWrapper> txMap = new HashMap<Data, TxnValueWrapper>();
 
-    public TransactionalMapProxy(String name, MapService mapService, NodeEngine nodeEngine, TransactionSupport transaction) {
+    public TransactionalMapProxy(String name, MapService mapService, NodeEngine nodeEngine, InternalTransaction transaction) {
         super(name, mapService, nodeEngine, transaction);
     }
 
