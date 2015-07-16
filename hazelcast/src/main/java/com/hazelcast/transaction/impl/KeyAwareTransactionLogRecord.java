@@ -16,7 +16,7 @@
 
 package com.hazelcast.transaction.impl;
 
-public interface KeyAwareTransactionRecord extends TransactionRecord {
+public interface KeyAwareTransactionLogRecord extends TransactionLogRecord {
 
     Object getKey();
 

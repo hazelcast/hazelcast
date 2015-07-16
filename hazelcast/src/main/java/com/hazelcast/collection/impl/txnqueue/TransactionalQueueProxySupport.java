@@ -83,7 +83,7 @@ public abstract class TransactionalQueueProxySupport extends AbstractDistributed
                 }
                 offeredQueue.offer(new QueueItem(null, itemId, data));
                 TxnOfferOperation txnOfferOperation = new TxnOfferOperation(name, itemId, data);
-                QueueTransactionRecord record = new QueueTransactionRecord(
+                QueueTransactionLogRecord record = new QueueTransactionLogRecord(
                         tx.getTxnId(), itemId, name, partitionId, txnOfferOperation);
                 tx.add(record);
                 return true;
@@ -113,8 +113,8 @@ public abstract class TransactionalQueueProxySupport extends AbstractDistributed
                     throw new TransactionException("Duplicate itemId: " + item.getItemId());
                 }
                 TxnPollOperation op = new TxnPollOperation(name, item.getItemId());
-                QueueTransactionRecord record
-                        = new QueueTransactionRecord(tx.getTxnId(), item.getItemId(), name, partitionId, op);
+                QueueTransactionLogRecord record
+                        = new QueueTransactionLogRecord(tx.getTxnId(), item.getItemId(), name, partitionId, op);
                 tx.add(record);
                 return item.getData();
             }

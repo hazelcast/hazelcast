@@ -80,7 +80,7 @@ public abstract class AbstractTransactionalCollectionProxy<S extends RemoteServi
                 CollectionTxnAddOperation op = new CollectionTxnAddOperation(name, itemId, value);
                 final String serviceName = getServiceName();
                 final String txnId = tx.getTxnId();
-                tx.add(new CollectionTransactionRecord(itemId, name, partitionId, serviceName, txnId, op));
+                tx.add(new CollectionTransactionLogRecord(itemId, name, partitionId, serviceName, txnId, op));
                 return true;
             }
         } catch (Throwable t) {
@@ -124,7 +124,7 @@ public abstract class AbstractTransactionalCollectionProxy<S extends RemoteServi
                     throw new TransactionException("Duplicate itemId: " + item.getItemId());
                 }
                 CollectionTxnRemoveOperation op = new CollectionTxnRemoveOperation(name, item.getItemId());
-                tx.add(new CollectionTransactionRecord(
+                tx.add(new CollectionTransactionLogRecord(
                         item.getItemId(),
                         name,
                         partitionId,
