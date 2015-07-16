@@ -54,7 +54,7 @@ public interface Member extends DataSerializable, Endpoint {
     /**
      * Change the capabilities this member has in the cluster
      * @param capabilities The new capabilities for this member.
-     * @since 3.4
+     * @since 3.6
      */
     void updateCapabilities(Set<Capability> capabilities);
 
