@@ -16,7 +16,6 @@
 
 package com.hazelcast.nio.tcp;
 
-import com.hazelcast.nio.Protocols;
 import com.hazelcast.nio.SocketWritable;
 import com.hazelcast.nio.ascii.SocketTextWriter;
 import com.hazelcast.util.Clock;
@@ -33,6 +32,10 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 
+import static com.hazelcast.nio.Protocols.CLIENT_BINARY;
+import static com.hazelcast.nio.Protocols.CLIENT_BINARY_NEW;
+import static com.hazelcast.nio.Protocols.CLUSTER;
+import static com.hazelcast.nio.Protocols.TEXT;
 import static com.hazelcast.util.StringUtil.stringToBytes;
 
 /**
@@ -88,18 +91,22 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
     }
 
     private void createWriter(String protocol) {
-        if (socketWriter == null) {
-            if (Protocols.CLUSTER.equals(protocol)) {
-                socketWriter = new SocketPacketWriter(connection);
-                outputBuffer.put(stringToBytes(Protocols.CLUSTER));
-                registerOp(SelectionKey.OP_WRITE);
-            } else if (Protocols.CLIENT_BINARY.equals(protocol)) {
-                socketWriter = new SocketClientDataWriter();
-            } else if (Protocols.CLIENT_BINARY_NEW.equals(protocol)) {
-                socketWriter = new SocketClientMessageWriter();
-            } else {
-                socketWriter = new SocketTextWriter(connection);
-            }
+        if (socketWriter != null) {
+            return;
+        }
+
+        if (CLUSTER.equals(protocol)) {
+            socketWriter = new SocketPacketWriter(connection);
+            outputBuffer.put(stringToBytes(CLUSTER));
+            registerOp(SelectionKey.OP_WRITE);
+        } else if (CLIENT_BINARY.equals(protocol)) {
+            socketWriter = new SocketClientDataWriter();
+        } else if (CLIENT_BINARY_NEW.equals(protocol)) {
+            socketWriter = new SocketClientMessageWriter();
+        } else if (TEXT.equals(protocol)) {
+            socketWriter = new SocketTextWriter(connection);
+        } else {
+            throw new IllegalArgumentException("Unrecognized protocol: " + protocol);
         }
     }
 
@@ -222,7 +229,7 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
 
         if (socketWriter == null) {
             logger.log(Level.WARNING, "SocketWriter is not set, creating SocketWriter with CLUSTER protocol!");
-            createWriter(Protocols.CLUSTER);
+            createWriter(CLUSTER);
         }
 
         try {
