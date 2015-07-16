@@ -22,7 +22,12 @@ import com.hazelcast.spi.NodeEngine;
 
 import java.util.concurrent.Future;
 
-public interface TransactionLog extends DataSerializable {
+/**
+ * Every change made in a transaction is recorded on the transaction using a transaction-record.
+ *
+ * @see InternalTransaction
+ */
+public interface TransactionRecord extends DataSerializable {
 
     Future prepare(NodeEngine nodeEngine);
 

@@ -36,7 +36,7 @@ import com.hazelcast.spi.SplitBrainHandlerService;
 import com.hazelcast.spi.StatisticsAwareService;
 import com.hazelcast.spi.TransactionalService;
 import com.hazelcast.transaction.TransactionalObject;
-import com.hazelcast.transaction.impl.TransactionSupport;
+import com.hazelcast.transaction.impl.InternalTransaction;
 import com.hazelcast.wan.WanReplicationEvent;
 import java.util.Map;
 import java.util.Properties;
@@ -162,7 +162,7 @@ public class MapService implements ManagedService, MigrationAwareService,
     }
 
     @Override
-    public <T extends TransactionalObject> T createTransactionalObject(String name, TransactionSupport transaction) {
+    public <T extends TransactionalObject> T createTransactionalObject(String name, InternalTransaction transaction) {
         return transactionalService.createTransactionalObject(name, transaction);
     }
 

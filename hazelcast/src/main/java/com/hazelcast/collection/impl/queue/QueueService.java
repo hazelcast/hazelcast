@@ -47,7 +47,7 @@ import com.hazelcast.spi.PartitionReplicationEvent;
 import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.StatisticsAwareService;
 import com.hazelcast.spi.TransactionalService;
-import com.hazelcast.transaction.impl.TransactionSupport;
+import com.hazelcast.transaction.impl.InternalTransaction;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.MapUtil;
@@ -292,7 +292,7 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
     }
 
     @Override
-    public TransactionalQueueProxy createTransactionalObject(String name, TransactionSupport transaction) {
+    public TransactionalQueueProxy createTransactionalObject(String name, InternalTransaction transaction) {
         return new TransactionalQueueProxy(nodeEngine, this, name, transaction);
     }
 

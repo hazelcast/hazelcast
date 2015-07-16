@@ -20,13 +20,13 @@ import com.hazelcast.collection.impl.collection.CollectionItem;
 import com.hazelcast.collection.impl.set.SetService;
 import com.hazelcast.collection.impl.txncollection.AbstractTransactionalCollectionProxy;
 import com.hazelcast.collection.impl.txncollection.operations.CollectionReserveAddOperation;
-import com.hazelcast.collection.impl.txncollection.CollectionTransactionLog;
+import com.hazelcast.collection.impl.txncollection.CollectionTransactionRecord;
 import com.hazelcast.collection.impl.txncollection.operations.CollectionTxnAddOperation;
 import com.hazelcast.core.TransactionalSet;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.transaction.TransactionException;
-import com.hazelcast.transaction.impl.TransactionSupport;
+import com.hazelcast.transaction.impl.InternalTransaction;
 import com.hazelcast.util.ExceptionUtil;
 import java.util.Collection;
 import java.util.HashSet;
@@ -37,7 +37,7 @@ public class TransactionalSetProxy<E> extends AbstractTransactionalCollectionPro
 
     private final HashSet<CollectionItem> set = new HashSet<CollectionItem>();
 
-    public TransactionalSetProxy(String name, TransactionSupport tx, NodeEngine nodeEngine, SetService service) {
+    public TransactionalSetProxy(String name, InternalTransaction tx, NodeEngine nodeEngine, SetService service) {
         super(name, tx, nodeEngine, service);
     }
 
@@ -63,7 +63,7 @@ public class TransactionalSetProxy<E> extends AbstractTransactionalCollectionPro
                 CollectionTxnAddOperation op = new CollectionTxnAddOperation(name, itemId, value);
                 final String txnId = tx.getTxnId();
                 final String serviceName = getServiceName();
-                tx.addTransactionLog(new CollectionTransactionLog(itemId, name, partitionId, serviceName, txnId, op));
+                tx.add(new CollectionTransactionRecord(itemId, name, partitionId, serviceName, txnId, op));
                 return true;
             }
         } catch (Throwable t) {

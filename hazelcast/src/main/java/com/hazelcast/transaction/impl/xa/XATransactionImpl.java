@@ -24,10 +24,10 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionNotActiveException;
-import com.hazelcast.transaction.impl.KeyAwareTransactionLog;
+import com.hazelcast.transaction.impl.KeyAwareTransactionRecord;
 import com.hazelcast.transaction.impl.Transaction;
-import com.hazelcast.transaction.impl.TransactionLog;
-import com.hazelcast.transaction.impl.TransactionSupport;
+import com.hazelcast.transaction.impl.TransactionRecord;
+import com.hazelcast.transaction.impl.InternalTransaction;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.FutureUtil;
@@ -64,7 +64,7 @@ import static com.hazelcast.util.FutureUtil.waitWithDeadline;
  * This class does not need to be thread-safe, it is only used via XAResource
  * All visibility guarantees handled by XAResource
  */
-final class XATransactionImpl implements Transaction, TransactionSupport {
+final class XATransactionImpl implements Transaction, InternalTransaction {
 
     private static final int ROLLBACK_TIMEOUT_MINUTES = 5;
     private static final int COMMIT_TIMEOUT_MINUTES = 5;
@@ -78,8 +78,8 @@ final class XATransactionImpl implements Transaction, TransactionSupport {
     private final SerializableXID xid;
     private final String txOwnerUuid;
 
-    private final List<TransactionLog> txLogs = new LinkedList<TransactionLog>();
-    private final Map<Object, TransactionLog> txLogMap = new HashMap<Object, TransactionLog>();
+    private final List<TransactionRecord> txLogs = new LinkedList<TransactionRecord>();
+    private final Map<Object, TransactionRecord> txLogMap = new HashMap<Object, TransactionRecord>();
 
     private State state = NO_TXN;
     private long startTime;
@@ -96,7 +96,7 @@ final class XATransactionImpl implements Transaction, TransactionSupport {
         this.rollbackExceptionHandler = logAllExceptions(logger, "Error during rollback!", Level.WARNING);
     }
 
-    XATransactionImpl(NodeEngine nodeEngine, List<TransactionLog> logs,
+    XATransactionImpl(NodeEngine nodeEngine, List<TransactionRecord> logs,
                       String txnId, SerializableXID xid, String txOwnerUuid, long timeoutMillis, long startTime) {
         this.nodeEngine = nodeEngine;
 
@@ -132,7 +132,7 @@ final class XATransactionImpl implements Transaction, TransactionSupport {
         try {
             final List<Future> futures = new ArrayList<Future>(txLogs.size());
             state = PREPARING;
-            for (TransactionLog txLog : txLogs) {
+            for (TransactionRecord txLog : txLogs) {
                 futures.add(txLog.prepare(nodeEngine));
             }
             waitWithDeadline(futures, timeoutMillis, TimeUnit.MILLISECONDS, RETHROW_TRANSACTION_EXCEPTION);
@@ -163,7 +163,7 @@ final class XATransactionImpl implements Transaction, TransactionSupport {
         try {
             final List<Future> futures = new ArrayList<Future>(txLogs.size());
             state = COMMITTING;
-            for (TransactionLog txLog : txLogs) {
+            for (TransactionRecord txLog : txLogs) {
                 futures.add(txLog.commit(nodeEngine));
             }
             // We should rethrow exception if transaction is not TWO_PHASE
@@ -183,7 +183,7 @@ final class XATransactionImpl implements Transaction, TransactionSupport {
         }
         checkTimeout();
         state = COMMITTING;
-        for (TransactionLog txLog : txLogs) {
+        for (TransactionRecord txLog : txLogs) {
             txLog.commitAsync(nodeEngine, callback);
         }
         // We should rethrow exception if transaction is not TWO_PHASE
@@ -200,9 +200,9 @@ final class XATransactionImpl implements Transaction, TransactionSupport {
         state = ROLLING_BACK;
         try {
             final List<Future> futures = new ArrayList<Future>(txLogs.size());
-            final ListIterator<TransactionLog> iterator = txLogs.listIterator(txLogs.size());
+            final ListIterator<TransactionRecord> iterator = txLogs.listIterator(txLogs.size());
             while (iterator.hasPrevious()) {
-                final TransactionLog txLog = iterator.previous();
+                final TransactionRecord txLog = iterator.previous();
                 futures.add(txLog.rollback(nodeEngine));
             }
             waitWithDeadline(futures, ROLLBACK_TIMEOUT_MINUTES, TimeUnit.MINUTES, rollbackExceptionHandler);
@@ -218,7 +218,7 @@ final class XATransactionImpl implements Transaction, TransactionSupport {
             throw new IllegalStateException("Transaction is not active");
         }
         state = ROLLING_BACK;
-        for (TransactionLog txLog : txLogs) {
+        for (TransactionRecord txLog : txLogs) {
             txLog.rollbackAsync(nodeEngine, callback);
         }
         state = ROLLED_BACK;
@@ -233,7 +233,7 @@ final class XATransactionImpl implements Transaction, TransactionSupport {
         return startTime;
     }
 
-    public List<TransactionLog> getTxLogs() {
+    public List<TransactionRecord> getTxLogs() {
         return txLogs;
     }
 
@@ -248,36 +248,36 @@ final class XATransactionImpl implements Transaction, TransactionSupport {
     }
 
     @Override
-    public void addTransactionLog(TransactionLog transactionLog) {
+    public void add(TransactionRecord record) {
         if (state != Transaction.State.ACTIVE) {
             throw new TransactionNotActiveException("Transaction is not active!");
         }
         // there should be just one tx log for the same key. so if there is older we are removing it
-        if (transactionLog instanceof KeyAwareTransactionLog) {
-            KeyAwareTransactionLog keyAwareTransactionLog = (KeyAwareTransactionLog) transactionLog;
-            TransactionLog removed = txLogMap.remove(keyAwareTransactionLog.getKey());
+        if (record instanceof KeyAwareTransactionRecord) {
+            KeyAwareTransactionRecord keyAwareTransactionRecord = (KeyAwareTransactionRecord) record;
+            TransactionRecord removed = txLogMap.remove(keyAwareTransactionRecord.getKey());
             if (removed != null) {
                 txLogs.remove(removed);
             }
         }
 
-        txLogs.add(transactionLog);
-        if (transactionLog instanceof KeyAwareTransactionLog) {
-            KeyAwareTransactionLog keyAwareTransactionLog = (KeyAwareTransactionLog) transactionLog;
-            txLogMap.put(keyAwareTransactionLog.getKey(), keyAwareTransactionLog);
+        txLogs.add(record);
+        if (record instanceof KeyAwareTransactionRecord) {
+            KeyAwareTransactionRecord keyAwareTransactionRecord = (KeyAwareTransactionRecord) record;
+            txLogMap.put(keyAwareTransactionRecord.getKey(), keyAwareTransactionRecord);
         }
     }
 
     @Override
-    public void removeTransactionLog(Object key) {
-        TransactionLog removed = txLogMap.remove(key);
+    public void remove(Object key) {
+        TransactionRecord removed = txLogMap.remove(key);
         if (removed != null) {
             txLogs.remove(removed);
         }
     }
 
     @Override
-    public TransactionLog getTransactionLog(Object key) {
+    public TransactionRecord get(Object key) {
         return txLogMap.get(key);
     }
 

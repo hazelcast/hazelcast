@@ -202,13 +202,13 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
     }
 
     void beginTxBackupLog(String callerUuid, String txnId) {
-        TxBackupLog log = new TxBackupLog(Collections.<TransactionLog>emptyList(), callerUuid, State.ACTIVE, -1, -1);
+        TxBackupLog log = new TxBackupLog(Collections.<TransactionRecord>emptyList(), callerUuid, State.ACTIVE, -1, -1);
         if (txBackupLogs.putIfAbsent(txnId, log) != null) {
             throw new TransactionException("TxLog already exists!");
         }
     }
 
-    void prepareTxBackupLog(List<TransactionLog> txLogs, String callerUuid, String txnId,
+    void prepareTxBackupLog(List<TransactionRecord> txLogs, String callerUuid, String txnId,
                             long timeoutMillis, long startTime) {
         TxBackupLog beginLog = txBackupLogs.get(txnId);
         if (beginLog == null) {
@@ -238,13 +238,13 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
     }
 
     private static final class TxBackupLog {
-        private final List<TransactionLog> txLogs;
+        private final List<TransactionRecord> txLogs;
         private final String callerUuid;
         private final long timeoutMillis;
         private final long startTime;
         private volatile State state;
 
-        private TxBackupLog(List<TransactionLog> txLogs, String callerUuid, State state, long timeoutMillis, long startTime) {
+        private TxBackupLog(List<TransactionRecord> txLogs, String callerUuid, State state, long timeoutMillis, long startTime) {
             this.txLogs = txLogs;
             this.callerUuid = callerUuid;
             this.state = state;

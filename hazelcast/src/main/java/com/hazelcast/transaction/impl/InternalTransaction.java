@@ -16,8 +16,19 @@
 
 package com.hazelcast.transaction.impl;
 
-public interface KeyAwareTransactionLog extends TransactionLog {
+/**
+ * A Internal Transaction interface that adds the ability to track TransactionRecords.
+ *
+ * E.g. if 3 puts on a transactional map and 3 adds on a transactional-queue are done, there will
+ * be 5 records for that transaction.
+ */
+public interface InternalTransaction extends Transaction {
 
-    Object getKey();
+    void add(TransactionRecord record);
 
+    void remove(Object key);
+
+    TransactionRecord get(Object key);
+
+    String getOwnerUuid();
 }

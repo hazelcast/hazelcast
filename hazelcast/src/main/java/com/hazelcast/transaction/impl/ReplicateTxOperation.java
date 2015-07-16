@@ -29,7 +29,7 @@ import java.util.List;
 
 public final class ReplicateTxOperation extends Operation {
 
-    private final List<TransactionLog> txLogs = new LinkedList<TransactionLog>();
+    private final List<TransactionRecord> txLogs = new LinkedList<TransactionRecord>();
     private String callerUuid;
     private String txnId;
     private long timeoutMillis;
@@ -38,7 +38,7 @@ public final class ReplicateTxOperation extends Operation {
     public ReplicateTxOperation() {
     }
 
-    public ReplicateTxOperation(List<TransactionLog> logs, String callerUuid, String txnId,
+    public ReplicateTxOperation(List<TransactionRecord> logs, String callerUuid, String txnId,
                                 long timeoutMillis, long startTime) {
         txLogs.addAll(logs);
         this.callerUuid = callerUuid;
@@ -93,7 +93,7 @@ public final class ReplicateTxOperation extends Operation {
         int len = txLogs.size();
         out.writeInt(len);
         if (len > 0) {
-            for (TransactionLog txLog : txLogs) {
+            for (TransactionRecord txLog : txLogs) {
                 out.writeObject(txLog);
             }
         }
@@ -108,7 +108,7 @@ public final class ReplicateTxOperation extends Operation {
         int len = in.readInt();
         if (len > 0) {
             for (int i = 0; i < len; i++) {
-                TransactionLog txLog = in.readObject();
+                TransactionRecord txLog = in.readObject();
                 txLogs.add(txLog);
             }
         }
