@@ -265,8 +265,8 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         final MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         final NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
         final int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
-        return !nodeEngine.getPartitionService().getPartitionOwner(partitionId)
-                .equals(nodeEngine.getClusterService().getThisAddress());
+        return !nodeEngine.getClusterService().getThisAddress()
+                .equals(nodeEngine.getPartitionService().getPartitionOwner(partitionId));
     }
 
     private boolean cacheKeyAnyway() {

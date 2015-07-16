@@ -167,6 +167,9 @@ public final class Address implements IdentifiedDataSerializable {
 
     @Override
     public boolean equals(Object o) {
+        if (o == null) {
+            return false;
+        }
         if (this == o) {
             return true;
         }

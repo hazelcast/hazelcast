@@ -149,7 +149,8 @@ public class Node {
         try {
             address = addressPicker.getPublicAddress();
             final Map<String, Object> memberAttributes = findMemberAttributes(config.getMemberAttributeConfig().asReadOnly());
-            localMember = new MemberImpl(address, true, UuidUtil.createMemberUuid(address), hazelcastInstance, memberAttributes);
+            localMember = new MemberImpl(address, true, UuidUtil.createMemberUuid(address), hazelcastInstance,
+                    config.getCapabilities(), memberAttributes);
             loggingService.setThisMember(localMember);
             logger = loggingService.getLogger(Node.class.getName());
             hazelcastThreadGroup = new HazelcastThreadGroup(
@@ -503,7 +504,7 @@ public class Node {
 
         return new JoinRequest(Packet.VERSION, buildInfo.getBuildNumber(), address,
                 localMember.getUuid(), createConfigCheck(), credentials, clusterService.getSize(), 0,
-                config.getMemberAttributeConfig().getAttributes());
+                localMember.getCapabilities(), config.getMemberAttributeConfig().getAttributes());
     }
 
     public ConfigCheck createConfigCheck() {
