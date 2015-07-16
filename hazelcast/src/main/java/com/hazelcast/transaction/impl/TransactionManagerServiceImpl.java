@@ -34,6 +34,7 @@ import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionManagerService;
 import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.TransactionalTask;
+import com.hazelcast.transaction.impl.operations.BroadcastTxRollbackOperation;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -201,15 +202,15 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
         return addresses;
     }
 
-    void beginTxBackupLog(String callerUuid, String txnId) {
+    public void beginTxBackupLog(String callerUuid, String txnId) {
         TxBackupLog log = new TxBackupLog(Collections.<TransactionRecord>emptyList(), callerUuid, State.ACTIVE, -1, -1);
         if (txBackupLogs.putIfAbsent(txnId, log) != null) {
             throw new TransactionException("TxLog already exists!");
         }
     }
 
-    void prepareTxBackupLog(List<TransactionRecord> txLogs, String callerUuid, String txnId,
-                            long timeoutMillis, long startTime) {
+    public void prepareTxBackupLog(List<TransactionRecord> txLogs, String callerUuid, String txnId,
+                                   long timeoutMillis, long startTime) {
         TxBackupLog beginLog = txBackupLogs.get(txnId);
         if (beginLog == null) {
             throw new TransactionException("Could not find begin tx log!");
@@ -224,7 +225,7 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
         }
     }
 
-    void rollbackTxBackupLog(String txnId) {
+    public void rollbackTxBackupLog(String txnId) {
         final TxBackupLog log = txBackupLogs.get(txnId);
         if (log != null) {
             log.state = State.ROLLING_BACK;
@@ -233,7 +234,7 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
         }
     }
 
-    void purgeTxBackupLog(String txnId) {
+    public void purgeTxBackupLog(String txnId) {
         txBackupLogs.remove(txnId);
     }
 
