@@ -31,7 +31,7 @@ public class XATransactionHolder implements DataSerializable {
     String ownerUuid;
     long timeoutMilis;
     long startTime;
-    List<TransactionRecord> txLogs;
+    List<TransactionRecord> records;
 
     public XATransactionHolder() {
 
@@ -42,18 +42,18 @@ public class XATransactionHolder implements DataSerializable {
         xid = xaTransaction.getXid();
         ownerUuid = xaTransaction.getOwnerUuid();
         timeoutMilis = xaTransaction.getTimeoutMillis();
-        startTime = xaTransaction.getStartTime();
-        txLogs = xaTransaction.getTxLogs();
+        startTime = xaTransaction.getStartTimeMillis();
+        records = xaTransaction.getRecords();
     }
 
     public XATransactionHolder(String txnId, SerializableXID xid, String ownerUuid, long timeoutMilis,
-                               long startTime, List<TransactionRecord> txLogs) {
+                               long startTime, List<TransactionRecord> records) {
         this.txnId = txnId;
         this.xid = xid;
         this.ownerUuid = ownerUuid;
         this.timeoutMilis = timeoutMilis;
         this.startTime = startTime;
-        this.txLogs = txLogs;
+        this.records = records;
     }
 
     @Override
@@ -63,11 +63,11 @@ public class XATransactionHolder implements DataSerializable {
         out.writeUTF(ownerUuid);
         out.writeLong(timeoutMilis);
         out.writeLong(startTime);
-        int len = txLogs.size();
+        int len = records.size();
         out.writeInt(len);
         if (len > 0) {
-            for (TransactionRecord txLog : txLogs) {
-                out.writeObject(txLog);
+            for (TransactionRecord record : records) {
+                out.writeObject(record);
             }
         }
     }
@@ -80,10 +80,10 @@ public class XATransactionHolder implements DataSerializable {
         timeoutMilis = in.readLong();
         startTime = in.readLong();
         int size = in.readInt();
-        txLogs = new ArrayList<TransactionRecord>(size);
+        records = new ArrayList<TransactionRecord>(size);
         for (int i = 0; i < size; i++) {
-            TransactionRecord txLog = in.readObject();
-            txLogs.add(txLog);
+            TransactionRecord record = in.readObject();
+            records.add(record);
         }
     }
 }

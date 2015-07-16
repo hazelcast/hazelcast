@@ -17,7 +17,6 @@
 package com.hazelcast.transaction.impl;
 
 import com.hazelcast.core.MemberLeftException;
-import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.OperationService;
@@ -25,17 +24,13 @@ import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionNotActiveException;
 import com.hazelcast.transaction.TransactionOptions;
-import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.FutureUtil;
 import com.hazelcast.util.UuidUtil;
 
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
-import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -51,12 +46,13 @@ import static com.hazelcast.transaction.impl.Transaction.State.PREPARED;
 import static com.hazelcast.transaction.impl.Transaction.State.PREPARING;
 import static com.hazelcast.transaction.impl.Transaction.State.ROLLED_BACK;
 import static com.hazelcast.transaction.impl.Transaction.State.ROLLING_BACK;
+import static com.hazelcast.util.Clock.currentTimeMillis;
 import static com.hazelcast.util.FutureUtil.ExceptionHandler;
 import static com.hazelcast.util.FutureUtil.RETHROW_TRANSACTION_EXCEPTION;
 import static com.hazelcast.util.FutureUtil.logAllExceptions;
 import static com.hazelcast.util.FutureUtil.waitWithDeadline;
 
-public class TransactionImpl implements Transaction, InternalTransaction {
+public class TransactionImpl extends AbstractTransaction {
 
     private static final ThreadLocal<Boolean> TRANSACTION_EXISTS = new ThreadLocal<Boolean>();
     private static final int ROLLBACK_TIMEOUT_MINUTES = 5;
@@ -67,32 +63,23 @@ public class TransactionImpl implements Transaction, InternalTransaction {
     private final ExceptionHandler rollbackTxExceptionHandler;
 
     private final TransactionManagerServiceImpl transactionManagerService;
-    private final NodeEngine nodeEngine;
-    private final List<TransactionRecord> txLogs = new LinkedList<TransactionRecord>();
-    private final Map<Object, TransactionRecord> txLogMap = new HashMap<Object, TransactionRecord>();
-    private final String txnId;
     private Long threadId;
-    private long timeoutMillis;
     private final int durability;
     private final TransactionType transactionType;
     private final String txOwnerUuid;
     private final boolean checkThreadAccess;
     private State state = NO_TXN;
-    private long startTime;
     private Address[] backupAddresses;
 
     public TransactionImpl(TransactionManagerServiceImpl transactionManagerService, NodeEngine nodeEngine,
                            TransactionOptions options, String txOwnerUuid) {
+        super(nodeEngine, UuidUtil.buildRandomUuidString(), options.getTimeoutMillis());
         this.transactionManagerService = transactionManagerService;
-        this.nodeEngine = nodeEngine;
-        this.txnId = UuidUtil.buildRandomUuidString();
-        this.timeoutMillis = options.getTimeoutMillis();
         this.durability = options.getDurability();
         this.transactionType = options.getTransactionType();
         this.txOwnerUuid = txOwnerUuid == null ? nodeEngine.getLocalMember().getUuid() : txOwnerUuid;
         this.checkThreadAccess = txOwnerUuid == null;
 
-        ILogger logger = nodeEngine.getLogger(getClass());
         this.commitExceptionHandler = logAllExceptions(logger, "Error during commit!", Level.WARNING);
         this.rollbackExceptionHandler = logAllExceptions(logger, "Error during rollback!", Level.WARNING);
         this.rollbackTxExceptionHandler = logAllExceptions(logger, "Error during tx rollback backup!", Level.WARNING);
@@ -100,28 +87,20 @@ public class TransactionImpl implements Transaction, InternalTransaction {
 
     // used by tx backups
     TransactionImpl(TransactionManagerServiceImpl transactionManagerService, NodeEngine nodeEngine,
-                    String txnId, List<TransactionRecord> txLogs, long timeoutMillis, long startTime, String txOwnerUuid) {
+                    String txnId, List<TransactionRecord> records, long timeoutMillis, long startTime, String txOwnerUuid) {
+        super(nodeEngine, txnId, timeoutMillis);
         this.transactionManagerService = transactionManagerService;
-        this.nodeEngine = nodeEngine;
-        this.txnId = txnId;
-        this.timeoutMillis = timeoutMillis;
-        this.startTime = startTime;
+        this.startTimeMillis = startTime;
         this.durability = 0;
         this.transactionType = TransactionType.TWO_PHASE;
-        this.txLogs.addAll(txLogs);
+        this.records.addAll(records);
         this.state = PREPARED;
         this.txOwnerUuid = txOwnerUuid;
         this.checkThreadAccess = false;
 
-        ILogger logger = nodeEngine.getLogger(getClass());
         this.commitExceptionHandler = logAllExceptions(logger, "Error during commit!", Level.WARNING);
         this.rollbackExceptionHandler = logAllExceptions(logger, "Error during rollback!", Level.WARNING);
         this.rollbackTxExceptionHandler = logAllExceptions(logger, "Error during tx rollback backup!", Level.WARNING);
-    }
-
-    @Override
-    public String getTxnId() {
-        return txnId;
     }
 
     public TransactionType getTransactionType() {
@@ -134,37 +113,7 @@ public class TransactionImpl implements Transaction, InternalTransaction {
             throw new TransactionNotActiveException("Transaction is not active!");
         }
         checkThread();
-        // there should be just one tx log for the same key. so if there is older we are removing it
-        if (record instanceof KeyAwareTransactionRecord) {
-            KeyAwareTransactionRecord keyAwareTransactionRecord = (KeyAwareTransactionRecord) record;
-            TransactionRecord removed = txLogMap.remove(keyAwareTransactionRecord.getKey());
-            if (removed != null) {
-                txLogs.remove(removed);
-            }
-        }
-
-        txLogs.add(record);
-        if (record instanceof KeyAwareTransactionRecord) {
-            KeyAwareTransactionRecord keyAwareTransactionRecord = (KeyAwareTransactionRecord) record;
-            txLogMap.put(keyAwareTransactionRecord.getKey(), keyAwareTransactionRecord);
-        }
-    }
-
-    @Override
-    public TransactionRecord get(Object key) {
-        return txLogMap.get(key);
-    }
-
-    public List<TransactionRecord> getTxLogs() {
-        return txLogs;
-    }
-
-    @Override
-    public void remove(Object key) {
-        TransactionRecord removed = txLogMap.remove(key);
-        if (removed != null) {
-            txLogs.remove(removed);
-        }
+        addInternal(record);
     }
 
     private void checkThread() {
@@ -181,7 +130,7 @@ public class TransactionImpl implements Transaction, InternalTransaction {
         if (TRANSACTION_EXISTS.get() != null) {
             throw new IllegalStateException("Nested transactions are not allowed!");
         }
-        startTime = Clock.currentTimeMillis();
+        startTimeMillis = currentTimeMillis();
         backupAddresses = transactionManagerService.pickBackupAddresses(durability);
 
         if (durability > 0 && backupAddresses != null && transactionType == TransactionType.TWO_PHASE) {
@@ -243,10 +192,10 @@ public class TransactionImpl implements Transaction, InternalTransaction {
         checkThread();
         checkTimeout();
         try {
-            final List<Future> futures = new ArrayList<Future>(txLogs.size());
+            final List<Future> futures = new ArrayList<Future>(records.size());
             state = PREPARING;
-            for (TransactionRecord txLog : txLogs) {
-                futures.add(txLog.prepare(nodeEngine));
+            for (TransactionRecord record : records) {
+                futures.add(record.prepare(nodeEngine));
             }
             waitWithDeadline(futures, timeoutMillis, TimeUnit.MILLISECONDS, RETHROW_TRANSACTION_EXCEPTION);
             futures.clear();
@@ -260,12 +209,12 @@ public class TransactionImpl implements Transaction, InternalTransaction {
     }
 
     private void replicateTxnLog() throws InterruptedException, ExecutionException, java.util.concurrent.TimeoutException {
-        final List<Future> futures = new ArrayList<Future>(txLogs.size());
+        final List<Future> futures = new ArrayList<Future>(records.size());
         final OperationService operationService = nodeEngine.getOperationService();
         for (Address backupAddress : backupAddresses) {
             if (nodeEngine.getClusterService().getMember(backupAddress) != null) {
                 final Future f = operationService.invokeOnTarget(TransactionManagerServiceImpl.SERVICE_NAME,
-                        new ReplicateTxOperation(txLogs, txOwnerUuid, txnId, timeoutMillis, startTime),
+                        new ReplicateTxOperation(records, txOwnerUuid, txnId, timeoutMillis, startTimeMillis),
                         backupAddress);
                 futures.add(f);
             }
@@ -286,10 +235,10 @@ public class TransactionImpl implements Transaction, InternalTransaction {
             checkThread();
             checkTimeout();
             try {
-                final List<Future> futures = new ArrayList<Future>(txLogs.size());
+                final List<Future> futures = new ArrayList<Future>(records.size());
                 state = COMMITTING;
-                for (TransactionRecord txLog : txLogs) {
-                    futures.add(txLog.commit(nodeEngine));
+                for (TransactionRecord record : records) {
+                    futures.add(record.commit(nodeEngine));
                 }
                 // We should rethrow exception if transaction is not TWO_PHASE
                 ExceptionHandler exceptionHandler = transactionType.equals(TransactionType.TWO_PHASE)
@@ -310,7 +259,7 @@ public class TransactionImpl implements Transaction, InternalTransaction {
     }
 
     private void checkTimeout() throws TransactionException {
-        if (startTime + timeoutMillis < Clock.currentTimeMillis()) {
+        if (startTimeMillis + timeoutMillis < currentTimeMillis()) {
             throw new TransactionException("Transaction is timed-out!");
         }
     }
@@ -326,11 +275,11 @@ public class TransactionImpl implements Transaction, InternalTransaction {
             try {
                 rollbackTxBackup();
 
-                final List<Future> futures = new ArrayList<Future>(txLogs.size());
-                final ListIterator<TransactionRecord> iterator = txLogs.listIterator(txLogs.size());
+                final List<Future> futures = new ArrayList<Future>(records.size());
+                final ListIterator<TransactionRecord> iterator = records.listIterator(records.size());
                 while (iterator.hasPrevious()) {
-                    final TransactionRecord txLog = iterator.previous();
-                    futures.add(txLog.rollback(nodeEngine));
+                    final TransactionRecord record = iterator.previous();
+                    futures.add(record.rollback(nodeEngine));
                 }
                 waitWithDeadline(futures, ROLLBACK_TIMEOUT_MINUTES, TimeUnit.MINUTES, rollbackExceptionHandler);
                 // purge tx backup
@@ -343,12 +292,11 @@ public class TransactionImpl implements Transaction, InternalTransaction {
         } finally {
             setThreadFlag(null);
         }
-
     }
 
     private void rollbackTxBackup() {
         final OperationService operationService = nodeEngine.getOperationService();
-        final List<Future> futures = new ArrayList<Future>(txLogs.size());
+        final List<Future> futures = new ArrayList<Future>(records.size());
         // rollback tx backup
         if (durability > 0 && transactionType.equals(TransactionType.TWO_PHASE)) {
             for (Address backupAddress : backupAddresses) {
@@ -380,10 +328,6 @@ public class TransactionImpl implements Transaction, InternalTransaction {
         }
     }
 
-    public long getStartTime() {
-        return startTime;
-    }
-
     @Override
     public String getOwnerUuid() {
         return txOwnerUuid;
@@ -394,19 +338,12 @@ public class TransactionImpl implements Transaction, InternalTransaction {
         return state;
     }
 
-    @Override
-    public long getTimeoutMillis() {
-        return timeoutMillis;
-    }
-
     public boolean setTimeoutMillis(long timeoutMillis) {
-
         if (timeoutMillis < 0) {
             throw new IllegalArgumentException("Timeout can not be negative!");
         }
 
         if (state == NO_TXN && getTimeoutMillis() != timeoutMillis) {
-
             if (timeoutMillis == 0) {
                 this.timeoutMillis = TransactionOptions.DEFAULT_TIMEOUT_MILLIS;
             } else {

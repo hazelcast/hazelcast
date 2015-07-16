@@ -44,7 +44,7 @@ public class XaReplicationOperation extends AbstractOperation {
         XAService xaService = getService();
         NodeEngine nodeEngine = getNodeEngine();
         for (XATransactionHolder holder : migrationData) {
-            XATransactionImpl xaTransaction = new XATransactionImpl(nodeEngine, holder.txLogs, holder.txnId, holder.xid,
+            XATransactionImpl xaTransaction = new XATransactionImpl(nodeEngine, holder.records, holder.txnId, holder.xid,
                     holder.ownerUuid, holder.timeoutMilis, holder.startTime);
             xaService.putTransaction(xaTransaction);
         }

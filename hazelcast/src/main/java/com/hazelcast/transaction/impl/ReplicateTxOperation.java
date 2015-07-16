@@ -29,7 +29,7 @@ import java.util.List;
 
 public final class ReplicateTxOperation extends Operation {
 
-    private final List<TransactionRecord> txLogs = new LinkedList<TransactionRecord>();
+    private final List<TransactionRecord> records = new LinkedList<TransactionRecord>();
     private String callerUuid;
     private String txnId;
     private long timeoutMillis;
@@ -40,7 +40,7 @@ public final class ReplicateTxOperation extends Operation {
 
     public ReplicateTxOperation(List<TransactionRecord> logs, String callerUuid, String txnId,
                                 long timeoutMillis, long startTime) {
-        txLogs.addAll(logs);
+        records.addAll(logs);
         this.callerUuid = callerUuid;
         this.txnId = txnId;
         this.timeoutMillis = timeoutMillis;
@@ -59,7 +59,7 @@ public final class ReplicateTxOperation extends Operation {
     @Override
     public void run() throws Exception {
         TransactionManagerServiceImpl txManagerService = getService();
-        txManagerService.prepareTxBackupLog(txLogs, callerUuid, txnId, timeoutMillis, startTime);
+        txManagerService.prepareTxBackupLog(records, callerUuid, txnId, timeoutMillis, startTime);
     }
 
     @Override
@@ -90,11 +90,11 @@ public final class ReplicateTxOperation extends Operation {
         out.writeUTF(txnId);
         out.writeLong(timeoutMillis);
         out.writeLong(startTime);
-        int len = txLogs.size();
+        int len = records.size();
         out.writeInt(len);
         if (len > 0) {
-            for (TransactionRecord txLog : txLogs) {
-                out.writeObject(txLog);
+            for (TransactionRecord record : records) {
+                out.writeObject(record);
             }
         }
     }
@@ -108,8 +108,8 @@ public final class ReplicateTxOperation extends Operation {
         int len = in.readInt();
         if (len > 0) {
             for (int i = 0; i < len; i++) {
-                TransactionRecord txLog = in.readObject();
-                txLogs.add(txLog);
+                TransactionRecord record = in.readObject();
+                records.add(record);
             }
         }
     }
