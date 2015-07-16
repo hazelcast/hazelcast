@@ -23,6 +23,7 @@ import com.hazelcast.util.Clock;
 import com.hazelcast.util.EmptyStatement;
 
 import java.io.IOException;
+import java.net.SocketException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.util.Queue;
@@ -44,7 +45,7 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
     private final Queue<SocketWritable> writeQueue = new ConcurrentLinkedQueue<SocketWritable>();
     private final Queue<SocketWritable> urgentWriteQueue = new ConcurrentLinkedQueue<SocketWritable>();
     private final AtomicBoolean scheduled = new AtomicBoolean(false);
-    private final ByteBuffer outputBuffer;
+    private ByteBuffer outputBuffer;
     private SocketWritable currentPacket;
     private SocketWriter socketWriter;
     private volatile long lastHandle;
@@ -58,7 +59,6 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
 
     WriteHandler(TcpIpConnection connection, IOSelector ioSelector) {
         super(connection, ioSelector, SelectionKey.OP_WRITE);
-        this.outputBuffer = ByteBuffer.allocate(connectionManager.socketSendBufferSize);
     }
 
     long getLastHandle() {
@@ -89,16 +89,30 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
     private void createWriter(String protocol) {
         if (socketWriter == null) {
             if (Protocols.CLUSTER.equals(protocol)) {
+                configureBuffers(connectionManager.socketSendBufferSize);
                 socketWriter = new SocketPacketWriter(connection);
                 outputBuffer.put(stringToBytes(Protocols.CLUSTER));
                 registerOp(SelectionKey.OP_WRITE);
             } else if (Protocols.CLIENT_BINARY.equals(protocol)) {
+                configureBuffers(connectionManager.socketClientSendBufferSize);
                 socketWriter = new SocketClientDataWriter();
             } else if (Protocols.CLIENT_BINARY_NEW.equals(protocol)) {
+                configureBuffers(connectionManager.socketClientSendBufferSize);
                 socketWriter = new SocketClientMessageWriter();
             } else {
+                configureBuffers(connectionManager.socketClientSendBufferSize);
                 socketWriter = new SocketTextWriter(connection);
             }
+        }
+    }
+
+    private void configureBuffers(int size)  {
+        outputBuffer = ByteBuffer.allocate(size);
+        try {
+            connection.setSendBufferSize(size);
+        } catch (SocketException e) {
+            logger.finest("Failed to adjust TCP send buffer of " + connection + " to "
+                    + size + " B.", e);
         }
     }
 

@@ -27,6 +27,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketAddress;
+import java.net.SocketException;
 
 /**
  * The Tcp/Ip implementation of the {@link com.hazelcast.nio.Connection}.
@@ -235,6 +236,14 @@ public final class TcpIpConnection implements Connection {
 
     public int getConnectionId() {
         return connectionId;
+    }
+
+    public void setSendBufferSize(int size) throws SocketException {
+        socketChannel.socket().setSendBufferSize(size);
+    }
+
+    public void setReceiveBufferSize(int size) throws SocketException {
+        socketChannel.socket().setReceiveBufferSize(size);
     }
 
     @Override
