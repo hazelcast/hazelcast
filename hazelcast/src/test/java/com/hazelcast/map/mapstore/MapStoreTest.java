@@ -461,7 +461,6 @@ public class MapStoreTest extends HazelcastTestSupport {
         assertEquals(1, testMapStore.getDestroyCount());
     }
 
-    // fails randomly
     @Test(timeout = 120000)
     public void testGetAllKeys() throws Exception {
         TestEventBasedMapStore testMapStore = new TestEventBasedMapStore();
