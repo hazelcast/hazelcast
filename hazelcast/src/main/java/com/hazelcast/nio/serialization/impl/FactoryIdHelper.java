@@ -56,6 +56,9 @@ public final class FactoryIdHelper {
     public static final String TOPIC_DS_FACTORY = "hazelcast.serialization.ds.topic";
     public static final int TOPIC_DS_FACTORY_ID = -18;
 
+    public static final String TRANSACTION_DS_FACTORY = "hazelcast.serialization.ds.transaction";
+    public static final int TRANSACTION_DS_FACTORY_ID = -19;
+
     public static final String COLLECTION_DS_FACTORY = "hazelcast.serialization.ds.collection";
     public static final int COLLECTION_DS_FACTORY_ID = -20;
 

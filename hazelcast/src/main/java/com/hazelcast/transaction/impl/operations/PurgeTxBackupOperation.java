@@ -14,76 +14,57 @@
  * limitations under the License.
  */
 
-package com.hazelcast.transaction.impl;
+package com.hazelcast.transaction.impl.operations;
 
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.ExceptionAction;
-import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.exception.TargetNotMemberException;
+import com.hazelcast.transaction.impl.TransactionManagerServiceImpl;
 
 import java.io.IOException;
 
-public final class BeginTxBackupOperation extends Operation {
+import static com.hazelcast.spi.ExceptionAction.THROW_EXCEPTION;
+import static com.hazelcast.transaction.impl.TransactionDataSerializerHook.PURGE_TX_BACKUP;
 
-    private String callerUuid;
+public final class PurgeTxBackupOperation extends TxBaseOperation {
+
     private String txnId;
 
-    public BeginTxBackupOperation() {
+    public PurgeTxBackupOperation() {
     }
 
-    public BeginTxBackupOperation(String callerUuid, String txnId) {
-        this.callerUuid = callerUuid;
+    public PurgeTxBackupOperation(String txnId) {
         this.txnId = txnId;
-    }
-
-    @Override
-    public String getServiceName() {
-        return TransactionManagerServiceImpl.SERVICE_NAME;
-    }
-
-    @Override
-    public void beforeRun() throws Exception {
     }
 
     @Override
     public void run() throws Exception {
         TransactionManagerServiceImpl txManagerService = getService();
-        txManagerService.beginTxBackupLog(callerUuid, txnId);
-    }
-
-    @Override
-    public void afterRun() throws Exception {
-    }
-
-    @Override
-    public boolean returnsResponse() {
-        return true;
-    }
-
-    @Override
-    public Object getResponse() {
-        return Boolean.TRUE;
+        txManagerService.purgeTxBackupLog(txnId);
     }
 
     @Override
     public ExceptionAction onException(Throwable throwable) {
         if (throwable instanceof MemberLeftException || throwable instanceof TargetNotMemberException) {
-            return ExceptionAction.THROW_EXCEPTION;
+            return THROW_EXCEPTION;
         }
         return super.onException(throwable);
     }
 
     @Override
+    public int getId() {
+        return PURGE_TX_BACKUP;
+    }
+
+    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
-        out.writeUTF(callerUuid);
         out.writeUTF(txnId);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
-        callerUuid = in.readUTF();
         txnId = in.readUTF();
     }
 }
