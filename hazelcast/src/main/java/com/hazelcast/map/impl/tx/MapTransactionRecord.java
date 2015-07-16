@@ -16,38 +16,34 @@
 
 package com.hazelcast.map.impl.tx;
 
-import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.map.impl.MapRecordKey;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
-import com.hazelcast.transaction.TransactionException;
+import com.hazelcast.transaction.impl.AbstractTransactionRecord;
 import com.hazelcast.transaction.impl.KeyAwareTransactionRecord;
-import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.ThreadUtil;
 
 import java.io.IOException;
-import java.util.concurrent.Future;
 
 /**
  * Represents an operation on the map in the transaction log.
  */
-public class MapTransactionRecord implements KeyAwareTransactionRecord {
+public class MapTransactionRecord extends AbstractTransactionRecord implements KeyAwareTransactionRecord {
 
-    String name;
-    Data key;
-    long threadId = ThreadUtil.getThreadId();
-    String ownerUuid;
-    Operation op;
+    private String name;
+    private Data key;
+    private long threadId = ThreadUtil.getThreadId();
+    private String ownerUuid;
+    private Operation op;
+    private int partitionId;
 
     public MapTransactionRecord() {
     }
 
-    public MapTransactionRecord(String name, Data key, Operation op, long version, String ownerUuid) {
+    public MapTransactionRecord(String name, int partitionId, Data key, Operation op, long version, String ownerUuid) {
         this.name = name;
         this.key = key;
         if (!(op instanceof MapTxnOperation)) {
@@ -55,66 +51,38 @@ public class MapTransactionRecord implements KeyAwareTransactionRecord {
         }
         this.op = op;
         this.ownerUuid = ownerUuid;
+        this.partitionId = partitionId;
     }
 
     @Override
-    public Future prepare(NodeEngine nodeEngine) throws TransactionException {
-        TxnPrepareOperation operation = new TxnPrepareOperation(name, key, ownerUuid);
-        operation.setThreadId(threadId);
-        try {
-            int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
-            return nodeEngine.getOperationService().invokeOnPartition(MapService.SERVICE_NAME, operation, partitionId);
-        } catch (Throwable t) {
-            throw ExceptionUtil.rethrow(t);
-        }
+    public int getPartitionId() {
+        return partitionId;
     }
 
     @Override
-    public Future commit(NodeEngine nodeEngine) {
-        MapTxnOperation txnOp = (MapTxnOperation) op;
-        txnOp.setThreadId(threadId);
-        txnOp.setOwnerUuid(ownerUuid);
-        try {
-            int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
-            return nodeEngine.getOperationService().invokeOnPartition(MapService.SERVICE_NAME, op, partitionId);
-        } catch (Throwable t) {
-            throw ExceptionUtil.rethrow(t);
-        }
+    public Operation createPrepareOperation() {
+        return new TxnPrepareOperation(partitionId, name, key, ownerUuid, threadId);
     }
 
     @Override
-    public void commitAsync(NodeEngine nodeEngine, ExecutionCallback callback) {
-        MapTxnOperation txnOp = (MapTxnOperation) op;
-        txnOp.setThreadId(threadId);
-        txnOp.setOwnerUuid(ownerUuid);
-        int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
-        InternalOperationService operationService = (InternalOperationService) nodeEngine.getOperationService();
-        operationService.asyncInvokeOnPartition(MapService.SERVICE_NAME, op, partitionId, callback);
-    }
-
-    public Future rollback(NodeEngine nodeEngine) {
-        int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
-        TxnRollbackOperation operation = new TxnRollbackOperation(name, key, ownerUuid);
-        operation.setThreadId(threadId);
-        try {
-            return nodeEngine.getOperationService().invokeOnPartition(MapService.SERVICE_NAME, operation, partitionId);
-        } catch (Throwable t) {
-            throw ExceptionUtil.rethrow(t);
-        }
+    public Operation createRollbackOperation() {
+        return new TxnRollbackOperation(partitionId, name, key, ownerUuid, threadId);
     }
 
     @Override
-    public void rollbackAsync(NodeEngine nodeEngine, ExecutionCallback callback) {
-        int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
-        TxnRollbackOperation operation = new TxnRollbackOperation(name, key, ownerUuid);
-        operation.setThreadId(threadId);
-        InternalOperationService operationService = (InternalOperationService) nodeEngine.getOperationService();
-        operationService.asyncInvokeOnPartition(MapService.SERVICE_NAME, operation, partitionId, callback);
+    public Operation createCommitOperation() {
+        MapTxnOperation commitOperation = (MapTxnOperation) op;
+        commitOperation.setThreadId(threadId);
+        commitOperation.setOwnerUuid(ownerUuid);
+        op.setPartitionId(partitionId);
+        op.setServiceName(MapService.SERVICE_NAME);
+        return op;
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(name);
+        out.write(partitionId);
         boolean isNullKey = key == null;
         out.writeBoolean(isNullKey);
         if (!isNullKey) {
@@ -128,6 +96,7 @@ public class MapTransactionRecord implements KeyAwareTransactionRecord {
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         name = in.readUTF();
+        partitionId = in.readInt();
         boolean isNullKey = in.readBoolean();
         if (!isNullKey) {
             key = in.readData();

@@ -29,13 +29,15 @@ import java.io.IOException;
 public class TxnPrepareOperation extends MultiMapBackupAwareOperation {
 
     private static final long LOCK_EXTENSION_TIME_IN_MILLIS = 10000L;
-    long ttl;
+
+    private long ttl;
 
     public TxnPrepareOperation() {
     }
 
-    public TxnPrepareOperation(String name, Data dataKey, long ttl, long threadId) {
+    public TxnPrepareOperation(int partitionId, String name, Data dataKey, long ttl, long threadId) {
         super(name, dataKey, threadId);
+        setPartitionId(partitionId);
         this.ttl = ttl;
     }
 

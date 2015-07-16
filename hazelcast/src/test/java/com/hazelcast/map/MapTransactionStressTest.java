@@ -14,6 +14,7 @@ import com.hazelcast.core.TransactionalQueue;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.TransactionalService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -319,6 +320,27 @@ public class MapTransactionStressTest extends HazelcastTestSupport {
     }
 
     public static class SleepyTransactionRecord implements TransactionRecord {
+
+        @Override
+        public int getPartitionId() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public Operation createPrepareOperation() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public Operation createCommitOperation() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public Operation createRollbackOperation() {
+            throw new UnsupportedOperationException();
+        }
+
         @Override
         public Future prepare(NodeEngine nodeEngine) {
             return new EmptyFuture();
@@ -353,7 +375,7 @@ public class MapTransactionStressTest extends HazelcastTestSupport {
 
         @Override
         public String toString() {
-            return "SleepyTransactionLog{}";
+            return "SleepyTransactionRecord{}";
         }
     }
 

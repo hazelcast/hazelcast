@@ -16,16 +16,17 @@
 
 package com.hazelcast.collection.impl.txnqueue.operations;
 
+import com.hazelcast.collection.impl.queue.QueueContainer;
+import com.hazelcast.collection.impl.queue.operations.QueueBackupAwareOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.collection.impl.queue.operations.QueueBackupAwareOperation;
-import com.hazelcast.collection.impl.queue.QueueContainer;
-import com.hazelcast.collection.impl.queue.QueueDataSerializerHook;
 import com.hazelcast.spi.Notifier;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.WaitNotifyKey;
 
 import java.io.IOException;
+
+import static com.hazelcast.collection.impl.queue.QueueDataSerializerHook.TXN_ROLLBACK;
 
 /**
  * Rollback operation for the transactional queue.
@@ -38,8 +39,9 @@ public class TxnRollbackOperation extends QueueBackupAwareOperation implements N
     public TxnRollbackOperation() {
     }
 
-    public TxnRollbackOperation(String name, long itemId, boolean pollOperation) {
+    public TxnRollbackOperation(int partitionId, String name, long itemId, boolean pollOperation) {
         super(name);
+        setPartitionId(partitionId);
         this.itemId = itemId;
         this.pollOperation = pollOperation;
     }
@@ -80,7 +82,7 @@ public class TxnRollbackOperation extends QueueBackupAwareOperation implements N
 
     @Override
     public int getId() {
-        return QueueDataSerializerHook.TXN_ROLLBACK;
+        return TXN_ROLLBACK;
     }
 
     @Override

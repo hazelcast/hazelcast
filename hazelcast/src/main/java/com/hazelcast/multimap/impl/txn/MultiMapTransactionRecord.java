@@ -16,94 +16,63 @@
 
 package com.hazelcast.multimap.impl.txn;
 
-import com.hazelcast.core.ExecutionCallback;
-import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationService;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+import com.hazelcast.transaction.impl.AbstractTransactionRecord;
 import com.hazelcast.transaction.impl.KeyAwareTransactionRecord;
-import com.hazelcast.util.ExceptionUtil;
 
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.Future;
 
-public class MultiMapTransactionRecord implements KeyAwareTransactionRecord {
+public class MultiMapTransactionRecord extends AbstractTransactionRecord implements KeyAwareTransactionRecord {
 
-    final List<Operation> opList = new LinkedList<Operation>();
-    String name;
-    Data key;
-    long ttl;
-    long threadId;
+    private final List<Operation> opList = new LinkedList<Operation>();
+    private String name;
+    private Data key;
+    private long ttl;
+    private long threadId;
+    private int partitionId;
 
     public MultiMapTransactionRecord() {
     }
 
-    public MultiMapTransactionRecord(Data key, String name, long ttl, long threadId) {
+    public MultiMapTransactionRecord(Data key, int partitionId, String name, long ttl, long threadId) {
         this.key = key;
         this.name = name;
         this.ttl = ttl;
         this.threadId = threadId;
-    }
-
-    public Future prepare(NodeEngine nodeEngine) {
-        TxnPrepareOperation operation = new TxnPrepareOperation(name, key, ttl, threadId);
-        try {
-            int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
-            final OperationService operationService = nodeEngine.getOperationService();
-            return operationService.invokeOnPartition(MultiMapService.SERVICE_NAME, operation, partitionId);
-        } catch (Throwable t) {
-            throw ExceptionUtil.rethrow(t);
-        }
-    }
-
-    public Future commit(NodeEngine nodeEngine) {
-        TxnCommitOperation operation = new TxnCommitOperation(name, key, threadId, opList);
-        try {
-            int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
-            final OperationService operationService = nodeEngine.getOperationService();
-            return operationService.invokeOnPartition(MultiMapService.SERVICE_NAME, operation, partitionId);
-        } catch (Throwable t) {
-            throw ExceptionUtil.rethrow(t);
-        }
+        this.partitionId = partitionId;
     }
 
     @Override
-    public void commitAsync(NodeEngine nodeEngine, ExecutionCallback callback) {
-        TxnCommitOperation operation = new TxnCommitOperation(name, key, threadId, opList);
-        int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
-        InternalOperationService operationService = (InternalOperationService) nodeEngine.getOperationService();
-        operationService.asyncInvokeOnPartition(MultiMapService.SERVICE_NAME, operation, partitionId, callback);
-    }
-
-    public Future rollback(NodeEngine nodeEngine) {
-        TxnRollbackOperation operation = new TxnRollbackOperation(name, key, threadId);
-        try {
-            int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
-            final OperationService operationService = nodeEngine.getOperationService();
-            return operationService.invokeOnPartition(MultiMapService.SERVICE_NAME, operation, partitionId);
-        } catch (Throwable t) {
-            throw ExceptionUtil.rethrow(t);
-        }
+    public int getPartitionId() {
+        return partitionId;
     }
 
     @Override
-    public void rollbackAsync(NodeEngine nodeEngine, ExecutionCallback callback) {
-        TxnRollbackOperation operation = new TxnRollbackOperation(name, key, threadId);
-        int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
-        InternalOperationService operationService = (InternalOperationService) nodeEngine.getOperationService();
-        operationService.asyncInvokeOnPartition(MultiMapService.SERVICE_NAME, operation, partitionId, callback);
+    public Operation createPrepareOperation() {
+        return new TxnPrepareOperation(partitionId, name, key, ttl, threadId);
     }
 
+    @Override
+    public Operation createCommitOperation() {
+        return new TxnCommitOperation(partitionId, name, key, threadId, opList);
+    }
+
+    @Override
+    public Operation createRollbackOperation() {
+        return new TxnRollbackOperation(partitionId, name, key, threadId);
+    }
+
+    @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(name);
+        out.writeInt(partitionId);
         out.writeInt(opList.size());
         for (Operation op : opList) {
             out.writeObject(op);
@@ -113,8 +82,10 @@ public class MultiMapTransactionRecord implements KeyAwareTransactionRecord {
         out.writeLong(threadId);
     }
 
+    @Override
     public void readData(ObjectDataInput in) throws IOException {
         name = in.readUTF();
+        partitionId = in.readInt();
         int size = in.readInt();
         for (int i = 0; i < size; i++) {
             opList.add((Operation) in.readObject());
@@ -124,6 +95,7 @@ public class MultiMapTransactionRecord implements KeyAwareTransactionRecord {
         threadId = in.readLong();
     }
 
+    @Override
     public Object getKey() {
         return new TransactionRecordKey(name, key);
     }
@@ -187,5 +159,4 @@ public class MultiMapTransactionRecord implements KeyAwareTransactionRecord {
                 + ", threadId=" + threadId
                 + '}';
     }
-
 }

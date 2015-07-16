@@ -16,14 +16,15 @@
 
 package com.hazelcast.collection.impl.txnqueue.operations;
 
+import com.hazelcast.collection.impl.queue.QueueContainer;
+import com.hazelcast.collection.impl.queue.operations.QueueBackupAwareOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.collection.impl.queue.operations.QueueBackupAwareOperation;
-import com.hazelcast.collection.impl.queue.QueueContainer;
-import com.hazelcast.collection.impl.queue.QueueDataSerializerHook;
 import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
+
+import static com.hazelcast.collection.impl.queue.QueueDataSerializerHook.TXN_PREPARE;
 
 /**
  * Prepare operation for the transactional queue.
@@ -39,8 +40,9 @@ public class TxnPrepareOperation extends QueueBackupAwareOperation {
     public TxnPrepareOperation() {
     }
 
-    public TxnPrepareOperation(String name, long itemId, boolean pollOperation, String transactionId) {
+    public TxnPrepareOperation(int partitionId, String name, long itemId, boolean pollOperation, String transactionId) {
         super(name);
+        setPartitionId(partitionId);
         this.itemId = itemId;
         this.pollOperation = pollOperation;
         this.transactionId = transactionId;
@@ -64,7 +66,7 @@ public class TxnPrepareOperation extends QueueBackupAwareOperation {
 
     @Override
     public int getId() {
-        return QueueDataSerializerHook.TXN_PREPARE;
+        return TXN_PREPARE;
     }
 
     @Override

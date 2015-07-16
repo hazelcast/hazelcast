@@ -35,17 +35,19 @@ import java.io.IOException;
  */
 public class TxnRollbackOperation extends KeyBasedMapOperation implements BackupAwareOperation, Notifier {
 
-    String ownerUuid;
-
-    protected TxnRollbackOperation(String name, Data dataKey, String ownerUuid) {
-        super(name, dataKey);
-        this.ownerUuid = ownerUuid;
-    }
+    private String ownerUuid;
 
     public TxnRollbackOperation() {
     }
 
-    @Override
+    protected TxnRollbackOperation(int partitionId, String name, Data dataKey, String ownerUuid, long threadId) {
+        super(name, dataKey);
+        setPartitionId(partitionId);
+        this.ownerUuid = ownerUuid;
+        this.threadId = threadId;
+    }
+
+     @Override
     public void run() throws Exception {
         if (recordStore.isLocked(getKey()) && !recordStore.unlock(getKey(), ownerUuid, getThreadId(), getCallId())) {
             throw new TransactionException("Lock is not owned by the transaction! Owner: "

@@ -18,11 +18,13 @@ package com.hazelcast.collection.impl.txncollection.operations;
 
 import com.hazelcast.collection.impl.collection.CollectionContainer;
 import com.hazelcast.collection.impl.collection.operations.CollectionBackupAwareOperation;
-import com.hazelcast.collection.impl.collection.CollectionDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.Operation;
+
 import java.io.IOException;
+
+import static com.hazelcast.collection.impl.collection.CollectionDataSerializerHook.COLLECTION_PREPARE;
 
 public class CollectionPrepareOperation extends CollectionBackupAwareOperation {
 
@@ -33,8 +35,11 @@ public class CollectionPrepareOperation extends CollectionBackupAwareOperation {
     public CollectionPrepareOperation() {
     }
 
-    public CollectionPrepareOperation(String name, long itemId, String transactionId, boolean removeOperation) {
+    public CollectionPrepareOperation(int partitionId, String name, String serviceName,
+                                      long itemId, String transactionId, boolean removeOperation) {
         super(name);
+        setPartitionId(partitionId);
+        setServiceName(serviceName);
         this.itemId = itemId;
         this.removeOperation = removeOperation;
         this.transactionId = transactionId;
@@ -58,7 +63,7 @@ public class CollectionPrepareOperation extends CollectionBackupAwareOperation {
 
     @Override
     public int getId() {
-        return CollectionDataSerializerHook.COLLECTION_PREPARE;
+        return COLLECTION_PREPARE;
     }
 
     @Override
