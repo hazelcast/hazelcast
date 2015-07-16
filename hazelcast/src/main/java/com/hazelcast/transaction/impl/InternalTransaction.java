@@ -24,11 +24,11 @@ package com.hazelcast.transaction.impl;
  */
 public interface InternalTransaction extends Transaction {
 
-    void add(TransactionRecord record);
+    void add(TransactionLogRecord record);
 
     void remove(Object key);
 
-    TransactionRecord get(Object key);
+    TransactionLogRecord get(Object key);
 
     String getOwnerUuid();
 }

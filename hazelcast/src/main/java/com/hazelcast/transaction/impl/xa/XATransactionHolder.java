@@ -19,7 +19,7 @@ package com.hazelcast.transaction.impl.xa;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
-import com.hazelcast.transaction.impl.TransactionRecord;
+import com.hazelcast.transaction.impl.TransactionLogRecord;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -31,7 +31,7 @@ public class XATransactionHolder implements DataSerializable {
     String ownerUuid;
     long timeoutMilis;
     long startTime;
-    List<TransactionRecord> txLogs;
+    List<TransactionLogRecord> records;
 
     public XATransactionHolder() {
 
@@ -43,17 +43,17 @@ public class XATransactionHolder implements DataSerializable {
         ownerUuid = xaTransaction.getOwnerUuid();
         timeoutMilis = xaTransaction.getTimeoutMillis();
         startTime = xaTransaction.getStartTime();
-        txLogs = xaTransaction.getTxLogs();
+        records = xaTransaction.getTransactionRecords();
     }
 
     public XATransactionHolder(String txnId, SerializableXID xid, String ownerUuid, long timeoutMilis,
-                               long startTime, List<TransactionRecord> txLogs) {
+                               long startTime, List<TransactionLogRecord> records) {
         this.txnId = txnId;
         this.xid = xid;
         this.ownerUuid = ownerUuid;
         this.timeoutMilis = timeoutMilis;
         this.startTime = startTime;
-        this.txLogs = txLogs;
+        this.records = records;
     }
 
     @Override
@@ -63,11 +63,11 @@ public class XATransactionHolder implements DataSerializable {
         out.writeUTF(ownerUuid);
         out.writeLong(timeoutMilis);
         out.writeLong(startTime);
-        int len = txLogs.size();
+        int len = records.size();
         out.writeInt(len);
         if (len > 0) {
-            for (TransactionRecord txLog : txLogs) {
-                out.writeObject(txLog);
+            for (TransactionLogRecord record : records) {
+                out.writeObject(record);
             }
         }
     }
@@ -80,10 +80,10 @@ public class XATransactionHolder implements DataSerializable {
         timeoutMilis = in.readLong();
         startTime = in.readLong();
         int size = in.readInt();
-        txLogs = new ArrayList<TransactionRecord>(size);
+        records = new ArrayList<TransactionLogRecord>(size);
         for (int i = 0; i < size; i++) {
-            TransactionRecord txLog = in.readObject();
-            txLogs.add(txLog);
+            TransactionLogRecord record = in.readObject();
+            records.add(record);
         }
     }
 }

@@ -166,7 +166,7 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
             long timeoutMillis = TransactionOptions.getDefault().getTimeoutMillis();
             waitWithDeadline(futures, timeoutMillis, TimeUnit.MILLISECONDS, finalizeExceptionHandler);
         } else {
-            TransactionImpl tx = new TransactionImpl(this, nodeEngine, txnId, log.txLogs,
+            TransactionImpl tx = new TransactionImpl(this, nodeEngine, txnId, log.records,
                     log.timeoutMillis, log.startTime, log.callerUuid);
             if (log.state == State.COMMITTING) {
                 try {
@@ -203,13 +203,13 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
     }
 
     public void beginTxBackupLog(String callerUuid, String txnId) {
-        TxBackupLog log = new TxBackupLog(Collections.<TransactionRecord>emptyList(), callerUuid, State.ACTIVE, -1, -1);
+        TxBackupLog log = new TxBackupLog(Collections.<TransactionLogRecord>emptyList(), callerUuid, State.ACTIVE, -1, -1);
         if (txBackupLogs.putIfAbsent(txnId, log) != null) {
             throw new TransactionException("TxLog already exists!");
         }
     }
 
-    public void prepareTxBackupLog(List<TransactionRecord> txLogs, String callerUuid, String txnId,
+    public void prepareTxBackupLog(List<TransactionLogRecord> records, String callerUuid, String txnId,
                                    long timeoutMillis, long startTime) {
         TxBackupLog beginLog = txBackupLogs.get(txnId);
         if (beginLog == null) {
@@ -218,8 +218,7 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
         if (beginLog.state != State.ACTIVE) {
             throw new TransactionException("TxLog already exists!");
         }
-        TxBackupLog newTxBackupLog
-                = new TxBackupLog(txLogs, callerUuid, State.COMMITTING, timeoutMillis, startTime);
+        TxBackupLog newTxBackupLog = new TxBackupLog(records, callerUuid, State.COMMITTING, timeoutMillis, startTime);
         if (!txBackupLogs.replace(txnId, beginLog, newTxBackupLog)) {
             throw new TransactionException("TxLog already exists!");
         }
@@ -239,14 +238,15 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
     }
 
     private static final class TxBackupLog {
-        private final List<TransactionRecord> txLogs;
+        private final List<TransactionLogRecord> records;
         private final String callerUuid;
         private final long timeoutMillis;
         private final long startTime;
         private volatile State state;
 
-        private TxBackupLog(List<TransactionRecord> txLogs, String callerUuid, State state, long timeoutMillis, long startTime) {
-            this.txLogs = txLogs;
+        private TxBackupLog(List<TransactionLogRecord> records, String callerUuid, State state,
+                            long timeoutMillis, long startTime) {
+            this.records = records;
             this.callerUuid = callerUuid;
             this.state = state;
             this.timeoutMillis = timeoutMillis;
@@ -256,7 +256,7 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
         @Override
         public String toString() {
             return "TxBackupLog{"
-                    + "txLogs=" + txLogs
+                    + "records=" + records
                     + ", callerUuid='" + callerUuid + '\''
                     + ", timeoutMillis=" + timeoutMillis
                     + ", startTime=" + startTime

@@ -20,7 +20,7 @@ import com.hazelcast.collection.impl.collection.CollectionItem;
 import com.hazelcast.collection.impl.set.SetService;
 import com.hazelcast.collection.impl.txncollection.AbstractTransactionalCollectionProxy;
 import com.hazelcast.collection.impl.txncollection.operations.CollectionReserveAddOperation;
-import com.hazelcast.collection.impl.txncollection.CollectionTransactionRecord;
+import com.hazelcast.collection.impl.txncollection.CollectionTransactionLogRecord;
 import com.hazelcast.collection.impl.txncollection.operations.CollectionTxnAddOperation;
 import com.hazelcast.core.TransactionalSet;
 import com.hazelcast.nio.serialization.Data;
@@ -63,7 +63,7 @@ public class TransactionalSetProxy<E> extends AbstractTransactionalCollectionPro
                 CollectionTxnAddOperation op = new CollectionTxnAddOperation(name, itemId, value);
                 final String txnId = tx.getTxnId();
                 final String serviceName = getServiceName();
-                tx.add(new CollectionTransactionRecord(itemId, name, partitionId, serviceName, txnId, op));
+                tx.add(new CollectionTransactionLogRecord(itemId, name, partitionId, serviceName, txnId, op));
                 return true;
             }
         } catch (Throwable t) {

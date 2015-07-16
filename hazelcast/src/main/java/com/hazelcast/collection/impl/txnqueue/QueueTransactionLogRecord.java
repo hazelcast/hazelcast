@@ -28,7 +28,7 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
-import com.hazelcast.transaction.impl.KeyAwareTransactionRecord;
+import com.hazelcast.transaction.impl.KeyAwareTransactionLogRecord;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.io.IOException;
@@ -37,7 +37,7 @@ import java.util.concurrent.Future;
 /**
  * This class contains Transaction log for the Queue.
  */
-public class QueueTransactionRecord implements KeyAwareTransactionRecord {
+public class QueueTransactionLogRecord implements KeyAwareTransactionLogRecord {
 
     private long itemId;
     private String name;
@@ -45,10 +45,10 @@ public class QueueTransactionRecord implements KeyAwareTransactionRecord {
     private int partitionId;
     private String transactionId;
 
-    public QueueTransactionRecord() {
+    public QueueTransactionLogRecord() {
     }
 
-    public QueueTransactionRecord(String transactionId, long itemId, String name, int partitionId, Operation op) {
+    public QueueTransactionLogRecord(String transactionId, long itemId, String name, int partitionId, Operation op) {
         this.transactionId = transactionId;
         this.itemId = itemId;
         this.name = name;

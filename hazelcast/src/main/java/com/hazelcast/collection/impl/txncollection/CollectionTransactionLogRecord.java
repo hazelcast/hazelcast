@@ -25,12 +25,12 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
-import com.hazelcast.transaction.impl.KeyAwareTransactionRecord;
+import com.hazelcast.transaction.impl.KeyAwareTransactionLogRecord;
 import com.hazelcast.util.ExceptionUtil;
 import java.io.IOException;
 import java.util.concurrent.Future;
 
-public class CollectionTransactionRecord implements KeyAwareTransactionRecord {
+public class CollectionTransactionLogRecord implements KeyAwareTransactionLogRecord {
 
     String transactionId;
     private long itemId;
@@ -39,15 +39,15 @@ public class CollectionTransactionRecord implements KeyAwareTransactionRecord {
     private int partitionId;
     private String serviceName;
 
-    public CollectionTransactionRecord() {
+    public CollectionTransactionLogRecord() {
     }
 
-    public CollectionTransactionRecord(long itemId,
-                                       String name,
-                                       int partitionId,
-                                       String serviceName,
-                                       String transactionId,
-                                       Operation op) {
+    public CollectionTransactionLogRecord(long itemId,
+                                          String name,
+                                          int partitionId,
+                                          String serviceName,
+                                          String transactionId,
+                                          Operation op) {
         this.itemId = itemId;
         this.name = name;
         this.op = op;

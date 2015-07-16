@@ -94,7 +94,7 @@ public class TransactionImplTest {
         TransactionOptions options = new TransactionOptions().setTransactionType(TransactionType.LOCAL);
         transaction = new TransactionImpl(transactionManagerService, nodeEngine, options, "dummy-uuid");
         transaction.begin();
-        transaction.add(new FailingTransactionRecord(false, true, false));
+        transaction.add(new FailingTransactionLogRecord(false, true, false));
         transaction.commit();
     }
 
@@ -112,7 +112,7 @@ public class TransactionImplTest {
         transaction = new TransactionImpl(transactionManagerService, nodeEngine, options, "dummy-uuid");
 
         transaction.begin();
-        transaction.add(new FailingTransactionRecord(true, true, false));
+        transaction.add(new FailingTransactionLogRecord(true, true, false));
         transaction.prepare();
     }
 
@@ -129,17 +129,17 @@ public class TransactionImplTest {
                 .setTransactionType(TransactionType.TWO_PHASE).setDurability(0);
         transaction = new TransactionImpl(transactionManagerService, nodeEngine, options, "dummy-uuid");
         transaction.begin();
-        transaction.add(new FailingTransactionRecord(false, true, false));
+        transaction.add(new FailingTransactionLogRecord(false, true, false));
         transaction.prepare();
         transaction.commit();
     }
 
-    private static class FailingTransactionRecord implements TransactionRecord {
+    private static class FailingTransactionLogRecord implements TransactionLogRecord {
         final boolean failPrepare;
         final boolean failCommit;
         final boolean failRollback;
 
-        public FailingTransactionRecord(boolean failPrepare, boolean failCommit, boolean failRollback) {
+        public FailingTransactionLogRecord(boolean failPrepare, boolean failCommit, boolean failRollback) {
             this.failPrepare = failPrepare;
             this.failCommit = failCommit;
             this.failRollback = failRollback;

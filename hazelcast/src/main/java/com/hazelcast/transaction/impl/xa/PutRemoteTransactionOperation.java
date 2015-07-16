@@ -21,7 +21,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.transaction.impl.TransactionRecord;
+import com.hazelcast.transaction.impl.TransactionLogRecord;
 
 import java.io.IOException;
 import java.util.LinkedList;
@@ -29,7 +29,7 @@ import java.util.List;
 
 public class PutRemoteTransactionOperation extends Operation implements BackupAwareOperation {
 
-    private final List<TransactionRecord> txLogs = new LinkedList<TransactionRecord>();
+    private final List<TransactionLogRecord> records = new LinkedList<TransactionLogRecord>();
 
     private SerializableXID xid;
     private String txnId;
@@ -40,9 +40,9 @@ public class PutRemoteTransactionOperation extends Operation implements BackupAw
     public PutRemoteTransactionOperation() {
     }
 
-    public PutRemoteTransactionOperation(List<TransactionRecord> logs, String txnId, SerializableXID xid,
+    public PutRemoteTransactionOperation(List<TransactionLogRecord> logs, String txnId, SerializableXID xid,
                                          String txOwnerUuid, long timeoutMillis, long startTime) {
-        txLogs.addAll(logs);
+        records.addAll(logs);
         this.txnId = txnId;
         this.xid = xid;
         this.txOwnerUuid = txOwnerUuid;
@@ -59,7 +59,7 @@ public class PutRemoteTransactionOperation extends Operation implements BackupAw
         XAService xaService = getService();
         NodeEngine nodeEngine = getNodeEngine();
         XATransactionImpl transaction =
-                new XATransactionImpl(nodeEngine, txLogs, txnId, xid, txOwnerUuid, timeoutMillis, startTime);
+                new XATransactionImpl(nodeEngine, records, txnId, xid, txOwnerUuid, timeoutMillis, startTime);
         xaService.putTransaction(transaction);
     }
 
@@ -94,7 +94,7 @@ public class PutRemoteTransactionOperation extends Operation implements BackupAw
 
     @Override
     public Operation getBackupOperation() {
-        return new PutRemoteTransactionBackupOperation(txLogs, txnId, xid, txOwnerUuid, timeoutMillis, startTime);
+        return new PutRemoteTransactionBackupOperation(records, txnId, xid, txOwnerUuid, timeoutMillis, startTime);
     }
 
     @Override
@@ -109,11 +109,11 @@ public class PutRemoteTransactionOperation extends Operation implements BackupAw
         out.writeUTF(txOwnerUuid);
         out.writeLong(timeoutMillis);
         out.writeLong(startTime);
-        int len = txLogs.size();
+        int len = records.size();
         out.writeInt(len);
         if (len > 0) {
-            for (TransactionRecord txLog : txLogs) {
-                out.writeObject(txLog);
+            for (TransactionLogRecord record : records) {
+                out.writeObject(record);
             }
         }
     }
@@ -128,8 +128,8 @@ public class PutRemoteTransactionOperation extends Operation implements BackupAw
         int len = in.readInt();
         if (len > 0) {
             for (int i = 0; i < len; i++) {
-                TransactionRecord txLog = in.readObject();
-                txLogs.add(txLog);
+                TransactionLogRecord record = in.readObject();
+                records.add(record);
             }
         }
     }

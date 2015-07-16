@@ -26,7 +26,7 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.transaction.TransactionException;
-import com.hazelcast.transaction.impl.KeyAwareTransactionRecord;
+import com.hazelcast.transaction.impl.KeyAwareTransactionLogRecord;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.ThreadUtil;
 
@@ -36,7 +36,7 @@ import java.util.concurrent.Future;
 /**
  * Represents an operation on the map in the transaction log.
  */
-public class MapTransactionRecord implements KeyAwareTransactionRecord {
+public class MapTransactionLogRecord implements KeyAwareTransactionLogRecord {
 
     String name;
     Data key;
@@ -44,10 +44,10 @@ public class MapTransactionRecord implements KeyAwareTransactionRecord {
     String ownerUuid;
     Operation op;
 
-    public MapTransactionRecord() {
+    public MapTransactionLogRecord() {
     }
 
-    public MapTransactionRecord(String name, Data key, Operation op, long version, String ownerUuid) {
+    public MapTransactionLogRecord(String name, Data key, Operation op, long version, String ownerUuid) {
         this.name = name;
         this.key = key;
         if (!(op instanceof MapTxnOperation)) {

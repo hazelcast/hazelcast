@@ -25,7 +25,7 @@ import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionalObject;
 import com.hazelcast.transaction.TransactionalTask;
 import com.hazelcast.transaction.TransactionalTaskContext;
-import com.hazelcast.transaction.impl.TransactionRecord;
+import com.hazelcast.transaction.impl.TransactionLogRecord;
 import com.hazelcast.transaction.impl.InternalTransaction;
 import org.junit.Assert;
 import org.junit.Test;
@@ -294,7 +294,7 @@ public class MapTransactionStressTest extends HazelcastTestSupport {
         }
 
         public void doSomethingTxnal() {
-            transaction.add(new SleepyTransactionRecord());
+            transaction.add(new SleepyTransactionLogRecord());
         }
 
         @Override
@@ -318,7 +318,7 @@ public class MapTransactionStressTest extends HazelcastTestSupport {
         }
     }
 
-    public static class SleepyTransactionRecord implements TransactionRecord {
+    public static class SleepyTransactionLogRecord implements TransactionLogRecord {
         @Override
         public Future prepare(NodeEngine nodeEngine) {
             return new EmptyFuture();
