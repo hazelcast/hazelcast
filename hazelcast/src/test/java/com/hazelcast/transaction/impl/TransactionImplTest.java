@@ -23,6 +23,7 @@ import com.hazelcast.logging.LogEvent;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.Operation;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.transaction.TransactionException;
@@ -143,6 +144,26 @@ public class TransactionImplTest {
             this.failPrepare = failPrepare;
             this.failCommit = failCommit;
             this.failRollback = failRollback;
+        }
+
+        @Override
+        public int getPartitionId() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public Operation createPrepareOperation() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public Operation createCommitOperation() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public Operation createRollbackOperation() {
+            throw new UnsupportedOperationException();
         }
 
         @Override

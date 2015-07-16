@@ -20,24 +20,18 @@ import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.collection.impl.txnqueue.operations.TxnPollOperation;
 import com.hazelcast.collection.impl.txnqueue.operations.TxnPrepareOperation;
 import com.hazelcast.collection.impl.txnqueue.operations.TxnRollbackOperation;
-import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.InternalCompletableFuture;
-import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationService;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+import com.hazelcast.transaction.impl.AbstractTransactionRecord;
 import com.hazelcast.transaction.impl.KeyAwareTransactionRecord;
-import com.hazelcast.util.ExceptionUtil;
 
 import java.io.IOException;
-import java.util.concurrent.Future;
 
 /**
  * This class contains Transaction log for the Queue.
  */
-public class QueueTransactionRecord implements KeyAwareTransactionRecord {
+public class QueueTransactionRecord extends AbstractTransactionRecord implements KeyAwareTransactionRecord {
 
     private long itemId;
     private String name;
@@ -57,54 +51,32 @@ public class QueueTransactionRecord implements KeyAwareTransactionRecord {
     }
 
     @Override
-    public Future prepare(NodeEngine nodeEngine) {
+    public int getPartitionId() {
+        return partitionId;
+    }
+
+    @Override
+    public Operation createPrepareOperation() {
         boolean pollOperation = op instanceof TxnPollOperation;
-        TxnPrepareOperation operation = new TxnPrepareOperation(name, itemId, pollOperation, transactionId);
-        try {
-            return invoke(nodeEngine, operation);
-        } catch (Throwable t) {
-            throw ExceptionUtil.rethrow(t);
-        }
-    }
-
-    private InternalCompletableFuture invoke(NodeEngine nodeEngine, Operation operation) {
-        OperationService operationService = nodeEngine.getOperationService();
-        return operationService.invokeOnPartition(QueueService.SERVICE_NAME, operation, partitionId);
+        return new TxnPrepareOperation(partitionId, name, itemId, pollOperation, transactionId);
     }
 
     @Override
-    public Future commit(NodeEngine nodeEngine) {
-        try {
-            OperationService operationService = nodeEngine.getOperationService();
-            return operationService.invokeOnPartition(QueueService.SERVICE_NAME, op, partitionId);
-        } catch (Throwable t) {
-            throw ExceptionUtil.rethrow(t);
-        }
-    }
-
-    @Override
-    public void commitAsync(NodeEngine nodeEngine, ExecutionCallback callback) {
-        InternalOperationService operationService = (InternalOperationService) nodeEngine.getOperationService();
-        operationService.asyncInvokeOnPartition(QueueService.SERVICE_NAME, op, partitionId, callback);
-    }
-
-    @Override
-    public Future rollback(NodeEngine nodeEngine) {
+    public Operation createRollbackOperation() {
         boolean pollOperation = op instanceof TxnPollOperation;
-        TxnRollbackOperation operation = new TxnRollbackOperation(name, itemId, pollOperation);
-        try {
-            return invoke(nodeEngine, operation);
-        } catch (Throwable t) {
-            throw ExceptionUtil.rethrow(t);
-        }
+        return new TxnRollbackOperation(partitionId, name, itemId, pollOperation);
     }
 
     @Override
-    public void rollbackAsync(NodeEngine nodeEngine, ExecutionCallback callback) {
-        boolean pollOperation = op instanceof TxnPollOperation;
-        TxnRollbackOperation operation = new TxnRollbackOperation(name, itemId, pollOperation);
-        InternalOperationService operationService = (InternalOperationService) nodeEngine.getOperationService();
-        operationService.asyncInvokeOnPartition(QueueService.SERVICE_NAME, operation, partitionId, callback);
+    public Operation createCommitOperation() {
+        op.setPartitionId(partitionId);
+        op.setServiceName(QueueService.SERVICE_NAME);
+        return op;
+    }
+
+    @Override
+    public Object getKey() {
+        return new TransactionRecordKey(itemId, name);
     }
 
     @Override
@@ -123,10 +95,5 @@ public class QueueTransactionRecord implements KeyAwareTransactionRecord {
         name = in.readUTF();
         partitionId = in.readInt();
         op = in.readObject();
-    }
-
-    @Override
-    public Object getKey() {
-        return new TransactionRecordKey(itemId, name);
     }
 }

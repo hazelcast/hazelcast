@@ -40,13 +40,14 @@ import com.hazelcast.spi.impl.BinaryOperationFactory;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionNotActiveException;
 import com.hazelcast.transaction.TransactionalObject;
-import com.hazelcast.transaction.impl.Transaction;
 import com.hazelcast.transaction.impl.InternalTransaction;
+import com.hazelcast.transaction.impl.Transaction;
 import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.IterationType;
 import com.hazelcast.util.QueryResultSet;
 import com.hazelcast.util.ThreadUtil;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -148,15 +149,19 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
     public Data putInternal(Data key, Data value) {
         VersionedValue versionedValue = lockAndGet(key, tx.getTimeoutMillis());
         final TxnSetOperation op = new TxnSetOperation(name, key, value, versionedValue.version);
-        tx.add(new MapTransactionRecord(name, key, op, versionedValue.version, tx.getOwnerUuid()));
+        tx.add(new MapTransactionRecord(name, getPartitionId(key), key, op, versionedValue.version, tx.getOwnerUuid()));
         return versionedValue.value;
+    }
+
+    private int getPartitionId(Data key) {
+        return getNodeEngine().getPartitionService().getPartitionId(key);
     }
 
     public Data putInternal(Data key, Data value, long ttl, TimeUnit timeUnit) {
         VersionedValue versionedValue = lockAndGet(key, tx.getTimeoutMillis());
         final long timeInMillis = getTimeInMillis(ttl, timeUnit);
         final TxnSetOperation op = new TxnSetOperation(name, key, value, versionedValue.version, timeInMillis);
-        tx.add(new MapTransactionRecord(name, key, op, versionedValue.version, tx.getOwnerUuid()));
+        tx.add(new MapTransactionRecord(name, getPartitionId(key), key, op, versionedValue.version, tx.getOwnerUuid()));
         return versionedValue.value;
     }
 
@@ -168,7 +173,7 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
         }
 
         final TxnSetOperation op = new TxnSetOperation(name, key, value, versionedValue.version);
-        tx.add(new MapTransactionRecord(name, key, op, versionedValue.version, tx.getOwnerUuid()));
+        tx.add(new MapTransactionRecord(name, getPartitionId(key), key, op, versionedValue.version, tx.getOwnerUuid()));
         return versionedValue.value;
     }
 
@@ -179,7 +184,7 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
             return null;
         }
         final TxnSetOperation op = new TxnSetOperation(name, key, value, versionedValue.version);
-        tx.add(new MapTransactionRecord(name, key, op, versionedValue.version, tx.getOwnerUuid()));
+        tx.add(new MapTransactionRecord(name, getPartitionId(key), key, op, versionedValue.version, tx.getOwnerUuid()));
         return versionedValue.value;
     }
 
@@ -190,13 +195,13 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
             return false;
         }
         final TxnSetOperation op = new TxnSetOperation(name, key, newValue, versionedValue.version);
-        tx.add(new MapTransactionRecord(name, key, op, versionedValue.version, tx.getOwnerUuid()));
+        tx.add(new MapTransactionRecord(name, getPartitionId(key), key, op, versionedValue.version, tx.getOwnerUuid()));
         return true;
     }
 
     public Data removeInternal(Data key) {
         VersionedValue versionedValue = lockAndGet(key, tx.getTimeoutMillis());
-        tx.add(new MapTransactionRecord(name, key,
+        tx.add(new MapTransactionRecord(name, getPartitionId(key), key,
                 new TxnDeleteOperation(name, key, versionedValue.version), versionedValue.version, tx.getOwnerUuid()));
         return versionedValue.value;
     }
@@ -207,14 +212,14 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
             addUnlockTransactionRecord(key, versionedValue.version);
             return false;
         }
-        tx.add(new MapTransactionRecord(name, key,
+        tx.add(new MapTransactionRecord(name, getPartitionId(key), key,
                 new TxnDeleteOperation(name, key, versionedValue.version), versionedValue.version, tx.getOwnerUuid()));
         return true;
     }
 
     private void addUnlockTransactionRecord(Data key, long version) {
         TxnUnlockOperation operation = new TxnUnlockOperation(name, key, version);
-        tx.add(new MapTransactionRecord(name, key, operation, version, tx.getOwnerUuid()));
+        tx.add(new MapTransactionRecord(name, getPartitionId(key), key, operation, version, tx.getOwnerUuid()));
     }
 
     private VersionedValue lockAndGet(Data key, long timeout) {

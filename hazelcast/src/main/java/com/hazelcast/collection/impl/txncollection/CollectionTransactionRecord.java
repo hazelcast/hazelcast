@@ -19,20 +19,17 @@ package com.hazelcast.collection.impl.txncollection;
 import com.hazelcast.collection.impl.txncollection.operations.CollectionPrepareOperation;
 import com.hazelcast.collection.impl.txncollection.operations.CollectionRollbackOperation;
 import com.hazelcast.collection.impl.txncollection.operations.CollectionTxnRemoveOperation;
-import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+import com.hazelcast.transaction.impl.AbstractTransactionRecord;
 import com.hazelcast.transaction.impl.KeyAwareTransactionRecord;
-import com.hazelcast.util.ExceptionUtil;
+
 import java.io.IOException;
-import java.util.concurrent.Future;
 
-public class CollectionTransactionRecord implements KeyAwareTransactionRecord {
+public class CollectionTransactionRecord extends AbstractTransactionRecord implements KeyAwareTransactionRecord {
 
-    String transactionId;
+    private String transactionId;
     private long itemId;
     private String name;
     private Operation op;
@@ -57,53 +54,32 @@ public class CollectionTransactionRecord implements KeyAwareTransactionRecord {
     }
 
     @Override
+    public int getPartitionId() {
+        return partitionId;
+    }
+
+    @Override
     public Object getKey() {
         return new TransactionRecordKey(name, itemId, serviceName);
     }
 
     @Override
-    public Future prepare(NodeEngine nodeEngine) {
+    public Operation createPrepareOperation() {
         boolean removeOperation = op instanceof CollectionTxnRemoveOperation;
-        CollectionPrepareOperation operation = new CollectionPrepareOperation(name, itemId, transactionId, removeOperation);
-        try {
-            return nodeEngine.getOperationService().invokeOnPartition(serviceName, operation, partitionId);
-        } catch (Throwable t) {
-            throw ExceptionUtil.rethrow(t);
-        }
+        return new CollectionPrepareOperation(partitionId, name, serviceName, itemId, transactionId, removeOperation);
     }
 
     @Override
-    public Future commit(NodeEngine nodeEngine) {
-        try {
-            return nodeEngine.getOperationService().invokeOnPartition(serviceName, op, partitionId);
-        } catch (Throwable t) {
-            throw ExceptionUtil.rethrow(t);
-        }
+    public Operation createCommitOperation() {
+        op.setServiceName(serviceName);
+        op.setPartitionId(partitionId);
+        return op;
     }
 
     @Override
-    public void commitAsync(NodeEngine nodeEngine, ExecutionCallback callback) {
-        InternalOperationService operationService = (InternalOperationService) nodeEngine.getOperationService();
-        operationService.asyncInvokeOnPartition(serviceName, op, partitionId, callback);
-    }
-
-    @Override
-    public Future rollback(NodeEngine nodeEngine) {
+    public Operation createRollbackOperation() {
         boolean removeOperation = op instanceof CollectionTxnRemoveOperation;
-        CollectionRollbackOperation operation = new CollectionRollbackOperation(name, itemId, removeOperation);
-        try {
-            return nodeEngine.getOperationService().invokeOnPartition(serviceName, operation, partitionId);
-        } catch (Throwable t) {
-            throw ExceptionUtil.rethrow(t);
-        }
-    }
-
-    @Override
-    public void rollbackAsync(NodeEngine nodeEngine, ExecutionCallback callback) {
-        boolean removeOperation = op instanceof CollectionTxnRemoveOperation;
-        CollectionRollbackOperation operation = new CollectionRollbackOperation(name, itemId, removeOperation);
-        InternalOperationService operationService = (InternalOperationService) nodeEngine.getOperationService();
-        operationService.asyncInvokeOnPartition(serviceName, operation, partitionId, callback);
+        return new CollectionRollbackOperation(partitionId, name, serviceName, itemId, removeOperation);
     }
 
     @Override

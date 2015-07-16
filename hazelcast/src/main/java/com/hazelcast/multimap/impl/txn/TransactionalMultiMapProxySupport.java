@@ -29,8 +29,8 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.transaction.TransactionNotActiveException;
 import com.hazelcast.transaction.TransactionalObject;
-import com.hazelcast.transaction.impl.Transaction;
 import com.hazelcast.transaction.impl.InternalTransaction;
+import com.hazelcast.transaction.impl.Transaction;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.ThreadUtil;
 
@@ -79,7 +79,7 @@ public abstract class TransactionalMultiMapProxySupport extends AbstractDistribu
         long recordId = -1;
         long timeout = tx.getTimeoutMillis();
         long ttl = extendTimeout(timeout);
-        final MultiMapTransactionRecord log;
+        final MultiMapTransactionRecord transactionRecord;
         if (coll == null) {
             MultiMapResponse response = lockAndGet(key, timeout, ttl);
             if (response == null) {
@@ -88,11 +88,13 @@ public abstract class TransactionalMultiMapProxySupport extends AbstractDistribu
             recordId = response.getNextRecordId();
             coll = createCollection(response.getRecordCollection(getNodeEngine()));
             txMap.put(key, coll);
-            log = new MultiMapTransactionRecord(key, name, ttl, getThreadId());
-            tx.add(log);
+            int partitionId = getPartitionId(key);
+            transactionRecord = new MultiMapTransactionRecord(key, partitionId, name, ttl, getThreadId());
+            tx.add(transactionRecord);
         } else {
-            log = (MultiMapTransactionRecord) tx.get(getTxLogKey(key));
+            transactionRecord = (MultiMapTransactionRecord) tx.get(getTxLogKey(key));
         }
+
         MultiMapRecord record = new MultiMapRecord(config.isBinary() ? value : getNodeEngine().toObject(value));
         if (coll.add(record)) {
             if (recordId == -1) {
@@ -100,10 +102,14 @@ public abstract class TransactionalMultiMapProxySupport extends AbstractDistribu
             }
             record.setRecordId(recordId);
             TxnPutOperation operation = new TxnPutOperation(name, key, value, recordId);
-            log.addOperation(operation);
+            transactionRecord.addOperation(operation);
             return true;
         }
         return false;
+    }
+
+    private int getPartitionId(Data key) {
+        return getNodeEngine().getPartitionService().getPartitionId(key);
     }
 
     protected boolean removeInternal(Data key, Data value) {
@@ -113,7 +119,7 @@ public abstract class TransactionalMultiMapProxySupport extends AbstractDistribu
         Collection<MultiMapRecord> coll = txMap.get(key);
         long timeout = tx.getTimeoutMillis();
         long ttl = extendTimeout(timeout);
-        final MultiMapTransactionRecord log;
+        final MultiMapTransactionRecord transactionRecord;
         if (coll == null) {
             MultiMapResponse response = lockAndGet(key, timeout, ttl);
             if (response == null) {
@@ -121,10 +127,10 @@ public abstract class TransactionalMultiMapProxySupport extends AbstractDistribu
             }
             coll = createCollection(response.getRecordCollection(getNodeEngine()));
             txMap.put(key, coll);
-            log = new MultiMapTransactionRecord(key, name, ttl, getThreadId());
-            tx.add(log);
+            transactionRecord = new MultiMapTransactionRecord(key, getPartitionId(key), name, ttl, getThreadId());
+            tx.add(transactionRecord);
         } else {
-            log = (MultiMapTransactionRecord) tx.get(getTxLogKey(key));
+            transactionRecord = (MultiMapTransactionRecord) tx.get(getTxLogKey(key));
         }
         MultiMapRecord record = new MultiMapRecord(config.isBinary() ? value : getNodeEngine().toObject(value));
         Iterator<MultiMapRecord> iterator = coll.iterator();
@@ -139,7 +145,7 @@ public abstract class TransactionalMultiMapProxySupport extends AbstractDistribu
         }
         if (recordId != -1) {
             TxnRemoveOperation operation = new TxnRemoveOperation(name, key, recordId, value);
-            log.addOperation(operation);
+            transactionRecord.addOperation(operation);
             return recordId != -1;
         }
         return false;
@@ -158,7 +164,7 @@ public abstract class TransactionalMultiMapProxySupport extends AbstractDistribu
                 throw new ConcurrentModificationException("Transaction couldn't obtain lock " + getThreadId());
             }
             coll = createCollection(response.getRecordCollection(getNodeEngine()));
-            log = new MultiMapTransactionRecord(key, name, ttl, getThreadId());
+            log = new MultiMapTransactionRecord(key, getPartitionId(key), name, ttl, getThreadId());
             tx.add(log);
         } else {
             log = (MultiMapTransactionRecord) tx.get(getTxLogKey(key));
@@ -177,7 +183,7 @@ public abstract class TransactionalMultiMapProxySupport extends AbstractDistribu
             GetAllOperation operation = new GetAllOperation(name, key);
             operation.setThreadId(ThreadUtil.getThreadId());
             try {
-                int partitionId = getNodeEngine().getPartitionService().getPartitionId(key);
+                int partitionId = getPartitionId(key);
                 final OperationService operationService = getNodeEngine().getOperationService();
                 Future<MultiMapResponse> f = operationService.invokeOnPartition(
                         MultiMapService.SERVICE_NAME,
@@ -202,7 +208,7 @@ public abstract class TransactionalMultiMapProxySupport extends AbstractDistribu
             CountOperation operation = new CountOperation(name, key);
             operation.setThreadId(ThreadUtil.getThreadId());
             try {
-                int partitionId = getNodeEngine().getPartitionService().getPartitionId(key);
+                int partitionId = getPartitionId(key);
                 final OperationService operationService = getNodeEngine().getOperationService();
                 Future<Integer> f = operationService
                         .invokeOnPartition(MultiMapService.SERVICE_NAME, operation, partitionId);

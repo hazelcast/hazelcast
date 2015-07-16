@@ -19,6 +19,7 @@ package com.hazelcast.transaction.impl;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.Operation;
 
 import java.util.concurrent.Future;
 
@@ -28,6 +29,14 @@ import java.util.concurrent.Future;
  * @see InternalTransaction
  */
 public interface TransactionRecord extends DataSerializable {
+
+    int getPartitionId();
+
+    Operation createPrepareOperation();
+
+    Operation createCommitOperation();
+
+    Operation createRollbackOperation();
 
     Future prepare(NodeEngine nodeEngine);
 

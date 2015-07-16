@@ -30,10 +30,12 @@ public class TxnRollbackOperation extends MultiMapBackupAwareOperation implement
     public TxnRollbackOperation() {
     }
 
-    public TxnRollbackOperation(String name, Data dataKey, long threadId) {
+    public TxnRollbackOperation(int partitionId, String name, Data dataKey, long threadId) {
         super(name, dataKey, threadId);
+        setPartitionId(partitionId);
     }
 
+    @Override
     public void run() throws Exception {
         MultiMapContainer container = getOrCreateContainer();
         if (container.isLocked(dataKey) && !container.unlock(dataKey, getCallerUuid(), threadId, getCallId())) {
@@ -43,18 +45,22 @@ public class TxnRollbackOperation extends MultiMapBackupAwareOperation implement
         }
     }
 
+    @Override
     public Operation getBackupOperation() {
         return new TxnRollbackBackupOperation(name, dataKey, getCallerUuid(), threadId);
     }
 
+    @Override
     public boolean shouldNotify() {
         return true;
     }
 
+    @Override
     public WaitNotifyKey getNotifiedKey() {
         return getWaitKey();
     }
 
+    @Override
     public int getId() {
         return MultiMapDataSerializerHook.TXN_ROLLBACK;
     }

@@ -25,20 +25,22 @@ import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Notifier;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.WaitNotifyKey;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
 public class TxnCommitOperation extends MultiMapBackupAwareOperation implements Notifier {
 
-    List<Operation> opList;
-    boolean notify = true;
+    private List<Operation> opList;
+    private boolean notify = true;
 
     public TxnCommitOperation() {
     }
 
-    public TxnCommitOperation(String name, Data dataKey, long threadId, List<Operation> opList) {
+    public TxnCommitOperation(int partitionId, String name, Data dataKey, long threadId, List<Operation> opList) {
         super(name, dataKey, threadId);
+        setPartitionId(partitionId);
         this.opList = opList;
     }
 
