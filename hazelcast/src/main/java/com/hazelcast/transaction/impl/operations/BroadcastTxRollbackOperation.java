@@ -14,20 +14,22 @@
  * limitations under the License.
  */
 
-package com.hazelcast.transaction.impl;
+package com.hazelcast.transaction.impl.operations;
 
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.ExceptionAction;
-import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.TransactionalService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.io.IOException;
 import java.util.Collection;
 
-public final class BroadcastTxRollbackOperation extends Operation {
+import static com.hazelcast.spi.ExceptionAction.THROW_EXCEPTION;
+import static com.hazelcast.transaction.impl.TransactionDataSerializerHook.BROADCAST_TX_ROLLBACK;
+
+public final class BroadcastTxRollbackOperation extends TxBaseOperation {
 
     private String txnId;
 
@@ -36,15 +38,6 @@ public final class BroadcastTxRollbackOperation extends Operation {
 
     public BroadcastTxRollbackOperation(String txnId) {
         this.txnId = txnId;
-    }
-
-    @Override
-    public String getServiceName() {
-        return TransactionManagerServiceImpl.SERVICE_NAME;
-    }
-
-    @Override
-    public void beforeRun() throws Exception {
     }
 
     @Override
@@ -61,25 +54,21 @@ public final class BroadcastTxRollbackOperation extends Operation {
     }
 
     @Override
-    public void afterRun() throws Exception {
-    }
-
-    @Override
-    public boolean returnsResponse() {
-        return true;
-    }
-
-    @Override
     public Object getResponse() {
-        return Boolean.TRUE;
+        return true;
     }
 
     @Override
     public ExceptionAction onException(Throwable throwable) {
         if (throwable instanceof MemberLeftException) {
-            return ExceptionAction.THROW_EXCEPTION;
+            return THROW_EXCEPTION;
         }
         return super.onException(throwable);
+    }
+
+    @Override
+    public int getId() {
+        return BROADCAST_TX_ROLLBACK;
     }
 
     @Override

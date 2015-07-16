@@ -14,21 +14,26 @@
  * limitations under the License.
  */
 
-package com.hazelcast.transaction.impl;
+package com.hazelcast.transaction.impl.operations;
 
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.ExceptionAction;
-import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.exception.TargetNotMemberException;
+import com.hazelcast.transaction.impl.TransactionLog;
+import com.hazelcast.transaction.impl.TransactionManagerServiceImpl;
 
 import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
 
-public final class ReplicateTxOperation extends Operation {
+import static com.hazelcast.spi.ExceptionAction.THROW_EXCEPTION;
+import static com.hazelcast.transaction.impl.TransactionDataSerializerHook.REPLICATE_TX;
 
+public final class ReplicateTxOperation extends TxBaseOperation {
+
+    // todo: probably we don't want to use linked list.
     private final List<TransactionLog> txLogs = new LinkedList<TransactionLog>();
     private String callerUuid;
     private String txnId;
@@ -48,40 +53,27 @@ public final class ReplicateTxOperation extends Operation {
     }
 
     @Override
-    public String getServiceName() {
-        return TransactionManagerServiceImpl.SERVICE_NAME;
-    }
-
-    @Override
-    public void beforeRun() throws Exception {
-    }
-
-    @Override
     public void run() throws Exception {
         TransactionManagerServiceImpl txManagerService = getService();
         txManagerService.prepareTxBackupLog(txLogs, callerUuid, txnId, timeoutMillis, startTime);
     }
 
     @Override
-    public void afterRun() throws Exception {
-    }
-
-    @Override
-    public boolean returnsResponse() {
-        return true;
-    }
-
-    @Override
     public Object getResponse() {
-        return Boolean.TRUE;
+        return true;
     }
 
     @Override
     public ExceptionAction onException(Throwable throwable) {
         if (throwable instanceof MemberLeftException || throwable instanceof TargetNotMemberException) {
-            return ExceptionAction.THROW_EXCEPTION;
+            return THROW_EXCEPTION;
         }
         return super.onException(throwable);
+    }
+
+    @Override
+    public int getId() {
+        return REPLICATE_TX;
     }
 
     @Override
