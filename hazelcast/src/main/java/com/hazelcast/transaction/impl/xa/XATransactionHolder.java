@@ -42,8 +42,8 @@ public class XATransactionHolder implements DataSerializable {
         xid = xaTransaction.getXid();
         ownerUuid = xaTransaction.getOwnerUuid();
         timeoutMilis = xaTransaction.getTimeoutMillis();
-        startTime = xaTransaction.getStartTime();
-        records = xaTransaction.getTransactionRecords();
+        startTime = xaTransaction.getStartTimeMillis();
+        records = xaTransaction.getRecords();
     }
 
     public XATransactionHolder(String txnId, SerializableXID xid, String ownerUuid, long timeoutMilis,

@@ -17,17 +17,15 @@
 package com.hazelcast.transaction.impl.xa;
 
 import com.hazelcast.core.ExecutionCallback;
-import com.hazelcast.logging.ILogger;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionNotActiveException;
-import com.hazelcast.transaction.impl.KeyAwareTransactionRecord;
+import com.hazelcast.transaction.impl.AbstractTransaction;
 import com.hazelcast.transaction.impl.Transaction;
 import com.hazelcast.transaction.impl.TransactionRecord;
-import com.hazelcast.transaction.impl.InternalTransaction;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.FutureUtil;
@@ -36,11 +34,8 @@ import com.hazelcast.util.UuidUtil;
 import javax.transaction.xa.XAException;
 import javax.transaction.xa.Xid;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
-import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -59,12 +54,13 @@ import static com.hazelcast.transaction.impl.xa.XAService.SERVICE_NAME;
 import static com.hazelcast.util.FutureUtil.RETHROW_TRANSACTION_EXCEPTION;
 import static com.hazelcast.util.FutureUtil.logAllExceptions;
 import static com.hazelcast.util.FutureUtil.waitWithDeadline;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * This class does not need to be thread-safe, it is only used via XAResource
  * All visibility guarantees handled by XAResource
  */
-final class XATransactionImpl implements Transaction, InternalTransaction {
+final class XATransactionImpl extends AbstractTransaction {
 
     private static final int ROLLBACK_TIMEOUT_MINUTES = 5;
     private static final int COMMIT_TIMEOUT_MINUTES = 5;
@@ -72,54 +68,40 @@ final class XATransactionImpl implements Transaction, InternalTransaction {
     private final FutureUtil.ExceptionHandler commitExceptionHandler;
     private final FutureUtil.ExceptionHandler rollbackExceptionHandler;
 
-    private final NodeEngine nodeEngine;
-    private final long timeoutMillis;
-    private final String txnId;
     private final SerializableXID xid;
     private final String txOwnerUuid;
 
-    private final List<TransactionRecord> records = new LinkedList<TransactionRecord>();
-    private final Map<Object, TransactionRecord> recordsMap = new HashMap<Object, TransactionRecord>();
-
     private State state = NO_TXN;
-    private long startTime;
 
-    public XATransactionImpl(NodeEngine nodeEngine, Xid xid, String txOwnerUuid, int timeout) {
-        this.nodeEngine = nodeEngine;
-        this.timeoutMillis = TimeUnit.SECONDS.toMillis(timeout);
-        this.txnId = UuidUtil.buildRandomUuidString();
+    public XATransactionImpl(NodeEngine nodeEngine, Xid xid, String txOwnerUuid, int timeoutSeconds) {
+        super(nodeEngine, UuidUtil.buildRandomUuidString(), SECONDS.toMillis(timeoutSeconds));
         this.xid = new SerializableXID(xid.getFormatId(), xid.getGlobalTransactionId(), xid.getBranchQualifier());
         this.txOwnerUuid = txOwnerUuid == null ? nodeEngine.getLocalMember().getUuid() : txOwnerUuid;
 
-        ILogger logger = nodeEngine.getLogger(getClass());
         this.commitExceptionHandler = logAllExceptions(logger, "Error during commit!", Level.WARNING);
         this.rollbackExceptionHandler = logAllExceptions(logger, "Error during rollback!", Level.WARNING);
     }
 
     XATransactionImpl(NodeEngine nodeEngine, List<TransactionRecord> logs,
-                      String txnId, SerializableXID xid, String txOwnerUuid, long timeoutMillis, long startTime) {
-        this.nodeEngine = nodeEngine;
+                      String txnId, SerializableXID xid, String txOwnerUuid, long timeoutMillis, long startTimeMillis) {
+        super(nodeEngine, txnId, timeoutMillis);
 
-        ILogger logger = nodeEngine.getLogger(getClass());
         this.commitExceptionHandler = logAllExceptions(logger, "Error during commit!", Level.WARNING);
         this.rollbackExceptionHandler = logAllExceptions(logger, "Error during rollback!", Level.WARNING);
 
         state = PREPARED;
         records.addAll(logs);
-        this.txnId = txnId;
         this.xid = xid;
         this.txOwnerUuid = txOwnerUuid;
-        this.timeoutMillis = timeoutMillis;
-        this.startTime = startTime;
+        this.startTimeMillis = startTimeMillis;
     }
-
 
     @Override
     public void begin() throws IllegalStateException {
         if (state == ACTIVE) {
             throw new IllegalStateException("Transaction is already active");
         }
-        startTime = Clock.currentTimeMillis();
+        startTimeMillis = Clock.currentTimeMillis();
         state = ACTIVE;
     }
 
@@ -146,7 +128,7 @@ final class XATransactionImpl implements Transaction, InternalTransaction {
 
     private void putTransactionInfoRemote() throws ExecutionException, InterruptedException {
         PutRemoteTransactionOperation operation =
-                new PutRemoteTransactionOperation(records, txnId, xid, txOwnerUuid, timeoutMillis, startTime);
+                new PutRemoteTransactionOperation(records, txnId, xid, txOwnerUuid, timeoutMillis, startTimeMillis);
         OperationService operationService = nodeEngine.getOperationService();
         InternalPartitionService partitionService = nodeEngine.getPartitionService();
         int partitionId = partitionService.getPartitionId(xid);
@@ -189,7 +171,6 @@ final class XATransactionImpl implements Transaction, InternalTransaction {
         // We should rethrow exception if transaction is not TWO_PHASE
 
         state = COMMITTED;
-
     }
 
     @Override
@@ -225,26 +206,8 @@ final class XATransactionImpl implements Transaction, InternalTransaction {
     }
 
     @Override
-    public String getTxnId() {
-        return txnId;
-    }
-
-    public long getStartTime() {
-        return startTime;
-    }
-
-    public List<TransactionRecord> getTransactionRecords() {
-        return records;
-    }
-
-    @Override
     public State getState() {
         return state;
-    }
-
-    @Override
-    public long getTimeoutMillis() {
-        return timeoutMillis;
     }
 
     @Override
@@ -252,33 +215,7 @@ final class XATransactionImpl implements Transaction, InternalTransaction {
         if (state != Transaction.State.ACTIVE) {
             throw new TransactionNotActiveException("Transaction is not active!");
         }
-        // there should be just one tx log for the same key. so if there is older we are removing it
-        if (record instanceof KeyAwareTransactionRecord) {
-            KeyAwareTransactionRecord keyAwareTransactionRecord = (KeyAwareTransactionRecord) record;
-            TransactionRecord removed = recordsMap.remove(keyAwareTransactionRecord.getKey());
-            if (removed != null) {
-                records.remove(removed);
-            }
-        }
-
-        records.add(record);
-        if (record instanceof KeyAwareTransactionRecord) {
-            KeyAwareTransactionRecord keyAwareTransactionRecord = (KeyAwareTransactionRecord) record;
-            recordsMap.put(keyAwareTransactionRecord.getKey(), keyAwareTransactionRecord);
-        }
-    }
-
-    @Override
-    public void remove(Object key) {
-        TransactionRecord removed = recordsMap.remove(key);
-        if (removed != null) {
-            records.remove(removed);
-        }
-    }
-
-    @Override
-    public TransactionRecord get(Object key) {
-        return recordsMap.get(key);
+        addInternal(record);
     }
 
     @Override
@@ -291,9 +228,8 @@ final class XATransactionImpl implements Transaction, InternalTransaction {
     }
 
     private void checkTimeout() {
-        if (startTime + timeoutMillis < Clock.currentTimeMillis()) {
+        if (startTimeMillis + timeoutMillis < Clock.currentTimeMillis()) {
             ExceptionUtil.sneakyThrow(new XAException(XAException.XA_RBTIMEOUT));
         }
     }
-
 }
