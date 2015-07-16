@@ -78,8 +78,8 @@ final class XATransactionImpl implements Transaction, InternalTransaction {
     private final SerializableXID xid;
     private final String txOwnerUuid;
 
-    private final List<TransactionRecord> txLogs = new LinkedList<TransactionRecord>();
-    private final Map<Object, TransactionRecord> txLogMap = new HashMap<Object, TransactionRecord>();
+    private final List<TransactionRecord> records = new LinkedList<TransactionRecord>();
+    private final Map<Object, TransactionRecord> recordsMap = new HashMap<Object, TransactionRecord>();
 
     private State state = NO_TXN;
     private long startTime;
@@ -105,7 +105,7 @@ final class XATransactionImpl implements Transaction, InternalTransaction {
         this.rollbackExceptionHandler = logAllExceptions(logger, "Error during rollback!", Level.WARNING);
 
         state = PREPARED;
-        txLogs.addAll(logs);
+        records.addAll(logs);
         this.txnId = txnId;
         this.xid = xid;
         this.txOwnerUuid = txOwnerUuid;
@@ -130,10 +130,10 @@ final class XATransactionImpl implements Transaction, InternalTransaction {
         }
         checkTimeout();
         try {
-            final List<Future> futures = new ArrayList<Future>(txLogs.size());
+            final List<Future> futures = new ArrayList<Future>(records.size());
             state = PREPARING;
-            for (TransactionRecord txLog : txLogs) {
-                futures.add(txLog.prepare(nodeEngine));
+            for (TransactionRecord record : records) {
+                futures.add(record.prepare(nodeEngine));
             }
             waitWithDeadline(futures, timeoutMillis, TimeUnit.MILLISECONDS, RETHROW_TRANSACTION_EXCEPTION);
             futures.clear();
@@ -146,7 +146,7 @@ final class XATransactionImpl implements Transaction, InternalTransaction {
 
     private void putTransactionInfoRemote() throws ExecutionException, InterruptedException {
         PutRemoteTransactionOperation operation =
-                new PutRemoteTransactionOperation(txLogs, txnId, xid, txOwnerUuid, timeoutMillis, startTime);
+                new PutRemoteTransactionOperation(records, txnId, xid, txOwnerUuid, timeoutMillis, startTime);
         OperationService operationService = nodeEngine.getOperationService();
         InternalPartitionService partitionService = nodeEngine.getPartitionService();
         int partitionId = partitionService.getPartitionId(xid);
@@ -161,10 +161,10 @@ final class XATransactionImpl implements Transaction, InternalTransaction {
         }
         checkTimeout();
         try {
-            final List<Future> futures = new ArrayList<Future>(txLogs.size());
+            final List<Future> futures = new ArrayList<Future>(records.size());
             state = COMMITTING;
-            for (TransactionRecord txLog : txLogs) {
-                futures.add(txLog.commit(nodeEngine));
+            for (TransactionRecord record : records) {
+                futures.add(record.commit(nodeEngine));
             }
             // We should rethrow exception if transaction is not TWO_PHASE
 
@@ -183,8 +183,8 @@ final class XATransactionImpl implements Transaction, InternalTransaction {
         }
         checkTimeout();
         state = COMMITTING;
-        for (TransactionRecord txLog : txLogs) {
-            txLog.commitAsync(nodeEngine, callback);
+        for (TransactionRecord record : records) {
+            record.commitAsync(nodeEngine, callback);
         }
         // We should rethrow exception if transaction is not TWO_PHASE
 
@@ -199,11 +199,11 @@ final class XATransactionImpl implements Transaction, InternalTransaction {
         }
         state = ROLLING_BACK;
         try {
-            final List<Future> futures = new ArrayList<Future>(txLogs.size());
-            final ListIterator<TransactionRecord> iterator = txLogs.listIterator(txLogs.size());
+            final List<Future> futures = new ArrayList<Future>(records.size());
+            final ListIterator<TransactionRecord> iterator = records.listIterator(records.size());
             while (iterator.hasPrevious()) {
-                final TransactionRecord txLog = iterator.previous();
-                futures.add(txLog.rollback(nodeEngine));
+                final TransactionRecord record = iterator.previous();
+                futures.add(record.rollback(nodeEngine));
             }
             waitWithDeadline(futures, ROLLBACK_TIMEOUT_MINUTES, TimeUnit.MINUTES, rollbackExceptionHandler);
         } catch (Throwable e) {
@@ -218,8 +218,8 @@ final class XATransactionImpl implements Transaction, InternalTransaction {
             throw new IllegalStateException("Transaction is not active");
         }
         state = ROLLING_BACK;
-        for (TransactionRecord txLog : txLogs) {
-            txLog.rollbackAsync(nodeEngine, callback);
+        for (TransactionRecord record : records) {
+            record.rollbackAsync(nodeEngine, callback);
         }
         state = ROLLED_BACK;
     }
@@ -233,8 +233,8 @@ final class XATransactionImpl implements Transaction, InternalTransaction {
         return startTime;
     }
 
-    public List<TransactionRecord> getTxLogs() {
-        return txLogs;
+    public List<TransactionRecord> getTransactionRecords() {
+        return records;
     }
 
     @Override
@@ -255,30 +255,30 @@ final class XATransactionImpl implements Transaction, InternalTransaction {
         // there should be just one tx log for the same key. so if there is older we are removing it
         if (record instanceof KeyAwareTransactionRecord) {
             KeyAwareTransactionRecord keyAwareTransactionRecord = (KeyAwareTransactionRecord) record;
-            TransactionRecord removed = txLogMap.remove(keyAwareTransactionRecord.getKey());
+            TransactionRecord removed = recordsMap.remove(keyAwareTransactionRecord.getKey());
             if (removed != null) {
-                txLogs.remove(removed);
+                records.remove(removed);
             }
         }
 
-        txLogs.add(record);
+        records.add(record);
         if (record instanceof KeyAwareTransactionRecord) {
             KeyAwareTransactionRecord keyAwareTransactionRecord = (KeyAwareTransactionRecord) record;
-            txLogMap.put(keyAwareTransactionRecord.getKey(), keyAwareTransactionRecord);
+            recordsMap.put(keyAwareTransactionRecord.getKey(), keyAwareTransactionRecord);
         }
     }
 
     @Override
     public void remove(Object key) {
-        TransactionRecord removed = txLogMap.remove(key);
+        TransactionRecord removed = recordsMap.remove(key);
         if (removed != null) {
-            txLogs.remove(removed);
+            records.remove(removed);
         }
     }
 
     @Override
     public TransactionRecord get(Object key) {
-        return txLogMap.get(key);
+        return recordsMap.get(key);
     }
 
     @Override

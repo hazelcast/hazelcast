@@ -68,8 +68,8 @@ public class TransactionImpl implements Transaction, InternalTransaction {
 
     private final TransactionManagerServiceImpl transactionManagerService;
     private final NodeEngine nodeEngine;
-    private final List<TransactionRecord> txLogs = new LinkedList<TransactionRecord>();
-    private final Map<Object, TransactionRecord> txLogMap = new HashMap<Object, TransactionRecord>();
+    private final List<TransactionRecord> records = new LinkedList<TransactionRecord>();
+    private final Map<Object, TransactionRecord> recordMap = new HashMap<Object, TransactionRecord>();
     private final String txnId;
     private Long threadId;
     private long timeoutMillis;
@@ -100,7 +100,7 @@ public class TransactionImpl implements Transaction, InternalTransaction {
 
     // used by tx backups
     TransactionImpl(TransactionManagerServiceImpl transactionManagerService, NodeEngine nodeEngine,
-                    String txnId, List<TransactionRecord> txLogs, long timeoutMillis, long startTime, String txOwnerUuid) {
+                    String txnId, List<TransactionRecord> records, long timeoutMillis, long startTime, String txOwnerUuid) {
         this.transactionManagerService = transactionManagerService;
         this.nodeEngine = nodeEngine;
         this.txnId = txnId;
@@ -108,7 +108,7 @@ public class TransactionImpl implements Transaction, InternalTransaction {
         this.startTime = startTime;
         this.durability = 0;
         this.transactionType = TransactionType.TWO_PHASE;
-        this.txLogs.addAll(txLogs);
+        this.records.addAll(records);
         this.state = PREPARED;
         this.txOwnerUuid = txOwnerUuid;
         this.checkThreadAccess = false;
@@ -137,33 +137,33 @@ public class TransactionImpl implements Transaction, InternalTransaction {
         // there should be just one tx log for the same key. so if there is older we are removing it
         if (record instanceof KeyAwareTransactionRecord) {
             KeyAwareTransactionRecord keyAwareTransactionRecord = (KeyAwareTransactionRecord) record;
-            TransactionRecord removed = txLogMap.remove(keyAwareTransactionRecord.getKey());
+            TransactionRecord removed = recordMap.remove(keyAwareTransactionRecord.getKey());
             if (removed != null) {
-                txLogs.remove(removed);
+                records.remove(removed);
             }
         }
 
-        txLogs.add(record);
+        records.add(record);
         if (record instanceof KeyAwareTransactionRecord) {
             KeyAwareTransactionRecord keyAwareTransactionRecord = (KeyAwareTransactionRecord) record;
-            txLogMap.put(keyAwareTransactionRecord.getKey(), keyAwareTransactionRecord);
+            recordMap.put(keyAwareTransactionRecord.getKey(), keyAwareTransactionRecord);
         }
     }
 
     @Override
     public TransactionRecord get(Object key) {
-        return txLogMap.get(key);
+        return recordMap.get(key);
     }
 
-    public List<TransactionRecord> getTxLogs() {
-        return txLogs;
+    public List<TransactionRecord> getRecords() {
+        return records;
     }
 
     @Override
     public void remove(Object key) {
-        TransactionRecord removed = txLogMap.remove(key);
+        TransactionRecord removed = recordMap.remove(key);
         if (removed != null) {
-            txLogs.remove(removed);
+            records.remove(removed);
         }
     }
 
@@ -243,10 +243,10 @@ public class TransactionImpl implements Transaction, InternalTransaction {
         checkThread();
         checkTimeout();
         try {
-            final List<Future> futures = new ArrayList<Future>(txLogs.size());
+            final List<Future> futures = new ArrayList<Future>(records.size());
             state = PREPARING;
-            for (TransactionRecord txLog : txLogs) {
-                futures.add(txLog.prepare(nodeEngine));
+            for (TransactionRecord record : records) {
+                futures.add(record.prepare(nodeEngine));
             }
             waitWithDeadline(futures, timeoutMillis, TimeUnit.MILLISECONDS, RETHROW_TRANSACTION_EXCEPTION);
             futures.clear();
@@ -260,12 +260,12 @@ public class TransactionImpl implements Transaction, InternalTransaction {
     }
 
     private void replicateTxnLog() throws InterruptedException, ExecutionException, java.util.concurrent.TimeoutException {
-        final List<Future> futures = new ArrayList<Future>(txLogs.size());
+        final List<Future> futures = new ArrayList<Future>(records.size());
         final OperationService operationService = nodeEngine.getOperationService();
         for (Address backupAddress : backupAddresses) {
             if (nodeEngine.getClusterService().getMember(backupAddress) != null) {
                 final Future f = operationService.invokeOnTarget(TransactionManagerServiceImpl.SERVICE_NAME,
-                        new ReplicateTxOperation(txLogs, txOwnerUuid, txnId, timeoutMillis, startTime),
+                        new ReplicateTxOperation(records, txOwnerUuid, txnId, timeoutMillis, startTime),
                         backupAddress);
                 futures.add(f);
             }
@@ -286,10 +286,10 @@ public class TransactionImpl implements Transaction, InternalTransaction {
             checkThread();
             checkTimeout();
             try {
-                final List<Future> futures = new ArrayList<Future>(txLogs.size());
+                final List<Future> futures = new ArrayList<Future>(records.size());
                 state = COMMITTING;
-                for (TransactionRecord txLog : txLogs) {
-                    futures.add(txLog.commit(nodeEngine));
+                for (TransactionRecord record : records) {
+                    futures.add(record.commit(nodeEngine));
                 }
                 // We should rethrow exception if transaction is not TWO_PHASE
                 ExceptionHandler exceptionHandler = transactionType.equals(TransactionType.TWO_PHASE)
@@ -326,11 +326,11 @@ public class TransactionImpl implements Transaction, InternalTransaction {
             try {
                 rollbackTxBackup();
 
-                final List<Future> futures = new ArrayList<Future>(txLogs.size());
-                final ListIterator<TransactionRecord> iterator = txLogs.listIterator(txLogs.size());
+                final List<Future> futures = new ArrayList<Future>(records.size());
+                final ListIterator<TransactionRecord> iterator = records.listIterator(records.size());
                 while (iterator.hasPrevious()) {
-                    final TransactionRecord txLog = iterator.previous();
-                    futures.add(txLog.rollback(nodeEngine));
+                    final TransactionRecord record = iterator.previous();
+                    futures.add(record.rollback(nodeEngine));
                 }
                 waitWithDeadline(futures, ROLLBACK_TIMEOUT_MINUTES, TimeUnit.MINUTES, rollbackExceptionHandler);
                 // purge tx backup
@@ -348,7 +348,7 @@ public class TransactionImpl implements Transaction, InternalTransaction {
 
     private void rollbackTxBackup() {
         final OperationService operationService = nodeEngine.getOperationService();
-        final List<Future> futures = new ArrayList<Future>(txLogs.size());
+        final List<Future> futures = new ArrayList<Future>(records.size());
         // rollback tx backup
         if (durability > 0 && transactionType.equals(TransactionType.TWO_PHASE)) {
             for (Address backupAddress : backupAddresses) {
