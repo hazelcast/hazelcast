@@ -233,7 +233,7 @@ public class CacheService extends AbstractCacheService {
 
     }
 
-    protected class InvalidationEventQueue extends ConcurrentLinkedQueue<CacheSingleInvalidationMessage> {
+    protected static class InvalidationEventQueue extends ConcurrentLinkedQueue<CacheSingleInvalidationMessage> {
 
         private final AtomicInteger elementCount = new AtomicInteger(0);
         private final AtomicBoolean flushingInProgress = new AtomicBoolean(false);

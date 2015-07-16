@@ -22,6 +22,7 @@ import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.ListenerWrapperEventFilter;
 import com.hazelcast.spi.NotifiableEventListener;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import javax.cache.configuration.CacheEntryListenerConfiguration;
 import javax.cache.configuration.Factory;
@@ -54,6 +55,8 @@ import java.util.HashSet;
  * @see javax.cache.event.CacheEntryExpiredListener
  * @see javax.cache.event.CacheEntryEventFilter
  */
+@SuppressFBWarnings(value = "SE_NO_SERIALVERSIONID",
+        justification = "Class is Serializable, but doesn't define serialVersionUID")
 public class CacheEventListenerAdaptor<K, V>
         implements CacheEventListener,
                    CacheEntryListenerProvider<K, V>,
@@ -61,12 +64,12 @@ public class CacheEventListenerAdaptor<K, V>
                    ListenerWrapperEventFilter,
                    Serializable {
 
-    private final CacheEntryListener<K, V> cacheEntryListener;
-    private final CacheEntryCreatedListener cacheEntryCreatedListener;
-    private final CacheEntryRemovedListener cacheEntryRemovedListener;
-    private final CacheEntryUpdatedListener cacheEntryUpdatedListener;
-    private final CacheEntryExpiredListener cacheEntryExpiredListener;
-    private final CacheEntryEventFilter<? super K, ? super V> filter;
+    private final transient CacheEntryListener<K, V> cacheEntryListener;
+    private final transient CacheEntryCreatedListener cacheEntryCreatedListener;
+    private final transient CacheEntryRemovedListener cacheEntryRemovedListener;
+    private final transient CacheEntryUpdatedListener cacheEntryUpdatedListener;
+    private final transient CacheEntryExpiredListener cacheEntryExpiredListener;
+    private final transient CacheEntryEventFilter<? super K, ? super V> filter;
     private final boolean isOldValueRequired;
 
     private transient SerializationService serializationService;
