@@ -16,6 +16,7 @@
 
 package com.hazelcast.cluster;
 
+import com.hazelcast.instance.Capability;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
@@ -23,29 +24,34 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 
 import java.io.IOException;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 public class MemberInfo implements DataSerializable {
     private Address address;
     private String uuid;
     private Map<String, Object> attributes;
+    private Set<Capability> capabilities;
 
     public MemberInfo() {
     }
 
     public MemberInfo(Address address) {
         this.address = address;
-    }
-
-    public MemberInfo(Address address, String uuid, Map<String, Object> attributes) {
-        this.address = address;
-        this.uuid = uuid;
-        this.attributes = new HashMap<String, Object>(attributes);
+        capabilities = EnumSet.allOf(Capability.class);
     }
 
     public MemberInfo(MemberImpl member) {
-        this(member.getAddress(), member.getUuid(), member.getAttributes());
+        this(member.getAddress(), member.getUuid(), member.getCapabilities(), member.getAttributes());
+    }
+
+    public MemberInfo(Address address, String uuid, Set<Capability> capabilities, Map<String, Object> attributes) {
+        this(address);
+        this.uuid = uuid;
+        this.capabilities = capabilities;
+        this.attributes = new HashMap<String, Object>(attributes);
     }
 
     public Address getAddress() {
@@ -60,6 +66,10 @@ public class MemberInfo implements DataSerializable {
         return attributes;
     }
 
+    public Set<Capability> getCapabilities() {
+        return capabilities;
+    }
+
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         address = new Address();
@@ -67,6 +77,9 @@ public class MemberInfo implements DataSerializable {
         if (in.readBoolean()) {
             uuid = in.readUTF();
         }
+
+        capabilities = Capability.readCapabilities(in);
+
         int size = in.readInt();
         if (size > 0) {
             attributes = new HashMap<String, Object>();
@@ -86,6 +99,9 @@ public class MemberInfo implements DataSerializable {
         if (hasUuid) {
             out.writeUTF(uuid);
         }
+
+        Capability.writeCapabilities(out, capabilities);
+
         out.writeInt(attributes == null ? 0 : attributes.size());
         if (attributes != null) {
             for (Map.Entry<String, Object> entry : attributes.entrySet()) {

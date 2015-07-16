@@ -16,6 +16,7 @@
 
 package com.hazelcast.cluster.impl;
 
+import com.hazelcast.instance.Capability;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -25,21 +26,25 @@ import com.hazelcast.security.Credentials;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 public class JoinRequest extends JoinMessage implements DataSerializable {
 
     private Credentials credentials;
     private int tryCount;
     private Map<String, Object> attributes;
+    private Set<Capability> capabilities;
 
     public JoinRequest() {
     }
 
     public JoinRequest(byte packetVersion, int buildNumber, Address address, String uuid, ConfigCheck config,
-                       Credentials credentials, int memberCount, int tryCount, Map<String, Object> attributes) {
+                       Credentials credentials, int memberCount, int tryCount, Set<Capability> capabilities,
+                       Map<String, Object> attributes) {
         super(packetVersion, buildNumber, address, uuid, config, memberCount);
         this.credentials = credentials;
         this.tryCount = tryCount;
+        this.capabilities = capabilities;
         this.attributes = attributes;
     }
 
@@ -59,6 +64,10 @@ public class JoinRequest extends JoinMessage implements DataSerializable {
         return attributes;
     }
 
+    public Set<Capability> getCapabilities() {
+        return capabilities;
+    }
+
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         super.readData(in);
@@ -67,8 +76,11 @@ public class JoinRequest extends JoinMessage implements DataSerializable {
             credentials.setEndpoint(getAddress().getHost());
         }
         tryCount = in.readInt();
+
+        capabilities = Capability.readCapabilities(in);
+
         int size = in.readInt();
-        attributes = new HashMap<String, Object>();
+        attributes = new HashMap<String, Object>(size, 1.0f);
         for (int i = 0; i < size; i++) {
             String key = in.readUTF();
             Object value = in.readObject();
@@ -81,6 +93,9 @@ public class JoinRequest extends JoinMessage implements DataSerializable {
         super.writeData(out);
         out.writeObject(credentials);
         out.writeInt(tryCount);
+
+        Capability.writeCapabilities(out, capabilities);
+
         out.writeInt(attributes.size());
         for (Map.Entry<String, Object> entry : attributes.entrySet()) {
             out.writeUTF(entry.getKey());

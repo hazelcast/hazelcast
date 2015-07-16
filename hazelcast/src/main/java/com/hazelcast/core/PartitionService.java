@@ -165,4 +165,17 @@ public interface PartitionService {
      * @since 3.3
      */
     boolean forceLocalMemberToBeSafe(long timeout, TimeUnit unit);
+
+    /**
+     * Remove all of the partitions currently owned by the local member. Wait for a configurable amount of time
+     * until the local member doesn't own any partitions.
+     * This will cause the local member to loose the PARTITION_HOST capability
+     *
+     * @param timeout The time to wait for the migration before returning.
+     * @param timeunit The unit in which the timeout was provided.
+     * @return true if the local member owns no partition. false otherwise.
+     * @since 3.6
+     */
+    boolean drain(long timeout, TimeUnit timeunit);
+
 }

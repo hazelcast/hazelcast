@@ -29,6 +29,8 @@ import com.hazelcast.cluster.impl.operations.JoinCheckOperation;
 import com.hazelcast.cluster.impl.operations.JoinRequestOperation;
 import com.hazelcast.cluster.impl.operations.MasterConfirmationOperation;
 import com.hazelcast.cluster.impl.operations.MasterDiscoveryOperation;
+import com.hazelcast.cluster.impl.operations.MemberCapabilityChangedOperation;
+import com.hazelcast.cluster.impl.operations.MemberCapabilityUpdateException;
 import com.hazelcast.cluster.impl.operations.MemberInfoUpdateOperation;
 import com.hazelcast.cluster.impl.operations.MemberRemoveOperation;
 import com.hazelcast.cluster.impl.operations.PostJoinOperation;
@@ -44,6 +46,7 @@ import com.hazelcast.core.MemberAttributeEvent;
 import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MembershipListener;
 import com.hazelcast.instance.BuildInfo;
+import com.hazelcast.instance.Capability;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.LifecycleServiceImpl;
 import com.hazelcast.instance.MemberImpl;
@@ -106,6 +109,7 @@ import static com.hazelcast.cluster.impl.operations.FinalizeJoinOperation.FINALI
 import static com.hazelcast.cluster.impl.operations.FinalizeJoinOperation.FINALIZE_JOIN_TIMEOUT_FACTOR;
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.MERGED;
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.MERGING;
+import static com.hazelcast.instance.Capability.PARTITION_HOST;
 import static com.hazelcast.util.FutureUtil.ExceptionHandler;
 import static com.hazelcast.util.FutureUtil.logAllExceptions;
 import static com.hazelcast.util.FutureUtil.waitWithDeadline;
@@ -664,7 +668,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
                 logger.finest(msg);
             }
 
-            MemberInfo memberInfo = new MemberInfo(target, joinRequest.getUuid(),
+            MemberInfo memberInfo = new MemberInfo(target, joinRequest.getUuid(), joinRequest.getCapabilities(),
                     joinRequest.getAttributes());
 
             if (!setJoins.contains(memberInfo)) {
@@ -1057,7 +1061,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
                 MemberImpl member = currentMemberMap.get(memberInfo.getAddress());
                 if (member == null) {
                     member = createMember(memberInfo.getAddress(), memberInfo.getUuid(),
-                            thisAddress.getScopeId(), memberInfo.getAttributes());
+                            thisAddress.getScopeId(), memberInfo.getCapabilities(), memberInfo.getAttributes());
                 }
                 newMembers[k++] = member;
                 member.didRead();
@@ -1129,6 +1133,56 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
             }
         } finally {
             lock.unlock();
+        }
+    }
+
+    public void updateMemberCapabilities(String uuid, Set<Capability> newCapabilities) {
+        lock.lock();
+        try {
+            MemberImpl member = getMember(uuid);
+            if (member == null) {
+                throw new MemberCapabilityUpdateException(String.format("Could not find member [%s] to update capabilities", uuid));
+            }
+
+            if (node.isMaster()) {
+                doMasterUpdate(member, newCapabilities);
+            } else {
+                member.setCapabilities(newCapabilities);
+            }
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    private void doMasterUpdate(MemberImpl member, Set<Capability> newCapabilities) {
+        if (canUpdate(newCapabilities)) {
+            boolean wasPartitionHost = member.hasCapability(PARTITION_HOST);
+
+            if (member.setCapabilities(newCapabilities)) {
+                // If node has been added or removed as a partition host then trigger re-partitioning
+                if (wasPartitionHost != member.hasCapability(PARTITION_HOST)) {
+                    node.getPartitionService().memberCapabilityUpdate(member);
+                }
+
+                logger.info(String.format("Updated member [%s] capabilities to [%s]", member, newCapabilities));
+
+                // Let other members know they should update their members
+                notifyCapabilityUpdate(member.getUuid(), newCapabilities);
+            }
+        } else {
+            logger.info(String.format("Cannot update member [%s] capabilities to [%s]", member, newCapabilities));
+        }
+    }
+
+    private boolean canUpdate(Set<Capability> newCapabilities) {
+        return newCapabilities.contains(PARTITION_HOST) || getMemberList(PARTITION_HOST).size() > 1;
+    }
+
+    private void notifyCapabilityUpdate(String uuid, Set<Capability> capabilities) {
+        for (MemberImpl member : getMemberList()) {
+            if (!member.localMember()) {
+                invokeClusterOperation(new MemberCapabilityChangedOperation(uuid, capabilities), member.getAddress());
+            }
         }
     }
 
@@ -1305,10 +1359,12 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         }
     }
 
-    protected MemberImpl createMember(Address address, String nodeUuid, String ipV6ScopeId, Map<String, Object> attributes) {
+    protected MemberImpl createMember(Address address, String nodeUuid, String ipV6ScopeId, Set<Capability> capabilities,
+                                      Map<String, Object> attributes) {
+
         address.setScopeId(ipV6ScopeId);
         return new MemberImpl(address, thisAddress.equals(address), nodeUuid,
-                (HazelcastInstanceImpl) nodeEngine.getHazelcastInstance(), attributes);
+                (HazelcastInstanceImpl) nodeEngine.getHazelcastInstance(), capabilities, attributes);
     }
 
     @Override
@@ -1348,6 +1404,18 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
     @Override
     public Collection<MemberImpl> getMemberList() {
         return membersRef.get();
+    }
+
+    public Collection<MemberImpl> getMemberList(Capability filter) {
+        Collection<MemberImpl> memberList = getMemberList();
+        Collection<MemberImpl> filtered = new ArrayList<MemberImpl>(memberList.size());
+        for (MemberImpl member : memberList) {
+            if (member.hasCapability(filter)) {
+                filtered.add(member);
+            }
+        }
+
+        return filtered;
     }
 
     @Override

@@ -16,10 +16,12 @@
 
 package com.hazelcast.core;
 
+import com.hazelcast.instance.Capability;
 import com.hazelcast.nio.serialization.DataSerializable;
 
 import java.net.InetSocketAddress;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Cluster member interface. The default implementation
@@ -48,6 +50,13 @@ public interface Member extends DataSerializable, Endpoint {
      */
     @Deprecated
     InetSocketAddress getInetSocketAddress();
+
+    /**
+     * Change the capabilities this member has in the cluster
+     * @param capabilities The new capabilities for this member.
+     * @since 3.6
+     */
+    void updateCapabilities(Set<Capability> capabilities);
 
     /**
      * Returns the socket address of this member.

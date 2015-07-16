@@ -173,6 +173,21 @@ public class PartitionServiceProxy implements com.hazelcast.core.PartitionServic
         return partitionService.prepareToSafeShutdown(timeout, unit);
     }
 
+    public boolean drain(long timeout, TimeUnit timeunit) {
+        if (timeunit == null) {
+            throw new NullPointerException();
+        }
+
+        if (timeout < 1L) {
+            throw new IllegalArgumentException();
+        }
+
+        if (!nodeActive()) {
+            return true;
+        }
+        return partitionService.drain(timeout, timeunit);
+    }
+
     private boolean nodeActive() {
         final Node node = getNode();
         return node.isActive();
