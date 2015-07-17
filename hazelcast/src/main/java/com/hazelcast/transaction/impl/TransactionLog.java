@@ -58,10 +58,11 @@ public class TransactionLog implements Iterable<TransactionLogRecord> {
     }
 
     public void add(TransactionLogRecord record) {
+        Object key = record.getKey();
+
         // there should be just one tx log for the same key. so if there is older we are removing it
-        if (record instanceof KeyAwareTransactionLogRecord) {
-            KeyAwareTransactionLogRecord keyAwareRecord = (KeyAwareTransactionLogRecord) record;
-            TransactionLogRecord removed = recordMap.remove(keyAwareRecord.getKey());
+        if (key != null) {
+            TransactionLogRecord removed = recordMap.remove(key);
             if (removed != null) {
                 recordList.remove(removed);
             }
@@ -69,9 +70,8 @@ public class TransactionLog implements Iterable<TransactionLogRecord> {
 
         recordList.add(record);
 
-        if (record instanceof KeyAwareTransactionLogRecord) {
-            KeyAwareTransactionLogRecord keyAwareRecord = (KeyAwareTransactionLogRecord) record;
-            recordMap.put(keyAwareRecord.getKey(), keyAwareRecord);
+        if (key != null) {
+            recordMap.put(key, record);
         }
     }
 

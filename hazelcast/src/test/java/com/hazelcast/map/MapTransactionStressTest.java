@@ -4,7 +4,6 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.ServiceConfig;
 import com.hazelcast.config.ServicesConfig;
 import com.hazelcast.core.DistributedObject;
-import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.IQueue;
@@ -14,7 +13,6 @@ import com.hazelcast.core.TransactionalQueue;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.AbstractOperation;
-import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.TransactionalService;
@@ -27,8 +25,8 @@ import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionalObject;
 import com.hazelcast.transaction.TransactionalTask;
 import com.hazelcast.transaction.TransactionalTaskContext;
-import com.hazelcast.transaction.impl.TransactionLogRecord;
 import com.hazelcast.transaction.impl.InternalTransaction;
+import com.hazelcast.transaction.impl.TransactionLogRecord;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -37,10 +35,7 @@ import org.junit.runner.RunWith;
 import java.io.IOException;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.concurrent.locks.LockSupport;
 
 import static org.junit.Assert.assertEquals;
@@ -321,6 +316,10 @@ public class MapTransactionStressTest extends HazelcastTestSupport {
     }
 
     public static class SleepyTransactionLogRecord implements TransactionLogRecord {
+        @Override
+        public Object getKey() {
+            return null;
+        }
 
         @Override
         public Operation newPrepareOperation() {

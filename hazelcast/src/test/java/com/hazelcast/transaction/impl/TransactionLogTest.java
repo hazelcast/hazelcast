@@ -38,7 +38,7 @@ public class TransactionLogTest {
     @Test
     public void add_whenKeyAware() {
         TransactionLog log = new TransactionLog();
-        KeyAwareTransactionLogRecord record = mock(KeyAwareTransactionLogRecord.class);
+        TransactionLogRecord record = mock(TransactionLogRecord.class);
         String key = "foo";
         when(record.getKey()).thenReturn(key);
 
@@ -64,12 +64,12 @@ public class TransactionLogTest {
         TransactionLog log = new TransactionLog();
         String key = "foo";
         // first we insert the old record
-        KeyAwareTransactionLogRecord oldRecord = mock(KeyAwareTransactionLogRecord.class);
+        TransactionLogRecord oldRecord = mock(TransactionLogRecord.class);
         when(oldRecord.getKey()).thenReturn(key);
         log.add(oldRecord);
 
         // then we insert the old record
-        KeyAwareTransactionLogRecord newRecord = mock(KeyAwareTransactionLogRecord.class);
+        TransactionLogRecord newRecord = mock(TransactionLogRecord.class);
         when(newRecord.getKey()).thenReturn(key);
         log.add(newRecord);
 
@@ -86,7 +86,7 @@ public class TransactionLogTest {
     @Test
     public void remove_whenExist_thenRemoved() {
         TransactionLog log = new TransactionLog();
-        KeyAwareTransactionLogRecord record = mock(KeyAwareTransactionLogRecord.class);
+        TransactionLogRecord record = mock(TransactionLogRecord.class);
         String key = "foo";
         when(record.getKey()).thenReturn(key);
         log.add(record);

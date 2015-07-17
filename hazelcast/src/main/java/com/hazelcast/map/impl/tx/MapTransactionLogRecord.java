@@ -21,7 +21,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.transaction.impl.KeyAwareTransactionLogRecord;
+import com.hazelcast.transaction.impl.TransactionLogRecord;
 import com.hazelcast.util.ThreadUtil;
 
 import java.io.IOException;
@@ -29,7 +29,7 @@ import java.io.IOException;
 /**
  * Represents an operation on the map in the transaction log.
  */
-public class MapTransactionLogRecord implements KeyAwareTransactionLogRecord {
+public class MapTransactionLogRecord implements TransactionLogRecord {
 
     private int partitionId;
     private String name;

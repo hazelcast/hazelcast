@@ -158,6 +158,11 @@ public class TransactionImplTest extends HazelcastTestSupport {
         }
 
         @Override
+        public Object getKey() {
+            return null;
+        }
+
+        @Override
         public Operation newPrepareOperation() {
             return createOperation(failPrepare);
         }

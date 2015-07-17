@@ -20,7 +20,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.transaction.impl.KeyAwareTransactionLogRecord;
+import com.hazelcast.transaction.impl.TransactionLogRecord;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -28,7 +28,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
-public class MultiMapTransactionLogRecord implements KeyAwareTransactionLogRecord {
+public class MultiMapTransactionLogRecord implements TransactionLogRecord {
 
     // todo: probably better to switch to an ArrayList to reduce litter.
     private final List<Operation> opList = new LinkedList<Operation>();

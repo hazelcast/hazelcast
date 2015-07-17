@@ -22,14 +22,14 @@ import com.hazelcast.collection.impl.txnqueue.operations.TxnRollbackOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.transaction.impl.KeyAwareTransactionLogRecord;
+import com.hazelcast.transaction.impl.TransactionLogRecord;
 
 import java.io.IOException;
 
 /**
  * This class contains Transaction log for the Queue.
  */
-public class QueueTransactionLogRecord implements KeyAwareTransactionLogRecord {
+public class QueueTransactionLogRecord implements TransactionLogRecord {
 
     private long itemId;
     private String name;
