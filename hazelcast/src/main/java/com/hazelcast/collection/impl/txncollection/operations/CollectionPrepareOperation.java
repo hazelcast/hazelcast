@@ -33,8 +33,11 @@ public class CollectionPrepareOperation extends CollectionBackupAwareOperation {
     public CollectionPrepareOperation() {
     }
 
-    public CollectionPrepareOperation(String name, long itemId, String transactionId, boolean removeOperation) {
+    public CollectionPrepareOperation(int partitionId, String name, String serviceName, long itemId, String transactionId,
+                                      boolean removeOperation) {
         super(name);
+        setPartitionId(partitionId);
+        setServiceName(serviceName);
         this.itemId = itemId;
         this.removeOperation = removeOperation;
         this.transactionId = transactionId;

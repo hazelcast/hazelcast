@@ -56,6 +56,10 @@ public abstract class AbstractDistributedObject<S extends RemoteService> impleme
         postDestroy();
     }
 
+    protected int getPartitionId(Data key) {
+        return getNodeEngine().getPartitionService().getPartitionId(key);
+    }
+
     protected void postDestroy() {
     }
 

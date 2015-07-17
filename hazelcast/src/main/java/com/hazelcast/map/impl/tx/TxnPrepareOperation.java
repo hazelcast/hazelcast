@@ -33,10 +33,12 @@ import java.io.IOException;
 public class TxnPrepareOperation extends KeyBasedMapOperation implements BackupAwareOperation, MutatingOperation {
 
     private static final long LOCK_TTL_MILLIS = 10000L;
-    String ownerUuid;
 
-    protected TxnPrepareOperation(String name, Data dataKey, String ownerUuid) {
+    private String ownerUuid;
+
+    protected TxnPrepareOperation(int partitionId, String name, Data dataKey, String ownerUuid) {
         super(name, dataKey);
+        setPartitionId(partitionId);
         this.ownerUuid = ownerUuid;
     }
 
@@ -55,25 +57,30 @@ public class TxnPrepareOperation extends KeyBasedMapOperation implements BackupA
 
     @Override
     public Object getResponse() {
-        return Boolean.TRUE;
+        return true;
     }
 
+    @Override
     public boolean shouldBackup() {
         return true;
     }
 
+    @Override
     public final Operation getBackupOperation() {
         return new TxnPrepareBackupOperation(name, dataKey, ownerUuid, getThreadId());
     }
 
+    @Override
     public final int getAsyncBackupCount() {
         return mapContainer.getAsyncBackupCount();
     }
 
+    @Override
     public final int getSyncBackupCount() {
         return mapContainer.getBackupCount();
     }
 
+    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeUTF(ownerUuid);

@@ -13,7 +13,9 @@ import com.hazelcast.core.TransactionalMultiMap;
 import com.hazelcast.core.TransactionalQueue;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.TransactionalService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -319,28 +321,33 @@ public class MapTransactionStressTest extends HazelcastTestSupport {
     }
 
     public static class SleepyTransactionLogRecord implements TransactionLogRecord {
+
         @Override
-        public Future prepare(NodeEngine nodeEngine) {
-            return new EmptyFuture();
+        public Operation newPrepareOperation() {
+            return new AbstractOperation() {
+                @Override
+                public void run() throws Exception {
+                }
+            };
         }
 
         @Override
-        public Future commit(NodeEngine nodeEngine) {
-            LockSupport.parkNanos(10000);
-            return new EmptyFuture();
+        public Operation newCommitOperation() {
+            return new AbstractOperation() {
+                @Override
+                public void run() throws Exception {
+                    LockSupport.parkNanos(10000);
+                }
+            };
         }
 
         @Override
-        public Future rollback(NodeEngine nodeEngine) {
-            return new EmptyFuture();
-        }
-
-        @Override
-        public void commitAsync(NodeEngine nodeEngine, ExecutionCallback callback) {
-        }
-
-        @Override
-        public void rollbackAsync(NodeEngine nodeEngine, ExecutionCallback callback) {
+        public Operation newRollbackOperation() {
+            return new AbstractOperation() {
+                @Override
+                public void run() throws Exception {
+                }
+            };
         }
 
         @Override
@@ -353,35 +360,7 @@ public class MapTransactionStressTest extends HazelcastTestSupport {
 
         @Override
         public String toString() {
-            return "SleepyTransactionLog{}";
-        }
-    }
-
-    public static class EmptyFuture implements Future {
-        @Override
-        public boolean cancel(boolean mayInterruptIfRunning) {
-            return false;
-        }
-
-        @Override
-        public boolean isCancelled() {
-            return false;
-        }
-
-        @Override
-        public boolean isDone() {
-            return true;
-        }
-
-        @Override
-        public Object get() throws InterruptedException, ExecutionException {
-            return null;
-        }
-
-        @Override
-        public Object get(long timeout, TimeUnit unit)
-                throws InterruptedException, ExecutionException, TimeoutException {
-            return null;
+            return "SleepyTransactionLogRecord{}";
         }
     }
 

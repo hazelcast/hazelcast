@@ -16,11 +16,8 @@
 
 package com.hazelcast.transaction.impl;
 
-import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.nio.serialization.DataSerializable;
-import com.hazelcast.spi.NodeEngine;
-
-import java.util.concurrent.Future;
+import com.hazelcast.spi.Operation;
 
 /**
  * Represents a change made in a transaction e.g. a map.put.
@@ -29,13 +26,9 @@ import java.util.concurrent.Future;
  */
 public interface TransactionLogRecord extends DataSerializable {
 
-    Future prepare(NodeEngine nodeEngine);
+    Operation newPrepareOperation();
 
-    Future commit(NodeEngine nodeEngine);
+    Operation newCommitOperation();
 
-    Future rollback(NodeEngine nodeEngine);
-
-    void commitAsync(NodeEngine nodeEngine, ExecutionCallback callback);
-
-    void rollbackAsync(NodeEngine nodeEngine, ExecutionCallback callback);
+    Operation newRollbackOperation();
 }

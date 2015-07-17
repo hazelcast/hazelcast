@@ -129,7 +129,7 @@ final class XATransactionImpl implements Transaction, InternalTransaction {
             final List<Future> futures = new ArrayList<Future>(transactionLog.size());
             state = PREPARING;
             for (TransactionLogRecord record : transactionLog) {
-                futures.add(record.prepare(nodeEngine));
+                futures.add(transactionLog.prepare(nodeEngine, record));
             }
             waitWithDeadline(futures, timeoutMillis, TimeUnit.MILLISECONDS, RETHROW_TRANSACTION_EXCEPTION);
             futures.clear();
@@ -160,7 +160,7 @@ final class XATransactionImpl implements Transaction, InternalTransaction {
             final List<Future> futures = new ArrayList<Future>(transactionLog.size());
             state = COMMITTING;
             for (TransactionLogRecord record : transactionLog) {
-                futures.add(record.commit(nodeEngine));
+                futures.add(transactionLog.commit(nodeEngine, record));
             }
             // We should rethrow exception if transaction is not TWO_PHASE
 
@@ -180,12 +180,11 @@ final class XATransactionImpl implements Transaction, InternalTransaction {
         checkTimeout();
         state = COMMITTING;
         for (TransactionLogRecord record : transactionLog) {
-            record.commitAsync(nodeEngine, callback);
+            transactionLog.commitAsync(nodeEngine, record, callback);
         }
         // We should rethrow exception if transaction is not TWO_PHASE
 
         state = COMMITTED;
-
     }
 
     @Override
@@ -200,7 +199,7 @@ final class XATransactionImpl implements Transaction, InternalTransaction {
             ListIterator<TransactionLogRecord> iterator = recordList.listIterator(recordList.size());
             while (iterator.hasPrevious()) {
                 TransactionLogRecord record = iterator.previous();
-                futures.add(record.rollback(nodeEngine));
+                futures.add(transactionLog.rollback(nodeEngine, record));
             }
             waitWithDeadline(futures, ROLLBACK_TIMEOUT_MINUTES, TimeUnit.MINUTES, rollbackExceptionHandler);
         } catch (Throwable e) {
@@ -216,7 +215,7 @@ final class XATransactionImpl implements Transaction, InternalTransaction {
         }
         state = ROLLING_BACK;
         for (TransactionLogRecord record : transactionLog) {
-            record.rollbackAsync(nodeEngine, callback);
+            transactionLog.rollbackAsync(nodeEngine, callback, record);
         }
         state = ROLLED_BACK;
     }

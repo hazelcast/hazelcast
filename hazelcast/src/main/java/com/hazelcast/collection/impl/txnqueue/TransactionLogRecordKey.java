@@ -16,13 +16,13 @@
 
 package com.hazelcast.collection.impl.txnqueue;
 
-class TransactionRecordKey {
+class TransactionLogRecordKey {
 
     private final long itemId;
 
     private final String name;
 
-    public TransactionRecordKey(long itemId, String name) {
+    public TransactionLogRecordKey(long itemId, String name) {
         this.itemId = itemId;
         this.name = name;
     }
@@ -31,11 +31,11 @@ class TransactionRecordKey {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof TransactionRecordKey)) {
+        if (!(o instanceof TransactionLogRecordKey)) {
             return false;
         }
 
-        TransactionRecordKey that = (TransactionRecordKey) o;
+        TransactionLogRecordKey that = (TransactionLogRecordKey) o;
 
         if (itemId != that.itemId) {
             return false;

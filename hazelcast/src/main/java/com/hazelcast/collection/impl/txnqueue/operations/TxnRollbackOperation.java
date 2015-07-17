@@ -38,8 +38,9 @@ public class TxnRollbackOperation extends QueueBackupAwareOperation implements N
     public TxnRollbackOperation() {
     }
 
-    public TxnRollbackOperation(String name, long itemId, boolean pollOperation) {
+    public TxnRollbackOperation(int partitionId, String name, long itemId, boolean pollOperation) {
         super(name);
+        setPartitionId(partitionId);
         this.itemId = itemId;
         this.pollOperation = pollOperation;
     }
