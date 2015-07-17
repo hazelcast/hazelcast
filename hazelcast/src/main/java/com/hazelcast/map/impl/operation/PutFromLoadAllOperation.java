@@ -23,7 +23,7 @@ import com.hazelcast.map.impl.MapEventPublisher;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.nearcache.NearCacheProvider;
-import com.hazelcast.map.impl.RecordStore;
+import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;

@@ -14,12 +14,14 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map.impl;
+package com.hazelcast.map.impl.recordstore;
 
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.map.impl.MapContainer;
+import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.eviction.EvictionOperator;
 import com.hazelcast.map.impl.eviction.MaxSizeChecker;
 import com.hazelcast.map.impl.record.Record;

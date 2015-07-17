@@ -20,6 +20,8 @@ import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.map.impl.recordstore.DefaultRecordStore;
+import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.spi.DefaultObjectNamespace;
 import com.hazelcast.spi.ExecutionService;

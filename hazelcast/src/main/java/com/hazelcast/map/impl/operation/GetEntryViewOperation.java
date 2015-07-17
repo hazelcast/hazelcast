@@ -22,7 +22,7 @@ import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.map.impl.EntryViews;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
-import com.hazelcast.map.impl.RecordStore;
+import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.DefaultObjectNamespace;

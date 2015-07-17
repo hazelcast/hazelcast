@@ -24,6 +24,7 @@ import com.hazelcast.map.impl.eviction.EvictionOperator;
 import com.hazelcast.map.impl.eviction.ExpirationManager;
 import com.hazelcast.map.impl.nearcache.NearCacheProvider;
 import com.hazelcast.map.impl.operation.MapPartitionDestroyOperation;
+import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.map.listener.MapPartitionLostListener;
 import com.hazelcast.map.merge.MergePolicyProvider;
 import com.hazelcast.nio.serialization.Data;

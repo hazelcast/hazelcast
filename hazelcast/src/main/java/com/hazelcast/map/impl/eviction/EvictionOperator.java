@@ -22,7 +22,7 @@ import com.hazelcast.config.MaxSizeConfig;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.map.impl.MapEventPublisher;
 import com.hazelcast.map.impl.MapServiceContext;
-import com.hazelcast.map.impl.RecordStore;
+import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;

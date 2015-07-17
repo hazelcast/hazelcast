@@ -27,7 +27,7 @@ import static com.hazelcast.util.Preconditions.checkNotNegative;
 /**
  * Utility methods for setting TTL and max idle seconds.
  */
-final class ExpirationTimeSetter {
+public final class ExpirationTimeSetter {
 
     private ExpirationTimeSetter() {
     }

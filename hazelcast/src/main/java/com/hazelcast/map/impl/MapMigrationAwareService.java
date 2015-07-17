@@ -18,6 +18,7 @@ package com.hazelcast.map.impl;
 
 import com.hazelcast.map.impl.operation.MapReplicationOperation;
 import com.hazelcast.map.impl.record.Record;
+import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.query.impl.IndexService;

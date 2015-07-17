@@ -14,9 +14,11 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map.impl;
+package com.hazelcast.map.impl.recordstore;
 
 import com.hazelcast.core.EntryView;
+import com.hazelcast.map.impl.MapContainer;
+import com.hazelcast.map.impl.MapEntrySet;
 import com.hazelcast.map.impl.mapstore.MapDataStore;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.merge.MapMergePolicy;
@@ -70,12 +72,12 @@ public interface RecordStore {
     void removeBackup(Data dataKey);
 
     /**
-     * Gets record from {@link com.hazelcast.map.impl.RecordStore}.
+     * Gets record from {@link RecordStore}.
      * Loads missing keys from map store.
      *
      * @param dataKey key.
      * @param backup  <code>true</code> if a backup partition, otherwise <code>false</code>.
-     * @return value of an entry in {@link com.hazelcast.map.impl.RecordStore}
+     * @return value of an entry in {@link RecordStore}
      */
     Object get(Data dataKey, boolean backup);
 
@@ -263,7 +265,6 @@ public interface RecordStore {
      *
      * @param keys                  keys to be loaded.
      * @param replaceExistingValues <code>true</code> if need to replace existing values otherwise <code>false</code>
-     * @param lastBatch when keys are sent is batches this indicates the last batch. Used to indicate loading is complete.
      */
     void loadAllFromStore(List<Data> keys, boolean replaceExistingValues);
 
