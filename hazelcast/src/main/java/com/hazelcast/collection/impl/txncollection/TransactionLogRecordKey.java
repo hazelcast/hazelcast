@@ -16,7 +16,7 @@
 
 package com.hazelcast.collection.impl.txncollection;
 
-class TransactionRecordKey {
+class TransactionLogRecordKey {
 
     private final String name;
 
@@ -24,7 +24,7 @@ class TransactionRecordKey {
 
     private final String serviceName;
 
-    TransactionRecordKey(String name, long itemId, String serviceName) {
+    TransactionLogRecordKey(String name, long itemId, String serviceName) {
         this.name = name;
         this.itemId = itemId;
         this.serviceName = serviceName;
@@ -35,11 +35,11 @@ class TransactionRecordKey {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof TransactionRecordKey)) {
+        if (!(o instanceof TransactionLogRecordKey)) {
             return false;
         }
 
-        TransactionRecordKey that = (TransactionRecordKey) o;
+        TransactionLogRecordKey that = (TransactionLogRecordKey) o;
 
         if (itemId != that.itemId) {
             return false;

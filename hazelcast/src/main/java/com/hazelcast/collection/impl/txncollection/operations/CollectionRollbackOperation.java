@@ -32,8 +32,10 @@ public class CollectionRollbackOperation extends CollectionBackupAwareOperation 
     public CollectionRollbackOperation() {
     }
 
-    public CollectionRollbackOperation(String name, long itemId, boolean removeOperation) {
+    public CollectionRollbackOperation(int partitionId, String name, String serviceName, long itemId, boolean removeOperation) {
         super(name);
+        setPartitionId(partitionId);
+        setServiceName(serviceName);
         this.itemId = itemId;
         this.removeOperation = removeOperation;
     }

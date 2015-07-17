@@ -29,8 +29,8 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.transaction.TransactionNotActiveException;
 import com.hazelcast.transaction.TransactionalObject;
-import com.hazelcast.transaction.impl.Transaction;
 import com.hazelcast.transaction.impl.InternalTransaction;
+import com.hazelcast.transaction.impl.Transaction;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.ThreadUtil;
 
@@ -79,7 +79,7 @@ public abstract class TransactionalMultiMapProxySupport extends AbstractDistribu
         long recordId = -1;
         long timeout = tx.getTimeoutMillis();
         long ttl = extendTimeout(timeout);
-        final MultiMapTransactionLogRecord log;
+        final MultiMapTransactionLogRecord logRecord;
         if (coll == null) {
             MultiMapResponse response = lockAndGet(key, timeout, ttl);
             if (response == null) {
@@ -88,10 +88,10 @@ public abstract class TransactionalMultiMapProxySupport extends AbstractDistribu
             recordId = response.getNextRecordId();
             coll = createCollection(response.getRecordCollection(getNodeEngine()));
             txMap.put(key, coll);
-            log = new MultiMapTransactionLogRecord(key, name, ttl, getThreadId());
-            tx.add(log);
+            logRecord = new MultiMapTransactionLogRecord(getPartitionId(key), key, name, ttl, getThreadId());
+            tx.add(logRecord);
         } else {
-            log = (MultiMapTransactionLogRecord) tx.get(getRecordLogKey(key));
+            logRecord = (MultiMapTransactionLogRecord) tx.get(getRecordLogKey(key));
         }
         MultiMapRecord record = new MultiMapRecord(config.isBinary() ? value : getNodeEngine().toObject(value));
         if (coll.add(record)) {
@@ -100,7 +100,7 @@ public abstract class TransactionalMultiMapProxySupport extends AbstractDistribu
             }
             record.setRecordId(recordId);
             TxnPutOperation operation = new TxnPutOperation(name, key, value, recordId);
-            log.addOperation(operation);
+            logRecord.addOperation(operation);
             return true;
         }
         return false;
@@ -113,7 +113,7 @@ public abstract class TransactionalMultiMapProxySupport extends AbstractDistribu
         Collection<MultiMapRecord> coll = txMap.get(key);
         long timeout = tx.getTimeoutMillis();
         long ttl = extendTimeout(timeout);
-        final MultiMapTransactionLogRecord log;
+        final MultiMapTransactionLogRecord logRecord;
         if (coll == null) {
             MultiMapResponse response = lockAndGet(key, timeout, ttl);
             if (response == null) {
@@ -121,10 +121,10 @@ public abstract class TransactionalMultiMapProxySupport extends AbstractDistribu
             }
             coll = createCollection(response.getRecordCollection(getNodeEngine()));
             txMap.put(key, coll);
-            log = new MultiMapTransactionLogRecord(key, name, ttl, getThreadId());
-            tx.add(log);
+            logRecord = new MultiMapTransactionLogRecord(getPartitionId(key), key, name, ttl, getThreadId());
+            tx.add(logRecord);
         } else {
-            log = (MultiMapTransactionLogRecord) tx.get(getRecordLogKey(key));
+            logRecord = (MultiMapTransactionLogRecord) tx.get(getRecordLogKey(key));
         }
         MultiMapRecord record = new MultiMapRecord(config.isBinary() ? value : getNodeEngine().toObject(value));
         Iterator<MultiMapRecord> iterator = coll.iterator();
@@ -139,7 +139,7 @@ public abstract class TransactionalMultiMapProxySupport extends AbstractDistribu
         }
         if (recordId != -1) {
             TxnRemoveOperation operation = new TxnRemoveOperation(name, key, recordId, value);
-            log.addOperation(operation);
+            logRecord.addOperation(operation);
             return recordId != -1;
         }
         return false;
@@ -151,21 +151,21 @@ public abstract class TransactionalMultiMapProxySupport extends AbstractDistribu
         long timeout = tx.getTimeoutMillis();
         long ttl = extendTimeout(timeout);
         Collection<MultiMapRecord> coll = txMap.get(key);
-        final MultiMapTransactionLogRecord log;
+        final MultiMapTransactionLogRecord logRecord;
         if (coll == null) {
             MultiMapResponse response = lockAndGet(key, timeout, ttl);
             if (response == null) {
                 throw new ConcurrentModificationException("Transaction couldn't obtain lock " + getThreadId());
             }
             coll = createCollection(response.getRecordCollection(getNodeEngine()));
-            log = new MultiMapTransactionLogRecord(key, name, ttl, getThreadId());
-            tx.add(log);
+            logRecord = new MultiMapTransactionLogRecord(getPartitionId(key), key, name, ttl, getThreadId());
+            tx.add(logRecord);
         } else {
-            log = (MultiMapTransactionLogRecord) tx.get(getRecordLogKey(key));
+            logRecord = (MultiMapTransactionLogRecord) tx.get(getRecordLogKey(key));
         }
         txMap.put(key, createCollection());
         TxnRemoveAllOperation operation = new TxnRemoveAllOperation(name, key, coll);
-        log.addOperation(operation);
+        logRecord.addOperation(operation);
         return coll;
     }
 

@@ -16,11 +16,18 @@
 
 package com.hazelcast.transaction.impl;
 
+import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.OperationService;
+import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Future;
 
 /**
  * The transaction log contains all {@link TransactionLogRecord} for a given transaction.
@@ -33,6 +40,7 @@ import java.util.Map;
  * linear search in that array. When there are too many items added, then enable the hashmap.
  */
 public class TransactionLog implements Iterable<TransactionLogRecord> {
+
     private final List<TransactionLogRecord> recordList = new LinkedList<TransactionLogRecord>();
     private final Map<Object, TransactionLogRecord> recordMap = new HashMap<Object, TransactionLogRecord>();
 
@@ -82,7 +90,51 @@ public class TransactionLog implements Iterable<TransactionLogRecord> {
         }
     }
 
+    /**
+     * Returns the number of TransactionRecords in this TransactionLog.
+     *
+     * @return the number of TransactionRecords.
+     */
     public int size() {
         return recordList.size();
+    }
+
+    public Future prepare(NodeEngine nodeEngine, TransactionLogRecord record) {
+        return invoke(nodeEngine, record.newPrepareOperation());
+    }
+
+    public Future commit(NodeEngine nodeEngine, TransactionLogRecord record) {
+        return invoke(nodeEngine, record.newCommitOperation());
+    }
+
+    public Future rollback(NodeEngine nodeEngine, TransactionLogRecord record) {
+        return invoke(nodeEngine, record.newRollbackOperation());
+    }
+
+    private Future invoke(NodeEngine nodeEngine, Operation op) {
+        OperationService operationService = nodeEngine.getOperationService();
+
+        return operationService.invokeOnPartition(
+                op.getServiceName(),
+                op,
+                op.getPartitionId());
+    }
+
+    public void commitAsync(NodeEngine nodeEngine, TransactionLogRecord record, ExecutionCallback callback) {
+        invokeAsync(nodeEngine, callback, record.newCommitOperation());
+    }
+
+    public void rollbackAsync(NodeEngine nodeEngine, ExecutionCallback callback, TransactionLogRecord record) {
+        invokeAsync(nodeEngine, callback, record.newRollbackOperation());
+    }
+
+    private void invokeAsync(NodeEngine nodeEngine, ExecutionCallback callback, Operation op) {
+        InternalOperationService operationService = (InternalOperationService) nodeEngine.getOperationService();
+
+        operationService.asyncInvokeOnPartition(
+                op.getServiceName(),
+                op,
+                op.getPartitionId(),
+                callback);
     }
 }

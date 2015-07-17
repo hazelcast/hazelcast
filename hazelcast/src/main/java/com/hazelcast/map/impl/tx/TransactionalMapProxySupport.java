@@ -148,7 +148,7 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
     public Data putInternal(Data key, Data value) {
         VersionedValue versionedValue = lockAndGet(key, tx.getTimeoutMillis());
         final TxnSetOperation op = new TxnSetOperation(name, key, value, versionedValue.version);
-        tx.add(new MapTransactionLogRecord(name, key, op, versionedValue.version, tx.getOwnerUuid()));
+        tx.add(new MapTransactionLogRecord(name, key, getPartitionId(key), op, versionedValue.version, tx.getOwnerUuid()));
         return versionedValue.value;
     }
 
@@ -156,7 +156,7 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
         VersionedValue versionedValue = lockAndGet(key, tx.getTimeoutMillis());
         final long timeInMillis = getTimeInMillis(ttl, timeUnit);
         final TxnSetOperation op = new TxnSetOperation(name, key, value, versionedValue.version, timeInMillis);
-        tx.add(new MapTransactionLogRecord(name, key, op, versionedValue.version, tx.getOwnerUuid()));
+        tx.add(new MapTransactionLogRecord(name, key, getPartitionId(key), op, versionedValue.version, tx.getOwnerUuid()));
         return versionedValue.value;
     }
 
@@ -168,7 +168,7 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
         }
 
         final TxnSetOperation op = new TxnSetOperation(name, key, value, versionedValue.version);
-        tx.add(new MapTransactionLogRecord(name, key, op, versionedValue.version, tx.getOwnerUuid()));
+        tx.add(new MapTransactionLogRecord(name, key, getPartitionId(key), op, versionedValue.version, tx.getOwnerUuid()));
         return versionedValue.value;
     }
 
@@ -179,7 +179,7 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
             return null;
         }
         final TxnSetOperation op = new TxnSetOperation(name, key, value, versionedValue.version);
-        tx.add(new MapTransactionLogRecord(name, key, op, versionedValue.version, tx.getOwnerUuid()));
+        tx.add(new MapTransactionLogRecord(name, key, getPartitionId(key), op, versionedValue.version, tx.getOwnerUuid()));
         return versionedValue.value;
     }
 
@@ -190,13 +190,13 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
             return false;
         }
         final TxnSetOperation op = new TxnSetOperation(name, key, newValue, versionedValue.version);
-        tx.add(new MapTransactionLogRecord(name, key, op, versionedValue.version, tx.getOwnerUuid()));
+        tx.add(new MapTransactionLogRecord(name, key, getPartitionId(key), op, versionedValue.version, tx.getOwnerUuid()));
         return true;
     }
 
     public Data removeInternal(Data key) {
         VersionedValue versionedValue = lockAndGet(key, tx.getTimeoutMillis());
-        tx.add(new MapTransactionLogRecord(name, key,
+        tx.add(new MapTransactionLogRecord(name, key, getPartitionId(key),
                 new TxnDeleteOperation(name, key, versionedValue.version), versionedValue.version, tx.getOwnerUuid()));
         return versionedValue.value;
     }
@@ -207,14 +207,14 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
             addUnlockTransactionRecord(key, versionedValue.version);
             return false;
         }
-        tx.add(new MapTransactionLogRecord(name, key,
+        tx.add(new MapTransactionLogRecord(name, key, getPartitionId(key),
                 new TxnDeleteOperation(name, key, versionedValue.version), versionedValue.version, tx.getOwnerUuid()));
         return true;
     }
 
     private void addUnlockTransactionRecord(Data key, long version) {
         TxnUnlockOperation operation = new TxnUnlockOperation(name, key, version);
-        tx.add(new MapTransactionLogRecord(name, key, operation, version, tx.getOwnerUuid()));
+        tx.add(new MapTransactionLogRecord(name, key, getPartitionId(key), operation, version, tx.getOwnerUuid()));
     }
 
     private VersionedValue lockAndGet(Data key, long timeout) {

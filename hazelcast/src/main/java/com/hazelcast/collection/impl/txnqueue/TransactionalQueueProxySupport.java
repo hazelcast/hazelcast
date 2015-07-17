@@ -104,7 +104,7 @@ public abstract class TransactionalQueueProxySupport extends AbstractDistributed
             if (item != null) {
                 if (reservedOffer != null && item.getItemId() == reservedOffer.getItemId()) {
                     offeredQueue.poll();
-                    tx.remove(new TransactionRecordKey(reservedOffer.getItemId(), name));
+                    tx.remove(new TransactionLogRecordKey(reservedOffer.getItemId(), name));
                     itemIdSet.remove(reservedOffer.getItemId());
                     return reservedOffer.getData();
                 }
