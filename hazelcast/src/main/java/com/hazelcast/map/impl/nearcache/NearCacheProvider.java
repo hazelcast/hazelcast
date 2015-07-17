@@ -14,10 +14,14 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map.impl;
+package com.hazelcast.map.impl.nearcache;
 
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.map.impl.MapContainer;
+import com.hazelcast.map.impl.MapService;
+import com.hazelcast.map.impl.MapServiceContext;
+import com.hazelcast.map.impl.SizeEstimator;
 import com.hazelcast.map.impl.operation.InvalidateNearCacheOperation;
 import com.hazelcast.map.impl.operation.NearCacheKeySetInvalidationOperation;
 import com.hazelcast.nio.serialization.Data;
