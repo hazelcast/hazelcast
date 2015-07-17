@@ -17,6 +17,7 @@
 package com.hazelcast.map.impl.mapstore.writebehind;
 
 import com.hazelcast.map.ReachedMaxSizeException;
+import com.hazelcast.map.impl.mapstore.writebehind.entry.DelayedEntry;
 
 import java.util.Collection;
 import java.util.List;
@@ -53,11 +54,6 @@ class BoundedWriteBehindQueue<E> implements WriteBehindQueue<E> {
         this.queue = queue;
     }
 
-    /**
-     * Add this collection to the front of the queue.
-     *
-     * @param collection collection of elements to be added in front of this queue.
-     */
     @Override
     public void addFirst(Collection<E> collection) {
         if (collection == null || collection.isEmpty()) {
@@ -67,24 +63,12 @@ class BoundedWriteBehindQueue<E> implements WriteBehindQueue<E> {
         queue.addFirst(collection);
     }
 
-    /**
-     * Inserts to the end of this queue.
-     *
-     * @param e element to be offered
-     */
     @Override
     public void addLast(E e) {
         addCapacity(1);
         queue.addLast(e);
     }
 
-    /**
-     * Removes the first occurrence of the specified element in this queue
-     * when searching it by starting from the head of this queue.
-     *
-     * @param e element to be removed.
-     * @return <code>true</code> if removed successfully, <code>false</code> otherwise
-     */
     @Override
     public boolean removeFirstOccurrence(E e) {
         boolean result = queue.removeFirstOccurrence(e);
@@ -94,12 +78,6 @@ class BoundedWriteBehindQueue<E> implements WriteBehindQueue<E> {
         return result;
     }
 
-    /**
-     * Removes all elements from this queue and adds them
-     * to the given collection.
-     *
-     * @return number of removed items from this queue.
-     */
     @Override
     public int drainTo(Collection<E> collection) {
         int size = queue.drainTo(collection);
@@ -107,31 +85,16 @@ class BoundedWriteBehindQueue<E> implements WriteBehindQueue<E> {
         return size;
     }
 
-    /**
-     * Checks whether an element exist in this queue.
-     *
-     * @param e item to be checked
-     * @return <code>true</code> if exists, <code>false</code> otherwise
-     */
     @Override
     public boolean contains(E e) {
         return queue.contains(e);
     }
 
-    /**
-     * Returns the number of elements in this {@link WriteBehindQueue}.
-     *
-     * @return the number of elements in this {@link WriteBehindQueue}.
-     */
     @Override
     public int size() {
         return queue.size();
     }
 
-    /**
-     * Removes all of the elements in this  {@link WriteBehindQueue}
-     * Queue will be empty after this method returns.
-     */
     @Override
     public void clear() {
         int size = size();
@@ -139,36 +102,34 @@ class BoundedWriteBehindQueue<E> implements WriteBehindQueue<E> {
         addCapacity(-size);
     }
 
-    /**
-     * Returns unmodifiable list representation of this queue.
-     *
-     * @return read-only list representation of this queue.
-     */
+    @Override
+    public Sequencer getSequencer() {
+        return queue.getSequencer();
+    }
+
     @Override
     public List<E> asList() {
         return queue.asList();
     }
 
-    /**
-     * Adds all elements to the supplied collection which are smaller than or equal to the given time.
-     *
-     * @param time       given time.
-     * @param collection to add filtered elements.
-     */
     @Override
     public void getFrontByTime(long time, Collection<E> collection) {
         queue.getFrontByTime(time, collection);
     }
 
-    /**
-     * Adds some number of elements to the supplied collection starting from the head of this queue.
-     *
-     * @param numberOfElements number of elements to add.
-     * @param collection       to add filtered elements.
-     */
     @Override
     public void getFrontByNumber(int numberOfElements, Collection<E> collection) {
         queue.getFrontByNumber(numberOfElements, collection);
+    }
+
+    @Override
+    public void getFrontBySequence(long sequence, Collection<DelayedEntry> collection) {
+        queue.getFrontBySequence(sequence, collection);
+    }
+
+    @Override
+    public void getEndBySequence(long sequence, Collection<DelayedEntry> collection) {
+        queue.getEndBySequence(sequence, collection);
     }
 
     /**

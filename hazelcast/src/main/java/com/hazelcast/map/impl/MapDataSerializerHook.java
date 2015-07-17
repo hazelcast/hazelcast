@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl;
 
+import com.hazelcast.map.impl.operation.EvictBackupOperation;
 import com.hazelcast.map.impl.operation.GetOperation;
 import com.hazelcast.map.impl.operation.PutBackupOperation;
 import com.hazelcast.map.impl.operation.PutOperation;
@@ -52,8 +53,9 @@ public final class MapDataSerializerHook implements DataSerializerHook {
     //    public static final int MAP_STATS = 12;
     public static final int QUERY_RESULT_ENTRY = 13;
     public static final int QUERY_RESULT_SET = 14;
+    public static final int EVICT_BACKUP = 15;
 
-    private static final int LEN = QUERY_RESULT_SET + 1;
+    private static final int LEN = EVICT_BACKUP + 1;
 
     public int getFactoryId() {
         return F_ID;
@@ -121,6 +123,12 @@ public final class MapDataSerializerHook implements DataSerializerHook {
         constructors[QUERY_RESULT_SET] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new QueryResultSet();
+            }
+        };
+
+        constructors[EVICT_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new EvictBackupOperation();
             }
         };
 

@@ -54,11 +54,11 @@ public class WriteBehindManager implements MapStoreManager {
 
     public WriteBehindManager(MapStoreContext mapStoreContext) {
         this.mapStoreContext = mapStoreContext;
-        this.writeBehindProcessor = newWriteBehindProcessor(mapStoreContext);
-        this.storeWorker = new StoreWorker(mapStoreContext, writeBehindProcessor);
         this.executorName = EXECUTOR_NAME_PREFIX + mapStoreContext.getMapName();
         final MapServiceContext mapServiceContext = mapStoreContext.getMapServiceContext();
         this.scheduledExecutor = getScheduledExecutorService(mapServiceContext);
+        this.writeBehindProcessor = newWriteBehindProcessor(mapStoreContext, scheduledExecutor);
+        this.storeWorker = new StoreWorker(mapStoreContext, writeBehindProcessor);
     }
 
     public void start() {
@@ -77,10 +77,22 @@ public class WriteBehindManager implements MapStoreManager {
         return MapDataStores.createWriteBehindStore(mapStoreContext, partitionId, writeBehindProcessor);
     }
 
-    private WriteBehindProcessor newWriteBehindProcessor(final MapStoreContext mapStoreContext) {
+    private WriteBehindProcessor newWriteBehindProcessor(final MapStoreContext mapStoreContext,
+                                                         ScheduledExecutorService scheduledExecutor) {
         WriteBehindProcessor writeBehindProcessor = createWriteBehindProcessor(mapStoreContext);
-        StoreListener<DelayedEntry> storeListener = new InternalStoreListener(mapStoreContext);
+        final WriteBehindBackupPartitionCleaner writeBehindBackupPartitionCleaner
+                = new WriteBehindBackupPartitionCleaner(mapStoreContext);
+        StoreListener<DelayedEntry> storeListener
+                = new InternalStoreListener(mapStoreContext, writeBehindBackupPartitionCleaner);
         writeBehindProcessor.addStoreListener(storeListener);
+
+        Runnable runnable = new Runnable() {
+            @Override
+            public void run() {
+                writeBehindBackupPartitionCleaner.removeFromBackups();
+            }
+        };
+        scheduledExecutor.scheduleAtFixedRate(runnable, 1, 1, TimeUnit.SECONDS);
         return writeBehindProcessor;
     }
 
@@ -94,13 +106,18 @@ public class WriteBehindManager implements MapStoreManager {
     /**
      * Store listener which is responsible for
      * {@link com.hazelcast.map.impl.mapstore.writebehind.WriteBehindStore#stagingArea cleaning.
+     * <p/>
+     * Called from at most one thread at a time.
      */
-    private static class InternalStoreListener implements StoreListener<DelayedEntry> {
+    private class InternalStoreListener implements StoreListener<DelayedEntry> {
 
+        private final WriteBehindBackupPartitionCleaner writeBehindBackupPartitionCleaner;
         private final MapStoreContext mapStoreContext;
 
-        public InternalStoreListener(MapStoreContext mapStoreContext) {
+        public InternalStoreListener(MapStoreContext mapStoreContext,
+                                     WriteBehindBackupPartitionCleaner writeBehindBackupPartitionCleaner) {
             this.mapStoreContext = mapStoreContext;
+            this.writeBehindBackupPartitionCleaner = writeBehindBackupPartitionCleaner;
         }
 
         @Override
@@ -121,6 +138,7 @@ public class WriteBehindManager implements MapStoreManager {
             }
 
             writeBehindStore.removeFromStagingArea(delayedEntry);
+            writeBehindBackupPartitionCleaner.add(partitionId);
         }
 
         private WriteBehindStore getWriteBehindStoreOrNull(int partitionId) {

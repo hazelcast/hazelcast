@@ -25,6 +25,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 
 import static com.hazelcast.util.CollectionUtil.isEmpty;
@@ -36,9 +37,11 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
 class CoalescedWriteBehindQueue implements WriteBehindQueue<DelayedEntry> {
 
     protected Map<Data, DelayedEntry> map;
+    protected Sequencer sequencer;
 
     public CoalescedWriteBehindQueue() {
         map = new LinkedHashMap<Data, DelayedEntry>();
+        sequencer = new DefaultSequencer();
     }
 
     @Override
@@ -62,33 +65,26 @@ class CoalescedWriteBehindQueue implements WriteBehindQueue<DelayedEntry> {
         if (delayedEntry == null) {
             return;
         }
-        calculateStoreTime(delayedEntry);
+        coalesce(delayedEntry);
         Data key = (Data) delayedEntry.getKey();
         map.put(key, delayedEntry);
     }
 
-    /**
-     * Removes the first occurrence of the specified element in this queue
-     * when searching it by starting from the head of this queue.
-     *
-     * @param entry element to be removed.
-     * @return <code>true</code> if removed successfully, <code>false</code> otherwise
-     */
     @Override
     public boolean removeFirstOccurrence(DelayedEntry entry) {
         Data key = (Data) entry.getKey();
-        Object value = entry.getValue();
         DelayedEntry delayedEntry = map.get(key);
-        if (delayedEntry == null) {
+        if (delayedEntry == null
+                || delayedEntry != entry) {
             return false;
         }
-        Object existingValue = delayedEntry.getValue();
-        if (existingValue == value) {
-            map.remove(key);
+        DelayedEntry removedEntry = map.remove(key);
+        if (removedEntry != null) {
+            sequencer.incrementHead();
             return true;
+        } else {
+            return false;
         }
-
-        return false;
     }
 
     @Override
@@ -104,7 +100,13 @@ class CoalescedWriteBehindQueue implements WriteBehindQueue<DelayedEntry> {
 
     @Override
     public void clear() {
+        sequencer.init();
         map.clear();
+    }
+
+    @Override
+    public Sequencer getSequencer() {
+        return sequencer;
     }
 
     @Override
@@ -116,6 +118,7 @@ class CoalescedWriteBehindQueue implements WriteBehindQueue<DelayedEntry> {
             collection.add(delayedEntry);
         }
         map.clear();
+        sequencer.setHeadSequence(sequencer.tailSequence());
         return collection.size();
     }
 
@@ -132,6 +135,8 @@ class CoalescedWriteBehindQueue implements WriteBehindQueue<DelayedEntry> {
         for (DelayedEntry e : values) {
             if (e.getStoreTime() <= time) {
                 collection.add(e);
+            } else {
+                break;
             }
         }
     }
@@ -149,18 +154,50 @@ class CoalescedWriteBehindQueue implements WriteBehindQueue<DelayedEntry> {
         }
     }
 
+    @Override
+    public void getFrontBySequence(long sequence, Collection<DelayedEntry> collection) {
+        Collection<DelayedEntry> values = map.values();
+        for (DelayedEntry e : values) {
+            if (e.getSequence() < sequence) {
+                collection.add(e);
+            } else {
+                break;
+            }
+        }
+    }
+
+    @Override
+    public void getEndBySequence(long sequence, Collection<DelayedEntry> collection) {
+        Collection<DelayedEntry> values = map.values();
+        List<DelayedEntry> list = new ArrayList<DelayedEntry>(values);
+        ListIterator<DelayedEntry> listIterator = list.listIterator();
+        while (listIterator.hasPrevious()) {
+            DelayedEntry e = listIterator.previous();
+            if (e.getSequence() > sequence) {
+                collection.add(e);
+            } else {
+                break;
+            }
+        }
+    }
+
 
     /**
      * If this is an existing key in this queue, use previously set store time;
      * since we do not want to shift store time of an existing key on every update.
      */
-    private void calculateStoreTime(DelayedEntry delayedEntry) {
-        Data key = (Data) delayedEntry.getKey();
+    private void coalesce(DelayedEntry newEntry) {
+        Data key = (Data) newEntry.getKey();
         DelayedEntry currentEntry = map.get(key);
         if (currentEntry != null) {
-            long currentStoreTime = currentEntry.getStoreTime();
-            delayedEntry.setStoreTime(currentStoreTime);
+            newEntry.setStoreTime(currentEntry.getStoreTime());
+            newEntry.setSequence(currentEntry.getSequence());
+        } else {
+            long sequence = sequencer.incrementTail();
+            newEntry.setSequence(sequence);
         }
+
+
     }
 
     private static <K, V> Map<K, V> createMapWithExpectedCapacity(int expectedCapacity) {

@@ -39,6 +39,7 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
  */
 class CyclicWriteBehindQueue implements WriteBehindQueue<DelayedEntry> {
 
+    protected Sequencer sequencer;
     private final Deque<DelayedEntry> deque;
 
     /**
@@ -57,13 +58,9 @@ class CyclicWriteBehindQueue implements WriteBehindQueue<DelayedEntry> {
     public CyclicWriteBehindQueue() {
         this.deque = new ArrayDeque<DelayedEntry>();
         this.index = new HashMap<Data, MutableInteger>();
+        this.sequencer = new DefaultSequencer();
     }
 
-    /**
-     * Add this collection to the front of the queue.
-     *
-     * @param collection collection to be added in front of this queue.
-     */
     @Override
     public void addFirst(Collection<DelayedEntry> collection) {
         for (DelayedEntry entry : collection) {
@@ -72,24 +69,13 @@ class CyclicWriteBehindQueue implements WriteBehindQueue<DelayedEntry> {
         addCountIndex(collection);
     }
 
-    /**
-     * Inserts to the end of this queue.
-     *
-     * @param entry item to be offered
-     */
     @Override
     public void addLast(DelayedEntry entry) {
+        entry.setSequence(sequencer.incrementTail());
         deque.addLast(entry);
         addCountIndex(entry);
     }
 
-    /**
-     * Removes the first element of this queue instead of searching for it,
-     * implementation of this method is strongly tied with {@link StoreWorker} implementation.
-     *
-     * @param entry element to be removed.
-     * @return <code>true</code> if removed successfully, <code>false</code> otherwise
-     */
     @Override
     public boolean removeFirstOccurrence(DelayedEntry entry) {
         DelayedEntry removedEntry = deque.pollFirst();
@@ -97,15 +83,10 @@ class CyclicWriteBehindQueue implements WriteBehindQueue<DelayedEntry> {
             return false;
         }
         decreaseCountIndex(entry);
+        sequencer.incrementHead();
         return true;
     }
 
-    /**
-     * Checks whether an item exist in queue or not.
-     *
-     * @param entry item to be checked
-     * @return <code>true</code> if exists, <code>false</code> otherwise
-     */
     @Override
     public boolean contains(DelayedEntry entry) {
         Data key = (Data) entry.getKey();
@@ -119,17 +100,16 @@ class CyclicWriteBehindQueue implements WriteBehindQueue<DelayedEntry> {
 
     @Override
     public void clear() {
+        sequencer.init();
         deque.clear();
         resetCountIndex();
     }
 
-    /**
-     * Removes all available elements from this queue and adds them
-     * to the given collection.
-     *
-     * @param collection all elements to be added to this collection.
-     * @return number of removed items from this queue.
-     */
+    @Override
+    public Sequencer getSequencer() {
+        return sequencer;
+    }
+
     @Override
     public int drainTo(Collection<DelayedEntry> collection) {
         checkNotNull(collection, "collection can not be null");
@@ -141,14 +121,10 @@ class CyclicWriteBehindQueue implements WriteBehindQueue<DelayedEntry> {
             iterator.remove();
         }
         resetCountIndex();
+        sequencer.setHeadSequence(sequencer.tailSequence());
         return collection.size();
     }
 
-    /**
-     * Returns unmodifiable list representation of this queue.
-     *
-     * @return read-only list representation of this queue.
-     */
     @Override
     public List<DelayedEntry> asList() {
         return Collections.unmodifiableList(new ArrayList<DelayedEntry>(deque));
@@ -161,6 +137,8 @@ class CyclicWriteBehindQueue implements WriteBehindQueue<DelayedEntry> {
             DelayedEntry e = iterator.next();
             if (e.getStoreTime() <= time) {
                 collection.add(e);
+            } else {
+                break;
             }
         }
     }
@@ -176,6 +154,32 @@ class CyclicWriteBehindQueue implements WriteBehindQueue<DelayedEntry> {
             }
             collection.add(e);
             count++;
+        }
+    }
+
+    @Override
+    public void getFrontBySequence(long sequence, Collection<DelayedEntry> collection) {
+        Iterator<DelayedEntry> iterator = deque.iterator();
+        while (iterator.hasNext()) {
+            DelayedEntry e = iterator.next();
+            if (e.getSequence() < sequence) {
+                collection.add(e);
+            } else {
+                break;
+            }
+        }
+    }
+
+    @Override
+    public void getEndBySequence(long sequence, Collection<DelayedEntry> collection) {
+        Iterator<DelayedEntry> iterator = deque.descendingIterator();
+        while (iterator.hasNext()) {
+            DelayedEntry e = iterator.next();
+            if (e.getSequence() > sequence) {
+                collection.add(e);
+            } else {
+                break;
+            }
         }
     }
 

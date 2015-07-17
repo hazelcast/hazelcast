@@ -22,6 +22,8 @@ import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.map.impl.RecordStore;
+import com.hazelcast.map.impl.mapstore.writebehind.DefaultSequencer;
+import com.hazelcast.map.impl.mapstore.writebehind.Sequencer;
 import com.hazelcast.map.impl.mapstore.writebehind.WriteBehindQueue;
 import com.hazelcast.map.impl.mapstore.writebehind.WriteBehindStore;
 import com.hazelcast.map.impl.mapstore.writebehind.entry.DelayedEntries;
@@ -36,6 +38,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.impl.MutatingOperation;
 import com.hazelcast.util.Clock;
+import com.hazelcast.util.CollectionUtil;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -54,6 +57,7 @@ public class MapReplicationOperation extends AbstractOperation implements Mutati
 
     private Map<String, Set<RecordReplicationInfo>> data;
     private Map<String, Collection<DelayedEntry>> delayedEntries;
+    private Map<String, Sequencer> sequences;
 
     public MapReplicationOperation() {
     }
@@ -83,23 +87,42 @@ public class MapReplicationOperation extends AbstractOperation implements Mutati
             data.put(name, recordSet);
         }
         readDelayedEntries(container);
+        readSequences(container);
     }
 
     private void readDelayedEntries(PartitionContainer container) {
         delayedEntries = new HashMap<String, Collection<DelayedEntry>>(container.getMaps().size());
         for (Entry<String, RecordStore> entry : container.getMaps().entrySet()) {
+            String mapName = entry.getKey();
             RecordStore recordStore = entry.getValue();
             MapContainer mapContainer = recordStore.getMapContainer();
             if (!mapContainer.getMapStoreContext().isWriteBehindMapStoreEnabled()) {
                 continue;
             }
-            final WriteBehindQueue<DelayedEntry> writeBehindQueue = ((WriteBehindStore) recordStore.getMapDataStore())
+            WriteBehindStore writeBehindStore = (WriteBehindStore) recordStore.getMapDataStore();
+            final WriteBehindQueue<DelayedEntry> writeBehindQueue = writeBehindStore
                     .getWriteBehindQueue();
             final Collection<DelayedEntry> delayedEntries = writeBehindQueue.asList();
             if (delayedEntries != null && delayedEntries.size() == 0) {
                 continue;
             }
-            this.delayedEntries.put(entry.getKey(), delayedEntries);
+            this.delayedEntries.put(mapName, delayedEntries);
+        }
+    }
+
+    private void readSequences(PartitionContainer container) {
+        sequences = new HashMap<String, Sequencer>();
+        for (Entry<String, RecordStore> entry : container.getMaps().entrySet()) {
+            String mapName = entry.getKey();
+            RecordStore recordStore = entry.getValue();
+            MapContainer mapContainer = recordStore.getMapContainer();
+            if (!mapContainer.getMapStoreContext().isWriteBehindMapStoreEnabled()) {
+                continue;
+            }
+            WriteBehindStore writeBehindStore = (WriteBehindStore) recordStore.getMapDataStore();
+            WriteBehindQueue<DelayedEntry> writeBehindQueue = writeBehindStore.getWriteBehindQueue();
+
+            this.sequences.put(mapName, writeBehindQueue.getSequencer());
         }
     }
 
@@ -125,14 +148,32 @@ public class MapReplicationOperation extends AbstractOperation implements Mutati
             }
         }
 
-        for (Entry<String, Collection<DelayedEntry>> entry : delayedEntries.entrySet()) {
-            RecordStore recordStore = mapServiceContext.getRecordStore(getPartitionId(), entry.getKey());
+        for (Entry<String, Sequencer> entry : sequences.entrySet()) {
+            String mapName = entry.getKey();
+            Sequencer sequencer = entry.getValue();
+            RecordStore recordStore = mapServiceContext.getRecordStore(getPartitionId(), mapName);
             WriteBehindStore mapDataStore = (WriteBehindStore) recordStore.getMapDataStore();
             mapDataStore.clear();
 
-            Collection<DelayedEntry> replicatedEntries = entry.getValue();
-            for (DelayedEntry delayedEntry : replicatedEntries) {
-                mapDataStore.add(delayedEntry);
+            WriteBehindQueue<DelayedEntry> writeBehindQueue = mapDataStore.getWriteBehindQueue();
+            Sequencer current = writeBehindQueue.getSequencer();
+            current.init();
+
+            Collection<DelayedEntry> delayedEntries = this.delayedEntries.get(mapName);
+            if (CollectionUtil.isEmpty(delayedEntries)) {
+                current.setHeadSequence(sequencer.headSequence());
+                current.setTailSequence(sequencer.tailSequence());
+            } else {
+                int i = 0;
+                for (DelayedEntry delayedEntry : delayedEntries) {
+                    long sequence = delayedEntry.getSequence();
+                    if (i == 0) {
+                        current.setHeadSequence(sequence);
+                    }
+                    mapDataStore.add(delayedEntry);
+                    current.setTailSequence(sequence);
+                    i++;
+                }
             }
         }
     }
@@ -165,13 +206,25 @@ public class MapReplicationOperation extends AbstractOperation implements Mutati
             for (int j = 0; j < listSize; j++) {
                 Data key = in.readData();
                 Data value = in.readData();
-                long storeTime = in.readLong();
                 int partitionId = in.readInt();
+                long storeTime = in.readLong();
+                long sequence = in.readLong();
 
                 DelayedEntry<Data, Data> entry = DelayedEntries.createDefault(key, value, storeTime, partitionId);
+                entry.setSequence(sequence);
                 delayedEntriesList.add(entry);
             }
             delayedEntries.put(mapName, delayedEntriesList);
+        }
+
+        sequences = new HashMap<String, Sequencer>();
+        int seqSize = in.readInt();
+        for (int i = 0; i < seqSize; i++) {
+            String mapName = in.readUTF();
+            Sequencer defaultSequencer = new DefaultSequencer();
+            defaultSequencer.readData(in);
+            sequences.put(mapName, defaultSequencer);
+
         }
     }
 
@@ -198,9 +251,19 @@ public class MapReplicationOperation extends AbstractOperation implements Mutati
                 final Data value = mapServiceContext.toData(e.getValue());
                 out.writeData(key);
                 out.writeData(value);
-                out.writeLong(e.getStoreTime());
                 out.writeInt(e.getPartitionId());
+                out.writeLong(e.getStoreTime());
+                out.writeLong(e.getSequence());
             }
+        }
+
+        out.writeInt(sequences.size());
+        for (Map.Entry<String, Sequencer> entry : sequences.entrySet()) {
+            String mapName = entry.getKey();
+            Sequencer seq = entry.getValue();
+
+            out.writeUTF(mapName);
+            seq.writeData(out);
         }
     }
 

@@ -36,5 +36,9 @@ public interface DelayedEntry<K, V> {
 
     int getPartitionId();
 
+    long getSequence();
+
     void setStoreTime(long storeTime);
+
+    void setSequence(long sequence);
 }

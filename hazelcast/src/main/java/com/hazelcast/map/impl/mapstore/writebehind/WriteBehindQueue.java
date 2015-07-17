@@ -16,6 +16,8 @@
 
 package com.hazelcast.map.impl.mapstore.writebehind;
 
+import com.hazelcast.map.impl.mapstore.writebehind.entry.DelayedEntry;
+
 import java.util.Collection;
 import java.util.List;
 
@@ -79,6 +81,8 @@ public interface WriteBehindQueue<E> {
      */
     void clear();
 
+    Sequencer getSequencer();
+
     /**
      * Returns a read-only list representation of this queue.
      *
@@ -103,6 +107,11 @@ public interface WriteBehindQueue<E> {
      * @param collection       all found elements will be added to this collection.
      */
     void getFrontByNumber(int numberOfElements, Collection<E> collection);
+
+
+    void getFrontBySequence(long sequence, Collection<DelayedEntry> collection);
+
+    void getEndBySequence(long sequence, Collection<DelayedEntry> collection);
 
 }
 

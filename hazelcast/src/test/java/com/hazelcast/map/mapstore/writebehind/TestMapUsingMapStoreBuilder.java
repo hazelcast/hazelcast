@@ -157,7 +157,7 @@ public class TestMapUsingMapStoreBuilder<K, V> {
         config.setProperty(GroupProperties.PROP_PARTITION_COUNT, String.valueOf(partitionCount));
         if (backupDelaySeconds > 0) {
             config.setProperty(GroupProperties.PROP_MAP_REPLICA_SCHEDULED_TASK_DELAY_SECONDS,
-                    String.valueOf(backupCount));
+                    String.valueOf(backupDelaySeconds));
         }
         // nodes.
         nodes = new HazelcastInstance[nodeCount];

@@ -47,35 +47,6 @@ import static org.junit.Assert.assertEquals;
 @Category(QuickTest.class)
 public class WriteBehindOnBackupsTest extends HazelcastTestSupport {
 
-    /**
-     * {@link com.hazelcast.map.impl.mapstore.writebehind.StoreWorker} delays processing of write-behind queues (wbq) by adding
-     * delay with {@link com.hazelcast.instance.GroupProperties#PROP_MAP_REPLICA_SCHEDULED_TASK_DELAY_SECONDS} property.
-     * This is used to provide some extra robustness against node disaster scenarios by trying to prevent lost of entries in wbq-s.
-     * Normally backup nodes don't store entries only remove them from wbq-s. Here, we are testing removal of entries occurred or not.
-     */
-    @Test
-    public void testBackupRemovesEntries_afterProcessingDelay() throws Exception {
-        final int numberOfItems = 10;
-        final String mapName = randomMapName();
-        final MapStoreWithCounter mapStore = new MapStoreWithCounter<Integer, String>();
-        TestMapUsingMapStoreBuilder<Object, Object> storeBuilder = TestMapUsingMapStoreBuilder.create();
-        final IMap<Object, Object> map = storeBuilder
-                .mapName(mapName)
-                .withMapStore(mapStore)
-                .withNodeCount(2)
-                .withNodeFactory(createHazelcastInstanceFactory(2))
-                .withWriteDelaySeconds(1)
-                .withBackupCount(1)
-                .withPartitionCount(1)
-                .withBackupProcessingDelay(1)
-                .build();
-
-        populateMap(map, numberOfItems);
-
-        assertWriteBehindQueuesEmptyOnOwnerAndOnBackups(mapName, numberOfItems, mapStore, storeBuilder.getNodes());
-    }
-
-
     @Test
     public void testPutTransientDoesNotStoreEntry_onBackupPartition() {
         String mapName = randomMapName();

@@ -88,6 +88,11 @@ class EmptyMapDataStore implements MapDataStore {
     }
 
     @Override
+    public boolean isWriteBehind() {
+        return false;
+    }
+
+    @Override
     public int notFinishedOperationsCount() {
         return 0;
     }

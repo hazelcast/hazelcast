@@ -144,11 +144,6 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
         return Clock.currentTimeMillis() - begin;
     }
 
-    private Object toObject(Object data) {
-        final MapServiceContext mapServiceContext = mapService.getMapServiceContext();
-        return mapServiceContext.toObject(data);
-    }
-
     private Data toData(Object obj) {
         final MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         return mapServiceContext.toData(obj);

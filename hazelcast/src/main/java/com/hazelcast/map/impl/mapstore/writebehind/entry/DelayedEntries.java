@@ -66,7 +66,17 @@ public final class DelayedEntries {
         }
 
         @Override
+        public long getSequence() {
+            return -1L;
+        }
+
+        @Override
         public void setStoreTime(long storeTime) {
+
+        }
+
+        @Override
+        public void setSequence(long sequence) {
 
         }
     }
