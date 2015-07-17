@@ -16,6 +16,7 @@
 
 package com.hazelcast.spi.impl.eventservice.impl;
 
+import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.EventFilter;
 import com.hazelcast.spi.ListenerWrapperEventFilter;
@@ -37,8 +38,11 @@ public class EventServiceSegment<S> {
 
     private final ConcurrentMap<String, Collection<Registration>> registrations
             = new ConcurrentHashMap<String, Collection<Registration>>();
-    private final ConcurrentMap<String, Registration> registrationIdMap
-            = new ConcurrentHashMap<String, Registration>();
+
+    @Probe(name = "listenerCount")
+    private final ConcurrentMap<String, Registration> registrationIdMap = new ConcurrentHashMap<String, Registration>();
+
+    @Probe(name = "publicationCount")
     private final AtomicLong totalPublishes = new AtomicLong();
 
     public EventServiceSegment(String serviceName, S service) {

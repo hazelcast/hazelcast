@@ -1,7 +1,6 @@
 package com.hazelcast.internal.metrics.metricsets;
 
-import com.hazelcast.internal.metrics.Gauge;
-import com.hazelcast.internal.metrics.Metric;
+import com.hazelcast.internal.metrics.LongGauge;
 import com.hazelcast.internal.metrics.impl.MetricsRegistryImpl;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.test.AssertTask;
@@ -38,36 +37,36 @@ public class ClassLoadingMetricSetTest extends HazelcastTestSupport {
 
     @Test
     public void loadedClassesCount() {
-        final Gauge gauge = blackbox.getGauge("classloading.loadedClassesCount");
+        final LongGauge gauge = blackbox.newLongGauge("classloading.loadedClassesCount");
 
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                assertEquals(BEAN.getLoadedClassCount(), gauge.readLong(), 100);
+                assertEquals(BEAN.getLoadedClassCount(), gauge.read(), 100);
             }
         });
     }
 
     @Test
     public void totalLoadedClassesCount() {
-        final Gauge gauge = blackbox.getGauge("classloading.totalLoadedClassesCount");
+        final LongGauge gauge = blackbox.newLongGauge("classloading.totalLoadedClassesCount");
 
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                assertEquals(BEAN.getTotalLoadedClassCount(), gauge.readLong(), 100);
+                assertEquals(BEAN.getTotalLoadedClassCount(), gauge.read(), 100);
             }
         });
     }
 
     @Test
     public void unloadedClassCount() {
-        final Gauge gauge = blackbox.getGauge("classloading.unloadedClassCount");
+        final LongGauge gauge = blackbox.newLongGauge("classloading.unloadedClassCount");
 
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                assertEquals(BEAN.getUnloadedClassCount(), gauge.readLong(), 100);
+                assertEquals(BEAN.getUnloadedClassCount(), gauge.read(), 100);
             }
         });
     }

@@ -17,19 +17,20 @@
 package com.hazelcast.internal.metrics;
 
 /**
- * A function that provides a long value and can be used to create a metric using
- * {@link MetricsRegistry#register(Object, String, LongProbe)}.
+ * A {@link ProbeFunction} that provides a double value and can be used to create a probe using
+ * {@link MetricsRegistry#register(Object, String, DoubleProbeFunction)}
  *
  * @param <S> the type of the source object.
+ * @see LongProbeFunction
  */
-public interface LongProbe<S> {
+public interface DoubleProbeFunction<S> extends ProbeFunction {
 
     /**
-     * Gets the current value of the source object as a long.
+     * Gets the current value of the source object.
      *
      * @param source the source object.
      * @return the current value of the source object.
      * @throws Exception if something fails while getting the value.
      */
-    long get(S source) throws Exception;
+    double get(S source) throws Exception;
 }

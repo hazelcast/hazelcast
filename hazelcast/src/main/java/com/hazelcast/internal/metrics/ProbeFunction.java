@@ -17,19 +17,7 @@
 package com.hazelcast.internal.metrics;
 
 /**
- * A function that provides a double value and can be used to create a metric using
- * {@link MetricsRegistry#register(Object, String, DoubleProbe)}
- *
- * @param <S> the type of the source object.
+ * A marker interface.
  */
-public interface DoubleProbe<S> {
-
-    /**
-     * Gets the current value of the source object.
-     *
-     * @param source the source object.
-     * @return the current value of the source object.
-     * @throws Exception if something fails while getting the value.
-     */
-    double get(S source) throws Exception;
+public interface ProbeFunction {
 }

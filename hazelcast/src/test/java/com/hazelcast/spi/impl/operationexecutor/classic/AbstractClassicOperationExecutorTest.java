@@ -5,6 +5,9 @@ import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.DefaultNodeExtension;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.HazelcastThreadGroup;
+import com.hazelcast.internal.metrics.MetricsRegistry;
+import com.hazelcast.internal.metrics.impl.MetricsRegistryImpl;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.logging.LoggingServiceImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.impl.operationexecutor.OperationHostileThread;
@@ -51,6 +54,7 @@ public abstract class AbstractClassicOperationExecutorTest extends HazelcastTest
     protected ResponsePacketHandler responsePacketHandler;
     protected ClassicOperationExecutor executor;
     protected Config config;
+    protected MetricsRegistry metricsRegistry;
 
     @Before
     public void setup() throws Exception {
@@ -69,6 +73,7 @@ public abstract class AbstractClassicOperationExecutorTest extends HazelcastTest
         nodeExtension = new DefaultNodeExtension();
         handlerFactory = new DummyOperationRunnerFactory();
 
+        metricsRegistry = new MetricsRegistryImpl(Logger.getLogger(MetricsRegistry.class));
         responsePacketHandler = new DummyResponsePacketHandler();
     }
 
@@ -76,7 +81,7 @@ public abstract class AbstractClassicOperationExecutorTest extends HazelcastTest
         groupProperties = new GroupProperties(config);
         executor = new ClassicOperationExecutor(
                 groupProperties, loggingService, thisAddress, handlerFactory, responsePacketHandler,
-                threadGroup, nodeExtension);
+                threadGroup, nodeExtension, metricsRegistry);
         return executor;
     }
 

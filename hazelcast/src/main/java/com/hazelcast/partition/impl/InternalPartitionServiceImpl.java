@@ -26,6 +26,7 @@ import com.hazelcast.core.MigrationListener;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
+import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
@@ -123,6 +124,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
     private final PartitionReplicaVersions[] replicaVersions;
     private final AtomicReferenceArray<ReplicaSyncInfo> replicaSyncRequests;
     private final EntryTaskScheduler<Integer, ReplicaSyncInfo> replicaSyncScheduler;
+    @Probe
     private final Semaphore replicaSyncProcessLock;
     private final MigrationThread migrationThread;
     private final long partitionMigrationInterval;
@@ -133,26 +135,35 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
     private final MemberGroupFactory memberGroupFactory;
     private final PartitionServiceProxy proxy;
     private final Lock lock = new ReentrantLock();
+
+    @Probe
     private final AtomicInteger stateVersion = new AtomicInteger();
+    @Probe(name = "migrationQueueSize")
     private final BlockingQueue<Runnable> migrationQueue = new LinkedBlockingQueue<Runnable>();
     private final AtomicBoolean migrationActive = new AtomicBoolean(true);
+    @Probe(name = "lastRepartitionTime")
     private final AtomicLong lastRepartitionTime = new AtomicLong();
     private final CoalescingDelayedTrigger delayedResumeMigrationTrigger;
 
     private final ExceptionHandler partitionStateSyncTimeoutHandler;
 
+    @Probe
     // can be read and written concurrently...
     private volatile int memberGroupsSize;
 
     // updates will be done under lock, but reads will be multithreaded.
     private volatile boolean initialized;
 
+    @Probe(name = "activeMigrationCount")
     // updates will be done under lock, but reads will be multithreaded.
     private final ConcurrentMap<Integer, MigrationInfo> activeMigrations
             = new ConcurrentHashMap<Integer, MigrationInfo>(3, 0.75f, 1);
 
     // both reads and updates will be done under lock!
     private final LinkedList<MigrationInfo> completedMigrations = new LinkedList<MigrationInfo>();
+
+    @Probe
+    private final AtomicLong completedMigrationCounter = new AtomicLong();
 
     public InternalPartitionServiceImpl(Node node) {
         this.partitionCount = node.groupProperties.PARTITION_COUNT.getInteger();
@@ -210,9 +221,9 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
 
         long definedBackupSyncCheckInterval = node.groupProperties.PARTITION_BACKUP_SYNC_INTERVAL.getInteger();
         backupSyncCheckInterval = definedBackupSyncCheckInterval > 0 ? definedBackupSyncCheckInterval : 1;
-
         maxParallelReplications = node.groupProperties.PARTITION_MAX_PARALLEL_REPLICATIONS.getInteger();
         replicaSyncProcessLock = new Semaphore(maxParallelReplications);
+        nodeEngine.getMetricsRegistry().scanAndRegister(this, "partitions");
     }
 
     private long calculateMaxMigrationDelayOnMemberRemoved() {
@@ -232,6 +243,22 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
 
         migrationDelayMs = Math.min(migrationDelayMs, maxDelayMs);
         return migrationDelayMs;
+    }
+
+    @Probe(name = "migrationActive")
+    private int migrationActiveProbe() {
+        return migrationActive.get() ? 1 : 0;
+    }
+
+    @Probe
+    private int localPartitionCount() {
+        int count = 0;
+        for (InternalPartition partition : partitions) {
+            if (partition.isLocal()) {
+                count++;
+            }
+        }
+        return count;
     }
 
     @Override
@@ -354,11 +381,13 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         return size > 0 ? size : 1;
     }
 
+    @Probe(name = "maxBackupCount")
     @Override
     public int getMaxBackupCount() {
         return Math.min(getMemberGroupsSize() - 1, InternalPartition.MAX_BACKUP_COUNT);
     }
 
+    @Override
     public void memberAdded(MemberImpl member) {
         if (!member.localMember()) {
             updateMemberGroupsSize();
@@ -381,6 +410,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         }
     }
 
+    @Override
     public void memberRemoved(final MemberImpl member) {
         updateMemberGroupsSize();
         final Address deadAddress = member.getAddress();
@@ -797,11 +827,14 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         return activeMigrations.remove(partitionId);
     }
 
+    @Override
     public Collection<MigrationInfo> getActiveMigrations() {
         return Collections.unmodifiableCollection(activeMigrations.values());
     }
 
     private void addCompletedMigration(MigrationInfo migrationInfo) {
+        completedMigrationCounter.incrementAndGet();
+
         lock.lock();
         try {
             if (completedMigrations.size() > 25) {

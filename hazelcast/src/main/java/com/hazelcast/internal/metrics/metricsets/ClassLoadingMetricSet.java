@@ -17,7 +17,7 @@
 package com.hazelcast.internal.metrics.metricsets;
 
 import com.hazelcast.internal.metrics.MetricsRegistry;
-import com.hazelcast.internal.metrics.LongProbe;
+import com.hazelcast.internal.metrics.LongProbeFunction;
 
 import java.lang.management.ClassLoadingMXBean;
 import java.lang.management.ManagementFactory;
@@ -43,7 +43,7 @@ public final class ClassLoadingMetricSet {
         ClassLoadingMXBean mxBean = ManagementFactory.getClassLoadingMXBean();
 
         metricsRegistry.register(mxBean, "classloading.loadedClassesCount",
-                new LongProbe<ClassLoadingMXBean>() {
+                new LongProbeFunction<ClassLoadingMXBean>() {
                     @Override
                     public long get(ClassLoadingMXBean classLoadingMXBean) {
                         return classLoadingMXBean.getLoadedClassCount();
@@ -52,7 +52,7 @@ public final class ClassLoadingMetricSet {
         );
 
         metricsRegistry.register(mxBean, "classloading.totalLoadedClassesCount",
-                new LongProbe<ClassLoadingMXBean>() {
+                new LongProbeFunction<ClassLoadingMXBean>() {
                     @Override
                     public long get(ClassLoadingMXBean classLoadingMXBean) {
                         return classLoadingMXBean.getTotalLoadedClassCount();
@@ -61,7 +61,7 @@ public final class ClassLoadingMetricSet {
         );
 
         metricsRegistry.register(mxBean, "classloading.unloadedClassCount",
-                new LongProbe<ClassLoadingMXBean>() {
+                new LongProbeFunction<ClassLoadingMXBean>() {
                     @Override
                     public long get(ClassLoadingMXBean classLoadingMXBean) {
                         return classLoadingMXBean.getUnloadedClassCount();

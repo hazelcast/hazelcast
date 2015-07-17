@@ -23,6 +23,10 @@ import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.management.ManagementCenterService;
+import com.hazelcast.internal.metrics.MetricsRegistry;
+import com.hazelcast.internal.metrics.impl.MetricsRegistryImpl;
+import com.hazelcast.internal.storage.DataRef;
+import com.hazelcast.internal.storage.Storage;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
@@ -35,8 +39,10 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PostJoinAwareService;
 import com.hazelcast.spi.impl.servicemanager.ServiceInfo;
 import com.hazelcast.spi.SharedService;
-import com.hazelcast.internal.storage.DataRef;
-import com.hazelcast.internal.storage.Storage;
+import com.hazelcast.spi.impl.eventservice.InternalEventService;
+import com.hazelcast.spi.impl.eventservice.impl.EventServiceImpl;
+import com.hazelcast.spi.impl.executionservice.InternalExecutionService;
+import com.hazelcast.spi.impl.executionservice.impl.ExecutionServiceImpl;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.impl.proxyservice.InternalProxyService;
@@ -44,12 +50,8 @@ import com.hazelcast.spi.impl.proxyservice.impl.ProxyServiceImpl;
 import com.hazelcast.spi.impl.servicemanager.impl.ServiceManagerImpl;
 import com.hazelcast.spi.impl.waitnotifyservice.InternalWaitNotifyService;
 import com.hazelcast.spi.impl.waitnotifyservice.impl.WaitNotifyServiceImpl;
-import com.hazelcast.spi.impl.eventservice.InternalEventService;
-import com.hazelcast.spi.impl.eventservice.impl.EventServiceImpl;
 import com.hazelcast.spi.impl.transceiver.PacketTransceiver;
 import com.hazelcast.spi.impl.transceiver.impl.PacketTransceiverImpl;
-import com.hazelcast.spi.impl.executionservice.InternalExecutionService;
-import com.hazelcast.spi.impl.executionservice.impl.ExecutionServiceImpl;
 import com.hazelcast.transaction.TransactionManagerService;
 import com.hazelcast.transaction.impl.TransactionManagerServiceImpl;
 import com.hazelcast.wan.WanReplicationService;
@@ -80,10 +82,12 @@ public class NodeEngineImpl implements NodeEngine {
     private final WanReplicationService wanReplicationService;
     private final PacketTransceiver packetTransceiver;
     private final QuorumServiceImpl quorumService;
+    private final MetricsRegistryImpl metricsRegistry;
 
     public NodeEngineImpl(Node node) {
         this.node = node;
         this.logger = node.getLogger(NodeEngine.class.getName());
+        this.metricsRegistry = new MetricsRegistryImpl(node.getLogger(MetricsRegistryImpl.class));
         this.proxyService = new ProxyServiceImpl(this);
         this.serviceManager = new ServiceManagerImpl(this);
         this.executionService = new ExecutionServiceImpl(this);
@@ -95,6 +99,10 @@ public class NodeEngineImpl implements NodeEngine {
         this.packetTransceiver = new PacketTransceiverImpl(
                 node, logger, operationService, eventService, wanReplicationService, executionService);
         quorumService = new QuorumServiceImpl(this);
+    }
+
+    public MetricsRegistry getMetricsRegistry() {
+        return metricsRegistry;
     }
 
     public PacketTransceiver getPacketTransceiver() {
@@ -317,5 +325,6 @@ public class NodeEngineImpl implements NodeEngine {
         operationService.shutdown();
         wanReplicationService.shutdown();
         executionService.shutdown();
+        metricsRegistry.shutdown();
     }
 }

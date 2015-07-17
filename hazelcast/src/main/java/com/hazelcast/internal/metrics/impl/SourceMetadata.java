@@ -23,14 +23,14 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.hazelcast.internal.metrics.impl.AccessibleObjectProbe.flatten;
+import static com.hazelcast.internal.metrics.impl.ProbeUtils.flatten;
 import static com.hazelcast.internal.metrics.impl.FieldProbe.createFieldProbe;
 import static com.hazelcast.internal.metrics.impl.MethodProbe.createMethodProbe;
 
 /**
- * Contains the metadata for an object with @Gauge fields/methods.
+ * Contains the metadata for an object with @Probe fields/methods.
  *
- * This object is effectively immutable after it is constructed.
+ * This object is effectively immutable after construction.
  */
 final class SourceMetadata {
     private final List<FieldProbe> fields = new ArrayList<FieldProbe>();

@@ -1,8 +1,6 @@
 package com.hazelcast.internal.metrics.impl;
 
-import com.hazelcast.internal.metrics.Gauge;
-import com.hazelcast.internal.metrics.LongProbe;
-import com.hazelcast.internal.metrics.Metric;
+import com.hazelcast.internal.metrics.LongProbeFunction;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -17,7 +15,7 @@ import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -34,7 +32,7 @@ public class MetricsRegistryImplTest extends HazelcastTestSupport {
     @Test
     public void modCount() {
         long modCount = metricsRegistry.modCount();
-        metricsRegistry.register(this, "foo", new LongProbe() {
+        metricsRegistry.register(this, "foo", new LongProbeFunction() {
             @Override
             public long get(Object obj) throws Exception {
                 return 1;
@@ -46,29 +44,31 @@ public class MetricsRegistryImplTest extends HazelcastTestSupport {
         assertEquals(modCount + 2, metricsRegistry.modCount());
     }
 
-    // ================ getGauge ======================
+    // ================ newLongGauge ======================
 
     @Test(expected = NullPointerException.class)
-    public void getMetric_whenNullName() {
-        metricsRegistry.getGauge(null);
+    public void newGauge_whenNullName() {
+        metricsRegistry.newLongGauge(null);
     }
 
     @Test
-    public void getMetric_whenNotExistingMetric() {
-        Gauge gauge = metricsRegistry.getGauge("foo");
+    public void newGauge_whenNotExistingMetric() {
+        LongGaugeImpl gauge = metricsRegistry.newLongGauge("foo");
 
         assertNotNull(gauge);
         assertEquals("foo", gauge.getName());
-        assertEquals(0, gauge.readLong());
+        assertEquals(0, gauge.read());
     }
 
     @Test
-    public void getMetric_whenExistingMetric() {
-        Gauge first = metricsRegistry.getGauge("foo");
-        Gauge second = metricsRegistry.getGauge("foo");
+    public void newGauge_whenExistingMetric() {
+        LongGaugeImpl first = metricsRegistry.newLongGauge("foo");
+        LongGaugeImpl second = metricsRegistry.newLongGauge("foo");
 
-        assertSame(first, second);
+        assertNotSame(first, second);
     }
+
+    // ================ getNames ======================
 
     @Test
     public void getNames() {
@@ -78,7 +78,7 @@ public class MetricsRegistryImplTest extends HazelcastTestSupport {
         expected.add("third");
 
         for (String name : expected) {
-            metricsRegistry.register(this, name, new LongProbe() {
+            metricsRegistry.register(this, name, new LongProbeFunction() {
                 @Override
                 public long get(Object obj) throws Exception {
                     return 0;
@@ -93,7 +93,7 @@ public class MetricsRegistryImplTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void shutdown(){
+    public void shutdown() {
         metricsRegistry.shutdown();
     }
 }

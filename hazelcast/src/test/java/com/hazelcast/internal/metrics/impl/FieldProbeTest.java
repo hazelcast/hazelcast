@@ -15,6 +15,7 @@ import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -51,6 +52,7 @@ public class FieldProbeTest extends HazelcastTestSupport {
         getLong("counterField", 10);
         getLong("collectionField", 10);
         getLong("mapField", 10);
+        getLong("semaphoreField", 10);
 
         getLong("ByteField", 10);
         getLong("ShortField", 10);
@@ -66,6 +68,7 @@ public class FieldProbeTest extends HazelcastTestSupport {
         getLong("nullShortField", 0);
         getLong("nullIntegerField", 0);
         getLong("nullLongField", 0);
+        getLong("nullSemaphoreField", 0);
     }
 
     public void getLong(String fieldName, int expectedValue) throws Exception {
@@ -141,7 +144,10 @@ public class FieldProbeTest extends HazelcastTestSupport {
         private Map mapField = MetricsUtils.createMap(10);
         @Probe
         private Map nullMapField;
-
+        @Probe
+        private Semaphore semaphoreField = new Semaphore(10);
+        @Probe
+        private Semaphore nullSemaphoreField;
 
         @Probe
         private Byte ByteField = (byte) 10;
@@ -168,5 +174,6 @@ public class FieldProbeTest extends HazelcastTestSupport {
         private Float nullFloatField;
         @Probe
         private Double nullDoubleField;
+
     }
 }

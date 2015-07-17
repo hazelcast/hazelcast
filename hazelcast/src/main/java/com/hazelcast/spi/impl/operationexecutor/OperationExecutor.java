@@ -60,10 +60,6 @@ public interface OperationExecutor {
     @Deprecated
     int getGenericOperationThreadCount();
 
-    // Will be replaced by the black-box
-    @Deprecated
-    void dumpPerformanceMetrics(StringBuffer sb);
-
     /**
      * Gets all the operation handlers for the partitions. Each partition will have its own operation handler. So if
      * there are 271 partitions, then the size of the array will be 271.

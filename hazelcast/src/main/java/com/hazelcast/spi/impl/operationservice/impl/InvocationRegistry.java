@@ -20,6 +20,7 @@ import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.partition.ReplicaErrorLogger;
@@ -33,6 +34,8 @@ import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.Response;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.EmptyStatement;
+import com.hazelcast.util.counters.MwCounter;
+import com.hazelcast.util.counters.SwCounter;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -41,6 +44,8 @@ import java.util.concurrent.TimeUnit;
 import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.inspectOutputMemoryError;
 import static com.hazelcast.spi.Operation.CALL_ID_LOCAL_SKIPPED;
 import static com.hazelcast.spi.OperationAccessor.setCallId;
+import static com.hazelcast.util.counters.MwCounter.newMwCounter;
+import static com.hazelcast.util.counters.SwCounter.newSwCounter;
 
 /**
  * The InvocationsRegistry is responsible for the registration of all pending invocations.
@@ -57,6 +62,7 @@ import static com.hazelcast.spi.OperationAccessor.setCallId;
  * the PartitionInvocation and TargetInvocation can be folded into Invocation.
  */
 public class InvocationRegistry {
+
     private static final long SCHEDULE_DELAY = 1111;
     private static final int INITIAL_CAPACITY = 1000;
     private static final float LOAD_FACTOR = 0.75f;
@@ -64,6 +70,8 @@ public class InvocationRegistry {
     private static final double HUNDRED_PERCENT = 100d;
 
     private final long backupTimeoutMillis;
+
+    @Probe(name = "invocations.pending")
     private final ConcurrentMap<Long, Invocation> invocations;
     private final NodeEngineImpl nodeEngine;
     private final ILogger logger;
@@ -71,18 +79,42 @@ public class InvocationRegistry {
     private final CallIdSequence callIdSequence;
     private final long slowInvocationThresholdMs;
 
+    @Probe(name = "response.normal.count")
+    private final SwCounter responseNormalCounter = newSwCounter();
+    @Probe(name = "response.timeout.count")
+    private final SwCounter responseTimeoutCounter = newSwCounter();
+    @Probe(name = "response.backup.count")
+    private final MwCounter responseBackupCounter = newMwCounter();
+    @Probe(name = "response.error.count")
+    private final SwCounter responseErrorCounter = newSwCounter();
+    @Probe(name = "invocations.backupTimeouts")
+    private final SwCounter backupTimeoutsCount = newSwCounter();
+    @Probe(name = "invocations.normalTimeouts")
+    private final SwCounter normalTimeoutsCount = newSwCounter();
+
     public InvocationRegistry(NodeEngineImpl nodeEngine, ILogger logger, BackpressureRegulator backpressureRegulator,
                               int concurrencyLevel) {
         this.nodeEngine = nodeEngine;
         this.logger = logger;
         this.callIdSequence = backpressureRegulator.newCallIdSequence();
-
         GroupProperties props = nodeEngine.getGroupProperties();
         this.slowInvocationThresholdMs = initSlowInvocationThresholdMs(props);
         this.backupTimeoutMillis = props.OPERATION_BACKUP_TIMEOUT_MILLIS.getLong();
         this.invocations = new ConcurrentHashMap<Long, Invocation>(INITIAL_CAPACITY, LOAD_FACTOR, concurrencyLevel);
         this.inspectionThread = new InspectionThread();
+
         inspectionThread.start();
+        nodeEngine.getMetricsRegistry().scanAndRegister(this, "operation");
+    }
+
+    @Probe(name = "invocations.usedPercentage")
+    private double invocationsUsedPercentage() {
+        int maxConcurrentInvocations = callIdSequence.getMaxConcurrentInvocations();
+        if (maxConcurrentInvocations == Integer.MAX_VALUE) {
+            return 0;
+        }
+
+        return (HUNDRED_PERCENT * invocations.size()) / maxConcurrentInvocations;
     }
 
     private long initSlowInvocationThresholdMs(GroupProperties props) {
@@ -93,6 +125,7 @@ public class InvocationRegistry {
         return thresholdMs;
     }
 
+    @Probe(name = "invocations.lastCallId")
     public long getLastCallId() {
         return callIdSequence.getLastCallId();
     }
@@ -137,10 +170,6 @@ public class InvocationRegistry {
         assert deleted : "failed to deregister callId:" + callId + " " + invocation;
     }
 
-    public double getInvocationUsagePercentage() {
-        return (HUNDRED_PERCENT * invocations.size()) / callIdSequence.getMaxConcurrentInvocations();
-    }
-
     /**
      * Returns the number of pending invocations.
      *
@@ -180,6 +209,8 @@ public class InvocationRegistry {
     }
 
     public void notifyBackupComplete(long callId) {
+        responseBackupCounter.inc();
+
         try {
             Invocation invocation = invocations.get(callId);
 
@@ -200,6 +231,8 @@ public class InvocationRegistry {
     }
 
     private void notifyErrorResponse(ErrorResponse response) {
+        responseErrorCounter.inc();
+
         Invocation invocation = invocations.get(response.getCallId());
 
         if (invocation == null) {
@@ -213,6 +246,8 @@ public class InvocationRegistry {
     }
 
     private void notifyNormalResponse(NormalResponse response) {
+        responseNormalCounter.inc();
+
         Invocation invocation = invocations.get(response.getCallId());
 
         if (invocation == null) {
@@ -225,6 +260,8 @@ public class InvocationRegistry {
     }
 
     private void notifyCallTimeout(CallTimeoutResponse response) {
+        responseTimeoutCounter.inc();
+
         Invocation invocation = invocations.get(response.getCallId());
 
         if (invocation == null) {
@@ -322,8 +359,6 @@ public class InvocationRegistry {
             }
 
             long now = Clock.currentTimeMillis();
-
-            // todo: these 2 measurements should be added to the black-box.
             int backupTimeouts = 0;
             int invocationTimeouts = 0;
             for (Invocation invocation : invocations.values()) {
@@ -342,6 +377,8 @@ public class InvocationRegistry {
                 }
             }
 
+            backupTimeoutsCount.inc(backupTimeouts);
+            normalTimeoutsCount.inc(invocationTimeouts);
             log(backupTimeouts, invocationTimeouts);
         }
 

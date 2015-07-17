@@ -19,20 +19,24 @@ package com.hazelcast.nio.tcp;
 import com.hazelcast.cluster.impl.BindMessage;
 import com.hazelcast.nio.IOService;
 import com.hazelcast.nio.Packet;
+import com.hazelcast.util.counters.Counter;
 
 import java.nio.ByteBuffer;
 
 public class DefaultPacketReader implements PacketReader {
 
     protected final TcpIpConnection connection;
-
     protected final IOService ioService;
-
     protected Packet packet;
+
+    private final Counter normalPacketsRead;
+    private final Counter priorityPacketsRead;
 
     public DefaultPacketReader(TcpIpConnection connection, IOService ioService) {
         this.connection = connection;
         this.ioService = ioService;
+        this.normalPacketsRead = connection.getReadHandler().getNormalPacketsRead();
+        this.priorityPacketsRead = connection.getReadHandler().getPriorityPacketsRead();
     }
 
     @Override
@@ -52,6 +56,12 @@ public class DefaultPacketReader implements PacketReader {
     }
 
     protected void handlePacket(Packet packet) {
+        if (packet.isHeaderSet(Packet.HEADER_URGENT)) {
+            priorityPacketsRead.inc();
+        } else {
+            normalPacketsRead.inc();
+        }
+
         packet.setConn(connection);
         if (packet.isHeaderSet(Packet.HEADER_BIND)) {
             handleBind(packet);

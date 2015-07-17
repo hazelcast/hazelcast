@@ -52,7 +52,7 @@ public class OperationRunnerImplTest extends HazelcastTestSupport {
         responseHandler = mock(OperationResponseHandler.class);
     }
 
-    @Test
+     @Test
     public void runTask() {
         final AtomicLong counter = new AtomicLong();
         operationRunner.run(new Runnable() {

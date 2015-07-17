@@ -20,6 +20,7 @@ import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.DistributedObjectListener;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.EventPublishingService;
 import com.hazelcast.spi.Operation;
@@ -36,6 +37,7 @@ import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.FutureUtil.ExceptionHandler;
 import com.hazelcast.util.UuidUtil;
+import com.hazelcast.util.counters.MwCounter;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -52,6 +54,7 @@ import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
 import static com.hazelcast.util.FutureUtil.logAllExceptions;
 import static com.hazelcast.util.FutureUtil.waitWithDeadline;
 import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.util.counters.MwCounter.newMwCounter;
 
 public class ProxyServiceImpl
         implements InternalProxyService, PostJoinAwareService, EventPublishingService<DistributedObjectEventPacket, Object> {
@@ -78,15 +81,22 @@ public class ProxyServiceImpl
     private final ConcurrentMap<String, ProxyRegistry> registries =
             new ConcurrentHashMap<String, ProxyRegistry>();
 
+    @Probe(name = "createdCount")
+    private final MwCounter createdCounter = newMwCounter();
+    @Probe(name = "destroyedCount")
+    private final MwCounter destroyedCounter = newMwCounter();
+
     public ProxyServiceImpl(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
         this.logger = nodeEngine.getLogger(ProxyService.class.getName());
+        nodeEngine.getMetricsRegistry().scanAndRegister(this, "proxy");
     }
 
     public void init() {
         nodeEngine.getEventService().registerListener(SERVICE_NAME, SERVICE_NAME, new Object());
     }
 
+    @Probe(name = "proxyCount")
     @Override
     public int getProxyCount() {
         int count = 0;
@@ -104,6 +114,7 @@ public class ProxyServiceImpl
 
         ProxyRegistry registry = getOrCreateRegistry(serviceName);
         registry.createProxy(name, true, true);
+        createdCounter.inc();
     }
 
     public ProxyRegistry getOrCreateRegistry(String serviceName) {
@@ -147,6 +158,7 @@ public class ProxyServiceImpl
         ProxyRegistry registry = registries.get(serviceName);
         if (registry != null) {
             registry.destroyProxy(name, fireEvent);
+            destroyedCounter.inc();
         }
         RemoteService service = nodeEngine.getService(serviceName);
         if (service != null) {

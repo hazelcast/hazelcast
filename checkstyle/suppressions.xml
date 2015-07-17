@@ -582,5 +582,8 @@
     <!-- Taken from JBOSS project, suppress checkstyles -->
     <suppress checks="" files="com/hazelcast/buildutils/ElementParser"/>
 
+
+    <suppress checks="ReturnCount" files="com.hazelcast.internal.metrics.impl.FieldProbe"/>
+    <suppress checks="ReturnCount" files="com.hazelcast.internal.metrics.impl.MethodProbe"/>
 </suppressions>
 
