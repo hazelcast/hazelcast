@@ -14,9 +14,12 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map.impl;
+package com.hazelcast.map.impl.recordstore;
 
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.map.impl.MapContainer;
+import com.hazelcast.map.impl.MapService;
+import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.mapstore.MapDataStore;
 import com.hazelcast.map.impl.operation.PutFromLoadAllOperation;
 import com.hazelcast.map.impl.record.Record;
@@ -123,7 +126,7 @@ class BasicRecordStoreLoader implements RecordStoreLoader {
         }
 
         List<Future> futures = doBatchLoad(keys);
-        for (Future future: futures) {
+        for (Future future : futures) {
             future.get();
         }
     }
@@ -221,7 +224,7 @@ class BasicRecordStoreLoader implements RecordStoreLoader {
         operation.setOperationResponseHandler(new OperationResponseHandler() {
             @Override
             public void sendResponse(Operation op, Object obj) {
-                 if (finishedBatchCounter.decrementAndGet() == 0) {
+                if (finishedBatchCounter.decrementAndGet() == 0) {
                     loaded.set(true);
                 }
             }

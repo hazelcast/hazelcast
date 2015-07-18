@@ -564,8 +564,8 @@
     <suppress checks="JavadocMethod" files="com/hazelcast/map/"/>
     <suppress checks="JavadocVariable" files="com/hazelcast/map/"/>
 
-    <suppress checks="MethodCountCheck" files="com/hazelcast/map/impl/RecordStore"/>
-    <suppress checks="MethodCountCheck" files="com/hazelcast/map/impl/DefaultRecordStore"/>
+    <suppress checks="MethodCountCheck" files="com/hazelcast/map/impl/recordstore/RecordStore"/>
+    <suppress checks="MethodCountCheck" files="com/hazelcast/map/impl/recordstore/DefaultRecordStore"/>
     <suppress checks="MethodCountCheck" files="com/hazelcast/map/impl/proxy/MapProxyImpl"/>
     <suppress checks="MethodCountCheck" files="com/hazelcast/map/impl/proxy/MapProxySupport"/>
     <suppress checks="ClassFanOutComplexityCheck" files="com/hazelcast/map/impl/proxy/MapProxySupport"/>

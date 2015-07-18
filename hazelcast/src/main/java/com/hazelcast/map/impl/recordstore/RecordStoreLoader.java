@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map.impl;
+package com.hazelcast.map.impl.recordstore;
 
 import com.hazelcast.nio.serialization.Data;
 

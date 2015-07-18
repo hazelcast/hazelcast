@@ -47,7 +47,7 @@ import com.hazelcast.map.impl.nearcache.NearCache;
 import com.hazelcast.map.impl.nearcache.NearCacheProvider;
 import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.map.impl.QueryEventFilter;
-import com.hazelcast.map.impl.RecordStore;
+import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.map.impl.operation.AddIndexOperation;
 import com.hazelcast.map.impl.operation.AddInterceptorOperation;
 import com.hazelcast.map.impl.operation.BasePutOperation;

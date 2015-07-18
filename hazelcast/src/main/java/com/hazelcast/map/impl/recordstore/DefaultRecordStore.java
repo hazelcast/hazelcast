@@ -14,13 +14,19 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map.impl;
+package com.hazelcast.map.impl.recordstore;
 
 
 import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.concurrent.lock.LockStore;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.map.impl.EntryViews;
+import com.hazelcast.map.impl.MapContainer;
+import com.hazelcast.map.impl.MapEntrySet;
+import com.hazelcast.map.impl.MapKeyLoader;
+import com.hazelcast.map.impl.MapService;
+import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.mapstore.MapDataStore;
 import com.hazelcast.map.impl.mapstore.MapStoreContext;
 import com.hazelcast.map.impl.mapstore.MapStoreManager;

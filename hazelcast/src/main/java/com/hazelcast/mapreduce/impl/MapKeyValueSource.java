@@ -17,7 +17,7 @@
 package com.hazelcast.mapreduce.impl;
 
 import com.hazelcast.map.impl.MapService;
-import com.hazelcast.map.impl.RecordStore;
+import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.mapreduce.KeyValueSource;
 import com.hazelcast.mapreduce.PartitionIdAware;
 import com.hazelcast.nio.Address;
