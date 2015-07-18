@@ -35,12 +35,9 @@ import com.hazelcast.util.UuidUtil;
 
 import javax.transaction.xa.XAException;
 import javax.transaction.xa.Xid;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
 import static com.hazelcast.transaction.impl.Transaction.State.ACTIVE;
@@ -56,6 +53,9 @@ import static com.hazelcast.transaction.impl.xa.XAService.SERVICE_NAME;
 import static com.hazelcast.util.FutureUtil.RETHROW_TRANSACTION_EXCEPTION;
 import static com.hazelcast.util.FutureUtil.logAllExceptions;
 import static com.hazelcast.util.FutureUtil.waitWithDeadline;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.MINUTES;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * This class does not need to be thread-safe, it is only used via XAResource
@@ -82,7 +82,7 @@ final class XATransactionImpl implements Transaction, InternalTransaction {
     public XATransactionImpl(NodeEngine nodeEngine, Xid xid, String txOwnerUuid, int timeout) {
         this.transactionLog = new TransactionLog();
         this.nodeEngine = nodeEngine;
-        this.timeoutMillis = TimeUnit.SECONDS.toMillis(timeout);
+        this.timeoutMillis = SECONDS.toMillis(timeout);
         this.txnId = UuidUtil.buildRandomUuidString();
         this.xid = new SerializableXID(xid.getFormatId(), xid.getGlobalTransactionId(), xid.getBranchQualifier());
         this.txOwnerUuid = txOwnerUuid == null ? nodeEngine.getLocalMember().getUuid() : txOwnerUuid;
@@ -109,7 +109,6 @@ final class XATransactionImpl implements Transaction, InternalTransaction {
         this.startTime = startTime;
     }
 
-
     @Override
     public void begin() throws IllegalStateException {
         if (state == ACTIVE) {
@@ -126,12 +125,9 @@ final class XATransactionImpl implements Transaction, InternalTransaction {
         }
         checkTimeout();
         try {
-            final List<Future> futures = new ArrayList<Future>(transactionLog.size());
             state = PREPARING;
-            for (TransactionLogRecord record : transactionLog) {
-                futures.add(transactionLog.prepare(nodeEngine, record));
-            }
-            waitWithDeadline(futures, timeoutMillis, TimeUnit.MILLISECONDS, RETHROW_TRANSACTION_EXCEPTION);
+            List<Future> futures = transactionLog.prepare(nodeEngine);
+            waitWithDeadline(futures, timeoutMillis, MILLISECONDS, RETHROW_TRANSACTION_EXCEPTION);
             futures.clear();
             putTransactionInfoRemote();
             state = PREPARED;
@@ -157,14 +153,12 @@ final class XATransactionImpl implements Transaction, InternalTransaction {
         }
         checkTimeout();
         try {
-            final List<Future> futures = new ArrayList<Future>(transactionLog.size());
             state = COMMITTING;
-            for (TransactionLogRecord record : transactionLog) {
-                futures.add(transactionLog.commit(nodeEngine, record));
-            }
+            List<Future> futures = transactionLog.commit(nodeEngine);
+
             // We should rethrow exception if transaction is not TWO_PHASE
 
-            waitWithDeadline(futures, COMMIT_TIMEOUT_MINUTES, TimeUnit.MINUTES, commitExceptionHandler);
+            waitWithDeadline(futures, COMMIT_TIMEOUT_MINUTES, MINUTES, commitExceptionHandler);
 
             state = COMMITTED;
         } catch (Throwable e) {
@@ -179,9 +173,7 @@ final class XATransactionImpl implements Transaction, InternalTransaction {
         }
         checkTimeout();
         state = COMMITTING;
-        for (TransactionLogRecord record : transactionLog) {
-            transactionLog.commitAsync(nodeEngine, record, callback);
-        }
+        transactionLog.commitAsync(nodeEngine, callback);
         // We should rethrow exception if transaction is not TWO_PHASE
 
         state = COMMITTED;
@@ -194,14 +186,8 @@ final class XATransactionImpl implements Transaction, InternalTransaction {
         }
         state = ROLLING_BACK;
         try {
-            List<TransactionLogRecord> recordList = transactionLog.getRecordList();
-            List<Future> futures = new ArrayList<Future>(recordList.size());
-            ListIterator<TransactionLogRecord> iterator = recordList.listIterator(recordList.size());
-            while (iterator.hasPrevious()) {
-                TransactionLogRecord record = iterator.previous();
-                futures.add(transactionLog.rollback(nodeEngine, record));
-            }
-            waitWithDeadline(futures, ROLLBACK_TIMEOUT_MINUTES, TimeUnit.MINUTES, rollbackExceptionHandler);
+            List<Future> futures = transactionLog.rollback(nodeEngine);
+            waitWithDeadline(futures, ROLLBACK_TIMEOUT_MINUTES, MINUTES, rollbackExceptionHandler);
         } catch (Throwable e) {
             throw ExceptionUtil.rethrow(e);
         } finally {
@@ -214,9 +200,8 @@ final class XATransactionImpl implements Transaction, InternalTransaction {
             throw new IllegalStateException("Transaction is not active");
         }
         state = ROLLING_BACK;
-        for (TransactionLogRecord record : transactionLog) {
-            transactionLog.rollbackAsync(nodeEngine, callback, record);
-        }
+        transactionLog.rollbackAsync(nodeEngine, callback);
+        //todo: I doubt this is correct; rollbackAsync is an async operation so has potentially not yet completed.
         state = ROLLED_BACK;
     }
 

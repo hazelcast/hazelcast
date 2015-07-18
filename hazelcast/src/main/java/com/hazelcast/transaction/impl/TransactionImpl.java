@@ -36,13 +36,12 @@ import com.hazelcast.util.UuidUtil;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
 import static com.hazelcast.transaction.TransactionOptions.TransactionType;
+import static com.hazelcast.transaction.TransactionOptions.TransactionType.TWO_PHASE;
 import static com.hazelcast.transaction.impl.Transaction.State.ACTIVE;
 import static com.hazelcast.transaction.impl.Transaction.State.COMMITTED;
 import static com.hazelcast.transaction.impl.Transaction.State.COMMITTING;
@@ -56,6 +55,8 @@ import static com.hazelcast.util.FutureUtil.ExceptionHandler;
 import static com.hazelcast.util.FutureUtil.RETHROW_TRANSACTION_EXCEPTION;
 import static com.hazelcast.util.FutureUtil.logAllExceptions;
 import static com.hazelcast.util.FutureUtil.waitWithDeadline;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.MINUTES;
 
 public class TransactionImpl implements Transaction, InternalTransaction {
 
@@ -109,7 +110,7 @@ public class TransactionImpl implements Transaction, InternalTransaction {
         this.timeoutMillis = timeoutMillis;
         this.startTime = startTime;
         this.durability = 0;
-        this.transactionType = TransactionType.TWO_PHASE;
+        this.transactionType = TWO_PHASE;
         this.state = PREPARED;
         this.txOwnerUuid = txOwnerUuid;
         this.checkThreadAccess = false;
@@ -165,7 +166,7 @@ public class TransactionImpl implements Transaction, InternalTransaction {
         startTime = Clock.currentTimeMillis();
         backupAddresses = transactionManagerService.pickBackupAddresses(durability);
 
-        if (durability > 0 && backupAddresses != null && transactionType == TransactionType.TWO_PHASE) {
+        if (durability > 0 && backupAddresses != null && transactionType == TWO_PHASE) {
             List<Future> futures = startTxBackup();
             awaitTxBackupCompletion(futures);
         }
@@ -181,7 +182,7 @@ public class TransactionImpl implements Transaction, InternalTransaction {
     private void awaitTxBackupCompletion(List<Future> futures) {
         for (Future future : futures) {
             try {
-                future.get(timeoutMillis, TimeUnit.MILLISECONDS);
+                future.get(timeoutMillis, MILLISECONDS);
             } catch (MemberLeftException e) {
                 nodeEngine.getLogger(Transaction.class).warning("Member left while replicating tx begin: " + e);
             } catch (Throwable e) {
@@ -198,11 +199,11 @@ public class TransactionImpl implements Transaction, InternalTransaction {
     }
 
     private List<Future> startTxBackup() {
-        final OperationService operationService = nodeEngine.getOperationService();
+        OperationService operationService = nodeEngine.getOperationService();
         List<Future> futures = new ArrayList<Future>(backupAddresses.length);
         for (Address backupAddress : backupAddresses) {
             if (nodeEngine.getClusterService().getMember(backupAddress) != null) {
-                final Future f = operationService.invokeOnTarget(TransactionManagerServiceImpl.SERVICE_NAME,
+                Future f = operationService.invokeOnTarget(TransactionManagerServiceImpl.SERVICE_NAME,
                         new BeginTxBackupOperation(txOwnerUuid, txnId), backupAddress);
                 futures.add(f);
             }
@@ -224,12 +225,10 @@ public class TransactionImpl implements Transaction, InternalTransaction {
         checkThread();
         checkTimeout();
         try {
-            final List<Future> futures = new ArrayList<Future>(transactionLog.size());
             state = PREPARING;
-            for (TransactionLogRecord record : transactionLog) {
-                futures.add(transactionLog.prepare(nodeEngine, record));
-            }
-            waitWithDeadline(futures, timeoutMillis, TimeUnit.MILLISECONDS, RETHROW_TRANSACTION_EXCEPTION);
+            List<Future> futures = transactionLog.prepare(nodeEngine);
+
+            waitWithDeadline(futures, timeoutMillis, MILLISECONDS, RETHROW_TRANSACTION_EXCEPTION);
             futures.clear();
             state = PREPARED;
             if (durability > 0) {
@@ -240,25 +239,29 @@ public class TransactionImpl implements Transaction, InternalTransaction {
         }
     }
 
+    // todo: should be moved to TransactionLog?
     private void replicateTxnLog() throws InterruptedException, ExecutionException, java.util.concurrent.TimeoutException {
-        final List<Future> futures = new ArrayList<Future>(transactionLog.size());
-        final OperationService operationService = nodeEngine.getOperationService();
+        List<Future> futures = new ArrayList<Future>(transactionLog.size());
+        OperationService operationService = nodeEngine.getOperationService();
         for (Address backupAddress : backupAddresses) {
-            if (nodeEngine.getClusterService().getMember(backupAddress) != null) {
-                final Future f = operationService.invokeOnTarget(TransactionManagerServiceImpl.SERVICE_NAME,
-                        new ReplicateTxOperation(transactionLog.getRecordList(), txOwnerUuid, txnId, timeoutMillis, startTime),
-                        backupAddress);
-                futures.add(f);
+            if (nodeEngine.getClusterService().getMember(backupAddress) == null) {
+                continue;
             }
+
+            Future f = operationService.invokeOnTarget(TransactionManagerServiceImpl.SERVICE_NAME,
+                    new ReplicateTxOperation(transactionLog.getRecordList(), txOwnerUuid, txnId, timeoutMillis, startTime),
+                    backupAddress);
+            futures.add(f);
         }
-        waitWithDeadline(futures, timeoutMillis, TimeUnit.MILLISECONDS, RETHROW_TRANSACTION_EXCEPTION);
+        waitWithDeadline(futures, timeoutMillis, MILLISECONDS, RETHROW_TRANSACTION_EXCEPTION);
+        // todo: why clear? The futures will be gc'd
         futures.clear();
     }
 
     @Override
     public void commit() throws TransactionException, IllegalStateException {
         try {
-            if (transactionType.equals(TransactionType.TWO_PHASE) && state != PREPARED) {
+            if (transactionType.equals(TWO_PHASE) && state != PREPARED) {
                 throw new IllegalStateException("Transaction is not prepared");
             }
             if (transactionType.equals(TransactionType.LOCAL) && state != ACTIVE) {
@@ -267,15 +270,14 @@ public class TransactionImpl implements Transaction, InternalTransaction {
             checkThread();
             checkTimeout();
             try {
-                final List<Future> futures = new ArrayList<Future>(transactionLog.size());
                 state = COMMITTING;
-                for (TransactionLogRecord record : transactionLog) {
-                    futures.add(transactionLog.commit(nodeEngine, record));
-                }
+
+                List<Future> futures = transactionLog.commit(nodeEngine);
+
                 // We should rethrow exception if transaction is not TWO_PHASE
-                ExceptionHandler exceptionHandler = transactionType.equals(TransactionType.TWO_PHASE)
+                ExceptionHandler exceptionHandler = transactionType.equals(TWO_PHASE)
                         ? commitExceptionHandler : FutureUtil.RETHROW_TRANSACTION_EXCEPTION;
-                waitWithDeadline(futures, COMMIT_TIMEOUT_MINUTES, TimeUnit.MINUTES, exceptionHandler);
+                waitWithDeadline(futures, COMMIT_TIMEOUT_MINUTES, MINUTES, exceptionHandler);
 
                 state = COMMITTED;
 
@@ -307,13 +309,8 @@ public class TransactionImpl implements Transaction, InternalTransaction {
             try {
                 rollbackTxBackup();
 
-                List<Future> futures = new ArrayList<Future>(transactionLog.size());
-                ListIterator<TransactionLogRecord> iterator = transactionLog.getRecordList().listIterator(transactionLog.size());
-                while (iterator.hasPrevious()) {
-                    TransactionLogRecord record = iterator.previous();
-                    futures.add(transactionLog.rollback(nodeEngine, record));
-                }
-                waitWithDeadline(futures, ROLLBACK_TIMEOUT_MINUTES, TimeUnit.MINUTES, rollbackExceptionHandler);
+                List<Future> futures = transactionLog.rollback(nodeEngine);
+                waitWithDeadline(futures, ROLLBACK_TIMEOUT_MINUTES, MINUTES, rollbackExceptionHandler);
                 // purge tx backup
                 purgeTxBackups();
             } catch (Throwable e) {
@@ -324,14 +321,14 @@ public class TransactionImpl implements Transaction, InternalTransaction {
         } finally {
             setThreadFlag(null);
         }
-
     }
 
+    //todo: move to transactionlog?
     private void rollbackTxBackup() {
-        final OperationService operationService = nodeEngine.getOperationService();
-        final List<Future> futures = new ArrayList<Future>(transactionLog.size());
+        OperationService operationService = nodeEngine.getOperationService();
+        List<Future> futures = new ArrayList<Future>(transactionLog.size());
         // rollback tx backup
-        if (durability > 0 && transactionType.equals(TransactionType.TWO_PHASE)) {
+        if (durability > 0 && transactionType.equals(TWO_PHASE)) {
             for (Address backupAddress : backupAddresses) {
                 if (nodeEngine.getClusterService().getMember(backupAddress) != null) {
                     final Future f = operationService.invokeOnTarget(TransactionManagerServiceImpl.SERVICE_NAME,
@@ -340,14 +337,14 @@ public class TransactionImpl implements Transaction, InternalTransaction {
                 }
             }
 
-            waitWithDeadline(futures, timeoutMillis, TimeUnit.MILLISECONDS, rollbackTxExceptionHandler);
+            waitWithDeadline(futures, timeoutMillis, MILLISECONDS, rollbackTxExceptionHandler);
             futures.clear();
         }
     }
 
     private void purgeTxBackups() {
-        if (durability > 0 && transactionType.equals(TransactionType.TWO_PHASE)) {
-            final OperationService operationService = nodeEngine.getOperationService();
+        if (durability > 0 && transactionType.equals(TWO_PHASE)) {
+            OperationService operationService = nodeEngine.getOperationService();
             for (Address backupAddress : backupAddresses) {
                 if (nodeEngine.getClusterService().getMember(backupAddress) != null) {
                     try {
