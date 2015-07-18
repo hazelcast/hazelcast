@@ -22,10 +22,11 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 
+import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 import java.util.concurrent.Future;
 
@@ -39,7 +40,7 @@ import java.util.concurrent.Future;
  * Most transaction will be small, but an linkedlist + hashmap is created. Instead use an array and do a
  * linear search in that array. When there are too many items added, then enable the hashmap.
  */
-public class TransactionLog implements Iterable<TransactionLogRecord> {
+public class TransactionLog {
 
     private final List<TransactionLogRecord> recordList = new LinkedList<TransactionLogRecord>();
     private final Map<Object, TransactionLogRecord> recordMap = new HashMap<Object, TransactionLogRecord>();
@@ -50,11 +51,6 @@ public class TransactionLog implements Iterable<TransactionLogRecord> {
     public TransactionLog(List<TransactionLogRecord> transactionLog) {
         //
         recordList.addAll(transactionLog);
-    }
-
-    @Override
-    public Iterator<TransactionLogRecord> iterator() {
-        return recordList.iterator();
     }
 
     public void add(TransactionLogRecord record) {
@@ -99,16 +95,33 @@ public class TransactionLog implements Iterable<TransactionLogRecord> {
         return recordList.size();
     }
 
-    public Future prepare(NodeEngine nodeEngine, TransactionLogRecord record) {
-        return invoke(nodeEngine, record.newPrepareOperation());
+    public List<Future> commit(NodeEngine nodeEngine) {
+        List<Future> futures = new ArrayList<Future>(size());
+        for (TransactionLogRecord record : recordList) {
+            Future future = invoke(nodeEngine, record.newCommitOperation());
+            futures.add(future);
+        }
+        return futures;
     }
 
-    public Future commit(NodeEngine nodeEngine, TransactionLogRecord record) {
-        return invoke(nodeEngine, record.newCommitOperation());
+    public List<Future> prepare(NodeEngine nodeEngine) {
+        List<Future> futures = new ArrayList<Future>(size());
+        for (TransactionLogRecord record : recordList) {
+            Future future = invoke(nodeEngine, record.newPrepareOperation());
+            futures.add(future);
+        }
+        return futures;
     }
 
-    public Future rollback(NodeEngine nodeEngine, TransactionLogRecord record) {
-        return invoke(nodeEngine, record.newRollbackOperation());
+    public List<Future> rollback(NodeEngine nodeEngine) {
+        List<Future> futures = new ArrayList<Future>(size());
+        ListIterator<TransactionLogRecord> iterator = recordList.listIterator(size());
+        while (iterator.hasPrevious()) {
+            TransactionLogRecord record = iterator.previous();
+            Future future = invoke(nodeEngine, record.newRollbackOperation());
+            futures.add(future);
+        }
+        return futures;
     }
 
     private Future invoke(NodeEngine nodeEngine, Operation op) {
@@ -120,12 +133,16 @@ public class TransactionLog implements Iterable<TransactionLogRecord> {
                 op.getPartitionId());
     }
 
-    public void commitAsync(NodeEngine nodeEngine, TransactionLogRecord record, ExecutionCallback callback) {
-        invokeAsync(nodeEngine, callback, record.newCommitOperation());
+    public void commitAsync(NodeEngine nodeEngine, ExecutionCallback callback) {
+        for (TransactionLogRecord record : recordList) {
+            invokeAsync(nodeEngine, callback, record.newCommitOperation());
+        }
     }
 
-    public void rollbackAsync(NodeEngine nodeEngine, ExecutionCallback callback, TransactionLogRecord record) {
-        invokeAsync(nodeEngine, callback, record.newRollbackOperation());
+    public void rollbackAsync(NodeEngine nodeEngine, ExecutionCallback callback) {
+        for (TransactionLogRecord record : recordList) {
+            invokeAsync(nodeEngine, callback, record.newRollbackOperation());
+        }
     }
 
     private void invokeAsync(NodeEngine nodeEngine, ExecutionCallback callback, Operation op) {
