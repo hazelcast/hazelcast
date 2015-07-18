@@ -22,7 +22,7 @@ import com.hazelcast.map.QueryResultSizeExceededException;
 import com.hazelcast.map.impl.MapEntrySet;
 import com.hazelcast.map.impl.MapKeySet;
 import com.hazelcast.map.impl.MapService;
-import com.hazelcast.map.impl.NearCache;
+import com.hazelcast.map.impl.nearcache.NearCache;
 import com.hazelcast.map.impl.QueryResult;
 import com.hazelcast.map.impl.operation.ContainsKeyOperation;
 import com.hazelcast.map.impl.operation.GetOperation;

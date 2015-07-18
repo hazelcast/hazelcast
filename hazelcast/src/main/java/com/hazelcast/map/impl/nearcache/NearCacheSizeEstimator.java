@@ -14,14 +14,16 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map.impl;
+package com.hazelcast.map.impl.nearcache;
+
+import com.hazelcast.map.impl.SizeEstimator;
 
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
 /**
  * Size estimator for near cache.
  */
-class NearCacheSizeEstimator
+public class NearCacheSizeEstimator
         implements SizeEstimator<NearCacheRecord> {
 
     private static final AtomicLongFieldUpdater<NearCacheSizeEstimator> SIZE_UPDATER = AtomicLongFieldUpdater
@@ -29,7 +31,7 @@ class NearCacheSizeEstimator
 
     private volatile long size;
 
-    protected NearCacheSizeEstimator() {
+    public NearCacheSizeEstimator() {
     }
 
     @Override

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map.impl;
+package com.hazelcast.map.impl.nearcache;
 
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.nio.serialization.Data;
