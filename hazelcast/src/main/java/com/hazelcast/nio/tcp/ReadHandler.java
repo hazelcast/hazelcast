@@ -27,6 +27,7 @@ import com.hazelcast.util.counters.SwCounter;
 
 import java.io.EOFException;
 import java.io.IOException;
+import java.net.SocketException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 
@@ -38,7 +39,7 @@ import static com.hazelcast.util.counters.SwCounter.newSwCounter;
  */
 public final class ReadHandler extends AbstractSelectionHandler {
 
-    private final ByteBuffer inputBuffer;
+    private ByteBuffer inputBuffer;
 
     @Probe(name = "in.bytesRead")
     private final SwCounter bytesRead = newSwCounter();
@@ -61,7 +62,6 @@ public final class ReadHandler extends AbstractSelectionHandler {
     public ReadHandler(TcpIpConnection connection, IOSelector ioSelector) {
         super(connection, ioSelector, SelectionKey.OP_READ);
         this.ioSelector = ioSelector;
-        this.inputBuffer = ByteBuffer.allocate(connectionManager.socketReceiveBufferSize);
 
         this.metricRegistry = connection.getConnectionManager().getMetricRegistry();
         metricRegistry.scanAndRegister(this, "tcp.connection[" + connection.getMetricsId() + "]");
@@ -190,16 +190,20 @@ public final class ReadHandler extends AbstractSelectionHandler {
                 String protocol = bytesToString(protocolBuffer.array());
                 WriteHandler writeHandler = connection.getWriteHandler();
                 if (Protocols.CLUSTER.equals(protocol)) {
+                    configureBuffers(connectionManager.socketReceiveBufferSize);
                     connection.setType(ConnectionType.MEMBER);
                     writeHandler.setProtocol(Protocols.CLUSTER);
                     socketReader = new SocketPacketReader(connection);
                 } else if (Protocols.CLIENT_BINARY.equals(protocol)) {
+                    configureBuffers(connectionManager.socketClientReceiveBufferSize);
                     writeHandler.setProtocol(Protocols.CLIENT_BINARY);
                     socketReader = new SocketClientDataReader(connection);
                 } else if (Protocols.CLIENT_BINARY_NEW.equals(protocol)) {
+                    configureBuffers(connectionManager.socketClientReceiveBufferSize);
                     writeHandler.setProtocol(Protocols.CLIENT_BINARY_NEW);
                     socketReader = new SocketClientMessageReader(connection, socketChannel);
                 } else {
+                    configureBuffers(connectionManager.socketClientReceiveBufferSize);
                     writeHandler.setProtocol(Protocols.TEXT);
                     inputBuffer.put(protocolBuffer.array());
                     socketReader = new SocketTextReader(connection);
@@ -209,6 +213,16 @@ public final class ReadHandler extends AbstractSelectionHandler {
             if (socketReader == null) {
                 throw new IOException("Could not initialize SocketReader!");
             }
+        }
+    }
+
+    private void configureBuffers(int size) {
+        inputBuffer = ByteBuffer.allocate(size);
+        try {
+            connection.setReceiveBufferSize(size);
+        } catch (SocketException e) {
+            logger.finest("Failed to adjust TCP receive buffer of " + connection + " to "
+                    + size + " B.", e);
         }
     }
 
