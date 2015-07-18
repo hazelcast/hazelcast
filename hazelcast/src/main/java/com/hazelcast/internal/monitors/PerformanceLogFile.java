@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.monitors;
 
-import com.hazelcast.core.Member;
+import com.hazelcast.instance.AbstractMember;
 import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.instance.GroupProperties;
@@ -28,6 +28,7 @@ import com.hazelcast.internal.metrics.renderers.CommaSeparatedKeyValueProbeRende
 import com.hazelcast.internal.metrics.renderers.HumanFriendlyProbeRenderer;
 import com.hazelcast.internal.metrics.renderers.ProbeRenderer;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.nio.Address;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 
 import java.io.BufferedWriter;
@@ -36,7 +37,6 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
-import java.net.InetSocketAddress;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.LinkedList;
@@ -93,9 +93,9 @@ final class PerformanceLogFile {
     }
 
     private String getPathName() {
-        Member localMember = hazelcastInstance.getCluster().getLocalMember();
-        InetSocketAddress address = localMember.getSocketAddress();
-        String addressString = address.getHostString().replace(":", "_") + "#" + address.getPort();
+        AbstractMember localMember = (AbstractMember) hazelcastInstance.getCluster().getLocalMember();
+        Address address = localMember.getAddress();
+        String addressString = address.getHost().replace(":", "_") + "#" + address.getPort();
         return "performance-" + addressString + "-" + currentTimeMillis() + "-%03d.log";
     }
 
