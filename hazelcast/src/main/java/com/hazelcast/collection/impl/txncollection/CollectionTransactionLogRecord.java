@@ -22,11 +22,11 @@ import com.hazelcast.collection.impl.txncollection.operations.CollectionTxnRemov
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.transaction.impl.KeyAwareTransactionLogRecord;
+import com.hazelcast.transaction.impl.TransactionLogRecord;
 
 import java.io.IOException;
 
-public class CollectionTransactionLogRecord implements KeyAwareTransactionLogRecord {
+public class CollectionTransactionLogRecord implements TransactionLogRecord {
 
     private String transactionId;
     private long itemId;
