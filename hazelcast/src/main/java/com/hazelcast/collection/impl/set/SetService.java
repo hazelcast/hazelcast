@@ -24,7 +24,7 @@ import com.hazelcast.core.DistributedObject;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionReplicationEvent;
-import com.hazelcast.transaction.impl.InternalTransaction;
+import com.hazelcast.transaction.impl.Transaction;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -68,7 +68,7 @@ public class SetService extends CollectionService {
     }
 
     @Override
-    public TransactionalSetProxy createTransactionalObject(String name, InternalTransaction transaction) {
+    public TransactionalSetProxy createTransactionalObject(String name, Transaction transaction) {
         return new TransactionalSetProxy(name, transaction, nodeEngine, this);
     }
 

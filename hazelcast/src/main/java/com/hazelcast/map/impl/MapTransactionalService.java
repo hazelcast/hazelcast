@@ -19,7 +19,7 @@ package com.hazelcast.map.impl;
 import com.hazelcast.map.impl.tx.TransactionalMapProxy;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.TransactionalService;
-import com.hazelcast.transaction.impl.InternalTransaction;
+import com.hazelcast.transaction.impl.Transaction;
 
 /**
  * Defines transactional service behavior of map service.
@@ -38,7 +38,7 @@ class MapTransactionalService implements TransactionalService {
 
     @SuppressWarnings("unchecked")
     @Override
-    public TransactionalMapProxy createTransactionalObject(String name, InternalTransaction transaction) {
+    public TransactionalMapProxy createTransactionalObject(String name, Transaction transaction) {
         return new TransactionalMapProxy(name, mapServiceContext.getService(), nodeEngine, transaction);
     }
 

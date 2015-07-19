@@ -58,7 +58,7 @@ import static com.hazelcast.util.FutureUtil.waitWithDeadline;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.MINUTES;
 
-public class TransactionImpl implements Transaction, InternalTransaction {
+public class TransactionImpl implements Transaction {
 
     private static final ThreadLocal<Boolean> TRANSACTION_EXISTS = new ThreadLocal<Boolean>();
     private static final int ROLLBACK_TIMEOUT_MINUTES = 5;

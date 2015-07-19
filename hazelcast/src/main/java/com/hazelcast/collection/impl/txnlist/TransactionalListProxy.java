@@ -21,7 +21,7 @@ import com.hazelcast.collection.impl.list.ListService;
 import com.hazelcast.collection.impl.txncollection.AbstractTransactionalCollectionProxy;
 import com.hazelcast.core.TransactionalList;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.transaction.impl.InternalTransaction;
+import com.hazelcast.transaction.impl.Transaction;
 import java.util.Collection;
 import java.util.LinkedList;
 
@@ -30,7 +30,7 @@ public class TransactionalListProxy<E> extends AbstractTransactionalCollectionPr
 
     private final LinkedList<CollectionItem> list = new LinkedList<CollectionItem>();
 
-    public TransactionalListProxy(String name, InternalTransaction tx, NodeEngine nodeEngine, ListService service) {
+    public TransactionalListProxy(String name, Transaction tx, NodeEngine nodeEngine, ListService service) {
         super(name, tx, nodeEngine, service);
     }
 

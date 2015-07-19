@@ -17,14 +17,14 @@
 package com.hazelcast.spi;
 
 import com.hazelcast.transaction.TransactionalObject;
-import com.hazelcast.transaction.impl.InternalTransaction;
+import com.hazelcast.transaction.impl.Transaction;
 
 /**
  * An interface that can be implemented by SPI services that want to deal with transactions.
  */
 public interface TransactionalService {
 
-    <T extends TransactionalObject> T createTransactionalObject(String name, InternalTransaction transaction);
+    <T extends TransactionalObject> T createTransactionalObject(String name, Transaction transaction);
 
     void rollbackTransaction(String transactionId);
 }

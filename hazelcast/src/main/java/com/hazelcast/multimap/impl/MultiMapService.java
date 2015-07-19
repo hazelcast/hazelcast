@@ -48,7 +48,7 @@ import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.StatisticsAwareService;
 import com.hazelcast.spi.TransactionalService;
 import com.hazelcast.transaction.TransactionalObject;
-import com.hazelcast.transaction.impl.InternalTransaction;
+import com.hazelcast.transaction.impl.Transaction;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.ExceptionUtil;
@@ -341,7 +341,7 @@ public class MultiMapService implements ManagedService, RemoteService, Migration
         return ConcurrencyUtil.getOrPutIfAbsent(statsMap, name, localMultiMapStatsConstructorFunction);
     }
 
-    public <T extends TransactionalObject> T createTransactionalObject(String name, InternalTransaction transaction) {
+    public <T extends TransactionalObject> T createTransactionalObject(String name, Transaction transaction) {
         return (T) new TransactionalMultiMapProxy(nodeEngine, this, name, transaction);
     }
 

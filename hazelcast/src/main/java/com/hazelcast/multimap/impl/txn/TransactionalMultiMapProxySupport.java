@@ -29,7 +29,6 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.transaction.TransactionNotActiveException;
 import com.hazelcast.transaction.TransactionalObject;
-import com.hazelcast.transaction.impl.InternalTransaction;
 import com.hazelcast.transaction.impl.Transaction;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.ThreadUtil;
@@ -50,7 +49,7 @@ public abstract class TransactionalMultiMapProxySupport extends AbstractDistribu
 
     private static final double TIMEOUT_EXTEND_MULTIPLIER = 1.5;
     protected final String name;
-    protected final InternalTransaction tx;
+    protected final Transaction tx;
     protected final MultiMapConfig config;
 
     private final Map<Data, Collection<MultiMapRecord>> txMap = new HashMap<Data, Collection<MultiMapRecord>>();
@@ -58,7 +57,7 @@ public abstract class TransactionalMultiMapProxySupport extends AbstractDistribu
     protected TransactionalMultiMapProxySupport(NodeEngine nodeEngine,
                                                 MultiMapService service,
                                                 String name,
-                                                InternalTransaction tx) {
+                                                Transaction tx) {
         super(nodeEngine, service);
         this.name = name;
         this.tx = tx;
