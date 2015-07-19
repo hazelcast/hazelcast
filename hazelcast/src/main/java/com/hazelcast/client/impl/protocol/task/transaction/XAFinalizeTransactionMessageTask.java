@@ -24,7 +24,7 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.security.permission.TransactionPermission;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.transaction.impl.xa.FinalizeRemoteTransactionOperation;
+import com.hazelcast.transaction.impl.xa.operations.FinalizeRemoteTransactionOperation;
 import com.hazelcast.transaction.impl.xa.XAService;
 
 import java.security.Permission;

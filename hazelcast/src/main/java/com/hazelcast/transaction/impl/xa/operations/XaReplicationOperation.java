@@ -14,12 +14,15 @@
  * limitations under the License.
  */
 
-package com.hazelcast.transaction.impl.xa;
+package com.hazelcast.transaction.impl.xa.operations;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.transaction.impl.xa.XAService;
+import com.hazelcast.transaction.impl.xa.XATransactionDTO;
+import com.hazelcast.transaction.impl.xa.XATransaction;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -27,45 +30,49 @@ import java.util.List;
 
 public class XaReplicationOperation extends AbstractOperation {
 
-    List<XATransactionHolder> migrationData;
+    private List<XATransactionDTO> migrationData;
 
     public XaReplicationOperation() {
     }
 
-    public XaReplicationOperation(List<XATransactionHolder> migrationData, int partitionId, int replicaIndex) {
+    public XaReplicationOperation(List<XATransactionDTO> migrationData, int partitionId, int replicaIndex) {
         setPartitionId(partitionId);
         setReplicaIndex(replicaIndex);
         this.migrationData = migrationData;
     }
 
-
     @Override
     public void run() throws Exception {
         XAService xaService = getService();
         NodeEngine nodeEngine = getNodeEngine();
-        for (XATransactionHolder holder : migrationData) {
-            XATransactionImpl xaTransaction = new XATransactionImpl(nodeEngine, holder.records, holder.txnId, holder.xid,
-                    holder.ownerUuid, holder.timeoutMilis, holder.startTime);
-            xaService.putTransaction(xaTransaction);
+        for (XATransactionDTO transactionDTO : migrationData) {
+            XATransaction transaction = new XATransaction(
+                    nodeEngine,
+                    transactionDTO.getRecords(),
+                    transactionDTO.getTxnId(),
+                    transactionDTO.getXid(),
+                    transactionDTO.getOwnerUuid(),
+                    transactionDTO.getTimeoutMilis(),
+                    transactionDTO.getStartTime());
+            xaService.putTransaction(transaction);
         }
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         out.writeInt(migrationData.size());
-        for (XATransactionHolder xaTransactionHolder : migrationData) {
-            out.writeObject(xaTransactionHolder);
+        for (XATransactionDTO transactionDTO : migrationData) {
+            out.writeObject(transactionDTO);
         }
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         int size = in.readInt();
-        migrationData = new ArrayList<XATransactionHolder>(size);
+        migrationData = new ArrayList<XATransactionDTO>(size);
         for (int i = 0; i < size; i++) {
-            XATransactionHolder xaTransactionHolder = in.readObject();
-            migrationData.add(xaTransactionHolder);
+            XATransactionDTO transactionDTO = in.readObject();
+            migrationData.add(transactionDTO);
         }
     }
-
 }

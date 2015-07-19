@@ -25,19 +25,18 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class XATransactionHolder implements DataSerializable {
-    String txnId;
-    SerializableXID xid;
-    String ownerUuid;
-    long timeoutMilis;
-    long startTime;
-    List<TransactionLogRecord> records;
+public class XATransactionDTO implements DataSerializable {
+    private String txnId;
+    private SerializableXID xid;
+    private String ownerUuid;
+    private long timeoutMilis;
+    private long startTime;
+    private List<TransactionLogRecord> records;
 
-    public XATransactionHolder() {
-
+    public XATransactionDTO() {
     }
 
-    public XATransactionHolder(XATransactionImpl xaTransaction) {
+    public XATransactionDTO(XATransaction xaTransaction) {
         txnId = xaTransaction.getTxnId();
         xid = xaTransaction.getXid();
         ownerUuid = xaTransaction.getOwnerUuid();
@@ -46,14 +45,38 @@ public class XATransactionHolder implements DataSerializable {
         records = xaTransaction.getTransactionRecords();
     }
 
-    public XATransactionHolder(String txnId, SerializableXID xid, String ownerUuid, long timeoutMilis,
-                               long startTime, List<TransactionLogRecord> records) {
+    public XATransactionDTO(String txnId, SerializableXID xid, String ownerUuid, long timeoutMilis,
+                            long startTime, List<TransactionLogRecord> records) {
         this.txnId = txnId;
         this.xid = xid;
         this.ownerUuid = ownerUuid;
         this.timeoutMilis = timeoutMilis;
         this.startTime = startTime;
         this.records = records;
+    }
+
+    public String getTxnId() {
+        return txnId;
+    }
+
+    public SerializableXID getXid() {
+        return xid;
+    }
+
+    public String getOwnerUuid() {
+        return ownerUuid;
+    }
+
+    public long getTimeoutMilis() {
+        return timeoutMilis;
+    }
+
+    public long getStartTime() {
+        return startTime;
+    }
+
+    public List<TransactionLogRecord> getRecords() {
+        return records;
     }
 
     @Override

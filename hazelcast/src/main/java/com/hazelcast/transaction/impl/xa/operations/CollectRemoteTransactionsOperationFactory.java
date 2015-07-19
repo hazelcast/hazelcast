@@ -14,21 +14,27 @@
  * limitations under the License.
  */
 
-package com.hazelcast.transaction.impl.xa;
+package com.hazelcast.transaction.impl.xa.operations;
 
-import com.hazelcast.transaction.TransactionContext;
-import com.hazelcast.transaction.impl.Transaction;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.OperationFactory;
 
-public final class TransactionAccessor {
+import java.io.IOException;
 
-    private TransactionAccessor() {
+public class CollectRemoteTransactionsOperationFactory implements OperationFactory {
+
+    @Override
+    public Operation createOperation() {
+        return new CollectRemoteTransactionsOperation();
     }
 
-    public static Transaction getTransaction(TransactionContext ctx) {
-        if (ctx instanceof XATransactionContextImpl) {
-            XATransactionContextImpl ctxImp = (XATransactionContextImpl) ctx;
-            return ctxImp.getTransaction();
-        }
-        throw new IllegalArgumentException();
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
     }
 }

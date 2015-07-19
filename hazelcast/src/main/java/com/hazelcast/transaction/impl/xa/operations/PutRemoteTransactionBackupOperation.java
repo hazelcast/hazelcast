@@ -14,20 +14,22 @@
  * limitations under the License.
  */
 
-package com.hazelcast.transaction.impl.xa;
+package com.hazelcast.transaction.impl.xa.operations;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.BackupOperation;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.Operation;
 import com.hazelcast.transaction.impl.TransactionLogRecord;
+import com.hazelcast.transaction.impl.xa.SerializableXID;
+import com.hazelcast.transaction.impl.xa.XAService;
+import com.hazelcast.transaction.impl.xa.XATransaction;
 
 import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
 
-public class PutRemoteTransactionBackupOperation extends Operation implements BackupOperation {
+public class PutRemoteTransactionBackupOperation extends BaseXAOperation implements BackupOperation {
 
     private final List<TransactionLogRecord> records = new LinkedList<TransactionLogRecord>();
 
@@ -51,35 +53,17 @@ public class PutRemoteTransactionBackupOperation extends Operation implements Ba
     }
 
     @Override
-    public void beforeRun() throws Exception {
-    }
-
-    @Override
     public void run() throws Exception {
         XAService xaService = getService();
         NodeEngine nodeEngine = getNodeEngine();
-        XATransactionImpl transaction =
-                new XATransactionImpl(nodeEngine, records, txnId, xid, txOwnerUuid, timeoutMillis, startTime);
+        XATransaction transaction =
+                new XATransaction(nodeEngine, records, txnId, xid, txOwnerUuid, timeoutMillis, startTime);
         xaService.putTransaction(transaction);
-    }
-
-    @Override
-    public void afterRun() throws Exception {
     }
 
     @Override
     public boolean returnsResponse() {
         return false;
-    }
-
-    @Override
-    public Object getResponse() {
-        return null;
-    }
-
-    @Override
-    public String getServiceName() {
-        return XAService.SERVICE_NAME;
     }
 
     @Override
