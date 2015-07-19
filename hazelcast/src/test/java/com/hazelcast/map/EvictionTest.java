@@ -144,11 +144,16 @@ public class EvictionTest extends HazelcastTestSupport {
             map.put(i.toString(), i.toString());
             map.get(i.toString());//trigger put into near cache
         }
-        sleepSeconds(3); //wait for eviction
 
-        final NearCacheStats originalNearCacheStats = map.getLocalMapStats().getNearCacheStats();
-        assertThat(originalNearCacheStats.getOwnedEntryCount(), lessThan((long)size));
-        assertThat(originalNearCacheStats.getOwnedEntryCount(), greaterThan((long) (size/2)));
+        //wait for eviction
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                final NearCacheStats originalNearCacheStats = map.getLocalMapStats().getNearCacheStats();
+                assertThat(originalNearCacheStats.getOwnedEntryCount(), lessThan((long) size));
+                assertThat(originalNearCacheStats.getOwnedEntryCount(), greaterThan((long) (size / 2)));
+            }
+        });
 
         final MapProxyImpl<String, String> proxy = h.getDistributedObject(MapService.SERVICE_NAME, mapName);
         final MapServiceContext mapServiceContext = proxy.getService().getMapServiceContext();
@@ -165,11 +170,16 @@ public class EvictionTest extends HazelcastTestSupport {
             map.put(i.toString(), i.toString());
             map.get(i.toString());//trigger put into near cache
         }
-        sleepSeconds(3); //wait for eviction
 
-        final NearCacheStats halvedNearCacheStats = map.getLocalMapStats().getNearCacheStats();
-        assertThat(halvedNearCacheStats.getOwnedEntryCount(), lessThan((long)size/2));
-        assertThat(halvedNearCacheStats.getOwnedEntryCount(), greaterThan((long) size/4));
+        //wait for eviction
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                final NearCacheStats halvedNearCacheStats = map.getLocalMapStats().getNearCacheStats();
+                assertThat(halvedNearCacheStats.getOwnedEntryCount(), lessThan((long) size / 2));
+                assertThat(halvedNearCacheStats.getOwnedEntryCount(), greaterThan((long) size / 4));
+            }
+        });
     }
 
     /*
