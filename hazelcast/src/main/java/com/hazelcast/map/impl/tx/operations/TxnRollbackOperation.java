@@ -14,13 +14,19 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map.impl.tx;
+package com.hazelcast.map.impl.tx.operations;
 
-import com.hazelcast.map.impl.operation.LockAwareOperation;
+import com.hazelcast.concurrent.lock.LockWaitNotifyKey;
+import com.hazelcast.map.impl.MapDataSerializerHook;
+import com.hazelcast.map.impl.MapService;
+import com.hazelcast.map.impl.operation.KeyBasedMapOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.BackupAwareOperation;
+import com.hazelcast.spi.DefaultObjectNamespace;
+import com.hazelcast.spi.Notifier;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.WaitNotifyKey;
 import com.hazelcast.transaction.TransactionException;
@@ -28,68 +34,43 @@ import com.hazelcast.transaction.TransactionException;
 import java.io.IOException;
 
 /**
- * An operation to unlock key on the partition owner.
+ * An operation to rollback transaction by unlocking the key on key owner.
  */
-public class TxnUnlockOperation extends LockAwareOperation implements MapTxnOperation, BackupAwareOperation {
+public class TxnRollbackOperation extends KeyBasedMapOperation
+        implements BackupAwareOperation, Notifier, IdentifiedDataSerializable {
 
-    private long version;
     private String ownerUuid;
 
-    public TxnUnlockOperation() {
+    public TxnRollbackOperation() {
     }
 
-    public TxnUnlockOperation(String name, Data dataKey, long version) {
-        super(name, dataKey, -1);
-        this.version = version;
+    public TxnRollbackOperation(int partitionId, String name, Data dataKey, String ownerUuid) {
+        super(name, dataKey);
+        setPartitionId(partitionId);
+        this.ownerUuid = ownerUuid;
     }
 
     @Override
-    public void innerBeforeRun() {
-        if (!recordStore.canAcquireLock(dataKey, ownerUuid, threadId)) {
-            throw new TransactionException("Cannot acquire lock uuid: " + ownerUuid + ", threadId: " + threadId);
+    public void run() throws Exception {
+        if (recordStore.isLocked(getKey()) && !recordStore.unlock(getKey(), ownerUuid, getThreadId(), getCallId())) {
+            throw new TransactionException("Lock is not owned by the transaction! Owner: "
+                    + recordStore.getLockOwnerInfo(getKey()));
         }
     }
 
     @Override
-    public void run() {
-        recordStore.unlock(dataKey, ownerUuid, threadId, getCallId());
-    }
-
-    @Override
-    public boolean shouldWait() {
-        return false;
-    }
-
-    @Override
-    public long getVersion() {
-        return version;
-    }
-
-    @Override
-    public void setVersion(long version) {
-        this.version = version;
-    }
-
-    @Override
     public Object getResponse() {
-        return Boolean.TRUE;
-    }
-
-    @Override
-    public boolean shouldNotify() {
         return true;
     }
 
     @Override
-    public Operation getBackupOperation() {
-        TxnUnlockBackupOperation txnUnlockOperation = new TxnUnlockBackupOperation(name, dataKey);
-        txnUnlockOperation.setThreadId(getThreadId());
-        return txnUnlockOperation;
+    public boolean shouldBackup() {
+        return true;
     }
 
     @Override
-    public void onWaitExpire() {
-        sendResponse(false);
+    public final Operation getBackupOperation() {
+        return new TxnRollbackBackupOperation(name, dataKey, ownerUuid, getThreadId());
     }
 
     @Override
@@ -103,31 +84,34 @@ public class TxnUnlockOperation extends LockAwareOperation implements MapTxnOper
     }
 
     @Override
-    public void setOwnerUuid(String ownerUuid) {
-        this.ownerUuid = ownerUuid;
-    }
-
-    @Override
-    public boolean shouldBackup() {
+    public boolean shouldNotify() {
         return true;
     }
 
     @Override
     public WaitNotifyKey getNotifiedKey() {
-        return getWaitKey();
+        return new LockWaitNotifyKey(new DefaultObjectNamespace(MapService.SERVICE_NAME, name), dataKey);
+    }
+
+    @Override
+    public int getFactoryId() {
+        return MapDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return MapDataSerializerHook.TXN_ROLLBACK;
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeLong(version);
         out.writeUTF(ownerUuid);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        version = in.readLong();
         ownerUuid = in.readUTF();
     }
 }

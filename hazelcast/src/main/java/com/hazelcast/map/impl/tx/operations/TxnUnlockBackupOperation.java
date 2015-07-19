@@ -14,17 +14,19 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map.impl.tx;
+package com.hazelcast.map.impl.tx.operations;
 
+import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.operation.KeyBasedMapOperation;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.BackupOperation;
 
 /**
  * An operation to unlock key on the backup owner.
  */
-public class TxnUnlockBackupOperation extends KeyBasedMapOperation implements BackupOperation {
-
+public class TxnUnlockBackupOperation extends KeyBasedMapOperation
+        implements BackupOperation, IdentifiedDataSerializable {
 
     public TxnUnlockBackupOperation() {
     }
@@ -40,6 +42,16 @@ public class TxnUnlockBackupOperation extends KeyBasedMapOperation implements Ba
 
     @Override
     public Object getResponse() {
-        return Boolean.TRUE;
+        return true;
+    }
+
+    @Override
+    public int getFactoryId() {
+        return MapDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return MapDataSerializerHook.TXN_UNLOCK_BACKUP;
     }
 }

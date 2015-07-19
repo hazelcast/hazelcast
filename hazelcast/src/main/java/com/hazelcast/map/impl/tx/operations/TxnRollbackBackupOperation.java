@@ -14,31 +14,35 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map.impl.tx;
+package com.hazelcast.map.impl.tx.operations;
 
+import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.operation.KeyBasedMapOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.BackupOperation;
 import com.hazelcast.transaction.TransactionException;
+
 import java.io.IOException;
 
 /**
  * An operation to rollback transaction by unlocking the key on key backup owner.
  */
-public class TxnRollbackBackupOperation extends KeyBasedMapOperation implements BackupOperation {
+public class TxnRollbackBackupOperation extends KeyBasedMapOperation
+        implements BackupOperation, IdentifiedDataSerializable {
 
     private String lockOwner;
     private long lockThreadId;
+
+    public TxnRollbackBackupOperation() {
+    }
 
     protected TxnRollbackBackupOperation(String name, Data dataKey, String lockOwner, long lockThreadId) {
         super(name, dataKey);
         this.lockOwner = lockOwner;
         this.lockThreadId = lockThreadId;
-    }
-
-    public TxnRollbackBackupOperation() {
     }
 
     @Override
@@ -51,7 +55,17 @@ public class TxnRollbackBackupOperation extends KeyBasedMapOperation implements 
 
     @Override
     public Object getResponse() {
-        return Boolean.TRUE;
+        return true;
+    }
+
+    @Override
+    public int getFactoryId() {
+        return MapDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return MapDataSerializerHook.TXN_ROLLBACK_BACKUP;
     }
 
     @Override

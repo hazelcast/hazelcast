@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map.impl.tx;
+package com.hazelcast.map.impl.tx.operations;
 
 import com.hazelcast.core.EntryEventType;
+import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.operation.BasePutOperation;
@@ -27,6 +28,7 @@ import com.hazelcast.map.impl.record.Records;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.WaitNotifyKey;
@@ -37,7 +39,8 @@ import java.io.IOException;
 /**
  * An operation to unlock and set (key,value) on the partition .
  */
-public class TxnSetOperation extends BasePutOperation implements MapTxnOperation {
+public class TxnSetOperation extends BasePutOperation
+        implements MapTxnOperation, IdentifiedDataSerializable {
 
     private long version;
     private transient boolean shouldBackup;
@@ -71,8 +74,8 @@ public class TxnSetOperation extends BasePutOperation implements MapTxnOperation
 
     @Override
     public void run() {
-        final MapServiceContext mapServiceContext = mapService.getMapServiceContext();
-        final EventService eventService = getNodeEngine().getEventService();
+        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
+        EventService eventService = getNodeEngine().getEventService();
         recordStore.unlock(dataKey, ownerUuid, threadId, getCallId());
         Record record = recordStore.getRecordOrNull(dataKey);
         if (record == null || version == record.getVersion()) {
@@ -102,7 +105,7 @@ public class TxnSetOperation extends BasePutOperation implements MapTxnOperation
 
     @Override
     public Object getResponse() {
-        return Boolean.TRUE;
+        return true;
     }
 
     @Override
@@ -110,12 +113,14 @@ public class TxnSetOperation extends BasePutOperation implements MapTxnOperation
         return true;
     }
 
+    @Override
     public Operation getBackupOperation() {
-        final Record record = recordStore.getRecord(dataKey);
-        final RecordInfo replicationInfo = record != null ? Records.buildRecordInfo(record) : null;
+        Record record = recordStore.getRecord(dataKey);
+        RecordInfo replicationInfo = record != null ? Records.buildRecordInfo(record) : null;
         return new PutBackupOperation(name, dataKey, dataValue, replicationInfo, true, false);
     }
 
+    @Override
     public void onWaitExpire() {
         sendResponse(false);
     }
@@ -127,6 +132,16 @@ public class TxnSetOperation extends BasePutOperation implements MapTxnOperation
 
     public WaitNotifyKey getNotifiedKey() {
         return getWaitKey();
+    }
+
+    @Override
+    public int getFactoryId() {
+        return MapDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return MapDataSerializerHook.TXN_SET;
     }
 
     @Override

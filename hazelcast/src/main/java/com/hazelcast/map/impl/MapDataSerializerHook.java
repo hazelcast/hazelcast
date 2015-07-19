@@ -21,13 +21,22 @@ import com.hazelcast.map.impl.operation.PutBackupOperation;
 import com.hazelcast.map.impl.operation.PutOperation;
 import com.hazelcast.map.impl.operation.RemoveBackupOperation;
 import com.hazelcast.map.impl.operation.RemoveOperation;
+import com.hazelcast.map.impl.tx.MapTransactionLogRecord;
+import com.hazelcast.map.impl.tx.operations.TxnDeleteOperation;
+import com.hazelcast.map.impl.tx.operations.TxnLockAndGetOperation;
+import com.hazelcast.map.impl.tx.operations.TxnPrepareBackupOperation;
+import com.hazelcast.map.impl.tx.operations.TxnPrepareOperation;
+import com.hazelcast.map.impl.tx.operations.TxnRollbackBackupOperation;
+import com.hazelcast.map.impl.tx.operations.TxnRollbackOperation;
+import com.hazelcast.map.impl.tx.operations.TxnSetOperation;
+import com.hazelcast.map.impl.tx.operations.TxnUnlockBackupOperation;
+import com.hazelcast.map.impl.tx.operations.TxnUnlockOperation;
+import com.hazelcast.map.impl.tx.VersionedValue;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.DataSerializerHook;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.nio.serialization.impl.ArrayDataSerializableFactory;
 import com.hazelcast.nio.serialization.impl.FactoryIdHelper;
 import com.hazelcast.query.impl.QueryResultEntryImpl;
-import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.QueryResultSet;
 
 import static com.hazelcast.nio.serialization.impl.FactoryIdHelper.MAP_DS_FACTORY;
@@ -42,88 +51,84 @@ public final class MapDataSerializerHook implements DataSerializerHook {
     public static final int REMOVE = 2;
     public static final int PUT_BACKUP = 3;
     public static final int REMOVE_BACKUP = 4;
-    //    public static final int DATA_RECORD = 5;
-//    public static final int OBJECT_RECORD = 6;
-//    public static final int CACHED_RECORD = 7;
     public static final int KEY_SET = 8;
     public static final int VALUES = 9;
     public static final int ENTRY_SET = 10;
     public static final int ENTRY_VIEW = 11;
-    //    public static final int MAP_STATS = 12;
     public static final int QUERY_RESULT_ENTRY = 13;
     public static final int QUERY_RESULT_SET = 14;
 
-    private static final int LEN = QUERY_RESULT_SET + 1;
+    public static final int TXN_LOG_RECORD = 15;
+    public static final int TXN_DELETE = 16;
+    public static final int TXN_LOCK_AND_GET = 17;
+    public static final int TXN_PREPARE_BACKUP = 18;
+    public static final int TXN_PREPARE = 19;
+    public static final int TXN_ROLLBACK_BACKUP = 20;
+    public static final int TXN_ROLLBACK = 21;
+    public static final int TXN_SET = 22;
+    public static final int TXN_UNLOCK_BACKUP = 23;
+    public static final int TXN_UNLOCK = 24;
+    public static final int VERSIONED_VALUE = 25;
 
+    @Override
     public int getFactoryId() {
         return F_ID;
     }
 
+    @Override
     public DataSerializableFactory createFactory() {
-        ConstructorFunction<Integer, IdentifiedDataSerializable>[] constructors = new ConstructorFunction[LEN];
-
-        constructors[PUT] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new PutOperation();
+        return new DataSerializableFactory() {
+            @Override
+            public IdentifiedDataSerializable create(int typeId) {
+                switch (typeId) {
+                    case PUT:
+                        return new PutOperation();
+                    case GET:
+                        return new GetOperation();
+                    case REMOVE:
+                        return new RemoveOperation();
+                    case PUT_BACKUP:
+                        return new PutBackupOperation();
+                    case REMOVE_BACKUP:
+                        return new RemoveBackupOperation();
+                    case KEY_SET:
+                        return new MapKeySet();
+                    case VALUES:
+                        return new MapValueCollection();
+                    case ENTRY_SET:
+                        return new MapEntrySet();
+                    case ENTRY_VIEW:
+                        return (IdentifiedDataSerializable) EntryViews.createSimpleEntryView();
+                    case QUERY_RESULT_ENTRY:
+                        return new QueryResultEntryImpl();
+                    case QUERY_RESULT_SET:
+                        return new QueryResultSet();
+                    case TXN_LOG_RECORD:
+                        return new MapTransactionLogRecord();
+                    case TXN_DELETE:
+                        return new TxnDeleteOperation();
+                    case TXN_LOCK_AND_GET:
+                        return new TxnLockAndGetOperation();
+                    case TXN_PREPARE_BACKUP:
+                        return new TxnPrepareBackupOperation();
+                    case TXN_PREPARE:
+                        return new TxnPrepareOperation();
+                    case TXN_ROLLBACK_BACKUP:
+                        return new TxnRollbackBackupOperation();
+                    case TXN_ROLLBACK:
+                        return new TxnRollbackOperation();
+                    case TXN_SET:
+                        return new TxnSetOperation();
+                    case TXN_UNLOCK_BACKUP:
+                        return new TxnUnlockBackupOperation();
+                    case TXN_UNLOCK:
+                        return new TxnUnlockOperation();
+                    case VERSIONED_VALUE:
+                        return new VersionedValue();
+                    default:
+                        return null;
+                }
             }
         };
-        constructors[GET] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new GetOperation();
-            }
-        };
-        constructors[REMOVE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new RemoveOperation();
-            }
-        };
-        constructors[PUT_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new PutBackupOperation();
-            }
-        };
-        constructors[REMOVE_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new RemoveBackupOperation();
-            }
-        };
-
-        constructors[KEY_SET] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new MapKeySet();
-            }
-        };
-        constructors[VALUES] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new MapValueCollection();
-            }
-        };
-        constructors[ENTRY_SET] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new MapEntrySet();
-            }
-        };
-        constructors[ENTRY_VIEW] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return (IdentifiedDataSerializable) EntryViews.createSimpleEntryView();
-            }
-        };
-//        constructors[MAP_STATS] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-//            public IdentifiedDataSerializable createNew(Integer arg) {
-//                return new LocalMapStatsImpl();
-//            }
-//        };
-        constructors[QUERY_RESULT_ENTRY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new QueryResultEntryImpl();
-            }
-        };
-        constructors[QUERY_RESULT_SET] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new QueryResultSet();
-            }
-        };
-
-        return new ArrayDataSerializableFactory(constructors);
     }
 }

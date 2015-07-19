@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map.impl.tx;
+package com.hazelcast.map.impl.tx.operations;
 
 import com.hazelcast.spi.Notifier;
 

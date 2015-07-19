@@ -14,9 +14,11 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map.impl.tx;
+package com.hazelcast.map.impl.tx.operations;
 
+import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.operation.KeyBasedMapOperation;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.MutatingOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -28,19 +30,20 @@ import java.io.IOException;
 /**
  *  An operation to prepare transaction by locking the key on key backup owner.
  */
-public class TxnPrepareBackupOperation extends KeyBasedMapOperation implements BackupOperation, MutatingOperation {
+public class TxnPrepareBackupOperation extends KeyBasedMapOperation
+        implements BackupOperation, MutatingOperation, IdentifiedDataSerializable {
 
     private static final long LOCK_TTL_MILLIS = 10000L;
     private String lockOwner;
     private long lockThreadId;
 
+    public TxnPrepareBackupOperation() {
+    }
+
     protected TxnPrepareBackupOperation(String name, Data dataKey, String lockOwner, long lockThreadId) {
         super(name, dataKey);
         this.lockOwner = lockOwner;
         this.lockThreadId = lockThreadId;
-    }
-
-    public TxnPrepareBackupOperation() {
     }
 
     @Override
@@ -53,7 +56,17 @@ public class TxnPrepareBackupOperation extends KeyBasedMapOperation implements B
 
     @Override
     public Object getResponse() {
-        return Boolean.TRUE;
+        return true;
+    }
+
+    @Override
+    public int getFactoryId() {
+        return MapDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return MapDataSerializerHook.TXN_PREPARE_BACKUP;
     }
 
     @Override

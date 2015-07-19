@@ -16,10 +16,15 @@
 
 package com.hazelcast.map.impl.tx;
 
+import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.MapRecordKey;
+import com.hazelcast.map.impl.tx.operations.MapTxnOperation;
+import com.hazelcast.map.impl.tx.operations.TxnPrepareOperation;
+import com.hazelcast.map.impl.tx.operations.TxnRollbackOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.transaction.impl.TransactionLogRecord;
 import com.hazelcast.util.ThreadUtil;
@@ -29,7 +34,7 @@ import java.io.IOException;
 /**
  * Represents an operation on the map in the transaction log.
  */
-public class MapTransactionLogRecord implements TransactionLogRecord {
+public class MapTransactionLogRecord implements TransactionLogRecord, IdentifiedDataSerializable {
 
     private int partitionId;
     private String name;
@@ -53,6 +58,11 @@ public class MapTransactionLogRecord implements TransactionLogRecord {
     }
 
     @Override
+    public Object getKey() {
+        return new MapRecordKey(name, key);
+    }
+
+    @Override
     public Operation newPrepareOperation() {
         TxnPrepareOperation operation = new TxnPrepareOperation(partitionId, name, key, ownerUuid);
         operation.setThreadId(threadId);
@@ -73,6 +83,16 @@ public class MapTransactionLogRecord implements TransactionLogRecord {
         TxnRollbackOperation operation = new TxnRollbackOperation(partitionId, name, key, ownerUuid);
         operation.setThreadId(threadId);
         return operation;
+    }
+
+    @Override
+    public int getFactoryId() {
+        return MapDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return MapDataSerializerHook.TXN_LOG_RECORD;
     }
 
     @Override
@@ -100,11 +120,6 @@ public class MapTransactionLogRecord implements TransactionLogRecord {
         threadId = in.readLong();
         ownerUuid = in.readUTF();
         op = in.readObject();
-    }
-
-    @Override
-    public Object getKey() {
-        return new MapRecordKey(name, key);
     }
 
     @Override

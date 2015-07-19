@@ -14,13 +14,16 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map.impl.tx;
+package com.hazelcast.map.impl.tx.operations;
 
+import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.operation.LockAwareOperation;
 import com.hazelcast.map.impl.record.Record;
+import com.hazelcast.map.impl.tx.VersionedValue;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.MutatingOperation;
 import com.hazelcast.transaction.TransactionException;
 
@@ -29,7 +32,8 @@ import java.io.IOException;
 /**
  * Transactional lock and get operation.
  */
-public class TxnLockAndGetOperation extends LockAwareOperation implements MutatingOperation {
+public class TxnLockAndGetOperation extends LockAwareOperation
+        implements MutatingOperation, IdentifiedDataSerializable {
 
     private VersionedValue response;
     private String ownerUuid;
@@ -53,6 +57,7 @@ public class TxnLockAndGetOperation extends LockAwareOperation implements Mutati
         response = new VersionedValue(value, record == null ? 0 : record.getVersion());
     }
 
+    @Override
     public boolean shouldWait() {
         return !recordStore.canAcquireLock(dataKey, ownerUuid, getThreadId());
     }
@@ -68,6 +73,16 @@ public class TxnLockAndGetOperation extends LockAwareOperation implements Mutati
     }
 
     @Override
+    public int getFactoryId() {
+        return MapDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return MapDataSerializerHook.TXN_LOCK_AND_GET;
+    }
+
+    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeUTF(ownerUuid);
@@ -79,7 +94,6 @@ public class TxnLockAndGetOperation extends LockAwareOperation implements Mutati
         ownerUuid = in.readUTF();
     }
 
-
     @Override
     public String toString() {
         return "TxnLockAndGetOperation{"
@@ -87,5 +101,4 @@ public class TxnLockAndGetOperation extends LockAwareOperation implements Mutati
                 + ", thread=" + getThreadId()
                 + '}';
     }
-
 }

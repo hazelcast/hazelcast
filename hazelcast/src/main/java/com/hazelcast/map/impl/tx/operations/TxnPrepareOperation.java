@@ -14,44 +14,47 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map.impl.tx;
+package com.hazelcast.map.impl.tx.operations;
 
-import com.hazelcast.concurrent.lock.LockWaitNotifyKey;
-import com.hazelcast.map.impl.MapService;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.operation.KeyBasedMapOperation;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.spi.impl.MutatingOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupAwareOperation;
-import com.hazelcast.spi.DefaultObjectNamespace;
-import com.hazelcast.spi.Notifier;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.WaitNotifyKey;
 import com.hazelcast.transaction.TransactionException;
-
 import java.io.IOException;
 
 /**
- * An operation to rollback transaction by unlocking the key on key owner.
+ * An operation to prepare transaction by locking the key on the key owner.
  */
-public class TxnRollbackOperation extends KeyBasedMapOperation implements BackupAwareOperation, Notifier {
+public class TxnPrepareOperation extends KeyBasedMapOperation
+        implements BackupAwareOperation, MutatingOperation, IdentifiedDataSerializable {
+
+    private static final long LOCK_TTL_MILLIS = 10000L;
 
     private String ownerUuid;
 
-    protected TxnRollbackOperation(int partitionId, String name, Data dataKey, String ownerUuid) {
+    public TxnPrepareOperation() {
+    }
+
+    public TxnPrepareOperation(int partitionId, String name, Data dataKey, String ownerUuid) {
         super(name, dataKey);
         setPartitionId(partitionId);
         this.ownerUuid = ownerUuid;
     }
 
-    public TxnRollbackOperation() {
-    }
-
     @Override
     public void run() throws Exception {
-        if (recordStore.isLocked(getKey()) && !recordStore.unlock(getKey(), ownerUuid, getThreadId(), getCallId())) {
-            throw new TransactionException("Lock is not owned by the transaction! Owner: "
-                    + recordStore.getLockOwnerInfo(getKey()));
+        if (!recordStore.extendLock(getKey(), ownerUuid, getThreadId(), LOCK_TTL_MILLIS)) {
+            ILogger logger = getLogger();
+            logger.severe("Locked: [" + recordStore.isLocked(getKey()) + "], key: [" + getKey() + ']');
+            throw new TransactionException("Lock is not owned by the transaction! ["
+                    + recordStore.getLockOwnerInfo(getKey()) + ']');
         }
     }
 
@@ -67,7 +70,7 @@ public class TxnRollbackOperation extends KeyBasedMapOperation implements Backup
 
     @Override
     public final Operation getBackupOperation() {
-        return new TxnRollbackBackupOperation(name, dataKey, ownerUuid, getThreadId());
+        return new TxnPrepareBackupOperation(name, dataKey, ownerUuid, getThreadId());
     }
 
     @Override
@@ -81,13 +84,13 @@ public class TxnRollbackOperation extends KeyBasedMapOperation implements Backup
     }
 
     @Override
-    public boolean shouldNotify() {
-        return true;
+    public int getFactoryId() {
+        return MapDataSerializerHook.F_ID;
     }
 
     @Override
-    public WaitNotifyKey getNotifiedKey() {
-        return new LockWaitNotifyKey(new DefaultObjectNamespace(MapService.SERVICE_NAME, name), dataKey);
+    public int getId() {
+        return MapDataSerializerHook.TXN_PREPARE;
     }
 
     @Override
@@ -100,5 +103,12 @@ public class TxnRollbackOperation extends KeyBasedMapOperation implements Backup
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         ownerUuid = in.readUTF();
+    }
+
+    @Override
+    public String toString() {
+        return "TxnPrepareOperation{"
+                + "ownerUuid='" + ownerUuid + '\''
+                + '}';
     }
 }

@@ -14,14 +14,16 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map.impl.tx;
+package com.hazelcast.map.impl.tx.operations;
 
+import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.operation.BaseRemoveOperation;
 import com.hazelcast.map.impl.operation.RemoveBackupOperation;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.WaitNotifyKey;
 import com.hazelcast.transaction.TransactionException;
@@ -31,7 +33,8 @@ import java.io.IOException;
 /**
  * Transactional delete operation
  */
-public class TxnDeleteOperation extends BaseRemoveOperation implements MapTxnOperation {
+public class TxnDeleteOperation extends BaseRemoveOperation
+        implements MapTxnOperation, IdentifiedDataSerializable {
 
     private long version;
     private boolean successful;
@@ -67,6 +70,7 @@ public class TxnDeleteOperation extends BaseRemoveOperation implements MapTxnOpe
         return false;
     }
 
+    @Override
     public void afterRun() {
         if (successful) {
             super.afterRun();
@@ -78,23 +82,27 @@ public class TxnDeleteOperation extends BaseRemoveOperation implements MapTxnOpe
         sendResponse(false);
     }
 
+    @Override
     public long getVersion() {
         return version;
     }
 
+    @Override
     public void setVersion(long version) {
         this.version = version;
     }
 
     @Override
     public Object getResponse() {
-        return Boolean.TRUE;
+        return true;
     }
 
+    @Override
     public boolean shouldNotify() {
         return true;
     }
 
+    @Override
     public Operation getBackupOperation() {
         return new RemoveBackupOperation(name, dataKey, true);
     }
@@ -109,8 +117,19 @@ public class TxnDeleteOperation extends BaseRemoveOperation implements MapTxnOpe
         return true;
     }
 
+    @Override
     public WaitNotifyKey getNotifiedKey() {
         return getWaitKey();
+    }
+
+    @Override
+    public int getFactoryId() {
+        return MapDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return MapDataSerializerHook.TXN_DELETE;
     }
 
     @Override
