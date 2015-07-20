@@ -16,14 +16,18 @@
 
 package com.hazelcast.client.protocol.generator;
 
+import com.hazelcast.annotation.Codec;
 import com.hazelcast.annotation.EventResponse;
 import com.hazelcast.annotation.GenerateCodec;
 import com.hazelcast.annotation.Request;
 import com.hazelcast.annotation.Response;
 import freemarker.cache.ClassTemplateLoader;
+import freemarker.ext.beans.BeansWrapper;
 import freemarker.log.Logger;
 import freemarker.template.Configuration;
 import freemarker.template.Template;
+import freemarker.template.TemplateHashModel;
+import freemarker.template.TemplateModelException;
 
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.Filer;
@@ -37,6 +41,9 @@ import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.type.MirroredTypeException;
+import javax.lang.model.type.TypeMirror;
+import javax.lang.model.util.Elements;
 import javax.tools.Diagnostic;
 import javax.tools.FileObject;
 import javax.tools.JavaFileManager;
@@ -56,13 +63,15 @@ public class CodecCodeGenerator
         extends AbstractProcessor {
 
     private Filer filer;
+    private Elements elementUtils;
     private Messager messager;
     private Template codecTemplate;
-//    private Template codecTemplateCSharp;
+    //    private Template codecTemplateCSharp;
     private Template messageTypeTemplate;
     private Template messageTypeTemplateCSharp;
-//    private boolean csharpEnabled = Boolean.getBoolean("hazelcast.generator.csharp");
-//    private boolean cppEnabled = Boolean.getBoolean("hazelcast.generator.cpp");
+    private boolean csharpEnabled = Boolean.getBoolean("hazelcast.generator.csharp");
+    private boolean cppEnabled = Boolean.getBoolean("hazelcast.generator.cpp");
+
     private Map<String, ExecutableElement> requestMap = new HashMap<String, ExecutableElement>();
     private Map<Integer, ExecutableElement> responseMap = new HashMap<Integer, ExecutableElement>();
     private Map<Integer, ExecutableElement> eventResponseMap = new HashMap<Integer, ExecutableElement>();
@@ -72,28 +81,46 @@ public class CodecCodeGenerator
 
         filer = env.getFiler();
         messager = env.getMessager();
-
+        elementUtils = env.getElementUtils();
         try {
             Logger.selectLoggerLibrary(Logger.LIBRARY_NONE);
         } catch (ClassNotFoundException e) {
             messager.printMessage(Diagnostic.Kind.ERROR, e.getMessage());
         }
-        Configuration cfg = new Configuration(Configuration.VERSION_2_3_22);
+        Configuration cfg = new Configuration(Configuration.VERSION_2_3_23);
         cfg.setTemplateLoader(new ClassTemplateLoader(getClass(), "/"));
         try {
             codecTemplate = cfg.getTemplate("codec-template-java.ftl");
-//            codecTemplateCSharp = cfg.getTemplate("codec-template-csharp.ftl");
+            //codecTemplateCSharp = cfg.getTemplate("codec-template-csharp.ftl");
             messageTypeTemplate = cfg.getTemplate("messagetype-template-java.ftl");
             messageTypeTemplateCSharp = cfg.getTemplate("messagetype-template-csharp.ftl");
         } catch (IOException e) {
             messager.printMessage(Diagnostic.Kind.ERROR, e.getMessage());
-            //throw new RuntimeException(e);
         }
     }
 
     @Override
     public boolean process(Set<? extends TypeElement> elements, RoundEnvironment env) {
         try {
+
+            TypeElement te = elementUtils.getTypeElement("com.hazelcast.annotation.GenerateCodec");
+            if(!elements.contains(te)) {
+                return false;
+            }
+            for (Element element : env.getElementsAnnotatedWith(Codec.class)) {
+                TypeElement classElement = (TypeElement) element;
+                classElement.getAnnotationMirrors();
+                Codec annotation = classElement.getAnnotation(Codec.class);
+                if (annotation != null) {
+                    try {
+                        annotation.value();
+                    } catch (MirroredTypeException mte) {
+                        TypeMirror value = mte.getTypeMirror();
+                        CodecModel.CUSTOM_CODEC_MAP.put(value.toString(), classElement);
+                    }
+                }
+            }
+
             for (Element element : env.getElementsAnnotatedWith(GenerateCodec.class)) {
                 register((TypeElement) element, Lang.JAVA);
             }
@@ -104,12 +131,12 @@ public class CodecCodeGenerator
 
             for (ExecutableElement element : requestMap.values()) {
                 generateCodec(element, Lang.JAVA);
-                //            if (csharpEnabled) {
-                //                generate((TypeElement) element, Lang.CSHARP);
-                //            }
-                //            if (cppEnabled) {
-                //                generate((TypeElement) element, Lang.CPP);
-                //            }
+                if (csharpEnabled) {
+                    //TODO :CSHARP
+                }
+                if (cppEnabled) {
+                    //TODO: C++
+                }
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -143,11 +170,33 @@ public class CodecCodeGenerator
             if (eventResponse != null) {
                 eventResponseMap.put(eventResponse.value(), methodElement);
             }
-
         }
     }
 
     public void generateCodec(ExecutableElement methodElement, Lang lang) {
+        CodecModel codecModel = createCodecModel(methodElement,lang);
+        final String content;
+        switch (lang) {
+            case JAVA:
+                content = generateFromTemplate(codecTemplate, codecModel);
+                saveClass(codecModel.getPackageName(), codecModel.getClassName(), content);
+                break;
+            case CSHARP:
+                //TODO
+                //                content = generateFromTemplate(codecTemplateCSharp, codecModel);
+                //                saveFile(codecModel.getClassName() + ".cs", codecModel.getPackageName(), content);
+                //                break;
+            case CPP:
+                //TODO
+                //content = generateFromTemplate(parameterTemplateCSharp, clazz);
+                //saveFile(classElement, clazz.getPackageName(), clazz.getClassName(), content);
+                break;
+            default:
+                throw new UnsupportedOperationException("Unsupported language: " + lang);
+        }
+    }
+
+    private CodecModel createCodecModel(ExecutableElement methodElement, Lang lang) {
         final TypeElement parent = (TypeElement) methodElement.getEnclosingElement();
 
         final Request methodElementAnnotation = methodElement.getAnnotation(Request.class);
@@ -167,27 +216,7 @@ public class CodecCodeGenerator
             }
         }
 
-        CodecModel codecModel = new CodecModel(parent, methodElement,
-                responseElement, eventElementList, retryable, lang);
-
-        final String content;
-        switch (lang) {
-            case JAVA:
-                content = generateFromTemplate(codecTemplate, codecModel);
-                saveClass(codecModel.getPackageName(), codecModel.getClassName(), content);
-                break;
-            case CSHARP:
-//                content = generateFromTemplate(codecTemplateCSharp, codecModel);
-//                saveFile(codecModel.getClassName() + ".cs", codecModel.getPackageName(), content);
-//                break;
-            case CPP:
-                //TODO
-                //content = generateFromTemplate(parameterTemplateCSharp, clazz);
-                //saveFile(classElement, clazz.getPackageName(), clazz.getClassName(), content);
-                break;
-            default:
-                throw new UnsupportedOperationException("Unsupported language: " + lang);
-        }
+        return new CodecModel(parent, methodElement, responseElement, eventElementList, retryable, lang);
     }
 
     private void generateMessageTypeEnum(TypeElement classElement, Lang lang) {
@@ -216,6 +245,15 @@ public class CodecCodeGenerator
         }
     }
 
+    private void generateProtocolDoc() {
+//        StringBuilder sb = new StringBuilder();
+//        for (ExecutableElement element : requestMap.values()) {
+//            sb.append(generateFromTemplate(codecTemplate, codecModel));
+//        }
+//        saveClass(codecModel.getPackageName(), codecModel.getClassName(), content);
+
+    }
+
     private void saveClass(String packageName, String className, String content) {
         JavaFileObject file;
         try {
@@ -234,7 +272,7 @@ public class CodecCodeGenerator
             file = filer.createResource(location, packageName, fileName);
             file.openWriter().append(content).close();
         } catch (IOException e) {
-            messager.printMessage(Diagnostic.Kind.ERROR, e.getMessage());
+            messager.printMessage(Diagnostic.Kind.WARNING, e.getMessage());
         }
     }
 
@@ -242,6 +280,7 @@ public class CodecCodeGenerator
         String content = null;
         try {
             Map<String, Object> data = new HashMap();
+            setUtilModel(data);
             data.put("model", model);
             StringWriter writer = new StringWriter();
             template.process(data, writer);
@@ -250,5 +289,13 @@ public class CodecCodeGenerator
             messager.printMessage(Diagnostic.Kind.ERROR, e.getMessage());
         }
         return content;
+    }
+
+    public static void setUtilModel(Map modelMap)
+            throws TemplateModelException {
+        BeansWrapper wrapper = BeansWrapper.getDefaultInstance();
+        TemplateHashModel staticModels = wrapper.getStaticModels();
+        TemplateHashModel statics = (TemplateHashModel) staticModels.get(CodeGenerationUtils.class.getName());
+        modelMap.put("util", statics);
     }
 }

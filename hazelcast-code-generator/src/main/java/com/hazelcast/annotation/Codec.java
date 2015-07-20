@@ -14,30 +14,25 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.protocol.generator;
+package com.hazelcast.annotation;
+
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
- * Language
+ * This annotation is for marking custom object codecs
  */
-public enum Lang {
+@Retention(RetentionPolicy.SOURCE)
+@Target(ElementType.TYPE)
+public @interface Codec {
 
     /**
-     *Java lang
+     * The class for this codec is responsible
+     * @return class
      */
-    JAVA,
+    Class value();
 
-    /**
-     * C# lang
-     */
-    CSHARP,
-
-    /**
-     *C++ lang
-     */
-    CPP,
-
-    /**
-     * Binary Protocol Document representing a human readable document in English
-     */
-    DOC
 }
+

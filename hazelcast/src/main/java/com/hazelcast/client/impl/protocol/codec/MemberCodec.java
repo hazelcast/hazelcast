@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
+import com.hazelcast.annotation.Codec;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.util.ParameterUtil;
 import com.hazelcast.core.Member;
@@ -26,6 +27,7 @@ import com.hazelcast.nio.Bits;
 import java.util.HashMap;
 import java.util.Map;
 
+@Codec(Member.class)
 public final class MemberCodec {
 
     private MemberCodec() {
@@ -60,14 +62,14 @@ public final class MemberCodec {
 
     public static int calculateDataSize(Member member) {
         int dataSize = AddressCodec.calculateDataSize(((AbstractMember) member).getAddress());
-        dataSize += ParameterUtil.calculateStringDataSize(member.getUuid());
+        dataSize += ParameterUtil.calculateDataSize(member.getUuid());
         dataSize += Bits.INT_SIZE_IN_BYTES;
         Map<String, Object> attributes = member.getAttributes();
         for (Map.Entry<String, Object> entry : attributes.entrySet()) {
-            dataSize += ParameterUtil.calculateStringDataSize(entry.getKey());
+            dataSize += ParameterUtil.calculateDataSize(entry.getKey());
             Object value = entry.getValue();
             //TODO: this is costly to use toString
-            dataSize += ParameterUtil.calculateStringDataSize(value.toString());
+            dataSize += ParameterUtil.calculateDataSize(value.toString());
         }
         return dataSize;
     }

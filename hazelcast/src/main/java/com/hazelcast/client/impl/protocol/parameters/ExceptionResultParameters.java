@@ -89,21 +89,21 @@ public class ExceptionResultParameters {
      * @return size
      */
     public static int calculateDataSize(String className, String causeClassName, String message, String stacktrace) {
-        int dataSize = ClientMessage.HEADER_SIZE + ParameterUtil.calculateStringDataSize(className);
+        int dataSize = ClientMessage.HEADER_SIZE + ParameterUtil.calculateDataSize(className);
         if (causeClassName == null) {
             dataSize += Bits.BOOLEAN_SIZE_IN_BYTES;
         } else {
-            dataSize += ParameterUtil.calculateStringDataSize(causeClassName);
+            dataSize += ParameterUtil.calculateDataSize(causeClassName);
         }
         if (message == null) {
             dataSize += Bits.BOOLEAN_SIZE_IN_BYTES;
         } else {
-            dataSize += ParameterUtil.calculateStringDataSize(message);
+            dataSize += ParameterUtil.calculateDataSize(message);
         }
         if (stacktrace == null) {
             dataSize += Bits.BOOLEAN_SIZE_IN_BYTES;
         } else {
-            dataSize += ParameterUtil.calculateStringDataSize(stacktrace);
+            dataSize += ParameterUtil.calculateDataSize(stacktrace);
         }
         return dataSize;
     }

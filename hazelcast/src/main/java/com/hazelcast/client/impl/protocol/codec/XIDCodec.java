@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
+import com.hazelcast.annotation.Codec;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.util.ParameterUtil;
 import com.hazelcast.nio.Bits;
@@ -23,6 +24,7 @@ import com.hazelcast.transaction.impl.xa.SerializableXID;
 
 import javax.transaction.xa.Xid;
 
+@Codec(Xid.class)
 public final class XIDCodec {
 
     private XIDCodec() {
@@ -45,8 +47,8 @@ public final class XIDCodec {
     public static int calculateDataSize(Xid xid) {
         int dataSize = 0;
         dataSize += Bits.INT_SIZE_IN_BYTES;
-        dataSize += ParameterUtil.calculateByteArrayDataSize(xid.getGlobalTransactionId());
-        dataSize += ParameterUtil.calculateByteArrayDataSize(xid.getBranchQualifier());
+        dataSize += ParameterUtil.calculateDataSize(xid.getGlobalTransactionId());
+        dataSize += ParameterUtil.calculateDataSize(xid.getBranchQualifier());
         return dataSize;
     }
 }
