@@ -16,17 +16,14 @@
 
 package com.hazelcast.client.loadBalancer;
 
-import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.util.RandomLB;
 import com.hazelcast.core.Cluster;
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.Member;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.AfterClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -37,12 +34,6 @@ import static org.junit.Assert.assertNull;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
 public class ClientRandomLBTest {
-
-    @AfterClass
-    public static void destroy() {
-        HazelcastClient.shutdownAll();
-        Hazelcast.shutdownAll();
-    }
 
     @Test
     public void testRandomLB_withoutMembers() {
@@ -55,7 +46,7 @@ public class ClientRandomLBTest {
     public void testRandomLB_withMembers() {
         RandomLB randomLB = new RandomLB();
 
-        TestHazelcastInstanceFactory factory = new TestHazelcastInstanceFactory(1);
+        TestHazelcastInstanceFactory factory = new TestHazelcastInstanceFactory();
         HazelcastInstance server = factory.newHazelcastInstance();
         Cluster cluster = server.getCluster();
 
@@ -68,5 +59,6 @@ public class ClientRandomLBTest {
         Member nextMember = randomLB.next();
 
         assertEquals(member, nextMember);
+        factory.terminateAll();
     }
 }

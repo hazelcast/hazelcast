@@ -1,21 +1,26 @@
 package com.hazelcast.client.map;
 
-import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.map.helpers.AMapStore;
+import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.config.XmlConfigBuilder;
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapLoader;
 import com.hazelcast.core.MapStore;
 import com.hazelcast.map.ReachedMaxSizeException;
 import com.hazelcast.test.AssertTask;
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.SlowTest;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
+
 import java.io.ByteArrayInputStream;
 import java.util.Collection;
 import java.util.HashMap;
@@ -23,20 +28,21 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
 import static junit.framework.Assert.assertEquals;
 
-@RunWith(HazelcastSerialClassRunner.class)
+@RunWith(HazelcastParallelClassRunner.class)
 @Category(SlowTest.class)
 public class ClientMapStoreTest extends HazelcastTestSupport {
 
-    static final String MAP_NAME = "clientMapStoreLoad";
-    Config nodeConfig;
+    private static final String MAP_NAME = "clientMapStoreLoad";
+    private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
+    private Config nodeConfig;
+
+    @After
+    public void tearDown() {
+        hazelcastFactory.terminateAll();
+    }
 
     @Before
     public void setup() {
@@ -51,15 +57,9 @@ public class ClientMapStoreTest extends HazelcastTestSupport {
         nodeConfig.addMapConfig(mapConfig);
     }
 
-    @After
-    public void tearDown() {
-        HazelcastClient.shutdownAll();
-        Hazelcast.shutdownAll();
-    }
-
     @Test
     public void testOneClient_KickOffMapStoreLoad() throws InterruptedException {
-        Hazelcast.newHazelcastInstance(nodeConfig);
+        hazelcastFactory.newHazelcastInstance(nodeConfig);
 
         ClientThread client1 = new ClientThread();
         client1.start();
@@ -70,7 +70,7 @@ public class ClientMapStoreTest extends HazelcastTestSupport {
 
     @Test
     public void testTwoClient_KickOffMapStoreLoad() throws InterruptedException {
-        Hazelcast.newHazelcastInstance(nodeConfig);
+        hazelcastFactory.newHazelcastInstance(nodeConfig);
         ClientThread[] clientThreads = new ClientThread[2];
         for (int i = 0; i < clientThreads.length; i++) {
             ClientThread client1 = new ClientThread();
@@ -87,12 +87,12 @@ public class ClientMapStoreTest extends HazelcastTestSupport {
 
     @Test
     public void testOneClientKickOffMapStoreLoad_ThenNodeJoins() {
-        Hazelcast.newHazelcastInstance(nodeConfig);
+        hazelcastFactory.newHazelcastInstance(nodeConfig);
 
         ClientThread client1 = new ClientThread();
         client1.start();
 
-        Hazelcast.newHazelcastInstance(nodeConfig);
+        hazelcastFactory.newHazelcastInstance(nodeConfig);
 
         HazelcastTestSupport.assertJoinable(client1);
 
@@ -101,11 +101,11 @@ public class ClientMapStoreTest extends HazelcastTestSupport {
 
     @Test
     public void testForIssue2112() {
-        Hazelcast.newHazelcastInstance(nodeConfig);
-        IMap<String, String> map = HazelcastClient.newHazelcastClient().getMap(ClientMapStoreTest.MAP_NAME);
+        hazelcastFactory.newHazelcastInstance(nodeConfig);
+        IMap<String, String> map = hazelcastFactory.newHazelcastClient().getMap(ClientMapStoreTest.MAP_NAME);
         assertSizeEventually(SimpleMapStore.MAX_KEYS, map);
-        Hazelcast.newHazelcastInstance(nodeConfig);
-        map = HazelcastClient.newHazelcastClient().getMap(ClientMapStoreTest.MAP_NAME);
+        hazelcastFactory.newHazelcastInstance(nodeConfig);
+        map = hazelcastFactory.newHazelcastClient().getMap(ClientMapStoreTest.MAP_NAME);
         assertSizeEventually(SimpleMapStore.MAX_KEYS, map);
     }
 
@@ -127,8 +127,8 @@ public class ClientMapStoreTest extends HazelcastTestSupport {
         mapConfig.setMapStoreConfig(mapStoreConfig);
         config.addMapConfig(mapConfig);
 
-        HazelcastInstance server = Hazelcast.newHazelcastInstance(config);
-        HazelcastInstance client = HazelcastClient.newHazelcastClient();
+        HazelcastInstance server = hazelcastFactory.newHazelcastInstance(config);
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient();
         final IMap map = client.getMap(MAP_NAME);
 
 
@@ -159,8 +159,8 @@ public class ClientMapStoreTest extends HazelcastTestSupport {
         mapConfig.setMapStoreConfig(mapStoreConfig);
         config.addMapConfig(mapConfig);
 
-        HazelcastInstance server = Hazelcast.newHazelcastInstance(config);
-        HazelcastInstance client = HazelcastClient.newHazelcastClient();
+        HazelcastInstance server = hazelcastFactory.newHazelcastInstance(config);
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient();
 
         final IMap map = client.getMap(MAP_NAME);
 
@@ -188,8 +188,8 @@ public class ClientMapStoreTest extends HazelcastTestSupport {
         mapConfig.setMapStoreConfig(mapStoreConfig);
         config.addMapConfig(mapConfig);
 
-        HazelcastInstance server = Hazelcast.newHazelcastInstance(config);
-        HazelcastInstance client = HazelcastClient.newHazelcastClient();
+        HazelcastInstance server = hazelcastFactory.newHazelcastInstance(config);
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient();
 
         IMap map = client.getMap(MAP_NAME);
 
@@ -262,7 +262,7 @@ public class ClientMapStoreTest extends HazelcastTestSupport {
         IMap<String, String> map;
 
         public void run() {
-            HazelcastInstance client = HazelcastClient.newHazelcastClient();
+            HazelcastInstance client = hazelcastFactory.newHazelcastClient();
             map = client.getMap(ClientMapStoreTest.MAP_NAME);
             map.size();
         }
@@ -361,8 +361,8 @@ public class ClientMapStoreTest extends HazelcastTestSupport {
                 "</hazelcast>";
 
         Config config = buildConfig(xml);
-        HazelcastInstance hz = Hazelcast.newHazelcastInstance(config);
-        HazelcastInstance client = HazelcastClient.newHazelcastClient();
+        HazelcastInstance hz = hazelcastFactory.newHazelcastInstance(config);
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient();
 
         IMap map = client.getMap(mapNameWithStoreAndSize + "1");
         map.put(1, 1);

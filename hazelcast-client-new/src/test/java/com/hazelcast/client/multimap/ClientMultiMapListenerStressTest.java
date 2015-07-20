@@ -1,17 +1,16 @@
 package com.hazelcast.client.multimap;
 
-import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.MultiMap;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.NightlyTest;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -32,20 +31,20 @@ public class ClientMultiMapListenerStressTest {
     private static final int THREADS_PER_CLIENT = 4;
     private static final String MAP_NAME = randomString();
 
+    private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
+    private HazelcastInstance server;
 
-    static HazelcastInstance server;
 
-    @BeforeClass
-    public static void init() {
-        Config cfg = new Config();
-        cfg.setProperty("hazelcast.event.queue.capacity", "5000000");
-        server = Hazelcast.newHazelcastInstance(cfg);
+    @After
+    public void tearDown() {
+        hazelcastFactory.terminateAll();
     }
 
-    @AfterClass
-    public static void destroy() {
-        HazelcastClient.shutdownAll();
-        Hazelcast.shutdownAll();
+    @Before
+    public void setup() {
+        Config cfg = new Config();
+        cfg.setProperty("hazelcast.event.queue.capacity", "5000000");
+        server = hazelcastFactory.newHazelcastInstance(cfg);
     }
 
     @Test
@@ -54,7 +53,7 @@ public class ClientMultiMapListenerStressTest {
 
         int idx = 0;
         for (int i = 0; i < NUMBER_OF_CLIENTS; i++) {
-            HazelcastInstance client = HazelcastClient.newHazelcastClient();
+            HazelcastInstance client = hazelcastFactory.newHazelcastClient();
             for (int j = 0; j < THREADS_PER_CLIENT; j++) {
                 PutItemsThread t = new PutItemsThread(client);
                 putThreads[idx++] = t;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2014, Hazelcast, Inc. All Rights Reserved.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -19,16 +19,22 @@ package com.hazelcast.client.quorum;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.config.QuorumConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.nio.Address;
 import com.hazelcast.quorum.PartitionedCluster;
+import com.hazelcast.config.QuorumConfig;
 import com.hazelcast.quorum.QuorumException;
 import com.hazelcast.quorum.QuorumType;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -36,13 +42,6 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.map.InterceptorTest.SimpleInterceptor;
 import static com.hazelcast.map.TempData.LoggingEntryProcessor;

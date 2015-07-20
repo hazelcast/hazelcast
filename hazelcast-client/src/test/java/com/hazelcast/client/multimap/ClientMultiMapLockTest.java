@@ -16,14 +16,14 @@
 
 package com.hazelcast.client.multimap;
 
-import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.core.Hazelcast;
+import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.MultiMap;
 import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -31,31 +31,27 @@ import org.junit.runner.RunWith;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.test.HazelcastTestSupport.assertJoinable;
-import static com.hazelcast.test.HazelcastTestSupport.assertOpenEventually;
-import static com.hazelcast.test.HazelcastTestSupport.randomString;
-import static com.hazelcast.test.HazelcastTestSupport.sleepSeconds;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
-public class ClientMultiMapLockTest {
+public class ClientMultiMapLockTest extends HazelcastTestSupport {
 
-    static HazelcastInstance server;
-    static HazelcastInstance client;
+    private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
 
-    @BeforeClass
-    public static void init() {
-        server = Hazelcast.newHazelcastInstance();
-        client = HazelcastClient.newHazelcastClient();
+    private HazelcastInstance client;
+
+    @After
+    public void tearDown() {
+        hazelcastFactory.terminateAll();
     }
 
-    @AfterClass
-    public static void destroy() {
-        HazelcastClient.shutdownAll();
-        Hazelcast.shutdownAll();
+    @Before
+    public void setup() {
+        hazelcastFactory.newHazelcastInstance();
+        client = hazelcastFactory.newHazelcastClient();
     }
 
     @Test
@@ -125,24 +121,26 @@ public class ClientMultiMapLockTest {
         throw t.exception;
     }
 
-    static class UnLockThread extends Thread{
-        public Exception exception=null;
-        public MultiMap mm=null;
-        public Object key=null;
+    static class UnLockThread extends Thread {
+        public Exception exception = null;
+        public MultiMap mm = null;
+        public Object key = null;
 
-        public UnLockThread(MultiMap mm, Object key){
+        public UnLockThread(MultiMap mm, Object key) {
             this.mm = mm;
             this.key = key;
         }
 
         public void run() {
-            try{
+            try {
                 mm.unlock(key);
-            }catch (Exception e){
+            } catch (Exception e) {
                 exception = e;
             }
         }
-    };
+    }
+
+    ;
 
     @Test
     public void testLock_whenAlreadyLockedBySelf() throws Exception {
@@ -198,10 +196,10 @@ public class ClientMultiMapLockTest {
         mm.lock(key);
 
         final CountDownLatch tryLockReturnsTrue = new CountDownLatch(1);
-        new Thread(){
+        new Thread() {
             public void run() {
                 try {
-                    if(mm.tryLock(key, 10, TimeUnit.SECONDS)){
+                    if (mm.tryLock(key, 10, TimeUnit.SECONDS)) {
                         tryLockReturnsTrue.countDown();
                     }
                 } catch (InterruptedException e) {
@@ -247,7 +245,7 @@ public class ClientMultiMapLockTest {
         final Object key = "key";
         mm.lock(key);
         final CountDownLatch forceUnlock = new CountDownLatch(1);
-        new Thread(){
+        new Thread() {
             public void run() {
                 mm.forceUnlock(key);
                 forceUnlock.countDown();
@@ -264,7 +262,7 @@ public class ClientMultiMapLockTest {
         mm.lock(key);
         mm.lock(key);
         final CountDownLatch forceUnlock = new CountDownLatch(1);
-        new Thread(){
+        new Thread() {
             public void run() {
                 mm.forceUnlock(key);
                 forceUnlock.countDown();

@@ -16,41 +16,43 @@
 
 package com.hazelcast.client.txn;
 
-import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.core.Hazelcast;
+import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ISet;
 import com.hazelcast.core.TransactionalSet;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.transaction.TransactionContext;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static com.hazelcast.test.HazelcastTestSupport.randomString;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
 public class ClientTxnSetTest {
-    static HazelcastInstance client;
-    static HazelcastInstance server1;
-    static HazelcastInstance server2;
+    private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
 
-    @BeforeClass
-    public static void init(){
-        server1 = Hazelcast.newHazelcastInstance();
-        client = HazelcastClient.newHazelcastClient();
+    private HazelcastInstance client;
+
+    @After
+    public void tearDown() {
+        hazelcastFactory.terminateAll();
     }
 
-    @AfterClass
-    public static void destroy() {
-        HazelcastClient.shutdownAll();
-        Hazelcast.shutdownAll();
+    @Before
+    public void setup() {
+        hazelcastFactory.newHazelcastInstance();
+        hazelcastFactory.newHazelcastInstance();
+        client = hazelcastFactory.newHazelcastClient();
     }
+
 
     @Test
     public void testAdd_withinTxn() throws Exception {
@@ -149,7 +151,7 @@ public class ClientTxnSetTest {
         assertFalse(txnSet.add(element));
 
         context.commitTransaction();
-        assertEquals(1,set.size());
+        assertEquals(1, set.size());
     }
 
     @Test

@@ -17,6 +17,7 @@
 package com.hazelcast.client.spi.impl;
 
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.connection.AddressProvider;
 import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.ClientImpl;
@@ -60,8 +61,8 @@ public class ClientClusterServiceImpl extends ClusterListenerSupport {
     private final AtomicReference<Map<Address, Member>> membersRef = new AtomicReference<Map<Address, Member>>();
     private final ConcurrentMap<String, MembershipListener> listeners = new ConcurrentHashMap<String, MembershipListener>();
 
-    public ClientClusterServiceImpl(HazelcastClientInstanceImpl client) {
-        super(client);
+    public ClientClusterServiceImpl(HazelcastClientInstanceImpl client, Collection<AddressProvider> addressProviders) {
+        super(client, addressProviders);
         final ClientConfig clientConfig = getClientConfig();
         final List<ListenerConfig> listenerConfigs = client.getClientConfig().getListenerConfigs();
         for (ListenerConfig listenerConfig : listenerConfigs) {

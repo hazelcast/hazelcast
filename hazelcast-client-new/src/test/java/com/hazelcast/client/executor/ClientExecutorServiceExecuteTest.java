@@ -16,22 +16,31 @@
 
 package com.hazelcast.client.executor;
 
-import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.client.executor.tasks.*;
-import com.hazelcast.core.*;
+import com.hazelcast.client.executor.tasks.MapPutRunnable;
+import com.hazelcast.client.executor.tasks.SelectAllMembers;
+import com.hazelcast.client.test.TestHazelcastFactory;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IExecutorService;
+import com.hazelcast.core.IMap;
+import com.hazelcast.core.Member;
+import com.hazelcast.core.MemberSelector;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 
-import static com.hazelcast.test.HazelcastTestSupport.*;
+import static com.hazelcast.test.HazelcastTestSupport.assertSizeEventually;
+import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
+import static com.hazelcast.test.HazelcastTestSupport.generateKeyOwnedBy;
+import static com.hazelcast.test.HazelcastTestSupport.randomString;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -39,24 +48,22 @@ import static org.junit.Assert.assertTrue;
 public class ClientExecutorServiceExecuteTest {
 
     private static final int CLUSTER_SIZE = 3;
+    private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
+    private HazelcastInstance server1;
+    private HazelcastInstance server2;
+    private HazelcastInstance client;
 
-    private static HazelcastInstance server1;
-    private static HazelcastInstance server2;
-
-    private static HazelcastInstance client;
-
-    @BeforeClass
-    public static void beforeClass() {
-        server1 = Hazelcast.newHazelcastInstance();
-        Hazelcast.newHazelcastInstance();
-        server2 = Hazelcast.newHazelcastInstance();
-        client = HazelcastClient.newHazelcastClient();
+    @After
+    public void tearDown() {
+        hazelcastFactory.terminateAll();
     }
 
-    @AfterClass
-    public static void afterClass() {
-        HazelcastClient.shutdownAll();
-        Hazelcast.shutdownAll();
+    @Before
+    public void setup()  {
+        server1 = hazelcastFactory.newHazelcastInstance();
+        hazelcastFactory.newHazelcastInstance();
+        server2 = hazelcastFactory.newHazelcastInstance();
+        client = hazelcastFactory.newHazelcastClient();
     }
 
     @Test

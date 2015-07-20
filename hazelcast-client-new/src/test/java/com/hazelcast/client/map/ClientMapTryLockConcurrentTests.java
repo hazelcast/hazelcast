@@ -1,18 +1,18 @@
 package com.hazelcast.client.map;
 
-import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.core.Hazelcast;
+import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-import java.util.Random;
-import java.util.concurrent.TimeUnit;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+
+import java.util.Random;
+import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.test.HazelcastTestSupport.assertJoinable;
 import static com.hazelcast.test.HazelcastTestSupport.randomString;
@@ -22,19 +22,19 @@ import static org.junit.Assert.assertTrue;
 @Category(QuickTest.class)
 public class ClientMapTryLockConcurrentTests {
 
-    static HazelcastInstance client;
-    static HazelcastInstance server;
+    private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
 
-    @BeforeClass
-    public static void init() {
-        server = Hazelcast.newHazelcastInstance();
-        client = HazelcastClient.newHazelcastClient();
+    private HazelcastInstance client;
+
+    @After
+    public void tearDown() {
+        hazelcastFactory.terminateAll();
     }
 
-    @AfterClass
-    public static void destroy() {
-        HazelcastClient.shutdownAll();
-        Hazelcast.shutdownAll();
+    @Before
+    public void setup() {
+        hazelcastFactory.newHazelcastInstance();
+        client = hazelcastFactory.newHazelcastClient();
     }
 
     @Test

@@ -20,7 +20,7 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.mapreduce.aggregation.Aggregation;
 import com.hazelcast.mapreduce.aggregation.Aggregations;
 import com.hazelcast.mapreduce.aggregation.Supplier;
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -33,7 +33,7 @@ import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 
-@RunWith(HazelcastSerialClassRunner.class)
+@RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
 public class BaseAggregationTest
         extends AbstractAggregationTest {
@@ -43,7 +43,7 @@ public class BaseAggregationTest
             throws Exception {
 
         String mapName = randomMapName();
-        IMap<String, Integer> map = HAZELCAST_INSTANCE.getMap(mapName);
+        IMap<String, Integer> map = client.getMap(mapName);
 
         Integer[] values = buildPlainValues(new ValueProvider<Integer>() {
             @Override
@@ -70,7 +70,7 @@ public class BaseAggregationTest
         Set<String> expectation = new HashSet<String>(Arrays.asList(probes));
 
         String mapName = randomMapName();
-        IMap<String, String> map = HAZELCAST_INSTANCE.getMap(mapName);
+        IMap<String, String> map = client.getMap(mapName);
 
         String[] values = buildPlainValues(new ValueProvider<String>() {
             @Override

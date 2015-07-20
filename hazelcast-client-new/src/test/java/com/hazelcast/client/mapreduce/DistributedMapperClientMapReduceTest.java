@@ -14,9 +14,9 @@
 
 package com.hazelcast.client.mapreduce;
 
-import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.client.test.TestHazelcastFactory;
+import com.hazelcast.config.Config;
 import com.hazelcast.core.ExecutionCallback;
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.IMap;
@@ -30,7 +30,7 @@ import com.hazelcast.mapreduce.KeyValueSource;
 import com.hazelcast.mapreduce.Mapper;
 import com.hazelcast.mapreduce.Reducer;
 import com.hazelcast.mapreduce.ReducerFactory;
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.NightlyTest;
 import org.junit.After;
 import org.junit.Test;
@@ -43,26 +43,38 @@ import java.util.concurrent.Semaphore;
 
 import static org.junit.Assert.assertEquals;
 
-@RunWith(HazelcastSerialClassRunner.class)
+@RunWith(HazelcastParallelClassRunner.class)
 @Category(NightlyTest.class)
 @SuppressWarnings("unused")
 public class DistributedMapperClientMapReduceTest
         extends AbstractClientMapReduceJobTest {
 
+    private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
+
     @After
-    public void shutdown() {
-        HazelcastClient.shutdownAll();
-        Hazelcast.shutdownAll();
+    public void tearDown() {
+        hazelcastFactory.terminateAll();
     }
 
     @Test(timeout = 120000)
     public void testMapperReducer() throws Exception {
-        prepareClusterNodes(3);
+        Config config = buildConfig();
 
-        HazelcastInstance client = HazelcastClient.newHazelcastClient(null);
-        IMap<Integer, Integer> m1 = getFilledIMap(client, 100);
+        HazelcastInstance h1 = hazelcastFactory.newHazelcastInstance(config);
+        HazelcastInstance h2 = hazelcastFactory.newHazelcastInstance(config);
+        HazelcastInstance h3 = hazelcastFactory.newHazelcastInstance(config);
 
-        JobTracker tracker = client.getJobTracker(randomMapName());
+        assertClusterSizeEventually(3, h1);
+        assertClusterSizeEventually(3, h2);
+        assertClusterSizeEventually(3, h3);
+
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient(null);
+        IMap<Integer, Integer> m1 = client.getMap(randomString());
+        for (int i = 0; i < 100; i++) {
+            m1.put(i, i);
+        }
+
+        JobTracker tracker = client.getJobTracker("default");
         Job<Integer, Integer> job = tracker.newJob(KeyValueSource.fromMap(m1));
         ICompletableFuture<Map<String, Integer>> future = job.mapper(new GroupingTestMapper()).combiner(new TestCombinerFactory())
                 .reducer(new TestReducerFactory()).submit();
@@ -83,12 +95,23 @@ public class DistributedMapperClientMapReduceTest
 
     @Test(timeout = 120000)
     public void testMapperReducerCollator() throws Exception {
-        prepareClusterNodes(3);
+        Config config = buildConfig();
 
-        HazelcastInstance client = HazelcastClient.newHazelcastClient(null);
-        IMap<Integer, Integer> m1 = getFilledIMap(client, 100);
+        HazelcastInstance h1 = hazelcastFactory.newHazelcastInstance(config);
+        HazelcastInstance h2 = hazelcastFactory.newHazelcastInstance(config);
+        HazelcastInstance h3 = hazelcastFactory.newHazelcastInstance(config);
 
-        JobTracker tracker = client.getJobTracker(randomMapName());
+        assertClusterSizeEventually(3, h1);
+        assertClusterSizeEventually(3, h2);
+        assertClusterSizeEventually(3, h3);
+
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient(null);
+        IMap<Integer, Integer> m1 = client.getMap(randomString());
+        for (int i = 0; i < 100; i++) {
+            m1.put(i, i);
+        }
+
+        JobTracker tracker = client.getJobTracker("default");
         Job<Integer, Integer> job = tracker.newJob(KeyValueSource.fromMap(m1));
         ICompletableFuture<Integer> future = job.mapper(new GroupingTestMapper()).combiner(new TestCombinerFactory())
                 .reducer(new TestReducerFactory()).submit(new TestCollator());
@@ -108,16 +131,27 @@ public class DistributedMapperClientMapReduceTest
 
     @Test(timeout = 120000)
     public void testAsyncMapperReducer() throws Exception {
-        prepareClusterNodes(3);
+        Config config = buildConfig();
 
-        HazelcastInstance client = HazelcastClient.newHazelcastClient(null);
-        IMap<Integer, Integer> m1 = getFilledIMap(client, 100);
+        HazelcastInstance h1 = hazelcastFactory.newHazelcastInstance(config);
+        HazelcastInstance h2 = hazelcastFactory.newHazelcastInstance(config);
+        HazelcastInstance h3 = hazelcastFactory.newHazelcastInstance(config);
+
+        assertClusterSizeEventually(3, h1);
+        assertClusterSizeEventually(3, h2);
+        assertClusterSizeEventually(3, h3);
+
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient(null);
+        IMap<Integer, Integer> m1 = client.getMap(randomString());
+        for (int i = 0; i < 100; i++) {
+            m1.put(i, i);
+        }
 
         final Map<String, Integer> listenerResults = new HashMap<String, Integer>();
         final Semaphore semaphore = new Semaphore(1);
         semaphore.acquire();
 
-        JobTracker tracker = client.getJobTracker(randomMapName());
+        JobTracker tracker = client.getJobTracker("default");
         Job<Integer, Integer> job = tracker.newJob(KeyValueSource.fromMap(m1));
         ICompletableFuture<Map<String, Integer>> future = job.mapper(new GroupingTestMapper()).combiner(new TestCombinerFactory())
                 .reducer(new TestReducerFactory()).submit();
@@ -154,16 +188,27 @@ public class DistributedMapperClientMapReduceTest
 
     @Test(timeout = 120000)
     public void testAsyncMapperReducerCollator() throws Exception {
-        prepareClusterNodes(3);
+        Config config = buildConfig();
 
-        HazelcastInstance client = HazelcastClient.newHazelcastClient(null);
-        IMap<Integer, Integer> m1 = getFilledIMap(client, 100);
+        HazelcastInstance h1 = hazelcastFactory.newHazelcastInstance(config);
+        HazelcastInstance h2 = hazelcastFactory.newHazelcastInstance(config);
+        HazelcastInstance h3 = hazelcastFactory.newHazelcastInstance(config);
+
+        assertClusterSizeEventually(3, h1);
+        assertClusterSizeEventually(3, h2);
+        assertClusterSizeEventually(3, h3);
+
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient(null);
+        IMap<Integer, Integer> m1 = client.getMap(randomString());
+        for (int i = 0; i < 100; i++) {
+            m1.put(i, i);
+        }
 
         final int[] result = new int[1];
         final Semaphore semaphore = new Semaphore(1);
         semaphore.acquire();
 
-        JobTracker tracker = client.getJobTracker(randomMapName());
+        JobTracker tracker = client.getJobTracker("default");
         Job<Integer, Integer> job = tracker.newJob(KeyValueSource.fromMap(m1));
         ICompletableFuture<Integer> future = job.mapper(new GroupingTestMapper()).combiner(new TestCombinerFactory())
                 .reducer(new TestReducerFactory()).submit(new TestCollator());

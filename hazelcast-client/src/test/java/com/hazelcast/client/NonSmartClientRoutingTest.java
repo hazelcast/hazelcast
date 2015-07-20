@@ -2,14 +2,13 @@ package com.hazelcast.client;
 
 
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.core.Hazelcast;
+import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -26,24 +25,26 @@ import static org.junit.Assert.assertEquals;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
 public class NonSmartClientRoutingTest {
-    static HazelcastInstance client;
-    static HazelcastInstance server1;
-    static HazelcastInstance server2;
 
-    @BeforeClass
-    public static void init() {
-        server1 = Hazelcast.newHazelcastInstance();
-        server2 = Hazelcast.newHazelcastInstance();
+    private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
+
+    private HazelcastInstance client;
+    private HazelcastInstance server1;
+
+    @After
+    public void tearDown() {
+        hazelcastFactory.terminateAll();
+    }
+
+    @Before
+    public void setup() {
+        server1 = hazelcastFactory.newHazelcastInstance();
+        hazelcastFactory.newHazelcastInstance();
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.getNetworkConfig().setSmartRouting(false);
-        client = HazelcastClient.newHazelcastClient(clientConfig);
+        client = hazelcastFactory.newHazelcastClient(clientConfig);
     }
 
-    @AfterClass
-    public static void destroy() {
-        HazelcastClient.shutdownAll();
-        Hazelcast.shutdownAll();
-    }
 
     @Test
     public void test() {

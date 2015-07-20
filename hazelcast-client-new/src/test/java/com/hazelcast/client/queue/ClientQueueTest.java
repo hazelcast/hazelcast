@@ -16,18 +16,17 @@
 
 package com.hazelcast.client.queue;
 
-import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.QueueConfig;
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IQueue;
 import com.hazelcast.core.ItemEvent;
 import com.hazelcast.core.ItemListener;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -57,24 +56,23 @@ public class ClientQueueTest {
     final static int maxSizeForQueue = 8;
     final static String queueWithMaxSize = "queueWithMaxSize*";
 
-    static HazelcastInstance client;
-    static HazelcastInstance server;
+    private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
+    private HazelcastInstance client;
 
-    @BeforeClass
-    public static void init() {
+    @Before
+    public void setup() {
         Config config = new Config();
 
         QueueConfig queueConfig = config.getQueueConfig(queueWithMaxSize);
         queueConfig.setMaxSize(maxSizeForQueue);
 
-        server = Hazelcast.newHazelcastInstance(config);
-        client = HazelcastClient.newHazelcastClient();
+        hazelcastFactory.newHazelcastInstance(config);
+        client = hazelcastFactory.newHazelcastClient();
     }
 
-    @AfterClass
-    public static void destroy() {
-        HazelcastClient.shutdownAll();
-        Hazelcast.shutdownAll();
+    @After
+    public void tearDown() {
+        hazelcastFactory.terminateAll();
     }
 
     @Test

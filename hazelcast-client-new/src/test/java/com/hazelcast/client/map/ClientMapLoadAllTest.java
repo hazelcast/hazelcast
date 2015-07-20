@@ -1,15 +1,19 @@
 package com.hazelcast.client.map;
 
-import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapStore;
 import com.hazelcast.map.mapstore.MapStoreTest;
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.After;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
+
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -18,16 +22,20 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
-@RunWith(HazelcastSerialClassRunner.class)
+@RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
 public class ClientMapLoadAllTest extends HazelcastTestSupport {
+
+    private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
+
+    @After
+    public void tearDown() {
+        hazelcastFactory.terminateAll();
+    }
 
     @Test(timeout = 60000)
     public void testGetMap_issue_3031() throws Exception {
@@ -37,7 +45,7 @@ public class ClientMapLoadAllTest extends HazelcastTestSupport {
         final AtomicBoolean breakMe = new AtomicBoolean(false);
 
         final Config config = createNewConfig(mapName, new BrokenLoadSimpleStore(breakMe));
-        final HazelcastInstance server = Hazelcast.newHazelcastInstance(config);
+        final HazelcastInstance server = hazelcastFactory.newHazelcastInstance(config);
 
         try {
             final IMap<Object, Object> map = server.getMap(mapName);
@@ -49,20 +57,16 @@ public class ClientMapLoadAllTest extends HazelcastTestSupport {
 
         breakMe.set(true);
 
-        final HazelcastInstance client = HazelcastClient.newHazelcastClient();
-        try {
-            client.getMap(mapName);
-        } finally {
-            closeResources(client, server);
-        }
+        final HazelcastInstance client = hazelcastFactory.newHazelcastClient();
+        client.getMap(mapName);
     }
 
     @Test
     public void testLoadAll_givenKeys() throws Exception {
         final String mapName = randomMapName();
         final Config config = createNewConfig(mapName);
-        final HazelcastInstance server = Hazelcast.newHazelcastInstance(config);
-        final HazelcastInstance client = HazelcastClient.newHazelcastClient();
+        hazelcastFactory.newHazelcastInstance(config);
+        final HazelcastInstance client = hazelcastFactory.newHazelcastClient();
         final IMap<Object, Object> map = client.getMap(mapName);
         populateMap(map, 1000);
         map.evictAll();
@@ -71,24 +75,20 @@ public class ClientMapLoadAllTest extends HazelcastTestSupport {
 
         assertEquals(900, map.size());
         assertRangeLoaded(map, 10, 910);
-
-        closeResources(client, server);
     }
 
     @Test
     public void testLoadAll_allKeys() throws Exception {
         final String mapName = randomMapName();
         final Config config = createNewConfig(mapName);
-        final HazelcastInstance server = Hazelcast.newHazelcastInstance(config);
-        final HazelcastInstance client = HazelcastClient.newHazelcastClient();
+        hazelcastFactory.newHazelcastInstance(config);
+        final HazelcastInstance client = hazelcastFactory.newHazelcastClient();
         final IMap<Object, Object> map = client.getMap(mapName);
         populateMap(map, 1000);
         map.evictAll();
         map.loadAll(true);
 
         assertEquals(1000, map.size());
-
-        closeResources(client, server);
     }
 
     private static Config createNewConfig(String mapName) {

@@ -16,21 +16,21 @@
 
 package com.hazelcast.client.multimap;
 
-import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.MapEvent;
 import com.hazelcast.core.MultiMap;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-import java.util.concurrent.CountDownLatch;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+
+import java.util.concurrent.CountDownLatch;
 
 import static com.hazelcast.test.HazelcastTestSupport.assertOpenEventually;
 import static com.hazelcast.test.HazelcastTestSupport.randomString;
@@ -41,19 +41,20 @@ import static org.junit.Assert.assertTrue;
 @Category(QuickTest.class)
 public class ClientMultiMapListenersTest {
 
-    static HazelcastInstance server;
-    static HazelcastInstance client;
+    private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
 
-    @BeforeClass
-    public static void init() {
-        server = Hazelcast.newHazelcastInstance();
-        client = HazelcastClient.newHazelcastClient();
+    private HazelcastInstance server;
+    private HazelcastInstance client;
+
+    @After
+    public void tearDown() {
+        hazelcastFactory.terminateAll();
     }
 
-    @AfterClass
-    public static void destroy() {
-        HazelcastClient.shutdownAll();
-        Hazelcast.shutdownAll();
+    @Before
+    public void setup() {
+        server = hazelcastFactory.newHazelcastInstance();
+        client = hazelcastFactory.newHazelcastClient();
     }
 
     @Test(expected = UnsupportedOperationException.class)

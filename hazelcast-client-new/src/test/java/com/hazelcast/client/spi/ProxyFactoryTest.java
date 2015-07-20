@@ -1,52 +1,44 @@
 package com.hazelcast.client.spi;
 
-import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ProxyFactoryConfig;
+import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ServiceConfig;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.spi.RemoteService;
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
-import org.junit.AfterClass;
 import org.junit.Assert;
-import org.junit.BeforeClass;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 
-@RunWith(HazelcastSerialClassRunner.class)
+@RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
 public class ProxyFactoryTest {
 
     static final String SERVICE_NAME = "CustomService";
+    private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
 
-    static HazelcastInstance server;
+    @After
+    public void tearDown() {
+        hazelcastFactory.terminateAll();
+    }
 
-    @BeforeClass
-    public static void startServer() {
+    @Before
+    public void setup() {
         Config config = new Config();
         ServiceConfig serviceConfig = new ServiceConfig();
         serviceConfig.setEnabled(true).setName(SERVICE_NAME)
                 .setServiceImpl(new CustomService());
         config.getServicesConfig().addServiceConfig(serviceConfig);
-
-        server = Hazelcast.newHazelcastInstance(config);
-    }
-
-    @AfterClass
-    public static void shutdownServer() {
-        Hazelcast.shutdownAll();
-    }
-
-    @After
-    public void shutdownClient() {
-        HazelcastClient.shutdownAll();
+        hazelcastFactory.newHazelcastInstance(config);
     }
 
     @Test
@@ -72,7 +64,7 @@ public class ProxyFactoryTest {
     }
 
     private void testCustomProxy(ClientConfig clientConfig) {
-        HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
         String objectName = "custom-object";
         CustomClientProxy proxy = client.getDistributedObject(SERVICE_NAME, objectName);
         Assert.assertEquals(SERVICE_NAME, proxy.getServiceName());

@@ -18,9 +18,11 @@ package com.hazelcast.client.config;
 
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.InvalidConfigurationException;
-import com.hazelcast.core.HazelcastException;
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -32,11 +34,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
-
-@RunWith(HazelcastSerialClassRunner.class)
+@RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
 public class XmlClientConfigImportVariableReplacementTest {
 

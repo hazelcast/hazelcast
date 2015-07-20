@@ -1,48 +1,56 @@
 package com.hazelcast.client.map;
 
-import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.core.MapStore;
 import com.hazelcast.core.MapStoreAdapter;
 import com.hazelcast.map.mapstore.MapStoreTest;
 import com.hazelcast.test.AssertTask;
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+
+import static com.hazelcast.util.ValidationUtil.checkState;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
-@RunWith(HazelcastSerialClassRunner.class)
+@RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
 public class ClientMapLoaderExceptionHandlingTest extends HazelcastTestSupport {
 
     private static final String mapName = randomMapName();
-    private static HazelcastInstance client;
-    private static HazelcastInstance server;
+    private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
+    private HazelcastInstance client;
+    private ExceptionalMapStore mapStore;
 
-    @BeforeClass
-    public static void init() {
-        final Config config = createNewConfig(mapName);
-        server = Hazelcast.newHazelcastInstance(config);
-        client = HazelcastClient.newHazelcastClient();
+    @Before
+    public void setup() {
+        mapStore = new ExceptionalMapStore();
+        Config config = createNewConfig(mapName, mapStore);
+        hazelcastFactory.newHazelcastInstance(config);
+        client = hazelcastFactory.newHazelcastClient();
     }
 
-    @AfterClass
-    public static void destroy() {
-        HazelcastClient.shutdownAll();
-        Hazelcast.shutdownAll();
+    @After
+    public void tearDown() {
+        hazelcastFactory.terminateAll();
+    }
+
+    @Before
+    public void configureMapStore() {
+        mapStore.setLoadAllKeysThrows(false);
     }
 
     @Test
@@ -58,26 +66,46 @@ public class ClientMapLoaderExceptionHandlingTest extends HazelcastTestSupport {
                 } catch (Exception e) {
                     exception = e;
                 }
-                assertNotNull(exception);
+                assertNotNull("Exception not propagated to client", exception);
                 assertEquals(ClassCastException.class, exception.getClass());
-
             }
         });
     }
 
-    private static Config createNewConfig(String mapName) {
-        final ExceptionalMapStore store = new ExceptionalMapStore();
+    @Test
+    public void testClientGetsException_whenLoadAllKeysThrowsOne() throws Exception {
+        mapStore.setLoadAllKeysThrows(true);
+
+        IMap<Integer, Integer> map = client.getMap(mapName);
+
+        Exception exception = null;
+        try {
+            map.get(1);
+        } catch (Exception e) {
+            exception = e;
+        }
+
+        assertNotNull("Exception not propagated to client", exception);
+        assertEquals(IllegalStateException.class, exception.getClass());
+    }
+
+    private static Config createNewConfig(String mapName, MapStore store) {
         return MapStoreTest.newConfig(mapName, store, 0);
     }
 
     private static class ExceptionalMapStore extends MapStoreAdapter {
 
+        private boolean loadAllKeysThrows = false;
+
         @Override
         public Set loadAllKeys() {
+            checkState(!loadAllKeysThrows, getClass().getName());
+
             final HashSet<Integer> integers = new HashSet<Integer>();
             for (int i = 0; i < 1000; i++) {
                 integers.add(i);
             }
+
             return integers;
         }
 
@@ -85,14 +113,9 @@ public class ClientMapLoaderExceptionHandlingTest extends HazelcastTestSupport {
         public Map loadAll(Collection keys) {
             throw new ClassCastException("ExceptionalMapStore.loadAll");
         }
-    }
 
-    private static void closeResources(HazelcastInstance... instances) {
-        if (instances == null) {
-            return;
-        }
-        for (HazelcastInstance instance : instances) {
-            instance.shutdown();
+        public void setLoadAllKeysThrows(boolean loadAllKeysThrows) {
+            this.loadAllKeysThrows = loadAllKeysThrows;
         }
     }
 }

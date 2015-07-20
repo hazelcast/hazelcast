@@ -16,19 +16,16 @@
 
 package com.hazelcast.client.collections;
 
-import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.config.Config;
-import com.hazelcast.core.Hazelcast;
+import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ISet;
 import com.hazelcast.core.ItemEvent;
 import com.hazelcast.core.ItemListener;
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
-import org.junit.AfterClass;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -44,33 +41,25 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-@RunWith(HazelcastSerialClassRunner.class)
+@RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
-public class ClientSetTest {
+public class ClientSetTest extends HazelcastTestSupport {
 
-    static final String name = "test";
-    static HazelcastInstance hz;
-    static HazelcastInstance server;
-    static ISet set;
+    private TestHazelcastFactory hazelcastFactory;
+    private HazelcastInstance client;
+    private ISet set;
 
-    @BeforeClass
-    public static void init(){
-        Config config = new Config();
-        server = Hazelcast.newHazelcastInstance(config);
-        hz = HazelcastClient.newHazelcastClient(null);
-        set = hz.getSet(name);
-    }
-
-    @AfterClass
-    public static void destroy() {
-        hz.shutdown();
-        Hazelcast.shutdownAll();
+    @After
+    public void tearDown() {
+        hazelcastFactory.shutdownAll();
     }
 
     @Before
-    @After
-    public void clear() throws IOException {
-        set.clear();
+    public void setup() throws IOException {
+        hazelcastFactory = new TestHazelcastFactory();
+        hazelcastFactory.newHazelcastInstance();
+        client = hazelcastFactory.newHazelcastClient();
+        set = client.getSet(randomString());
     }
 
     @Test
@@ -104,22 +93,22 @@ public class ClientSetTest {
     }
 
     @Test
-    public void testIterator(){
+    public void testIterator() {
         assertTrue(set.add("item1"));
         assertTrue(set.add("item2"));
         assertTrue(set.add("item3"));
         assertTrue(set.add("item4"));
 
         Iterator iter = set.iterator();
-        assertTrue(((String)iter.next()).startsWith("item"));
-        assertTrue(((String)iter.next()).startsWith("item"));
-        assertTrue(((String)iter.next()).startsWith("item"));
-        assertTrue(((String)iter.next()).startsWith("item"));
+        assertTrue(((String) iter.next()).startsWith("item"));
+        assertTrue(((String) iter.next()).startsWith("item"));
+        assertTrue(((String) iter.next()).startsWith("item"));
+        assertTrue(((String) iter.next()).startsWith("item"));
         assertFalse(iter.hasNext());
     }
 
     @Test
-    public void testContains(){
+    public void testContains() {
         assertTrue(set.add("item1"));
         assertTrue(set.add("item2"));
         assertTrue(set.add("item3"));
@@ -138,7 +127,7 @@ public class ClientSetTest {
     }
 
     @Test
-    public void removeRetainAll(){
+    public void removeRetainAll() {
         assertTrue(set.add("item1"));
         assertTrue(set.add("item2"));
         assertTrue(set.add("item3"));
@@ -168,9 +157,6 @@ public class ClientSetTest {
     @Test
     public void testListener() throws Exception {
 
-//        final ISet tempSet = server.getSet(name);
-        final ISet tempSet = set;
-
         final CountDownLatch latch = new CountDownLatch(6);
 
         ItemListener listener = new ItemListener() {
@@ -182,30 +168,31 @@ public class ClientSetTest {
             public void itemRemoved(ItemEvent item) {
             }
         };
-        String registrationId = tempSet.addItemListener(listener, true);
+        String registrationId = set.addItemListener(listener, true);
 
-        new Thread(){
+        new Thread() {
             public void run() {
-                for (int i=0; i<5; i++){
-                    tempSet.add("item" + i);
+                for (int i = 0; i < 5; i++) {
+                    set.add("item" + i);
                 }
-                tempSet.add("done");
+                set.add("done");
             }
         }.start();
         assertTrue(latch.await(20, TimeUnit.SECONDS));
+        set.removeItemListener(registrationId);
 
     }
 
     @Test
     public void testIsEmpty_whenEmpty() {
         assertTrue(set.isEmpty());
-        assertEquals(0,set.size());
+        assertEquals(0, set.size());
     }
 
     @Test
     public void testIsEmpty_whenNotEmpty() {
         set.add("item");
         assertFalse(set.isEmpty());
-        assertEquals(1,set.size());
+        assertEquals(1, set.size());
     }
 }

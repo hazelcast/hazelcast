@@ -1,8 +1,7 @@
 package com.hazelcast.client.map;
 
-import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.MapPartitionLostEvent;
 import com.hazelcast.map.MapPartitionLostListenerStressTest.EventCollectingMapPartitionLostListener;
@@ -12,7 +11,7 @@ import com.hazelcast.partition.InternalPartitionLostEvent;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.impl.eventservice.InternalEventService;
 import com.hazelcast.test.AssertTask;
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Test;
@@ -30,20 +29,21 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.mockito.Mockito.mock;
 
-@RunWith(HazelcastSerialClassRunner.class)
+@RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
 public class ClientMapPartitionLostListenerTest {
 
+    private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
+
     @After
-    public void destroy() {
-        HazelcastClient.shutdownAll();
-        Hazelcast.shutdownAll();
+    public void tearDown() {
+        hazelcastFactory.terminateAll();
     }
 
     @Test
     public void test_mapPartitionLostListener_registered() {
-        final HazelcastInstance instance = Hazelcast.newHazelcastInstance();
-        final HazelcastInstance client = HazelcastClient.newHazelcastClient();
+        final HazelcastInstance instance = hazelcastFactory.newHazelcastInstance();
+        final HazelcastInstance client = hazelcastFactory.newHazelcastClient();
 
         final String mapName = randomMapName();
 
@@ -54,8 +54,8 @@ public class ClientMapPartitionLostListenerTest {
 
     @Test
     public void test_mapPartitionLostListener_removed() {
-        final HazelcastInstance instance = Hazelcast.newHazelcastInstance();
-        final HazelcastInstance client = HazelcastClient.newHazelcastClient();
+        final HazelcastInstance instance = hazelcastFactory.newHazelcastInstance();
+        final HazelcastInstance client = hazelcastFactory.newHazelcastClient();
 
         final String mapName = randomMapName();
 
@@ -72,8 +72,8 @@ public class ClientMapPartitionLostListenerTest {
         final Config config = new Config();
         config.getMapConfig(mapName).setBackupCount(0);
 
-        final HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
-        final HazelcastInstance client = HazelcastClient.newHazelcastClient();
+        final HazelcastInstance instance = hazelcastFactory.newHazelcastInstance(config);
+        final HazelcastInstance client = hazelcastFactory.newHazelcastClient();
 
         final EventCollectingMapPartitionLostListener listener = new EventCollectingMapPartitionLostListener(0);
         client.getMap(mapName).addPartitionLostListener(listener);
@@ -106,9 +106,9 @@ public class ClientMapPartitionLostListenerTest {
         final Config config = new Config();
         config.getMapConfig(mapName).setBackupCount(0);
 
-        final HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(config);
-        final HazelcastInstance instance2 = Hazelcast.newHazelcastInstance(config);
-        final HazelcastInstance client = HazelcastClient.newHazelcastClient();
+        final HazelcastInstance instance1 = hazelcastFactory.newHazelcastInstance(config);
+        final HazelcastInstance instance2 = hazelcastFactory.newHazelcastInstance(config);
+        final HazelcastInstance client = hazelcastFactory.newHazelcastClient();
 
         final EventCollectingMapPartitionLostListener listener = new EventCollectingMapPartitionLostListener(0);
         client.getMap(mapName).addPartitionLostListener(listener);

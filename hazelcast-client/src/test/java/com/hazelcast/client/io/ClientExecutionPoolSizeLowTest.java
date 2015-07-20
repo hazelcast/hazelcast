@@ -1,12 +1,10 @@
 package com.hazelcast.client.io;
 
-import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.config.Config;
-import com.hazelcast.core.Hazelcast;
+import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.After;
 import org.junit.Before;
@@ -14,41 +12,39 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.io.IOException;
 import java.util.concurrent.ExecutionException;
 
 import static com.hazelcast.test.HazelcastTestSupport.assertSizeEventually;
 import static com.hazelcast.test.HazelcastTestSupport.randomString;
 import static org.junit.Assert.assertEquals;
 
-@RunWith(HazelcastSerialClassRunner.class)
+@RunWith(HazelcastParallelClassRunner.class)
 @Category(SlowTest.class)
 public class ClientExecutionPoolSizeLowTest {
 
     static final int COUNT = 1000;
-    static HazelcastInstance server1;
-    static HazelcastInstance server2;
-    static HazelcastInstance client;
-    static IMap map;
+    private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
+    private HazelcastInstance server1;
+    private HazelcastInstance server2;
+    private IMap map;
+
+    @After
+    public void tearDown() {
+        hazelcastFactory.terminateAll();
+    }
+
 
     @Before
-    public void init() {
-        Config config = new Config();
-        server1 = Hazelcast.newHazelcastInstance(config);
+    public void setup() throws IOException {
+        server1 = hazelcastFactory.newHazelcastInstance();
+        server2 = hazelcastFactory.newHazelcastInstance();
 
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.setExecutorPoolSize(1);
         clientConfig.getNetworkConfig().setRedoOperation(true);
-        client = HazelcastClient.newHazelcastClient(clientConfig);
-
-        server2 = Hazelcast.newHazelcastInstance(config);
-
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
         map = client.getMap(randomString());
-    }
-
-    @After
-    public void destroy() {
-        HazelcastClient.shutdownAll();
-        Hazelcast.shutdownAll();
     }
 
     @Test

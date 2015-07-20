@@ -16,38 +16,36 @@
 
 package com.hazelcast.client.proxy;
 
-import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.DistributedObjectEvent;
 import com.hazelcast.core.DistributedObjectListener;
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ITopic;
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.concurrent.CountDownLatch;
 
-@RunWith(HazelcastSerialClassRunner.class)
+@RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
 public class DistributedObjectListenerTest extends HazelcastTestSupport {
 
-    @Before
+    private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
+
     @After
-    public void cleanup(){
-        HazelcastClient.shutdownAll();
-        Hazelcast.shutdownAll();
+    public void tearDown() {
+        hazelcastFactory.terminateAll();
     }
 
     @Test
     public void destroyedNotReceivedOnClient() throws Exception {
-        HazelcastInstance instance = Hazelcast.newHazelcastInstance();
-        HazelcastInstance client = HazelcastClient.newHazelcastClient();
+        HazelcastInstance instance = hazelcastFactory.newHazelcastInstance();
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient();
         final CountDownLatch createdLatch = new CountDownLatch(1);
         final CountDownLatch destroyedLatch = new CountDownLatch(1);
         client.addDistributedObjectListener(new DistributedObjectListener() {

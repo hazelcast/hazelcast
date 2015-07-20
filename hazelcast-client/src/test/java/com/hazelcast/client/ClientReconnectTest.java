@@ -17,19 +17,18 @@
 package com.hazelcast.client;
 
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.test.AssertTask;
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -41,23 +40,24 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
-@RunWith(HazelcastSerialClassRunner.class)
+@RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
 public class ClientReconnectTest extends HazelcastTestSupport {
 
+    private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
+
     @After
-    @Before
-    public void cleanup() throws Exception {
-        HazelcastClient.shutdownAll();
-        Hazelcast.shutdownAll();
+    public void cleanup() {
+        hazelcastFactory.terminateAll();
     }
+
 
     @Test
     public void testClientReconnectOnClusterDown() throws Exception {
-        final HazelcastInstance h1 = Hazelcast.newHazelcastInstance();
+        final HazelcastInstance h1 = hazelcastFactory.newHazelcastInstance();
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.getNetworkConfig().setConnectionAttemptLimit(Integer.MAX_VALUE);
-        final HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
+        final HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
         final CountDownLatch connectedLatch = new CountDownLatch(2);
         client.getLifecycleService().addLifecycleListener(new LifecycleListener() {
             @Override
@@ -67,7 +67,7 @@ public class ClientReconnectTest extends HazelcastTestSupport {
         });
         IMap<String, String> m = client.getMap("default");
         h1.shutdown();
-        Hazelcast.newHazelcastInstance();
+        hazelcastFactory.newHazelcastInstance();
         assertOpenEventually(connectedLatch, 10);
         assertNull(m.put("test", "test"));
         assertEquals("test", m.get("test"));
@@ -75,12 +75,12 @@ public class ClientReconnectTest extends HazelcastTestSupport {
 
     @Test
     public void testClientReconnectOnClusterDownWithEntryListeners() throws Exception {
-        HazelcastInstance h1 = Hazelcast.newHazelcastInstance();
+        HazelcastInstance h1 = hazelcastFactory.newHazelcastInstance();
 
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.getNetworkConfig().setRedoOperation(true);
         clientConfig.getNetworkConfig().setConnectionAttemptLimit(Integer.MAX_VALUE);
-        final HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
+        final HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
         final CountDownLatch connectedLatch = new CountDownLatch(2);
         client.getLifecycleService().addLifecycleListener(new LifecycleListener() {
             @Override
@@ -100,7 +100,7 @@ public class ClientReconnectTest extends HazelcastTestSupport {
 
         h1.shutdown();
 
-        Hazelcast.newHazelcastInstance();
+        hazelcastFactory.newHazelcastInstance();
         assertOpenEventually(connectedLatch, 10);
 
         assertTrueEventually(new AssertTask() {

@@ -16,8 +16,7 @@
 
 package com.hazelcast.client.map;
 
-import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.core.Hazelcast;
+import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.nio.serialization.DefaultSerializationServiceBuilder;
@@ -26,14 +25,12 @@ import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.query.impl.QueryEntry;
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.IterationType;
 import org.junit.After;
-import org.junit.AfterClass;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -55,35 +52,23 @@ import static junit.framework.Assert.assertTrue;
 /**
  * Used for testing {@link PagingPredicate}
  */
-@RunWith(HazelcastSerialClassRunner.class)
+@RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
 public class ClientSortLimitTest extends HazelcastTestSupport {
 
-    static HazelcastInstance client;
-    static HazelcastInstance server1;
-    static HazelcastInstance server2;
-
-    static IMap map;
-    static int pageSize = 5;
-    static int size = 50;
-
-    final private SerializationService ss = new DefaultSerializationServiceBuilder().build();
-
-    @BeforeClass
-    public static void createInstances() {
-        server1 = Hazelcast.newHazelcastInstance();
-        server2 = Hazelcast.newHazelcastInstance();
-        client = HazelcastClient.newHazelcastClient();
-    }
-
-    @AfterClass
-    public static void shutdownInstances() {
-        HazelcastClient.shutdownAll();
-        Hazelcast.shutdownAll();
-    }
+    private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
+    private final SerializationService ss = new DefaultSerializationServiceBuilder().build();
+    private HazelcastInstance client;
+    private HazelcastInstance server;
+    private IMap map;
+    private int pageSize = 5;
+    private int size = 50;
 
     @Before
-    public void init() {
+    public void setup() {
+        server = hazelcastFactory.newHazelcastInstance();
+        hazelcastFactory.newHazelcastInstance();
+        client = hazelcastFactory.newHazelcastClient();
         map = client.getMap(randomString());
         for (int i = 0; i < size; i++) {
             map.put(i, i);
@@ -91,8 +76,8 @@ public class ClientSortLimitTest extends HazelcastTestSupport {
     }
 
     @After
-    public void reset() {
-        map.destroy();
+    public void tearDown() {
+        hazelcastFactory.terminateAll();
     }
 
     @Test
@@ -338,7 +323,7 @@ public class ClientSortLimitTest extends HazelcastTestSupport {
     }
 
     private IMap<Integer, Employee> makeEmployeeMap(int maxEmployees) {
-        final IMap<Integer, Employee> map = server1.getMap(randomString());
+        final IMap<Integer, Employee> map = server.getMap(randomString());
         for (int i = 0; i < maxEmployees; i++) {
             Employee e = new Employee(i);
             map.put(e.id, e);
