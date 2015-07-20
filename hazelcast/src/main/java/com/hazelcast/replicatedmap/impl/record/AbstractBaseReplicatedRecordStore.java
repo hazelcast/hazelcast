@@ -46,6 +46,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import static com.hazelcast.util.HashUtil.hashToIndex;
+
 /**
  * Internal base class to encapsulate the internals from the interface methods of ReplicatedRecordStore
  *
@@ -164,8 +166,9 @@ abstract class AbstractBaseReplicatedRecordStore<K, V>
         return new HashSet<ReplicatedRecord>(storage.values());
     }
 
-    protected Object getMutex(final Object key) {
-        return mutexes[key.hashCode() != Integer.MIN_VALUE ? Math.abs(key.hashCode()) % mutexes.length : 0];
+    protected Object getMutex(Object key) {
+        int hashCode = key.hashCode();
+        return hashToIndex(hashCode, mutexes.length);
     }
 
     ScheduledEntry<K, V> cancelTtlEntry(K key) {

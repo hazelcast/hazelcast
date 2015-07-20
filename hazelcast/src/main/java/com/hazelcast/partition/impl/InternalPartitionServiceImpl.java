@@ -61,6 +61,7 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.FutureUtil.ExceptionHandler;
+import com.hazelcast.util.HashUtil;
 import com.hazelcast.util.scheduler.CoalescingDelayedTrigger;
 import com.hazelcast.util.scheduler.EntryTaskScheduler;
 import com.hazelcast.util.scheduler.EntryTaskSchedulerFactory;
@@ -1313,12 +1314,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
 
     @Override
     public final int getPartitionId(Data key) {
-        int hash = key.getPartitionHash();
-        if (hash == Integer.MIN_VALUE) {
-            return 0;
-        } else {
-            return Math.abs(hash) % partitionCount;
-        }
+        return HashUtil.hashToIndex(key.getPartitionHash(), partitionCount);
     }
 
     @Override

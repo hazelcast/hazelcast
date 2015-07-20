@@ -35,6 +35,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.tcp.iobalancer.IOBalancer;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
+import com.hazelcast.util.HashUtil;
 import com.hazelcast.util.counters.MwCounter;
 import com.hazelcast.util.executor.StripedRunnable;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -355,7 +356,8 @@ public class TcpIpConnectionManager implements ConnectionManager {
     }
 
     private int nextSelectorIndex() {
-        return Math.abs(nextSelectorIndex.getAndIncrement()) % selectorThreadCount;
+        int value = nextSelectorIndex.getAndIncrement();
+        return HashUtil.hashToIndex(value, selectorThreadCount);
     }
 
     SocketChannelWrapper wrapSocketChannel(SocketChannel socketChannel, boolean client) throws Exception {
