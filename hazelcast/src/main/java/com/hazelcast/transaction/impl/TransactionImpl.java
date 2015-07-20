@@ -249,7 +249,7 @@ public class TransactionImpl implements Transaction {
             }
 
             Future f = operationService.invokeOnTarget(TransactionManagerServiceImpl.SERVICE_NAME,
-                    new ReplicateTxOperation(transactionLog.getRecordList(), txOwnerUuid, txnId, timeoutMillis, startTime),
+                    new ReplicateTxOperation(transactionLog.getRecords(), txOwnerUuid, txnId, timeoutMillis, startTime),
                     backupAddress);
             futures.add(f);
         }

@@ -18,7 +18,7 @@ import static org.mockito.Mockito.when;
 public class TransactionLogTest {
 
     @Test
-    public void add_whenKeyAware() {
+    public void add_whenNotExisting() {
         TransactionLog log = new TransactionLog();
         TransactionLogRecord record = mock(TransactionLogRecord.class);
         String key = "foo";
@@ -28,17 +28,6 @@ public class TransactionLogTest {
 
         assertSame(record, log.get(key));
         assertEquals(1, log.size());
-    }
-
-    @Test
-    public void add_whenNotKeyAware() {
-        TransactionLog log = new TransactionLog();
-        TransactionLogRecord record = mock(TransactionLogRecord.class);
-
-        log.add(record);
-
-        assertEquals(1, log.size());
-        assertEquals(asList(record), log.getRecordList());
     }
 
     @Test

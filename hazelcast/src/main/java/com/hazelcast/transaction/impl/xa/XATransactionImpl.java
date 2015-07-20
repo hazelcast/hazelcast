@@ -34,6 +34,7 @@ import com.hazelcast.util.UuidUtil;
 
 import javax.transaction.xa.XAException;
 import javax.transaction.xa.Xid;
+import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -91,7 +92,7 @@ final class XATransactionImpl implements Transaction {
         this.rollbackExceptionHandler = logAllExceptions(logger, "Error during rollback!", Level.WARNING);
     }
 
-    XATransactionImpl(NodeEngine nodeEngine, List<TransactionLogRecord> logs,
+    XATransactionImpl(NodeEngine nodeEngine, Collection<TransactionLogRecord> logs,
                       String txnId, SerializableXID xid, String txOwnerUuid, long timeoutMillis, long startTime) {
         this.nodeEngine = nodeEngine;
         this.transactionLog = new TransactionLog(logs);
@@ -137,7 +138,7 @@ final class XATransactionImpl implements Transaction {
 
     private void putTransactionInfoRemote() throws ExecutionException, InterruptedException {
         PutRemoteTransactionOperation operation = new PutRemoteTransactionOperation(
-                transactionLog.getRecordList(), txnId, xid, txOwnerUuid, timeoutMillis, startTime);
+                transactionLog.getRecords(), txnId, xid, txOwnerUuid, timeoutMillis, startTime);
         OperationService operationService = nodeEngine.getOperationService();
         InternalPartitionService partitionService = nodeEngine.getPartitionService();
         int partitionId = partitionService.getPartitionId(xid);
@@ -213,8 +214,8 @@ final class XATransactionImpl implements Transaction {
         return startTime;
     }
 
-    public List<TransactionLogRecord> getTransactionRecords() {
-        return transactionLog.getRecordList();
+    public Collection<TransactionLogRecord> getTransactionRecords() {
+        return transactionLog.getRecords();
     }
 
     @Override

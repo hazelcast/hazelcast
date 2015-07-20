@@ -23,10 +23,9 @@ import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.Map;
 import java.util.concurrent.Future;
 
@@ -42,48 +41,45 @@ import java.util.concurrent.Future;
  */
 public class TransactionLog {
 
-    private final List<TransactionLogRecord> recordList = new LinkedList<TransactionLogRecord>();
     private final Map<Object, TransactionLogRecord> recordMap = new HashMap<Object, TransactionLogRecord>();
 
     public TransactionLog() {
     }
 
-    public TransactionLog(List<TransactionLogRecord> transactionLog) {
-        //
-        recordList.addAll(transactionLog);
+    public TransactionLog(Collection<TransactionLogRecord> transactionLog) {
+        for (TransactionLogRecord record : transactionLog) {
+            recordMap.put(record.getKey(), record);
+        }
     }
 
+    /**
+     * Adds a record to this TransactionLog.
+     *
+     * If a previous record for the same key exist, it will be overwritten.
+     *
+     * @param record the record to add.
+     */
     public void add(TransactionLogRecord record) {
         Object key = record.getKey();
-
-        // there should be just one tx log for the same key. so if there is older we are removing it
-        if (key != null) {
-            TransactionLogRecord removed = recordMap.remove(key);
-            if (removed != null) {
-                recordList.remove(removed);
-            }
-        }
-
-        recordList.add(record);
-
-        if (key != null) {
-            recordMap.put(key, record);
-        }
+        recordMap.put(key, record);
     }
 
+    /**
+     * Gets the TransactionLogRecord with the given key.
+     *
+     * @param key the key of the TransactionLogRecord
+     * @return the found TransactionLogRecord or null if no record is found for that key.
+     */
     public TransactionLogRecord get(Object key) {
         return recordMap.get(key);
     }
 
-    public List<TransactionLogRecord> getRecordList() {
-        return recordList;
+    public Collection<TransactionLogRecord> getRecords() {
+        return recordMap.values();
     }
 
     public void remove(Object key) {
-        TransactionLogRecord removed = recordMap.remove(key);
-        if (removed != null) {
-            recordList.remove(removed);
-        }
+        recordMap.remove(key);
     }
 
     /**
@@ -92,12 +88,12 @@ public class TransactionLog {
      * @return the number of TransactionRecords.
      */
     public int size() {
-        return recordList.size();
+        return recordMap.size();
     }
 
     public List<Future> commit(NodeEngine nodeEngine) {
         List<Future> futures = new ArrayList<Future>(size());
-        for (TransactionLogRecord record : recordList) {
+        for (TransactionLogRecord record : recordMap.values()) {
             Future future = invoke(nodeEngine, record.newCommitOperation());
             futures.add(future);
         }
@@ -106,7 +102,7 @@ public class TransactionLog {
 
     public List<Future> prepare(NodeEngine nodeEngine) {
         List<Future> futures = new ArrayList<Future>(size());
-        for (TransactionLogRecord record : recordList) {
+        for (TransactionLogRecord record : recordMap.values()) {
             Future future = invoke(nodeEngine, record.newPrepareOperation());
             futures.add(future);
         }
@@ -115,9 +111,7 @@ public class TransactionLog {
 
     public List<Future> rollback(NodeEngine nodeEngine) {
         List<Future> futures = new ArrayList<Future>(size());
-        ListIterator<TransactionLogRecord> iterator = recordList.listIterator(size());
-        while (iterator.hasPrevious()) {
-            TransactionLogRecord record = iterator.previous();
+        for (TransactionLogRecord record : recordMap.values()) {
             Future future = invoke(nodeEngine, record.newRollbackOperation());
             futures.add(future);
         }
@@ -134,13 +128,13 @@ public class TransactionLog {
     }
 
     public void commitAsync(NodeEngine nodeEngine, ExecutionCallback callback) {
-        for (TransactionLogRecord record : recordList) {
+        for (TransactionLogRecord record : recordMap.values()) {
             invokeAsync(nodeEngine, callback, record.newCommitOperation());
         }
     }
 
     public void rollbackAsync(NodeEngine nodeEngine, ExecutionCallback callback) {
-        for (TransactionLogRecord record : recordList) {
+        for (TransactionLogRecord record : recordMap.values()) {
             invokeAsync(nodeEngine, callback, record.newRollbackOperation());
         }
     }

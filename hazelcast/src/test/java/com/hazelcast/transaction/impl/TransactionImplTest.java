@@ -38,6 +38,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
+import java.util.UUID;
 import java.util.logging.Level;
 
 import static org.junit.Assert.assertEquals;
@@ -150,6 +151,7 @@ public class TransactionImplTest extends HazelcastTestSupport {
         final boolean failPrepare;
         final boolean failCommit;
         final boolean failRollback;
+        final String key = UUID.randomUUID().toString();
 
         public FailingTransactionLogRecord(boolean failPrepare, boolean failCommit, boolean failRollback) {
             this.failPrepare = failPrepare;
@@ -159,7 +161,7 @@ public class TransactionImplTest extends HazelcastTestSupport {
 
         @Override
         public Object getKey() {
-            return null;
+            return key;
         }
 
         @Override

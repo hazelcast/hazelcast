@@ -25,6 +25,7 @@ import com.hazelcast.transaction.impl.TransactionManagerServiceImpl;
 import com.hazelcast.transaction.impl.TransactionLogRecord;
 
 import java.io.IOException;
+import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -43,9 +44,9 @@ public final class ReplicateTxOperation extends TxBaseOperation {
     public ReplicateTxOperation() {
     }
 
-    public ReplicateTxOperation(List<TransactionLogRecord> logs, String callerUuid, String txnId,
+    public ReplicateTxOperation(Collection<TransactionLogRecord> logRecords, String callerUuid, String txnId,
                                 long timeoutMillis, long startTime) {
-        records.addAll(logs);
+        records.addAll(logRecords);
         this.callerUuid = callerUuid;
         this.txnId = txnId;
         this.timeoutMillis = timeoutMillis;
