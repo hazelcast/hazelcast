@@ -5,7 +5,6 @@ import com.hazelcast.core.IAtomicLong;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ClientCompatibleTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -20,10 +19,9 @@ import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
-public class AtomicLongAdvancedTest extends HazelcastTestSupport{
+public class AtomicLongAdvancedTest extends HazelcastTestSupport {
 
     @Test
-    @ClientCompatibleTest
     public void testMultipleThreadAtomicLong() throws InterruptedException {
         final HazelcastInstance instance = createHazelcastInstance();
         final int k = 10;
@@ -48,7 +46,6 @@ public class AtomicLongAdvancedTest extends HazelcastTestSupport{
     }
 
     @Test
-    @ClientCompatibleTest
     public void testAtomicLongFailure() {
         int k = 4;
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(k + 1);
@@ -67,7 +64,6 @@ public class AtomicLongAdvancedTest extends HazelcastTestSupport{
     }
 
     @Test
-    @ClientCompatibleTest
     public void testAtomicLongSpawnNodeInParallel() throws InterruptedException {
         int total = 6;
         int parallel = 2;
