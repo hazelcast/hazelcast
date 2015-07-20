@@ -46,4 +46,11 @@ public interface Transaction {
 
     long getTimeoutMillis();
 
+    void add(TransactionLogRecord record);
+
+    void remove(Object key);
+
+    TransactionLogRecord get(Object key);
+
+    String getOwnerUuid();
 }

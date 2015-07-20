@@ -24,7 +24,6 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionNotActiveException;
-import com.hazelcast.transaction.impl.InternalTransaction;
 import com.hazelcast.transaction.impl.Transaction;
 import com.hazelcast.transaction.impl.TransactionLog;
 import com.hazelcast.transaction.impl.TransactionLogRecord;
@@ -61,7 +60,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * This class does not need to be thread-safe, it is only used via XAResource
  * All visibility guarantees handled by XAResource
  */
-final class XATransactionImpl implements Transaction, InternalTransaction {
+final class XATransactionImpl implements Transaction {
 
     private static final int ROLLBACK_TIMEOUT_MINUTES = 5;
     private static final int COMMIT_TIMEOUT_MINUTES = 5;

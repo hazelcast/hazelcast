@@ -25,7 +25,7 @@ import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionalObject;
 import com.hazelcast.transaction.TransactionalTask;
 import com.hazelcast.transaction.TransactionalTaskContext;
-import com.hazelcast.transaction.impl.InternalTransaction;
+import com.hazelcast.transaction.impl.Transaction;
 import com.hazelcast.transaction.impl.TransactionLogRecord;
 import org.junit.Assert;
 import org.junit.Test;
@@ -260,7 +260,7 @@ public class MapTransactionStressTest extends HazelcastTestSupport {
 
         @Override
         public TransactionalObject createTransactionalObject(String name,
-                                                             InternalTransaction transaction) {
+                                                             Transaction transaction) {
             return new DummyTransactionalObject(serviceName, name, transaction);
         }
 
@@ -282,9 +282,9 @@ public class MapTransactionStressTest extends HazelcastTestSupport {
 
         final String serviceName;
         final String name;
-        final InternalTransaction transaction;
+        final Transaction transaction;
 
-        DummyTransactionalObject(String serviceName, String name, InternalTransaction transaction) {
+        DummyTransactionalObject(String serviceName, String name, Transaction transaction) {
             this.serviceName = serviceName;
             this.name = name;
             this.transaction = transaction;

@@ -22,7 +22,7 @@ import com.hazelcast.spi.Operation;
 /**
  * Represents a change made in a transaction e.g. a map.put.
  *
- * @see InternalTransaction
+ * @see Transaction
  */
 public interface TransactionLogRecord extends DataSerializable {
 

@@ -26,7 +26,7 @@ import com.hazelcast.core.TransactionalSet;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.transaction.TransactionException;
-import com.hazelcast.transaction.impl.InternalTransaction;
+import com.hazelcast.transaction.impl.Transaction;
 import com.hazelcast.util.ExceptionUtil;
 import java.util.Collection;
 import java.util.HashSet;
@@ -37,7 +37,7 @@ public class TransactionalSetProxy<E> extends AbstractTransactionalCollectionPro
 
     private final HashSet<CollectionItem> set = new HashSet<CollectionItem>();
 
-    public TransactionalSetProxy(String name, InternalTransaction tx, NodeEngine nodeEngine, SetService service) {
+    public TransactionalSetProxy(String name, Transaction tx, NodeEngine nodeEngine, SetService service) {
         super(name, tx, nodeEngine, service);
     }
 

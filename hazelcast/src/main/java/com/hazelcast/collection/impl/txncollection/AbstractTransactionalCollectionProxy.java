@@ -30,7 +30,6 @@ import com.hazelcast.spi.RemoteService;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionNotActiveException;
 import com.hazelcast.transaction.impl.Transaction;
-import com.hazelcast.transaction.impl.InternalTransaction;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.util.Collection;
@@ -44,11 +43,11 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
 public abstract class AbstractTransactionalCollectionProxy<S extends RemoteService, E> extends AbstractDistributedObject<S> {
 
     protected final String name;
-    protected final InternalTransaction tx;
+    protected final Transaction tx;
     protected final int partitionId;
     protected final Set<Long> itemIdSet = new HashSet<Long>();
 
-    public AbstractTransactionalCollectionProxy(String name, InternalTransaction tx, NodeEngine nodeEngine, S service) {
+    public AbstractTransactionalCollectionProxy(String name, Transaction tx, NodeEngine nodeEngine, S service) {
         super(nodeEngine, service);
         this.name = name;
         this.tx = tx;

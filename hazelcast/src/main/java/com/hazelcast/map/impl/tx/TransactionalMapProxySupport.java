@@ -41,7 +41,6 @@ import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionNotActiveException;
 import com.hazelcast.transaction.TransactionalObject;
 import com.hazelcast.transaction.impl.Transaction;
-import com.hazelcast.transaction.impl.InternalTransaction;
 import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.IterationType;
@@ -66,12 +65,12 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
         implements TransactionalObject {
 
     protected final String name;
-    protected final InternalTransaction tx;
+    protected final Transaction tx;
     protected final PartitioningStrategy partitionStrategy;
     protected final Map<Data, VersionedValue> valueMap = new HashMap<Data, VersionedValue>();
 
     public TransactionalMapProxySupport(String name, MapService mapService, NodeEngine nodeEngine,
-                                        InternalTransaction transaction) {
+                                        Transaction transaction) {
         super(nodeEngine, mapService);
         this.name = name;
         this.tx = transaction;
