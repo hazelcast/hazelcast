@@ -80,12 +80,13 @@ Hazelcast has 3 testing profiles:
 * **Slow Tests**: Type `mvn test -P slow-test` to run tests those are either slow or cannot be run in-parallel.
 * **All Tests**: Type `mvn test -P all-tests` to run all test serially using network.
 
-### Checkstyle && Findbugs
+### Checkstyle and Findbugs
 
 In each Pull Request, we do static analyzing on the changes.
-Run following command locally to check if your contribution is checkstyle && findbugs compatible.
+Run the following commands locally to check if your contribution is checkstyle and findbugs compatible.
 
-`mvn clean compile -Pqa`
+`mvn clean compile -P findbugs`
+`mvn clean validate -P checkstyle`
 
 ### Contributing to Hazelcast
 
