@@ -86,6 +86,7 @@ In each Pull Request, we do static analyzing on the changes.
 Run the following commands locally to check if your contribution is checkstyle and findbugs compatible.
 
 `mvn clean compile -P findbugs`
+
 `mvn clean validate -P checkstyle`
 
 ### Contributing to Hazelcast
