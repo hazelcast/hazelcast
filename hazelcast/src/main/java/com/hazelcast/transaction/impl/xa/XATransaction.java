@@ -27,6 +27,7 @@ import com.hazelcast.transaction.TransactionNotActiveException;
 import com.hazelcast.transaction.impl.Transaction;
 import com.hazelcast.transaction.impl.TransactionLog;
 import com.hazelcast.transaction.impl.TransactionLogRecord;
+import com.hazelcast.transaction.impl.xa.operations.PutRemoteTransactionOperation;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.FutureUtil;
@@ -57,10 +58,12 @@ import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
+ * XA {@link Transaction} implementation.
+ *
  * This class does not need to be thread-safe, it is only used via XAResource
  * All visibility guarantees handled by XAResource
  */
-final class XATransactionImpl implements Transaction {
+public final class XATransaction implements Transaction {
 
     private static final int ROLLBACK_TIMEOUT_MINUTES = 5;
     private static final int COMMIT_TIMEOUT_MINUTES = 5;
@@ -78,7 +81,7 @@ final class XATransactionImpl implements Transaction {
     private State state = NO_TXN;
     private long startTime;
 
-    public XATransactionImpl(NodeEngine nodeEngine, Xid xid, String txOwnerUuid, int timeout) {
+    public XATransaction(NodeEngine nodeEngine, Xid xid, String txOwnerUuid, int timeout) {
         this.transactionLog = new TransactionLog();
         this.nodeEngine = nodeEngine;
         this.timeoutMillis = SECONDS.toMillis(timeout);
@@ -91,8 +94,8 @@ final class XATransactionImpl implements Transaction {
         this.rollbackExceptionHandler = logAllExceptions(logger, "Error during rollback!", Level.WARNING);
     }
 
-    XATransactionImpl(NodeEngine nodeEngine, List<TransactionLogRecord> logs,
-                      String txnId, SerializableXID xid, String txOwnerUuid, long timeoutMillis, long startTime) {
+    public XATransaction(NodeEngine nodeEngine, List<TransactionLogRecord> logs,
+                         String txnId, SerializableXID xid, String txOwnerUuid, long timeoutMillis, long startTime) {
         this.nodeEngine = nodeEngine;
         this.transactionLog = new TransactionLog(logs);
 

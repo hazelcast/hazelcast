@@ -28,6 +28,7 @@ import com.hazelcast.spi.PartitionReplicationEvent;
 import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.transaction.TransactionContext;
+import com.hazelcast.transaction.impl.xa.operations.XaReplicationOperation;
 
 import javax.transaction.xa.Xid;
 import java.util.ArrayList;
@@ -52,8 +53,8 @@ public class XAService implements ManagedService, RemoteService, MigrationAwareS
 
     private final XAResourceImpl xaResource;
 
-    private final ConcurrentMap<SerializableXID, List<XATransactionImpl>> transactions =
-            new ConcurrentHashMap<SerializableXID, List<XATransactionImpl>>();
+    private final ConcurrentMap<SerializableXID, List<XATransaction>> transactions =
+            new ConcurrentHashMap<SerializableXID, List<XATransaction>>();
 
     public XAService(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
@@ -85,17 +86,17 @@ public class XAService implements ManagedService, RemoteService, MigrationAwareS
         return new XATransactionContextImpl(nodeEngine, xid, null, timeout);
     }
 
-    public void putTransaction(XATransactionImpl transaction) {
+    public void putTransaction(XATransaction transaction) {
         SerializableXID xid = transaction.getXid();
-        List<XATransactionImpl> list = transactions.get(xid);
+        List<XATransaction> list = transactions.get(xid);
         if (list == null) {
-            list = new CopyOnWriteArrayList<XATransactionImpl>();
+            list = new CopyOnWriteArrayList<XATransaction>();
             transactions.put(xid, list);
         }
         list.add(transaction);
     }
 
-    public List<XATransactionImpl> removeTransactions(SerializableXID xid) {
+    public List<XATransaction> removeTransactions(SerializableXID xid) {
         return transactions.remove(xid);
     }
 
@@ -107,16 +108,16 @@ public class XAService implements ManagedService, RemoteService, MigrationAwareS
 
     @Override
     public Operation prepareReplicationOperation(PartitionReplicationEvent event) {
-        List<XATransactionHolder> migrationData = new ArrayList<XATransactionHolder>();
+        List<XATransactionDTO> migrationData = new ArrayList<XATransactionDTO>();
         InternalPartitionService partitionService = nodeEngine.getPartitionService();
-        for (Map.Entry<SerializableXID, List<XATransactionImpl>> entry : transactions.entrySet()) {
+        for (Map.Entry<SerializableXID, List<XATransaction>> entry : transactions.entrySet()) {
             SerializableXID xid = entry.getKey();
             int partitionId = partitionService.getPartitionId(xid);
-            List<XATransactionImpl> xaTransactionList = entry.getValue();
-            for (XATransactionImpl xaTransaction : xaTransactionList) {
+            List<XATransaction> xaTransactionList = entry.getValue();
+            for (XATransaction xaTransaction : xaTransactionList) {
                 if (partitionId == event.getPartitionId()
                         && event.getReplicaIndex() <= 1) {
-                    migrationData.add(new XATransactionHolder(xaTransaction));
+                    migrationData.add(new XATransactionDTO(xaTransaction));
                 }
             }
         }
@@ -149,9 +150,9 @@ public class XAService implements ManagedService, RemoteService, MigrationAwareS
     @Override
     public void clearPartitionReplica(int partitionId) {
         InternalPartitionService partitionService = nodeEngine.getPartitionService();
-        Iterator<Map.Entry<SerializableXID, List<XATransactionImpl>>> iterator = transactions.entrySet().iterator();
+        Iterator<Map.Entry<SerializableXID, List<XATransaction>>> iterator = transactions.entrySet().iterator();
         while (iterator.hasNext()) {
-            Map.Entry<SerializableXID, List<XATransactionImpl>> entry = iterator.next();
+            Map.Entry<SerializableXID, List<XATransaction>> entry = iterator.next();
             SerializableXID xid = entry.getKey();
             int xidPartitionId = partitionService.getPartitionId(xid);
             if (xidPartitionId == partitionId) {

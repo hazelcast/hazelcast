@@ -14,17 +14,19 @@
  * limitations under the License.
  */
 
-package com.hazelcast.transaction.impl.xa;
+package com.hazelcast.transaction.impl.xa.operations;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.transaction.impl.xa.SerializableXID;
+import com.hazelcast.transaction.impl.xa.XAService;
 
 import java.io.IOException;
 
-public class ClearRemoteTransactionOperation extends Operation implements BackupAwareOperation {
+public class ClearRemoteTransactionOperation extends BaseXAOperation implements BackupAwareOperation {
 
     private Data xidData;
 
@@ -49,21 +51,6 @@ public class ClearRemoteTransactionOperation extends Operation implements Backup
     }
 
     @Override
-    public void afterRun() throws Exception {
-
-    }
-
-    @Override
-    public boolean returnsResponse() {
-        return true;
-    }
-
-    @Override
-    public Object getResponse() {
-        return null;
-    }
-
-    @Override
     public boolean shouldBackup() {
         return true;
     }
@@ -81,11 +68,6 @@ public class ClearRemoteTransactionOperation extends Operation implements Backup
     @Override
     public Operation getBackupOperation() {
         return new ClearRemoteTransactionBackupOperation(xidData);
-    }
-
-    @Override
-    public String getServiceName() {
-        return XAService.SERVICE_NAME;
     }
 
     @Override

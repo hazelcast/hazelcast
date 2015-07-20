@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.transaction.impl.xa;
+package com.hazelcast.transaction.impl.xa.operations;
 
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.nio.ObjectDataInput;
@@ -22,13 +22,16 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.transaction.impl.xa.SerializableXID;
+import com.hazelcast.transaction.impl.xa.XAService;
+import com.hazelcast.transaction.impl.xa.XATransaction;
 
 import javax.transaction.xa.XAException;
 import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class FinalizeRemoteTransactionOperation extends Operation implements BackupAwareOperation {
+public class FinalizeRemoteTransactionOperation extends BaseXAOperation implements BackupAwareOperation {
 
     private Data xidData;
     private boolean isCommit;
@@ -53,7 +56,7 @@ public class FinalizeRemoteTransactionOperation extends Operation implements Bac
     @Override
     public void run() throws Exception {
         XAService xaService = getService();
-        final List<XATransactionImpl> list = xaService.removeTransactions(xid);
+        final List<XATransaction> list = xaService.removeTransactions(xid);
         if (list == null) {
             sendResponse(getNodeEngine().toData(XAException.XAER_NOTA));
             return;
@@ -81,12 +84,12 @@ public class FinalizeRemoteTransactionOperation extends Operation implements Bac
             }
         };
 
-        for (XATransactionImpl xaTransaction : list) {
+        for (XATransaction xaTransaction : list) {
             finalizeTransaction(xaTransaction, callback);
         }
     }
 
-    private void finalizeTransaction(XATransactionImpl xaTransaction, ExecutionCallback callback) {
+    private void finalizeTransaction(XATransaction xaTransaction, ExecutionCallback callback) {
         if (isCommit) {
             xaTransaction.commitAsync(callback);
         } else {
@@ -95,18 +98,8 @@ public class FinalizeRemoteTransactionOperation extends Operation implements Bac
     }
 
     @Override
-    public void afterRun() throws Exception {
-
-    }
-
-    @Override
     public boolean returnsResponse() {
         return returnsResponse;
-    }
-
-    @Override
-    public Object getResponse() {
-        return null;
     }
 
     @Override
@@ -127,11 +120,6 @@ public class FinalizeRemoteTransactionOperation extends Operation implements Bac
     @Override
     public Operation getBackupOperation() {
         return new FinalizeRemoteTransactionBackupOperation(xidData);
-    }
-
-    @Override
-    public String getServiceName() {
-        return XAService.SERVICE_NAME;
     }
 
     @Override

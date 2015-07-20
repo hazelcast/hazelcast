@@ -14,29 +14,23 @@
  * limitations under the License.
  */
 
-package com.hazelcast.transaction.impl.xa;
+package com.hazelcast.transaction.impl.xa.operations;
 
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.SerializableList;
+import com.hazelcast.transaction.impl.xa.SerializableXID;
+import com.hazelcast.transaction.impl.xa.XAService;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
-public class CollectRemoteTransactionsOperation extends Operation {
+public class CollectRemoteTransactionsOperation extends BaseXAOperation {
 
     private transient SerializableList xidSet;
 
     public CollectRemoteTransactionsOperation() {
-    }
-
-    @Override
-    public void beforeRun() throws Exception {
     }
 
     @Override
@@ -52,29 +46,7 @@ public class CollectRemoteTransactionsOperation extends Operation {
     }
 
     @Override
-    public void afterRun() throws Exception {
-    }
-
-    @Override
-    public boolean returnsResponse() {
-        return true;
-    }
-
-    @Override
     public Object getResponse() {
         return xidSet;
-    }
-
-    @Override
-    public String getServiceName() {
-        return XAService.SERVICE_NAME;
-    }
-
-    @Override
-    protected void writeInternal(ObjectDataOutput out) throws IOException {
-    }
-
-    @Override
-    protected void readInternal(ObjectDataInput in) throws IOException {
     }
 }

@@ -14,27 +14,15 @@
  * limitations under the License.
  */
 
-package com.hazelcast.transaction.impl.xa;
+package com.hazelcast.transaction.impl.xa.operations;
 
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationFactory;
+import com.hazelcast.spi.AbstractOperation;
+import com.hazelcast.transaction.impl.xa.XAService;
 
-import java.io.IOException;
-
-public class CollectRemoteTransactionsOperationFactory implements OperationFactory {
+public abstract class BaseXAOperation extends AbstractOperation {
 
     @Override
-    public Operation createOperation() {
-        return new CollectRemoteTransactionsOperation();
-    }
-
-    @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
-    }
-
-    @Override
-    public void readData(ObjectDataInput in) throws IOException {
+    public String getServiceName() {
+        return XAService.SERVICE_NAME;
     }
 }
