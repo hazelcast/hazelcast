@@ -33,10 +33,13 @@ import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileWriter;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
 import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
+import java.nio.charset.Charset;
+import java.nio.charset.CharsetEncoder;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.LinkedList;
@@ -54,6 +57,7 @@ import static java.util.Collections.sort;
 final class PerformanceLogFile {
 
     private static final int ONE_MB = 1024 * 1024;
+    private static final CharsetEncoder UTF8 = Charset.forName("UTF-8").newEncoder();
 
     volatile File logFile;
 
@@ -107,7 +111,8 @@ final class PerformanceLogFile {
             }
 
             if (writer == null) {
-                writer = new BufferedWriter(new FileWriter(logFile, true));
+                FileOutputStream fos = new FileOutputStream(logFile, true);
+                writer = new BufferedWriter(new OutputStreamWriter(fos, UTF8));
             }
 
             if (renderHead) {
@@ -146,7 +151,12 @@ final class PerformanceLogFile {
 
     private void deleteOld() {
         File file = new File(format(pathname, index - maxRollingFileCount));
-        file.delete();
+        boolean exist = file.exists();
+        if (exist) {
+            if (!file.delete()) {
+                logger.warning("Could not delete file:" + file.getAbsolutePath());
+            }
+        }
     }
 
     /**
@@ -225,7 +235,7 @@ final class PerformanceLogFile {
 
         private void renderSystemProperties(BufferedWriter writer) throws IOException {
             writer.append("================[ System Properties ]===================================\n");
-            writer.append(format("%-30s  %4s\n", "property", "value"));
+            writer.append(format("%-30s  %4s%n", "property", "value"));
             writer.append("------------------------------------------------------------------------\n");
             List keys = new LinkedList();
             keys.addAll(getProperties().keySet());
@@ -261,7 +271,7 @@ final class PerformanceLogFile {
 
         private void renderConfigProperties(BufferedWriter writer) throws IOException {
             writer.append("=================[ Hazelcast Config ]===================================\n");
-            writer.append(format("%-60s  %4s\n", "property", "value"));
+            writer.append(format("%-60s  %4s%n", "property", "value"));
             writer.append("------------------------------------------------------------------------\n");
             List keys = new LinkedList();
             Properties properties = hazelcastInstance.getConfig().getProperties();
@@ -271,13 +281,13 @@ final class PerformanceLogFile {
             for (Object key : keys) {
                 String keyString = (String) key;
                 String value = properties.getProperty(keyString);
-                writer.append(format("%-60s  %4s\n", keyString, value));
+                writer.append(format("%-60s  %4s%n", keyString, value));
             }
         }
 
         private void renderBuildInfo(BufferedWriter writer) throws IOException {
             writer.append("====================[ Build Info ]======================================\n");
-            writer.append(format("%-30s  %4s\n", "property", "value"));
+            writer.append(format("%-30s  %4s%n", "property", "value"));
             writer.append("------------------------------------------------------------------------\n");
 
             BuildInfo buildInfo = BuildInfoProvider.getBuildInfo();
@@ -289,7 +299,7 @@ final class PerformanceLogFile {
         }
 
         private String formatKeyValue(String keyString, Object value) {
-            return format("%-30s  %4s\n", keyString, value);
+            return format("%-30s  %4s%n", keyString, value);
         }
 
         private boolean ignore(String systemProperty) {

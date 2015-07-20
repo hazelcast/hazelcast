@@ -105,12 +105,12 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
     }
 
     @Probe(name = "out.writeQueuePendingBytes")
-    private long bytesPending() {
+    public long bytesPending() {
         return bytesPending(writeQueue);
     }
 
     @Probe(name = "out.priorityWriteQueuePendingBytes")
-    private long priorityBytesPending() {
+    public long priorityBytesPending() {
         return bytesPending(urgentWriteQueue);
     }
 

@@ -101,10 +101,11 @@ public class InvocationRegistry {
         this.slowInvocationThresholdMs = initSlowInvocationThresholdMs(props);
         this.backupTimeoutMillis = props.OPERATION_BACKUP_TIMEOUT_MILLIS.getLong();
         this.invocations = new ConcurrentHashMap<Long, Invocation>(INITIAL_CAPACITY, LOAD_FACTOR, concurrencyLevel);
-        this.inspectionThread = new InspectionThread();
 
-        inspectionThread.start();
         nodeEngine.getMetricsRegistry().scanAndRegister(this, "operation");
+
+        this.inspectionThread = new InspectionThread();
+        inspectionThread.start();
     }
 
     @Probe(name = "invocations.usedPercentage")
