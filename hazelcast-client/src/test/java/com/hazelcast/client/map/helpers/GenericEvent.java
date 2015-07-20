@@ -14,13 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.map;
+package com.hazelcast.client.map.helpers;
 
 import java.io.Serializable;
 
-/**
- * @ali 7/2/13
- */
 public class GenericEvent implements Serializable {
 
     final String value;

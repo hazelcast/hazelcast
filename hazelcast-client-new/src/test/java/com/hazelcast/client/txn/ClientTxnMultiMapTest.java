@@ -16,23 +16,21 @@
 
 package com.hazelcast.client.txn;
 
-import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.config.Config;
-import com.hazelcast.config.MultiMapConfig;
-import com.hazelcast.core.Hazelcast;
+import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.MultiMap;
 import com.hazelcast.core.TransactionalMultiMap;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.transaction.TransactionContext;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -50,24 +48,20 @@ import static org.junit.Assert.assertTrue;
 public class ClientTxnMultiMapTest {
 
     private static final String multiMapBackedByList = "BackedByList*";
-    static HazelcastInstance client;
-    static HazelcastInstance server;
+    private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
 
-    @BeforeClass
-    public static void init() {
+    private HazelcastInstance client;
+    private HazelcastInstance server;
 
-        Config config = new Config();
-        MultiMapConfig multiMapConfig = config.getMultiMapConfig(multiMapBackedByList);
-        multiMapConfig.setValueCollectionType(MultiMapConfig.ValueCollectionType.LIST);
-
-        server = Hazelcast.newHazelcastInstance(config);
-        client = HazelcastClient.newHazelcastClient();
+    @After
+    public void tearDown() {
+        hazelcastFactory.terminateAll();
     }
 
-    @AfterClass
-    public static void destroy() {
-        HazelcastClient.shutdownAll();
-        Hazelcast.shutdownAll();
+    @Before
+    public void setup() {
+        server = hazelcastFactory.newHazelcastInstance();
+        client = hazelcastFactory.newHazelcastClient();
     }
 
     @Test

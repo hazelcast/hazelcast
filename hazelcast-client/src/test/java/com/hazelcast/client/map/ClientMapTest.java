@@ -17,14 +17,14 @@
 package com.hazelcast.client.map;
 
 import com.hazelcast.client.impl.client.AuthenticationRequest;
-import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.client.map.helpers.GenericEvent;
+import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.ExecutionCallback;
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapEvent;
@@ -41,8 +41,8 @@ import com.hazelcast.query.SqlPredicate;
 import com.hazelcast.security.UsernamePasswordCredentials;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -71,14 +71,21 @@ import static org.junit.Assert.assertTrue;
 @Category(QuickTest.class)
 public class ClientMapTest {
 
-    static HazelcastInstance client;
-    static HazelcastInstance server;
+    private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
 
-    static TestMapStore flushMapStore = new TestMapStore();
-    static TestMapStore transientMapStore = new TestMapStore();
+    @After
+    public void tearDown() {
+        hazelcastFactory.terminateAll();
+    }
 
-    @BeforeClass
-    public static void init() {
+    private HazelcastInstance client;
+    private HazelcastInstance server;
+
+    private TestMapStore flushMapStore = new TestMapStore();
+    private TestMapStore transientMapStore = new TestMapStore();
+
+    @Before
+    public void setup() {
         Config config = new Config();
         config.getMapConfig("flushMap").
                 setMapStoreConfig(new MapStoreConfig()
@@ -89,19 +96,13 @@ public class ClientMapTest {
                         .setWriteDelaySeconds(1000)
                         .setImplementation(transientMapStore));
 
-        server = Hazelcast.newHazelcastInstance(config);
-        client = HazelcastClient.newHazelcastClient(null);
+        server = hazelcastFactory.newHazelcastInstance(config);
+        client = hazelcastFactory.newHazelcastClient(null);
     }
 
 
     public IMap createMap() {
         return client.getMap(randomString());
-    }
-
-    @AfterClass
-    public static void destroy() {
-        client.shutdown();
-        Hazelcast.shutdownAll();
     }
 
     @Test

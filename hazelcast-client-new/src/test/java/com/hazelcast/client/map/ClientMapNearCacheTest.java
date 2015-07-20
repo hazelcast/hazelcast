@@ -16,13 +16,12 @@
 
 package com.hazelcast.client.map;
 
-import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.monitor.LocalMapStats;
@@ -72,14 +71,14 @@ public class ClientMapNearCacheTest {
     private static final String NEAR_CACHE_RANDOM_WITH_MAX_SIZE = "NEAR_CACHE_RANDOM_WITH_MAX_SIZE";
     private static final String NEAR_CACHE_NONE_WITH_MAX_SIZE = "NEAR_CACHE_NONE_WITH_MAX_SIZE";
 
+    private static final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
     private static HazelcastInstance h1;
-    private static HazelcastInstance h2;
     private static HazelcastInstance client;
 
     @BeforeClass
     public static void setup() throws Exception {
-        h1 = Hazelcast.newHazelcastInstance();
-        h2 = Hazelcast.newHazelcastInstance();
+        h1 = hazelcastFactory.newHazelcastInstance();
+        hazelcastFactory.newHazelcastInstance();
 
         ClientConfig clientConfig = new ClientConfig();
 
@@ -148,13 +147,12 @@ public class ClientMapNearCacheTest {
         noneMaxSizeConfig.setEvictionPolicy("NONE");
         clientConfig.addNearCacheConfig(noneMaxSizeConfig);
 
-        client = HazelcastClient.newHazelcastClient(clientConfig);
+        client = hazelcastFactory.newHazelcastClient(clientConfig);
     }
 
     @AfterClass
     public static void cleanup() throws Exception {
-        HazelcastClient.shutdownAll();
-        Hazelcast.shutdownAll();
+        hazelcastFactory.terminateAll();
     }
 
     @Test

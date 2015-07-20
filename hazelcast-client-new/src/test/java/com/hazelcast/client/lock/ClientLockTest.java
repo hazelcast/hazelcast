@@ -16,23 +16,19 @@
 
 package com.hazelcast.client.lock;
 
-import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.core.Hazelcast;
+import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ILock;
 import com.hazelcast.test.AssertTask;
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
-import org.junit.AfterClass;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -40,31 +36,24 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-@RunWith(HazelcastSerialClassRunner.class)
+@RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
 public class ClientLockTest extends HazelcastTestSupport {
 
-    static final String name = "test";
-    static HazelcastInstance hz;
-    static ILock lock;
-
-    @BeforeClass
-    public static void init() {
-        Hazelcast.newHazelcastInstance();
-        hz = HazelcastClient.newHazelcastClient();
-        lock = hz.getLock(name);
-    }
-
-    @AfterClass
-    public static void destroy() {
-        hz.shutdown();
-        Hazelcast.shutdownAll();
-    }
+    private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
+    private ILock lock;
 
     @Before
+    public void setup() {
+        hazelcastFactory.newHazelcastInstance();
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient();
+        lock = client.getLock(randomString());
+    }
+
     @After
-    public void clear() throws IOException {
+    public void tearDown() {
         lock.forceUnlock();
+        hazelcastFactory.terminateAll();
     }
 
     @Test
@@ -221,12 +210,12 @@ public class ClientLockTest extends HazelcastTestSupport {
     @Test
     public void testObtainLock_FromDiffClients() throws InterruptedException {
 
-        HazelcastInstance clientA = HazelcastClient.newHazelcastClient();
-        ILock lockA = clientA.getLock(name);
+        HazelcastInstance clientA = hazelcastFactory.newHazelcastClient();
+        ILock lockA = clientA.getLock(lock.getName());
         lockA.lock();
 
-        HazelcastInstance clientB = HazelcastClient.newHazelcastClient();
-        ILock lockB = clientB.getLock(name);
+        HazelcastInstance clientB = hazelcastFactory.newHazelcastClient();
+        ILock lockB = clientB.getLock(lock.getName());
         boolean lockObtained = lockB.tryLock();
 
         assertFalse("Lock obtained by 2 client ", lockObtained);

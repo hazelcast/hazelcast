@@ -1,23 +1,19 @@
 package com.hazelcast.client.lock;
 
-import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.core.Hazelcast;
+import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ICondition;
 import com.hazelcast.core.ILock;
 import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
-import org.junit.AfterClass;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -25,31 +21,25 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-@RunWith(HazelcastSerialClassRunner.class)
+@RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
-public class ClientConditionTest extends HazelcastTestSupport {
-    private static final String name = "test";
-    private static HazelcastInstance client;
-    private static ILock lock;
-    private static HazelcastInstance hz;
+public class ClientConditionTest extends HazelcastTestSupport{
 
-    @BeforeClass
-    public static void init() {
-        hz = Hazelcast.newHazelcastInstance();
-        client = HazelcastClient.newHazelcastClient();
-        lock = client.getLock(name);
-    }
-
-    @AfterClass
-    public static void destroy() {
-        client.shutdown();
-        Hazelcast.shutdownAll();
-    }
+    private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
+    private HazelcastInstance client;
+    private ILock lock;
 
     @Before
+    public void setup() {
+        hazelcastFactory.newHazelcastInstance();
+        client = hazelcastFactory.newHazelcastClient();
+        lock = client.getLock(randomString());
+    }
+
     @After
-    public void clear() throws IOException {
+    public void tearDown() {
         lock.forceUnlock();
+        hazelcastFactory.terminateAll();
     }
 
     @Test

@@ -16,7 +16,6 @@
 
 package com.hazelcast.client.executor;
 
-import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.executor.tasks.AppendCallable;
 import com.hazelcast.client.executor.tasks.GetMemberUuidTask;
 import com.hazelcast.client.executor.tasks.MapPutPartitionAwareCallable;
@@ -24,8 +23,8 @@ import com.hazelcast.client.executor.tasks.MapPutPartitionAwareRunnable;
 import com.hazelcast.client.executor.tasks.MapPutRunnable;
 import com.hazelcast.client.executor.tasks.NullCallable;
 import com.hazelcast.client.executor.tasks.SelectAllMembers;
+import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.ExecutionCallback;
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IExecutorService;
 import com.hazelcast.core.IMap;
@@ -36,12 +35,13 @@ import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.io.IOException;
 import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.Callable;
@@ -62,23 +62,23 @@ import static org.junit.Assert.assertTrue;
 public class ClientExecutorServiceSubmitTest {
 
     private static final int CLUSTER_SIZE = 3;
+    private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
+    private HazelcastInstance server;
+    private HazelcastInstance client;
 
-    private static HazelcastInstance server;
-    private static HazelcastInstance client;
-
-    @BeforeClass
-    public static void beforeClass() {
-        Hazelcast.newHazelcastInstance();
-        server = Hazelcast.newHazelcastInstance();
-        Hazelcast.newHazelcastInstance();
-        client = HazelcastClient.newHazelcastClient();
+    @After
+    public void tearDown() {
+        hazelcastFactory.terminateAll();
     }
 
-    @AfterClass
-    public static void afterClass() {
-        HazelcastClient.shutdownAll();
-        Hazelcast.shutdownAll();
+    @Before
+    public void setup() throws IOException {
+        hazelcastFactory.newHazelcastInstance();
+        server = hazelcastFactory.newHazelcastInstance();
+        hazelcastFactory.newHazelcastInstance();
+        client = hazelcastFactory.newHazelcastClient();
     }
+
 
     @Test(expected = NullPointerException.class)
     public void testSubmitCallableNullTask() throws Exception {

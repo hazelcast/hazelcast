@@ -1,12 +1,12 @@
 package com.hazelcast.client.map;
 
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.NightlyTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-@RunWith(HazelcastSerialClassRunner.class)
+@RunWith(HazelcastParallelClassRunner.class)
 @Category(NightlyTest.class)
 public class ClientMapUnboundReturnValues_TxnTest extends ClientMapUnboundReturnValuesTestSupport {
 

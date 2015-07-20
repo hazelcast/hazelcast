@@ -16,11 +16,10 @@
 
 package com.hazelcast.client.lock;
 
-import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.core.Hazelcast;
+import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ILock;
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
@@ -35,21 +34,23 @@ import java.util.concurrent.TimeUnit;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-@RunWith(HazelcastSerialClassRunner.class)
+@RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
 public class ClientLockWithTerminationTest {
-    private HazelcastInstance node1;
+
+    private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
     private HazelcastInstance node2;
     private HazelcastInstance client1;
     private HazelcastInstance client2;
+
     private String keyOwnedByNode2;
 
     @Before
     public void setup() throws InterruptedException {
-        node1 = Hazelcast.newHazelcastInstance();
-        node2 = Hazelcast.newHazelcastInstance();
-        client1 = HazelcastClient.newHazelcastClient();
-        client2 = HazelcastClient.newHazelcastClient();
+        hazelcastFactory.newHazelcastInstance();
+        node2 = hazelcastFactory.newHazelcastInstance();
+        client1 = hazelcastFactory.newHazelcastClient();
+        client2 = hazelcastFactory.newHazelcastClient();
 
         HazelcastTestSupport.warmUpPartitions(node2);
         keyOwnedByNode2 = HazelcastTestSupport.generateKeyOwnedBy(node2);
@@ -57,8 +58,7 @@ public class ClientLockWithTerminationTest {
 
     @After
     public void tearDown() throws IOException {
-        HazelcastClient.shutdownAll();
-        Hazelcast.shutdownAll();
+        hazelcastFactory.terminateAll();
     }
 
     @Test

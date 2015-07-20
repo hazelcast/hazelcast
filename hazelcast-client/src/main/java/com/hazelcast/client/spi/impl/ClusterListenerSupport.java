@@ -17,7 +17,6 @@
 package com.hazelcast.client.spi.impl;
 
 import com.hazelcast.client.AuthenticationException;
-import com.hazelcast.client.config.ClientAwsConfig;
 import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.client.connection.AddressProvider;
 import com.hazelcast.client.connection.Authenticator;
@@ -71,23 +70,9 @@ public abstract class ClusterListenerSupport implements ConnectionListener, Conn
     private volatile Address ownerConnectionAddress;
     private volatile ClientPrincipal principal;
 
-    public ClusterListenerSupport(HazelcastClientInstanceImpl client) {
+    public ClusterListenerSupport(HazelcastClientInstanceImpl client, Collection<AddressProvider> addressProviders) {
         this.client = client;
-
-        ClientNetworkConfig networkConfig = client.getClientConfig().getNetworkConfig();
-        final ClientAwsConfig awsConfig = networkConfig.getAwsConfig();
-        addressProviders = new LinkedList<AddressProvider>();
-
-        addressProviders.add(new DefaultAddressProvider(networkConfig));
-
-        if (awsConfig != null && awsConfig.isEnabled()) {
-            try {
-                addressProviders.add(new AwsAddressProvider(awsConfig));
-            } catch (NoClassDefFoundError e) {
-                LOGGER.log(Level.WARNING, "hazelcast-cloud.jar might be missing!");
-                throw e;
-            }
-        }
+        this.addressProviders = addressProviders;
         shuffleMemberList = client.getClientProperties().getShuffleMemberList().getBoolean();
     }
 

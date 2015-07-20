@@ -1,17 +1,16 @@
 package com.hazelcast.client.map;
 
-import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.helpers.PortableHelpersFactory;
 import com.hazelcast.client.helpers.SimpleClientInterceptor;
+import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -19,40 +18,33 @@ import org.junit.runner.RunWith;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
-
-/**
- * User: danny Date: 11/26/13
- */
-
-@RunWith(HazelcastSerialClassRunner.class)
+@RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
 public class SimpleClientMapInterceptorTest {
 
-    static HazelcastInstance server1;
-    static HazelcastInstance server2;
-    static HazelcastInstance client;
+    private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
+    private HazelcastInstance client;
 
-    static SimpleClientInterceptor interceptor;
+    private SimpleClientInterceptor interceptor;
 
 
-    @BeforeClass
-    public static void init() {
+    @Before
+    public void setup() {
         Config config = new Config();
         config.getSerializationConfig().addPortableFactory(PortableHelpersFactory.ID, new PortableHelpersFactory());
-        server1 = Hazelcast.newHazelcastInstance(config);
-        server2 = Hazelcast.newHazelcastInstance(config);
+        hazelcastFactory.newHazelcastInstance(config);
+        hazelcastFactory.newHazelcastInstance(config);
 
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.getSerializationConfig().addPortableFactory(PortableHelpersFactory.ID, new PortableHelpersFactory());
-        client = HazelcastClient.newHazelcastClient(clientConfig);
+        client = hazelcastFactory.newHazelcastClient(clientConfig);
 
         interceptor = new SimpleClientInterceptor();
     }
 
-    @AfterClass
-    public static void destroy() {
-        client.shutdown();
-        Hazelcast.shutdownAll();
+    @After
+    public void tearDown() {
+        hazelcastFactory.terminateAll();
     }
 
     @Test

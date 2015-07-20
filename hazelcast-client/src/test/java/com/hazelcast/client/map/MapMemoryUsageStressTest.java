@@ -1,12 +1,11 @@
 package com.hazelcast.client.map;
 
-import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.GroupConfig;
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.NightlyTest;
 import org.junit.After;
@@ -22,24 +21,25 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 //https://github.com/hazelcast/hazelcast/issues/2138
-@RunWith(HazelcastSerialClassRunner.class)
+@RunWith(HazelcastParallelClassRunner.class)
 @Category(NightlyTest.class)
 public class MapMemoryUsageStressTest extends HazelcastTestSupport {
 
+    private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
     private HazelcastInstance client;
 
     @Before
     public void launchHazelcastServer() {
-        Hazelcast.newHazelcastInstance();
+        hazelcastFactory.newHazelcastInstance();
         ClientConfig config = new ClientConfig();
         config.setGroupConfig(new GroupConfig("dev", "dev-pass"));
         config.getNetworkConfig().addAddress("127.0.0.1");
-        client = HazelcastClient.newHazelcastClient(config);
+        client = hazelcastFactory.newHazelcastClient(config);
     }
 
     @After
     public void shutdownHazelcastServer() {
-        Hazelcast.shutdownAll();
+        hazelcastFactory.terminateAll();
     }
 
     @Test
@@ -69,9 +69,9 @@ public class MapMemoryUsageStressTest extends HazelcastTestSupport {
 
         public void run() {
             try {
-                for(;;){
+                for (; ; ) {
                     int index = counter.decrementAndGet();
-                    if(index<=0){
+                    if (index <= 0) {
                         return;
                     }
 
@@ -80,8 +80,8 @@ public class MapMemoryUsageStressTest extends HazelcastTestSupport {
                     map.clear();
                     map.destroy();
 
-                    if(index % 1000 == 0){
-                        System.out.println("At: "+index);
+                    if (index % 1000 == 0) {
+                        System.out.println("At: " + index);
                     }
                 }
             } catch (Throwable t) {

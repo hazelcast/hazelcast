@@ -39,7 +39,7 @@ public class AwsAddressProvider implements AddressProvider {
     private final AWSClient awsClient;
     private volatile Map<String, String> privateToPublic;
 
-    AwsAddressProvider(ClientAwsConfig awsConfig) {
+    public AwsAddressProvider(ClientAwsConfig awsConfig) {
         awsClient = new AWSClient(awsConfig);
     }
 

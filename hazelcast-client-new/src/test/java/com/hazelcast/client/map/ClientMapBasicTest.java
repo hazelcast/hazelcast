@@ -16,11 +16,10 @@
 
 package com.hazelcast.client.map;
 
-import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.EntryView;
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapEvent;
@@ -29,6 +28,12 @@ import com.hazelcast.query.Predicate;
 import com.hazelcast.query.SqlPredicate;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
+
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -36,11 +41,6 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
 import static com.hazelcast.test.HazelcastTestSupport.randomString;
 import static com.hazelcast.test.HazelcastTestSupport.sleepSeconds;
@@ -54,24 +54,24 @@ import static org.junit.Assert.assertTrue;
 @Category(QuickTest.class)
 public class ClientMapBasicTest {
 
-    static HazelcastInstance client;
-    static HazelcastInstance server;
+    private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
+    private HazelcastInstance client;
+    private HazelcastInstance server;
 
-    @BeforeClass
-    public static void init() {
-        server = Hazelcast.newHazelcastInstance();
-        client = HazelcastClient.newHazelcastClient();
+    @Before
+    public void setup() {
+        server = hazelcastFactory.newHazelcastInstance();
+        client = hazelcastFactory.newHazelcastClient();
     }
 
-    @AfterClass
-    public static void destroy() {
-        HazelcastClient.shutdownAll();
-        Hazelcast.shutdownAll();
+    @After
+    public void tearDown() {
+        hazelcastFactory.terminateAll();
     }
 
     @Test
     public void testClientGetMap() {
-        assertNotNull(client.getMap(randomString()));
+        assertNotNull( client.getMap(randomString()) );
     }
 
     @Test
@@ -764,7 +764,7 @@ public class ClientMapBasicTest {
     public void testEvict_whenKeyAbsent() throws InterruptedException {
         final IMap map = client.getMap(randomString());
         boolean result = map.evict("NOT_THERE");
-        assertFalse(result);
+        assertFalse( result );
     }
 
     @Test(expected = NullPointerException.class)
@@ -796,7 +796,7 @@ public class ClientMapBasicTest {
         }
         map.putAll(expected);
 
-        for (Object key : expected.keySet()) {
+        for(Object key : expected.keySet()){
             Object value = map.get(key);
             Object expectedValue = expected.get(key);
             assertEquals(expectedValue, value);
@@ -815,7 +815,7 @@ public class ClientMapBasicTest {
         }
         Map result = map.getAll(expected.keySet());
 
-        for (Object key : expected.keySet()) {
+        for(Object key : expected.keySet()){
             Object value = result.get(key);
             Object expectedValue = expected.get(key);
             assertEquals(expectedValue, value);
@@ -934,7 +934,7 @@ public class ClientMapBasicTest {
     }
 
     @Test
-    public void testGetEntryView_whenKeyAbsent() {
+    public void testGetEntryView_whenKeyAbsent(){
         final IMap map = client.getMap(randomString());
         final EntryView view = map.getEntryView("NOT_THERE");
 
@@ -942,7 +942,7 @@ public class ClientMapBasicTest {
     }
 
     @Test
-    public void testGetEntryView() {
+    public void testGetEntryView(){
         final IMap map = client.getMap(randomString());
         final Object key = "Key";
         final Object value = "Value";
@@ -969,7 +969,7 @@ public class ClientMapBasicTest {
 
         final Set expected = new TreeSet();
         for (int key = 0; key < max; key++) {
-            Object value = key + "value";
+            Object value = key+"value";
             expected.add(key);
             map.put(key, value);
         }
@@ -985,7 +985,7 @@ public class ClientMapBasicTest {
 
         final Set expected = new TreeSet();
         for (int key = 0; key < max; key++) {
-            Object value = key + "value";
+            Object value = key+"value";
             map.put(key, value);
         }
         expected.add(4);
@@ -1009,7 +1009,7 @@ public class ClientMapBasicTest {
 
         final Set expected = new TreeSet();
         for (int key = 0; key < max; key++) {
-            Object value = key + "value";
+            Object value = key+"value";
             expected.add(value);
             map.put(key, value);
         }
@@ -1026,7 +1026,7 @@ public class ClientMapBasicTest {
 
         final Set expected = new TreeSet();
         for (int key = 0; key < max; key++) {
-            Object value = key + "value";
+            Object value = key+"value";
             map.put(key, value);
         }
         expected.add(4);
@@ -1050,13 +1050,13 @@ public class ClientMapBasicTest {
 
         final Map expected = new HashMap();
         for (int key = 0; key < max; key++) {
-            Object value = key + "value";
+            Object value = key+"value";
             expected.put(key, value);
             map.put(key, value);
         }
         Set<Map.Entry> entrySet = map.entrySet();
 
-        for (Map.Entry entry : entrySet) {
+        for(Map.Entry entry : entrySet){
             Object value = entry.getValue();
             Object key = entry.getKey();
             Object expectedValue = expected.get(key);
@@ -1072,7 +1072,7 @@ public class ClientMapBasicTest {
 
         final Map expected = new HashMap();
         for (int key = 0; key < max; key++) {
-            Object value = key + "value";
+            Object value = key+"value";
             expected.put(key, value);
             map.put(key, value);
         }
@@ -1107,31 +1107,31 @@ public class ClientMapBasicTest {
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void testAddLocalEntryListener() {
+    public void testAddLocalEntryListener(){
         final IMap map = client.getMap(randomString());
         map.addLocalEntryListener(new DumEntryListener());
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void testAddLocalEntryListener_WithPredicate() {
+    public void testAddLocalEntryListener_WithPredicate(){
         final IMap map = client.getMap(randomString());
         map.addLocalEntryListener(new DumEntryListener(), new DumPredicate(), true);
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void testAddLocalEntryListener_WithPredicateAndKey() {
+    public void testAddLocalEntryListener_WithPredicateAndKey(){
         final IMap map = client.getMap(randomString());
         map.addLocalEntryListener(new DumEntryListener(), new DumPredicate(), "Key", true);
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void testLocalKeySet() {
+    public void testLocalKeySet(){
         final IMap map = client.getMap(randomString());
         map.localKeySet();
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    public void testLocalKeySet_WithPredicate() {
+    public void testLocalKeySet_WithPredicate(){
         final IMap map = client.getMap(randomString());
         map.localKeySet(new DumPredicate());
     }
@@ -1139,19 +1139,14 @@ public class ClientMapBasicTest {
     static class DumEntryListener implements EntryListener {
         public void entryAdded(EntryEvent event) {
         }
-
         public void entryRemoved(EntryEvent event) {
         }
-
         public void entryUpdated(EntryEvent event) {
         }
-
         public void entryEvicted(EntryEvent event) {
         }
-
         public void mapEvicted(MapEvent event) {
         }
-
         public void mapCleared(MapEvent event) {
         }
     }

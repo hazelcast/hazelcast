@@ -21,6 +21,7 @@ import com.hazelcast.core.IAtomicReference;
 import com.hazelcast.core.IFunction;
 import com.hazelcast.test.ExpectedRuntimeException;
 import com.hazelcast.test.HazelcastTestSupport;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -44,7 +45,14 @@ public abstract class AtomicReferenceBasicTest extends HazelcastTestSupport {
         ref = newInstance();
     }
 
-    protected IAtomicReference newInstance(){
+    @After
+    public void tearDown() {
+        for (HazelcastInstance instance : instances) {
+            instance.getLifecycleService().terminate();
+        }
+    }
+
+    protected IAtomicReference newInstance() {
         HazelcastInstance local = instances[0];
         HazelcastInstance target = instances[instances.length - 1];
         String name = generateKeyOwnedBy(target);
@@ -305,7 +313,7 @@ public abstract class AtomicReferenceBasicTest extends HazelcastTestSupport {
     @Test
     public void testToString() {
         String name = ref.getName();
-        assertEquals(format("IAtomicReference{name='%s'}",name), ref.toString());
+        assertEquals(format("IAtomicReference{name='%s'}", name), ref.toString());
     }
 
     @Test

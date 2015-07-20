@@ -1,17 +1,21 @@
 package com.hazelcast.client.map;
 
-import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapStore;
 import com.hazelcast.core.MapStoreAdapter;
 import com.hazelcast.map.mapstore.MapStoreTest;
 import com.hazelcast.test.AssertTask;
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import java.util.Collection;
 import java.util.HashSet;
@@ -19,36 +23,29 @@ import java.util.Map;
 import java.util.Set;
 
 import static com.hazelcast.util.ValidationUtil.checkState;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
-
-@RunWith(HazelcastSerialClassRunner.class)
+@RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
 public class ClientMapLoaderExceptionHandlingTest extends HazelcastTestSupport {
 
     private static final String mapName = randomMapName();
+    private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
     private HazelcastInstance client;
-    private HazelcastInstance server;
     private ExceptionalMapStore mapStore;
 
     @Before
-    public void init() {
+    public void setup() {
         mapStore = new ExceptionalMapStore();
         Config config = createNewConfig(mapName, mapStore);
-        server = Hazelcast.newHazelcastInstance(config);
-        client = HazelcastClient.newHazelcastClient();
+        hazelcastFactory.newHazelcastInstance(config);
+        client = hazelcastFactory.newHazelcastClient();
     }
 
     @After
-    public void shutdown() {
-        closeResources(client, server);
+    public void tearDown() {
+        hazelcastFactory.terminateAll();
     }
 
     @Before
@@ -119,15 +116,6 @@ public class ClientMapLoaderExceptionHandlingTest extends HazelcastTestSupport {
 
         public void setLoadAllKeysThrows(boolean loadAllKeysThrows) {
             this.loadAllKeysThrows = loadAllKeysThrows;
-        }
-    }
-
-    private static void closeResources(HazelcastInstance... instances) {
-        if (instances == null) {
-            return;
-        }
-        for (HazelcastInstance instance : instances) {
-            instance.shutdown();
         }
     }
 }
