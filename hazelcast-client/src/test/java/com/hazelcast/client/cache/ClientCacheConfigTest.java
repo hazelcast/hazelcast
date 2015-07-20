@@ -146,8 +146,8 @@ public class ClientCacheConfigTest {
         clientConfig.setInstanceName(instanceName);
         
         HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
-
-        assetEquals("ClientInstanceTest", client.getName());
+        
+        assertEquals(instanceName, client.getName());
         
         URI uri1 = new URI("MY-SCOPE");
         Properties properties = new Properties();

@@ -44,6 +44,7 @@ import javax.cache.Cache;
 import javax.cache.CacheManager;
 import javax.cache.Caching;
 import javax.cache.spi.CachingProvider;
+
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -138,13 +139,16 @@ public class ClientCacheConfigTest {
     public void cacheManagerByInstanceNameTest()
             throws URISyntaxException {
         assertEquals(0, HazelcastClient.getAllHazelcastClients().size());
+        String instanceName = "ClientInstanceTest";
+
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.getGroupConfig().setName("cluster1");
         clientConfig.getGroupConfig().setPassword("cluster1pass");
+        clientConfig.setInstanceName(instanceName);
 
         HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
-        String instanceName = client.getName();
-
+        assertEquals(instanceName, client.getName());
+        
         URI uri1 = new URI("MY-SCOPE");
         Properties properties = new Properties();
         properties.setProperty(HazelcastCachingProvider.HAZELCAST_INSTANCE_NAME, instanceName);
