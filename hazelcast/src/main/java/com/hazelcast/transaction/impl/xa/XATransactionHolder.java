@@ -23,6 +23,7 @@ import com.hazelcast.transaction.impl.TransactionLogRecord;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 public class XATransactionHolder implements DataSerializable {
@@ -31,7 +32,7 @@ public class XATransactionHolder implements DataSerializable {
     String ownerUuid;
     long timeoutMilis;
     long startTime;
-    List<TransactionLogRecord> records;
+    Collection<TransactionLogRecord> records;
 
     public XATransactionHolder() {
 

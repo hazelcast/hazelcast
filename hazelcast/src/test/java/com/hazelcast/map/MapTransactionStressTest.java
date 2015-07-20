@@ -316,9 +316,11 @@ public class MapTransactionStressTest extends HazelcastTestSupport {
     }
 
     public static class SleepyTransactionLogRecord implements TransactionLogRecord {
+        private final String key = UUID.randomUUID().toString();
+
         @Override
         public Object getKey() {
-            return null;
+            return key;
         }
 
         @Override

@@ -33,7 +33,7 @@ public interface TransactionLogRecord extends DataSerializable {
      * key, and if later on another put on that key is done, by using the same transaction-log-key, the first
      * put is overwritten.
      *
-     * If null is returned, this TransactionLogRecord can't be identified and can't be overwritten by a later change.
+     * Null should not be returned.
      *
      * @return the transaction-log-key that uniquely identifies this TransactionLogRecord.
      */
