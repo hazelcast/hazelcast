@@ -39,10 +39,6 @@ public class MemberInfo implements DataSerializable {
         this.address = address;
     }
     
-    public MemberInfo(Address address, String uuid, Map<String, Object> attributes) {
-    	this(address, uuid, attributes, null);
-    }
-
     public MemberInfo(Address address, String uuid, Map<String, Object> attributes, Map<String, Object> systemAttributes) {
         this.address = address;
         this.uuid = uuid;
