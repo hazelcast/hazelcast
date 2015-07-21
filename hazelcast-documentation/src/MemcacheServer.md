@@ -1,6 +1,0 @@
-
-
-## Memcache Server
-
-???
-

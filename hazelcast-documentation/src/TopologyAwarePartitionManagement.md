@@ -1,7 +1,0 @@
-
-
-## Topology Aware Partition Management
-
-???
-
-

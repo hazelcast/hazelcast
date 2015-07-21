@@ -1,9 +1,0 @@
-
-
-
-
-
-## Hazelcast Network Protocol
-
-???
-
