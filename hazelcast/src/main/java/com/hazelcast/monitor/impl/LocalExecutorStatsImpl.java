@@ -17,6 +17,7 @@
 package com.hazelcast.monitor.impl;
 
 import com.eclipsesource.json.JsonObject;
+import com.hazelcast.internal.management.JsonSerializable;
 import com.hazelcast.monitor.LocalExecutorStats;
 import com.hazelcast.util.Clock;
 
@@ -24,7 +25,7 @@ import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
 import static com.hazelcast.util.JsonUtil.getLong;
 
-public class LocalExecutorStatsImpl implements LocalExecutorStats {
+public class LocalExecutorStatsImpl implements LocalExecutorStats, JsonSerializable {
 
     private static final AtomicLongFieldUpdater<LocalExecutorStatsImpl> PENDING_UPDATER = AtomicLongFieldUpdater
             .newUpdater(LocalExecutorStatsImpl.class, "pending");

@@ -20,6 +20,7 @@ import com.eclipsesource.json.JsonArray;
 import com.eclipsesource.json.JsonObject;
 import com.eclipsesource.json.JsonValue;
 import com.hazelcast.instance.Node;
+import com.hazelcast.internal.management.JsonSerializable;
 import com.hazelcast.internal.management.dto.SlowOperationDTO;
 import com.hazelcast.monitor.LocalOperationStats;
 import com.hazelcast.util.Clock;
@@ -33,7 +34,7 @@ import static com.hazelcast.util.JsonUtil.getLong;
 /**
  * Hazelcast statistic implementations for local operations.
  */
-public class LocalOperationStatsImpl implements LocalOperationStats {
+public class LocalOperationStatsImpl implements LocalOperationStats, JsonSerializable {
 
     private long maxVisibleSlowOperationCount;
     private List<SlowOperationDTO> slowOperations;

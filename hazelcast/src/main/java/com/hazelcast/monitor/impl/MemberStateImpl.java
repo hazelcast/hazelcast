@@ -19,6 +19,7 @@ package com.hazelcast.monitor.impl;
 import com.eclipsesource.json.JsonArray;
 import com.eclipsesource.json.JsonObject;
 import com.eclipsesource.json.JsonValue;
+import com.hazelcast.internal.management.JsonSerializable;
 import com.hazelcast.internal.management.dto.ClientEndPointDTO;
 import com.hazelcast.internal.management.dto.MXBeansDTO;
 import com.hazelcast.monitor.LocalCacheStats;
@@ -41,21 +42,21 @@ import static com.hazelcast.util.JsonUtil.getArray;
 import static com.hazelcast.util.JsonUtil.getObject;
 import static com.hazelcast.util.JsonUtil.getString;
 
-public class MemberStateImpl implements MemberState {
+public class MemberStateImpl implements MemberState, JsonSerializable {
 
     private String address;
     private Map<String, Long> runtimeProps = new HashMap<String, Long>();
-    private Map<String, LocalMapStats> mapStats = new HashMap<String, LocalMapStats>();
-    private Map<String, LocalMultiMapStats> multiMapStats = new HashMap<String, LocalMultiMapStats>();
-    private Map<String, LocalQueueStats> queueStats = new HashMap<String, LocalQueueStats>();
-    private Map<String, LocalTopicStats> topicStats = new HashMap<String, LocalTopicStats>();
-    private Map<String, LocalExecutorStats> executorStats = new HashMap<String, LocalExecutorStats>();
-    private Map<String, LocalCacheStats> cacheStats = new HashMap<String, LocalCacheStats>();
+    private Map<String, LocalMapStatsImpl> mapStats = new HashMap<String, LocalMapStatsImpl>();
+    private Map<String, LocalMultiMapStatsImpl> multiMapStats = new HashMap<String, LocalMultiMapStatsImpl>();
+    private Map<String, LocalQueueStatsImpl> queueStats = new HashMap<String, LocalQueueStatsImpl>();
+    private Map<String, LocalTopicStatsImpl> topicStats = new HashMap<String, LocalTopicStatsImpl>();
+    private Map<String, LocalExecutorStatsImpl> executorStats = new HashMap<String, LocalExecutorStatsImpl>();
+    private Map<String, LocalCacheStatsImpl> cacheStats = new HashMap<String, LocalCacheStatsImpl>();
     private Collection<ClientEndPointDTO> clients = new HashSet<ClientEndPointDTO>();
     private MXBeansDTO beans = new MXBeansDTO();
-    private LocalMemoryStats memoryStats = new LocalMemoryStatsImpl();
-    private MemberPartitionState memberPartitionState = new MemberPartitionStateImpl();
-    private LocalOperationStats operationStats = new LocalOperationStatsImpl();
+    private LocalMemoryStatsImpl memoryStats = new LocalMemoryStatsImpl();
+    private MemberPartitionStateImpl memberPartitionState = new MemberPartitionStateImpl();
+    private LocalOperationStatsImpl operationStats = new LocalOperationStatsImpl();
 
     public MemberStateImpl() {
     }
@@ -108,27 +109,27 @@ public class MemberStateImpl implements MemberState {
         this.address = address;
     }
 
-    public void putLocalMapStats(String name, LocalMapStats localMapStats) {
+    public void putLocalMapStats(String name, LocalMapStatsImpl localMapStats) {
         mapStats.put(name, localMapStats);
     }
 
-    public void putLocalMultiMapStats(String name, LocalMultiMapStats localMultiMapStats) {
+    public void putLocalMultiMapStats(String name, LocalMultiMapStatsImpl localMultiMapStats) {
         multiMapStats.put(name, localMultiMapStats);
     }
 
-    public void putLocalQueueStats(String name, LocalQueueStats localQueueStats) {
+    public void putLocalQueueStats(String name, LocalQueueStatsImpl localQueueStats) {
         queueStats.put(name, localQueueStats);
     }
 
-    public void putLocalTopicStats(String name, LocalTopicStats localTopicStats) {
+    public void putLocalTopicStats(String name, LocalTopicStatsImpl localTopicStats) {
         topicStats.put(name, localTopicStats);
     }
 
-    public void putLocalExecutorStats(String name, LocalExecutorStats localExecutorStats) {
+    public void putLocalExecutorStats(String name, LocalExecutorStatsImpl localExecutorStats) {
         executorStats.put(name, localExecutorStats);
     }
 
-    public void putLocalCacheStats(String name, LocalCacheStats localCacheStats) {
+    public void putLocalCacheStats(String name, LocalCacheStatsImpl localCacheStats) {
         cacheStats.put(name, localCacheStats);
     }
 
@@ -154,7 +155,7 @@ public class MemberStateImpl implements MemberState {
         return memoryStats;
     }
 
-    public void setLocalMemoryStats(LocalMemoryStats memoryStats) {
+    public void setLocalMemoryStats(LocalMemoryStatsImpl memoryStats) {
         this.memoryStats = memoryStats;
     }
 
@@ -163,7 +164,7 @@ public class MemberStateImpl implements MemberState {
         return operationStats;
     }
 
-    public void setOperationStats(LocalOperationStats operationStats) {
+    public void setOperationStats(LocalOperationStatsImpl operationStats) {
         this.operationStats = operationStats;
     }
 
@@ -177,32 +178,32 @@ public class MemberStateImpl implements MemberState {
         JsonObject root = new JsonObject();
         root.add("address", address);
         JsonObject mapStatsObject = new JsonObject();
-        for (Map.Entry<String, LocalMapStats> entry : mapStats.entrySet()) {
+        for (Map.Entry<String, LocalMapStatsImpl> entry : mapStats.entrySet()) {
             mapStatsObject.add(entry.getKey(), entry.getValue().toJson());
         }
         root.add("mapStats", mapStatsObject);
         JsonObject multimapStatsObject = new JsonObject();
-        for (Map.Entry<String, LocalMultiMapStats> entry : multiMapStats.entrySet()) {
+        for (Map.Entry<String, LocalMultiMapStatsImpl> entry : multiMapStats.entrySet()) {
             multimapStatsObject.add(entry.getKey(), entry.getValue().toJson());
         }
         root.add("multiMapStats", multimapStatsObject);
         JsonObject queueStatsObject = new JsonObject();
-        for (Map.Entry<String, LocalQueueStats> entry : queueStats.entrySet()) {
+        for (Map.Entry<String, LocalQueueStatsImpl> entry : queueStats.entrySet()) {
             queueStatsObject.add(entry.getKey(), entry.getValue().toJson());
         }
         root.add("queueStats", queueStatsObject);
         JsonObject topicStatsObject = new JsonObject();
-        for (Map.Entry<String, LocalTopicStats> entry : topicStats.entrySet()) {
+        for (Map.Entry<String, LocalTopicStatsImpl> entry : topicStats.entrySet()) {
             topicStatsObject.add(entry.getKey(), entry.getValue().toJson());
         }
         root.add("topicStats", topicStatsObject);
         JsonObject executorStatsObject = new JsonObject();
-        for (Map.Entry<String, LocalExecutorStats> entry : executorStats.entrySet()) {
+        for (Map.Entry<String, LocalExecutorStatsImpl> entry : executorStats.entrySet()) {
             executorStatsObject.add(entry.getKey(), entry.getValue().toJson());
         }
         root.add("executorStats", executorStatsObject);
         JsonObject cacheStatsObject = new JsonObject();
-        for (Map.Entry<String, LocalCacheStats> entry : cacheStats.entrySet()) {
+        for (Map.Entry<String, LocalCacheStatsImpl> entry : cacheStats.entrySet()) {
             cacheStatsObject.add(entry.getKey(), entry.getValue().toJson());
         }
         root.add("cacheStats", cacheStatsObject);
@@ -252,7 +253,7 @@ public class MemberStateImpl implements MemberState {
             executorStats.put(next.getName(), stats);
         }
         for (JsonObject.Member next : getObject(json, "cacheStats", new JsonObject())) {
-            LocalCacheStats stats = new LocalCacheStatsImpl();
+            LocalCacheStatsImpl stats = new LocalCacheStatsImpl();
             stats.fromJson(next.getValue().asObject());
             cacheStats.put(next.getName(), stats);
         }

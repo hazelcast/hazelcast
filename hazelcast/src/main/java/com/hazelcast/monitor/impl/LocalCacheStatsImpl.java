@@ -18,6 +18,7 @@ package com.hazelcast.monitor.impl;
 
 import com.eclipsesource.json.JsonObject;
 import com.hazelcast.cache.CacheStatistics;
+import com.hazelcast.internal.management.JsonSerializable;
 import com.hazelcast.monitor.LocalCacheStats;
 import com.hazelcast.util.Clock;
 
@@ -40,7 +41,7 @@ import static com.hazelcast.util.JsonUtil.getLong;
  *
  * @see com.hazelcast.cache.CacheStatistics
  */
-public class LocalCacheStatsImpl implements LocalCacheStats {
+public class LocalCacheStatsImpl implements LocalCacheStats, JsonSerializable {
 
     private long creationTime;
     private long cacheHits;

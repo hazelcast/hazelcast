@@ -25,6 +25,8 @@ import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.internal.management.TimedMemberStateFactory;
 import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
+import com.hazelcast.monitor.LocalOperationStats;
+import com.hazelcast.monitor.impl.LocalOperationStatsImpl;
 import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
@@ -106,7 +108,8 @@ abstract class SlowOperationDetectorAbstractTest extends HazelcastTestSupport {
 
     static JsonObject getOperationStats(HazelcastInstance instance) {
         TimedMemberStateFactory timedMemberStateFactory = new TimedMemberStateFactory(getHazelcastInstanceImpl(instance));
-        return timedMemberStateFactory.createTimedMemberState().getMemberState().getOperationStats().toJson();
+        LocalOperationStatsImpl operationStats = (LocalOperationStatsImpl) timedMemberStateFactory.createTimedMemberState().getMemberState().getOperationStats();
+        return operationStats.toJson();
     }
 
     static void assertNumberOfSlowOperationLogs(final Collection<SlowOperationLog> logs, final int expected) {

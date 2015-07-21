@@ -21,7 +21,6 @@ import com.hazelcast.mapreduce.KeyValueSource;
 import com.hazelcast.mapreduce.impl.MapReduceService;
 import com.hazelcast.mapreduce.impl.operation.ProcessStatsUpdateOperation;
 import com.hazelcast.nio.Address;
-import com.hazelcast.spi.NodeEngine;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -54,7 +53,7 @@ class KeyValueSourceFacade<K, V>
     }
 
     @Override
-    public boolean open(NodeEngine nodeEngine) {
+    public boolean open(Object nodeEngine) {
         return keyValueSource.open(nodeEngine);
     }
 

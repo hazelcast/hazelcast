@@ -17,13 +17,14 @@
 package com.hazelcast.monitor.impl;
 
 import com.eclipsesource.json.JsonObject;
+import com.hazelcast.internal.management.JsonSerializable;
 import com.hazelcast.memory.GarbageCollectorStats;
 import com.hazelcast.monitor.LocalGCStats;
 import com.hazelcast.util.Clock;
 
 import static com.hazelcast.util.JsonUtil.getLong;
 
-public class LocalGCStatsImpl implements LocalGCStats {
+public class LocalGCStatsImpl implements LocalGCStats, JsonSerializable {
 
     private long creationTime;
     private long minorCount;

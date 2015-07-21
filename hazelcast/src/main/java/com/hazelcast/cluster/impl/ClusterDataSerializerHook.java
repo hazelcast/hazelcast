@@ -27,6 +27,7 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 public final class ClusterDataSerializerHook implements DataSerializerHook {
 
+    // don't change this value. If you do; you need to check Address since it is hard coded
     public static final int F_ID = 0;
 
     public static final int ADDRESS = Address.ID;

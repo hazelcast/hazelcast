@@ -18,6 +18,7 @@ package com.hazelcast.monitor.impl;
 
 import com.eclipsesource.json.JsonObject;
 import com.eclipsesource.json.JsonValue;
+import com.hazelcast.internal.management.JsonSerializable;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.util.Clock;
 
@@ -29,7 +30,7 @@ import static com.hazelcast.util.JsonUtil.getLong;
 /**
  * Default implementation of {@link LocalMapStats}
  */
-public class LocalMapStatsImpl implements LocalMapStats {
+public class LocalMapStatsImpl implements LocalMapStats, JsonSerializable {
 
     private static final AtomicLongFieldUpdater<LocalMapStatsImpl> LAST_ACCESS_TIME_UPDATER = AtomicLongFieldUpdater
             .newUpdater(LocalMapStatsImpl.class, "lastAccessTime");

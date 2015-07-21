@@ -17,6 +17,7 @@
 package com.hazelcast.monitor.impl;
 
 import com.eclipsesource.json.JsonObject;
+import com.hazelcast.internal.management.JsonSerializable;
 import com.hazelcast.memory.MemoryStats;
 import com.hazelcast.monitor.LocalGCStats;
 import com.hazelcast.monitor.LocalMemoryStats;
@@ -24,7 +25,7 @@ import com.hazelcast.monitor.LocalMemoryStats;
 import static com.hazelcast.util.JsonUtil.getLong;
 import static com.hazelcast.util.JsonUtil.getObject;
 
-public class LocalMemoryStatsImpl implements LocalMemoryStats {
+public class LocalMemoryStatsImpl implements LocalMemoryStats, JsonSerializable {
 
     private long creationTime;
 
@@ -46,7 +47,7 @@ public class LocalMemoryStatsImpl implements LocalMemoryStats {
 
     private long usedHeap;
 
-    private LocalGCStats gcStats;
+    private LocalGCStatsImpl gcStats;
 
     public LocalMemoryStatsImpl() {
     }
@@ -155,7 +156,7 @@ public class LocalMemoryStatsImpl implements LocalMemoryStats {
         return gcStats;
     }
 
-    public void setGcStats(LocalGCStats gcStats) {
+    public void setGcStats(LocalGCStatsImpl gcStats) {
         this.gcStats = gcStats;
     }
 

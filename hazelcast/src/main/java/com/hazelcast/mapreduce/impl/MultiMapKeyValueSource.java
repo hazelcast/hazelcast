@@ -29,7 +29,6 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.partition.InternalPartitionService;
-import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.io.IOException;
@@ -75,7 +74,7 @@ public class MultiMapKeyValueSource<K, V>
     }
 
     @Override
-    public boolean open(NodeEngine nodeEngine) {
+    public boolean open(Object nodeEngine) {
         NodeEngineImpl nei = (NodeEngineImpl) nodeEngine;
         InternalPartitionService ps = nei.getPartitionService();
         MultiMapService multiMapService = nei.getService(MultiMapService.SERVICE_NAME);

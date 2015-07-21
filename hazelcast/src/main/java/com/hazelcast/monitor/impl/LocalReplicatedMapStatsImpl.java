@@ -17,6 +17,7 @@
 package com.hazelcast.monitor.impl;
 
 import com.eclipsesource.json.JsonObject;
+import com.hazelcast.internal.management.JsonSerializable;
 import com.hazelcast.monitor.LocalReplicatedMapStats;
 import com.hazelcast.util.Clock;
 
@@ -28,7 +29,7 @@ import static com.hazelcast.util.JsonUtil.getLong;
  * This class collects statistics about the replication map usage for management center and is
  * able to transform those between wire format and instance view.
  */
-public class LocalReplicatedMapStatsImpl implements LocalReplicatedMapStats {
+public class LocalReplicatedMapStatsImpl implements LocalReplicatedMapStats, JsonSerializable {
 
     //CHECKSTYLE:OFF
     private static final AtomicLongFieldUpdater<LocalReplicatedMapStatsImpl> LAST_ACCESS_TIME_UPDATER = AtomicLongFieldUpdater
