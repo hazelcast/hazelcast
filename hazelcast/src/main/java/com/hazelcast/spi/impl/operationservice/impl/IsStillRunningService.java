@@ -67,6 +67,11 @@ public class IsStillRunningService {
      * @return true if the operation is running, false otherwise.
      */
     public boolean isOperationExecuting(Invocation invocation) {
+        if (isStillRunningOperation(invocation)) {
+            // we don't want to is-still-running-operations; it can lead to a explosion of such invocations
+            return false;
+        }
+
         // ask if op is still being executed?
         Boolean executing = Boolean.FALSE;
         try {
@@ -86,10 +91,24 @@ public class IsStillRunningService {
     }
 
     /**
+     * Checks if the Invocation is pointing to a IsStillExecutingOperation/TraceableIsStillExecutingOperation.
+     */
+    private boolean isStillRunningOperation(Invocation invocation) {
+        Operation op = invocation.op;
+        return op instanceof IsStillExecutingOperation || op instanceof TraceableIsStillExecutingOperation;
+    }
+
+    /**
      * Sets operation timeout to invocation result if the operation is not running.
+     *
      * @param invocation The invocation to check
      */
-    public void timeoutInvocationIfNotExecuting(final Invocation invocation) {
+    public void timeoutInvocationIfNotExecuting(Invocation invocation) {
+        if (isStillRunningOperation(invocation)) {
+            // we don't want to is-still-running-operations; it can lead to a explosion of such invocations
+            return;
+        }
+
         try {
             final Operation isStillExecuting = createCheckOperation(invocation);
             final ExecutionCallback<Object> callback = new IsOperationStillRunningCallback(invocation);
