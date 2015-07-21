@@ -39,6 +39,8 @@
                 <xs:element name="load-balancer" type="load-balancer" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="near-cache" type="near-cache-client" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="query-caches" type="query-caches" minOccurs="0" maxOccurs="unbounded"/>
+                
+                <xs:element name="instance-name" type="xs:string" minOccurs="0" maxOccurs="1" />
             </xs:choice>
             <xs:attribute name="id" type="xs:string" use="optional" default="default"/>
         </xs:complexType>

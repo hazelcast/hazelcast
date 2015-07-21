@@ -239,8 +239,10 @@ public class XmlClientConfigBuilderTest {
     public void testNearCacheConfigWithEvictionConfig() throws IOException {
         URL schemaResource = XMLConfigBuilderTest.class.getClassLoader().getResource("hazelcast-client-test.xml");
         ClientConfig clientConfig = new XmlClientConfigBuilder(schemaResource).build();
-        NearCacheConfig nearCacheConfig = clientConfig.getNearCacheConfig("nearCacheWithEviction");
+        assertEquals("MyName", clientConfig.getInstanceName());
 
+        NearCacheConfig nearCacheConfig = clientConfig.getNearCacheConfig("nearCacheWithEviction");
+        
         assertEquals(10000, nearCacheConfig.getTimeToLiveSeconds());
         assertEquals(5000, nearCacheConfig.getMaxIdleSeconds());
         assertFalse(nearCacheConfig.isInvalidateOnChange());
