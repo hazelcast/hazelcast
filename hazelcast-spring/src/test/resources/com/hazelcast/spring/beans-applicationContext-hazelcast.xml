@@ -18,18 +18,27 @@
 <beans xmlns="http://www.springframework.org/schema/beans"
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xmlns:hz="http://www.hazelcast.com/schema/spring"
+       xmlns:p="http://www.springframework.org/schema/p"
        xsi:schemaLocation="http://www.springframework.org/schema/beans
 		http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
 		http://www.hazelcast.com/schema/spring
 		http://www.hazelcast.com/schema/spring/hazelcast-spring.xsd">
 
+    <bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer"
+          p:systemPropertiesModeName="SYSTEM_PROPERTIES_MODE_OVERRIDE">
+        <property name="locations">
+            <list>
+                <value>classpath:/hazelcast-default.properties</value>
+            </list>
+        </property>
+    </bean>
     <hz:hazelcast id="instance" lazy-init="true" scope="singleton">
         <hz:config>
             <hz:group name="${cluster.group.name}" password="${cluster.group.password}"/>
             <hz:network port="5701" port-auto-increment="false">
                 <hz:join>
-                    <hz:multicast enabled="false"/>
-                    <hz:tcp-ip enabled="true">
+                    <hz:multicast enabled="${boolean.false}"/>
+                    <hz:tcp-ip enabled="${boolean.true}">
                         <hz:interface>127.0.0.1:5701</hz:interface>
                         <hz:interface>127.0.0.1:5702</hz:interface>
                     </hz:tcp-ip>
@@ -39,11 +48,12 @@
                     <hz:interface>127.0.0.1</hz:interface>
                 </hz:interfaces>
             </hz:network>
+            <hz:map name="map1" backup-count="${backup.count}" statistics-enabled="${boolean.false}"/>
         </hz:config>
     </hz:hazelcast>
 
     <hz:client id="client" lazy-init="true" scope="prototype">
-        <hz:group name="${cluster.group.name}" password="${cluster.group.password}" />
+        <hz:group name="${cluster.group.name}" password="${cluster.group.password}"/>
         <hz:network connection-attempt-limit="3"
                     connection-attempt-period="3000"
                     connection-timeout="1000"
