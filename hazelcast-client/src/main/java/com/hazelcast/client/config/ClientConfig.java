@@ -683,10 +683,10 @@ public class ClientConfig {
     }
 
     public String getInstanceName() {
-		return instanceName;
-	}
+        return instanceName;
+    }
 
-	public void setInstanceName(String instanceName) {
-		this.instanceName = instanceName;
-	}
+    public void setInstanceName(String instanceName) {
+        this.instanceName = instanceName;
+    }
 }

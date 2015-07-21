@@ -88,7 +88,7 @@ public class ClientConfig {
 
     private String instanceName;
 
-	private ConfigPatternMatcher configPatternMatcher = new MatchingPointConfigPatternMatcher();
+    private ConfigPatternMatcher configPatternMatcher = new MatchingPointConfigPatternMatcher();
 
     private Map<String, NearCacheConfig> nearCacheConfigMap = new ConcurrentHashMap<String, NearCacheConfig>();
 
@@ -680,11 +680,10 @@ public class ClientConfig {
     }
 
     public String getInstanceName() {
-		return instanceName;
-	}
+        return instanceName;
+    }
 
-	public void setInstanceName(String instanceName) {
-		this.instanceName = instanceName;
-	}
-
+    public void setInstanceName(String instanceName) {
+        this.instanceName = instanceName;
+    }
 }

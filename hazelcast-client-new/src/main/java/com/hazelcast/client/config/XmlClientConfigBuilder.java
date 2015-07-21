@@ -226,7 +226,7 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
         } else if (LICENSE_KEY.isEqual(nodeName)) {
             clientConfig.setLicenseKey(getTextContent(node));
         } else if (INSTANCE_NAME.isEqual(nodeName)) {
-        	clientConfig.setInstanceName(getTextContent(node));
+            clientConfig.setInstanceName(getTextContent(node));
         }
     }
 
