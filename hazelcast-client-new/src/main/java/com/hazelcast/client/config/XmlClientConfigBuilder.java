@@ -50,6 +50,7 @@ import java.util.HashSet;
 import java.util.Properties;
 import java.util.Set;
 
+import static com.hazelcast.client.config.ClientXmlElements.INSTANCE_NAME;
 import static com.hazelcast.client.config.ClientXmlElements.EXECUTOR_POOL_SIZE;
 import static com.hazelcast.client.config.ClientXmlElements.GROUP;
 import static com.hazelcast.client.config.ClientXmlElements.LICENSE_KEY;
@@ -224,6 +225,8 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
             handleExecutorPoolSize(node);
         } else if (LICENSE_KEY.isEqual(nodeName)) {
             clientConfig.setLicenseKey(getTextContent(node));
+        } else if (INSTANCE_NAME.isEqual(nodeName)) {
+        	clientConfig.setInstanceName(getTextContent(node));
         }
     }
 
