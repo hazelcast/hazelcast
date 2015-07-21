@@ -30,6 +30,7 @@ public class MemberInfo implements DataSerializable {
     private Address address;
     private String uuid;
     private Map<String, Object> attributes;
+    private Map<String, Object> systemAttributes;
 
     public MemberInfo() {
     }
@@ -37,15 +38,20 @@ public class MemberInfo implements DataSerializable {
     public MemberInfo(Address address) {
         this.address = address;
     }
-
+    
     public MemberInfo(Address address, String uuid, Map<String, Object> attributes) {
+    	this(address, uuid, attributes, null);
+    }
+
+    public MemberInfo(Address address, String uuid, Map<String, Object> attributes, Map<String, Object> systemAttributes) {
         this.address = address;
         this.uuid = uuid;
         this.attributes = new HashMap<String, Object>(attributes);
+        this.systemAttributes = new HashMap<String, Object>(systemAttributes);
     }
 
     public MemberInfo(MemberImpl member) {
-        this(member.getAddress(), member.getUuid(), member.getAttributes());
+        this(member.getAddress(), member.getUuid(), member.getAttributes(), member.getSystemAttributes());
     }
 
     public Address getAddress() {
@@ -60,7 +66,11 @@ public class MemberInfo implements DataSerializable {
         return attributes;
     }
 
-    @Override
+    public Map<String, Object> getSystemAttributes() {
+		return systemAttributes;
+	}
+
+	@Override
     public void readData(ObjectDataInput in) throws IOException {
         address = new Address();
         address.readData(in);
@@ -76,6 +86,14 @@ public class MemberInfo implements DataSerializable {
             Object value = in.readObject();
             attributes.put(key, value);
         }
+        if (size > 0) {
+            systemAttributes = new HashMap<String, Object>();
+        }
+        for (int i = 0; i < size; i++) {
+            String key = in.readUTF();
+            Object value = in.readObject();
+            systemAttributes.put(key, value);
+        }
     }
 
     @Override
@@ -89,6 +107,13 @@ public class MemberInfo implements DataSerializable {
         out.writeInt(attributes == null ? 0 : attributes.size());
         if (attributes != null) {
             for (Map.Entry<String, Object> entry : attributes.entrySet()) {
+                out.writeUTF(entry.getKey());
+                out.writeObject(entry.getValue());
+            }
+        }
+        out.writeInt(systemAttributes == null ? 0 : systemAttributes.size());
+        if (systemAttributes != null) {
+            for (Map.Entry<String, Object> entry : systemAttributes.entrySet()) {
                 out.writeUTF(entry.getKey());
                 out.writeObject(entry.getValue());
             }

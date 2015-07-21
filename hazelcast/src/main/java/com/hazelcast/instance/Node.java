@@ -149,7 +149,7 @@ public class Node {
         try {
             address = addressPicker.getPublicAddress();
             final Map<String, Object> memberAttributes = findMemberAttributes(config.getMemberAttributeConfig().asReadOnly());
-            localMember = new MemberImpl(address, true, UuidUtil.createMemberUuid(address), hazelcastInstance, memberAttributes);
+            localMember = new MemberImpl(address, true, UuidUtil.createMemberUuid(address), hazelcastInstance, memberAttributes, retrieveSystemAttribute());
             loggingService.setThisMember(localMember);
             logger = loggingService.getLogger(Node.class.getName());
             hazelcastThreadGroup = new HazelcastThreadGroup(
@@ -503,7 +503,7 @@ public class Node {
 
         return new JoinRequest(Packet.VERSION, buildInfo.getBuildNumber(), address,
                 localMember.getUuid(), createConfigCheck(), credentials, clusterService.getSize(), 0,
-                config.getMemberAttributeConfig().getAttributes());
+                config.getMemberAttributeConfig().getAttributes(), retrieveSystemAttribute());
     }
 
     public ConfigCheck createConfigCheck() {
@@ -622,4 +622,18 @@ public class Node {
         }
         return attributes;
     }
+    
+    private HashMap<String, Object> retrieveSystemAttribute() {
+        HashMap<String, Object> systemAttributes = new HashMap<String, Object>();
+
+        systemAttributes.put("java.vm.version", System.getProperty("java.vm.version"));
+        systemAttributes.put("java.vm.vendor", System.getProperty("java.vm.vendor"));
+        systemAttributes.put("java.runtime.version", System.getProperty("java.runtime.version"));
+        systemAttributes.put("os.arch", System.getProperty("os.arch"));
+        systemAttributes.put("os.name", System.getProperty("os.name"));
+        systemAttributes.put("available.processors", Runtime.getRuntime().availableProcessors());
+
+        return systemAttributes;
+    }
 }
+

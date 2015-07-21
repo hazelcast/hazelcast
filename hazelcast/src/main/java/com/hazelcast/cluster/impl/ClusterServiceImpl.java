@@ -676,7 +676,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
             }
 
             MemberInfo memberInfo = new MemberInfo(target, joinRequest.getUuid(),
-                    joinRequest.getAttributes());
+                    joinRequest.getAttributes(), joinRequest.getSystemAttributes());
 
             if (!setJoins.contains(memberInfo)) {
                 try {
@@ -1068,7 +1068,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
                 MemberImpl member = currentMemberMap.get(memberInfo.getAddress());
                 if (member == null) {
                     member = createMember(memberInfo.getAddress(), memberInfo.getUuid(),
-                            thisAddress.getScopeId(), memberInfo.getAttributes());
+                            thisAddress.getScopeId(), memberInfo.getAttributes(), memberInfo.getSystemAttributes());
                 }
                 newMembers[k++] = member;
                 member.didRead();
@@ -1316,10 +1316,10 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         }
     }
 
-    protected MemberImpl createMember(Address address, String nodeUuid, String ipV6ScopeId, Map<String, Object> attributes) {
+    protected MemberImpl createMember(Address address, String nodeUuid, String ipV6ScopeId, Map<String, Object> attributes, Map<String, Object> systemAttributes) {
         address.setScopeId(ipV6ScopeId);
         return new MemberImpl(address, thisAddress.equals(address), nodeUuid,
-                (HazelcastInstanceImpl) nodeEngine.getHazelcastInstance(), attributes);
+                (HazelcastInstanceImpl) nodeEngine.getHazelcastInstance(), attributes, systemAttributes);
     }
 
     @Override

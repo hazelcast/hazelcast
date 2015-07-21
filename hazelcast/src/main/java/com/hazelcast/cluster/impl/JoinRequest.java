@@ -31,16 +31,18 @@ public class JoinRequest extends JoinMessage implements DataSerializable {
     private Credentials credentials;
     private int tryCount;
     private Map<String, Object> attributes;
+    private Map<String, Object> systemAttributes;
 
     public JoinRequest() {
     }
 
     public JoinRequest(byte packetVersion, int buildNumber, Address address, String uuid, ConfigCheck config,
-                       Credentials credentials, int memberCount, int tryCount, Map<String, Object> attributes) {
+                       Credentials credentials, int memberCount, int tryCount, Map<String, Object> attributes, Map<String, Object> systemAttributes) {
         super(packetVersion, buildNumber, address, uuid, config, memberCount);
         this.credentials = credentials;
         this.tryCount = tryCount;
         this.attributes = attributes;
+        this.systemAttributes = systemAttributes;
     }
 
     public Credentials getCredentials() {
@@ -59,7 +61,15 @@ public class JoinRequest extends JoinMessage implements DataSerializable {
         return attributes;
     }
 
-    @Override
+    public Map<String, Object> getSystemAttributes() {
+		return systemAttributes;
+	}
+
+	public void setSystemAttributes(Map<String, Object> systemAttributes) {
+		this.systemAttributes = systemAttributes;
+	}
+
+	@Override
     public void readData(ObjectDataInput in) throws IOException {
         super.readData(in);
         credentials = in.readObject();
@@ -67,12 +77,19 @@ public class JoinRequest extends JoinMessage implements DataSerializable {
             credentials.setEndpoint(getAddress().getHost());
         }
         tryCount = in.readInt();
-        int size = in.readInt();
+        int sizeAttributes = in.readInt();
         attributes = new HashMap<String, Object>();
-        for (int i = 0; i < size; i++) {
+        for (int i = 0; i < sizeAttributes; i++) {
             String key = in.readUTF();
             Object value = in.readObject();
             attributes.put(key, value);
+        }
+        int sizeSystemAttributes = in.readInt();
+        systemAttributes = new HashMap<String, Object>();
+        for (int i = 0; i < sizeSystemAttributes; i++) {
+            String key = in.readUTF();
+            Object value = in.readObject();
+            systemAttributes.put(key, value);
         }
     }
 
@@ -83,6 +100,11 @@ public class JoinRequest extends JoinMessage implements DataSerializable {
         out.writeInt(tryCount);
         out.writeInt(attributes.size());
         for (Map.Entry<String, Object> entry : attributes.entrySet()) {
+            out.writeUTF(entry.getKey());
+            out.writeObject(entry.getValue());
+        }
+        out.writeInt(systemAttributes.size());
+        for (Map.Entry<String, Object> entry : systemAttributes.entrySet()) {
             out.writeUTF(entry.getKey());
             out.writeObject(entry.getValue());
         }

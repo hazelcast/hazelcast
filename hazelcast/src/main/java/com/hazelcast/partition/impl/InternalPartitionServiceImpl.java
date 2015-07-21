@@ -509,7 +509,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         try {
             List<MemberInfo> memberInfos = new ArrayList<MemberInfo>(members.size());
             for (MemberImpl member : members) {
-                MemberInfo memberInfo = new MemberInfo(member.getAddress(), member.getUuid(), member.getAttributes());
+                MemberInfo memberInfo = new MemberInfo(member.getAddress(), member.getUuid(), member.getAttributes(), member.getSystemAttributes());
                 memberInfos.add(memberInfo);
             }
             ArrayList<MigrationInfo> migrationInfos = new ArrayList<MigrationInfo>(completedMigrations);

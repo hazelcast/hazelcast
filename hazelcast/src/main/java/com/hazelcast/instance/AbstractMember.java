@@ -37,6 +37,7 @@ public abstract class AbstractMember
         implements Member {
 
     protected final Map<String, Object> attributes = new ConcurrentHashMap<String, Object>();
+    protected final Map<String, Object> systemAttributes = new ConcurrentHashMap<String, Object>();
     protected Address address;
     protected String uuid;
 
@@ -52,11 +53,18 @@ public abstract class AbstractMember
     }
 
     protected AbstractMember(Address address, String uuid, Map<String, Object> attributes) {
+    	this(address, uuid, attributes, null);
+    }
+
+    protected AbstractMember(Address address, String uuid, Map<String, Object> attributes, Map<String, Object> systemAttributes) {
         this.address = address;
         this.uuid = uuid;
         if (attributes != null) {
             this.attributes.putAll(attributes);
         }
+        if (systemAttributes != null) {
+            this.systemAttributes.putAll(systemAttributes);
+        }        
     }
 
     protected AbstractMember(AbstractMember member) {
@@ -115,6 +123,11 @@ public abstract class AbstractMember
     @Override
     public Map<String, Object> getAttributes() {
         return Collections.unmodifiableMap(attributes);
+    }
+    
+    @Override
+    public Map<String, Object> getSystemAttributes() {
+        return Collections.unmodifiableMap(systemAttributes);
     }
 
     public void updateAttribute(MemberAttributeOperationType operationType, String key, Object value) {
