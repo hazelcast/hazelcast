@@ -9,7 +9,9 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.operationexecutor.OperationExecutor;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+import com.hazelcast.spi.impl.operationservice.impl.operations.IsStillExecutingOperation;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -20,6 +22,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 
 import static org.junit.Assert.assertEquals;
@@ -29,6 +32,42 @@ import static org.junit.Assert.assertTrue;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
 public class IsStillRunningServiceTest extends HazelcastTestSupport {
+
+    @Test
+    public void test_IsStillRunningShouldNotCauseIsStillRunningInvocation() {
+        HazelcastInstance hz = createHazelcastInstance();
+        OperationServiceImpl operationService = (OperationServiceImpl) getOperationService(hz);
+        IsStillRunningService isStillRunningService = operationService.getIsStillRunningService();
+        final OperationExecutor operationExecutor = operationService.getOperationExecutor();
+
+        final int partitionId = 0;
+        long callId = 123;
+        final CountDownLatch started = new CountDownLatch(1);
+        final Operation isStillExecutingOperation = new IsStillExecutingOperation(callId, partitionId) {
+            @Override
+            public void run() throws Exception {
+                super.run();
+                started.countDown();
+            }
+        };
+        isStillExecutingOperation.setPartitionId(partitionId);
+
+        spawn(new Runnable() {
+            @Override
+            public void run() {
+                operationExecutor.getPartitionOperationRunners()[partitionId].run(isStillExecutingOperation);
+            }
+        });
+
+        started.countDown();
+
+        PartitionInvocation invocation = new PartitionInvocation(
+                getNodeEngineImpl(hz), null, isStillExecutingOperation, partitionId, 0, 0, 0, 0, null, false);
+
+        boolean result = isStillRunningService.isOperationExecuting(invocation);
+        assertFalse(result);
+    }
+
 
     // The problem with testing a generic operation, is that it will be executed on the calling
     // thread. So to prevent this, we send the generic operation to a remote node and then we
@@ -53,7 +92,7 @@ public class IsStillRunningServiceTest extends HazelcastTestSupport {
             public void run() throws Exception {
                 int partitionId = operation.getPartitionId();
                 long callId = operation.getCallId();
-                OperationServiceImpl remoteOperationService = (OperationServiceImpl)getOperationService(remoteHz);
+                OperationServiceImpl remoteOperationService = (OperationServiceImpl) getOperationService(remoteHz);
                 IsStillRunningService isStillRunningService = remoteOperationService.getIsStillRunningService();
                 boolean isRunning = isStillRunningService.isOperationExecuting(localAddress, partitionId, callId);
                 assertTrue(isRunning);
