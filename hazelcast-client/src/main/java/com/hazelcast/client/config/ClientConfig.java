@@ -85,6 +85,8 @@ public class ClientConfig {
      */
     private int executorPoolSize = -1;
 
+    private String instanceName;
+
     private ConfigPatternMatcher configPatternMatcher = new MatchingPointConfigPatternMatcher();
 
     private Map<String, NearCacheConfig> nearCacheConfigMap = new ConcurrentHashMap<String, NearCacheConfig>();
@@ -678,5 +680,13 @@ public class ClientConfig {
             LOGGER.finest("No configuration found for " + itemName + ", using default config!");
         }
         return null;
+    }
+
+    public String getInstanceName() {
+        return instanceName;
+    }
+
+    public void setInstanceName(String instanceName) {
+        this.instanceName = instanceName;
     }
 }

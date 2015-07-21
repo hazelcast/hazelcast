@@ -24,6 +24,7 @@ import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.HazelcastClientProxy;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.OutOfMemoryHandler;
+import com.hazelcast.core.DuplicateInstanceNameException;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
 import com.hazelcast.util.EmptyStatement;
 
@@ -86,6 +87,9 @@ public final class HazelcastClient {
             client.start();
             OutOfMemoryErrorDispatcher.registerClient(client);
             proxy = new HazelcastClientProxy(client);
+            if(CLIENTS.containsKey(client.getName())) {
+               throw new DuplicateInstanceNameException("HazelcastClientInstance with name '" + client.getName() + "' already exists!");
+            }
             CLIENTS.put(client.getName(), proxy);
         } finally {
             Thread.currentThread().setContextClassLoader(tccl);

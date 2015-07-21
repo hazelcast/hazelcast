@@ -19,6 +19,8 @@
                   xmlns="http://www.hazelcast.com/schema/client-config"
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
 
+	<instance-name>MyName</instance-name>
+	
     <near-cache name="nearCacheWithEviction">
         <time-to-live-seconds>10000</time-to-live-seconds>
         <max-idle-seconds>5000</max-idle-seconds>
