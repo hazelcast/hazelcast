@@ -19,9 +19,10 @@ package com.hazelcast.hibernate;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.hibernate.entity.DummyEntity;
+import com.hazelcast.hibernate.entity.DummyEntityNonStrictRW;
+import com.hazelcast.hibernate.entity.DummyEntityReadOnly;
 import com.hazelcast.hibernate.entity.DummyProperty;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.hibernate.Session;
 import org.hibernate.Transaction;
@@ -59,8 +60,100 @@ public class LocalRegionFactoryDefaultTest extends RegionFactoryDefaultTest {
         return props;
     }
 
+
     @Test
-    public void testEntity() {
+    public void testNonStrictReadWriteEntity() {
+        Session session = null;
+        Transaction txn = null;
+
+        int entityCount = 10;
+        int childCount = 4;
+
+        insertDummyNonStrictRWEntities(entityCount, childCount);
+
+        sf.getCache().evictEntityRegions();
+        sf2.getCache().evictEntityRegions();
+
+        session = sf.openSession();
+        ArrayList<DummyEntityNonStrictRW> entities = new ArrayList<DummyEntityNonStrictRW>(entityCount);
+        for (int i=0; i<entityCount; i++) {
+            entities.add((DummyEntityNonStrictRW)session.get(DummyEntityNonStrictRW.class, (long)i));
+        }
+        assertEquals(entityCount*2, sf.getStatistics().getSecondLevelCacheMissCount());
+        assertEquals(0, sf.getStatistics().getSecondLevelCacheHitCount());
+
+        session.close();
+        sf.getStatistics().clear();
+
+        session = sf.openSession();
+        txn = session.beginTransaction();
+        DummyEntityNonStrictRW updatedEntity = entities.get(0);
+        updatedEntity.setName("updated:" + 0);
+        session.update(updatedEntity);
+        DummyEntityNonStrictRW removedEntity = entities.get(1);
+        session.delete(removedEntity);
+        txn.commit();
+        session.close();
+        sleep(1);
+
+        session = sf.openSession();
+        entities = new ArrayList<DummyEntityNonStrictRW>(entityCount);
+        for (int i=0; i<entityCount; i++) {
+            DummyEntityNonStrictRW ent = (DummyEntityNonStrictRW)session.get(DummyEntityNonStrictRW.class, (long)i);
+            entities.add(ent);
+        }
+        //missed entries: updated entry, children of updated entry, deleted entry
+        assertEquals(1 + 1 + childCount, sf.getStatistics().getSecondLevelCacheMissCount());
+        //assertEquals((entityCount - 1) * (2 + childCount), sf2.getStatistics().getSecondLevelCacheHitCount());
+
+    }
+
+    @Test
+    public void testReadOnlyEntity() {
+        Session session = null;
+        Transaction txn = null;
+
+        int entityCount = 10;
+        int childCount = 4;
+
+        insertDummyReadOnlyEntities(entityCount, childCount);
+
+        sf.getCache().evictEntityRegions();
+
+        session = sf.openSession();
+        ArrayList<DummyEntityReadOnly> entities = new ArrayList<DummyEntityReadOnly>(entityCount);
+        for (int i=0; i<entityCount; i++) {
+            entities.add((DummyEntityReadOnly)session.get(DummyEntityReadOnly.class, (long)i));
+        }
+        assertEquals(entityCount * 2, sf.getStatistics().getSecondLevelCacheMissCount());
+        assertEquals(0, sf.getStatistics().getSecondLevelCacheHitCount());
+
+
+        session.close();
+
+        session = sf.openSession();
+        txn =session.beginTransaction();
+        DummyEntityReadOnly deletedEntity = (DummyEntityReadOnly) session.get(DummyEntityReadOnly.class, (long) 2);
+        session.delete(deletedEntity);
+        txn.commit();
+
+        sf.getStatistics().clear();
+
+        session = sf.openSession();
+        entities = new ArrayList<DummyEntityReadOnly>(entityCount);
+        for (int i=0; i<entityCount; i++) {
+            DummyEntityReadOnly ent = (DummyEntityReadOnly)session.get(DummyEntityReadOnly.class, (long)i);
+            entities.add(ent);
+            session.evict(ent);
+        }
+        //missed entity: deleted entity(id = 2)
+        assertEquals(1, sf.getStatistics().getSecondLevelCacheMissCount());
+        //hit entitities: all entitties except the deleted one along with their children
+        assertEquals((entityCount-1) * (2 + childCount), sf.getStatistics().getSecondLevelCacheHitCount());
+    }
+
+    @Test
+    public void testReadWriteEntity() {
         final HazelcastInstance hz = getHazelcastInstance(sf);
         assertNotNull(hz);
         final int count = 100;

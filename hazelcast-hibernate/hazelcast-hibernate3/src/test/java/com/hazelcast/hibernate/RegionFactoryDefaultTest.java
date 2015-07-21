@@ -17,8 +17,9 @@
 package com.hazelcast.hibernate;
 
 import com.hazelcast.hibernate.entity.DummyEntity;
+import com.hazelcast.hibernate.entity.DummyEntityNonStrictRW;
+import com.hazelcast.hibernate.entity.DummyEntityReadOnly;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.hibernate.Session;
 import org.hibernate.Transaction;
@@ -28,6 +29,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.Properties;
 
@@ -43,6 +45,71 @@ public class RegionFactoryDefaultTest extends HibernateStatisticsTestSupport {
         Properties props = new Properties();
         props.setProperty(Environment.CACHE_REGION_FACTORY, HazelcastCacheRegionFactory.class.getName());
         return props;
+    }
+
+    @Test
+    public void testUpdateQueryCausesInvalidationOfEntireRegion() {
+        int entityCount = 10;
+        insertDummyEntities(entityCount);
+        Session session = null;
+
+        int res = executeUpdateQueryInTransaction(sf, "UPDATE DummyEntity set name = 'manually-updated' where id=2");
+
+        assertEquals(1, res);
+
+        sf.getStatistics().clear();
+
+        session = sf.openSession();
+        ArrayList<DummyEntity> entities = new ArrayList<DummyEntity>(entityCount);
+        for (int i=0; i<entityCount; i++) {
+            entities.add((DummyEntity)session.get(DummyEntity.class, (long)i));
+        }
+        assertEquals(entityCount * 2, sf.getStatistics().getSecondLevelCacheMissCount());
+        assertEquals(0, sf.getStatistics().getSecondLevelCacheHitCount());
+    }
+
+    @Test
+    public void testUpdateQueryOnNonStrictRWCausesInvalidationOfEntireRegion() {
+        int entityCount = 10;
+        insertDummyNonStrictRWEntities(entityCount, 0);
+        Session session = null;
+
+        int res = executeUpdateQueryInTransaction(sf, "UPDATE DummyEntityNonStrictRW set name = 'manually-updated' where id=2");
+
+        assertEquals(1, res);
+
+        sf.getStatistics().clear();
+
+        session = sf.openSession();
+        ArrayList<DummyEntityNonStrictRW> entities = new ArrayList<DummyEntityNonStrictRW>(entityCount);
+        for (int i=0; i<entityCount; i++) {
+            entities.add((DummyEntityNonStrictRW)session.get(DummyEntityNonStrictRW.class, (long)i));
+        }
+        assertEquals(entityCount * 2, sf.getStatistics().getSecondLevelCacheMissCount());
+        assertEquals(0, sf.getStatistics().getSecondLevelCacheHitCount());
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testReadOnlyUpdate() throws Exception{
+        Session session = null;
+        Transaction txn = null;
+
+        insertDummyReadOnlyEntities(1, 0);
+        sleep(1);
+
+        try {
+            session = sf.openSession();
+            DummyEntityReadOnly e = (DummyEntityReadOnly) session.get(DummyEntityReadOnly.class, (long)0);
+            txn = session.beginTransaction();
+            e.setName("updated");
+            session.update(e);
+            txn.commit();
+        } catch (Exception e) {
+            txn.rollback();
+            throw e;
+        } finally {
+            session.close();
+        }
     }
 
     @Test
