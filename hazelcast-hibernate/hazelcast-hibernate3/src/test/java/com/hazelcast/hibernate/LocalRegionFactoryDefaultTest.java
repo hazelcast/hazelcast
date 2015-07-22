@@ -60,19 +60,16 @@ public class LocalRegionFactoryDefaultTest extends RegionFactoryDefaultTest {
         return props;
     }
 
-
     @Test
     public void testNonStrictReadWriteEntity() {
         Session session = null;
         Transaction txn = null;
-
         int entityCount = 10;
         int childCount = 4;
 
         insertDummyNonStrictRWEntities(entityCount, childCount);
 
         sf.getCache().evictEntityRegions();
-        sf2.getCache().evictEntityRegions();
 
         session = sf.openSession();
         ArrayList<DummyEntityNonStrictRW> entities = new ArrayList<DummyEntityNonStrictRW>(entityCount);
@@ -94,18 +91,17 @@ public class LocalRegionFactoryDefaultTest extends RegionFactoryDefaultTest {
         session.delete(removedEntity);
         txn.commit();
         session.close();
-        sleep(1);
 
         session = sf.openSession();
         entities = new ArrayList<DummyEntityNonStrictRW>(entityCount);
         for (int i=0; i<entityCount; i++) {
             DummyEntityNonStrictRW ent = (DummyEntityNonStrictRW)session.get(DummyEntityNonStrictRW.class, (long)i);
-            entities.add(ent);
+            if(ent != null)
+                entities.add(ent);
         }
-        //missed entries: updated entry, children of updated entry, deleted entry
-        assertEquals(1 + 1 + childCount, sf.getStatistics().getSecondLevelCacheMissCount());
-        //assertEquals((entityCount - 1) * (2 + childCount), sf2.getStatistics().getSecondLevelCacheHitCount());
-
+        assertEquals(entityCount-1, entities.size());
+        assertEquals(2 + childCount, sf.getStatistics().getSecondLevelCacheMissCount());
+        assertEquals((entityCount - 1) * (1 + childCount) + childCount, sf.getStatistics().getSecondLevelCacheHitCount());
     }
 
     @Test

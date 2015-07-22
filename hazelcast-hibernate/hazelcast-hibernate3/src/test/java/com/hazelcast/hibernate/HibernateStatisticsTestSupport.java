@@ -146,101 +146,6 @@ public abstract class HibernateStatisticsTestSupport extends HibernateTestSuppor
     }
 
     @Test
-    public void testNonStrictReadWriteEntity() {
-        Session session = null;
-        Transaction txn = null;
-
-        int entityCount = 10;
-        int childCount = 4;
-
-        insertDummyNonStrictRWEntities(entityCount, childCount);
-
-        sf.getCache().evictEntityRegions();
-        sf2.getCache().evictEntityRegions();
-
-        session = sf.openSession();
-        ArrayList<DummyEntityNonStrictRW> entities = new ArrayList<DummyEntityNonStrictRW>(entityCount);
-        for (int i=0; i<entityCount; i++) {
-            entities.add((DummyEntityNonStrictRW)session.get(DummyEntityNonStrictRW.class, (long)i));
-        }
-        assertEquals(entityCount*2, sf.getStatistics().getSecondLevelCacheMissCount());
-        assertEquals(0, sf.getStatistics().getSecondLevelCacheHitCount());
-
-        session.close();
-
-        session = sf.openSession();
-        txn = session.beginTransaction();
-        DummyEntityNonStrictRW updatedEntity = entities.get(0);
-        updatedEntity.setName("updated:" + 0);
-        session.update(updatedEntity);
-        DummyEntityNonStrictRW removedEntity = entities.get(1);
-        session.delete(removedEntity);
-        txn.commit();
-        session.close();
-        sleep(1);
-
-
-        assertEquals(0, sf2.getStatistics().getSecondLevelCacheMissCount());
-        assertEquals(0, sf2.getStatistics().getSecondLevelCacheHitCount());
-
-        session = sf2.openSession();
-        entities = new ArrayList<DummyEntityNonStrictRW>(entityCount);
-        for (int i=0; i<entityCount; i++) {
-            DummyEntityNonStrictRW ent = (DummyEntityNonStrictRW)session.get(DummyEntityNonStrictRW.class, (long)i);
-            entities.add(ent);
-        }
-        //missed entries: updated entry, children of updated entry, deleted entry
-        assertEquals(1 + 1 + childCount, sf2.getStatistics().getSecondLevelCacheMissCount());
-        //assertEquals((entityCount - 1) * (2 + childCount), sf2.getStatistics().getSecondLevelCacheHitCount());
-
-    }
-
-    @Test
-    public void testReadOnlyEntity() {
-        Session session = null;
-        Transaction txn = null;
-
-        int entityCount = 10;
-        int childCount = 4;
-
-        insertDummyReadOnlyEntities(entityCount, childCount);
-
-        sf.getCache().evictEntityRegions();
-        sf2.getCache().evictEntityRegions();
-
-        session = sf.openSession();
-        ArrayList<DummyEntityReadOnly> entities = new ArrayList<DummyEntityReadOnly>(entityCount);
-        for (int i=0; i<entityCount; i++) {
-            entities.add((DummyEntityReadOnly)session.get(DummyEntityReadOnly.class, (long)i));
-        }
-        assertEquals(entityCount * 2, sf.getStatistics().getSecondLevelCacheMissCount());
-        assertEquals(0, sf.getStatistics().getSecondLevelCacheHitCount());
-
-        session.close();
-
-        session = sf.openSession();
-        txn =session.beginTransaction();
-        DummyEntityReadOnly deletedEntity = (DummyEntityReadOnly) session.get(DummyEntityReadOnly.class, (long) 2);
-        session.delete(deletedEntity);
-        txn.commit();
-
-        assertEquals(0, sf2.getStatistics().getSecondLevelCacheMissCount());
-        assertEquals(0, sf2.getStatistics().getSecondLevelCacheHitCount());
-
-        session = sf2.openSession();
-        entities = new ArrayList<DummyEntityReadOnly>(entityCount);
-        for (int i=0; i<entityCount; i++) {
-            DummyEntityReadOnly ent = (DummyEntityReadOnly)session.get(DummyEntityReadOnly.class, (long)i);
-            entities.add(ent);
-            session.evict(ent);
-        }
-        //missed entity: deleted entity(id = 2)
-        assertEquals(1, sf2.getStatistics().getSecondLevelCacheMissCount());
-        //hit entitities: all entitties except the deleted one along with their children
-        assertEquals((entityCount-1) * (2 + childCount), sf2.getStatistics().getSecondLevelCacheHitCount());
-    }
-
-    @Test
     public void testReadWriteEntity() {
         final HazelcastInstance hz = getHazelcastInstance(sf);
         assertNotNull(hz);
@@ -364,6 +269,23 @@ public abstract class HibernateStatisticsTestSupport extends HibernateTestSuppor
         }
     }
 
+    protected List<DummyEntity> executeListQueryInTransaction(SessionFactory factory) {
+        Session session = factory.openSession();
+        Transaction txn = null;
+        List<DummyEntity> res = null;
+        try {
+            txn = session.beginTransaction();
+            Query query = session.createQuery("FROM DummyEntity");
+            query.setCacheable(true);
+
+            res= query.list();
+            txn.commit();
+        } finally {
+            session.close();
+        }
+        return res;
+    }
+
     protected int executeUpdateQueryInTransaction(SessionFactory factory, String queryString) {
         Session session = factory.openSession();
         Transaction txn = null;
@@ -371,6 +293,8 @@ public abstract class HibernateStatisticsTestSupport extends HibernateTestSuppor
         try {
             txn = session.beginTransaction();
             Query query = session.createQuery(queryString);
+            query.setCacheable(true);
+            session.evict(query);
 
             res = query.executeUpdate();
             txn.commit();
