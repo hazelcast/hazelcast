@@ -82,6 +82,7 @@ public class MemberInfo implements DataSerializable {
             Object value = in.readObject();
             attributes.put(key, value);
         }
+        size = in.readInt();
         if (size > 0) {
             systemAttributes = new HashMap<String, Object>();
         }

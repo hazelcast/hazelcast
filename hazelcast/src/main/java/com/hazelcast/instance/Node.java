@@ -626,12 +626,12 @@ public class Node {
     private HashMap<String, Object> retrieveSystemAttribute() {
         HashMap<String, Object> systemAttributes = new HashMap<String, Object>();
 
-        systemAttributes.put("java.vm.version", System.getProperty("java.vm.version"));
-        systemAttributes.put("java.vm.vendor", System.getProperty("java.vm.vendor"));
-        systemAttributes.put("java.runtime.version", System.getProperty("java.runtime.version"));
-        systemAttributes.put("os.arch", System.getProperty("os.arch"));
-        systemAttributes.put("os.name", System.getProperty("os.name"));
-        systemAttributes.put("available.processors", Runtime.getRuntime().availableProcessors());
+        systemAttributes.put("java.vm.version", String.valueOf(System.getProperty("java.vm.version")));
+        systemAttributes.put("java.vm.vendor", String.valueOf(System.getProperty("java.vm.vendor")));
+        systemAttributes.put("java.runtime.version", String.valueOf(System.getProperty("java.runtime.version")));
+        systemAttributes.put("os.arch", String.valueOf(System.getProperty("os.arch")));
+        systemAttributes.put("os.name", String.valueOf(System.getProperty("os.name")));
+        systemAttributes.put("available.processors", Integer.valueOf(Runtime.getRuntime().availableProcessors()));
 
         return systemAttributes;
     }
