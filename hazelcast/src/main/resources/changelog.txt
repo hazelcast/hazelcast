@@ -7,6 +7,9 @@ Chapter 1 - Preface
 Chapter 2 - What's New in Hazelcast 3.5
 - Upgrading from 3.x added as a new section.
 
+Chapter 3 - Getting Started
+- Deploying On Amazon EC2 added as a new section to provide a sample deployment project.
+
 Chapter 4 - Overview
 - Separated from Getting Started as a new chapter.
 - Data Partitioning added as a new section explaining how the partitioning works in Hazelcast.
@@ -21,10 +24,14 @@ Chapter 6 - Distributed Data Structures
 - Example Map Eviction Scenario added as a new section.
 - MapPartitionLostListener added as a new section.
 - A note stating the change in the return type of the method loadAllKeys() added to the Initialization On Startup section.
+- Map Eviction section updated by adding the definition for the min-eviction-check-millis property.
 - Replicated Map Configuration added as a new section explaining the configuration elements.
+- Ringbuffer added as a new section.
+- Reliable Topic added as a new section.
 
 Chapter 7 - Distributed Events
 - The whole chapter improved by adding sections describing each listener.
+- Partition Lost Listener	added as a new section.
 
 Chapter 8 - Distributed Computing
 - Execution Member Selector added as a new section explaining how to select a cluster member on which an execution will be performed.
@@ -34,6 +41,7 @@ Chapter 9 - Distributed Query
 
 Chapter 11 - Transactions
 - Added a note related to `REPEATABLE_READ` isolation level.
+- Local versus Two Phase added as a new section explaining the trade offs between these two transaction types.
 
 Chapter 12 - Hazelcast JCache
 - JCache Near Cache: Added as a new section explaining the invalidation concept, eviction policies and configuration of JCache's near cache feature.
@@ -41,6 +49,7 @@ Chapter 12 - Hazelcast JCache
 Chapter 13 - Integrated Clustering
 - Added introduction paragraphs.
 - Tomcat Based Web Session Replication: Updated the Overview paragraph to include the support for Tomcat 8.
+- "transient-attributes" added as a new section.
 
 Chapter 14 - Storage
 - Sizing Practices: Added as a new section.
@@ -48,6 +57,8 @@ Chapter 14 - Storage
 Chapter 15 - Hazelcast Java Client
 - Added introduction paragraphs.
 - Separated from the formerly known "Clients" chapter to be a chapter of its own.
+- Added an important note related to the new Java Client library in the chapter introduction.
+- Hazelcast Clients Feature Comparison added as a new section.
 
 Chapter 16 - Other Client Implementations
 - C++, .NET, Memcache and REST client sections separated from the formerly known "Clients" chapter.
