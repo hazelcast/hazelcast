@@ -72,7 +72,6 @@ public interface Member extends DataSerializable, Endpoint {
      */
     Map<String, Object> getAttributes();
 
-    
     /**
      * Returns system attributes for this member.<br/>
      * 
@@ -90,7 +89,7 @@ public interface Member extends DataSerializable, Endpoint {
      * @since 3.2
      */
     Map<String, Object> getSystemAttributes();
-    
+
     /**
      * Returns the value of the specified key for this member or
      * null if value is undefined.

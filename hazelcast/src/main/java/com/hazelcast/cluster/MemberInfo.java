@@ -38,7 +38,7 @@ public class MemberInfo implements DataSerializable {
     public MemberInfo(Address address) {
         this.address = address;
     }
-    
+
     public MemberInfo(Address address, String uuid, Map<String, Object> attributes, Map<String, Object> systemAttributes) {
         this.address = address;
         this.uuid = uuid;
@@ -63,7 +63,7 @@ public class MemberInfo implements DataSerializable {
     }
 
     public Map<String, Object> getSystemAttributes() {
-		return systemAttributes;
+        return systemAttributes;
 	}
 
 	@Override

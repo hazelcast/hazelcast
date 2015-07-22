@@ -37,7 +37,8 @@ public class JoinRequest extends JoinMessage implements DataSerializable {
     }
 
     public JoinRequest(byte packetVersion, int buildNumber, Address address, String uuid, ConfigCheck config,
-                       Credentials credentials, int memberCount, int tryCount, Map<String, Object> attributes, Map<String, Object> systemAttributes) {
+                       Credentials credentials, int memberCount, int tryCount, Map<String, Object> attributes, 
+                       Map<String, Object> systemAttributes) {
         super(packetVersion, buildNumber, address, uuid, config, memberCount);
         this.credentials = credentials;
         this.tryCount = tryCount;
@@ -62,7 +63,7 @@ public class JoinRequest extends JoinMessage implements DataSerializable {
     }
 
     public Map<String, Object> getSystemAttributes() {
-		return systemAttributes;
+        return systemAttributes;
 	}
 
 	public void setSystemAttributes(Map<String, Object> systemAttributes) {

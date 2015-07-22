@@ -53,7 +53,7 @@ public abstract class AbstractMember
     }
 
     protected AbstractMember(Address address, String uuid, Map<String, Object> attributes) {
-    	this(address, uuid, attributes, null);
+        this(address, uuid, attributes, null);
     }
 
     protected AbstractMember(Address address, String uuid, Map<String, Object> attributes, Map<String, Object> systemAttributes) {
@@ -64,7 +64,7 @@ public abstract class AbstractMember
         }
         if (systemAttributes != null) {
             this.systemAttributes.putAll(systemAttributes);
-        }        
+        }
     }
 
     protected AbstractMember(AbstractMember member) {
@@ -124,7 +124,7 @@ public abstract class AbstractMember
     public Map<String, Object> getAttributes() {
         return Collections.unmodifiableMap(attributes);
     }
-    
+
     @Override
     public Map<String, Object> getSystemAttributes() {
         return Collections.unmodifiableMap(systemAttributes);
