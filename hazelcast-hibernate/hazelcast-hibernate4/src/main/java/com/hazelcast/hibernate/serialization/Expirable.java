@@ -19,7 +19,6 @@ package com.hazelcast.hibernate.serialization;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import org.hibernate.cache.spi.access.SoftLock;
 
 import java.io.IOException;
 import java.util.Comparator;
@@ -71,13 +70,13 @@ public abstract class Expirable implements IdentifiedDataSerializable {
      * @return {@code true} if the {@link Expirable} matches using the specified lock, {@code false} otherwise
      * @see ExpiryMarker#expire(long)
      */
-    public abstract boolean matches(SoftLock lock);
+    public abstract boolean matches(ExpiryMarker lock);
 
     /**
      * Mark the entry for expiration with the given timeout and marker id.
      * <p/>
      * For every invocation a corresponding call to {@link ExpiryMarker#expire(long)} should be made, provided that
-     * the returned marker {@link #matches(SoftLock) matches}
+     * the returned marker {@link #matches(ExpiryMarker)}
      *
      * @param timeout      the timestamp in which the lock times out
      * @param nextMarkerId the next lock id to use if creating a new lock

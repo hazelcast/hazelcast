@@ -26,6 +26,8 @@ import com.hazelcast.hibernate.RegionCache;
 
 
 import com.hazelcast.hibernate.serialization.Expirable;
+import com.hazelcast.hibernate.serialization.MarkerWrapper;
+import com.hazelcast.hibernate.serialization.ExpiryMarker;
 import com.hazelcast.hibernate.serialization.Value;
 import org.hibernate.cache.CacheDataDescription;
 import org.hibernate.cache.access.SoftLock;
@@ -105,8 +107,13 @@ public class IMapRegionCache implements RegionCache {
     }
 
     public boolean update(final Object key, final Object newValue, final Object newVersion, final SoftLock lock) {
-        return (Boolean) map.executeOnKey(key, new UpdateEntryProcessor(lock, newValue, newVersion,
-                nextMarkerId(), nextTimestamp(hazelcastInstance)));
+        if (lock instanceof MarkerWrapper) {
+            final ExpiryMarker unwrappedMarker = ((MarkerWrapper) lock).getMarker();
+            return (Boolean) map.executeOnKey(key, new UpdateEntryProcessor(unwrappedMarker, newValue, newVersion,
+                    nextMarkerId(), nextTimestamp(hazelcastInstance)));
+        } else {
+            return false;
+        }
     }
 
     public boolean remove(final Object key) {
@@ -115,12 +122,17 @@ public class IMapRegionCache implements RegionCache {
 
     public SoftLock tryLock(final Object key, final Object version) {
         long timeout = nextTimestamp(hazelcastInstance) + lockTimeout;
-
-        return (SoftLock) map.executeOnKey(key, new LockEntryProcessor(nextMarkerId(), timeout, version));
+        final ExpiryMarker marker = (ExpiryMarker) map.executeOnKey(key,
+                new LockEntryProcessor(nextMarkerId(), timeout, version));
+        return new MarkerWrapper(marker);
     }
 
     public void unlock(final Object key, SoftLock lock) {
-        map.executeOnKey(key, new UnlockEntryProcessor(lock, nextMarkerId(), nextTimestamp(hazelcastInstance)));
+        if (lock instanceof MarkerWrapper) {
+            final ExpiryMarker unwrappedMarker = ((MarkerWrapper) lock).getMarker();
+            map.executeOnKey(key, new UnlockEntryProcessor(unwrappedMarker, nextMarkerId(),
+                    nextTimestamp(hazelcastInstance)));
+        }
     }
 
     public boolean contains(final Object key) {

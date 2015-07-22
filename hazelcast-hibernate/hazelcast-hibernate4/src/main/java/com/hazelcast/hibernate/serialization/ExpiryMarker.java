@@ -18,9 +18,9 @@ package com.hazelcast.hibernate.serialization;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import org.hibernate.cache.spi.access.SoftLock;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.Comparator;
 
 /**
@@ -32,13 +32,12 @@ import java.util.Comparator;
  *     <li>It will always return a null value, resulting in a cache miss</li>
  *     <li>It is only replaceable when it is completely expired</li>
  *     <li>It can be marked by multiple transactions at the same time and will not expire until all transactions complete</li>
- *     <li>It should not be expired unless {@link #matches(SoftLock)} is true</li>
+ *     <li>It should not be expired unless {@link #matches(ExpiryMarker)} is true</li>
  * </ul>
  */
-public class ExpiryMarker extends Expirable implements SoftLock {
+public class ExpiryMarker extends Expirable implements Serializable {
 
     private static final long NOT_COMPLETELY_EXPIRED = -1;
-
     private boolean concurrent;
     private long expiredTimestamp;
     private String markerId;
@@ -94,13 +93,8 @@ public class ExpiryMarker extends Expirable implements SoftLock {
     }
 
     @Override
-    public boolean matches(SoftLock lock) {
-        if (lock instanceof ExpiryMarker) {
-            ExpiryMarker other = (ExpiryMarker) lock;
-            return markerId.equals(other.markerId);
-        }
-
-        return false;
+    public boolean matches(ExpiryMarker lock) {
+        return markerId.equals(lock.markerId);
     }
 
     /**
