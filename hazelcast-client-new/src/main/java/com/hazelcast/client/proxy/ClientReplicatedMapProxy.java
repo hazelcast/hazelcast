@@ -21,6 +21,7 @@ import com.hazelcast.client.impl.protocol.codec.ReplicatedMapAddEntryListenerCod
 import com.hazelcast.client.impl.protocol.codec.ReplicatedMapAddEntryListenerToKeyCodec;
 import com.hazelcast.client.impl.protocol.codec.ReplicatedMapAddEntryListenerToKeyWithPredicateCodec;
 import com.hazelcast.client.impl.protocol.codec.ReplicatedMapAddEntryListenerWithPredicateCodec;
+import com.hazelcast.client.impl.protocol.codec.ReplicatedMapAddNearCacheEntryListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.ReplicatedMapClearCodec;
 import com.hazelcast.client.impl.protocol.codec.ReplicatedMapContainsKeyCodec;
 import com.hazelcast.client.impl.protocol.codec.ReplicatedMapContainsValueCodec;
@@ -44,6 +45,7 @@ import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.ReplicatedMap;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
 
@@ -85,6 +87,7 @@ public class ClientReplicatedMapProxy<K, V>
     @Override
     protected void onDestroy() {
         if (nearCache != null) {
+            removeNearCacheInvalidationListener();
             nearCache.destroy();
         }
     }
@@ -297,6 +300,29 @@ public class ClientReplicatedMapProxy<K, V>
             ClientHeapNearCache<Object> nearCache = new ClientHeapNearCache<Object>(getName(),
                     getContext(), nearCacheConfig);
             this.nearCache = nearCache;
+            if (nearCache.isInvalidateOnChange()) {
+                addNearCacheInvalidateListener();
+            }
+        }
+    }
+
+    private void addNearCacheInvalidateListener() {
+        try {
+            ClientMessage request = ReplicatedMapAddNearCacheEntryListenerCodec.encodeRequest(getName(), false);
+            EventHandler handler = new ReplicatedMapAddNearCacheEventHandler();
+            String registrationId = getContext().getListenerService().startListening(request, null, handler);
+            nearCache.setId(registrationId);
+        } catch (Exception e) {
+            Logger.getLogger(ClientHeapNearCache.class).severe(
+                    "-----------------\n Near Cache is not initialized!!! \n-----------------", e);
+        }
+    }
+
+    private void removeNearCacheInvalidationListener() {
+        if (nearCache != null && nearCache.getId() != null) {
+            String registrationId = nearCache.getId();
+            ClientMessage request = ReplicatedMapRemoveEntryListenerCodec.encodeRequest(getName(), registrationId);
+            getContext().getListenerService().stopListening(request, registrationId);
         }
     }
 
@@ -347,6 +373,42 @@ public class ClientReplicatedMapProxy<K, V>
 
         @Override
         public void onListenerRegister() {
+        }
+    }
+
+    private void invalidateNearCache() {
+        if (nearCache != null) {
+            nearCache.clear();
+        }
+    }
+
+    private class ReplicatedMapAddNearCacheEventHandler extends ReplicatedMapAddNearCacheEntryListenerCodec.AbstractEventHandler
+            implements EventHandler<ClientMessage> {
+
+        @Override
+        public void beforeListenerRegister() {
+            invalidateNearCache();
+        }
+
+        @Override
+        public void onListenerRegister() {
+            invalidateNearCache();
+        }
+
+        @Override
+        public void handle(Data key, Data value, Data oldValue, Data mergingValue,
+                           int eventType, String uuid, int numberOfAffectedEntries) {
+            EntryEventType entryEventType = EntryEventType.getByType(eventType);
+            switch (entryEventType) {
+                case ADDED:
+                case REMOVED:
+                case UPDATED:
+                case EVICTED:
+                    nearCache.remove(toObject(key));
+                    break;
+                default:
+                    throw new IllegalArgumentException("Not a known event type " + entryEventType);
+            }
         }
     }
 }

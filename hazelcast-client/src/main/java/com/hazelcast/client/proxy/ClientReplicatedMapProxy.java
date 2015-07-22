@@ -16,8 +16,9 @@
 
 package com.hazelcast.client.proxy;
 
-import com.hazelcast.client.nearcache.ClientHeapNearCache;
+import com.hazelcast.client.impl.client.BaseClientRemoveListenerRequest;
 import com.hazelcast.client.impl.client.ClientRequest;
+import com.hazelcast.client.nearcache.ClientHeapNearCache;
 import com.hazelcast.client.nearcache.ClientNearCache;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.spi.EventHandler;
@@ -26,6 +27,7 @@ import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.ReplicatedMap;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.replicatedmap.impl.client.ClientReplicatedMapAddEntryListenerRequest;
 import com.hazelcast.replicatedmap.impl.client.ClientReplicatedMapClearRequest;
@@ -76,6 +78,7 @@ public class ClientReplicatedMapProxy<K, V>
     @Override
     protected void onDestroy() {
         if (nearCache != null) {
+            removeNearCacheInvalidationListener();
             nearCache.destroy();
         }
     }
@@ -220,6 +223,31 @@ public class ClientReplicatedMapProxy<K, V>
             ClientHeapNearCache<Object> nearCache = new ClientHeapNearCache<Object>(getName(),
                     getContext(), nearCacheConfig);
             this.nearCache = nearCache;
+            if (nearCache.isInvalidateOnChange()) {
+                addNearCacheInvalidateListener();
+            }
+        }
+    }
+
+    private void addNearCacheInvalidateListener() {
+        try {
+            ClientRequest request = new ClientReplicatedMapAddEntryListenerRequest(getName(), null, null);
+            EventHandler handler = new ReplicatedMapNearCacheEventHandler();
+
+            String registrationId = getContext().getListenerService().startListening(request, null, handler);
+            nearCache.setId(registrationId);
+        } catch (Exception e) {
+            Logger.getLogger(ClientHeapNearCache.class).severe(
+                    "-----------------\n Near Cache is not initialized!!! \n-----------------", e);
+        }
+    }
+
+    private void removeNearCacheInvalidationListener() {
+        if (nearCache != null && nearCache.getId() != null) {
+            String registrationId = nearCache.getId();
+            BaseClientRemoveListenerRequest request =
+                    new ClientReplicatedMapRemoveEntryListenerRequest(getName(), registrationId);
+            getContext().getListenerService().stopListening(request, registrationId);
         }
     }
 
@@ -268,4 +296,37 @@ public class ClientReplicatedMapProxy<K, V>
         public void onListenerRegister() {
         }
     }
+
+    private void invalidateNearCache() {
+        if (nearCache != null) {
+            nearCache.clear();
+        }
+    }
+
+    private class ReplicatedMapNearCacheEventHandler implements EventHandler<ReplicatedMapPortableEntryEvent> {
+        @Override
+        public void handle(ReplicatedMapPortableEntryEvent event) {
+            switch (event.getEventType()) {
+                case ADDED:
+                case REMOVED:
+                case UPDATED:
+                case EVICTED:
+                    nearCache.remove(event.getKey());
+                    break;
+                default:
+                    throw new IllegalArgumentException("Not a known event type " + event.getEventType());
+            }
+        }
+
+        @Override
+        public void beforeListenerRegister() {
+            invalidateNearCache();
+        }
+
+        @Override
+        public void onListenerRegister() {
+            invalidateNearCache();
+        }
+    }
+
 }
