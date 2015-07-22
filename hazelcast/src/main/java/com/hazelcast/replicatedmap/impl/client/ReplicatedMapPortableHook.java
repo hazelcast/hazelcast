@@ -56,8 +56,9 @@ public class ReplicatedMapPortableHook
     public static final int REMOVE_LISTENER = 17;
     public static final int MAP_ENTRY_EVENT = 18;
     public static final int CLEAR = 19;
+    public static final int ADD_NEAR_CACHE_ENTRY_LISTENER = 20;
 
-    private static final int LENGTH = CLEAR + 1;
+    private static final int LENGTH = ADD_NEAR_CACHE_ENTRY_LISTENER + 1;
 
     @Override
     public int getFactoryId() {
@@ -182,6 +183,13 @@ public class ReplicatedMapPortableHook
                     @Override
                     public Portable createNew(Integer arg) {
                         return new ClientReplicatedMapClearRequest();
+                    }
+                };
+
+                constructors[ADD_NEAR_CACHE_ENTRY_LISTENER] = new ConstructorFunction<Integer, Portable>() {
+                    @Override
+                    public Portable createNew(Integer arg) {
+                        return new ClientReplicatedMapAddNearCacheListenerRequest();
                     }
                 };
             }

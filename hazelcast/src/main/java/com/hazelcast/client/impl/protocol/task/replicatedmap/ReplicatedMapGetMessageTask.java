@@ -39,7 +39,7 @@ public class ReplicatedMapGetMessageTask
     protected Object call() throws Exception {
         ReplicatedMapService replicatedMapService = getService(ReplicatedMapService.SERVICE_NAME);
         ReplicatedRecordStore recordStore = replicatedMapService.getReplicatedRecordStore(parameters.name, true);
-        Object returnValue = recordStore.get(parameters.key);
+        Object returnValue = recordStore.get(serializationService.toObject(parameters.key));
         return serializationService.toData(returnValue);
     }
 
