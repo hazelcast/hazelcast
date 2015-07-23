@@ -41,10 +41,10 @@ public abstract class ClientMapUnboundReturnValuesTestSupport {
 
     @After
     public void tearDown() {
-        hazelcastFactory.terminateAll();
         if (serverMap != null) {
             serverMap.destroy();
         }
+        hazelcastFactory.terminateAll();
     }
 
 
