@@ -43,6 +43,7 @@ import com.hazelcast.client.impl.protocol.codec.ListSubCodec;
 import com.hazelcast.client.spi.ClientClusterService;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.spi.EventHandler;
+import com.hazelcast.client.spi.impl.ListenerRemoveCodec;
 import com.hazelcast.core.IList;
 import com.hazelcast.core.ItemEvent;
 import com.hazelcast.core.ItemEventType;
@@ -239,8 +240,17 @@ public class ClientListProxy<E> extends ClientProxy implements IList<E> {
     }
 
     public boolean removeItemListener(String registrationId) {
-        ClientMessage request = ListRemoveListenerCodec.encodeRequest(name, registrationId);
-        return stopListening(request, registrationId);
+        return stopListening(registrationId, new ListenerRemoveCodec() {
+            @Override
+            public ClientMessage encodeRequest(String realRegistrationId) {
+                return ListRemoveListenerCodec.encodeRequest(name, realRegistrationId);
+            }
+
+            @Override
+            public boolean decodeResponse(ClientMessage clientMessage) {
+                return ListRemoveListenerCodec.decodeResponse(clientMessage).response;
+            }
+        });
     }
 
     protected <T> T invoke(ClientMessage req) {

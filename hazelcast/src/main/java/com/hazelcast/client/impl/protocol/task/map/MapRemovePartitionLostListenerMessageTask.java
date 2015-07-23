@@ -20,6 +20,7 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapRemovePartitionLostListenerCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.instance.Node;
+import com.hazelcast.map.impl.MapService;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.partition.InternalPartitionService;
 
@@ -35,9 +36,8 @@ public class MapRemovePartitionLostListenerMessageTask
 
     @Override
     protected Object call() {
-        InternalPartitionService service = getService(InternalPartitionService.SERVICE_NAME);
-        boolean success = service.removePartitionLostListener(parameters.registrationId);
-        return MapRemovePartitionLostListenerCodec.encodeResponse(success);
+        MapService mapService = getService(MapService.SERVICE_NAME);
+        return mapService.getMapServiceContext().removePartitionLostListener(parameters.name, parameters.registrationId);
     }
 
     @Override

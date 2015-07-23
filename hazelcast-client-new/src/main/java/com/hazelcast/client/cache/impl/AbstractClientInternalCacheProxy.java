@@ -44,9 +44,11 @@ import com.hazelcast.client.impl.protocol.codec.CacheReplaceCodec;
 import com.hazelcast.client.spi.ClientClusterService;
 import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.ClientExecutionService;
+import com.hazelcast.client.spi.ClientListenerService;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.client.spi.impl.ClientInvocationFuture;
+import com.hazelcast.client.spi.impl.ListenerRemoveCodec;
 import com.hazelcast.client.util.ClientDelegatingFuture;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.NearCacheConfig;
@@ -489,9 +491,21 @@ abstract class AbstractClientInternalCacheProxy<K, V>
     }
 
     private void deregisterAllCacheEntryListener(Collection<String> listenerRegistrations) {
+        ClientListenerService listenerService = clientContext.getListenerService();
+
+        ListenerRemoveCodec listenerRemoveCodec = new ListenerRemoveCodec() {
+            @Override
+            public ClientMessage encodeRequest(String realRegistrationId) {
+                return CacheRemoveEntryListenerCodec.encodeRequest(nameWithPrefix, realRegistrationId);
+            }
+
+            @Override
+            public boolean decodeResponse(ClientMessage clientMessage) {
+                return CacheRemoveEntryListenerCodec.decodeResponse(clientMessage).response;
+            }
+        };
         for (String regId : listenerRegistrations) {
-            ClientMessage removeReq = CacheRemoveEntryListenerCodec.encodeRequest(nameWithPrefix, regId);
-            clientContext.getListenerService().stopListening(removeReq, regId);
+            listenerService.stopListening(regId, listenerRemoveCodec);
         }
     }
 
@@ -742,25 +756,30 @@ abstract class AbstractClientInternalCacheProxy<K, V>
 
     private void removeInvalidationListener(Member member, boolean removeFromMemberAlso) {
         String registrationId = nearCacheInvalidationListeners.remove(member);
-        if (registrationId != null) {
-            try {
-                Address address = ((AbstractMember) member).getAddress();
-                if (removeFromMemberAlso) {
-                    ClientMessage request = CacheRemoveInvalidationListenerCodec.encodeRequest(nameWithPrefix, registrationId);
-                    HazelcastClientInstanceImpl clientInstance = (HazelcastClientInstanceImpl) clientContext
-                            .getHazelcastInstance();
-                    ClientInvocation invocation = new ClientInvocation(clientInstance, request, address);
-                    Future<ClientMessage> future = invocation.invoke();
-                    boolean result = CacheRemoveInvalidationListenerCodec.decodeResponse(future.get()).response;
-                    if (!result) {
-                        logger.warning("Invalidation listener couldn't be removed on member " + address);
-                    }
-                }
-                clientContext.getListenerService().deRegisterListener(registrationId);
-            } catch (Exception e) {
-                throw ExceptionUtil.rethrow(e);
-            }
+        if (registrationId == null) {
+            return;
         }
+
+        Address address = ((AbstractMember) member).getAddress();
+        if (!removeFromMemberAlso) {
+            return;
+        }
+        boolean result = clientContext.getListenerService().stopListening(registrationId, new ListenerRemoveCodec() {
+            @Override
+            public ClientMessage encodeRequest(String realRegistrationId) {
+                return CacheRemoveInvalidationListenerCodec.encodeRequest(name, realRegistrationId);
+            }
+
+            @Override
+            public boolean decodeResponse(ClientMessage clientMessage) {
+                return CacheRemoveInvalidationListenerCodec.decodeResponse(clientMessage).response;
+            }
+        });
+
+        if (!result) {
+            logger.warning("Invalidation listener couldn't be removed on member " + address);
+        }
+
     }
 
 }

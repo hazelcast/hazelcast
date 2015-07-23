@@ -14,21 +14,13 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.spi;
+package com.hazelcast.client.spi.impl;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.spi.impl.ListenerRemoveCodec;
 
-/**
- * Client service to add/remove remote listeners.
- */
-public interface ClientListenerService {
+public interface ListenerRemoveCodec {
 
-    String startListening(ClientMessage clientMessage, Object key, EventHandler handler);
+    ClientMessage encodeRequest(String realRegistrationId);
 
-    boolean stopListening(String registrationId, ListenerRemoveCodec listenerRemoveCodec);
-
-    void registerListener(String uuid, Integer callId);
-
-    String deRegisterListener(String uuid);
+    boolean decodeResponse(ClientMessage clientMessage);
 }

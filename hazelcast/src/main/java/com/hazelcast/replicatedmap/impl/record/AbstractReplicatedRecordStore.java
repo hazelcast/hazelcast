@@ -302,7 +302,8 @@ public abstract class AbstractReplicatedRecordStore<K, V>
     @Override
     public String addEntryListener(EntryListener listener, Object key) {
         isNotNull(listener, "listener");
-        EventFilter eventFilter = new ReplicatedEntryEventFilter(marshallKey(key));
+        Object dataKey = marshallKey(key);
+        EventFilter eventFilter = new ReplicatedEntryEventFilter(dataKey);
         mapStats.incrementOtherOperations();
         return replicatedMapService.addEventListener(listener, eventFilter, getName());
     }
