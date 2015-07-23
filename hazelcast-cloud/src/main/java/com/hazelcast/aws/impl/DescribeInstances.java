@@ -39,7 +39,7 @@ public class DescribeInstances {
     private String endpoint;
     private Map<String, String> attributes = new HashMap<String, String>();
 
-    public DescribeInstances(AwsConfig awsConfig,String endpoint) {
+    public DescribeInstances(AwsConfig awsConfig, String endpoint) {
         if (awsConfig == null) {
             throw new IllegalArgumentException("AwsConfig is required!");
         }
@@ -49,7 +49,7 @@ public class DescribeInstances {
         this.awsConfig = awsConfig;
         this.endpoint = endpoint;
 
-        rs = new EC2RequestSigner(awsConfig, timeStamp,endpoint);
+        rs = new EC2RequestSigner(awsConfig, timeStamp, endpoint);
         attributes.put("Action", this.getClass().getSimpleName());
         attributes.put("Version", DOC_VERSION);
         attributes.put("X-Amz-Algorithm", SIGNATURE_METHOD_V4);

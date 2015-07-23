@@ -49,7 +49,7 @@ public class EC2RequestSigner {
     private String endpoint;
     private byte[] signingKey;
 
-    public EC2RequestSigner(AwsConfig config, final String timeStamp,String endpoint) {
+    public EC2RequestSigner(AwsConfig config, final String timeStamp, String endpoint) {
         if (config == null) {
             throw new IllegalArgumentException("config cannot be null");
         }
