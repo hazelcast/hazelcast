@@ -63,6 +63,7 @@ import com.hazelcast.client.impl.protocol.codec.MapRemoveCodec;
 import com.hazelcast.client.impl.protocol.codec.MapRemoveEntryListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.MapRemoveIfSameCodec;
 import com.hazelcast.client.impl.protocol.codec.MapRemoveInterceptorCodec;
+import com.hazelcast.client.impl.protocol.codec.MapRemovePartitionLostListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.MapReplaceCodec;
 import com.hazelcast.client.impl.protocol.codec.MapReplaceIfSameCodec;
 import com.hazelcast.client.impl.protocol.codec.MapSetCodec;
@@ -77,10 +78,12 @@ import com.hazelcast.client.impl.protocol.codec.MapValuesWithPagingPredicateCode
 import com.hazelcast.client.impl.protocol.codec.MapValuesWithPredicateCodec;
 import com.hazelcast.client.nearcache.ClientHeapNearCache;
 import com.hazelcast.client.nearcache.ClientNearCache;
+import com.hazelcast.client.spi.ClientListenerService;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.client.spi.impl.ClientInvocationFuture;
+import com.hazelcast.client.spi.impl.ListenerRemoveCodec;
 import com.hazelcast.client.util.ClientDelegatingFuture;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.EntryEvent;
@@ -622,9 +625,18 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
     }
 
     @Override
-    public boolean removeEntryListener(String id) {
-        ClientMessage request = MapRemoveEntryListenerCodec.encodeRequest(name, id);
-        return stopListening(request, id);
+    public boolean removeEntryListener(String registrationId) {
+        return stopListening(registrationId, new ListenerRemoveCodec() {
+            @Override
+            public ClientMessage encodeRequest(String realRegistrationId) {
+                return MapRemoveEntryListenerCodec.encodeRequest(name, realRegistrationId);
+            }
+
+            @Override
+            public boolean decodeResponse(ClientMessage clientMessage) {
+                return MapRemoveEntryListenerCodec.decodeResponse(clientMessage).response;
+            }
+        });
     }
 
     @Override
@@ -635,9 +647,18 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
     }
 
     @Override
-    public boolean removePartitionLostListener(String id) {
-        ClientMessage request = MapRemoveEntryListenerCodec.encodeRequest(name, id);
-        return stopListening(request, id);
+    public boolean removePartitionLostListener(String registrationId) {
+        return stopListening(registrationId, new ListenerRemoveCodec() {
+            @Override
+            public ClientMessage encodeRequest(String realRegistrationId) {
+                return MapRemovePartitionLostListenerCodec.encodeRequest(name, realRegistrationId);
+            }
+
+            @Override
+            public boolean decodeResponse(ClientMessage clientMessage) {
+                return MapRemovePartitionLostListenerCodec.decodeResponse(clientMessage).response;
+            }
+        });
     }
 
     @Override
@@ -1243,8 +1264,20 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
     private void removeNearCacheInvalidationListener() {
         if (nearCache != null && nearCache.getId() != null) {
             String registrationId = nearCache.getId();
-            ClientMessage request = MapRemoveEntryListenerCodec.encodeRequest(name, registrationId);
-            getContext().getListenerService().stopListening(request, registrationId);
+
+            ClientListenerService listenerService = getContext().getListenerService();
+
+            listenerService.stopListening(registrationId, new ListenerRemoveCodec() {
+                @Override
+                public ClientMessage encodeRequest(String realRegistrationId) {
+                    return MapRemoveEntryListenerCodec.encodeRequest(name, realRegistrationId);
+                }
+
+                @Override
+                public boolean decodeResponse(ClientMessage clientMessage) {
+                    return MapRemoveEntryListenerCodec.decodeResponse(clientMessage).response;
+                }
+            });
         }
     }
 

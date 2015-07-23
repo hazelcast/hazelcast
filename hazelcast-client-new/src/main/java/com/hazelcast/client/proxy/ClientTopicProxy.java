@@ -23,6 +23,7 @@ import com.hazelcast.client.impl.protocol.codec.TopicRemoveMessageListenerCodec;
 import com.hazelcast.client.spi.ClientClusterService;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.spi.EventHandler;
+import com.hazelcast.client.spi.impl.ListenerRemoveCodec;
 import com.hazelcast.core.ITopic;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.Message;
@@ -59,8 +60,17 @@ public class ClientTopicProxy<E> extends ClientProxy implements ITopic<E> {
 
     @Override
     public boolean removeMessageListener(String registrationId) {
-        ClientMessage request = TopicRemoveMessageListenerCodec.encodeRequest(name, registrationId);
-        return stopListening(request, registrationId);
+        return stopListening(registrationId, new ListenerRemoveCodec() {
+            @Override
+            public ClientMessage encodeRequest(String realRegistrationId) {
+                return TopicRemoveMessageListenerCodec.encodeRequest(name, realRegistrationId);
+            }
+
+            @Override
+            public boolean decodeResponse(ClientMessage clientMessage) {
+                return TopicRemoveMessageListenerCodec.decodeResponse(clientMessage).response;
+            }
+        });
     }
 
     @Override
