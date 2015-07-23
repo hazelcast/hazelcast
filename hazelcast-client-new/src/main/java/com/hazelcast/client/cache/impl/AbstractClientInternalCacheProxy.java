@@ -25,6 +25,7 @@ import com.hazelcast.cache.impl.nearcache.NearCacheContext;
 import com.hazelcast.cache.impl.nearcache.NearCacheExecutor;
 import com.hazelcast.cache.impl.nearcache.NearCacheManager;
 import com.hazelcast.cache.impl.operation.MutableOperation;
+import com.hazelcast.client.impl.ClientMessageDecoder;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CacheAddEntryListenerCodec;
@@ -98,6 +99,48 @@ abstract class AbstractClientInternalCacheProxy<K, V>
     private static final long MAX_COMPLETION_LATCH_WAIT_TIME = TimeUnit.MINUTES.toMillis(5);
     private static final long COMPLETION_LATCH_WAIT_TIME_STEP = TimeUnit.SECONDS.toMillis(1);
 
+    private static final ClientMessageDecoder getAndRemoveResponseDecoder = new ClientMessageDecoder() {
+        @Override
+        public <T> T decodeClientMessage(ClientMessage clientMessage) {
+            return (T) CacheGetAndRemoveCodec.decodeResponse(clientMessage).response;
+        }
+    };
+
+    private static final ClientMessageDecoder removeResponseDecoder = new ClientMessageDecoder() {
+        @Override
+        public <T> T decodeClientMessage(ClientMessage clientMessage) {
+            return (T) CacheRemoveCodec.decodeResponse(clientMessage).response;
+        }
+    };
+
+    private static final ClientMessageDecoder replaceResponseDecoder = new ClientMessageDecoder() {
+        @Override
+        public <T> T decodeClientMessage(ClientMessage clientMessage) {
+            return (T) CacheReplaceCodec.decodeResponse(clientMessage).response;
+        }
+    };
+
+    private static final ClientMessageDecoder getAndReplaceResponseDecoder = new ClientMessageDecoder() {
+        @Override
+        public <T> T decodeClientMessage(ClientMessage clientMessage) {
+            return (T) CacheGetAndReplaceCodec.decodeResponse(clientMessage).response;
+        }
+    };
+
+    private static final ClientMessageDecoder putResponseDecoder = new ClientMessageDecoder() {
+        @Override
+        public <T> T decodeClientMessage(ClientMessage clientMessage) {
+            return (T) CachePutCodec.decodeResponse(clientMessage).response;
+        }
+    };
+
+    private static final ClientMessageDecoder putIfAbsentResponseDecoder = new ClientMessageDecoder() {
+        @Override
+        public <T> T decodeClientMessage(ClientMessage clientMessage) {
+            return (T) Boolean.valueOf(CachePutIfAbsentCodec.decodeResponse(clientMessage).response);
+        }
+    };
+
     protected final ILogger logger = Logger.getLogger(getClass());
 
     protected final HazelcastClientCacheManager cacheManager;
@@ -132,8 +175,8 @@ abstract class AbstractClientInternalCacheProxy<K, V>
             cacheOnUpdate = nearCacheConfig.getLocalUpdatePolicy() == NearCacheConfig.LocalUpdatePolicy.CACHE;
             NearCacheContext nearCacheContext =
                     new NearCacheContext(nearCacheManager,
-                                         clientContext.getSerializationService(),
-                                         createNearCacheExecutor(clientContext.getExecutionService()));
+                            clientContext.getSerializationService(),
+                            createNearCacheExecutor(clientContext.getExecutionService()));
             nearCache = nearCacheManager.getOrCreateNearCache(nameWithPrefix, nearCacheConfig, nearCacheContext);
             registerInvalidationListener();
         }
@@ -226,7 +269,8 @@ abstract class AbstractClientInternalCacheProxy<K, V>
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }
-        return new ClientDelegatingFuture<T>(future, clientContext.getSerializationService());
+        return new ClientDelegatingFuture<T>(future, clientContext.getSerializationService(),
+                getAndRemoveResponseDecoder);
     }
 
     protected <T> ICompletableFuture<T> removeAsyncInternal(K key, V oldValue, boolean hasOldValue,
@@ -251,11 +295,12 @@ abstract class AbstractClientInternalCacheProxy<K, V>
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }
-        return new ClientDelegatingFuture<T>(future, clientContext.getSerializationService());
+        return new ClientDelegatingFuture<T>(future, clientContext.getSerializationService(),
+                removeResponseDecoder);
     }
 
     protected <T> ICompletableFuture<T> replaceAsyncInternal(K key, V oldValue, V newValue, ExpiryPolicy expiryPolicy,
-                                                             boolean hasOldValue, boolean isGet, boolean withCompletionEvent) {
+                                                             boolean hasOldValue, boolean withCompletionEvent) {
         ensureOpen();
         if (hasOldValue) {
             validateNotNull(key, oldValue, newValue);
@@ -270,14 +315,8 @@ abstract class AbstractClientInternalCacheProxy<K, V>
         final Data newValueData = toData(newValue);
         final Data expiryPolicyData = toData(expiryPolicy);
         final int completionId = withCompletionEvent ? nextCompletionId() : -1;
-        ClientMessage request;
-        if (isGet) {
-            request = CacheGetAndReplaceCodec.encodeRequest(nameWithPrefix, keyData, newValueData,
-                    expiryPolicyData, completionId);
-        } else {
-            request = CacheReplaceCodec.encodeRequest(nameWithPrefix, keyData, oldValueData, newValueData,
-                    expiryPolicyData, completionId);
-        }
+        ClientMessage request = CacheReplaceCodec.encodeRequest(nameWithPrefix, keyData, oldValueData, newValueData,
+                expiryPolicyData, completionId);
         ClientInvocationFuture future;
         try {
             future = invoke(request, keyData, completionId);
@@ -285,7 +324,38 @@ abstract class AbstractClientInternalCacheProxy<K, V>
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }
-        return new ClientDelegatingFuture<T>(future, clientContext.getSerializationService());
+
+        return new ClientDelegatingFuture<T>(future, clientContext.getSerializationService(),
+                replaceResponseDecoder);
+    }
+
+    protected <T> ICompletableFuture<T> replaceAndGetAsyncInternal(K key, V oldValue, V newValue, ExpiryPolicy expiryPolicy,
+                                                                   boolean hasOldValue, boolean withCompletionEvent) {
+        ensureOpen();
+        if (hasOldValue) {
+            validateNotNull(key, oldValue, newValue);
+            CacheProxyUtil.validateConfiguredTypes(cacheConfig, key, oldValue, newValue);
+        } else {
+            validateNotNull(key, newValue);
+            CacheProxyUtil.validateConfiguredTypes(cacheConfig, key, newValue);
+        }
+
+        final Data keyData = toData(key);
+        final Data newValueData = toData(newValue);
+        final Data expiryPolicyData = toData(expiryPolicy);
+        final int completionId = withCompletionEvent ? nextCompletionId() : -1;
+        ClientMessage request = CacheGetAndReplaceCodec.encodeRequest(nameWithPrefix, keyData, newValueData,
+                expiryPolicyData, completionId);
+        ClientInvocationFuture future;
+        try {
+            future = invoke(request, keyData, completionId);
+            invalidateNearCache(keyData);
+        } catch (Exception e) {
+            throw ExceptionUtil.rethrow(e);
+        }
+
+        return new ClientDelegatingFuture<T>(future, clientContext.getSerializationService(),
+                getAndReplaceResponseDecoder);
     }
 
     protected <T> ICompletableFuture<T> putAsyncInternal(K key, V value, ExpiryPolicy expiryPolicy, boolean isGet,
@@ -310,7 +380,8 @@ abstract class AbstractClientInternalCacheProxy<K, V>
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }
-        return new ClientDelegatingFuture<T>(future, clientContext.getSerializationService());
+
+        return new ClientDelegatingFuture<T>(future, clientContext.getSerializationService(), putResponseDecoder);
     }
 
     protected ICompletableFuture<Boolean> putIfAbsentAsyncInternal(K key, V value, ExpiryPolicy expiryPolicy,
@@ -335,7 +406,8 @@ abstract class AbstractClientInternalCacheProxy<K, V>
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }
-        return new ClientDelegatingFuture<Boolean>(future, clientContext.getSerializationService());
+        return new ClientDelegatingFuture<Boolean>(future, clientContext.getSerializationService(),
+                putIfAbsentResponseDecoder);
     }
 
     protected void removeAllKeysInternal(Set<? extends K> keys) {

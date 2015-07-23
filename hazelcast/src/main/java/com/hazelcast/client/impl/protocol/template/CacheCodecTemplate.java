@@ -84,7 +84,7 @@ public interface CacheCodecTemplate {
     @Request(id = 18, retryable = true, response = ResponseMessageConst.DATA)
     void managementConfig(String name, boolean isStat, boolean enabled, String hostname, int port);
 
-    @Request(id = 19, retryable = false, response = ResponseMessageConst.DATA)
+    @Request(id = 19, retryable = false, response = ResponseMessageConst.BOOLEAN)
     void putIfAbsent(String name, Data key, Data value, @Nullable Data expiryPolicy, int completionId);
 
     @Request(id = 20, retryable = false, response = ResponseMessageConst.DATA)

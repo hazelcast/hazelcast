@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.proxy;
 
+import com.hazelcast.client.impl.ClientMessageDecoder;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapAddEntryListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.MapAddEntryListenerToKeyCodec;
@@ -152,6 +153,34 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
     private final AtomicBoolean nearCacheInitialized = new AtomicBoolean();
     private volatile ClientHeapNearCache<Data> nearCache;
 
+    private static final ClientMessageDecoder getAsyncResponseDecoder = new ClientMessageDecoder() {
+        @Override
+        public <T> T decodeClientMessage(ClientMessage clientMessage) {
+            return (T) MapGetAsyncCodec.decodeResponse(clientMessage).response;
+        }
+    };
+
+    private static final ClientMessageDecoder putAsyncResponseDecoder = new ClientMessageDecoder() {
+        @Override
+        public <T> T decodeClientMessage(ClientMessage clientMessage) {
+            return (T) MapPutAsyncCodec.decodeResponse(clientMessage).response;
+        }
+    };
+
+    private static final ClientMessageDecoder removeAsyncResponseDecoder = new ClientMessageDecoder() {
+        @Override
+        public <T> T decodeClientMessage(ClientMessage clientMessage) {
+            return (T) MapRemoveAsyncCodec.decodeResponse(clientMessage).response;
+        }
+    };
+
+    private static final ClientMessageDecoder submitToKeyResponseDecoder = new ClientMessageDecoder() {
+        @Override
+        public <T> T decodeClientMessage(ClientMessage clientMessage) {
+            return (T) MapSubmitToKeyCodec.decodeResponse(clientMessage).response;
+        }
+    };
+
     public ClientMapProxy(String serviceName, String name) {
         super(serviceName, name);
         this.name = name;
@@ -284,7 +313,8 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
         final ClientMessage request = MapGetAsyncCodec.encodeRequest(name, keyData, ThreadUtil.getThreadId());
         try {
             ClientInvocationFuture future = invokeOnKeyOwner(request, keyData);
-            ClientDelegatingFuture<V> delegatingFuture = new ClientDelegatingFuture<V>(future, serializationService);
+            ClientDelegatingFuture<V> delegatingFuture =
+                    new ClientDelegatingFuture<V>(future, serializationService, getAsyncResponseDecoder);
             if (nearCache != null) {
                 delegatingFuture.andThenInternal(new ExecutionCallback<Data>() {
                     @Override
@@ -329,7 +359,8 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
                 valueData, ThreadUtil.getThreadId(), getTimeInMillis(ttl, timeunit));
         try {
             final ClientInvocationFuture future = invokeOnKeyOwner(request, keyData);
-            return new ClientDelegatingFuture<V>(future, getContext().getSerializationService());
+            return new ClientDelegatingFuture<V>(future, getContext().getSerializationService()
+                    , putAsyncResponseDecoder);
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }
@@ -343,7 +374,8 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
         ClientMessage request = MapRemoveAsyncCodec.encodeRequest(name, keyData, ThreadUtil.getThreadId());
         try {
             final ClientInvocationFuture future = invokeOnKeyOwner(request, keyData);
-            return new ClientDelegatingFuture<V>(future, getContext().getSerializationService());
+            return new ClientDelegatingFuture<V>(future, getContext().getSerializationService(),
+                    removeAsyncResponseDecoder);
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }
@@ -995,7 +1027,8 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
 
         try {
             final ClientInvocationFuture future = invokeOnKeyOwner(request, keyData);
-            return new ClientDelegatingFuture(future, getContext().getSerializationService());
+            return new ClientDelegatingFuture(future, getContext().getSerializationService()
+                    , submitToKeyResponseDecoder);
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }
