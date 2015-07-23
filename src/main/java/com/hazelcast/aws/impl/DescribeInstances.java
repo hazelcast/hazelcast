@@ -36,9 +36,10 @@ public class DescribeInstances {
     String timeStamp = getFormattedTimestamp();
     private EC2RequestSigner rs;
     private AwsConfig awsConfig;
+    private String endpoint;
     private Map<String, String> attributes = new HashMap<String, String>();
 
-    public DescribeInstances(AwsConfig awsConfig) {
+    public DescribeInstances(AwsConfig awsConfig,String endpoint) {
         if (awsConfig == null) {
             throw new IllegalArgumentException("AwsConfig is required!");
         }
@@ -46,8 +47,9 @@ public class DescribeInstances {
             throw new IllegalArgumentException("AWS access key is required!");
         }
         this.awsConfig = awsConfig;
+        this.endpoint = endpoint;
 
-        rs = new EC2RequestSigner(awsConfig, timeStamp);
+        rs = new EC2RequestSigner(awsConfig, timeStamp,endpoint);
         attributes.put("Action", this.getClass().getSimpleName());
         attributes.put("Version", DOC_VERSION);
         attributes.put("X-Amz-Algorithm", SIGNATURE_METHOD_V4);
@@ -64,7 +66,6 @@ public class DescribeInstances {
     }
 
     public Map<String, String> execute() throws Exception {
-        final String endpoint = String.format(awsConfig.getHostHeader());
         final String signature = rs.sign("ec2", attributes);
         attributes.put("X-Amz-Signature", signature);
         InputStream stream = callService(endpoint, signature);
