@@ -44,7 +44,7 @@ public class ReliableTopicStressTest extends HazelcastTestSupport {
         config.addTopicConfig(topicConfig);
 
         HazelcastInstance hz = createHazelcastInstance(config);
-        topic = hz.getTopic(topicConfig.getName());
+        topic = hz.getReliableTopic(topicConfig.getName());
     }
 
     @Test
