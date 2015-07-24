@@ -55,7 +55,7 @@ public class EC2RequestSignerTest {
         awsConfig.setAccessKey(TEST_ACCESS_KEY);
         awsConfig.setSecretKey(TEST_SECRET_KEY);
 
-        DescribeInstances di = new DescribeInstances(awsConfig);
+        DescribeInstances di = new DescribeInstances(awsConfig,TEST_HOST);
         // Override the attributes map. We need to change values. Not pretty, but
         // no real alternative, and in this case : testing only
         try {
@@ -71,7 +71,7 @@ public class EC2RequestSignerTest {
         }
 
         // Override private method
-        EC2RequestSigner rs = new EC2RequestSigner(awsConfig, TEST_REQUEST_DATE);
+        EC2RequestSigner rs = new EC2RequestSigner(awsConfig, TEST_REQUEST_DATE,TEST_HOST);
         byte[] derivedKey = null;
         try {
             Field field = null;
@@ -98,7 +98,7 @@ public class EC2RequestSignerTest {
         awsConfig.setAccessKey(TEST_ACCESS_KEY);
         awsConfig.setSecretKey(TEST_SECRET_KEY);
 
-        DescribeInstances di = new DescribeInstances(awsConfig);
+        DescribeInstances di = new DescribeInstances(awsConfig,TEST_HOST);
 
         Field timeField = di.getClass().getDeclaredField("timeStamp");
         timeField.setAccessible(true);
@@ -112,7 +112,7 @@ public class EC2RequestSignerTest {
         attributes.put("X-Amz-Date", TEST_REQUEST_DATE);
 
 
-        EC2RequestSigner rs = new EC2RequestSigner(awsConfig, TEST_REQUEST_DATE);
+        EC2RequestSigner rs = new EC2RequestSigner(awsConfig, TEST_REQUEST_DATE,TEST_HOST);
         attributes.put("X-Amz-Credential",rs.createFormattedCredential());
         String signature = rs.sign(TEST_SERVICE, attributes);
 

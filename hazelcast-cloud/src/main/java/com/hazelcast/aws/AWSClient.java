@@ -39,15 +39,18 @@ public class AWSClient {
         }
         this.awsConfig = awsConfig;
         endpoint = awsConfig.getHostHeader();
+        if (awsConfig.getRegion() != null && awsConfig.getRegion().length() > 0) {
+            setEndpoint("ec2." + awsConfig.getRegion() + ".amazonaws.com");
+        }
     }
 
     public Collection<String> getPrivateIpAddresses() throws Exception {
-        final Map<String, String> result = new DescribeInstances(awsConfig).execute();
+        final Map<String, String> result = new DescribeInstances(awsConfig, endpoint).execute();
         return result.keySet();
     }
 
     public Map<String, String> getAddresses() throws Exception {
-        return new DescribeInstances(awsConfig).execute();
+        return new DescribeInstances(awsConfig, endpoint).execute();
     }
 
     public void setEndpoint(String s) {

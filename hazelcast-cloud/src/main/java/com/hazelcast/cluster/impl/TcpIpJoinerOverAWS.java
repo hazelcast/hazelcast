@@ -17,7 +17,6 @@
 package com.hazelcast.cluster.impl;
 
 import com.hazelcast.aws.AWSClient;
-import com.hazelcast.cluster.impl.TcpIpJoiner;
 import com.hazelcast.config.AwsConfig;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
@@ -35,9 +34,6 @@ public class TcpIpJoinerOverAWS extends TcpIpJoiner {
         logger = node.getLogger(getClass());
         AwsConfig awsConfig = node.getConfig().getNetworkConfig().getJoin().getAwsConfig();
         aws = new AWSClient(awsConfig);
-        if (awsConfig.getRegion() != null && awsConfig.getRegion().length() > 0) {
-            aws.setEndpoint("ec2." + awsConfig.getRegion() + ".amazonaws.com");
-        }
     }
 
     @Override
