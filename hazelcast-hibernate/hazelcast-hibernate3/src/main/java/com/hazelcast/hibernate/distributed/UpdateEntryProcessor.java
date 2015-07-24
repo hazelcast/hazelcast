@@ -22,7 +22,6 @@ import com.hazelcast.hibernate.serialization.HibernateDataSerializerHook;
 import com.hazelcast.hibernate.serialization.Value;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import org.hibernate.cache.access.SoftLock;
 
 
 import java.io.IOException;
@@ -34,7 +33,7 @@ import java.util.Map;
  */
 public class UpdateEntryProcessor extends AbstractRegionCacheEntryProcessor {
 
-    private SoftLock lock;
+    private ExpiryMarker lock;
     private Object newValue;
     private Object newVersion;
     private String nextMarkerId;
@@ -43,7 +42,7 @@ public class UpdateEntryProcessor extends AbstractRegionCacheEntryProcessor {
     public UpdateEntryProcessor() {
     }
 
-    public UpdateEntryProcessor(SoftLock lock, Object newValue, Object newVersion, String nextMarkerId, long timestamp) {
+    public UpdateEntryProcessor(ExpiryMarker lock, Object newValue, Object newVersion, String nextMarkerId, long timestamp) {
         this.lock = lock;
         this.nextMarkerId = nextMarkerId;
         this.newValue = newValue;

@@ -25,6 +25,7 @@ import com.hazelcast.hibernate.CacheEnvironment;
 import com.hazelcast.hibernate.HazelcastTimestamper;
 import com.hazelcast.hibernate.RegionCache;
 import com.hazelcast.hibernate.serialization.Expirable;
+import com.hazelcast.hibernate.serialization.MarkerWrapper;
 import com.hazelcast.hibernate.serialization.ExpiryMarker;
 import com.hazelcast.hibernate.serialization.Value;
 import com.hazelcast.logging.ILogger;
@@ -139,7 +140,7 @@ public class LocalRegionCache implements RegionCache {
     }
 
     public boolean update(final Object key, final Object newValue, final Object newVersion, final SoftLock softLock) {
-        boolean updated;
+        boolean updated = false;
         while (true) {
             Expirable original = cache.get(key);
             Expirable revised;
@@ -152,31 +153,36 @@ public class LocalRegionCache implements RegionCache {
                     break;
                 }
             } else {
-                if (original.matches(softLock)) {
-                    // The lock matches
-                    final ExpiryMarker marker = (ExpiryMarker) original;
-                    if (marker.isConcurrent()) {
-                        revised = marker.expire(timestamp);
+                if (softLock instanceof MarkerWrapper) {
+                    final ExpiryMarker unwrappedMarker = ((MarkerWrapper) softLock).getMarker();
+                    if (original.matches(unwrappedMarker)) {
+                        // The lock matches
+                        final ExpiryMarker marker = (ExpiryMarker) original;
+                        if (marker.isConcurrent()) {
+                            revised = marker.expire(timestamp);
+                            updated = false;
+                        } else {
+                            revised = new Value(newVersion, timestamp, newValue);
+                            updated = true;
+                        }
+                        if (cache.replace(key, original, revised)) {
+                            break;
+                        }
+                    } else if (original.getValue() == null) {
+                        // It's marked for expiration, leave it as is
                         updated = false;
+                        break;
                     } else {
-                        revised = new Value(newVersion, timestamp, newValue);
-                        updated = true;
+                        // It's a value. Instead of removing it, expire it to prevent stale from in progress
+                        // transactions being put in the cache
+                        revised = new ExpiryMarker(newVersion, timestamp, nextMarkerId()).expire(timestamp);
+                        updated = false;
+                        if (cache.replace(key, original, revised)) {
+                            break;
+                        }
                     }
-                    if (cache.replace(key, original, revised)) {
-                        break;
-                    }
-                } else if (original.getValue() == null) {
-                    // It's marked for expiration, leave it as is
-                    updated = false;
-                    break;
                 } else {
-                    // It's a value. Instead of removing it, expire it to prevent stale from in progress
-                    // transactions being put in the cache
-                    revised = new ExpiryMarker(newVersion, timestamp, nextMarkerId()).expire(timestamp);
-                    updated = false;
-                    if (cache.replace(key, original, revised)) {
-                        break;
-                    }
+                    break;
                 }
             }
         }
@@ -229,14 +235,18 @@ public class LocalRegionCache implements RegionCache {
                 }
             }
         }
-        return marker;
+        return new MarkerWrapper(marker);
     }
 
     public void unlock(final Object key, SoftLock lock) {
         while (true) {
             final Expirable original = cache.get(key);
             if (original != null) {
-                if (original.matches(lock)) {
+                if (!(lock instanceof MarkerWrapper)) {
+                    break;
+                }
+                final ExpiryMarker unwrappedMarker = ((MarkerWrapper) lock).getMarker();
+                if (original.matches(unwrappedMarker)) {
                     final Expirable revised = ((ExpiryMarker) original).expire(nextTimestamp());
                     if (cache.replace(key, original, revised)) {
                         break;

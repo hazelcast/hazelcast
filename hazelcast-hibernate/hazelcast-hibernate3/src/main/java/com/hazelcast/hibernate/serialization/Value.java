@@ -18,7 +18,6 @@ package com.hazelcast.hibernate.serialization;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import org.hibernate.cache.access.SoftLock;
 
 import java.io.IOException;
 import java.util.Comparator;
@@ -62,7 +61,7 @@ public class Value extends Expirable {
     }
 
     @Override
-    public boolean matches(SoftLock lock) {
+    public boolean matches(ExpiryMarker lock) {
         return false;
     }
 
