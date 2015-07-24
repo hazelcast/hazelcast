@@ -55,12 +55,16 @@ public final class MemberImpl
     }
 
     public MemberImpl(Address address, boolean localMember, String uuid, HazelcastInstanceImpl instance) {
-        this(address, localMember, uuid, instance, null);
+        this(address, localMember, uuid, instance, null, null);
     }
 
     public MemberImpl(Address address, boolean localMember, String uuid, HazelcastInstanceImpl instance,
-                      Map<String, Object> attributes) {
-        super(address, uuid, attributes);
+            Map<String, Object> attributes) {
+        this(address, localMember, uuid, instance, attributes, null);
+    }
+    public MemberImpl(Address address, boolean localMember, String uuid, HazelcastInstanceImpl instance,
+                      Map<String, Object> attributes, Map<String, Object> systemAttributes) {
+        super(address, uuid, attributes, systemAttributes);
         this.localMember = localMember;
         this.lastRead = Clock.currentTimeMillis();
         this.instance = instance;

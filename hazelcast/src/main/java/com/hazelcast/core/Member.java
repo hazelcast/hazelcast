@@ -82,6 +82,24 @@ public interface Member extends DataSerializable, Endpoint {
     Map<String, Object> getAttributes();
 
     /**
+     * Returns system attributes for this member.<br/>
+     * 
+     * System attributes are:
+     *  - java.vm.version
+     *  - java.vm.vendor
+     *  - java.runtime.version
+     *  - os.arch
+     *  - os.name
+     *  - available.processors
+     * 
+     * <b>This method might not be available on all native clients.</b>
+     *
+     * @return system attributes for this member.
+     * @since 3.2
+     */
+    Map<String, Object> getSystemAttributes();
+
+    /**
      * Returns the value of the specified key for this member or
      * null if value is undefined.
      *

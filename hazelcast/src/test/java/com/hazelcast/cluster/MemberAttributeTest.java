@@ -19,10 +19,12 @@ package com.hazelcast.cluster;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MemberAttributeConfig;
 import com.hazelcast.core.*;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
+
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -246,6 +248,18 @@ public class MemberAttributeTest extends HazelcastTestSupport {
         assertEquals("1234", m1.getStringAttribute("Test-2"));
         assertEquals("12345", m1.getStringAttribute("Test-3"));
         assertEquals(1234567, (int) m1.getIntAttribute("Test-4"));
+
+        h1.shutdown();
+    }
+
+    @Test(timeout = 120000)
+    public void testSystemAttributes() throws Exception {
+        Config config = new Config();
+
+        HazelcastInstance h1 = createHazelcastInstance(config);
+        Integer processors = (Integer)h1.getCluster().getLocalMember().getSystemAttributes().get("available.processors");
+
+        assertTrue(processors > 0);
 
         h1.shutdown();
     }

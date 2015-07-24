@@ -72,6 +72,11 @@ public class SimpleMemberImpl implements Member {
     }
 
     @Override
+    public Map<String, Object> getSystemAttributes() {
+        return null;
+    }
+
+    @Override
     public String getStringAttribute(String key) {
         return null;
     }
