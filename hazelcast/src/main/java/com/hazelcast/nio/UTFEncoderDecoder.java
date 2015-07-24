@@ -541,7 +541,7 @@ public final class UTFEncoderDecoder {
 
         if (allAscii) {
             while (bufferPos != bufferLimit) {
-                data[charArrCount++] = (char)(buffer[bufferPos++] & 0xFF);
+                data[charArrCount++] = (char) (buffer[bufferPos++] & 0xFF);
             }
 
             for (readCount = bufferPos - 1; readCount < utfLength; readCount++) {
@@ -690,9 +690,12 @@ public final class UTFEncoderDecoder {
             Class<String> clazz = String.class;
             clazz.getDeclaredConstructor(int.class, int.class, char[].class);
             return true;
+        } catch (NoSuchMethodException t) {
+            Logger.getLogger(UTFEncoderDecoder.class).
+                    finest("Old String constructor doesn't seem available.");
         } catch (Throwable t) {
             Logger.getLogger(UTFEncoderDecoder.class).
-                    finest("Old String constructor doesn't seem available", t);
+                    finest("Old String constructor doesn't seem available.", t);
         }
         return false;
     }
