@@ -17,6 +17,7 @@
 package com.hazelcast.monitor.impl;
 
 import com.eclipsesource.json.JsonObject;
+import com.hazelcast.internal.management.JsonSerializable;
 import com.hazelcast.monitor.LocalTopicStats;
 import com.hazelcast.util.Clock;
 
@@ -24,7 +25,7 @@ import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
 import static com.hazelcast.util.JsonUtil.getLong;
 
-public class LocalTopicStatsImpl implements LocalTopicStats {
+public class LocalTopicStatsImpl implements LocalTopicStats, JsonSerializable {
 
     private static final AtomicLongFieldUpdater<LocalTopicStatsImpl> TOTAL_PUBLISHES_UPDATER = AtomicLongFieldUpdater
             .newUpdater(LocalTopicStatsImpl.class, "totalPublishes");

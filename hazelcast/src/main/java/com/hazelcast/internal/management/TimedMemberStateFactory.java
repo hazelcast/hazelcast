@@ -34,15 +34,18 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.monitor.LocalExecutorStats;
 import com.hazelcast.monitor.LocalMapStats;
-import com.hazelcast.monitor.LocalMemoryStats;
 import com.hazelcast.monitor.LocalMultiMapStats;
-import com.hazelcast.monitor.LocalOperationStats;
 import com.hazelcast.monitor.LocalQueueStats;
 import com.hazelcast.monitor.LocalTopicStats;
 import com.hazelcast.monitor.TimedMemberState;
 import com.hazelcast.monitor.impl.LocalCacheStatsImpl;
+import com.hazelcast.monitor.impl.LocalExecutorStatsImpl;
+import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.monitor.impl.LocalMemoryStatsImpl;
+import com.hazelcast.monitor.impl.LocalMultiMapStatsImpl;
 import com.hazelcast.monitor.impl.LocalOperationStatsImpl;
+import com.hazelcast.monitor.impl.LocalQueueStatsImpl;
+import com.hazelcast.monitor.impl.LocalTopicStatsImpl;
 import com.hazelcast.monitor.impl.MemberPartitionStateImpl;
 import com.hazelcast.monitor.impl.MemberStateImpl;
 import com.hazelcast.multimap.impl.MultiMapService;
@@ -118,11 +121,11 @@ public class TimedMemberStateFactory {
         return timedMemberState;
     }
 
-    protected LocalMemoryStats getMemoryStats() {
+    protected LocalMemoryStatsImpl getMemoryStats() {
         return new LocalMemoryStatsImpl(instance.getMemoryStats());
     }
 
-    protected LocalOperationStats getOperationStats() {
+    protected LocalOperationStatsImpl getOperationStats() {
         return new LocalOperationStatsImpl(instance.node);
     }
 
@@ -197,7 +200,7 @@ public class TimedMemberStateFactory {
             if (count >= maxVisibleInstanceCount) {
                 break;
             } else if (config.findExecutorConfig(name).isStatisticsEnabled()) {
-                LocalExecutorStats stats = entry.getValue();
+                LocalExecutorStatsImpl stats = (LocalExecutorStatsImpl) entry.getValue();
                 memberState.putLocalExecutorStats(name, stats);
                 ++count;
             }
@@ -211,7 +214,7 @@ public class TimedMemberStateFactory {
             if (count >= maxVisibleInstanceCount) {
                 break;
             } else if (config.findMultiMapConfig(name).isStatisticsEnabled()) {
-                LocalMultiMapStats stats = entry.getValue();
+                LocalMultiMapStatsImpl stats = (LocalMultiMapStatsImpl) entry.getValue();
                 memberState.putLocalMultiMapStats(name, stats);
                 ++count;
             }
@@ -225,7 +228,7 @@ public class TimedMemberStateFactory {
             if (count >= maxVisibleInstanceCount) {
                 break;
             } else if (config.findTopicConfig(name).isStatisticsEnabled()) {
-                LocalTopicStats stats = entry.getValue();
+                LocalTopicStatsImpl stats = (LocalTopicStatsImpl) entry.getValue();
                 memberState.putLocalTopicStats(name, stats);
                 ++count;
             }
@@ -239,7 +242,7 @@ public class TimedMemberStateFactory {
             if (count >= maxVisibleInstanceCount) {
                 break;
             } else if (config.findQueueConfig(name).isStatisticsEnabled()) {
-                LocalQueueStats stats = entry.getValue();
+                LocalQueueStatsImpl stats = (LocalQueueStatsImpl) entry.getValue();
                 memberState.putLocalQueueStats(name, stats);
                 ++count;
             }
@@ -253,7 +256,7 @@ public class TimedMemberStateFactory {
             if (count >= maxVisibleInstanceCount) {
                 break;
             } else if (config.findMapConfig(name).isStatisticsEnabled()) {
-                LocalMapStats stats = entry.getValue();
+                LocalMapStatsImpl stats = (LocalMapStatsImpl) entry.getValue();
                 memberState.putLocalMapStats(name, stats);
                 ++count;
             }

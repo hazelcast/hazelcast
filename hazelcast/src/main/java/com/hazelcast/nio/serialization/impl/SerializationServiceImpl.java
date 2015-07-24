@@ -419,11 +419,11 @@ public class SerializationServiceImpl implements SerializationService {
     }
 
     public final ObjectDataOutputStream createObjectDataOutputStream(OutputStream out) {
-        return new ObjectDataOutputStream(out, this);
+        return new ObjectDataOutputStreamImpl(out, this);
     }
 
     public final ObjectDataInputStream createObjectDataInputStream(InputStream in) {
-        return new ObjectDataInputStream(in, this);
+        return new ObjectDataInputStreamImpl(in, this);
     }
 
     public final void register(Class type, Serializer serializer) {

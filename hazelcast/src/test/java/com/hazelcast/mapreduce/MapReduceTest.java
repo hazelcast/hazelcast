@@ -1452,7 +1452,7 @@ public class MapReduceTest
         }
 
         @Override
-        public boolean open(NodeEngine nodeEngine) {
+        public boolean open(Object nodeEngine) {
             if (openCount < 2) {
                 openCount++;
                 return false;

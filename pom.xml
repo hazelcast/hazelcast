@@ -29,6 +29,7 @@
     <url>http://www.hazelcast.com/</url>
 
     <modules>
+        <module>hazelcast-api</module>
         <module>hazelcast</module>
         <module>hazelcast-client</module>
         <module>hazelcast-client-new</module>

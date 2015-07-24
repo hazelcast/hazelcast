@@ -97,8 +97,8 @@ public class CustomDataSourceMapReduceTest
         private transient Iterator<Map.Entry<String, Integer>> iterator;
         private transient Map.Entry<String, Integer> nextElement;
 
-        @Override
-        public boolean open(NodeEngine nodeEngine) {
+        //@Override
+        public boolean open(Object nodeEngine) {
             entries = new ArrayList<Map.Entry<String, Integer>>();
             for (int i = 0; i < 1000; i++) {
                 entries.add(new AbstractMap.SimpleEntry<String, Integer>(String.valueOf(i), i));

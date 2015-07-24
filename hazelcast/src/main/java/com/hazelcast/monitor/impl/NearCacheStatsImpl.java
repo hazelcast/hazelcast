@@ -17,6 +17,7 @@
 package com.hazelcast.monitor.impl;
 
 import com.eclipsesource.json.JsonObject;
+import com.hazelcast.internal.management.JsonSerializable;
 import com.hazelcast.monitor.NearCacheStats;
 import com.hazelcast.util.Clock;
 
@@ -24,7 +25,7 @@ import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
 import static com.hazelcast.util.JsonUtil.getLong;
 
-public class NearCacheStatsImpl implements NearCacheStats {
+public class NearCacheStatsImpl implements NearCacheStats, JsonSerializable {
 
     private static final double PERCENTAGE = 100.0;
 

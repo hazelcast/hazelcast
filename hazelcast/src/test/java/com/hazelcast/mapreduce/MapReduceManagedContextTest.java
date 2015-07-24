@@ -95,7 +95,7 @@ public class MapReduceManagedContextTest
         }
 
         @Override
-        public boolean open(NodeEngine nodeEngine) {
+        public boolean open(Object nodeEngine) {
             hazelcastInstance.getName();
             return keyValueSource.open(nodeEngine);
         }
