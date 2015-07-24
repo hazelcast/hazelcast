@@ -17,10 +17,12 @@
 package com.hazelcast.cluster.impl;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.JoinConfig;
 import com.hazelcast.config.MulticastConfig;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.BufferObjectDataInput;
 import com.hazelcast.nio.BufferObjectDataOutput;
 import com.hazelcast.nio.Packet;
@@ -30,6 +32,7 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.MulticastSocket;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -53,7 +56,50 @@ public class MulticastService implements Runnable {
 
     private volatile boolean running = true;
 
-    public MulticastService(Node node, MulticastSocket multicastSocket) throws Exception {
+    public static MulticastService createMulticastService(Address bindAddress, Node node, Config config, ILogger logger) {
+        JoinConfig join = config.getNetworkConfig().getJoin();
+        MulticastConfig multicastConfig = join.getMulticastConfig();
+        if (!multicastConfig.isEnabled()) {
+            return null;
+        }
+
+        MulticastService mcService = null;
+        try {
+            MulticastSocket multicastSocket = new MulticastSocket(null);
+            multicastSocket.setReuseAddress(true);
+            // bind to receive interface
+            multicastSocket.bind(new InetSocketAddress(multicastConfig.getMulticastPort()));
+            multicastSocket.setTimeToLive(multicastConfig.getMulticastTimeToLive());
+            try {
+                // http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=4417033
+                // http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6402758
+                if (!bindAddress.getInetAddress().isLoopbackAddress()) {
+                    multicastSocket.setInterface(bindAddress.getInetAddress());
+                } else if (multicastConfig.isLoopbackModeEnabled()) {
+                    multicastSocket.setLoopbackMode(true);
+                    multicastSocket.setInterface(bindAddress.getInetAddress());
+                }
+            } catch (Exception e) {
+                logger.warning(e);
+            }
+            multicastSocket.setReceiveBufferSize(64 * 1024);
+            multicastSocket.setSendBufferSize(64 * 1024);
+            String multicastGroup = System.getProperty("hazelcast.multicast.group");
+            if (multicastGroup == null) {
+                multicastGroup = multicastConfig.getMulticastGroup();
+            }
+            multicastConfig.setMulticastGroup(multicastGroup);
+            multicastSocket.joinGroup(InetAddress.getByName(multicastGroup));
+            multicastSocket.setSoTimeout(1000);
+            mcService = new MulticastService(node, multicastSocket);
+            mcService.addMulticastListener(new NodeMulticastListener(node));
+        } catch (Exception e) {
+            logger.severe(e);
+        }
+        return mcService;
+    }
+
+    private MulticastService(Node node, MulticastSocket multicastSocket) throws Exception {
         this.node = node;
         logger = node.getLogger(MulticastService.class.getName());
         Config config = node.getConfig();
