@@ -16,6 +16,9 @@
 
 package com.hazelcast.util;
 
+import java.util.Iterator;
+import java.util.NoSuchElementException;
+
 import static com.hazelcast.partition.InternalPartition.MAX_BACKUP_COUNT;
 import static java.lang.String.format;
 
@@ -281,6 +284,33 @@ public final class Preconditions {
     public static void checkTrue(boolean expression, String errorMessage) {
         if (!expression) {
             throw new IllegalArgumentException(errorMessage);
+        }
+    }
+
+    /**
+     * Check if iterator has next element. If not throw NoSuchElementException
+     *
+     * @param iterator
+     * @param message
+     * @return the iterator itself
+     * @throws java.util.NoSuchElementException if iterator.hasNext returns false
+     */
+    public static <T> Iterator<T> checkHasNext(Iterator<T> iterator, String message) throws NoSuchElementException {
+        if (!iterator.hasNext()) {
+            throw new NoSuchElementException(message);
+        }
+        return iterator;
+    }
+
+    /**
+     * Check the state of a condition
+     * @param condition
+     * @param message
+     * @throws IllegalStateException if condition if false
+     */
+    public static void checkState(boolean condition, String message) throws IllegalStateException {
+        if (!condition) {
+            throw new IllegalStateException(message);
         }
     }
 }

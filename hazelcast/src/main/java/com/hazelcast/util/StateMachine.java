@@ -21,8 +21,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-import static com.hazelcast.util.ValidationUtil.checkNotNull;
-import static com.hazelcast.util.ValidationUtil.checkState;
+import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.util.Preconditions.checkState;
 
 /**
  * Simple state machine using an Enum as possible states.

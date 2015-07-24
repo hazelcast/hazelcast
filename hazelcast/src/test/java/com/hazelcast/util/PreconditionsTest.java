@@ -8,9 +8,14 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.math.BigInteger;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.NoSuchElementException;
 
 import static com.hazelcast.partition.InternalPartition.MAX_BACKUP_COUNT;
 import static com.hazelcast.util.Preconditions.checkFalse;
+import static com.hazelcast.util.Preconditions.checkHasNext;
 import static com.hazelcast.util.Preconditions.checkInstanceOf;
 import static com.hazelcast.util.Preconditions.checkNotInstanceOf;
 import static com.hazelcast.util.Preconditions.checkTrue;
@@ -319,5 +324,30 @@ public class PreconditionsTest {
         } catch (IllegalArgumentException e) {
             assertSame(errorMessage, e.getMessage());
         }
+    }
+
+    @Test
+    public void test_checkFalse() throws Exception {
+        try {
+            checkFalse(Boolean.FALSE, "comparison cannot be true");
+        } catch (Exception e) {
+            fail("checkFalse method should not throw this exception " + e);
+        }
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void test_checkFalse_whenComparisonTrue() throws Exception {
+        checkFalse(Boolean.TRUE, "comparison cannot be true");
+    }
+
+    @Test(expected = NoSuchElementException.class)
+    public void test_hasNextThrowsException_whenEmptyIteratorGiven() throws Exception {
+        checkHasNext(Collections.emptyList().iterator(), "");
+    }
+
+    @Test
+    public void test_hasNextReturnsIterator_whenNonEmptyIteratorGiven() throws Exception {
+        Iterator<Integer> iterator = Arrays.asList(1, 2).iterator();
+        assertEquals(iterator, checkHasNext(iterator, ""));
     }
 }
