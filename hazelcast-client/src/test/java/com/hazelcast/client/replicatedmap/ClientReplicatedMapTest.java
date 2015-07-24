@@ -16,13 +16,16 @@
 
 package com.hazelcast.client.replicatedmap;
 
+import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ReplicatedMap;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.WatchedOperationExecutor;
@@ -799,6 +802,43 @@ public class ClientReplicatedMapTest
         ReplicatedMap<String, String> map = instance2.getReplicatedMap("default");
         String value = map.get("foo");
         assertNull(value);
+    }
+
+    @Test
+    public void testNearCacheInvalidation() {
+        hazelcastFactory.newHazelcastInstance();
+        ClientConfig config = getClientConfigWithNearCacheInvalidationEnabled();
+        HazelcastInstance client1 = hazelcastFactory.newHazelcastClient(config);
+        HazelcastInstance client2 = hazelcastFactory.newHazelcastClient(config);
+
+        String mapName = randomString();
+        final ReplicatedMap replicatedMap1 = client1.getReplicatedMap(mapName);
+
+
+        replicatedMap1.put(1, 1);
+        //puts key 1 to near cache
+        replicatedMap1.get(1);
+
+        final ReplicatedMap replicatedMap2 = client2.getReplicatedMap(mapName);
+        //This should invalidate near cache of replicatedMap1
+        replicatedMap2.put(1, 2);
+
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertEquals(2, replicatedMap1.get(1));
+            }
+        });
+    }
+
+    private ClientConfig getClientConfigWithNearCacheInvalidationEnabled() {
+        ClientConfig config = new ClientConfig();
+        NearCacheConfig nnc = new NearCacheConfig();
+        nnc.setInvalidateOnChange(true);
+        nnc.setInMemoryFormat(InMemoryFormat.OBJECT);
+        config.addNearCacheConfig(nnc);
+        return config;
     }
 
     private Config buildConfig(InMemoryFormat inMemoryFormat, long replicationDelay) {

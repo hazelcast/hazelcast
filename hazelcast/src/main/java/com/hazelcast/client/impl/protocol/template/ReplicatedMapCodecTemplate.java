@@ -83,5 +83,8 @@ public interface ReplicatedMapCodecTemplate {
     @Request(id = 17, retryable = true, response = ResponseMessageConst.MAP_DATA_DATA)
     void entrySet(String name);
 
+    @Request(id = 18, retryable = true, response = ResponseMessageConst.STRING, event = EventMessageConst.EVENT_ENTRY)
+    void addNearCacheEntryListener(String name, boolean includeValue);
+
 }
 
