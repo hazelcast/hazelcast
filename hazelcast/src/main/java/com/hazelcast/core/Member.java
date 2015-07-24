@@ -16,6 +16,7 @@
 
 package com.hazelcast.core;
 
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.DataSerializable;
 
 import java.net.InetSocketAddress;
@@ -38,6 +39,14 @@ public interface Member extends DataSerializable, Endpoint {
      *         local member, <tt>false</tt> otherwise.
      */
     boolean localMember();
+
+    /**
+     * Returns the Address of this Member.
+     *
+     * @return the address.
+     * @since 3.6
+     */
+    Address getAddress();
 
     /**
      * Returns the InetSocketAddress of this member.

@@ -17,6 +17,7 @@
 package com.hazelcast.instance;
 
 import com.hazelcast.core.Member;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
@@ -38,6 +39,11 @@ public class SimpleMemberImpl implements Member {
     public SimpleMemberImpl(String uuid, InetSocketAddress address) {
         this.uuid = uuid;
         this.address = address;
+    }
+
+    @Override
+    public Address getAddress() {
+        throw new UnsupportedOperationException();
     }
 
     @Override
