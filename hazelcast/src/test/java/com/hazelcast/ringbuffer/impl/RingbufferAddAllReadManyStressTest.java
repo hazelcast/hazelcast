@@ -1,6 +1,7 @@
 package com.hazelcast.ringbuffer.impl;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.ringbuffer.ReadResultSet;
@@ -34,6 +35,7 @@ public class RingbufferAddAllReadManyStressTest extends HazelcastTestSupport {
     public void whenNoTTL() throws Exception {
         RingbufferConfig ringbufferConfig = new RingbufferConfig("foo")
                 .setCapacity(20 * 1000 * 1000)
+                .setInMemoryFormat(InMemoryFormat.OBJECT)
                 .setTimeToLiveSeconds(0);
         test(ringbufferConfig);
     }
@@ -58,6 +60,7 @@ public class RingbufferAddAllReadManyStressTest extends HazelcastTestSupport {
     public void whenShortTTLAndBigBuffer() throws Exception {
         setLoggingLog4j();
         RingbufferConfig ringbufferConfig = new RingbufferConfig("foo")
+                .setInMemoryFormat(InMemoryFormat.OBJECT)
                 .setCapacity(20 * 1000 * 1000)
                 .setTimeToLiveSeconds(2);
         test(ringbufferConfig);
