@@ -56,7 +56,7 @@ public class ClientRingbufferProxy<E> extends ClientProxy implements Ringbuffer<
     public long capacity() {
         if (capacity == -1) {
             CapacityRequest request = new CapacityRequest(getName());
-            capacity = invoke(request);
+            capacity = (Long) invoke(request);
         }
 
         return capacity;
