@@ -16,12 +16,11 @@
 
 package com.hazelcast.client.util;
 
+import com.hazelcast.client.impl.ClientMessageDecoder;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.ExecutorServiceSubmitToPartitionCodec;
 import com.hazelcast.client.spi.impl.ClientInvocationFuture;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.util.ExceptionUtil;
 
@@ -31,33 +30,43 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+/**
+ * Client Delegating Future is used to delegate ClientInvocationFuture to user to be used with
+ * andThen or get. It converts ClientMessage coming from ClientInvocationFuture to user object
+ *
+ * @param <V> Value type that user expecting
+ */
 public class ClientDelegatingFuture<V> implements ICompletableFuture<V> {
 
     private final ClientInvocationFuture future;
     private final SerializationService serializationService;
+    private final ClientMessageDecoder clientMessageDecoder;
     private final V defaultValue;
     private final Object mutex = new Object();
     private Throwable error;
     private V deserializedValue;
-    private Data valueData;
+    private Object response;
     private volatile boolean done;
 
     public ClientDelegatingFuture(ClientInvocationFuture clientInvocationFuture,
-                                  SerializationService serializationService, V defaultValue) {
+                                  SerializationService serializationService,
+                                  ClientMessageDecoder clientMessageDecoder, V defaultValue) {
         this.future = clientInvocationFuture;
         this.serializationService = serializationService;
+        this.clientMessageDecoder = clientMessageDecoder;
         this.defaultValue = defaultValue;
     }
 
     public ClientDelegatingFuture(ClientInvocationFuture clientInvocationFuture,
-                                  SerializationService serializationService) {
+                                  SerializationService serializationService, ClientMessageDecoder clientMessageDecoder) {
         this.future = clientInvocationFuture;
         this.serializationService = serializationService;
+        this.clientMessageDecoder = clientMessageDecoder;
         this.defaultValue = null;
     }
 
-    public void andThenInternal(final ExecutionCallback<Data> callback) {
-        future.andThenInternal(new DelegatingExecutionCallback<Data>(callback, false));
+    public <R> void andThenInternal(final ExecutionCallback<R> callback) {
+        future.andThenInternal(new DelegatingExecutionCallback<R>(callback, false));
     }
 
     @Override
@@ -86,8 +95,8 @@ public class ClientDelegatingFuture<V> implements ICompletableFuture<V> {
         return done ? done : future.isDone();
     }
 
-    public Data getValueData() {
-        return valueData;
+    public Object getResponse() {
+        return response;
     }
 
     @Override
@@ -106,9 +115,9 @@ public class ClientDelegatingFuture<V> implements ICompletableFuture<V> {
             synchronized (mutex) {
                 if (!done) {
                     try {
-                        valueData = resolveMessageToValue(future.get(timeout, unit));
+                        response = resolveMessageToValue(future.get(timeout, unit));
                         if (deserializedValue == null) {
-                            deserializedValue = serializationService.toObject(valueData);
+                            deserializedValue = serializationService.toObject(response);
                         }
                     } catch (InterruptedException e) {
                         error = e;
@@ -147,15 +156,15 @@ public class ClientDelegatingFuture<V> implements ICompletableFuture<V> {
             // Otherwise, it is possible that received data may not be deserialized
             // if "shouldDeserializeData" flag is not true in any of registered "DelegatingExecutionCallback".
             // So, be sure that value is deserialized before returning to caller.
-            if (valueData != null) {
-                deserializedValue = serializationService.toObject(valueData);
+            if (response != null) {
+                deserializedValue = serializationService.toObject(response);
             }
             return deserializedValue;
         }
     }
 
-    private Data resolveMessageToValue(ClientMessage message) {
-        return ExecutorServiceSubmitToPartitionCodec.decodeResponse(message).response;
+    private Object resolveMessageToValue(ClientMessage message) {
+        return clientMessageDecoder.decodeClientMessage(message);
     }
 
     protected void setError(Throwable error) {
@@ -185,9 +194,9 @@ public class ClientDelegatingFuture<V> implements ICompletableFuture<V> {
             if (!done) {
                 synchronized (mutex) {
                     if (!done) {
-                        valueData = resolveMessageToValue(message);
+                        response = resolveMessageToValue(message);
                         if (shouldDeserializeData && deserializedValue == null) {
-                            deserializedValue = serializationService.toObject(valueData);
+                            deserializedValue = serializationService.toObject(response);
                         }
                         done = true;
                     }
@@ -196,7 +205,7 @@ public class ClientDelegatingFuture<V> implements ICompletableFuture<V> {
             if (shouldDeserializeData) {
                 callback.onResponse((T) deserializedValue);
             } else {
-                callback.onResponse((T) valueData);
+                callback.onResponse((T) response);
             }
         }
 

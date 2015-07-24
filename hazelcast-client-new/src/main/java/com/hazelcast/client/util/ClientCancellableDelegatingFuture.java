@@ -16,92 +16,43 @@
 
 package com.hazelcast.client.util;
 
-import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
-import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.ExecutorServiceCancelOnAddressCodec;
-import com.hazelcast.client.impl.protocol.codec.ExecutorServiceCancelOnPartitionCodec;
+import com.hazelcast.client.impl.ClientMessageDecoder;
 import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.client.spi.impl.ClientInvocationFuture;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.nio.Address;
 import com.hazelcast.util.EmptyStatement;
 
-import java.util.concurrent.CancellationException;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.util.ExceptionUtil.rethrow;
-
 /**
- * A DelegatingFuture that can cancel a Runnable/Callable that is executed by an {@link com.hazelcast.core.IExecutorService}.
- * It does this by sending a CancellationRequest to the remote owning member and then cancelling the running task.
+ * An Abstract DelegatingFuture that can cancel a Runnable/Callable that is executed by an
+ * {@link com.hazelcast.core.IExecutorService}.
+ * It does this by sending a Cancellation Request to the remote owning member and then cancelling the running task.
  *
  * @param <V> Type of returned object from the get method of this class.
  */
-public final class ClientCancellableDelegatingFuture<V> extends ClientDelegatingFuture<V> {
+public abstract class ClientCancellableDelegatingFuture<V> extends ClientDelegatingFuture<V> {
 
     private static final int INVOCATION_WAIT_TIMEOUT_SECONDS = 5;
-    private final ClientContext context;
-    private final String uuid;
-    private final Address target;
-    private final int partitionId;
+    protected final ClientContext context;
+    protected final String uuid;
+    protected volatile boolean cancelled;
     private final ILogger logger = Logger.getLogger(ClientCancellableDelegatingFuture.class);
-    private volatile boolean cancelled;
 
     public ClientCancellableDelegatingFuture(ClientInvocationFuture future, ClientContext context,
-                                             String uuid, Address target, int partitionId, V defaultValue) {
-        super(future, context.getSerializationService(), defaultValue);
+                                             String uuid, V defaultValue,
+                                             ClientMessageDecoder resultDecoder) {
+        super(future, context.getSerializationService(), resultDecoder, defaultValue);
         this.context = context;
         this.uuid = uuid;
-        this.target = target;
-        this.partitionId = partitionId;
+
     }
 
-    @Override
-    public boolean cancel(boolean mayInterruptIfRunning) {
-        if (isDone() || cancelled) {
-            return false;
-        }
+    public abstract boolean cancel(boolean mayInterruptIfRunning);
 
-        waitForRequestToBeSend();
-        ClientInvocationFuture f = invokeCancelRequest(mayInterruptIfRunning);
-        try {
-            boolean cancelSuccessful = ExecutorServiceCancelOnAddressCodec.decodeResponse(f.get()).response;
-            if (cancelSuccessful) {
-                setError(new CancellationException());
-                cancelled = true;
-                return true;
-            }
-            return false;
-        } catch (Exception e) {
-            throw rethrow(e);
-        } finally {
-            setDone();
-        }
-    }
-
-    private ClientInvocationFuture invokeCancelRequest(boolean mayInterruptIfRunning) {
-        ClientInvocation clientInvocation;
-        final HazelcastClientInstanceImpl client = (HazelcastClientInstanceImpl) context.getHazelcastInstance();
-        if (target != null) {
-            ClientMessage request = ExecutorServiceCancelOnAddressCodec.encodeRequest(uuid, target.getHost(),
-                    target.getPort(), mayInterruptIfRunning);
-            clientInvocation = new ClientInvocation(client, request, target);
-        } else {
-            ClientMessage request =
-                    ExecutorServiceCancelOnPartitionCodec.encodeRequest(uuid, partitionId, mayInterruptIfRunning);
-            clientInvocation = new ClientInvocation(client, request, partitionId);
-        }
-
-        try {
-            return clientInvocation.invoke();
-        } catch (Exception e) {
-            throw rethrow(e);
-        }
-    }
-
-    private void waitForRequestToBeSend() {
+    protected void waitForRequestToBeSend() {
         ClientInvocationFuture clientCallFuture = getFuture();
         ClientInvocation invocation = clientCallFuture.getInvocation();
 
