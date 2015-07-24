@@ -24,7 +24,6 @@ import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
@@ -48,8 +47,6 @@ public class ClientInvocationFuture implements ICompletableFuture<ClientMessage>
 
     private final ClientListenerServiceImpl clientListenerService;
 
-    private final SerializationService serializationService;
-
     private final EventHandler handler;
 
     private final List<ExecutionCallbackNode> callbackNodeList = new LinkedList<ExecutionCallbackNode>();
@@ -64,7 +61,6 @@ public class ClientInvocationFuture implements ICompletableFuture<ClientMessage>
 
         this.executionService = (ClientExecutionServiceImpl) client.getClientExecutionService();
         this.clientListenerService = (ClientListenerServiceImpl) client.getListenerService();
-        this.serializationService = client.getSerializationService();
         this.clientMessage = clientMessage;
         this.handler = handler;
         this.invocation = invocation;

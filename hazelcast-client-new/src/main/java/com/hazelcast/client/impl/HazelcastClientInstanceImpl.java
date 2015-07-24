@@ -10,9 +10,7 @@ import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.client.config.ClientProperties;
 import com.hazelcast.client.config.ClientSecurityConfig;
 import com.hazelcast.client.connection.AddressProvider;
-import com.hazelcast.client.connection.AddressTranslator;
 import com.hazelcast.client.connection.ClientConnectionManager;
-import com.hazelcast.client.connection.nio.ClientConnectionManagerImpl;
 import com.hazelcast.client.impl.client.DistributedObjectInfo;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientGetDistributedObjectCodec;
@@ -26,7 +24,6 @@ import com.hazelcast.client.spi.ClientPartitionService;
 import com.hazelcast.client.spi.ClientTransactionManagerService;
 import com.hazelcast.client.spi.ProxyManager;
 import com.hazelcast.client.spi.impl.AwsAddressProvider;
-import com.hazelcast.client.spi.impl.AwsAddressTranslator;
 import com.hazelcast.client.spi.impl.ClientClusterServiceImpl;
 import com.hazelcast.client.spi.impl.ClientExecutionServiceImpl;
 import com.hazelcast.client.spi.impl.ClientInvocation;
@@ -36,7 +33,6 @@ import com.hazelcast.client.spi.impl.ClientPartitionServiceImpl;
 import com.hazelcast.client.spi.impl.ClientSmartInvocationServiceImpl;
 import com.hazelcast.client.spi.impl.ClientTransactionManagerServiceImpl;
 import com.hazelcast.client.spi.impl.DefaultAddressProvider;
-import com.hazelcast.client.spi.impl.DefaultAddressTranslator;
 import com.hazelcast.client.util.RoundRobinLB;
 import com.hazelcast.collection.impl.list.ListService;
 import com.hazelcast.collection.impl.queue.QueueService;
@@ -45,7 +41,6 @@ import com.hazelcast.concurrent.atomiclong.AtomicLongService;
 import com.hazelcast.concurrent.atomicreference.AtomicReferenceService;
 import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
 import com.hazelcast.concurrent.idgen.IdGeneratorService;
-import com.hazelcast.concurrent.lock.LockProxy;
 import com.hazelcast.concurrent.lock.LockServiceImpl;
 import com.hazelcast.concurrent.semaphore.SemaphoreService;
 import com.hazelcast.config.Config;
@@ -141,13 +136,13 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
                                        AddressProvider externalAddressProvider) {
         this.config = config;
         final GroupConfig groupConfig = config.getGroupConfig();
-        
-        if(config.getInstanceName() != null) {
-        	instanceName = config.getInstanceName();
+
+        if (config.getInstanceName() != null) {
+            instanceName = config.getInstanceName();
         } else {
-        	instanceName = "hz.client_" + id + (groupConfig != null ? "_" + groupConfig.getName() : "");
+            instanceName = "hz.client_" + id + (groupConfig != null ? "_" + groupConfig.getName() : "");
         }
-        
+
         clientExtension = createClientInitializer(config.getClassLoader());
         clientExtension.beforeStart(this);
 

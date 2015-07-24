@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.proxy;
 
+import com.hazelcast.client.impl.ClientMessageDecoder;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ExecutorServiceIsShutdownCodec;
 import com.hazelcast.client.impl.protocol.codec.ExecutorServiceShutdownCodec;
@@ -25,8 +26,9 @@ import com.hazelcast.client.spi.ClientPartitionService;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.client.spi.impl.ClientInvocationFuture;
-import com.hazelcast.client.util.ClientCancellableDelegatingFuture;
+import com.hazelcast.client.util.ClientAddressCancellableDelegatingFuture;
 import com.hazelcast.client.util.ClientDelegatingFuture;
+import com.hazelcast.client.util.ClientPartitionCancellableDelegatingFuture;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.IExecutorService;
@@ -70,6 +72,20 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
 
     private static final int MIN_TIME_RESOLUTION_OF_CONSECUTIVE_SUBMITS = 10;
     private static final int MAX_CONSECUTIVE_SUBMITS = 100;
+    private static final ClientMessageDecoder SUBMIT_TO_PARTITION_DECODER = new ClientMessageDecoder() {
+        @Override
+        public <T> T decodeClientMessage(ClientMessage clientMessage) {
+            return (T) ExecutorServiceSubmitToPartitionCodec.decodeResponse(clientMessage).response;
+        }
+    };
+
+    private static final ClientMessageDecoder SUBMIT_TO_ADDRESS_DECODER = new ClientMessageDecoder() {
+        @Override
+        public <T> T decodeClientMessage(ClientMessage clientMessage) {
+            return (T) ExecutorServiceSubmitToAddressCodec.decodeResponse(clientMessage).response;
+        }
+    };
+
     private final String name;
     private final Random random = new Random(-System.currentTimeMillis());
     private final AtomicInteger consecutiveSubmits = new AtomicInteger();
@@ -398,7 +414,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         ClientMessage request =
                 ExecutorServiceSubmitToPartitionCodec.encodeRequest(name, uuid, toData(task), partitionId);
         ClientInvocationFuture f = invokeOnPartitionOwner(request, partitionId);
-        return checkSync(f, uuid, null, partitionId, preventSync, defaultValue);
+        return checkSync(f, uuid, partitionId, preventSync, defaultValue);
     }
 
     private <T> void submitToKeyOwnerInternal(Callable<T> task, Object key, ExecutionCallback<T> callback) {
@@ -410,7 +426,9 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
                 ExecutorServiceSubmitToPartitionCodec.encodeRequest(name, uuid, toData(task), partitionId);
         ClientInvocationFuture f = invokeOnPartitionOwner(request, partitionId);
         SerializationService serializationService = getContext().getSerializationService();
-        ClientDelegatingFuture<T> delegatingFuture = new ClientDelegatingFuture<T>(f, serializationService);
+
+        ClientDelegatingFuture<T> delegatingFuture = new ClientDelegatingFuture<T>(f, serializationService,
+                SUBMIT_TO_PARTITION_DECODER);
         delegatingFuture.andThen(callback);
     }
 
@@ -422,9 +440,8 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         ClientMessage request =
                 ExecutorServiceSubmitToPartitionCodec.encodeRequest(name, uuid, toData(task), partitionId);
         ClientInvocationFuture f = invokeOnPartitionOwner(request, partitionId);
-        return checkSync(f, uuid, null, partitionId, preventSync, defaultValue);
+        return checkSync(f, uuid, partitionId, preventSync, defaultValue);
     }
-
 
     private <T> void submitToRandomInternal(Callable<T> task, ExecutionCallback<T> callback) {
         checkNotNull(task, "task should not be null");
@@ -435,10 +452,11 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
                 ExecutorServiceSubmitToPartitionCodec.encodeRequest(name, uuid, toData(task), partitionId);
         ClientInvocationFuture f = invokeOnPartitionOwner(request, partitionId);
         SerializationService serializationService = getContext().getSerializationService();
-        ClientDelegatingFuture<T> delegatingFuture = new ClientDelegatingFuture<T>(f, serializationService);
+        ClientDelegatingFuture<T> delegatingFuture =
+                new ClientDelegatingFuture<T>(f, serializationService,
+                        SUBMIT_TO_PARTITION_DECODER);
         delegatingFuture.andThen(callback);
     }
-
 
     private <T> Future<T> submitToTargetInternal(Callable<T> task, Address address
             , T defaultValue, boolean preventSync) {
@@ -448,7 +466,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         ClientMessage request = ExecutorServiceSubmitToAddressCodec.encodeRequest(name, uuid, toData(task),
                 address.getHost(), address.getPort());
         ClientInvocationFuture f = invokeOnTarget(request, address);
-        return checkSync(f, uuid, address, -1, preventSync, defaultValue);
+        return checkSync(f, uuid, address, preventSync, defaultValue);
     }
 
     private <T> void submitToTargetInternal(Callable<T> task, Address address, ExecutionCallback<T> callback) {
@@ -459,25 +477,39 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
                 address.getHost(), address.getPort());
         ClientInvocationFuture f = invokeOnTarget(request, address);
         SerializationService serializationService = getContext().getSerializationService();
-        ClientDelegatingFuture<T> delegatingFuture = new ClientDelegatingFuture<T>(f, serializationService);
+        ClientDelegatingFuture<T> delegatingFuture =
+                new ClientDelegatingFuture<T>(f, serializationService, SUBMIT_TO_ADDRESS_DECODER);
         delegatingFuture.andThen(callback);
     }
-
 
     @Override
     public String toString() {
         return "IExecutorService{" + "name='" + getName() + '\'' + '}';
     }
 
-    private <T> Future<T> checkSync(ClientInvocationFuture f, String uuid,
-                                    Address address, int partitionId, boolean preventSync, T defaultValue) {
+    private <T> Future<T> checkSync(ClientInvocationFuture f, String uuid, Address address,
+                                    boolean preventSync, T defaultValue) {
         boolean sync = isSyncComputation(preventSync);
         if (sync) {
             Object response = retrieveResultFromMessage(f);
             ExecutorService asyncExecutor = getContext().getExecutionService().getAsyncExecutor();
             return new CompletedFuture<T>(getContext().getSerializationService(), response, asyncExecutor);
         } else {
-            return new ClientCancellableDelegatingFuture<T>(f, getContext(), uuid, address, partitionId, defaultValue);
+            return new ClientAddressCancellableDelegatingFuture<T>(f, getContext(), uuid, address, defaultValue
+                    , SUBMIT_TO_ADDRESS_DECODER);
+        }
+    }
+
+    private <T> Future<T> checkSync(ClientInvocationFuture f, String uuid, int partitionId,
+                                    boolean preventSync, T defaultValue) {
+        boolean sync = isSyncComputation(preventSync);
+        if (sync) {
+            Object response = retrieveResultFromMessage(f);
+            ExecutorService asyncExecutor = getContext().getExecutionService().getAsyncExecutor();
+            return new CompletedFuture<T>(getContext().getSerializationService(), response, asyncExecutor);
+        } else {
+            return new ClientPartitionCancellableDelegatingFuture<T>(f, getContext(), uuid, partitionId, defaultValue
+                    , SUBMIT_TO_PARTITION_DECODER);
         }
     }
 
