@@ -58,7 +58,6 @@ public class RingbufferAddAllReadManyStressTest extends HazelcastTestSupport {
 
     @Test
     public void whenShortTTLAndBigBuffer() throws Exception {
-        setLoggingLog4j();
         RingbufferConfig ringbufferConfig = new RingbufferConfig("foo")
                 .setInMemoryFormat(InMemoryFormat.OBJECT)
                 .setCapacity(20 * 1000 * 1000)
