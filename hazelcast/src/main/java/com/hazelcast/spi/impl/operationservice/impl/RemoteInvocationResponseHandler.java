@@ -17,13 +17,20 @@
 package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.nio.Packet;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationResponseHandler;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.spi.impl.operationservice.impl.responses.ErrorResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.Response;
+
+import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
  * An {@link OperationResponseHandler} that is used for a remotely executed Operation. So when a calling member
@@ -31,10 +38,12 @@ import com.hazelcast.spi.impl.operationservice.impl.responses.Response;
  * to that operation.
  */
 public final class RemoteInvocationResponseHandler implements OperationResponseHandler {
-    private final InternalOperationService operationService;
+    private final SerializationService serializationService;
+    private final NodeEngineImpl nodeEngine;
 
-    public RemoteInvocationResponseHandler(InternalOperationService operationService) {
-        this.operationService = operationService;
+    public RemoteInvocationResponseHandler(NodeEngineImpl nodeEngine) {
+        this.nodeEngine = nodeEngine;
+        this.serializationService = nodeEngine.getSerializationService();
     }
 
     @Override
@@ -50,9 +59,33 @@ public final class RemoteInvocationResponseHandler implements OperationResponseH
             response = (Response) obj;
         }
 
-        if (!operationService.send(response, operation.getCallerAddress())) {
+        if (!send(operation, response)) {
             throw new HazelcastException("Cannot send response: " + obj + " to " + conn.getEndPoint());
         }
+    }
+
+    public boolean send(Operation op, Response response) {
+        checkNotNull(op, "op can't be null");
+        checkNotNull(response, "response can't be null");
+
+        Connection connection = op.getConnection();
+        return send(connection, response);
+    }
+
+    public boolean send(Connection connection, Response response) {
+        checkNotNull(connection, "op can't be null");
+        checkNotNull(response, "response can't be null");
+
+        Data data = serializationService.toData(response);
+        Packet packet = new Packet(data);
+        packet.setHeader(Packet.HEADER_OP);
+        packet.setHeader(Packet.HEADER_RESPONSE);
+
+        if (response.isUrgent()) {
+            packet.setHeader(Packet.HEADER_URGENT);
+        }
+
+        return nodeEngine.getPacketTransceiver().transmit(packet, connection);
     }
 
     @Override

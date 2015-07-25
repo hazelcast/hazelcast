@@ -83,7 +83,7 @@ class OperationRunnerImpl extends OperationRunner {
     // will never be called concurrently.
     private InternalPartition internalPartition;
 
-    private final OperationResponseHandler remoteResponseHandler;
+    public final RemoteInvocationResponseHandler remoteResponseHandler;
 
     // When partitionId >= 0, it is a partition specific
     // when partitionId = -1, it is generic
@@ -96,7 +96,7 @@ class OperationRunnerImpl extends OperationRunner {
         this.logger = operationService.logger;
         this.node = operationService.node;
         this.nodeEngine = operationService.nodeEngine;
-        this.remoteResponseHandler = new RemoteInvocationResponseHandler(operationService);
+        this.remoteResponseHandler = operationService.remoteInvocationResponseHandler;
         this.executedOperationsCount = operationService.completedOperationsCount;
 
         if (partitionId >= 0) {
@@ -333,7 +333,8 @@ class OperationRunnerImpl extends OperationRunner {
         } catch (Throwable throwable) {
             // If exception happens we need to extract the callId from the bytes directly!
             long callId = IOUtil.extractOperationCallId(data, node.getSerializationService());
-            operationService.send(new ErrorResponse(throwable, callId, packet.isUrgent()), caller);
+            ErrorResponse response = new ErrorResponse(throwable, callId, packet.isUrgent());
+            remoteResponseHandler.send(connection, response);
             logOperationDeserializationException(throwable, callId);
             throw ExceptionUtil.rethrow(throwable);
         } finally {

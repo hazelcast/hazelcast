@@ -33,6 +33,10 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.nio.Packet.HEADER_EVENT;
+import static com.hazelcast.nio.Packet.HEADER_OP;
+import static com.hazelcast.nio.Packet.HEADER_WAN_REPLICATION;
+
 /**
  * Default {@link com.hazelcast.spi.impl.transceiver.PacketTransceiver} implementation.
  */
@@ -64,23 +68,26 @@ public class PacketTransceiverImpl implements PacketTransceiver {
 
     @Override
     public boolean transmit(Packet packet, Connection connection) {
-        if (connection == null || !connection.isAlive()) {
+        if (connection == null) {
             return false;
         }
-        final MemberImpl memberImpl = node.getClusterService().getMember(connection.getEndPoint());
+
+        MemberImpl memberImpl = node.getClusterService().getMember(connection.getEndPoint());
+
         if (memberImpl != null) {
             memberImpl.didWrite();
         }
+
         return connection.write(packet);
     }
 
     @Override
     public void receive(Packet packet) {
-        if (packet.isHeaderSet(Packet.HEADER_OP)) {
+        if (packet.isHeaderSet(HEADER_OP)) {
             operationExecutor.execute(packet);
-        } else if (packet.isHeaderSet(Packet.HEADER_EVENT)) {
+        } else if (packet.isHeaderSet(HEADER_EVENT)) {
             eventService.handleEvent(packet);
-        } else if (packet.isHeaderSet(Packet.HEADER_WAN_REPLICATION)) {
+        } else if (packet.isHeaderSet(HEADER_WAN_REPLICATION)) {
             wanReplicationService.handleEvent(packet);
         } else {
             logger.severe("Unknown packet type! Header: " + packet.getHeader());

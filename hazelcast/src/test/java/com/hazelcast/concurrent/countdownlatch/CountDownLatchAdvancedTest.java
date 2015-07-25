@@ -11,6 +11,7 @@ import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.TestThread;
 import com.hazelcast.test.annotation.ClientCompatibleTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.apache.log4j.Level;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -71,6 +72,9 @@ public class CountDownLatchAdvancedTest extends HazelcastTestSupport {
     @Test
     @ClientCompatibleTest
     public void testSimpleUsage() throws InterruptedException {
+        setLoggingLog4j();
+        setLogLevel(Level.DEBUG);
+
         final int k = 5;
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(k);
         final HazelcastInstance[] instances = factory.newInstances();

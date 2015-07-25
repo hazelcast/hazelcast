@@ -44,6 +44,7 @@ import com.hazelcast.spi.impl.operationexecutor.slowoperationdetector.SlowOperat
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.spi.impl.operationservice.impl.responses.Response;
 import com.hazelcast.util.EmptyStatement;
+import com.hazelcast.util.Preconditions;
 import com.hazelcast.util.counters.MwCounter;
 import com.hazelcast.util.executor.ExecutorType;
 import com.hazelcast.util.executor.ManagedExecutorService;
@@ -61,6 +62,7 @@ import static com.hazelcast.spi.InvocationBuilder.DEFAULT_DESERIALIZE_RESULT;
 import static com.hazelcast.spi.InvocationBuilder.DEFAULT_REPLICA_INDEX;
 import static com.hazelcast.spi.InvocationBuilder.DEFAULT_TRY_COUNT;
 import static com.hazelcast.spi.InvocationBuilder.DEFAULT_TRY_PAUSE_MILLIS;
+import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
  * This is the implementation of the {@link com.hazelcast.spi.impl.operationservice.InternalOperationService}.
@@ -113,21 +115,27 @@ public final class OperationServiceImpl implements InternalOperationService {
     final OperationBackupHandler operationBackupHandler;
     final BackpressureRegulator backpressureRegulator;
     final long defaultCallTimeoutMillis;
+    final Address thisAddress;
+
+    public final RemoteInvocationResponseHandler remoteInvocationResponseHandler;
 
     private final SlowOperationDetector slowOperationDetector;
     private final IsStillRunningService isStillRunningService;
+
 
     public OperationServiceImpl(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
         this.node = nodeEngine.getNode();
         this.logger = node.getLogger(OperationService.class);
         this.metricsRegistry = nodeEngine.getMetricsRegistry();
-
+        this.thisAddress = nodeEngine.getThisAddress();
         this.invocationLogger = nodeEngine.getLogger(Invocation.class);
         GroupProperties groupProperties = node.getGroupProperties();
         this.defaultCallTimeoutMillis = groupProperties.OPERATION_CALL_TIMEOUT_MILLIS.getLong();
 
         this.backpressureRegulator = new BackpressureRegulator(groupProperties, logger);
+
+        this.remoteInvocationResponseHandler = new RemoteInvocationResponseHandler(nodeEngine);
 
         int coreSize = Runtime.getRuntime().availableProcessors();
         boolean reallyMultiCore = coreSize >= CORE_SIZE_CHECK;
@@ -356,7 +364,7 @@ public final class OperationServiceImpl implements InternalOperationService {
             throw new IllegalArgumentException("Target is required!");
         }
 
-        if (nodeEngine.getThisAddress().equals(target)) {
+        if (thisAddress.equals(target)) {
             throw new IllegalArgumentException("Target is this node! -> " + target + ", op: " + op);
         }
 
@@ -379,21 +387,12 @@ public final class OperationServiceImpl implements InternalOperationService {
             throw new IllegalArgumentException("Target is required!");
         }
 
-        if (nodeEngine.getThisAddress().equals(target)) {
+        if (thisAddress.equals(target)) {
             throw new IllegalArgumentException("Target is this node! -> " + target + ", response: " + response);
         }
 
-        Data data = nodeEngine.toData(response);
-        Packet packet = new Packet(data);
-        packet.setHeader(Packet.HEADER_OP);
-        packet.setHeader(Packet.HEADER_RESPONSE);
-
-        if (response.isUrgent()) {
-            packet.setHeader(Packet.HEADER_URGENT);
-        }
-
-        Connection connection = node.getConnectionManager().getOrConnect(target);
-        return nodeEngine.getPacketTransceiver().transmit(packet, connection);
+        Connection connection = nodeEngine.getNode().connectionManager.getConnection(target);
+        return remoteInvocationResponseHandler.send(connection, response);
     }
 
     public void onMemberLeft(MemberImpl member) {
