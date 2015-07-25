@@ -59,7 +59,7 @@ public class TxnLockAndGetOperation extends LockAwareOperation implements Mutati
 
     @Override
     public void onWaitExpire() {
-        sendResponse(null);
+        sendNormalResponse(null);
     }
 
     @Override

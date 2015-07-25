@@ -35,6 +35,7 @@ import java.io.IOException;
  * </li>
  * </ol>
  */
+@Deprecated
 public abstract class Response implements IdentifiedDataSerializable {
 
     protected long callId;

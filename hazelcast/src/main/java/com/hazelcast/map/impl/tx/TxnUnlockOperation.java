@@ -89,7 +89,7 @@ public class TxnUnlockOperation extends LockAwareOperation implements MapTxnOper
 
     @Override
     public void onWaitExpire() {
-        sendResponse(false);
+        sendNormalResponse(false);
     }
 
     @Override

@@ -19,6 +19,7 @@ package com.hazelcast.concurrent.lock;
 import com.hazelcast.concurrent.lock.operations.UnlockIfLeaseExpiredOperation;
 import com.hazelcast.concurrent.lock.operations.UnlockOperation;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.ObjectNamespace;
@@ -27,6 +28,7 @@ import com.hazelcast.spi.OperationAccessor;
 import com.hazelcast.spi.OperationResponseHandler;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.exception.RetryableException;
+import com.hazelcast.spi.impl.OperationResponseHandlerAdapter;
 import com.hazelcast.util.scheduler.EntryTaskScheduler;
 import com.hazelcast.util.scheduler.ScheduledEntry;
 import com.hazelcast.util.scheduler.ScheduledEntryProcessor;
@@ -82,22 +84,14 @@ public final class LockEvictionProcessor implements ScheduledEntryProcessor<Data
         operationService.executeOperation(operation);
     }
 
-    private class UnlockResponseHandler implements OperationResponseHandler {
+    private class UnlockResponseHandler extends OperationResponseHandlerAdapter {
         @Override
-        public void sendResponse(Operation op, Object obj) {
-            if (obj instanceof Throwable) {
-                Throwable t = (Throwable) obj;
-                if (t instanceof RetryableException) {
-                    logger.finest("While unlocking... " + t.getMessage());
-                } else {
-                    logger.warning(t);
-                }
+        public void sendErrorResponse(Address address, long callId, boolean urgent, Operation op, Throwable cause) {
+            if (cause instanceof RetryableException) {
+                logger.finest("While unlocking... " + cause.getMessage());
+            } else {
+                logger.warning(cause);
             }
-        }
-
-        @Override
-        public boolean isLocal() {
-            return true;
         }
     }
 }

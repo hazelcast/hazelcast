@@ -59,7 +59,7 @@ public class RemoveIfSameOperation extends BaseRemoveOperation {
 
     @Override
     public void onWaitExpire() {
-        sendResponse(null);
+        sendNormalResponse(null);
     }
 
     @Override

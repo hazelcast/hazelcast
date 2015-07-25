@@ -40,7 +40,7 @@ public class RemoveAllOperation extends MultiMapBackupAwareOperation {
     @Override
     public void run() throws Exception {
         MultiMapContainer container = getOrCreateContainer();
-        coll = remove(getOperationResponseHandler().isLocal());
+        coll = remove(getNotNullOperationResponseHandler().isLocal());
         response = new MultiMapResponse(coll, getValueCollectionType(container));
     }
 
@@ -68,7 +68,7 @@ public class RemoveAllOperation extends MultiMapBackupAwareOperation {
     public void onWaitExpire() {
         MultiMapContainer container = getOrCreateContainer();
         MultiMapConfig.ValueCollectionType valueCollectionType = getValueCollectionType(container);
-        sendResponse(new MultiMapResponse(null, valueCollectionType));
+        sendNormalResponse(new MultiMapResponse(null, valueCollectionType));
     }
 
     @Override

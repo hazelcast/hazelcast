@@ -23,9 +23,9 @@ import com.hazelcast.spi.OperationResponseHandler;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.WaitSupport;
 import com.hazelcast.spi.exception.RetryableException;
-import com.hazelcast.spi.impl.operationservice.impl.responses.CallTimeoutResponse;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+import com.hazelcast.spi.impl.operationservice.impl.responses.CallTimeoutResponse;
 import com.hazelcast.util.Clock;
 
 import java.util.Queue;
@@ -137,8 +137,17 @@ class WaitingOperation extends AbstractOperation implements Delayed, PartitionAw
         if (expired) {
             waitSupport.onWaitExpire();
         } else {
-            OperationResponseHandler responseHandler = op.getOperationResponseHandler();
-            responseHandler.sendResponse(op, cancelResponse);
+            OperationResponseHandler responseHandler = op.getNotNullOperationResponseHandler();
+            if (cancelResponse instanceof CallTimeoutResponse) {
+                responseHandler.sendTimeoutResponse(op);
+            } else if (cancelResponse instanceof Throwable) {
+                op.sendErrorResponse((Throwable) cancelResponse);
+            } else {
+                //responseHandler.sendTimeoutResponse();
+                //responseHandler.sendResponse(op, cancelResponse);
+                //todo:
+                throw new RuntimeException();
+            }
         }
     }
 

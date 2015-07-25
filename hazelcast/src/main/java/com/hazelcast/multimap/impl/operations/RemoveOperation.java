@@ -85,7 +85,7 @@ public class RemoveOperation extends MultiMapBackupAwareOperation {
 
     @Override
     public void onWaitExpire() {
-        sendResponse(false);
+        sendNormalResponse(false);
     }
 
     @Override

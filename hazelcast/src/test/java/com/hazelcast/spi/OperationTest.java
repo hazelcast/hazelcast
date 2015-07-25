@@ -36,7 +36,7 @@ public class OperationTest extends HazelcastTestSupport {
         assertNotNull(found);
 
         // verify that the sendResponse is forwarded.
-        found.sendResponse(op, "foo");
+        found.sendNormalResponse(op, "foo", 0);
         verify(responseHandler).sendResponse("foo");
 
         // verify that the isLocal call is forwarded
@@ -75,7 +75,7 @@ public class OperationTest extends HazelcastTestSupport {
 
         // verify that the sendResponse is forwarded.
         found.sendResponse("foo");
-        verify(operationResponseHandler).sendResponse(op, "foo");
+        verify(operationResponseHandler).sendNormalResponse(op, "foo", 0);
 
         // verify that the isLocal call is forwarded
         found.isLocal();

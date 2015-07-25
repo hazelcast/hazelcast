@@ -17,12 +17,13 @@
 package com.hazelcast.spi.impl;
 
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.nio.Address;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationResponseHandler;
 
 public final class OperationResponseHandlerFactory {
 
-    private static final NoResponseHandler EMPTY_RESPONSE_HANDLER = new NoResponseHandler();
+    private static final EmptyResponseHandler EMPTY_RESPONSE_HANDLER = new EmptyResponseHandler();
 
     private OperationResponseHandlerFactory() {
     }
@@ -31,13 +32,9 @@ public final class OperationResponseHandlerFactory {
         return EMPTY_RESPONSE_HANDLER;
     }
 
-    private static class NoResponseHandler
-            implements OperationResponseHandler {
+    private static class EmptyResponseHandler extends OperationResponseHandlerAdapter {
 
-        @Override
-        public void sendResponse(Operation op, Object obj) {
-        }
-
+        // TODO: Should this not return true?
         @Override
         public boolean isLocal() {
             return false;
@@ -56,11 +53,22 @@ public final class OperationResponseHandlerFactory {
         }
 
         @Override
-        public void sendResponse(Operation op, Object obj) {
-            if (obj instanceof Throwable) {
-                Throwable t = (Throwable) obj;
-                logger.severe(t);
-            }
+        public void sendNormalResponse(Operation op, Object response, int syncBackupCount) {
+        }
+
+        @Override
+        public void sendBackupComplete(Address address, long callId, boolean urgent) {
+        }
+
+        @Override
+        public void sendErrorResponse(Address address, long callId, boolean urgent, Operation op, Throwable cause) {
+            //todo: should we not include operation information?
+            logger.severe(cause);
+        }
+
+        @Override
+        public void sendTimeoutResponse(Operation op) {
+            //todo: should we not log the timeout?
         }
 
         @Override

@@ -179,9 +179,12 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
             }
             callbackChain = callbackHead;
             callbackHead = null;
-            notifyAll();
 
-            operationService.invocationsRegistry.deregister(invocation);
+            notify();
+
+            //if (registered) {
+                operationService.invocationsRegistry.deregister(invocation);
+            //}
         }
 
 
@@ -402,7 +405,7 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
 
     @Override
     public boolean isDone() {
-         return responseAvailable(response);
+        return responseAvailable(response);
     }
 
     @Override

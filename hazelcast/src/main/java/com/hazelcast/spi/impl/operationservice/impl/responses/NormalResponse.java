@@ -37,6 +37,7 @@ import java.io.IOException;
  *
  * @author mdogan 4/10/13
  */
+@Deprecated
 public class NormalResponse extends Response {
 
     private Object value;

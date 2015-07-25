@@ -22,6 +22,7 @@ import com.hazelcast.spi.impl.SpiDataSerializerHook;
 /**
  * An response that indicates that the execution of a single call ran into a timeout.
  */
+@Deprecated
 public class CallTimeoutResponse extends Response implements IdentifiedDataSerializable {
 
     public CallTimeoutResponse() {

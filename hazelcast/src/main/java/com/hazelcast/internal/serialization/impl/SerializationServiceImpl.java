@@ -20,12 +20,11 @@ import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
-import com.hazelcast.nio.BufferObjectDataInput;
-import com.hazelcast.nio.BufferObjectDataOutput;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.ByteArraySerializer;
-import com.hazelcast.nio.serialization.ClassDefinition;
+import com.hazelcast.internal.serialization.InputOutputFactory;
+import com.hazelcast.internal.serialization.ObjectDataInputStream;
+import com.hazelcast.internal.serialization.ObjectDataOutputStream;
+import com.hazelcast.internal.serialization.PortableContext;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.impl.ConstantSerializers.BooleanSerializer;
 import com.hazelcast.internal.serialization.impl.ConstantSerializers.ByteSerializer;
 import com.hazelcast.internal.serialization.impl.ConstantSerializers.CharArraySerializer;
@@ -42,22 +41,6 @@ import com.hazelcast.internal.serialization.impl.ConstantSerializers.ShortArrayS
 import com.hazelcast.internal.serialization.impl.ConstantSerializers.ShortSerializer;
 import com.hazelcast.internal.serialization.impl.ConstantSerializers.StringSerializer;
 import com.hazelcast.internal.serialization.impl.ConstantSerializers.TheByteArraySerializer;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.DataSerializable;
-import com.hazelcast.nio.serialization.DataSerializableFactory;
-import com.hazelcast.nio.serialization.FieldDefinition;
-import com.hazelcast.nio.serialization.FieldType;
-import com.hazelcast.nio.serialization.HazelcastSerializationException;
-import com.hazelcast.internal.serialization.InputOutputFactory;
-import com.hazelcast.internal.serialization.ObjectDataInputStream;
-import com.hazelcast.internal.serialization.ObjectDataOutputStream;
-import com.hazelcast.nio.serialization.Portable;
-import com.hazelcast.internal.serialization.PortableContext;
-import com.hazelcast.nio.serialization.PortableFactory;
-import com.hazelcast.nio.serialization.PortableReader;
-import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.nio.serialization.Serializer;
-import com.hazelcast.nio.serialization.StreamSerializer;
 import com.hazelcast.internal.serialization.impl.DefaultSerializers.BigDecimalSerializer;
 import com.hazelcast.internal.serialization.impl.DefaultSerializers.BigIntegerSerializer;
 import com.hazelcast.internal.serialization.impl.DefaultSerializers.ClassSerializer;
@@ -68,6 +51,23 @@ import com.hazelcast.internal.serialization.impl.DefaultSerializers.ObjectSerial
 import com.hazelcast.internal.serialization.impl.bufferpool.BufferPool;
 import com.hazelcast.internal.serialization.impl.bufferpool.BufferPoolFactory;
 import com.hazelcast.internal.serialization.impl.bufferpool.BufferPoolThreadLocal;
+import com.hazelcast.nio.BufferObjectDataInput;
+import com.hazelcast.nio.BufferObjectDataOutput;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.ByteArraySerializer;
+import com.hazelcast.nio.serialization.ClassDefinition;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.DataSerializableFactory;
+import com.hazelcast.nio.serialization.FieldDefinition;
+import com.hazelcast.nio.serialization.FieldType;
+import com.hazelcast.nio.serialization.HazelcastSerializationException;
+import com.hazelcast.nio.serialization.Portable;
+import com.hazelcast.nio.serialization.PortableFactory;
+import com.hazelcast.nio.serialization.PortableReader;
+import com.hazelcast.nio.serialization.Serializer;
+import com.hazelcast.nio.serialization.StreamSerializer;
 
 import java.io.Externalizable;
 import java.io.IOException;
@@ -89,7 +89,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static com.hazelcast.util.Preconditions.checkNotNull;
 import static java.lang.Boolean.parseBoolean;
 
 public class SerializationServiceImpl implements SerializationService {
@@ -229,7 +228,13 @@ public class SerializationServiceImpl implements SerializationService {
 
     @Override
     public final byte[] toBytes(Object obj, PartitioningStrategy strategy) {
-        checkNotNull(obj);
+        if (obj == null) {
+            return null;
+        }
+
+        if (obj instanceof Data) {
+            return ((Data) obj).toByteArray();
+        }
 
         BufferPool pool = bufferPoolThreadLocal.get();
         BufferObjectDataOutput out = pool.takeOutputBuffer();

@@ -65,7 +65,7 @@ public class GetEntryViewOperation extends KeyBasedMapOperation implements Reado
 
     @Override
     public void onWaitExpire() {
-        sendResponse(new OperationTimeoutException("Cannot read transactionally locked entry!"));
+        sendErrorResponse(new OperationTimeoutException("Cannot read transactionally locked entry!"));
     }
 
     @Override

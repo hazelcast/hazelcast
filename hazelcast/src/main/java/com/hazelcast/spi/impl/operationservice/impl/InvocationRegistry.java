@@ -28,11 +28,6 @@ import com.hazelcast.partition.ReplicaErrorLogger;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.executionservice.InternalExecutionService;
 import com.hazelcast.spi.impl.operationexecutor.OperationHostileThread;
-import com.hazelcast.spi.impl.operationservice.impl.responses.BackupResponse;
-import com.hazelcast.spi.impl.operationservice.impl.responses.CallTimeoutResponse;
-import com.hazelcast.spi.impl.operationservice.impl.responses.ErrorResponse;
-import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
-import com.hazelcast.spi.impl.operationservice.impl.responses.Response;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.counters.MwCounter;
@@ -194,27 +189,7 @@ public class InvocationRegistry {
         return invocations.get(callId);
     }
 
-    /**
-     * Notifies the invocation that a Response is available.
-     *
-     * @param response The response that is available.
-     * @param sender   Endpoint who sent the response
-     */
-    public void notify(Response response, Address sender) {
-        if (response instanceof NormalResponse) {
-            notifyNormalResponse((NormalResponse) response, sender);
-        } else if (response instanceof BackupResponse) {
-            notifyBackupComplete(response.getCallId());
-        } else if (response instanceof CallTimeoutResponse) {
-            notifyCallTimeout((CallTimeoutResponse) response, sender);
-        } else if (response instanceof ErrorResponse) {
-            notifyErrorResponse((ErrorResponse) response, sender);
-        } else {
-            logger.severe("Unrecognized response: " + response);
-        }
-    }
-
-    public void notifyBackupComplete(long callId) {
+    public void notifyBackupComplete(long callId, Address sender) {
         responseBackupCounter.inc();
 
         try {
@@ -225,55 +200,62 @@ public class InvocationRegistry {
             // taking too much time.
             if (invocation == null) {
                 if (logger.isFinestEnabled()) {
-                    logger.finest("No Invocation found for BackupResponse with callId " + callId);
+                    logger.finest("No Invocation found for BackupResponse with callId " + callId + " from sender:" + sender);
                 }
                 return;
             }
 
-            invocation.notifySingleBackupComplete();
+            invocation.sendBackupComplete(null, callId, false);
         } catch (Exception e) {
             ReplicaErrorLogger.log(e, logger);
         }
     }
 
-    private void notifyErrorResponse(ErrorResponse response, Address sender) {
+    public void notifyErrorResponse(long callId, Object cause, Address sender) {
         responseErrorCounter.inc();
-        Invocation invocation = invocations.get(response.getCallId());
+
+        // todo: fast remove
+        Invocation invocation = invocations.get(callId);
 
         if (invocation == null) {
             if (nodeEngine.isActive()) {
-                logger.warning("No Invocation found for response: " + response + " sent from " + sender);
+                logger.warning("No Invocation found for error-response: " + callId + " sent from " + sender);
             }
             return;
         }
 
-        invocation.notifyError(response.getCause());
+        invocation.notifyError(cause);
     }
 
-    private void notifyNormalResponse(NormalResponse response, Address sender) {
+    public void notifyNormalResponse(long callId, int backupCount, Object response, Address sender) {
         responseNormalCounter.inc();
-        Invocation invocation = invocations.get(response.getCallId());
+
+        Invocation invocation = invocations.get(callId);
 
         if (invocation == null) {
             if (nodeEngine.isActive()) {
-                logger.warning("No Invocation found for response: " + response + " sent from " + sender);
+                logger.warning("No Invocation found for normal-response: " + callId + " sent from " + sender);
             }
             return;
         }
-        invocation.notifyNormalResponse(response.getValue(), response.getBackupCount());
+
+        invocation.notifyNormalResponse(response, backupCount);
     }
 
-    private void notifyCallTimeout(CallTimeoutResponse response, Address sender) {
+    public void notifyCallTimeout(long callId, Address sender) {
         responseTimeoutCounter.inc();
-        Invocation invocation = invocations.get(response.getCallId());
+
+        // todo: fast remove
+        Invocation invocation = invocations.get(callId);
 
         if (invocation == null) {
             if (nodeEngine.isActive()) {
-                logger.warning("No Invocation found for response: " + response + " sent from " + sender);
+                logger.warning("No Invocation found for call-timeout-response: " + callId + " sent from " + sender);
             }
             return;
         }
-        invocation.notifyCallTimeout();
+
+        invocation.sendTimeoutResponse(invocation.op);
     }
 
     public void onMemberLeft(MemberImpl member) {

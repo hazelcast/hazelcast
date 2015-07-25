@@ -26,6 +26,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionManager;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.partition.NoDataMemberInClusterException;
 import com.hazelcast.spi.ExceptionAction;
@@ -41,9 +42,7 @@ import com.hazelcast.spi.exception.WrongTargetException;
 import com.hazelcast.spi.impl.AllowedDuringShutdown;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationexecutor.OperationExecutor;
-import com.hazelcast.spi.impl.operationservice.impl.responses.CallTimeoutResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.ErrorResponse;
-import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -121,6 +120,7 @@ abstract class Invocation implements OperationResponseHandler, Runnable {
     Invocation(NodeEngineImpl nodeEngine, String serviceName, Operation op, int partitionId,
                int replicaIndex, int tryCount, long tryPauseMillis, long callTimeout, ExecutionCallback callback,
                boolean resultDeserialized) {
+
         this.operationService = (OperationServiceImpl) nodeEngine.getOperationService();
         this.logger = operationService.invocationLogger;
         this.nodeEngine = nodeEngine;
@@ -214,7 +214,7 @@ abstract class Invocation implements OperationResponseHandler, Runnable {
 
     private void handleInvocationException(Exception e) {
         if (e instanceof RetryableException) {
-            notify(e);
+            notifyError(e);
         } else {
             throw ExceptionUtil.rethrow(e);
         }
@@ -264,7 +264,7 @@ abstract class Invocation implements OperationResponseHandler, Runnable {
         boolean sent = operationService.send(op, invTarget);
         if (!sent) {
             operationService.invocationsRegistry.deregister(this);
-            notify(new RetryableIOException("Packet not send to -> " + invTarget));
+            notifyError(new RetryableIOException("Packet not send to -> " + invTarget));
         }
     }
 
@@ -274,14 +274,14 @@ abstract class Invocation implements OperationResponseHandler, Runnable {
     }
 
     private boolean engineActive() {
-        final NodeState state = nodeEngine.getNode().getState();
+        NodeState state = nodeEngine.getNode().getState();
         if (state == NodeState.ACTIVE) {
             return true;
         }
 
         boolean allowed = state == NodeState.SHUTTING_DOWN && (op instanceof AllowedDuringShutdown);
         if (!allowed) {
-            notify(new HazelcastInstanceNotActiveException("State: " + state));
+            notifyError(new HazelcastInstanceNotActiveException("State: " + state));
             remote = false;
         }
         return allowed;
@@ -297,38 +297,38 @@ abstract class Invocation implements OperationResponseHandler, Runnable {
 
         invTarget = getTarget();
 
-        final ClusterService clusterService = nodeEngine.getClusterService();
+        ClusterService clusterService = nodeEngine.getClusterService();
         if (invTarget == null) {
             remote = false;
             if (nodeEngine.isActive()) {
                 if (clusterService.getSize(DATA_MEMBER_SELECTOR) == 0) {
-                    final NoDataMemberInClusterException exception = new NoDataMemberInClusterException(
+                    NoDataMemberInClusterException exception = new NoDataMemberInClusterException(
                             "Partitions can't be assigned since all nodes in the cluster are lite members");
-                    notify(exception);
+                    notifyError(exception);
                 } else {
-                    notify(new WrongTargetException(thisAddress, null, partitionId
+                    notifyError(new WrongTargetException(thisAddress, null, partitionId
                             , replicaIndex, op.getClass().getName(), serviceName));
                 }
             } else {
-                notify(new HazelcastInstanceNotActiveException());
+                notifyError(new HazelcastInstanceNotActiveException());
             }
             return false;
         }
 
         targetMember = clusterService.getMember(invTarget);
         if (targetMember == null && !(isJoinOperation(op) || isWanReplicationOperation(op))) {
-            notify(new TargetNotMemberException(invTarget, partitionId, op.getClass().getName(), serviceName));
+            notifyError(new TargetNotMemberException(invTarget, partitionId, op.getClass().getName(), serviceName));
             return false;
         }
 
         if (op.getPartitionId() != partitionId) {
-            notify(new IllegalStateException("Partition id of operation: " + op.getPartitionId()
+            notifyError(new IllegalStateException("Partition id of operation: " + op.getPartitionId()
                     + " is not equal to the partition id of invocation: " + partitionId));
             return false;
         }
 
         if (op.getReplicaIndex() != replicaIndex) {
-            notify(new IllegalStateException("Replica index of operation: " + op.getReplicaIndex()
+            notifyError(new IllegalStateException("Replica index of operation: " + op.getReplicaIndex()
                     + " is not equal to the replica index of invocation: " + replicaIndex));
             return false;
         }
@@ -338,43 +338,27 @@ abstract class Invocation implements OperationResponseHandler, Runnable {
     }
 
     @Override
-    public void sendResponse(Operation op, Object obj) {
+    public void sendNormalResponse(Operation op, Object response, int syncBackupCount) {
         if (!RESPONSE_RECEIVED.compareAndSet(this, FALSE, TRUE)) {
             throw new ResponseAlreadySentException("NormalResponse already responseReceived for callback: " + this
-                    + ", current-response: : " + obj);
+                    + ", current-response: : " + response);
         }
-        notify(obj);
+
+        notifyNormalResponse(response, syncBackupCount);
     }
 
-    //this method is called by the operation service to signal the invocation that something has happened, e.g.
-    //a response is returned.
-    void notify(Object response) {
-        if (response == null) {
-            response = NULL_RESPONSE;
-        }
-
-        if (response instanceof CallTimeoutResponse) {
-            notifyCallTimeout();
-            return;
-        }
-
-        if (response instanceof ErrorResponse || response instanceof Throwable) {
-            notifyError(response);
-            return;
-        }
-
-        if (response instanceof NormalResponse) {
-            NormalResponse normalResponse = (NormalResponse) response;
-            notifyNormalResponse(normalResponse.getValue(), normalResponse.getBackupCount());
-            return;
-        }
-
-        // there are no backups or the number of expected backups has returned; so signal the future that the result is ready.
-        invocationFuture.set(response);
+    @Override
+    public void sendErrorResponse(Address address, long callId, boolean urgent, Operation op, Throwable cause) {
+        notifyError(cause);
     }
 
     void notifyError(Object error) {
         assert error != null;
+
+        // todo: this part sucks since it is now done on the io-thread/response-handler thread.
+        if (error instanceof Data) {
+            error = nodeEngine.getSerializationService().toObject(error);
+        }
 
         Throwable cause;
         if (error instanceof Throwable) {
@@ -438,7 +422,8 @@ abstract class Invocation implements OperationResponseHandler, Runnable {
 
     @SuppressFBWarnings(value = "VO_VOLATILE_INCREMENT",
             justification = "We have the guarantee that only a single thread at any given time can change the volatile field")
-    void notifyCallTimeout() {
+    @Override
+    public void sendTimeoutResponse(Operation op) {
         operationService.callTimeoutCount.inc();
 
         if (logger.isFinestEnabled()) {
@@ -457,7 +442,8 @@ abstract class Invocation implements OperationResponseHandler, Runnable {
         handleRetry("invocation timeout");
     }
 
-    void notifySingleBackupComplete() {
+    @Override
+    public void sendBackupComplete(Address address, long callId, boolean urgent) {
         int newBackupsCompleted = BACKUPS_COMPLETED.incrementAndGet(this);
 
         Object pendingResponse = this.pendingResponse;
@@ -589,7 +575,7 @@ abstract class Invocation implements OperationResponseHandler, Runnable {
             return false;
         }
 
-         // The backups have not yet completed, but we are going to release the future anyway if a pendingResponse has been set.
+        // The backups have not yet completed, but we are going to release the future anyway if a pendingResponse has been set.
         invocationFuture.set(pendingResponse);
         return true;
     }

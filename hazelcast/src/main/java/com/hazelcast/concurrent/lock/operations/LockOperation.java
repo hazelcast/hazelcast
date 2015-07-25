@@ -73,7 +73,7 @@ public class LockOperation extends BaseLockOperation implements WaitSupport, Bac
         } else {
             response = Boolean.FALSE;
         }
-        sendResponse(response);
+        sendNormalResponse(response);
     }
 
     @Override

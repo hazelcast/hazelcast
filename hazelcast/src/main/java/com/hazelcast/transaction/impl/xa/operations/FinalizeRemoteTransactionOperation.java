@@ -58,7 +58,7 @@ public class FinalizeRemoteTransactionOperation extends BaseXAOperation implemen
         XAService xaService = getService();
         final List<XATransaction> list = xaService.removeTransactions(xid);
         if (list == null) {
-            sendResponse(getNodeEngine().toData(XAException.XAER_NOTA));
+            sendNormalResponse(getNodeEngine().toData(XAException.XAER_NOTA));
             return;
         }
         final int size = list.size();
@@ -79,7 +79,7 @@ public class FinalizeRemoteTransactionOperation extends BaseXAOperation implemen
 
             void sendResponseIfComplete() {
                 if (size == counter.incrementAndGet()) {
-                    sendResponse(null);
+                    sendNormalResponse(null);
                 }
             }
         };

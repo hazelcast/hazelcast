@@ -16,25 +16,48 @@
 
 package com.hazelcast.spi;
 
+import com.hazelcast.nio.Address;
+
 /**
  * A handler for the {@link com.hazelcast.spi.OperationService} when it has calculated a response. This way you can hook
  * into the Operation execution and decide what to do with it: for example, send it to the right machine.
  *
- * The difference between the {@link ResponseHandler} and the OperationResponseHandler is that the OperationResponseHandler
- * can be re-used since it isn't tied to a particular execution.
+ * There are 2 difference between the {@link ResponseHandler} and the OperationResponseHandler:
+ * <ol>
+ *     <li>the OperationResponseHandler can be re-used since it isn't tied to a particular execution.</li>
+ *     <li>the OperationResponseHandler has specific methods for types of responses instead of a generic one.
+ *     This prevent forcing to create {@link com.hazelcast.spi.impl.operationservice.impl.responses.Response} instances.</li>
+ * </ol>
  *
  * Also during the development of Hazelcast 3.6 additional methods will be added to the OperationResponseHandler for certain
  * types of responses like exceptions, backup complete etc.
  */
-public interface OperationResponseHandler<O extends Operation> {
+public interface OperationResponseHandler {
 
     /**
-     * Sends a response.
+     * Sends back a normal response
      *
-     * @param op the operation that got executed.
-     * @param response the response of the operation that got executed.
+     * @param op
+     * @param response
+     * @param syncBackupCount send back to the caller for how many acks of sync backups he needs to wait for.
      */
-    void sendResponse(O op, Object response);
+    void sendNormalResponse(Operation op, Object response, int syncBackupCount);
+
+    void sendBackupComplete(Address address, long callId, boolean urgent);
+
+    /**
+     * Sends a error response.
+     *
+     * @param address
+     * @param callId
+     * @param urgent
+     * @param op the Operation that failed. The Operation could be null e.g. if the operation could not be deserialized due
+     *           to a deserialization error.
+     * @param cause
+     */
+    void sendErrorResponse(Address address, long callId, boolean urgent, Operation op, Throwable cause);
+
+    void sendTimeoutResponse(Operation op);
 
     /**
      * Checks if this OperationResponseHandler is for a local invocation.

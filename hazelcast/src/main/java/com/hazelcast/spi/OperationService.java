@@ -174,8 +174,7 @@ public interface OperationService {
     /**
      * Sends a response to a remote machine.
      * <p/>
-     * This methods is deprecated since 3.5. It is an implementation detail, so it is moved to the
-     * {@link com.hazelcast.spi.impl.operationservice.InternalOperationService}.
+     * This methods is deprecated since 3.5.
      *
      * @param response the response to send.
      * @param target   the address of the target machine

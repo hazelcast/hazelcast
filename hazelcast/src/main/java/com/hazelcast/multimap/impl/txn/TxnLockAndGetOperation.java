@@ -74,7 +74,7 @@ public class TxnLockAndGetOperation extends MultiMapKeyBasedOperation implements
 
     @Override
     public void onWaitExpire() {
-        sendResponse(null);
+        sendNormalResponse(null);
     }
 
     @Override

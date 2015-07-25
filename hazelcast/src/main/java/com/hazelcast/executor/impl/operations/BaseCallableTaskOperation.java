@@ -80,7 +80,7 @@ abstract class BaseCallableTaskOperation extends Operation implements TraceableO
         try {
             return getNodeEngine().toObject(callableData);
         } catch (HazelcastSerializationException e) {
-            sendResponse(e);
+            sendErrorResponse(e);
             throw ExceptionUtil.rethrow(e);
         }
     }

@@ -75,7 +75,7 @@ public class TxnDeleteOperation extends BaseRemoveOperation implements MapTxnOpe
 
     @Override
     public void onWaitExpire() {
-        sendResponse(false);
+        sendNormalResponse(false);
     }
 
     public long getVersion() {

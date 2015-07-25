@@ -26,10 +26,12 @@ import static com.hazelcast.spi.OperationAccessor.setCallId;
 import static com.hazelcast.spi.OperationAccessor.setCallTimeout;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Matchers.same;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyZeroInteractions;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -85,7 +87,7 @@ public class OperationRunnerImplTest extends HazelcastTestSupport {
 
         operationRunner.run(op);
         assertEquals(1, counter.get());
-        verify(responseHandler).sendResponse(op, response);
+        verify(responseHandler).sendNormalResponse(op, response, 0);
     }
 
     @Test
@@ -110,7 +112,7 @@ public class OperationRunnerImplTest extends HazelcastTestSupport {
         operationRunner.run(op);
 
         assertEquals(1, counter.get());
-        verify(responseHandler).sendResponse(op, response);
+        verify(responseHandler).sendNormalResponse(op, response, 0);
     }
 
     @Test
@@ -129,7 +131,12 @@ public class OperationRunnerImplTest extends HazelcastTestSupport {
         operationRunner.run(op);
 
         assertEquals(0, counter.get());
-        verify(responseHandler).sendResponse(same(op), any(IllegalStateException.class));
+        verify(responseHandler).sendErrorResponse(
+                same(op.getCallerAddress()),
+                eq(op.getCallId()),
+                eq(op.isUrgent()),
+                same(op),
+                any(IllegalStateException.class));
     }
 
     @Test
@@ -145,7 +152,12 @@ public class OperationRunnerImplTest extends HazelcastTestSupport {
 
         operationRunner.run(op);
 
-        verify(responseHandler).sendResponse(same(op), any(ExpectedRuntimeException.class));
+        verify(responseHandler).sendErrorResponse(
+                same(op.getCallerAddress()),
+                eq(op.getCallId()),
+                eq(op.isUrgent()),
+                same(op),
+                any(ExpectedRuntimeException.class));
     }
 
     @Test
@@ -163,7 +175,8 @@ public class OperationRunnerImplTest extends HazelcastTestSupport {
         operationRunner.run(op);
         assertEquals(0, counter.get());
         // verify that the response handler was not called
-        verify(responseHandler, never()).sendResponse(same(op), any());
+
+        verifyZeroInteractions(responseHandler);
     }
 
     @Test
@@ -183,7 +196,7 @@ public class OperationRunnerImplTest extends HazelcastTestSupport {
 
         operationRunner.run(op);
         assertEquals(0, counter.get());
-        verify(responseHandler).sendResponse(same(op), any(CallTimeoutResponse.class));
+        verify(responseHandler).sendTimeoutResponse(op);
     }
 
     @Test

@@ -25,6 +25,7 @@ import com.hazelcast.spi.impl.SpiDataSerializerHook;
  * but also the {@link BackupResponse} to make sure that the change
  * is written to the expected number of backups.
  */
+@Deprecated
 public final class BackupResponse extends Response {
 
     public BackupResponse() {

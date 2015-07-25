@@ -217,7 +217,7 @@ public final class MigrationRequestOperation extends BaseMigrationOperation {
         @Override
         public void notify(Object result) {
             migrationInfo.doneProcessing();
-            op.sendResponse(result);
+            op.sendNormalResponse(result);
         }
     }
 }

@@ -127,7 +127,7 @@ public class CacheCreateConfigOperation
         @Override
         public void notify(Object object) {
             if (counter.decrementAndGet() == 0) {
-                operation.sendResponse(null);
+                operation.sendNormalResponse(null);
             }
         }
     }

@@ -272,7 +272,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
 
         GetOperation operation = new GetOperation(name, key);
         operation.setThreadId(ThreadUtil.getThreadId());
-        Data value = (Data) invokeOperation(key, operation);
+        Data value = (Data) invokeOperation(key, operation, false);
 
         if (nearCache != null) {
             if (notOwnerPartitionForKey(key) || cacheKeyAnyway()) {
@@ -393,7 +393,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
 
     protected Data putInternal(Data key, Data value, long ttl, TimeUnit timeunit) {
         PutOperation operation = new PutOperation(name, key, value, getTimeInMillis(ttl, timeunit));
-        Data previousValue = (Data) invokeOperation(key, operation);
+        Data previousValue = (Data) invokeOperation(key, operation, false);
         invalidateNearCache(key);
         return previousValue;
     }
@@ -407,7 +407,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
 
     protected Data putIfAbsentInternal(Data key, Data value, long ttl, TimeUnit timeunit) {
         PutIfAbsentOperation operation = new PutIfAbsentOperation(name, key, value, getTimeInMillis(ttl, timeunit));
-        Data previousValue = (Data) invokeOperation(key, operation);
+        Data previousValue = (Data) invokeOperation(key, operation, false);
         invalidateNearCache(key);
         return previousValue;
     }
@@ -419,7 +419,12 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
     }
 
     private Object invokeOperation(Data key, KeyBasedMapOperation operation) {
-        int partitionId = partitionService.getPartitionId(key);
+        return invokeOperation(key, operation, true);
+    }
+
+    private Object invokeOperation(Data key, KeyBasedMapOperation operation, boolean deserializeResult) {
+        final NodeEngine nodeEngine = getNodeEngine();
+        int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
         operation.setThreadId(ThreadUtil.getThreadId());
         try {
             Object result;
@@ -427,7 +432,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
                 long time = System.currentTimeMillis();
                 Future f = operationService
                         .createInvocationBuilder(SERVICE_NAME, operation, partitionId)
-                        .setResultDeserialized(false)
+                        .setResultDeserialized(deserializeResult)
                         .invoke();
                 result = f.get();
                 if (operation instanceof BasePutOperation) {
@@ -470,7 +475,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
 
     protected Data replaceInternal(Data key, Data value) {
         ReplaceOperation operation = new ReplaceOperation(name, key, value);
-        Data result = (Data) invokeOperation(key, operation);
+        Data result = (Data) invokeOperation(key, operation, false);
         invalidateNearCache(key);
         return result;
     }
@@ -565,7 +570,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
 
     protected Data removeInternal(Data key) {
         RemoveOperation operation = new RemoveOperation(name, key);
-        Data previousValue = (Data) invokeOperation(key, operation);
+        Data previousValue = (Data) invokeOperation(key, operation, false);
         invalidateNearCache(key);
         return previousValue;
     }

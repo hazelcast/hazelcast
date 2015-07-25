@@ -65,7 +65,7 @@ public class TxnReservePollOperation extends QueueBackupAwareOperation implement
 
     @Override
     public void onWaitExpire() {
-        sendResponse(null);
+        sendNormalResponse(null);
     }
 
     @Override

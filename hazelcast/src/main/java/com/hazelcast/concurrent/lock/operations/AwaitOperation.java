@@ -111,7 +111,7 @@ public class AwaitOperation extends BaseLockOperation
         boolean locked = lockStore.lock(key, getCallerUuid(), threadId, getReferenceCallId(), leaseTime);
         if (locked) {
             // expired & acquired lock, send FALSE
-            sendResponse(false);
+            sendNormalResponse(false);
         } else {
             // expired but could not acquire lock, no response atm
             lockStore.registerExpiredAwaitOp(this);

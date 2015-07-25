@@ -18,6 +18,7 @@ package com.hazelcast.spi.impl.operationservice.impl.operations;
 
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -28,7 +29,6 @@ import com.hazelcast.spi.OperationAccessor;
 import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.OperationResponseHandler;
 import com.hazelcast.spi.impl.SpiDataSerializerHook;
-import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
 import com.hazelcast.util.ResponseQueueFactory;
 
 import java.io.IOException;
@@ -66,14 +66,10 @@ public final class PartitionIteratingOperation extends AbstractOperation impleme
 
     private void getResults(Map<Integer, ResponseQueue> responses) throws InterruptedException {
         for (Map.Entry<Integer, ResponseQueue> responseQueueEntry : responses.entrySet()) {
-            final ResponseQueue queue = responseQueueEntry.getValue();
-            final Integer key = responseQueueEntry.getKey();
-            final Object result = queue.get();
-            if (result instanceof NormalResponse) {
-                results.put(key, ((NormalResponse) result).getValue());
-            } else {
-                results.put(key, result);
-            }
+            ResponseQueue queue = responseQueueEntry.getValue();
+            Integer key = responseQueueEntry.getKey();
+            Object result = queue.get();
+            results.put(key, result);
         }
     }
 
@@ -111,11 +107,31 @@ public final class PartitionIteratingOperation extends AbstractOperation impleme
     }
 
     private static class ResponseQueue implements OperationResponseHandler {
+        //TODO: Integrate the logic of the queue into this class. ResponseQueueFactory can't carry its weight.
         final BlockingQueue b = ResponseQueueFactory.newResponseQueue();
 
         @Override
-        public void sendResponse(Operation op, Object obj) {
-            if (!b.offer(obj)) {
+        public void sendNormalResponse(Operation op, Object response, int syncBackupCount) {
+            offer(response);
+        }
+
+        @Override
+        public void sendBackupComplete(Address address, long callId, boolean urgent) {
+            //todo:
+        }
+
+        @Override
+        public void sendErrorResponse(Address address, long callId, boolean urgent, Operation op, Throwable cause) {
+            offer(cause);
+        }
+
+        @Override
+        public void sendTimeoutResponse(Operation op) {
+            //todo:
+        }
+
+        private void offer(Object response) {
+            if (!b.offer(response)) {
                 throw new HazelcastException("Response could not be queued for transportation");
             }
         }

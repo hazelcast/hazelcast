@@ -44,6 +44,9 @@ import java.util.concurrent.FutureTask;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
+import static java.lang.Boolean.FALSE;
+import static java.lang.Boolean.TRUE;
+
 public class DistributedExecutorService implements ManagedService, RemoteService, ExecutionTracingService,
         StatisticsAwareService {
 
@@ -175,7 +178,7 @@ public class DistributedExecutorService implements ManagedService, RemoteService
 
     private final class CallableProcessor extends FutureTask implements Runnable {
         //is being used through the RESPONSE_FLAG. Can't be private due to reflection constraint.
-        volatile Boolean responseFlag = Boolean.FALSE;
+        volatile Boolean responseFlag = FALSE;
 
         private final String name;
         private final String uuid;
@@ -223,8 +226,8 @@ public class DistributedExecutorService implements ManagedService, RemoteService
         }
 
         private void sendResponse(Object result) {
-            if (RESPONSE_FLAG.compareAndSet(this, Boolean.FALSE, Boolean.TRUE)) {
-                op.sendResponse(result);
+            if (RESPONSE_FLAG.compareAndSet(this, FALSE, TRUE)) {
+                op.sendNormalResponse(result);
             }
         }
     }

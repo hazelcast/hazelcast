@@ -17,13 +17,13 @@
 package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationResponseHandler;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
-import com.hazelcast.spi.impl.operationservice.impl.responses.ErrorResponse;
-import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
-import com.hazelcast.spi.impl.operationservice.impl.responses.Response;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 
 /**
  * An {@link OperationResponseHandler} that is used for a remotely executed Operation. So when a calling member
@@ -31,28 +31,93 @@ import com.hazelcast.spi.impl.operationservice.impl.responses.Response;
  * to that operation.
  */
 public final class RemoteInvocationResponseHandler implements OperationResponseHandler {
-    private final InternalOperationService operationService;
 
-    public RemoteInvocationResponseHandler(InternalOperationService operationService) {
-        this.operationService = operationService;
+    private final SerializationService serializationService;
+    private final NodeEngineImpl nodeEngine;
+
+    public RemoteInvocationResponseHandler(NodeEngineImpl nodeEngine) {
+        this.nodeEngine = nodeEngine;
+        this.serializationService = nodeEngine.getSerializationService();
     }
 
     @Override
-    public void sendResponse(Operation operation, Object obj) {
-        Connection conn = operation.getConnection();
-
-        Response response;
-        if (obj instanceof Throwable) {
-            response = new ErrorResponse((Throwable) obj, operation.getCallId(), operation.isUrgent());
-        } else if (!(obj instanceof Response)) {
-            response = new NormalResponse(obj, operation.getCallId(), 0, operation.isUrgent());
-        } else {
-            response = (Response) obj;
+    public void sendNormalResponse(Operation op, Object response, int syncBackupCount) {
+        byte[] payload = serializationService.toBytes(response);
+        Packet packet = new Packet(payload);
+        packet.setHeader(Packet.HEADER_OP);
+        packet.setHeader(Packet.HEADER_RESPONSE);
+        if (op.isUrgent()) {
+            packet.setHeader(Packet.HEADER_URGENT);
         }
+        packet.setResponseType(Packet.RESPONSE_NORMAL);
+        packet.setResponseCallId(op.getCallId());
+        packet.setResponseSyncBackupCount(syncBackupCount);
 
-        if (!operationService.send(response, operation.getCallerAddress())) {
-            throw new HazelcastException("Cannot send response: " + obj + " to " + conn.getEndPoint());
+        Connection connection = op.getConnection();
+        if (!transmit(connection, packet)) {
+            throw new HazelcastException("Cannot send BackupResponse: " + op.getCallId() + " to " + connection.getEndPoint());
         }
+    }
+
+    @Override
+    public void sendBackupComplete(Address address, long callId, boolean urgent) {
+        Packet packet = new Packet(null);
+        packet.setHeader(Packet.HEADER_OP);
+        packet.setHeader(Packet.HEADER_RESPONSE);
+        if (urgent) {
+            packet.setHeader(Packet.HEADER_URGENT);
+        }
+        packet.setResponseType(Packet.RESPONSE_BACKUP);
+        packet.setResponseCallId(callId);
+
+        Connection connection = getConnection(address);
+        if (!transmit(connection, packet)) {
+            throw new HazelcastException("Cannot send BackupResponse: " + callId + " to " + connection.getEndPoint());
+        }
+    }
+
+    @Override
+    public void sendErrorResponse(Address address, long callId, boolean urgent, Operation op, Throwable cause) {
+        byte[] payload = serializationService.toBytes(cause);
+        Packet packet = new Packet(payload);
+        packet.setHeader(Packet.HEADER_OP);
+        packet.setHeader(Packet.HEADER_RESPONSE);
+        if (urgent) {
+            packet.setHeader(Packet.HEADER_URGENT);
+        }
+        packet.setResponseType(Packet.RESPONSE_ERROR);
+        packet.setResponseCallId(callId);
+
+        Connection connection = getConnection(address);
+        if (!transmit(connection, packet)) {
+            throw new HazelcastException("Cannot send BackupResponse: " + callId + " to " + connection.getEndPoint());
+        }
+    }
+
+    @Override
+    public void sendTimeoutResponse(Operation op) {
+        Packet packet = new Packet(null);
+
+        packet.setHeader(Packet.HEADER_OP);
+        packet.setHeader(Packet.HEADER_RESPONSE);
+        if (op.isUrgent()) {
+            packet.setHeader(Packet.HEADER_URGENT);
+        }
+        packet.setResponseType(Packet.RESPONSE_TIMEOUT);
+        packet.setResponseCallId(op.getCallId());
+
+        Connection connection = op.getConnection();
+        if (!transmit(connection, packet)) {
+            throw new HazelcastException("Cannot send BackupResponse: " + op.getCallId() + " to " + connection.getEndPoint());
+        }
+    }
+
+    private boolean transmit(Connection connection, Packet packet) {
+        return nodeEngine.getNode().getConnectionManager().transmit(packet, connection);
+    }
+
+    private Connection getConnection(Address address) {
+        return nodeEngine.getNode().connectionManager.getConnection(address);
     }
 
     @Override

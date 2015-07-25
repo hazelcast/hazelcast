@@ -97,6 +97,7 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
     private static final int ASYNC_QUEUE_CAPACITY = 100000;
     private static final long TERMINATION_TIMEOUT_MILLIS = TimeUnit.SECONDS.toMillis(10);
 
+    final RemoteInvocationResponseHandler remoteResponseHandler;
     final InvocationRegistry invocationsRegistry;
     final OperationExecutor operationExecutor;
     final ILogger invocationLogger;
@@ -127,6 +128,7 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
     private final AsyncResponsePacketHandler responsePacketExecutor;
     private final SerializationService serializationService;
 
+    // A lot of creation logic should be moved into the DI container. So the dependencies should be injected
     public OperationServiceImpl(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
         this.node = nodeEngine.getNode();
@@ -151,8 +153,8 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
                 logger,
                 new ResponsePacketHandlerImpl(
                         logger,
-                        node.getSerializationService(),
                         invocationsRegistry));
+        this.remoteResponseHandler = new RemoteInvocationResponseHandler(nodeEngine);
 
         this.operationExecutor = new ClassicOperationExecutor(
                 groupProperties,
@@ -192,10 +194,6 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
     @Override
     public List<SlowOperationDTO> getSlowOperationDTOs() {
         return slowOperationDetector.getSlowOperationDTOs();
-    }
-
-    public InvocationRegistry getInvocationsRegistry() {
-        return invocationsRegistry;
     }
 
     @Override

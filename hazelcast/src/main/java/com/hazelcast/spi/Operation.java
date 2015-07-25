@@ -28,7 +28,9 @@ import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.quorum.QuorumException;
 import com.hazelcast.spi.exception.RetryableException;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
+import com.hazelcast.spi.impl.NewResponseHandlerAdapter;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.OldResponseHandlerAdapter;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
@@ -272,6 +274,21 @@ public abstract class Operation implements DataSerializable {
     }
 
     /**
+     * Gets the OperationResponseHandler tied to this Operation. If no OperationResponseHandler is configured, a
+     * IllegalStateException is thrown.
+     *
+     * @return the OperationResponseHandler
+     * @throws IllegalStateException if the response handler is null. This exception will include a description of
+     *                               the operation to simplify debugging.
+     */
+    public final OperationResponseHandler getNotNullOperationResponseHandler() {
+        if (responseHandler == null) {
+            throw new IllegalStateException("ResponseHandler should not be null! " + this);
+        }
+        return responseHandler;
+    }
+
+    /**
      * Sets the OperationResponseHandler. Value is allowed to be null.
      *
      * @param responseHandler the OperationResponseHandler to set.
@@ -282,9 +299,14 @@ public abstract class Operation implements DataSerializable {
         return this;
     }
 
-    public final void sendResponse(Object value) {
-        OperationResponseHandler operationResponseHandler = getOperationResponseHandler();
-        operationResponseHandler.sendResponse(this, value);
+    public final void sendNormalResponse(Object value) {
+        OperationResponseHandler handler = getNotNullOperationResponseHandler();
+        handler.sendNormalResponse(this, value, 0);
+    }
+
+    public final void sendErrorResponse(Throwable cause) {
+        OperationResponseHandler handler = getNotNullOperationResponseHandler();
+        handler.sendErrorResponse(callerAddress, callId, isUrgent(), this, cause);
     }
 
     /**
@@ -297,22 +319,12 @@ public abstract class Operation implements DataSerializable {
             return null;
         }
 
-        if (responseHandler instanceof ResponseHandlerAdapter) {
-            ResponseHandlerAdapter adapter = (ResponseHandlerAdapter) responseHandler;
-            return adapter.responseHandler;
+        if (responseHandler instanceof OldResponseHandlerAdapter) {
+            OldResponseHandlerAdapter adapter = (OldResponseHandlerAdapter) responseHandler;
+            return adapter.getResponseHandler();
         }
 
-        return new ResponseHandler() {
-            @Override
-            public void sendResponse(Object obj) {
-                responseHandler.sendResponse(Operation.this, obj);
-            }
-
-            @Override
-            public boolean isLocal() {
-                return responseHandler.isLocal();
-            }
-        };
+        return new NewResponseHandlerAdapter(responseHandler, this);
     }
 
     /**
@@ -326,7 +338,7 @@ public abstract class Operation implements DataSerializable {
             return this;
         }
 
-        this.responseHandler = new ResponseHandlerAdapter(responseHandler);
+        this.responseHandler = new OldResponseHandlerAdapter(responseHandler);
         return this;
     }
 
@@ -369,7 +381,7 @@ public abstract class Operation implements DataSerializable {
      * @return the updated Operation.
      * @see #getCallTimeout()
      */
-    // Accessed using OperationAccessor
+// Accessed using OperationAccessor
     final Operation setCallTimeout(long callTimeout) {
         this.callTimeout = callTimeout;
         setFlag(callTimeout > Integer.MAX_VALUE, BITMASK_CALL_TIMEOUT_64_BIT);
@@ -584,21 +596,4 @@ public abstract class Operation implements DataSerializable {
         return sb.toString();
     }
 
-    private static class ResponseHandlerAdapter implements OperationResponseHandler {
-        private final ResponseHandler responseHandler;
-
-        public ResponseHandlerAdapter(ResponseHandler responseHandler) {
-            this.responseHandler = responseHandler;
-        }
-
-        @Override
-        public void sendResponse(Operation op, Object obj) {
-            responseHandler.sendResponse(obj);
-        }
-
-        @Override
-        public boolean isLocal() {
-            return responseHandler.isLocal();
-        }
-    }
 }

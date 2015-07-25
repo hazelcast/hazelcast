@@ -80,7 +80,7 @@ public class PutOperation extends MultiMapBackupAwareOperation {
 
     @Override
     public void onWaitExpire() {
-        sendResponse(false);
+        sendNormalResponse(false);
     }
 
     @Override

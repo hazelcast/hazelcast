@@ -44,10 +44,6 @@ import com.hazelcast.spi.exception.WrongTargetException;
 import com.hazelcast.spi.impl.AllowedDuringShutdown;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunner;
-import com.hazelcast.spi.impl.operationservice.impl.responses.CallTimeoutResponse;
-import com.hazelcast.spi.impl.operationservice.impl.responses.ErrorResponse;
-import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
-import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.counters.Counter;
 
 import java.util.concurrent.atomic.AtomicLong;
@@ -62,6 +58,7 @@ import static com.hazelcast.spi.impl.OperationResponseHandlerFactory.createEmpty
 import static com.hazelcast.spi.impl.operationutil.Operations.isJoinOperation;
 import static com.hazelcast.spi.impl.operationutil.Operations.isMigrationOperation;
 import static com.hazelcast.spi.impl.operationutil.Operations.isWanReplicationOperation;
+import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.counters.SwCounter.newSwCounter;
 import static java.util.logging.Level.FINEST;
 import static java.util.logging.Level.SEVERE;
@@ -87,7 +84,7 @@ class OperationRunnerImpl extends OperationRunner {
     // will never be called concurrently.
     private InternalPartition internalPartition;
 
-    private final OperationResponseHandler remoteResponseHandler;
+    private RemoteInvocationResponseHandler remoteResponseHandler;
 
     // When partitionId >= 0, it is a partition specific
     // when partitionId = -1, it is generic
@@ -100,7 +97,7 @@ class OperationRunnerImpl extends OperationRunner {
         this.logger = operationService.logger;
         this.node = operationService.node;
         this.nodeEngine = operationService.nodeEngine;
-        this.remoteResponseHandler = new RemoteInvocationResponseHandler(operationService);
+        this.remoteResponseHandler = operationService.remoteResponseHandler;
         this.executedOperationsCount = operationService.completedOperationsCount;
 
         if (partitionId >= 0) {
@@ -219,9 +216,7 @@ class OperationRunnerImpl extends OperationRunner {
             return false;
         }
 
-        CallTimeoutResponse callTimeoutResponse = new CallTimeoutResponse(op.getCallId(), op.isUrgent());
-        OperationResponseHandler responseHandler = op.getOperationResponseHandler();
-        responseHandler.sendResponse(op, callTimeoutResponse);
+        op.getNotNullOperationResponseHandler().sendTimeoutResponse(op);
         return true;
     }
 
@@ -250,17 +245,10 @@ class OperationRunnerImpl extends OperationRunner {
     }
 
     private void sendResponse(Operation op, int syncBackupCount) {
-        OperationResponseHandler responseHandler = op.getOperationResponseHandler();
-        if (responseHandler == null) {
-            throw new IllegalStateException("ResponseHandler should not be null! " + op);
-        }
+        OperationResponseHandler responseHandler = op.getNotNullOperationResponseHandler();
 
         try {
-            Object response = op.getResponse();
-            if (syncBackupCount > 0) {
-                response = new NormalResponse(response, op.getCallId(), syncBackupCount, op.isUrgent());
-            }
-            responseHandler.sendResponse(op, response);
+            responseHandler.sendNormalResponse(op, op.getResponse(), syncBackupCount);
         } catch (ResponseAlreadySentException e) {
             logOperationError(op, e);
         }
@@ -314,28 +302,30 @@ class OperationRunnerImpl extends OperationRunner {
         return !(op instanceof ReadonlyOperation || isMigrationOperation(op));
     }
 
-    private void handleOperationError(Operation operation, Throwable e) {
+    private void handleOperationError(Operation op, Throwable e) {
         if (e instanceof OutOfMemoryError) {
             OutOfMemoryErrorDispatcher.onOutOfMemory((OutOfMemoryError) e);
         }
+
         try {
-            operation.onExecutionFailure(e);
+            op.onExecutionFailure(e);
         } catch (Throwable t) {
-            logger.warning("While calling 'operation.onFailure(e)'... op: " + operation + ", error: " + e, t);
+            logger.warning("While calling 'operation.onFailure(e)'... op: " + op + ", error: " + e, t);
         }
 
-        operation.logError(e);
+        op.logError(e);
 
-        OperationResponseHandler responseHandler = operation.getOperationResponseHandler();
-        if (operation.returnsResponse() && responseHandler != null) {
+        OperationResponseHandler responseHandler = op.getOperationResponseHandler();
+        if (op.returnsResponse() && responseHandler != null) {
             try {
                 if (node.getState() == NodeState.ACTIVE) {
-                    responseHandler.sendResponse(operation, e);
+                    responseHandler.sendErrorResponse(op.getCallerAddress(), op.getCallId(), op.isUrgent(), op, e);
                 } else if (responseHandler.isLocal()) {
-                    responseHandler.sendResponse(operation, new HazelcastInstanceNotActiveException());
+                    responseHandler.sendErrorResponse(op.getCallerAddress(), op.getCallId(), op.isUrgent(), op,
+                            new HazelcastInstanceNotActiveException());
                 }
             } catch (Throwable t) {
-                logger.warning("While sending op error... op: " + operation + ", error: " + e, t);
+                logger.warning("While sending op error... op: " + op + ", error: " + e, t);
             }
         }
     }
@@ -375,11 +365,10 @@ class OperationRunnerImpl extends OperationRunner {
             }
             run(op);
         } catch (Throwable throwable) {
-            // If exception happens we need to extract the callId from the bytes directly!
             long callId = extractOperationCallId(packet, node.getSerializationService());
-            operationService.send(new ErrorResponse(throwable, callId, packet.isUrgent()), caller);
+            remoteResponseHandler.sendErrorResponse(caller, callId, packet.isUrgent(), null, throwable);
             logOperationDeserializationException(throwable, callId);
-            throw ExceptionUtil.rethrow(throwable);
+            throw rethrow(throwable);
         } finally {
             if (publishCurrentTask) {
                 currentTask = null;

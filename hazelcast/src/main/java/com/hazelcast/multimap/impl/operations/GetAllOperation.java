@@ -45,7 +45,7 @@ public class GetAllOperation extends MultiMapKeyBasedOperation implements WaitSu
         Collection coll = null;
         if (multiMapValue != null) {
             multiMapValue.incrementHit();
-            OperationResponseHandler responseHandler = getOperationResponseHandler();
+            OperationResponseHandler responseHandler = getNotNullOperationResponseHandler();
             coll = multiMapValue.getCollection(responseHandler.isLocal());
         }
         response = new MultiMapResponse(coll, getValueCollectionType(container));
@@ -72,6 +72,6 @@ public class GetAllOperation extends MultiMapKeyBasedOperation implements WaitSu
 
     @Override
     public void onWaitExpire() {
-        sendResponse(new OperationTimeoutException("Cannot read transactionally locked entry!"));
+        sendErrorResponse(new OperationTimeoutException("Cannot read transactionally locked entry!"));
     }
 }

@@ -17,15 +17,16 @@
 package com.hazelcast.cluster.impl.operations;
 
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationAccessor;
-import com.hazelcast.spi.OperationResponseHandler;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.UrgentSystemOperation;
+import com.hazelcast.spi.impl.OperationResponseHandlerAdapter;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -57,24 +58,16 @@ public class PostJoinOperation extends AbstractOperation implements UrgentSystem
             for (int i = 0; i < len; i++) {
                 final Operation op = operations[i];
                 op.setNodeEngine(nodeEngine);
-                op.setOperationResponseHandler(new OperationResponseHandler() {
+                op.setOperationResponseHandler(new OperationResponseHandlerAdapter() {
                     @Override
-                    public void sendResponse(Operation op, Object obj) {
-                        if (obj instanceof Throwable) {
-                            Throwable t = (Throwable) obj;
-                            ILogger logger = nodeEngine.getLogger(op.getClass());
-                            logger.warning("Error while running post-join operation: "
-                                    + t.getClass().getSimpleName() + ": " + t.getMessage());
+                    public void sendErrorResponse(Address address, long callId, boolean urgent, Operation op, Throwable cause) {
+                        ILogger logger = nodeEngine.getLogger(op.getClass());
+                        logger.warning("Error while running post-join operation: "
+                                + cause.getClass().getSimpleName() + ": " + cause.getMessage());
 
-                            if (logger.isFinestEnabled()) {
-                                logger.finest(t);
-                            }
+                        if (logger.isFinestEnabled()) {
+                            logger.finest(cause);
                         }
-                    }
-
-                    @Override
-                    public boolean isLocal() {
-                        return true;
                     }
                 });
 

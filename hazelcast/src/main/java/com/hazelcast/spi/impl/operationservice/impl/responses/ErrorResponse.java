@@ -22,6 +22,7 @@ import com.hazelcast.spi.impl.SpiDataSerializerHook;
 
 import java.io.IOException;
 
+@Deprecated
 public class ErrorResponse extends Response {
     private Throwable cause;
 

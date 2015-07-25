@@ -207,7 +207,7 @@ public class Invocation_NetworkSplitTest extends HazelcastTestSupport {
 
         @Override
         public void onWaitExpire() {
-            sendResponse(new TimeoutException());
+            sendNormalResponse(new TimeoutException());
         }
 
         @Override

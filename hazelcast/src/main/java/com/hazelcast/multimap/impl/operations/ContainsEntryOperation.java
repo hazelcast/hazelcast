@@ -112,6 +112,6 @@ public class ContainsEntryOperation extends MultiMapOperation implements WaitSup
 
     @Override
     public void onWaitExpire() {
-        sendResponse(new OperationTimeoutException("Cannot read transactionally locked entry!"));
+        sendErrorResponse(new OperationTimeoutException("Cannot read transactionally locked entry!"));
     }
 }

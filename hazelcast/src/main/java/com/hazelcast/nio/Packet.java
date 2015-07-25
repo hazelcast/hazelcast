@@ -20,7 +20,10 @@ import com.hazelcast.internal.serialization.impl.HeapData;
 
 import java.nio.ByteBuffer;
 
+import static com.hazelcast.nio.Bits.BYTE_SIZE_IN_BYTES;
 import static com.hazelcast.nio.Bits.INT_SIZE_IN_BYTES;
+import static com.hazelcast.nio.Bits.LONG_SIZE_IN_BYTES;
+import static com.hazelcast.nio.Bits.SHORT_SIZE_IN_BYTES;
 
 /**
  * A Packet is a piece of data send over the line. The Packet is used for member to member communication and old-client to
@@ -42,14 +45,21 @@ public final class Packet extends HeapData implements OutboundFrame {
     public static final int HEADER_URGENT = 4;
     public static final int HEADER_BIND = 5;
 
+    public static final byte RESPONSE_NORMAL = 1;
+    public static final byte RESPONSE_BACKUP = 2;
+    public static final byte RESPONSE_ERROR = 3;
+    public static final byte RESPONSE_TIMEOUT = 4;
+
     // The value of these constants is important. The order needs to match the order in the read/write process
     private static final short PERSIST_VERSION = 1;
     private static final short PERSIST_HEADER = 2;
     private static final short PERSIST_PARTITION = 3;
-    private static final short PERSIST_SIZE = 4;
-    private static final short PERSIST_VALUE = 5;
+    private static final short PERSIST_RESPONSE = 4;
+    private static final short PERSIST_SIZE = 5;
+    private static final short PERSIST_VALUE = 6;
 
     private static final short PERSIST_COMPLETED = Short.MAX_VALUE;
+    private static final byte[] EMPTY_PAYLOAD = new byte[0];
 
     private short header;
     private int partitionId;
@@ -60,6 +70,10 @@ public final class Packet extends HeapData implements OutboundFrame {
     private int size;
     // Stores the current 'phase' of read/write. This is needed so that repeated calls can be made to read/write.
     private short persistStatus;
+
+    private byte responseType;
+    private long responseCallId;
+    private int responseSyncBackupCount;
 
     public Packet() {
     }
@@ -112,6 +126,30 @@ public final class Packet extends HeapData implements OutboundFrame {
         return header;
     }
 
+    public byte getResponseType() {
+        return responseType;
+    }
+
+    public void setResponseType(byte responseType) {
+        this.responseType = responseType;
+    }
+
+    public long getResponseCallId() {
+        return responseCallId;
+    }
+
+    public void setResponseCallId(long responseCallId) {
+        this.responseCallId = responseCallId;
+    }
+
+    public int getResponseSyncBackupCount() {
+        return responseSyncBackupCount;
+    }
+
+    public void setResponseSyncBackupCount(int responseSyncBackupCount) {
+        this.responseSyncBackupCount = responseSyncBackupCount;
+    }
+
     /**
      * Returns the partition id of this packet. If this packet is not for a particular partition, -1 is returned.
      *
@@ -139,6 +177,10 @@ public final class Packet extends HeapData implements OutboundFrame {
             return false;
         }
 
+        if (!writeResponse(dst)) {
+            return false;
+        }
+
         if (!writeSize(dst)) {
             return false;
         }
@@ -161,6 +203,10 @@ public final class Packet extends HeapData implements OutboundFrame {
         }
 
         if (!readPartition(src)) {
+            return false;
+        }
+
+        if (!readResponse(src)) {
             return false;
         }
 
@@ -208,7 +254,7 @@ public final class Packet extends HeapData implements OutboundFrame {
 
     private boolean readHeader(ByteBuffer src) {
         if (!isPersistStatusSet(PERSIST_HEADER)) {
-            if (src.remaining() < 2) {
+            if (src.remaining() < SHORT_SIZE_IN_BYTES) {
                 return false;
             }
             header = src.getShort();
@@ -224,6 +270,40 @@ public final class Packet extends HeapData implements OutboundFrame {
             }
             dst.putShort(header);
             setPersistStatus(PERSIST_HEADER);
+        }
+        return true;
+    }
+
+    // ========================= response =================================================
+
+    private boolean readResponse(ByteBuffer source) {
+        if (!isPersistStatusSet(PERSIST_RESPONSE)) {
+            if (isHeaderSet(HEADER_OP) && isHeaderSet(HEADER_RESPONSE)) {
+                if (source.remaining() < BYTE_SIZE_IN_BYTES + LONG_SIZE_IN_BYTES + INT_SIZE_IN_BYTES) {
+                    return false;
+                }
+
+                responseType = source.get();
+                responseCallId = source.getLong();
+                responseSyncBackupCount = source.getInt();
+            }
+            setPersistStatus(PERSIST_RESPONSE);
+        }
+        return true;
+    }
+
+    private boolean writeResponse(ByteBuffer destination) {
+        if (!isPersistStatusSet(PERSIST_RESPONSE)) {
+            if (isHeaderSet(HEADER_OP) && isHeaderSet(HEADER_RESPONSE)) {
+                if (destination.remaining() < BYTE_SIZE_IN_BYTES + LONG_SIZE_IN_BYTES + INT_SIZE_IN_BYTES) {
+                    return false;
+                }
+
+                destination.put(responseType);
+                destination.putLong(responseCallId);
+                destination.putInt(responseSyncBackupCount);
+            }
+            setPersistStatus(PERSIST_RESPONSE);
         }
         return true;
     }
@@ -244,7 +324,7 @@ public final class Packet extends HeapData implements OutboundFrame {
 
     private boolean writePartition(ByteBuffer dst) {
         if (!isPersistStatusSet(PERSIST_PARTITION)) {
-            if (dst.remaining() < Bits.INT_SIZE_IN_BYTES) {
+            if (dst.remaining() < INT_SIZE_IN_BYTES) {
                 return false;
             }
             dst.putInt(partitionId);
@@ -317,6 +397,10 @@ public final class Packet extends HeapData implements OutboundFrame {
 
     private boolean writeValue(ByteBuffer dst) {
         if (!isPersistStatusSet(PERSIST_VALUE)) {
+            if (payload == null) {
+                payload = size == 0 ? EMPTY_PAYLOAD : new byte[size];
+            }
+
             if (size > 0) {
                 // the number of bytes that can be written to the bb.
                 int bytesWritable = dst.remaining();
@@ -355,6 +439,7 @@ public final class Packet extends HeapData implements OutboundFrame {
      * @return the size of the packet.
      */
     public int packetSize() {
+        // todo: not correct. The response information size is missing.
         // 11 = byte(version) + short(header) + int(partitionId) + int(data size)
         return (payload != null ? totalSize() : 0) + 11;
     }

@@ -66,6 +66,6 @@ public abstract class MultiMapBackupAwareOperation extends MultiMapKeyBasedOpera
 
     @Override
     public void onWaitExpire() {
-        sendResponse(null);
+        sendNormalResponse(null);
     }
 }
