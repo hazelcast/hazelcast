@@ -15,7 +15,7 @@ public class ClientSubscriberContext extends AbstractSubscriberContext {
 
     public ClientSubscriberContext(QueryCacheContext context) {
         super(context);
-        clientSubscriberContextSupport = new ClientSubscriberContextSupport();
+        clientSubscriberContextSupport = new ClientSubscriberContextSupport(context.getSerializationService());
     }
 
     @Override
