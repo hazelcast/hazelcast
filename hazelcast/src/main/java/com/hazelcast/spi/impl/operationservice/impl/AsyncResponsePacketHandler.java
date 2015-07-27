@@ -65,7 +65,6 @@ public class AsyncResponsePacketHandler implements PacketHandler {
         responseThread.shutdown();
     }
 
-    //@Override
     @Override
     public void handle(Packet packet) {
         checkNotNull(packet, "packet can't be null");
