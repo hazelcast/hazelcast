@@ -223,27 +223,6 @@ public class RegionFactoryDefaultTest extends HibernateStatisticsTestSupport {
     }
 
     @Test
-    public void testAutoQueryRegionEviction() {
-        int entityCount = 10;
-        insertDummyEntities(entityCount, 0);
-        sleep(1);
-
-        //miss 1 query list entities
-        executeQuery(sf);
-        //query is cached
-
-        //query cache invalidated
-        executeUpdateQuery(sf, "delete from DummyEntity");
-        //miss 1 query
-        executeQuery(sf);
-        //hit 1 query
-        executeQuery(sf);
-
-        assertEquals(1, sf.getStatistics().getQueryCacheHitCount());
-        assertEquals(2, sf.getStatistics().getQueryCacheMissCount());
-    }
-
-    @Test
     public void testSpecificQueryRegionEviction() {
         int entityCount = 10;
         insertDummyEntities(entityCount, 0);
