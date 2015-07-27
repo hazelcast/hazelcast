@@ -38,6 +38,7 @@ import java.util.Map;
  */
 public class EC2RequestSigner {
     private static final String API_TERMINATOR = "aws4_request";
+    private static final String SIGN_ALGO = "AWS4-HMAC-SHA256";
 
     private final AwsConfig config;
     private String service;
@@ -68,6 +69,12 @@ public class EC2RequestSigner {
 
     public String getSignedHeaders() {
         return "host";
+    }
+
+    public String createAuthHeader(String service, Map<String, String> attributes) {
+        final String signature = sign(service, attributes);
+        // algorithm Credential=access key ID/credential scope, SignedHeaders=SignedHeaders, Signature=signature
+        return String.format("%s Credential=%s/%s,SignedHeaders=%s,Signature=%s", SIGN_ALGO, config.getAccessKey(), getCredentialScope(), getSignedHeaders(), signature);
     }
 
     public String sign(String service, Map<String, String> attributes) {
@@ -184,7 +191,8 @@ public class EC2RequestSigner {
 
 
     protected String getCanonicalHeaders() {
-        return String.format("host:%s", config.getHostHeader()) + "\n";
+        final String endpoint = String.format("ec2.%s.amazonaws.com", config.getRegion());
+        return String.format("host:%s", endpoint) + "\n";
     }
 
     public String getCanonicalizedQueryString(Map<String, String> attributes) {

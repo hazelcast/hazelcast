@@ -19,8 +19,13 @@ package com.hazelcast.aws.impl;
 import com.hazelcast.aws.security.EC2RequestSigner;
 import com.hazelcast.aws.utility.CloudyUtility;
 import com.hazelcast.config.AwsConfig;
+import com.hazelcast.nio.IOUtil;
+import sun.misc.IOUtils;
 
+import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.text.SimpleDateFormat;
@@ -34,6 +39,7 @@ import static com.hazelcast.aws.impl.Constants.DOC_VERSION;
 public class DescribeInstances {
     private EC2RequestSigner rs;
     private AwsConfig awsConfig;
+    private String timeStamp;
 
     private Map<String, String> attributes = new HashMap<String, String>();
 
@@ -45,8 +51,9 @@ public class DescribeInstances {
             throw new IllegalArgumentException("AWS access key is required!");
         }
         this.awsConfig = awsConfig;
+        this.timeStamp = getFormattedTimestamp();
 
-        rs = new EC2RequestSigner(awsConfig, getFormattedTimestamp());
+        rs = new EC2RequestSigner(awsConfig, this.timeStamp);
         attributes.put("Action", this.getClass().getSimpleName());
         attributes.put("Version", DOC_VERSION);
     }
@@ -58,19 +65,20 @@ public class DescribeInstances {
     }
 
     public Map<String, String> execute() throws Exception {
-        final String endpoint = String.format("https://%s", awsConfig.getHostHeader());
-        final String signature = rs.sign("ec2", attributes);
-        InputStream stream = callService(endpoint, signature);
+        final String endpoint = String.format("ec2.%s.amazonaws.com", awsConfig.getRegion());
+        final String authHeader = rs.createAuthHeader("ec2", attributes);
+        InputStream stream = callService(endpoint, authHeader);
         return CloudyUtility.unmarshalTheResponse(stream, awsConfig);
     }
 
-    private InputStream callService(String endpoint, String signature) throws Exception {
+    private InputStream callService(String endpoint, String authHeader) throws Exception {
         String query = rs.getCanonicalizedQueryString(attributes);
-        URL url = new URL("https", endpoint, -1, "/" + query);
+        URL url = new URL("https", endpoint, -1, "/?" + query);
         HttpURLConnection httpConnection = (HttpURLConnection) (url.openConnection());
         httpConnection.setRequestMethod(Constants.GET);
         httpConnection.setDoOutput(true);
-        httpConnection.setRequestProperty("Authorization", signature);
+        httpConnection.setRequestProperty("Authorization", authHeader);
+        httpConnection.setRequestProperty("x-amz-date", this.timeStamp);
         httpConnection.connect();
         return httpConnection.getInputStream();
     }
