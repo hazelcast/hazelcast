@@ -35,4 +35,30 @@
         <many-to-one name="entity" class="com.hazelcast.hibernate.entity.DummyEntity"
                      column="parent_uid"/>
     </class>
+    <class name="DummyPropertyNonStrictRW" table="dummy_props_nonstrict_rw">
+        <cache usage="nonstrict-read-write"/>
+
+        <id name="id" column="uid" type="long" unsaved-value="null">
+            <generator class="native"/>
+            <!-- 			<generator class="assigned" /> -->
+        </id>
+        <version column="version" name="version" type="int"/>
+        <property name="key" type="string" length="100"/>
+
+        <many-to-one name="entity" class="com.hazelcast.hibernate.entity.DummyEntityNonStrictRW"
+                     column="parent_uid"/>
+    </class>
+    <class name="DummyPropertyReadOnly" table="dummy_props_read_only">
+        <cache usage="read-only"/>
+
+        <id name="id" column="uid" type="long" unsaved-value="null">
+            <generator class="native"/>
+            <!-- 			<generator class="assigned" /> -->
+        </id>
+        <version column="version" name="version" type="int"/>
+        <property name="key" type="string" length="100"/>
+
+        <many-to-one name="entity" class="com.hazelcast.hibernate.entity.DummyEntityReadOnly"
+                     column="parent_uid"/>
+    </class>
 </hibernate-mapping>

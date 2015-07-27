@@ -20,7 +20,11 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.hibernate.entity.DummyEntity;
+import com.hazelcast.hibernate.entity.DummyEntityNonStrictRW;
+import com.hazelcast.hibernate.entity.DummyEntityReadOnly;
 import com.hazelcast.hibernate.entity.DummyProperty;
+import com.hazelcast.hibernate.entity.DummyPropertyNonStrictRW;
+import com.hazelcast.hibernate.entity.DummyPropertyReadOnly;
 import com.hazelcast.hibernate.instance.HazelcastAccessor;
 import com.hazelcast.hibernate.region.HazelcastQueryResultsRegion;
 import com.hazelcast.test.annotation.NightlyTest;
@@ -99,8 +103,50 @@ public abstract class HibernateStatisticsTestSupport extends HibernateTestSuppor
         }
     }
 
+    protected void insertDummyNonStrictRWEntities(int count, int childCount) {
+        Session session = sf.openSession();
+        Transaction tx = session.beginTransaction();
+        try {
+            for (int i = 0; i < count; i++) {
+                DummyEntityNonStrictRW e = new DummyEntityNonStrictRW((long) i, "dummy:" + i, i * 123456d, new Date());
+                session.save(e);
+                for (int j = 0; j < childCount; j++) {
+                    DummyPropertyNonStrictRW p = new DummyPropertyNonStrictRW("key:" + j, e);
+                    session.save(p);
+                }
+            }
+            tx.commit();
+        } catch (Exception e) {
+            tx.rollback();
+            e.printStackTrace();
+        } finally {
+            session.close();
+        }
+    }
+
+    protected void insertDummyReadOnlyEntities(int count, int childCount) {
+        Session session = sf.openSession();
+        Transaction tx = session.beginTransaction();
+        try {
+            for (int i = 0; i < count; i++) {
+                DummyEntityReadOnly e = new DummyEntityReadOnly((long) i, "dummy:" + i, i * 123456d, new Date());
+                session.save(e);
+                for (int j = 0; j < childCount; j++) {
+                    DummyPropertyReadOnly p = new DummyPropertyReadOnly("key:" + j, e);
+                    session.save(p);
+                }
+            }
+            tx.commit();
+        } catch (Exception e) {
+            tx.rollback();
+            e.printStackTrace();
+        } finally {
+            session.close();
+        }
+    }
+
     @Test
-    public void testEntity() {
+    public void testReadWriteEntity() {
         final HazelcastInstance hz = getHazelcastInstance(sf);
         assertNotNull(hz);
         final int count = 100;
@@ -221,6 +267,41 @@ public abstract class HibernateStatisticsTestSupport extends HibernateTestSuppor
         } finally {
             session.close();
         }
+    }
+
+    protected List<DummyEntity> executeListQueryInTransaction(SessionFactory factory) {
+        Session session = factory.openSession();
+        Transaction txn = null;
+        List<DummyEntity> res = null;
+        try {
+            txn = session.beginTransaction();
+            Query query = session.createQuery("FROM DummyEntity");
+            query.setCacheable(true);
+
+            res= query.list();
+            txn.commit();
+        } finally {
+            session.close();
+        }
+        return res;
+    }
+
+    protected int executeUpdateQueryInTransaction(SessionFactory factory, String queryString) {
+        Session session = factory.openSession();
+        Transaction txn = null;
+        int res = -1;
+        try {
+            txn = session.beginTransaction();
+            Query query = session.createQuery(queryString);
+            query.setCacheable(true);
+            session.evict(query);
+
+            res = query.executeUpdate();
+            txn.commit();
+        } finally {
+            session.close();
+        }
+        return res;
     }
 
     @Test
