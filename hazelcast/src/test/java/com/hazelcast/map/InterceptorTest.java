@@ -29,6 +29,9 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.Serializable;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 
@@ -129,22 +132,22 @@ public class InterceptorTest extends HazelcastTestSupport {
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
         IMap map = instance1.getMap("map");
         for (int i = 0; i < 100; i++) {
-            map.put(i,i);
+            map.put(i, i);
         }
         map.addInterceptor(new NegativeInterceptor());
         for (int i = 0; i < 100; i++) {
-            assertEquals(i*-1, map.get(i));
+            assertEquals(i * -1, map.get(i));
         }
         HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
         for (int i = 0; i < 100; i++) {
-            assertEquals(i*-1, map.get(i));
+            assertEquals(i * -1, map.get(i));
         }
     }
 
     static class NegativeInterceptor implements MapInterceptor, Serializable {
         @Override
         public Object interceptGet(Object value) {
-            return ((Integer)value)*-1;
+            return ((Integer) value) * -1;
         }
 
         @Override
@@ -167,6 +170,28 @@ public class InterceptorTest extends HazelcastTestSupport {
 
         @Override
         public void afterRemove(Object value) {
+        }
+    }
+
+
+    @Test
+    public void testGetAll_withGetInterceptor() throws InterruptedException {
+        String mapName = randomString();
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
+        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance();
+        IMap<Integer, String> map = instance1.getMap(mapName);
+        SimpleInterceptor interceptor = new SimpleInterceptor();
+        map.addInterceptor(interceptor);
+
+        Set<Integer> set = new HashSet<Integer>();
+        for (int i = 0; i < 100; i++) {
+            map.put(i, String.valueOf(i));
+            set.add(i);
+        }
+
+        Map<Integer, String> allValues = map.getAll(set);
+        for (int i = 0; i < 100; i++) {
+            assertEquals(String.valueOf(i) + ":", allValues.get(i));
         }
     }
 }
