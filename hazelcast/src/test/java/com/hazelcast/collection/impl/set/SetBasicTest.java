@@ -17,14 +17,11 @@
 package com.hazelcast.collection.impl.set;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.config.QueueConfig;
 import com.hazelcast.config.SetConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IAtomicLong;
 import com.hazelcast.core.ISet;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ClientCompatibleTest;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -172,7 +169,6 @@ public abstract class SetBasicTest extends HazelcastTestSupport {
     }
 
     @Test(expected = UnsupportedOperationException.class)
-    @ClientCompatibleTest
     public void testIteratorRemoveThrowsUnsupportedOperationException() {
         set.add("item");
 

@@ -5,7 +5,6 @@ import com.hazelcast.core.ICountDownLatch;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ClientCompatibleTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -19,7 +18,6 @@ import static org.junit.Assert.assertEquals;
 public class CountDownLatchMigrationTest extends HazelcastTestSupport {
 
     @Test
-    @ClientCompatibleTest
     public void testLatchMigration() throws InterruptedException {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(5);
         HazelcastInstance hz1 = factory.newHazelcastInstance();
