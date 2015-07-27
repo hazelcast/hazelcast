@@ -15,6 +15,6 @@
  */
 
 /**
- * Contains the code for the {@link com.hazelcast.spi.impl.transceiver.PacketTransceiver}.
+ * Contains the implementation of the {@link com.hazelcast.spi.impl.packettransceiver.PacketTransceiver}.
  */
-package com.hazelcast.spi.impl.transceiver;
+package com.hazelcast.spi.impl.packettransceiver.impl;

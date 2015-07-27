@@ -18,7 +18,7 @@ import com.hazelcast.nio.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.impl.operationexecutor.ResponsePacketHandler;
+import com.hazelcast.spi.impl.PacketHandler;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunner;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunnerFactory;
 import com.hazelcast.spi.impl.operationservice.impl.responses.Response;
@@ -51,7 +51,7 @@ public abstract class AbstractClassicOperationExecutorTest extends HazelcastTest
     protected DefaultNodeExtension nodeExtension;
     protected OperationRunnerFactory handlerFactory;
     protected SerializationService serializationService;
-    protected ResponsePacketHandler responsePacketHandler;
+    protected PacketHandler responsePacketHandler;
     protected ClassicOperationExecutor executor;
     protected Config config;
     protected MetricsRegistry metricsRegistry;
@@ -80,7 +80,7 @@ public abstract class AbstractClassicOperationExecutorTest extends HazelcastTest
     protected ClassicOperationExecutor initExecutor() {
         groupProperties = new GroupProperties(config);
         executor = new ClassicOperationExecutor(
-                groupProperties, loggingService, thisAddress, handlerFactory, responsePacketHandler,
+                groupProperties, loggingService, thisAddress, handlerFactory,
                 threadGroup, nodeExtension, metricsRegistry);
         return executor;
     }
@@ -95,7 +95,7 @@ public abstract class AbstractClassicOperationExecutorTest extends HazelcastTest
         });
     }
 
-    protected class DummyResponsePacketHandler implements ResponsePacketHandler {
+    protected class DummyResponsePacketHandler implements PacketHandler {
         protected List<Packet> packets = synchronizedList(new LinkedList<Packet>());
         protected List<Response> responses = synchronizedList(new LinkedList<Response>());
 

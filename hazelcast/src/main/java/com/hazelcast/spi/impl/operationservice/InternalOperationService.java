@@ -21,8 +21,8 @@ import com.hazelcast.internal.management.dto.SlowOperationDTO;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
+import com.hazelcast.spi.impl.PacketHandler;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
-import com.hazelcast.spi.impl.operationexecutor.OperationExecutor;
 
 import java.util.List;
 
@@ -34,7 +34,7 @@ import java.util.List;
  * It exposes methods that will not be called by regular code, like shutdown, but will only be called by
  * the the SPI management.
  */
-public interface InternalOperationService extends OperationService {
+public interface InternalOperationService extends OperationService, PacketHandler {
 
     /**
      * Checks if this call is timed out. A timed out call is not going to be executed.
@@ -53,13 +53,6 @@ public interface InternalOperationService extends OperationService {
      * @param task the task to execute
      */
     void execute(PartitionSpecificRunnable task);
-
-    /**
-     * Gets the OperationExecutor that is executing operations for this {@link InternalOperationService}.
-     *
-     * @return the OperationExecutor.
-     */
-    OperationExecutor getOperationExecutor();
 
     /**
      * Returns information about long running operations.
