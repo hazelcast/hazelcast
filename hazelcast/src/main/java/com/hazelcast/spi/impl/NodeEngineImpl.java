@@ -28,6 +28,7 @@ import com.hazelcast.internal.metrics.impl.MetricsRegistryImpl;
 import com.hazelcast.internal.storage.DataRef;
 import com.hazelcast.internal.storage.Storage;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.LoggingServiceImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
@@ -83,9 +84,13 @@ public class NodeEngineImpl implements NodeEngine {
     private final PacketTransceiver packetTransceiver;
     private final QuorumServiceImpl quorumService;
     private final MetricsRegistryImpl metricsRegistry;
+    private final SerializationService serializationService;
+    private final LoggingServiceImpl loggingService;
 
     public NodeEngineImpl(Node node) {
         this.node = node;
+        this.loggingService = node.loggingService;
+        this.serializationService = node.getSerializationService();
         this.logger = node.getLogger(NodeEngine.class.getName());
         this.metricsRegistry = new MetricsRegistryImpl(node.getLogger(MetricsRegistryImpl.class));
         this.proxyService = new ProxyServiceImpl(this);
@@ -146,7 +151,7 @@ public class NodeEngineImpl implements NodeEngine {
 
     @Override
     public SerializationService getSerializationService() {
-        return node.getSerializationService();
+        return serializationService;
     }
 
     @Override
@@ -199,16 +204,13 @@ public class NodeEngineImpl implements NodeEngine {
     }
 
     @Override
-    public Data toData(final Object object) {
-        return node.getSerializationService().toData(object);
+    public Data toData(Object object) {
+        return serializationService.toData(object);
     }
 
     @Override
-    public Object toObject(final Object object) {
-        if (object instanceof Data) {
-            return node.getSerializationService().toObject(object);
-        }
-        return object;
+    public Object toObject(Object object) {
+        return serializationService.toObject(object);
     }
 
     @Override
@@ -223,12 +225,12 @@ public class NodeEngineImpl implements NodeEngine {
 
     @Override
     public ILogger getLogger(String name) {
-        return node.getLogger(name);
+        return loggingService.getLogger(name);
     }
 
     @Override
     public ILogger getLogger(Class clazz) {
-        return node.getLogger(clazz);
+        return loggingService.getLogger(clazz);
     }
 
     @Override
