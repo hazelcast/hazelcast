@@ -33,11 +33,13 @@ class ByteArraySerializerAdapter implements SerializerAdapter {
     }
 
     @SuppressWarnings("unchecked")
+    @Override
     public void write(ObjectDataOutput out, Object object) throws IOException {
         byte[] bytes = serializer.write(object);
         out.writeByteArray(bytes);
     }
 
+    @Override
     public Object read(ObjectDataInput in) throws IOException {
         byte[] bytes = in.readByteArray();
         if (bytes == null) {
@@ -46,10 +48,12 @@ class ByteArraySerializerAdapter implements SerializerAdapter {
         return serializer.read(bytes);
     }
 
+    @Override
     public int getTypeId() {
         return serializer.getTypeId();
     }
 
+    @Override
     public void destroy() {
         serializer.destroy();
     }

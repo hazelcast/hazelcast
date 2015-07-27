@@ -63,51 +63,61 @@ public class DefaultPortableWriter implements PortableWriter {
         return cd.getVersion();
     }
 
+    @Override
     public void writeInt(String fieldName, int value) throws IOException {
         setPosition(fieldName, FieldType.INT);
         out.writeInt(value);
     }
 
+    @Override
     public void writeLong(String fieldName, long value) throws IOException {
         setPosition(fieldName, FieldType.LONG);
         out.writeLong(value);
     }
 
+    @Override
     public void writeUTF(String fieldName, String str) throws IOException {
         setPosition(fieldName, FieldType.UTF);
         out.writeUTF(str);
     }
 
+    @Override
     public void writeBoolean(String fieldName, boolean value) throws IOException {
         setPosition(fieldName, FieldType.BOOLEAN);
         out.writeBoolean(value);
     }
 
+    @Override
     public void writeByte(String fieldName, byte value) throws IOException {
         setPosition(fieldName, FieldType.BYTE);
         out.writeByte(value);
     }
 
+    @Override
     public void writeChar(String fieldName, int value) throws IOException {
         setPosition(fieldName, FieldType.CHAR);
         out.writeChar(value);
     }
 
+    @Override
     public void writeDouble(String fieldName, double value) throws IOException {
         setPosition(fieldName, FieldType.DOUBLE);
         out.writeDouble(value);
     }
 
+    @Override
     public void writeFloat(String fieldName, float value) throws IOException {
         setPosition(fieldName, FieldType.FLOAT);
         out.writeFloat(value);
     }
 
+    @Override
     public void writeShort(String fieldName, short value) throws IOException {
         setPosition(fieldName, FieldType.SHORT);
         out.writeShort(value);
     }
 
+    @Override
     public void writePortable(String fieldName, Portable portable) throws IOException {
         FieldDefinition fd = setPosition(fieldName, FieldType.PORTABLE);
         final boolean isNull = portable == null;
@@ -133,6 +143,7 @@ public class DefaultPortableWriter implements PortableWriter {
         }
     }
 
+    @Override
     public void writeNullPortable(String fieldName, int factoryId, int classId) throws IOException {
         setPosition(fieldName, FieldType.PORTABLE);
         out.writeBoolean(true);
@@ -141,41 +152,49 @@ public class DefaultPortableWriter implements PortableWriter {
         out.writeInt(classId);
     }
 
+    @Override
     public void writeByteArray(String fieldName, byte[] values) throws IOException {
         setPosition(fieldName, FieldType.BYTE_ARRAY);
         out.writeByteArray(values);
     }
 
+    @Override
     public void writeCharArray(String fieldName, char[] values) throws IOException {
         setPosition(fieldName, FieldType.CHAR_ARRAY);
         out.writeCharArray(values);
     }
 
+    @Override
     public void writeIntArray(String fieldName, int[] values) throws IOException {
         setPosition(fieldName, FieldType.INT_ARRAY);
         out.writeIntArray(values);
     }
 
+    @Override
     public void writeLongArray(String fieldName, long[] values) throws IOException {
         setPosition(fieldName, FieldType.LONG_ARRAY);
         out.writeLongArray(values);
     }
 
+    @Override
     public void writeDoubleArray(String fieldName, double[] values) throws IOException {
         setPosition(fieldName, FieldType.DOUBLE_ARRAY);
         out.writeDoubleArray(values);
     }
 
+    @Override
     public void writeFloatArray(String fieldName, float[] values) throws IOException {
         setPosition(fieldName, FieldType.FLOAT_ARRAY);
         out.writeFloatArray(values);
     }
 
+    @Override
     public void writeShortArray(String fieldName, short[] values) throws IOException {
         setPosition(fieldName, FieldType.SHORT_ARRAY);
         out.writeShortArray(values);
     }
 
+    @Override
     public void writePortableArray(String fieldName, Portable[] portables) throws IOException {
         FieldDefinition fd = setPosition(fieldName, FieldType.PORTABLE_ARRAY);
         final int len = portables == null ? 0 : portables.length;
@@ -219,6 +238,7 @@ public class DefaultPortableWriter implements PortableWriter {
         return fd;
     }
 
+    @Override
     public ObjectDataOutput getRawDataOutput() throws IOException {
         if (!raw) {
             int pos = out.position();

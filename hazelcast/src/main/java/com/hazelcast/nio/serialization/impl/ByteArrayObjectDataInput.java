@@ -74,14 +74,17 @@ class ByteArrayObjectDataInput extends InputStream implements BufferObjectDataIn
         this.mark = 0;
     }
 
+    @Override
     public int read() throws IOException {
         return (pos < size) ? (data[pos++] & 0xff) : -1;
     }
 
+    @Override
     public int read(int position) throws IOException {
         return (position < size) ? (data[position] & 0xff) : -1;
     }
 
+    @Override
     public final int read(byte[] b, int off, int len) throws IOException {
         if (b == null) {
             throw new NullPointerException();
@@ -104,6 +107,7 @@ class ByteArrayObjectDataInput extends InputStream implements BufferObjectDataIn
         return len;
     }
 
+    @Override
     public final boolean readBoolean() throws IOException {
         final int ch = read();
         if (ch < 0) {
@@ -112,6 +116,7 @@ class ByteArrayObjectDataInput extends InputStream implements BufferObjectDataIn
         return (ch != 0);
     }
 
+    @Override
     public final boolean readBoolean(int position) throws IOException {
         final int ch = read(position);
         if (ch < 0) {
@@ -132,6 +137,7 @@ class ByteArrayObjectDataInput extends InputStream implements BufferObjectDataIn
      * @throws java.io.IOException  if an I/O error occurs.
      * @see java.io.FilterInputStream#in
      */
+    @Override
     public final byte readByte() throws IOException {
         final int ch = read();
         if (ch < 0) {
@@ -140,6 +146,7 @@ class ByteArrayObjectDataInput extends InputStream implements BufferObjectDataIn
         return (byte) (ch);
     }
 
+    @Override
     public final byte readByte(int position) throws IOException {
         final int ch = read(position);
         if (ch < 0) {
@@ -160,12 +167,14 @@ class ByteArrayObjectDataInput extends InputStream implements BufferObjectDataIn
      * @throws java.io.IOException  if an I/O error occurs.
      * @see java.io.FilterInputStream#in
      */
+    @Override
     public final char readChar() throws IOException {
         final char c = readChar(pos);
         pos += CHAR_SIZE_IN_BYTES;
         return c;
     }
 
+    @Override
     public char readChar(int position) throws IOException {
         checkAvailable(position, CHAR_SIZE_IN_BYTES);
         return Bits.readChar(data, position, bigEndian);
@@ -185,10 +194,12 @@ class ByteArrayObjectDataInput extends InputStream implements BufferObjectDataIn
      * @see java.io.DataInputStream#readLong()
      * @see Double#longBitsToDouble(long)
      */
+    @Override
     public double readDouble() throws IOException {
         return Double.longBitsToDouble(readLong());
     }
 
+    @Override
     public double readDouble(int position) throws IOException {
         return Double.longBitsToDouble(readLong(position));
     }
@@ -217,10 +228,12 @@ class ByteArrayObjectDataInput extends InputStream implements BufferObjectDataIn
      * @see java.io.DataInputStream#readInt()
      * @see Float#intBitsToFloat(int)
      */
+    @Override
     public float readFloat() throws IOException {
         return Float.intBitsToFloat(readInt());
     }
 
+    @Override
     public float readFloat(int position) throws IOException {
         return Float.intBitsToFloat(readInt(position));
     }
@@ -235,12 +248,14 @@ class ByteArrayObjectDataInput extends InputStream implements BufferObjectDataIn
         return Float.intBitsToFloat(readInt(position, byteOrder));
     }
 
+    @Override
     public void readFully(final byte[] b) throws IOException {
         if (read(b) == -1) {
             throw new EOFException("End of stream reached");
         }
     }
 
+    @Override
     public void readFully(final byte[] b, final int off, final int len) throws IOException {
         if (read(b, off, len) == -1) {
             throw new EOFException("End of stream reached");
@@ -260,6 +275,7 @@ class ByteArrayObjectDataInput extends InputStream implements BufferObjectDataIn
      * @throws java.io.IOException  if an I/O error occurs.
      * @see java.io.FilterInputStream#in
      */
+    @Override
     public final int readInt() throws IOException {
         final int i = readInt(pos);
         pos += INT_SIZE_IN_BYTES;
@@ -302,6 +318,7 @@ class ByteArrayObjectDataInput extends InputStream implements BufferObjectDataIn
      * @throws java.io.IOException  if an I/O error occurs.
      * @see java.io.FilterInputStream#in
      */
+    @Override
     public final long readLong() throws IOException {
         final long l = readLong(pos);
         pos += LONG_SIZE_IN_BYTES;
@@ -339,12 +356,14 @@ class ByteArrayObjectDataInput extends InputStream implements BufferObjectDataIn
      * @throws java.io.IOException  if an I/O error occurs.
      * @see java.io.FilterInputStream#in
      */
+    @Override
     public final short readShort() throws IOException {
         short s = readShort(pos);
         pos += SHORT_SIZE_IN_BYTES;
         return s;
     }
 
+    @Override
     public short readShort(int position) throws IOException {
         checkAvailable(position, SHORT_SIZE_IN_BYTES);
         return Bits.readShort(data, position, bigEndian);
@@ -363,6 +382,7 @@ class ByteArrayObjectDataInput extends InputStream implements BufferObjectDataIn
         return Bits.readShort(data, position, byteOrder == ByteOrder.BIG_ENDIAN);
     }
 
+    @Override
     public byte[] readByteArray() throws IOException {
         int len = readInt();
         if (len > 0) {
@@ -373,6 +393,7 @@ class ByteArrayObjectDataInput extends InputStream implements BufferObjectDataIn
         return new byte[0];
     }
 
+    @Override
     public char[] readCharArray() throws IOException {
         int len = readInt();
         if (len > 0) {
@@ -385,6 +406,7 @@ class ByteArrayObjectDataInput extends InputStream implements BufferObjectDataIn
         return new char[0];
     }
 
+    @Override
     public int[] readIntArray() throws IOException {
         int len = readInt();
         if (len > 0) {
@@ -397,6 +419,7 @@ class ByteArrayObjectDataInput extends InputStream implements BufferObjectDataIn
         return new int[0];
     }
 
+    @Override
     public long[] readLongArray() throws IOException {
         int len = readInt();
         if (len > 0) {
@@ -409,6 +432,7 @@ class ByteArrayObjectDataInput extends InputStream implements BufferObjectDataIn
         return new long[0];
     }
 
+    @Override
     public double[] readDoubleArray() throws IOException {
         int len = readInt();
         if (len > 0) {
@@ -421,6 +445,7 @@ class ByteArrayObjectDataInput extends InputStream implements BufferObjectDataIn
         return new double[0];
     }
 
+    @Override
     public float[] readFloatArray() throws IOException {
         int len = readInt();
         if (len > 0) {
@@ -433,6 +458,7 @@ class ByteArrayObjectDataInput extends InputStream implements BufferObjectDataIn
         return new float[0];
     }
 
+    @Override
     public short[] readShortArray() throws IOException {
         int len = readInt();
         if (len > 0) {
@@ -457,6 +483,7 @@ class ByteArrayObjectDataInput extends InputStream implements BufferObjectDataIn
      * @throws java.io.IOException  if an I/O error occurs.
      * @see java.io.FilterInputStream#in
      */
+    @Override
     public int readUnsignedByte() throws IOException {
         return readByte() & 0xFF;
     }
@@ -474,6 +501,7 @@ class ByteArrayObjectDataInput extends InputStream implements BufferObjectDataIn
      * @throws java.io.IOException  if an I/O error occurs.
      * @see java.io.FilterInputStream#in
      */
+    @Override
     public int readUnsignedShort() throws IOException {
         return readShort() & 0xffff;
     }
@@ -492,6 +520,7 @@ class ByteArrayObjectDataInput extends InputStream implements BufferObjectDataIn
      *                                        encoding of a string.
      * @see java.io.DataInputStream#readUTF(java.io.DataInput)
      */
+    @Override
     public final String readUTF() throws IOException {
         if (utfBuffer == null) {
             utfBuffer = new byte[UTF_BUFFER_SIZE];

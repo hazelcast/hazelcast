@@ -207,10 +207,12 @@ final class PortableContextImpl implements PortableContext {
         return ConcurrencyUtil.getOrPutIfAbsent(classDefContextMap, factoryId, constructorFunction);
     }
 
+    @Override
     public int getVersion() {
         return version;
     }
 
+    @Override
     public ManagedContext getManagedContext() {
         return serializationService.getManagedContext();
     }

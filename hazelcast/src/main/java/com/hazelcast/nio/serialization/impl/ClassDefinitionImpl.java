@@ -46,10 +46,12 @@ public class ClassDefinitionImpl implements ClassDefinition {
         fieldDefinitionsMap.put(fd.getName(), fd);
     }
 
+    @Override
     public FieldDefinition getField(String name) {
         return fieldDefinitionsMap.get(name);
     }
 
+    @Override
     public FieldDefinition getField(int fieldIndex) {
         if (fieldIndex < 0 || fieldIndex >= fieldDefinitionsMap.size()) {
             throw new IndexOutOfBoundsException("Index: " + fieldIndex + ", Size: " + fieldDefinitionsMap.size());
@@ -62,14 +64,17 @@ public class ClassDefinitionImpl implements ClassDefinition {
         throw new IndexOutOfBoundsException("Index: " + fieldIndex + ", Size: " + fieldDefinitionsMap.size());
     }
 
+    @Override
     public boolean hasField(String fieldName) {
         return fieldDefinitionsMap.containsKey(fieldName);
     }
 
+    @Override
     public Set<String> getFieldNames() {
         return new HashSet<String>(fieldDefinitionsMap.keySet());
     }
 
+    @Override
     public FieldType getFieldType(String fieldName) {
         final FieldDefinition fd = getField(fieldName);
         if (fd != null) {
@@ -78,6 +83,7 @@ public class ClassDefinitionImpl implements ClassDefinition {
         throw new IllegalArgumentException("Unknown field: " + fieldName);
     }
 
+    @Override
     public int getFieldClassId(String fieldName) {
         final FieldDefinition fd = getField(fieldName);
         if (fd != null) {
@@ -95,14 +101,17 @@ public class ClassDefinitionImpl implements ClassDefinition {
         return fieldDefinitionsMap.size();
     }
 
+    @Override
     public final int getFactoryId() {
         return factoryId;
     }
 
+    @Override
     public final int getClassId() {
         return classId;
     }
 
+    @Override
     public final int getVersion() {
         return version;
     }

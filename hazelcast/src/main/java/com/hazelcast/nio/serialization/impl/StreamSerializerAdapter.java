@@ -36,18 +36,22 @@ class StreamSerializerAdapter implements SerializerAdapter {
     }
 
     @SuppressWarnings("unchecked")
+    @Override
     public void write(ObjectDataOutput out, Object object) throws IOException {
         serializer.write(out, object);
     }
 
+    @Override
     public Object read(ObjectDataInput in) throws IOException {
         return serializer.read(in);
     }
 
+    @Override
     public int getTypeId() {
         return serializer.getTypeId();
     }
 
+    @Override
     public void destroy() {
         serializer.destroy();
     }

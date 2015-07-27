@@ -41,10 +41,12 @@ final class PortableSerializer implements StreamSerializer<Portable> {
         factories.putAll(portableFactories);
     }
 
+    @Override
     public int getTypeId() {
         return SerializationConstants.CONSTANT_TYPE_PORTABLE;
     }
 
+    @Override
     public void write(ObjectDataOutput out, Portable p) throws IOException {
         if (!(out instanceof BufferObjectDataOutput)) {
             throw new IllegalArgumentException("ObjectDataOutput must be instance of BufferObjectDataOutput!");
@@ -68,6 +70,7 @@ final class PortableSerializer implements StreamSerializer<Portable> {
         writer.end();
     }
 
+    @Override
     public Portable read(ObjectDataInput in) throws IOException {
         if (!(in instanceof BufferObjectDataInput)) {
             throw new IllegalArgumentException("ObjectDataInput must be instance of BufferObjectDataInput!");
@@ -152,6 +155,7 @@ final class PortableSerializer implements StreamSerializer<Portable> {
         return reader;
     }
 
+    @Override
     public void destroy() {
         factories.clear();
     }

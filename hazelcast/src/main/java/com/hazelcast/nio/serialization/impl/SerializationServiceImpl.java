@@ -221,10 +221,12 @@ public class SerializationServiceImpl implements SerializationService {
         portableContext.registerClassDefinition(cd);
     }
 
+    @Override
     public final Data toData(final Object obj) {
         return toData(obj, globalPartitioningStrategy);
     }
 
+    @Override
     public final Data toData(Object obj, PartitioningStrategy strategy) {
         if (obj == null) {
             return null;
@@ -310,6 +312,7 @@ public class SerializationServiceImpl implements SerializationService {
         return data.dataSize() == 0 && data.getType() == SerializationConstants.CONSTANT_TYPE_NULL;
     }
 
+    @Override
     public final void writeObject(final ObjectDataOutput out, final Object obj) {
         if (obj instanceof Data) {
             throw new HazelcastSerializationException("Cannot write a Data instance! "
@@ -329,6 +332,7 @@ public class SerializationServiceImpl implements SerializationService {
         }
     }
 
+    @Override
     public final <T> T readObject(final ObjectDataInput in) {
         try {
             final boolean isNull = in.readBoolean();
@@ -384,6 +388,7 @@ public class SerializationServiceImpl implements SerializationService {
         }
     }
 
+    @Override
     public void disposeData(Data data) {
     }
 
@@ -401,14 +406,17 @@ public class SerializationServiceImpl implements SerializationService {
         throw new HazelcastSerializationException(e);
     }
 
+    @Override
     public final BufferObjectDataInput createObjectDataInput(byte[] data) {
         return inputOutputFactory.createInput(data, this);
     }
 
+    @Override
     public final BufferObjectDataInput createObjectDataInput(Data data) {
         return inputOutputFactory.createInput(data, this);
     }
 
+    @Override
     public final BufferObjectDataOutput createObjectDataOutput(int size) {
         return inputOutputFactory.createOutput(size, this);
     }
@@ -418,14 +426,17 @@ public class SerializationServiceImpl implements SerializationService {
         return inputOutputFactory.createOutput(outputBufferSize, this);
     }
 
+    @Override
     public final ObjectDataOutputStream createObjectDataOutputStream(OutputStream out) {
         return new ObjectDataOutputStream(out, this);
     }
 
+    @Override
     public final ObjectDataInputStream createObjectDataInputStream(InputStream in) {
         return new ObjectDataInputStream(in, this);
     }
 
+    @Override
     public final void register(Class type, Serializer serializer) {
         if (type == null) {
             throw new IllegalArgumentException("Class type information is required!");
@@ -437,6 +448,7 @@ public class SerializationServiceImpl implements SerializationService {
         safeRegister(type, createSerializerAdapter(serializer));
     }
 
+    @Override
     public final void registerGlobal(final Serializer serializer) {
         SerializerAdapter adapter = createSerializerAdapter(serializer);
         if (!global.compareAndSet(null, adapter)) {

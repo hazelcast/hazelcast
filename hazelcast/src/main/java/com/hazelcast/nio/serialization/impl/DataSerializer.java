@@ -85,10 +85,12 @@ final class DataSerializer implements StreamSerializer<DataSerializable> {
         }
     }
 
+    @Override
     public int getTypeId() {
         return CONSTANT_TYPE_DATA_SERIALIZABLE;
     }
 
+    @Override
     public DataSerializable read(ObjectDataInput in) throws IOException {
         final DataSerializable ds;
         final boolean identified = in.readBoolean();
@@ -132,6 +134,7 @@ final class DataSerializer implements StreamSerializer<DataSerializable> {
         }
     }
 
+    @Override
     public void write(ObjectDataOutput out, DataSerializable obj) throws IOException {
         // If you ever change the way this is serialized think about to change
         // BasicOperationService::extractOperationCallId
@@ -147,6 +150,7 @@ final class DataSerializer implements StreamSerializer<DataSerializable> {
         obj.writeData(out);
     }
 
+    @Override
     public void destroy() {
         factories.clear();
     }

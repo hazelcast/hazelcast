@@ -35,45 +35,53 @@ class UnsafeObjectDataOutput extends ByteArrayObjectDataOutput {
         super(size, service, ByteOrder.nativeOrder());
     }
 
+    @Override
     public void writeChar(final int v) throws IOException {
         ensureAvailable(CHAR_SIZE_IN_BYTES);
         UnsafeHelper.UNSAFE.putChar(buffer, UnsafeHelper.BYTE_ARRAY_BASE_OFFSET + pos, (char) v);
         pos += CHAR_SIZE_IN_BYTES;
     }
 
+    @Override
     public void writeChar(int position, final int v) throws IOException {
         checkAvailable(position, CHAR_SIZE_IN_BYTES);
         UnsafeHelper.UNSAFE.putChar(buffer, UnsafeHelper.BYTE_ARRAY_BASE_OFFSET + position, (char) v);
     }
 
+    @Override
     public void writeDouble(final double v) throws IOException {
         ensureAvailable(DOUBLE_SIZE_IN_BYTES);
         UnsafeHelper.UNSAFE.putDouble(buffer, UnsafeHelper.BYTE_ARRAY_BASE_OFFSET + pos, v);
         pos += DOUBLE_SIZE_IN_BYTES;
     }
 
+    @Override
     public void writeDouble(int position, final double v) throws IOException {
         checkAvailable(position, DOUBLE_SIZE_IN_BYTES);
         UnsafeHelper.UNSAFE.putDouble(buffer, UnsafeHelper.BYTE_ARRAY_BASE_OFFSET + position, v);
     }
 
+    @Override
     public void writeFloat(final float v) throws IOException {
         ensureAvailable(FLOAT_SIZE_IN_BYTES);
         UnsafeHelper.UNSAFE.putFloat(buffer, UnsafeHelper.BYTE_ARRAY_BASE_OFFSET + pos, v);
         pos += FLOAT_SIZE_IN_BYTES;
     }
 
+    @Override
     public void writeFloat(int position, final float v) throws IOException {
         checkAvailable(position, FLOAT_SIZE_IN_BYTES);
         UnsafeHelper.UNSAFE.putFloat(buffer, UnsafeHelper.BYTE_ARRAY_BASE_OFFSET + position, v);
     }
 
+    @Override
     public void writeInt(final int v) throws IOException {
         ensureAvailable(INT_SIZE_IN_BYTES);
         UnsafeHelper.UNSAFE.putInt(buffer, UnsafeHelper.BYTE_ARRAY_BASE_OFFSET + pos, v);
         pos += INT_SIZE_IN_BYTES;
     }
 
+    @Override
     public void writeInt(int position, int v) throws IOException {
         checkAvailable(position, INT_SIZE_IN_BYTES);
         UnsafeHelper.UNSAFE.putInt(buffer, UnsafeHelper.BYTE_ARRAY_BASE_OFFSET + position, v);
@@ -97,12 +105,14 @@ class UnsafeObjectDataOutput extends ByteArrayObjectDataOutput {
         }
     }
 
+    @Override
     public void writeLong(final long v) throws IOException {
         ensureAvailable(LONG_SIZE_IN_BYTES);
         UnsafeHelper.UNSAFE.putLong(buffer, UnsafeHelper.BYTE_ARRAY_BASE_OFFSET + pos, v);
         pos += LONG_SIZE_IN_BYTES;
     }
 
+    @Override
     public void writeLong(int position, final long v) throws IOException {
         checkAvailable(position, LONG_SIZE_IN_BYTES);
         UnsafeHelper.UNSAFE.putLong(buffer, UnsafeHelper.BYTE_ARRAY_BASE_OFFSET + position, v);
@@ -126,12 +136,14 @@ class UnsafeObjectDataOutput extends ByteArrayObjectDataOutput {
         }
     }
 
+    @Override
     public void writeShort(final int v) throws IOException {
         ensureAvailable(SHORT_SIZE_IN_BYTES);
         UnsafeHelper.UNSAFE.putShort(buffer, UnsafeHelper.BYTE_ARRAY_BASE_OFFSET + pos, (short) v);
         pos += SHORT_SIZE_IN_BYTES;
     }
 
+    @Override
     public void writeShort(int position, final int v) throws IOException {
         checkAvailable(position, SHORT_SIZE_IN_BYTES);
         UnsafeHelper.UNSAFE.putShort(buffer, UnsafeHelper.BYTE_ARRAY_BASE_OFFSET + position, (short) v);
@@ -157,6 +169,7 @@ class UnsafeObjectDataOutput extends ByteArrayObjectDataOutput {
         }
     }
 
+    @Override
     public void writeCharArray(char[] values) throws IOException {
         int len = values != null ? values.length : 0;
         writeInt(len);
@@ -165,6 +178,7 @@ class UnsafeObjectDataOutput extends ByteArrayObjectDataOutput {
         }
     }
 
+    @Override
     public void writeShortArray(short[] values) throws IOException {
         int len = values != null ? values.length : 0;
         writeInt(len);
@@ -173,6 +187,7 @@ class UnsafeObjectDataOutput extends ByteArrayObjectDataOutput {
         }
     }
 
+    @Override
     public void writeIntArray(int[] values) throws IOException {
         int len = values != null ? values.length : 0;
         writeInt(len);
@@ -181,6 +196,7 @@ class UnsafeObjectDataOutput extends ByteArrayObjectDataOutput {
         }
     }
 
+    @Override
     public void writeFloatArray(float[] values) throws IOException {
         int len = values != null ? values.length : 0;
         writeInt(len);
@@ -189,6 +205,7 @@ class UnsafeObjectDataOutput extends ByteArrayObjectDataOutput {
         }
     }
 
+    @Override
     public void writeLongArray(long[] values) throws IOException {
         int len = values != null ? values.length : 0;
         writeInt(len);
@@ -197,6 +214,7 @@ class UnsafeObjectDataOutput extends ByteArrayObjectDataOutput {
         }
     }
 
+    @Override
     public void writeDoubleArray(double[] values) throws IOException {
         int len = values != null ? values.length : 0;
         writeInt(len);
@@ -223,6 +241,7 @@ class UnsafeObjectDataOutput extends ByteArrayObjectDataOutput {
         }
     }
 
+    @Override
     public ByteOrder getByteOrder() {
         return ByteOrder.nativeOrder();
     }

@@ -52,15 +52,18 @@ class ByteArrayObjectDataOutput extends OutputStream implements BufferObjectData
         isBigEndian = byteOrder == ByteOrder.BIG_ENDIAN;
     }
 
+    @Override
     public void write(int b) {
         ensureAvailable(1);
         buffer[pos++] = (byte) (b);
     }
 
+    @Override
     public void write(int position, int b) {
         buffer[position] = (byte) b;
     }
 
+    @Override
     public void write(byte[] b, int off, int len) {
         if ((off < 0) || (off > b.length) || (len < 0)
                 || ((off + len) > b.length) || ((off + len) < 0)) {
@@ -73,28 +76,34 @@ class ByteArrayObjectDataOutput extends OutputStream implements BufferObjectData
         pos += len;
     }
 
+    @Override
     public final void writeBoolean(final boolean v) throws IOException {
         write(v ? 1 : 0);
     }
 
+    @Override
     public final void writeBoolean(int position, final boolean v) throws IOException {
         write(position, v ? 1 : 0);
     }
 
+    @Override
     public final void writeByte(final int v) throws IOException {
         write(v);
     }
 
+    @Override
     public final void writeZeroBytes(int count) {
         for (int k = 0; k < count; k++) {
             write(0);
         }
     }
 
+    @Override
     public final void writeByte(int position, final int v) throws IOException {
         write(position, v);
     }
 
+    @Override
     public final void writeBytes(final String s) throws IOException {
         final int len = s.length();
         ensureAvailable(len);
@@ -103,16 +112,19 @@ class ByteArrayObjectDataOutput extends OutputStream implements BufferObjectData
         }
     }
 
+    @Override
     public void writeChar(final int v) throws IOException {
         ensureAvailable(CHAR_SIZE_IN_BYTES);
         Bits.writeChar(buffer, pos, (char) v, isBigEndian);
         pos += CHAR_SIZE_IN_BYTES;
     }
 
+    @Override
     public void writeChar(int position, final int v) throws IOException {
         Bits.writeChar(buffer, position, (char) v, isBigEndian);
     }
 
+    @Override
     public void writeChars(final String s) throws IOException {
         final int len = s.length();
         ensureAvailable(len * CHAR_SIZE_IN_BYTES);
@@ -123,10 +135,12 @@ class ByteArrayObjectDataOutput extends OutputStream implements BufferObjectData
         }
     }
 
+    @Override
     public void writeDouble(final double v) throws IOException {
         writeLong(Double.doubleToLongBits(v));
     }
 
+    @Override
     public void writeDouble(int position, final double v) throws IOException {
         writeLong(position, Double.doubleToLongBits(v));
     }
@@ -141,10 +155,12 @@ class ByteArrayObjectDataOutput extends OutputStream implements BufferObjectData
         writeLong(position, Double.doubleToLongBits(v), byteOrder);
     }
 
+    @Override
     public void writeFloat(final float v) throws IOException {
         writeInt(Float.floatToIntBits(v));
     }
 
+    @Override
     public void writeFloat(int position, final float v) throws IOException {
         writeInt(position, Float.floatToIntBits(v));
     }
@@ -159,12 +175,14 @@ class ByteArrayObjectDataOutput extends OutputStream implements BufferObjectData
         writeInt(position, Float.floatToIntBits(v), byteOrder);
     }
 
+    @Override
     public void writeInt(final int v) throws IOException {
         ensureAvailable(INT_SIZE_IN_BYTES);
         Bits.writeInt(buffer, pos, v, isBigEndian);
         pos += INT_SIZE_IN_BYTES;
     }
 
+    @Override
     public void writeInt(int position, int v) throws IOException {
         Bits.writeInt(buffer, position, v, isBigEndian);
     }
@@ -181,12 +199,14 @@ class ByteArrayObjectDataOutput extends OutputStream implements BufferObjectData
         Bits.writeInt(buffer, position, v, byteOrder == ByteOrder.BIG_ENDIAN);
     }
 
+    @Override
     public void writeLong(final long v) throws IOException {
         ensureAvailable(LONG_SIZE_IN_BYTES);
         Bits.writeLong(buffer, pos, v, isBigEndian);
         pos += LONG_SIZE_IN_BYTES;
     }
 
+    @Override
     public void writeLong(int position, final long v) throws IOException {
         Bits.writeLong(buffer, position, v, isBigEndian);
     }
@@ -203,12 +223,14 @@ class ByteArrayObjectDataOutput extends OutputStream implements BufferObjectData
         Bits.writeLong(buffer, position, v, byteOrder == ByteOrder.BIG_ENDIAN);
     }
 
+    @Override
     public void writeShort(final int v) throws IOException {
         ensureAvailable(SHORT_SIZE_IN_BYTES);
         Bits.writeShort(buffer, pos, (short) v, isBigEndian);
         pos += SHORT_SIZE_IN_BYTES;
     }
 
+    @Override
     public void writeShort(int position, final int v) throws IOException {
         Bits.writeShort(buffer, position, (short) v, isBigEndian);
     }
@@ -225,6 +247,7 @@ class ByteArrayObjectDataOutput extends OutputStream implements BufferObjectData
         Bits.writeShort(buffer, position, (short) v, byteOrder == ByteOrder.BIG_ENDIAN);
     }
 
+    @Override
     public void writeUTF(final String str) throws IOException {
         if (utfBuffer == null) {
             utfBuffer = new byte[UTF_BUFFER_SIZE];
@@ -232,6 +255,7 @@ class ByteArrayObjectDataOutput extends OutputStream implements BufferObjectData
         UTFEncoderDecoder.writeUTF(this, str, utfBuffer);
     }
 
+    @Override
     public void writeByteArray(byte[] bytes) throws IOException {
         int len = (bytes == null) ? 0 : bytes.length;
         writeInt(len);
@@ -240,6 +264,7 @@ class ByteArrayObjectDataOutput extends OutputStream implements BufferObjectData
         }
     }
 
+    @Override
     public void writeCharArray(char[] chars) throws IOException {
         int len = chars != null ? chars.length : 0;
         writeInt(len);
@@ -250,6 +275,7 @@ class ByteArrayObjectDataOutput extends OutputStream implements BufferObjectData
         }
     }
 
+    @Override
     public void writeIntArray(int[] ints) throws IOException {
         int len = ints != null ? ints.length : 0;
         writeInt(len);
@@ -260,6 +286,7 @@ class ByteArrayObjectDataOutput extends OutputStream implements BufferObjectData
         }
     }
 
+    @Override
     public void writeLongArray(long[] longs) throws IOException {
         int len = longs != null ? longs.length : 0;
         writeInt(len);
@@ -270,6 +297,7 @@ class ByteArrayObjectDataOutput extends OutputStream implements BufferObjectData
         }
     }
 
+    @Override
     public void writeDoubleArray(double[] doubles) throws IOException {
         int len = doubles != null ? doubles.length : 0;
         writeInt(len);
@@ -280,6 +308,7 @@ class ByteArrayObjectDataOutput extends OutputStream implements BufferObjectData
         }
     }
 
+    @Override
     public void writeFloatArray(float[] floats) throws IOException {
         int len = floats != null ? floats.length : 0;
         writeInt(len);
@@ -290,6 +319,7 @@ class ByteArrayObjectDataOutput extends OutputStream implements BufferObjectData
         }
     }
 
+    @Override
     public void writeShortArray(short[] shorts) throws IOException {
         int len = shorts != null ? shorts.length : 0;
         writeInt(len);
@@ -313,10 +343,12 @@ class ByteArrayObjectDataOutput extends OutputStream implements BufferObjectData
         }
     }
 
+    @Override
     public void writeObject(Object object) throws IOException {
         service.writeObject(this, object);
     }
 
+    @Override
     public void writeData(Data data) throws IOException {
         service.writeData(this, data);
     }
@@ -324,10 +356,12 @@ class ByteArrayObjectDataOutput extends OutputStream implements BufferObjectData
     /**
      * Returns this buffer's position.
      */
+    @Override
     public final int position() {
         return pos;
     }
 
+    @Override
     public void position(int newPos) {
         if ((newPos > buffer.length) || (newPos < 0)) {
             throw new IllegalArgumentException();
@@ -340,6 +374,7 @@ class ByteArrayObjectDataOutput extends OutputStream implements BufferObjectData
         return buffer != null ? buffer.length - pos : 0;
     }
 
+    @Override
     public byte toByteArray()[] {
         if (buffer == null || pos == 0) {
             return new byte[0];
@@ -349,6 +384,7 @@ class ByteArrayObjectDataOutput extends OutputStream implements BufferObjectData
         return newBuffer;
     }
 
+    @Override
     public void clear() {
         pos = 0;
         if (buffer != null && buffer.length > initialSize * 8) {
@@ -356,11 +392,13 @@ class ByteArrayObjectDataOutput extends OutputStream implements BufferObjectData
         }
     }
 
+    @Override
     public void close() {
         pos = 0;
         buffer = null;
     }
 
+    @Override
     public ByteOrder getByteOrder() {
         return isBigEndian ? ByteOrder.BIG_ENDIAN : ByteOrder.LITTLE_ENDIAN;
     }

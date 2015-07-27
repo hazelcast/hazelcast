@@ -60,36 +60,44 @@ public class DefaultPortableReader implements PortableReader {
         this.offset = in.position();
     }
 
+    @Override
     public int getVersion() {
         return cd.getVersion();
     }
 
+    @Override
     public boolean hasField(String fieldName) {
         return cd.hasField(fieldName);
     }
 
+    @Override
     public Set<String> getFieldNames() {
         return cd.getFieldNames();
     }
 
+    @Override
     public FieldType getFieldType(String fieldName) {
         return cd.getFieldType(fieldName);
     }
 
+    @Override
     public int getFieldClassId(String fieldName) {
         return cd.getFieldClassId(fieldName);
     }
 
+    @Override
     public int readInt(String fieldName) throws IOException {
         int pos = readPosition(fieldName, FieldType.INT);
         return in.readInt(pos);
     }
 
+    @Override
     public long readLong(String fieldName) throws IOException {
         int pos = readPosition(fieldName, FieldType.LONG);
         return in.readLong(pos);
     }
 
+    @Override
     public String readUTF(String fieldName) throws IOException {
         final int currentPos = in.position();
         try {
@@ -101,36 +109,43 @@ public class DefaultPortableReader implements PortableReader {
         }
     }
 
+    @Override
     public boolean readBoolean(String fieldName) throws IOException {
         int pos = readPosition(fieldName, FieldType.BOOLEAN);
         return in.readBoolean(pos);
     }
 
+    @Override
     public byte readByte(String fieldName) throws IOException {
         int pos = readPosition(fieldName, FieldType.BYTE);
         return in.readByte(pos);
     }
 
+    @Override
     public char readChar(String fieldName) throws IOException {
         int pos = readPosition(fieldName, FieldType.CHAR);
         return in.readChar(pos);
     }
 
+    @Override
     public double readDouble(String fieldName) throws IOException {
         int pos = readPosition(fieldName, FieldType.DOUBLE);
         return in.readDouble(pos);
     }
 
+    @Override
     public float readFloat(String fieldName) throws IOException {
         int pos = readPosition(fieldName, FieldType.FLOAT);
         return in.readFloat(pos);
     }
 
+    @Override
     public short readShort(String fieldName) throws IOException {
         int pos = readPosition(fieldName, FieldType.SHORT);
         return in.readShort(pos);
     }
 
+    @Override
     public byte[] readByteArray(String fieldName) throws IOException {
         final int currentPos = in.position();
         try {
@@ -142,6 +157,7 @@ public class DefaultPortableReader implements PortableReader {
         }
     }
 
+    @Override
     public char[] readCharArray(String fieldName) throws IOException {
         final int currentPos = in.position();
         try {
@@ -153,6 +169,7 @@ public class DefaultPortableReader implements PortableReader {
         }
     }
 
+    @Override
     public int[] readIntArray(String fieldName) throws IOException {
         final int currentPos = in.position();
         try {
@@ -164,6 +181,7 @@ public class DefaultPortableReader implements PortableReader {
         }
     }
 
+    @Override
     public long[] readLongArray(String fieldName) throws IOException {
         final int currentPos = in.position();
         try {
@@ -175,6 +193,7 @@ public class DefaultPortableReader implements PortableReader {
         }
     }
 
+    @Override
     public double[] readDoubleArray(String fieldName) throws IOException {
         final int currentPos = in.position();
         try {
@@ -186,6 +205,7 @@ public class DefaultPortableReader implements PortableReader {
         }
     }
 
+    @Override
     public float[] readFloatArray(String fieldName) throws IOException {
         final int currentPos = in.position();
         try {
@@ -197,6 +217,7 @@ public class DefaultPortableReader implements PortableReader {
         }
     }
 
+    @Override
     public short[] readShortArray(String fieldName) throws IOException {
         final int currentPos = in.position();
         try {
@@ -208,6 +229,7 @@ public class DefaultPortableReader implements PortableReader {
         }
     }
 
+    @Override
     public Portable readPortable(String fieldName) throws IOException {
         final int currentPos = in.position();
         try {
@@ -237,6 +259,7 @@ public class DefaultPortableReader implements PortableReader {
         }
     }
 
+    @Override
     public Portable[] readPortableArray(String fieldName) throws IOException {
         final int currentPos = in.position();
         try {
@@ -343,6 +366,7 @@ public class DefaultPortableReader implements PortableReader {
         return pos + Bits.SHORT_SIZE_IN_BYTES + len + 1;
     }
 
+    @Override
     public ObjectDataInput getRawDataInput() throws IOException {
         if (!raw) {
             int pos = in.readInt(offset + cd.getFieldCount() * Bits.INT_SIZE_IN_BYTES);

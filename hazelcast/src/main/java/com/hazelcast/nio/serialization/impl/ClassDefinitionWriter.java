@@ -41,70 +41,87 @@ final class ClassDefinitionWriter implements PortableWriter {
         this.builder = builder;
     }
 
+    @Override
     public void writeInt(String fieldName, int value) {
         builder.addIntField(fieldName);
     }
 
+    @Override
     public void writeLong(String fieldName, long value) {
         builder.addLongField(fieldName);
     }
 
+    @Override
     public void writeUTF(String fieldName, String str) {
         builder.addUTFField(fieldName);
     }
 
+    @Override
     public void writeBoolean(String fieldName, boolean value) throws IOException {
         builder.addBooleanField(fieldName);
     }
 
+    @Override
     public void writeByte(String fieldName, byte value) throws IOException {
         builder.addByteField(fieldName);
     }
 
+    @Override
     public void writeChar(String fieldName, int value) throws IOException {
         builder.addCharField(fieldName);
     }
 
+    @Override
     public void writeDouble(String fieldName, double value) throws IOException {
         builder.addDoubleField(fieldName);
     }
 
+    @Override
     public void writeFloat(String fieldName, float value) throws IOException {
         builder.addFloatField(fieldName);
     }
 
+    @Override
     public void writeShort(String fieldName, short value) throws IOException {
         builder.addShortField(fieldName);
     }
 
+    @Override
     public void writeByteArray(String fieldName, byte[] bytes) throws IOException {
         builder.addByteArrayField(fieldName);
     }
 
+    @Override
     public void writeCharArray(String fieldName, char[] chars) throws IOException {
         builder.addCharArrayField(fieldName);
     }
 
+    @Override
     public void writeIntArray(String fieldName, int[] ints) throws IOException {
         builder.addIntArrayField(fieldName);
     }
 
+    @Override
     public void writeLongArray(String fieldName, long[] longs) throws IOException {
         builder.addLongArrayField(fieldName);
     }
 
+    @Override
     public void writeDoubleArray(String fieldName, double[] values) throws IOException {
         builder.addDoubleArrayField(fieldName);
     }
 
+    @Override
     public void writeFloatArray(String fieldName, float[] values) throws IOException {
         builder.addFloatArrayField(fieldName);
     }
 
+    @Override
     public void writeShortArray(String fieldName, short[] values) throws IOException {
         builder.addShortArrayField(fieldName);
     }
 
+    @Override
     public void writePortable(String fieldName, Portable portable) throws IOException {
         if (portable == null) {
             throw new HazelcastSerializationException("Cannot write null portable without explicitly "
@@ -116,6 +133,7 @@ final class ClassDefinitionWriter implements PortableWriter {
         builder.addPortableField(fieldName, nestedClassDef);
     }
 
+    @Override
     public void writeNullPortable(String fieldName, int factoryId, int classId) throws IOException {
         final ClassDefinition nestedClassDef = context.lookupClassDefinition(factoryId, classId, context.getVersion());
         if (nestedClassDef == null) {
@@ -125,6 +143,7 @@ final class ClassDefinitionWriter implements PortableWriter {
         builder.addPortableField(fieldName, nestedClassDef);
     }
 
+    @Override
     public void writePortableArray(String fieldName, Portable[] portables) throws IOException {
         if (portables == null || portables.length == 0) {
             throw new HazelcastSerializationException("Cannot write null portable array without explicitly "
@@ -143,6 +162,7 @@ final class ClassDefinitionWriter implements PortableWriter {
         builder.addPortableArrayField(fieldName, nestedClassDef);
     }
 
+    @Override
     public ObjectDataOutput getRawDataOutput() {
         return new EmptyObjectDataOutput();
     }
