@@ -36,6 +36,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Level;
 
+import static com.hazelcast.spi.impl.OperationResponseHandlerFactory.createErrorLoggingResponseHandler;
+
 @SuppressFBWarnings("EI_EXPOSE_REP")
 public class ReplicaSyncResponse extends Operation
         implements PartitionAwareOperation, BackupOperation, UrgentSystemOperation {
@@ -111,8 +113,8 @@ public class ReplicaSyncResponse extends Operation
             logApplyReplicaSync(partitionId, replicaIndex);
             for (Operation op : tasks) {
                 try {
-                    ErrorLoggingResponseHandler responseHandler
-                            = new ErrorLoggingResponseHandler(nodeEngine.getLogger(op.getClass()));
+                    ILogger opLogger = nodeEngine.getLogger(op.getClass());
+                    OperationResponseHandler responseHandler = createErrorLoggingResponseHandler(opLogger);
                     op.setNodeEngine(nodeEngine)
                             .setPartitionId(partitionId)
                             .setReplicaIndex(replicaIndex)
@@ -211,26 +213,5 @@ public class ReplicaSyncResponse extends Operation
     public String toString() {
         return getClass().getSimpleName() + "{partitionId=" + getPartitionId() + ", replicaIndex=" + getReplicaIndex()
                 + ", replicaVersions=" + Arrays.toString(replicaVersions) + '}';
-    }
-
-    private static final class ErrorLoggingResponseHandler implements OperationResponseHandler {
-        private final ILogger logger;
-
-        private ErrorLoggingResponseHandler(ILogger logger) {
-            this.logger = logger;
-        }
-
-        @Override
-        public void sendResponse(Operation op, Object obj) {
-            if (obj instanceof Throwable) {
-                Throwable t = (Throwable) obj;
-                logger.severe(t);
-            }
-        }
-
-        @Override
-        public boolean isLocal() {
-            return true;
-        }
     }
 }
