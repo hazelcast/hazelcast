@@ -29,6 +29,7 @@ import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
 import org.hibernate.internal.SessionFactoryImpl;
+import org.hibernate.stat.SecondLevelCacheStatistics;
 import org.hibernate.stat.Statistics;
 import org.junit.After;
 import org.junit.Before;
@@ -40,6 +41,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -48,6 +50,10 @@ public abstract class HibernateStatisticsTestSupport extends HibernateTestSuppor
 
     protected SessionFactory sf;
     protected SessionFactory sf2;
+
+    protected final String CACHE_ENTITY = DummyEntity.class.getName();
+    protected final String CACHE_PROPERTY = DummyProperty.class.getName();
+    protected final String CACHE_COLLECTION_ENTITY = DummyEntity.class.getName() + ".properties";
 
     @Before
     public void postConstruct() {
@@ -66,10 +72,6 @@ public abstract class HibernateStatisticsTestSupport extends HibernateTestSuppor
             sf2 = null;
         }
         Hazelcast.shutdownAll();
-    }
-
-    protected HazelcastInstance getHazelcastInstance(SessionFactory sf) {
-        return HazelcastAccessor.getHazelcastInstance(sf);
     }
 
     protected abstract Properties getCacheProperties();
@@ -99,108 +101,6 @@ public abstract class HibernateStatisticsTestSupport extends HibernateTestSuppor
         }
     }
 
-    @Test
-    public void testEntity() {
-        final HazelcastInstance hz = getHazelcastInstance(sf);
-        assertNotNull(hz);
-        final int count = 100;
-        final int childCount = 3;
-        insertDummyEntities(count, childCount);
-        sleep(1);
-        List<DummyEntity> list = new ArrayList<DummyEntity>(count);
-        Session session = sf.openSession();
-        try {
-            for (int i = 0; i < count; i++) {
-                DummyEntity e = (DummyEntity) session.get(DummyEntity.class, (long) i);
-                session.evict(e);
-                list.add(e);
-            }
-        } finally {
-            session.close();
-        }
-        session = sf.openSession();
-        Transaction tx = session.beginTransaction();
-        try {
-            for (DummyEntity dummy : list) {
-                dummy.setDate(new Date());
-                session.update(dummy);
-            }
-            tx.commit();
-        } catch (Exception e) {
-            tx.rollback();
-            e.printStackTrace();
-        } finally {
-            session.close();
-        }
-
-        Statistics stats = sf.getStatistics();
-        Map<?, ?> cache = hz.getMap(DummyEntity.class.getName());
-        Map<?, ?> propCache = hz.getMap(DummyProperty.class.getName());
-        Map<?, ?> propCollCache = hz.getMap(DummyEntity.class.getName() + ".properties");
-        assertEquals((childCount + 1) * count, stats.getEntityInsertCount());
-        // twice put of entity and properties (on load and update) and once put of collection
-        // TODO: fix next assertion ->
-//        assertEquals((childCount + 1) * count * 2, stats.getSecondLevelCachePutCount());
-        assertEquals(childCount * count, stats.getEntityLoadCount());
-        assertEquals(count, stats.getSecondLevelCacheHitCount());
-        // collection cache miss
-        assertEquals(count, stats.getSecondLevelCacheMissCount());
-        assertEquals(count, cache.size());
-        assertEquals(count * childCount, propCache.size());
-        assertEquals(count, propCollCache.size());
-        sf.getCache().evictEntityRegion(DummyEntity.class);
-        sf.getCache().evictEntityRegion(DummyProperty.class);
-        assertEquals(0, cache.size());
-        assertEquals(0, propCache.size());
-        stats.logSummary();
-    }
-
-    @Test
-    public void testQuery() {
-        final int entityCount = 10;
-        final int queryCount = 3;
-        insertDummyEntities(entityCount);
-        sleep(2);
-        List<DummyEntity> list = null;
-        for (int i = 0; i < queryCount; i++) {
-            list = executeQuery(sf);
-            assertEquals(entityCount, list.size());
-            sleepAtLeastSeconds(1);
-        }
-
-        assertNotNull(list);
-        Session session = sf.openSession();
-        Transaction tx = session.beginTransaction();
-        try {
-            for (DummyEntity dummy : list) {
-                session.delete(dummy);
-            }
-            tx.commit();
-        } catch (Exception e) {
-            tx.rollback();
-            e.printStackTrace();
-        } finally {
-            session.close();
-        }
-
-        Statistics stats = sf.getStatistics();
-        assertEquals(1, stats.getQueryCachePutCount());
-        assertEquals(1, stats.getQueryCacheMissCount());
-        assertEquals(queryCount - 1, stats.getQueryCacheHitCount());
-        assertEquals(1, stats.getQueryExecutionCount());
-        assertEquals(entityCount, stats.getEntityInsertCount());
-//      FIXME
-//      HazelcastRegionFactory puts into L2 cache 2 times; 1 on insert, 1 on query execution 
-//      assertEquals(entityCount, stats.getSecondLevelCachePutCount());
-        assertEquals(entityCount, stats.getEntityLoadCount());
-        assertEquals(entityCount, stats.getEntityDeleteCount());
-        assertEquals(entityCount * (queryCount - 1) * 2, stats.getSecondLevelCacheHitCount());
-        // collection cache miss
-        assertEquals(entityCount, stats.getSecondLevelCacheMissCount());
-
-        stats.logSummary();
-    }
-
     protected List<DummyEntity> executeQuery(SessionFactory factory) {
         Session session = factory.openSession();
         try {
@@ -223,65 +123,100 @@ public abstract class HibernateStatisticsTestSupport extends HibernateTestSuppor
         }
     }
 
-    @Test
-    public void testQuery2() {
-        final int entityCount = 10;
-        final int queryCount = 2;
-        insertDummyEntities(entityCount);
-        sleep(1);
-        List<DummyEntity> list = null;
-        for (int i = 0; i < queryCount; i++) {
-            list = executeQuery(sf);
-            assertEquals(entityCount, list.size());
-            sleep(1);
-        }
-
-        for (int i = 0; i < queryCount; i++) {
-            list = executeQuery(sf2);
-            assertEquals(entityCount, list.size());
-            sleep(1);
-        }
-
-        assertNotNull(list);
-        DummyEntity toDelete = list.get(0);
+    protected ArrayList<DummyEntity> getDummyEntities(SessionFactory sf, long untilId) {
         Session session = sf.openSession();
-        Transaction tx = session.beginTransaction();
+        ArrayList<DummyEntity> entities = new ArrayList<DummyEntity>();
+        for (long i=0; i<untilId; i++) {
+            DummyEntity entity = (DummyEntity)session.get(DummyEntity.class, i);
+            if (entity != null) {
+                session.evict(entity);
+                entities.add(entity);
+            }
+        }
+        session.close();
+        return entities;
+    }
+
+    protected Set<DummyProperty> getPropertiesOfEntity(SessionFactory sf, long entityId) {
+        Session session = sf.openSession();
+        DummyEntity entity = (DummyEntity)session.get(DummyEntity.class, entityId);
+        if(entity != null) {
+            return entity.getProperties();
+        } else {
+            return null;
+        }
+    }
+
+    protected void updateDummyEntityName(SessionFactory sf, long id, String newName) {
+        Session session = null;
+        Transaction txn = null;
         try {
-            session.delete(toDelete);
-            tx.commit();
-        } catch (Exception e) {
-            tx.rollback();
+            session = sf.openSession();
+            txn = session.beginTransaction();
+            DummyEntity entityToUpdate = (DummyEntity)session.get(DummyEntity.class, id);
+            entityToUpdate.setName(newName);
+            session.update(entityToUpdate);
+            txn.commit();
+        } catch (RuntimeException e) {
+            txn.rollback();
             e.printStackTrace();
+            throw e;
         } finally {
             session.close();
         }
-
-        sleep(1);
-
-        assertEquals(entityCount - 1, executeQuery(sf).size());
-        assertEquals(entityCount - 1, executeQuery(sf2).size());
     }
 
-    @Category(NightlyTest.class)
-    @Test
-    public void testQueryCacheCleanup() {
-
-        MapConfig mapConfig = getHazelcastInstance(sf).getConfig().getMapConfig("org.hibernate.cache.*");
-        final float baseEvictionRate = 0.2f;
-        final int numberOfEntities = 100;
-        final int defaultCleanupPeriod = 60;
-        final int maxSize = mapConfig.getMaxSizeConfig().getSize();
-        final int evictedItemCount = numberOfEntities - maxSize + (int) (maxSize * baseEvictionRate);
-        insertDummyEntities(numberOfEntities);
-        sleep(1);
-        for (int i=0; i < numberOfEntities; i++) {
-            executeQuery(sf, i);
+    protected void deleteDummyEntity(SessionFactory sf, long id)
+            throws Exception {
+        Session session = null;
+        Transaction txn = null;
+        try {
+            session = sf.openSession();
+            txn = session.beginTransaction();
+            DummyEntity entityToDelete = (DummyEntity) session.get(DummyEntity.class, id);
+            session.delete(entityToDelete);
+            txn.commit();
+        } catch (Exception e) {
+            txn.rollback();
+            e.printStackTrace();
+            throw e;
+        } finally {
+            session.close();
         }
+    }
 
-        HazelcastQueryResultsRegion queryRegion = ((HazelcastQueryResultsRegion) (((SessionFactoryImpl) sf).getQueryCache()).getRegion());
-        assertEquals(numberOfEntities, queryRegion.getCache().size());
-        sleep(defaultCleanupPeriod);
+    protected void executeUpdateQuery(SessionFactory sf, String queryString)
+            throws RuntimeException {
+        Session session = null;
+        Transaction txn = null;
+        try {
+            session = sf.openSession();
+            txn = session.beginTransaction();
+            Query query = session.createQuery(queryString);
+            query.setCacheable(true);
+            query.executeUpdate();
+            txn.commit();
+        } catch (RuntimeException e) {
+            txn.rollback();
+            e.printStackTrace();
+            throw e;
+        } finally {
+            session.close();
+        }
+    }
 
-        assertEquals(numberOfEntities - evictedItemCount, queryRegion.getCache().size());
+    @Test
+    public void testUpdateQueryCausesInvalidationOfEntireRegion() {
+        insertDummyEntities(10);
+
+        executeUpdateQuery(sf, "UPDATE DummyEntity set name = 'manually-updated' where id=2");
+
+        sf.getStatistics().clear();
+
+        getDummyEntities(sf, 10);
+
+        SecondLevelCacheStatistics dummyEntityCacheStats = sf.getStatistics().getSecondLevelCacheStatistics(CACHE_ENTITY);
+        assertEquals(10, dummyEntityCacheStats.getMissCount());
+        assertEquals(0, dummyEntityCacheStats.getHitCount());
     }
 }
