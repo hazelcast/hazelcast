@@ -315,14 +315,6 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
                 DEFAULT_CALL_TIMEOUT, callback, DEFAULT_DESERIALIZE_RESULT).invokeAsync();
     }
 
-    @Override
-    @SuppressWarnings("unchecked")
-    public <V> void asyncInvokeOnTarget(String serviceName, Operation op, Address target, ExecutionCallback<V> callback) {
-        new TargetInvocation(nodeEngine, serviceName, op, target, DEFAULT_TRY_COUNT,
-                DEFAULT_TRY_PAUSE_MILLIS,
-                DEFAULT_CALL_TIMEOUT, callback, DEFAULT_DESERIALIZE_RESULT).invokeAsync();
-    }
-
     // =============================== processing operation  ===============================
 
     @Override

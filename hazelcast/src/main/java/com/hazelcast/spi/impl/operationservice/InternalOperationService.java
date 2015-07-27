@@ -18,7 +18,6 @@ package com.hazelcast.spi.impl.operationservice;
 
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.internal.management.dto.SlowOperationDTO;
-import com.hazelcast.nio.Address;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.impl.PacketHandler;
@@ -62,6 +61,4 @@ public interface InternalOperationService extends OperationService, PacketHandle
     List<SlowOperationDTO> getSlowOperationDTOs();
 
     <V> void asyncInvokeOnPartition(String serviceName, Operation op, int partitionId, ExecutionCallback<V> callback);
-
-    <V> void asyncInvokeOnTarget(String serviceName, Operation op, Address target, ExecutionCallback<V> callback);
 }
