@@ -170,7 +170,8 @@ public class IOBalancerStressTest extends HazelcastTestSupport {
                     + deadHandler.getEventCount(), deadHandler.getEventCount() < 10);
         }
 
-        assertTrue(activeHandler.getEventCount() > 10000);
+        assertTrue("activeHandlerEvent count should be at least 1000, but was:" + activeHandler.getEventCount(),
+                activeHandler.getEventCount() > 1000);
     }
 
     private void add(Map<IOSelector, Set<MigratableHandler>> handlersPerSelector, MigratableHandler handler) {
