@@ -69,7 +69,9 @@ import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static com.hazelcast.cluster.impl.MulticastService.createMulticastService;
 import static com.hazelcast.instance.NodeShutdownHelper.shutdownNodeByFiringEvents;
+import static com.hazelcast.util.UuidUtil.createMemberUuid;
 
 public class Node {
 
@@ -149,7 +151,7 @@ public class Node {
         try {
             address = addressPicker.getPublicAddress();
             final Map<String, Object> memberAttributes = findMemberAttributes(config.getMemberAttributeConfig().asReadOnly());
-            localMember = new MemberImpl(address, true, UuidUtil.createMemberUuid(address), hazelcastInstance, memberAttributes);
+            localMember = new MemberImpl(address, true, createMemberUuid(address), hazelcastInstance, memberAttributes);
             loggingService.setThisMember(localMember);
             logger = loggingService.getLogger(Node.class.getName());
             hazelcastThreadGroup = new HazelcastThreadGroup(
@@ -168,7 +170,7 @@ public class Node {
             clusterService = new ClusterServiceImpl(this);
             textCommandService = new TextCommandServiceImpl(this);
             nodeExtension.printNodeInfo(this);
-            this.multicastService = createMulticastService(addressPicker);
+            this.multicastService = createMulticastService(addressPicker.getBindAddress(), this, config, logger);
             initializeListeners(config);
             joiner = nodeContext.createJoiner(this);
         } catch (Throwable e) {
@@ -182,49 +184,6 @@ public class Node {
 
     public HazelcastThreadGroup getHazelcastThreadGroup() {
         return hazelcastThreadGroup;
-    }
-
-    private MulticastService createMulticastService(AddressPicker addressPicker) {
-        MulticastService mcService = null;
-        try {
-            JoinConfig join = config.getNetworkConfig().getJoin();
-            if (join.getMulticastConfig().isEnabled()) {
-                MulticastConfig multicastConfig = join.getMulticastConfig();
-                MulticastSocket multicastSocket = new MulticastSocket(null);
-                multicastSocket.setReuseAddress(true);
-                // bind to receive interface
-                multicastSocket.bind(new InetSocketAddress(multicastConfig.getMulticastPort()));
-                multicastSocket.setTimeToLive(multicastConfig.getMulticastTimeToLive());
-                try {
-                    // set the send interface
-                    final Address bindAddress = addressPicker.getBindAddress();
-                    // http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=4417033
-                    // http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6402758
-                    if (!bindAddress.getInetAddress().isLoopbackAddress()) {
-                        multicastSocket.setInterface(bindAddress.getInetAddress());
-                    } else if (multicastConfig.isLoopbackModeEnabled()) {
-                        multicastSocket.setLoopbackMode(true);
-                        multicastSocket.setInterface(bindAddress.getInetAddress());
-                    }
-                } catch (Exception e) {
-                    logger.warning(e);
-                }
-                multicastSocket.setReceiveBufferSize(64 * 1024);
-                multicastSocket.setSendBufferSize(64 * 1024);
-                String multicastGroup = System.getProperty("hazelcast.multicast.group");
-                if (multicastGroup == null) {
-                    multicastGroup = multicastConfig.getMulticastGroup();
-                }
-                multicastConfig.setMulticastGroup(multicastGroup);
-                multicastSocket.joinGroup(InetAddress.getByName(multicastGroup));
-                multicastSocket.setSoTimeout(1000);
-                mcService = new MulticastService(this, multicastSocket);
-                mcService.addMulticastListener(new NodeMulticastListener(this));
-            }
-        } catch (Exception e) {
-            logger.severe(e);
-        }
-        return mcService;
     }
 
     private void initializeListeners(Config config) {
@@ -329,7 +288,8 @@ public class Node {
         connectionManager.start();
         if (config.getNetworkConfig().getJoin().getMulticastConfig().isEnabled()) {
             final Thread multicastServiceThread = new Thread(
-                    hazelcastThreadGroup.getInternalThreadGroup(), multicastService, hazelcastThreadGroup.getThreadNamePrefix("MulticastThread"));
+                    hazelcastThreadGroup.getInternalThreadGroup(), multicastService,
+                    hazelcastThreadGroup.getThreadNamePrefix("MulticastThread"));
             multicastServiceThread.start();
         }
         setActive(true);
@@ -421,7 +381,7 @@ public class Node {
     public void onRestart() {
         joined.set(false);
         joiner.reset();
-        final String uuid = UuidUtil.createMemberUuid(address);
+        final String uuid = createMemberUuid(address);
         if (logger.isFinestEnabled()) {
             logger.finest("Generated new UUID for local member: " + uuid);
         }
