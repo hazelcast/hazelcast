@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi.impl.transceiver;
+package com.hazelcast.spi.impl.packettransceiver;
 
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;

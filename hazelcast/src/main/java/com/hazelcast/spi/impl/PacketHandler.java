@@ -14,21 +14,22 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi.impl.operationexecutor;
+package com.hazelcast.spi.impl;
 
 import com.hazelcast.nio.Packet;
 
 /**
- * The {@link com.hazelcast.spi.impl.operationexecutor.ResponsePacketHandler} is responsible for handling
- * response packets.
+ * The {@link PacketHandler} is responsible for handling packets.
+ *
+ * It provides an abstraction for different components that want to receive packets and handle them. For example an
+ * OperationService that receive operation or operation-response packets.
  */
-public interface ResponsePacketHandler {
+public interface PacketHandler {
 
     /**
-     * Signals the ResponsePacketHandler that there is a response packet that should be handled.
+     * Signals the PacketHandler that there is a packet to be handled.
      *
      * @param packet the response packet to handle
-     * @throws Exception
      */
     void handle(Packet packet) throws Exception;
 }

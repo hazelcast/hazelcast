@@ -422,7 +422,7 @@ public class EventServiceImpl implements InternalEventService {
     }
 
     @Override
-    public void handleEvent(Packet packet) {
+    public void handle(Packet packet) {
         try {
             eventExecutor.execute(new RemoteEventPacketProcessor(this, packet));
         } catch (RejectedExecutionException e) {

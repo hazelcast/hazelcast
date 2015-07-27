@@ -18,6 +18,7 @@ package com.hazelcast.wan;
 
 import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.CoreService;
+import com.hazelcast.spi.impl.PacketHandler;
 
 /**
  * This is the WAN replications service API core interface. The WanReplicationService needs to
@@ -26,7 +27,7 @@ import com.hazelcast.spi.CoreService;
  * delays, slow uploads and higher latencies.
  */
 public interface WanReplicationService
-        extends CoreService {
+        extends CoreService, PacketHandler {
 
     /**
      * The service identifier
@@ -49,7 +50,7 @@ public interface WanReplicationService
      *
      * @param packet the WAN replication packet to process
      */
-    void handleEvent(Packet packet);
+    void handle(Packet packet);
 
     /**
      * Starts the shutdown process of the WAN replication service.

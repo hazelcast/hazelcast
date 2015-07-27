@@ -37,6 +37,7 @@ import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.UrgentSystemOperation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.PacketHandler;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.operationexecutor.OperationExecutor;
 import com.hazelcast.spi.impl.operationexecutor.classic.ClassicOperationExecutor;
@@ -61,6 +62,8 @@ import static com.hazelcast.spi.InvocationBuilder.DEFAULT_DESERIALIZE_RESULT;
 import static com.hazelcast.spi.InvocationBuilder.DEFAULT_REPLICA_INDEX;
 import static com.hazelcast.spi.InvocationBuilder.DEFAULT_TRY_COUNT;
 import static com.hazelcast.spi.InvocationBuilder.DEFAULT_TRY_PAUSE_MILLIS;
+import static com.hazelcast.util.Preconditions.checkNotNull;
+import static com.hazelcast.util.Preconditions.checkTrue;
 
 /**
  * This is the implementation of the {@link com.hazelcast.spi.impl.operationservice.InternalOperationService}.
@@ -81,7 +84,7 @@ import static com.hazelcast.spi.InvocationBuilder.DEFAULT_TRY_PAUSE_MILLIS;
  * @see PartitionInvocation
  * @see TargetInvocation
  */
-public final class OperationServiceImpl implements InternalOperationService {
+public final class OperationServiceImpl implements InternalOperationService, PacketHandler {
 
     private static final int CORE_SIZE_CHECK = 8;
     private static final int CORE_SIZE_FACTOR = 4;
@@ -116,6 +119,7 @@ public final class OperationServiceImpl implements InternalOperationService {
 
     private final SlowOperationDetector slowOperationDetector;
     private final IsStillRunningService isStillRunningService;
+    private final AsyncResponsePacketHandler responsePacketExecutor;
 
     public OperationServiceImpl(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
@@ -136,12 +140,19 @@ public final class OperationServiceImpl implements InternalOperationService {
         this.invocationsRegistry = new InvocationRegistry(nodeEngine, logger, backpressureRegulator, concurrencyLevel);
         this.operationBackupHandler = new OperationBackupHandler(this);
 
+        this.responsePacketExecutor = new AsyncResponsePacketHandler(
+                node.getHazelcastThreadGroup(),
+                logger,
+                new ResponsePacketHandlerImpl(
+                        logger,
+                        node.getSerializationService(),
+                        invocationsRegistry));
+
         this.operationExecutor = new ClassicOperationExecutor(
                 groupProperties,
                 node.loggingService,
                 node.getThisAddress(),
                 new OperationRunnerFactoryImpl(this),
-                new ResponsePacketHandlerImpl(this),
                 node.getHazelcastThreadGroup(),
                 node.getNodeExtension(),
                 metricsRegistry
@@ -209,12 +220,6 @@ public final class OperationServiceImpl implements InternalOperationService {
         return invocationsRegistry.size();
     }
 
-    @Probe(name = "response-queue.size")
-    @Override
-    public int getResponseQueueSize() {
-        return operationExecutor.getResponseQueueSize();
-    }
-
     @Probe(name = "queue.size")
     @Override
     public int getOperationExecutorQueueSize() {
@@ -227,9 +232,26 @@ public final class OperationServiceImpl implements InternalOperationService {
         return operationExecutor.getPriorityOperationExecutorQueueSize();
     }
 
-    @Override
     public OperationExecutor getOperationExecutor() {
         return operationExecutor;
+    }
+
+    @Probe(name = "response-queue.size")
+    @Override
+    public int getResponseQueueSize() {
+        return responsePacketExecutor.getQueueSize();
+    }
+
+    @Override
+    public void handle(Packet packet) throws Exception {
+        checkNotNull(packet, "packet can't be null");
+        checkTrue(packet.isHeaderSet(Packet.HEADER_OP), "Packet.HEADER_OP should be set!");
+
+        if (packet.isHeaderSet(Packet.HEADER_RESPONSE)) {
+            responsePacketExecutor.handle(packet);
+        } else {
+            operationExecutor.execute(packet);
+        }
     }
 
     @Override
@@ -408,6 +430,7 @@ public final class OperationServiceImpl implements InternalOperationService {
         logger.finest("Shutting down OperationService");
         invocationsRegistry.shutdown();
         operationExecutor.shutdown();
+        responsePacketExecutor.shutdown();
         slowOperationDetector.shutdown();
 
         try {

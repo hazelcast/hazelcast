@@ -19,31 +19,33 @@ package com.hazelcast.spi.impl.operationservice.impl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.impl.operationexecutor.ResponsePacketHandler;
+import com.hazelcast.nio.serialization.SerializationService;
+import com.hazelcast.spi.impl.PacketHandler;
 import com.hazelcast.spi.impl.operationservice.impl.responses.Response;
 
 /**
  * Responsible for handling responses.
  */
-final class ResponsePacketHandlerImpl implements ResponsePacketHandler {
+final class ResponsePacketHandlerImpl implements PacketHandler {
 
     private final ILogger logger;
-    private final OperationServiceImpl operationService;
-    private final NodeEngineImpl nodeEngine;
+    private final SerializationService serializationService;
+    private final InvocationRegistry invocationRegistry;
 
-    public ResponsePacketHandlerImpl(OperationServiceImpl operationService) {
-        this.operationService = operationService;
-        this.logger = operationService.logger;
-        this.nodeEngine = operationService.nodeEngine;
+    public ResponsePacketHandlerImpl(ILogger logger,
+                                     SerializationService serializationService,
+                                     InvocationRegistry invocationRegistry) {
+        this.logger = logger;
+        this.serializationService = serializationService;
+        this.invocationRegistry = invocationRegistry;
     }
 
     @Override
     public void handle(Packet packet) throws Exception {
         Data data = packet.getData();
-        Response response = (Response) nodeEngine.toObject(data);
+        Response response = serializationService.toObject(data);
         try {
-            operationService.invocationsRegistry.notify(response);
+            invocationRegistry.notify(response);
         } catch (Throwable e) {
             logger.severe("While processing response...", e);
         }

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi.impl.transceiver.impl;
+package com.hazelcast.spi.impl.packettransceiver.impl;
 
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
@@ -24,17 +24,16 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.ExecutionService;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
-import com.hazelcast.spi.impl.eventservice.InternalEventService;
-import com.hazelcast.spi.impl.operationexecutor.OperationExecutor;
-import com.hazelcast.spi.impl.transceiver.PacketTransceiver;
-import com.hazelcast.wan.WanReplicationService;
+import com.hazelcast.spi.impl.PacketHandler;
+import com.hazelcast.spi.impl.packettransceiver.PacketTransceiver;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.inspectOutputMemoryError;
+
 /**
- * Default {@link com.hazelcast.spi.impl.transceiver.PacketTransceiver} implementation.
+ * Default {@link com.hazelcast.spi.impl.packettransceiver.PacketTransceiver} implementation.
  */
 public class PacketTransceiverImpl implements PacketTransceiver {
 
@@ -44,19 +43,19 @@ public class PacketTransceiverImpl implements PacketTransceiver {
     private final Node node;
     private final ExecutionService executionService;
     private final ILogger logger;
-    private final InternalEventService eventService;
-    private final WanReplicationService wanReplicationService;
-    private final OperationExecutor operationExecutor;
+    private final PacketHandler eventService;
+    private final PacketHandler wanReplicationService;
+    private final PacketHandler operationService;
 
     public PacketTransceiverImpl(Node node,
                                  ILogger logger,
-                                 InternalOperationService operationService,
-                                 InternalEventService eventService,
-                                 WanReplicationService wanReplicationService,
+                                 PacketHandler operationService,
+                                 PacketHandler eventService,
+                                 PacketHandler wanReplicationService,
                                  ExecutionService executionService) {
         this.node = node;
         this.executionService = executionService;
-        this.operationExecutor = operationService.getOperationExecutor();
+        this.operationService = operationService;
         this.eventService = eventService;
         this.wanReplicationService = wanReplicationService;
         this.logger = logger;
@@ -76,14 +75,19 @@ public class PacketTransceiverImpl implements PacketTransceiver {
 
     @Override
     public void receive(Packet packet) {
-        if (packet.isHeaderSet(Packet.HEADER_OP)) {
-            operationExecutor.execute(packet);
-        } else if (packet.isHeaderSet(Packet.HEADER_EVENT)) {
-            eventService.handleEvent(packet);
-        } else if (packet.isHeaderSet(Packet.HEADER_WAN_REPLICATION)) {
-            wanReplicationService.handleEvent(packet);
-        } else {
-            logger.severe("Unknown packet type! Header: " + packet.getHeader());
+        try {
+            if (packet.isHeaderSet(Packet.HEADER_OP)) {
+                operationService.handle(packet);
+            } else if (packet.isHeaderSet(Packet.HEADER_EVENT)) {
+                eventService.handle(packet);
+            } else if (packet.isHeaderSet(Packet.HEADER_WAN_REPLICATION)) {
+                wanReplicationService.handle(packet);
+            } else {
+                logger.severe("Unknown packet type! Header: " + packet.getHeader());
+            }
+        } catch (Throwable t) {
+            inspectOutputMemoryError(t);
+            logger.severe("Failed to process packet:" + packet, t);
         }
     }
 

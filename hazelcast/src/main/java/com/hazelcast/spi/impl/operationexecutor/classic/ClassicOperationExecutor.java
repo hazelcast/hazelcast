@@ -30,7 +30,6 @@ import com.hazelcast.spi.impl.operationexecutor.OperationExecutor;
 import com.hazelcast.spi.impl.operationexecutor.OperationHostileThread;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunner;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunnerFactory;
-import com.hazelcast.spi.impl.operationexecutor.ResponsePacketHandler;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.concurrent.TimeUnit;
@@ -74,8 +73,6 @@ public final class ClassicOperationExecutor implements OperationExecutor {
     private final GenericOperationThread[] genericOperationThreads;
     private final OperationRunner[] genericOperationRunners;
 
-    private final ResponseThread responseThread;
-    private final ResponsePacketHandler responsePacketHandler;
     private final Address thisAddress;
     private final NodeExtension nodeExtension;
     private final HazelcastThreadGroup threadGroup;
@@ -86,7 +83,6 @@ public final class ClassicOperationExecutor implements OperationExecutor {
                                     LoggingService loggerService,
                                     Address thisAddress,
                                     OperationRunnerFactory operationRunnerFactory,
-                                    ResponsePacketHandler responsePacketHandler,
                                     HazelcastThreadGroup hazelcastThreadGroup,
                                     NodeExtension nodeExtension,
                                     MetricsRegistry metricsRegistry) {
@@ -95,7 +91,6 @@ public final class ClassicOperationExecutor implements OperationExecutor {
         this.threadGroup = hazelcastThreadGroup;
         this.metricsRegistry = metricsRegistry;
         this.logger = loggerService.getLogger(ClassicOperationExecutor.class);
-        this.responsePacketHandler = responsePacketHandler;
         this.genericScheduleQueue = new DefaultScheduleQueue();
 
         this.adHocOperationRunner = operationRunnerFactory.createAdHocRunner();
@@ -105,8 +100,6 @@ public final class ClassicOperationExecutor implements OperationExecutor {
 
         this.genericOperationRunners = initGenericOperationRunners(properties, operationRunnerFactory);
         this.genericOperationThreads = initGenericThreads();
-
-        this.responseThread = initResponseThread();
 
         logger.info("Starting with " + genericOperationThreads.length + " generic operation threads and "
                 + partitionOperationThreads.length + " partition operation threads.");
@@ -190,12 +183,6 @@ public final class ClassicOperationExecutor implements OperationExecutor {
         }
 
         return threads;
-    }
-
-    private ResponseThread initResponseThread() {
-        ResponseThread thread = new ResponseThread(threadGroup, logger, responsePacketHandler);
-        thread.start();
-        return thread;
     }
 
     @SuppressFBWarnings({"EI_EXPOSE_REP" })
@@ -317,11 +304,6 @@ public final class ClassicOperationExecutor implements OperationExecutor {
     }
 
     @Override
-    public int getResponseQueueSize() {
-        return responseThread.workQueue.size();
-    }
-
-    @Override
     public int getPartitionOperationThreadCount() {
         return partitionOperationThreads.length;
     }
@@ -359,15 +341,9 @@ public final class ClassicOperationExecutor implements OperationExecutor {
         checkNotNull(packet, "packet can't be null");
         checkOpPacket(packet);
 
-        if (packet.isHeaderSet(Packet.HEADER_RESPONSE)) {
-            // it's a response packet
-            responseThread.workQueue.add(packet);
-        } else {
-            // it must be an operation packet
-            int partitionId = packet.getPartitionId();
-            boolean hasPriority = packet.isUrgent();
-            execute(packet, partitionId, hasPriority);
-        }
+        int partitionId = packet.getPartitionId();
+        boolean hasPriority = packet.isUrgent();
+        execute(packet, partitionId, hasPriority);
     }
 
     private void checkOpPacket(Packet packet) {
@@ -433,7 +409,6 @@ public final class ClassicOperationExecutor implements OperationExecutor {
 
     @Override
     public void shutdown() {
-        responseThread.shutdown();
         shutdownAll(partitionOperationThreads);
         shutdownAll(genericOperationThreads);
         awaitTermination(partitionOperationThreads);
