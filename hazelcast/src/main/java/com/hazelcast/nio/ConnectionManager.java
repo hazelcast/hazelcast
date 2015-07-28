@@ -39,11 +39,35 @@ public interface ConnectionManager {
 
     void destroyConnection(Connection conn);
 
-    void shutdown();
-
+    /**
+     * Starts ConnectionManager, initializes its resources, starts threads etc.
+     * After start ConnectionManager becomes fully operational.
+     * <p/>
+     * If it's already started, then this method has no effect.
+     *
+     * @throws IllegalStateException if ConnectionManager is shutdown
+     */
     void start();
 
-    void restart();
+    /**
+     * Stops ConnectionManager, releases its resources, stops threads etc.
+     * When stopped ConnectionManager can be started again using {@link #start()}.
+     * <p/>
+     * This method has no effect if it's already stopped or shutdown.
+     * <p/>
+     * Currently <tt>stop</tt> is called during merge process
+     * to detach node from current cluster. After node becomes ready to join to
+     * the new cluster, <tt>start</tt> is called to re-initialize the ConnectionManager.
+     */
+    void stop();
+
+    /**
+     * Shutdowns ConnectionManager completely. ConnectionManager won't be operational anymore and
+     * cannot be restarted.
+     * <p/>
+     * This method has no effect if it's already shutdown.
+     */
+    void shutdown();
 
     void addConnectionListener(ConnectionListener connectionListener);
 }

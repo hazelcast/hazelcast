@@ -902,48 +902,8 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
     public void merge(Address newTargetAddress) {
         if (preparingToMerge.compareAndSet(true, false)) {
             node.getJoiner().setTargetAddress(newTargetAddress);
-            final LifecycleServiceImpl lifecycleService = node.hazelcastInstance.getLifecycleService();
-            lifecycleService.runUnderLifecycleLock(new Runnable() {
-                public void run() {
-                    lifecycleService.fireLifecycleEvent(MERGING);
-                    final NodeEngineImpl nodeEngine = node.nodeEngine;
-                    final Collection<SplitBrainHandlerService> services = nodeEngine
-                            .getServices(SplitBrainHandlerService.class);
-                    final Collection<Runnable> tasks = new LinkedList<Runnable>();
-                    for (SplitBrainHandlerService service : services) {
-                        final Runnable runnable = service.prepareMergeRunnable();
-                        if (runnable != null) {
-                            tasks.add(runnable);
-                        }
-                    }
-                    final Collection<ManagedService> managedServices = nodeEngine.getServices(ManagedService.class);
-                    for (ManagedService service : managedServices) {
-                        service.reset();
-                    }
-                    node.onRestart();
-                    node.nodeEngine.reset();
-                    node.connectionManager.restart();
-                    node.rejoin();
-                    final Collection<Future> futures = new LinkedList<Future>();
-                    for (Runnable task : tasks) {
-                        Future f = nodeEngine.getExecutionService().submit("hz:system", task);
-                        futures.add(f);
-                    }
-                    long callTimeout = node.groupProperties.OPERATION_CALL_TIMEOUT_MILLIS.getLong();
-                    for (Future f : futures) {
-                        try {
-                            waitOnFutureInterruptible(f, callTimeout, TimeUnit.MILLISECONDS);
-                        } catch (HazelcastInstanceNotActiveException e) {
-                            EmptyStatement.ignore(e);
-                        } catch (Exception e) {
-                            logger.severe("While merging...", e);
-                        }
-                    }
-                    if (node.isActive() && node.joined()) {
-                        lifecycleService.fireLifecycleEvent(MERGED);
-                    }
-                }
-            });
+            LifecycleServiceImpl lifecycleService = node.hazelcastInstance.getLifecycleService();
+            lifecycleService.runUnderLifecycleLock(new MergeTask());
         }
     }
 
@@ -1468,5 +1428,91 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         sb.append("{address=").append(thisAddress);
         sb.append('}');
         return sb.toString();
+    }
+
+    private class MergeTask implements Runnable {
+
+        public void run() {
+            LifecycleServiceImpl lifecycleService = node.hazelcastInstance.getLifecycleService();
+            lifecycleService.fireLifecycleEvent(MERGING);
+
+            resetState();
+
+            Collection<Runnable> tasks = collectMergeTasks();
+
+            resetServices();
+
+            rejoin();
+
+            executeMergeTasks(tasks);
+
+            if (node.isActive() && node.joined()) {
+                lifecycleService.fireLifecycleEvent(MERGED);
+            }
+        }
+
+        private void resetState() {
+            // reset node and membership state
+            // from now on this node won't be joined
+            // and won't have a master address
+            node.reset();
+            ClusterServiceImpl.this.reset();
+            // stop the connection-manager
+            // all socket connections will be closed
+            // connection listening thread will stop
+            // and no new connection will be established
+            node.connectionManager.stop();
+
+            // clear waiting operations in queue
+            // and notify invocations to retry
+            nodeEngine.reset();
+        }
+
+        private Collection<Runnable> collectMergeTasks() {
+            // gather merge tasks from services
+            Collection<SplitBrainHandlerService> services = nodeEngine.getServices(SplitBrainHandlerService.class);
+            Collection<Runnable> tasks = new LinkedList<Runnable>();
+            for (SplitBrainHandlerService service : services) {
+                final Runnable runnable = service.prepareMergeRunnable();
+                if (runnable != null) {
+                    tasks.add(runnable);
+                }
+            }
+            return tasks;
+        }
+
+        private void resetServices() {
+            // reset all services to their initial state
+            Collection<ManagedService> managedServices = nodeEngine.getServices(ManagedService.class);
+            for (ManagedService service : managedServices) {
+                service.reset();
+            }
+        }
+
+        private void rejoin() {
+            // start connection-manager to setup and accept new connections
+            node.connectionManager.start();
+            // re-join to the target cluster
+            node.rejoin();
+        }
+
+        private void executeMergeTasks(Collection<Runnable> tasks) {
+            // execute merge tasks
+            Collection<Future> futures = new LinkedList<Future>();
+            for (Runnable task : tasks) {
+                Future f = nodeEngine.getExecutionService().submit("hz:system", task);
+                futures.add(f);
+            }
+            long callTimeout = node.groupProperties.OPERATION_CALL_TIMEOUT_MILLIS.getLong();
+            for (Future f : futures) {
+                try {
+                    waitOnFutureInterruptible(f, callTimeout, TimeUnit.MILLISECONDS);
+                } catch (HazelcastInstanceNotActiveException e) {
+                    EmptyStatement.ignore(e);
+                } catch (Exception e) {
+                    logger.severe("While merging...", e);
+                }
+            }
+        }
     }
 }

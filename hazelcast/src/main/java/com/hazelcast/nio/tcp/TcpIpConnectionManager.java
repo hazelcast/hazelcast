@@ -138,7 +138,8 @@ public class TcpIpConnectionManager implements ConnectionManager {
     // accessed only in synchronized block
     private volatile Thread socketAcceptorThread;
 
-    private IOBalancer ioBalancer;
+    private volatile IOBalancer ioBalancer;
+
     private final LoggingService loggingService;
 
     @Probe
@@ -379,7 +380,8 @@ public class TcpIpConnectionManager implements ConnectionManager {
         connection.start();
         ioBalancer.connectionAdded(connection);
 
-        log(Level.INFO, "Established socket connection between " + channel.socket().getLocalSocketAddress());
+        log(Level.INFO, "Established socket connection between "
+                + channel.socket().getLocalSocketAddress() + " and " + channel.socket().getRemoteSocketAddress());
         openedCount.inc();
 
         return connection;
@@ -475,6 +477,10 @@ public class TcpIpConnectionManager implements ConnectionManager {
         if (live) {
             return;
         }
+        if (!serverSocketChannel.isOpen()) {
+            throw new IllegalStateException("ConnectionManager is already shutdown. Cannot start!");
+        }
+
         live = true;
         log(Level.FINEST, "Starting ConnectionManager and IO selectors.");
         IOSelectorOutOfMemoryHandler oomeHandler = new IOSelectorOutOfMemoryHandler() {
@@ -523,35 +529,10 @@ public class TcpIpConnectionManager implements ConnectionManager {
     }
 
     @Override
-    public synchronized void restart() {
-        stop();
-        start();
-    }
-
-    @Override
-    public synchronized void shutdown() {
+    public synchronized void stop() {
         if (!live) {
             return;
         }
-        live = false;
-        shutdownSocketAcceptor();
-        closeServerSocket();
-        stop();
-        connectionListeners.clear();
-    }
-
-    private void closeServerSocket() {
-        try {
-            if (logger.isFinestEnabled()) {
-                log(Level.FINEST, "Closing server socket channel: " + serverSocketChannel);
-            }
-            serverSocketChannel.close();
-        } catch (IOException ignore) {
-            logger.finest(ignore);
-        }
-    }
-
-    private void stop() {
         live = false;
         log(Level.FINEST, "Stopping ConnectionManager");
         ioBalancer.stop();
@@ -612,6 +593,25 @@ public class TcpIpConnectionManager implements ConnectionManager {
             killingThread.join(DEFAULT_KILL_THREAD_MILLIS);
         } catch (InterruptedException e) {
             logger.finest(e);
+        }
+    }
+
+    @Override
+    public synchronized void shutdown() {
+        shutdownSocketAcceptor();
+        closeServerSocket();
+        stop();
+        connectionListeners.clear();
+    }
+
+    private void closeServerSocket() {
+        try {
+            if (logger.isFinestEnabled()) {
+                log(Level.FINEST, "Closing server socket channel: " + serverSocketChannel);
+            }
+            serverSocketChannel.close();
+        } catch (IOException ignore) {
+            logger.finest(ignore);
         }
     }
 

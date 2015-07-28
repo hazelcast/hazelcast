@@ -36,7 +36,6 @@ import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.core.MembershipListener;
 import com.hazelcast.core.MigrationListener;
-import com.hazelcast.partition.PartitionLostListener;
 import com.hazelcast.internal.ascii.TextCommandService;
 import com.hazelcast.internal.ascii.TextCommandServiceImpl;
 import com.hazelcast.internal.management.ManagementCenterService;
@@ -48,6 +47,7 @@ import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.partition.PartitionLostListener;
 import com.hazelcast.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.SecurityContext;
@@ -378,7 +378,15 @@ public class Node {
         }
     }
 
-    public void onRestart() {
+    /**
+     * Resets the internal cluster-state of the Node to be able to make it ready to join a new cluster.
+     * After this method is called,
+     * a new join process can be triggered by calling {@link #rejoin()}.
+     * <p/>
+     * This method is called during merge process after a split-brain is detected.
+     */
+    public void reset() {
+        setMasterAddress(null);
         joined.set(false);
         joiner.reset();
         final String uuid = createMemberUuid(address);
