@@ -15,7 +15,7 @@ import com.hazelcast.map.impl.querycache.QueryCacheEventService;
 import com.hazelcast.map.impl.querycache.event.BatchEventData;
 import com.hazelcast.map.impl.querycache.event.BatchIMapEvent;
 import com.hazelcast.map.impl.querycache.event.LocalEntryEventData;
-import com.hazelcast.map.impl.querycache.event.SingleEventData;
+import com.hazelcast.map.impl.querycache.event.QueryCacheEventData;
 import com.hazelcast.map.impl.querycache.event.SingleIMapEvent;
 import com.hazelcast.map.listener.MapListener;
 import com.hazelcast.nio.serialization.Data;
@@ -152,8 +152,8 @@ public class ClientQueryCacheEventService implements QueryCacheEventService {
             public void handle(EventData eventData) {
 
                 IMapEvent iMapEvent = null;
-                if (eventData instanceof SingleEventData) {
-                    iMapEvent = new SingleIMapEvent((SingleEventData) eventData);
+                if (eventData instanceof QueryCacheEventData) {
+                    iMapEvent = new SingleIMapEvent((QueryCacheEventData) eventData);
                 } else if (eventData instanceof BatchEventData) {
                     iMapEvent = new BatchIMapEvent((BatchEventData) eventData);
                 }
