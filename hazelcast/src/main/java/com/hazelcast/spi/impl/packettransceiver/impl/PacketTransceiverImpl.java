@@ -62,7 +62,7 @@ public class PacketTransceiverImpl implements PacketTransceiver {
 
     @Override
     public boolean transmit(Packet packet, Connection connection) {
-        if (connection == null || !connection.isAlive()) {
+        if (connection == null) {
             return false;
         }
         return connection.write(packet);
