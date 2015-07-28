@@ -17,17 +17,23 @@
 package com.hazelcast.replicatedmap.impl;
 
 import com.hazelcast.core.EntryEvent;
+import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryListener;
+import com.hazelcast.core.MapEvent;
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.map.impl.DataAwareEntryEvent;
 import com.hazelcast.map.impl.event.EntryEventData;
 import com.hazelcast.map.impl.event.EventData;
+import com.hazelcast.map.impl.event.MapEventData;
 import com.hazelcast.monitor.impl.LocalReplicatedMapStatsImpl;
 import com.hazelcast.replicatedmap.impl.record.AbstractReplicatedRecordStore;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
 import com.hazelcast.spi.EventPublishingService;
+import com.hazelcast.spi.EventRegistration;
+import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.NodeEngine;
+import java.util.Collection;
 
 /**
  * Dispatches published events on replicated map to corresponding listeners.
@@ -41,40 +47,68 @@ public class ReplicatedMapEventPublishingService implements EventPublishingServi
         this.nodeEngine = replicatedMapService.getNodeEngine();
     }
 
-    @Override
-    public void dispatchEvent(Object event, Object listener) {
-        if (!(event instanceof EntryEventData)) {
+    public void fireMapClearedEvent(int deletedEntrySize, String name) {
+        EventService eventService = nodeEngine.getEventService();
+        Collection<EventRegistration> registrations = eventService.getRegistrations(
+                ReplicatedMapService.SERVICE_NAME, name);
+        if (registrations.isEmpty()) {
             return;
         }
-        EntryEventData entryEventData = (EntryEventData) event;
-        Member member = getMember(entryEventData);
-        EntryEvent entryEvent = createDataAwareEntryEvent(entryEventData, member);
-        EntryListener entryListener = (EntryListener) listener;
-        switch (entryEvent.getEventType()) {
-            case ADDED:
-                entryListener.entryAdded(entryEvent);
-                break;
-            case EVICTED:
-                entryListener.entryEvicted(entryEvent);
-                break;
-            case UPDATED:
-                entryListener.entryUpdated(entryEvent);
-                break;
-            case REMOVED:
-                entryListener.entryRemoved(entryEvent);
-                break;
-            // TODO handle evictAll and clearAll event
-            default:
-                throw new IllegalArgumentException("event type " + entryEvent.getEventType() + " not supported");
+        MapEventData mapEventData = new MapEventData(name, name, nodeEngine.getThisAddress(),
+                EntryEventType.CLEAR_ALL.getType(), deletedEntrySize);
+        for (EventRegistration registration : registrations) {
+            eventService.publishEvent(ReplicatedMapService.SERVICE_NAME, registration, mapEventData, name.hashCode());
         }
-        String mapName = ((EntryEventData) event).getMapName();
-        if (replicatedMapService.getConfig().findReplicatedMapConfig(mapName).isStatisticsEnabled()) {
-            int partitionId = nodeEngine.getPartitionService().getPartitionId(entryEventData.getDataKey());
-            ReplicatedRecordStore recordStore = replicatedMapService.getPartitionContainer(partitionId)
-                    .getRecordStore(mapName);
-            if (recordStore instanceof AbstractReplicatedRecordStore) {
-                LocalReplicatedMapStatsImpl stats = ((AbstractReplicatedRecordStore) recordStore).getStats();
-                stats.incrementReceivedEvents();
+    }
+
+
+    @Override
+    public void dispatchEvent(Object event, Object listener) {
+        if ((event instanceof EntryEventData)) {
+            EntryEventData entryEventData = (EntryEventData) event;
+            Member member = getMember(entryEventData);
+            EntryEvent entryEvent = createDataAwareEntryEvent(entryEventData, member);
+            EntryListener entryListener = (EntryListener) listener;
+            switch (entryEvent.getEventType()) {
+                case ADDED:
+                    entryListener.entryAdded(entryEvent);
+                    break;
+                case EVICTED:
+                    entryListener.entryEvicted(entryEvent);
+                    break;
+                case UPDATED:
+                    entryListener.entryUpdated(entryEvent);
+                    break;
+                case REMOVED:
+                    entryListener.entryRemoved(entryEvent);
+                    break;
+                // TODO handle evictAll and clearAll event
+                default:
+                    throw new IllegalArgumentException("event type " + entryEvent.getEventType() + " not supported");
+            }
+            String mapName = ((EntryEventData) event).getMapName();
+            if (replicatedMapService.getConfig().findReplicatedMapConfig(mapName).isStatisticsEnabled()) {
+                int partitionId = nodeEngine.getPartitionService().getPartitionId(entryEventData.getDataKey());
+                ReplicatedRecordStore recordStore = replicatedMapService.getPartitionContainer(partitionId)
+                        .getRecordStore(mapName);
+                if (recordStore instanceof AbstractReplicatedRecordStore) {
+                    LocalReplicatedMapStatsImpl stats = ((AbstractReplicatedRecordStore) recordStore).getStats();
+                    stats.incrementReceivedEvents();
+                }
+            }
+        } else if (event instanceof MapEventData) {
+            MapEventData mapEventData = (MapEventData) event;
+            Member member = getMember(mapEventData);
+            MapEvent mapEvent = new MapEvent(mapEventData.getMapName(), member,
+                    mapEventData.getEventType(), mapEventData.getNumberOfEntries());
+            EntryListener entryListener = (EntryListener) listener;
+            EntryEventType type = EntryEventType.getByType(mapEventData.getEventType());
+            switch (type) {
+                case CLEAR_ALL:
+                    entryListener.mapCleared(mapEvent);
+                    break;
+                default:
+                    throw new IllegalArgumentException("event type " + type + " not supported");
             }
         }
     }

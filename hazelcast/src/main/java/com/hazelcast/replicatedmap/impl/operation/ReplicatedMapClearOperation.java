@@ -30,6 +30,7 @@ import java.io.IOException;
 public class ReplicatedMapClearOperation extends AbstractOperation implements IdentifiedDataSerializable {
 
     private String mapName;
+    private transient int response;
 
     public ReplicatedMapClearOperation() {
     }
@@ -41,7 +42,17 @@ public class ReplicatedMapClearOperation extends AbstractOperation implements Id
     @Override
     public void run() throws Exception {
         ReplicatedMapService service = getService();
-        service.clearLocalRecordStores(mapName);
+        response = service.clearLocalRecordStores(mapName);
+    }
+
+    @Override
+    public boolean returnsResponse() {
+        return true;
+    }
+
+    @Override
+    public Object getResponse() {
+        return response;
     }
 
     @Override

@@ -94,6 +94,16 @@ public class ClientReplicatedMapAddEntryListenerRequest extends AbstractReplicat
             }
         }
 
+        private void handleMapEvent(MapEvent event) {
+            if (endpoint.isAlive()) {
+                final EntryEventType type = event.getEventType();
+                final String uuid = event.getMember().getUuid();
+                ReplicatedMapPortableEntryEvent portableEntryEvent = new ReplicatedMapPortableEntryEvent(null,
+                        null, null, type, uuid, event.getNumberOfEntriesAffected());
+                endpoint.sendEvent(null, portableEntryEvent, getCallId());
+            }
+        }
+
         @Override
         public void entryAdded(EntryEvent event) {
             handleEvent(event);
@@ -121,7 +131,7 @@ public class ClientReplicatedMapAddEntryListenerRequest extends AbstractReplicat
 
         @Override
         public void mapCleared(MapEvent event) {
-            // TODO handle this event
+            handleMapEvent(event);
         }
     }
 

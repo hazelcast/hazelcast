@@ -241,16 +241,24 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
         return stores;
     }
 
-    public void clearLocalRecordStores(String name) {
+    public int clearLocalRecordStores(String name) {
+        int deletedEntrySize = 0;
         for (int i = 0; i < nodeEngine.getPartitionService().getPartitionCount(); i++) {
             ReplicatedRecordStore recordStore = partitionContainers[i].getRecordStore(name);
             if (recordStore != null) {
+                deletedEntrySize += recordStore.size();
                 recordStore.clear();
             }
         }
+        return deletedEntrySize;
     }
 
     public void clearLocalAndRemoteRecordStores(String name) {
+        Operation operation = new ReplicatedMapClearOperation(name);
+        InternalCompletableFuture<Object> result = operationService
+                .invokeOnTarget(SERVICE_NAME, operation, nodeEngine.getThisAddress());
+        Integer deletedEntrySize = (Integer) result.getSafely();
+
         Collection<Address> failedMembers = new ArrayList<Address>(clusterService.getMemberAddresses());
         for (int i = 0; i < MAX_CLEAR_EXECUTION_RETRY; i++) {
             Map<Address, InternalCompletableFuture> futures = executeClearOnMembers(failedMembers, name);
@@ -266,6 +274,7 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
             }
 
             if (failedMembers.size() == 0) {
+                replicatedMapEventPublishingService.fireMapClearedEvent(deletedEntrySize, name);
                 return;
             }
         }
@@ -276,6 +285,9 @@ public class ReplicatedMapService implements ManagedService, RemoteService, Even
     private Map executeClearOnMembers(Collection<Address> members, String name) {
         Map<Address, InternalCompletableFuture> futures = new HashMap<Address, InternalCompletableFuture>(members.size());
         for (Address address : members) {
+            if (address.equals(nodeEngine.getThisAddress())) {
+                continue;
+            }
             Operation operation = new ReplicatedMapClearOperation(name);
             InvocationBuilder ib = operationService.createInvocationBuilder(SERVICE_NAME, operation, address);
             futures.put(address, ib.invoke());
