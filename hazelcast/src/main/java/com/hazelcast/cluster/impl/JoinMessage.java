@@ -22,6 +22,9 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 
 public class JoinMessage implements DataSerializable {
 
@@ -30,19 +33,24 @@ public class JoinMessage implements DataSerializable {
     protected Address address;
     protected String uuid;
     protected ConfigCheck configCheck;
-    protected int memberCount;
+    protected Collection<Address> memberAddresses;
 
     public JoinMessage() {
     }
 
-    public JoinMessage(byte packetVersion, int buildNumber, Address address, String uuid, ConfigCheck configCheck,
-                       int memberCount) {
+    public JoinMessage(byte packetVersion, int buildNumber, Address address,
+            String uuid, ConfigCheck configCheck) {
+        this(packetVersion, buildNumber, address, uuid, configCheck, Collections.<Address>emptySet());
+    }
+
+    public JoinMessage(byte packetVersion, int buildNumber, Address address,
+            String uuid, ConfigCheck configCheck, Collection<Address> memberAddresses) {
         this.packetVersion = packetVersion;
         this.buildNumber = buildNumber;
         this.address = address;
         this.uuid = uuid;
         this.configCheck = configCheck;
-        this.memberCount = memberCount;
+        this.memberAddresses = memberAddresses;
     }
 
     public byte getPacketVersion() {
@@ -66,7 +74,11 @@ public class JoinMessage implements DataSerializable {
     }
 
     public int getMemberCount() {
-        return memberCount;
+        return memberAddresses != null ? memberAddresses.size() : 0;
+    }
+
+    public Collection<Address> getMemberAddresses() {
+        return memberAddresses != null ? memberAddresses : Collections.<Address>emptySet();
     }
 
     @Override
@@ -78,7 +90,15 @@ public class JoinMessage implements DataSerializable {
         uuid = in.readUTF();
         configCheck = new ConfigCheck();
         configCheck.readData(in);
-        memberCount = in.readInt();
+
+        int memberCount = in.readInt();
+        memberAddresses = new ArrayList<Address>(memberCount);
+        for (int i = 0; i < memberCount; i++) {
+            Address member = new Address();
+            member.readData(in);
+            memberAddresses.add(member);
+        }
+
     }
 
     @Override
@@ -88,7 +108,14 @@ public class JoinMessage implements DataSerializable {
         address.writeData(out);
         out.writeUTF(uuid);
         configCheck.writeData(out);
+
+        int memberCount = getMemberCount();
         out.writeInt(memberCount);
+        if (memberCount > 0) {
+            for (Address member : memberAddresses) {
+                member.writeData(out);
+            }
+        }
     }
 
     @Override
@@ -99,6 +126,7 @@ public class JoinMessage implements DataSerializable {
         sb.append(", buildNumber=").append(buildNumber);
         sb.append(", address=").append(address);
         sb.append(", uuid='").append(uuid).append('\'');
+        sb.append(", memberCount=").append(getMemberCount());
         sb.append('}');
         return sb.toString();
     }

@@ -29,7 +29,6 @@ import com.hazelcast.client.spi.impl.AwsAddressTranslator;
 import com.hazelcast.client.spi.impl.DefaultAddressTranslator;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.TestUtil;
 import com.hazelcast.logging.ILogger;
@@ -166,11 +165,7 @@ public class TestClientRegistry {
         @Override
         public boolean write(SocketWritable socketWritable) {
             Packet newPacket = readFromPacket((Packet) socketWritable);
-            MemberImpl member = serverNodeEngine.getClusterService().getMember(remoteAddress);
             lastWriteTime = System.currentTimeMillis();
-            if (member != null) {
-                member.didRead();
-            }
             serverNodeEngine.getNode().clientEngine.handlePacket(newPacket);
             return true;
         }
@@ -272,10 +267,6 @@ public class TestClientRegistry {
             final Packet packet = (Packet) socketWritable;
             if (nodeEngine.getNode().isActive()) {
                 Packet newPacket = readFromPacket(packet);
-                MemberImpl member = nodeEngine.getClusterService().getMember(localEndpoint);
-                if (member != null) {
-                    member.didRead();
-                }
                 responseConnection.handlePacket(newPacket);
                 return true;
             }
