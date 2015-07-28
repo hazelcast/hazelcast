@@ -28,7 +28,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.partition.InternalPartitionService;
-import com.hazelcast.quorum.impl.QuorumServiceImpl;
+import com.hazelcast.quorum.QuorumService;
 import com.hazelcast.transaction.TransactionManagerService;
 import com.hazelcast.wan.WanReplicationService;
 
@@ -103,7 +103,12 @@ public interface NodeEngine {
      */
     WanReplicationService getWanReplicationService();
 
-    QuorumServiceImpl getQuorumService();
+    /**
+     * Gets the QuorumService.
+     *
+     * @return the QuorumService.
+     */
+    QuorumService getQuorumService();
 
     /**
      * Gets the TransactionManagerService.
