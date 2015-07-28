@@ -46,6 +46,7 @@ public class PartitionContainer {
     private final ConstructorFunction<String, RecordStore> recordStoreConstructor
             = new ConstructorFunction<String, RecordStore>() {
 
+        @Override
         public RecordStore createNew(String name) {
             MapServiceContext serviceContext = mapService.getMapServiceContext();
             MapContainer mapContainer = serviceContext.getMapContainer(name);

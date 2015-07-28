@@ -68,6 +68,7 @@ public class DataAwareEntryEvent extends EntryEvent {
         return dataMergingValue;
     }
 
+    @Override
     public Object getKey() {
         if (key == null && dataKey != null) {
             key = serializationService.toObject(dataKey);
@@ -75,6 +76,7 @@ public class DataAwareEntryEvent extends EntryEvent {
         return key;
     }
 
+    @Override
     public Object getOldValue() {
         if (oldValue == null && dataOldValue != null) {
             oldValue = serializationService.toObject(dataOldValue);
@@ -82,6 +84,7 @@ public class DataAwareEntryEvent extends EntryEvent {
         return oldValue;
     }
 
+    @Override
     public Object getValue() {
         if (value == null && dataNewValue != null) {
             value = serializationService.toObject(dataNewValue);
@@ -89,13 +92,13 @@ public class DataAwareEntryEvent extends EntryEvent {
         return value;
     }
 
+    @Override
     public Object getMergingValue() {
         if (mergingValue == null && dataMergingValue != null) {
             mergingValue = serializationService.toObject(dataMergingValue);
         }
         return mergingValue;
     }
-
 
     private void writeObject(ObjectOutputStream out) throws IOException {
         throw new NotSerializableException();

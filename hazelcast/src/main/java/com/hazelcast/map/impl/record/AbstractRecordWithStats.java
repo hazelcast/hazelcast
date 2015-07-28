@@ -33,23 +33,28 @@ abstract class AbstractRecordWithStats<V> extends AbstractRecord<V> {
         this.recordStatistics = new RecordStatistics();
     }
 
+    @Override
     public final RecordStatistics getStatistics() {
         return recordStatistics;
     }
 
+    @Override
     public final void setStatistics(RecordStatistics recordStatistics) {
         this.recordStatistics = recordStatistics;
     }
 
+    @Override
     public final void onAccess() {
         super.onAccess();
         this.recordStatistics.access();
     }
 
+    @Override
     public final void onStore() {
         this.recordStatistics.store();
     }
 
+    @Override
     public final void onUpdate() {
         super.onUpdate();
     }

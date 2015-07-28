@@ -36,10 +36,12 @@ abstract class AbstractBaseRecord<V> implements Record<V> {
         version = 0L;
     }
 
+    @Override
     public final long getVersion() {
         return version;
     }
 
+    @Override
     public final void setVersion(long version) {
         this.version = version;
     }

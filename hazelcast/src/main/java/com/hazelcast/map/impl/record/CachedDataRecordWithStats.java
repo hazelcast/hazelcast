@@ -32,6 +32,7 @@ class CachedDataRecordWithStats extends DataRecordWithStats {
         super(keyData, value);
     }
 
+    @Override
     public void setValue(Data o) {
         cachedValue = null;
         super.setValue(o);
@@ -47,6 +48,7 @@ class CachedDataRecordWithStats extends DataRecordWithStats {
         this.cachedValue = cachedValue;
     }
 
+    @Override
     public void invalidate() {
         super.invalidate();
         cachedValue = null;

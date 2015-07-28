@@ -100,6 +100,7 @@ class MapSplitBrainHandlerService implements SplitBrainHandlerService {
             this.recordMap = recordMap;
         }
 
+        @Override
         public void run() {
             final Semaphore semaphore = new Semaphore(0);
             int recordCount = 0;

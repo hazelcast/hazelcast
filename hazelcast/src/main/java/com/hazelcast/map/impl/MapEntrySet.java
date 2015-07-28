@@ -51,6 +51,7 @@ public final class MapEntrySet implements IdentifiedDataSerializable {
         entrySet.add(new AbstractMap.SimpleImmutableEntry<Data, Data>(key, value));
     }
 
+    @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         int size = entrySet.size();
         out.writeInt(size);
@@ -60,6 +61,7 @@ public final class MapEntrySet implements IdentifiedDataSerializable {
         }
     }
 
+    @Override
     public void readData(ObjectDataInput in) throws IOException {
         int size = in.readInt();
         for (int i = 0; i < size; i++) {

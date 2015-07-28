@@ -70,6 +70,7 @@ public class QueryResult implements DataSerializable {
         return result;
     }
 
+    @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         int partitionSize = (partitionIds == null) ? 0 : partitionIds.size();
         out.writeInt(partitionSize);
@@ -89,6 +90,7 @@ public class QueryResult implements DataSerializable {
         }
     }
 
+    @Override
     public void readData(ObjectDataInput in) throws IOException {
         int partitionSize = in.readInt();
         if (partitionSize > 0) {

@@ -59,10 +59,12 @@ public class NearCacheSizeEstimator
         return size;
     }
 
+    @Override
     public void add(long size) {
         SIZE_UPDATER.addAndGet(this, size);
     }
 
+    @Override
     public void reset() {
         SIZE_UPDATER.set(this, 0L);
     }

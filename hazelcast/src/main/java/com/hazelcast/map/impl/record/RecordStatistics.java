@@ -75,12 +75,14 @@ public class RecordStatistics implements DataSerializable {
         return numberOfLongVariables * (Long.SIZE / Byte.SIZE) + (Integer.SIZE / Byte.SIZE);
     }
 
+    @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeInt(hits);
         out.writeLong(lastStoredTime);
         out.writeLong(expirationTime);
     }
 
+    @Override
     public void readData(ObjectDataInput in) throws IOException {
         hits = in.readInt();
         lastStoredTime = in.readLong();

@@ -43,14 +43,17 @@ class DataRecord extends AbstractRecord<Data> {
         return size;
     }
 
+    @Override
     public Data getValue() {
         return value;
     }
 
+    @Override
     public void setValue(Data o) {
         value = o;
     }
 
+    @Override
     public void invalidate() {
         value = null;
     }

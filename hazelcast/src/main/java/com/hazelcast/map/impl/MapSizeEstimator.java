@@ -27,18 +27,22 @@ class MapSizeEstimator<T extends Record> implements SizeEstimator<T> {
 
     private volatile long size;
 
+    @Override
     public long getSize() {
         return size;
     }
 
+    @Override
     public void add(long size) {
         this.size += size;
     }
 
+    @Override
     public void reset() {
         size = 0;
     }
 
+    @Override
     public long getCost(T record) {
         if (record == null) {
             return 0L;

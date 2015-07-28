@@ -40,6 +40,7 @@ public class QueryEventFilter extends EntryEventFilter {
         return predicate;
     }
 
+    @Override
     public boolean eval(Object arg) {
         final QueryEntry entry = (QueryEntry) arg;
         final Data keyData = entry.getKeyData();

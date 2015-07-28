@@ -42,14 +42,17 @@ class DataRecordWithStats extends AbstractRecordWithStats<Data> {
         return cost;
     }
 
+    @Override
     public Data getValue() {
         return value;
     }
 
+    @Override
     public void setValue(Data o) {
         value = o;
     }
 
+    @Override
     public void invalidate() {
         value = null;
     }

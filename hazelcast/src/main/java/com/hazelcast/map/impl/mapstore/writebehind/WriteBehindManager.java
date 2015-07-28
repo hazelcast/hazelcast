@@ -61,10 +61,12 @@ public class WriteBehindManager implements MapStoreManager {
         this.scheduledExecutor = getScheduledExecutorService(mapServiceContext);
     }
 
+    @Override
     public void start() {
         scheduledExecutor.scheduleAtFixedRate(storeWorker, 1, 1, TimeUnit.SECONDS);
     }
 
+    @Override
     public void stop() {
         final MapServiceContext mapServiceContext = mapStoreContext.getMapServiceContext();
         NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
@@ -105,7 +107,6 @@ public class WriteBehindManager implements MapStoreManager {
 
         @Override
         public void beforeStore(StoreEvent<DelayedEntry> storeEvent) {
-
         }
 
         /**

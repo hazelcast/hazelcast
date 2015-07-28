@@ -31,23 +31,29 @@ abstract class AbstractRecord<V> extends AbstractBaseRecord<V> {
     public AbstractRecord() {
     }
 
+    @Override
     public final Data getKey() {
         return key;
     }
 
+    @Override
     public RecordStatistics getStatistics() {
         return null;
     }
 
+    @Override
     public void setStatistics(RecordStatistics stats) {
     }
 
+    @Override
     public void onAccess() {
     }
 
+    @Override
     public void onStore() {
     }
 
+    @Override
     public void onUpdate() {
         version++;
     }

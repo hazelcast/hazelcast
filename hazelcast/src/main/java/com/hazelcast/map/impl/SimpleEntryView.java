@@ -52,6 +52,7 @@ public class SimpleEntryView<K, V> implements EntryView<K, V>, IdentifiedDataSer
     public SimpleEntryView() {
     }
 
+    @Override
     public K getKey() {
         return key;
     }
@@ -60,6 +61,7 @@ public class SimpleEntryView<K, V> implements EntryView<K, V>, IdentifiedDataSer
         this.key = key;
     }
 
+    @Override
     public V getValue() {
         return value;
     }
@@ -68,6 +70,7 @@ public class SimpleEntryView<K, V> implements EntryView<K, V>, IdentifiedDataSer
         this.value = value;
     }
 
+    @Override
     public long getCost() {
         return cost;
     }
@@ -76,6 +79,7 @@ public class SimpleEntryView<K, V> implements EntryView<K, V>, IdentifiedDataSer
         this.cost = cost;
     }
 
+    @Override
     public long getCreationTime() {
         return creationTime;
     }
@@ -84,6 +88,7 @@ public class SimpleEntryView<K, V> implements EntryView<K, V>, IdentifiedDataSer
         this.creationTime = creationTime;
     }
 
+    @Override
     public long getExpirationTime() {
         return expirationTime;
     }
@@ -92,6 +97,7 @@ public class SimpleEntryView<K, V> implements EntryView<K, V>, IdentifiedDataSer
         this.expirationTime = expirationTime;
     }
 
+    @Override
     public long getHits() {
         return hits;
     }
@@ -100,6 +106,7 @@ public class SimpleEntryView<K, V> implements EntryView<K, V>, IdentifiedDataSer
         this.hits = hits;
     }
 
+    @Override
     public long getLastAccessTime() {
         return lastAccessTime;
     }
@@ -108,6 +115,7 @@ public class SimpleEntryView<K, V> implements EntryView<K, V>, IdentifiedDataSer
         this.lastAccessTime = lastAccessTime;
     }
 
+    @Override
     public long getLastStoredTime() {
         return lastStoredTime;
     }
@@ -116,6 +124,7 @@ public class SimpleEntryView<K, V> implements EntryView<K, V>, IdentifiedDataSer
         this.lastStoredTime = lastStoredTime;
     }
 
+    @Override
     public long getLastUpdateTime() {
         return lastUpdateTime;
     }
@@ -124,6 +133,7 @@ public class SimpleEntryView<K, V> implements EntryView<K, V>, IdentifiedDataSer
         this.lastUpdateTime = lastUpdateTime;
     }
 
+    @Override
     public long getVersion() {
         return version;
     }
@@ -140,6 +150,7 @@ public class SimpleEntryView<K, V> implements EntryView<K, V>, IdentifiedDataSer
         this.evictionCriteriaNumber = evictionCriteriaNumber;
     }
 
+    @Override
     public long getTtl() {
         return ttl;
     }
@@ -180,10 +191,12 @@ public class SimpleEntryView<K, V> implements EntryView<K, V>, IdentifiedDataSer
         ttl = in.readLong();
     }
 
+    @Override
     public int getFactoryId() {
         return MapDataSerializerHook.F_ID;
     }
 
+    @Override
     public int getId() {
         return MapDataSerializerHook.ENTRY_VIEW;
     }

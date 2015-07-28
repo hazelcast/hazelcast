@@ -46,6 +46,7 @@ class NativeRecordWithStats extends AbstractRecordWithStats<Data> {
         return size;
     }
 
+    @Override
     public Data getValue() {
         if (valueRef != null) {
             return storage.get(key.getPartitionHash(), valueRef);
@@ -53,6 +54,7 @@ class NativeRecordWithStats extends AbstractRecordWithStats<Data> {
         return null;
     }
 
+    @Override
     public void setValue(Data value) {
         invalidate();
         if (value != null) {
@@ -60,6 +62,7 @@ class NativeRecordWithStats extends AbstractRecordWithStats<Data> {
         }
     }
 
+    @Override
     public void invalidate() {
         if (valueRef != null) {
             storage.remove(key.getPartitionHash(), valueRef);

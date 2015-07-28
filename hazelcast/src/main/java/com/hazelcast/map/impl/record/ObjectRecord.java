@@ -36,14 +36,17 @@ class ObjectRecord extends AbstractRecord<Object> implements Record<Object> {
         return 0L;
     }
 
+    @Override
     public Object getValue() {
         return value;
     }
 
+    @Override
     public void setValue(Object o) {
         value = o;
     }
 
+    @Override
     public void invalidate() {
         value = null;
     }

@@ -129,10 +129,12 @@ public class MapPortableHook implements PortableHook {
     public static final int ADD_MAP_PARTITION_LOST_LISTENER = 51;
     public static final int REMOVE_MAP_PARTITION_LOST_LISTENER = 52;
 
+    @Override
     public int getFactoryId() {
         return F_ID;
     }
 
+    @Override
     public PortableFactory createFactory() {
         return new PortableFactory() {
             final ConstructorFunction<Integer, Portable>[] constructors
@@ -433,6 +435,7 @@ public class MapPortableHook implements PortableHook {
         };
     }
 
+    @Override
     public Collection<ClassDefinition> getBuiltinDefinitions() {
         return null;
     }

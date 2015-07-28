@@ -44,15 +44,18 @@ public class EntryEventFilter implements EventFilter, DataSerializable {
         return key;
     }
 
+    @Override
     public boolean eval(Object arg) {
         return key == null || key.equals(arg);
     }
 
+    @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeBoolean(includeValue);
         out.writeData(key);
     }
 
+    @Override
     public void readData(ObjectDataInput in) throws IOException {
         includeValue = in.readBoolean();
         key = in.readData();

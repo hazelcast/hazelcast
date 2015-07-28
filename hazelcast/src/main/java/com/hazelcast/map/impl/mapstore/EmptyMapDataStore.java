@@ -34,7 +34,6 @@ class EmptyMapDataStore implements MapDataStore {
 
     @Override
     public void addTransient(Object key, long now) {
-
     }
 
     @Override
@@ -44,17 +43,14 @@ class EmptyMapDataStore implements MapDataStore {
 
     @Override
     public void remove(Object key, long now) {
-
     }
 
     @Override
     public void removeBackup(Object key, long now) {
-
     }
 
     @Override
     public void clear() {
-
     }
 
     @Override
@@ -69,7 +65,6 @@ class EmptyMapDataStore implements MapDataStore {
 
     @Override
     public void removeAll(Collection keys) {
-
     }
 
     @Override

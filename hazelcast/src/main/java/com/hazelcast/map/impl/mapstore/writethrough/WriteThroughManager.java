@@ -34,12 +34,10 @@ public class WriteThroughManager implements MapStoreManager {
 
     @Override
     public void start() {
-
     }
 
     @Override
     public void stop() {
-
     }
 
     @Override

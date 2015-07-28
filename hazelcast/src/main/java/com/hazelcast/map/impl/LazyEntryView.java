@@ -59,6 +59,7 @@ class LazyEntryView<K, V> implements EntryView<K, V> {
         this.mergePolicy = mergePolicy;
     }
 
+    @Override
     public K getKey() {
         key = serializationService.toObject(key);
         return key;
@@ -68,6 +69,7 @@ class LazyEntryView<K, V> implements EntryView<K, V> {
         this.key = key;
     }
 
+    @Override
     public V getValue() {
         if (returnRawData(mergePolicy)) {
             return value;
@@ -87,6 +89,7 @@ class LazyEntryView<K, V> implements EntryView<K, V> {
         this.value = value;
     }
 
+    @Override
     public long getCost() {
         return cost;
     }
@@ -95,6 +98,7 @@ class LazyEntryView<K, V> implements EntryView<K, V> {
         this.cost = cost;
     }
 
+    @Override
     public long getCreationTime() {
         return creationTime;
     }
@@ -103,6 +107,7 @@ class LazyEntryView<K, V> implements EntryView<K, V> {
         this.creationTime = creationTime;
     }
 
+    @Override
     public long getExpirationTime() {
         return expirationTime;
     }
@@ -111,6 +116,7 @@ class LazyEntryView<K, V> implements EntryView<K, V> {
         this.expirationTime = expirationTime;
     }
 
+    @Override
     public long getHits() {
         return hits;
     }
@@ -119,6 +125,7 @@ class LazyEntryView<K, V> implements EntryView<K, V> {
         this.hits = hits;
     }
 
+    @Override
     public long getLastAccessTime() {
         return lastAccessTime;
     }
@@ -127,6 +134,7 @@ class LazyEntryView<K, V> implements EntryView<K, V> {
         this.lastAccessTime = lastAccessTime;
     }
 
+    @Override
     public long getLastStoredTime() {
         return lastStoredTime;
     }
@@ -135,6 +143,7 @@ class LazyEntryView<K, V> implements EntryView<K, V> {
         this.lastStoredTime = lastStoredTime;
     }
 
+    @Override
     public long getLastUpdateTime() {
         return lastUpdateTime;
     }
@@ -143,6 +152,7 @@ class LazyEntryView<K, V> implements EntryView<K, V> {
         this.lastUpdateTime = lastUpdateTime;
     }
 
+    @Override
     public long getVersion() {
         return version;
     }
@@ -159,6 +169,7 @@ class LazyEntryView<K, V> implements EntryView<K, V> {
         this.evictionCriteriaNumber = evictionCriteriaNumber;
     }
 
+    @Override
     public long getTtl() {
         return ttl;
     }

@@ -53,5 +53,4 @@ class MapPartitionAwareService implements PartitionAwareService {
             }
         }
     }
-
 }

@@ -44,6 +44,5 @@ class MapTransactionalService implements TransactionalService {
 
     @Override
     public void rollbackTransaction(String transactionId) {
-
     }
 }

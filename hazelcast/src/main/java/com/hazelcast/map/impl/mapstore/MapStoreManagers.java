@@ -46,12 +46,10 @@ public final class MapStoreManagers {
         return new MapStoreManager() {
             @Override
             public void start() {
-
             }
 
             @Override
             public void stop() {
-
             }
 
             @Override

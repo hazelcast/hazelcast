@@ -55,10 +55,12 @@ public final class MapDataSerializerHook implements DataSerializerHook {
 
     private static final int LEN = QUERY_RESULT_SET + 1;
 
+    @Override
     public int getFactoryId() {
         return F_ID;
     }
 
+    @Override
     public DataSerializableFactory createFactory() {
         ConstructorFunction<Integer, IdentifiedDataSerializable>[] constructors = new ConstructorFunction[LEN];
 

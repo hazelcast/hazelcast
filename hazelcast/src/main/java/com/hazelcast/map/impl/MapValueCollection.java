@@ -39,6 +39,7 @@ public class MapValueCollection implements IdentifiedDataSerializable {
         return values;
     }
 
+    @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         int size = values.size();
         out.writeInt(size);
@@ -47,6 +48,7 @@ public class MapValueCollection implements IdentifiedDataSerializable {
         }
     }
 
+    @Override
     public void readData(ObjectDataInput in) throws IOException {
         int size = in.readInt();
         values = new ArrayList<Data>(size);
