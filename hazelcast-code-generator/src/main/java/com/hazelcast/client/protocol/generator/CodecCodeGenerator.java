@@ -203,8 +203,11 @@ public class CodecCodeGenerator
             TypeElement parent = entry.getKey();
             model.put(parent, map);
 
+
             for (Map.Entry<String, ExecutableElement> entrySub : entry.getValue().entrySet()) {
-                CodecModel codecModel = createCodecModel(entrySub.getValue(), lang);
+                ExecutableElement methodElement = entrySub.getValue();
+                CodecModel codecModel = createCodecModel(methodElement, lang);
+                codecModel.commment = elementUtils.getDocComment(methodElement);
                 map.put(entrySub.getKey(), codecModel);
             }
         }

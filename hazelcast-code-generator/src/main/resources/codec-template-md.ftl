@@ -5,7 +5,7 @@
 <#if map?has_content>
 #${key}
 <#list map as cm>
-## **${cm.name}** operation id:${cm.id}
+## **${cm.name?cap_first}** operation id:${cm.id}
 
 ###Request Format
 

@@ -42,6 +42,7 @@ public class CodecModel implements Model{
     private String className;
     private String parentName;
     private String packageName;
+    String commment;
 
     private int retryable;
     private int response;
