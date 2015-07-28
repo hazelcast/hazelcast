@@ -115,6 +115,8 @@ public class RingbufferAddAllReadManyStressTest extends HazelcastTestSupport {
     class ProduceThread extends TestThread {
         private final ILogger logger = Logger.getLogger(ProduceThread.class);
         private volatile long produced;
+        Random random = new Random();
+
         long lastLogMs = 0;
 
 
@@ -129,17 +131,15 @@ public class RingbufferAddAllReadManyStressTest extends HazelcastTestSupport {
 
         @Override
         public void doRun() throws Throwable {
-            Random random = new Random();
-
-            while (!stop.get()) {
-                LinkedList<Long> items = makeBatch(random);
+             while (!stop.get()) {
+                LinkedList<Long> items = makeBatch();
                 addAll(items);
             }
 
             ringbuffer.add(Long.MIN_VALUE);
         }
 
-        private LinkedList<Long> makeBatch(Random random) {
+        private LinkedList<Long> makeBatch() {
             int count = max(1, random.nextInt(MAX_BATCH));
             LinkedList<Long> items = new LinkedList<Long>();
 
