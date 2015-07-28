@@ -25,6 +25,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.ringbuffer.OverflowPolicy.FAIL;
 import static java.lang.Math.max;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -143,7 +144,7 @@ public class RingbufferAddAllReadManyStressTest extends HazelcastTestSupport {
                 produced++;
 
                 long currentTimeMs = System.currentTimeMillis();
-                if (lastLogMs + TimeUnit.SECONDS.toMillis(5000) < currentTimeMs) {
+                if (lastLogMs + SECONDS.toMillis(5) < currentTimeMs) {
                     lastLogMs = currentTimeMs;
                     logger.info(getName() + " at " + produced);
                 }
@@ -200,7 +201,7 @@ public class RingbufferAddAllReadManyStressTest extends HazelcastTestSupport {
                     seq++;
 
                     long currentTimeMs = System.currentTimeMillis();
-                    if (lastLogMs + TimeUnit.SECONDS.toMillis(5000) < currentTimeMs) {
+                    if (lastLogMs + SECONDS.toMillis(5) < currentTimeMs) {
                         lastLogMs = currentTimeMs;
                         logger.info(getName() + " at " + seq);
                     }
