@@ -1,5 +1,7 @@
 package com.hazelcast.test;
 
+import com.hazelcast.logging.Logger;
+
 import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
 import static java.lang.String.format;
 import static org.junit.Assert.assertFalse;
@@ -19,19 +21,18 @@ public abstract class TestThread extends Thread {
 
     @Override
     public final void run() {
-        System.out.println(getName() + " Starting");
+        Logger.getLogger(getClass()).info(getName() + " Starting");
         try {
             doRun();
-            System.out.println(getName() + " Completed");
+            Logger.getLogger(getClass()).info(getName() + " Completed");
         } catch (Throwable t) {
-            System.out.println(getName()+" Completed with failure");
-            t.printStackTrace();
+            Logger.getLogger(getClass()).warning(getName() + " Completed with failure", t);
             this.error = t;
             onError(t);
         }
     }
 
-    public void onError(Throwable t){
+    public void onError(Throwable t) {
     }
 
     public Throwable getError() {
