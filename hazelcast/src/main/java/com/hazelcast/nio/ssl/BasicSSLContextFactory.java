@@ -40,6 +40,7 @@ public class BasicSSLContextFactory implements SSLContextFactory {
     public BasicSSLContextFactory() {
     }
 
+    @Override
     public void init(Properties properties) throws Exception {
         KeyStore ks = KeyStore.getInstance("JKS");
         KeyStore ts = KeyStore.getInstance("JKS");
@@ -100,6 +101,7 @@ public class BasicSSLContextFactory implements SSLContextFactory {
         return value != null ? value : defaultValue;
     }
 
+    @Override
     public SSLContext getSSLContext() {
         return sslContext;
     }

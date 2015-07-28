@@ -52,6 +52,7 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Mul
         lockSupport = new LockProxySupport(new DefaultObjectNamespace(MultiMapService.SERVICE_NAME, name));
     }
 
+    @Override
     public String getName() {
         return name;
     }
@@ -229,7 +230,7 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Mul
         }
     }
 
-
+    @Override
     public String getServiceName() {
         return MultiMapService.SERVICE_NAME;
     }

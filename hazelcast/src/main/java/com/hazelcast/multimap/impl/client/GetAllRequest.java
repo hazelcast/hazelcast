@@ -48,16 +48,19 @@ public class GetAllRequest extends MultiMapKeyBasedRequest implements RetryableR
         this.threadId = threadId;
     }
 
+    @Override
     protected Operation prepareOperation() {
         GetAllOperation operation = new GetAllOperation(name, key);
         operation.setThreadId(threadId);
         return operation;
     }
 
+    @Override
     public int getClassId() {
         return MultiMapPortableHook.GET_ALL;
     }
 
+    @Override
     protected Object filter(Object response) {
         if (response instanceof MultiMapResponse) {
             Collection<MultiMapRecord> responseCollection = ((MultiMapResponse) response).getCollection();

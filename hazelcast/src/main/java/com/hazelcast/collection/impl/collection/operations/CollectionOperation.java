@@ -102,7 +102,7 @@ public abstract class CollectionOperation extends Operation
         return getOrCreateContainer().hasEnoughCapacity(delta);
     }
 
-     @Override
+    @Override
     public boolean returnsResponse() {
         return true;
     }

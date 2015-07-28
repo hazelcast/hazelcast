@@ -34,28 +34,34 @@ public class ClearOperation extends MultiMapOperation implements BackupAwareOper
         super(name);
     }
 
+    @Override
     public void beforeRun() throws Exception {
         MultiMapContainer container = getOrCreateContainer();
         shouldBackup = container.size() > 0;
     }
 
+    @Override
     public void run() throws Exception {
         MultiMapContainer container = getOrCreateContainer();
         response = container.clear();
     }
 
+    @Override
     public void afterRun() throws Exception {
         ((MultiMapService) getService()).getLocalMultiMapStatsImpl(name).incrementOtherOperations();
     }
 
+    @Override
     public boolean shouldBackup() {
         return shouldBackup;
     }
 
+    @Override
     public Operation getBackupOperation() {
         return new ClearBackupOperation(name);
     }
 
+    @Override
     public int getId() {
         return MultiMapDataSerializerHook.CLEAR;
     }

@@ -29,12 +29,14 @@ public class EntrySetOperation extends MultiMapOperation {
         super(name);
     }
 
+    @Override
     public void run() throws Exception {
         MultiMapContainer container = getOrCreateContainer();
         ((MultiMapService) getService()).getLocalMultiMapStatsImpl(name).incrementOtherOperations();
         response = new EntrySetResponse(container.copyCollections(), getNodeEngine());
     }
 
+    @Override
     public int getId() {
         return MultiMapDataSerializerHook.ENTRY_SET;
     }

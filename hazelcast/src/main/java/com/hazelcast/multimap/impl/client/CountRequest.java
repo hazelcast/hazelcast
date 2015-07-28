@@ -37,12 +37,14 @@ public class CountRequest extends MultiMapKeyBasedRequest implements RetryableRe
         this.threadId = threadId;
     }
 
+    @Override
     protected Operation prepareOperation() {
         CountOperation operation = new CountOperation(name, key);
         operation.setThreadId(threadId);
         return operation;
     }
 
+    @Override
     public int getClassId() {
         return MultiMapPortableHook.COUNT;
     }

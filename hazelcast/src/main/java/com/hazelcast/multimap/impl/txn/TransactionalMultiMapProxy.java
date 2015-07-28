@@ -36,10 +36,12 @@ public class TransactionalMultiMapProxy<K, V> extends TransactionalMultiMapProxy
         super(nodeEngine, service, name, tx);
     }
 
+    @Override
     public String getName() {
         return name;
     }
 
+    @Override
     public boolean put(K key, V value) throws TransactionException {
         checkTransactionActive();
         Data dataKey = getNodeEngine().toData(key);
@@ -47,6 +49,7 @@ public class TransactionalMultiMapProxy<K, V> extends TransactionalMultiMapProxy
         return putInternal(dataKey, dataValue);
     }
 
+    @Override
     public Collection<V> get(K key) {
         checkTransactionActive();
         Data dataKey = getNodeEngine().toData(key);
@@ -58,6 +61,7 @@ public class TransactionalMultiMapProxy<K, V> extends TransactionalMultiMapProxy
         return collection;
     }
 
+    @Override
     public boolean remove(Object key, Object value) {
         checkTransactionActive();
         Data dataKey = getNodeEngine().toData(key);
@@ -65,6 +69,7 @@ public class TransactionalMultiMapProxy<K, V> extends TransactionalMultiMapProxy
         return removeInternal(dataKey, dataValue);
     }
 
+    @Override
     public Collection<V> remove(Object key) {
         checkTransactionActive();
         Data dataKey = getNodeEngine().toData(key);
@@ -76,6 +81,7 @@ public class TransactionalMultiMapProxy<K, V> extends TransactionalMultiMapProxy
         return result;
     }
 
+    @Override
     public int valueCount(K key) {
         checkTransactionActive();
         Data dataKey = getNodeEngine().toData(key);

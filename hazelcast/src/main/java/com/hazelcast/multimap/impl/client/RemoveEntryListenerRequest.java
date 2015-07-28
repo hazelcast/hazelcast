@@ -33,23 +33,28 @@ public class RemoveEntryListenerRequest extends BaseClientRemoveListenerRequest 
         super(name, registrationId);
     }
 
+    @Override
     public Object call() throws Exception {
         final MultiMapService service = getService();
         return service.removeListener(name, registrationId);
     }
 
+    @Override
     public String getServiceName() {
         return MultiMapService.SERVICE_NAME;
     }
 
+    @Override
     public int getFactoryId() {
         return MultiMapPortableHook.F_ID;
     }
 
+    @Override
     public int getClassId() {
         return MultiMapPortableHook.REMOVE_ENTRY_LISTENER;
     }
 
+    @Override
     public Permission getRequiredPermission() {
         return new MultiMapPermission(name, ActionConstants.ACTION_LISTEN);
     }

@@ -42,29 +42,35 @@ public class MultiMapIsLockedRequest extends AbstractIsLockedRequest implements 
         this.name = name;
     }
 
+    @Override
     protected ObjectNamespace getNamespace() {
         return new DefaultObjectNamespace(MultiMapService.SERVICE_NAME, name);
     }
 
+    @Override
     public void write(PortableWriter writer) throws IOException {
         writer.writeUTF("n", name);
         super.write(writer);
     }
 
+    @Override
     public void read(PortableReader reader) throws IOException {
         name = reader.readUTF("n");
         super.read(reader);
     }
 
 
+    @Override
     public int getFactoryId() {
         return MultiMapPortableHook.F_ID;
     }
 
+    @Override
     public int getClassId() {
         return MultiMapPortableHook.IS_LOCKED;
     }
 
+    @Override
     public Permission getRequiredPermission() {
         return new MultiMapPermission(name, ActionConstants.ACTION_LOCK);
     }

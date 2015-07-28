@@ -29,12 +29,14 @@ public class SizeOperation extends MultiMapOperation {
         super(name);
     }
 
+    @Override
     public void run() throws Exception {
         MultiMapContainer container = getOrCreateContainer();
         response = container.size();
         ((MultiMapService) getService()).getLocalMultiMapStatsImpl(name).incrementOtherOperations();
     }
 
+    @Override
     public int getId() {
         return MultiMapDataSerializerHook.SIZE;
     }

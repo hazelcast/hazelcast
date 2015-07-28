@@ -56,6 +56,7 @@ public class MultiMapRecord implements DataSerializable {
         this.object = object;
     }
 
+    @Override
     public boolean equals(Object o) {
         if (this == o) {
             return true;
@@ -73,15 +74,18 @@ public class MultiMapRecord implements DataSerializable {
         return true;
     }
 
+    @Override
     public int hashCode() {
         return object.hashCode();
     }
 
+    @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeLong(recordId);
         IOUtil.writeObject(out, object);
     }
 
+    @Override
     public void readData(ObjectDataInput in) throws IOException {
         recordId = in.readLong();
         object = IOUtil.readObject(in);

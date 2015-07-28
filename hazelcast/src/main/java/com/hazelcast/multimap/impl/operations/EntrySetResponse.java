@@ -75,6 +75,7 @@ public class EntrySetResponse implements DataSerializable {
         return entrySet;
     }
 
+    @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeInt(map.size());
         for (Map.Entry<Data, Collection<Data>> entry : map.entrySet()) {
@@ -87,6 +88,7 @@ public class EntrySetResponse implements DataSerializable {
         }
     }
 
+    @Override
     public void readData(ObjectDataInput in) throws IOException {
         int size = in.readInt();
         map = new HashMap<Data, Collection<Data>>(size);

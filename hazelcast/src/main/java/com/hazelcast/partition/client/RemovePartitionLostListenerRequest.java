@@ -32,12 +32,14 @@ public class RemovePartitionLostListenerRequest
         super(null, registrationId);
     }
 
+    @Override
     public Object call()
             throws Exception {
         final InternalPartitionService service = getService();
         return service.removePartitionLostListener(registrationId);
     }
 
+    @Override
     public String getServiceName() {
         return InternalPartitionService.SERVICE_NAME;
     }

@@ -29,10 +29,12 @@ public class TxnGenerateRecordIdOperation extends MultiMapKeyBasedOperation {
         super(name, dataKey);
     }
 
+    @Override
     public void run() throws Exception {
         response = getOrCreateContainer().nextId();
     }
 
+    @Override
     public int getId() {
         return MultiMapDataSerializerHook.TXN_GENERATE_RECORD_ID;
     }

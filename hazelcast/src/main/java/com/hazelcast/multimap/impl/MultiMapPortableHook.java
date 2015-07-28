@@ -85,10 +85,12 @@ public class MultiMapPortableHook implements PortableHook {
     public static final int TXN_MM_REMOVEALL = 25;
     public static final int KEY_BASED_CONTAINS = 26;
 
+    @Override
     public int getFactoryId() {
         return F_ID;
     }
 
+    @Override
     public PortableFactory createFactory() {
         ConstructorFunction<Integer, Portable>[] constructors = new ConstructorFunction[KEY_BASED_CONTAINS + 1];
         constructors[CLEAR] = new ConstructorFunction<Integer, Portable>() {
@@ -216,6 +218,7 @@ public class MultiMapPortableHook implements PortableHook {
         return new ArrayPortableFactory(constructors);
     }
 
+    @Override
     public Collection<ClassDefinition> getBuiltinDefinitions() {
         return null;
     }

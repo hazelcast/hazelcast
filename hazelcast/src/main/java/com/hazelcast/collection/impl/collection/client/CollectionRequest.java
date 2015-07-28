@@ -63,11 +63,13 @@ public abstract class CollectionRequest extends PartitionClientRequest implement
         return CollectionPortableHook.F_ID;
     }
 
+    @Override
     public void write(PortableWriter writer) throws IOException {
         writer.writeUTF("s", serviceName);
         writer.writeUTF("n", name);
     }
 
+    @Override
     public void read(PortableReader reader) throws IOException {
         serviceName = reader.readUTF("s");
         name = reader.readUTF("n");

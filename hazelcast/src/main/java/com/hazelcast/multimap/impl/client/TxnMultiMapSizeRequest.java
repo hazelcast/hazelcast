@@ -28,11 +28,13 @@ public class TxnMultiMapSizeRequest extends TxnMultiMapRequest {
         super(name);
     }
 
+    @Override
     public Object innerCall() throws Exception {
         final TransactionContext context = getEndpoint().getTransactionContext(txnId);
         return context.getMultiMap(name).size();
     }
 
+    @Override
     public int getClassId() {
         return MultiMapPortableHook.TXN_MM_SIZE;
     }

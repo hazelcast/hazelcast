@@ -35,20 +35,24 @@ public class TxnMultiMapValueCountRequest extends TxnMultiMapRequest {
         this.key = key;
     }
 
+    @Override
     public Object innerCall() throws Exception {
         final TransactionContext context = getEndpoint().getTransactionContext(txnId);
         return context.getMultiMap(name).valueCount(key);
     }
 
+    @Override
     public int getClassId() {
         return MultiMapPortableHook.TXN_MM_VALUE_COUNT;
     }
 
+    @Override
     public void write(PortableWriter writer) throws IOException {
         super.write(writer);
         writer.getRawDataOutput().writeData(key);
     }
 
+    @Override
     public void read(PortableReader reader) throws IOException {
         super.read(reader);
         key = reader.getRawDataInput().readData();

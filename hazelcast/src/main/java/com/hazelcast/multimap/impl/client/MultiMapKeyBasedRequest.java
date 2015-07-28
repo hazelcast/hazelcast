@@ -35,10 +35,12 @@ public abstract class MultiMapKeyBasedRequest extends MultiMapRequest {
         this.key = key;
     }
 
+    @Override
     protected int getPartition() {
         return getClientEngine().getPartitionService().getPartitionId(key);
     }
 
+    @Override
     public void write(PortableWriter writer) throws IOException {
         super.write(writer);
         final ObjectDataOutput out = writer.getRawDataOutput();

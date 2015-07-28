@@ -37,6 +37,7 @@ public class ClearRequest extends MultiMapAllPartitionRequest implements Retryab
         super(name);
     }
 
+    @Override
     protected OperationFactory createOperationFactory() {
         return new MultiMapOperationFactory(name, MultiMapOperationFactory.OperationFactoryType.CLEAR);
     }
@@ -52,10 +53,12 @@ public class ClearRequest extends MultiMapAllPartitionRequest implements Retryab
         return null;
     }
 
+    @Override
     public int getClassId() {
         return MultiMapPortableHook.CLEAR;
     }
 
+    @Override
     public Permission getRequiredPermission() {
         return new MultiMapPermission(name, ActionConstants.ACTION_REMOVE);
     }

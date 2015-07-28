@@ -245,6 +245,7 @@ public abstract class TransactionalMultiMapProxySupport extends AbstractDistribu
         return new TransactionRecordKey(name, key);
     }
 
+    @Override
     public final String getServiceName() {
         return MultiMapService.SERVICE_NAME;
     }

@@ -45,14 +45,17 @@ public class RemoveRequest extends MultiMapKeyBasedRequest {
         this.threadId = threadId;
     }
 
+    @Override
     protected Operation prepareOperation() {
         return new RemoveOperation(name, key, threadId, value);
     }
 
+    @Override
     public int getClassId() {
         return MultiMapPortableHook.REMOVE;
     }
 
+    @Override
     public void write(PortableWriter writer) throws IOException {
         writer.writeLong("t", threadId);
         super.write(writer);
@@ -60,6 +63,7 @@ public class RemoveRequest extends MultiMapKeyBasedRequest {
         out.writeData(value);
     }
 
+    @Override
     public void read(PortableReader reader) throws IOException {
         threadId = reader.readLong("t");
         super.read(reader);
@@ -67,6 +71,7 @@ public class RemoveRequest extends MultiMapKeyBasedRequest {
         value = in.readData();
     }
 
+    @Override
     public Permission getRequiredPermission() {
         return new MultiMapPermission(name, ActionConstants.ACTION_REMOVE);
     }

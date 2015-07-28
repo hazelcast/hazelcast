@@ -44,6 +44,7 @@ public class TxnMultiMapGetRequest extends TxnMultiMapRequest {
     }
 
 
+    @Override
     public Object innerCall() throws Exception {
         final TransactionContext context = getEndpoint().getTransactionContext(txnId);
         final Collection<Object> objects = context.getMultiMap(name).get(key);
@@ -55,6 +56,7 @@ public class TxnMultiMapGetRequest extends TxnMultiMapRequest {
         return new PortableCollection(coll);
     }
 
+    @Override
     public int getClassId() {
         return MultiMapPortableHook.TXN_MM_GET;
     }

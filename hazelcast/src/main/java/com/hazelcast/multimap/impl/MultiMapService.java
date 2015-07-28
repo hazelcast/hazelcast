@@ -93,6 +93,7 @@ public class MultiMapService implements ManagedService, RemoteService, Migration
         publisher = new MultiMapEventsPublisher(nodeEngine);
     }
 
+    @Override
     public void init(final NodeEngine nodeEngine, Properties properties) {
         int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
         for (int partition = 0; partition < partitionCount; partition++) {
@@ -102,15 +103,18 @@ public class MultiMapService implements ManagedService, RemoteService, Migration
         if (lockService != null) {
             lockService.registerLockStoreConstructor(SERVICE_NAME,
                     new ConstructorFunction<ObjectNamespace, LockStoreInfo>() {
+                        @Override
                         public LockStoreInfo createNew(final ObjectNamespace key) {
                             String name = key.getObjectName();
                             final MultiMapConfig multiMapConfig = nodeEngine.getConfig().findMultiMapConfig(name);
 
                             return new LockStoreInfo() {
+                                @Override
                                 public int getBackupCount() {
                                     return multiMapConfig.getSyncBackupCount();
                                 }
 
+                                @Override
                                 public int getAsyncBackupCount() {
                                     return multiMapConfig.getAsyncBackupCount();
                                 }
@@ -120,6 +124,7 @@ public class MultiMapService implements ManagedService, RemoteService, Migration
         }
     }
 
+    @Override
     public void reset() {
         for (MultiMapPartitionContainer container : partitionContainers) {
             if (container != null) {
@@ -128,6 +133,7 @@ public class MultiMapService implements ManagedService, RemoteService, Migration
         }
     }
 
+    @Override
     public void shutdown(boolean terminate) {
         reset();
         for (int i = 0; i < partitionContainers.length; i++) {
@@ -143,10 +149,12 @@ public class MultiMapService implements ManagedService, RemoteService, Migration
         return partitionContainers[partitionId];
     }
 
+    @Override
     public DistributedObject createDistributedObject(String name) {
         return new ObjectMultiMapProxy(this, nodeEngine, name);
     }
 
+    @Override
     public void destroyDistributedObject(String name) {
         for (MultiMapPartitionContainer container : partitionContainers) {
             if (container != null) {
@@ -209,9 +217,11 @@ public class MultiMapService implements ManagedService, RemoteService, Migration
         return eventService.deregisterListener(SERVICE_NAME, name, registrationId);
     }
 
+    @Override
     public void beforeMigration(PartitionMigrationEvent partitionMigrationEvent) {
     }
 
+    @Override
     public Operation prepareReplicationOperation(PartitionReplicationEvent event) {
         int replicaIndex = event.getReplicaIndex();
         final MultiMapPartitionContainer partitionContainer = partitionContainers[event.getPartitionId()];
@@ -264,18 +274,21 @@ public class MultiMapService implements ManagedService, RemoteService, Migration
         }
     }
 
+    @Override
     public void commitMigration(PartitionMigrationEvent event) {
         if (event.getMigrationEndpoint() == MigrationEndpoint.SOURCE) {
             clearMigrationData(event.getPartitionId());
         }
     }
 
+    @Override
     public void rollbackMigration(PartitionMigrationEvent event) {
         if (event.getMigrationEndpoint() == MigrationEndpoint.DESTINATION) {
             clearMigrationData(event.getPartitionId());
         }
     }
 
+    @Override
     public void clearPartitionReplica(int partitionId) {
         clearMigrationData(partitionId);
     }
@@ -341,10 +354,12 @@ public class MultiMapService implements ManagedService, RemoteService, Migration
         return ConcurrencyUtil.getOrPutIfAbsent(statsMap, name, localMultiMapStatsConstructorFunction);
     }
 
+    @Override
     public <T extends TransactionalObject> T createTransactionalObject(String name, Transaction transaction) {
         return (T) new TransactionalMultiMapProxy(nodeEngine, this, name, transaction);
     }
 
+    @Override
     public void rollbackTransaction(String transactionId) {
 
     }

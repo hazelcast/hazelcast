@@ -46,24 +46,29 @@ public class RemoveAllRequest extends MultiMapKeyBasedRequest {
         this.threadId = threadId;
     }
 
+    @Override
     protected Operation prepareOperation() {
         return new RemoveAllOperation(name, key, threadId);
     }
 
+    @Override
     public int getClassId() {
         return MultiMapPortableHook.REMOVE_ALL;
     }
 
+    @Override
     public void write(PortableWriter writer) throws IOException {
         writer.writeLong("t", threadId);
         super.write(writer);
     }
 
+    @Override
     public void read(PortableReader reader) throws IOException {
         threadId = reader.readLong("t");
         super.read(reader);
     }
 
+    @Override
     protected Object filter(Object response) {
         if (response instanceof MultiMapResponse) {
             Collection<MultiMapRecord> responseCollection = ((MultiMapResponse) response).getCollection();
@@ -79,6 +84,7 @@ public class RemoveAllRequest extends MultiMapKeyBasedRequest {
         return super.filter(response);
     }
 
+    @Override
     public Permission getRequiredPermission() {
         return new MultiMapPermission(name, ActionConstants.ACTION_REMOVE);
     }

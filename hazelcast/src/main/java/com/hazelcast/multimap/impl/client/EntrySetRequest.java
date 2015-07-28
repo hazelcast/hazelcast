@@ -35,10 +35,12 @@ public class EntrySetRequest extends MultiMapAllPartitionRequest implements Retr
         super(name);
     }
 
+    @Override
     protected OperationFactory createOperationFactory() {
         return new MultiMapOperationFactory(name, MultiMapOperationFactory.OperationFactoryType.ENTRY_SET);
     }
 
+    @Override
     protected Object reduce(Map<Integer, Object> map) {
         Set<Map.Entry> entrySet = new HashSet<Map.Entry>();
         for (Object obj : map.values()) {
@@ -52,6 +54,7 @@ public class EntrySetRequest extends MultiMapAllPartitionRequest implements Retr
         return new PortableEntrySetResponse(entrySet);
     }
 
+    @Override
     public int getClassId() {
         return MultiMapPortableHook.ENTRY_SET;
     }

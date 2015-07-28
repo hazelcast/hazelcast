@@ -29,12 +29,14 @@ public class ClearBackupOperation extends MultiMapOperation implements BackupOpe
         super(name);
     }
 
+    @Override
     public void run() throws Exception {
         MultiMapContainer container = getOrCreateContainer();
         container.clear();
         response = true;
     }
 
+    @Override
     public int getId() {
         return MultiMapDataSerializerHook.CLEAR_BACKUP;
     }

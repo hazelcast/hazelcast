@@ -40,22 +40,27 @@ public abstract class MultiMapAllPartitionRequest extends AllPartitionsClientReq
         this.name = name;
     }
 
+    @Override
     public String getServiceName() {
         return MultiMapService.SERVICE_NAME;
     }
 
+    @Override
     public int getFactoryId() {
         return MultiMapPortableHook.F_ID;
     }
 
+    @Override
     public void write(PortableWriter writer) throws IOException {
         writer.writeUTF("n", name);
     }
 
+    @Override
     public void read(PortableReader reader) throws IOException {
         name = reader.readUTF("n");
     }
 
+    @Override
     public Permission getRequiredPermission() {
         return new MultiMapPermission(name, ActionConstants.ACTION_READ);
     }

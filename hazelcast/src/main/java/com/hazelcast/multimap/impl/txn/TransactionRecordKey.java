@@ -29,6 +29,7 @@ class TransactionRecordKey {
         this.key = key;
     }
 
+    @Override
     public boolean equals(Object o) {
         if (this == o) {
             return true;
@@ -49,6 +50,7 @@ class TransactionRecordKey {
         return true;
     }
 
+    @Override
     public int hashCode() {
         int result = name.hashCode();
         result = 31 * result + key.hashCode();

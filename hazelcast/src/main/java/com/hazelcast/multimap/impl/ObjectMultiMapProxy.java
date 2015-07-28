@@ -95,6 +95,7 @@ public class ObjectMultiMapProxy<K, V>
         }
     }
 
+    @Override
     public boolean put(K key, V value) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
@@ -105,6 +106,7 @@ public class ObjectMultiMapProxy<K, V>
         return putInternal(dataKey, dataValue, -1);
     }
 
+    @Override
     public Collection<V> get(K key) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
@@ -114,6 +116,7 @@ public class ObjectMultiMapProxy<K, V>
         return result.getObjectCollection(nodeEngine);
     }
 
+    @Override
     public boolean remove(Object key, Object value) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
@@ -124,6 +127,7 @@ public class ObjectMultiMapProxy<K, V>
         return removeInternal(dataKey, dataValue);
     }
 
+    @Override
     public Collection<V> remove(Object key) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
@@ -133,16 +137,19 @@ public class ObjectMultiMapProxy<K, V>
         return result.getObjectCollection(nodeEngine);
     }
 
+    @Override
     public Set<K> localKeySet() {
         Set<Data> dataKeySet = localKeySetInternal();
         return toObjectSet(dataKeySet);
     }
 
+    @Override
     public Set<K> keySet() {
         Set<Data> dataKeySet = keySetInternal();
         return toObjectSet(dataKeySet);
     }
 
+    @Override
     public Collection<V> values() {
         final NodeEngine nodeEngine = getNodeEngine();
         Map map = valuesInternal();
@@ -157,6 +164,7 @@ public class ObjectMultiMapProxy<K, V>
         return values;
     }
 
+    @Override
     public Set<Map.Entry<K, V>> entrySet() {
         final NodeEngine nodeEngine = getNodeEngine();
         Map map = entrySetInternal();
@@ -172,6 +180,7 @@ public class ObjectMultiMapProxy<K, V>
         return entrySet;
     }
 
+    @Override
     public boolean containsKey(K key) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
@@ -180,6 +189,7 @@ public class ObjectMultiMapProxy<K, V>
         return containsInternal(dataKey, null);
     }
 
+    @Override
     public boolean containsValue(Object value) {
         checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
 
@@ -188,6 +198,7 @@ public class ObjectMultiMapProxy<K, V>
         return containsInternal(null, valueKey);
     }
 
+    @Override
     public boolean containsEntry(K key, V value) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
@@ -198,6 +209,7 @@ public class ObjectMultiMapProxy<K, V>
         return containsInternal(dataKey, valueKey);
     }
 
+    @Override
     public int valueCount(K key) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
@@ -206,24 +218,29 @@ public class ObjectMultiMapProxy<K, V>
         return countInternal(dataKey);
     }
 
+    @Override
     public String addLocalEntryListener(EntryListener<K, V> listener) {
         return getService().addListener(name, listener, null, false, true);
     }
 
+    @Override
     public String addEntryListener(EntryListener<K, V> listener, boolean includeValue) {
         return getService().addListener(name, listener, null, includeValue, false);
     }
 
+    @Override
     public boolean removeEntryListener(String registrationId) {
         return getService().removeListener(name, registrationId);
     }
 
+    @Override
     public String addEntryListener(EntryListener<K, V> listener, K key, boolean includeValue) {
         final NodeEngine nodeEngine = getNodeEngine();
         Data dataKey = nodeEngine.toData(key);
         return getService().addListener(name, listener, dataKey, includeValue, false);
     }
 
+    @Override
     public void lock(K key) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
@@ -232,6 +249,7 @@ public class ObjectMultiMapProxy<K, V>
         lockSupport.lock(nodeEngine, dataKey);
     }
 
+    @Override
     public void lock(K key, long leaseTime, TimeUnit timeUnit) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         checkPositive(leaseTime, "leaseTime should be positive");
@@ -241,6 +259,7 @@ public class ObjectMultiMapProxy<K, V>
         lockSupport.lock(nodeEngine, dataKey, timeUnit.toMillis(leaseTime));
     }
 
+    @Override
     public boolean isLocked(K key) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
@@ -249,6 +268,7 @@ public class ObjectMultiMapProxy<K, V>
         return lockSupport.isLocked(nodeEngine, dataKey);
     }
 
+    @Override
     public boolean tryLock(K key) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
@@ -257,6 +277,7 @@ public class ObjectMultiMapProxy<K, V>
         return lockSupport.tryLock(nodeEngine, dataKey);
     }
 
+    @Override
     public boolean tryLock(K key, long time, TimeUnit timeunit)
             throws InterruptedException {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
@@ -266,6 +287,7 @@ public class ObjectMultiMapProxy<K, V>
         return lockSupport.tryLock(nodeEngine, dataKey, time, timeunit);
     }
 
+    @Override
     public boolean tryLock(K key, long time, TimeUnit timeunit, long leaseTime, TimeUnit leaseUnit) throws InterruptedException {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
@@ -274,6 +296,7 @@ public class ObjectMultiMapProxy<K, V>
         return lockSupport.tryLock(nodeEngine, dataKey, time, timeunit, leaseTime, leaseUnit);
     }
 
+    @Override
     public void unlock(K key) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
@@ -282,6 +305,7 @@ public class ObjectMultiMapProxy<K, V>
         lockSupport.unlock(nodeEngine, dataKey);
     }
 
+    @Override
     public void forceUnlock(K key) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
@@ -290,6 +314,7 @@ public class ObjectMultiMapProxy<K, V>
         lockSupport.forceUnlock(nodeEngine, dataKey);
     }
 
+    @Override
     public LocalMultiMapStats getLocalMultiMapStats() {
         return (LocalMultiMapStats) getService().createStats(name);
     }

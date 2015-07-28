@@ -45,10 +45,12 @@ public class ContainsRequest extends MultiMapAllPartitionRequest implements Retr
         this.value = value;
     }
 
+    @Override
     protected OperationFactory createOperationFactory() {
         return new MultiMapOperationFactory(name, MultiMapOperationFactory.OperationFactoryType.CONTAINS, null, value);
     }
 
+    @Override
     protected Object reduce(Map<Integer, Object> map) {
         for (Object obj : map.values()) {
             if (Boolean.TRUE.equals(obj)) {
@@ -58,16 +60,19 @@ public class ContainsRequest extends MultiMapAllPartitionRequest implements Retr
         return false;
     }
 
+    @Override
     public int getClassId() {
         return MultiMapPortableHook.CONTAINS_ENTRY;
     }
 
+    @Override
     public void write(PortableWriter writer) throws IOException {
         super.write(writer);
         final ObjectDataOutput out = writer.getRawDataOutput();
         out.writeData(value);
     }
 
+    @Override
     public void read(PortableReader reader) throws IOException {
         super.read(reader);
         final ObjectDataInput in = reader.getRawDataInput();

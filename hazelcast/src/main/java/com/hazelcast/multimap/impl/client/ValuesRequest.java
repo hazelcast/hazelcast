@@ -37,10 +37,12 @@ public class ValuesRequest extends MultiMapAllPartitionRequest implements Retrya
         super(name);
     }
 
+    @Override
     protected OperationFactory createOperationFactory() {
         return new MultiMapOperationFactory(name, MultiMapOperationFactory.OperationFactoryType.VALUES);
     }
 
+    @Override
     protected Object reduce(Map<Integer, Object> map) {
         Collection<Data> list = new LinkedList();
         for (Object obj : map.values()) {
@@ -59,6 +61,7 @@ public class ValuesRequest extends MultiMapAllPartitionRequest implements Retrya
         return new PortableCollection(list);
     }
 
+    @Override
     public int getClassId() {
         return MultiMapPortableHook.VALUES;
     }

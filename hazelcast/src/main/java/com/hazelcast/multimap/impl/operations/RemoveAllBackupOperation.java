@@ -29,11 +29,13 @@ public class RemoveAllBackupOperation extends MultiMapKeyBasedOperation implemen
         super(name, dataKey);
     }
 
+    @Override
     public void run() throws Exception {
         delete();
         response = true;
     }
 
+    @Override
     public int getId() {
         return MultiMapDataSerializerHook.REMOVE_ALL_BACKUP;
     }

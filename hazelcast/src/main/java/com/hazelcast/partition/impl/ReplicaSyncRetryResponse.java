@@ -36,9 +36,11 @@ public class ReplicaSyncRetryResponse extends Operation
     public ReplicaSyncRetryResponse() {
     }
 
+    @Override
     public void beforeRun() throws Exception {
     }
 
+    @Override
     public void run() throws Exception {
         final InternalPartitionServiceImpl partitionService = getService();
         final int partitionId = getPartitionId();
@@ -65,17 +67,21 @@ public class ReplicaSyncRetryResponse extends Operation
         }
     }
 
+    @Override
     public void afterRun() throws Exception {
     }
 
+    @Override
     public boolean returnsResponse() {
         return false;
     }
 
+    @Override
     public Object getResponse() {
         return null;
     }
 
+    @Override
     public boolean validatesTarget() {
         return false;
     }
@@ -85,13 +91,16 @@ public class ReplicaSyncRetryResponse extends Operation
         return InternalPartitionService.SERVICE_NAME;
     }
 
+    @Override
     public void logError(Throwable e) {
         ReplicaErrorLogger.log(e, getLogger());
     }
 
+    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
     }
 
+    @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
     }
 

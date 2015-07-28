@@ -47,14 +47,17 @@ public class PutRequest extends MultiMapKeyBasedRequest {
         this.threadId = threadId;
     }
 
+    @Override
     protected Operation prepareOperation() {
         return new PutOperation(name, key, threadId, value, index);
     }
 
+    @Override
     public int getClassId() {
         return MultiMapPortableHook.PUT;
     }
 
+    @Override
     public void write(PortableWriter writer) throws IOException {
         writer.writeInt("i", index);
         writer.writeLong("t", threadId);
@@ -63,6 +66,7 @@ public class PutRequest extends MultiMapKeyBasedRequest {
         out.writeData(value);
     }
 
+    @Override
     public void read(PortableReader reader) throws IOException {
         index = reader.readInt("i");
         threadId = reader.readLong("t");
@@ -71,6 +75,7 @@ public class PutRequest extends MultiMapKeyBasedRequest {
         value = in.readData();
     }
 
+    @Override
     public Permission getRequiredPermission() {
         return new MultiMapPermission(name, ActionConstants.ACTION_PUT);
     }

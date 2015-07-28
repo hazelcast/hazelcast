@@ -108,6 +108,7 @@ public class SocketTextReader implements SocketReader {
         socketTextWriter.enqueue(command);
     }
 
+    @Override
     public void read(ByteBuffer inBuffer) {
         while (inBuffer.hasRemaining()) {
             doRead(inBuffer);

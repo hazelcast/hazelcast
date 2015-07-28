@@ -37,10 +37,12 @@ public class KeySetRequest extends MultiMapAllPartitionRequest implements Retrya
         super(name);
     }
 
+    @Override
     protected OperationFactory createOperationFactory() {
         return new MultiMapOperationFactory(name, MultiMapOperationFactory.OperationFactoryType.KEY_SET);
     }
 
+    @Override
     protected Object reduce(Map<Integer, Object> map) {
         Set<Data> keySet = new HashSet<Data>();
         for (Object obj : map.values()) {
@@ -56,6 +58,7 @@ public class KeySetRequest extends MultiMapAllPartitionRequest implements Retrya
         return new PortableCollection(keySet);
     }
 
+    @Override
     public int getClassId() {
         return MultiMapPortableHook.KEY_SET;
     }

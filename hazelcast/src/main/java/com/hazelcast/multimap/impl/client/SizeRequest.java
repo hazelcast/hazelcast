@@ -31,10 +31,12 @@ public class SizeRequest extends MultiMapAllPartitionRequest implements Retryabl
         super(name);
     }
 
+    @Override
     protected OperationFactory createOperationFactory() {
         return new MultiMapOperationFactory(name, MultiMapOperationFactory.OperationFactoryType.SIZE);
     }
 
+    @Override
     protected Object reduce(Map<Integer, Object> map) {
         int total = 0;
         for (Object obj : map.values()) {
@@ -43,6 +45,7 @@ public class SizeRequest extends MultiMapAllPartitionRequest implements Retryabl
         return total;
     }
 
+    @Override
     public int getClassId() {
         return MultiMapPortableHook.SIZE;
     }
