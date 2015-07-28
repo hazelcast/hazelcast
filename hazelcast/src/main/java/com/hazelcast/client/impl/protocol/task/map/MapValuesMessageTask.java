@@ -31,7 +31,6 @@ import com.hazelcast.spi.OperationFactory;
 
 import java.security.Permission;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -64,7 +63,7 @@ public class MapValuesMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return MapValuesCodec.encodeResponse((Collection<Data>) response);
+        return MapValuesCodec.encodeResponse((List<Data>) response);
     }
 
     @Override

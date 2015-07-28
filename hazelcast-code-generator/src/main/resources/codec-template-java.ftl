@@ -96,7 +96,7 @@ public final class ${model.className} {
     </#list>;
 
         ClientMessage clientMessage = ClientMessage.createForEncode(dataSize);
-        clientMessage.setMessageType(com.hazelcast.client.impl.protocol.EventMessageConst.${event.typeString});
+        clientMessage.setMessageType(com.hazelcast.client.impl.protocol.EventMessageConst.EVENT_${event.name?upper_case});
         clientMessage.addFlag(ClientMessage.LISTENER_EVENT_FLAG);
 
     <#list event.eventParams as p>
@@ -114,7 +114,7 @@ public final class ${model.className} {
         public void handle(ClientMessage clientMessage) {
             int messageType = clientMessage.getMessageType();
         <#list model.events as event>
-            if (messageType == com.hazelcast.client.impl.protocol.EventMessageConst.${event.typeString}) {
+            if (messageType == com.hazelcast.client.impl.protocol.EventMessageConst.EVENT_${event.name?upper_case}) {
             <#list event.eventParams as p>
                 <@getterText varName=p.name type=p.type isNullable=p.nullable isEvent=true/>
             </#list>
@@ -184,7 +184,7 @@ public final class ${model.className} {
             ${keyType} key = entry.getKey();
             ${valueType} val = entry.getValue();
         <@sizeText varName="key"  type=keyType/>
-        <@sizeText varName="val"  type=keyType/>
+        <@sizeText varName="val"  type=valueType/>
         }
 </#switch>
 </#macro>
@@ -240,7 +240,7 @@ public final class ${model.className} {
             ${keyType} key = entry.getKey();
             ${valueType} val = entry.getValue();
         <@setterTextInternal varName="key"  type=keyType/>
-        <@setterTextInternal varName="val"  type=keyType/>
+        <@setterTextInternal varName="val"  type=valueType/>
         }
     </#if>
 </#macro>
@@ -279,6 +279,9 @@ public final class ${model.className} {
             <#case "java.lang.String">
         ${varName} = clientMessage.getStringUtf8();
                 <#break >
+            <#case "java.util.Map.Entry<com.hazelcast.nio.serialization.Data,com.hazelcast.nio.serialization.Data>">
+        ${varName} = clientMessage.getMapEntry();
+                <#break >
             <#default>
         ${varName} = clientMessage.get${util.capitalizeFirstLetter(varType)}();
         </#switch>
@@ -287,7 +290,7 @@ public final class ${model.className} {
             ${varName} = ${util.getTypeCodec(varType)}.decode(clientMessage);
         <#break >
     <#case "COLLECTION">
-    <#local collectionType><#if varType?starts_with("java.util.Set")>java.util.HashSet<#else></#if>java.util.ArrayList</#local>
+    <#local collectionType><#if varType?starts_with("java.util.List")>java.util.ArrayList<#else>java.util.HashSet</#if></#local>
     <#local itemVariableType= util.getGenericType(varType)>
     <#local itemVariableName= "${varName}_item">
     <#local sizeVariableName= "${varName}_size">

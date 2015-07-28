@@ -241,8 +241,7 @@ abstract class AbstractClientCacheProxy<K, V>
         Data expiryPolicyData = toData(expiryPolicy);
         ClientMessage request = CacheGetAllCodec.encodeRequest(nameWithPrefix, keySet, expiryPolicyData);
         ClientMessage responseMessage = invoke(request);
-        Map<Data, Data> mapEntrySet = CacheGetAllCodec.decodeResponse(responseMessage).map;
-        Set<Map.Entry<Data, Data>> entrySet = mapEntrySet.entrySet();
+        Set<Map.Entry<Data, Data>> entrySet = CacheGetAllCodec.decodeResponse(responseMessage).entrySet;
         for (Map.Entry<Data, Data> dataEntry : entrySet) {
             Data keyData = dataEntry.getKey();
             Data valueData = dataEntry.getValue();

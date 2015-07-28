@@ -31,10 +31,9 @@ import com.hazelcast.security.permission.MultiMapPermission;
 import com.hazelcast.spi.Operation;
 
 import java.security.Permission;
+import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
-
-import static com.hazelcast.multimap.impl.ValueCollectionFactory.createCollection;
+import java.util.List;
 
 /**
  * Client Protocol Task for handling messages with type id:
@@ -61,17 +60,15 @@ public class MultiMapGetMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
+        List<Data> collection = new ArrayList<Data>();
         Collection<MultiMapRecord> responseCollection = ((MultiMapResponse) response).getCollection();
-        if (responseCollection == null) {
-            return MultiMapGetCodec.encodeResponse(Collections.EMPTY_LIST);
-        }
-        Collection<Data> collection = createCollection(responseCollection);
-        for (MultiMapRecord record : responseCollection) {
-            collection.add(serializationService.toData(record.getObject()));
+        if (responseCollection != null) {
+            for (MultiMapRecord record : responseCollection) {
+                collection.add(serializationService.toData(record.getObject()));
+            }
         }
         return MultiMapGetCodec.encodeResponse(collection);
     }
-
 
     @Override
     public String getServiceName() {

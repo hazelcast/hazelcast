@@ -34,6 +34,7 @@ import java.security.Permission;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 public class XACollectTransactionsMessageTask
         extends AbstractMultiTargetMessageTask<XATransactionCollectTransactionsCodec.RequestParameters> {
@@ -49,7 +50,7 @@ public class XACollectTransactionsMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return XATransactionCollectTransactionsCodec.encodeResponse((Collection<Data>) response);
+        return XATransactionCollectTransactionsCodec.encodeResponse((Set<Data>) response);
     }
 
     @Override

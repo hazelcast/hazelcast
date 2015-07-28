@@ -31,6 +31,7 @@ import com.hazelcast.mapreduce.Collator;
 import com.hazelcast.mapreduce.CombinerFactory;
 import com.hazelcast.mapreduce.Job;
 import com.hazelcast.mapreduce.JobCompletableFuture;
+import com.hazelcast.mapreduce.JobPartitionState;
 import com.hazelcast.mapreduce.JobProcessInformation;
 import com.hazelcast.mapreduce.JobTracker;
 import com.hazelcast.mapreduce.KeyPredicate;
@@ -57,6 +58,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -99,7 +101,8 @@ public class ClientMapReduceProxy
         return "JobTracker{" + "name='" + getName() + '\'' + '}';
     }
 
-    private ClientMessage invoke(ClientMessage request, String jobId) throws Exception {
+    private ClientMessage invoke(ClientMessage request, String jobId)
+            throws Exception {
         ClientTrackableJob trackableJob = trackableJobs.get(jobId);
         if (trackableJob != null) {
             Address runningMember = trackableJob.jobOwner;
@@ -110,7 +113,8 @@ public class ClientMapReduceProxy
         return null;
     }
 
-    private class ClientJob<KeyIn, ValueIn> extends AbstractJob<KeyIn, ValueIn> {
+    private class ClientJob<KeyIn, ValueIn>
+            extends AbstractJob<KeyIn, ValueIn> {
 
         public ClientJob(String name, KeyValueSource<KeyIn, ValueIn> keyValueSource) {
             super(name, ClientMapReduceProxy.this, keyValueSource);
@@ -121,9 +125,8 @@ public class ClientMapReduceProxy
             try {
                 final String jobId = UuidUtil.buildRandomUuidString();
 
-                ClientMessage request = getRequest(name, jobId, keys,
-                        predicate, mapper, combinerFactory, reducerFactory, keyValueSource,
-                        chunkSize, topologyChangedStrategy);
+                ClientMessage request = getRequest(name, jobId, keys, predicate, mapper, combinerFactory, reducerFactory,
+                        keyValueSource, chunkSize, topologyChangedStrategy);
 
                 final ClientCompletableFuture completableFuture = new ClientCompletableFuture(jobId);
 
@@ -150,8 +153,7 @@ public class ClientMapReduceProxy
                     public void onFailure(Throwable throwable) {
                         Throwable t = throwable;
                         try {
-                            if (t instanceof ExecutionException
-                                    && t.getCause() instanceof CancellationException) {
+                            if (t instanceof ExecutionException && t.getCause() instanceof CancellationException) {
                                 t = t.getCause();
                             }
                             completableFuture.setResult(t);
@@ -173,9 +175,9 @@ public class ClientMapReduceProxy
 
     private Map toObjectMap(ClientMessage res) {
         SerializationService serializationService = getContext().getSerializationService();
-        Map<Data, Data> map = MapReduceForCustomCodec.decodeResponse(res).map;
+        Set<Map.Entry<Data, Data>> entrySet = MapReduceForCustomCodec.decodeResponse(res).entrySet;
         HashMap hashMap = new HashMap();
-        for (Map.Entry<Data, Data> entry : map.entrySet()) {
+        for (Map.Entry<Data, Data> entry : entrySet) {
             Object key = serializationService.toObject(entry.getKey());
             Object value = serializationService.toObject(entry.getValue());
             hashMap.put(key, value);
@@ -183,11 +185,10 @@ public class ClientMapReduceProxy
         return hashMap;
     }
 
-    private ClientMessage getRequest(String name, String jobId, Collection keys,
-                                     KeyPredicate predicate, Mapper mapper,
-                                     CombinerFactory combinerFactory, ReducerFactory
-                                             reducerFactory, KeyValueSource keyValueSource,
-                                     int chunkSize, TopologyChangedStrategy topologyChangedStrategy) {
+    private ClientMessage getRequest(String name, String jobId, Collection keys, KeyPredicate predicate, Mapper mapper,
+                                     CombinerFactory combinerFactory, ReducerFactory reducerFactory,
+                                     KeyValueSource keyValueSource, int chunkSize,
+                                     TopologyChangedStrategy topologyChangedStrategy) {
         Data predicateData = toData(predicate);
         Data mapperData = toData(mapper);
         Data combinerFactoryData = toData(combinerFactory);
@@ -207,28 +208,28 @@ public class ClientMapReduceProxy
 
         if (keyValueSource instanceof MapKeyValueSource) {
             MapKeyValueSource source = (MapKeyValueSource) keyValueSource;
-            return MapReduceForMapCodec.encodeRequest(name, jobId, predicateData, mapperData,
-                    combinerFactoryData, reducerFactoryData, source.getMapName(), chunkSize,
-                    list, topologyChangedStrategyName);
+            return MapReduceForMapCodec
+                    .encodeRequest(name, jobId, predicateData, mapperData, combinerFactoryData, reducerFactoryData,
+                            source.getMapName(), chunkSize, list, topologyChangedStrategyName);
         } else if (keyValueSource instanceof ListKeyValueSource) {
             ListKeyValueSource source = (ListKeyValueSource) keyValueSource;
-            return MapReduceForMapCodec.encodeRequest(name, jobId, predicateData, mapperData,
-                    combinerFactoryData, reducerFactoryData, source.getListName(), chunkSize,
-                    list, topologyChangedStrategyName);
+            return MapReduceForMapCodec
+                    .encodeRequest(name, jobId, predicateData, mapperData, combinerFactoryData, reducerFactoryData,
+                            source.getListName(), chunkSize, list, topologyChangedStrategyName);
         } else if (keyValueSource instanceof SetKeyValueSource) {
             SetKeyValueSource source = (SetKeyValueSource) keyValueSource;
-            return MapReduceForMapCodec.encodeRequest(name, jobId, predicateData, mapperData,
-                    combinerFactoryData, reducerFactoryData, source.getSetName(), chunkSize,
-                    list, topologyChangedStrategyName);
+            return MapReduceForMapCodec
+                    .encodeRequest(name, jobId, predicateData, mapperData, combinerFactoryData, reducerFactoryData,
+                            source.getSetName(), chunkSize, list, topologyChangedStrategyName);
         } else if (keyValueSource instanceof MultiMapKeyValueSource) {
             MultiMapKeyValueSource source = (MultiMapKeyValueSource) keyValueSource;
-            return MapReduceForMapCodec.encodeRequest(name, jobId, predicateData, mapperData,
-                    combinerFactoryData, reducerFactoryData, source.getMultiMapName(), chunkSize,
-                    list, topologyChangedStrategyName);
+            return MapReduceForMapCodec
+                    .encodeRequest(name, jobId, predicateData, mapperData, combinerFactoryData, reducerFactoryData,
+                            source.getMultiMapName(), chunkSize, list, topologyChangedStrategyName);
         }
-        return MapReduceForCustomCodec.encodeRequest(name, jobId, predicateData, mapperData,
-                combinerFactoryData, reducerFactoryData, toData(keyValueSource), chunkSize,
-                list, topologyChangedStrategyName);
+        return MapReduceForCustomCodec
+                .encodeRequest(name, jobId, predicateData, mapperData, combinerFactoryData, reducerFactoryData,
+                        toData(keyValueSource), chunkSize, list, topologyChangedStrategyName);
 
     }
 
@@ -276,7 +277,8 @@ public class ClientMapReduceProxy
         }
 
         @Override
-        public V get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
+        public V get(long timeout, TimeUnit unit)
+                throws InterruptedException, ExecutionException, TimeoutException {
             isNotNull(unit, "unit");
             if (!latch.await(timeout, unit) || !isDone()) {
                 throw new TimeoutException("timeout reached");
@@ -292,8 +294,7 @@ public class ClientMapReduceProxy
         private final Address jobOwner;
         private final AbstractCompletableFuture<V> completableFuture;
 
-        private ClientTrackableJob(String jobId, Address jobOwner,
-                                   AbstractCompletableFuture<V> completableFuture) {
+        private ClientTrackableJob(String jobId, Address jobOwner, AbstractCompletableFuture<V> completableFuture) {
             this.jobId = jobId;
             this.jobOwner = jobOwner;
             this.completableFuture = completableFuture;
@@ -324,10 +325,10 @@ public class ClientMapReduceProxy
             try {
                 ClientMessage request = MapReduceJobProcessInformationCodec.encodeRequest(getName(), jobId);
 
-                MapReduceJobProcessInformationCodec.ResponseParameters responseParameters =
-                        MapReduceJobProcessInformationCodec.decodeResponse(invoke(request, jobId));
-                return new TransferableJobProcessInformation(responseParameters.jobPartitionStates,
-                        responseParameters.processRecords);
+                MapReduceJobProcessInformationCodec.ResponseParameters responseParameters = MapReduceJobProcessInformationCodec
+                        .decodeResponse(invoke(request, jobId));
+                JobPartitionState[] partitionStates = responseParameters.jobPartitionStates.toArray(new JobPartitionState[0]);
+                return new TransferableJobProcessInformation(partitionStates, responseParameters.processRecords);
             } catch (Exception ignore) {
                 EmptyStatement.ignore(ignore);
             }

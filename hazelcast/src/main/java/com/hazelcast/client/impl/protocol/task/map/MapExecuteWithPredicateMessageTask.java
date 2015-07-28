@@ -32,7 +32,7 @@ import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.OperationFactory;
 
 import java.security.Permission;
-import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -52,14 +52,14 @@ public class MapExecuteWithPredicateMessageTask
 
     @Override
     protected Object reduce(Map<Integer, Object> map) {
-        Map<Data, Data> dataMap = new HashMap<Data, Data>();
+        Set<Map.Entry<Data, Data>> dataMap = new HashSet<Map.Entry<Data, Data>>();
         MapService mapService = getService(MapService.SERVICE_NAME);
         for (Object o : map.values()) {
             if (o != null) {
                 MapEntrySet entrySet = (MapEntrySet) mapService.getMapServiceContext().toObject(o);
                 Set<Map.Entry<Data, Data>> entries = entrySet.getEntrySet();
                 for (Map.Entry<Data, Data> entry : entries) {
-                    dataMap.put(entry.getKey(), entry.getValue());
+                    dataMap.add(entry);
                 }
             }
         }
@@ -73,7 +73,7 @@ public class MapExecuteWithPredicateMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return MapExecuteWithPredicateCodec.encodeResponse((Map<Data, Data>) response);
+        return MapExecuteWithPredicateCodec.encodeResponse((Set<Map.Entry<Data, Data>>) response);
     }
 
     @Override

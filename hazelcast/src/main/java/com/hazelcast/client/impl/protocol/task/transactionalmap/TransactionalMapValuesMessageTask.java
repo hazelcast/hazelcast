@@ -64,7 +64,7 @@ public class TransactionalMapValuesMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return TransactionalMapValuesCodec.encodeResponse((Collection<Data>) response);
+        return TransactionalMapValuesCodec.encodeResponse((List<Data>) response);
     }
 
     @Override

@@ -28,9 +28,9 @@ import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.ReplicatedMapPermission;
 
 import java.security.Permission;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 public class ReplicatedMapKeySetMessageTask
         extends AbstractCallableMessageTask<ReplicatedMapKeySetCodec.RequestParameters> {
@@ -44,7 +44,7 @@ public class ReplicatedMapKeySetMessageTask
         ReplicatedMapService replicatedMapService = getService(getServiceName());
         final ReplicatedRecordStore recordStore = replicatedMapService.getReplicatedRecordStore(parameters.name, true);
         final Collection values = recordStore.keySet();
-        List<Data> res = new ArrayList<Data>(values.size());
+        Set<Data> res = new HashSet<Data>(values.size());
         for (Object o : values) {
             res.add(serializationService.toData(o));
         }
@@ -59,7 +59,7 @@ public class ReplicatedMapKeySetMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return ReplicatedMapKeySetCodec.encodeResponse((Collection<Data>) response);
+        return ReplicatedMapKeySetCodec.encodeResponse((Set<Data>) response);
     }
 
     @Override

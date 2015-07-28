@@ -91,6 +91,14 @@ public final class CodeGenerationUtils {
         return typeElement != null ? typeElement.toString() : "";
     }
 
+    public static String getConvertedType(String type) {
+        if (type.startsWith("java.util.List<") || type.startsWith("java.util.Set<") || type.startsWith("java.util.Collection<")) {
+            return type.replaceAll("java.util.*<(.*)>", "java.util.Collection<$1>");
+        }
+        return type;
+    }
+
+
 
     public static String convertTypeToCSharp(String type) {
         String getterString;

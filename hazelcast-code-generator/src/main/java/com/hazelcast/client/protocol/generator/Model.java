@@ -16,33 +16,14 @@
 
 package com.hazelcast.client.protocol.generator;
 
-/**
- * Language
- */
-public enum Lang {
+public interface Model {
+    boolean isEmpty();
 
-    /**
-     *Java lang
-     */
-    JAVA,
+    Lang getLang();
 
-    /**
-     * C# lang
-     */
-    CS,
+    String getName();
 
-    /**
-     *C++ lang
-     */
-    CPP,
+    String getClassName();
 
-    /**
-     *PYTHON lang
-     */
-    PY,
-
-    /**
-     * Binary Protocol Document representing a human readable document in English
-     */
-    MD
+    String getPackageName();
 }

@@ -29,7 +29,6 @@ import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.transaction.TransactionContext;
 
 import java.security.Permission;
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -45,11 +44,11 @@ public class TransactionalMapKeySetMessageTask
         final TransactionContext context = getEndpoint().getTransactionContext(parameters.txnId);
         final TransactionalMap map = context.getMap(parameters.name);
         Set keySet = map.keySet();
-        Collection<Data> list = new HashSet<Data>(keySet.size());
+        Set<Data> set = new HashSet<Data>(keySet.size());
         for (Object o : keySet) {
-            list.add(serializationService.toData(o));
+            set.add(serializationService.toData(o));
         }
-        return list;
+        return set;
     }
 
     @Override
@@ -64,7 +63,7 @@ public class TransactionalMapKeySetMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return TransactionalMapKeySetCodec.encodeResponse((Collection<Data>) response);
+        return TransactionalMapKeySetCodec.encodeResponse((Set<Data>) response);
     }
 
     @Override

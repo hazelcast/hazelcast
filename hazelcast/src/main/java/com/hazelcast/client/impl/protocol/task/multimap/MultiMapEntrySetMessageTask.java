@@ -16,7 +16,6 @@
 
 package com.hazelcast.client.impl.protocol.task.multimap;
 
-
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MultiMapEntrySetCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractAllPartitionsMessageTask;
@@ -31,8 +30,7 @@ import com.hazelcast.security.permission.MultiMapPermission;
 import com.hazelcast.spi.OperationFactory;
 
 import java.security.Permission;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -54,8 +52,7 @@ public class MultiMapEntrySetMessageTask
 
     @Override
     protected Object reduce(Map<Integer, Object> map) {
-        List<Data> keys = new ArrayList<Data>();
-        List<Data> values = new ArrayList<Data>();
+        Set<Map.Entry<Data, Data>> reduced = new HashSet<Map.Entry<Data, Data>>();
         for (Object obj : map.values()) {
             if (obj == null) {
                 continue;
@@ -63,11 +60,10 @@ public class MultiMapEntrySetMessageTask
             EntrySetResponse response = (EntrySetResponse) obj;
             Set<Map.Entry<Data, Data>> entries = response.getDataEntrySet();
             for (Map.Entry<Data, Data> entry : entries) {
-                keys.add(entry.getKey());
-                values.add(entry.getValue());
+                reduced.add(entry);
             }
         }
-        return MultiMapEntrySetCodec.encodeResponse(keys, values);
+        return reduced;
     }
 
     @Override
@@ -77,7 +73,7 @@ public class MultiMapEntrySetMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return (ClientMessage) response;
+        return MultiMapEntrySetCodec.encodeResponse((Set<Map.Entry<Data, Data>>) response);
     }
 
     @Override

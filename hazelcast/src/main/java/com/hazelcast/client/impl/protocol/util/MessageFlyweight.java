@@ -20,10 +20,12 @@ import com.hazelcast.nio.Bits;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.impl.DefaultData;
 
+import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -121,6 +123,10 @@ public class MessageFlyweight {
         return this;
     }
 
+    public MessageFlyweight set(final Map.Entry<Data, Data> entry) {
+        return set(entry.getKey()).set(entry.getValue());
+    }
+
     //endregion SET Overloads
 
     //region GET Overloads
@@ -182,6 +188,11 @@ public class MessageFlyweight {
         return result;
     }
 
+    public Map.Entry<Data, Data> getMapEntry() {
+        Data key = getData();
+        Data value = getData();
+        return new AbstractMap.SimpleEntry<Data, Data>(key, value);
+    }
     //endregion GET Overloads
 
     protected int int32Get(int index) {

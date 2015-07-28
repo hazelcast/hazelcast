@@ -32,11 +32,12 @@ import java.util.Map;
 
 import static com.hazelcast.client.protocol.generator.CodeGenerationUtils.convertTypeToCSharp;
 
-public class CodecModel {
+public class CodecModel implements Model{
 
     static final Map<String, TypeElement> CUSTOM_CODEC_MAP = new HashMap<String, TypeElement>();
 
     private final Lang lang;
+    private String id;
     private String name;
     private String className;
     private String parentName;
@@ -150,14 +151,17 @@ public class CodecModel {
         this.lang = lang;
 
         name = methodElement.getSimpleName().toString();
+        short requestId = methodElement.getAnnotation(Request.class).id();
+        short masterId = parent.getAnnotation(GenerateCodec.class).id();
+        id = CodeGenerationUtils.mergeIds(masterId, requestId);
         parentName = parent.getAnnotation(GenerateCodec.class).name();
         className =
                 CodeGenerationUtils.capitalizeFirstLetter(parentName) + CodeGenerationUtils.capitalizeFirstLetter(name) + "Codec";
         packageName = "com.hazelcast.client.impl.protocol.codec";
 
-        //        if (lang != Lang.JAVA) {
-        //            packageName = classElement.getAnnotation(GenerateParameters.class).ns();
-        //        }
+        if (lang != Lang.JAVA) {
+            packageName = parent.getAnnotation(GenerateCodec.class).ns();
+        }
 
         response = methodElement.getAnnotation(Request.class).response();
         initParameters(methodElement, responseElement, eventElementList, lang);
@@ -214,6 +218,14 @@ public class CodecModel {
         return name;
     }
 
+    public Lang getLang() {
+        return lang;
+    }
+
+    public String getId() {
+        return id;
+    }
+
     public String getClassName() {
         return className;
     }
@@ -224,6 +236,11 @@ public class CodecModel {
 
     public String getPackageName() {
         return packageName;
+    }
+
+    @Override
+    public boolean isEmpty() {
+        return requestParams.isEmpty();
     }
 
     public int getResponse() {
@@ -259,10 +276,6 @@ public class CodecModel {
             return name;
         }
 
-        public String getTypeString() {
-            return "EVENT_" + name.toUpperCase();
-        }
-
         public List<ParameterModel> getEventParams() {
             return eventParams;
         }
@@ -283,13 +296,13 @@ public class CodecModel {
         }
 
         public String getType() {
-            if (lang == Lang.CSHARP) {
-                return convertTypeToCSharp(type);
-            }
-            if (type.startsWith("java.util.List<") || type.startsWith("java.util.Set<") || type
-                    .startsWith("java.util.Collection<")) {
-                return type.replaceAll("java.util.*<(.*)>", "java.util.Collection<$1>");
-            }
+//            if (lang == Lang.CSHARP) {
+//                return convertTypeToCSharp(type);
+//            }
+//            if (type.startsWith("java.util.List<") || type.startsWith("java.util.Set<") || type.startsWith("java.util.Collection<")) {
+//                System.out.println(">>>>>>>>>>getType :"+type + ":" + name);
+//                return type.replaceAll("java.util.*<(.*)>", "java.util.Collection<$1>");
+//            }
             return type;
         }
 

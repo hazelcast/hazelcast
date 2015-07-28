@@ -33,28 +33,28 @@ public interface MapReduceCodecTemplate {
     @Request(id = 2, retryable = true, response = ResponseMessageConst.JOB_PROCESS_INFO)
     void jobProcessInformation(String name, String jobId);
 
-    @Request(id = 3, retryable = false, response = ResponseMessageConst.MAP_DATA_DATA)
+    @Request(id = 3, retryable = false, response = ResponseMessageConst.SET_ENTRY)
     void forMap(String name, String jobId, @Nullable Data predicate, Data mapper, @Nullable Data combinerFactory,
                 @Nullable Data reducerFactory, String mapName, int chunkSize, @Nullable List<Data> keys,
                 @Nullable String topologyChangedStrategy);
 
-    @Request(id = 4, retryable = false, response = ResponseMessageConst.MAP_DATA_DATA)
+    @Request(id = 4, retryable = false, response = ResponseMessageConst.SET_ENTRY)
     void forList(String name, String jobId, @Nullable Data predicate, Data mapper, @Nullable Data combinerFactory,
                  @Nullable Data reducerFactory, String listName, int chunkSize, @Nullable List<Data> keys,
                  @Nullable String topologyChangedStrategy);
 
 
-    @Request(id = 5, retryable = false, response = ResponseMessageConst.MAP_DATA_DATA)
+    @Request(id = 5, retryable = false, response = ResponseMessageConst.SET_ENTRY)
     void forSet(String name, String jobId, @Nullable Data predicate, Data mapper, @Nullable Data combinerFactory,
                 @Nullable Data reducerFactory, String setName, int chunkSize, @Nullable List<Data> keys,
                 @Nullable String topologyChangedStrategy);
 
-    @Request(id = 6, retryable = false, response = ResponseMessageConst.MAP_DATA_DATA)
+    @Request(id = 6, retryable = false, response = ResponseMessageConst.SET_ENTRY)
     void forMultiMap(String name, String jobId, @Nullable Data predicate, Data mapper, @Nullable Data combinerFactory,
                      @Nullable Data reducerFactory, String multiMapName, int chunkSize, @Nullable List<Data> keys,
                      @Nullable String topologyChangedStrategy);
 
-    @Request(id = 7, retryable = false, response = ResponseMessageConst.MAP_DATA_DATA)
+    @Request(id = 7, retryable = false, response = ResponseMessageConst.SET_ENTRY)
     void forCustom(String name, String jobId, @Nullable Data predicate, Data mapper, @Nullable Data combinerFactory,
                    @Nullable Data reducerFactory, Data keyValueSource, int chunkSize, @Nullable List<Data> keys,
                    @Nullable String topologyChangedStrategy);

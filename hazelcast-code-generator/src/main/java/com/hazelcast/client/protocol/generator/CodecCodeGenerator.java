@@ -65,14 +65,9 @@ public class CodecCodeGenerator
     private Filer filer;
     private Elements elementUtils;
     private Messager messager;
-    private Template codecTemplate;
-    //    private Template codecTemplateCSharp;
-    private Template messageTypeTemplate;
-    private Template messageTypeTemplateCSharp;
-    private boolean csharpEnabled = Boolean.getBoolean("hazelcast.generator.csharp");
-    private boolean cppEnabled = Boolean.getBoolean("hazelcast.generator.cpp");
-
-    private Map<String, ExecutableElement> requestMap = new HashMap<String, ExecutableElement>();
+    private Map<Lang, Template> codecTemplateMap = new HashMap<Lang, Template>();
+    private Map<Lang, Template> messageTypeTemplateMap = new HashMap<Lang, Template>();
+    private Map<TypeElement, Map<String, ExecutableElement>> requestMap = new HashMap<TypeElement, Map<String, ExecutableElement>>();
     private Map<Integer, ExecutableElement> responseMap = new HashMap<Integer, ExecutableElement>();
     private Map<Integer, ExecutableElement> eventResponseMap = new HashMap<Integer, ExecutableElement>();
 
@@ -89,24 +84,34 @@ public class CodecCodeGenerator
         }
         Configuration cfg = new Configuration(Configuration.VERSION_2_3_23);
         cfg.setTemplateLoader(new ClassTemplateLoader(getClass(), "/"));
-        try {
-            codecTemplate = cfg.getTemplate("codec-template-java.ftl");
-            //codecTemplateCSharp = cfg.getTemplate("codec-template-csharp.ftl");
-            messageTypeTemplate = cfg.getTemplate("messagetype-template-java.ftl");
-            messageTypeTemplateCSharp = cfg.getTemplate("messagetype-template-csharp.ftl");
-        } catch (IOException e) {
-            messager.printMessage(Diagnostic.Kind.ERROR, e.getMessage());
+        for (Lang lang : Lang.values()) {
+            boolean enabled = Boolean.getBoolean("hazelcast.generator." + lang.name().toLowerCase());
+            if (enabled || lang == Lang.JAVA) {
+                try {
+                    Template codecTemplate = cfg.getTemplate("codec-template-" + lang.name().toLowerCase() + ".ftl");
+                    codecTemplateMap.put(lang, codecTemplate);
+                } catch (IOException e) {
+                    messager.printMessage(Diagnostic.Kind.ERROR, "Cannot find template for lang:" + lang);
+                }
+                try {
+                    Template messageTypeTemplate = cfg.getTemplate("messagetype-template-" + lang.name().toLowerCase() + ".ftl");
+                    messageTypeTemplateMap.put(lang, messageTypeTemplate);
+                } catch (IOException e) {
+                    messager.printMessage(Diagnostic.Kind.WARNING, "Cannot find messagetype template for lang:" + lang);
+                }
+            }
         }
     }
 
     @Override
     public boolean process(Set<? extends TypeElement> elements, RoundEnvironment env) {
         try {
-
             TypeElement te = elementUtils.getTypeElement("com.hazelcast.annotation.GenerateCodec");
-            if(!elements.contains(te)) {
+            if (!elements.contains(te)) {
                 return false;
             }
+
+            //PREPARE META DATA
             for (Element element : env.getElementsAnnotatedWith(Codec.class)) {
                 TypeElement classElement = (TypeElement) element;
                 classElement.getAnnotationMirrors();
@@ -122,29 +127,46 @@ public class CodecCodeGenerator
             }
 
             for (Element element : env.getElementsAnnotatedWith(GenerateCodec.class)) {
-                register((TypeElement) element, Lang.JAVA);
+                register((TypeElement) element);
             }
-
-            for (Element element : env.getElementsAnnotatedWith(GenerateCodec.class)) {
-                generateMessageTypeEnum((TypeElement) element, Lang.JAVA);
-            }
-
-            for (ExecutableElement element : requestMap.values()) {
-                generateCodec(element, Lang.JAVA);
-                if (csharpEnabled) {
-                    //TODO :CSHARP
-                }
-                if (cppEnabled) {
-                    //TODO: C++
-                }
+            //END
+            for (Lang lang : codecTemplateMap.keySet()) {
+                generateContent(lang);
             }
         } catch (Exception e) {
+            messager.printMessage(Diagnostic.Kind.ERROR, e.getMessage());
             e.printStackTrace();
         }
         return true;
     }
 
-    public void register(TypeElement classElement, Lang lang) {
+    public void generateContent(Lang lang) {
+        //GENERATE CONTENT
+        Map<TypeElement, Map<String, CodecModel>> allCodecModel = createAllCodecModel(lang);
+
+        Template messageTypeTemplate = messageTypeTemplateMap.get(lang);
+        if (messageTypeTemplate != null) {
+            for (Element element : allCodecModel.keySet()) {
+                generateMessageTypeEnum((TypeElement) element, lang, messageTypeTemplate);
+            }
+        }
+
+        Template codecTemplate = codecTemplateMap.get(lang);
+
+        if(lang == Lang.MD) {
+            generateDoc(allCodecModel, codecTemplate);
+        } else {
+            for (Map<String, CodecModel> map : allCodecModel.values()) {
+                for (CodecModel model : map.values()) {
+                    generateCodec(model, codecTemplate);
+                }
+            }
+        }
+    }
+
+    public void register(TypeElement classElement) {
+        HashMap<String, ExecutableElement> map = new HashMap<String, ExecutableElement>();
+        requestMap.put(classElement, map);
         for (Element enclosedElement : classElement.getEnclosedElements()) {
             if (!enclosedElement.getKind().equals(ElementKind.METHOD)) {
                 continue;
@@ -156,7 +178,7 @@ public class CodecCodeGenerator
             final Request request = methodElement.getAnnotation(Request.class);
             if (request != null) {
                 String id = CodeGenerationUtils.mergeIds(masterId, request.id());
-                requestMap.put(id, methodElement);
+                map.put(id, methodElement);
                 continue;
             }
 
@@ -173,27 +195,20 @@ public class CodecCodeGenerator
         }
     }
 
-    public void generateCodec(ExecutableElement methodElement, Lang lang) {
-        CodecModel codecModel = createCodecModel(methodElement,lang);
-        final String content;
-        switch (lang) {
-            case JAVA:
-                content = generateFromTemplate(codecTemplate, codecModel);
-                saveClass(codecModel.getPackageName(), codecModel.getClassName(), content);
-                break;
-            case CSHARP:
-                //TODO
-                //                content = generateFromTemplate(codecTemplateCSharp, codecModel);
-                //                saveFile(codecModel.getClassName() + ".cs", codecModel.getPackageName(), content);
-                //                break;
-            case CPP:
-                //TODO
-                //content = generateFromTemplate(parameterTemplateCSharp, clazz);
-                //saveFile(classElement, clazz.getPackageName(), clazz.getClassName(), content);
-                break;
-            default:
-                throw new UnsupportedOperationException("Unsupported language: " + lang);
+    private Map<TypeElement, Map<String, CodecModel>> createAllCodecModel(Lang lang) {
+        Map<TypeElement, Map<String, CodecModel>> model = new HashMap<TypeElement, Map<String, CodecModel>>();
+
+        for (Map.Entry<TypeElement, Map<String, ExecutableElement>> entry : requestMap.entrySet()) {
+            HashMap<String, CodecModel> map = new HashMap<String, CodecModel>();
+            TypeElement parent = entry.getKey();
+            model.put(parent, map);
+
+            for (Map.Entry<String, ExecutableElement> entrySub : entry.getValue().entrySet()) {
+                CodecModel codecModel = createCodecModel(entrySub.getValue(), lang);
+                map.put(entrySub.getKey(), codecModel);
+            }
         }
+        return model;
     }
 
     private CodecModel createCodecModel(ExecutableElement methodElement, Lang lang) {
@@ -201,7 +216,14 @@ public class CodecCodeGenerator
 
         final Request methodElementAnnotation = methodElement.getAnnotation(Request.class);
         final int response = methodElementAnnotation.response();
-        final int[] events = methodElementAnnotation.event();
+        int[] events = null;
+        try {
+            events = methodElementAnnotation.event();
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.err.println(parent.toString());
+            System.err.println(methodElement.toString());
+        }
         final boolean retryable = methodElementAnnotation.retryable();
 
         ExecutableElement responseElement = responseMap.get(response);
@@ -215,65 +237,32 @@ public class CodecCodeGenerator
                 }
             }
         }
-
         return new CodecModel(parent, methodElement, responseElement, eventElementList, retryable, lang);
     }
 
-    private void generateMessageTypeEnum(TypeElement classElement, Lang lang) {
-        MessageTypeEnumModel clazz = new MessageTypeEnumModel(classElement, lang);
-        if (clazz.isEmpty()) {
+    public void generateCodec(CodecModel codecModel, Template codecTemplate) {
+        final String content = generateFromTemplate(codecTemplate, codecModel);
+        if (codecModel.getLang() == Lang.JAVA) {
+            saveClass(codecModel.getPackageName(), codecModel.getClassName(), content);
+        } else {
+            //TODO
+            saveFile(codecModel.getClassName() + "." + codecModel.getLang().name().toLowerCase(), codecModel.getPackageName(),
+                    content);
+        }
+    }
+
+    public void generateDoc(Object model, Template codecTemplate) {
+        final String content = generateFromTemplate(codecTemplate, model);
+        saveFile("protocol.md" , "document", content);
+    }
+
+    private void generateMessageTypeEnum(TypeElement classElement, Lang lang, Template messageTypeTemplate) {
+        MessageTypeEnumModel model = new MessageTypeEnumModel(classElement, lang);
+        if (model.isEmpty()) {
             return;
         }
-        final String content;
-        switch (lang) {
-            case JAVA:
-                content = generateFromTemplate(messageTypeTemplate, clazz);
-                saveClass(clazz.getPackageName(), clazz.getClassName(), content);
-                break;
-            case CSHARP:
-                content = generateFromTemplate(messageTypeTemplateCSharp, clazz);
-                saveFile(clazz.getClassName() + ".cs", clazz.getPackageName(), content);
-                break;
-            case CPP:
-                //TODO
-                //content = generateFromTemplate(messageTypeTemplateCpp, clazz);
-                //saveFile(classElement, clazz.getPackageName(), clazz.getClassName(), content);
-                break;
-            default:
-                throw new UnsupportedOperationException("Unsupported language: " + lang);
-
-        }
-    }
-
-    private void generateProtocolDoc() {
-//        StringBuilder sb = new StringBuilder();
-//        for (ExecutableElement element : requestMap.values()) {
-//            sb.append(generateFromTemplate(codecTemplate, codecModel));
-//        }
-//        saveClass(codecModel.getPackageName(), codecModel.getClassName(), content);
-
-    }
-
-    private void saveClass(String packageName, String className, String content) {
-        JavaFileObject file;
-        try {
-            final String fullClassName = packageName + "." + className;
-            file = filer.createSourceFile(fullClassName);
-            file.openWriter().append(content).close();
-        } catch (IOException e) {
-            messager.printMessage(Diagnostic.Kind.WARNING, e.getMessage());
-        }
-    }
-
-    private void saveFile(String fileName, String packageName, String content) {
-        FileObject file;
-        try {
-            final JavaFileManager.Location location = StandardLocation.locationFor(StandardLocation.SOURCE_OUTPUT.name());
-            file = filer.createResource(location, packageName, fileName);
-            file.openWriter().append(content).close();
-        } catch (IOException e) {
-            messager.printMessage(Diagnostic.Kind.WARNING, e.getMessage());
-        }
+        final String content = generateFromTemplate(messageTypeTemplate, model);
+        saveContent(model,content);
     }
 
     private String generateFromTemplate(Template template, Object model) {
@@ -287,8 +276,43 @@ public class CodecCodeGenerator
             content = writer.toString();
         } catch (Exception e) {
             messager.printMessage(Diagnostic.Kind.ERROR, e.getMessage());
+            e.printStackTrace();
         }
         return content;
+    }
+
+    private void saveContent(Model codecModel, String content) {
+        if (codecModel.getLang() == Lang.JAVA) {
+            saveClass(codecModel.getPackageName(), codecModel.getClassName(), content);
+        } else {
+            //TODO
+            saveFile(codecModel.getClassName() + "." + codecModel.getLang().name().toLowerCase(), codecModel.getPackageName(),
+                    content);
+        }
+    }
+
+    private void saveClass(String packageName, String className, String content) {
+        JavaFileObject file;
+        try {
+            final String fullClassName = packageName + "." + className;
+            file = filer.createSourceFile(fullClassName);
+            file.openWriter().append(content).close();
+        } catch (IOException e) {
+            messager.printMessage(Diagnostic.Kind.WARNING, e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    private void saveFile(String fileName, String packageName, String content) {
+        FileObject file;
+        try {
+            final JavaFileManager.Location location = StandardLocation.locationFor(StandardLocation.SOURCE_OUTPUT.name());
+            file = filer.createResource(location, packageName, fileName);
+            file.openWriter().append(content).close();
+        } catch (IOException e) {
+            messager.printMessage(Diagnostic.Kind.WARNING, e.getMessage());
+            e.printStackTrace();
+        }
     }
 
     public static void setUtilModel(Map modelMap)

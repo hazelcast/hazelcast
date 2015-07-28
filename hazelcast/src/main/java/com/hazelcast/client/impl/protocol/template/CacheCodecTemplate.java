@@ -57,7 +57,7 @@ public interface CacheCodecTemplate {
     @Request(id = 9, retryable = false, response = ResponseMessageConst.DATA)
     void entryProcessor(String name, Data key, Data entryProcessor, List<Data> arguments, int completionId);
 
-    @Request(id = 10, retryable = false, response = ResponseMessageConst.MAP_DATA_DATA)
+    @Request(id = 10, retryable = false, response = ResponseMessageConst.SET_ENTRY)
     void getAll(String name, Set<Data> keys, @Nullable Data expiryPolicy);
 
     @Request(id = 11, retryable = false, response = ResponseMessageConst.DATA)

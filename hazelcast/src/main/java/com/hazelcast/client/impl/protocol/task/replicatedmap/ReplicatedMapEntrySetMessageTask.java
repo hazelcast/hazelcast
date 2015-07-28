@@ -51,7 +51,7 @@ public class ReplicatedMapEntrySetMessageTask
             dataMap.put(serializationService.toData(entry.getKey()), serializationService.toData(entry.getValue()));
         }
 
-        return dataMap;
+        return dataMap.entrySet();
     }
 
 
@@ -62,7 +62,7 @@ public class ReplicatedMapEntrySetMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return ReplicatedMapEntrySetCodec.encodeResponse((Map<Data, Data>) response);
+        return ReplicatedMapEntrySetCodec.encodeResponse((Set<Map.Entry<Data, Data>>) response);
     }
 
     @Override

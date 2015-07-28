@@ -19,6 +19,8 @@ package com.hazelcast.client.impl.protocol.util;
 import com.hazelcast.nio.Bits;
 import com.hazelcast.nio.serialization.Data;
 
+import java.util.Map;
+
 public final class ParameterUtil {
 
     private static final int UTF8_MAX_BYTES_PER_CHAR = 3;
@@ -31,6 +33,10 @@ public final class ParameterUtil {
 
     public static int calculateDataSize(Data data) {
         return calculateDataSize(data.toByteArray());
+    }
+
+    public static int calculateDataSize(Map.Entry<Data, Data> entry) {
+        return calculateDataSize(entry.getKey().toByteArray()) + calculateDataSize(entry.getValue().toByteArray());
     }
 
     public static int calculateDataSize(byte[] bytes) {

@@ -34,8 +34,8 @@ public final class ResponseMessageConst {
     public static final int STRING = 104;
     public static final int DATA = 105;
     public static final int LIST_DATA = 106;
-    public static final int MAP_INT_DATA = 107;
-    public static final int MAP_DATA_DATA = 108;
+//    public static final int MAP_INT_DATA = 107;
+//    public static final int MAP_DATA_DATA = 108;
     public static final int AUTHENTICATION = 109;
     public static final int PARTITIONS = 110;
     public static final int EXCEPTION = 111;

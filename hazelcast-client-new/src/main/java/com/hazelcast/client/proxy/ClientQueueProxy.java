@@ -52,11 +52,11 @@ import com.hazelcast.monitor.LocalQueueStats;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 
-import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -309,28 +309,28 @@ public final class ClientQueueProxy<E> extends ClientProxy implements IQueue<E> 
     }
 
     public boolean containsAll(Collection<?> c) {
-        ClientMessage request = QueueContainsAllCodec.encodeRequest(name, getDataList(c));
+        ClientMessage request = QueueContainsAllCodec.encodeRequest(name, getDataSet(c));
         ClientMessage response = invoke(request);
         QueueContainsAllCodec.ResponseParameters resultParameters = QueueContainsAllCodec.decodeResponse(response);
         return resultParameters.response;
     }
 
     public boolean addAll(Collection<? extends E> c) {
-        ClientMessage request = QueueAddAllCodec.encodeRequest(name, getDataList(c));
+        ClientMessage request = QueueAddAllCodec.encodeRequest(name, getDataSet(c));
         ClientMessage response = invoke(request);
         QueueAddAllCodec.ResponseParameters resultParameters = QueueAddAllCodec.decodeResponse(response);
         return resultParameters.response;
     }
 
     public boolean removeAll(Collection<?> c) {
-        ClientMessage request = QueueCompareAndRemoveAllCodec.encodeRequest(name, getDataList(c));
+        ClientMessage request = QueueCompareAndRemoveAllCodec.encodeRequest(name, getDataSet(c));
         ClientMessage response = invoke(request);
         QueueCompareAndRemoveAllCodec.ResponseParameters resultParameters = QueueCompareAndRemoveAllCodec.decodeResponse(response);
         return resultParameters.response;
     }
 
     public boolean retainAll(Collection<?> c) {
-        ClientMessage request = QueueCompareAndRetainAllCodec.encodeRequest(name, getDataList(c));
+        ClientMessage request = QueueCompareAndRetainAllCodec.encodeRequest(name, getDataSet(c));
         ClientMessage response = invoke(request);
         QueueCompareAndRetainAllCodec.ResponseParameters resultParameters = QueueCompareAndRetainAllCodec.decodeResponse(response);
         return resultParameters.response;
@@ -349,12 +349,12 @@ public final class ClientQueueProxy<E> extends ClientProxy implements IQueue<E> 
         return super.invokeInterruptibly(req, getPartitionKey());
     }
 
-    private List<Data> getDataList(Collection<?> objects) {
-        List<Data> dataList = new ArrayList<Data>(objects.size());
+    private Set<Data> getDataSet(Collection<?> objects) {
+        Set<Data> dataSet = new HashSet<Data>(objects.size());
         for (Object o : objects) {
-            dataList.add(toData(o));
+            dataSet.add(toData(o));
         }
-        return dataList;
+        return dataSet;
     }
 
     @Override

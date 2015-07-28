@@ -25,9 +25,9 @@ import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
 
 import java.security.Permission;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 public class GetDistributedObjectMessageTask
         extends AbstractCallableMessageTask<ClientGetDistributedObjectCodec.RequestParameters> {
@@ -37,13 +37,13 @@ public class GetDistributedObjectMessageTask
     }
 
     @Override
-    protected Object call() throws Exception {
+    protected Object call()
+            throws Exception {
         Collection<DistributedObject> distributedObjects = clientEngine.getProxyService().getAllDistributedObjects();
 
-        List<DistributedObjectInfo> coll = new ArrayList<DistributedObjectInfo>(distributedObjects.size());
+        Set<DistributedObjectInfo> coll = new HashSet<DistributedObjectInfo>(distributedObjects.size());
         for (DistributedObject distributedObject : distributedObjects) {
-            coll.add(new DistributedObjectInfo(
-                    distributedObject.getServiceName(), distributedObject.getName()));
+            coll.add(new DistributedObjectInfo(distributedObject.getServiceName(), distributedObject.getName()));
         }
         return coll;
     }
@@ -55,7 +55,7 @@ public class GetDistributedObjectMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return ClientGetDistributedObjectCodec.encodeResponse((Collection<DistributedObjectInfo>) response);
+        return ClientGetDistributedObjectCodec.encodeResponse((Set<DistributedObjectInfo>) response);
     }
 
     @Override

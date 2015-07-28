@@ -30,46 +30,39 @@ import com.hazelcast.partition.InternalPartitionService;
 import java.security.Permission;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
-public class GetPartitionsMessageTask extends AbstractCallableMessageTask<ClientGetPartitionsCodec.RequestParameters> {
+public class GetPartitionsMessageTask
+        extends AbstractCallableMessageTask<ClientGetPartitionsCodec.RequestParameters> {
 
     public GetPartitionsMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
-    @Override
     protected Object call() {
         InternalPartitionService service = getService(InternalPartitionService.SERVICE_NAME);
         service.firstArrangement();
         ClusterService clusterService = getService(ClusterServiceImpl.SERVICE_NAME);
         Collection<MemberImpl> memberList = clusterService.getMemberList();
-        Address[] addresses = new Address[memberList.size()];
-        Map<Address, Integer> addressMap = new HashMap<Address, Integer>(memberList.size());
-        int k = 0;
+
+        Map<Address, Set<Integer>> partitionsMap = new HashMap<Address, Set<Integer>>(memberList.size());
         for (MemberImpl member : memberList) {
             Address address = member.getAddress();
-            addresses[k] = address;
-            addressMap.put(address, k);
-            k++;
+            partitionsMap.put(address, new HashSet<Integer>());
         }
-        InternalPartition[] partitions = service.getPartitions();
-        int[] indexes = new int[partitions.length];
-        for (int i = 0; i < indexes.length; i++) {
-            Address owner = partitions[i].getOwnerOrNull();
-            int index = -1;
+
+        for (InternalPartition partition : service.getPartitions()) {
+            Address owner = partition.getOwnerOrNull();
             if (owner == null) {
-                return ClientGetPartitionsCodec.encodeResponse(new Address[0], new int[0]);
+                partitionsMap.clear();
+                return ClientGetPartitionsCodec.encodeResponse(partitionsMap);
             }
-
-            final Integer idx = addressMap.get(owner);
-            if (idx != null) {
-                index = idx;
-            }
-
-            indexes[i] = index;
+            Set<Integer> indexes = partitionsMap.get(owner);
+            indexes.add(partition.getPartitionId());
         }
-        return ClientGetPartitionsCodec.encodeResponse(addresses, indexes);
+        return ClientGetPartitionsCodec.encodeResponse(partitionsMap);
     }
 
     @Override
