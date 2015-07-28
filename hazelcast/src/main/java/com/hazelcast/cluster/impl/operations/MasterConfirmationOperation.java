@@ -20,9 +20,22 @@ import com.hazelcast.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.OperationService;
 
+import java.io.IOException;
+
 public class MasterConfirmationOperation extends AbstractClusterOperation {
+
+    private long timestamp;
+
+    public MasterConfirmationOperation() {
+    }
+
+    public MasterConfirmationOperation(long timestamp) {
+        this.timestamp = timestamp;
+    }
 
     @Override
     public void run() {
@@ -41,10 +54,22 @@ public class MasterConfirmationOperation extends AbstractClusterOperation {
             operationService.send(new MemberRemoveOperation(clusterService.getThisAddress()), endpoint);
         } else {
             if (clusterService.isMaster()) {
-                clusterService.acceptMasterConfirmation(member);
+                clusterService.acceptMasterConfirmation(member, timestamp);
             } else {
                 logger.warning(endpoint + " has sent MasterConfirmation, but this node is not master!");
             }
         }
+    }
+
+    @Override
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
+        super.writeInternal(out);
+        out.writeLong(timestamp);
+    }
+
+    @Override
+    protected void readInternal(ObjectDataInput in) throws IOException {
+        super.readInternal(in);
+        timestamp = in.readLong();
     }
 }
