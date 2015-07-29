@@ -38,7 +38,10 @@ public final class QueryCacheEventDataCodec {
         DefaultQueryCacheEventData queryCacheEventData = new DefaultQueryCacheEventData();
         queryCacheEventData.setSequence(clientMessage.getLong());
 
-        queryCacheEventData.setDataKey(clientMessage.getData());
+        boolean isNullKey = clientMessage.getBoolean();
+        if (!isNullKey) {
+            queryCacheEventData.setDataKey(clientMessage.getData());
+        }
 
         boolean isNullValue = clientMessage.getBoolean();
         if (!isNullValue) {
@@ -53,7 +56,12 @@ public final class QueryCacheEventDataCodec {
     public static void encode(QueryCacheEventData queryCacheEventData, ClientMessage clientMessage) {
         clientMessage.set(queryCacheEventData.getSequence());
 
-        clientMessage.set(queryCacheEventData.getDataKey());
+        Data dataKey = queryCacheEventData.getDataKey();
+        boolean isNullKey = dataKey == null;
+        clientMessage.set(isNullKey);
+        if (!isNullKey) {
+            clientMessage.set(dataKey);
+        }
 
         Data dataNewValue = queryCacheEventData.getDataNewValue();
         boolean isNullValue = dataNewValue == null;
@@ -70,7 +78,11 @@ public final class QueryCacheEventDataCodec {
         int dataSize = Bits.LONG_SIZE_IN_BYTES;
 
         dataSize += Bits.BOOLEAN_SIZE_IN_BYTES;
-        dataSize += ParameterUtil.calculateDataSize(queryCacheEventData.getDataKey());
+        Data dataKey = queryCacheEventData.getDataKey();
+        boolean isNullKey = dataKey == null;
+        if (!isNullKey) {
+            dataSize += ParameterUtil.calculateDataSize(dataKey);
+        }
 
         dataSize += Bits.BOOLEAN_SIZE_IN_BYTES;
         Data dataNewValue = queryCacheEventData.getDataNewValue();
