@@ -741,95 +741,34 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
     }
 
     @Override
-    public void put(Map.Entry<Data, Object> entry) {
-        checkIfLoaded();
-        final long now = getNow();
-
-        Data key = entry.getKey();
-        Object value = entry.getValue();
-        Record record = getRecordOrNull(key, now, false);
-        if (record == null) {
-            value = mapServiceContext.interceptPut(name, null, value);
-            value = mapDataStore.add(key, value, now);
-            record = createRecord(key, value, now);
-            records.put(key, record);
-            // increase size.
-            updateSizeEstimator(calculateRecordHeapCost(record));
-            saveIndex(record);
-        } else {
-            final Object oldValue = record.getValue();
-            value = mapServiceContext.interceptPut(name, oldValue, value);
-            value = mapDataStore.add(key, value, now);
-            onStore(record);
-            // if key exists before, first reduce size
-            updateSizeEstimator(-calculateRecordHeapCost(record));
-            updateRecord(record, value, now);
-            // then increase size
-            updateSizeEstimator(calculateRecordHeapCost(record));
-            saveIndex(record);
-        }
-    }
-
-    @Override
-    public Object put(Data key, Object value, long ttl) {
+    public Object put(Data key, Object value, long ttl, boolean fetchOldValue) {
         checkIfLoaded();
         final long now = getNow();
         markRecordStoreExpirable(ttl);
 
         Record record = getRecordOrNull(key, now, false);
+
         Object oldValue;
         if (record == null) {
-            oldValue = mapDataStore.load(key);
+            oldValue = fetchOldValue ? mapDataStore.load(key) : null;
             value = mapServiceContext.interceptPut(name, null, value);
             value = mapDataStore.add(key, value, now);
             record = createRecord(key, value, ttl, now);
             records.put(key, record);
-            updateSizeEstimator(calculateRecordHeapCost(record));
-            saveIndex(record);
         } else {
             oldValue = record.getValue();
             value = mapServiceContext.interceptPut(name, oldValue, value);
             value = mapDataStore.add(key, value, now);
             onStore(record);
-            // if key exists before, first reduce size
             updateSizeEstimator(-calculateRecordHeapCost(record));
             updateRecord(record, value, now);
-            // then increase size.
-            updateSizeEstimator(calculateRecordHeapCost(record));
-            updateExpiryTime(record, ttl, mapContainer.getMapConfig());
-            saveIndex(record);
-        }
-        return oldValue;
-    }
-
-    @Override
-    public boolean set(Data key, Object value, long ttl) {
-        checkIfLoaded();
-        final long now = getNow();
-        markRecordStoreExpirable(ttl);
-
-        Record record = getRecordOrNull(key, now, false);
-        boolean newRecord = false;
-        if (record == null) {
-            value = mapServiceContext.interceptPut(name, null, value);
-            value = mapDataStore.add(key, value, now);
-            record = createRecord(key, value, ttl, now);
-            records.put(key, record);
-            updateSizeEstimator(calculateRecordHeapCost(record));
-            newRecord = true;
-        } else {
-            value = mapServiceContext.interceptPut(name, record.getValue(), value);
-            value = mapDataStore.add(key, value, now);
-            onStore(record);
-            // if key exists before, first reduce size
-            updateSizeEstimator(-calculateRecordHeapCost(record));
-            updateRecord(record, value, now);
-            // then increase size.
-            updateSizeEstimator(calculateRecordHeapCost(record));
             updateExpiryTime(record, ttl, mapContainer.getMapConfig());
         }
+
+        updateSizeEstimator(calculateRecordHeapCost(record));
         saveIndex(record);
-        return newRecord;
+
+        return oldValue;
     }
 
     @Override
@@ -942,14 +881,14 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
             value = mapServiceContext.interceptPut(name, null, value);
             record = createRecord(key, value, ttl, now);
             records.put(key, record);
-            updateSizeEstimator(calculateRecordHeapCost(record));
         } else {
             value = mapServiceContext.interceptPut(name, record.getValue(), value);
             updateSizeEstimator(-calculateRecordHeapCost(record));
             updateRecord(record, value, now);
-            updateSizeEstimator(calculateRecordHeapCost(record));
             updateExpiryTime(record, ttl, mapContainer.getMapConfig());
         }
+
+        updateSizeEstimator(calculateRecordHeapCost(record));
         saveIndex(record);
         mapDataStore.addTransient(key, now);
     }
@@ -986,32 +925,6 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
         saveIndex(record);
 
         return oldValue;
-    }
-
-    @Override
-    public boolean tryPut(Data key, Object value, long ttl) {
-        checkIfLoaded();
-        final long now = getNow();
-        markRecordStoreExpirable(ttl);
-
-        Record record = getRecordOrNull(key, now, false);
-        if (record == null) {
-            value = mapServiceContext.interceptPut(name, null, value);
-            value = mapDataStore.add(key, value, now);
-            record = createRecord(key, value, ttl, now);
-            records.put(key, record);
-            updateSizeEstimator(calculateRecordHeapCost(record));
-        } else {
-            value = mapServiceContext.interceptPut(name, record.getValue(), value);
-            value = mapDataStore.add(key, value, now);
-            onStore(record);
-            updateSizeEstimator(-calculateRecordHeapCost(record));
-            updateRecord(record, value, now);
-            updateSizeEstimator(calculateRecordHeapCost(record));
-            updateExpiryTime(record, ttl, mapContainer.getMapConfig());
-        }
-        saveIndex(record);
-        return true;
     }
 
     @Override

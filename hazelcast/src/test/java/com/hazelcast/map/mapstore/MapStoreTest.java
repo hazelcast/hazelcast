@@ -38,9 +38,11 @@ import com.hazelcast.map.AbstractEntryProcessor;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapStoreWrapper;
-import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
+import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.map.mapstore.MapStoreWriteBehindTest.RecordingMapStore;
+import com.hazelcast.map.mapstore.writebehind.MapStoreWithCounter;
+import com.hazelcast.map.mapstore.writebehind.TestMapUsingMapStoreBuilder;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.query.SampleObjects.Employee;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -49,6 +51,10 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Ignore;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import java.io.InputStream;
 import java.util.Collection;
@@ -72,11 +78,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
 
 /**
@@ -928,6 +929,34 @@ public class MapStoreTest extends HazelcastTestSupport {
         store.awaitRemoves();
 
         assertEquals(0, store.getStore().keySet().size());
+    }
+
+
+    @Test
+    public void testMapLoaderLoadMethod_notCalledByIMapSet() throws Exception {
+        MapStoreWithCounter mapStore = new MapStoreWithCounter<Integer, String>();
+        IMap<Object, Object> map = TestMapUsingMapStoreBuilder.create()
+                .withMapStore(mapStore)
+                .withNodeFactory(createHazelcastInstanceFactory(1))
+                .build();
+
+        map.set(1, 1);
+
+        assertEquals(0, mapStore.getLoadCount());
+    }
+
+
+    @Test
+    public void testMapLoaderLoadMethod_calledByIMapPut() throws Exception {
+        MapStoreWithCounter mapStore = new MapStoreWithCounter<Integer, String>();
+        IMap<Object, Object> map = TestMapUsingMapStoreBuilder.create()
+                .withMapStore(mapStore)
+                .withNodeFactory(createHazelcastInstanceFactory(1))
+                .build();
+
+        map.put(1, 1);
+
+        assertEquals(1, mapStore.getLoadCount());
     }
 
 

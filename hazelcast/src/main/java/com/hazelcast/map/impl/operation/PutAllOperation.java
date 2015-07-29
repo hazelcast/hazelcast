@@ -23,25 +23,28 @@ import com.hazelcast.map.impl.MapEntrySet;
 import com.hazelcast.map.impl.MapEventPublisher;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.nearcache.NearCacheProvider;
-import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.RecordInfo;
 import com.hazelcast.map.impl.record.Records;
+import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.spi.BackupAwareOperation;
-import com.hazelcast.spi.impl.MutatingOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionAwareOperation;
+import com.hazelcast.spi.impl.MutatingOperation;
 import com.hazelcast.util.Clock;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import static com.hazelcast.map.impl.recordstore.RecordStore.DEFAULT_TTL;
 
 public class PutAllOperation extends AbstractMapOperation implements PartitionAwareOperation,
         BackupAwareOperation, MutatingOperation {
@@ -93,9 +96,9 @@ public class PutAllOperation extends AbstractMapOperation implements PartitionAw
 
         Data dataOldValue = null;
         if (initialLoad) {
-            recordStore.putFromLoad(dataKey, dataValue, -1);
+            recordStore.putFromLoad(dataKey, dataValue, DEFAULT_TTL);
         } else {
-            dataOldValue = mapServiceContext.toData(recordStore.put(dataKey, dataValue, -1));
+            dataOldValue = mapServiceContext.toData(recordStore.put(dataKey, dataValue, DEFAULT_TTL, true));
         }
         mapServiceContext.interceptAfterPut(name, dataValue);
         EntryEventType eventType = dataOldValue == null ? EntryEventType.ADDED : EntryEventType.UPDATED;

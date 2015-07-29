@@ -49,8 +49,6 @@ import static com.hazelcast.map.impl.SizeEstimators.createMapSizeEstimator;
  */
 abstract class AbstractRecordStore implements RecordStore {
 
-    protected static final long DEFAULT_TTL = -1L;
-
     // Concurrency level is 1 since at most one thread can write at a time.
     protected final ConcurrentMap<Data, Record> records = new ConcurrentHashMap<Data, Record>(1000, 0.75f, 1);
 

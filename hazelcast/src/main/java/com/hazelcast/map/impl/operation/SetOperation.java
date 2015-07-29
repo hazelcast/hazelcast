@@ -38,7 +38,8 @@ public class SetOperation extends BasePutOperation {
 
     @Override
     public void run() {
-        newRecord = recordStore.set(dataKey, dataValue, ttl);
+        Object previousValue = recordStore.put(dataKey, dataValue, ttl, false);
+        newRecord = previousValue == null;
     }
 
     @Override

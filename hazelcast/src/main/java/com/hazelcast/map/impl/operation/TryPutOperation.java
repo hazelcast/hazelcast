@@ -32,7 +32,8 @@ public class TryPutOperation extends BasePutOperation {
 
     @Override
     public void run() {
-        successful = recordStore.tryPut(dataKey, dataValue, ttl);
+        recordStore.put(dataKey, dataValue, ttl, false);
+        successful = true;
     }
 
     @Override
