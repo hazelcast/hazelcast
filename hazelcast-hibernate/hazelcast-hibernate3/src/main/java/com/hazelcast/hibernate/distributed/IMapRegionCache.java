@@ -68,11 +68,13 @@ public class IMapRegionCache implements RegionCache {
         markerIdCounter = new AtomicLong();
     }
 
+    @Override
     public Object get(final Object key, final long txTimestamp) {
         Expirable entry = map.get(key);
         return entry == null ? null : entry.getValue(txTimestamp);
     }
 
+    @Override
     public boolean insert(final Object key, final Object value, final Object currentVersion) {
         return map.putIfAbsent(key, new Value(currentVersion, nextTimestamp(hazelcastInstance), value)) == null;
     }
@@ -106,6 +108,7 @@ public class IMapRegionCache implements RegionCache {
         return false;
     }
 
+    @Override
     public boolean update(final Object key, final Object newValue, final Object newVersion, final SoftLock lock) {
         if (lock instanceof MarkerWrapper) {
             final ExpiryMarker unwrappedMarker = ((MarkerWrapper) lock).getMarker();
@@ -116,10 +119,12 @@ public class IMapRegionCache implements RegionCache {
         }
     }
 
+    @Override
     public boolean remove(final Object key) {
         return map.remove(key) != null;
     }
 
+    @Override
     public SoftLock tryLock(final Object key, final Object version) {
         long timeout = nextTimestamp(hazelcastInstance) + lockTimeout;
         final ExpiryMarker marker = (ExpiryMarker) map.executeOnKey(key,
@@ -127,6 +132,7 @@ public class IMapRegionCache implements RegionCache {
         return new MarkerWrapper(marker);
     }
 
+    @Override
     public void unlock(final Object key, SoftLock lock) {
         if (lock instanceof MarkerWrapper) {
             final ExpiryMarker unwrappedMarker = ((MarkerWrapper) lock).getMarker();
@@ -135,18 +141,22 @@ public class IMapRegionCache implements RegionCache {
         }
     }
 
+    @Override
     public boolean contains(final Object key) {
         return map.containsKey(key);
     }
 
+    @Override
     public void clear() {
         map.evictAll();
     }
 
+    @Override
     public long size() {
         return map.size();
     }
 
+    @Override
     public long getSizeInMemory() {
         long size = 0;
         for (final Object key : map.keySet()) {
@@ -158,6 +168,7 @@ public class IMapRegionCache implements RegionCache {
         return size;
     }
 
+    @Override
     public Map asMap() {
         return map;
     }

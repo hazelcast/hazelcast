@@ -45,6 +45,7 @@ public final class HazelcastEntityRegion<Cache extends RegionCache>
         super(instance, regionName, props, metadata, cache);
     }
 
+    @Override
     public EntityRegionAccessStrategy buildAccessStrategy(final AccessType accessType) throws CacheException {
         if (null == accessType) {
             throw new CacheException(

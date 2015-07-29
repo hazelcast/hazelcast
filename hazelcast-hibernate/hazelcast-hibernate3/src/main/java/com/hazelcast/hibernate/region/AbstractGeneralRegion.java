@@ -42,6 +42,7 @@ abstract class AbstractGeneralRegion<Cache extends RegionCache> extends Abstract
         this.cache = cache;
     }
 
+    @Override
     public void evict(final Object key) throws CacheException {
         try {
             getCache().remove(key);
@@ -50,6 +51,7 @@ abstract class AbstractGeneralRegion<Cache extends RegionCache> extends Abstract
         }
     }
 
+    @Override
     public void evictAll() throws CacheException {
         try {
             getCache().clear();
@@ -58,6 +60,7 @@ abstract class AbstractGeneralRegion<Cache extends RegionCache> extends Abstract
         }
     }
 
+    @Override
     public Object get(final Object key) throws CacheException {
         try {
             return getCache().get(key, nextTimestamp());
@@ -66,6 +69,7 @@ abstract class AbstractGeneralRegion<Cache extends RegionCache> extends Abstract
         }
     }
 
+    @Override
     public void put(final Object key, final Object value) throws CacheException {
         try {
             getCache().put(key, value, nextTimestamp(), null);

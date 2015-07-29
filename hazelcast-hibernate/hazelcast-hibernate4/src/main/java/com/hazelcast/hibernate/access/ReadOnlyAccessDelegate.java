@@ -54,6 +54,7 @@ public class ReadOnlyAccessDelegate<T extends HazelcastRegion> extends NonStrict
      * <p/>
      * This cache is asynchronous hence a no-op
      */
+    @Override
     public boolean insert(final Object key, final Object value, final Object version) throws CacheException {
         return false;
     }
@@ -72,6 +73,7 @@ public class ReadOnlyAccessDelegate<T extends HazelcastRegion> extends NonStrict
                 + getHazelcastRegion().getName());
     }
 
+    @Override
     public void removeAll() throws CacheException {
         cache.clear();
     }

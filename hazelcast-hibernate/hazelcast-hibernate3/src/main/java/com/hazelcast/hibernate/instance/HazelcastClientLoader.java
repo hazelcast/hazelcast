@@ -43,10 +43,12 @@ class HazelcastClientLoader implements IHazelcastInstanceLoader {
     private final Properties props = new Properties();
     private HazelcastInstance client;
 
+    @Override
     public void configure(Properties props) {
         this.props.putAll(props);
     }
 
+    @Override
     public HazelcastInstance loadInstance() throws CacheException {
         if (client != null && client.getLifecycleService().isRunning()) {
             LOGGER.warning("Current HazelcastClient is already active! Shutting it down...");
@@ -73,6 +75,7 @@ class HazelcastClientLoader implements IHazelcastInstanceLoader {
         return client;
     }
 
+    @Override
     public void unloadInstance() throws CacheException {
         if (client == null) {
             return;

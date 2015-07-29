@@ -47,18 +47,21 @@ public class HazelcastCacheRegionFactory extends AbstractHazelcastCacheRegionFac
         super(properties);
     }
 
+    @Override
     public CollectionRegion buildCollectionRegion(final String regionName, final Properties properties,
                                                   final CacheDataDescription metadata) throws CacheException {
         return new HazelcastCollectionRegion<IMapRegionCache>(instance, regionName, properties, metadata,
                 new IMapRegionCache(regionName, instance, properties, metadata));
     }
 
+    @Override
     public EntityRegion buildEntityRegion(final String regionName, final Properties properties,
                                           final CacheDataDescription metadata) throws CacheException {
         return new HazelcastEntityRegion<IMapRegionCache>(instance, regionName, properties, metadata,
                 new IMapRegionCache(regionName, instance, properties, metadata));
     }
 
+    @Override
     public TimestampsRegion buildTimestampsRegion(final String regionName, final Properties properties)
             throws CacheException {
         return new HazelcastTimestampsRegion<IMapRegionCache>(instance, regionName, properties,

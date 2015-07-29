@@ -53,6 +53,7 @@ public abstract class AbstractHazelcastCacheRegionFactory implements RegionFacto
         this.instance = instance;
     }
 
+    @Override
     public final QueryResultsRegion buildQueryResultsRegion(final String regionName, final Properties properties)
             throws CacheException {
         HazelcastQueryResultsRegion region = new HazelcastQueryResultsRegion(instance, regionName, properties);
@@ -63,14 +64,17 @@ public abstract class AbstractHazelcastCacheRegionFactory implements RegionFacto
     /**
      * @return true - for a large cluster, unnecessary puts will most likely slow things down.
      */
+    @Override
     public boolean isMinimalPutsEnabledByDefault() {
         return true;
     }
 
+    @Override
     public long nextTimestamp() {
         return HazelcastTimestamper.nextTimestamp(instance);
     }
 
+    @Override
     public void start(final Settings settings, final Properties properties) throws CacheException {
         logger.info("Starting up " + getClass().getSimpleName());
         if (instance == null || !instance.getLifecycleService().isRunning()) {
@@ -80,6 +84,7 @@ public abstract class AbstractHazelcastCacheRegionFactory implements RegionFacto
         cleanupService = new CleanupService(instance.getName());
     }
 
+    @Override
     public void stop() {
         if (instanceLoader != null) {
             logger.info("Shutting down " + getClass().getSimpleName());
@@ -94,6 +99,7 @@ public abstract class AbstractHazelcastCacheRegionFactory implements RegionFacto
         return instance;
     }
 
+    @Override
     public AccessType getDefaultAccessType() {
         return AccessType.READ_WRITE;
     }

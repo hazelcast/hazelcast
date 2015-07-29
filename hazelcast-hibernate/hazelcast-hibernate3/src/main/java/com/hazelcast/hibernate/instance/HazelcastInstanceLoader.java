@@ -44,10 +44,12 @@ class HazelcastInstanceLoader implements IHazelcastInstanceLoader {
     private HazelcastInstance instance;
     private Config config;
 
+    @Override
     public void configure(Properties props) {
         this.props.putAll(props);
     }
 
+    @Override
     public HazelcastInstance loadInstance() throws CacheException {
         if (instance != null && instance.getLifecycleService().isRunning()) {
             LOGGER.warning("Current HazelcastInstance is already loaded and running! "
@@ -90,6 +92,7 @@ class HazelcastInstanceLoader implements IHazelcastInstanceLoader {
         instance = Hazelcast.newHazelcastInstance(config);
     }
 
+    @Override
     public void unloadInstance() throws CacheException {
         if (instance == null) {
             return;

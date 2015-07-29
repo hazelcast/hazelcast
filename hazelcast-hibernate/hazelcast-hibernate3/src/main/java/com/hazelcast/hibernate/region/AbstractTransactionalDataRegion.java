@@ -46,6 +46,7 @@ public abstract class AbstractTransactionalDataRegion<Cache extends RegionCache>
     /**
      * @see org.hibernate.cache.TransactionalDataRegion#getCacheDataDescription()
      */
+    @Override
     public CacheDataDescription getCacheDataDescription() {
         return metadata;
     }
@@ -53,10 +54,12 @@ public abstract class AbstractTransactionalDataRegion<Cache extends RegionCache>
     /**
      * @see org.hibernate.cache.TransactionalDataRegion#isTransactionAware()
      */
+    @Override
     public boolean isTransactionAware() {
         return false;
     }
 
+    @Override
     public Cache getCache() {
         return cache;
     }

@@ -47,6 +47,7 @@ public class HazelcastLocalCacheRegionFactory extends AbstractHazelcastCacheRegi
         super(properties);
     }
 
+    @Override
     public CollectionRegion buildCollectionRegion(final String regionName, final Properties properties,
                                                   final CacheDataDescription metadata) throws CacheException {
         final HazelcastCollectionRegion<LocalRegionCache> region = new HazelcastCollectionRegion<LocalRegionCache>(instance,
@@ -55,6 +56,7 @@ public class HazelcastLocalCacheRegionFactory extends AbstractHazelcastCacheRegi
         return region;
     }
 
+    @Override
     public EntityRegion buildEntityRegion(final String regionName, final Properties properties,
                                           final CacheDataDescription metadata) throws CacheException {
         final HazelcastEntityRegion<LocalRegionCache> region = new HazelcastEntityRegion<LocalRegionCache>(instance,
@@ -63,6 +65,7 @@ public class HazelcastLocalCacheRegionFactory extends AbstractHazelcastCacheRegi
         return region;
     }
 
+    @Override
     public TimestampsRegion buildTimestampsRegion(final String regionName, final Properties properties)
             throws CacheException {
         return new HazelcastTimestampsRegion<LocalRegionCache>(instance, regionName, properties,

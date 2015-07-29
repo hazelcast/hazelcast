@@ -57,6 +57,7 @@ public final class CleanupService {
      */
     private class CleanupThreadFactory implements ThreadFactory {
 
+        @Override
         public Thread newThread(final Runnable r) {
             final Thread thread = new CleanupThread(r, name + ".hibernate.cleanup");
             thread.setDaemon(true);

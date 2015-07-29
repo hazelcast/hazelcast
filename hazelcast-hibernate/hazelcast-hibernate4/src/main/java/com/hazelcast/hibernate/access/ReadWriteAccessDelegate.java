@@ -36,6 +36,7 @@ public class ReadWriteAccessDelegate<T extends HazelcastRegion> extends Abstract
         super(hazelcastRegion, props);
     }
 
+    @Override
     public boolean afterInsert(final Object key, final Object value, final Object version) throws CacheException {
         try {
             return cache.insert(key, value, version);
@@ -52,6 +53,7 @@ public class ReadWriteAccessDelegate<T extends HazelcastRegion> extends Abstract
      * <p/>
      * Called after <code>com.hazelcast.ReadWriteAccessDelegate.lockItem()</code>
      */
+    @Override
     public boolean afterUpdate(final Object key, final Object value, final Object currentVersion, final Object previousVersion,
                                final SoftLock lock) throws CacheException {
         try {
@@ -68,14 +70,17 @@ public class ReadWriteAccessDelegate<T extends HazelcastRegion> extends Abstract
      * This is an asynchronous cache access strategy.
      * NO-OP
      */
+    @Override
     public boolean insert(final Object key, final Object value, final Object version) throws CacheException {
         return false;
     }
 
+    @Override
     public SoftLock lockItem(final Object key, final Object version) throws CacheException {
         return cache.tryLock(key, version);
     }
 
+    @Override
     public void unlockItem(final Object key, final SoftLock lock) throws CacheException {
         cache.unlock(key, lock);
     }
@@ -96,6 +101,7 @@ public class ReadWriteAccessDelegate<T extends HazelcastRegion> extends Abstract
      * <p/>
      * A no-op since this is an asynchronous cache access strategy.
      */
+    @Override
     public void remove(final Object key) throws CacheException {
     }
 
@@ -103,6 +109,7 @@ public class ReadWriteAccessDelegate<T extends HazelcastRegion> extends Abstract
      * This is an asynchronous cache access strategy.
      * NO-OP
      */
+    @Override
     public void removeAll() throws CacheException {
     }
 }

@@ -110,6 +110,7 @@ public class LocalRegionCache implements RegionCache {
         }
     }
 
+    @Override
     public Object get(final Object key, long txTimestamp) {
         final Expirable value = cache.get(key);
         return value != null ? value.getValue(txTimestamp) : null;
@@ -121,6 +122,7 @@ public class LocalRegionCache implements RegionCache {
         return cache.putIfAbsent(key, newValue) == null;
     }
 
+    @Override
     public boolean put(final Object key, final Object value, final long txTimestamp, final Object version) {
         while (true) {
             Expirable previous = cache.get(key);
@@ -139,6 +141,7 @@ public class LocalRegionCache implements RegionCache {
         }
     }
 
+    @Override
     public boolean update(final Object key, final Object newValue, final Object newVersion, final SoftLock softLock) {
         boolean updated = false;
         while (true) {
@@ -211,12 +214,14 @@ public class LocalRegionCache implements RegionCache {
         };
     }
 
+    @Override
     public boolean remove(final Object key) {
         final Expirable value = cache.remove(key);
         maybeNotifyTopic(key, null, (value == null) ? null : value.getVersion());
         return (value != null);
     }
 
+    @Override
     public SoftLock tryLock(final Object key, final Object version) {
         ExpiryMarker marker;
         String markerId = nextMarkerId();
@@ -238,6 +243,7 @@ public class LocalRegionCache implements RegionCache {
         return new MarkerWrapper(marker);
     }
 
+    @Override
     public void unlock(final Object key, SoftLock lock) {
         while (true) {
             final Expirable original = cache.get(key);
@@ -265,23 +271,28 @@ public class LocalRegionCache implements RegionCache {
         maybeNotifyTopic(key, null, null);
     }
 
+    @Override
     public boolean contains(final Object key) {
         return cache.containsKey(key);
     }
 
+    @Override
     public void clear() {
         cache.clear();
         maybeNotifyTopic(null, null, null);
     }
 
+    @Override
     public long size() {
         return cache.size();
     }
 
+    @Override
     public long getSizeInMemory() {
         return 0;
     }
 
+    @Override
     public Map asMap() {
         return cache;
     }
@@ -407,6 +418,7 @@ public class LocalRegionCache implements RegionCache {
             this.value = value;
         }
 
+        @Override
         public int compareTo(final EvictionEntry o) {
             final long thisVal = this.value.getTimestamp();
             final long anotherVal = o.value.getTimestamp();

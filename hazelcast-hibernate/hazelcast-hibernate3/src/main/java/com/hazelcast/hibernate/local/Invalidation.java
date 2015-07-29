@@ -48,11 +48,13 @@ public class Invalidation implements IdentifiedDataSerializable {
         return version;
     }
 
+    @Override
     public void writeData(final ObjectDataOutput out) throws IOException {
         out.writeObject(key);
         out.writeObject(version);
     }
 
+    @Override
     public void readData(final ObjectDataInput in) throws IOException {
         key = in.readObject();
         version = in.readObject();

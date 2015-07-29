@@ -52,10 +52,12 @@ public abstract class AbstractAccessDelegate<T extends HazelcastRegion> implemen
         cache = hazelcastRegion.getCache();
     }
 
+    @Override
     public final T getHazelcastRegion() {
         return hazelcastRegion;
     }
 
+    @Override
     public Object get(final Object key, final long txTimestamp) throws CacheException {
         try {
             return cache.get(key, txTimestamp);
@@ -67,6 +69,7 @@ public abstract class AbstractAccessDelegate<T extends HazelcastRegion> implemen
         }
     }
 
+    @Override
     public boolean putFromLoad(final Object key, final Object value, final long txTimestamp,
                                final Object version) throws CacheException {
         try {
@@ -79,15 +82,18 @@ public abstract class AbstractAccessDelegate<T extends HazelcastRegion> implemen
         }
     }
 
+    @Override
     public boolean putFromLoad(final Object key, final Object value, final long txTimestamp,
                                final Object version, boolean minimalPuts) throws CacheException {
         return putFromLoad(key, value, txTimestamp, version);
     }
 
+    @Override
     public void evict(final Object key) throws CacheException {
         cache.remove(key);
     }
 
+    @Override
     public void evictAll() throws CacheException {
         cache.clear();
     }
@@ -95,10 +101,12 @@ public abstract class AbstractAccessDelegate<T extends HazelcastRegion> implemen
     /**
      * NO-OP
      */
+    @Override
     public SoftLock lockRegion() throws CacheException {
         return null;
     }
 
+    @Override
     public void unlockRegion(final SoftLock lock) throws CacheException {
         cache.clear();
     }

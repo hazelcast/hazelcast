@@ -51,6 +51,7 @@ public class Value extends Expirable {
         return timestamp;
     }
 
+    @Override
     public Object getValue() {
         return value;
     }

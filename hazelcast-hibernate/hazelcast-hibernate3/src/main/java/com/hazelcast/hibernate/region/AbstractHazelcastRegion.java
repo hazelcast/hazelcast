@@ -45,6 +45,7 @@ abstract class AbstractHazelcastRegion<Cache extends RegionCache> implements Haz
         this.props = props;
     }
 
+    @Override
     public void destroy() throws CacheException {
 //      Destroy of the region should not propagate
 //      to other nodes of cluster.
@@ -54,6 +55,7 @@ abstract class AbstractHazelcastRegion<Cache extends RegionCache> implements Haz
     /**
      * @return The size of the internal <code>{@link com.hazelcast.core.IMap}</code>.
      */
+    @Override
     public long getElementCountInMemory() {
         return getCache().size();
     }
@@ -63,6 +65,7 @@ abstract class AbstractHazelcastRegion<Cache extends RegionCache> implements Haz
      *
      * @return -1 this value means "unsupported"
      */
+    @Override
     public long getElementCountOnDisk() {
         return -1;
     }
@@ -70,6 +73,7 @@ abstract class AbstractHazelcastRegion<Cache extends RegionCache> implements Haz
     /**
      * @return The name of the region.
      */
+    @Override
     public String getName() {
         return regionName;
     }
@@ -77,14 +81,17 @@ abstract class AbstractHazelcastRegion<Cache extends RegionCache> implements Haz
     /**
      * @return a rough estimate of number of bytes used by this region.
      */
+    @Override
     public long getSizeInMemory() {
         return getCache().getSizeInMemory();
     }
 
+    @Override
     public final int getTimeout() {
         return timeout;
     }
 
+    @Override
     public final long nextTimestamp() {
         return HazelcastTimestamper.nextTimestamp(instance);
     }
@@ -94,18 +101,22 @@ abstract class AbstractHazelcastRegion<Cache extends RegionCache> implements Haz
      *
      * @return the internal <code>IMap</code> used for this region.
      */
+    @Override
     public Map toMap() {
         return getCache().asMap();
     }
 
+    @Override
     public boolean contains(Object key) {
         return getCache().contains(key);
     }
 
+    @Override
     public final HazelcastInstance getInstance() {
         return instance;
     }
 
+    @Override
     public final ILogger getLogger() {
         final String name = getClass().getName();
         try {

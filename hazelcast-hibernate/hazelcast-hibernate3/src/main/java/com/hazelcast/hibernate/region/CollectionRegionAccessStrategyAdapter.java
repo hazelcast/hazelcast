@@ -35,52 +35,64 @@ public final class CollectionRegionAccessStrategyAdapter implements CollectionRe
         this.delegate = delegate;
     }
 
+    @Override
     public void evict(final Object key) throws CacheException {
         delegate.evict(key);
     }
 
+    @Override
     public void evictAll() throws CacheException {
         delegate.evictAll();
     }
 
+    @Override
     public Object get(final Object key, final long txTimestamp) throws CacheException {
         return delegate.get(key, txTimestamp);
     }
 
+    @Override
     public CollectionRegion getRegion() {
         return delegate.getHazelcastRegion();
     }
 
+    @Override
     public SoftLock lockItem(final Object key, final Object version) throws CacheException {
         return delegate.lockItem(key, version);
     }
 
+    @Override
     public SoftLock lockRegion() throws CacheException {
         return delegate.lockRegion();
     }
 
+    @Override
     public boolean putFromLoad(final Object key, final Object value, final long txTimestamp, final Object version)
             throws CacheException {
         return delegate.putFromLoad(key, value, txTimestamp, version);
     }
 
+    @Override
     public boolean putFromLoad(final Object key, final Object value, final long txTimestamp, final Object version,
                                final boolean minimalPutOverride) throws CacheException {
         return delegate.putFromLoad(key, value, txTimestamp, version, minimalPutOverride);
     }
 
+    @Override
     public void remove(final Object key) throws CacheException {
         delegate.remove(key);
     }
 
+    @Override
     public void removeAll() throws CacheException {
         delegate.removeAll();
     }
 
+    @Override
     public void unlockItem(final Object key, final SoftLock lock) throws CacheException {
         delegate.unlockItem(key, lock);
     }
 
+    @Override
     public void unlockRegion(final SoftLock lock) throws CacheException {
         delegate.unlockRegion(lock);
     }
