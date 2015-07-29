@@ -39,40 +39,6 @@
     <build>
         <plugins>
             <plugin>
-                <groupId>org.glassfish</groupId>
-                <artifactId>maven-embedded-glassfish-plugin</artifactId>
-                <version>3.1.1</version>
-                <configuration>
-                    <!-- This sets the path to use the war file we have built in the target directory -->
-                    <app>target/${project.build.finalName}</app>
-                    <port>8080</port>
-                    <!-- This sets the context root, e.g. http://localhost:8080/test/ -->
-                    <contextRoot>test</contextRoot>
-                    <!-- This deletes the temporary files during GlassFish shutdown. -->
-                    <autoDelete>true</autoDelete>
-                </configuration>
-                <executions>
-                    <execution>
-                        <id>start</id>
-                        <!-- We implement the integration testing by setting up our GlassFish instance to start and deploy our application. -->
-                        <phase>pre-integration-test</phase>
-                        <goals>
-                            <goal>start</goal>
-                            <goal>deploy</goal>
-                        </goals>
-                    </execution>
-                    <execution>
-                        <id>stop</id>
-                        <!-- After integration testing we undeploy the application and shutdown GlassFish gracefully. -->
-                        <phase>post-integration-test</phase>
-                        <goals>
-                            <goal>undeploy</goal>
-                            <goal>stop</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>animal-sniffer-maven-plugin</artifactId>
                 <version>${animal.sniffer.plugin.version}</version>
