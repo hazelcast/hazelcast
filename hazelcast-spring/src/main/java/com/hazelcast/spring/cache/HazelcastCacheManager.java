@@ -43,6 +43,7 @@ public class HazelcastCacheManager implements CacheManager {
         this.hazelcastInstance = hazelcastInstance;
     }
 
+    @Override
     public Cache getCache(String name) {
         Cache cache = caches.get(name);
         if (cache == null) {
@@ -56,6 +57,7 @@ public class HazelcastCacheManager implements CacheManager {
         return cache;
     }
 
+    @Override
     public Collection<String> getCacheNames() {
         Set<String> cacheNames = new HashSet<String>();
         final Collection<DistributedObject> distributedObjects = hazelcastInstance.getDistributedObjects();

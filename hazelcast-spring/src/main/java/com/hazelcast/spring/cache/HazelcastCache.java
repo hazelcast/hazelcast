@@ -38,14 +38,17 @@ public class HazelcastCache implements Cache {
         this.map = map;
     }
 
+    @Override
     public String getName() {
         return map.getName();
     }
 
+    @Override
     public Object getNativeCache() {
         return map;
     }
 
+    @Override
     public ValueWrapper get(final Object key) {
         if (key == null) {
             return null;
@@ -62,6 +65,7 @@ public class HazelcastCache implements Cache {
         return (T) value;
     }
 
+    @Override
     public void put(final Object key, final Object value) {
         if (key != null) {
             map.set(key, toStoreValue(value));
@@ -82,12 +86,14 @@ public class HazelcastCache implements Cache {
         return value;
     }
 
+    @Override
     public void evict(final Object key) {
         if (key != null) {
             map.delete(key);
         }
     }
 
+    @Override
     public void clear() {
         map.clear();
     }
@@ -98,9 +104,11 @@ public class HazelcastCache implements Cache {
     }
 
     static final class NullDataSerializable implements DataSerializable {
+        @Override
         public void writeData(final ObjectDataOutput out) throws IOException {
         }
 
+        @Override
         public void readData(final ObjectDataInput in) throws IOException {
         }
 

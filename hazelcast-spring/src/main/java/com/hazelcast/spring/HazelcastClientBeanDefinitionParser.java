@@ -70,6 +70,7 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
 
     private static final int INITIAL_CAPACITY = 10;
 
+    @Override
     protected AbstractBeanDefinition parseInternal(Element element, ParserContext parserContext) {
         final SpringXmlBuilder springXmlBuilder = new SpringXmlBuilder(parserContext);
         springXmlBuilder.handleClient(element);
@@ -318,10 +319,6 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
             }
             return listeners;
         }
-
-
     }
-
-
 }
 

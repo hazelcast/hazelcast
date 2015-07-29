@@ -38,6 +38,7 @@ public class HazelcastTypeBeanDefinitionParser extends AbstractHazelcastBeanDefi
         this.methodName = "get" + Character.toUpperCase(type.charAt(0)) + type.substring(1);
     }
 
+    @Override
     protected AbstractBeanDefinition parseInternal(Element element, ParserContext parserContext) {
         final SpringXmlBuilder springXmlBuilder = new SpringXmlBuilder(parserContext);
         springXmlBuilder.handle(element);

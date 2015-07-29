@@ -33,6 +33,7 @@ public class SpringManagedContext implements ManagedContext, ApplicationContextA
     public SpringManagedContext() {
     }
 
+    @Override
     public Object initialize(Object obj) {
         Object resultObject = obj;
         if (obj != null) {
@@ -63,6 +64,7 @@ public class SpringManagedContext implements ManagedContext, ApplicationContextA
         return resultObject;
     }
 
+    @Override
     public void setApplicationContext(final ApplicationContext applicationContext) throws BeansException {
         this.beanFactory = applicationContext.getAutowireCapableBeanFactory();
     }

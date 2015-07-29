@@ -43,6 +43,7 @@ public class RegionFactoryBeanDefinitionParser extends AbstractBeanDefinitionPar
     private static final String CACHE_REGION_FACTORY = "com.hazelcast.hibernate.HazelcastCacheRegionFactory";
     private static final String LOCAL_CACHE_REGION_FACTORY = "com.hazelcast.hibernate.HazelcastLocalCacheRegionFactory";
 
+    @Override
     protected AbstractBeanDefinition parseInternal(Element element, ParserContext parserContext) {
         final NamedNodeMap atts = element.getAttributes();
         String instanceRefName = "instance";
