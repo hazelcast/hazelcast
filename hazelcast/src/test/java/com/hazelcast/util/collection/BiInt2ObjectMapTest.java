@@ -21,6 +21,7 @@ import com.hazelcast.util.collection.BiInt2ObjectMap.EntryConsumer;
 import com.hazelcast.util.function.Consumer;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
+import org.hamcrest.core.CombinableMatcher;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -45,7 +46,8 @@ public class BiInt2ObjectMapTest {
         final double loadFactor = 0.6;
         final BiInt2ObjectMap<String> map = new BiInt2ObjectMap<String>(initialCapacity, loadFactor);
 
-        assertThat(map.capacity(), either(is(initialCapacity)).or(greaterThan(initialCapacity)));
+        CombinableMatcher.CombinableEitherMatcher<Integer> either = either(is(initialCapacity));
+        assertThat(map.capacity(), either.or(greaterThan(initialCapacity)));
         assertThat(map.loadFactor(), is(loadFactor));
     }
 
