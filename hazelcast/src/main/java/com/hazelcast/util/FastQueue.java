@@ -21,7 +21,7 @@ public final class FastQueue<E> extends AbstractQueue<E> implements BlockingQueu
     private final static Node BLOCKED = new Node();
 
     private final Thread owningThread;
-    private final AtomicReference<Node> head = new AtomicReference<Node>();
+    private final PaddedAtomicReference<Node> head = new PaddedAtomicReference<Node>();
     private final boolean spin;
     private Object[] array;
     private int index = -1;
@@ -50,7 +50,7 @@ public final class FastQueue<E> extends AbstractQueue<E> implements BlockingQueu
             throw new IllegalArgumentException("value can't be null");
         }
 
-        AtomicReference<Node> head = this.head;
+        PaddedAtomicReference<Node> head = this.head;
         Node newHead = new Node();
         newHead.value = value;
 
@@ -136,7 +136,7 @@ public final class FastQueue<E> extends AbstractQueue<E> implements BlockingQueu
     }
 
     public void takeAll() throws InterruptedException {
-        AtomicReference<Node> head = this.head;
+        PaddedAtomicReference<Node> head = this.head;
         for (; ; ) {
             Node currentHead = head.get();
 
@@ -167,7 +167,7 @@ public final class FastQueue<E> extends AbstractQueue<E> implements BlockingQueu
     }
 
     public boolean pollAll() {
-        AtomicReference<Node> head = this.head;
+        PaddedAtomicReference<Node> head = this.head;
         for (; ; ) {
             Node headNode = head.get();
             if (headNode == null) {
