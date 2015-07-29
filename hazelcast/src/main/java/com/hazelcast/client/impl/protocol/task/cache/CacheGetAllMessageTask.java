@@ -28,7 +28,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.OperationFactory;
 
 import javax.cache.expiry.ExpiryPolicy;
-import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -51,7 +51,7 @@ public class CacheGetAllMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return CacheGetAllCodec.encodeResponse((Map<Data, Data>) response);
+        return CacheGetAllCodec.encodeResponse((Set<Map.Entry<Data, Data>>) response);
     }
 
     @Override
@@ -64,12 +64,12 @@ public class CacheGetAllMessageTask
 
     @Override
     protected Object reduce(Map<Integer, Object> map) {
-        Map<Data, Data> reducedMap = new HashMap<Data, Data>(map.size());
+        Set<Map.Entry<Data, Data>> reducedMap = new HashSet<Map.Entry<Data, Data>>(map.size());
         for (Map.Entry<Integer, Object> entry : map.entrySet()) {
             MapEntrySet mapEntrySet = (MapEntrySet) nodeEngine.toObject(entry.getValue());
             Set<Map.Entry<Data, Data>> entrySet = mapEntrySet.getEntrySet();
             for (Map.Entry<Data, Data> dataEntry : entrySet) {
-                reducedMap.put(dataEntry.getKey(), dataEntry.getValue());
+                reducedMap.add(dataEntry);
             }
         }
         return reducedMap;

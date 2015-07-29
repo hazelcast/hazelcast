@@ -33,6 +33,7 @@ import com.hazelcast.spi.Operation;
 import java.security.Permission;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 
 /**
  * Client Protocol Task for handling messages with type id:
@@ -59,7 +60,7 @@ public class MultiMapRemoveMessageTask
     protected ClientMessage encodeResponse(Object response) {
         MultiMapResponse multiMapResponse = (MultiMapResponse) response;
         Collection<MultiMapRecord> collection = multiMapResponse.getCollection();
-        Collection<Data> resultCollection = new ArrayList<Data>(collection.size());
+        List<Data> resultCollection = new ArrayList<Data>(collection.size());
         for (MultiMapRecord multiMapRecord : collection) {
             resultCollection.add(serializationService.toData(multiMapRecord.getObject()));
         }

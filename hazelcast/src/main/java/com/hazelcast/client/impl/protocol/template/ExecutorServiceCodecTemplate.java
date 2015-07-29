@@ -19,6 +19,7 @@ package com.hazelcast.client.impl.protocol.template;
 import com.hazelcast.annotation.GenerateCodec;
 import com.hazelcast.annotation.Request;
 import com.hazelcast.client.impl.protocol.ResponseMessageConst;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 
 @GenerateCodec(id = TemplateConstants.EXECUTOR_TEMPLATE_ID,
@@ -41,5 +42,5 @@ public interface ExecutorServiceCodecTemplate {
     void submitToPartition(String name, String uuid, Data callable, int partitionId);
 
     @Request(id = 6, retryable = false, response = ResponseMessageConst.DATA)
-    void submitToAddress(String name, String uuid, Data callable, String hostname, int port);
+    void submitToAddress(String name, String uuid, Data callable, Address address);
 }

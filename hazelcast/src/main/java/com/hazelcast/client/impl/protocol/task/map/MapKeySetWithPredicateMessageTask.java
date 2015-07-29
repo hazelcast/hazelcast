@@ -24,9 +24,9 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.QueryResultEntry;
 
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 public class MapKeySetWithPredicateMessageTask
         extends AbstractMapQueryMessageTask<MapKeySetWithPredicateCodec.RequestParameters> {
@@ -37,11 +37,11 @@ public class MapKeySetWithPredicateMessageTask
 
     @Override
     protected Object reduce(Collection<QueryResultEntry> result) {
-        List<Data> keys = new ArrayList<Data>(result.size());
+        Set<Data> set = new HashSet<Data>(result.size());
         for (QueryResultEntry resultEntry : result) {
-            keys.add(resultEntry.getKeyData());
+            set.add(resultEntry.getKeyData());
         }
-        return keys;
+        return set;
     }
 
     @Override
@@ -56,7 +56,7 @@ public class MapKeySetWithPredicateMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return MapKeySetWithPredicateCodec.encodeResponse((Collection<Data>) response);
+        return MapKeySetWithPredicateCodec.encodeResponse((Set<Data>) response);
     }
 
     @Override

@@ -44,7 +44,7 @@ public class MapGetAllMessageTask
 
     @Override
     protected OperationFactory createOperationFactory() {
-        return new MapGetAllOperationFactory(parameters.name, (Set<Data>) parameters.keys);
+        return new MapGetAllOperationFactory(parameters.name, parameters.keys);
     }
 
     @Override
@@ -58,7 +58,7 @@ public class MapGetAllMessageTask
                 dataMap.put(dataEntry.getKey(), dataEntry.getValue());
             }
         }
-        return dataMap;
+        return dataMap.entrySet();
     }
 
     @Override
@@ -73,7 +73,7 @@ public class MapGetAllMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return MapGetAllCodec.encodeResponse((Map<Data, Data>) response);
+        return MapGetAllCodec.encodeResponse((Set<Map.Entry<Data, Data>>) response);
     }
 
     @Override

@@ -59,7 +59,7 @@ public class ReplicatedMapValuesMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return ReplicatedMapValuesCodec.encodeResponse((Collection<Data>) response);
+        return ReplicatedMapValuesCodec.encodeResponse((List<Data>) response);
     }
 
     @Override

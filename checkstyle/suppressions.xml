@@ -219,7 +219,7 @@
     <suppress checks="" files="com/hazelcast/client/impl/protocol/.*Parameters"/>
     <suppress checks="" files="com/hazelcast/client/impl/protocol/.*Codec"/>
     <suppress checks="" files="com/hazelcast/client/impl/protocol/template/.*Template*"/>
-    <suppress checks="CyclomaticComplexity" files="com/hazelcast/client/protocol/generator/CodecModel"/>
+    <suppress checks="" files="com/hazelcast/client/protocol/generator/*"/>
     <suppress checks="" files="com/hazelcast/client/impl/protocol/.*Const"/>
     <suppress checks="MethodCount" files="com/hazelcast/client/impl/protocol/parameters/MapTemplate"/>
     <suppress checks="MethodCount" files="com/hazelcast/client/impl/protocol/parameters/CacheTemplate"/>

@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
+import com.hazelcast.annotation.Codec;
 import com.hazelcast.cache.impl.CacheEventData;
 import com.hazelcast.cache.impl.CacheEventDataImpl;
 import com.hazelcast.cache.impl.CacheEventType;
@@ -24,6 +25,7 @@ import com.hazelcast.client.impl.protocol.util.ParameterUtil;
 import com.hazelcast.nio.Bits;
 import com.hazelcast.nio.serialization.Data;
 
+@Codec(CacheEventData.class)
 public final class CacheEventDataCodec {
 
     private CacheEventDataCodec() {
@@ -71,7 +73,7 @@ public final class CacheEventDataCodec {
 
     public static int calculateDataSize(CacheEventData cacheEventData) {
         int dataSize = Bits.INT_SIZE_IN_BYTES;
-        dataSize += ParameterUtil.calculateStringDataSize(cacheEventData.getName());
+        dataSize += ParameterUtil.calculateDataSize(cacheEventData.getName());
         dataSize += ParameterUtil.calculateDataSize(cacheEventData.getDataKey());
         Data dataValue = cacheEventData.getDataValue();
         if (dataValue == null) {

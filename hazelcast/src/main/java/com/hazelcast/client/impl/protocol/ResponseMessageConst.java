@@ -34,15 +34,12 @@ public final class ResponseMessageConst {
     public static final int STRING = 104;
     public static final int DATA = 105;
     public static final int LIST_DATA = 106;
-    public static final int MAP_INT_DATA = 107;
-    public static final int MAP_DATA_DATA = 108;
-    public static final int AUTHENTICATION = 109;
-    public static final int PARTITIONS = 110;
-    public static final int EXCEPTION = 111;
-    public static final int DISTRIBUTED_OBJECT = 112;
-    public static final int ENTRY_VIEW = 113;
-    public static final int JOB_PROCESS_INFO = 114;
-    public static final int SET_DATA = 115;
-    public static final int SET_ENTRY = 116;
-    public static final int MAP_INT_BOOLEAN = 117;
+    public static final int AUTHENTICATION = 107;
+    public static final int PARTITIONS = 108;
+    public static final int EXCEPTION = 109;
+    public static final int DISTRIBUTED_OBJECT = 110;
+    public static final int ENTRY_VIEW = 111;
+    public static final int JOB_PROCESS_INFO = 112;
+    public static final int SET_DATA = 113;
+    public static final int SET_ENTRY = 114;
 }

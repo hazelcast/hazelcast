@@ -74,13 +74,13 @@ public interface ReplicatedMapCodecTemplate {
     @Request(id = 14, retryable = false, response = ResponseMessageConst.BOOLEAN)
     void removeEntryListener(String name, String registrationId);
 
-    @Request(id = 15, retryable = true, response = ResponseMessageConst.LIST_DATA)
+    @Request(id = 15, retryable = true, response = ResponseMessageConst.SET_DATA)
     void keySet(String name);
 
     @Request(id = 16, retryable = true, response = ResponseMessageConst.LIST_DATA)
     void values(String name);
 
-    @Request(id = 17, retryable = true, response = ResponseMessageConst.MAP_DATA_DATA)
+    @Request(id = 17, retryable = true, response = ResponseMessageConst.SET_ENTRY)
     void entrySet(String name);
 
     @Request(id = 18, retryable = true, response = ResponseMessageConst.STRING, event = EventMessageConst.EVENT_ENTRY)

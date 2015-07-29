@@ -27,6 +27,7 @@ import com.hazelcast.query.impl.QueryResultEntry;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 public class MapEntriesWithPredicateMessageTask
         extends AbstractMapQueryMessageTask<MapEntriesWithPredicateCodec.RequestParameters> {
@@ -41,7 +42,7 @@ public class MapEntriesWithPredicateMessageTask
         for (QueryResultEntry resultEntry : result) {
             map.put(resultEntry.getKeyData(), resultEntry.getValueData());
         }
-        return map;
+        return map.entrySet();
     }
 
     @Override
@@ -56,7 +57,7 @@ public class MapEntriesWithPredicateMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return MapEntriesWithPredicateCodec.encodeResponse((Map<Data, Data>) response);
+        return MapEntriesWithPredicateCodec.encodeResponse((Set<Map.Entry<Data, Data>>) response);
     }
 
     @Override

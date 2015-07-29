@@ -30,7 +30,6 @@ import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.transaction.TransactionContext;
 
 import java.security.Permission;
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -48,11 +47,11 @@ public class TransactionalMapKeySetWithPredicateMessageTask
 
         Predicate predicate = serializationService.toObject(parameters.predicate);
         Set keySet = map.keySet(predicate);
-        Collection<Data> list = new HashSet<Data>(keySet.size());
+        Set<Data> set = new HashSet<Data>(keySet.size());
         for (Object o : keySet) {
-            list.add(serializationService.toData(o));
+            set.add(serializationService.toData(o));
         }
-        return list;
+        return set;
     }
 
     @Override
@@ -67,7 +66,7 @@ public class TransactionalMapKeySetWithPredicateMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return TransactionalMapKeySetWithPredicateCodec.encodeResponse((Collection<Data>) response);
+        return TransactionalMapKeySetWithPredicateCodec.encodeResponse((Set<Data>) response);
     }
 
     @Override

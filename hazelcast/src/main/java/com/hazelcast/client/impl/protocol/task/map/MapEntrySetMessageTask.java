@@ -30,7 +30,7 @@ import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.OperationFactory;
 
 import java.security.Permission;
-import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -48,12 +48,12 @@ public class MapEntrySetMessageTask
 
     @Override
     protected Object reduce(Map<Integer, Object> map) {
-        HashMap<Data, Data> dataMap = new HashMap<Data, Data>();
+        Set<Map.Entry<Data, Data>> dataMap = new HashSet<Map.Entry<Data, Data>>();
         MapService service = getService(MapService.SERVICE_NAME);
         for (Object result : map.values()) {
             Set<Map.Entry<Data, Data>> entries = ((MapEntrySet) service.getMapServiceContext().toObject(result)).getEntrySet();
             for (Map.Entry<Data, Data> entry : entries) {
-                dataMap.put(entry.getKey(), entry.getValue());
+                dataMap.add(entry);
             }
         }
         return dataMap;
@@ -66,7 +66,7 @@ public class MapEntrySetMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return MapEntrySetCodec.encodeResponse((Map<Data, Data>) response);
+        return MapEntrySetCodec.encodeResponse((Set<Map.Entry<Data, Data>>) response);
     }
 
     @Override

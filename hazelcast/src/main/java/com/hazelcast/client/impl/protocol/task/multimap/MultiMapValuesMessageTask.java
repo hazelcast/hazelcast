@@ -78,7 +78,7 @@ public class MultiMapValuesMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return MultiMapValuesCodec.encodeResponse((Collection<Data>) response);
+        return MultiMapValuesCodec.encodeResponse((List<Data>) response);
     }
 
     @Override

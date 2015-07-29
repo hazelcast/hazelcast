@@ -16,10 +16,12 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
+import com.hazelcast.annotation.Codec;
 import com.hazelcast.client.impl.client.DistributedObjectInfo;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.util.ParameterUtil;
 
+@Codec(DistributedObjectInfo.class)
 public final class DistributedObjectInfoCodec {
 
     private DistributedObjectInfoCodec() {
@@ -38,8 +40,8 @@ public final class DistributedObjectInfoCodec {
     }
 
     public static int calculateDataSize(DistributedObjectInfo info) {
-        return ParameterUtil.calculateStringDataSize(info.getServiceName())
-                + ParameterUtil.calculateStringDataSize(info.getName());
+        return ParameterUtil.calculateDataSize(info.getServiceName())
+                + ParameterUtil.calculateDataSize(info.getName());
     }
 }
 

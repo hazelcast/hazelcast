@@ -22,7 +22,7 @@ import com.hazelcast.client.impl.protocol.EventMessageConst;
 import com.hazelcast.client.impl.protocol.ResponseMessageConst;
 import com.hazelcast.nio.serialization.Data;
 
-import java.util.Collection;
+import java.util.Set;
 
 @GenerateCodec(id = TemplateConstants.QUEUE_TEMPLATE_ID, name = "Queue", ns = "Hazelcast.Client.Protocol.Queue")
 public interface QueueCodecTemplate {
@@ -61,22 +61,22 @@ public interface QueueCodecTemplate {
     void contains(String name, Data value);
 
     @Request(id = 12, retryable = false, response = ResponseMessageConst.BOOLEAN)
-    void containsAll(String name, Collection<Data> dataList);
+    void containsAll(String name, Set<Data> dataList);
 
     @Request(id = 13, retryable = false, response = ResponseMessageConst.BOOLEAN)
-    void compareAndRemoveAll(String name, Collection<Data> dataList);
+    void compareAndRemoveAll(String name, Set<Data> dataList);
 
     @Request(id = 14, retryable = false, response = ResponseMessageConst.BOOLEAN)
-    void compareAndRetainAll(String name, Collection<Data> dataList);
+    void compareAndRetainAll(String name, Set<Data> dataList);
 
     @Request(id = 15, retryable = false, response = ResponseMessageConst.VOID)
     void clear(String name);
 
     @Request(id = 16, retryable = false, response = ResponseMessageConst.BOOLEAN)
-    void addAll(String name, Collection<Data> dataList);
+    void addAll(String name, Set<Data> dataList);
 
     @Request(id = 17, retryable = true, response = ResponseMessageConst.STRING,
-            event = {EventMessageConst.EVENT_ITEM})
+             event = {EventMessageConst.EVENT_ITEM})
     void addListener(String name, boolean includeValue);
 
     @Request(id = 18, retryable = false, response = ResponseMessageConst.BOOLEAN)

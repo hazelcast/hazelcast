@@ -20,12 +20,15 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapReduceJobProcessInformationCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.instance.Node;
+import com.hazelcast.mapreduce.JobPartitionState;
 import com.hazelcast.mapreduce.JobProcessInformation;
 import com.hazelcast.mapreduce.impl.MapReduceService;
 import com.hazelcast.mapreduce.impl.task.JobSupervisor;
 import com.hazelcast.nio.Connection;
 
 import java.security.Permission;
+import java.util.Arrays;
+import java.util.List;
 
 public class MapReduceJobProcessInformationMessageTask
         extends AbstractCallableMessageTask<MapReduceJobProcessInformationCodec.RequestParameters> {
@@ -35,18 +38,18 @@ public class MapReduceJobProcessInformationMessageTask
     }
 
     @Override
-    protected Object call() throws Exception {
+    protected Object call()
+            throws Exception {
         MapReduceService mapReduceService = getService(MapReduceService.SERVICE_NAME);
         JobSupervisor supervisor = mapReduceService.getJobSupervisor(parameters.name, parameters.jobId);
 
         if (supervisor != null && supervisor.getJobProcessInformation() != null) {
             JobProcessInformation current = supervisor.getJobProcessInformation();
-
-            return MapReduceJobProcessInformationCodec.encodeResponse(current.getPartitionStates(),
-                    current.getProcessedRecords());
+            List<JobPartitionState> jobPartitionStates = Arrays.asList(current.getPartitionStates());
+            return MapReduceJobProcessInformationCodec.encodeResponse(jobPartitionStates, current.getProcessedRecords());
         }
-        throw new IllegalStateException("Information not found for map reduce with name : "
-                + parameters.name + ", job id : " + parameters.jobId);
+        throw new IllegalStateException(
+                "Information not found for map reduce with name : " + parameters.name + ", job id : " + parameters.jobId);
     }
 
     @Override

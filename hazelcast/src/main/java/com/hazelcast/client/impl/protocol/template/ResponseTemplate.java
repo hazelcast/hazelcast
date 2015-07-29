@@ -26,7 +26,6 @@ import com.hazelcast.mapreduce.JobPartitionState;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -58,34 +57,29 @@ public interface ResponseTemplate {
     @Response(ResponseMessageConst.LIST_DATA)
     void ListData(List<Data> list);
 
-    @Response(ResponseMessageConst.MAP_DATA_DATA)
-    void MapDataData(Map<Data, Data> map);
+    @Response(ResponseMessageConst.SET_DATA)
+    void SetData(Set<Data> set);
 
-    @Response(ResponseMessageConst.MAP_INT_DATA)
-    void MapIntData(Map<Integer, Data> map);
+    @Response(ResponseMessageConst.SET_ENTRY)
+    void SetEntry(Set<Map.Entry<Data, Data>> entrySet);
 
     @Response(ResponseMessageConst.AUTHENTICATION)
     void Authentication(Address address, String uuid, String ownerUuid);
 
     @Response(ResponseMessageConst.PARTITIONS)
-    void Partitions(Address[] members, int[] ownerIndexes);
+    void Partitions(Map<Address, Set<Integer>> partitions);
 
     @Response(ResponseMessageConst.DISTRIBUTED_OBJECT)
-    void DistributedObject(Collection<DistributedObjectInfo> infoCollection);
+    void DistributedObject(Set<DistributedObjectInfo> infoCollection);
 
     @Response(ResponseMessageConst.ENTRY_VIEW)
     void EntryView(@Nullable SimpleEntryView<Data, Data> dataEntryView);
 
     @Response(ResponseMessageConst.JOB_PROCESS_INFO)
-    void JobProcessInfo(JobPartitionState[] jobPartitionStates, int processRecords);
+    void JobProcessInfo(List<JobPartitionState> jobPartitionStates, int processRecords);
 
-    @Response(ResponseMessageConst.SET_DATA)
-    void SetData(Set<Data> list);
-
-    @Response(ResponseMessageConst.SET_ENTRY)
-    void SetEntry(List<Data> keys, List<Data> values);
-
-    @Response(ResponseMessageConst.MAP_INT_BOOLEAN)
-    void MapIntBoolean(Map<Integer, Boolean> map);
+    //FIXME review this one
+    @Response(ResponseMessageConst.EXCEPTION)
+    void Exception(int error, String className, String causeClassName, String message, String stacktrace);
 
 }

@@ -29,7 +29,7 @@ import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.OperationFactory;
 
 import java.security.Permission;
-import java.util.List;
+import java.util.Arrays;
 import java.util.Map;
 
 public class MapLoadGivenKeysMessageTask
@@ -41,7 +41,8 @@ public class MapLoadGivenKeysMessageTask
 
     @Override
     protected OperationFactory createOperationFactory() {
-        return new MapLoadAllOperationFactory(parameters.name, (List<Data>) parameters.keys, parameters.replaceExistingValues);
+        Data[] keys = parameters.keys.toArray(new Data[0]);
+        return new MapLoadAllOperationFactory(parameters.name, Arrays.asList(keys), parameters.replaceExistingValues);
     }
 
     @Override

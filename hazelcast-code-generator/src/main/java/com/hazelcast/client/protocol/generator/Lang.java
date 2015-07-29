@@ -29,10 +29,20 @@ public enum Lang {
     /**
      * C# lang
      */
-    CSHARP,
+    CS,
 
     /**
      *C++ lang
      */
-    CPP
+    CPP,
+
+    /**
+     *PYTHON lang
+     */
+    PY,
+
+    /**
+     * Binary Protocol Document representing a human readable document in English
+     */
+    MD
 }

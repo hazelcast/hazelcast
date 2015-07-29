@@ -16,18 +16,20 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
+import com.hazelcast.annotation.Codec;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.util.ParameterUtil;
 import com.hazelcast.map.impl.SimpleEntryView;
 import com.hazelcast.nio.Bits;
 import com.hazelcast.nio.serialization.Data;
 
+@Codec(SimpleEntryView.class)
 public final class EntryViewCodec {
 
     private EntryViewCodec() {
     }
 
-    public static SimpleEntryView decode(ClientMessage clientMessage) {
+    public static SimpleEntryView<Data, Data> decode(ClientMessage clientMessage) {
         SimpleEntryView<Data, Data> dataEntryView = new SimpleEntryView<Data, Data>();
         dataEntryView.setKey(clientMessage.getData());
         dataEntryView.setValue(clientMessage.getData());
@@ -57,7 +59,6 @@ public final class EntryViewCodec {
         long version = dataEntryView.getVersion();
         long ttl = dataEntryView.getTtl();
         long evictionCriteriaNumber = dataEntryView.getEvictionCriteriaNumber();
-
 
         clientMessage.set(key).set(value).set(cost).set(creationTime).set(expirationTime)
                 .set(hits).set(lastAccessTime).set(lastStoredTime).set(lastUpdateTime)

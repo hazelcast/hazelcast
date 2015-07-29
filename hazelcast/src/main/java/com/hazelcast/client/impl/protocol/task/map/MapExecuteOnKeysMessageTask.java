@@ -49,7 +49,7 @@ public class MapExecuteOnKeysMessageTask
     @Override
     protected OperationFactory createOperationFactory() {
         EntryProcessor entryProcessor = serializationService.toObject(parameters.entryProcessor);
-        return new MultipleEntryOperationFactory(parameters.name, (Set<Data>) parameters.keys, entryProcessor);
+        return new MultipleEntryOperationFactory(parameters.name, parameters.keys, entryProcessor);
     }
 
     @Override
@@ -66,7 +66,7 @@ public class MapExecuteOnKeysMessageTask
                 }
             }
         }
-        return dataMap;
+        return dataMap.entrySet();
     }
 
     @Override
@@ -90,7 +90,7 @@ public class MapExecuteOnKeysMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return MapExecuteOnKeysCodec.encodeResponse((Map<Data, Data>) response);
+        return MapExecuteOnKeysCodec.encodeResponse((Set<Map.Entry<Data, Data>>) response);
     }
 
 

@@ -463,8 +463,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         checkNotNull(task, "task should not be null");
 
         String uuid = getUUID();
-        ClientMessage request = ExecutorServiceSubmitToAddressCodec.encodeRequest(name, uuid, toData(task),
-                address.getHost(), address.getPort());
+        ClientMessage request = ExecutorServiceSubmitToAddressCodec.encodeRequest(name, uuid, toData(task), address);
         ClientInvocationFuture f = invokeOnTarget(request, address);
         return checkSync(f, uuid, address, preventSync, defaultValue);
     }
@@ -473,8 +472,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         checkNotNull(task, "task should not be null");
 
         String uuid = getUUID();
-        ClientMessage request = ExecutorServiceSubmitToAddressCodec.encodeRequest(name, uuid, toData(task),
-                address.getHost(), address.getPort());
+        ClientMessage request = ExecutorServiceSubmitToAddressCodec.encodeRequest(name, uuid, toData(task), address);
         ClientInvocationFuture f = invokeOnTarget(request, address);
         SerializationService serializationService = getContext().getSerializationService();
         ClientDelegatingFuture<T> delegatingFuture =

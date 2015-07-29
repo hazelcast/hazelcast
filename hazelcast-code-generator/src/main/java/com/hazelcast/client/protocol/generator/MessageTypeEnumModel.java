@@ -26,8 +26,10 @@ import javax.lang.model.element.TypeElement;
 import java.util.LinkedList;
 import java.util.List;
 
-public class MessageTypeEnumModel {
+public class MessageTypeEnumModel
+        implements Model {
 
+    private Lang lang;
     private String name;
     private String className;
     private String packageName;
@@ -36,6 +38,7 @@ public class MessageTypeEnumModel {
 
     public MessageTypeEnumModel(TypeElement classElement, Lang lang) {
         try {
+            this.lang = lang;
             name = classElement.getAnnotation(GenerateCodec.class).name();
             className = CodeGenerationUtils.capitalizeFirstLetter(name) + "MessageType";
             packageName = "com.hazelcast.client.impl.protocol.codec";
@@ -65,18 +68,26 @@ public class MessageTypeEnumModel {
         }
     }
 
+    @Override
     public boolean isEmpty() {
         return params.isEmpty();
     }
 
+    public Lang getLang() {
+        return lang;
+    }
+
+    @Override
     public String getName() {
         return name;
     }
 
+    @Override
     public String getClassName() {
         return className;
     }
 
+    @Override
     public String getPackageName() {
         return packageName;
     }

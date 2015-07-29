@@ -30,7 +30,7 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.SerializableList;
 
 import java.security.Permission;
-import java.util.Collection;
+import java.util.List;
 
 /**
  * Client Protocol Task for handling messages with type id:
@@ -71,7 +71,7 @@ public class QueueDrainMessageTask
     @Override
     protected ClientMessage encodeResponse(Object response) {
         SerializableList serializableList = (SerializableList) response;
-        Collection<Data> coll = serializableList.getCollection();
+        List<Data> coll = serializableList.getCollection();
         return QueueDrainToCodec.encodeResponse(coll);
     }
 

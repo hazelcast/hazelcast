@@ -56,7 +56,7 @@ public class MapValuesWithPredicateMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return MapValuesWithPredicateCodec.encodeResponse((Collection<Data>) response);
+        return MapValuesWithPredicateCodec.encodeResponse((List<Data>) response);
     }
 
     @Override

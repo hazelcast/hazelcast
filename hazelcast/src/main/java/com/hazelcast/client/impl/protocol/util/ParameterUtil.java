@@ -19,21 +19,35 @@ package com.hazelcast.client.impl.protocol.util;
 import com.hazelcast.nio.Bits;
 import com.hazelcast.nio.serialization.Data;
 
+import java.util.Map;
+
 public final class ParameterUtil {
 
-    private static final int UTF8_MAX_BYTES_PER_CHAR = 4;
+    private static final int UTF8_MAX_BYTES_PER_CHAR = 3;
 
     private ParameterUtil() { }
 
-    public static int calculateStringDataSize(String string) {
+    public static int calculateDataSize(String string) {
         return Bits.INT_SIZE_IN_BYTES + string.length() * UTF8_MAX_BYTES_PER_CHAR;
     }
 
-    public static int calculateByteArrayDataSize(byte[] bytes) {
+    public static int calculateDataSize(Data data) {
+        return calculateDataSize(data.toByteArray());
+    }
+
+    public static int calculateDataSize(Map.Entry<Data, Data> entry) {
+        return calculateDataSize(entry.getKey().toByteArray()) + calculateDataSize(entry.getValue().toByteArray());
+    }
+
+    public static int calculateDataSize(byte[] bytes) {
         return Bits.INT_SIZE_IN_BYTES + bytes.length;
     }
 
-    public static int calculateDataSize(Data key) {
-        return calculateByteArrayDataSize(key.toByteArray());
+    public static int calculateDataSize(Integer data) {
+        return Bits.INT_SIZE_IN_BYTES;
+    }
+
+    public static int calculateDataSize(Boolean data) {
+        return Bits.BOOLEAN_SIZE_IN_BYTES;
     }
 }

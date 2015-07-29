@@ -28,10 +28,10 @@ import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.impl.DefaultData;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.ListenerWrapperEventFilter;
 import com.hazelcast.spi.NotifiableEventListener;
-import com.hazelcast.nio.serialization.impl.DefaultData;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.Serializable;

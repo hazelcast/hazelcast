@@ -50,7 +50,8 @@ import java.util.concurrent.ExecutionException;
 
 import static com.hazelcast.mapreduce.impl.MapReduceUtil.executeOperation;
 
-public abstract class AbstractMapReduceTask<Parameters> extends AbstractMessageTask<Parameters>
+public abstract class AbstractMapReduceTask<Parameters>
+        extends AbstractMessageTask<Parameters>
         implements ExecutionCallback {
 
     public AbstractMapReduceTask(ClientMessage clientMessage, Node node, Connection connection) {
@@ -62,8 +63,7 @@ public abstract class AbstractMapReduceTask<Parameters> extends AbstractMessageT
         MapReduceService mapReduceService = getService(MapReduceService.SERVICE_NAME);
         NodeEngine nodeEngine = mapReduceService.getNodeEngine();
         final String objectName = getDistributedObjectName();
-        AbstractJobTracker jobTracker = (AbstractJobTracker)
-                mapReduceService.createDistributedObject(objectName);
+        AbstractJobTracker jobTracker = (AbstractJobTracker) mapReduceService.createDistributedObject(objectName);
         TrackableJobFuture jobFuture = new TrackableJobFuture(objectName, getJobId(), jobTracker, nodeEngine, null);
         if (jobTracker.registerTrackableJob(jobFuture)) {
             startSupervisionTask(jobTracker);
@@ -89,7 +89,6 @@ public abstract class AbstractMapReduceTask<Parameters> extends AbstractMessageT
 
     protected abstract KeyPredicate getPredicate();
 
-
     private void startSupervisionTask(JobTracker jobTracker) {
         MapReduceService mapReduceService = getService(MapReduceService.SERVICE_NAME);
 
@@ -104,8 +103,7 @@ public abstract class AbstractMapReduceTask<Parameters> extends AbstractMessageT
         if (topologyChangedStrategyStr == null) {
             topologyChangedStrategy = config.getTopologyChangedStrategy();
         } else {
-            topologyChangedStrategy =
-                    TopologyChangedStrategy.valueOf(topologyChangedStrategyStr.toUpperCase(Locale.ENGLISH));
+            topologyChangedStrategy = TopologyChangedStrategy.valueOf(topologyChangedStrategyStr.toUpperCase(Locale.ENGLISH));
         }
 
         ClusterService cs = nodeEngine.getClusterService();
@@ -130,8 +128,8 @@ public abstract class AbstractMapReduceTask<Parameters> extends AbstractMessageT
         KeyPredicate predicate = getPredicate();
 
         for (MemberImpl member : members) {
-            Operation operation = new KeyValueJobOperation(name, jobId, chunkSize, keyValueSource, mapper,
-                    combinerFactory, reducerFactory, communicateStats, topologyChangedStrategy);
+            Operation operation = new KeyValueJobOperation(name, jobId, chunkSize, keyValueSource, mapper, combinerFactory,
+                    reducerFactory, communicateStats, topologyChangedStrategy);
 
             executeOperation(operation, member.getAddress(), mapReduceService, nodeEngine);
         }
@@ -146,14 +144,13 @@ public abstract class AbstractMapReduceTask<Parameters> extends AbstractMessageT
     @Override
     public void onResponse(Object response) {
         Map<Object, Object> m = (Map<Object, Object>) response;
-        HashMap<Data, Data> hashMap = new HashMap<Data, Data>();
+        Map<Data, Data> hashMap = new HashMap<Data, Data>();
         for (Map.Entry<Object, Object> entry : m.entrySet()) {
             Data key = serializationService.toData(entry.getKey());
             Data value = serializationService.toData(entry.getValue());
             hashMap.put(key, value);
         }
-        sendResponse(hashMap);
-
+        sendResponse(hashMap.entrySet());
     }
 
     @Override

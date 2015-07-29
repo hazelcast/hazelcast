@@ -139,27 +139,27 @@ public interface MapCodecTemplate {
     void loadAll(String name, boolean replaceExistingValues);
 
     @Request(id = 37, retryable = false, response = ResponseMessageConst.VOID)
-    void loadGivenKeys(String name, List<Data> keys, boolean replaceExistingValues);
+    void loadGivenKeys(String name, Set<Data> keys, boolean replaceExistingValues);
 
-    @Request(id = 38, retryable = false, response = ResponseMessageConst.LIST_DATA)
+    @Request(id = 38, retryable = false, response = ResponseMessageConst.SET_DATA)
     void keySet(String name);
 
-    @Request(id = 39, retryable = false, response = ResponseMessageConst.MAP_DATA_DATA)
+    @Request(id = 39, retryable = false, response = ResponseMessageConst.SET_ENTRY)
     void getAll(String name, Set<Data> keys);
 
     @Request(id = 40, retryable = false, response = ResponseMessageConst.LIST_DATA)
     void values(String name);
 
-    @Request(id = 41, retryable = false, response = ResponseMessageConst.MAP_DATA_DATA)
+    @Request(id = 41, retryable = false, response = ResponseMessageConst.SET_ENTRY)
     void entrySet(String name);
 
-    @Request(id = 42, retryable = false, response = ResponseMessageConst.LIST_DATA)
+    @Request(id = 42, retryable = false, response = ResponseMessageConst.SET_DATA)
     void keySetWithPredicate(String name, Data predicate);
 
     @Request(id = 43, retryable = false, response = ResponseMessageConst.LIST_DATA)
     void valuesWithPredicate(String name, Data predicate);
 
-    @Request(id = 44, retryable = false, response = ResponseMessageConst.MAP_DATA_DATA)
+    @Request(id = 44, retryable = false, response = ResponseMessageConst.SET_ENTRY)
     void entriesWithPredicate(String name, Data predicate);
 
     @Request(id = 45, retryable = false, response = ResponseMessageConst.VOID)
@@ -183,25 +183,25 @@ public interface MapCodecTemplate {
     @Request(id = 51, retryable = false, response = ResponseMessageConst.DATA)
     void submitToKey(String name, Data entryProcessor, Data key);
 
-    @Request(id = 52, retryable = false, response = ResponseMessageConst.MAP_DATA_DATA)
+    @Request(id = 52, retryable = false, response = ResponseMessageConst.SET_ENTRY)
     void executeOnAllKeys(String name, Data entryProcessor);
 
-    @Request(id = 53, retryable = false, response = ResponseMessageConst.MAP_DATA_DATA)
+    @Request(id = 53, retryable = false, response = ResponseMessageConst.SET_ENTRY)
     void executeWithPredicate(String name, Data entryProcessor, Data predicate);
 
-    @Request(id = 54, retryable = false, response = ResponseMessageConst.MAP_DATA_DATA)
+    @Request(id = 54, retryable = false, response = ResponseMessageConst.SET_ENTRY)
     void executeOnKeys(String name, Data entryProcessor, Set<Data> keys);
 
     @Request(id = 55, retryable = false, response = ResponseMessageConst.VOID)
     void forceUnlock(String name, Data key);
 
-    @Request(id = 56, retryable = false, response = ResponseMessageConst.MAP_DATA_DATA)
+    @Request(id = 56, retryable = false, response = ResponseMessageConst.SET_DATA)
     void keySetWithPagingPredicate(String name, Data predicate);
 
-    @Request(id = 57, retryable = false, response = ResponseMessageConst.MAP_DATA_DATA)
+    @Request(id = 57, retryable = false, response = ResponseMessageConst.SET_ENTRY)
     void valuesWithPagingPredicate(String name, Data predicate);
 
-    @Request(id = 58, retryable = false, response = ResponseMessageConst.MAP_DATA_DATA)
+    @Request(id = 58, retryable = false, response = ResponseMessageConst.SET_ENTRY)
     void entriesWithPagingPredicate(String name, Data predicate);
 
 }

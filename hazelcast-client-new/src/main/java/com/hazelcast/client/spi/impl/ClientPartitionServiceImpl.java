@@ -33,6 +33,8 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.HashUtil;
 
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
@@ -42,7 +44,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 /**
  * The {@link ClientPartitionService} implementation.
  */
-public final class ClientPartitionServiceImpl implements ClientPartitionService {
+public final class ClientPartitionServiceImpl
+        implements ClientPartitionService {
 
     private static final ILogger LOGGER = Logger.getLogger(ClientPartitionService.class);
     private static final long PERIOD = 10;
@@ -117,21 +120,15 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
     }
 
     private boolean processPartitionResponse(ClientGetPartitionsCodec.ResponseParameters response) {
-        int[] ownerIndexes = response.ownerIndexes;
-        if (ownerIndexes.length == 0) {
-            return false;
-        }
-        Address[] members = response.members;
-        if (partitionCount == 0) {
-            partitionCount = ownerIndexes.length;
-        }
-        for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
-            final int ownerIndex = ownerIndexes[partitionId];
-            if (ownerIndex > -1) {
-                partitions.put(partitionId, members[ownerIndex]);
+        Map<Address, Set<Integer>> partitionResponse = response.partitions;
+        for (Map.Entry<Address, Set<Integer>> entry : partitionResponse.entrySet()) {
+            Address address = entry.getKey();
+            for (Integer partition : entry.getValue()) {
+                this.partitions.put(partition, address);
             }
         }
-        return true;
+        partitionCount = partitions.size();
+        return partitionResponse.size() > 0;
     }
 
     public void stop() {
@@ -176,7 +173,8 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
         return new PartitionImpl(partitionId);
     }
 
-    private final class PartitionImpl implements Partition {
+    private final class PartitionImpl
+            implements Partition {
 
         private final int partitionId;
 
@@ -205,7 +203,8 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
         }
     }
 
-    private class RefreshTask implements Runnable {
+    private class RefreshTask
+            implements Runnable {
 
         @Override
         public void run() {

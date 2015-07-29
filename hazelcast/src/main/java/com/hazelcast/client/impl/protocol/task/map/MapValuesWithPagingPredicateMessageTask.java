@@ -27,6 +27,7 @@ import com.hazelcast.query.impl.QueryResultEntry;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 public class MapValuesWithPagingPredicateMessageTask
         extends AbstractMapQueryMessageTask<MapValuesWithPagingPredicateCodec.RequestParameters> {
@@ -37,11 +38,12 @@ public class MapValuesWithPagingPredicateMessageTask
 
     @Override
     protected Object reduce(Collection<QueryResultEntry> result) {
-        Map<Data, Data> map = new HashMap<Data, Data>(result.size());
+        HashMap<Data, Data> map = new HashMap<Data, Data>();
         for (QueryResultEntry resultEntry : result) {
             map.put(resultEntry.getKeyData(), resultEntry.getValueData());
         }
-        return map;
+        Set<Map.Entry<Data, Data>> entries = map.entrySet();
+        return entries;
     }
 
     @Override
@@ -56,7 +58,7 @@ public class MapValuesWithPagingPredicateMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return MapValuesWithPagingPredicateCodec.encodeResponse((Map<Data, Data>) response);
+        return MapValuesWithPagingPredicateCodec.encodeResponse((Set<Map.Entry<Data, Data>>) response);
     }
 
     @Override

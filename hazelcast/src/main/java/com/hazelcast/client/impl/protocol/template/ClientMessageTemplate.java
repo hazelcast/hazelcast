@@ -33,7 +33,7 @@ public interface ClientMessageTemplate {
     void authenticationCustom(Data credentials, @Nullable String uuid, @Nullable String ownerUuid, boolean isOwnerConnection);
 
     @Request(id = 4, retryable = false, response = ResponseMessageConst.STRING,
-            event = {EventMessageConst.EVENT_MEMBER, EventMessageConst.EVENT_MEMBERLIST, EventMessageConst.EVENT_MEMBERATTRIBUTECHANGE})
+            event = {EventMessageConst.EVENT_MEMBER, EventMessageConst.EVENT_MEMBERSET, EventMessageConst.EVENT_MEMBERATTRIBUTECHANGE})
     void membershipListener();
 
     @Request(id = 5, retryable = false, response = ResponseMessageConst.VOID)

@@ -36,7 +36,8 @@ public class MapReduceCancelMessageTask
     }
 
     @Override
-    protected Object call() throws Exception {
+    protected Object call()
+            throws Exception {
 
         MapReduceService mapReduceService = getService(MapReduceService.SERVICE_NAME);
         Address jobOwner = mapReduceService.getLocalAddress();

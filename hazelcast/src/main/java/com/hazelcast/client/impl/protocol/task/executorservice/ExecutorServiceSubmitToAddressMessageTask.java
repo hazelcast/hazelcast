@@ -23,7 +23,6 @@ import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.executor.impl.DistributedExecutorService;
 import com.hazelcast.executor.impl.operations.MemberCallableTaskOperation;
 import com.hazelcast.instance.Node;
-import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.security.SecurityContext;
@@ -32,7 +31,6 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 
 import javax.security.auth.Subject;
-import java.net.UnknownHostException;
 import java.security.Permission;
 import java.util.concurrent.Callable;
 
@@ -47,13 +45,7 @@ public class ExecutorServiceSubmitToAddressMessageTask
     @Override
     protected InvocationBuilder getInvocationBuilder(Operation op) {
         final InternalOperationService operationService = nodeEngine.getOperationService();
-        Address target = null;
-        try {
-            target = new Address(parameters.hostname, parameters.port);
-        } catch (UnknownHostException e) {
-            e.printStackTrace();
-        }
-        return operationService.createInvocationBuilder(getServiceName(), op, target);
+        return operationService.createInvocationBuilder(getServiceName(), op, parameters.address);
     }
 
     @Override

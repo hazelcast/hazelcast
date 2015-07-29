@@ -122,7 +122,7 @@ public class ClientMessageTest {
                 .setCorrelationId(66).setPartitionId(77);
 
         final byte[] data1 = VAR_DATA_STR_1.getBytes(DEFAULT_ENCODING);
-        final int calculatedFrameSize = ClientMessage.HEADER_SIZE + ParameterUtil.calculateByteArrayDataSize(data1);
+        final int calculatedFrameSize = ClientMessage.HEADER_SIZE + ParameterUtil.calculateDataSize(data1);
         cmEncode.set(data1);
         cmEncode.updateFrameLength();
 
@@ -150,7 +150,7 @@ public class ClientMessageTest {
 
         byte[] bytes = VAR_DATA_STR_1.getBytes();
         final int calculatedFrameSize = ClientMessage.HEADER_SIZE + Bits.INT_SIZE_IN_BYTES +
-                ParameterUtil.calculateByteArrayDataSize(bytes);
+                ParameterUtil.calculateDataSize(bytes);
         cmEncode.set(1);
         cmEncode.set(bytes);
         cmEncode.updateFrameLength();
@@ -177,7 +177,7 @@ public class ClientMessageTest {
                 .setCorrelationId(66).setPartitionId(77);
 
         final int calculatedFrameSize = FutureClientMessage.THE_NEW_HEADER_SIZE
-                + ParameterUtil.calculateByteArrayDataSize(BYTE_DATA);
+                + ParameterUtil.calculateDataSize(BYTE_DATA);
         cmEncode.set(BYTE_DATA);
         cmEncode.updateFrameLength();
 
@@ -206,7 +206,7 @@ public class ClientMessageTest {
                 .setCorrelationId(66).setPartitionId(77);
 
         final int calculatedFrameSize = ClientMessage.HEADER_SIZE
-                + ParameterUtil.calculateByteArrayDataSize(BYTE_DATA);
+                + ParameterUtil.calculateDataSize(BYTE_DATA);
         cmEncode.set(BYTE_DATA);
         cmEncode.updateFrameLength();
         ClientMessage cmDecode = FutureClientMessage.createForDecode(byteBuffer, 0);
@@ -232,7 +232,7 @@ public class ClientMessageTest {
         cmEncode.set(BYTE_DATA);
         cmEncode.updateFrameLength();
         final int calculatedFrame1Size = ClientMessage.HEADER_SIZE
-                + ParameterUtil.calculateByteArrayDataSize(BYTE_DATA);
+                + ParameterUtil.calculateDataSize(BYTE_DATA);
 
         final int nexMessageOffset = cmEncode.getFrameLength();
         ClientMessage cmEncode2 =
@@ -243,7 +243,7 @@ public class ClientMessageTest {
         cmEncode2.set(BYTE_DATA);
         cmEncode2.updateFrameLength();
         final int calculatedFrame2Size = ClientMessage.HEADER_SIZE
-                + ParameterUtil.calculateByteArrayDataSize(BYTE_DATA);
+                + ParameterUtil.calculateDataSize(BYTE_DATA);
 
         ClientMessage cmDecode1 = ClientMessage.createForDecode(byteBuffer, 0);
 

@@ -16,12 +16,14 @@
 
 package com.hazelcast.client.impl.protocol.codec;
 
+import com.hazelcast.annotation.Codec;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.util.ParameterUtil;
 import com.hazelcast.mapreduce.JobPartitionState;
 import com.hazelcast.mapreduce.impl.task.JobPartitionStateImpl;
 import com.hazelcast.nio.Address;
 
+@Codec(JobPartitionState.class)
 public class JobPartitionStateCodec {
 
     private JobPartitionStateCodec() {
@@ -41,7 +43,7 @@ public class JobPartitionStateCodec {
 
     public static int calculateDataSize(JobPartitionState jobPartitionState) {
         int dataSize = AddressCodec.calculateDataSize(jobPartitionState.getOwner());
-        dataSize += ParameterUtil.calculateStringDataSize(jobPartitionState.getState().name());
+        dataSize += ParameterUtil.calculateDataSize(jobPartitionState.getState().name());
         return dataSize;
     }
 }

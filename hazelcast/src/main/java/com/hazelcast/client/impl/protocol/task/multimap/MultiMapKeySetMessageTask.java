@@ -76,7 +76,7 @@ public class MultiMapKeySetMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return MultiMapKeySetCodec.encodeResponse((Collection<Data>) response);
+        return MultiMapKeySetCodec.encodeResponse((List<Data>) response);
     }
 
     @Override

@@ -247,8 +247,8 @@ public class ClientReplicatedMapProxy<K, V>
         ClientMessage request = ReplicatedMapKeySetCodec.encodeRequest(getName());
         ClientMessage response = invoke(request);
         ReplicatedMapKeySetCodec.ResponseParameters result = ReplicatedMapKeySetCodec.decodeResponse(response);
-        Set<K> resultSet = new HashSet<K>(result.list.size());
-        for (Data data : result.list) {
+        Set<K> resultSet = new HashSet<K>(result.set.size());
+        for (Data data : result.set) {
             resultSet.add((K) toObject(data));
         }
         return resultSet;
@@ -278,8 +278,8 @@ public class ClientReplicatedMapProxy<K, V>
         ClientMessage request = ReplicatedMapEntrySetCodec.encodeRequest(getName());
         ClientMessage response = invoke(request);
         ReplicatedMapEntrySetCodec.ResponseParameters result = ReplicatedMapEntrySetCodec.decodeResponse(response);
-        Set<Entry<K, V>> resultCollection = new HashSet<Entry<K, V>>(result.map.size());
-        for (Entry<Data, Data> dataEntry : result.map.entrySet()) {
+        Set<Entry<K, V>> resultCollection = new HashSet<Entry<K, V>>(result.entrySet.size());
+        for (Entry<Data, Data> dataEntry : result.entrySet) {
             K key = toObject(dataEntry.getKey());
             V value = toObject(dataEntry.getValue());
             resultCollection.add(new AbstractMap.SimpleImmutableEntry<K, V>(key, value));
