@@ -39,6 +39,7 @@ import com.hazelcast.client.nearcache.ClientHeapNearCache;
 import com.hazelcast.client.nearcache.ClientNearCache;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.spi.EventHandler;
+import com.hazelcast.client.spi.impl.ListenerRemoveCodec;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryEventType;
@@ -202,9 +203,19 @@ public class ClientReplicatedMapProxy<K, V>
     }
 
     @Override
-    public boolean removeEntryListener(String id) {
-        ClientMessage request = ReplicatedMapRemoveEntryListenerCodec.encodeRequest(getName(), id);
-        return stopListening(request, id);
+    public boolean removeEntryListener(String registrationId) {
+        final String name = getName();
+        return stopListening(registrationId, new ListenerRemoveCodec() {
+            @Override
+            public ClientMessage encodeRequest(String realRegistrationId) {
+                return ReplicatedMapRemoveEntryListenerCodec.encodeRequest(name, realRegistrationId);
+            }
+
+            @Override
+            public boolean decodeResponse(ClientMessage clientMessage) {
+                return ReplicatedMapRemoveEntryListenerCodec.decodeResponse(clientMessage).response;
+            }
+        });
     }
 
     @Override
@@ -321,8 +332,18 @@ public class ClientReplicatedMapProxy<K, V>
     private void removeNearCacheInvalidationListener() {
         if (nearCache != null && nearCache.getId() != null) {
             String registrationId = nearCache.getId();
-            ClientMessage request = ReplicatedMapRemoveEntryListenerCodec.encodeRequest(getName(), registrationId);
-            getContext().getListenerService().stopListening(request, registrationId);
+            final String name = getName();
+            getContext().getListenerService().stopListening(registrationId, new ListenerRemoveCodec() {
+                @Override
+                public ClientMessage encodeRequest(String realRegistrationId) {
+                    return ReplicatedMapRemoveEntryListenerCodec.encodeRequest(name, realRegistrationId);
+                }
+
+                @Override
+                public boolean decodeResponse(ClientMessage clientMessage) {
+                    return ReplicatedMapRemoveEntryListenerCodec.decodeResponse(clientMessage).response;
+                }
+            });
         }
     }
 

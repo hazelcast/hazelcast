@@ -34,6 +34,7 @@ import com.hazelcast.client.impl.protocol.codec.SetSizeCodec;
 import com.hazelcast.client.spi.ClientClusterService;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.spi.EventHandler;
+import com.hazelcast.client.spi.impl.ListenerRemoveCodec;
 import com.hazelcast.core.ISet;
 import com.hazelcast.core.ItemEvent;
 import com.hazelcast.core.ItemEventType;
@@ -180,6 +181,20 @@ public class ClientSetProxy<E> extends ClientProxy implements ISet<E> {
         return listen(request, getPartitionKey(), eventHandler);
     }
 
+    public boolean removeItemListener(String registrationId) {
+        return stopListening(registrationId, new ListenerRemoveCodec() {
+            @Override
+            public ClientMessage encodeRequest(String realRegistrationId) {
+                return SetRemoveListenerCodec.encodeRequest(name, realRegistrationId);
+            }
+
+            @Override
+            public boolean decodeResponse(ClientMessage clientMessage) {
+                return SetRemoveListenerCodec.decodeResponse(clientMessage).response;
+            }
+        });
+    }
+
     private class ItemEventHandler extends ListAddListenerCodec.AbstractEventHandler
             implements EventHandler<ClientMessage> {
 
@@ -215,11 +230,6 @@ public class ClientSetProxy<E> extends ClientProxy implements ISet<E> {
         public void onListenerRegister() {
 
         }
-    }
-
-    public boolean removeItemListener(String registrationId) {
-        ClientMessage request = SetRemoveListenerCodec.encodeRequest(name, registrationId);
-        return stopListening(request, registrationId);
     }
 
     private Collection<E> getAll() {

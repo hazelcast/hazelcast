@@ -41,6 +41,7 @@ import com.hazelcast.client.impl.protocol.codec.QueueTakeCodec;
 import com.hazelcast.client.spi.ClientClusterService;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.spi.EventHandler;
+import com.hazelcast.client.spi.impl.ListenerRemoveCodec;
 import com.hazelcast.collection.impl.queue.QueueIterator;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.IQueue;
@@ -118,8 +119,17 @@ public final class ClientQueueProxy<E> extends ClientProxy implements IQueue<E> 
 
 
     public boolean removeItemListener(String registrationId) {
-        ClientMessage request = QueueRemoveListenerCodec.encodeRequest(name, registrationId);
-        return stopListening(request, registrationId);
+        return stopListening(registrationId, new ListenerRemoveCodec() {
+            @Override
+            public ClientMessage encodeRequest(String realRegistrationId) {
+                return QueueRemoveListenerCodec.encodeRequest(name, realRegistrationId);
+            }
+
+            @Override
+            public boolean decodeResponse(ClientMessage clientMessage) {
+                return QueueRemoveListenerCodec.decodeResponse(clientMessage).response;
+            }
+        });
     }
 
     public LocalQueueStats getLocalQueueStats() {

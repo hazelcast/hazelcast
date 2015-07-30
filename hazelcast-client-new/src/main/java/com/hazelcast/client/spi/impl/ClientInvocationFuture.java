@@ -126,7 +126,9 @@ public class ClientInvocationFuture implements ICompletableFuture<ClientMessage>
             }
 
             if (this.response != null && !(response instanceof Throwable)) {
-                String uuid = MapAddEntryListenerCodec.decodeResponse((ClientMessage) this.response).response;
+                ClientMessage uuidMessage = (ClientMessage) this.response;
+                ClientMessage copyFlyweight = ClientMessage.createForDecode(uuidMessage.buffer(), 0);
+                String uuid = MapAddEntryListenerCodec.decodeResponse(copyFlyweight).response;
                 String alias = MapAddEntryListenerCodec.decodeResponse((ClientMessage) response).response;
 
                 clientListenerService.reRegisterListener(uuid, alias, clientMessage.getCorrelationId());

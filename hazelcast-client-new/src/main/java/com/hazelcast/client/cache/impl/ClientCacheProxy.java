@@ -29,8 +29,10 @@ import com.hazelcast.client.impl.protocol.codec.CacheListenerRegistrationCodec;
 import com.hazelcast.client.impl.protocol.codec.CacheLoadAllCodec;
 import com.hazelcast.client.impl.protocol.codec.CacheRemoveEntryListenerCodec;
 import com.hazelcast.client.spi.ClientContext;
+import com.hazelcast.client.spi.ClientListenerService;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.client.spi.impl.ClientInvocation;
+import com.hazelcast.client.spi.impl.ListenerRemoveCodec;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.Member;
@@ -62,10 +64,10 @@ import static com.hazelcast.cache.impl.CacheProxyUtil.validateNotNull;
 
 /**
  * ICache implementation for client
- * <p/>
+ * <p>
  * This proxy is the implementation of ICache and javax.cache.Cache which is returned by
  * HazelcastClientCacheManager. Represent a cache on client.
- * <p/>
+ * <p>
  * This implementation is a thin proxy implementation using hazelcast client infrastructure
  *
  * @param <K> key type
@@ -318,17 +320,29 @@ public class ClientCacheProxy<K, V>
             throw new NullPointerException("CacheEntryListenerConfiguration can't be null");
         }
         final String regId = removeListenerLocally(cacheEntryListenerConfiguration);
-        if (regId != null) {
-            ClientMessage removeReq = CacheRemoveEntryListenerCodec.encodeRequest(nameWithPrefix, regId);
-            boolean isDeregistered = clientContext.getListenerService().stopListening(removeReq, regId);
+        if (regId == null) {
+            return;
+        }
 
-            if (isDeregistered) {
-                cacheConfig.removeCacheEntryListenerConfiguration(cacheEntryListenerConfiguration);
-                //REMOVE ON OTHERS TOO
-                updateCacheListenerConfigOnOtherNodes(cacheEntryListenerConfiguration, false);
-            } else {
-                addListenerLocally(regId, cacheEntryListenerConfiguration);
+        ClientListenerService listenerService = clientContext.getListenerService();
+        boolean isDeregistered = listenerService.stopListening(regId, new ListenerRemoveCodec() {
+            @Override
+            public ClientMessage encodeRequest(String realRegistrationId) {
+                return CacheRemoveEntryListenerCodec.encodeRequest(nameWithPrefix, realRegistrationId);
             }
+
+            @Override
+            public boolean decodeResponse(ClientMessage clientMessage) {
+                return CacheRemoveEntryListenerCodec.decodeResponse(clientMessage).response;
+            }
+        });
+
+        if (isDeregistered) {
+            cacheConfig.removeCacheEntryListenerConfiguration(cacheEntryListenerConfiguration);
+            //REMOVE ON OTHERS TOO
+            updateCacheListenerConfigOnOtherNodes(cacheEntryListenerConfiguration, false);
+        } else {
+            addListenerLocally(regId, cacheEntryListenerConfiguration);
         }
     }
 

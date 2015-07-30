@@ -42,6 +42,7 @@ import com.hazelcast.client.proxy.ClientSetProxy;
 import com.hazelcast.client.proxy.ClientTopicProxy;
 import com.hazelcast.client.proxy.txn.xa.XAResourceProxy;
 import com.hazelcast.client.spi.impl.ClientInvocation;
+import com.hazelcast.client.spi.impl.ListenerRemoveCodec;
 import com.hazelcast.collection.impl.list.ListService;
 import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.collection.impl.set.SetService;
@@ -274,8 +275,19 @@ public final class ProxyManager {
     }
 
     public boolean removeDistributedObjectListener(String id) {
-        ClientMessage request = ClientRemoveDistributedObjectListenerCodec.encodeRequest(id);
-        return client.getListenerService().stopListening(request, id);
+        boolean result = client.getListenerService().stopListening(id, new ListenerRemoveCodec() {
+            @Override
+            public ClientMessage encodeRequest(String realRegistrationId) {
+                return ClientRemoveDistributedObjectListenerCodec.encodeRequest(realRegistrationId);
+            }
+
+            @Override
+            public boolean decodeResponse(ClientMessage clientMessage) {
+                return ClientRemoveDistributedObjectListenerCodec.decodeResponse(clientMessage).response;
+            }
+        });
+        return result;
+
     }
 
     private static class ClientProxyFuture {
