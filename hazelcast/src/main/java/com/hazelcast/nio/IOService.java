@@ -109,7 +109,9 @@ public interface IOService {
 
     boolean getSocketNoDelay();
 
-    int getSelectorThreadCount();
+    int getInputSelectorThreadCount();
+
+    int getOutputSelectorThreadCount();
 
     long getConnectionMonitorInterval();
 

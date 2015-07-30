@@ -35,7 +35,6 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.tcp.iobalancer.IOBalancer;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
-import com.hazelcast.util.HashUtil;
 import com.hazelcast.util.counters.MwCounter;
 import com.hazelcast.util.executor.StripedRunnable;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -53,6 +52,7 @@ import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 
+import static com.hazelcast.util.HashUtil.hashToIndex;
 import static com.hazelcast.util.counters.MwCounter.newMwCounter;
 
 public class TcpIpConnectionManager implements ConnectionManager {
@@ -118,8 +118,6 @@ public class TcpIpConnectionManager implements ConnectionManager {
 
     private final ServerSocketChannel serverSocketChannel;
 
-    private final int selectorThreadCount;
-
     private final InSelectorImpl[] inSelectors;
 
     private final OutSelectorImpl[] outSelectors;
@@ -162,9 +160,8 @@ public class TcpIpConnectionManager implements ConnectionManager {
         this.socketConnectTimeoutSeconds = ioService.getSocketConnectTimeoutSeconds();
         this.socketKeepAlive = ioService.getSocketKeepAlive();
         this.socketNoDelay = ioService.getSocketNoDelay();
-        this.selectorThreadCount = ioService.getSelectorThreadCount();
-        this.inSelectors = new InSelectorImpl[selectorThreadCount];
-        this.outSelectors = new OutSelectorImpl[selectorThreadCount];
+        this.inSelectors = new InSelectorImpl[ioService.getInputSelectorThreadCount()];
+        this.outSelectors = new OutSelectorImpl[ioService.getOutputSelectorThreadCount()];
         final Collection<Integer> ports = ioService.getOutboundPorts();
         this.outboundPortCount = ports.size();
         this.outboundPorts.addAll(ports);
@@ -172,6 +169,10 @@ public class TcpIpConnectionManager implements ConnectionManager {
         this.loggingService = loggingService;
 
         metricRegistry.scanAndRegister(this, "tcp.connection");
+
+        logger.info("TcpIpConnection managed configured with "
+                + inSelectors.length + " input threads and "
+                + outSelectors.length + " output threads");
     }
 
     public MetricsRegistry getMetricRegistry() {
@@ -356,11 +357,6 @@ public class TcpIpConnectionManager implements ConnectionManager {
         //now you can send anything...
     }
 
-    private int nextSelectorIndex() {
-        int value = nextSelectorIndex.getAndIncrement();
-        return HashUtil.hashToIndex(value, selectorThreadCount);
-    }
-
     SocketChannelWrapper wrapSocketChannel(SocketChannel socketChannel, boolean client) throws Exception {
         SocketChannelWrapper wrapper = socketChannelWrapperFactory.wrapSocketChannel(socketChannel, client);
         acceptedSockets.add(wrapper);
@@ -368,10 +364,13 @@ public class TcpIpConnectionManager implements ConnectionManager {
     }
 
     TcpIpConnection assignSocketChannel(SocketChannelWrapper channel, Address endpoint) {
-        int index = nextSelectorIndex();
+        int value = nextSelectorIndex.getAndIncrement();
 
-        final TcpIpConnection connection = new TcpIpConnection(this, inSelectors[index],
-                outSelectors[index], connectionIdGen.incrementAndGet(), channel);
+        TcpIpConnection connection = new TcpIpConnection(this,
+                inSelectors[hashToIndex(value, inSelectors.length)],
+                outSelectors[hashToIndex(value, outSelectors.length)],
+                connectionIdGen.incrementAndGet(),
+                channel);
 
         connection.setEndPoint(endpoint);
         activeConnections.add(connection);
@@ -499,7 +498,9 @@ public class TcpIpConnectionManager implements ConnectionManager {
             inSelectors[i] = inSelector;
             metricRegistry.scanAndRegister(inSelector, "tcp." + inSelector.getName());
             inSelector.start();
+        }
 
+        for (int i = 0; i < outSelectors.length; i++) {
             OutSelectorImpl outSelector = new OutSelectorImpl(
                     ioService.getThreadGroup(),
                     ioService.getThreadPrefix() + "out-" + i,
@@ -564,16 +565,19 @@ public class TcpIpConnectionManager implements ConnectionManager {
 
     private synchronized void shutdownIOSelectors() {
         if (logger.isFinestEnabled()) {
-            log(Level.FINEST, "Shutting down IO selectors... Total: " + selectorThreadCount);
+            log(Level.FINEST, "Shutting down IO selectors... Total: " + (inSelectors.length + outSelectors.length));
         }
-        for (int i = 0; i < selectorThreadCount; i++) {
+
+        for (int i = 0; i < inSelectors.length; i++) {
             IOSelector ioSelector = inSelectors[i];
             if (ioSelector != null) {
                 ioSelector.shutdown();
             }
             inSelectors[i] = null;
+        }
 
-            ioSelector = outSelectors[i];
+        for (int i = 0; i < outSelectors.length; i++) {
+            IOSelector ioSelector = outSelectors[i];
             if (ioSelector != null) {
                 ioSelector.shutdown();
             }
