@@ -27,7 +27,6 @@ import com.hazelcast.map.impl.querycache.event.QueryCacheEventData;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
@@ -78,7 +77,7 @@ public interface EventResponseTemplate {
     void QueryCacheSingle(QueryCacheEventData data);
 
     @EventResponse(EventMessageConst.EVENT_QUERYCACHEBATCH)
-    void QueryCacheBatch(Collection<QueryCacheEventData> events, String source, int partitionId);
+    void QueryCacheBatch(List<QueryCacheEventData> events, String source, int partitionId);
 
 
 }
