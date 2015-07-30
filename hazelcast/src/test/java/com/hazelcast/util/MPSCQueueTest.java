@@ -3,14 +3,13 @@ package com.hazelcast.util;
 
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestThread;
-import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.Random;
 
 import static org.junit.Assert.assertEquals;
 
-public class FastQueueTest extends HazelcastTestSupport {
+public class MPSCQueueTest extends HazelcastTestSupport {
 
 //    @Test
 //    public void test() throws InterruptedException {
@@ -59,9 +58,9 @@ public class FastQueueTest extends HazelcastTestSupport {
     @Test
     public void producerConsumerTest() throws Exception {
         ConsumerThread consumerThread = new ConsumerThread();
-        FastQueue fastQueue = consumerThread.queue;
+        MPSCQueue queue = consumerThread.queue;
         int itemCount = 2000;
-        ProducerThread producerThread = new ProducerThread(fastQueue, itemCount);
+        ProducerThread producerThread = new ProducerThread(queue, itemCount);
 
         producerThread.start();
         consumerThread.start();
@@ -72,10 +71,10 @@ public class FastQueueTest extends HazelcastTestSupport {
     }
 
     class ProducerThread extends TestThread {
-        private final FastQueue queue;
+        private final MPSCQueue queue;
         private final int itemCount;
 
-        public ProducerThread(FastQueue queue, int itemCount) {
+        public ProducerThread(MPSCQueue queue, int itemCount) {
             this.queue = queue;
             this.itemCount = itemCount;
         }
@@ -97,11 +96,11 @@ public class FastQueueTest extends HazelcastTestSupport {
     }
 
     class ConsumerThread extends TestThread {
-        private final FastQueue queue;
+        private final MPSCQueue queue;
         private int itemCount;
 
         ConsumerThread() {
-            queue = new FastQueue(this);
+            queue = new MPSCQueue(this);
         }
 
         public void doRun() throws Exception {

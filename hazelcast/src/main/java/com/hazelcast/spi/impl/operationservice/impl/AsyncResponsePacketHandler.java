@@ -21,7 +21,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.impl.PacketHandler;
 import com.hazelcast.spi.impl.operationexecutor.OperationHostileThread;
-import com.hazelcast.util.FastQueue;
+import com.hazelcast.util.MPSCQueue;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.concurrent.BlockingQueue;
@@ -58,8 +58,8 @@ public class AsyncResponsePacketHandler implements PacketHandler {
 
         if (Boolean.getBoolean("fastqueue")) {
             boolean spin = Boolean.getBoolean("response.spin");
-            workQueue = new FastQueue<Packet>(responseThread, spin);
-            logger.info("Enabled ResponseHandler.fastQueue with spinning-enabled:"+spin);
+            workQueue = new MPSCQueue<Packet>(responseThread, spin);
+            logger.info("Enabled ResponseHandler.fastQueue with spinning-enabled:" + spin);
         } else {
             workQueue = new LinkedBlockingQueue<Packet>();
         }
@@ -133,7 +133,7 @@ public class AsyncResponsePacketHandler implements PacketHandler {
             }
         }
 
-        @SuppressFBWarnings({"VO_VOLATILE_INCREMENT"})
+        @SuppressFBWarnings({"VO_VOLATILE_INCREMENT" })
         private void process(Packet responsePacket) {
             processedResponses++;
             try {

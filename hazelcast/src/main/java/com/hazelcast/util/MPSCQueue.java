@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.hazelcast.util;
 
 import java.util.AbstractQueue;
@@ -17,8 +33,9 @@ import static java.util.concurrent.locks.LockSupport.unpark;
  *
  * @param <E>
  */
-public final class FastQueue<E> extends AbstractQueue<E> implements BlockingQueue<E> {
-    private final static Node BLOCKED = new Node();
+public final class MPSCQueue<E> extends AbstractQueue<E> implements BlockingQueue<E> {
+    private static final Node BLOCKED = new Node();
+    private static final int INITIAL_ARRAY_SIZE = 512;
 
     private final Thread owningThread;
     private final PaddedAtomicReference<Node> head = new PaddedAtomicReference<Node>();
@@ -26,16 +43,16 @@ public final class FastQueue<E> extends AbstractQueue<E> implements BlockingQueu
     private Object[] array;
     private int index = -1;
 
-    public FastQueue(Thread owningThread) {
+    public MPSCQueue(Thread owningThread) {
         this(owningThread, false);
     }
 
-    public FastQueue(Thread owningThread, boolean spin) {
+    public MPSCQueue(Thread owningThread, boolean spin) {
         if (owningThread == null) {
             throw new IllegalArgumentException("owningThread can't be null");
         }
         this.owningThread = owningThread;
-        this.array = new Object[512];
+        this.array = new Object[INITIAL_ARRAY_SIZE];
         this.spin = spin;
     }
 
