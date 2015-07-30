@@ -27,6 +27,7 @@ import static com.hazelcast.test.HazelcastTestSupport.getNode;
 import static com.hazelcast.test.HazelcastTestSupport.randomMapName;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -62,7 +63,7 @@ public class ClientMapPartitionLostListenerTest {
         final String registrationId = client.getMap(mapName).addPartitionLostListener(mock(MapPartitionLostListener.class));
         assertRegistrationsSizeEventually(instance, mapName, 1);
 
-        client.getMap(mapName).removePartitionLostListener(registrationId);
+        assertTrue(client.getMap(mapName).removePartitionLostListener(registrationId));
         assertRegistrationsSizeEventually(instance, mapName, 0);
     }
 

@@ -19,7 +19,6 @@ package com.hazelcast.client.spi.impl;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapAddEntryListenerCodec;
-import com.hazelcast.client.impl.protocol.codec.MapRemoveEntryListenerCodec;
 import com.hazelcast.client.spi.ClientInvocationService;
 import com.hazelcast.client.spi.ClientListenerService;
 import com.hazelcast.client.spi.EventHandler;
@@ -85,14 +84,15 @@ public final class ClientListenerServiceImpl implements ClientListenerService {
     }
 
     @Override
-    public boolean stopListening(ClientMessage clientMessage, String registrationId) {
+    public boolean stopListening(String registrationId, ListenerRemoveCodec listenerRemoveCodec) {
         try {
             String realRegistrationId = deRegisterListener(registrationId);
             if (realRegistrationId == null) {
                 return false;
             }
-            final Future future = new ClientInvocation(client, clientMessage).invoke();
-            return MapRemoveEntryListenerCodec.decodeResponse((ClientMessage) future.get()).response;
+            ClientMessage removeRequest = listenerRemoveCodec.encodeRequest(realRegistrationId);
+            final Future future = new ClientInvocation(client, removeRequest).invoke();
+            return listenerRemoveCodec.decodeResponse((ClientMessage) future.get());
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }
@@ -127,7 +127,7 @@ public final class ClientListenerServiceImpl implements ClientListenerService {
     public String deRegisterListener(String alias) {
         final String uuid = registrationAliasMap.remove(alias);
         if (uuid != null) {
-            final Integer callId = registrationMap.remove(alias);
+            final Integer callId = registrationMap.remove(uuid);
             invocationService.removeEventHandler(callId);
         }
         return uuid;

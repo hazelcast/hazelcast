@@ -18,13 +18,10 @@ package com.hazelcast.client;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.test.TestHazelcastFactory;
-import com.hazelcast.core.EntryAdapter;
-import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
@@ -34,11 +31,9 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
@@ -73,43 +68,4 @@ public class ClientReconnectTest extends HazelcastTestSupport {
         assertEquals("test", m.get("test"));
     }
 
-    @Test
-    public void testClientReconnectOnClusterDownWithEntryListeners() throws Exception {
-        HazelcastInstance h1 = hazelcastFactory.newHazelcastInstance();
-
-        ClientConfig clientConfig = new ClientConfig();
-        clientConfig.getNetworkConfig().setRedoOperation(true);
-        clientConfig.getNetworkConfig().setConnectionAttemptLimit(Integer.MAX_VALUE);
-        final HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
-        final CountDownLatch connectedLatch = new CountDownLatch(2);
-        client.getLifecycleService().addLifecycleListener(new LifecycleListener() {
-            @Override
-            public void stateChanged(LifecycleEvent event) {
-                connectedLatch.countDown();
-            }
-        });
-
-        final IMap<Object, Object> map = client.getMap("default");
-        final AtomicInteger eventCount = new AtomicInteger();
-        final EntryAdapter<Object, Object> listener = new EntryAdapter<Object, Object>() {
-            public void onEntryEvent(EntryEvent<Object, Object> event) {
-                eventCount.incrementAndGet();
-            }
-        };
-        map.addEntryListener(listener, true);
-
-        h1.shutdown();
-
-        hazelcastFactory.newHazelcastInstance();
-        assertOpenEventually(connectedLatch, 10);
-
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                map.put("key", "value");
-                int count = eventCount.get();
-                assertTrue("No events generated!", count > 0);
-            }
-        }, 30);
-    }
 }
