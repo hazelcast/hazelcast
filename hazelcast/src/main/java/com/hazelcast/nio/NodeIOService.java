@@ -24,8 +24,8 @@ import com.hazelcast.config.SymmetricEncryptionConfig;
 import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
-import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.ascii.TextCommandService;
+import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
@@ -231,8 +231,13 @@ public class NodeIOService implements IOService {
     }
 
     @Override
-    public int getSelectorThreadCount() {
-        return node.groupProperties.IO_THREAD_COUNT.getInteger();
+    public int getInputSelectorThreadCount() {
+        return node.groupProperties.IO_INPUT_THREAD_COUNT.getInteger();
+    }
+
+    @Override
+    public int getOutputSelectorThreadCount() {
+        return node.groupProperties.IO_OUTPUT_THREAD_COUNT.getInteger();
     }
 
     @Override

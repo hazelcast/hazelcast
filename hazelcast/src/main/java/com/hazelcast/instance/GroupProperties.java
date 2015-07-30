@@ -101,7 +101,24 @@ public class GroupProperties {
 
     public static final String PROP_VERSION_CHECK_ENABLED = "hazelcast.version.check.enabled";
     public static final String PROP_PREFER_IPv4_STACK = "hazelcast.prefer.ipv4.stack";
+
+    /**
+     * The number of threads doing socket input and the number of threads doing socket output.
+     *
+     * If e.g. 3 is configured, then you get 3 threads doing input and 3 doing output. For indidual control
+     * check PROP_IO_INPUT_THREAD_COUNT and PROP_IO_OUTPUT_THREAD_COUNT.
+     *
+     * Default value is 3 (so 6 threads)
+     */
     public static final String PROP_IO_THREAD_COUNT = "hazelcast.io.thread.count";
+    /**
+     * Controls the number of socket input threads. BY default it is the same as PROP_IO_THREAD_COUNT.
+     */
+    public static final String PROP_IO_INPUT_THREAD_COUNT = "hazelcast.io.input.thread.count";
+    /**
+     * Controls the number of socket output threads. BY default it is the same as PROP_IO_THREAD_COUNT.
+     */
+    public static final String PROP_IO_OUTPUT_THREAD_COUNT = "hazelcast.io.output.thread.count";
 
     /**
      * The interval in seconds between {@link com.hazelcast.nio.tcp.iobalancer.IOBalancer IOBalancer}
@@ -493,6 +510,8 @@ public class GroupProperties {
     public final GroupProperty PERFORMANCE_MONITOR_HUMAN_FRIENDLY_FORMAT;
 
     public final GroupProperty IO_THREAD_COUNT;
+    public final GroupProperty IO_INPUT_THREAD_COUNT;
+    public final GroupProperty IO_OUTPUT_THREAD_COUNT;
 
     public final GroupProperty IO_BALANCER_INTERVAL_SECONDS;
 
@@ -693,6 +712,9 @@ public class GroupProperties {
         VERSION_CHECK_ENABLED = new GroupProperty(config, PROP_VERSION_CHECK_ENABLED, "true");
         PREFER_IPv4_STACK = new GroupProperty(config, PROP_PREFER_IPv4_STACK, "true");
         IO_THREAD_COUNT = new GroupProperty(config, PROP_IO_THREAD_COUNT, "3");
+        IO_INPUT_THREAD_COUNT = new GroupProperty(config, PROP_IO_INPUT_THREAD_COUNT, IO_THREAD_COUNT.value);
+        IO_OUTPUT_THREAD_COUNT = new GroupProperty(config, PROP_IO_OUTPUT_THREAD_COUNT, IO_THREAD_COUNT.value);
+
         IO_BALANCER_INTERVAL_SECONDS = new GroupProperty(config, PROP_IO_BALANCER_INTERVAL_SECONDS, "20");
 
         //-1 means that the value is worked out dynamically.
