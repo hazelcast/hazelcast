@@ -16,6 +16,7 @@
 
 package com.hazelcast.replicatedmap.impl.client;
 
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
@@ -31,8 +32,7 @@ import java.util.Set;
 /**
  * Client request class for {@link Map#putAll(java.util.Map)} implementation
  */
-public class ClientReplicatedMapPutAllRequest
-        extends AbstractReplicatedMapClientRequest {
+public class ClientReplicatedMapPutAllRequest extends AbstractReplicatedMapClientRequest {
 
     private ReplicatedMapEntrySet entrySet;
 
@@ -46,26 +46,23 @@ public class ClientReplicatedMapPutAllRequest
     }
 
     @Override
-    public Object call()
-            throws Exception {
+    public Object call() throws Exception {
         ReplicatedRecordStore recordStore = getReplicatedRecordStore();
-        Set<Map.Entry> entries = entrySet.getEntrySet();
-        for (Map.Entry entry : entries) {
+        Set<Map.Entry<Data, Data>> entries = entrySet.getEntrySet();
+        for (Map.Entry<Data, Data> entry : entries) {
             recordStore.put(entry.getKey(), entry.getValue());
         }
         return null;
     }
 
     @Override
-    public void write(PortableWriter writer)
-            throws IOException {
+    public void write(PortableWriter writer) throws IOException {
         super.write(writer);
         entrySet.writePortable(writer);
     }
 
     @Override
-    public void read(PortableReader reader)
-            throws IOException {
+    public void read(PortableReader reader) throws IOException {
         super.read(reader);
         entrySet = new ReplicatedMapEntrySet();
         entrySet.readPortable(reader);
@@ -88,7 +85,7 @@ public class ClientReplicatedMapPutAllRequest
 
     @Override
     public Object[] getParameters() {
-        final Set<Map.Entry> set = entrySet.getEntrySet();
+        final Set<Map.Entry<Data, Data>> set = entrySet.getEntrySet();
         final HashMap map = new HashMap();
         for (Map.Entry entry : set) {
             map.put(entry.getKey(), entry.getValue());

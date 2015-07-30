@@ -18,6 +18,7 @@ package com.hazelcast.replicatedmap.impl.client;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
@@ -35,15 +36,15 @@ import java.util.concurrent.TimeUnit;
 public class ClientReplicatedMapPutTtlRequest
         extends AbstractReplicatedMapClientRequest {
 
-    private Object key;
-    private Object value;
+    private Data key;
+    private Data value;
     private long ttlMillis;
 
     ClientReplicatedMapPutTtlRequest() {
         super(null);
     }
 
-    public ClientReplicatedMapPutTtlRequest(String mapName, Object key, Object value, long ttlMillis) {
+    public ClientReplicatedMapPutTtlRequest(String mapName, Data key, Data value, long ttlMillis) {
         super(mapName);
         this.key = key;
         this.value = value;
@@ -63,8 +64,8 @@ public class ClientReplicatedMapPutTtlRequest
         super.write(writer);
         writer.writeLong("ttlMillis", ttlMillis);
         ObjectDataOutput out = writer.getRawDataOutput();
-        out.writeObject(key);
-        out.writeObject(value);
+        out.writeData(key);
+        out.writeData(value);
     }
 
     @Override
@@ -73,8 +74,8 @@ public class ClientReplicatedMapPutTtlRequest
         super.read(reader);
         ttlMillis = reader.readLong("ttlMillis");
         ObjectDataInput in = reader.getRawDataInput();
-        key = in.readObject();
-        value = in.readObject();
+        key = in.readData();
+        value = in.readData();
     }
 
     @Override

@@ -25,8 +25,7 @@ import java.security.Permission;
 /**
  * Client request class for {@link java.util.Map#isEmpty()} implementation
  */
-public class ClientReplicatedMapIsEmptyRequest
-        extends AbstractReplicatedMapClientRequest {
+public class ClientReplicatedMapIsEmptyRequest extends AbstractReplicatedMapClientRequest {
 
     ClientReplicatedMapIsEmptyRequest() {
         super(null);
@@ -37,8 +36,7 @@ public class ClientReplicatedMapIsEmptyRequest
     }
 
     @Override
-    public Object call()
-            throws Exception {
+    public Object call() throws Exception {
         ReplicatedRecordStore recordStore = getReplicatedRecordStore();
         return recordStore.isEmpty();
     }

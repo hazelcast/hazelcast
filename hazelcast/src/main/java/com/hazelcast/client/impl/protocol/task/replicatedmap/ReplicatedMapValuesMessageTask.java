@@ -23,6 +23,7 @@ import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
+import com.hazelcast.replicatedmap.impl.record.ReplicatedRecord;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.ReplicatedMapPermission;
@@ -43,10 +44,10 @@ public class ReplicatedMapValuesMessageTask
     protected Object call() throws Exception {
         ReplicatedMapService replicatedMapService = getService(getServiceName());
         final ReplicatedRecordStore recordStore = replicatedMapService.getReplicatedRecordStore(parameters.name, true);
-        final Collection values = recordStore.values();
+        final Collection<ReplicatedRecord> values = recordStore.values(false);
         List<Data> res = new ArrayList<Data>(values.size());
-        for (Object o : values) {
-            res.add(serializationService.toData(o));
+        for (ReplicatedRecord record : values) {
+            res.add(serializationService.toData(record.getValue()));
         }
         return res;
     }

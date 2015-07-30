@@ -16,17 +16,19 @@
 
 package com.hazelcast.replicatedmap.impl.client;
 
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.replicatedmap.impl.record.ReplicatedRecord;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.ReplicatedMapPermission;
-
 import java.security.Permission;
+import java.util.ArrayList;
+import java.util.Collection;
 
 /**
  * Client request class for {@link java.util.Map#values()} implementation
  */
-public class ClientReplicatedMapValuesRequest
-        extends AbstractReplicatedMapClientRequest {
+public class ClientReplicatedMapValuesRequest extends AbstractReplicatedMapClientRequest {
 
     ClientReplicatedMapValuesRequest() {
         super(null);
@@ -37,10 +39,14 @@ public class ClientReplicatedMapValuesRequest
     }
 
     @Override
-    public Object call()
-            throws Exception {
+    public Object call() throws Exception {
         ReplicatedRecordStore recordStore = getReplicatedRecordStore();
-        return new ReplicatedMapValueCollection(recordStore.values());
+        Collection<ReplicatedRecord> values = recordStore.values(false);
+        Collection<Data> dataValues = new ArrayList<Data>(values.size());
+        for (ReplicatedRecord value : values) {
+            dataValues.add(serializationService.toData(value.getValue()));
+        }
+        return new ReplicatedMapValueCollection(dataValues);
     }
 
     @Override

@@ -22,6 +22,11 @@ import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
+import com.hazelcast.core.Member;
+import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.map.impl.DataAwareEntryEvent;
+import com.hazelcast.map.impl.EntryEventData;
+import com.hazelcast.map.impl.EventData;
 import com.hazelcast.monitor.impl.LocalReplicatedMapStatsImpl;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.replicatedmap.impl.messages.MultiReplicationMessage;
@@ -40,7 +45,6 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.RemoteService;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
-
 import java.util.EventListener;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
@@ -112,8 +116,10 @@ public class ReplicatedMapService
 
     @Override
     public void dispatchEvent(Object event, Object listener) {
-        if (event instanceof EntryEvent) {
-            EntryEvent entryEvent = (EntryEvent) event;
+        if (event instanceof EntryEventData) {
+            EntryEventData entryEventData = (EntryEventData) event;
+            Member member = getMember(entryEventData);
+            EntryEvent entryEvent = createDataAwareEntryEvent(entryEventData, member);
             EntryListener entryListener = (EntryListener) listener;
             switch (entryEvent.getEventType()) {
                 case ADDED:
@@ -132,7 +138,7 @@ public class ReplicatedMapService
                 default:
                     throw new IllegalArgumentException("event type " + entryEvent.getEventType() + " not supported");
             }
-            String mapName = ((EntryEvent) event).getName();
+            String mapName = ((EntryEventData)event).getMapName();
             if (config.findReplicatedMapConfig(mapName).isStatisticsEnabled()) {
                 ReplicatedRecordStore recordStore = replicatedStorages.get(mapName);
                 if (recordStore instanceof AbstractReplicatedRecordStore) {
@@ -144,6 +150,21 @@ public class ReplicatedMapService
             ((ReplicatedMessageListener) listener).onMessage((IdentifiedDataSerializable) event);
         }
     }
+
+    private Member getMember(EventData eventData) {
+        Member member = nodeEngine.getClusterService().getMember(eventData.getCaller());
+        if (member == null) {
+            member = new MemberImpl(eventData.getCaller(), false);
+        }
+        return member;
+    }
+
+    private DataAwareEntryEvent createDataAwareEntryEvent(EntryEventData entryEventData, Member member) {
+        return new DataAwareEntryEvent(member, entryEventData.getEventType(), entryEventData.getMapName(),
+                entryEventData.getDataKey(), entryEventData.getDataNewValue(), entryEventData.getDataOldValue(),
+                entryEventData.getDataMergingValue(), nodeEngine.getSerializationService());
+    }
+
 
     public ReplicatedMapConfig getReplicatedMapConfig(String name) {
         return config.getReplicatedMapConfig(name).getAsReadOnly();

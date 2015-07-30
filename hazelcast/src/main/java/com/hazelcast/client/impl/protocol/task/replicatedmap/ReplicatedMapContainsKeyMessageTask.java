@@ -39,7 +39,7 @@ public class ReplicatedMapContainsKeyMessageTask
     protected Object call() throws Exception {
         ReplicatedMapService replicatedMapService = getService(ReplicatedMapService.SERVICE_NAME);
         ReplicatedRecordStore recordStore = replicatedMapService.getReplicatedRecordStore(parameters.name, true);
-        return recordStore.containsKey(serializationService.toObject(parameters.key));
+        return recordStore.containsKey(parameters.key);
     }
 
 

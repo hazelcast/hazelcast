@@ -37,7 +37,6 @@ public class ReplicatedMapClearMessageTask
 
     @Override
     protected Object call() throws Exception {
-
         ReplicatedMapService replicatedMapService = getService(ReplicatedMapService.SERVICE_NAME);
         ReplicatedRecordStore recordStore = replicatedMapService.getReplicatedRecordStore(parameters.name, true);
         recordStore.clear(true, true);

@@ -23,6 +23,7 @@ import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
+import com.hazelcast.replicatedmap.impl.record.ReplicatedRecord;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.ReplicatedMapPermission;
@@ -43,15 +44,12 @@ public class ReplicatedMapEntrySetMessageTask
     protected Object call() throws Exception {
         ReplicatedMapService replicatedMapService = getService(getServiceName());
         final ReplicatedRecordStore recordStore = replicatedMapService.getReplicatedRecordStore(parameters.name, true);
-
-        final Set<Map.Entry> entrySet = recordStore.entrySet();
+        final Set<Map.Entry<Object, ReplicatedRecord>> entrySet = recordStore.entrySet(false);
         HashMap<Data, Data> dataMap = new HashMap<Data, Data>();
-
-        for (Map.Entry entry : entrySet) {
-            dataMap.put(serializationService.toData(entry.getKey()), serializationService.toData(entry.getValue()));
+        for (Map.Entry<Object, ReplicatedRecord> entry : entrySet) {
+            dataMap.put(serializationService.toData(entry.getKey()), serializationService.toData(entry.getValue().getValue()));
         }
-
-        return dataMap.entrySet();
+        return dataMap;
     }
 
 
@@ -62,7 +60,7 @@ public class ReplicatedMapEntrySetMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return ReplicatedMapEntrySetCodec.encodeResponse((Set<Map.Entry<Data, Data>>) response);
+        return ReplicatedMapEntrySetCodec.encodeResponse((Map<Data, Data>) response);
     }
 
     @Override

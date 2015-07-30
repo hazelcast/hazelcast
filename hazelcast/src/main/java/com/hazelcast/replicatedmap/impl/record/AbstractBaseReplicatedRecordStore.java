@@ -18,15 +18,17 @@ package com.hazelcast.replicatedmap.impl.record;
 
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.ReplicatedMapConfig;
-import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.map.impl.EntryEventData;
 import com.hazelcast.monitor.LocalReplicatedMapStats;
 import com.hazelcast.monitor.impl.LocalReplicatedMapStatsImpl;
 import com.hazelcast.nio.ClassLoaderUtil;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapEvictionProcessor;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.spi.EventFilter;
@@ -39,7 +41,6 @@ import com.hazelcast.util.scheduler.EntryTaskScheduler;
 import com.hazelcast.util.scheduler.EntryTaskSchedulerFactory;
 import com.hazelcast.util.scheduler.ScheduleType;
 import com.hazelcast.util.scheduler.ScheduledEntry;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -72,12 +73,14 @@ abstract class AbstractBaseReplicatedRecordStore<K, V>
 
     private final Object[] mutexes;
     private final String name;
+    private final SerializationService serializationService;
 
     protected AbstractBaseReplicatedRecordStore(String name, NodeEngine nodeEngine,
                                                 ReplicatedMapService replicatedMapService) {
         this.name = name;
 
         this.nodeEngine = nodeEngine;
+        this.serializationService = nodeEngine.getSerializationService();
         this.localMember = nodeEngine.getLocalMember();
         this.eventService = nodeEngine.getEventService();
         this.localMemberHash = localMember.getUuid().hashCode();
@@ -94,6 +97,10 @@ abstract class AbstractBaseReplicatedRecordStore<K, V>
         for (int i = 0; i < mutexes.length; i++) {
             mutexes[i] = new Object();
         }
+    }
+
+    public InternalReplicatedMapStorage<K, V> getStorage() {
+        return storage;
     }
 
     @Override
@@ -190,14 +197,18 @@ abstract class AbstractBaseReplicatedRecordStore<K, V>
         Collection<EventRegistration> registrations = eventService.getRegistrations(
                 ReplicatedMapService.SERVICE_NAME, name);
         if (registrations.size() > 0) {
-            EntryEvent event = new EntryEvent(name, nodeEngine.getLocalMember(), eventType.getType(),
-                    key, oldValue, value);
+            Data dataKey = serializationService.toData(key);
+            Data dataValue = serializationService.toData(value);
+            Data dataOldValue = serializationService.toData(oldValue);
+            EntryEventData eventData = new EntryEventData(name, name, nodeEngine.getThisAddress(), dataKey, dataValue, dataOldValue, eventType.getType());
+//            EntryEvent event = new EntryEvent(name, nodeEngine.getLocalMember(), eventType.getType(),
+//                    key, oldValue, value);
 
             for (EventRegistration registration : registrations) {
                 EventFilter filter = registration.getFilter();
                 boolean publish = filter == null || filter.eval(marshallKey(key));
                 if (publish) {
-                    eventService.publishEvent(ReplicatedMapService.SERVICE_NAME, registration, event, name.hashCode());
+                    eventService.publishEvent(ReplicatedMapService.SERVICE_NAME, registration, eventData, dataKey.hashCode());
                 }
             }
         }

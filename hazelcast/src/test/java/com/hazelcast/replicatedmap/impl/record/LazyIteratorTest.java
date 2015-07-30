@@ -606,12 +606,12 @@ public class LazyIteratorTest
         }
 
         @Override
-        public Set keySet() {
+        public Set keySet(boolean lazy) {
             return null;
         }
 
         @Override
-        public Collection values() {
+        public Collection values(boolean lazy) {
             return null;
         }
 
@@ -621,7 +621,7 @@ public class LazyIteratorTest
         }
 
         @Override
-        public Set entrySet() {
+        public Set entrySet(boolean lazy) {
             return null;
         }
 

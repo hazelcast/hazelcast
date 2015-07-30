@@ -35,7 +35,7 @@ import java.util.concurrent.locks.ReentrantLock;
  * @param <K> key type
  * @param <V> value type
  */
-class InternalReplicatedMapStorage<K, V> {
+public class InternalReplicatedMapStorage<K, V> {
 
     private final ConcurrentMap<K, ReplicatedRecord<K, V>> storage = new ConcurrentHashMap<K, ReplicatedRecord<K, V>>();
 

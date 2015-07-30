@@ -39,7 +39,7 @@ public class ReplicatedMapRemoveMessageTask
     protected Object call() throws Exception {
         ReplicatedMapService replicatedMapService = getService(ReplicatedMapService.SERVICE_NAME);
         ReplicatedRecordStore recordStore = replicatedMapService.getReplicatedRecordStore(parameters.name, true);
-        Object returnValue = recordStore.remove(serializationService.toObject(parameters.key));
+        Object returnValue = recordStore.remove(parameters.key);
         return serializationService.toData(returnValue);
     }
 

@@ -18,10 +18,10 @@ package com.hazelcast.replicatedmap.impl.client;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
-
 import java.io.IOException;
 import java.util.AbstractMap;
 import java.util.HashSet;
@@ -30,24 +30,20 @@ import java.util.Set;
 
 /**
  * An implementation of a portable implementing entry set for client results on entrySet requests
- *
- * @param <K> key type
- * @param <V> value type
  */
-public class ReplicatedMapEntrySet<K, V>
-        implements Portable {
+public class ReplicatedMapEntrySet implements Portable {
 
-    private final Set<Map.Entry<K, V>> entrySet;
+    private final Set<Map.Entry<Data, Data>> entrySet;
 
     ReplicatedMapEntrySet() {
-        entrySet = new HashSet<Map.Entry<K, V>>();
+        entrySet = new HashSet<Map.Entry<Data, Data>>();
     }
 
-    public ReplicatedMapEntrySet(Set<Map.Entry<K, V>> entrySet) {
+    public ReplicatedMapEntrySet(Set<Map.Entry<Data, Data>> entrySet) {
         this.entrySet = entrySet;
     }
 
-    public Set<Map.Entry<K, V>> getEntrySet() {
+    public Set<Map.Entry<Data, Data>> getEntrySet() {
         return entrySet;
     }
 
@@ -56,9 +52,9 @@ public class ReplicatedMapEntrySet<K, V>
             throws IOException {
         writer.writeInt("size", entrySet.size());
         ObjectDataOutput out = writer.getRawDataOutput();
-        for (Map.Entry<K, V> entry : entrySet) {
-            out.writeObject(entry.getKey());
-            out.writeObject(entry.getValue());
+        for (Map.Entry<Data, Data> entry : entrySet) {
+            out.writeData(entry.getKey());
+            out.writeData(entry.getValue());
         }
     }
 
@@ -68,8 +64,8 @@ public class ReplicatedMapEntrySet<K, V>
         int size = reader.readInt("size");
         ObjectDataInput in = reader.getRawDataInput();
         for (int i = 0; i < size; i++) {
-            K key = (K) in.readObject();
-            V value = (V) in.readObject();
+            Data key = in.readData();
+            Data value = in.readData();
             entrySet.add(new AbstractMap.SimpleImmutableEntry(key, value));
         }
     }

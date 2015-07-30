@@ -21,6 +21,7 @@ import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.MapEvent;
+import com.hazelcast.map.impl.DataAwareEntryEvent;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -40,28 +41,26 @@ import java.security.Permission;
  * Client request class for {@link com.hazelcast.core.ReplicatedMap#addEntryListener(com.hazelcast.core.EntryListener)}
  * implementation
  */
-public class ClientReplicatedMapAddEntryListenerRequest
-        extends AbstractReplicatedMapClientRequest {
+public class ClientReplicatedMapAddEntryListenerRequest extends AbstractReplicatedMapClientRequest {
 
     private Predicate predicate;
-    private Object key;
+    private Data key;
 
     ClientReplicatedMapAddEntryListenerRequest() {
         super(null);
     }
 
-    public ClientReplicatedMapAddEntryListenerRequest(String mapName, Predicate predicate, Object key) {
+    public ClientReplicatedMapAddEntryListenerRequest(String mapName, Predicate predicate, Data key) {
         super(mapName);
         this.predicate = predicate;
         this.key = key;
     }
 
     @Override
-    public Object call()
-            throws Exception {
+    public Object call() throws Exception {
         final ClientEndpoint endpoint = getEndpoint();
         final ReplicatedRecordStore replicatedRecordStore = getReplicatedRecordStore();
-        final EntryListener<Object, Object> listener = new ClientReplicatedMapEntryListener();
+        final EntryListener listener = new ClientReplicatedMapEntryListener();
         String registrationId;
         if (predicate == null) {
             registrationId = replicatedRecordStore.addEntryListener(listener, key);
@@ -75,13 +74,18 @@ public class ClientReplicatedMapAddEntryListenerRequest
     /**
      * Client replicated map entry listener.
      */
-    private class ClientReplicatedMapEntryListener implements EntryListener<Object, Object> {
+    private class ClientReplicatedMapEntryListener implements EntryListener {
 
-        private void handleEvent(EntryEvent<Object, Object> event) {
+        private void handleEvent(EntryEvent event) {
             if (endpoint.isAlive()) {
-                Object key = event.getKey();
-                Object value = event.getValue();
-                Object oldValue = event.getOldValue();
+                if (!(event instanceof DataAwareEntryEvent)) {
+                    throw new IllegalArgumentException("Expecting: DataAwareEntryEvent, Found: "
+                            + event.getClass().getSimpleName());
+                }
+                DataAwareEntryEvent dataAwareEntryEvent = (DataAwareEntryEvent) event;
+                Data key = dataAwareEntryEvent.getKeyData();
+                Data value = dataAwareEntryEvent.getNewValueData();
+                Data oldValue = dataAwareEntryEvent.getOldValueData();
                 EntryEventType eventType = event.getEventType();
                 String uuid = event.getMember().getUuid();
                 Portable portableEntryEvent = new ReplicatedMapPortableEntryEvent(key, value, oldValue, eventType, uuid);
@@ -91,22 +95,22 @@ public class ClientReplicatedMapAddEntryListenerRequest
         }
 
         @Override
-        public void entryAdded(EntryEvent<Object, Object> event) {
+        public void entryAdded(EntryEvent event) {
             handleEvent(event);
         }
 
         @Override
-        public void entryRemoved(EntryEvent<Object, Object> event) {
+        public void entryRemoved(EntryEvent event) {
             handleEvent(event);
         }
 
         @Override
-        public void entryUpdated(EntryEvent<Object, Object> event) {
+        public void entryUpdated(EntryEvent event) {
             handleEvent(event);
         }
 
         @Override
-        public void entryEvicted(EntryEvent<Object, Object> event) {
+        public void entryEvicted(EntryEvent event) {
             handleEvent(event);
         }
 
@@ -126,7 +130,7 @@ public class ClientReplicatedMapAddEntryListenerRequest
             throws IOException {
         super.write(writer);
         ObjectDataOutput out = writer.getRawDataOutput();
-        out.writeObject(key);
+        out.writeData(key);
         out.writeObject(predicate);
     }
 
@@ -135,7 +139,7 @@ public class ClientReplicatedMapAddEntryListenerRequest
             throws IOException {
         super.read(reader);
         ObjectDataInput in = reader.getRawDataInput();
-        key = in.readObject();
+        key = in.readData();
         predicate = in.readObject();
     }
 

@@ -25,8 +25,7 @@ import java.security.Permission;
 /**
  * Client request class for {@link java.util.Map#size()} implementation
  */
-public class ClientReplicatedMapSizeRequest
-        extends AbstractReplicatedMapClientRequest {
+public class ClientReplicatedMapSizeRequest extends AbstractReplicatedMapClientRequest {
 
     ClientReplicatedMapSizeRequest() {
         super(null);
@@ -37,8 +36,7 @@ public class ClientReplicatedMapSizeRequest
     }
 
     @Override
-    public Object call()
-            throws Exception {
+    public Object call() throws Exception {
         ReplicatedRecordStore recordStore = getReplicatedRecordStore();
         return recordStore.size();
     }

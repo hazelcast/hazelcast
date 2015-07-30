@@ -18,12 +18,12 @@ package com.hazelcast.replicatedmap.impl.client;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.ReplicatedMapPermission;
-
 import java.io.IOException;
 import java.security.Permission;
 
@@ -33,38 +33,35 @@ import java.security.Permission;
 public class ClientReplicatedMapContainsKeyRequest
         extends AbstractReplicatedMapClientRequest {
 
-    private Object key;
+    private Data key;
 
     ClientReplicatedMapContainsKeyRequest() {
         super(null);
     }
 
-    public ClientReplicatedMapContainsKeyRequest(String mapName, Object key) {
+    public ClientReplicatedMapContainsKeyRequest(String mapName, Data key) {
         super(mapName);
         this.key = key;
     }
 
     @Override
-    public Object call()
-            throws Exception {
+    public Object call() throws Exception {
         ReplicatedRecordStore recordStore = getReplicatedRecordStore();
         return recordStore.containsKey(key);
     }
 
     @Override
-    public void write(PortableWriter writer)
-            throws IOException {
+    public void write(PortableWriter writer) throws IOException {
         super.write(writer);
         ObjectDataOutput out = writer.getRawDataOutput();
-        out.writeObject(key);
+        out.writeData(key);
     }
 
     @Override
-    public void read(PortableReader reader)
-            throws IOException {
+    public void read(PortableReader reader) throws IOException {
         super.read(reader);
         ObjectDataInput in = reader.getRawDataInput();
-        key = in.readObject();
+        key = in.readData();
     }
 
     @Override

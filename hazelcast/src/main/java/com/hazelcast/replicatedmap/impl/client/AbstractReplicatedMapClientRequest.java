@@ -29,8 +29,7 @@ import java.io.IOException;
 /**
  * Base class for all ReplicatedMap client request.
  */
-public abstract class AbstractReplicatedMapClientRequest
-        extends CallableClientRequest
+public abstract class AbstractReplicatedMapClientRequest extends CallableClientRequest
         implements RetryableRequest, Portable {
 
     private String mapName;
@@ -56,14 +55,12 @@ public abstract class AbstractReplicatedMapClientRequest
     }
 
     @Override
-    public void write(PortableWriter writer)
-            throws IOException {
+    public void write(PortableWriter writer) throws IOException {
         writer.writeUTF("mapName", mapName);
     }
 
     @Override
-    public void read(PortableReader reader)
-            throws IOException {
+    public void read(PortableReader reader) throws IOException {
         mapName = reader.readUTF("mapName");
     }
 

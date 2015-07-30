@@ -39,7 +39,7 @@ public class ReplicatedMapContainsValueMessageTask
     protected Object call() throws Exception {
         ReplicatedMapService replicatedMapService = getService(ReplicatedMapService.SERVICE_NAME);
         ReplicatedRecordStore recordStore = replicatedMapService.getReplicatedRecordStore(parameters.name, true);
-        return recordStore.containsValue(serializationService.toObject(parameters.value));
+        return recordStore.containsValue(parameters.value);
     }
 
 

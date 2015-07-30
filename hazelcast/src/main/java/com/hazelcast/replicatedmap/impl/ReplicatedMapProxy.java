@@ -147,12 +147,12 @@ public class ReplicatedMapProxy<K, V>
 
     @Override
     public Set<K> keySet() {
-        return replicatedRecordStore.keySet();
+        return replicatedRecordStore.keySet(true);
     }
 
     @Override
     public Collection<V> values() {
-        return replicatedRecordStore.values();
+        return replicatedRecordStore.values(true);
     }
 
     @Override
@@ -162,7 +162,7 @@ public class ReplicatedMapProxy<K, V>
 
     @Override
     public Set<Entry<K, V>> entrySet() {
-        return replicatedRecordStore.entrySet();
+        return replicatedRecordStore.entrySet(true);
     }
 
     public boolean storageEquals(Object o) {

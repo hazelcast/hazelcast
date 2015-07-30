@@ -28,6 +28,7 @@ import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.logging.Logger;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.replicatedmap.impl.client.ClientReplicatedMapAddEntryListenerRequest;
 import com.hazelcast.replicatedmap.impl.client.ClientReplicatedMapAddNearCacheListenerRequest;
@@ -45,14 +46,15 @@ import com.hazelcast.replicatedmap.impl.client.ClientReplicatedMapRemoveRequest;
 import com.hazelcast.replicatedmap.impl.client.ClientReplicatedMapSizeRequest;
 import com.hazelcast.replicatedmap.impl.client.ClientReplicatedMapValuesRequest;
 import com.hazelcast.replicatedmap.impl.client.ReplicatedMapEntrySet;
-import com.hazelcast.replicatedmap.impl.client.ReplicatedMapGetResponse;
 import com.hazelcast.replicatedmap.impl.client.ReplicatedMapKeySet;
 import com.hazelcast.replicatedmap.impl.client.ReplicatedMapPortableEntryEvent;
 import com.hazelcast.replicatedmap.impl.client.ReplicatedMapValueCollection;
-
+import java.util.AbstractMap;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -65,9 +67,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @param <K> key type
  * @param <V> value type
  */
-public class ClientReplicatedMapProxy<K, V>
-        extends ClientProxy
-        implements ReplicatedMap<K, V> {
+public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements ReplicatedMap<K, V> {
 
     private volatile ClientHeapNearCache<Object> nearCache;
     private final AtomicBoolean nearCacheInitialized = new AtomicBoolean();
@@ -86,7 +86,9 @@ public class ClientReplicatedMapProxy<K, V>
 
     @Override
     public V put(K key, V value, long ttl, TimeUnit timeUnit) {
-        return invoke(new ClientReplicatedMapPutTtlRequest(getName(), key, value, timeUnit.toMillis(ttl)));
+        Data dataKey = toData(key);
+        Data dataValue = toData(value);
+        return invoke(new ClientReplicatedMapPutTtlRequest(getName(), dataKey, dataValue, timeUnit.toMillis(ttl)));
     }
 
     @Override
@@ -101,12 +103,14 @@ public class ClientReplicatedMapProxy<K, V>
 
     @Override
     public boolean containsKey(Object key) {
-        return (Boolean) invoke(new ClientReplicatedMapContainsKeyRequest(getName(), key));
+        Data dataKey = toData(key);
+        return (Boolean) invoke(new ClientReplicatedMapContainsKeyRequest(getName(), dataKey));
     }
 
     @Override
     public boolean containsValue(Object value) {
-        return (Boolean) invoke(new ClientReplicatedMapContainsValueRequest(getName(), value));
+        Data dataValue = toData(value);
+        return (Boolean) invoke(new ClientReplicatedMapContainsValueRequest(getName(), dataValue));
     }
 
     @Override
@@ -121,10 +125,9 @@ public class ClientReplicatedMapProxy<K, V>
                 return (V) cached;
             }
         }
-
-        ReplicatedMapGetResponse response = invoke(new ClientReplicatedMapGetRequest(getName(), key));
-
-        V value = (V) response.getValue();
+        Data dataKey = toData(key);
+        Object response = invoke(new ClientReplicatedMapGetRequest(getName(), dataKey));
+        V value = response != null ? (V) response : null;
         if (nearCache != null) {
             nearCache.put(key, value);
         }
@@ -138,12 +141,18 @@ public class ClientReplicatedMapProxy<K, V>
 
     @Override
     public V remove(Object key) {
-        return invoke(new ClientReplicatedMapRemoveRequest(getName(), key));
+        Data dataKey = toData(key);
+        return invoke(new ClientReplicatedMapRemoveRequest(getName(), dataKey));
     }
 
     @Override
     public void putAll(Map<? extends K, ? extends V> m) {
-        invoke(new ClientReplicatedMapPutAllRequest(getName(), new ReplicatedMapEntrySet(m.entrySet())));
+        Set<? extends Entry<? extends K, ? extends V>> entries = m.entrySet();
+        Set<Entry<Data, Data>> dataEntries = new HashSet<Entry<Data, Data>>(m.size());
+        for (Entry<? extends K, ? extends V> entry : entries) {
+            dataEntries.add(new AbstractMap.SimpleImmutableEntry<Data, Data>(toData(entry.getKey()), toData(entry.getValue())));
+        }
+        invoke(new ClientReplicatedMapPutAllRequest(getName(), new ReplicatedMapEntrySet(dataEntries)));
     }
 
     @Override
@@ -161,42 +170,54 @@ public class ClientReplicatedMapProxy<K, V>
 
     @Override
     public String addEntryListener(EntryListener<K, V> listener) {
-        ClientReplicatedMapAddEntryListenerRequest request = new ClientReplicatedMapAddEntryListenerRequest(getName(), null,
-                null);
+        ClientReplicatedMapAddEntryListenerRequest request = new ClientReplicatedMapAddEntryListenerRequest(getName(), null, null);
         EventHandler<ReplicatedMapPortableEntryEvent> handler = createHandler(listener);
         return listen(request, null, handler);
     }
 
     @Override
     public String addEntryListener(EntryListener<K, V> listener, K key) {
-        ClientReplicatedMapAddEntryListenerRequest request = new ClientReplicatedMapAddEntryListenerRequest(getName(), null, key);
+        Data dataKey = toData(key);
+        ClientReplicatedMapAddEntryListenerRequest request = new ClientReplicatedMapAddEntryListenerRequest(getName(), null, dataKey);
         EventHandler<ReplicatedMapPortableEntryEvent> handler = createHandler(listener);
         return listen(request, null, handler);
     }
 
     @Override
     public String addEntryListener(EntryListener<K, V> listener, Predicate<K, V> predicate) {
-        ClientReplicatedMapAddEntryListenerRequest request = new ClientReplicatedMapAddEntryListenerRequest(getName(), predicate,
-                null);
+        ClientReplicatedMapAddEntryListenerRequest request = new ClientReplicatedMapAddEntryListenerRequest(getName(), predicate, null);
         EventHandler<ReplicatedMapPortableEntryEvent> handler = createHandler(listener);
         return listen(request, null, handler);
     }
 
     @Override
     public String addEntryListener(EntryListener<K, V> listener, Predicate<K, V> predicate, K key) {
-        ClientRequest request = new ClientReplicatedMapAddEntryListenerRequest(getName(), predicate, key);
+        Data dataKey = toData(key);
+        ClientRequest request = new ClientReplicatedMapAddEntryListenerRequest(getName(), predicate, dataKey);
         EventHandler<ReplicatedMapPortableEntryEvent> handler = createHandler(listener);
         return listen(request, null, handler);
     }
 
     @Override
     public Set<K> keySet() {
-        return ((ReplicatedMapKeySet) invoke(new ClientReplicatedMapKeySetRequest(getName()))).getKeySet();
+        ReplicatedMapKeySet result = invoke(new ClientReplicatedMapKeySetRequest(getName()));
+        Set<Data> dataKeyset = result.getKeySet();
+        HashSet<K> keySet = new HashSet<K>(dataKeyset.size());
+        for (Data dataKey : dataKeyset) {
+            keySet.add((K) toObject(dataKey));
+        }
+        return keySet;
     }
 
     @Override
     public Collection<V> values() {
-        return ((ReplicatedMapValueCollection) invoke(new ClientReplicatedMapValuesRequest(getName()))).getValues();
+        ReplicatedMapValueCollection result = invoke(new ClientReplicatedMapValuesRequest(getName()));
+        Collection<Data> dataValues = result.getValues();
+        ArrayList<V> values = new ArrayList<V>(dataValues.size());
+        for (Data dataValue : dataValues) {
+            values.add((V) toObject(dataValue));
+        }
+        return values;
     }
 
     @Override
@@ -208,7 +229,15 @@ public class ClientReplicatedMapProxy<K, V>
 
     @Override
     public Set<Entry<K, V>> entrySet() {
-        return ((ReplicatedMapEntrySet) invoke(new ClientReplicatedMapEntrySetRequest(getName()))).getEntrySet();
+        ReplicatedMapEntrySet result = invoke(new ClientReplicatedMapEntrySetRequest(getName()));
+        Set<Entry<Data, Data>> dataEntries = result.getEntrySet();
+        HashSet<Entry<K, V>> entries = new HashSet<Entry<K, V>>(dataEntries.size());
+        for (Entry<Data, Data> dataEntry : dataEntries) {
+            K key = toObject(dataEntry.getKey());
+            V value = toObject(dataEntry.getValue());
+            entries.add(new AbstractMap.SimpleImmutableEntry<K, V>(key, value));
+        }
+        return entries;
     }
 
     private EventHandler<ReplicatedMapPortableEntryEvent> createHandler(final EntryListener<K, V> listener) {
@@ -221,8 +250,7 @@ public class ClientReplicatedMapProxy<K, V>
             if (nearCacheConfig == null) {
                 return;
             }
-            ClientHeapNearCache<Object> nearCache = new ClientHeapNearCache<Object>(getName(),
-                    getContext(), nearCacheConfig);
+            ClientHeapNearCache<Object> nearCache = new ClientHeapNearCache<Object>(getName(), getContext(), nearCacheConfig);
             this.nearCache = nearCache;
             if (nearCache.isInvalidateOnChange()) {
                 addNearCacheInvalidateListener();
@@ -265,9 +293,9 @@ public class ClientReplicatedMapProxy<K, V>
         }
 
         public void handle(ReplicatedMapPortableEntryEvent event) {
-            V value = (V) event.getValue();
-            V oldValue = (V) event.getOldValue();
-            K key = (K) event.getKey();
+            V value = toObject(event.getValue());
+            V oldValue = toObject(event.getOldValue());
+            K key = toObject(event.getKey());
             Member member = getContext().getClusterService().getMember(event.getUuid());
             EntryEvent<K, V> entryEvent = new EntryEvent<K, V>(getName(), member, event.getEventType().getType(), key,
                     oldValue, value);
@@ -312,7 +340,7 @@ public class ClientReplicatedMapProxy<K, V>
                 case REMOVED:
                 case UPDATED:
                 case EVICTED:
-                    nearCache.remove(event.getKey());
+                    nearCache.remove(toObject(event.getKey()));
                     break;
                 default:
                     throw new IllegalArgumentException("Not a known event type " + event.getEventType());

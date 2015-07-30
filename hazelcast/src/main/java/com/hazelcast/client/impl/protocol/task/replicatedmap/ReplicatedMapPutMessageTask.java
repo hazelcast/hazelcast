@@ -40,8 +40,7 @@ public class ReplicatedMapPutMessageTask
     protected Object call() throws Exception {
         ReplicatedMapService replicatedMapService = getService(ReplicatedMapService.SERVICE_NAME);
         ReplicatedRecordStore recordStore = replicatedMapService.getReplicatedRecordStore(parameters.name, true);
-        Object returnValue = recordStore.put(serializationService.toObject(parameters.key),
-                serializationService.toObject(parameters.value), parameters.ttl, TimeUnit.MILLISECONDS);
+        Object returnValue = recordStore.put(parameters.key, parameters.value, parameters.ttl, TimeUnit.MILLISECONDS);
         return serializationService.toData(returnValue);
     }
 

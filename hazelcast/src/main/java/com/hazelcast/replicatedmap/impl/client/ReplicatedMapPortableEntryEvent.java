@@ -19,6 +19,7 @@ package com.hazelcast.replicatedmap.impl.client;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
@@ -28,19 +29,18 @@ import java.io.IOException;
 /**
  * Class to redirect entry listener events on the members to the listening client
  */
-public class ReplicatedMapPortableEntryEvent
-        implements Portable {
+public class ReplicatedMapPortableEntryEvent implements Portable {
 
-    private Object key;
-    private Object value;
-    private Object oldValue;
+    private Data key;
+    private Data value;
+    private Data oldValue;
     private EntryEventType eventType;
     private String uuid;
 
     ReplicatedMapPortableEntryEvent() {
     }
 
-    ReplicatedMapPortableEntryEvent(Object key, Object value, Object oldValue, EntryEventType eventType, String uuid) {
+    ReplicatedMapPortableEntryEvent(Data key, Data value, Data oldValue, EntryEventType eventType, String uuid) {
         this.key = key;
         this.value = value;
         this.oldValue = oldValue;
@@ -48,15 +48,15 @@ public class ReplicatedMapPortableEntryEvent
         this.uuid = uuid;
     }
 
-    public Object getKey() {
+    public Data getKey() {
         return key;
     }
 
-    public Object getValue() {
+    public Data getValue() {
         return value;
     }
 
-    public Object getOldValue() {
+    public Data getOldValue() {
         return oldValue;
     }
 
@@ -68,24 +68,22 @@ public class ReplicatedMapPortableEntryEvent
         return uuid;
     }
 
-    public void writePortable(PortableWriter writer)
-            throws IOException {
+    public void writePortable(PortableWriter writer) throws IOException {
         writer.writeInt("e", eventType.getType());
         writer.writeUTF("u", uuid);
         final ObjectDataOutput out = writer.getRawDataOutput();
-        out.writeObject(key);
-        out.writeObject(value);
-        out.writeObject(oldValue);
+        out.writeData(key);
+        out.writeData(value);
+        out.writeData(oldValue);
     }
 
-    public void readPortable(PortableReader reader)
-            throws IOException {
+    public void readPortable(PortableReader reader) throws IOException {
         eventType = EntryEventType.getByType(reader.readInt("e"));
         uuid = reader.readUTF("u");
         final ObjectDataInput in = reader.getRawDataInput();
-        key = in.readObject();
-        value = in.readObject();
-        oldValue = in.readObject();
+        key = in.readData();
+        value = in.readData();
+        oldValue = in.readData();
     }
 
     public int getFactoryId() {

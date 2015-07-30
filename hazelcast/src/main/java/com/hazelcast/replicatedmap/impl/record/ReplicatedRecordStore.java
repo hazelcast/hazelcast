@@ -49,13 +49,13 @@ public interface ReplicatedRecordStore {
 
     ReplicatedRecord getReplicatedRecord(Object key);
 
-    Set keySet();
+    Set keySet(boolean lazy);
 
-    Collection values();
+    Collection values(boolean lazy);
 
     Collection values(Comparator comparator);
 
-    Set entrySet();
+    Set entrySet(boolean lazy);
 
     int size();
 

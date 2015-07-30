@@ -39,7 +39,6 @@ public class ReplicatedMapPutAllMessageTask
 
     @Override
     protected Object call() throws Exception {
-
         ReplicatedMapService replicatedMapService = getService(ReplicatedMapService.SERVICE_NAME);
         ReplicatedRecordStore recordStore = replicatedMapService.getReplicatedRecordStore(parameters.name, true);
         for (Map.Entry<Data, Data> entry : parameters.map.entrySet()) {

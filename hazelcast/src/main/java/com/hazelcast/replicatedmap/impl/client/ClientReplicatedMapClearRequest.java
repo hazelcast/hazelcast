@@ -25,8 +25,7 @@ import java.security.Permission;
 /**
  * Client request class for {@link java.util.Map#clear()} implementation
  */
-public class ClientReplicatedMapClearRequest
-        extends AbstractReplicatedMapClientRequest {
+public class ClientReplicatedMapClearRequest extends AbstractReplicatedMapClientRequest {
 
     ClientReplicatedMapClearRequest() {
         super(null);
@@ -37,8 +36,7 @@ public class ClientReplicatedMapClearRequest
     }
 
     @Override
-    public Object call()
-            throws Exception {
+    public Object call() throws Exception {
         ReplicatedRecordStore recordStore = getReplicatedRecordStore();
         recordStore.clear(true, true);
         return Boolean.TRUE;

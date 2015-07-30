@@ -215,9 +215,10 @@ public abstract class AbstractReplicatedRecordStore<K, V>
         isNotNull(value, "value");
         storage.checkState();
         mapStats.incrementOtherOperations();
+        Object v = unmarshallValue(value);
         for (Map.Entry<K, ReplicatedRecord<K, V>> entry : storage.entrySet()) {
             V entryValue = entry.getValue().getValue();
-            if (value == entryValue || (entryValue != null && unmarshallValue(entryValue).equals(value))) {
+            if (v == entryValue || (entryValue != null && unmarshallValue(entryValue).equals(v))) {
                 return true;
             }
         }
@@ -225,21 +226,27 @@ public abstract class AbstractReplicatedRecordStore<K, V>
     }
 
     @Override
-    public Set keySet() {
+    public Set keySet(boolean lazy) {
         storage.checkState();
         mapStats.incrementOtherOperations();
 
-        // Lazy evaluation to prevent to much copying
-        return new LazySet<K, V, K>(new KeySetIteratorFactory<K, V>(this), storage);
+        if (lazy) {
+            // Lazy evaluation to prevent to much copying
+            return new LazySet<K, V, K>(new KeySetIteratorFactory<K, V>(this), storage);
+        }
+        return storage.keySet();
     }
 
     @Override
-    public Collection values() {
+    public Collection values(boolean lazy) {
         storage.checkState();
         mapStats.incrementOtherOperations();
 
-        // Lazy evaluation to prevent to much copying
-        return new LazyCollection<K, V>(new ValuesIteratorFactory<K, V>(this), storage);
+        if (lazy) {
+            // Lazy evaluation to prevent to much copying
+            return new LazyCollection<K, V>(new ValuesIteratorFactory<K, V>(this), storage);
+        }
+        return storage.values();
     }
 
     @Override
@@ -255,12 +262,15 @@ public abstract class AbstractReplicatedRecordStore<K, V>
     }
 
     @Override
-    public Set entrySet() {
+    public Set entrySet(boolean lazy) {
         storage.checkState();
         mapStats.incrementOtherOperations();
 
-        // Lazy evaluation to prevent to much copying
-        return new LazySet<K, V, Map.Entry<K, V>>(new EntrySetIteratorFactory<K, V>(this), storage);
+        if (lazy) {
+            // Lazy evaluation to prevent to much copying
+            return new LazySet<K, V, Map.Entry<K, V>>(new EntrySetIteratorFactory<K, V>(this), storage);
+        }
+        return storage.entrySet();
     }
 
     @Override

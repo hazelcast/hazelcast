@@ -27,8 +27,7 @@ import java.security.Permission;
 /**
  * Client request class for {@link com.hazelcast.core.ReplicatedMap#removeEntryListener(String)} implementation
  */
-public class ClientReplicatedMapRemoveEntryListenerRequest
-        extends BaseClientRemoveListenerRequest {
+public class ClientReplicatedMapRemoveEntryListenerRequest extends BaseClientRemoveListenerRequest {
 
     public ClientReplicatedMapRemoveEntryListenerRequest() {
     }
@@ -37,8 +36,7 @@ public class ClientReplicatedMapRemoveEntryListenerRequest
         super(mapName, registrationId);
     }
 
-    public Object call()
-            throws Exception {
+    public Object call() throws Exception {
         final ReplicatedRecordStore replicatedRecordStore = getReplicatedRecordStore();
         return replicatedRecordStore.removeEntryListenerInternal(registrationId);
     }
