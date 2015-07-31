@@ -16,7 +16,6 @@
 
 package com.hazelcast.nio;
 
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.impl.HeapData;
 
 import java.nio.ByteBuffer;
@@ -25,8 +24,14 @@ import static com.hazelcast.nio.Bits.INT_SIZE_IN_BYTES;
 
 /**
  * A Packet is a piece of data send over the line.
+ *
+ * The Packet extends HeapData instead of wrapping it. From a design point of view this is often not the preferred solution (
+ * prefer composition over inheritance), but in this case that would mean more object litter.
+ *
+ * Since the Packet isn't used throughout the system, this design choice is visible locally.
  */
-public final class Packet implements SocketWritable, SocketReadable {
+public final class Packet extends HeapData
+        implements SocketWritable, SocketReadable {
 
     public static final byte VERSION = 4;
 
@@ -46,7 +51,6 @@ public final class Packet implements SocketWritable, SocketReadable {
 
     private static final short PERSIST_COMPLETED = Short.MAX_VALUE;
 
-    private Data data;
     private short header;
     private int partitionId;
     private transient Connection conn;
@@ -60,12 +64,12 @@ public final class Packet implements SocketWritable, SocketReadable {
     public Packet() {
     }
 
-    public Packet(Data data) {
-        this(data, -1);
+    public Packet(byte[] payload) {
+        this(payload, -1);
     }
 
-    public Packet(Data data, int partitionId) {
-        this.data = data;
+    public Packet(byte[] payload, int partitionId) {
+        super(payload);
         this.partitionId = partitionId;
     }
 
@@ -270,7 +274,7 @@ public final class Packet implements SocketWritable, SocketReadable {
             if (destination.remaining() < INT_SIZE_IN_BYTES) {
                 return false;
             }
-            size = data.totalSize();
+            size = totalSize();
             destination.putInt(size);
             setPersistStatus(PERSIST_SIZE);
         }
@@ -300,7 +304,7 @@ public final class Packet implements SocketWritable, SocketReadable {
                     done = false;
                 }
 
-                byte[] byteArray = data.toByteArray();
+                byte[] byteArray = toByteArray();
                 destination.put(byteArray, valueOffset, bytesWrite);
                 valueOffset += bytesWrite;
 
@@ -315,12 +319,8 @@ public final class Packet implements SocketWritable, SocketReadable {
 
     private boolean readValue(ByteBuffer source) {
         if (!isPersistStatusSet(PERSIST_VALUE)) {
-            byte[] bytes;
-            if (data == null) {
-                bytes = new byte[size];
-                data = new HeapData(bytes);
-            } else {
-                bytes = data.toByteArray();
+            if (payload == null) {
+                payload = new byte[size];
             }
 
             if (size > 0) {
@@ -339,7 +339,7 @@ public final class Packet implements SocketWritable, SocketReadable {
                 }
 
                 // read the data from the byte-buffer into the bytes-array.
-                source.get(bytes, valueOffset, bytesRead);
+                source.get(payload, valueOffset, bytesRead);
                 valueOffset += bytesRead;
 
                 if (!done) {
@@ -352,23 +352,14 @@ public final class Packet implements SocketWritable, SocketReadable {
         return true;
     }
 
-
     /**
      * Returns an estimation of the packet, including its payload, in bytes.
      *
      * @return the size of the packet.
      */
-    public int size() {
+    public int packetSize() {
         // 11 = byte(version) + short(header) + int(partitionId) + int(data size)
-        return (data != null ? data.totalSize() : 0) + 11;
-    }
-
-    public Data getData() {
-        return data;
-    }
-
-    public void setData(Data data) {
-        this.data = data;
+        return (payload != null ? totalSize() : 0) + 11;
     }
 
     public boolean done() {
@@ -376,7 +367,7 @@ public final class Packet implements SocketWritable, SocketReadable {
     }
 
     public void reset() {
-        data = null;
+        payload = null;
         persistStatus = 0;
     }
 

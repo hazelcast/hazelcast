@@ -102,7 +102,7 @@ public abstract class AbstractClassicOperationExecutorTest extends HazelcastTest
         @Override
         public void handle(Packet packet) throws Exception {
             packets.add(packet);
-            Response response = serializationService.toObject(packet.getData());
+            Response response = serializationService.toObject(packet);
             responses.add(response);
         }
     }
@@ -213,7 +213,7 @@ public abstract class AbstractClassicOperationExecutorTest extends HazelcastTest
         @Override
         public void run(Packet packet) throws Exception {
             packets.add(packet);
-            Operation op = serializationService.toObject(packet.getData());
+            Operation op = serializationService.toObject(packet);
             run(op);
         }
 

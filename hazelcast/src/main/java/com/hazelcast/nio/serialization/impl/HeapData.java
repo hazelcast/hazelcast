@@ -27,7 +27,7 @@ import java.util.Arrays;
  * A {@link Data} implementation where the content lives on the heap.
  */
 @SuppressFBWarnings("EI_EXPOSE_REP")
-public final class HeapData implements Data {
+public class HeapData implements Data {
   // type and partition_hash are always written with BIG_ENDIAN byte-order
     public static final int TYPE_OFFSET = 0;
     // will use a byte to store partition_hash bit
@@ -37,17 +37,17 @@ public final class HeapData implements Data {
     // array (12: array header, 4: length)
     private static final int ARRAY_HEADER_SIZE_IN_BYTES = 16;
 
-    private byte[] data;
+    protected byte[] payload;
 
     public HeapData() {
     }
 
-    public HeapData(byte[] data) {
-        if (data != null && data.length > 0 && data.length < DATA_OFFSET) {
+    public HeapData(byte[] payload) {
+        if (payload != null && payload.length > 0 && payload.length < DATA_OFFSET) {
             throw new IllegalArgumentException("Data should be either empty or should contain more than "
-                    + HeapData.DATA_OFFSET + " bytes! -> " + Arrays.toString(data));
+                    + HeapData.DATA_OFFSET + " bytes! -> " + Arrays.toString(payload));
         }
-        this.data = data;
+        this.payload = payload;
     }
 
     @Override
@@ -57,25 +57,25 @@ public final class HeapData implements Data {
 
     @Override
     public int totalSize() {
-        return data != null ? data.length : 0;
+        return payload != null ? payload.length : 0;
     }
 
     @Override
     public int getPartitionHash() {
         if (hasPartitionHash()) {
-            return Bits.readIntB(data, data.length - Bits.INT_SIZE_IN_BYTES);
+            return Bits.readIntB(payload, payload.length - Bits.INT_SIZE_IN_BYTES);
         }
         return hashCode();
     }
 
     @Override
     public boolean hasPartitionHash() {
-        return totalSize() != 0 && data[PARTITION_HASH_BIT_OFFSET] != 0;
+        return totalSize() != 0 && payload[PARTITION_HASH_BIT_OFFSET] != 0;
     }
 
     @Override
     public byte[] toByteArray() {
-        return data;
+        return payload;
     }
 
     @Override
@@ -83,14 +83,14 @@ public final class HeapData implements Data {
         if (totalSize() == 0) {
             return SerializationConstants.CONSTANT_TYPE_NULL;
         }
-        return Bits.readIntB(data, TYPE_OFFSET);
+        return Bits.readIntB(payload, TYPE_OFFSET);
     }
 
     @Override
     public int getHeapCost() {
         // reference (assuming compressed oops)
         int objectRef = Bits.INT_SIZE_IN_BYTES;
-        return objectRef + (data != null ? ARRAY_HEADER_SIZE_IN_BYTES + data.length : 0);
+        return objectRef + (payload != null ? ARRAY_HEADER_SIZE_IN_BYTES + payload.length : 0);
     }
 
     @Override
@@ -115,7 +115,7 @@ public final class HeapData implements Data {
             return false;
         }
 
-        return dataSize == 0 || equals(this.data, data.toByteArray());
+        return dataSize == 0 || equals(this.payload, data.toByteArray());
     }
 
     // Same as Arrays.equals(byte[] a, byte[] a2) but loop order is reversed.
@@ -140,12 +140,12 @@ public final class HeapData implements Data {
 
     @Override
     public int hashCode() {
-        return HashUtil.MurmurHash3_x86_32(data, DATA_OFFSET, dataSize());
+        return HashUtil.MurmurHash3_x86_32(payload, DATA_OFFSET, dataSize());
     }
 
     @Override
     public long hash64() {
-        return HashUtil.MurmurHash3_x64_64(data, DATA_OFFSET, dataSize());
+        return HashUtil.MurmurHash3_x64_64(payload, DATA_OFFSET, dataSize());
     }
 
     @Override

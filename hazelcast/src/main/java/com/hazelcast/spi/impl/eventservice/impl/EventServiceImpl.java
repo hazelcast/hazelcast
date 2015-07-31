@@ -27,6 +27,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.spi.EventFilter;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
@@ -88,9 +89,11 @@ public class EventServiceImpl implements InternalEventService {
     private final MwCounter totalFailures = newMwCounter();
     @Probe(name = "rejectedCount")
     private final MwCounter rejectedCount = newMwCounter();
+    private final SerializationService serializationService;
 
     public EventServiceImpl(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
+        this.serializationService = nodeEngine.getSerializationService();
         this.logger = nodeEngine.getLogger(EventService.class.getName());
         final Node node = nodeEngine.getNode();
         GroupProperties groupProperties = node.getGroupProperties();
@@ -314,7 +317,7 @@ public class EventServiceImpl implements InternalEventService {
             }
 
             if (eventData == null) {
-                eventData = nodeEngine.toData(event);
+                eventData = serializationService.toData(event);
             }
             EventPacket eventPacket = new EventPacket(registration.getId(), serviceName, eventData);
             sendEventPacket(registration.getSubscriber(), eventPacket, orderKey);
@@ -326,7 +329,7 @@ public class EventServiceImpl implements InternalEventService {
         if (registrations.isEmpty()) {
             return;
         }
-        Data eventData = nodeEngine.toData(event);
+        Data eventData = serializationService.toData(event);
         for (EventRegistration registration : registrations) {
             if (!(registration instanceof Registration)) {
                 throw new IllegalArgumentException();
@@ -376,7 +379,7 @@ public class EventServiceImpl implements InternalEventService {
                 ignore(ignored);
             }
         } else {
-            final Packet packet = new Packet(nodeEngine.toData(eventPacket), orderKey);
+            Packet packet = new Packet(serializationService.toBytes(eventPacket), orderKey);
             packet.setHeader(Packet.HEADER_EVENT);
 
             if (!nodeEngine.getPacketTransceiver().transmit(packet, subscriber)) {

@@ -31,7 +31,6 @@ import com.hazelcast.nio.IOService;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.MemberSocketInterceptor;
 import com.hazelcast.nio.Packet;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.tcp.iobalancer.IOBalancer;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
@@ -350,8 +349,8 @@ public class TcpIpConnectionManager implements ConnectionManager {
             log(Level.FINEST, "Sending bind packet to " + remoteEndPoint);
         }
         BindMessage bind = new BindMessage(ioService.getThisAddress(), remoteEndPoint, replyBack);
-        Data bindData = ioService.toData(bind);
-        Packet packet = new Packet(bindData);
+        byte[] bytes = ioService.getSerializationService().toBytes(bind);
+        Packet packet = new Packet(bytes);
         packet.setHeader(Packet.HEADER_BIND);
         connection.write(packet);
         //now you can send anything...

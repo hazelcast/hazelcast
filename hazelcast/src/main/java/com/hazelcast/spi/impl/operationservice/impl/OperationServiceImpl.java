@@ -28,7 +28,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.Packet;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.InternalCompletableFuture;
@@ -122,17 +122,18 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
     private final SlowOperationDetector slowOperationDetector;
     private final IsStillRunningService isStillRunningService;
     private final AsyncResponsePacketHandler responsePacketExecutor;
+    private final SerializationService serializationService;
 
     public OperationServiceImpl(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
         this.node = nodeEngine.getNode();
         this.logger = node.getLogger(OperationService.class);
         this.metricsRegistry = nodeEngine.getMetricsRegistry();
+        this.serializationService = nodeEngine.getSerializationService();
 
         this.invocationLogger = nodeEngine.getLogger(Invocation.class);
         GroupProperties groupProperties = node.getGroupProperties();
         this.defaultCallTimeoutMillis = groupProperties.OPERATION_CALL_TIMEOUT_MILLIS.getLong();
-
         this.backpressureRegulator = new BackpressureRegulator(groupProperties, logger);
 
         int coreSize = Runtime.getRuntime().availableProcessors();
@@ -165,10 +166,8 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
         ExecutionService executionService = nodeEngine.getExecutionService();
         this.asyncExecutor = executionService.register(ExecutionService.ASYNC_EXECUTOR, coreSize,
                 ASYNC_QUEUE_CAPACITY, ExecutorType.CONCRETE);
-
         this.slowOperationDetector = initSlowOperationDetector();
-
-        nodeEngine.getMetricsRegistry().scanAndRegister(this, "operation");
+        metricsRegistry.scanAndRegister(this, "operation");
     }
 
     private SlowOperationDetector initSlowOperationDetector() {
@@ -380,9 +379,9 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
             throw new IllegalArgumentException("Target is this node! -> " + target + ", op: " + op);
         }
 
-        Data data = nodeEngine.toData(op);
+        byte[] bytes = serializationService.toBytes(op);
         int partitionId = op.getPartitionId();
-        Packet packet = new Packet(data, partitionId);
+        Packet packet = new Packet(bytes, partitionId);
         packet.setHeader(Packet.HEADER_OP);
 
         if (op instanceof UrgentSystemOperation) {
@@ -403,8 +402,8 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
             throw new IllegalArgumentException("Target is this node! -> " + target + ", response: " + response);
         }
 
-        Data data = nodeEngine.toData(response);
-        Packet packet = new Packet(data);
+        byte[] bytes = serializationService.toBytes(response);
+        Packet packet = new Packet(bytes, -1);
         packet.setHeader(Packet.HEADER_OP);
         packet.setHeader(Packet.HEADER_RESPONSE);
 

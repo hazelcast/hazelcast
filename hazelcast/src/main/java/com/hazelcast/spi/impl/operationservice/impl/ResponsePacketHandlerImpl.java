@@ -18,7 +18,6 @@ package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Packet;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.spi.impl.PacketHandler;
 import com.hazelcast.spi.impl.operationservice.impl.responses.Response;
@@ -42,8 +41,7 @@ final class ResponsePacketHandlerImpl implements PacketHandler {
 
     @Override
     public void handle(Packet packet) throws Exception {
-        Data data = packet.getData();
-        Response response = serializationService.toObject(data);
+        Response response = serializationService.toObject(packet);
         try {
             invocationRegistry.notify(response);
         } catch (Throwable e) {

@@ -118,7 +118,7 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
         long bytesPending = 0;
         for (SocketWritable writable : writeQueue) {
             if (writable instanceof Packet) {
-                bytesPending += ((Packet) writable).size();
+                bytesPending += ((Packet) writable).packetSize();
             }
         }
         return bytesPending;

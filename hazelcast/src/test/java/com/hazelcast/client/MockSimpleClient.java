@@ -66,8 +66,7 @@ public class MockSimpleClient implements SimpleClient {
     }
 
     public void send(Object o) throws IOException {
-        Data data = serializationService.toData(o);
-        Packet packet = new Packet(data);
+        Packet packet = new Packet(serializationService.toBytes(o));
         packet.setConn(connection);
         clientEngine.handlePacket(packet);
     }
@@ -79,7 +78,7 @@ public class MockSimpleClient implements SimpleClient {
         } catch (InterruptedException e) {
             throw new HazelcastException(e);
         }
-        ClientResponse clientResponse = serializationService.toObject(packet.getData());
+        ClientResponse clientResponse = serializationService.toObject(packet);
         return serializationService.toObject(clientResponse.getResponse());
     }
 

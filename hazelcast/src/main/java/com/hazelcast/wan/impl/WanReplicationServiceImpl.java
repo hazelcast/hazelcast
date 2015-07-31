@@ -24,7 +24,6 @@ import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.Packet;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.ReplicationSupportingService;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.executor.StripedExecutor;
@@ -105,9 +104,8 @@ public class WanReplicationServiceImpl implements WanReplicationService {
         ex.execute(new StripedRunnable() {
             @Override
             public void run() {
-                final Data data = packet.getData();
                 try {
-                    WanReplicationEvent replicationEvent = (WanReplicationEvent) node.nodeEngine.toObject(data);
+                    WanReplicationEvent replicationEvent = (WanReplicationEvent) node.nodeEngine.toObject(packet);
                     String serviceName = replicationEvent.getServiceName();
                     ReplicationSupportingService service = node.nodeEngine.getService(serviceName);
                     service.onReplicationEvent(replicationEvent);

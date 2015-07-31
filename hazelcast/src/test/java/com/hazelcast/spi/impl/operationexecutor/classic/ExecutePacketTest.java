@@ -33,8 +33,7 @@ public class ExecutePacketTest extends AbstractClassicOperationExecutorTest {
         initExecutor();
 
         final NormalResponse normalResponse = new NormalResponse(null, 1, 0, false);
-        Data data = serializationService.toData(normalResponse);
-        final Packet packet = new Packet(data, 0);
+        final Packet packet = new Packet(serializationService.toBytes(normalResponse), 0);
         packet.setHeader(Packet.HEADER_RESPONSE);
         packet.setHeader(Packet.HEADER_OP);
         executor.execute(packet);
@@ -54,8 +53,7 @@ public class ExecutePacketTest extends AbstractClassicOperationExecutorTest {
         initExecutor();
 
         final DummyOperation operation = new DummyOperation(0);
-        Data data = serializationService.toData(operation);
-        final Packet packet = new Packet(data, operation.getPartitionId());
+        final Packet packet = new Packet(serializationService.toBytes(operation), operation.getPartitionId());
         packet.setHeader(Packet.HEADER_OP);
         executor.execute(packet);
 
@@ -74,8 +72,7 @@ public class ExecutePacketTest extends AbstractClassicOperationExecutorTest {
         initExecutor();
 
         final DummyOperation operation = new DummyOperation(Operation.GENERIC_PARTITION_ID);
-        Data data = serializationService.toData(operation);
-        final Packet packet = new Packet(data, operation.getPartitionId());
+        final Packet packet = new Packet(serializationService.toBytes(operation), operation.getPartitionId());
         packet.setHeader(Packet.HEADER_OP);
         executor.execute(packet);
 

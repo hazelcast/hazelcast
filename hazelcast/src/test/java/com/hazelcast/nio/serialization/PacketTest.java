@@ -69,23 +69,22 @@ public class PacketTest {
         testPacketWriteRead(portablePerson);
     }
 
-    private void testPacketWriteRead(Object object) throws IOException {
+    private void testPacketWriteRead(Object originalObject) throws IOException {
         SerializationService ss = createSerializationServiceBuilder().build();
-        Data data1 = ss.toData(object);
+        byte[] originalPayload = ss.toBytes(originalObject);
 
-        ByteBuffer buffer = ByteBuffer.allocate(data1.dataSize() * 2);
-        Packet packet1 = new Packet(data1);
-        assertTrue(packet1.writeTo(buffer));
+        ByteBuffer buffer = ByteBuffer.allocate(originalPayload.length * 2);
+        Packet originalPacket = new Packet(originalPayload);
+        assertTrue(originalPacket.writeTo(buffer));
         buffer.flip();
 
         SerializationService ss2 = createSerializationServiceBuilder().build();
-        Packet packet2 = new Packet();
-        assertTrue(packet2.readFrom(buffer));
+        Packet clonedPacket = new Packet();
+        assertTrue(clonedPacket.readFrom(buffer));
 
-        Data data2 = packet2.getData();
-        Object object2 = ss2.toObject(data2);
+        Object clonedObject = ss2.toObject(clonedPacket);
 
-        assertEquals(data1, data2);
-        assertEquals(object, object2);
+        assertEquals(originalPacket, clonedPacket);
+        assertEquals(originalObject, clonedObject);
     }
 }

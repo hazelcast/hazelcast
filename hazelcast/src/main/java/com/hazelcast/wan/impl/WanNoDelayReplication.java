@@ -23,7 +23,6 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.nio.Packet;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
@@ -103,8 +102,8 @@ public class WanNoDelayReplication
                     }
                 }
                 if (conn != null && conn.isAlive()) {
-                    Data data = node.nodeEngine.getSerializationService().toData(event);
-                    Packet packet = new Packet(data);
+                    byte[] bytes = node.nodeEngine.getSerializationService().toBytes(event);
+                    Packet packet = new Packet(bytes);
                     packet.setHeader(Packet.HEADER_WAN_REPLICATION);
                     node.nodeEngine.getPacketTransceiver().transmit(packet, conn);
                 } else {
