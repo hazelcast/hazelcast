@@ -63,6 +63,24 @@ public class ClientReplicatedMapTest
     }
 
     @Test
+    public void testPutNullReturnValueDeserialization() {
+        hazelcastFactory.newHazelcastInstance();
+        final HazelcastInstance client = hazelcastFactory.newHazelcastClient();
+        final ReplicatedMap<Object, Object> map = client.getReplicatedMap(randomMapName());
+        assertNull(map.put(1, 2));
+    }
+
+    @Test
+    public void testPutReturnValueDeserialization() {
+        hazelcastFactory.newHazelcastInstance();
+        final HazelcastInstance client = hazelcastFactory.newHazelcastClient();
+        final ReplicatedMap<Object, Object> map = client.getReplicatedMap(randomMapName());
+        map.put(1, 2);
+        assertEquals(2, map.put(1, 3));
+    }
+
+
+    @Test
     public void testAddObjectDelay0()
             throws Exception {
 
