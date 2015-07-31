@@ -73,10 +73,10 @@ public abstract class OperationThread extends HazelcastManagedThread {
         super(threadGroup.getInternalThreadGroup(), name);
         setContextClassLoader(threadGroup.getClassLoader());
 
-        this.scheduleQueue = initScheduledQueue(scheduleQueue);
-        this.threadId = threadId;
         this.logger = logger;
+        this.threadId = threadId;
         this.nodeExtension = nodeExtension;
+        this.scheduleQueue = initScheduledQueue(scheduleQueue);
     }
 
     private ScheduleQueue initScheduledQueue(ScheduleQueue scheduleQueue) {
