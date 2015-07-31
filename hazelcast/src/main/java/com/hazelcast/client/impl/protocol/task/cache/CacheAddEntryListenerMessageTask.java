@@ -28,7 +28,7 @@ import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.impl.DefaultData;
+import com.hazelcast.nio.serialization.impl.HeapData;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.ListenerWrapperEventFilter;
 import com.hazelcast.spi.NotifiableEventListener;
@@ -81,7 +81,7 @@ public class CacheAddEntryListenerMessageTask
             if (eventObject instanceof CacheEventSet) {
                 Set<CacheEventData> events = ((CacheEventSet) eventObject).getEvents();
                 if (events.size() > 1) {
-                    partitionKey = new DefaultData();
+                    partitionKey = new HeapData();
                 } else if (events.size() == 1) {
                     partitionKey = events.iterator().next().getDataKey();
                 }

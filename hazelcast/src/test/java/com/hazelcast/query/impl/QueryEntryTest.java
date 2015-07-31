@@ -4,7 +4,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.DataSerializable;
-import com.hazelcast.nio.serialization.impl.DefaultData;
+import com.hazelcast.nio.serialization.impl.HeapData;
 import com.hazelcast.nio.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.SerializationService;
@@ -125,7 +125,7 @@ public class QueryEntryTest extends HazelcastTestSupport {
 
     @Test
     public void test_init() throws Exception {
-        Data indexedKey = new DefaultData();
+        Data indexedKey = new HeapData();
 
         Data dataKey = serializationService.toData("dataKey");
         Data dataValue = serializationService.toData("dataValue");

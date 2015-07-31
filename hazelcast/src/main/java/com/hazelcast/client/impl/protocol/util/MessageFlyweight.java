@@ -18,7 +18,7 @@ package com.hazelcast.client.impl.protocol.util;
 
 import com.hazelcast.nio.Bits;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.impl.DefaultData;
+import com.hazelcast.nio.serialization.impl.HeapData;
 
 import java.util.AbstractMap;
 import java.util.ArrayList;
@@ -165,7 +165,7 @@ public class MessageFlyweight {
     }
 
     public Data getData() {
-        return new DefaultData(getByteArray());
+        return new HeapData(getByteArray());
     }
 
     public List<Data> getDataList() {

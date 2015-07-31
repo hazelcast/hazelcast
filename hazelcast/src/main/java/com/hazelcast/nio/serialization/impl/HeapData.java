@@ -23,8 +23,11 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.Arrays;
 
+/**
+ * A {@link Data} implementation where the content lives on the heap.
+ */
 @SuppressFBWarnings("EI_EXPOSE_REP")
-public final class DefaultData implements Data {
+public final class HeapData implements Data {
   // type and partition_hash are always written with BIG_ENDIAN byte-order
     public static final int TYPE_OFFSET = 0;
     // will use a byte to store partition_hash bit
@@ -36,13 +39,13 @@ public final class DefaultData implements Data {
 
     private byte[] data;
 
-    public DefaultData() {
+    public HeapData() {
     }
 
-    public DefaultData(byte[] data) {
+    public HeapData(byte[] data) {
         if (data != null && data.length > 0 && data.length < DATA_OFFSET) {
             throw new IllegalArgumentException("Data should be either empty or should contain more than "
-                    + DefaultData.DATA_OFFSET + " bytes! -> " + Arrays.toString(data));
+                    + HeapData.DATA_OFFSET + " bytes! -> " + Arrays.toString(data));
         }
         this.data = data;
     }

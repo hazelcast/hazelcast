@@ -251,7 +251,7 @@ public class SerializationServiceImpl implements SerializationService {
                 out.writeInt(partitionHash, ByteOrder.BIG_ENDIAN);
             }
 
-            return new DefaultData(out.toByteArray());
+            return new HeapData(out.toByteArray());
         } catch (Throwable e) {
             throw handleException(e);
         } finally {
@@ -382,7 +382,7 @@ public class SerializationServiceImpl implements SerializationService {
             if (isNull) {
                 return null;
             }
-            return new DefaultData(input.readByteArray());
+            return new HeapData(input.readByteArray());
         } catch (Throwable e) {
             throw handleException(e);
         }

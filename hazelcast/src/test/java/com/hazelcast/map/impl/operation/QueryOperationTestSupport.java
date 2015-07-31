@@ -7,7 +7,7 @@ import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.QueryResult;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.impl.DefaultData;
+import com.hazelcast.nio.serialization.impl.HeapData;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.query.TruePredicate;
 import com.hazelcast.query.impl.IndexService;
@@ -111,7 +111,7 @@ public abstract class QueryOperationTestSupport {
             byte[] randomBytes = new byte[20];
             random.nextBytes(randomBytes);
 
-            return new DefaultData(randomBytes);
+            return new HeapData(randomBytes);
         }
     }
 }
