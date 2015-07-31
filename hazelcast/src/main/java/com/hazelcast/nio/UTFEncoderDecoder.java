@@ -541,7 +541,7 @@ public final class UTFEncoderDecoder {
 
         if (allAscii) {
             while (bufferPos != bufferLimit) {
-                data[charArrCount++] = (char) (buffer[bufferPos++] & 0xFF);
+                data[charArrCount++] = (char)(buffer[bufferPos++] & 0xFF);
             }
 
             for (readCount = bufferPos - 1; readCount < utfLength; readCount++) {
@@ -690,12 +690,9 @@ public final class UTFEncoderDecoder {
             Class<String> clazz = String.class;
             clazz.getDeclaredConstructor(int.class, int.class, char[].class);
             return true;
-        } catch (NoSuchMethodException t) {
-            Logger.getLogger(UTFEncoderDecoder.class).
-                    finest("Old String constructor doesn't seem available.");
         } catch (Throwable t) {
             Logger.getLogger(UTFEncoderDecoder.class).
-                    finest("Old String constructor doesn't seem available.", t);
+                    finest("Old String constructor doesn't seem available", t);
         }
         return false;
     }
@@ -769,13 +766,6 @@ public final class UTFEncoderDecoder {
 
     private static class FastStringCreator implements StringCreator {
 
-        private static final ThreadLocal<Object[]> NEW_ARGS_THREAD_LOCAL = new ThreadLocal<Object[]>() {
-            @Override
-            protected Object[] initialValue() {
-                return new Object[]{null, Boolean.TRUE};
-            }
-        };
-
         private final Constructor<String> constructor;
         private final boolean useOldStringConstructor;
 
@@ -790,17 +780,12 @@ public final class UTFEncoderDecoder {
                 if (useOldStringConstructor) {
                     return constructor.newInstance(0, chars.length, chars);
                 } else {
-                    Object[] args = NEW_ARGS_THREAD_LOCAL.get();
-                    args[0] = chars;
-                    try {
-                        return constructor.newInstance(args);
-                    } finally {
-                        args[0] = null;
-                    }
+                    return constructor.newInstance(chars, Boolean.TRUE);
                 }
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
         }
+
     }
 }

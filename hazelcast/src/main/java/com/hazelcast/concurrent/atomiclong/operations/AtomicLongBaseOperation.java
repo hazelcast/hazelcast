@@ -74,7 +74,7 @@ public abstract class AtomicLongBaseOperation extends Operation
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
-       out.writeUTF(name);
+        out.writeUTF(name);
     }
 
     @Override

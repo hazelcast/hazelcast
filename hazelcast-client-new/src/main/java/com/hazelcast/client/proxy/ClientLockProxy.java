@@ -112,17 +112,11 @@ public class ClientLockProxy extends ClientProxy implements ILock {
         }
     }
 
-    public boolean tryLock(long timeout, TimeUnit unit) throws InterruptedException {
-        return tryLock(timeout, unit, Long.MAX_VALUE, null);
-    }
-
-    @Override
-    public boolean tryLock(long timeout, TimeUnit unit, long leaseTime, TimeUnit leaseUnit) throws InterruptedException {
-        long timeoutInMillis = getTimeInMillis(timeout, unit);
-        long leaseTimeInMillis = getTimeInMillis(leaseTime, leaseUnit);
-        long threadId = ThreadUtil.getThreadId();
-        ClientMessage request = LockTryLockCodec.encodeRequest(getName(), threadId, leaseTimeInMillis, timeoutInMillis);
-        LockTryLockCodec.ResponseParameters resultParameters = LockTryLockCodec.decodeResponse((ClientMessage) invoke(request));
+    public boolean tryLock(long time, TimeUnit unit) throws InterruptedException {
+        ClientMessage request =
+                LockTryLockCodec.encodeRequest(getName(), ThreadUtil.getThreadId(), getTimeInMillis(time, unit));
+        LockTryLockCodec.ResponseParameters resultParameters =
+                LockTryLockCodec.decodeResponse((ClientMessage) invoke(request));
         return resultParameters.response;
     }
 

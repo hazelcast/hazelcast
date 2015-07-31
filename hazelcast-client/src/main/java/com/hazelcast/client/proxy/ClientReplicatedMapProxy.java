@@ -30,7 +30,6 @@ import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.replicatedmap.impl.client.ClientReplicatedMapAddEntryListenerRequest;
-import com.hazelcast.replicatedmap.impl.client.ClientReplicatedMapAddNearCacheListenerRequest;
 import com.hazelcast.replicatedmap.impl.client.ClientReplicatedMapClearRequest;
 import com.hazelcast.replicatedmap.impl.client.ClientReplicatedMapContainsKeyRequest;
 import com.hazelcast.replicatedmap.impl.client.ClientReplicatedMapContainsValueRequest;
@@ -232,7 +231,7 @@ public class ClientReplicatedMapProxy<K, V>
 
     private void addNearCacheInvalidateListener() {
         try {
-            ClientRequest request = new ClientReplicatedMapAddNearCacheListenerRequest(getName());
+            ClientRequest request = new ClientReplicatedMapAddEntryListenerRequest(getName(), null, null);
             EventHandler handler = new ReplicatedMapNearCacheEventHandler();
 
             String registrationId = getContext().getListenerService().startListening(request, null, handler);

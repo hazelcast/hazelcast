@@ -40,7 +40,7 @@ public class PutTransientOperation extends BasePutOperation {
 
     @Override
     public void onWaitExpire() {
-        sendResponse(null);
+        getResponseHandler().sendResponse(null);
     }
 
     @Override

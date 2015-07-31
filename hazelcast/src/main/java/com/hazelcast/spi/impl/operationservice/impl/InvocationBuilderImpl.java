@@ -42,12 +42,17 @@ public class InvocationBuilderImpl extends InvocationBuilder {
 
     @Override
     public InternalCompletableFuture invoke() {
+        Object callback = this.callback;
+        if (callback == null) {
+            callback = this.executionCallback;
+        }
+
         if (target == null) {
             return new PartitionInvocation(nodeEngine, serviceName, op, partitionId, replicaIndex,
-                    tryCount, tryPauseMillis, callTimeout, getTargetExecutionCallback(), resultDeserialized).invoke();
+                    tryCount, tryPauseMillis, callTimeout, callback, resultDeserialized).invoke();
         } else {
             return new TargetInvocation(nodeEngine, serviceName, op, target, tryCount, tryPauseMillis,
-                    callTimeout, getTargetExecutionCallback(), resultDeserialized).invoke();
+                    callTimeout, callback, resultDeserialized).invoke();
         }
     }
 }

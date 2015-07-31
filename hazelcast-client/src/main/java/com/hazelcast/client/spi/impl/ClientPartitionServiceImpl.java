@@ -38,8 +38,6 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static com.hazelcast.util.HashUtil.hashToIndex;
-
 /**
  * The {@link ClientPartitionService} implementation.
  */
@@ -151,7 +149,7 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
             return 0;
         }
         int hash = key.getPartitionHash();
-        return hashToIndex(hash, pc);
+        return (hash == Integer.MIN_VALUE) ? 0 : Math.abs(hash) % pc;
     }
 
     @Override

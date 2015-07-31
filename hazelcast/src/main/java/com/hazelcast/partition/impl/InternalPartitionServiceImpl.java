@@ -17,7 +17,6 @@
 package com.hazelcast.partition.impl;
 
 import com.hazelcast.cluster.MemberInfo;
-import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MigrationEvent;
@@ -26,7 +25,6 @@ import com.hazelcast.core.MigrationListener;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
-import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
@@ -46,6 +44,7 @@ import com.hazelcast.partition.PartitionServiceProxy;
 import com.hazelcast.partition.membergroup.MemberGroup;
 import com.hazelcast.partition.membergroup.MemberGroupFactory;
 import com.hazelcast.partition.membergroup.MemberGroupFactoryFactory;
+import com.hazelcast.spi.Callback;
 import com.hazelcast.spi.EventPublishingService;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
@@ -54,14 +53,14 @@ import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationResponseHandler;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.PartitionAwareService;
+import com.hazelcast.spi.ResponseHandler;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.ResponseHandlerFactory;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.FutureUtil.ExceptionHandler;
-import com.hazelcast.util.HashUtil;
 import com.hazelcast.util.scheduler.CoalescingDelayedTrigger;
 import com.hazelcast.util.scheduler.EntryTaskScheduler;
 import com.hazelcast.util.scheduler.EntryTaskSchedulerFactory;
@@ -98,9 +97,8 @@ import java.util.logging.Level;
 
 import static com.hazelcast.partition.impl.InternalPartitionServiceState.MIGRATION_LOCAL;
 import static com.hazelcast.partition.impl.InternalPartitionServiceState.MIGRATION_ON_MASTER;
-import static com.hazelcast.partition.impl.InternalPartitionServiceState.REPLICA_NOT_SYNC;
 import static com.hazelcast.partition.impl.InternalPartitionServiceState.SAFE;
-import static com.hazelcast.spi.impl.OperationResponseHandlerFactory.createErrorLoggingResponseHandler;
+import static com.hazelcast.partition.impl.InternalPartitionServiceState.REPLICA_NOT_SYNC;
 import static com.hazelcast.util.FutureUtil.logAllExceptions;
 import static com.hazelcast.util.FutureUtil.waitWithDeadline;
 
@@ -125,7 +123,6 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
     private final PartitionReplicaVersions[] replicaVersions;
     private final AtomicReferenceArray<ReplicaSyncInfo> replicaSyncRequests;
     private final EntryTaskScheduler<Integer, ReplicaSyncInfo> replicaSyncScheduler;
-    @Probe
     private final Semaphore replicaSyncProcessLock;
     private final MigrationThread migrationThread;
     private final long partitionMigrationInterval;
@@ -136,35 +133,26 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
     private final MemberGroupFactory memberGroupFactory;
     private final PartitionServiceProxy proxy;
     private final Lock lock = new ReentrantLock();
-
-    @Probe
     private final AtomicInteger stateVersion = new AtomicInteger();
-    @Probe(name = "migrationQueueSize")
     private final BlockingQueue<Runnable> migrationQueue = new LinkedBlockingQueue<Runnable>();
     private final AtomicBoolean migrationActive = new AtomicBoolean(true);
-    @Probe(name = "lastRepartitionTime")
     private final AtomicLong lastRepartitionTime = new AtomicLong();
     private final CoalescingDelayedTrigger delayedResumeMigrationTrigger;
 
     private final ExceptionHandler partitionStateSyncTimeoutHandler;
 
-    @Probe
     // can be read and written concurrently...
     private volatile int memberGroupsSize;
 
     // updates will be done under lock, but reads will be multithreaded.
     private volatile boolean initialized;
 
-    @Probe(name = "activeMigrationCount")
     // updates will be done under lock, but reads will be multithreaded.
     private final ConcurrentMap<Integer, MigrationInfo> activeMigrations
             = new ConcurrentHashMap<Integer, MigrationInfo>(3, 0.75f, 1);
 
     // both reads and updates will be done under lock!
     private final LinkedList<MigrationInfo> completedMigrations = new LinkedList<MigrationInfo>();
-
-    @Probe
-    private final AtomicLong completedMigrationCounter = new AtomicLong();
 
     public InternalPartitionServiceImpl(Node node) {
         this.partitionCount = node.groupProperties.PARTITION_COUNT.getInteger();
@@ -222,9 +210,9 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
 
         long definedBackupSyncCheckInterval = node.groupProperties.PARTITION_BACKUP_SYNC_INTERVAL.getInteger();
         backupSyncCheckInterval = definedBackupSyncCheckInterval > 0 ? definedBackupSyncCheckInterval : 1;
+
         maxParallelReplications = node.groupProperties.PARTITION_MAX_PARALLEL_REPLICATIONS.getInteger();
         replicaSyncProcessLock = new Semaphore(maxParallelReplications);
-        nodeEngine.getMetricsRegistry().scanAndRegister(this, "partitions");
     }
 
     private long calculateMaxMigrationDelayOnMemberRemoved() {
@@ -244,22 +232,6 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
 
         migrationDelayMs = Math.min(migrationDelayMs, maxDelayMs);
         return migrationDelayMs;
-    }
-
-    @Probe(name = "migrationActive")
-    private int migrationActiveProbe() {
-        return migrationActive.get() ? 1 : 0;
-    }
-
-    @Probe
-    private int localPartitionCount() {
-        int count = 0;
-        for (InternalPartition partition : partitions) {
-            if (partition.isLocal()) {
-                count++;
-            }
-        }
-        return count;
     }
 
     @Override
@@ -382,13 +354,11 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         return size > 0 ? size : 1;
     }
 
-    @Probe(name = "maxBackupCount")
     @Override
     public int getMaxBackupCount() {
         return Math.min(getMemberGroupsSize() - 1, InternalPartition.MAX_BACKUP_COUNT);
     }
 
-    @Override
     public void memberAdded(MemberImpl member) {
         if (!member.localMember()) {
             updateMemberGroupsSize();
@@ -411,7 +381,6 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         }
     }
 
-    @Override
     public void memberRemoved(final MemberImpl member) {
         updateMemberGroupsSize();
         final Address deadAddress = member.getAddress();
@@ -627,7 +596,6 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
                         logger.warning("Received a ClusterRuntimeState, but its sender doesn't seem to be master!"
                                 + " => Sender: " + sender + ", Master: " + master + "! "
                                 + "(Ignore if master node has changed recently.)");
-                        return;
                     }
                 }
             }
@@ -828,14 +796,11 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         return activeMigrations.remove(partitionId);
     }
 
-    @Override
     public Collection<MigrationInfo> getActiveMigrations() {
         return Collections.unmodifiableCollection(activeMigrations.values());
     }
 
     private void addCompletedMigration(MigrationInfo migrationInfo) {
-        completedMigrationCounter.incrementAndGet();
-
         lock.lock();
         try {
             if (completedMigrations.size() > 25) {
@@ -1177,7 +1142,8 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         final Operation op = new IsReplicaVersionSync(replicaVersion);
         op.setService(this);
         op.setNodeEngine(nodeEngine);
-        op.setOperationResponseHandler(createErrorLoggingResponseHandler(node.getLogger(IsReplicaVersionSync.class)));
+        op.setResponseHandler(ResponseHandlerFactory
+                .createErrorLoggingResponseHandler(node.getLogger(IsReplicaVersionSync.class)));
         op.setPartitionId(partitionId);
 
         return op;
@@ -1195,18 +1161,15 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         final Address thisAddress = node.getThisAddress();
         final Semaphore s = new Semaphore(0);
         final AtomicBoolean ok = new AtomicBoolean(true);
-        final ExecutionCallback<Object> callback = new ExecutionCallback<Object>() {
+        final Callback<Object> callback = new Callback<Object>() {
             @Override
-            public void onResponse(Object response) {
-                if (Boolean.FALSE.equals(response)) {
+            public void notify(Object object) {
+                if (Boolean.FALSE.equals(object)) {
+                    ok.compareAndSet(true, false);
+                } else if (object instanceof Throwable) {
                     ok.compareAndSet(true, false);
                 }
                 s.release();
-            }
-
-            @Override
-            public void onFailure(Throwable t) {
-                ok.compareAndSet(true, false);
             }
         };
         int ownedCount = submitSyncReplicaOperations(thisAddress, s, ok, callback);
@@ -1223,12 +1186,12 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
     }
 
     private int submitSyncReplicaOperations(Address thisAddress, Semaphore s, AtomicBoolean ok,
-                                            ExecutionCallback callback) {
+                                            Callback<Object> callback) {
 
         int ownedCount = 0;
         ILogger responseLogger = node.getLogger(SyncReplicaVersion.class);
-        OperationResponseHandler responseHandler =
-                createErrorLoggingResponseHandler(responseLogger);
+        ResponseHandler responseHandler = ResponseHandlerFactory
+                .createErrorLoggingResponseHandler(responseLogger);
 
         for (InternalPartitionImpl partition : partitions) {
             Address owner = partition.getOwnerOrNull();
@@ -1238,7 +1201,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
                         SyncReplicaVersion op = new SyncReplicaVersion(i, callback);
                         op.setService(this);
                         op.setNodeEngine(nodeEngine);
-                        op.setOperationResponseHandler(responseHandler);
+                        op.setResponseHandler(responseHandler);
                         op.setPartitionId(partition.getPartitionId());
                         nodeEngine.getOperationService().executeOperation(op);
                     } else {
@@ -1314,7 +1277,12 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
 
     @Override
     public final int getPartitionId(Data key) {
-        return HashUtil.hashToIndex(key.getPartitionHash(), partitionCount);
+        int hash = key.getPartitionHash();
+        if (hash == Integer.MIN_VALUE) {
+            return 0;
+        } else {
+            return Math.abs(hash) % partitionCount;
+        }
     }
 
     @Override
@@ -1607,7 +1575,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
             final ScheduledEntry<Integer, ReplicaSyncInfo> entry = replicaSyncScheduler.get(partitionId);
             if (entry != null) {
-                entries.add(entry);
+               entries.add(entry);
             }
         }
 
@@ -1637,8 +1605,8 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
                                 SyncReplicaVersion op = new SyncReplicaVersion(index, null);
                                 op.setService(InternalPartitionServiceImpl.this);
                                 op.setNodeEngine(nodeEngine);
-                                op.setOperationResponseHandler(
-                                        createErrorLoggingResponseHandler(node.getLogger(SyncReplicaVersion.class)));
+                                op.setResponseHandler(ResponseHandlerFactory
+                                        .createErrorLoggingResponseHandler(node.getLogger(SyncReplicaVersion.class)));
                                 op.setPartitionId(partition.getPartitionId());
                                 nodeEngine.getOperationService().executeOperation(op);
                             }
@@ -2016,7 +1984,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
             NodeEngine nodeEngine = partitionService.nodeEngine;
             ResetReplicaVersionOperation op = new ResetReplicaVersionOperation(reason, initialAssignment);
             op.setPartitionId(partitionId).setReplicaIndex(replicaIndex)
-                    .setNodeEngine(nodeEngine).setService(partitionService);
+              .setNodeEngine(nodeEngine).setService(partitionService);
             nodeEngine.getOperationService().executeOperation(op);
         }
 

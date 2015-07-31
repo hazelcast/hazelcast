@@ -20,7 +20,6 @@ import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.DistributedObjectListener;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.instance.MemberImpl;
-import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.EventPublishingService;
 import com.hazelcast.spi.Operation;
@@ -29,15 +28,15 @@ import com.hazelcast.spi.PostJoinAwareService;
 import com.hazelcast.spi.ProxyService;
 import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
+import com.hazelcast.spi.impl.DistributedObjectEventPacket;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.proxyservice.InternalProxyService;
 import com.hazelcast.spi.impl.proxyservice.impl.operations.DistributedObjectDestroyOperation;
 import com.hazelcast.spi.impl.proxyservice.impl.operations.PostJoinProxyOperation;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.EmptyStatement;
-import com.hazelcast.util.FutureUtil.ExceptionHandler;
+import com.hazelcast.util.FutureUtil;
 import com.hazelcast.util.UuidUtil;
-import com.hazelcast.util.counters.MwCounter;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -51,17 +50,15 @@ import java.util.logging.Level;
 
 import static com.hazelcast.core.DistributedObjectEvent.EventType.CREATED;
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
-import static com.hazelcast.util.FutureUtil.logAllExceptions;
 import static com.hazelcast.util.FutureUtil.waitWithDeadline;
 import static com.hazelcast.util.Preconditions.checkNotNull;
-import static com.hazelcast.util.counters.MwCounter.newMwCounter;
 
 public class ProxyServiceImpl
         implements InternalProxyService, PostJoinAwareService, EventPublishingService<DistributedObjectEventPacket, Object> {
 
     public static final String SERVICE_NAME = "hz:core:proxyService";
 
-    private static final ExceptionHandler DESTROY_PROXY_EXCEPTION_HANDLER = logAllExceptions(Level.WARNING);
+    private static final FutureUtil.ExceptionHandler DESTROY_PROXY_EXCEPTION_HANDLER = FutureUtil.logAllExceptions(Level.WARNING);
 
     private static final int TRY_COUNT = 10;
     private static final long DESTROY_TIMEOUT_SECONDS = 30;
@@ -81,22 +78,15 @@ public class ProxyServiceImpl
     private final ConcurrentMap<String, ProxyRegistry> registries =
             new ConcurrentHashMap<String, ProxyRegistry>();
 
-    @Probe(name = "createdCount")
-    private final MwCounter createdCounter = newMwCounter();
-    @Probe(name = "destroyedCount")
-    private final MwCounter destroyedCounter = newMwCounter();
-
     public ProxyServiceImpl(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
         this.logger = nodeEngine.getLogger(ProxyService.class.getName());
-        nodeEngine.getMetricsRegistry().scanAndRegister(this, "proxy");
     }
 
     public void init() {
         nodeEngine.getEventService().registerListener(SERVICE_NAME, SERVICE_NAME, new Object());
     }
 
-    @Probe(name = "proxyCount")
     @Override
     public int getProxyCount() {
         int count = 0;
@@ -114,7 +104,6 @@ public class ProxyServiceImpl
 
         ProxyRegistry registry = getOrCreateRegistry(serviceName);
         registry.createProxy(name, true, true);
-        createdCounter.inc();
     }
 
     public ProxyRegistry getOrCreateRegistry(String serviceName) {
@@ -158,9 +147,8 @@ public class ProxyServiceImpl
         ProxyRegistry registry = registries.get(serviceName);
         if (registry != null) {
             registry.destroyProxy(name, fireEvent);
-            destroyedCounter.inc();
         }
-        RemoteService service = nodeEngine.getService(serviceName);
+        final RemoteService service = nodeEngine.getService(serviceName);
         if (service != null) {
             service.destroyDistributedObject(name);
         }
@@ -205,7 +193,7 @@ public class ProxyServiceImpl
 
     @Override
     public String addProxyListener(DistributedObjectListener distributedObjectListener) {
-        String id = UuidUtil.buildRandomUuidString();
+        final String id = UuidUtil.buildRandomUuidString();
         listeners.put(id, distributedObjectListener);
         return id;
     }
@@ -217,7 +205,7 @@ public class ProxyServiceImpl
 
     @Override
     public void dispatchEvent(final DistributedObjectEventPacket eventPacket, Object ignore) {
-        String serviceName = eventPacket.getServiceName();
+        final String serviceName = eventPacket.getServiceName();
         if (eventPacket.getEventType() == CREATED) {
             try {
                 final ProxyRegistry registry = getOrCreateRegistry(serviceName);

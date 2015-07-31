@@ -103,7 +103,7 @@ public final class OfferOperation extends QueueBackupAwareOperation
 
     @Override
     public void onWaitExpire() {
-        sendResponse(false);
+        getResponseHandler().sendResponse(Boolean.FALSE);
     }
 
     @Override

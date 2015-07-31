@@ -21,7 +21,7 @@ import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.client.ClientRequest;
 import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.nio.serialization.SerializationService;
-import com.hazelcast.spi.impl.SerializableList;
+import com.hazelcast.spi.impl.SerializableCollection;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionNotActiveException;
 import com.hazelcast.transaction.TransactionOptions;
@@ -146,7 +146,7 @@ final class TransactionProxy {
         final SerializationService ss = client.getSerializationService();
         try {
             final ClientInvocation clientInvocation = new ClientInvocation(client, request, connection);
-            final Future<SerializableList> future = clientInvocation.invoke();
+            final Future<SerializableCollection> future = clientInvocation.invoke();
             return ss.toObject(future.get());
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);

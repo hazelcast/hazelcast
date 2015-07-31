@@ -21,7 +21,6 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.ringbuffer.impl.RingbufferContainer;
 import com.hazelcast.spi.BackupOperation;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 
@@ -34,7 +33,7 @@ public class AddAllBackupOperation extends AbstractRingBufferOperation implement
     public AddAllBackupOperation() {
     }
 
-    @SuppressFBWarnings({"EI_EXPOSE_REP" })
+    @edu.umd.cs.findbugs.annotations.SuppressWarnings({"EI_EXPOSE_REP" })
     public AddAllBackupOperation(String name, Data[] items) {
         super(name);
         this.items = items;

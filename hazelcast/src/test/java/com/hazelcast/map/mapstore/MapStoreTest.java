@@ -38,7 +38,7 @@ import com.hazelcast.map.AbstractEntryProcessor;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapStoreWrapper;
-import com.hazelcast.map.impl.recordstore.RecordStore;
+import com.hazelcast.map.impl.RecordStore;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.map.mapstore.MapStoreWriteBehindTest.RecordingMapStore;
 import com.hazelcast.monitor.LocalMapStats;
@@ -961,6 +961,7 @@ public class MapStoreTest extends HazelcastTestSupport {
         private AtomicInteger count;
 
         public WaitingOnFirstTestMapStore() {
+            super();
             this.count = new AtomicInteger(0);
         }
 

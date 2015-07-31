@@ -37,7 +37,6 @@ final class LockResourceImpl implements DataSerializable, LockResource {
     private Data key;
     private String owner;
     private long threadId;
-    private long referenceId;
     private int lockCount;
     private long expirationTime = -1;
     private long acquireTime = -1L;
@@ -74,21 +73,20 @@ final class LockResourceImpl implements DataSerializable, LockResource {
         return (this.threadId == threadId && owner != null && owner.equals(this.owner));
     }
 
-    boolean lock(String owner, long threadId, long referenceId, long leaseTime, boolean transactional) {
+    boolean lock(String owner, long threadId, long leaseTime) {
+        return lock(owner, threadId, leaseTime, false);
+    }
+
+    boolean lock(String owner, long threadId, long leaseTime, boolean transactional) {
         if (lockCount == 0) {
             this.owner = owner;
             this.threadId = threadId;
-            this.referenceId = referenceId;
-            lockCount = 1;
+            lockCount++;
             acquireTime = Clock.currentTimeMillis();
             setExpirationTime(leaseTime);
             this.transactional = transactional;
             return true;
         } else if (isLockedBy(owner, threadId)) {
-            if (this.referenceId == referenceId) {
-                return true;
-            }
-            this.referenceId = referenceId;
             lockCount++;
             setExpirationTime(leaseTime);
             this.transactional = transactional;
@@ -125,7 +123,7 @@ final class LockResourceImpl implements DataSerializable, LockResource {
         }
     }
 
-    boolean unlock(String owner, long threadId, long referenceId) {
+    boolean unlock(String owner, long threadId) {
         if (lockCount == 0) {
             return false;
         }
@@ -134,11 +132,6 @@ final class LockResourceImpl implements DataSerializable, LockResource {
             return false;
         }
 
-        if (this.referenceId == referenceId) {
-            return true;
-        }
-
-        this.referenceId = referenceId;
         lockCount--;
         if (lockCount == 0) {
             clear();
@@ -251,7 +244,6 @@ final class LockResourceImpl implements DataSerializable, LockResource {
         threadId = 0;
         lockCount = 0;
         owner = null;
-        referenceId = 0L;
         expirationTime = 0;
         acquireTime = -1L;
         cancelEviction();
@@ -323,7 +315,6 @@ final class LockResourceImpl implements DataSerializable, LockResource {
         out.writeData(key);
         out.writeUTF(owner);
         out.writeLong(threadId);
-        out.writeLong(referenceId);
         out.writeInt(lockCount);
         out.writeLong(expirationTime);
         out.writeLong(acquireTime);
@@ -370,7 +361,6 @@ final class LockResourceImpl implements DataSerializable, LockResource {
         key = in.readData();
         owner = in.readUTF();
         threadId = in.readLong();
-        referenceId = in.readLong();
         lockCount = in.readInt();
         expirationTime = in.readLong();
         acquireTime = in.readLong();

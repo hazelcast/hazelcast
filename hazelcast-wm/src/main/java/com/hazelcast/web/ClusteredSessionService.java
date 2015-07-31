@@ -66,7 +66,7 @@ public class ClusteredSessionService {
      * The constant LOGGER.
      */
     protected static final ILogger LOGGER = Logger.getLogger(ClusteredSessionService.class);
-    private static final long CLUSTER_CHECK_INTERVAL = 1000L;
+    private static final long CLUSTER_CHECK_INTERVAL = 5L;
     private static final long RETRY_MILLIS = 7000;
 
     private final String jvmId = UUID.randomUUID().toString();
@@ -85,7 +85,6 @@ public class ClusteredSessionService {
     private volatile boolean failedConnection = true;
     private volatile long lastConnectionTry;
     private final ScheduledExecutorService es = Executors.newSingleThreadScheduledExecutor(new EnsureInstanceThreadFactory());
-    private volatile boolean ensureInstanceRunning = true;
 
 
     /**
@@ -102,25 +101,20 @@ public class ClusteredSessionService {
         this.clusterMapName = clusterMapName;
         this.sessionTTL = sessionTTL;
 
-        es.scheduleWithFixedDelay(new Runnable() {
-            public void run() {
-                while (ensureInstanceRunning) {
-                    try {
-                        ensureInstance();
-                    } catch (Exception ignored) {
-                        if (ignored instanceof InterruptedException) {
-                            ensureInstanceRunning = false;
-                        }
-                        EmptyStatement.ignore(ignored);
-                    }
-                }
-            }
-        }, 0, CLUSTER_CHECK_INTERVAL, TimeUnit.SECONDS);
         try {
             ensureInstance();
         } catch (Exception ignored) {
             EmptyStatement.ignore(ignored);
         }
+        es.scheduleWithFixedDelay(new Runnable() {
+            public void run() {
+                try {
+                    ensureInstance();
+                } catch (Exception ignored) {
+                    EmptyStatement.ignore(ignored);
+                }
+            }
+        }, 0, CLUSTER_CHECK_INTERVAL, TimeUnit.SECONDS);
     }
 
     private void ensureInstance() throws Exception {
@@ -317,7 +311,6 @@ public class ClusteredSessionService {
         if (hazelcastInstance != null) {
             try {
                 hazelcastInstance.getLifecycleService().shutdown();
-                ensureInstanceRunning = false;
                 es.shutdown();
             } catch (Exception ignored) {
                 EmptyStatement.ignore(ignored);

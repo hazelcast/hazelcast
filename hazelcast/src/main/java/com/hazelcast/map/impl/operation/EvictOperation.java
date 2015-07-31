@@ -54,7 +54,7 @@ public class EvictOperation extends LockAwareOperation implements MutatingOperat
 
     @Override
     public void onWaitExpire() {
-        sendResponse(false);
+        getResponseHandler().sendResponse(false);
     }
 
     public Operation getBackupOperation() {

@@ -31,6 +31,7 @@ public class CacheDataRecord extends AbstractCacheRecord<Data> {
 
     // Deserialization constructor
     public CacheDataRecord() {
+        super();
     }
 
     public CacheDataRecord(Data value, long creationTime, long expiryTime) {

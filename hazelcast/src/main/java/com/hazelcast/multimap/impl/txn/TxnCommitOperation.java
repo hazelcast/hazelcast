@@ -31,37 +31,31 @@ import java.util.List;
 
 public class TxnCommitOperation extends MultiMapBackupAwareOperation implements Notifier {
 
-    private List<Operation> opList;
-    private boolean notify = true;
+    List<Operation> opList;
+    boolean notify = true;
 
     public TxnCommitOperation() {
     }
 
-    public TxnCommitOperation(int partitionId, String name, Data dataKey, long threadId, List<Operation> opList) {
+    public TxnCommitOperation(String name, Data dataKey, long threadId, List<Operation> opList) {
         super(name, dataKey, threadId);
-        setPartitionId(partitionId);
         this.opList = opList;
     }
 
-    @Override
     public void run() throws Exception {
         for (Operation op : opList) {
-            op.setNodeEngine(getNodeEngine())
-                    .setServiceName(getServiceName())
-                    .setPartitionId(getPartitionId());
+            op.setNodeEngine(getNodeEngine()).setServiceName(getServiceName()).setPartitionId(getPartitionId());
             op.beforeRun();
             op.run();
             op.afterRun();
         }
-        getOrCreateContainer().unlock(dataKey, getCallerUuid(), threadId, getCallId());
+        getOrCreateContainer().unlock(dataKey, getCallerUuid(), threadId);
     }
 
-    @Override
     public boolean shouldBackup() {
         return notify;
     }
 
-    @Override
     public Operation getBackupOperation() {
         List<Operation> backupOpList = new ArrayList<Operation>();
         for (Operation operation : opList) {
@@ -75,22 +69,14 @@ public class TxnCommitOperation extends MultiMapBackupAwareOperation implements 
         return new TxnCommitBackupOperation(name, dataKey, backupOpList, getCallerUuid(), threadId);
     }
 
-    @Override
     public boolean shouldNotify() {
         return notify;
     }
 
-    @Override
     public WaitNotifyKey getNotifiedKey() {
         return getWaitKey();
     }
 
-    @Override
-    public int getId() {
-        return MultiMapDataSerializerHook.TXN_COMMIT;
-    }
-
-    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeInt(opList.size());
@@ -99,7 +85,6 @@ public class TxnCommitOperation extends MultiMapBackupAwareOperation implements 
         }
     }
 
-    @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         int size = in.readInt();
@@ -107,5 +92,9 @@ public class TxnCommitOperation extends MultiMapBackupAwareOperation implements 
         for (int i = 0; i < size; i++) {
             opList.add((Operation) in.readObject());
         }
+    }
+
+    public int getId() {
+        return MultiMapDataSerializerHook.TXN_COMMIT;
     }
 }

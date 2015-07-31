@@ -16,28 +16,27 @@
 
 package com.hazelcast.transaction.impl;
 
-import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.logging.AbstractLogger;
 import com.hazelcast.logging.LogEvent;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.TransactionOptions.TransactionType;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
 
 import static org.junit.Assert.assertEquals;
@@ -48,18 +47,11 @@ import static org.mockito.Mockito.when;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class TransactionImplTest extends HazelcastTestSupport {
-
-    private InternalOperationService operationService;
-
-    @Before
-    public void setup() {
-        HazelcastInstance hz = createHazelcastInstance();
-        operationService = getOperationService(hz);
-    }
+public class TransactionImplTest {
 
     @Test
     public void testTransactionBegin_whenBeginThrowsException() throws Exception {
+
         TransactionImpl transaction;
         TransactionManagerServiceImpl transactionManagerService = mock(TransactionManagerServiceImpl.class);
         RuntimeException expectedException = new RuntimeException("example exception");
@@ -67,7 +59,6 @@ public class TransactionImplTest extends HazelcastTestSupport {
                 .thenThrow(expectedException);
 
         NodeEngine nodeEngine = mock(NodeEngine.class);
-        when(nodeEngine.getOperationService()).thenReturn(operationService);
         when(nodeEngine.getLocalMember()).thenReturn(new MemberImpl());
         when(nodeEngine.getLogger(TransactionImpl.class)).thenReturn(new DummyLogger());
 
@@ -97,14 +88,13 @@ public class TransactionImplTest extends HazelcastTestSupport {
         TransactionManagerServiceImpl transactionManagerService = mock(TransactionManagerServiceImpl.class);
 
         NodeEngine nodeEngine = mock(NodeEngine.class);
-        when(nodeEngine.getOperationService()).thenReturn(operationService);
         when(nodeEngine.getLocalMember()).thenReturn(new MemberImpl());
         when(nodeEngine.getLogger(TransactionImpl.class)).thenReturn(new DummyLogger());
 
         TransactionOptions options = new TransactionOptions().setTransactionType(TransactionType.LOCAL);
         transaction = new TransactionImpl(transactionManagerService, nodeEngine, options, "dummy-uuid");
         transaction.begin();
-        transaction.add(new FailingTransactionLogRecord(false, true, false));
+        transaction.addTransactionLog(new FailingTransactionLog(false, true, false));
         transaction.commit();
     }
 
@@ -114,7 +104,6 @@ public class TransactionImplTest extends HazelcastTestSupport {
         TransactionManagerServiceImpl transactionManagerService = mock(TransactionManagerServiceImpl.class);
 
         NodeEngine nodeEngine = mock(NodeEngine.class);
-        when(nodeEngine.getOperationService()).thenReturn(operationService);
         when(nodeEngine.getLocalMember()).thenReturn(new MemberImpl());
         when(nodeEngine.getLogger(TransactionImpl.class)).thenReturn(new DummyLogger());
 
@@ -123,7 +112,7 @@ public class TransactionImplTest extends HazelcastTestSupport {
         transaction = new TransactionImpl(transactionManagerService, nodeEngine, options, "dummy-uuid");
 
         transaction.begin();
-        transaction.add(new FailingTransactionLogRecord(true, true, false));
+        transaction.addTransactionLog(new FailingTransactionLog(true, true, false));
         transaction.prepare();
     }
 
@@ -133,7 +122,6 @@ public class TransactionImplTest extends HazelcastTestSupport {
         TransactionManagerServiceImpl transactionManagerService = mock(TransactionManagerServiceImpl.class);
 
         NodeEngine nodeEngine = mock(NodeEngine.class);
-        when(nodeEngine.getOperationService()).thenReturn(operationService);
         when(nodeEngine.getLocalMember()).thenReturn(new MemberImpl());
         when(nodeEngine.getLogger(TransactionImpl.class)).thenReturn(new DummyLogger());
 
@@ -141,55 +129,43 @@ public class TransactionImplTest extends HazelcastTestSupport {
                 .setTransactionType(TransactionType.TWO_PHASE).setDurability(0);
         transaction = new TransactionImpl(transactionManagerService, nodeEngine, options, "dummy-uuid");
         transaction.begin();
-        transaction.add(new FailingTransactionLogRecord(false, true, false));
+        transaction.addTransactionLog(new FailingTransactionLog(false, true, false));
         transaction.prepare();
         transaction.commit();
     }
 
-    private static class FailingTransactionLogRecord implements TransactionLogRecord {
+    private static class FailingTransactionLog implements TransactionLog {
         final boolean failPrepare;
         final boolean failCommit;
         final boolean failRollback;
 
-        public FailingTransactionLogRecord(boolean failPrepare, boolean failCommit, boolean failRollback) {
+        public FailingTransactionLog(boolean failPrepare, boolean failCommit, boolean failRollback) {
             this.failPrepare = failPrepare;
             this.failCommit = failCommit;
             this.failRollback = failRollback;
         }
 
         @Override
-        public Object getKey() {
-            return null;
+        public Future prepare(NodeEngine nodeEngine) {
+            return failPrepare ? new FailingFuture() : new FutureAdapter();
         }
 
         @Override
-        public Operation newPrepareOperation() {
-            return createOperation(failPrepare);
+        public Future commit(NodeEngine nodeEngine) {
+            return failCommit ? new FailingFuture() : new FutureAdapter();
         }
 
         @Override
-        public Operation newCommitOperation() {
-            return createOperation(failCommit);
+        public void commitAsync(NodeEngine nodeEngine, ExecutionCallback callback) {
         }
 
         @Override
-        public Operation newRollbackOperation() {
-            return createOperation(failRollback);
+        public Future rollback(NodeEngine nodeEngine) {
+            return failRollback ? new FailingFuture() : new FutureAdapter();
         }
 
-        public Operation createOperation(final boolean fail) {
-            return new AbstractOperation() {
-                {
-                    setPartitionId(0);
-                }
-
-                @Override
-                public void run() throws Exception {
-                    if (fail) {
-                        throw new TransactionException();
-                    }
-                }
-            };
+        @Override
+        public void rollbackAsync(NodeEngine nodeEngine, ExecutionCallback callback) {
         }
 
         @Override
@@ -198,6 +174,47 @@ public class TransactionImplTest extends HazelcastTestSupport {
 
         @Override
         public void readData(ObjectDataInput in) throws IOException {
+        }
+    }
+
+    private static class FutureAdapter implements Future {
+        @Override
+        public Object get() throws InterruptedException, ExecutionException {
+            return null;
+        }
+
+        @Override
+        public Object get(long timeout, TimeUnit unit)
+                throws InterruptedException, ExecutionException, TimeoutException {
+            return null;
+        }
+
+        @Override
+        public boolean cancel(boolean mayInterruptIfRunning) {
+            return false;
+        }
+
+        @Override
+        public boolean isCancelled() {
+            return false;
+        }
+
+        @Override
+        public boolean isDone() {
+            return false;
+        }
+    }
+
+    private static class FailingFuture extends FutureAdapter {
+        @Override
+        public Object get() throws InterruptedException, ExecutionException {
+            throw new TransactionException();
+        }
+
+        @Override
+        public Object get(long timeout, TimeUnit unit)
+                throws InterruptedException, ExecutionException, TimeoutException {
+            return get();
         }
     }
 

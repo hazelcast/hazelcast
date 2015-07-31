@@ -6,10 +6,8 @@ import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.partition.impl.PromoteFromBackupOperation.InternalPartitionLostEventPublisher;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.executionservice.InternalExecutionService;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
@@ -28,7 +26,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
-@Category(QuickTest.class)
 public class PromoteFromBackupOperationTest {
 
     @Mock

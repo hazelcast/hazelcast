@@ -17,12 +17,8 @@
 package com.hazelcast.map.impl;
 
 
-import com.hazelcast.map.impl.nearcache.NearCacheSizeEstimator;
-
 /**
  * Static factory methods for corresponding size estimators.
- *
- * todo: this class doesn't service a lot of purpose; it is a layer of indirection without benefit.
  */
 public final class SizeEstimators {
 
@@ -36,5 +32,6 @@ public final class SizeEstimators {
     public static SizeEstimator createNearCacheSizeEstimator() {
         return new NearCacheSizeEstimator();
     }
+
 }
 

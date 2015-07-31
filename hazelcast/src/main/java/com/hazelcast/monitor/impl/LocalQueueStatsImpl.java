@@ -39,7 +39,6 @@ public class LocalQueueStatsImpl implements LocalQueueStats {
             .newUpdater(LocalQueueStatsImpl.class, "numberOfOtherOperations");
     private static final AtomicLongFieldUpdater<LocalQueueStatsImpl> NUMBER_OF_EVENTS_UPDATER = AtomicLongFieldUpdater
             .newUpdater(LocalQueueStatsImpl.class, "numberOfEvents");
-
     private int ownedItemCount;
     private int backupItemCount;
     private long minAge;
@@ -199,6 +198,74 @@ public class LocalQueueStatsImpl implements LocalQueueStats {
         NUMBER_OF_EMPTY_POLLS_UPDATER.set(this, getLong(json, "numberOfEmptyPolls", -1L));
         NUMBER_OF_OTHER_OPERATIONS_UPDATER.set(this, getLong(json, "numberOfOtherOperations", -1L));
         NUMBER_OF_EVENTS_UPDATER.set(this, getLong(json, "numberOfEvents", -1L));
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        LocalQueueStatsImpl that = (LocalQueueStatsImpl) o;
+
+        if (ownedItemCount != that.ownedItemCount) {
+            return false;
+        }
+        if (backupItemCount != that.backupItemCount) {
+            return false;
+        }
+        if (minAge != that.minAge) {
+            return false;
+        }
+        if (maxAge != that.maxAge) {
+            return false;
+        }
+        if (aveAge != that.aveAge) {
+            return false;
+        }
+        if (creationTime != that.creationTime) {
+            return false;
+        }
+        if (numberOfOffers != that.numberOfOffers) {
+            return false;
+        }
+        if (numberOfRejectedOffers != that.numberOfRejectedOffers) {
+            return false;
+        }
+        if (numberOfPolls != that.numberOfPolls) {
+            return false;
+        }
+        if (numberOfEmptyPolls != that.numberOfEmptyPolls) {
+            return false;
+        }
+        if (numberOfOtherOperations != that.numberOfOtherOperations) {
+            return false;
+        }
+        if (numberOfEvents != that.numberOfEvents) {
+            return false;
+        }
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = ownedItemCount;
+        result = 31 * result + backupItemCount;
+        result = 31 * result + (int) (minAge ^ (minAge >>> 32));
+        result = 31 * result + (int) (maxAge ^ (maxAge >>> 32));
+        result = 31 * result + (int) (aveAge ^ (aveAge >>> 32));
+        result = 31 * result + (int) (creationTime ^ (creationTime >>> 32));
+        result = 31 * result + (int) (numberOfOffers ^ (numberOfOffers >>> 32));
+        result = 31 * result + (int) (numberOfRejectedOffers ^ (numberOfRejectedOffers >>> 32));
+        result = 31 * result + (int) (numberOfPolls ^ (numberOfPolls >>> 32));
+        result = 31 * result + (int) (numberOfEmptyPolls ^ (numberOfEmptyPolls >>> 32));
+        result = 31 * result + (int) (numberOfOtherOperations ^ (numberOfOtherOperations >>> 32));
+        result = 31 * result + (int) (numberOfEvents ^ (numberOfEvents >>> 32));
+        return result;
     }
 
     @Override

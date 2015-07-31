@@ -19,7 +19,6 @@ package com.hazelcast.buildutils;
 import aQute.lib.osgi.Instruction;
 import edu.emory.mathcs.backport.java.util.Arrays;
 import edu.emory.mathcs.backport.java.util.Collections;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.maven.plugins.shade.relocation.Relocator;
 import org.apache.maven.plugins.shade.resource.ManifestResourceTransformer;
 import org.codehaus.plexus.util.IOUtil;
@@ -65,15 +64,15 @@ public class HazelcastManifestTransformer
     private Manifest shadedManifest;
 
     // Configuration
-    @SuppressFBWarnings(value = "UWF_UNWRITTEN_FIELD",
+    @edu.umd.cs.findbugs.annotations.SuppressWarnings(value = "UWF_UNWRITTEN_FIELD",
             justification = "Filled by Maven")
     private Map<String, Attributes> manifestEntries;
 
-    @SuppressFBWarnings(value = "UWF_UNWRITTEN_FIELD",
+    @edu.umd.cs.findbugs.annotations.SuppressWarnings(value = "UWF_UNWRITTEN_FIELD",
             justification = "Filled by Maven")
     private String mainClass;
 
-    @SuppressFBWarnings(value = "UWF_UNWRITTEN_FIELD",
+    @edu.umd.cs.findbugs.annotations.SuppressWarnings(value = "UWF_UNWRITTEN_FIELD",
             justification = "Filled by Maven")
     private Map<String, String> overrideInstructions;
 
@@ -198,7 +197,7 @@ public class HazelcastManifestTransformer
         jarOutputStream.flush();
     }
 
-    @SuppressFBWarnings(value = "NP_UNWRITTEN_FIELD",
+    @edu.umd.cs.findbugs.annotations.SuppressWarnings(value = "NP_UNWRITTEN_FIELD",
             justification = "Field is set by Maven")
     private void precompileOverrideInstructions() {
         String importPackageInstructions = overrideInstructions.get(IMPORT_PACKAGE);

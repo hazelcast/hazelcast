@@ -41,6 +41,7 @@ import com.hazelcast.concurrent.atomiclong.AtomicLongService;
 import com.hazelcast.concurrent.atomicreference.AtomicReferenceService;
 import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
 import com.hazelcast.concurrent.idgen.IdGeneratorService;
+import com.hazelcast.concurrent.lock.LockProxy;
 import com.hazelcast.concurrent.lock.LockServiceImpl;
 import com.hazelcast.concurrent.semaphore.SemaphoreService;
 import com.hazelcast.config.Config;
@@ -136,13 +137,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
                                        AddressProvider externalAddressProvider) {
         this.config = config;
         final GroupConfig groupConfig = config.getGroupConfig();
-
-        if (config.getInstanceName() != null) {
-            instanceName = config.getInstanceName();
-        } else {
-            instanceName = "hz.client_" + id + (groupConfig != null ? "_" + groupConfig.getName() : "");
-        }
-
+        instanceName = "hz.client_" + id + (groupConfig != null ? "_" + groupConfig.getName() : "");
         clientExtension = createClientInitializer(config.getClassLoader());
         clientExtension.beforeStart(this);
 
@@ -341,6 +336,14 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     }
 
     @Override
+    @Deprecated
+    public ILock getLock(Object key) {
+        //this method will be deleted in the near future.
+        String name = LockProxy.convertToStringKey(key, serializationService);
+        return getDistributedObject(LockServiceImpl.SERVICE_NAME, name);
+    }
+
+    @Override
     public <E> Ringbuffer<E> getRingbuffer(String name) {
         return getDistributedObject(RingbufferService.SERVICE_NAME, name);
     }
@@ -460,6 +463,15 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     @Override
     public LifecycleService getLifecycleService() {
         return lifecycleService;
+    }
+
+    @Override
+    @Deprecated
+    public <T extends DistributedObject> T getDistributedObject(String serviceName, Object id) {
+        if (id instanceof String) {
+            return (T) proxyManager.getOrCreateProxy(serviceName, (String) id);
+        }
+        throw new IllegalArgumentException("'id' must be type of String!");
     }
 
     @Override

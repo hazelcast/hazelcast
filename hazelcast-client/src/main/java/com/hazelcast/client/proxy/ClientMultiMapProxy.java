@@ -27,7 +27,6 @@ import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.MapEvent;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MultiMap;
-import com.hazelcast.map.impl.client.MapLockRequest;
 import com.hazelcast.mapreduce.Collator;
 import com.hazelcast.mapreduce.CombinerFactory;
 import com.hazelcast.mapreduce.Job;
@@ -269,20 +268,12 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
         }
     }
 
-    @Override
     public boolean tryLock(K key, long time, TimeUnit timeunit) throws InterruptedException {
-        return tryLock(key, time, timeunit, Long.MAX_VALUE, null);
-    }
-
-    @Override
-    public boolean tryLock(K key, long timeout, TimeUnit timeunit,
-                           long leaseTime, TimeUnit leaseTimeunit) throws InterruptedException {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
+
         final Data keyData = toData(key);
-        long timeoutInMillis = getTimeInMillis(timeout, timeunit);
-        long leaseTimeInMillis = getTimeInMillis(leaseTime, leaseTimeunit);
-        long threadId = ThreadUtil.getThreadId();
-        MultiMapLockRequest request = new MultiMapLockRequest(keyData, threadId, leaseTimeInMillis, timeoutInMillis, name);
+        MultiMapLockRequest request = new MultiMapLockRequest(keyData, ThreadUtil.getThreadId(),
+                Long.MAX_VALUE, getTimeInMillis(time, timeunit), name);
         Boolean result = invoke(request, keyData);
         return result;
     }

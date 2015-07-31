@@ -60,7 +60,7 @@ public class BeforeAwaitOperation extends BaseLockOperation implements Notifier,
     public void run() throws Exception {
         LockStoreImpl lockStore = getLockStore();
         lockStore.addAwait(key, conditionId, getCallerUuid(), threadId);
-        lockStore.unlock(key, getCallerUuid(), threadId, getReferenceCallId());
+        lockStore.unlock(key, getCallerUuid(), threadId);
     }
 
     @Override

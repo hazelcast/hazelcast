@@ -28,7 +28,6 @@ import com.hazelcast.spi.Notifier;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.WaitNotifyKey;
 import com.hazelcast.transaction.TransactionException;
-
 import java.io.IOException;
 
 /**
@@ -36,11 +35,10 @@ import java.io.IOException;
  */
 public class TxnRollbackOperation extends KeyBasedMapOperation implements BackupAwareOperation, Notifier {
 
-    private String ownerUuid;
+    String ownerUuid;
 
-    protected TxnRollbackOperation(int partitionId, String name, Data dataKey, String ownerUuid) {
+    protected TxnRollbackOperation(String name, Data dataKey, String ownerUuid) {
         super(name, dataKey);
-        setPartitionId(partitionId);
         this.ownerUuid = ownerUuid;
     }
 
@@ -49,7 +47,7 @@ public class TxnRollbackOperation extends KeyBasedMapOperation implements Backup
 
     @Override
     public void run() throws Exception {
-        if (recordStore.isLocked(getKey()) && !recordStore.unlock(getKey(), ownerUuid, getThreadId(), getCallId())) {
+        if (recordStore.isLocked(getKey()) && !recordStore.unlock(getKey(), ownerUuid, getThreadId())) {
             throw new TransactionException("Lock is not owned by the transaction! Owner: "
                     + recordStore.getLockOwnerInfo(getKey()));
         }
@@ -57,25 +55,21 @@ public class TxnRollbackOperation extends KeyBasedMapOperation implements Backup
 
     @Override
     public Object getResponse() {
-        return true;
+        return Boolean.TRUE;
     }
 
-    @Override
     public boolean shouldBackup() {
         return true;
     }
 
-    @Override
     public final Operation getBackupOperation() {
         return new TxnRollbackBackupOperation(name, dataKey, ownerUuid, getThreadId());
     }
 
-    @Override
     public final int getAsyncBackupCount() {
         return mapContainer.getAsyncBackupCount();
     }
 
-    @Override
     public final int getSyncBackupCount() {
         return mapContainer.getBackupCount();
     }

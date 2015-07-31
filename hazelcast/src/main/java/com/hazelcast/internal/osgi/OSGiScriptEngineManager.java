@@ -18,7 +18,6 @@ package com.hazelcast.internal.osgi;
 
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.nio.ClassLoaderUtil;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 
@@ -76,8 +75,6 @@ http://svn.apache.org/repos/asf/felix/trunk/mishell/src/main/java/org/apache/fel
  * </li></ul>
  */
 public class OSGiScriptEngineManager extends ScriptEngineManager {
-    private static final String RHINO_SCRIPT_ENGINE_FACTORY = "com.sun.script.javascript.RhinoScriptEngineFactory";
-    private static final String NASHORN_SCRIPT_ENGINE_FACTORY = "jdk.nashorn.api.scripting.NashornScriptEngineFactory";
 
     private final ILogger logger = Logger.getLogger(getClass());
     private Bindings bindings;
@@ -246,7 +243,7 @@ public class OSGiScriptEngineManager extends ScriptEngineManager {
     private ClassLoader loadScriptEngineFactoryClassLoader(String factoryName) {
         //We do not really need the class, but we need the classloader
         try {
-            return ClassLoaderUtil.tryLoadClass(factoryName).getClassLoader();
+            return Class.forName(factoryName).getClassLoader();
         } catch (ClassNotFoundException cnfe) {
             // may fail if script implementation is not in environment
             logger.warning("Found ScriptEngineFactory candidate for "
@@ -308,26 +305,8 @@ public class OSGiScriptEngineManager extends ScriptEngineManager {
                 reader.close();
             }
         }
-
         //add java built in JavaScript ScriptEngineFactory's
-        addJavaScriptEngine(factoryCandidates);
-
+        factoryCandidates.add("com.sun.script.javascript.RhinoScriptEngineFactory");
         return factoryCandidates;
-    }
-
-    /**
-     * Adds the JDK build-in JavaScript engine into the given list of scripting engine factories.
-     *
-     * @param factoryCandidates List of scripting engine factories
-     */
-    private void addJavaScriptEngine(List<String> factoryCandidates) {
-        //Rhino is available in java < 8, Nashorn is available in java >= 8
-        if (ClassLoaderUtil.isClassDefined(RHINO_SCRIPT_ENGINE_FACTORY)) {
-            factoryCandidates.add(RHINO_SCRIPT_ENGINE_FACTORY);
-        } else if (ClassLoaderUtil.isClassDefined(NASHORN_SCRIPT_ENGINE_FACTORY)) {
-            factoryCandidates.add(NASHORN_SCRIPT_ENGINE_FACTORY);
-        } else {
-            logger.warning("No built-in JavaScript ScriptEngineFactory found.");
-        }
     }
 }

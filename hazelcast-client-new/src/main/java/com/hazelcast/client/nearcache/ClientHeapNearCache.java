@@ -21,7 +21,7 @@ import com.hazelcast.client.spi.ClientExecutionService;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
-import com.hazelcast.map.impl.nearcache.NearCacheRecord;
+import com.hazelcast.map.impl.NearCacheRecord;
 import com.hazelcast.monitor.impl.NearCacheStatsImpl;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.util.Clock;

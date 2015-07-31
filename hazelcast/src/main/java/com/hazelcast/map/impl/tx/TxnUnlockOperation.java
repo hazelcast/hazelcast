@@ -22,6 +22,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.ResponseHandler;
 import com.hazelcast.spi.WaitNotifyKey;
 import com.hazelcast.transaction.TransactionException;
 
@@ -52,20 +53,17 @@ public class TxnUnlockOperation extends LockAwareOperation implements MapTxnOper
 
     @Override
     public void run() {
-        recordStore.unlock(dataKey, ownerUuid, threadId, getCallId());
+        recordStore.unlock(dataKey, ownerUuid, threadId);
     }
 
-    @Override
     public boolean shouldWait() {
         return false;
     }
 
-    @Override
     public long getVersion() {
         return version;
     }
 
-    @Override
     public void setVersion(long version) {
         this.version = version;
     }
@@ -75,29 +73,25 @@ public class TxnUnlockOperation extends LockAwareOperation implements MapTxnOper
         return Boolean.TRUE;
     }
 
-    @Override
     public boolean shouldNotify() {
         return true;
     }
 
-    @Override
     public Operation getBackupOperation() {
         TxnUnlockBackupOperation txnUnlockOperation = new TxnUnlockBackupOperation(name, dataKey);
         txnUnlockOperation.setThreadId(getThreadId());
         return txnUnlockOperation;
     }
 
-    @Override
     public void onWaitExpire() {
-        sendResponse(false);
+        final ResponseHandler responseHandler = getResponseHandler();
+        responseHandler.sendResponse(false);
     }
 
-    @Override
     public final int getAsyncBackupCount() {
         return mapContainer.getAsyncBackupCount();
     }
 
-    @Override
     public final int getSyncBackupCount() {
         return mapContainer.getBackupCount();
     }
@@ -112,7 +106,6 @@ public class TxnUnlockOperation extends LockAwareOperation implements MapTxnOper
         return true;
     }
 
-    @Override
     public WaitNotifyKey getNotifiedKey() {
         return getWaitKey();
     }

@@ -16,33 +16,30 @@
 
 package com.hazelcast.internal.metrics.impl;
 
-import com.hazelcast.internal.metrics.DoubleProbeFunction;
-import com.hazelcast.internal.metrics.LongProbeFunction;
+import com.hazelcast.internal.metrics.DoubleProbe;
+import com.hazelcast.internal.metrics.LongProbe;
 import com.hazelcast.internal.metrics.Probe;
-import com.hazelcast.internal.metrics.ProbeFunction;
 import com.hazelcast.util.counters.Counter;
 
 import java.lang.reflect.Method;
 import java.util.Collection;
 import java.util.Map;
-import java.util.concurrent.Semaphore;
 
-import static com.hazelcast.internal.metrics.impl.ProbeUtils.TYPE_COLLECTION;
-import static com.hazelcast.internal.metrics.impl.ProbeUtils.TYPE_COUNTER;
-import static com.hazelcast.internal.metrics.impl.ProbeUtils.TYPE_DOUBLE_NUMBER;
-import static com.hazelcast.internal.metrics.impl.ProbeUtils.TYPE_DOUBLE_PRIMITIVE;
-import static com.hazelcast.internal.metrics.impl.ProbeUtils.TYPE_LONG_NUMBER;
-import static com.hazelcast.internal.metrics.impl.ProbeUtils.TYPE_MAP;
-import static com.hazelcast.internal.metrics.impl.ProbeUtils.TYPE_PRIMITIVE_LONG;
-import static com.hazelcast.internal.metrics.impl.ProbeUtils.TYPE_SEMAPHORE;
-import static com.hazelcast.internal.metrics.impl.ProbeUtils.getType;
-import static com.hazelcast.internal.metrics.impl.ProbeUtils.isDouble;
+import static com.hazelcast.internal.metrics.impl.AccessibleObjectProbe.TYPE_COLLECTION;
+import static com.hazelcast.internal.metrics.impl.AccessibleObjectProbe.TYPE_COUNTER;
+import static com.hazelcast.internal.metrics.impl.AccessibleObjectProbe.TYPE_DOUBLE_NUMBER;
+import static com.hazelcast.internal.metrics.impl.AccessibleObjectProbe.TYPE_DOUBLE_PRIMITIVE;
+import static com.hazelcast.internal.metrics.impl.AccessibleObjectProbe.TYPE_LONG_NUMBER;
+import static com.hazelcast.internal.metrics.impl.AccessibleObjectProbe.TYPE_MAP;
+import static com.hazelcast.internal.metrics.impl.AccessibleObjectProbe.TYPE_PRIMITIVE_LONG;
+import static com.hazelcast.internal.metrics.impl.AccessibleObjectProbe.getType;
+import static com.hazelcast.internal.metrics.impl.AccessibleObjectProbe.isDouble;
 import static java.lang.String.format;
 
 /**
- * A MethodProbe is a {@link ProbeFunction} that invokes a method that is annotated with {@link Probe}.
+ * A Probe that reads out a method that is annotated with {@link Probe}.
  */
-abstract class MethodProbe implements ProbeFunction {
+abstract class MethodProbe {
 
     final Method method;
     final Probe probe;
@@ -88,7 +85,7 @@ abstract class MethodProbe implements ProbeFunction {
         }
     }
 
-    static class LongMethodProbe<S> extends MethodProbe implements LongProbeFunction<S> {
+    static class LongMethodProbe<S> extends MethodProbe implements LongProbe<S> {
 
         public LongMethodProbe(Method method, Probe probe, int type) {
             super(method, probe, type);
@@ -111,16 +108,13 @@ abstract class MethodProbe implements ProbeFunction {
                 case TYPE_COUNTER:
                     Counter counter = (Counter) method.invoke(source);
                     return counter == null ? 0 : counter.get();
-                case TYPE_SEMAPHORE:
-                    Semaphore semaphore = (Semaphore) method.invoke(source);
-                    return semaphore == null ? 0 : semaphore.availablePermits();
                 default:
                     throw new IllegalStateException("Unrecognized type:" + type);
             }
         }
     }
 
-    static class DoubleMethodProbe<S> extends MethodProbe implements DoubleProbeFunction<S> {
+    static class DoubleMethodProbe<S> extends MethodProbe implements DoubleProbe<S> {
 
         public DoubleMethodProbe(Method method, Probe probe, int type) {
             super(method, probe, type);

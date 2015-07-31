@@ -116,6 +116,11 @@ public final class HazelcastInstanceProxy implements HazelcastInstance, Serializ
     }
 
     @Override
+    public ILock getLock(Object key) {
+        return getOriginal().getLock(key);
+    }
+
+    @Override
     public ILock getLock(String key) {
         return getOriginal().getLock(key);
     }
@@ -219,6 +224,11 @@ public final class HazelcastInstanceProxy implements HazelcastInstance, Serializ
     public LifecycleService getLifecycleService() {
         final HazelcastInstanceImpl hz = original;
         return hz != null ? hz.getLifecycleService() : new TerminatedLifecycleService();
+    }
+
+    @Override
+    public <S extends DistributedObject> S getDistributedObject(String serviceName, Object id) {
+        return getOriginal().getDistributedObject(serviceName, id);
     }
 
     @Override

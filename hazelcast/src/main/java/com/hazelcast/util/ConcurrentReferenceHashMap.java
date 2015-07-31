@@ -22,8 +22,6 @@ package com.hazelcast.util;
  * http://creativecommons.org/licenses/publicdomain
  */
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-
 import java.io.IOException;
 import java.io.Serializable;
 import java.lang.ref.Reference;
@@ -502,8 +500,8 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V>
         /**
          * The number of elements in this segment's region.
          */
-        @SuppressFBWarnings(value = "SE_TRANSIENT_FIELD_NOT_RESTORED", justification =
-                "I have faith in Doug Lea's technical decision")
+        // I have faith in Doug Lea's techical decision
+        @edu.umd.cs.findbugs.annotations.SuppressWarnings("SE_TRANSIENT_FIELD_NOT_RESTORED")
         transient volatile int count;
 
         /**
@@ -514,8 +512,8 @@ public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V>
          * we might have an inconsistent view of state so (usually) we
          * must retry.
          */
-        @SuppressFBWarnings(value = "SE_TRANSIENT_FIELD_NOT_RESTORED", justification =
-                "I have faith in Doug Lea's technical decision")
+        // I have faith in Doug Lea's techical decision
+        @edu.umd.cs.findbugs.annotations.SuppressWarnings("SE_TRANSIENT_FIELD_NOT_RESTORED")
         transient int modCount;
 
         /**

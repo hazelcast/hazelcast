@@ -255,6 +255,9 @@ public class PagingPredicate implements IndexAwarePredicate, DataSerializable {
     }
 
     public void setPage(int page) {
+        if (page < 0) {
+            throw new IllegalArgumentException("Page cannot be negative");
+        }
         this.page = page;
     }
 

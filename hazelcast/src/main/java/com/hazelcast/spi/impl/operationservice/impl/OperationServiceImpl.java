@@ -16,13 +16,11 @@
 
 package com.hazelcast.spi.impl.operationservice.impl;
 
-import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.management.dto.SlowOperationDTO;
-import com.hazelcast.internal.metrics.MetricsRegistry;
-import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
@@ -37,7 +35,6 @@ import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.UrgentSystemOperation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.impl.PacketHandler;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.operationexecutor.OperationExecutor;
 import com.hazelcast.spi.impl.operationexecutor.classic.ClassicOperationExecutor;
@@ -45,7 +42,6 @@ import com.hazelcast.spi.impl.operationexecutor.slowoperationdetector.SlowOperat
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.spi.impl.operationservice.impl.responses.Response;
 import com.hazelcast.util.EmptyStatement;
-import com.hazelcast.util.counters.MwCounter;
 import com.hazelcast.util.executor.ExecutorType;
 import com.hazelcast.util.executor.ManagedExecutorService;
 
@@ -62,8 +58,7 @@ import static com.hazelcast.spi.InvocationBuilder.DEFAULT_DESERIALIZE_RESULT;
 import static com.hazelcast.spi.InvocationBuilder.DEFAULT_REPLICA_INDEX;
 import static com.hazelcast.spi.InvocationBuilder.DEFAULT_TRY_COUNT;
 import static com.hazelcast.spi.InvocationBuilder.DEFAULT_TRY_PAUSE_MILLIS;
-import static com.hazelcast.util.Preconditions.checkNotNull;
-import static com.hazelcast.util.Preconditions.checkTrue;
+import static java.lang.String.format;
 
 /**
  * This is the implementation of the {@link com.hazelcast.spi.impl.operationservice.InternalOperationService}.
@@ -84,7 +79,7 @@ import static com.hazelcast.util.Preconditions.checkTrue;
  * @see PartitionInvocation
  * @see TargetInvocation
  */
-public final class OperationServiceImpl implements InternalOperationService, PacketHandler {
+public final class OperationServiceImpl implements InternalOperationService {
 
     private static final int CORE_SIZE_CHECK = 8;
     private static final int CORE_SIZE_FACTOR = 4;
@@ -96,21 +91,9 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
     final OperationExecutor operationExecutor;
     final ILogger invocationLogger;
     final ManagedExecutorService asyncExecutor;
-
-    @Probe(name = "completed.count")
-    final AtomicLong completedOperationsCount = new AtomicLong();
-
-    @Probe(name = "operationTimeoutCount")
-    final MwCounter operationTimeoutCount = MwCounter.newMwCounter();
-
-    @Probe(name = "callTimeoutCount")
-    final MwCounter callTimeoutCount = MwCounter.newMwCounter();
-
-    @Probe(name = "retryCount")
-    final MwCounter retryCount = MwCounter.newMwCounter();
+    final AtomicLong executedOperationsCount = new AtomicLong();
 
     final NodeEngineImpl nodeEngine;
-    final MetricsRegistry metricsRegistry;
     final Node node;
     final ILogger logger;
     final OperationBackupHandler operationBackupHandler;
@@ -119,14 +102,11 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
 
     private final SlowOperationDetector slowOperationDetector;
     private final IsStillRunningService isStillRunningService;
-    private final AsyncResponsePacketHandler responsePacketExecutor;
 
     public OperationServiceImpl(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
         this.node = nodeEngine.getNode();
         this.logger = node.getLogger(OperationService.class);
-        this.metricsRegistry = nodeEngine.getMetricsRegistry();
-
         this.invocationLogger = nodeEngine.getLogger(Invocation.class);
         GroupProperties groupProperties = node.getGroupProperties();
         this.defaultCallTimeoutMillis = groupProperties.OPERATION_CALL_TIMEOUT_MILLIS.getLong();
@@ -137,25 +117,17 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
         boolean reallyMultiCore = coreSize >= CORE_SIZE_CHECK;
         int concurrencyLevel = reallyMultiCore ? coreSize * CORE_SIZE_FACTOR : CONCURRENCY_LEVEL;
 
-        this.invocationsRegistry = new InvocationRegistry(nodeEngine, logger, backpressureRegulator, concurrencyLevel);
+        this.invocationsRegistry = new InvocationRegistry(this, concurrencyLevel);
         this.operationBackupHandler = new OperationBackupHandler(this);
-
-        this.responsePacketExecutor = new AsyncResponsePacketHandler(
-                node.getHazelcastThreadGroup(),
-                logger,
-                new ResponsePacketHandlerImpl(
-                        logger,
-                        node.getSerializationService(),
-                        invocationsRegistry));
 
         this.operationExecutor = new ClassicOperationExecutor(
                 groupProperties,
                 node.loggingService,
                 node.getThisAddress(),
                 new OperationRunnerFactoryImpl(this),
+                new ResponsePacketHandlerImpl(this),
                 node.getHazelcastThreadGroup(),
-                node.getNodeExtension(),
-                metricsRegistry
+                node.getNodeExtension()
         );
 
         this.isStillRunningService = new IsStillRunningService(operationExecutor, nodeEngine, logger);
@@ -165,8 +137,6 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
                 ASYNC_QUEUE_CAPACITY, ExecutorType.CONCRETE);
 
         this.slowOperationDetector = initSlowOperationDetector();
-
-        nodeEngine.getMetricsRegistry().scanAndRegister(this, "operation");
     }
 
     private SlowOperationDetector initSlowOperationDetector() {
@@ -183,6 +153,13 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
 
     @Override
     public void dumpPerformanceMetrics(StringBuffer sb) {
+        sb.append("invocationsPending=")
+                .append(invocationsRegistry.getInvocationUsagePercentage()).append('\n');
+        sb.append("invocationsUsed=")
+                .append(format("%.2f", invocationsRegistry.getInvocationUsagePercentage())).append("%\n");
+        sb.append("invocationsMax=")
+                .append(backpressureRegulator.getMaxConcurrentInvocations()).append('\n');
+        operationExecutor.dumpPerformanceMetrics(sb);
     }
 
     @Override
@@ -195,6 +172,16 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
     }
 
     @Override
+    public int getPendingInvocationCount() {
+        return invocationsRegistry.size();
+    }
+
+    @Override
+    public double getInvocationUsagePercentage() {
+        return invocationsRegistry.getInvocationUsagePercentage();
+    }
+
+    @Override
     public int getPartitionOperationThreadCount() {
         return operationExecutor.getPartitionOperationThreadCount();
     }
@@ -204,7 +191,6 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
         return operationExecutor.getGenericOperationThreadCount();
     }
 
-    @Probe(name = "running.count")
     @Override
     public int getRunningOperationsCount() {
         return operationExecutor.getRunningOperationCount();
@@ -212,7 +198,7 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
 
     @Override
     public long getExecutedOperationCount() {
-        return completedOperationsCount.get();
+        return executedOperationsCount.get();
     }
 
     @Override
@@ -220,38 +206,24 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
         return invocationsRegistry.size();
     }
 
-    @Probe(name = "queue.size")
+    @Override
+    public int getResponseQueueSize() {
+        return operationExecutor.getResponseQueueSize();
+    }
+
     @Override
     public int getOperationExecutorQueueSize() {
         return operationExecutor.getOperationExecutorQueueSize();
     }
 
-    @Probe(name = "priority-queue.size")
     @Override
     public int getPriorityOperationExecutorQueueSize() {
         return operationExecutor.getPriorityOperationExecutorQueueSize();
     }
 
+    @Override
     public OperationExecutor getOperationExecutor() {
         return operationExecutor;
-    }
-
-    @Probe(name = "response-queue.size")
-    @Override
-    public int getResponseQueueSize() {
-        return responsePacketExecutor.getQueueSize();
-    }
-
-    @Override
-    public void handle(Packet packet) throws Exception {
-        checkNotNull(packet, "packet can't be null");
-        checkTrue(packet.isHeaderSet(Packet.HEADER_OP), "Packet.HEADER_OP should be set!");
-
-        if (packet.isHeaderSet(Packet.HEADER_RESPONSE)) {
-            responsePacketExecutor.handle(packet);
-        } else {
-            operationExecutor.execute(packet);
-        }
     }
 
     @Override
@@ -430,7 +402,6 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
         logger.finest("Shutting down OperationService");
         invocationsRegistry.shutdown();
         operationExecutor.shutdown();
-        responsePacketExecutor.shutdown();
         slowOperationDetector.shutdown();
 
         try {

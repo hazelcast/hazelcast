@@ -41,10 +41,10 @@ import com.hazelcast.core.ItemListener;
 import com.hazelcast.core.Member;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
-import com.hazelcast.spi.impl.UnmodifiableLazyList;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -87,7 +87,7 @@ public class ClientSetProxy<E> extends ClientProxy implements ISet<E> {
     }
 
     public Iterator<E> iterator() {
-        return getAll().iterator();
+        return Collections.unmodifiableCollection(getAll()).iterator();
     }
 
     public Object[] toArray() {
@@ -180,29 +180,6 @@ public class ClientSetProxy<E> extends ClientProxy implements ISet<E> {
         return listen(request, getPartitionKey(), eventHandler);
     }
 
-    public boolean removeItemListener(String registrationId) {
-        ClientMessage request = SetRemoveListenerCodec.encodeRequest(name, registrationId);
-        return stopListening(request, registrationId);
-    }
-
-    private Collection<E> getAll() {
-        ClientMessage request = SetGetAllCodec.encodeRequest(name);
-        ClientMessage response = invoke(request);
-        SetGetAllCodec.ResponseParameters resultParameters = SetGetAllCodec.decodeResponse(response);
-        List<Data> resultCollection = (List<Data>) resultParameters.list;
-        SerializationService serializationService = getContext().getSerializationService();
-        return new UnmodifiableLazyList<E>(resultCollection, serializationService);
-    }
-
-    protected <T> T invoke(ClientMessage req) {
-        return super.invoke(req, getPartitionKey());
-    }
-
-    @Override
-    public String toString() {
-        return "ISet{" + "name='" + getName() + '\'' + '}';
-    }
-
     private class ItemEventHandler extends ListAddListenerCodec.AbstractEventHandler
             implements EventHandler<ClientMessage> {
 
@@ -238,6 +215,32 @@ public class ClientSetProxy<E> extends ClientProxy implements ISet<E> {
         public void onListenerRegister() {
 
         }
+    }
+
+    public boolean removeItemListener(String registrationId) {
+        ClientMessage request = SetRemoveListenerCodec.encodeRequest(name, registrationId);
+        return stopListening(request, registrationId);
+    }
+
+    private Collection<E> getAll() {
+        ClientMessage request = SetGetAllCodec.encodeRequest(name);
+        ClientMessage response = invoke(request);
+        SetGetAllCodec.ResponseParameters resultParameters = SetGetAllCodec.decodeResponse(response);
+        Collection<Data> resultCollection = resultParameters.list;
+        final ArrayList<E> list = new ArrayList<E>(resultCollection.size());
+        for (Data value : resultCollection) {
+            list.add((E) toObject(value));
+        }
+        return list;
+    }
+
+    protected <T> T invoke(ClientMessage req) {
+        return super.invoke(req, getPartitionKey());
+    }
+
+    @Override
+    public String toString() {
+        return "ISet{" + "name='" + getName() + '\'' + '}';
     }
 
 }

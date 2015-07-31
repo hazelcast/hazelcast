@@ -17,6 +17,7 @@
 package com.hazelcast.nio.tcp.iobalancer;
 
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.LoggingService;
 import com.hazelcast.nio.tcp.AbstractIOSelector;
 import com.hazelcast.nio.tcp.IOSelector;
 import com.hazelcast.nio.tcp.MigratableHandler;
@@ -36,9 +37,10 @@ import static com.hazelcast.util.StringUtil.getLineSeperator;
  * This class is not thread-safe with the exception of
  * {@link #addHandler(MigratableHandler)}   and
  * {@link #removeHandler(MigratableHandler)}
+ *
  */
 class LoadTracker {
-    private final ILogger logger;
+    private final ILogger log;
 
     //all known IO selectors. we assume no. of selectors is constant during a lifespan of a member
     private final AbstractIOSelector[] selectors;
@@ -57,8 +59,8 @@ class LoadTracker {
 
     private final LoadImbalance imbalance;
 
-    LoadTracker(AbstractIOSelector[] selectors, ILogger logger) {
-        this.logger = logger;
+    LoadTracker(AbstractIOSelector[] selectors, LoggingService loggingService) {
+        this.log = loggingService.getLogger(LoadTracker.class);
 
         this.selectors = new AbstractIOSelector[selectors.length];
         System.arraycopy(selectors, 0, this.selectors, 0, selectors.length);
@@ -146,7 +148,7 @@ class LoadTracker {
     }
 
     private void printDebugTable() {
-        if (!logger.isFinestEnabled()) {
+        if (!log.isFinestEnabled()) {
             return;
         }
 
@@ -196,7 +198,7 @@ class LoadTracker {
         }
         sb.append("------------")
                 .append(getLineSeperator());
-        logger.finest(sb.toString());
+        log.finest(sb.toString());
     }
 
     private void appendSelectorInfo(IOSelector minSelector, Map<IOSelector,

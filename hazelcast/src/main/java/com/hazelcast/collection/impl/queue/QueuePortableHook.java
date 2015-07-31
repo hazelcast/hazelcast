@@ -16,6 +16,12 @@
 
 package com.hazelcast.collection.impl.queue;
 
+import com.hazelcast.nio.serialization.ArrayPortableFactory;
+import com.hazelcast.nio.serialization.ClassDefinition;
+import com.hazelcast.nio.serialization.FactoryIdHelper;
+import com.hazelcast.nio.serialization.Portable;
+import com.hazelcast.nio.serialization.PortableFactory;
+import com.hazelcast.nio.serialization.PortableHook;
 import com.hazelcast.collection.impl.queue.client.AddAllRequest;
 import com.hazelcast.collection.impl.queue.client.AddListenerRequest;
 import com.hazelcast.collection.impl.queue.client.ClearRequest;
@@ -35,25 +41,16 @@ import com.hazelcast.collection.impl.txnqueue.client.TxnOfferRequest;
 import com.hazelcast.collection.impl.txnqueue.client.TxnPeekRequest;
 import com.hazelcast.collection.impl.txnqueue.client.TxnPollRequest;
 import com.hazelcast.collection.impl.txnqueue.client.TxnSizeRequest;
-import com.hazelcast.nio.serialization.ClassDefinition;
-import com.hazelcast.nio.serialization.Portable;
-import com.hazelcast.nio.serialization.PortableFactory;
-import com.hazelcast.nio.serialization.PortableHook;
-import com.hazelcast.nio.serialization.impl.ArrayPortableFactory;
-import com.hazelcast.nio.serialization.impl.FactoryIdHelper;
 import com.hazelcast.util.ConstructorFunction;
 
 import java.util.Collection;
-
-import static com.hazelcast.nio.serialization.impl.FactoryIdHelper.QUEUE_PORTABLE_FACTORY;
-import static com.hazelcast.nio.serialization.impl.FactoryIdHelper.QUEUE_PORTABLE_FACTORY_ID;
 
 /**
  * Provides a Portable hook for the queue operations.
  */
 public class QueuePortableHook implements PortableHook {
 
-    public static final int F_ID = FactoryIdHelper.getFactoryId(QUEUE_PORTABLE_FACTORY, QUEUE_PORTABLE_FACTORY_ID);
+    public static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.QUEUE_PORTABLE_FACTORY, -11);
 
     public static final int OFFER = 1;
     public static final int SIZE = 2;

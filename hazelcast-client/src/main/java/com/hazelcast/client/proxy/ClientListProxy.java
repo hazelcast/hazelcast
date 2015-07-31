@@ -17,16 +17,15 @@
 package com.hazelcast.client.proxy;
 
 import com.hazelcast.collection.impl.list.client.ListAddAllRequest;
-import com.hazelcast.collection.impl.list.client.ListAddRequest;
 import com.hazelcast.collection.impl.list.client.ListGetRequest;
-import com.hazelcast.collection.impl.list.client.ListIndexOfRequest;
-import com.hazelcast.collection.impl.list.client.ListRemoveRequest;
+import com.hazelcast.collection.impl.list.client.ListAddRequest;
 import com.hazelcast.collection.impl.list.client.ListSetRequest;
+import com.hazelcast.collection.impl.list.client.ListRemoveRequest;
+import com.hazelcast.collection.impl.list.client.ListIndexOfRequest;
 import com.hazelcast.collection.impl.list.client.ListSubRequest;
 import com.hazelcast.core.IList;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.impl.SerializableList;
-import com.hazelcast.spi.impl.UnmodifiableLazyList;
+import com.hazelcast.spi.impl.SerializableCollection;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -103,10 +102,14 @@ public class ClientListProxy<E> extends AbstractClientCollectionProxy<E> impleme
     }
 
     public List<E> subList(int fromIndex, int toIndex) {
-        ListSubRequest request = new ListSubRequest(getName(), fromIndex, toIndex);
-        SerializableList result = invoke(request);
-        List<Data> collection = result.getCollection();
-        return new UnmodifiableLazyList<E>(collection, getContext().getSerializationService());
+        final ListSubRequest request = new ListSubRequest(getName(), fromIndex, toIndex);
+        final SerializableCollection result = invoke(request);
+        final Collection<Data> collection = result.getCollection();
+        final List<E> list = new ArrayList<E>(collection.size());
+        for (Data value : collection) {
+            list.add((E) toObject(value));
+        }
+        return list;
     }
 
     @Override

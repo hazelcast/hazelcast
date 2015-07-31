@@ -16,110 +16,61 @@
 
 package com.hazelcast.internal.monitors;
 
-import com.hazelcast.instance.GroupProperties;
-import com.hazelcast.instance.GroupProperties.GroupProperty;
 import com.hazelcast.instance.HazelcastInstanceImpl;
-import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.instance.Node;
-import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 
+import java.util.concurrent.TimeUnit;
+
 /**
- * The PerformanceMonitor is a tool that provides insights in internal metrics. Currently the content of the
- * {@link MetricsRegistry} is being dumped.
+ * The PerformanceMonitor is responsible for logging all kinds of performance related information. Currently it only
+ * shows the read/write events per selector and the operations executed per operation-thread, but new kinds of behavior
+ * will be added.
+ * <p/>
+ * This tool is currently used internally. External users should be experts. In the future it will become more useful
+ * for regular developers. It is also likely that most of the metrics we collect will be exposed through JMX at some
+ * point in time.
  */
-public class PerformanceMonitor {
+public class PerformanceMonitor extends Thread {
 
-    final MetricsRegistry metricRegistry;
-    final HazelcastInstanceImpl hazelcastInstance;
-    final ILogger logger;
-    final InternalOperationService operationService;
-    final PerformanceLogFile performanceLogFile;
-    final boolean humanFriendlyFormat;
+    private final ILogger logger;
     private final Node node;
-    private final MonitorThread monitorThread;
-    private final boolean enabled;
+    private final int delaySeconds;
+    private final InternalOperationService operationService;
+    private final ConnectionManager connectionManager;
 
-    public PerformanceMonitor(HazelcastInstanceImpl hazelcastInstance) {
-        this.hazelcastInstance = hazelcastInstance;
+    public PerformanceMonitor(HazelcastInstanceImpl hazelcastInstance, int delaySeconds) {
+        super(hazelcastInstance.node.getHazelcastThreadGroup().getInternalThreadGroup(),
+                hazelcastInstance.node.getHazelcastThreadGroup().getThreadNamePrefix("PerformanceMonitor"));
+        setDaemon(true);
+
+        this.delaySeconds = delaySeconds;
         this.node = hazelcastInstance.node;
+        this.logger = node.getLogger(PerformanceMonitor.class.getName());
         this.operationService = node.nodeEngine.getOperationService();
-        this.logger = node.getLogger(PerformanceMonitor.class);
-        this.metricRegistry = hazelcastInstance.node.nodeEngine.getMetricsRegistry();
-        this.enabled = node.getGroupProperties().PERFORMANCE_MONITOR_ENABLED.getBoolean();
-        this.humanFriendlyFormat = node.getGroupProperties().PERFORMANCE_MONITOR_HUMAN_FRIENDLY_FORMAT.getBoolean();
-        this.performanceLogFile = new PerformanceLogFile(this);
-        this.monitorThread = initMonitorThread();
+        this.connectionManager = node.connectionManager;
     }
 
-    private MonitorThread initMonitorThread() {
-        if (!enabled) {
-            return null;
-        }
+    @Override
+    public void run() {
+        StringBuffer sb = new StringBuffer();
 
-        GroupProperties props = node.getGroupProperties();
-        int delaySeconds = props.PERFORMANCE_MONITOR_DELAY_SECONDS.getInteger();
+        while (node.isActive()) {
+            sb.append("\n");
+            sb.append("ConnectionManager metrics\n");
+            connectionManager.dumpPerformanceMetrics(sb);
+            sb.append("OperationService metrics\n");
+            operationService.dumpPerformanceMetrics(sb);
 
-        HazelcastThreadGroup threadGroup = node.getHazelcastThreadGroup();
-        return new MonitorThread(threadGroup, delaySeconds);
-    }
+            logger.info(sb.toString());
 
-    public PerformanceMonitor start() {
-        if (!enabled) {
-            logger.finest("PerformanceMonitor disabled");
-            return this;
-        }
-
-        logger.info("PerformanceMonitor started");
-
-        GroupProperty slowOperationDetectorEnabled = node.getGroupProperties().SLOW_OPERATION_DETECTOR_ENABLED;
-        if (!slowOperationDetectorEnabled.getBoolean()) {
-            logger.info("To enable the SlowOperationDetector in the Performance log, set the following property: "
-                    + "-D" + slowOperationDetectorEnabled.getName() + "=true");
-        }
-
-        monitorThread.start();
-        return this;
-    }
-
-    private final class MonitorThread extends Thread {
-        private static final int DELAY_MILLIS = 1000;
-        private final int delaySeconds;
-
-        private MonitorThread(HazelcastThreadGroup threadGroup, int delaySeconds) {
-            super(threadGroup.getInternalThreadGroup(), threadGroup.getThreadNamePrefix("PerformanceMonitor"));
-            this.delaySeconds = delaySeconds;
-        }
-
-        @Override
-        public void run() {
+            sb.setLength(0);
             try {
-                while (node.isActive()) {
-                    performanceLogFile.render();
-                    sleep();
-                }
-
-                // always write the sensors at the end when shutting down.
-                performanceLogFile.render();
-            } catch (Throwable t) {
-                logger.warning(t.getMessage(), t);
-            }
-        }
-
-        private void sleep() {
-            for (int k = 0; k < delaySeconds; k++) {
-                try {
-                    Thread.sleep(DELAY_MILLIS);
-                } catch (InterruptedException e) {
-                    // we can eat the interrupt since we'll check node.isActive.
-                    return;
-                }
-
-                if (performanceLogFile.isRenderingForced()) {
-                    logger.info("Detected a request to update the Performance Log");
-                    return;
-                }
+                Thread.sleep(TimeUnit.SECONDS.toMillis(delaySeconds));
+            } catch (InterruptedException e) {
+                return;
             }
         }
     }

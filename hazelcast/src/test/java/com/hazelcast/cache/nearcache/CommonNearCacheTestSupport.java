@@ -7,10 +7,11 @@ import com.hazelcast.cache.impl.nearcache.impl.store.NearCacheDataRecordStore;
 import com.hazelcast.cache.impl.nearcache.impl.store.NearCacheObjectRecordStore;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
-import com.hazelcast.nio.serialization.impl.DefaultSerializationServiceBuilder;
+import com.hazelcast.nio.serialization.DefaultSerializationServiceBuilder;
 import com.hazelcast.test.HazelcastTestSupport;
 
 import org.junit.After;
+import org.junit.Before;
 
 import java.util.ArrayList;
 import java.util.List;

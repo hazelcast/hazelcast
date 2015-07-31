@@ -19,7 +19,6 @@ package com.hazelcast.spi.impl.waitnotifyservice.impl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationResponseHandler;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.WaitSupport;
 import com.hazelcast.spi.exception.RetryableException;
@@ -137,8 +136,7 @@ class WaitingOperation extends AbstractOperation implements Delayed, PartitionAw
         if (expired) {
             waitSupport.onWaitExpire();
         } else {
-            OperationResponseHandler responseHandler = op.getOperationResponseHandler();
-            responseHandler.sendResponse(op, cancelResponse);
+            op.getResponseHandler().sendResponse(cancelResponse);
         }
     }
 

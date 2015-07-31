@@ -60,7 +60,7 @@ abstract class AbstractGeneralRegion<Cache extends RegionCache> extends Abstract
 
     public Object get(final Object key) throws CacheException {
         try {
-            return getCache().get(key, nextTimestamp());
+            return getCache().get(key);
         } catch (OperationTimeoutException e) {
             return null;
         }
@@ -68,7 +68,7 @@ abstract class AbstractGeneralRegion<Cache extends RegionCache> extends Abstract
 
     public void put(final Object key, final Object value) throws CacheException {
         try {
-            getCache().put(key, value, nextTimestamp(), null);
+            getCache().put(key, value, null);
         } catch (OperationTimeoutException e) {
             Logger.getLogger(AbstractGeneralRegion.class).finest(e);
         }

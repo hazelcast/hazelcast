@@ -39,13 +39,12 @@ public class ReliableTopicStressTest extends HazelcastTestSupport {
         RingbufferConfig ringbufferConfig = new RingbufferConfig("foobar");
         ringbufferConfig.setCapacity(1000 * 1000);
         ringbufferConfig.setTimeToLiveSeconds(5);
-        config.addRingBufferConfig(ringbufferConfig);
 
         TopicConfig topicConfig = new TopicConfig("foobar");
         config.addTopicConfig(topicConfig);
 
         HazelcastInstance hz = createHazelcastInstance(config);
-        topic = hz.getReliableTopic(topicConfig.getName());
+        topic = hz.getTopic(topicConfig.getName());
     }
 
     @Test

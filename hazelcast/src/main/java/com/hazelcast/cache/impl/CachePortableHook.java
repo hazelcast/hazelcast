@@ -42,16 +42,13 @@ import com.hazelcast.cache.impl.client.CacheReplaceRequest;
 import com.hazelcast.cache.impl.client.CacheSingleInvalidationMessage;
 import com.hazelcast.cache.impl.client.CacheSizeRequest;
 import com.hazelcast.nio.serialization.ClassDefinition;
+import com.hazelcast.nio.serialization.FactoryIdHelper;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.nio.serialization.PortableHook;
-import com.hazelcast.nio.serialization.impl.FactoryIdHelper;
 import com.hazelcast.util.ConstructorFunction;
 
 import java.util.Collection;
-
-import static com.hazelcast.nio.serialization.impl.FactoryIdHelper.CACHE_PORTABLE_FACTORY;
-import static com.hazelcast.nio.serialization.impl.FactoryIdHelper.CACHE_PORTABLE_FACTORY_ID;
 
 /**
  * {@link CachePortableHook} contains all the ID hooks for classes used inside the JCache framework which implement
@@ -62,7 +59,7 @@ import static com.hazelcast.nio.serialization.impl.FactoryIdHelper.CACHE_PORTABL
 public class CachePortableHook
         implements PortableHook {
 
-    public static final int F_ID = FactoryIdHelper.getFactoryId(CACHE_PORTABLE_FACTORY, CACHE_PORTABLE_FACTORY_ID);
+    public static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.CACHE_PORTABLE_FACTORY, -24);
     public static final int GET = 1;
     public static final int PUT = 2;
     public static final int PUT_IF_ABSENT = 3;

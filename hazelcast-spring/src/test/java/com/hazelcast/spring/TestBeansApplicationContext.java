@@ -18,10 +18,9 @@ package com.hazelcast.spring;
 
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.impl.HazelcastClientProxy;
-import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.spring.context.SpringManagedContext;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -33,14 +32,13 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.test.context.ContextConfiguration;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(CustomSpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {"beans-applicationContext-hazelcast.xml"})
 @Category(QuickTest.class)
-public class TestBeansApplicationContext extends HazelcastTestSupport {
+public class TestBeansApplicationContext {
 
     @BeforeClass
     @AfterClass
@@ -54,6 +52,7 @@ public class TestBeansApplicationContext extends HazelcastTestSupport {
 
     @Test
     public void testApplicationContext() {
+        assertTrue(Hazelcast.getAllHazelcastInstances().isEmpty());
         assertTrue(HazelcastClient.getAllHazelcastClients().isEmpty());
 
         context.getBean("map2");
@@ -75,18 +74,6 @@ public class TestBeansApplicationContext extends HazelcastTestSupport {
         assertEquals(1, Hazelcast.getAllHazelcastInstances().size());
         assertEquals(instance, Hazelcast.getAllHazelcastInstances().iterator().next());
         assertNull(instance.getConfig().getManagedContext());
-    }
-
-
-    @Test
-    public void testPlaceHolder() {
-        HazelcastInstance instance = (HazelcastInstance) context.getBean("instance");
-        waitInstanceForSafeState(instance);
-        Config config = instance.getConfig();
-        assertEquals("spring-group", config.getGroupConfig().getName());
-        assertTrue(config.getNetworkConfig().getJoin().getTcpIpConfig().isEnabled());
-        assertEquals(6,config.getMapConfig("map1").getBackupCount());
-        assertFalse(config.getMapConfig("map1").isStatisticsEnabled());
     }
 
 }

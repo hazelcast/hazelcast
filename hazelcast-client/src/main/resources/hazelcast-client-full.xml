@@ -23,34 +23,20 @@
         <name>dev</name>
         <password>dev-pass</password>
     </group>
-    <license-key>HAZELCAST_ENTERPRISE_LICENSE_KEY</license-key>
     <properties>
-        <property name="hazelcast.client.shuffle.member.list">true</property>
-        <property name="hazelcast.client.heartbeat.timeout">60000</property>
-        <property name="hazelcast.client.heartbeat.interval">5000</property>
-        <property name="hazelcast.client.event.thread.count">5</property>
-        <property name="hazelcast.client.event.queue.capacity">1000000</property>
-        <property name="hazelcast.client.invocation.timeout.seconds">120</property>
+        <property name="hazelcast.client.connection.timeout">10000</property>
+        <property name="hazelcast.client.retry.count">6</property>
     </properties>
 
     <network>
+        <connection-attempt-limit>0</connection-attempt-limit>
         <cluster-members>
             <address>127.0.0.1</address>
             <address>127.0.0.2</address>
         </cluster-members>
         <smart-routing>true</smart-routing>
         <redo-operation>true</redo-operation>
-        <connection-timeout>60000</connection-timeout>
-        <connection-attempt-period>3000</connection-attempt-period>
-        <connection-attempt-limit>2</connection-attempt-limit>
-        <socket-options>
-            <tcp-no-delay>false</tcp-no-delay>
-            <keep-alive>true</keep-alive>
-            <reuse-address>true</reuse-address>
-            <linger-seconds>3</linger-seconds>
-            <timeout>-1</timeout>
-            <buffer-size>32</buffer-size>
-        </socket-options>
+
         <socket-interceptor enabled="true">
             <class-name>com.hazelcast.examples.MySocketInterceptor</class-name>
             <properties>
@@ -58,9 +44,6 @@
             </properties>
         </socket-interceptor>
 
-        <ssl enabled="false">
-           <factory-class-name>com.hazelcast.examples.MySslFactory</factory-class-name>
-        </ssl>
         <aws enabled="true" connection-timeout-seconds="11">
             <inside-aws>true</inside-aws>
             <access-key>TEST_ACCESS_KEY</access-key>
@@ -109,29 +92,22 @@
         <check-class-def-errors>true</check-class-def-errors>
     </serialization>
 
-    <native-memory enabled="false" allocator-type="POOLED">
-        <size unit="MEGABYTES" value="128" />
-        <min-block-size>1</min-block-size>
-        <page-size>1</page-size>
-        <metadata-space-percentage>40.5</metadata-space-percentage>
-    </native-memory>
-    
     <proxy-factories>
         <proxy-factory class-name="com.hazelcast.examples.ProxyXYZ1" service="sampleService1"/>
         <proxy-factory class-name="com.hazelcast.examples.ProxyXYZ2" service="sampleService1"/>
         <proxy-factory class-name="com.hazelcast.examples.ProxyXYZ3" service="sampleService3"/>
+
     </proxy-factories>
 
     <load-balancer type="random"/>
 
-    <near-cache name="default">
+    <near-cache name="asd">
         <max-size>2000</max-size>
         <time-to-live-seconds>90</time-to-live-seconds>
         <max-idle-seconds>100</max-idle-seconds>
         <eviction-policy>LFU</eviction-policy>
         <invalidate-on-change>true</invalidate-on-change>
         <in-memory-format>OBJECT</in-memory-format>
-        <local-update-policy>INVALIDATE</local-update-policy>
     </near-cache>
 
     <query-caches>

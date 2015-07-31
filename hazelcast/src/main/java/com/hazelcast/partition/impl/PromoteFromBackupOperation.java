@@ -16,7 +16,6 @@
 
 package com.hazelcast.partition.impl;
 
-import com.hazelcast.core.Member;
 import com.hazelcast.core.MigrationEvent;
 import com.hazelcast.core.MigrationEvent.MigrationStatus;
 import com.hazelcast.instance.MemberImpl;
@@ -97,7 +96,7 @@ final class PromoteFromBackupOperation
     private void sendMigrationEvent(final MigrationStatus status) {
         final int partitionId = getPartitionId();
         final NodeEngine nodeEngine = getNodeEngine();
-        final Member localMember = nodeEngine.getLocalMember();
+        final MemberImpl localMember = nodeEngine.getLocalMember();
         final MemberImpl deadMember = new MemberImpl(oldAddress, false);
         final MigrationEvent event = new MigrationEvent(partitionId, deadMember, localMember, status);
 

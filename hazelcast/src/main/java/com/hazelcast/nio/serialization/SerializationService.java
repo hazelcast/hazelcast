@@ -52,8 +52,6 @@ public interface SerializationService {
 
     BufferObjectDataOutput createObjectDataOutput(int size);
 
-    BufferObjectDataOutput createObjectDataOutput();
-
     ObjectDataOutputStream createObjectDataOutputStream(OutputStream out);
 
     ObjectDataInputStream createObjectDataInputStream(InputStream in);
@@ -71,6 +69,10 @@ public interface SerializationService {
     ManagedContext getManagedContext();
 
     ByteOrder getByteOrder();
+
+//    BufferObjectDataOutput pop();
+//
+//    void push(BufferObjectDataOutput out);
 
     void destroy();
 }

@@ -5,15 +5,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.ILock;
 import com.hazelcast.instance.GroupProperties;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.impl.DefaultData;
-import com.hazelcast.spi.AbstractOperation;
-import com.hazelcast.spi.ObjectNamespace;
-import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.impl.operationservice.InternalOperationService;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -22,14 +13,11 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.LockSupport;
 
-import static com.hazelcast.instance.TestUtil.terminateInstance;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -342,79 +330,6 @@ public class LockAdvancedTest extends HazelcastTestSupport {
         sleepMillis(5000);
         t.interrupt();
         assertTrue(latch.await(15, TimeUnit.SECONDS));
-    }
-
-    @Test
-    public void testLockCleanup_whenInvokingMemberDies() {
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
-        HazelcastInstance hz = factory.newHazelcastInstance();
-
-
-        HazelcastInstance hz2 = factory.newHazelcastInstance();
-        NodeEngineImpl nodeEngine = getNodeEngineImpl(hz2);
-        InternalOperationService operationService = getOperationService(hz2);
-        warmUpPartitions(hz2);
-
-        String name = randomNameOwnedBy(hz);
-        Data key = nodeEngine.toData(name);
-        int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
-
-        operationService.invokeOnPartition(LockService.SERVICE_NAME, new SlowLockOperation(name, key, 2000),
-                partitionId);
-
-        sleepMillis(500);
-        terminateInstance(hz2);
-
-        final ILock lock = hz.getLock(name);
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertFalse("Lock owned by dead member should have been released!", lock.isLocked());
-            }
-        }, 30);
-    }
-
-    private static class SlowLockOperation extends AbstractOperation {
-
-        Data key;
-        ObjectNamespace ns;
-        long sleepMillis;
-
-        public SlowLockOperation() {
-        }
-
-        public SlowLockOperation(String name, Data key, long sleepMillis) {
-            this.key = key;
-            this.ns = new InternalLockNamespace(name);
-            this.sleepMillis = sleepMillis;
-        }
-
-        protected final LockStoreImpl getLockStore() {
-            LockServiceImpl service = getService();
-            return service.getLockStore(getPartitionId(), ns);
-        }
-
-        @Override
-        public void run() throws Exception {
-            LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(1000));
-            getLockStore().lock(key, getCallerUuid(), 1, 1, -1);
-        }
-
-        @Override
-        protected void writeInternal(ObjectDataOutput out) throws IOException {
-            super.writeInternal(out);
-            out.writeLong(sleepMillis);
-            out.writeByteArray(key.toByteArray());
-            out.writeUTF(ns.getObjectName());
-        }
-
-        @Override
-        protected void readInternal(ObjectDataInput in) throws IOException {
-            super.readInternal(in);
-            sleepMillis = in.readLong();
-            key = new DefaultData(in.readByteArray());
-            ns = new InternalLockNamespace(in.readUTF());
-        }
     }
 
 }

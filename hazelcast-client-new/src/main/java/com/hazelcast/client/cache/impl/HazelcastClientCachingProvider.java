@@ -38,6 +38,7 @@ import java.util.Properties;
 public final class HazelcastClientCachingProvider extends AbstractHazelcastCachingProvider {
 
     public HazelcastClientCachingProvider() {
+        super();
     }
 
     /**

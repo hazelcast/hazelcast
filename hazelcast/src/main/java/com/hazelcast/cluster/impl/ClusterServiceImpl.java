@@ -48,8 +48,6 @@ import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.LifecycleServiceImpl;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
-import com.hazelcast.internal.metrics.MetricsRegistry;
-import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
@@ -72,7 +70,6 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.executor.ExecutorType;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
@@ -165,7 +162,6 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
 
     private volatile boolean joinInProgress = false;
 
-    @Probe(name = "lastHeartBeat")
     private volatile long lastHeartBeat = 0L;
 
     private long timeToStartJoin = 0;
@@ -201,14 +197,6 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         icmpTtl = node.groupProperties.ICMP_TTL.getInteger();
         icmpTimeout = node.groupProperties.ICMP_TIMEOUT.getInteger();
         node.connectionManager.addConnectionListener(this);
-
-        registerMetrics();
-    }
-
-    void registerMetrics() {
-        MetricsRegistry metricsRegistry = node.nodeEngine.getMetricsRegistry();
-        metricsRegistry.scanAndRegister(clusterClock, "cluster.clock");
-        metricsRegistry.scanAndRegister(this, "cluster");
     }
 
     @Override
@@ -1390,7 +1378,6 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         return node.getLocalMember();
     }
 
-    @Probe(name = "size")
     @Override
     public int getSize() {
         final Collection<MemberImpl> members = getMemberList();
@@ -1424,7 +1411,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         return eventService.deregisterListener(SERVICE_NAME, SERVICE_NAME, registrationId);
     }
 
-    @SuppressFBWarnings("BC_UNCONFIRMED_CAST")
+    @edu.umd.cs.findbugs.annotations.SuppressWarnings("BC_UNCONFIRMED_CAST")
     @Override
     public void dispatchEvent(MembershipEvent event, MembershipListener listener) {
         switch (event.getEventType()) {

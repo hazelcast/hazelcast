@@ -19,7 +19,6 @@ package com.hazelcast.spi.impl.operationexecutor.classic;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.instance.NodeExtension;
-import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.nio.Address;
@@ -30,7 +29,7 @@ import com.hazelcast.spi.impl.operationexecutor.OperationExecutor;
 import com.hazelcast.spi.impl.operationexecutor.OperationHostileThread;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunner;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunnerFactory;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import com.hazelcast.spi.impl.operationexecutor.ResponsePacketHandler;
 
 import java.util.concurrent.TimeUnit;
 
@@ -73,24 +72,25 @@ public final class ClassicOperationExecutor implements OperationExecutor {
     private final GenericOperationThread[] genericOperationThreads;
     private final OperationRunner[] genericOperationRunners;
 
+    private final ResponseThread responseThread;
+    private final ResponsePacketHandler responsePacketHandler;
     private final Address thisAddress;
     private final NodeExtension nodeExtension;
     private final HazelcastThreadGroup threadGroup;
     private final OperationRunner adHocOperationRunner;
-    private final MetricsRegistry metricsRegistry;
 
     public ClassicOperationExecutor(GroupProperties properties,
                                     LoggingService loggerService,
                                     Address thisAddress,
                                     OperationRunnerFactory operationRunnerFactory,
+                                    ResponsePacketHandler responsePacketHandler,
                                     HazelcastThreadGroup hazelcastThreadGroup,
-                                    NodeExtension nodeExtension,
-                                    MetricsRegistry metricsRegistry) {
+                                    NodeExtension nodeExtension) {
         this.thisAddress = thisAddress;
         this.nodeExtension = nodeExtension;
         this.threadGroup = hazelcastThreadGroup;
-        this.metricsRegistry = metricsRegistry;
         this.logger = loggerService.getLogger(ClassicOperationExecutor.class);
+        this.responsePacketHandler = responsePacketHandler;
         this.genericScheduleQueue = new DefaultScheduleQueue();
 
         this.adHocOperationRunner = operationRunnerFactory.createAdHocRunner();
@@ -100,6 +100,8 @@ public final class ClassicOperationExecutor implements OperationExecutor {
 
         this.genericOperationRunners = initGenericOperationRunners(properties, operationRunnerFactory);
         this.genericOperationThreads = initGenericThreads();
+
+        this.responseThread = initResponseThread();
 
         logger.info("Starting with " + genericOperationThreads.length + " generic operation threads and "
                 + partitionOperationThreads.length + " partition operation threads.");
@@ -146,8 +148,6 @@ public final class ClassicOperationExecutor implements OperationExecutor {
 
             threads[threadId] = operationThread;
             operationThread.start();
-
-            metricsRegistry.scanAndRegister(operationThread, "operation." + operationThread.getName());
         }
 
         // we need to assign the PartitionOperationThreads to all OperationRunners they own
@@ -178,20 +178,24 @@ public final class ClassicOperationExecutor implements OperationExecutor {
             operationThread.start();
 
             operationRunner.setCurrentThread(operationThread);
-
-            metricsRegistry.scanAndRegister(operationThread, "operation." + operationThread.getName());
         }
 
         return threads;
     }
 
-    @SuppressFBWarnings({"EI_EXPOSE_REP" })
+    private ResponseThread initResponseThread() {
+        ResponseThread thread = new ResponseThread(threadGroup, logger, responsePacketHandler);
+        thread.start();
+        return thread;
+    }
+
+    @edu.umd.cs.findbugs.annotations.SuppressWarnings({"EI_EXPOSE_REP" })
     @Override
     public OperationRunner[] getPartitionOperationRunners() {
         return partitionOperationRunners;
     }
 
-    @SuppressFBWarnings({"EI_EXPOSE_REP" })
+    @edu.umd.cs.findbugs.annotations.SuppressWarnings({"EI_EXPOSE_REP" })
     @Override
     public OperationRunner[] getGenericOperationRunners() {
         return genericOperationRunners;
@@ -304,6 +308,11 @@ public final class ClassicOperationExecutor implements OperationExecutor {
     }
 
     @Override
+    public int getResponseQueueSize() {
+        return responseThread.workQueue.size();
+    }
+
+    @Override
     public int getPartitionOperationThreadCount() {
         return partitionOperationThreads.length;
     }
@@ -341,9 +350,15 @@ public final class ClassicOperationExecutor implements OperationExecutor {
         checkNotNull(packet, "packet can't be null");
         checkOpPacket(packet);
 
-        int partitionId = packet.getPartitionId();
-        boolean hasPriority = packet.isUrgent();
-        execute(packet, partitionId, hasPriority);
+        if (packet.isHeaderSet(Packet.HEADER_RESPONSE)) {
+            // it's a response packet
+            responseThread.workQueue.add(packet);
+        } else {
+            // it must be an operation packet
+            int partitionId = packet.getPartitionId();
+            boolean hasPriority = packet.isUrgent();
+            execute(packet, partitionId, hasPriority);
+        }
     }
 
     private void checkOpPacket(Packet packet) {
@@ -409,6 +424,7 @@ public final class ClassicOperationExecutor implements OperationExecutor {
 
     @Override
     public void shutdown() {
+        responseThread.shutdown();
         shutdownAll(partitionOperationThreads);
         shutdownAll(genericOperationThreads);
         awaitTermination(partitionOperationThreads);
@@ -429,6 +445,24 @@ public final class ClassicOperationExecutor implements OperationExecutor {
                 Thread.currentThread().interrupt();
             }
         }
+    }
+
+    @Override
+    public void dumpPerformanceMetrics(StringBuffer sb) {
+        for (PartitionOperationThread operationThread : partitionOperationThreads) {
+            sb.append(operationThread.getName())
+                    .append(" processedCount=").append(operationThread.processedCount)
+                    .append(" pendingCount=").append(operationThread.scheduleQueue.size())
+                    .append('\n');
+        }
+        sb.append("pending generic operations ").append(genericScheduleQueue.size()).append('\n');
+        for (GenericOperationThread operationThread : genericOperationThreads) {
+            sb.append(operationThread.getName())
+                    .append(" processedCount=").append(operationThread.processedCount).append('\n');
+        }
+        sb.append(responseThread.getName())
+                .append(" processedCount=").append(responseThread.processedResponses)
+                .append(" pendingCount=").append(responseThread.workQueue.size()).append('\n');
     }
 
     @Override

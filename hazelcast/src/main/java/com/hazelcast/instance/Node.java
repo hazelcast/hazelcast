@@ -159,9 +159,7 @@ public class Node {
 
             serializationService = nodeExtension.createSerializationService();
             securityContext = config.getSecurityConfig().isEnabled() ? nodeExtension.getSecurityContext() : null;
-
             nodeEngine = new NodeEngineImpl(this);
-
             clientEngine = new ClientEngineImpl(this);
             connectionManager = nodeContext.createConnectionManager(this, serverSocketChannel);
             partitionService = new InternalPartitionServiceImpl(this);
@@ -301,6 +299,10 @@ public class Node {
 
     public MemberImpl getLocalMember() {
         return localMember;
+    }
+
+    public String getName() {
+        return hazelcastInstance.getName();
     }
 
     public boolean joined() {
@@ -601,7 +603,7 @@ public class Node {
 
     @Override
     public String toString() {
-        return "Node[" + hazelcastInstance.getName() + "]";
+        return "Node[" + getName() + "]";
     }
 
     public BuildInfo getBuildInfo() {

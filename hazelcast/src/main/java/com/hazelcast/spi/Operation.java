@@ -29,7 +29,6 @@ import com.hazelcast.quorum.QuorumException;
 import com.hazelcast.spi.exception.RetryableException;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 import java.util.logging.Level;
@@ -74,7 +73,7 @@ public abstract class Operation implements DataSerializable {
     private transient Object service;
     private transient Address callerAddress;
     private transient Connection connection;
-    private transient OperationResponseHandler responseHandler;
+    private transient ResponseHandler responseHandler;
 
     public Operation() {
         setFlag(true, BITMASK_VALIDATE_TARGET);
@@ -107,7 +106,7 @@ public abstract class Operation implements DataSerializable {
         return serviceName;
     }
 
-    @SuppressFBWarnings("ES_COMPARING_PARAMETER_STRING_WITH_EQ")
+    @edu.umd.cs.findbugs.annotations.SuppressWarnings("ES_COMPARING_PARAMETER_STRING_WITH_EQ")
     public final Operation setServiceName(String serviceName) {
         // If the name of the service is the same as the name already provided, the call is skipped.
         // We can do a == instead of an equals because serviceName are typically constants, and it will
@@ -183,23 +182,7 @@ public abstract class Operation implements DataSerializable {
     // Accessed using OperationAccessor
     final Operation setCallId(long callId) {
         this.callId = callId;
-        onSetCallId();
         return this;
-    }
-
-    /**
-     * This method is called every time a new <tt>callId</tt> is set to the operation.
-     * A new <tt>callId</tt> is set to an operation before initial invocation
-     * and before every invocation retry.
-     * <p/>
-     * By default this is a no-op method. Operation implementations which are willing to
-     * get notified on <tt>callId</tt> changes can override this method. New <tt>callId</tt>
-     * can be accessed by calling {@link #getCallId()}.
-     * <p/>
-     * For example an operation can distinguish the first invocation and invocation retries by keeping
-     * the initial <tt>callId</tt>.
-     */
-    protected void onSetCallId() {
     }
 
     public boolean validatesTarget() {
@@ -262,72 +245,13 @@ public abstract class Operation implements DataSerializable {
         return this;
     }
 
-    /**
-     * Gets the OperationResponseHandler tied to this Operation. The returned value can be null.
-     *
-     * @return the OperationResponseHandler
-     */
-    public final OperationResponseHandler getOperationResponseHandler() {
-        return responseHandler;
-    }
-
-    /**
-     * Sets the OperationResponseHandler. Value is allowed to be null.
-     *
-     * @param responseHandler the OperationResponseHandler to set.
-     * @return this instance.
-     */
-    public final Operation setOperationResponseHandler(OperationResponseHandler responseHandler) {
+    public final Operation setResponseHandler(ResponseHandler responseHandler) {
         this.responseHandler = responseHandler;
         return this;
     }
 
-    public final void sendResponse(Object value) {
-        OperationResponseHandler operationResponseHandler = getOperationResponseHandler();
-        operationResponseHandler.sendResponse(this, value);
-    }
-
-    /**
-     * This method is deprecated since Hazelcast 3.6. Make use of the
-     * {@link #getOperationResponseHandler()}
-     */
-    @Deprecated
     public final ResponseHandler getResponseHandler() {
-        if (responseHandler == null) {
-            return null;
-        }
-
-        if (responseHandler instanceof ResponseHandlerAdapter) {
-            ResponseHandlerAdapter adapter = (ResponseHandlerAdapter) responseHandler;
-            return adapter.responseHandler;
-        }
-
-        return new ResponseHandler() {
-            @Override
-            public void sendResponse(Object obj) {
-                responseHandler.sendResponse(Operation.this, obj);
-            }
-
-            @Override
-            public boolean isLocal() {
-                return responseHandler.isLocal();
-            }
-        };
-    }
-
-    /**
-     * This method is deprecated since Hazelcast 3.6. Make use of the
-     * {@link #setOperationResponseHandler(OperationResponseHandler)}
-     */
-    @Deprecated
-    public final Operation setResponseHandler(final ResponseHandler responseHandler) {
-        if (responseHandler == null) {
-            this.responseHandler = null;
-            return this;
-        }
-
-        this.responseHandler = new ResponseHandlerAdapter(responseHandler);
-        return this;
+        return responseHandler;
     }
 
     /**
@@ -544,21 +468,4 @@ public abstract class Operation implements DataSerializable {
         return sb.toString();
     }
 
-    private static class ResponseHandlerAdapter implements OperationResponseHandler {
-        private final ResponseHandler responseHandler;
-
-        public ResponseHandlerAdapter(ResponseHandler responseHandler) {
-            this.responseHandler = responseHandler;
-        }
-
-        @Override
-        public void sendResponse(Operation op, Object obj) {
-            responseHandler.sendResponse(obj);
-        }
-
-        @Override
-        public boolean isLocal() {
-            return responseHandler.isLocal();
-        }
-    }
 }

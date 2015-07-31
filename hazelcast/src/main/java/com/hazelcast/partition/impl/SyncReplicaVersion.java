@@ -16,13 +16,13 @@
 
 package com.hazelcast.partition.impl;
 
-import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.partition.ReplicaErrorLogger;
+import com.hazelcast.spi.Callback;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
@@ -38,10 +38,10 @@ final class SyncReplicaVersion extends Operation implements PartitionAwareOperat
     public static final int OPERATION_TRY_PAUSE_MILLIS = 250;
 
     private final int syncReplicaIndex;
-    private final ExecutionCallback callback;
+    private final Callback<Object> callback;
     private final boolean sync;
 
-    public SyncReplicaVersion(int syncReplicaIndex, ExecutionCallback callback) {
+    public SyncReplicaVersion(int syncReplicaIndex, Callback<Object> callback) {
         if (syncReplicaIndex < 1 || syncReplicaIndex > InternalPartition.MAX_BACKUP_COUNT) {
             throw new IllegalArgumentException("Replica index should be in range [1-"
                     + InternalPartition.MAX_BACKUP_COUNT + "]");
@@ -81,7 +81,7 @@ final class SyncReplicaVersion extends Operation implements PartitionAwareOperat
             OperationService operationService = nodeEngine.getOperationService();
             if (sync) {
                 operationService.createInvocationBuilder(InternalPartitionService.SERVICE_NAME, op, target)
-                        .setExecutionCallback(callback)
+                        .setCallback(callback)
                         .setTryCount(OPERATION_TRY_COUNT)
                         .setTryPauseMillis(OPERATION_TRY_PAUSE_MILLIS)
                         .invoke();
@@ -95,7 +95,7 @@ final class SyncReplicaVersion extends Operation implements PartitionAwareOperat
 
     private void notifyCallback(boolean result) {
         if (callback != null) {
-            callback.onResponse(result);
+            callback.notify(result);
         }
     }
 

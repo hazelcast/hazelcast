@@ -19,6 +19,7 @@ package com.hazelcast.cache.impl;
 import com.hazelcast.cache.HazelcastExpiryPolicy;
 import com.hazelcast.cache.impl.operation.CacheBackupEntryProcessorOperation;
 import com.hazelcast.cache.impl.operation.CacheClearBackupOperation;
+import com.hazelcast.cache.impl.operation.CacheRemoveAllBackupOperation;
 import com.hazelcast.cache.impl.operation.CacheClearOperation;
 import com.hazelcast.cache.impl.operation.CacheClearOperationFactory;
 import com.hazelcast.cache.impl.operation.CacheContainsKeyOperation;
@@ -40,7 +41,6 @@ import com.hazelcast.cache.impl.operation.CachePutAllBackupOperation;
 import com.hazelcast.cache.impl.operation.CachePutBackupOperation;
 import com.hazelcast.cache.impl.operation.CachePutIfAbsentOperation;
 import com.hazelcast.cache.impl.operation.CachePutOperation;
-import com.hazelcast.cache.impl.operation.CacheRemoveAllBackupOperation;
 import com.hazelcast.cache.impl.operation.CacheRemoveAllOperation;
 import com.hazelcast.cache.impl.operation.CacheRemoveAllOperationFactory;
 import com.hazelcast.cache.impl.operation.CacheRemoveBackupOperation;
@@ -48,15 +48,12 @@ import com.hazelcast.cache.impl.operation.CacheRemoveOperation;
 import com.hazelcast.cache.impl.operation.CacheReplaceOperation;
 import com.hazelcast.cache.impl.operation.CacheSizeOperation;
 import com.hazelcast.cache.impl.operation.CacheSizeOperationFactory;
+import com.hazelcast.nio.serialization.ArrayDataSerializableFactory;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.DataSerializerHook;
+import com.hazelcast.nio.serialization.FactoryIdHelper;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.nio.serialization.impl.ArrayDataSerializableFactory;
-import com.hazelcast.nio.serialization.impl.FactoryIdHelper;
 import com.hazelcast.util.ConstructorFunction;
-
-import static com.hazelcast.nio.serialization.impl.FactoryIdHelper.CACHE_DS_FACTORY;
-import static com.hazelcast.nio.serialization.impl.FactoryIdHelper.CACHE_DS_FACTORY_ID;
 
 /**
  * {@link CacheDataSerializerHook} contains all the ID hooks for {@link IdentifiedDataSerializable} classes used
@@ -67,7 +64,7 @@ import static com.hazelcast.nio.serialization.impl.FactoryIdHelper.CACHE_DS_FACT
 public final class CacheDataSerializerHook
         implements DataSerializerHook {
 
-    public static final int F_ID = FactoryIdHelper.getFactoryId(CACHE_DS_FACTORY, CACHE_DS_FACTORY_ID);
+    public static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.CACHE_DS_FACTORY, -25);
     public static final short GET = 1;
     public static final short CONTAINS_KEY = 2;
     public static final short PUT = 3;

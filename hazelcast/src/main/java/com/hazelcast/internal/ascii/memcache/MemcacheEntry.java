@@ -20,7 +20,6 @@ import com.hazelcast.internal.ascii.TextCommandConstants;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -29,7 +28,7 @@ import java.util.Arrays;
 import static com.hazelcast.util.StringUtil.bytesToString;
 import static com.hazelcast.util.StringUtil.stringToBytes;
 
-@SuppressFBWarnings("EI_EXPOSE_REP")
+@edu.umd.cs.findbugs.annotations.SuppressWarnings("EI_EXPOSE_REP")
 public class MemcacheEntry implements DataSerializable {
     private byte[] bytes;
     private byte[] value;

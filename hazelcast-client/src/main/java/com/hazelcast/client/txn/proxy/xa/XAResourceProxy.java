@@ -23,7 +23,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
-import com.hazelcast.spi.impl.SerializableList;
+import com.hazelcast.spi.impl.SerializableCollection;
 import com.hazelcast.transaction.HazelcastXAResource;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionOptions;
@@ -202,7 +202,7 @@ public class XAResourceProxy extends ClientProxy implements HazelcastXAResource 
 
     @Override
     public Xid[] recover(int flag) throws XAException {
-        SerializableList xidSet = invoke(new CollectXATransactionsRequest());
+        SerializableCollection xidSet = invoke(new CollectXATransactionsRequest());
         SerializableXID[] xidArray = new SerializableXID[xidSet.size()];
         SerializationService serializationService = getContext().getSerializationService();
         int index = 0;

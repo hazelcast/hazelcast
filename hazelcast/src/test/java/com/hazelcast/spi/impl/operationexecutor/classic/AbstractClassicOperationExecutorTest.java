@@ -5,20 +5,17 @@ import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.DefaultNodeExtension;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.HazelcastThreadGroup;
-import com.hazelcast.internal.metrics.MetricsRegistry;
-import com.hazelcast.internal.metrics.impl.MetricsRegistryImpl;
-import com.hazelcast.logging.Logger;
 import com.hazelcast.logging.LoggingServiceImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.impl.operationexecutor.OperationHostileThread;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.Packet;
-import com.hazelcast.nio.serialization.impl.DefaultSerializationServiceBuilder;
+import com.hazelcast.nio.serialization.DefaultSerializationServiceBuilder;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.impl.PacketHandler;
+import com.hazelcast.spi.impl.operationexecutor.ResponsePacketHandler;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunner;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunnerFactory;
 import com.hazelcast.spi.impl.operationservice.impl.responses.Response;
@@ -51,10 +48,9 @@ public abstract class AbstractClassicOperationExecutorTest extends HazelcastTest
     protected DefaultNodeExtension nodeExtension;
     protected OperationRunnerFactory handlerFactory;
     protected SerializationService serializationService;
-    protected PacketHandler responsePacketHandler;
+    protected ResponsePacketHandler responsePacketHandler;
     protected ClassicOperationExecutor executor;
     protected Config config;
-    protected MetricsRegistry metricsRegistry;
 
     @Before
     public void setup() throws Exception {
@@ -73,15 +69,14 @@ public abstract class AbstractClassicOperationExecutorTest extends HazelcastTest
         nodeExtension = new DefaultNodeExtension();
         handlerFactory = new DummyOperationRunnerFactory();
 
-        metricsRegistry = new MetricsRegistryImpl(Logger.getLogger(MetricsRegistry.class));
         responsePacketHandler = new DummyResponsePacketHandler();
     }
 
     protected ClassicOperationExecutor initExecutor() {
         groupProperties = new GroupProperties(config);
         executor = new ClassicOperationExecutor(
-                groupProperties, loggingService, thisAddress, handlerFactory,
-                threadGroup, nodeExtension, metricsRegistry);
+                groupProperties, loggingService, thisAddress, handlerFactory, responsePacketHandler,
+                threadGroup, nodeExtension);
         return executor;
     }
 
@@ -95,7 +90,7 @@ public abstract class AbstractClassicOperationExecutorTest extends HazelcastTest
         });
     }
 
-    protected class DummyResponsePacketHandler implements PacketHandler {
+    protected class DummyResponsePacketHandler implements ResponsePacketHandler {
         protected List<Packet> packets = synchronizedList(new LinkedList<Packet>());
         protected List<Response> responses = synchronizedList(new LinkedList<Response>());
 

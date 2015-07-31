@@ -16,9 +16,6 @@
 
 package com.hazelcast.concurrent.lock.operations;
 
-import com.hazelcast.concurrent.lock.LockResource;
-import com.hazelcast.concurrent.lock.LockStoreImpl;
-import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -33,26 +30,11 @@ import java.io.IOException;
 
 public class LocalLockCleanupOperation extends UnlockOperation implements Notifier, BackupAwareOperation {
 
-    private final String uuid;
-
-    public LocalLockCleanupOperation(ObjectNamespace namespace, Data key, String uuid) {
-        super(namespace, key, -1, true);
-        this.uuid = uuid;
+    public LocalLockCleanupOperation() {
     }
 
-    @Override
-    public void run() throws Exception {
-        LockStoreImpl lockStore = getLockStore();
-        LockResource lock = lockStore.getLock(key);
-        if (uuid.equals(lock.getOwner())) {
-            ILogger logger = getLogger();
-            if (logger.isFinestEnabled()) {
-                logger.finest(
-                        "Unlocking lock owned by uuid: " + uuid + ", thread-id: " + lock.getThreadId() + ", count: "
-                                + lock.getLockCount());
-            }
-            response = lockStore.forceUnlock(key);
-        }
+    public LocalLockCleanupOperation(ObjectNamespace namespace, Data key, long threadId) {
+        super(namespace, key, threadId, true);
     }
 
     @Override

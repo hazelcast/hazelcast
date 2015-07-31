@@ -17,16 +17,13 @@
 package com.hazelcast.replicatedmap.impl.client;
 
 import com.hazelcast.nio.serialization.ClassDefinition;
+import com.hazelcast.nio.serialization.FactoryIdHelper;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.nio.serialization.PortableHook;
-import com.hazelcast.nio.serialization.impl.FactoryIdHelper;
 import com.hazelcast.util.ConstructorFunction;
 
 import java.util.Collection;
-
-import static com.hazelcast.nio.serialization.impl.FactoryIdHelper.REPLICATED_PORTABLE_FACTORY;
-import static com.hazelcast.nio.serialization.impl.FactoryIdHelper.REPLICATED_PORTABLE_FACTORY_ID;
 
 /**
  * This class registers all Portable serializers that are needed for communication between nodes and clients
@@ -35,7 +32,7 @@ import static com.hazelcast.nio.serialization.impl.FactoryIdHelper.REPLICATED_PO
 public class ReplicatedMapPortableHook
         implements PortableHook {
 
-    public static final int F_ID = FactoryIdHelper.getFactoryId(REPLICATED_PORTABLE_FACTORY, REPLICATED_PORTABLE_FACTORY_ID);
+    public static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.REPLICATED_PORTABLE_FACTORY, -22);
 
     public static final int SIZE = 1;
     public static final int IS_EMPTY = 2;
@@ -56,9 +53,8 @@ public class ReplicatedMapPortableHook
     public static final int REMOVE_LISTENER = 17;
     public static final int MAP_ENTRY_EVENT = 18;
     public static final int CLEAR = 19;
-    public static final int ADD_NEAR_CACHE_ENTRY_LISTENER = 20;
 
-    private static final int LENGTH = ADD_NEAR_CACHE_ENTRY_LISTENER + 1;
+    private static final int LENGTH = CLEAR + 1;
 
     @Override
     public int getFactoryId() {
@@ -183,13 +179,6 @@ public class ReplicatedMapPortableHook
                     @Override
                     public Portable createNew(Integer arg) {
                         return new ClientReplicatedMapClearRequest();
-                    }
-                };
-
-                constructors[ADD_NEAR_CACHE_ENTRY_LISTENER] = new ConstructorFunction<Integer, Portable>() {
-                    @Override
-                    public Portable createNew(Integer arg) {
-                        return new ClientReplicatedMapAddNearCacheListenerRequest();
                     }
                 };
             }

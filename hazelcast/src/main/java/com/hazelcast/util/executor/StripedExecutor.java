@@ -27,8 +27,6 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
-import static com.hazelcast.util.HashUtil.hashToIndex;
-
 /**
  * The StripedExecutor internally uses a stripe of queues and each queue has its own private worker-thread.
  * When a task is 'executed' on the StripedExecutor, the task is checked if it is a StripedRunnable. If it
@@ -123,7 +121,12 @@ public final class StripedExecutor implements Executor {
             key = rand.nextInt();
         }
 
-        int index = hashToIndex(key, size);
+        final int index;
+        if (key == Integer.MIN_VALUE) {
+            index = 0;
+        } else {
+            index = Math.abs(key) % size;
+        }
         return workers[index];
     }
 

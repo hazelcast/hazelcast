@@ -60,16 +60,20 @@ public final class LockStoreImpl implements DataSerializable, LockStore {
         this.lockService = lockService;
     }
 
-    @Override
-    public boolean lock(Data key, String caller, long threadId, long referenceId, long leaseTime) {
-        LockResourceImpl lock = getLock(key);
-        return lock.lock(caller, threadId, referenceId, leaseTime, false);
+    public boolean lock(Data key, String caller, long threadId) {
+        return lock(key, caller, threadId, Long.MAX_VALUE);
     }
 
     @Override
-    public boolean txnLock(Data key, String caller, long threadId, long referenceId, long leaseTime) {
+    public boolean lock(Data key, String caller, long threadId, long leaseTime) {
         LockResourceImpl lock = getLock(key);
-        return lock.lock(caller, threadId, referenceId, leaseTime, true);
+        return lock.lock(caller, threadId, leaseTime);
+    }
+
+    @Override
+    public boolean txnLock(Data key, String caller, long threadId, long leaseTime) {
+        LockResourceImpl lock = getLock(key);
+        return lock.lock(caller, threadId, leaseTime, true);
     }
 
     @Override
@@ -81,7 +85,7 @@ public final class LockStoreImpl implements DataSerializable, LockStore {
         return lock.extendLeaseTime(caller, threadId, leaseTime);
     }
 
-    public LockResourceImpl getLock(Data key) {
+    private LockResourceImpl getLock(Data key) {
         return ConcurrencyUtil.getOrPutIfAbsent(locks, key, lockConstructor);
     }
 
@@ -137,7 +141,7 @@ public final class LockStoreImpl implements DataSerializable, LockStore {
     }
 
     @Override
-    public boolean unlock(Data key, String caller, long threadId, long referenceId) {
+    public boolean unlock(Data key, String caller, long threadId) {
         LockResourceImpl lock = locks.get(key);
         if (lock == null) {
             return false;
@@ -145,7 +149,7 @@ public final class LockStoreImpl implements DataSerializable, LockStore {
 
         boolean result = false;
         if (lock.canAcquireLock(caller, threadId)) {
-            if (lock.unlock(caller, threadId, referenceId)) {
+            if (lock.unlock(caller, threadId)) {
                 result = true;
             }
         }

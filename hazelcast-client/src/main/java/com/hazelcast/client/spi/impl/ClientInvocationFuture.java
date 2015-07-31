@@ -56,8 +56,6 @@ public class ClientInvocationFuture<V> implements ICompletableFuture<V> {
 
     private final ClientInvocation invocation;
 
-    private boolean responseDeserialized;
-
     private volatile Object response;
 
     public ClientInvocationFuture(ClientInvocation invocation, HazelcastClientInstanceImpl client,
@@ -68,17 +66,6 @@ public class ClientInvocationFuture<V> implements ICompletableFuture<V> {
         this.request = request;
         this.handler = handler;
         this.invocation = invocation;
-    }
-
-    /**
-     * By default the ClientInvocationFuture will not deserialize a response if it is in Data format.
-     *
-     * This can be changed setting the responseDeserialized to true.
-     *
-     * @param responseDeserialized
-     */
-    public void setResponseDeserialized(boolean responseDeserialized) {
-        this.responseDeserialized = responseDeserialized;
     }
 
     @Override
@@ -157,35 +144,25 @@ public class ClientInvocationFuture<V> implements ICompletableFuture<V> {
 
     private V resolveResponse() throws ExecutionException, TimeoutException, InterruptedException {
         if (response instanceof Throwable) {
-            return resolveException();
+            ExceptionUtil.fixRemoteStackTrace((Throwable) response, Thread.currentThread().getStackTrace());
+            if (response instanceof ExecutionException) {
+                throw (ExecutionException) response;
+            }
+            if (response instanceof TimeoutException) {
+                throw (TimeoutException) response;
+            }
+            if (response instanceof Error) {
+                throw (Error) response;
+            }
+            if (response instanceof InterruptedException) {
+                throw (InterruptedException) response;
+            }
+            throw new ExecutionException((Throwable) response);
         }
-
         if (response == null) {
             throw new TimeoutException();
         }
-
-        if (responseDeserialized) {
-            return serializationService.toObject(response);
-        }
-
         return (V) response;
-    }
-
-    private V resolveException() throws ExecutionException, TimeoutException, InterruptedException {
-        ExceptionUtil.fixRemoteStackTrace((Throwable) response, Thread.currentThread().getStackTrace());
-        if (response instanceof ExecutionException) {
-            throw (ExecutionException) response;
-        }
-        if (response instanceof TimeoutException) {
-            throw (TimeoutException) response;
-        }
-        if (response instanceof Error) {
-            throw (Error) response;
-        }
-        if (response instanceof InterruptedException) {
-            throw (InterruptedException) response;
-        }
-        throw new ExecutionException((Throwable) response);
     }
 
     @Override

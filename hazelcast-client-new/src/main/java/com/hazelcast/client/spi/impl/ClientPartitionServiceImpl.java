@@ -31,7 +31,6 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.util.EmptyStatement;
-import com.hazelcast.util.HashUtil;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
@@ -154,7 +153,7 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
             return 0;
         }
         int hash = key.getPartitionHash();
-        return HashUtil.hashToIndex(hash, pc);
+        return (hash == Integer.MIN_VALUE) ? 0 : Math.abs(hash) % pc;
     }
 
     @Override

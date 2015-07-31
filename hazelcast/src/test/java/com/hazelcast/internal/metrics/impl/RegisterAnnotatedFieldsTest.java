@@ -1,9 +1,9 @@
 package com.hazelcast.internal.metrics.impl;
 
-import com.hazelcast.internal.metrics.DoubleGauge;
-import com.hazelcast.internal.metrics.LongGauge;
+import com.hazelcast.internal.metrics.Gauge;
 import com.hazelcast.util.counters.Counter;
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.metrics.Metric;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -35,9 +35,9 @@ public class RegisterAnnotatedFieldsTest extends HazelcastTestSupport {
         ObjectLongGaugeFieldWithName object = new ObjectLongGaugeFieldWithName();
         metricsRegistry.scanAndRegister(object, "foo");
 
-        LongGauge gauge = metricsRegistry.newLongGauge("foo.myfield");
+        Gauge gauge = metricsRegistry.getGauge("foo.myfield");
         object.field = 10;
-        assertEquals(object.field, gauge.read());
+        assertEquals(object.field, gauge.readLong());
     }
 
     public class ObjectLongGaugeFieldWithName {
@@ -50,9 +50,9 @@ public class RegisterAnnotatedFieldsTest extends HazelcastTestSupport {
         PrimitiveIntegerField object = new PrimitiveIntegerField();
         metricsRegistry.scanAndRegister(object, "foo");
 
-        LongGauge gauge = metricsRegistry.newLongGauge("foo.field");
+        Gauge gauge = metricsRegistry.getGauge("foo.field");
         object.field = 10;
-        assertEquals(object.field, gauge.read());
+        assertEquals(object.field, gauge.readLong());
     }
 
     public class PrimitiveIntegerField {
@@ -65,9 +65,9 @@ public class RegisterAnnotatedFieldsTest extends HazelcastTestSupport {
         PrimitiveLongField object = new PrimitiveLongField();
         metricsRegistry.scanAndRegister(object, "foo");
 
-        LongGauge gauge = metricsRegistry.newLongGauge("foo.field");
+        Gauge gauge = metricsRegistry.getGauge("foo.field");
         object.field = 10;
-        assertEquals(object.field, gauge.read());
+        assertEquals(object.field, gauge.readLong());
     }
 
     public class PrimitiveLongField {
@@ -80,9 +80,9 @@ public class RegisterAnnotatedFieldsTest extends HazelcastTestSupport {
         PrimitiveDoubleField object = new PrimitiveDoubleField();
         metricsRegistry.scanAndRegister(object, "foo");
 
-        DoubleGauge gauge = metricsRegistry.newDoubleGauge("foo.field");
+        Gauge gauge = metricsRegistry.getGauge("foo.field");
         object.field = 10;
-        assertEquals(object.field, gauge.read(),0.1);
+        assertEquals(object.field, gauge.readDouble(),0.1);
     }
 
     public class PrimitiveDoubleField {
@@ -97,11 +97,11 @@ public class RegisterAnnotatedFieldsTest extends HazelcastTestSupport {
         object.field.put("bar", "bar");
         metricsRegistry.scanAndRegister(object, "foo");
 
-        LongGauge gauge = metricsRegistry.newLongGauge("foo.field");
-        assertEquals(object.field.size(), gauge.read());
+        Gauge gauge = metricsRegistry.getGauge("foo.field");
+        assertEquals(object.field.size(), gauge.readLong());
 
         object.field = null;
-        assertEquals(0, gauge.read());
+        assertEquals(0, gauge.readLong());
     }
 
     public class ConcurrentMapField {
@@ -115,11 +115,11 @@ public class RegisterAnnotatedFieldsTest extends HazelcastTestSupport {
         object.field.inc(10);
         metricsRegistry.scanAndRegister(object, "foo");
 
-        LongGauge gauge = metricsRegistry.newLongGauge("foo.field");
-        assertEquals(10, gauge.read());
+        Gauge gauge = metricsRegistry.getGauge("foo.field");
+        assertEquals(10, gauge.readLong());
 
         object.field = null;
-        assertEquals(0, gauge.read());
+        assertEquals(0, gauge.readLong());
     }
 
     public class CounterField {
@@ -133,11 +133,11 @@ public class RegisterAnnotatedFieldsTest extends HazelcastTestSupport {
         StaticField.field.set(10);
         metricsRegistry.scanAndRegister(object, "foo");
 
-        LongGauge gauge = metricsRegistry.newLongGauge("foo.field");
-        assertEquals(10, gauge.read());
+        Gauge gauge = metricsRegistry.getGauge("foo.field");
+        assertEquals(10, gauge.readLong());
 
         StaticField.field = null;
-        assertEquals(0, gauge.read());
+        assertEquals(0, gauge.readLong());
     }
 
     public static class StaticField {
@@ -150,11 +150,11 @@ public class RegisterAnnotatedFieldsTest extends HazelcastTestSupport {
         Subclass object = new Subclass();
         metricsRegistry.scanAndRegister(object, "foo");
 
-        LongGauge gauge = metricsRegistry.newLongGauge("foo.field");
-        assertEquals(0, gauge.read());
+        Gauge gauge = metricsRegistry.getGauge("foo.field");
+        assertEquals(0, gauge.readLong());
 
         object.field = 10;
-        assertEquals(10, gauge.read());
+        assertEquals(10, gauge.readLong());
     }
 
     public static class SuperClass{

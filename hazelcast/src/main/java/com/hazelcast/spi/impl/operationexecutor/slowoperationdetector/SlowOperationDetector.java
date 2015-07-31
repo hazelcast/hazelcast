@@ -24,7 +24,6 @@ import com.hazelcast.logging.LoggingService;
 import com.hazelcast.spi.impl.operationexecutor.OperationExecutor;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunner;
 import com.hazelcast.util.EmptyStatement;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -65,7 +64,7 @@ public final class SlowOperationDetector {
 
     private boolean isFirstLog = true;
 
-    @SuppressFBWarnings({"EI_EXPOSE_REP2" })
+    @edu.umd.cs.findbugs.annotations.SuppressWarnings({"EI_EXPOSE_REP2" })
     public SlowOperationDetector(LoggingService loggingServices,
                                  OperationRunner[] genericOperationRunners,
                                  OperationRunner[] partitionOperationRunners,

@@ -24,8 +24,7 @@ import com.hazelcast.core.DistributedObject;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionReplicationEvent;
-import com.hazelcast.transaction.impl.Transaction;
-
+import com.hazelcast.transaction.impl.TransactionSupport;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -69,7 +68,7 @@ public class ListService extends CollectionService {
     }
 
     @Override
-    public TransactionalListProxy createTransactionalObject(String name, Transaction transaction) {
+    public TransactionalListProxy createTransactionalObject(String name, TransactionSupport transaction) {
         return new TransactionalListProxy(name, transaction, nodeEngine, this);
     }
 

@@ -353,43 +353,6 @@ public class MapLockTest extends HazelcastTestSupport {
         assertEquals("unlocked keys not removed", 1, map.size());
     }
 
-    @Test(timeout = 60000)
-    public void testTryLockLeaseTime_whenLockFree() throws InterruptedException {
-        IMap map = getMapForLock();
-        String key = randomString();
-        boolean isLocked = map.tryLock(key, 1000, TimeUnit.MILLISECONDS, 1000, TimeUnit.MILLISECONDS);
-        assertTrue(isLocked);
-    }
-
-    @Test(timeout = 60000)
-    public void testTryLockLeaseTime_whenLockAcquiredByOther() throws InterruptedException {
-        final IMap map = getMapForLock();
-        final String key = randomString();
-        Thread thread = new Thread() {
-            public void run() {
-                map.lock(key);
-            }
-        };
-        thread.start();
-        thread.join();
-
-        boolean isLocked = map.tryLock(key, 1000, TimeUnit.MILLISECONDS, 1000, TimeUnit.MILLISECONDS);
-        Assert.assertFalse(isLocked);
-    }
-
-    @Test
-    public void testTryLockLeaseTime_lockIsReleasedEventually() throws InterruptedException {
-        final IMap map = getMapForLock();
-        final String key = randomString();
-        map.tryLock(key, 1000, TimeUnit.MILLISECONDS, 1000, TimeUnit.MILLISECONDS);
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                Assert.assertFalse(map.isLocked(key));
-            }
-        }, 30);
-    }
-
     /**
      * See issue #4888
      */
@@ -409,9 +372,5 @@ public class MapLockTest extends HazelcastTestSupport {
             LockStoreContainer lockContainer = lockService.getLockContainer(i);
             Assert.assertEquals("LockStores should be empty", 0, lockContainer.getLockStores().size());
         }
-    }
-
-    private IMap getMapForLock(){
-        return createHazelcastInstance().getMap(randomString());
     }
 }

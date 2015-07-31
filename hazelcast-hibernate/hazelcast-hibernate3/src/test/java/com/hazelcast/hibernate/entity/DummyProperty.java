@@ -30,15 +30,18 @@ public class DummyProperty {
     }
 
     public DummyProperty(String key) {
+        super();
         this.key = key;
     }
 
     public DummyProperty(String key, DummyEntity entity) {
+        super();
         this.key = key;
         this.entity = entity;
     }
 
     public DummyProperty(long id, String key, DummyEntity entity) {
+        super();
         this.id = id;
         this.key = key;
         this.entity = entity;

@@ -50,10 +50,10 @@ import com.hazelcast.core.ItemListener;
 import com.hazelcast.core.Member;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
-import com.hazelcast.spi.impl.UnmodifiableLazyList;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -142,9 +142,12 @@ public class ClientListProxy<E> extends ClientProxy implements IList<E> {
         ClientMessage request = ListIteratorCodec.encodeRequest(name);
         ClientMessage response = invoke(request);
         ListIteratorCodec.ResponseParameters resultParameters = ListIteratorCodec.decodeResponse(response);
-        List<Data> resultCollection = (List<Data>) resultParameters.list;
-        SerializationService serializationService = getContext().getSerializationService();
-        return new UnmodifiableLazyList<E>(resultCollection, serializationService).iterator();
+        Collection<Data> resultCollection = resultParameters.list;
+        final ArrayList<E> list = new ArrayList<E>(resultCollection.size());
+        for (Data value : resultCollection) {
+            list.add((E) toObject(value));
+        }
+        return Collections.unmodifiableCollection(list).iterator();
     }
 
     public Object[] toArray() {
@@ -243,6 +246,43 @@ public class ClientListProxy<E> extends ClientProxy implements IList<E> {
         return stopListening(request, registrationId);
     }
 
+    private class ItemEventHandler extends ListAddListenerCodec.AbstractEventHandler
+            implements EventHandler<ClientMessage> {
+
+        private final boolean includeValue;
+        private final ItemListener<E> listener;
+
+        public ItemEventHandler(boolean includeValue, ItemListener<E> listener) {
+            this.includeValue = includeValue;
+            this.listener = listener;
+        }
+
+        @Override
+        public void handle(Data dataItem, String uuid, int eventType) {
+            SerializationService serializationService = getContext().getSerializationService();
+            ClientClusterService clusterService = getContext().getClusterService();
+
+            E item = includeValue ? (E) serializationService.toObject(dataItem) : null;
+            Member member = clusterService.getMember(uuid);
+            ItemEvent<E> itemEvent = new ItemEvent<E>(name, ItemEventType.getByType(eventType), item, member);
+            if (eventType == ItemEventType.ADDED.getType()) {
+                listener.itemAdded(itemEvent);
+            } else {
+                listener.itemRemoved(itemEvent);
+            }
+        }
+
+        @Override
+        public void beforeListenerRegister() {
+
+        }
+
+        @Override
+        public void onListenerRegister() {
+
+        }
+    }
+
     protected <T> T invoke(ClientMessage req) {
         return super.invoke(req, getPartitionKey());
     }
@@ -285,59 +325,28 @@ public class ClientListProxy<E> extends ClientProxy implements IList<E> {
         ClientMessage request = ListListIteratorCodec.encodeRequest(name, index);
         ClientMessage response = invoke(request);
         ListListIteratorCodec.ResponseParameters resultParameters = ListListIteratorCodec.decodeResponse(response);
-        List<Data> resultCollection = (List<Data>) resultParameters.list;
-        SerializationService serializationService = getContext().getSerializationService();
-        return new UnmodifiableLazyList<E>(resultCollection, serializationService).listIterator();
+        Collection<Data> resultCollection = resultParameters.list;
+        final List<E> list = new ArrayList<E>(resultCollection.size());
+        for (Data value : resultCollection) {
+            list.add((E) toObject(value));
+        }
+        return list.listIterator();
     }
 
     public List<E> subList(int fromIndex, int toIndex) {
         ClientMessage request = ListSubCodec.encodeRequest(name, fromIndex, toIndex);
         ClientMessage response = invoke(request);
         ListSubCodec.ResponseParameters resultParameters = ListSubCodec.decodeResponse(response);
-        List<Data> resultCollection = (List<Data>) resultParameters.list;
-        SerializationService serializationService = getContext().getSerializationService();
-        return new UnmodifiableLazyList<E>(resultCollection, serializationService);
+        Collection<Data> resultCollection = resultParameters.list;
+        final List<E> list = new ArrayList<E>(resultCollection.size());
+        for (Data value : resultCollection) {
+            list.add((E) toObject(value));
+        }
+        return list;
     }
 
     @Override
     public String toString() {
         return "IList{" + "name='" + getName() + '\'' + '}';
-    }
-
-    private class ItemEventHandler extends ListAddListenerCodec.AbstractEventHandler
-            implements EventHandler<ClientMessage> {
-
-        private final boolean includeValue;
-        private final ItemListener<E> listener;
-
-        public ItemEventHandler(boolean includeValue, ItemListener<E> listener) {
-            this.includeValue = includeValue;
-            this.listener = listener;
-        }
-
-        @Override
-        public void handle(Data dataItem, String uuid, int eventType) {
-            SerializationService serializationService = getContext().getSerializationService();
-            ClientClusterService clusterService = getContext().getClusterService();
-
-            E item = includeValue ? (E) serializationService.toObject(dataItem) : null;
-            Member member = clusterService.getMember(uuid);
-            ItemEvent<E> itemEvent = new ItemEvent<E>(name, ItemEventType.getByType(eventType), item, member);
-            if (eventType == ItemEventType.ADDED.getType()) {
-                listener.itemAdded(itemEvent);
-            } else {
-                listener.itemRemoved(itemEvent);
-            }
-        }
-
-        @Override
-        public void beforeListenerRegister() {
-
-        }
-
-        @Override
-        public void onListenerRegister() {
-
-        }
     }
 }

@@ -43,11 +43,11 @@ import com.hazelcast.map.impl.MapEntrySet;
 import com.hazelcast.map.impl.MapEventPublisher;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
-import com.hazelcast.map.impl.nearcache.NearCache;
-import com.hazelcast.map.impl.nearcache.NearCacheProvider;
+import com.hazelcast.map.impl.NearCache;
+import com.hazelcast.map.impl.NearCacheProvider;
 import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.map.impl.QueryEventFilter;
-import com.hazelcast.map.impl.recordstore.RecordStore;
+import com.hazelcast.map.impl.RecordStore;
 import com.hazelcast.map.impl.operation.AddIndexOperation;
 import com.hazelcast.map.impl.operation.AddInterceptorOperation;
 import com.hazelcast.map.impl.operation.BasePutOperation;
@@ -96,6 +96,7 @@ import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.TruePredicate;
 import com.hazelcast.spi.AbstractDistributedObject;
+import com.hazelcast.spi.Callback;
 import com.hazelcast.spi.DefaultObjectNamespace;
 import com.hazelcast.spi.EventFilter;
 import com.hazelcast.spi.ExecutionService;
@@ -1059,7 +1060,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
             } else {
                 ICompletableFuture future = nodeEngine.getOperationService()
                         .createInvocationBuilder(SERVICE_NAME, operation, partitionId)
-                        .setExecutionCallback(new MapExecutionCallbackAdapter(callback))
+                        .setCallback(new MapExecutionCallbackAdapter(callback))
                         .invoke();
                 invalidateNearCache(key);
                 return future;
@@ -1227,7 +1228,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         return SERVICE_NAME;
     }
 
-    private class MapExecutionCallbackAdapter implements ExecutionCallback {
+    private class MapExecutionCallbackAdapter implements Callback {
 
         private final ExecutionCallback executionCallback;
 
@@ -1236,14 +1237,12 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         }
 
         @Override
-        public void onResponse(Object response) {
-            MapServiceContext mapServiceContext = getService().getMapServiceContext();
-            executionCallback.onResponse(mapServiceContext.toObject(response));
-        }
-
-        @Override
-        public void onFailure(Throwable t) {
-            executionCallback.onFailure(t);
+        public void notify(Object response) {
+            if (response instanceof Throwable) {
+                executionCallback.onFailure((Throwable) response);
+            } else {
+                executionCallback.onResponse(getService().getMapServiceContext().toObject(response));
+            }
         }
     }
 

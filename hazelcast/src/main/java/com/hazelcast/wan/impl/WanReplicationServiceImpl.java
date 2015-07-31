@@ -100,7 +100,7 @@ public class WanReplicationServiceImpl implements WanReplicationService {
     }
 
     @Override
-    public void handle(final Packet packet) {
+    public void handleEvent(final Packet packet) {
         StripedExecutor ex = getExecutor();
         ex.execute(new StripedRunnable() {
             @Override

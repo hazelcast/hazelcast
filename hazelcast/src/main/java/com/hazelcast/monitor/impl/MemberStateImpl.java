@@ -283,6 +283,67 @@ public class MemberStateImpl implements MemberState {
     }
 
     @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        MemberStateImpl that = (MemberStateImpl) o;
+
+        if (address != null ? !address.equals(that.address) : that.address != null) {
+            return false;
+        }
+        if (executorStats != null ? !executorStats.equals(that.executorStats) : that.executorStats != null) {
+            return false;
+        }
+        if (mapStats != null ? !mapStats.equals(that.mapStats) : that.mapStats != null) {
+            return false;
+        }
+        if (multiMapStats != null ? !multiMapStats.equals(that.multiMapStats) : that.multiMapStats != null) {
+            return false;
+        }
+        if (queueStats != null ? !queueStats.equals(that.queueStats) : that.queueStats != null) {
+            return false;
+        }
+        if (runtimeProps != null ? !runtimeProps.equals(that.runtimeProps) : that.runtimeProps != null) {
+            return false;
+        }
+        if (topicStats != null ? !topicStats.equals(that.topicStats) : that.topicStats != null) {
+            return false;
+        }
+        if (cacheStats != null ? !cacheStats.equals(that.cacheStats) : that.cacheStats != null) {
+            return false;
+        }
+        if (memoryStats != null ? !memoryStats.equals(that.memoryStats) : that.memoryStats != null) {
+            return false;
+        }
+        if (operationStats != null ? !operationStats.equals(that.operationStats) : that.operationStats != null) {
+            return false;
+        }
+        if (memberPartitionState != null
+                ? !memberPartitionState.equals(that.memberPartitionState) : that.memberPartitionState != null) {
+            return false;
+        }
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = address != null ? address.hashCode() : 0;
+        result = 31 * result + (mapStats != null ? mapStats.hashCode() : 0);
+        result = 31 * result + (multiMapStats != null ? multiMapStats.hashCode() : 0);
+        result = 31 * result + (queueStats != null ? queueStats.hashCode() : 0);
+        result = 31 * result + (topicStats != null ? topicStats.hashCode() : 0);
+        result = 31 * result + (executorStats != null ? executorStats.hashCode() : 0);
+        result = 31 * result + (cacheStats != null ? cacheStats.hashCode() : 0);
+        result = 31 * result + (memberPartitionState != null ? memberPartitionState.hashCode() : 0);
+        return result;
+    }
+
+    @Override
     public String toString() {
         return "MemberStateImpl{"
                 + "address=" + address

@@ -19,7 +19,6 @@ package com.hazelcast.internal.metrics.metricsets;
 
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.lang.management.GarbageCollectorMXBean;
 import java.lang.management.ManagementFactory;
@@ -65,7 +64,7 @@ public final class GarbageCollectionMetricSet {
     }
 
 
-    @SuppressFBWarnings(value = "URF_UNREAD_FIELD", justification = "used by instrumentation tools")
+    @edu.umd.cs.findbugs.annotations.SuppressWarnings({"URF_UNREAD_FIELD" })
     static class GcStats implements Runnable {
         @Probe
         volatile long minorCount;

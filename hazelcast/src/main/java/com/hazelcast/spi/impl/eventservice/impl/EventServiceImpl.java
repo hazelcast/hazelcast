@@ -20,7 +20,6 @@ import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
-import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
@@ -36,8 +35,9 @@ import com.hazelcast.spi.impl.eventservice.impl.operations.DeregistrationOperati
 import com.hazelcast.spi.impl.eventservice.impl.operations.PostJoinRegistrationOperation;
 import com.hazelcast.spi.impl.eventservice.impl.operations.RegistrationOperation;
 import com.hazelcast.spi.impl.eventservice.impl.operations.SendEventOperation;
+import com.hazelcast.util.ConcurrencyUtil;
+import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.EmptyStatement;
-import com.hazelcast.util.counters.MwCounter;
 import com.hazelcast.util.executor.StripedExecutor;
 
 import java.io.Closeable;
@@ -52,12 +52,12 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 
 import static com.hazelcast.util.EmptyStatement.ignore;
 import static com.hazelcast.util.FutureUtil.ExceptionHandler;
 import static com.hazelcast.util.FutureUtil.waitWithDeadline;
-import static com.hazelcast.util.counters.MwCounter.newMwCounter;
 
 public class EventServiceImpl implements InternalEventService {
 
@@ -78,15 +78,9 @@ public class EventServiceImpl implements InternalEventService {
     private final ConcurrentMap<String, EventServiceSegment> segments;
     private final StripedExecutor eventExecutor;
     private final int eventQueueTimeoutMs;
-
-    @Probe(name = "threadCount")
     private final int eventThreadCount;
-    @Probe(name = "queueCapacity")
     private final int eventQueueCapacity;
-    @Probe(name = "totalFailureCount")
-    private final MwCounter totalFailures = newMwCounter();
-    @Probe(name = "rejectedCount")
-    private final MwCounter rejectedCount = newMwCounter();
+    private final AtomicLong totalFailures = new AtomicLong();
 
     public EventServiceImpl(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
@@ -108,8 +102,6 @@ public class EventServiceImpl implements InternalEventService {
         this.deregistrationExceptionHandler
                 = new FutureUtilExceptionHandler(logger, "Member left while de-registering listener...");
         this.segments = new ConcurrentHashMap<String, EventServiceSegment>();
-
-        nodeEngine.getMetricsRegistry().scanAndRegister(this, "event");
     }
 
     @Override
@@ -138,7 +130,6 @@ public class EventServiceImpl implements InternalEventService {
         return eventQueueCapacity;
     }
 
-    @Probe(name = "eventQueueSize")
     @Override
     public int getEventQueueSize() {
         return eventExecutor.getWorkQueueSize();
@@ -349,8 +340,6 @@ public class EventServiceImpl implements InternalEventService {
                     logger.warning("Something seems wrong! Listener instance is null! -> " + reg);
                 }
             } catch (RejectedExecutionException e) {
-                rejectedCount.inc();
-
                 if (eventExecutor.isLive()) {
                     logFailure("EventQueue overloaded! %s failed to publish to %s:%s",
                             event, reg.getServiceName(), reg.getTopic());
@@ -377,7 +366,6 @@ public class EventServiceImpl implements InternalEventService {
         } else {
             final Packet packet = new Packet(nodeEngine.toData(eventPacket), orderKey);
             packet.setHeader(Packet.HEADER_EVENT);
-
             if (!nodeEngine.getPacketTransceiver().transmit(packet, subscriber)) {
                 if (nodeEngine.isActive()) {
                     logFailure("IO Queue overloaded! Failed to send event packet to: %s", subscriber);
@@ -389,15 +377,14 @@ public class EventServiceImpl implements InternalEventService {
     public EventServiceSegment getSegment(String service, boolean forceCreate) {
         EventServiceSegment segment = segments.get(service);
         if (segment == null && forceCreate) {
-            // we can't make use of the ConcurrentUtil; we need to register the segment to the metricsRegistry in case of creation
-            EventServiceSegment newSegment = new EventServiceSegment(service, nodeEngine.getService(service));
-            EventServiceSegment existingSegment = segments.putIfAbsent(service, newSegment);
-            if (existingSegment == null) {
-                segment = newSegment;
-                nodeEngine.getMetricsRegistry().scanAndRegister(newSegment, "event." + service);
-            } else {
-                segment = existingSegment;
-            }
+            ConstructorFunction<String, EventServiceSegment> func
+                    = new ConstructorFunction<String, EventServiceSegment>() {
+                @Override
+                public EventServiceSegment createNew(String key) {
+                    return new EventServiceSegment(key, nodeEngine.getService(key));
+                }
+            };
+            return ConcurrencyUtil.getOrPutIfAbsent(segments, service, func);
         }
         return segment;
     }
@@ -412,8 +399,6 @@ public class EventServiceImpl implements InternalEventService {
             try {
                 eventExecutor.execute(callback);
             } catch (RejectedExecutionException e) {
-                rejectedCount.inc();
-
                 if (eventExecutor.isLive()) {
                     logFailure("EventQueue overloaded! Failed to execute event callback: %s", callback);
                 }
@@ -422,12 +407,10 @@ public class EventServiceImpl implements InternalEventService {
     }
 
     @Override
-    public void handle(Packet packet) {
+    public void handleEvent(Packet packet) {
         try {
             eventExecutor.execute(new RemoteEventPacketProcessor(this, packet));
         } catch (RejectedExecutionException e) {
-            rejectedCount.inc();
-
             if (eventExecutor.isLive()) {
                 Connection conn = packet.getConn();
                 String endpoint = conn.getEndPoint() != null ? conn.getEndPoint().toString() : conn.toString();
@@ -466,14 +449,7 @@ public class EventServiceImpl implements InternalEventService {
     }
 
     private void logFailure(String message, Object... args) {
-        totalFailures.inc();
-
-        long total = totalFailures.get();
-
-        // it can happen that 2 threads at the same conclude that the level should be warn because of the
-        // non atomic int/get. This is an acceptable trade of since it is unlikely to happen and you only get
-        // additional warning under log as a side effect.
-        Level level = total % WARNING_LOG_FREQUENCY == 0
+        Level level = totalFailures.getAndIncrement() % WARNING_LOG_FREQUENCY == 0
                 ? Level.WARNING : Level.FINEST;
 
         if (logger.isLoggable(level)) {

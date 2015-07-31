@@ -17,8 +17,8 @@
 package com.hazelcast.internal.metrics.metricsets;
 
 import com.hazelcast.internal.metrics.MetricsRegistry;
-import com.hazelcast.internal.metrics.DoubleProbeFunction;
-import com.hazelcast.internal.metrics.LongProbeFunction;
+import com.hazelcast.internal.metrics.DoubleProbe;
+import com.hazelcast.internal.metrics.LongProbe;
 
 import java.lang.management.ManagementFactory;
 import java.lang.management.OperatingSystemMXBean;
@@ -58,7 +58,7 @@ public final class OperatingSystemMetricsSet {
         registerMethod(metricsRegistry, mxBean, "getSystemCpuLoad", "os.systemCpuLoad");
 
         metricsRegistry.register(mxBean, "os.systemLoadAverage",
-                new DoubleProbeFunction<OperatingSystemMXBean>() {
+                new DoubleProbe<OperatingSystemMXBean>() {
                     @Override
                     public double get(OperatingSystemMXBean bean) {
                         return PERCENTAGE_MULTIPLIER * bean.getSystemLoadAverage();
@@ -79,7 +79,7 @@ public final class OperatingSystemMetricsSet {
 
         if (long.class.equals(method.getReturnType())) {
             metricsRegistry.register(osBean, name,
-                    new LongProbeFunction() {
+                    new LongProbe() {
                         @Override
                         public long get(Object bean) throws Exception {
                             return (Long) method.invoke(bean);
@@ -87,7 +87,7 @@ public final class OperatingSystemMetricsSet {
                     });
         } else {
             metricsRegistry.register(osBean, name,
-                    new DoubleProbeFunction() {
+                    new DoubleProbe() {
                         @Override
                         public double get(Object bean) throws Exception {
                             return (Double) method.invoke(bean);

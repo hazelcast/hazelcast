@@ -40,7 +40,6 @@ import com.hazelcast.nio.ascii.SocketTextWriter;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.EmptyStatement;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.nio.ByteBuffer;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -360,7 +359,7 @@ public class TextCommandServiceImpl implements TextCommandService {
         private final BlockingQueue<TextCommand> blockingQueue = new ArrayBlockingQueue<TextCommand>(200);
         private final Object stopObject = new Object();
 
-        @SuppressFBWarnings("RV_RETURN_VALUE_IGNORED_BAD_PRACTICE")
+        @edu.umd.cs.findbugs.annotations.SuppressWarnings("RV_RETURN_VALUE_IGNORED_BAD_PRACTICE")
         public void sendResponse(TextCommand textCommand) {
             blockingQueue.offer(textCommand);
         }
@@ -387,7 +386,7 @@ public class TextCommandServiceImpl implements TextCommandService {
             }
         }
 
-        @SuppressFBWarnings("RV_RETURN_VALUE_IGNORED_BAD_PRACTICE")
+        @edu.umd.cs.findbugs.annotations.SuppressWarnings("RV_RETURN_VALUE_IGNORED_BAD_PRACTICE")
         void stop() {
             running = false;
             synchronized (stopObject) {

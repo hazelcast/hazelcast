@@ -17,8 +17,8 @@
 package com.hazelcast.nio.tcp;
 
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 
 import java.io.IOException;
 import java.nio.channels.SelectionKey;
@@ -33,10 +33,9 @@ public abstract class AbstractIOSelector extends Thread implements IOSelector {
     private static final int SELECT_WAIT_TIME_MILLIS = 5000;
     private static final int SELECT_FAILURE_PAUSE_MILLIS = 1000;
 
-    @Probe(name = "selectorQueueSize")
-    protected final Queue<Runnable> selectorQueue = new ConcurrentLinkedQueue<Runnable>();
-
     private final ILogger logger;
+
+    private final Queue<Runnable> selectorQueue = new ConcurrentLinkedQueue<Runnable>();
 
     private final int waitTime;
 
@@ -46,8 +45,6 @@ public abstract class AbstractIOSelector extends Thread implements IOSelector {
 
     // field doesn't need to be volatile, is only accessed by the IOSelector-thread.
     private boolean running = true;
-
-    private volatile long lastSelectTimeMs;
 
     public AbstractIOSelector(ThreadGroup threadGroup, String threadName, ILogger logger,
                               IOSelectorOutOfMemoryHandler oomeHandler) {
@@ -75,7 +72,7 @@ public abstract class AbstractIOSelector extends Thread implements IOSelector {
             });
             interrupt();
         } catch (Throwable t) {
-            logger.finest("Exception while waiting for shutdown", t);
+            Logger.getLogger(AbstractIOSelector.class).finest("Exception while waiting for shutdown", t);
         }
     }
 
@@ -88,12 +85,6 @@ public abstract class AbstractIOSelector extends Thread implements IOSelector {
     public final void addTaskAndWakeup(Runnable task) {
         selectorQueue.add(task);
         selector.wakeup();
-    }
-
-    // shows how long this probe has been idle.
-    @Probe
-    private long idleTime() {
-        return Math.max(System.currentTimeMillis() - lastSelectTimeMs, 0);
     }
 
     private void processSelectionQueue() {
@@ -140,8 +131,6 @@ public abstract class AbstractIOSelector extends Thread implements IOSelector {
 
                 try {
                     int selectedKeyCount = selector.select(waitTime);
-                    lastSelectTimeMs = System.currentTimeMillis();
-
                     if (selectedKeyCount == 0) {
                         continue;
                     }
@@ -156,19 +145,14 @@ public abstract class AbstractIOSelector extends Thread implements IOSelector {
         } catch (Throwable e) {
             logger.warning("Unhandled exception in " + getName(), e);
         } finally {
-            closeSelector();
-        }
-    }
-
-    private void closeSelector() {
-        if (logger.isFinestEnabled()) {
-            logger.finest("Closing selector " + getName());
-        }
-
-        try {
-            selector.close();
-        } catch (Exception e) {
-            logger.finest("Exception while closing selector", e);
+            try {
+                if (logger.isFinestEnabled()) {
+                    logger.finest("Closing selector " + getName());
+                }
+                selector.close();
+            } catch (final Exception e) {
+                Logger.getLogger(AbstractIOSelector.class).finest("Exception while closing selector", e);
+            }
         }
     }
 
@@ -210,10 +194,5 @@ public abstract class AbstractIOSelector extends Thread implements IOSelector {
         } catch (InterruptedException i) {
             Thread.currentThread().interrupt();
         }
-    }
-
-    @Override
-    public String toString() {
-        return getName();
     }
 }

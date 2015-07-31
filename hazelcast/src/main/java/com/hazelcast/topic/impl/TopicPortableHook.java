@@ -17,10 +17,10 @@
 package com.hazelcast.topic.impl;
 
 import com.hazelcast.nio.serialization.ClassDefinition;
+import com.hazelcast.nio.serialization.FactoryIdHelper;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.nio.serialization.PortableHook;
-import com.hazelcast.nio.serialization.impl.FactoryIdHelper;
 import com.hazelcast.topic.impl.client.AddMessageListenerRequest;
 import com.hazelcast.topic.impl.client.PortableMessage;
 import com.hazelcast.topic.impl.client.PublishRequest;
@@ -28,12 +28,9 @@ import com.hazelcast.topic.impl.client.RemoveMessageListenerRequest;
 
 import java.util.Collection;
 
-import static com.hazelcast.nio.serialization.impl.FactoryIdHelper.TOPIC_PORTABLE_FACTORY;
-import static com.hazelcast.nio.serialization.impl.FactoryIdHelper.TOPIC_PORTABLE_FACTORY_ID;
-
 public class TopicPortableHook implements PortableHook {
 
-    public static final int F_ID = FactoryIdHelper.getFactoryId(TOPIC_PORTABLE_FACTORY, TOPIC_PORTABLE_FACTORY_ID);
+    public static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.TOPIC_PORTABLE_FACTORY, -18);
 
     public static final int PUBLISH = 1;
     public static final int ADD_LISTENER = 2;

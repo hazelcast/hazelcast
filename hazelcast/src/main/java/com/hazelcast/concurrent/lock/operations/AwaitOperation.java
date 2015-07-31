@@ -25,6 +25,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.ResponseHandler;
 import com.hazelcast.spi.WaitSupport;
 
 import java.io.IOException;
@@ -54,7 +55,7 @@ public class AwaitOperation extends BaseLockOperation
     @Override
     public void run() throws Exception {
         LockStoreImpl lockStore = getLockStore();
-        if (!lockStore.lock(key, getCallerUuid(), threadId, getReferenceCallId(), -1L)) {
+        if (!lockStore.lock(key, getCallerUuid(), threadId)) {
             throw new IllegalMonitorStateException(
                     "Current thread is not owner of the lock! -> " + lockStore.getOwnerInfo(key));
         }
@@ -108,10 +109,11 @@ public class AwaitOperation extends BaseLockOperation
         lockStore.removeSignalKey(getWaitKey());
         lockStore.removeAwait(key, conditionId, getCallerUuid(), threadId);
 
-        boolean locked = lockStore.lock(key, getCallerUuid(), threadId, getReferenceCallId(), -1L);
+        boolean locked = lockStore.lock(key, getCallerUuid(), threadId);
         if (locked) {
+            ResponseHandler responseHandler = getResponseHandler();
             // expired & acquired lock, send FALSE
-            sendResponse(false);
+            responseHandler.sendResponse(false);
         } else {
             // expired but could not acquire lock, no response atm
             lockStore.registerExpiredAwaitOp(this);

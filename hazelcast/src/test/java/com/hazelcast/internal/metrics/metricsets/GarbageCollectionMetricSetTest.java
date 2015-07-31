@@ -1,6 +1,7 @@
 package com.hazelcast.internal.metrics.metricsets;
 
-import com.hazelcast.internal.metrics.LongGauge;
+import com.hazelcast.internal.metrics.Gauge;
+import com.hazelcast.internal.metrics.Metric;
 import com.hazelcast.internal.metrics.impl.MetricsRegistryImpl;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.test.AssertTask;
@@ -35,48 +36,48 @@ public class GarbageCollectionMetricSetTest extends HazelcastTestSupport {
 
     @Test
     public void minorCount() {
-        final LongGauge gauge = blackbox.newLongGauge("gc.minorCount");
+        final Gauge gauge = blackbox.getGauge("gc.minorCount");
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
                 gcStats.run();
-                 assertEquals(gcStats.minorCount, gauge.read(), 1);
+                 assertEquals(gcStats.minorCount, gauge.readLong(), 1);
             }
         });
     }
 
     @Test
     public void minorTime() throws InterruptedException {
-        final LongGauge gauge = blackbox.newLongGauge("gc.minorTime");
+        final Gauge gauge = blackbox.getGauge("gc.minorTime");
          assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
                 gcStats.run();
-                assertEquals(gcStats.minorTime, gauge.read(), SECONDS.toMillis(1));
+                assertEquals(gcStats.minorTime, gauge.readLong(), SECONDS.toMillis(1));
             }
         });
     }
 
     @Test
     public void majorCount() {
-        final LongGauge gauge = blackbox.newLongGauge("gc.majorCount");
+        final Gauge gauge = blackbox.getGauge("gc.majorCount");
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
                 gcStats.run();
-                assertEquals(gcStats.majorCount, gauge.read(), 1);
+                assertEquals(gcStats.majorCount, gauge.readLong(), 1);
             }
         });
     }
 
     @Test
     public void majorTime() {
-        final LongGauge gauge = blackbox.newLongGauge("gc.majorTime");
+        final Gauge gauge = blackbox.getGauge("gc.majorTime");
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
                 gcStats.run();
-                assertEquals(gcStats.majorTime, gauge.read(), SECONDS.toMillis(1));
+                assertEquals(gcStats.majorTime, gauge.readLong(), SECONDS.toMillis(1));
             }
         });
     }
@@ -84,24 +85,24 @@ public class GarbageCollectionMetricSetTest extends HazelcastTestSupport {
 
     @Test
     public void unknownCount() {
-        final LongGauge gauge = blackbox.newLongGauge("gc.unknownCount");
+        final Gauge gauge = blackbox.getGauge("gc.unknownCount");
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
                 gcStats.run();
-                assertEquals(gcStats.unknownCount, gauge.read(), 1);
+                assertEquals(gcStats.unknownCount, gauge.readLong(), 1);
             }
         });
     }
 
     @Test
     public void unknownTime() {
-        final LongGauge gauge = blackbox.newLongGauge("gc.unknownTime");
+        final Gauge gauge = blackbox.getGauge("gc.unknownTime");
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
                 gcStats.run();
-                assertEquals(gcStats.unknownTime, gauge.read(), SECONDS.toMillis(1));
+                assertEquals(gcStats.unknownTime, gauge.readLong(), SECONDS.toMillis(1));
             }
         });
     }

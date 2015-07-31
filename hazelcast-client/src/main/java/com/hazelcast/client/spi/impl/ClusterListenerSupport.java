@@ -37,7 +37,7 @@ import com.hazelcast.nio.ConnectionListener;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.security.Credentials;
-import com.hazelcast.spi.impl.SerializableList;
+import com.hazelcast.spi.impl.SerializableCollection;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
 
@@ -98,9 +98,9 @@ public abstract class ClusterListenerSupport implements ConnectionListener, Conn
             connection.init();
             auth.setOwnerConnection(true);
             //contains remoteAddress and principal
-            SerializableList collectionWrapper;
+            SerializableCollection collectionWrapper;
             final ClientInvocation clientInvocation = new ClientInvocation(client, auth, connection);
-            final Future<SerializableList> future = clientInvocation.invoke();
+            final Future<SerializableCollection> future = clientInvocation.invoke();
             try {
                 collectionWrapper = ss.toObject(future.get());
             } catch (Exception e) {

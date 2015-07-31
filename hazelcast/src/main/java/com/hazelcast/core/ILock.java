@@ -68,28 +68,6 @@ public interface ILock extends Lock, DistributedObject {
     boolean tryLock(long time, TimeUnit unit) throws InterruptedException;
 
     /**
-     * Tries to acquire the lock for the specified lease time.
-     * <p>After lease time, the lock will be released.
-     * <p/>
-     * <p>If the lock is not available, then
-     * the current thread becomes disabled for thread scheduling
-     * purposes and lies dormant until one of two things happens:
-     * <ul>
-     * <li>the lock is acquired by the current thread, or
-     * <li>the specified waiting time elapses.
-     * </ul>
-     * <p/>
-     *
-     * @param time     maximum time to wait for the lock.
-     * @param unit time unit of the <tt>time</tt> argument.
-     * @param leaseTime time to wait before releasing the lock.
-     * @param leaseUnit unit of time to specify lease time.
-     * @return <tt>true</tt> if the lock was acquired and <tt>false</tt>
-     * if the waiting time elapsed before the lock was acquired.
-     */
-    boolean tryLock(long time, TimeUnit unit, long leaseTime, TimeUnit leaseUnit) throws InterruptedException;
-
-    /**
      * Releases the lock.
      */
     void unlock();

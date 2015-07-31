@@ -42,9 +42,6 @@ import javax.transaction.xa.XAResource;
 import java.util.HashMap;
 import java.util.Map;
 
-import static com.hazelcast.transaction.TransactionOptions.TransactionType.TWO_PHASE;
-import static com.hazelcast.transaction.impl.Transaction.State.ACTIVE;
-
 final class TransactionContextImpl implements TransactionContext {
 
     private final NodeEngineImpl nodeEngine;
@@ -70,7 +67,7 @@ final class TransactionContextImpl implements TransactionContext {
 
     @Override
     public void commitTransaction() throws TransactionException {
-        if (transaction.getTransactionType().equals(TWO_PHASE)) {
+        if (transaction.getTransactionType().equals(TransactionOptions.TransactionType.TWO_PHASE)) {
             transaction.prepare();
         }
         transaction.commit();
@@ -114,43 +111,31 @@ final class TransactionContextImpl implements TransactionContext {
     @SuppressWarnings("unchecked")
     @Override
     public TransactionalObject getTransactionalObject(String serviceName, String name) {
-        checkActive(serviceName, name);
-
+        if (transaction.getState() != Transaction.State.ACTIVE) {
+            throw new TransactionNotActiveException("No transaction is found while accessing "
+                    + "transactional object -> " + serviceName + "[" + name + "]!");
+        }
         TransactionalObjectKey key = new TransactionalObjectKey(serviceName, name);
         TransactionalObject obj = txnObjectMap.get(key);
         if (obj != null) {
             return obj;
         }
 
-        TransactionalService transactionalService = getTransactionalService(serviceName);
-        nodeEngine.getProxyService().initializeDistributedObject(serviceName, name);
-        obj = transactionalService.createTransactionalObject(name, transaction);
-        txnObjectMap.put(key, obj);
-        return obj;
-    }
-
-    private TransactionalService getTransactionalService(String serviceName) {
         final Object service = nodeEngine.getService(serviceName);
-
-        if (service == null) {
-            if (!nodeEngine.isActive()) {
-                throw new HazelcastInstanceNotActiveException();
+        if (service instanceof TransactionalService) {
+            nodeEngine.getProxyService().initializeDistributedObject(serviceName, name);
+            obj = ((TransactionalService) service).createTransactionalObject(name, transaction);
+            txnObjectMap.put(key, obj);
+        } else {
+            if (service == null) {
+                if (!nodeEngine.isActive()) {
+                    throw new HazelcastInstanceNotActiveException();
+                }
+                throw new IllegalArgumentException("Unknown Service[" + serviceName + "]!");
             }
-            throw new IllegalArgumentException("Unknown Service[" + serviceName + "]!");
-        }
-
-        if (!(service instanceof TransactionalService)) {
             throw new IllegalArgumentException("Service[" + serviceName + "] is not transactional!");
         }
-
-        return (TransactionalService) service;
-    }
-
-    private void checkActive(String serviceName, String name) {
-        if (transaction.getState() != ACTIVE) {
-            throw new TransactionNotActiveException("No transaction is found while accessing "
-                    + "transactional object -> " + serviceName + "[" + name + "]!");
-        }
+        return obj;
     }
 
     Transaction getTransaction() {

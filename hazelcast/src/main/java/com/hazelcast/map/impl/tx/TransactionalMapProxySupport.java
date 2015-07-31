@@ -22,7 +22,7 @@ import com.hazelcast.map.QueryResultSizeExceededException;
 import com.hazelcast.map.impl.MapEntrySet;
 import com.hazelcast.map.impl.MapKeySet;
 import com.hazelcast.map.impl.MapService;
-import com.hazelcast.map.impl.nearcache.NearCache;
+import com.hazelcast.map.impl.NearCache;
 import com.hazelcast.map.impl.QueryResult;
 import com.hazelcast.map.impl.operation.ContainsKeyOperation;
 import com.hazelcast.map.impl.operation.GetOperation;
@@ -41,6 +41,7 @@ import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionNotActiveException;
 import com.hazelcast.transaction.TransactionalObject;
 import com.hazelcast.transaction.impl.Transaction;
+import com.hazelcast.transaction.impl.TransactionSupport;
 import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.IterationType;
@@ -65,12 +66,12 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
         implements TransactionalObject {
 
     protected final String name;
-    protected final Transaction tx;
+    protected final TransactionSupport tx;
     protected final PartitioningStrategy partitionStrategy;
     protected final Map<Data, VersionedValue> valueMap = new HashMap<Data, VersionedValue>();
 
     public TransactionalMapProxySupport(String name, MapService mapService, NodeEngine nodeEngine,
-                                        Transaction transaction) {
+                                        TransactionSupport transaction) {
         super(nodeEngine, mapService);
         this.name = name;
         this.tx = transaction;
@@ -124,7 +125,7 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
 
     public Object getForUpdateInternal(Data key) {
         VersionedValue versionedValue = lockAndGet(key, tx.getTimeoutMillis());
-        addUnlockTransactionRecord(key, versionedValue.version);
+        addUnlockTransactionLog(key, versionedValue.version);
         return versionedValue.value;
     }
 
@@ -147,7 +148,7 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
     public Data putInternal(Data key, Data value) {
         VersionedValue versionedValue = lockAndGet(key, tx.getTimeoutMillis());
         final TxnSetOperation op = new TxnSetOperation(name, key, value, versionedValue.version);
-        tx.add(new MapTransactionLogRecord(name, key, getPartitionId(key), op, versionedValue.version, tx.getOwnerUuid()));
+        tx.addTransactionLog(new MapTransactionLog(name, key, op, versionedValue.version, tx.getOwnerUuid()));
         return versionedValue.value;
     }
 
@@ -155,47 +156,47 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
         VersionedValue versionedValue = lockAndGet(key, tx.getTimeoutMillis());
         final long timeInMillis = getTimeInMillis(ttl, timeUnit);
         final TxnSetOperation op = new TxnSetOperation(name, key, value, versionedValue.version, timeInMillis);
-        tx.add(new MapTransactionLogRecord(name, key, getPartitionId(key), op, versionedValue.version, tx.getOwnerUuid()));
+        tx.addTransactionLog(new MapTransactionLog(name, key, op, versionedValue.version, tx.getOwnerUuid()));
         return versionedValue.value;
     }
 
     public Data putIfAbsentInternal(Data key, Data value) {
         VersionedValue versionedValue = lockAndGet(key, tx.getTimeoutMillis());
         if (versionedValue.value != null) {
-            addUnlockTransactionRecord(key, versionedValue.version);
+            addUnlockTransactionLog(key, versionedValue.version);
             return versionedValue.value;
         }
 
         final TxnSetOperation op = new TxnSetOperation(name, key, value, versionedValue.version);
-        tx.add(new MapTransactionLogRecord(name, key, getPartitionId(key), op, versionedValue.version, tx.getOwnerUuid()));
+        tx.addTransactionLog(new MapTransactionLog(name, key, op, versionedValue.version, tx.getOwnerUuid()));
         return versionedValue.value;
     }
 
     public Data replaceInternal(Data key, Data value) {
         VersionedValue versionedValue = lockAndGet(key, tx.getTimeoutMillis());
         if (versionedValue.value == null) {
-            addUnlockTransactionRecord(key, versionedValue.version);
+            addUnlockTransactionLog(key, versionedValue.version);
             return null;
         }
         final TxnSetOperation op = new TxnSetOperation(name, key, value, versionedValue.version);
-        tx.add(new MapTransactionLogRecord(name, key, getPartitionId(key), op, versionedValue.version, tx.getOwnerUuid()));
+        tx.addTransactionLog(new MapTransactionLog(name, key, op, versionedValue.version, tx.getOwnerUuid()));
         return versionedValue.value;
     }
 
     public boolean replaceIfSameInternal(Data key, Object oldValue, Data newValue) {
         VersionedValue versionedValue = lockAndGet(key, tx.getTimeoutMillis());
         if (!getService().getMapServiceContext().compare(name, oldValue, versionedValue.value)) {
-            addUnlockTransactionRecord(key, versionedValue.version);
+            addUnlockTransactionLog(key, versionedValue.version);
             return false;
         }
         final TxnSetOperation op = new TxnSetOperation(name, key, newValue, versionedValue.version);
-        tx.add(new MapTransactionLogRecord(name, key, getPartitionId(key), op, versionedValue.version, tx.getOwnerUuid()));
+        tx.addTransactionLog(new MapTransactionLog(name, key, op, versionedValue.version, tx.getOwnerUuid()));
         return true;
     }
 
     public Data removeInternal(Data key) {
         VersionedValue versionedValue = lockAndGet(key, tx.getTimeoutMillis());
-        tx.add(new MapTransactionLogRecord(name, key, getPartitionId(key),
+        tx.addTransactionLog(new MapTransactionLog(name, key,
                 new TxnDeleteOperation(name, key, versionedValue.version), versionedValue.version, tx.getOwnerUuid()));
         return versionedValue.value;
     }
@@ -203,17 +204,17 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
     public boolean removeIfSameInternal(Data key, Object value) {
         VersionedValue versionedValue = lockAndGet(key, tx.getTimeoutMillis());
         if (!getService().getMapServiceContext().compare(name, versionedValue.value, value)) {
-            addUnlockTransactionRecord(key, versionedValue.version);
+            addUnlockTransactionLog(key, versionedValue.version);
             return false;
         }
-        tx.add(new MapTransactionLogRecord(name, key, getPartitionId(key),
+        tx.addTransactionLog(new MapTransactionLog(name, key,
                 new TxnDeleteOperation(name, key, versionedValue.version), versionedValue.version, tx.getOwnerUuid()));
         return true;
     }
 
-    private void addUnlockTransactionRecord(Data key, long version) {
+    private void addUnlockTransactionLog(Data key, long version) {
         TxnUnlockOperation operation = new TxnUnlockOperation(name, key, version);
-        tx.add(new MapTransactionLogRecord(name, key, getPartitionId(key), operation, version, tx.getOwnerUuid()));
+        tx.addTransactionLog(new MapTransactionLog(name, key, operation, version, tx.getOwnerUuid()));
     }
 
     private VersionedValue lockAndGet(Data key, long timeout) {

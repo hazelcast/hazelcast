@@ -27,12 +27,11 @@ import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MembershipListener;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.impl.SerializableList;
+import com.hazelcast.spi.impl.SerializableCollection;
 
 import java.security.Permission;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 
 public final class AddMembershipListenerRequest extends CallableClientRequest implements RetryableRequest {
 
@@ -48,11 +47,11 @@ public final class AddMembershipListenerRequest extends CallableClientRequest im
         endpoint.setListenerRegistration(name, name, registrationId);
 
         Collection<MemberImpl> memberList = service.getMemberList();
-        List<Data> response = new ArrayList<Data>(memberList.size());
+        Collection<Data> response = new ArrayList<Data>(memberList.size());
         for (MemberImpl member : memberList) {
             response.add(serializationService.toData(member));
         }
-        return new SerializableList(response);
+        return new SerializableCollection(response);
     }
 
     @Override

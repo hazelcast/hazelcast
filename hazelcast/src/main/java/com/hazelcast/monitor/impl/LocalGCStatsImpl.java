@@ -141,4 +141,46 @@ public class LocalGCStatsImpl implements LocalGCStats {
                 + ", unknownTime=" + unknownTime
                 + '}';
     }
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        LocalGCStatsImpl that = (LocalGCStatsImpl) o;
+
+        if (creationTime != that.creationTime) {
+            return false;
+        } else if (majorCount != that.majorCount) {
+            return false;
+        } else if (majorTime != that.majorTime) {
+            return false;
+        } else if (minorCount != that.minorCount) {
+            return false;
+        } else if (minorTime != that.minorTime) {
+            return false;
+        } else if (unknownCount != that.unknownCount) {
+            return false;
+        } else if (unknownTime != that.unknownTime) {
+            return false;
+        }
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = (int) (creationTime ^ (creationTime >>> 32));
+        result = 31 * result + (int) (minorCount ^ (minorCount >>> 32));
+        result = 31 * result + (int) (minorTime ^ (minorTime >>> 32));
+        result = 31 * result + (int) (majorCount ^ (majorCount >>> 32));
+        result = 31 * result + (int) (majorTime ^ (majorTime >>> 32));
+        result = 31 * result + (int) (unknownCount ^ (unknownCount >>> 32));
+        result = 31 * result + (int) (unknownTime ^ (unknownTime >>> 32));
+        return result;
+    }
+
 }

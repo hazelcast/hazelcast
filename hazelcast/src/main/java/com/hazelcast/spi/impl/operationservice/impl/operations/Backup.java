@@ -34,12 +34,11 @@ import com.hazelcast.spi.impl.SpiDataSerializerHook;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.impl.operationservice.impl.responses.BackupResponse;
 import com.hazelcast.util.Clock;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 import java.util.Arrays;
 
-import static com.hazelcast.spi.impl.OperationResponseHandlerFactory.createEmptyResponseHandler;
+import static com.hazelcast.spi.impl.ResponseHandlerFactory.createEmptyResponseHandler;
 
 public final class Backup extends Operation implements BackupOperation, IdentifiedDataSerializable {
 
@@ -54,7 +53,7 @@ public final class Backup extends Operation implements BackupOperation, Identifi
     public Backup() {
     }
 
-    @SuppressFBWarnings("EI_EXPOSE_REP")
+    @edu.umd.cs.findbugs.annotations.SuppressWarnings("EI_EXPOSE_REP")
     public Backup(Data backupOp, Address originalCaller, long[] replicaVersions, boolean sync) {
         this.backupOpData = backupOp;
         this.originalCaller = originalCaller;
@@ -96,7 +95,7 @@ public final class Backup extends Operation implements BackupOperation, Identifi
             backupOp.setCallerUuid(getCallerUuid());
             OperationAccessor.setCallerAddress(backupOp, getCallerAddress());
             OperationAccessor.setInvocationTime(backupOp, Clock.currentTimeMillis());
-            backupOp.setOperationResponseHandler(createEmptyResponseHandler());
+            backupOp.setResponseHandler(createEmptyResponseHandler());
 
             backupOp.beforeRun();
             backupOp.run();

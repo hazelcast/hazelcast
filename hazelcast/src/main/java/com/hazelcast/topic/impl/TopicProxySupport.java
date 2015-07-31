@@ -19,8 +19,8 @@ package com.hazelcast.topic.impl;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.TopicConfig;
 import com.hazelcast.core.HazelcastInstanceAware;
-import com.hazelcast.core.Member;
 import com.hazelcast.core.MessageListener;
+import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.monitor.LocalTopicStats;
 import com.hazelcast.monitor.impl.LocalTopicStatsImpl;
 import com.hazelcast.nio.ClassLoaderUtil;
@@ -36,7 +36,7 @@ public abstract class TopicProxySupport extends AbstractDistributedObject<TopicS
     private final ClassLoader configClassLoader;
     private final TopicService topicService;
     private final LocalTopicStatsImpl topicStats;
-    private final Member localMember;
+    private final MemberImpl localMember;
 
     public TopicProxySupport(String name, NodeEngine nodeEngine, TopicService service) {
         super(nodeEngine, service);

@@ -1,7 +1,6 @@
 package com.hazelcast.util;
 
 import com.hazelcast.nio.IOUtil;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -12,7 +11,7 @@ import java.io.PrintWriter;
 /**
  * Contains some debugging functionality; useful if you are running large testsuites and can't rely on a debugger.
  */
-@SuppressFBWarnings({"DM_DEFAULT_ENCODING"})
+@edu.umd.cs.findbugs.annotations.SuppressWarnings({"DM_DEFAULT_ENCODING"})
 public final class DebugUtil {
 
     private DebugUtil() {

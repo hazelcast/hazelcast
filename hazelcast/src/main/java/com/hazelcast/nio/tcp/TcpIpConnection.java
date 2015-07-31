@@ -34,8 +34,8 @@ import java.net.SocketException;
  *
  * A Connection has 2 sides:
  * <ol>
- * <li>the side where it receives data from the remote  machine</li>
- * <li>the side where it sends data to the remote machine</li>
+ *     <li>the side where it receives data from the remote  machine</li>
+ *     <li>the side where it sends data to the remote machine</li>
  * </ol>
  *
  * The reading side is the {@link com.hazelcast.nio.tcp.ReadHandler} and the writing side of this connection
@@ -63,11 +63,8 @@ public final class TcpIpConnection implements Connection {
 
     private TcpIpConnectionMonitor monitor;
 
-    public TcpIpConnection(TcpIpConnectionManager connectionManager,
-                           IOSelector in,
-                           IOSelector out,
-                           int connectionId,
-                           SocketChannelWrapper socketChannel) {
+    public TcpIpConnection(TcpIpConnectionManager connectionManager, IOSelector in, IOSelector out,
+                           int connectionId, SocketChannelWrapper socketChannel) {
         this.connectionId = connectionId;
         this.logger = connectionManager.ioService.getLogger(TcpIpConnection.class.getName());
         this.connectionManager = connectionManager;
@@ -152,12 +149,12 @@ public final class TcpIpConnection implements Connection {
 
     @Override
     public long lastWriteTime() {
-        return writeHandler.getLastWriteTime();
+        return writeHandler.getLastHandle();
     }
 
     @Override
     public long lastReadTime() {
-        return readHandler.getLastReadTime();
+        return readHandler.getLastHandle();
     }
 
     @Override
@@ -221,8 +218,7 @@ public final class TcpIpConnection implements Connection {
         } catch (Exception e) {
             logger.warning(e);
         }
-
-        Object connAddress = getConnectionAddress();
+        Object connAddress = (endPoint == null) ? socketChannel.socket().getRemoteSocketAddress() : endPoint;
         String message = "Connection [" + connAddress + "] lost. Reason: ";
         if (t != null) {
             message += t.getClass().getName() + "[" + t.getMessage() + "]";
@@ -236,17 +232,6 @@ public final class TcpIpConnection implements Connection {
         if (t != null && monitor != null) {
             monitor.onError(t);
         }
-    }
-
-    Object getConnectionAddress() {
-        return (endPoint == null) ? socketChannel.socket().getRemoteSocketAddress() : endPoint;
-    }
-
-    Object getMetricsId() {
-        Socket socket = this.socketChannel.socket();
-        SocketAddress localSocketAddress = socket != null ? socket.getLocalSocketAddress() : null;
-        SocketAddress remoteSocketAddress = socket != null ? socket.getRemoteSocketAddress() : null;
-        return getType() + "#" + localSocketAddress + "->" + remoteSocketAddress;
     }
 
     public int getConnectionId() {

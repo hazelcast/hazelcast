@@ -23,9 +23,9 @@ import com.hazelcast.core.EntryView;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
-import com.hazelcast.map.impl.LazyMapEntry;
 import com.hazelcast.map.impl.LocalMapStatsProvider;
 import com.hazelcast.map.impl.MapContainer;
+import com.hazelcast.map.impl.MapEntrySimple;
 import com.hazelcast.map.impl.MapEventPublisher;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.record.Record;
@@ -36,10 +36,9 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.EventService;
-import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.MutatingOperation;
+import com.hazelcast.spi.Operation;
 import com.hazelcast.util.Clock;
-
 import java.io.IOException;
 import java.util.AbstractMap;
 import java.util.Map;
@@ -78,7 +77,10 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
         final long now = getNow();
         oldValue = getValueFor(dataKey, now);
 
-        Map.Entry entry = createMapEntry(dataKey, oldValue);
+        final Object key = toObject(dataKey);
+        final Object value = toObject(oldValue);
+
+        final Map.Entry entry = createMapEntry(key, value);
 
         response = process(entry);
 
@@ -106,8 +108,9 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
 
     @Override
     public void onWaitExpire() {
-        sendResponse(null);
+        getResponseHandler().sendResponse(null);
     }
+
 
     @Override
     public Object getResponse() {
@@ -164,7 +167,7 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
      * - or entry does not exist and no add operation is done.
      */
     private boolean noOp(Map.Entry entry) {
-        final LazyMapEntry mapEntrySimple = (LazyMapEntry) entry;
+        final MapEntrySimple mapEntrySimple = (MapEntrySimple) entry;
         return !mapEntrySimple.isModified() || (oldValue == null && entry.getValue() == null);
     }
 
@@ -202,7 +205,7 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
             if (oldValue == null) {
                 return EntryEventType.ADDED;
             }
-            final LazyMapEntry mapEntrySimple = (LazyMapEntry) entry;
+            final MapEntrySimple mapEntrySimple = (MapEntrySimple) entry;
             if (mapEntrySimple.isModified()) {
                 return EntryEventType.UPDATED;
             }
@@ -226,8 +229,8 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
         return toData(result);
     }
 
-    private Map.Entry createMapEntry(Data key, Object value) {
-        return new LazyMapEntry(key, value, getNodeEngine().getSerializationService());
+    private Map.Entry createMapEntry(Object key, Object value) {
+        return new MapEntrySimple(key, value);
     }
 
     private LocalMapStatsImpl getLocalMapStats() {

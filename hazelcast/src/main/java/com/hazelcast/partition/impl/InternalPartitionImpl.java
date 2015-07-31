@@ -18,16 +18,15 @@ package com.hazelcast.partition.impl;
 
 import com.hazelcast.nio.Address;
 import com.hazelcast.partition.InternalPartition;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.Arrays;
 
 class InternalPartitionImpl implements InternalPartition {
 
-    @SuppressFBWarnings(value = "VO_VOLATILE_REFERENCE_TO_ARRAY", justification =
-            "The contents of this array will never be updated, so it can be safely read using a volatile read."
-                    + " Writing to `addresses` is done under InternalPartitionServiceImpl.lock,"
-                    + " so there's no need to guard `addresses` field or to use a CAS.")
+    // The content of this array will never be updated, so it can be safely read using a volatile read.
+    // Writing to 'addresses' is done under InternalPartitionServiceImpl.lock,
+    // so there's no need to guard `addresses` field or to use a CAS.
+    @edu.umd.cs.findbugs.annotations.SuppressWarnings("VO_VOLATILE_REFERENCE_TO_ARRAY")
     private volatile Address[] addresses = new Address[MAX_REPLICA_COUNT];
     private final int partitionId;
     private final PartitionListener partitionListener;

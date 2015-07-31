@@ -42,7 +42,7 @@ import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
-import com.hazelcast.spi.impl.SerializableList;
+import com.hazelcast.spi.impl.SerializableCollection;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.util.Collection;
@@ -138,13 +138,13 @@ abstract class QueueProxySupport extends AbstractDistributedObject<QueueService>
 
     List<Data> listInternal() {
         IteratorOperation operation = new IteratorOperation(name);
-        SerializableList collectionContainer = invokeAndGet(operation);
+        SerializableCollection collectionContainer = invokeAndGet(operation);
         return (List<Data>) collectionContainer.getCollection();
     }
 
     Collection<Data> drainInternal(int maxSize) {
         DrainOperation operation = new DrainOperation(name, maxSize);
-        SerializableList collectionContainer = invokeAndGet(operation);
+        SerializableCollection collectionContainer = invokeAndGet(operation);
         return collectionContainer.getCollection();
     }
 

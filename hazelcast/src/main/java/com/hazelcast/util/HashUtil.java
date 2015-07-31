@@ -17,16 +17,12 @@
 package com.hazelcast.util;
 
 import com.hazelcast.nio.UnsafeHelper;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import sun.misc.Unsafe;
 
 import java.nio.ByteOrder;
 import java.util.Arrays;
 
-import static com.hazelcast.util.Preconditions.checkPositive;
-import static java.lang.Math.abs;
-
-@SuppressFBWarnings({"SF_SWITCH_FALLTHROUGH", "SF_SWITCH_NO_DEFAULT"})
+@edu.umd.cs.findbugs.annotations.SuppressWarnings({"SF_SWITCH_FALLTHROUGH", "SF_SWITCH_NO_DEFAULT"})
 public final class HashUtil {
 
     private static final boolean LITTLE_ENDIAN = ByteOrder.LITTLE_ENDIAN == ByteOrder.nativeOrder();
@@ -103,9 +99,9 @@ public final class HashUtil {
             // little endian load order
             int k1 = LITTLE_ENDIAN ? unsafe.getInt(address + i)
                     : (unsafe.getByte(address + i + 3) & 0xff)
-                    | ((unsafe.getByte(address + i + 2) & 0xff) << 8)
-                    | ((unsafe.getByte(address + i + 1) & 0xff) << 16)
-                    | (unsafe.getByte(address + i) << 24);
+                        | ((unsafe.getByte(address + i + 2) & 0xff) << 8)
+                        | ((unsafe.getByte(address + i + 1) & 0xff) << 16)
+                        | (unsafe.getByte(address + i) << 24);
             k1 *= c1;
             k1 = (k1 << 15) | (k1 >>> 17);  // ROTL32(k1,15);
             k1 *= c2;
@@ -185,37 +181,22 @@ public final class HashUtil {
         int tail = ((len >>> 4) << 4) + offset;
 
         switch (len & 15) {
-            case 15:
-                k2 ^= (long) data[tail + 14] << 48;
-            case 14:
-                k2 ^= (long) data[tail + 13] << 40;
-            case 13:
-                k2 ^= (long) data[tail + 12] << 32;
-            case 12:
-                k2 ^= (long) data[tail + 11] << 24;
-            case 11:
-                k2 ^= (long) data[tail + 10] << 16;
-            case 10:
-                k2 ^= (long) data[tail + 9] << 8;
-            case 9:
-                k2 ^= data[tail + 8];
+            case 15: k2 ^= (long) data[tail + 14] << 48;
+            case 14: k2 ^= (long) data[tail + 13] << 40;
+            case 13: k2 ^= (long) data[tail + 12] << 32;
+            case 12: k2 ^= (long) data[tail + 11] << 24;
+            case 11: k2 ^= (long) data[tail + 10] << 16;
+            case 10: k2 ^= (long) data[tail + 9] << 8;
+            case 9:  k2 ^= data[tail + 8];
 
-            case 8:
-                k1 ^= (long) data[tail + 7] << 56;
-            case 7:
-                k1 ^= (long) data[tail + 6] << 48;
-            case 6:
-                k1 ^= (long) data[tail + 5] << 40;
-            case 5:
-                k1 ^= (long) data[tail + 4] << 32;
-            case 4:
-                k1 ^= (long) data[tail + 3] << 24;
-            case 3:
-                k1 ^= (long) data[tail + 2] << 16;
-            case 2:
-                k1 ^= (long) data[tail + 1] << 8;
-            case 1:
-                k1 ^= data[tail];
+            case 8:  k1 ^= (long) data[tail + 7] << 56;
+            case 7:  k1 ^= (long) data[tail + 6] << 48;
+            case 6:  k1 ^= (long) data[tail + 5] << 40;
+            case 5:  k1 ^= (long) data[tail + 4] << 32;
+            case 4:  k1 ^= (long) data[tail + 3] << 24;
+            case 3:  k1 ^= (long) data[tail + 2] << 16;
+            case 2:  k1 ^= (long) data[tail + 1] << 8;
+            case 1:  k1 ^= data[tail];
 
                 // bmix();
                 k1 *= c1;
@@ -298,37 +279,22 @@ public final class HashUtil {
         int tail = ((len >>> 4) << 4) + offset;
         Unsafe unsafe = UnsafeHelper.UNSAFE;
         switch (len & 15) {
-            case 15:
-                k2 ^= (long) unsafe.getByte(address + tail + 14) << 48;
-            case 14:
-                k2 ^= (long) unsafe.getByte(address + tail + 13) << 40;
-            case 13:
-                k2 ^= (long) unsafe.getByte(address + tail + 12) << 32;
-            case 12:
-                k2 ^= (long) unsafe.getByte(address + tail + 11) << 24;
-            case 11:
-                k2 ^= (long) unsafe.getByte(address + tail + 10) << 16;
-            case 10:
-                k2 ^= (long) unsafe.getByte(address + tail + 9) << 8;
-            case 9:
-                k2 ^= unsafe.getByte(address + tail + 8);
+            case 15: k2 ^= (long) unsafe.getByte(address + tail + 14) << 48;
+            case 14: k2 ^= (long) unsafe.getByte(address + tail + 13) << 40;
+            case 13: k2 ^= (long) unsafe.getByte(address + tail + 12) << 32;
+            case 12: k2 ^= (long) unsafe.getByte(address + tail + 11) << 24;
+            case 11: k2 ^= (long) unsafe.getByte(address + tail + 10) << 16;
+            case 10: k2 ^= (long) unsafe.getByte(address + tail + 9) << 8;
+            case 9:  k2 ^= unsafe.getByte(address + tail + 8);
 
-            case 8:
-                k1 ^= (long) unsafe.getByte(address + tail + 7) << 56;
-            case 7:
-                k1 ^= (long) unsafe.getByte(address + tail + 6) << 48;
-            case 6:
-                k1 ^= (long) unsafe.getByte(address + tail + 5) << 40;
-            case 5:
-                k1 ^= (long) unsafe.getByte(address + tail + 4) << 32;
-            case 4:
-                k1 ^= (long) unsafe.getByte(address + tail + 3) << 24;
-            case 3:
-                k1 ^= (long) unsafe.getByte(address + tail + 2) << 16;
-            case 2:
-                k1 ^= (long) unsafe.getByte(address + tail + 1) << 8;
-            case 1:
-                k1 ^= unsafe.getByte(address + tail);
+            case 8:  k1 ^= (long) unsafe.getByte(address + tail + 7) << 56;
+            case 7:  k1 ^= (long) unsafe.getByte(address + tail + 6) << 48;
+            case 6:  k1 ^= (long) unsafe.getByte(address + tail + 5) << 40;
+            case 5:  k1 ^= (long) unsafe.getByte(address + tail + 4) << 32;
+            case 4:  k1 ^= (long) unsafe.getByte(address + tail + 3) << 24;
+            case 3:  k1 ^= (long) unsafe.getByte(address + tail + 2) << 16;
+            case 2:  k1 ^= (long) unsafe.getByte(address + tail + 1) << 8;
+            case 1:  k1 ^= unsafe.getByte(address + tail);
 
                 // bmix();
                 k1 *= c1;
@@ -412,36 +378,10 @@ public final class HashUtil {
 
     /**
      * Hash code for multiple objects using {@link Arrays#hashCode(Object[])}.
-     */
-    public static int hashCode(Object... objects) {
+     **/
+    public static int hashCode(Object ... objects) {
         return Arrays.hashCode(objects);
     }
 
-
-    /**
-     * A function that calculates the index (e.g. to be used in an array/list) for a given hash. The returned value will always
-     * be equal or larger than 0 and will always be smaller than 'length'.
-     *
-     * The reason this function exists is to deal correctly with negative and especially the Integer.MIN_VALUE; since that can't
-     * be used safely with a Math.abs function.
-     *
-     * @param hash
-     * @param length the length of the array/list
-     * @return the mod of the hash
-     * @throws IllegalArgumentException if mod smaller than 1.
-     */
-    public static int hashToIndex(int hash, int length) {
-        checkPositive(length, "mod must be larger than 0");
-
-        if (hash == Integer.MIN_VALUE) {
-            hash = 0;
-        } else {
-            hash = abs(hash);
-        }
-
-        return hash % length;
-    }
-
-    private HashUtil() {
-    }
+    private HashUtil(){}
 }

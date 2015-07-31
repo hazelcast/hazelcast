@@ -17,7 +17,6 @@
 package com.hazelcast.cluster.impl;
 
 import com.hazelcast.cluster.ClusterClock;
-import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.util.Clock;
 
@@ -25,7 +24,6 @@ import com.hazelcast.util.Clock;
 public class ClusterClockImpl implements ClusterClock {
 
     private final ILogger logger;
-
     private volatile long clusterTimeDiff = Long.MAX_VALUE;
     private volatile long clusterStartTime = Long.MIN_VALUE;
 
@@ -33,7 +31,6 @@ public class ClusterClockImpl implements ClusterClock {
         this.logger = logger;
     }
 
-    @Probe(name = "clusterTime")
     @Override
     public long getClusterTime() {
         return Clock.currentTimeMillis() + ((clusterTimeDiff == Long.MAX_VALUE) ? 0 : clusterTimeDiff);
@@ -47,13 +44,11 @@ public class ClusterClockImpl implements ClusterClock {
         this.clusterTimeDiff = diff;
     }
 
-    @Probe(name = "clusterTimeDiff")
     @Override
     public long getClusterTimeDiff() {
         return (clusterTimeDiff == Long.MAX_VALUE) ? 0 : clusterTimeDiff;
     }
 
-    @Probe(name = "clusterUpTime")
     @Override
     public long getClusterUpTime() {
         return Clock.currentTimeMillis() - clusterStartTime;
@@ -65,14 +60,8 @@ public class ClusterClockImpl implements ClusterClock {
         }
     }
 
-    @Probe(name = "localClockTime")
-    private long getLocalClockTime() {
-        return Clock.currentTimeMillis();
-    }
-
-    @Probe(name = "clusterStartTime")
     public long getClusterStartTime() {
-        return clusterStartTime;
+       return clusterStartTime;
     }
 
 }

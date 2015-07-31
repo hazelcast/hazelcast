@@ -19,7 +19,8 @@ package com.hazelcast.map.impl.operation;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.map.EntryBackupProcessor;
-import com.hazelcast.map.impl.LazyMapEntry;
+import com.hazelcast.map.impl.MapEntrySimple;
+import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -55,7 +56,10 @@ public class EntryBackupOperation extends KeyBasedMapOperation implements Backup
         final long now = getNow();
         oldValue = getValueFor(dataKey, now);
 
-        Map.Entry entry = createMapEntry(dataKey, oldValue);
+        final Object key = toObject(dataKey);
+        final Object value = toObject(oldValue);
+
+        final Map.Entry entry = createMapEntry(key, value);
 
         processBackup(entry);
 
@@ -113,17 +117,22 @@ public class EntryBackupOperation extends KeyBasedMapOperation implements Backup
      * - or entry does not exist and no add operation is done.
      */
     private boolean noOpBackup(Map.Entry entry) {
-        final LazyMapEntry mapEntrySimple = (LazyMapEntry) entry;
+        final MapEntrySimple mapEntrySimple = (MapEntrySimple) entry;
         return !mapEntrySimple.isModified() || (oldValue == null && entry.getValue() == null);
     }
 
-    private Map.Entry createMapEntry(Data key, Object value) {
-        return new LazyMapEntry(key, value, getNodeEngine().getSerializationService());
+    private Map.Entry createMapEntry(Object key, Object value) {
+        return new MapEntrySimple(key, value);
     }
 
     private Object getValueFor(Data dataKey, long now) {
         Map.Entry<Data, Object> mapEntry = recordStore.getMapEntry(dataKey, now);
         return mapEntry.getValue();
+    }
+
+    private Object toObject(Object data) {
+        final MapServiceContext mapServiceContext = mapService.getMapServiceContext();
+        return mapServiceContext.toObject(data);
     }
 
     private long getNow() {

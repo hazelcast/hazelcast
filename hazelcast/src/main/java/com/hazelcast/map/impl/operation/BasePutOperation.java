@@ -27,6 +27,7 @@ import com.hazelcast.map.impl.record.RecordInfo;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.ResponseHandler;
 import com.hazelcast.spi.impl.MutatingOperation;
 
 import static com.hazelcast.map.impl.record.Records.buildRecordInfo;
@@ -110,7 +111,8 @@ public abstract class BasePutOperation extends LockAwareOperation implements Bac
 
     @Override
     public void onWaitExpire() {
-        sendResponse(null);
+        final ResponseHandler responseHandler = getResponseHandler();
+        responseHandler.sendResponse(null);
     }
 
     @Override

@@ -39,7 +39,6 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.executor.CompletedFuture;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -367,7 +366,7 @@ public class ExecutorServiceProxy
         CallableTaskOperation op = new CallableTaskOperation(name, null, taskData);
         OperationService operationService = nodeEngine.getOperationService();
         operationService.createInvocationBuilder(DistributedExecutorService.SERVICE_NAME, op, partitionId)
-                .setExecutionCallback((ExecutionCallback) callback).invoke();
+                .setCallback(new ExecutionCallbackAdapter(callback)).invoke();
     }
 
     @Override
@@ -391,9 +390,8 @@ public class ExecutorServiceProxy
         MemberCallableTaskOperation op = new MemberCallableTaskOperation(name, null, taskData);
         OperationService operationService = nodeEngine.getOperationService();
         Address address = ((MemberImpl) member).getAddress();
-        operationService
-                .createInvocationBuilder(DistributedExecutorService.SERVICE_NAME, op, address)
-                .setExecutionCallback((ExecutionCallback) callback).invoke();
+        operationService.createInvocationBuilder(DistributedExecutorService.SERVICE_NAME, op, address)
+                .setCallback(new ExecutionCallbackAdapter(callback)).invoke();
     }
 
     private String getRejectionMessage() {

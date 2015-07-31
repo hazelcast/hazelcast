@@ -18,19 +18,16 @@ package com.hazelcast.spi.impl.operationexecutor.classic;
 
 import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.instance.NodeExtension;
-import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunner;
-import com.hazelcast.util.counters.SwCounter;
+import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.util.executor.HazelcastManagedThread;
 
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.inspectOutputMemoryError;
-import static com.hazelcast.util.counters.SwCounter.newSwCounter;
 
 /**
  * The OperationThread is responsible for processing operations, packets containing operations and runnable's.
@@ -45,16 +42,8 @@ public abstract class OperationThread extends HazelcastManagedThread {
 
     final int threadId;
     final ScheduleQueue scheduleQueue;
-
-    // All these counters are updated by this OperationThread (so a single writer) and are read by the MetricsRegistry.
-    @Probe
-    private final SwCounter processedTotalCount = newSwCounter();
-    @Probe
-    private final SwCounter processedPacketCount = newSwCounter();
-    @Probe
-    private final SwCounter processedOperationsCount = newSwCounter();
-    @Probe
-    private final SwCounter processedPartitionSpecificRunnableCount = newSwCounter();
+    // This field is updated by this OperationThread (so a single writer) and can be read by other threads.
+    volatile long processedCount;
 
     private final NodeExtension nodeExtension;
     private final ILogger logger;
@@ -72,16 +61,6 @@ public abstract class OperationThread extends HazelcastManagedThread {
         this.threadId = threadId;
         this.logger = logger;
         this.nodeExtension = nodeExtension;
-    }
-
-    @Probe
-    int priorityPendingCount() {
-        return scheduleQueue.normalSize();
-    }
-
-    @Probe
-    int normalPendingCount() {
-        return scheduleQueue.normalSize();
     }
 
     public OperationRunner getCurrentOperationRunner() {
@@ -123,8 +102,9 @@ public abstract class OperationThread extends HazelcastManagedThread {
         }
     }
 
+    @edu.umd.cs.findbugs.annotations.SuppressWarnings({"VO_VOLATILE_INCREMENT" })
     private void process(Object task) {
-        processedTotalCount.inc();
+        processedCount++;
 
         if (task instanceof Operation) {
             processOperation((Operation) task);
@@ -145,8 +125,6 @@ public abstract class OperationThread extends HazelcastManagedThread {
     }
 
     private void processPartitionSpecificRunnable(PartitionSpecificRunnable runnable) {
-        processedPartitionSpecificRunnableCount.inc();
-
         currentOperationRunner = getOperationRunner(runnable.getPartitionId());
         try {
             currentOperationRunner.run(runnable);
@@ -159,8 +137,6 @@ public abstract class OperationThread extends HazelcastManagedThread {
     }
 
     private void processPacket(Packet packet) {
-        processedPacketCount.inc();
-
         currentOperationRunner = getOperationRunner(packet.getPartitionId());
         try {
             currentOperationRunner.run(packet);
@@ -173,8 +149,6 @@ public abstract class OperationThread extends HazelcastManagedThread {
     }
 
     private void processOperation(Operation operation) {
-        processedOperationsCount.inc();
-
         currentOperationRunner = getOperationRunner(operation.getPartitionId());
         try {
             currentOperationRunner.run(operation);

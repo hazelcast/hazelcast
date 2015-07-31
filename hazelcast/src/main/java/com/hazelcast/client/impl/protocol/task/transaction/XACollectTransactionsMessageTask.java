@@ -26,8 +26,8 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.security.permission.TransactionPermission;
 import com.hazelcast.spi.OperationFactory;
-import com.hazelcast.spi.impl.SerializableList;
-import com.hazelcast.transaction.impl.xa.operations.CollectRemoteTransactionsOperationFactory;
+import com.hazelcast.spi.impl.SerializableCollection;
+import com.hazelcast.transaction.impl.xa.CollectRemoteTransactionsOperationFactory;
 import com.hazelcast.transaction.impl.xa.XAService;
 
 import java.security.Permission;
@@ -61,7 +61,7 @@ public class XACollectTransactionsMessageTask
     protected Object reduce(Map<Address, Object> map) throws Throwable {
         HashSet<Data> set = new HashSet<Data>();
         for (Object o : map.values()) {
-            SerializableList xidSet = (SerializableList) o;
+            SerializableCollection xidSet = (SerializableCollection) o;
             set.addAll(xidSet.getCollection());
         }
         return set;

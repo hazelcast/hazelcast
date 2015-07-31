@@ -66,7 +66,7 @@ public class TestHibernateApplicationContext {
         final Set<Member> members = instance.getCluster().getMembers();
         assertEquals(1, members.size());
         final Member member = members.iterator().next();
-        final InetSocketAddress inetSocketAddress = member.getSocketAddress();
+        final InetSocketAddress inetSocketAddress = member.getInetSocketAddress();
         assertEquals(5700, inetSocketAddress.getPort());
     }
 

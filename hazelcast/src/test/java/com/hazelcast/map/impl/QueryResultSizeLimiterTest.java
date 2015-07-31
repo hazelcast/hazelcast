@@ -4,7 +4,6 @@ import com.hazelcast.config.Config;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.map.QueryResultSizeExceededException;
-import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.test.HazelcastParallelClassRunner;

@@ -28,7 +28,7 @@ import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.impl.SerializableList;
+import com.hazelcast.spi.impl.SerializableCollection;
 import com.hazelcast.util.ExceptionUtil;
 
 import javax.cache.CacheException;
@@ -119,7 +119,7 @@ abstract class AbstractClientCacheProxyBase<K, V> {
             CacheDestroyRequest request = new CacheDestroyRequest(nameWithPrefix, partitionId);
             final ClientInvocation clientInvocation = new ClientInvocation(
                     (HazelcastClientInstanceImpl) clientContext.getHazelcastInstance(), request, partitionId);
-            final Future<SerializableList> future = clientInvocation.invoke();
+            final Future<SerializableCollection> future = clientInvocation.invoke();
             future.get();
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
@@ -164,7 +164,7 @@ abstract class AbstractClientCacheProxyBase<K, V> {
         try {
             final ClientInvocation clientInvocation = new ClientInvocation(
                     (HazelcastClientInstanceImpl) clientContext.getHazelcastInstance(), req);
-            final Future<SerializableList> future = clientInvocation.invoke();
+            final Future<SerializableCollection> future = clientInvocation.invoke();
             Object result = future.get();
             return toObject(result);
         } catch (Exception e) {

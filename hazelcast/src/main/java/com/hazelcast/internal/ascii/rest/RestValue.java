@@ -19,13 +19,12 @@ package com.hazelcast.internal.ascii.rest;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 
 import static com.hazelcast.util.StringUtil.bytesToString;
 
-@SuppressFBWarnings("EI_EXPOSE_REP")
+@edu.umd.cs.findbugs.annotations.SuppressWarnings("EI_EXPOSE_REP")
 public class RestValue implements DataSerializable {
     private byte[] value;
     private byte[] contentType;

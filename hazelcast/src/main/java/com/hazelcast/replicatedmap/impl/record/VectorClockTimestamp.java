@@ -48,7 +48,7 @@ public final class VectorClockTimestamp
         this.clocks = Collections.unmodifiableMap(clocks);
     }
 
-    public VectorClockTimestamp incrementClock(Member localMember) {
+    VectorClockTimestamp incrementClock0(Member localMember) {
         Map<Member, Integer> copy = new HashMap<Member, Integer>(clocks);
         Integer clock = copy.get(localMember);
         if (clock == null) {
@@ -59,7 +59,7 @@ public final class VectorClockTimestamp
         return new VectorClockTimestamp(copy);
     }
 
-    public VectorClockTimestamp applyVector(VectorClockTimestamp update) {
+    VectorClockTimestamp applyVector0(VectorClockTimestamp update) {
         Map<Member, Integer> copy = new HashMap<Member, Integer>(clocks);
         for (Member m : update.clocks.keySet()) {
             final Integer currentClock = copy.get(m);
@@ -129,7 +129,7 @@ public final class VectorClockTimestamp
         return new VectorClockTimestamp(clocks);
     }
 
-    public static boolean happenedBefore(VectorClockTimestamp x, VectorClockTimestamp y) {
+    static boolean happenedBefore(VectorClockTimestamp x, VectorClockTimestamp y) {
         Set<Member> members = new HashSet<Member>(x.clocks.keySet());
         members.addAll(y.clocks.keySet());
 

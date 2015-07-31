@@ -30,7 +30,7 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.PartitionReplicationEvent;
-import com.hazelcast.spi.impl.servicemanager.ServiceInfo;
+import com.hazelcast.spi.ServiceInfo;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.io.IOException;

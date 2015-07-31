@@ -49,7 +49,7 @@ public class IsStillExecutingOperation extends AbstractOperation implements Urge
         IsStillRunningService isStillRunningService = operationService.getIsStillRunningService();
         boolean executing = isStillRunningService.isOperationExecuting(getCallerAddress(),
                 operationPartitionId, operationCallId);
-        getOperationResponseHandler().sendResponse(this, executing);
+        getResponseHandler().sendResponse(executing);
     }
 
     @Override

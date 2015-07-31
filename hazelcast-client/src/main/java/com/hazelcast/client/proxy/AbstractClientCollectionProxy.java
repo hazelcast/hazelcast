@@ -37,13 +37,12 @@ import com.hazelcast.core.ItemEventType;
 import com.hazelcast.core.ItemListener;
 import com.hazelcast.core.Member;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.spi.impl.PortableItemEvent;
-import com.hazelcast.spi.impl.SerializableList;
-import com.hazelcast.spi.impl.UnmodifiableLazyList;
+import com.hazelcast.spi.impl.SerializableCollection;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -81,7 +80,7 @@ public class AbstractClientCollectionProxy<E> extends ClientProxy implements ICo
     }
 
     public Iterator<E> iterator() {
-        return getAll().iterator();
+        return Collections.unmodifiableCollection(getAll()).iterator();
     }
 
     public Object[] toArray() {
@@ -198,11 +197,14 @@ public class AbstractClientCollectionProxy<E> extends ClientProxy implements ICo
     }
 
     private Collection<E> getAll() {
-        CollectionGetAllRequest request = new CollectionGetAllRequest(getName());
-        SerializableList result = invoke(request);
-        List<Data> collection = result.getCollection();
-        SerializationService serializationService = getContext().getSerializationService();
-        return new UnmodifiableLazyList<E>(collection, serializationService);
+        final CollectionGetAllRequest request = new CollectionGetAllRequest(getName());
+        final SerializableCollection result = invoke(request);
+        final Collection<Data> collection = result.getCollection();
+        final ArrayList<E> list = new ArrayList<E>(collection.size());
+        for (Data value : collection) {
+            list.add((E) toObject(value));
+        }
+        return list;
     }
 
 }

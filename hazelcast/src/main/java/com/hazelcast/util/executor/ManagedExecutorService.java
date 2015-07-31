@@ -16,26 +16,19 @@
 
 package com.hazelcast.util.executor;
 
-import com.hazelcast.internal.metrics.Probe;
-
 import java.util.concurrent.ExecutorService;
 
 public interface ManagedExecutorService extends ExecutorService {
 
     String getName();
 
-    @Probe(name = "completedTaskCount")
     long getCompletedTaskCount();
 
-    @Probe(name = "maximumPoolSize")
     int getMaximumPoolSize();
 
-    @Probe(name = "poolSize")
     int getPoolSize();
 
-    @Probe(name = "queueSize")
     int getQueueSize();
 
-    @Probe(name = "remainingQueueCapacity")
     int getRemainingQueueCapacity();
 }

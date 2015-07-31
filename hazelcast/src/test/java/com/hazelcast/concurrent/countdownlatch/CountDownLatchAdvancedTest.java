@@ -9,6 +9,7 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.TestThread;
+import com.hazelcast.test.annotation.ClientCompatibleTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -68,6 +69,7 @@ public class CountDownLatchAdvancedTest extends HazelcastTestSupport {
     }
 
     @Test
+    @ClientCompatibleTest
     public void testSimpleUsage() throws InterruptedException {
         final int k = 5;
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(k);
@@ -96,6 +98,7 @@ public class CountDownLatchAdvancedTest extends HazelcastTestSupport {
     }
 
     @Test(expected = DistributedObjectDestroyedException.class)
+    @ClientCompatibleTest
     public void testLatchDestroyed() throws Exception {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         HazelcastInstance hz1 = factory.newHazelcastInstance();

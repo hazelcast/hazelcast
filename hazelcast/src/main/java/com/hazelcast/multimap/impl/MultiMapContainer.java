@@ -79,12 +79,12 @@ public class MultiMapContainer extends MultiMapContainerSupport {
         return lockStore != null && lockStore.isTransactionallyLocked(key);
     }
 
-    public boolean txnLock(Data key, String caller, long threadId, long referenceId, long ttl) {
-        return lockStore != null && lockStore.txnLock(key, caller, threadId, referenceId, ttl);
+    public boolean txnLock(Data key, String caller, long threadId, long ttl) {
+        return lockStore != null && lockStore.txnLock(key, caller, threadId, ttl);
     }
 
-    public boolean unlock(Data key, String caller, long threadId, long referenceId) {
-        return lockStore != null && lockStore.unlock(key, caller, threadId, referenceId);
+    public boolean unlock(Data key, String caller, long threadId) {
+        return lockStore != null && lockStore.unlock(key, caller, threadId);
     }
 
     public boolean forceUnlock(Data key) {

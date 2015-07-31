@@ -17,9 +17,6 @@
 package com.hazelcast.collection.impl.queue;
 
 import com.hazelcast.collection.common.DataAwareItemEvent;
-import com.hazelcast.collection.impl.queue.operations.QueueReplicationOperation;
-import com.hazelcast.collection.impl.txnqueue.TransactionalQueueProxy;
-import com.hazelcast.collection.impl.txnqueue.operations.QueueTransactionRollbackOperation;
 import com.hazelcast.core.ItemEvent;
 import com.hazelcast.core.ItemEventType;
 import com.hazelcast.core.ItemListener;
@@ -34,6 +31,9 @@ import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
+import com.hazelcast.collection.impl.queue.operations.QueueReplicationOperation;
+import com.hazelcast.collection.impl.txnqueue.operations.QueueTransactionRollbackOperation;
+import com.hazelcast.collection.impl.txnqueue.TransactionalQueueProxy;
 import com.hazelcast.spi.EventPublishingService;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
@@ -47,7 +47,7 @@ import com.hazelcast.spi.PartitionReplicationEvent;
 import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.StatisticsAwareService;
 import com.hazelcast.spi.TransactionalService;
-import com.hazelcast.transaction.impl.Transaction;
+import com.hazelcast.transaction.impl.TransactionSupport;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.MapUtil;
@@ -292,7 +292,7 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
     }
 
     @Override
-    public TransactionalQueueProxy createTransactionalObject(String name, Transaction transaction) {
+    public TransactionalQueueProxy createTransactionalObject(String name, TransactionSupport transaction) {
         return new TransactionalQueueProxy(nodeEngine, this, name, transaction);
     }
 

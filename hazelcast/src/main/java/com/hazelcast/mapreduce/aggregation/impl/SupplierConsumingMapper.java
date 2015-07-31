@@ -22,7 +22,6 @@ import com.hazelcast.mapreduce.aggregation.Supplier;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 import java.util.Map;
@@ -34,7 +33,7 @@ import java.util.Map;
  * @param <ValueIn>  the input value type
  * @param <ValueOut> the output value type
  */
-@SuppressFBWarnings("SE_NO_SERIALVERSIONID")
+@edu.umd.cs.findbugs.annotations.SuppressWarnings("SE_NO_SERIALVERSIONID")
 class SupplierConsumingMapper<Key, ValueIn, ValueOut>
         implements Mapper<Key, ValueIn, Key, ValueOut>, IdentifiedDataSerializable {
 

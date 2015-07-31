@@ -16,9 +16,11 @@
 
 package com.hazelcast.transaction.impl.xa;
 
+import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.impl.Transaction;
 
+@PrivateApi
 public final class TransactionAccessor {
 
     private TransactionAccessor() {

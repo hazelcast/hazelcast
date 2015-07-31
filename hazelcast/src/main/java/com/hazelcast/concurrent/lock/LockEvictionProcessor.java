@@ -22,10 +22,9 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.ObjectNamespace;
-import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationAccessor;
-import com.hazelcast.spi.OperationResponseHandler;
 import com.hazelcast.spi.OperationService;
+import com.hazelcast.spi.ResponseHandler;
 import com.hazelcast.spi.exception.RetryableException;
 import com.hazelcast.util.scheduler.EntryTaskScheduler;
 import com.hazelcast.util.scheduler.ScheduledEntry;
@@ -40,13 +39,13 @@ public final class LockEvictionProcessor implements ScheduledEntryProcessor<Data
     private final NodeEngine nodeEngine;
     private final ObjectNamespace namespace;
     private final ILogger logger;
-    private final OperationResponseHandler unlockResponseHandler;
+    private final ResponseHandler unlockResponseHandler;
 
     public LockEvictionProcessor(NodeEngine nodeEngine, ObjectNamespace namespace) {
         this.nodeEngine = nodeEngine;
         this.namespace = namespace;
-        this.logger = nodeEngine.getLogger(getClass());
-        this.unlockResponseHandler = new UnlockResponseHandler();
+        logger = nodeEngine.getLogger(getClass());
+        unlockResponseHandler = new UnlockResponseHandler();
     }
 
     @Override
@@ -76,15 +75,15 @@ public final class LockEvictionProcessor implements ScheduledEntryProcessor<Data
         operation.setPartitionId(partitionId);
         OperationAccessor.setCallerAddress(operation, nodeEngine.getThisAddress());
         operation.setCallerUuid(nodeEngine.getLocalMember().getUuid());
-        operation.setOperationResponseHandler(unlockResponseHandler);
+        operation.setResponseHandler(unlockResponseHandler);
         operation.setAsyncBackup(true);
 
         operationService.executeOperation(operation);
     }
 
-    private class UnlockResponseHandler implements OperationResponseHandler {
+    private class UnlockResponseHandler implements ResponseHandler {
         @Override
-        public void sendResponse(Operation op, Object obj) {
+        public void sendResponse(Object obj) {
             if (obj instanceof Throwable) {
                 Throwable t = (Throwable) obj;
                 if (t instanceof RetryableException) {

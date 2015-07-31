@@ -31,8 +31,7 @@ enum ClientXmlElements {
     NEAR_CACHE("near-cache", true),
     QUERY_CACHES("query-caches", false),
     EXECUTOR_POOL_SIZE("executor-pool-size", false),
-    LICENSE_KEY("license-key", false),
-    INSTANCE_NAME("instance-name", false);
+    LICENSE_KEY("license-key", false);
 
 
     final String name;

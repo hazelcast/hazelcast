@@ -34,15 +34,12 @@ import com.hazelcast.mapreduce.impl.operation.RequestPartitionProcessed;
 import com.hazelcast.mapreduce.impl.operation.RequestPartitionReducing;
 import com.hazelcast.mapreduce.impl.operation.RequestPartitionResult;
 import com.hazelcast.mapreduce.impl.operation.StartProcessingJobOperation;
+import com.hazelcast.nio.serialization.ArrayDataSerializableFactory;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.DataSerializerHook;
+import com.hazelcast.nio.serialization.FactoryIdHelper;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.nio.serialization.impl.ArrayDataSerializableFactory;
-import com.hazelcast.nio.serialization.impl.FactoryIdHelper;
 import com.hazelcast.util.ConstructorFunction;
-
-import static com.hazelcast.nio.serialization.impl.FactoryIdHelper.MAP_REDUCE_DS_FACTORY;
-import static com.hazelcast.nio.serialization.impl.FactoryIdHelper.MAP_REDUCE_DS_FACTORY_ID;
 
 /**
  * This class contains all the ID hooks for IdentifiedDataSerializable classes used inside the MR framework.
@@ -52,7 +49,7 @@ import static com.hazelcast.nio.serialization.impl.FactoryIdHelper.MAP_REDUCE_DS
 public class MapReduceDataSerializerHook
         implements DataSerializerHook {
 
-    public static final int F_ID = FactoryIdHelper.getFactoryId(MAP_REDUCE_DS_FACTORY, MAP_REDUCE_DS_FACTORY_ID);
+    public static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.MAP_REDUCE_DS_FACTORY, -23);
 
     public static final int KEY_VALUE_SOURCE_MAP = 0;
     public static final int KEY_VALUE_SOURCE_MULTIMAP = 1;

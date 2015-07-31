@@ -46,10 +46,9 @@ public class EC2RequestSigner {
     private Map<String, String> attributes;
     private String canonicalRequest;
     private String stringToSign;
-    private String endpoint;
     private byte[] signingKey;
 
-    public EC2RequestSigner(AwsConfig config, final String timeStamp, String endpoint) {
+    public EC2RequestSigner(AwsConfig config, final String timeStamp) {
         if (config == null) {
             throw new IllegalArgumentException("config cannot be null");
         }
@@ -59,7 +58,6 @@ public class EC2RequestSigner {
         this.config = config;
         this.timestamp = timeStamp;
         this.service = null;
-        this.endpoint = endpoint;
     }
 
     public String getCredentialScope() {
@@ -186,7 +184,7 @@ public class EC2RequestSigner {
 
 
     protected String getCanonicalHeaders() {
-        return String.format("host:%s", endpoint) + "\n";
+        return String.format("host:%s", config.getHostHeader()) + "\n";
     }
 
     public String getCanonicalizedQueryString(Map<String, String> attributes) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright 2014 - 2015 Real Logic Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.hazelcast.client.impl.protocol.util;
 
 import com.hazelcast.util.QuickMath;
@@ -24,7 +23,6 @@ import java.util.Arrays;
  * Builder for appending buffers that grows capacity as necessary.
  */
 public class BufferBuilder {
-    /** Buffer's default initial capacity */
     public static final int INITIAL_CAPACITY = 4096;
 
     private static final String PROP_HAZELCAST_PROTOCOL_UNSAFE = "hazelcast.protocol.unsafe.enabled";

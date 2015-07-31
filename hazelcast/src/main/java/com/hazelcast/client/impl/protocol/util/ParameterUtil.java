@@ -19,14 +19,10 @@ package com.hazelcast.client.impl.protocol.util;
 import com.hazelcast.nio.Bits;
 import com.hazelcast.nio.serialization.Data;
 
-public final class ParameterUtil {
-
-    private static final int UTF8_MAX_BYTES_PER_CHAR = 4;
-
-    private ParameterUtil() { }
+public class ParameterUtil {
 
     public static int calculateStringDataSize(String string) {
-        return Bits.INT_SIZE_IN_BYTES + string.length() * UTF8_MAX_BYTES_PER_CHAR;
+        return Bits.INT_SIZE_IN_BYTES + string.length() * 4;
     }
 
     public static int calculateByteArrayDataSize(byte[] bytes) {

@@ -33,7 +33,6 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.StatisticsAwareService;
 import com.hazelcast.util.ConstructorFunction;
-import com.hazelcast.util.HashUtil;
 import com.hazelcast.util.MapUtil;
 
 import java.util.Collection;
@@ -97,7 +96,11 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
 
     private int getOrderLockIndex(String key) {
         int hash = key.hashCode();
-        return HashUtil.hashToIndex(hash, orderingLocks.length);
+        if (hash == Integer.MIN_VALUE) {
+            return 0;
+        } else {
+            return Math.abs(hash) % orderingLocks.length;
+        }
     }
 
     @Override

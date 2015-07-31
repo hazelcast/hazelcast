@@ -23,6 +23,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.ResponseHandler;
 import com.hazelcast.spi.WaitNotifyKey;
 import com.hazelcast.transaction.TransactionException;
 
@@ -54,7 +55,7 @@ public class TxnDeleteOperation extends BaseRemoveOperation implements MapTxnOpe
 
     @Override
     public void run() {
-        recordStore.unlock(dataKey, ownerUuid, getThreadId(), getCallId());
+        recordStore.unlock(dataKey, ownerUuid, getThreadId());
         Record record = recordStore.getRecord(dataKey);
         if (record == null || version == record.getVersion()) {
             dataOldValue = getNodeEngine().toData(recordStore.remove(dataKey));
@@ -75,7 +76,8 @@ public class TxnDeleteOperation extends BaseRemoveOperation implements MapTxnOpe
 
     @Override
     public void onWaitExpire() {
-        sendResponse(false);
+        final ResponseHandler responseHandler = getResponseHandler();
+        responseHandler.sendResponse(false);
     }
 
     public long getVersion() {

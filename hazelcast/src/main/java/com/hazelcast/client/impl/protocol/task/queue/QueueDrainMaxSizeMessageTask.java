@@ -27,7 +27,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.QueuePermission;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.impl.SerializableList;
+import com.hazelcast.spi.impl.SerializableCollection;
 
 import java.security.Permission;
 import java.util.Collection;
@@ -70,8 +70,8 @@ public class QueueDrainMaxSizeMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        SerializableList serializableList = (SerializableList) response;
-        Collection<Data> coll = serializableList.getCollection();
+        SerializableCollection serializableCollection = (SerializableCollection) response;
+        Collection<Data> coll = serializableCollection.getCollection();
         return QueueDrainToMaxSizeCodec.encodeResponse(coll);
     }
 

@@ -28,6 +28,7 @@ public class ItemListenerConfig extends ListenerConfig {
     private ItemListenerConfigReadOnly readOnly;
 
     public ItemListenerConfig() {
+        super();
     }
 
     public ItemListenerConfig(String className, boolean includeValue) {

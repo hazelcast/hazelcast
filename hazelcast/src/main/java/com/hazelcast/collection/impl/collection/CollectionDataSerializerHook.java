@@ -29,6 +29,7 @@ import com.hazelcast.collection.impl.collection.operations.CollectionIsEmptyOper
 import com.hazelcast.collection.impl.collection.operations.CollectionRemoveBackupOperation;
 import com.hazelcast.collection.impl.collection.operations.CollectionRemoveOperation;
 import com.hazelcast.collection.impl.collection.operations.CollectionSizeOperation;
+import com.hazelcast.collection.impl.txncollection.operations.CollectionTransactionRollbackOperation;
 import com.hazelcast.collection.impl.list.operations.ListAddAllOperation;
 import com.hazelcast.collection.impl.list.operations.ListAddOperation;
 import com.hazelcast.collection.impl.list.operations.ListGetOperation;
@@ -45,24 +46,20 @@ import com.hazelcast.collection.impl.txncollection.operations.CollectionReserveA
 import com.hazelcast.collection.impl.txncollection.operations.CollectionReserveRemoveOperation;
 import com.hazelcast.collection.impl.txncollection.operations.CollectionRollbackBackupOperation;
 import com.hazelcast.collection.impl.txncollection.operations.CollectionRollbackOperation;
-import com.hazelcast.collection.impl.txncollection.operations.CollectionTransactionRollbackOperation;
 import com.hazelcast.collection.impl.txncollection.operations.CollectionTxnAddBackupOperation;
 import com.hazelcast.collection.impl.txncollection.operations.CollectionTxnAddOperation;
 import com.hazelcast.collection.impl.txncollection.operations.CollectionTxnRemoveBackupOperation;
 import com.hazelcast.collection.impl.txncollection.operations.CollectionTxnRemoveOperation;
+import com.hazelcast.nio.serialization.ArrayDataSerializableFactory;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.DataSerializerHook;
+import com.hazelcast.nio.serialization.FactoryIdHelper;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.nio.serialization.impl.ArrayDataSerializableFactory;
-import com.hazelcast.nio.serialization.impl.FactoryIdHelper;
 import com.hazelcast.util.ConstructorFunction;
-
-import static com.hazelcast.nio.serialization.impl.FactoryIdHelper.COLLECTION_DS_FACTORY;
-import static com.hazelcast.nio.serialization.impl.FactoryIdHelper.COLLECTION_DS_FACTORY_ID;
 
 public class CollectionDataSerializerHook implements DataSerializerHook {
 
-    public static final int F_ID = FactoryIdHelper.getFactoryId(COLLECTION_DS_FACTORY, COLLECTION_DS_FACTORY_ID);
+    public static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.COLLECTION_DS_FACTORY, -20);
 
     public static final int COLLECTION_ADD = 1;
     public static final int COLLECTION_ADD_BACKUP = 2;

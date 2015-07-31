@@ -99,6 +99,7 @@ public class TestHazelcastFactory extends TestHazelcastInstanceFactory {
                 }
 
                 return inetAddresses;
+
             }
         };
     }

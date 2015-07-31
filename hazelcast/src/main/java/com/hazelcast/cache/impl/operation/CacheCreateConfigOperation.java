@@ -20,15 +20,15 @@ import com.hazelcast.cache.impl.AbstractCacheService;
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
 import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.config.CacheConfig;
-import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.spi.Callback;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.OperationService;
+import com.hazelcast.spi.ResponseHandler;
 import com.hazelcast.spi.impl.AbstractNamedOperation;
-import com.hazelcast.spi.impl.SimpleExecutionCallback;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -94,14 +94,14 @@ public class CacheCreateConfigOperation
             if (remoteNodeCount > 0) {
                 postponeReturnResponse();
 
-                ExecutionCallback<Object> callback = new CacheConfigCreateCallback(this, remoteNodeCount);
+                Callback<Object> callback = new CacheConfigCreateCallback(getResponseHandler(), remoteNodeCount);
                 OperationService operationService = nodeEngine.getOperationService();
                 for (MemberImpl member : members) {
                     if (!member.localMember()) {
                         CacheCreateConfigOperation op = new CacheCreateConfigOperation(config, false);
                         operationService
                                 .createInvocationBuilder(AbstractCacheService.SERVICE_NAME, op, member.getAddress())
-                                .setExecutionCallback(callback)
+                                .setCallback(callback)
                                 .invoke();
                     }
                 }
@@ -115,20 +115,20 @@ public class CacheCreateConfigOperation
         returnsResponse = false;
     }
 
-    private static class CacheConfigCreateCallback extends SimpleExecutionCallback<Object> {
+    private static class CacheConfigCreateCallback implements Callback<Object> {
 
+        final ResponseHandler responseHandler;
         final AtomicInteger counter;
-        final CacheCreateConfigOperation operation;
 
-        public CacheConfigCreateCallback(CacheCreateConfigOperation op, int count) {
-            this.operation = op;
-            this.counter = new AtomicInteger(count);
+        public CacheConfigCreateCallback(ResponseHandler responseHandler, int count) {
+            this.responseHandler = responseHandler;
+            counter = new AtomicInteger(count);
         }
 
         @Override
         public void notify(Object object) {
             if (counter.decrementAndGet() == 0) {
-                operation.sendResponse(null);
+                responseHandler.sendResponse(null);
             }
         }
     }

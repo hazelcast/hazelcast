@@ -29,7 +29,7 @@ import com.hazelcast.spi.PartitionAwareOperation;
 
 import java.io.IOException;
 
-public abstract class BaseLockOperation extends AbstractOperation
+abstract class BaseLockOperation extends AbstractOperation
         implements PartitionAwareOperation, IdentifiedDataSerializable {
 
     public static final long DEFAULT_LOCK_TTL = Long.MAX_VALUE;
@@ -41,7 +41,6 @@ public abstract class BaseLockOperation extends AbstractOperation
     protected long ttl = DEFAULT_LOCK_TTL;
     protected transient Object response;
     private transient boolean asyncBackup;
-    private long referenceCallId;
 
     public BaseLockOperation() {
     }
@@ -99,21 +98,6 @@ public abstract class BaseLockOperation extends AbstractOperation
     }
 
     @Override
-    protected void onSetCallId() {
-        if (referenceCallId == 0L) {
-            referenceCallId = getCallId();
-        }
-    }
-
-    protected final void setReferenceCallId(long refCallId) {
-        this.referenceCallId = refCallId;
-    }
-
-    protected final long getReferenceCallId() {
-        return referenceCallId != 0 ? referenceCallId : getCallId();
-    }
-
-    @Override
     public final String getServiceName() {
         return LockServiceImpl.SERVICE_NAME;
     }
@@ -134,7 +118,6 @@ public abstract class BaseLockOperation extends AbstractOperation
         out.writeData(key);
         out.writeLong(threadId);
         out.writeLong(ttl);
-        out.writeLong(referenceCallId);
     }
 
     @Override
@@ -144,6 +127,5 @@ public abstract class BaseLockOperation extends AbstractOperation
         key = in.readData();
         threadId = in.readLong();
         ttl = in.readLong();
-        referenceCallId = in.readLong();
     }
 }

@@ -17,17 +17,17 @@
 package com.hazelcast.hibernate.local;
 
 
-import com.hazelcast.hibernate.serialization.HibernateDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.DataSerializable;
 
 import java.io.IOException;
 
 /**
  * An invalidation messages
  */
-public class Invalidation implements IdentifiedDataSerializable {
+// TODO Make this IdentifiedDataSerializable
+public class Invalidation implements DataSerializable {
 
     private Object key;
     private Object version;
@@ -56,16 +56,6 @@ public class Invalidation implements IdentifiedDataSerializable {
     public void readData(final ObjectDataInput in) throws IOException {
         key = in.readObject();
         version = in.readObject();
-    }
-
-    @Override
-    public int getFactoryId() {
-        return HibernateDataSerializerHook.F_ID;
-    }
-
-    @Override
-    public int getId() {
-        return HibernateDataSerializerHook.INVALIDATION;
     }
 
     @Override

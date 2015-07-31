@@ -61,7 +61,7 @@ public class ReplaceIfSameOperation extends BasePutOperation {
 
     @Override
     public void onWaitExpire() {
-        sendResponse(false);
+        getResponseHandler().sendResponse(false);
     }
 
     @Override

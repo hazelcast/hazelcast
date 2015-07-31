@@ -49,7 +49,7 @@ public class TryPutOperation extends BasePutOperation {
 
     @Override
     public void onWaitExpire() {
-        sendResponse(false);
+        getResponseHandler().sendResponse(false);
     }
 
     @Override

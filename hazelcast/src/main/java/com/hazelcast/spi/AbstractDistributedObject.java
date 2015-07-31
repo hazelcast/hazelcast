@@ -56,10 +56,6 @@ public abstract class AbstractDistributedObject<S extends RemoteService> impleme
         postDestroy();
     }
 
-    protected int getPartitionId(Data key) {
-        return getNodeEngine().getPartitionService().getPartitionId(key);
-    }
-
     protected void postDestroy() {
     }
 
@@ -115,6 +111,12 @@ public abstract class AbstractDistributedObject<S extends RemoteService> impleme
     public final void invalidate() {
         nodeEngine = null;
         service = null;
+    }
+
+    @Override
+    @Deprecated
+    public final Object getId() {
+        return getName();
     }
 
     @Override

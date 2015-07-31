@@ -44,6 +44,7 @@ import com.hazelcast.concurrent.atomiclong.AtomicLongService;
 import com.hazelcast.concurrent.atomicreference.AtomicReferenceService;
 import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
 import com.hazelcast.concurrent.idgen.IdGeneratorService;
+import com.hazelcast.concurrent.lock.LockProxy;
 import com.hazelcast.concurrent.lock.LockServiceImpl;
 import com.hazelcast.concurrent.semaphore.SemaphoreService;
 import com.hazelcast.config.Config;
@@ -84,10 +85,9 @@ import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.quorum.QuorumService;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.ringbuffer.Ringbuffer;
-import com.hazelcast.ringbuffer.impl.RingbufferService;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.UsernamePasswordCredentials;
-import com.hazelcast.spi.impl.SerializableList;
+import com.hazelcast.spi.impl.SerializableCollection;
 import com.hazelcast.spi.impl.SerializationServiceSupport;
 import com.hazelcast.topic.impl.TopicService;
 import com.hazelcast.transaction.HazelcastXAResource;
@@ -139,13 +139,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
                                        AddressProvider externalAddressProvider) {
         this.config = config;
         final GroupConfig groupConfig = config.getGroupConfig();
-        
-        if(config.getInstanceName() != null) {
-        	instanceName = config.getInstanceName();
-        } else {
-            instanceName = "hz.client_" + id + (groupConfig != null ? "_" + groupConfig.getName() : "");
-        }
-
+        instanceName = "hz.client_" + id + (groupConfig != null ? "_" + groupConfig.getName() : "");
         clientExtension = createClientInitializer(config.getClassLoader());
         clientExtension.beforeStart(this);
 
@@ -344,7 +338,15 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
 
     @Override
     public <E> Ringbuffer<E> getRingbuffer(String name) {
-        return getDistributedObject(RingbufferService.SERVICE_NAME, name);
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    @Deprecated
+    public ILock getLock(Object key) {
+        //this method will be deleted in the near future.
+        String name = LockProxy.convertToStringKey(key, serializationService);
+        return getDistributedObject(LockServiceImpl.SERVICE_NAME, name);
     }
 
     @Override
@@ -415,9 +417,9 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         try {
             GetDistributedObjectsRequest request = new GetDistributedObjectsRequest();
 
-            final Future<SerializableList> future = new ClientInvocation(this, request).invoke();
-            final SerializableList serializableList = serializationService.toObject(future.get());
-            for (Data data : serializableList) {
+            final Future<SerializableCollection> future = new ClientInvocation(this, request).invoke();
+            final SerializableCollection serializableCollection = serializationService.toObject(future.get());
+            for (Data data : serializableCollection) {
                 final DistributedObjectInfo o = serializationService.toObject(data);
                 getDistributedObject(o.getServiceName(), o.getName());
             }
@@ -460,6 +462,15 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     @Override
     public LifecycleService getLifecycleService() {
         return lifecycleService;
+    }
+
+    @Override
+    @Deprecated
+    public <T extends DistributedObject> T getDistributedObject(String serviceName, Object id) {
+        if (id instanceof String) {
+            return (T) proxyManager.getOrCreateProxy(serviceName, (String) id);
+        }
+        throw new IllegalArgumentException("'id' must be type of String!");
     }
 
     @Override

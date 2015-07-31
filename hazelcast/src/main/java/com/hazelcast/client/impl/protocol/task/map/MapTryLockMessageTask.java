@@ -43,7 +43,7 @@ public class MapTryLockMessageTask
     @Override
     protected Operation prepareOperation() {
         return new LockOperation(getNamespace(), parameters.key,
-                parameters.threadId, parameters.lease, parameters.timeout);
+                parameters.threadId, parameters.timeout);
     }
 
     @Override

@@ -44,13 +44,13 @@ import java.util.Map;
 public class XATransactionContextImpl implements TransactionContext {
 
     private final NodeEngineImpl nodeEngine;
-    private final XATransaction transaction;
+    private final XATransactionImpl transaction;
     private final Map<TransactionalObjectKey, TransactionalObject> txnObjectMap
             = new HashMap<TransactionalObjectKey, TransactionalObject>(2);
 
     public XATransactionContextImpl(NodeEngineImpl nodeEngine, Xid xid, String txOwnerUuid, int timeout) {
         this.nodeEngine = nodeEngine;
-        this.transaction = new XATransaction(nodeEngine, xid, txOwnerUuid, timeout);
+        this.transaction = new XATransactionImpl(nodeEngine, xid, txOwnerUuid, timeout);
     }
 
     @Override
@@ -133,7 +133,7 @@ public class XATransactionContextImpl implements TransactionContext {
         return obj;
     }
 
-    XATransaction getTransaction() {
+    XATransactionImpl getTransaction() {
         return transaction;
     }
 

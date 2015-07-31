@@ -18,8 +18,8 @@ package com.hazelcast.ringbuffer.impl;
 
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.DataSerializerHook;
+import com.hazelcast.nio.serialization.FactoryIdHelper;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.nio.serialization.impl.FactoryIdHelper;
 import com.hazelcast.ringbuffer.impl.operations.AddAllBackupOperation;
 import com.hazelcast.ringbuffer.impl.operations.AddAllOperation;
 import com.hazelcast.ringbuffer.impl.operations.AddBackupOperation;
@@ -29,15 +29,12 @@ import com.hazelcast.ringbuffer.impl.operations.ReadManyOperation;
 import com.hazelcast.ringbuffer.impl.operations.ReadOneOperation;
 import com.hazelcast.ringbuffer.impl.operations.ReplicationOperation;
 
-import static com.hazelcast.nio.serialization.impl.FactoryIdHelper.RINGBUFFER_DS_FACTORY;
-import static com.hazelcast.nio.serialization.impl.FactoryIdHelper.RINGBUFFER_DS_FACTORY_ID;
-
 /**
  * The {@link DataSerializerHook} for the Ringbuffer.
  */
 public class RingbufferDataSerializerHook implements DataSerializerHook {
 
-    public static final int F_ID = FactoryIdHelper.getFactoryId(RINGBUFFER_DS_FACTORY, RINGBUFFER_DS_FACTORY_ID);
+    public static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.COLLECTION_DS_FACTORY, -29);
 
     public static final int GENERIC_OPERATION = 1;
     public static final int ADD_BACKUP_OPERATION = 2;

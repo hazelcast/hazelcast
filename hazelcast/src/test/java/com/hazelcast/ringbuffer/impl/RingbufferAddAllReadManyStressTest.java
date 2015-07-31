@@ -1,7 +1,6 @@
 package com.hazelcast.ringbuffer.impl;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.ringbuffer.ReadResultSet;
@@ -34,8 +33,7 @@ public class RingbufferAddAllReadManyStressTest extends HazelcastTestSupport {
     @Test
     public void whenNoTTL() throws Exception {
         RingbufferConfig ringbufferConfig = new RingbufferConfig("foo")
-                .setCapacity(20 * 1000 * 1000)
-                .setInMemoryFormat(InMemoryFormat.OBJECT)
+                .setCapacity(200 * 1000)
                 .setTimeToLiveSeconds(0);
         test(ringbufferConfig);
     }
@@ -44,7 +42,7 @@ public class RingbufferAddAllReadManyStressTest extends HazelcastTestSupport {
     public void whenTTLEnabled() throws Exception {
         RingbufferConfig ringbufferConfig = new RingbufferConfig("foo")
                 .setCapacity(200 * 1000)
-                .setTimeToLiveSeconds(2);
+                .setTimeToLiveSeconds(1);
         test(ringbufferConfig);
     }
 
@@ -52,16 +50,15 @@ public class RingbufferAddAllReadManyStressTest extends HazelcastTestSupport {
     public void whenLongTTLAndSmallBuffer() throws Exception {
         RingbufferConfig ringbufferConfig = new RingbufferConfig("foo")
                 .setCapacity(1000)
-                .setTimeToLiveSeconds(30);
+                .setTimeToLiveSeconds(1);
         test(ringbufferConfig);
     }
 
     @Test
     public void whenShortTTLAndBigBuffer() throws Exception {
         RingbufferConfig ringbufferConfig = new RingbufferConfig("foo")
-                .setInMemoryFormat(InMemoryFormat.OBJECT)
                 .setCapacity(20 * 1000 * 1000)
-                .setTimeToLiveSeconds(2);
+                .setTimeToLiveSeconds(1);
         test(ringbufferConfig);
     }
 
@@ -71,7 +68,6 @@ public class RingbufferAddAllReadManyStressTest extends HazelcastTestSupport {
         HazelcastInstance[] instances = createHazelcastInstanceFactory(2).newInstances(config);
 
         ringbuffer = instances[0].getRingbuffer(ringbufferConfig.getName());
-
         ConsumeThread consumer1 = new ConsumeThread(1);
         consumer1.start();
 

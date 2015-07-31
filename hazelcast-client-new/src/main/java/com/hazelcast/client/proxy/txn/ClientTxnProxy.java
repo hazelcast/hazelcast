@@ -65,7 +65,7 @@ abstract class ClientTxnProxy implements TransactionalObject {
     }
 
     @Override
-    public String getName() {
+    public Object getId() {
         return objectName;
     }
 

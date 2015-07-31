@@ -28,14 +28,11 @@ import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.OperationService;
-import com.hazelcast.spi.impl.SerializableList;
+import com.hazelcast.spi.impl.SerializableCollection;
 import com.hazelcast.transaction.HazelcastXAResource;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.impl.Transaction;
-import com.hazelcast.transaction.impl.xa.operations.ClearRemoteTransactionOperation;
-import com.hazelcast.transaction.impl.xa.operations.CollectRemoteTransactionsOperation;
-import com.hazelcast.transaction.impl.xa.operations.FinalizeRemoteTransactionOperation;
 import com.hazelcast.util.ExceptionUtil;
 
 import javax.transaction.xa.XAException;
@@ -233,21 +230,21 @@ public final class XAResourceImpl extends AbstractDistributedObject<XAService> i
         OperationService operationService = nodeEngine.getOperationService();
         ClusterService clusterService = nodeEngine.getClusterService();
         Collection<MemberImpl> memberList = clusterService.getMemberList();
-        List<InternalCompletableFuture<SerializableList>> futureList
-                = new ArrayList<InternalCompletableFuture<SerializableList>>();
+        List<InternalCompletableFuture<SerializableCollection>> futureList
+                = new ArrayList<InternalCompletableFuture<SerializableCollection>>();
         for (MemberImpl member : memberList) {
             if (member.localMember()) {
                 continue;
             }
             CollectRemoteTransactionsOperation op = new CollectRemoteTransactionsOperation();
             Address address = member.getAddress();
-            InternalCompletableFuture<SerializableList> future = operationService.invokeOnTarget(SERVICE_NAME, op, address);
+            InternalCompletableFuture<SerializableCollection> future = operationService.invokeOnTarget(SERVICE_NAME, op, address);
             futureList.add(future);
         }
         HashSet<SerializableXID> xids = new HashSet<SerializableXID>();
         xids.addAll(xaService.getPreparedXids());
-        for (InternalCompletableFuture<SerializableList> future : futureList) {
-            SerializableList xidSet = future.getSafely();
+        for (InternalCompletableFuture<SerializableCollection> future : futureList) {
+            SerializableCollection xidSet = future.getSafely();
             for (Data xidData : xidSet) {
                 SerializableXID xid = nodeEngine.toObject(xidData);
                 xids.add(xid);

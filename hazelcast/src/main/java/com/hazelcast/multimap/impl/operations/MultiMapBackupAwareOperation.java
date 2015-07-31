@@ -25,7 +25,6 @@ import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.DefaultObjectNamespace;
 import com.hazelcast.spi.WaitNotifyKey;
 import com.hazelcast.spi.WaitSupport;
-
 import java.io.IOException;
 
 public abstract class MultiMapBackupAwareOperation extends MultiMapKeyBasedOperation
@@ -39,33 +38,27 @@ public abstract class MultiMapBackupAwareOperation extends MultiMapKeyBasedOpera
         super(name, dataKey, threadId);
     }
 
-    @Override
     public boolean shouldBackup() {
         return response != null;
     }
 
-    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
     }
 
-    @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
     }
 
-    @Override
     public WaitNotifyKey getWaitKey() {
         return new LockWaitNotifyKey(new DefaultObjectNamespace(MultiMapService.SERVICE_NAME, name), dataKey);
     }
 
-    @Override
     public boolean shouldWait() {
         return !getOrCreateContainer().canAcquireLock(dataKey, getCallerUuid(), threadId);
     }
 
-    @Override
     public void onWaitExpire() {
-        sendResponse(null);
+        getResponseHandler().sendResponse(null);
     }
 }

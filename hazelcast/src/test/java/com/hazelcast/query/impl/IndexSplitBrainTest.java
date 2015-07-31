@@ -25,17 +25,16 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestEnvironment;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.After;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
-
+import groovy.lang.Category;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Properties;
 import java.util.Random;
 import java.util.concurrent.CountDownLatch;
+import org.junit.After;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import static junit.framework.Assert.assertNotNull;
 import static junit.framework.Assert.assertNull;

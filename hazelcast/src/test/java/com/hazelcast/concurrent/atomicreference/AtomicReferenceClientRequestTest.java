@@ -18,16 +18,12 @@ package com.hazelcast.concurrent.atomicreference;
 
 import com.hazelcast.client.ClientTestSupport;
 import com.hazelcast.client.SimpleClient;
-import com.hazelcast.concurrent.atomicreference.client.CompareAndSetRequest;
-import com.hazelcast.concurrent.atomicreference.client.ContainsRequest;
-import com.hazelcast.concurrent.atomicreference.client.GetAndSetRequest;
-import com.hazelcast.concurrent.atomicreference.client.GetRequest;
-import com.hazelcast.concurrent.atomicreference.client.IsNullRequest;
-import com.hazelcast.concurrent.atomicreference.client.SetRequest;
+import com.hazelcast.concurrent.atomicreference.client.*;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.IAtomicReference;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.annotation.ClientCompatibleTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -64,7 +60,7 @@ public class AtomicReferenceClientRequestTest extends ClientTestSupport {
 
         reference.set("foo");
         client.send(new GetRequest(name));
-        assertEquals("foo", client.receive());
+        assertEquals("foo",client.receive());
     }
 
     @Test
@@ -73,15 +69,16 @@ public class AtomicReferenceClientRequestTest extends ClientTestSupport {
 
         final SimpleClient client = getClient();
         client.send(new IsNullRequest(name));
-        assertEquals(Boolean.TRUE, client.receive());
+        assertEquals(Boolean.TRUE,client.receive());
 
         reference.set("foo");
         client.send(new IsNullRequest(name));
-        assertEquals(Boolean.FALSE, client.receive());
+        assertEquals(Boolean.FALSE,client.receive());
     }
 
     @Test
-    public void contains() throws Exception {
+    @ClientCompatibleTest
+    public void contains()throws Exception {
         IAtomicReference<String> reference = getAtomicReference();
         final SimpleClient client = getClient();
 
@@ -94,10 +91,10 @@ public class AtomicReferenceClientRequestTest extends ClientTestSupport {
         assertEquals(Boolean.FALSE, client.receive());
 
         client.send(new ContainsRequest(name, toData("foo")));
-        assertEquals(Boolean.TRUE, client.receive());
+        assertEquals(Boolean.TRUE,client.receive());
 
         client.send(new ContainsRequest(name, toData("bar")));
-        assertEquals(Boolean.FALSE, client.receive());
+        assertEquals(Boolean.FALSE,client.receive());
     }
 
     @Test
@@ -120,7 +117,7 @@ public class AtomicReferenceClientRequestTest extends ClientTestSupport {
 
         client.send(new SetRequest(name, toData(null)));
         assertNull(client.receive());
-        assertEquals(null, reference.get());
+        assertEquals(null,reference.get());
     }
 
     @Test
@@ -135,15 +132,15 @@ public class AtomicReferenceClientRequestTest extends ClientTestSupport {
 
         client.send(new GetAndSetRequest(name, toData("foo")));
         assertNull(client.receive());
-        assertEquals("foo", reference.get());
+        assertEquals("foo",reference.get());
 
         client.send(new GetAndSetRequest(name, toData("foo")));
         assertEquals("foo", client.receive());
-        assertEquals("foo", reference.get());
+        assertEquals("foo",reference.get());
 
         client.send(new GetAndSetRequest(name, toData("bar")));
         assertEquals("foo", client.receive());
-        assertEquals("bar", reference.get());
+        assertEquals("bar",reference.get());
 
         client.send(new GetAndSetRequest(name, toData(null)));
         assertEquals("bar", client.receive());
@@ -170,26 +167,26 @@ public class AtomicReferenceClientRequestTest extends ClientTestSupport {
 
         client.send(new CompareAndSetRequest(name, toData("foo"), toData("foo")));
         assertEquals(Boolean.TRUE, client.receive());
-        assertEquals("foo", reference.get());
+        assertEquals("foo",reference.get());
 
         client.send(new CompareAndSetRequest(name, toData(null), toData("pipo")));
         assertEquals(Boolean.FALSE, client.receive());
-        assertEquals("foo", reference.get());
+        assertEquals("foo",reference.get());
 
         client.send(new CompareAndSetRequest(name, toData("bar"), toData("foo")));
         assertEquals(Boolean.FALSE, client.receive());
-        assertEquals("foo", reference.get());
+        assertEquals("foo",reference.get());
 
         client.send(new CompareAndSetRequest(name, toData("foo"), toData("bar")));
         assertEquals(Boolean.TRUE, client.receive());
-        assertEquals("bar", reference.get());
+        assertEquals("bar",reference.get());
 
         client.send(new CompareAndSetRequest(name, toData("bar"), toData(null)));
         assertEquals(Boolean.TRUE, client.receive());
-        assertEquals(null, reference.get());
+        assertEquals(null,reference.get());
     }
 
-    public Data toData(Object o) {
+    public Data toData(Object o){
         return getNode(getInstance()).getSerializationService().toData(o);
     }
 }

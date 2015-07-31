@@ -31,28 +31,38 @@ import com.hazelcast.spi.impl.PartitionSpecificRunnable;
  *
  * The actual processing of a operation-packet, Operation, or a PartitionSpecificRunnable is forwarded to the
  * {@link OperationRunner}.
+ *
+ * In case of a response packet, the {@link ResponsePacketHandler} is used to handle the response.
  */
 public interface OperationExecutor {
 
-    // Will be replaced by metrics
+    // Will be replaced by the black-box
     @Deprecated
     int getRunningOperationCount();
 
-    // Will be replaced by metrics
+    // Will be replaced by the black-box
     @Deprecated
     int getOperationExecutorQueueSize();
 
-    // Will be replaced by metrics
+    // Will be replaced by the black-box
     @Deprecated
     int getPriorityOperationExecutorQueueSize();
 
-    // Will be replaced by metrics
+    // Will be replaced by the black-box
+    @Deprecated
+    int getResponseQueueSize();
+
+    // Will be replaced by the black-box
     @Deprecated
     int getPartitionOperationThreadCount();
 
-    // Will be replaced by metrics
+    // Will be replaced by the black-box
     @Deprecated
     int getGenericOperationThreadCount();
+
+    // Will be replaced by the black-box
+    @Deprecated
+    void dumpPerformanceMetrics(StringBuffer sb);
 
     /**
      * Gets all the operation handlers for the partitions. Each partition will have its own operation handler. So if
@@ -91,7 +101,7 @@ public interface OperationExecutor {
     void execute(PartitionSpecificRunnable task);
 
     /**
-     * Executes a Operation packet
+     * Executes a Operation/Response-packet.
      *
      * @param packet the packet to execute.
      * @throws java.lang.NullPointerException if packet is null
@@ -148,4 +158,5 @@ public interface OperationExecutor {
      * Shuts down this OperationExecutor.
      */
     void shutdown();
+
 }

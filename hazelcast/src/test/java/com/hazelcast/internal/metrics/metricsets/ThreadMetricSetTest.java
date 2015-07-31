@@ -1,6 +1,7 @@
 package com.hazelcast.internal.metrics.metricsets;
 
-import com.hazelcast.internal.metrics.LongGauge;
+import com.hazelcast.internal.metrics.Gauge;
+import com.hazelcast.internal.metrics.Metric;
 import com.hazelcast.internal.metrics.impl.MetricsRegistryImpl;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.test.AssertTask;
@@ -37,48 +38,48 @@ public class ThreadMetricSetTest extends HazelcastTestSupport {
 
     @Test
     public void threadCount() {
-        final LongGauge gauge = blackbox.newLongGauge("thread.threadCount");
+        final Gauge gauge = blackbox.getGauge("thread.threadCount");
 
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                assertEquals(MX_BEAN.getThreadCount(), gauge.read(), 10);
+                assertEquals(MX_BEAN.getThreadCount(), gauge.readLong(), 10);
             }
         });
     }
 
     @Test
     public void peakThreadCount() {
-        final LongGauge gauge = blackbox.newLongGauge("thread.peakThreadCount");
+        final Gauge gauge = blackbox.getGauge("thread.peakThreadCount");
 
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                assertEquals(MX_BEAN.getPeakThreadCount(), gauge.read(), 10);
+                assertEquals(MX_BEAN.getPeakThreadCount(), gauge.readLong(), 10);
             }
         });
     }
 
     @Test
     public void daemonThreadCount() {
-        final LongGauge gauge = blackbox.newLongGauge("thread.daemonThreadCount");
+        final Gauge gauge = blackbox.getGauge("thread.daemonThreadCount");
 
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                assertEquals(MX_BEAN.getDaemonThreadCount(), gauge.read(), 10);
+                assertEquals(MX_BEAN.getDaemonThreadCount(), gauge.readLong(), 10);
             }
         });
     }
 
     @Test
     public void totalStartedThreadCount() {
-        final LongGauge gauge = blackbox.newLongGauge("thread.totalStartedThreadCount");
+        final Gauge gauge = blackbox.getGauge("thread.totalStartedThreadCount");
 
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                assertEquals(MX_BEAN.getTotalStartedThreadCount(), gauge.read(), 10);
+                assertEquals(MX_BEAN.getTotalStartedThreadCount(), gauge.readLong(), 10);
             }
         });
     }

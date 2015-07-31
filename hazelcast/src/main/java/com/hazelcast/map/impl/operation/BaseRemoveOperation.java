@@ -77,7 +77,7 @@ public abstract class BaseRemoveOperation extends LockAwareOperation implements 
 
     @Override
     public void onWaitExpire() {
-        sendResponse(null);
+        getResponseHandler().sendResponse(null);
     }
 
     @Override

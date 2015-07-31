@@ -30,6 +30,7 @@ public class MapAddEntryListenerRequest extends AbstractMapAddEntryListenerReque
     private Predicate predicate;
 
     public MapAddEntryListenerRequest() {
+        super();
     }
 
     public MapAddEntryListenerRequest(String name, boolean includeValue) {

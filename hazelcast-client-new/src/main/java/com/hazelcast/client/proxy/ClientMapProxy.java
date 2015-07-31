@@ -534,17 +534,10 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
 
     @Override
     public boolean tryLock(K key, long time, TimeUnit timeunit) throws InterruptedException {
-        return tryLock(key, time, timeunit, Long.MAX_VALUE, null);
-    }
-
-    @Override
-    public boolean tryLock(K key, long time, TimeUnit timeunit, long leaseTime, TimeUnit leaseUnit) throws InterruptedException {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         final Data keyData = toData(key);
-        long timeoutInMillis = getTimeInMillis(time, timeunit);
-        long leaseTimeInMillis = getTimeInMillis(leaseTime, leaseUnit);
-        long threadId = ThreadUtil.getThreadId();
-        ClientMessage request = MapTryLockCodec.encodeRequest(name, keyData, threadId, leaseTimeInMillis, timeoutInMillis);
+        ClientMessage request = MapTryLockCodec.encodeRequest(name, keyData,
+                ThreadUtil.getThreadId(), getTimeInMillis(time, timeunit));
 
         ClientMessage response = invoke(request, keyData);
         MapTryLockCodec.ResponseParameters resultParameters = MapTryLockCodec.decodeResponse(response);

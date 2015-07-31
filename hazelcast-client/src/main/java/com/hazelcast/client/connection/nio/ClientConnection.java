@@ -30,7 +30,6 @@ import com.hazelcast.nio.SocketWritable;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.nio.tcp.IOSelector;
 import com.hazelcast.nio.tcp.SocketChannelWrapper;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -225,7 +224,8 @@ public class ClientConnection implements Connection, Closeable {
         }
     }
 
-    @SuppressFBWarnings(value = "VO_VOLATILE_INCREMENT", justification = "incremented in single thread")
+    //failedHeartBeat is incremented in single thread.
+    @edu.umd.cs.findbugs.annotations.SuppressWarnings("VO_VOLATILE_INCREMENT")
     void heartBeatingFailed() {
         heartBeating = false;
     }

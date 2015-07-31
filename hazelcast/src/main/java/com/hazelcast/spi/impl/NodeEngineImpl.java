@@ -23,12 +23,7 @@ import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.management.ManagementCenterService;
-import com.hazelcast.internal.metrics.MetricsRegistry;
-import com.hazelcast.internal.metrics.impl.MetricsRegistryImpl;
-import com.hazelcast.internal.storage.DataRef;
-import com.hazelcast.internal.storage.Storage;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.LoggingServiceImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
@@ -38,21 +33,22 @@ import com.hazelcast.quorum.impl.QuorumServiceImpl;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PostJoinAwareService;
-import com.hazelcast.spi.impl.servicemanager.ServiceInfo;
+import com.hazelcast.spi.ServiceInfo;
 import com.hazelcast.spi.SharedService;
-import com.hazelcast.spi.impl.eventservice.InternalEventService;
-import com.hazelcast.spi.impl.eventservice.impl.EventServiceImpl;
-import com.hazelcast.spi.impl.executionservice.InternalExecutionService;
-import com.hazelcast.spi.impl.executionservice.impl.ExecutionServiceImpl;
+import com.hazelcast.internal.storage.DataRef;
+import com.hazelcast.internal.storage.Storage;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.impl.proxyservice.InternalProxyService;
 import com.hazelcast.spi.impl.proxyservice.impl.ProxyServiceImpl;
-import com.hazelcast.spi.impl.servicemanager.impl.ServiceManagerImpl;
 import com.hazelcast.spi.impl.waitnotifyservice.InternalWaitNotifyService;
 import com.hazelcast.spi.impl.waitnotifyservice.impl.WaitNotifyServiceImpl;
-import com.hazelcast.spi.impl.packettransceiver.PacketTransceiver;
-import com.hazelcast.spi.impl.packettransceiver.impl.PacketTransceiverImpl;
+import com.hazelcast.spi.impl.eventservice.InternalEventService;
+import com.hazelcast.spi.impl.eventservice.impl.EventServiceImpl;
+import com.hazelcast.spi.impl.transceiver.PacketTransceiver;
+import com.hazelcast.spi.impl.transceiver.impl.PacketTransceiverImpl;
+import com.hazelcast.spi.impl.executionservice.InternalExecutionService;
+import com.hazelcast.spi.impl.executionservice.impl.ExecutionServiceImpl;
 import com.hazelcast.transaction.TransactionManagerService;
 import com.hazelcast.transaction.impl.TransactionManagerServiceImpl;
 import com.hazelcast.wan.WanReplicationService;
@@ -77,24 +73,18 @@ public class NodeEngineImpl implements NodeEngine {
     private final OperationServiceImpl operationService;
     private final ExecutionServiceImpl executionService;
     private final WaitNotifyServiceImpl waitNotifyService;
-    private final ServiceManagerImpl serviceManager;
+    private final ServiceManager serviceManager;
     private final TransactionManagerServiceImpl transactionManagerService;
     private final ProxyServiceImpl proxyService;
     private final WanReplicationService wanReplicationService;
     private final PacketTransceiver packetTransceiver;
     private final QuorumServiceImpl quorumService;
-    private final MetricsRegistryImpl metricsRegistry;
-    private final SerializationService serializationService;
-    private final LoggingServiceImpl loggingService;
 
     public NodeEngineImpl(Node node) {
         this.node = node;
-        this.loggingService = node.loggingService;
-        this.serializationService = node.getSerializationService();
         this.logger = node.getLogger(NodeEngine.class.getName());
-        this.metricsRegistry = new MetricsRegistryImpl(node.getLogger(MetricsRegistryImpl.class));
         this.proxyService = new ProxyServiceImpl(this);
-        this.serviceManager = new ServiceManagerImpl(this);
+        this.serviceManager = new ServiceManager(this);
         this.executionService = new ExecutionServiceImpl(this);
         this.operationService = new OperationServiceImpl(this);
         this.eventService = new EventServiceImpl(this);
@@ -102,17 +92,8 @@ public class NodeEngineImpl implements NodeEngine {
         this.transactionManagerService = new TransactionManagerServiceImpl(this);
         this.wanReplicationService = node.getNodeExtension().createService(WanReplicationService.class);
         this.packetTransceiver = new PacketTransceiverImpl(
-                node,
-                logger,
-                operationService,
-                eventService,
-                wanReplicationService,
-                executionService);
+                node, logger, operationService, eventService, wanReplicationService, executionService);
         quorumService = new QuorumServiceImpl(this);
-    }
-
-    public MetricsRegistry getMetricsRegistry() {
-        return metricsRegistry;
     }
 
     public PacketTransceiver getPacketTransceiver() {
@@ -156,7 +137,7 @@ public class NodeEngineImpl implements NodeEngine {
 
     @Override
     public SerializationService getSerializationService() {
-        return serializationService;
+        return node.getSerializationService();
     }
 
     @Override
@@ -209,13 +190,16 @@ public class NodeEngineImpl implements NodeEngine {
     }
 
     @Override
-    public Data toData(Object object) {
-        return serializationService.toData(object);
+    public Data toData(final Object object) {
+        return node.getSerializationService().toData(object);
     }
 
     @Override
-    public Object toObject(Object object) {
-        return serializationService.toObject(object);
+    public Object toObject(final Object object) {
+        if (object instanceof Data) {
+            return node.getSerializationService().toObject(object);
+        }
+        return object;
     }
 
     @Override
@@ -230,12 +214,12 @@ public class NodeEngineImpl implements NodeEngine {
 
     @Override
     public ILogger getLogger(String name) {
-        return loggingService.getLogger(name);
+        return node.getLogger(name);
     }
 
     @Override
     public ILogger getLogger(Class clazz) {
-        return loggingService.getLogger(clazz);
+        return node.getLogger(clazz);
     }
 
     @Override
@@ -244,12 +228,20 @@ public class NodeEngineImpl implements NodeEngine {
     }
 
     public <T> T getService(String serviceName) {
-        return serviceManager.getService(serviceName);
+        final ServiceInfo serviceInfo = serviceManager.getServiceInfo(serviceName);
+        return serviceInfo != null ? (T) serviceInfo.getService() : null;
     }
 
     @Override
     public <T extends SharedService> T getSharedService(String serviceName) {
-        return serviceManager.getSharedService(serviceName);
+        final Object service = getService(serviceName);
+        if (service == null) {
+            return null;
+        }
+        if (service instanceof SharedService) {
+            return (T) service;
+        }
+        throw new IllegalArgumentException("No SharedService registered with name: " + serviceName);
     }
 
     /**
@@ -332,6 +324,5 @@ public class NodeEngineImpl implements NodeEngine {
         operationService.shutdown();
         wanReplicationService.shutdown();
         executionService.shutdown();
-        metricsRegistry.shutdown();
     }
 }

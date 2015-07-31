@@ -6,22 +6,19 @@ enterprise-ready and developer-friendly in-memory data grid solution.
 
 ### Features:
 
-* Distributed implementations of `java.util.{Queue, Set, List, Map}`.
-* Distributed implementation of `java.util.concurrent.locks.Lock`.
-* Distributed implementation of `java.util.concurrent.ExecutorService`.
-* Distributed `MultiMap` for one-to-many relationships.
-* Distributed `Topic` for publish/subscribe messaging.
-* Distributed Query, MapReduce and Aggregators.
-* Synchronous (write-through) and asynchronous (write-behind) persistence.
-* Transaction support.
-* Specification compliant JCache implementation.
-* Native Java, .NET, C++ clients, Memcache and REST clients.
-* Socket level encryption support for secure clusters.
-* Second level cache provider for Hibernate.
-* Monitoring and management of the cluster via JMX.
-* Dynamic HTTP session clustering.
-* Support for cluster info and membership events.
-* Dynamic discovery, scaling, partitioning with backups and fail-over.
+* Distributed implementations of `java.util.{Queue, Set, List, Map}`
+* Distributed implementation of `java.util.concurrent.locks.Lock`
+* Distributed implementation of `java.util.concurrent.ExecutorService`
+* Distributed `MultiMap` for one-to-many relationships
+* Distributed `Topic` for publish/subscribe messaging
+* Synchronous (write-through) and asynchronous (write-behind) persistence
+* Transaction support
+* Socket level encryption support for secure clusters
+* Second level cache provider for Hibernate
+* Monitoring and management of the cluster via JMX
+* Dynamic HTTP session clustering
+* Support for cluster info and membership events
+* Dynamic discovery, scaling, partitioning with backups and fail-over
 
 ### Getting Started
 
@@ -88,13 +85,9 @@ Hazelcast has 3 testing profiles:
 In each Pull Request, we do static analyzing on the changes.
 Run the following commands locally to check if your contribution is checkstyle and findbugs compatible.
 
-```
-mvn clean compile -P findbugs
-```
+`mvn clean compile -P findbugs`
 
-```
-mvn clean validate -P checkstyle`
-```
+`mvn clean validate -P checkstyle`
 
 ### Contributing to Hazelcast
 
@@ -116,7 +109,7 @@ Please join the mail group if you are interested in using or developing Hazelcas
 
 #### License
 
-Hazelcast is available under the Apache 2 License. Please see the [Licensing appendix](http://docs.hazelcast.org/docs/latest/manual/html-single/hazelcast-documentation.html#license-questions) for more information.
+Hazelcast is available under the Apache 2 License.
 
 #### Copyright
 

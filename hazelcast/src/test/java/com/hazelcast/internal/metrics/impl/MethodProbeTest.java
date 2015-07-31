@@ -14,7 +14,6 @@ import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
-import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -42,7 +41,6 @@ public class MethodProbeTest extends HazelcastTestSupport {
         getLong("ShortMethod", 10);
         getLong("IntegerMethod", 10);
         getLong("LongMethod", 10);
-        getLong("SemaphoreMethod", 10);
 
         getLong("nullAtomicLongMethod", 0);
         getLong("nullAtomicIntegerMethod", 0);
@@ -53,7 +51,6 @@ public class MethodProbeTest extends HazelcastTestSupport {
         getLong("nullShortMethod", 0);
         getLong("nullIntegerMethod", 0);
         getLong("nullLongMethod", 0);
-        getLong("nullSemaphoreMethod", 0);
     }
 
     public void getLong(String fieldName, int expectedValue) throws Exception {
@@ -207,11 +204,6 @@ public class MethodProbeTest extends HazelcastTestSupport {
         }
 
         @Probe
-        private Semaphore SemaphoreMethod() {
-            return new Semaphore(10);
-        }
-
-        @Probe
         private Byte nullByteMethod() {
             return null;
         }
@@ -238,11 +230,6 @@ public class MethodProbeTest extends HazelcastTestSupport {
 
         @Probe
         private Double nullDoubleMethod() {
-            return null;
-        }
-
-        @Probe
-        private Semaphore nullSemaphoreMethod() {
             return null;
         }
     }

@@ -26,7 +26,6 @@ import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
-import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
@@ -37,7 +36,7 @@ import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.impl.packettransceiver.PacketTransceiver;
+import com.hazelcast.spi.impl.transceiver.PacketTransceiver;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -54,11 +53,6 @@ public class NodeIOService implements IOService {
         this.node = node;
         this.nodeEngine = nodeEngine;
         this.packetTransceiver = nodeEngine.getPacketTransceiver();
-    }
-
-    @Override
-    public MetricsRegistry getMetricRegistry() {
-        return nodeEngine.getMetricsRegistry();
     }
 
     @Override

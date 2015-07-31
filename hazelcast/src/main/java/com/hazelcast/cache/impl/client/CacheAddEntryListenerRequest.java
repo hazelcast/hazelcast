@@ -26,13 +26,13 @@ import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.impl.client.CallableClientRequest;
 import com.hazelcast.client.impl.client.RetryableRequest;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.impl.DefaultData;
+import com.hazelcast.nio.serialization.DefaultData;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.ListenerWrapperEventFilter;
 import com.hazelcast.spi.NotifiableEventListener;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import edu.umd.cs.findbugs.annotations.SuppressWarnings;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -66,7 +66,7 @@ public class CacheAddEntryListenerRequest
         return service.registerListener(name, cacheEntryListener, cacheEntryListener);
     }
 
-    @SuppressFBWarnings(value = "SE_NO_SERIALVERSIONID",
+    @SuppressWarnings(value = "SE_NO_SERIALVERSIONID",
             justification = "Class is Serializable, but doesn't define serialVersionUID")
     private static final class CacheEntryListener
             implements CacheEventListener,

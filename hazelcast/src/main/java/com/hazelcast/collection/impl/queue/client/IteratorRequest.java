@@ -22,7 +22,7 @@ import com.hazelcast.collection.impl.queue.operations.IteratorOperation;
 import com.hazelcast.collection.impl.queue.QueuePortableHook;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.PortableCollection;
-import com.hazelcast.spi.impl.SerializableList;
+import com.hazelcast.spi.impl.SerializableCollection;
 
 import java.util.Collection;
 
@@ -50,9 +50,9 @@ public class IteratorRequest extends QueueRequest implements RetryableRequest {
 
     @Override
     protected Object filter(Object response) {
-        if (response instanceof SerializableList) {
-            SerializableList serializableList = (SerializableList) response;
-            Collection<Data> coll = serializableList.getCollection();
+        if (response instanceof SerializableCollection) {
+            SerializableCollection serializableCollection = (SerializableCollection) response;
+            Collection<Data> coll = serializableCollection.getCollection();
             return new PortableCollection(coll);
         }
         return super.filter(response);

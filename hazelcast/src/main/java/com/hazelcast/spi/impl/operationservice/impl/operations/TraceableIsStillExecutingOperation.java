@@ -46,7 +46,7 @@ public class TraceableIsStillExecutingOperation extends AbstractOperation implem
         IsStillRunningService isStillRunningService = operationService.getIsStillRunningService();
         boolean executing = isStillRunningService.isOperationExecuting(getCallerAddress(), getCallerUuid(),
                 serviceName, identifier);
-        getOperationResponseHandler().sendResponse(this, executing);
+        getResponseHandler().sendResponse(executing);
     }
 
     @Override

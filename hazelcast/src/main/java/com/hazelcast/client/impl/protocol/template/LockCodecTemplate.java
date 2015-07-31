@@ -45,5 +45,5 @@ public interface LockCodecTemplate {
     void forceUnlock(String name);
 
     @Request(id = 8, retryable = false, response = ResponseMessageConst.BOOLEAN)
-    void tryLock(String name, long threadId, long lease, long timeout);
+    void tryLock(String name, long threadId, long timeout);
 }

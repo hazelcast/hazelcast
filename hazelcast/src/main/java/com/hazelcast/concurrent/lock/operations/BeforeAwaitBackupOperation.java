@@ -45,7 +45,7 @@ public class BeforeAwaitBackupOperation extends BaseLockOperation implements Bac
     public void run() throws Exception {
         LockStoreImpl lockStore = getLockStore();
         lockStore.addAwait(key, conditionId, originalCaller, threadId);
-        lockStore.unlock(key, originalCaller, threadId, getReferenceCallId());
+        lockStore.unlock(key, originalCaller, threadId);
         response = true;
     }
 

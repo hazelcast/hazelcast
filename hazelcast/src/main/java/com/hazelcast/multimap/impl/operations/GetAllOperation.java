@@ -24,7 +24,7 @@ import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.multimap.impl.MultiMapWrapper;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.DefaultObjectNamespace;
-import com.hazelcast.spi.OperationResponseHandler;
+import com.hazelcast.spi.ResponseHandler;
 import com.hazelcast.spi.WaitNotifyKey;
 import com.hazelcast.spi.WaitSupport;
 import java.util.Collection;
@@ -38,20 +38,18 @@ public class GetAllOperation extends MultiMapKeyBasedOperation implements WaitSu
         super(name, dataKey);
     }
 
-    @Override
     public void run() throws Exception {
         MultiMapContainer container = getOrCreateContainer();
         MultiMapWrapper wrapper = container.getMultiMapWrapperOrNull(dataKey);
         Collection coll = null;
         if (wrapper != null) {
             wrapper.incrementHit();
-            OperationResponseHandler responseHandler = getOperationResponseHandler();
+            final ResponseHandler responseHandler = getResponseHandler();
             coll = wrapper.getCollection(responseHandler.isLocal());
         }
         response = new MultiMapResponse(coll, getValueCollectionType(container));
     }
 
-    @Override
     public int getId() {
         return MultiMapDataSerializerHook.GET_ALL;
     }
@@ -72,6 +70,6 @@ public class GetAllOperation extends MultiMapKeyBasedOperation implements WaitSu
 
     @Override
     public void onWaitExpire() {
-        sendResponse(new OperationTimeoutException("Cannot read transactionally locked entry!"));
+        getResponseHandler().sendResponse(new OperationTimeoutException("Cannot read transactionally locked entry!"));
     }
 }

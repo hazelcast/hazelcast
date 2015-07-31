@@ -22,13 +22,12 @@ import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 
 import static com.hazelcast.cluster.MemberAttributeOperationType.PUT;
 
-@SuppressFBWarnings("SE_BAD_FIELD")
+@edu.umd.cs.findbugs.annotations.SuppressWarnings("SE_BAD_FIELD")
 public class MemberAttributeEvent extends MembershipEvent implements DataSerializable {
 
     private MemberAttributeOperationType operationType;

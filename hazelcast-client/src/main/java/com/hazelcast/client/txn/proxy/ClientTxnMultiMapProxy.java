@@ -99,6 +99,10 @@ public class ClientTxnMultiMapProxy<K, V> extends ClientTxnProxy implements Tran
         return result;
     }
 
+    public String getName() {
+        return (String) getId();
+    }
+
     @Override
     public String getServiceName() {
         return MultiMapService.SERVICE_NAME;

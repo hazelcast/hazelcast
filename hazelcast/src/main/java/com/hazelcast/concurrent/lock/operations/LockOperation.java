@@ -17,7 +17,6 @@
 package com.hazelcast.concurrent.lock.operations;
 
 import com.hazelcast.concurrent.lock.LockDataSerializerHook;
-import com.hazelcast.concurrent.lock.LockStoreImpl;
 import com.hazelcast.concurrent.lock.LockWaitNotifyKey;
 import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.nio.serialization.Data;
@@ -32,20 +31,22 @@ public class LockOperation extends BaseLockOperation implements WaitSupport, Bac
     public LockOperation() {
     }
 
+    public LockOperation(ObjectNamespace namespace, Data key, long threadId, long timeout) {
+        super(namespace, key, threadId, timeout);
+    }
+
     public LockOperation(ObjectNamespace namespace, Data key, long threadId, long ttl, long timeout) {
         super(namespace, key, threadId, ttl, timeout);
     }
 
     @Override
     public void run() throws Exception {
-        response = getLockStore().lock(key, getCallerUuid(), threadId, getReferenceCallId(), ttl);
+        response = getLockStore().lock(key, getCallerUuid(), threadId, ttl);
     }
 
     @Override
     public Operation getBackupOperation() {
-        LockBackupOperation operation = new LockBackupOperation(namespace, key, threadId, getCallerUuid());
-        operation.setReferenceCallId(getReferenceCallId());
-        return operation;
+        return new LockBackupOperation(namespace, key, threadId, getCallerUuid());
     }
 
     @Override
@@ -60,8 +61,7 @@ public class LockOperation extends BaseLockOperation implements WaitSupport, Bac
 
     @Override
     public final boolean shouldWait() {
-        LockStoreImpl lockStore = getLockStore();
-        return getWaitTimeout() != 0 && !lockStore.canAcquireLock(key, getCallerUuid(), threadId);
+        return getWaitTimeout() != 0 && !getLockStore().canAcquireLock(key, getCallerUuid(), threadId);
     }
 
     @Override
@@ -73,7 +73,7 @@ public class LockOperation extends BaseLockOperation implements WaitSupport, Bac
         } else {
             response = Boolean.FALSE;
         }
-        sendResponse(response);
+        getResponseHandler().sendResponse(response);
     }
 
     @Override

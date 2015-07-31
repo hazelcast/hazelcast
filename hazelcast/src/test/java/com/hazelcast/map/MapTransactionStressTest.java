@@ -4,6 +4,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.ServiceConfig;
 import com.hazelcast.config.ServicesConfig;
 import com.hazelcast.core.DistributedObject;
+import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.IQueue;
@@ -12,8 +13,7 @@ import com.hazelcast.core.TransactionalMultiMap;
 import com.hazelcast.core.TransactionalQueue;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.AbstractOperation;
-import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.TransactionalService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -25,8 +25,8 @@ import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionalObject;
 import com.hazelcast.transaction.TransactionalTask;
 import com.hazelcast.transaction.TransactionalTaskContext;
-import com.hazelcast.transaction.impl.Transaction;
-import com.hazelcast.transaction.impl.TransactionLogRecord;
+import com.hazelcast.transaction.impl.TransactionLog;
+import com.hazelcast.transaction.impl.TransactionSupport;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -35,7 +35,10 @@ import org.junit.runner.RunWith;
 import java.io.IOException;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.locks.LockSupport;
 
 import static org.junit.Assert.assertEquals;
@@ -260,7 +263,7 @@ public class MapTransactionStressTest extends HazelcastTestSupport {
 
         @Override
         public TransactionalObject createTransactionalObject(String name,
-                                                             Transaction transaction) {
+                                                             TransactionSupport transaction) {
             return new DummyTransactionalObject(serviceName, name, transaction);
         }
 
@@ -282,16 +285,21 @@ public class MapTransactionStressTest extends HazelcastTestSupport {
 
         final String serviceName;
         final String name;
-        final Transaction transaction;
+        final TransactionSupport transaction;
 
-        DummyTransactionalObject(String serviceName, String name, Transaction transaction) {
+        DummyTransactionalObject(String serviceName, String name, TransactionSupport transaction) {
             this.serviceName = serviceName;
             this.name = name;
             this.transaction = transaction;
         }
 
         public void doSomethingTxnal() {
-            transaction.add(new SleepyTransactionLogRecord());
+            transaction.addTransactionLog(new SleepyTransactionLog());
+        }
+
+        @Override
+        public Object getId() {
+            return name;
         }
 
         @Override
@@ -315,38 +323,29 @@ public class MapTransactionStressTest extends HazelcastTestSupport {
         }
     }
 
-    public static class SleepyTransactionLogRecord implements TransactionLogRecord {
+    public static class SleepyTransactionLog implements TransactionLog {
         @Override
-        public Object getKey() {
-            return null;
+        public Future prepare(NodeEngine nodeEngine) {
+            return new EmptyFuture();
         }
 
         @Override
-        public Operation newPrepareOperation() {
-            return new AbstractOperation() {
-                @Override
-                public void run() throws Exception {
-                }
-            };
+        public Future commit(NodeEngine nodeEngine) {
+            LockSupport.parkNanos(10000);
+            return new EmptyFuture();
         }
 
         @Override
-        public Operation newCommitOperation() {
-            return new AbstractOperation() {
-                @Override
-                public void run() throws Exception {
-                    LockSupport.parkNanos(10000);
-                }
-            };
+        public Future rollback(NodeEngine nodeEngine) {
+            return new EmptyFuture();
         }
 
         @Override
-        public Operation newRollbackOperation() {
-            return new AbstractOperation() {
-                @Override
-                public void run() throws Exception {
-                }
-            };
+        public void commitAsync(NodeEngine nodeEngine, ExecutionCallback callback) {
+        }
+
+        @Override
+        public void rollbackAsync(NodeEngine nodeEngine, ExecutionCallback callback) {
         }
 
         @Override
@@ -359,7 +358,35 @@ public class MapTransactionStressTest extends HazelcastTestSupport {
 
         @Override
         public String toString() {
-            return "SleepyTransactionLogRecord{}";
+            return "SleepyTransactionLog{}";
+        }
+    }
+
+    public static class EmptyFuture implements Future {
+        @Override
+        public boolean cancel(boolean mayInterruptIfRunning) {
+            return false;
+        }
+
+        @Override
+        public boolean isCancelled() {
+            return false;
+        }
+
+        @Override
+        public boolean isDone() {
+            return true;
+        }
+
+        @Override
+        public Object get() throws InterruptedException, ExecutionException {
+            return null;
+        }
+
+        @Override
+        public Object get(long timeout, TimeUnit unit)
+                throws InterruptedException, ExecutionException, TimeoutException {
+            return null;
         }
     }
 

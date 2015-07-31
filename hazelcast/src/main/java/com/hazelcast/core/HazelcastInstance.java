@@ -141,6 +141,12 @@ public interface HazelcastInstance {
     ILock getLock(String key);
 
     /**
+     * @deprecated will be removed in Hazelcast 3.2. Use {@link #getLock(String)} instead.
+     */
+    @Deprecated
+    ILock getLock(Object key);
+
+    /**
      * Returns the distributed Ringbuffer instance with the specified name.
      *
      * @param name name of the distributed Ringbuffer
@@ -359,6 +365,18 @@ public interface HazelcastInstance {
      * @return the lifecycle service for this instance
      */
     LifecycleService getLifecycleService();
+
+    /**
+     *
+     * @param serviceName name of the service
+     * @param id identifier of the object
+     * @param <T> type of the DistributedObject
+     * @return DistributedObject created by the service
+     *
+     * @deprecated use {@link #getDistributedObject(String, String)} instead.
+     */
+    @Deprecated
+    <T extends DistributedObject> T getDistributedObject(String serviceName, Object id);
 
     /**
      *

@@ -22,7 +22,7 @@ import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.ListenerWrapperEventFilter;
 import com.hazelcast.spi.NotifiableEventListener;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import edu.umd.cs.findbugs.annotations.SuppressWarnings;
 
 import javax.cache.configuration.CacheEntryListenerConfiguration;
 import javax.cache.configuration.Factory;
@@ -55,7 +55,7 @@ import java.util.HashSet;
  * @see javax.cache.event.CacheEntryExpiredListener
  * @see javax.cache.event.CacheEntryEventFilter
  */
-@SuppressFBWarnings(value = "SE_NO_SERIALVERSIONID",
+@SuppressWarnings(value = "SE_NO_SERIALVERSIONID",
         justification = "Class is Serializable, but doesn't define serialVersionUID")
 public class CacheEventListenerAdaptor<K, V>
         implements CacheEventListener,

@@ -36,7 +36,6 @@ import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.spi.PostJoinAwareService;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import javax.cache.configuration.CacheEntryListenerConfiguration;
 import javax.cache.event.CacheEntryListener;
@@ -432,8 +431,10 @@ public abstract class AbstractCacheService
         return current == null ? cacheOperationProvider : current;
     }
 
-    @SuppressFBWarnings(value = "JLM_JSR166_UTILCONCURRENT_MONITORENTER", justification =
-            "several ops performed on concurrent map, need synchronization for atomicity")
+    // This method will be called at cache creation from each partition while creating cache record store.
+    // A better synchronization may be implemented but
+    // since these are not called so much periodically, but it is not needed at this time.
+    @edu.umd.cs.findbugs.annotations.SuppressWarnings(value = "JLM_JSR166_UTILCONCURRENT_MONITORENTER")
     public void addCacheResource(String name, Closeable resource) {
         Set<Closeable> cacheResources = resources.get(name);
         if (cacheResources == null) {

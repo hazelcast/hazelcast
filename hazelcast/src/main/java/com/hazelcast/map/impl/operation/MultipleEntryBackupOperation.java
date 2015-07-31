@@ -49,7 +49,10 @@ public class MultipleEntryBackupOperation extends AbstractMultipleEntryOperation
             }
             final Object oldValue = getValueFor(dataKey, now);
 
-            final Map.Entry entry = createMapEntry(dataKey, oldValue);
+            final Object key = toObject(dataKey);
+            final Object value = toObject(oldValue);
+
+            final Map.Entry entry = createMapEntry(key, value);
 
             processBackup(entry);
 

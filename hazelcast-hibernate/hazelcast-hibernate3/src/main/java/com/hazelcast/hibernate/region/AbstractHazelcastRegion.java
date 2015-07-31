@@ -39,6 +39,7 @@ abstract class AbstractHazelcastRegion<Cache extends RegionCache> implements Haz
     private final int timeout;
 
     protected AbstractHazelcastRegion(final HazelcastInstance instance, final String regionName, final Properties props) {
+        super();
         this.instance = instance;
         this.regionName = regionName;
         this.timeout = HazelcastTimestamper.getTimeout(instance, regionName);

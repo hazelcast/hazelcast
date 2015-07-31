@@ -36,7 +36,7 @@ import java.util.Collection;
 
 public class TxnLockAndGetOperation extends MultiMapKeyBasedOperation implements WaitSupport {
 
-    private long ttl;
+    long ttl;
 
     public TxnLockAndGetOperation() {
     }
@@ -48,48 +48,41 @@ public class TxnLockAndGetOperation extends MultiMapKeyBasedOperation implements
         setWaitTimeout(timeout);
     }
 
-    @Override
     public void run() throws Exception {
         MultiMapContainer container = getOrCreateContainer();
-        if (!container.txnLock(dataKey, getCallerUuid(), threadId, getCallId(), ttl)) {
+        if (!container.txnLock(dataKey, getCallerUuid(), threadId, ttl)) {
             throw new TransactionException("Transaction couldn't obtain lock!");
         }
         MultiMapWrapper wrapper = getCollectionWrapper();
-        final boolean isLocal = getOperationResponseHandler().isLocal();
+        final boolean isLocal = getResponseHandler().isLocal();
         Collection<MultiMapRecord> collection = wrapper == null ? null : wrapper.getCollection(isLocal);
         final MultiMapResponse multiMapResponse = new MultiMapResponse(collection, getValueCollectionType(container));
         multiMapResponse.setNextRecordId(container.nextId());
         response = multiMapResponse;
     }
 
-    @Override
     public WaitNotifyKey getWaitKey() {
         return new LockWaitNotifyKey(new DefaultObjectNamespace(MultiMapService.SERVICE_NAME, name), dataKey);
     }
 
-    @Override
     public boolean shouldWait() {
         return !getOrCreateContainer().canAcquireLock(dataKey, getCallerUuid(), threadId);
     }
 
-    @Override
     public void onWaitExpire() {
-        sendResponse(null);
+        getResponseHandler().sendResponse(null);
     }
 
-    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeLong(ttl);
     }
 
-    @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         ttl = in.readLong();
     }
 
-    @Override
     public int getId() {
         return MultiMapDataSerializerHook.TXN_LOCK_AND_GET;
     }

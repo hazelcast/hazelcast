@@ -32,6 +32,7 @@ public class MapAddEntryListenerSqlRequest extends AbstractMapAddEntryListenerRe
     private transient Predicate cachedPredicate;
 
     public MapAddEntryListenerSqlRequest() {
+        super();
     }
 
     public MapAddEntryListenerSqlRequest(String name, boolean includeValue) {

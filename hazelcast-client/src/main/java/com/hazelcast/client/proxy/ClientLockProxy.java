@@ -27,7 +27,6 @@ import com.hazelcast.core.ICondition;
 import com.hazelcast.core.ILock;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.util.ThreadUtil;
-
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 
@@ -100,15 +99,9 @@ public class ClientLockProxy extends ClientProxy implements ILock {
         }
     }
 
-    public boolean tryLock(long timeout, TimeUnit unit) throws InterruptedException {
-        return tryLock(timeout, unit, Long.MAX_VALUE, null);
-    }
-
-    @Override
-    public boolean tryLock(long timeout, TimeUnit unit, long leaseTime, TimeUnit leaseUnit) throws InterruptedException {
-        long timeoutInMillis = getTimeInMillis(timeout, unit);
-        long leaseTimeInMillis = getTimeInMillis(leaseTime, leaseUnit);
-        LockRequest request = new LockRequest(getKeyData(), ThreadUtil.getThreadId(), leaseTimeInMillis, timeoutInMillis);
+    public boolean tryLock(long time, TimeUnit unit) throws InterruptedException {
+        LockRequest request = new LockRequest(getKeyData(),
+                ThreadUtil.getThreadId(), Long.MAX_VALUE, getTimeInMillis(time, unit));
         Boolean result = invoke(request);
         return result;
     }

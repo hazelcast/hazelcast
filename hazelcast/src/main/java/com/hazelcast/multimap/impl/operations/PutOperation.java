@@ -30,9 +30,9 @@ import java.util.List;
 
 public class PutOperation extends MultiMapBackupAwareOperation {
 
-    private Data value;
-    private int index = -1;
-    private long recordId;
+    Data value;
+    int index = -1;
+    long recordId;
 
     public PutOperation() {
     }
@@ -43,7 +43,6 @@ public class PutOperation extends MultiMapBackupAwareOperation {
         this.index = index;
     }
 
-    @Override
     public void run() throws Exception {
         MultiMapContainer container = getOrCreateContainer();
         recordId = container.nextId();
@@ -61,43 +60,36 @@ public class PutOperation extends MultiMapBackupAwareOperation {
         }
     }
 
-    @Override
     public void afterRun() throws Exception {
         if (Boolean.TRUE.equals(response)) {
             publishEvent(EntryEventType.ADDED, dataKey, value, null);
         }
     }
 
-    @Override
     public Operation getBackupOperation() {
         return new PutBackupOperation(name, dataKey, value, recordId, index);
     }
 
-    @Override
     public boolean shouldBackup() {
         return Boolean.TRUE.equals(response);
     }
 
-    @Override
     public void onWaitExpire() {
-        sendResponse(false);
+        getResponseHandler().sendResponse(false);
     }
 
-    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeInt(index);
         out.writeData(value);
     }
 
-    @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         index = in.readInt();
         value = in.readData();
     }
 
-    @Override
     public int getId() {
         return MultiMapDataSerializerHook.PUT;
     }

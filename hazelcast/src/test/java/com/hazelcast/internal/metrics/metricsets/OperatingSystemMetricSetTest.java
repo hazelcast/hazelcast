@@ -1,7 +1,7 @@
 package com.hazelcast.internal.metrics.metricsets;
 
-import com.hazelcast.internal.metrics.DoubleGauge;
-import com.hazelcast.internal.metrics.LongGauge;
+import com.hazelcast.internal.metrics.Gauge;
+import com.hazelcast.internal.metrics.Metric;
 import com.hazelcast.internal.metrics.impl.MetricsRegistryImpl;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -96,8 +96,8 @@ public class OperatingSystemMetricSetTest extends HazelcastTestSupport {
         FakeOperatingSystemBean fakeOperatingSystemBean = new FakeOperatingSystemBean();
         registerMethod(blackbox, fakeOperatingSystemBean, "doubleMethod", "doubleMethod");
 
-        DoubleGauge gauge = blackbox.newDoubleGauge("doubleMethod");
-        assertEquals(fakeOperatingSystemBean.doubleMethod(), gauge.read(), 0.1);
+        Gauge gauge = blackbox.getGauge("doubleMethod");
+        assertEquals(fakeOperatingSystemBean.doubleMethod(), gauge.readDouble(), 0.1);
     }
 
     @Test
@@ -107,8 +107,8 @@ public class OperatingSystemMetricSetTest extends HazelcastTestSupport {
         FakeOperatingSystemBean fakeOperatingSystemBean = new FakeOperatingSystemBean();
         registerMethod(blackbox, fakeOperatingSystemBean, "longMethod", "longMethod");
 
-        LongGauge gauge = blackbox.newLongGauge("longMethod");
-        assertEquals(fakeOperatingSystemBean.longMethod(), gauge.read());
+        Gauge gauge = blackbox.getGauge("longMethod");
+        assertEquals(fakeOperatingSystemBean.longMethod(), gauge.readLong());
     }
 
     @Test

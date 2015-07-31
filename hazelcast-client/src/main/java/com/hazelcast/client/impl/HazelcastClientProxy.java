@@ -70,7 +70,7 @@ public final class HazelcastClientProxy implements HazelcastInstance, Serializat
 
     @Override
     public <E> Ringbuffer<E> getRingbuffer(String name) {
-        return getClient().getRingbuffer(name);
+        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -126,6 +126,11 @@ public final class HazelcastClientProxy implements HazelcastInstance, Serializat
     @Override
     public JobTracker getJobTracker(String name) {
         return getClient().getJobTracker(name);
+    }
+
+    @Override
+    public ILock getLock(Object key) {
+        return getClient().getLock(key);
     }
 
     @Override
@@ -234,6 +239,11 @@ public final class HazelcastClientProxy implements HazelcastInstance, Serializat
     public LifecycleService getLifecycleService() {
         final HazelcastClientInstanceImpl hz = client;
         return hz != null ? hz.getLifecycleService() : new TerminatedLifecycleService();
+    }
+
+    @Deprecated
+    public <T extends DistributedObject> T getDistributedObject(String serviceName, Object id) {
+        return getClient().getDistributedObject(serviceName, id);
     }
 
     @Override

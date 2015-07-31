@@ -66,6 +66,10 @@ public class ObjectMultiMapProxy<K, V>
         super(service, nodeEngine, name);
     }
 
+    public String getName() {
+        return name;
+    }
+
     @Override
     public void initialize() {
         final NodeEngine nodeEngine = getNodeEngine();
@@ -252,26 +256,20 @@ public class ObjectMultiMapProxy<K, V>
     public boolean tryLock(K key) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
-        NodeEngine nodeEngine = getNodeEngine();
-        Data dataKey = nodeEngine.toData(key);
-        return lockSupport.tryLock(nodeEngine, dataKey);
+        try {
+            return tryLock(key, 0, TimeUnit.MILLISECONDS);
+        } catch (InterruptedException e) {
+            return false;
+        }
     }
 
     public boolean tryLock(K key, long time, TimeUnit timeunit)
             throws InterruptedException {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
-        NodeEngine nodeEngine = getNodeEngine();
+        final NodeEngine nodeEngine = getNodeEngine();
         Data dataKey = nodeEngine.toData(key);
         return lockSupport.tryLock(nodeEngine, dataKey, time, timeunit);
-    }
-
-    public boolean tryLock(K key, long time, TimeUnit timeunit, long leaseTime, TimeUnit leaseUnit) throws InterruptedException {
-        checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
-
-        NodeEngine nodeEngine = getNodeEngine();
-        Data dataKey = nodeEngine.toData(key);
-        return lockSupport.tryLock(nodeEngine, dataKey, time, timeunit, leaseTime, leaseUnit);
     }
 
     public void unlock(K key) {
@@ -342,4 +340,11 @@ public class ObjectMultiMapProxy<K, V>
         return keySet;
     }
 
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder("MultiMap{");
+        sb.append("name=").append(getName());
+        sb.append('}');
+        return sb.toString();
+    }
 }

@@ -16,8 +16,6 @@
 
 package com.hazelcast.core;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-
 import java.util.EventObject;
 import java.util.Set;
 
@@ -30,7 +28,7 @@ import java.util.Set;
  * @see MembershipListener
  * @see MembershipEvent
  */
-@SuppressFBWarnings("SE_BAD_FIELD")
+@edu.umd.cs.findbugs.annotations.SuppressWarnings("SE_BAD_FIELD")
 public class InitialMembershipEvent extends EventObject {
 
     private static final long serialVersionUID = -2010865371829087371L;

@@ -21,21 +21,18 @@ import com.hazelcast.map.impl.operation.PutBackupOperation;
 import com.hazelcast.map.impl.operation.PutOperation;
 import com.hazelcast.map.impl.operation.RemoveBackupOperation;
 import com.hazelcast.map.impl.operation.RemoveOperation;
+import com.hazelcast.nio.serialization.ArrayDataSerializableFactory;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.DataSerializerHook;
+import com.hazelcast.nio.serialization.FactoryIdHelper;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.nio.serialization.impl.ArrayDataSerializableFactory;
-import com.hazelcast.nio.serialization.impl.FactoryIdHelper;
 import com.hazelcast.query.impl.QueryResultEntryImpl;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.QueryResultSet;
 
-import static com.hazelcast.nio.serialization.impl.FactoryIdHelper.MAP_DS_FACTORY;
-import static com.hazelcast.nio.serialization.impl.FactoryIdHelper.MAP_DS_FACTORY_ID;
-
 public final class MapDataSerializerHook implements DataSerializerHook {
 
-    public static final int F_ID = FactoryIdHelper.getFactoryId(MAP_DS_FACTORY, MAP_DS_FACTORY_ID);
+    public static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.MAP_DS_FACTORY, -10);
 
     public static final int PUT = 0;
     public static final int GET = 1;
@@ -49,7 +46,7 @@ public final class MapDataSerializerHook implements DataSerializerHook {
     public static final int VALUES = 9;
     public static final int ENTRY_SET = 10;
     public static final int ENTRY_VIEW = 11;
-    //    public static final int MAP_STATS = 12;
+//    public static final int MAP_STATS = 12;
     public static final int QUERY_RESULT_ENTRY = 13;
     public static final int QUERY_RESULT_SET = 14;
 

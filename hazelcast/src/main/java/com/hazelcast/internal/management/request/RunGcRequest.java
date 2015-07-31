@@ -18,11 +18,12 @@ package com.hazelcast.internal.management.request;
 
 import com.eclipsesource.json.JsonObject;
 import com.hazelcast.internal.management.ManagementCenterService;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 /**
  * Request for invoking Garbage Collection on the node.
  */
+//We want to be able to force a gc.
+@edu.umd.cs.findbugs.annotations.SuppressWarnings("DM_GC")
 public class RunGcRequest implements ConsoleRequest {
 
     public RunGcRequest() {
@@ -39,7 +40,6 @@ public class RunGcRequest implements ConsoleRequest {
     }
 
     @Override
-    @SuppressFBWarnings(value = "DM_GC", justification = "Explicit GC is the point of this class")
     public void writeResponse(ManagementCenterService mcs, JsonObject root) throws Exception {
         System.gc();
         root.add("result", new JsonObject());

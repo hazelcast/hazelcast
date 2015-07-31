@@ -1,24 +1,8 @@
-/*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package com.hazelcast.client.impl.protocol.util;
 
 import com.hazelcast.nio.Bits;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.impl.DefaultData;
+import com.hazelcast.nio.serialization.DefaultData;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -43,11 +27,9 @@ public class MessageFlyweight {
      */
     private static final short SHORT_MASK = 0x00FF;
 
+    private int offset; //initialized in wrap method by user , does not change.
+    private int index; //starts from zero, incremented each tome something set to buffer
     protected ClientProtocolBuffer buffer;
-    //initialized in wrap method by user , does not change.
-    private int offset;
-    //starts from zero, incremented each tome something set to buffer
-    private int index;
 
 
     public MessageFlyweight() {

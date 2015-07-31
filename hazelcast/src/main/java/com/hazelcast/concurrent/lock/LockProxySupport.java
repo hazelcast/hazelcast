@@ -26,7 +26,6 @@ import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.Operation;
-
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.concurrent.lock.LockServiceImpl.SERVICE_NAME;
@@ -98,21 +97,15 @@ public final class LockProxySupport {
 
     public boolean tryLock(NodeEngine nodeEngine, Data key) {
         try {
-            return tryLock(nodeEngine, key, 0, TimeUnit.MILLISECONDS, -1, TimeUnit.MILLISECONDS);
+            return tryLock(nodeEngine, key, 0, TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
             return false;
         }
     }
 
     public boolean tryLock(NodeEngine nodeEngine, Data key, long timeout, TimeUnit timeunit) throws InterruptedException {
-        return tryLock(nodeEngine, key, timeout, timeunit, -1, TimeUnit.MILLISECONDS);
-    }
-
-    public boolean tryLock(NodeEngine nodeEngine, Data key, long timeout, TimeUnit timeunit,
-                           long leaseTime, TimeUnit leaseTimeunit) throws InterruptedException {
-        long timeoutInMillis = getTimeInMillis(timeout, timeunit);
-        long leaseTimeInMillis = getTimeInMillis(leaseTime, leaseTimeunit);
-        LockOperation operation = new LockOperation(namespace, key, getThreadId(), leaseTimeInMillis, timeoutInMillis);
+        LockOperation operation = new LockOperation(namespace, key, getThreadId(),
+                getTimeInMillis(timeout, timeunit));
         InternalCompletableFuture<Boolean> f = invoke(nodeEngine, operation, key);
 
         try {

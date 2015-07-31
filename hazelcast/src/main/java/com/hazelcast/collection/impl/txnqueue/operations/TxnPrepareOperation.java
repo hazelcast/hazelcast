@@ -31,15 +31,16 @@ import java.io.IOException;
 public class TxnPrepareOperation extends QueueBackupAwareOperation {
 
     private long itemId;
+
     private boolean pollOperation;
+
     private String transactionId;
 
     public TxnPrepareOperation() {
     }
 
-    public TxnPrepareOperation(int partitionId, String name, long itemId, boolean pollOperation, String transactionId) {
+    public TxnPrepareOperation(String name, long itemId, boolean pollOperation, String transactionId) {
         super(name);
-        setPartitionId(partitionId);
         this.itemId = itemId;
         this.pollOperation = pollOperation;
         this.transactionId = transactionId;

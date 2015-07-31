@@ -64,7 +64,7 @@ public class MemcacheTest extends HazelcastTestSupport {
 
     public MemcachedClient getMemcacheClient(HazelcastInstance instance) throws IOException {
         final LinkedList<InetSocketAddress> addresses = new LinkedList<InetSocketAddress>();
-        addresses.add(instance.getCluster().getLocalMember().getSocketAddress());
+        addresses.add(instance.getCluster().getLocalMember().getInetSocketAddress());
         final ConnectionFactory factory = new ConnectionFactoryBuilder().setOpTimeout(60 * 60 * 60).setDaemon(true).setFailureMode(FailureMode.Retry).build();
         return new MemcachedClient(factory, addresses);
     }
@@ -130,7 +130,7 @@ public class MemcacheTest extends HazelcastTestSupport {
                 assertEquals(i * 10, bulk.get(String.valueOf(i)));
             }
             // STATS
-            final Map<String, String> stats = client.getStats().get(instance.getCluster().getLocalMember().getSocketAddress());
+            final Map<String, String> stats = client.getStats().get(instance.getCluster().getLocalMember().getInetSocketAddress());
             assertEquals("700", stats.get("cmd_set"));
             assertEquals("1000", stats.get("cmd_get"));
             assertEquals("700", stats.get("get_hits"));
@@ -196,7 +196,7 @@ public class MemcacheTest extends HazelcastTestSupport {
             for (int i = 0; i < 100; i++) {
                 assertEquals(i, client.get(String.valueOf(i)));
             }
-            final Map<String, String> stats = client.getStats().get(instance.getCluster().getLocalMember().getSocketAddress());
+            final Map<String, String> stats = client.getStats().get(instance.getCluster().getLocalMember().getInetSocketAddress());
             assertEquals("100", stats.get("cmd_set"));
             assertEquals("100", stats.get("cmd_get"));
             assertEquals("100", stats.get("incr_hits"));

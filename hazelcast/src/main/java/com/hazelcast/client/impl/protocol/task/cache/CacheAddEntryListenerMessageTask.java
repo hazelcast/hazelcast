@@ -28,11 +28,11 @@ import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.DefaultData;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.ListenerWrapperEventFilter;
 import com.hazelcast.spi.NotifiableEventListener;
-import com.hazelcast.nio.serialization.impl.DefaultData;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import edu.umd.cs.findbugs.annotations.SuppressWarnings;
 
 import java.io.Serializable;
 import java.security.Permission;
@@ -59,7 +59,7 @@ public class CacheAddEntryListenerMessageTask
         return service.registerListener(parameters.name, cacheEntryListener, cacheEntryListener);
     }
 
-    @SuppressFBWarnings(value = "SE_NO_SERIALVERSIONID",
+    @SuppressWarnings(value = "SE_NO_SERIALVERSIONID",
             justification = "Class is Serializable, but doesn't define serialVersionUID")
     private static final class CacheEntryListener
             implements CacheEventListener,

@@ -41,7 +41,7 @@ public final class ItemCounter<T> {
     /**
      * Set counter of item to value
      *
-     * @param item  to set set the value for
+     * @param item to set set the value for
      * @param value a new value
      */
     public void set(T item, long value) {
@@ -75,6 +75,7 @@ public final class ItemCounter<T> {
      * It will <b>NOT</b> necessary remove all data referenced.
      *
      * Time complexity of this operation is O(n) where n is number of items.
+     *
      */
     public void reset() {
         for (MutableLong entry : map.values()) {
@@ -124,10 +125,5 @@ public final class ItemCounter<T> {
     @Override
     public int hashCode() {
         return map.hashCode();
-    }
-
-    @Override
-    public String toString() {
-        return map.toString();
     }
 }

@@ -45,6 +45,7 @@ public class HashMapAdapter<K, V>
     }
 
     public HashMapAdapter() {
+        super();
     }
 
     public HashMapAdapter(Map<? extends K, ? extends V> m) {

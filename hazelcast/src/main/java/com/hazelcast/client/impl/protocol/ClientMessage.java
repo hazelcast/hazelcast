@@ -114,6 +114,7 @@ public class ClientMessage
     private transient boolean isRetryable;
 
     public ClientMessage() {
+        super();
     }
 
     public static ClientMessage create() {

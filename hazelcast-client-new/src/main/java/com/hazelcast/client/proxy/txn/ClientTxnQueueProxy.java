@@ -99,6 +99,10 @@ public class ClientTxnQueueProxy<E> extends ClientTxnProxy implements Transactio
         return TransactionalQueueSizeCodec.decodeResponse(response).response;
     }
 
+    public String getName() {
+        return (String) getId();
+    }
+
     @Override
     public String getServiceName() {
         return QueueService.SERVICE_NAME;

@@ -168,6 +168,74 @@ public class LocalCacheStatsImpl implements LocalCacheStats {
     }
 
     @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        LocalCacheStatsImpl that = (LocalCacheStatsImpl) o;
+
+        if (creationTime != that.creationTime) {
+            return false;
+        }
+        if (cacheHits != that.cacheHits) {
+            return false;
+        }
+        if (Float.compare(that.cacheHitPercentage, cacheHitPercentage) != 0) {
+            return false;
+        }
+        if (cacheMisses != that.cacheMisses) {
+            return false;
+        }
+        if (Float.compare(that.cacheMissPercentage, cacheMissPercentage) != 0) {
+            return false;
+        }
+        if (cacheGets != that.cacheGets) {
+            return false;
+        }
+        if (cachePuts != that.cachePuts) {
+            return false;
+        }
+        if (cacheRemovals != that.cacheRemovals) {
+            return false;
+        }
+        if (cacheEvictions != that.cacheEvictions) {
+            return false;
+        }
+        if (Float.compare(that.averageGetTime, averageGetTime) != 0) {
+            return false;
+        }
+        if (Float.compare(that.averagePutTime, averagePutTime) != 0) {
+            return false;
+        }
+        if (Float.compare(that.averageRemoveTime, averageRemoveTime) != 0) {
+            return false;
+        }
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = (int) (creationTime ^ (creationTime >>> 32));
+        result = 31 * result + (int) (cacheHits ^ (cacheHits >>> 32));
+        result = 31 * result + (cacheHitPercentage != +0.0f ? Float.floatToIntBits(cacheHitPercentage) : 0);
+        result = 31 * result + (int) (cacheMisses ^ (cacheMisses >>> 32));
+        result = 31 * result + (cacheMissPercentage != +0.0f ? Float.floatToIntBits(cacheMissPercentage) : 0);
+        result = 31 * result + (int) (cacheGets ^ (cacheGets >>> 32));
+        result = 31 * result + (int) (cachePuts ^ (cachePuts >>> 32));
+        result = 31 * result + (int) (cacheRemovals ^ (cacheRemovals >>> 32));
+        result = 31 * result + (int) (cacheEvictions ^ (cacheEvictions >>> 32));
+        result = 31 * result + (averageGetTime != +0.0f ? Float.floatToIntBits(averageGetTime) : 0);
+        result = 31 * result + (averagePutTime != +0.0f ? Float.floatToIntBits(averagePutTime) : 0);
+        result = 31 * result + (averageRemoveTime != +0.0f ? Float.floatToIntBits(averageRemoveTime) : 0);
+        return result;
+    }
+
+    @Override
     public String toString() {
         return "LocalCacheStatsImpl{"
                 + "creationTime=" + creationTime

@@ -20,12 +20,11 @@ import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.impl.SerializableList;
+import com.hazelcast.spi.impl.SerializableCollection;
 
 import java.security.Permission;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 
 /**
  * Returns member list to client
@@ -40,11 +39,11 @@ public class GetMemberListRequest extends CallableClientRequest implements Retry
         ClusterService service = getService();
 
         Collection<MemberImpl> memberList = service.getMemberList();
-        List<Data> response = new ArrayList<Data>(memberList.size());
+        Collection<Data> response = new ArrayList<Data>(memberList.size());
         for (MemberImpl member : memberList) {
             response.add(serializationService.toData(member));
         }
-        return new SerializableList(response);
+        return new SerializableCollection(response);
     }
 
 

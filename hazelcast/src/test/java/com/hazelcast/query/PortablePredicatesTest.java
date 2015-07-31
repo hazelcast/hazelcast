@@ -17,7 +17,6 @@
 package com.hazelcast.query;
 
 import com.hazelcast.nio.serialization.*;
-import com.hazelcast.nio.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.query.impl.QueryEntry;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;

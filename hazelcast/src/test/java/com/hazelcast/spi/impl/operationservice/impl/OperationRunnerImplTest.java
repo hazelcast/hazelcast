@@ -6,15 +6,17 @@ import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationResponseHandler;
+import com.hazelcast.spi.ResponseHandler;
 import com.hazelcast.spi.WaitNotifyKey;
 import com.hazelcast.spi.WaitSupport;
 import com.hazelcast.spi.impl.operationservice.impl.responses.CallTimeoutResponse;
+import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
 import com.hazelcast.test.ExpectedRuntimeException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -23,9 +25,10 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import static com.hazelcast.spi.OperationAccessor.setCallId;
 import static com.hazelcast.spi.OperationAccessor.setCallTimeout;
+import static com.hazelcast.spi.OperationAccessor.setCallerAddress;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.same;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -39,7 +42,7 @@ public class OperationRunnerImplTest extends HazelcastTestSupport {
     private OperationRunnerImpl operationRunner;
     private OperationServiceImpl operationService;
     private ClusterService clusterService;
-    private OperationResponseHandler responseHandler;
+    private ResponseHandler responseHandler;
 
     @Before
     public void setup() {
@@ -49,10 +52,10 @@ public class OperationRunnerImplTest extends HazelcastTestSupport {
         operationService = (OperationServiceImpl) getOperationService(local);
         clusterService = getClusterService(local);
         operationRunner = new OperationRunnerImpl(operationService, getPartitionId(local));
-        responseHandler = mock(OperationResponseHandler.class);
+        responseHandler = mock(ResponseHandler.class);
     }
 
-     @Test
+    @Test
     public void runTask() {
         final AtomicLong counter = new AtomicLong();
         operationRunner.run(new Runnable() {
@@ -80,11 +83,11 @@ public class OperationRunnerImplTest extends HazelcastTestSupport {
             }
         };
         op.setPartitionId(operationRunner.getPartitionId());
-        op.setOperationResponseHandler(responseHandler);
+        op.setResponseHandler(responseHandler);
 
         operationRunner.run(op);
         assertEquals(1, counter.get());
-        verify(responseHandler).sendResponse(op, response);
+        verify(responseHandler).sendResponse(response);
     }
 
     @Test
@@ -104,12 +107,12 @@ public class OperationRunnerImplTest extends HazelcastTestSupport {
             }
         };
         op.setPartitionId(-1);
-        op.setOperationResponseHandler(responseHandler);
+        op.setResponseHandler(responseHandler);
 
         operationRunner.run(op);
 
         assertEquals(1, counter.get());
-        verify(responseHandler).sendResponse(op, response);
+        verify(responseHandler).sendResponse(response);
     }
 
     @Test
@@ -123,12 +126,12 @@ public class OperationRunnerImplTest extends HazelcastTestSupport {
             }
         };
         op.setPartitionId(operationRunner.getPartitionId() + 1);
-        op.setOperationResponseHandler(responseHandler);
+        op.setResponseHandler(responseHandler);
 
         operationRunner.run(op);
 
         assertEquals(0, counter.get());
-        verify(responseHandler).sendResponse(same(op), any(IllegalStateException.class));
+        verify(responseHandler).sendResponse(any(IllegalStateException.class));
     }
 
     @Test
@@ -139,12 +142,12 @@ public class OperationRunnerImplTest extends HazelcastTestSupport {
                 throw new ExpectedRuntimeException();
             }
         };
-        op.setOperationResponseHandler(responseHandler);
+        op.setResponseHandler(responseHandler);
         op.setPartitionId(operationRunner.getPartitionId());
 
         operationRunner.run(op);
 
-        verify(responseHandler).sendResponse(same(op), any(ExpectedRuntimeException.class));
+        verify(responseHandler).sendResponse(any(ExpectedRuntimeException.class));
     }
 
     @Test
@@ -162,7 +165,7 @@ public class OperationRunnerImplTest extends HazelcastTestSupport {
         operationRunner.run(op);
         assertEquals(0, counter.get());
         // verify that the response handler was not called
-        verify(responseHandler, never()).sendResponse(same(op), any());
+        verify(responseHandler, never()).sendResponse(any());
     }
 
     @Test
@@ -178,11 +181,11 @@ public class OperationRunnerImplTest extends HazelcastTestSupport {
         setCallId(op, 10);
         setCallTimeout(op, clusterService.getClusterClock().getClusterTime() - 1);
         op.setPartitionId(operationRunner.getPartitionId());
-        op.setOperationResponseHandler(responseHandler);
+        op.setResponseHandler(responseHandler);
 
         operationRunner.run(op);
         assertEquals(0, counter.get());
-        verify(responseHandler).sendResponse(same(op), any(CallTimeoutResponse.class));
+        verify(responseHandler).sendResponse(any(CallTimeoutResponse.class));
     }
 
     @Test

@@ -26,7 +26,7 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationAccessor;
 import com.hazelcast.spi.OperationFactory;
-import com.hazelcast.spi.OperationResponseHandler;
+import com.hazelcast.spi.ResponseHandler;
 import com.hazelcast.spi.impl.SpiDataSerializerHook;
 import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
 import com.hazelcast.util.ResponseQueueFactory;
@@ -86,7 +86,7 @@ public final class PartitionIteratingOperation extends AbstractOperation impleme
             op.setNodeEngine(nodeEngine)
                     .setPartitionId(partitionId)
                     .setReplicaIndex(getReplicaIndex())
-                    .setOperationResponseHandler(responseQueue)
+                    .setResponseHandler(responseQueue)
                     .setServiceName(getServiceName())
                     .setService(getService())
                     .setCallerUuid(getCallerUuid());
@@ -110,11 +110,11 @@ public final class PartitionIteratingOperation extends AbstractOperation impleme
         return new PartitionResponse(results);
     }
 
-    private static class ResponseQueue implements OperationResponseHandler {
+    private static class ResponseQueue implements ResponseHandler {
         final BlockingQueue b = ResponseQueueFactory.newResponseQueue();
 
         @Override
-        public void sendResponse(Operation op, Object obj) {
+        public void sendResponse(Object obj) {
             if (!b.offer(obj)) {
                 throw new HazelcastException("Response could not be queued for transportation");
             }

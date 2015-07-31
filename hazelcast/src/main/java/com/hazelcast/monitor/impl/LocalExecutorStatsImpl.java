@@ -116,9 +116,8 @@ public class LocalExecutorStatsImpl implements LocalExecutorStats {
         root.add("creationTime", creationTime);
         root.add("pending", pending);
         root.add("started", started);
-        root.add("completed", completed);
-        root.add("cancelled", cancelled);
         root.add("totalStartLatency", totalStartLatency);
+        root.add("completed", completed);
         root.add("totalExecutionTime", totalExecutionTime);
         return root;
     }
@@ -128,10 +127,57 @@ public class LocalExecutorStatsImpl implements LocalExecutorStats {
         creationTime = getLong(json, "creationTime", -1L);
         PENDING_UPDATER.set(this, getLong(json, "pending", -1L));
         STARTED_UPDATER.set(this, getLong(json, "started", -1L));
-        COMPLETED_UPDATER.set(this, getLong(json, "completed", -1L));
-        CANCELLED_UPDATER.set(this, getLong(json, "cancelled", -1L));
         TOTAL_START_LATENCY_UPDATER.set(this, getLong(json, "totalStartLatency", -1L));
+        COMPLETED_UPDATER.set(this, getLong(json, "completed", -1L));
         TOTAL_EXECUTION_TIME_UPDATER.set(this, getLong(json, "totalExecutionTime", -1L));
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        LocalExecutorStatsImpl that = (LocalExecutorStatsImpl) o;
+
+        if (creationTime != that.creationTime) {
+            return false;
+        }
+        if (pending != that.pending) {
+            return false;
+        }
+        if (started != that.started) {
+            return false;
+        }
+        if (completed != that.completed) {
+            return false;
+        }
+        if (cancelled != that.cancelled) {
+            return false;
+        }
+        if (totalStartLatency != that.totalStartLatency) {
+            return false;
+        }
+        if (totalExecutionTime != that.totalExecutionTime) {
+            return false;
+        }
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = (int) (creationTime ^ (creationTime >>> 32));
+        result = 31 * result + (int) (pending ^ (pending >>> 32));
+        result = 31 * result + (int) (started ^ (started >>> 32));
+        result = 31 * result + (int) (completed ^ (completed >>> 32));
+        result = 31 * result + (int) (cancelled ^ (cancelled >>> 32));
+        result = 31 * result + (int) (totalStartLatency ^ (totalStartLatency >>> 32));
+        result = 31 * result + (int) (totalExecutionTime ^ (totalExecutionTime >>> 32));
+        return result;
     }
 
     @Override

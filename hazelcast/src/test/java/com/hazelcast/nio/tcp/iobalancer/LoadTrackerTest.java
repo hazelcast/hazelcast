@@ -48,9 +48,14 @@ public class LoadTrackerTest {
         selectors = new AbstractIOSelector[]{selector1, selector2};
 
         ILogger logger = mock(ILogger.class);
-        when(logger.isFinestEnabled()).thenReturn(true);
+        when(logger.isFinestEnabled())
+                .thenReturn(true);
 
-        loadTracker = new LoadTracker(selectors, logger);
+        LoggingService loggingService = mock(LoggingService.class);
+        when(loggingService.getLogger(LoadTracker.class))
+                .thenReturn(logger);
+
+        loadTracker = new LoadTracker(selectors, loggingService);
     }
 
     @Test

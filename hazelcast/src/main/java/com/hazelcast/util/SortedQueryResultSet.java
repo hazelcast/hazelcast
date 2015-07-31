@@ -23,7 +23,7 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 
 /**
- * Collection class for results of query operationsgit
+ * Collection class for results of query operations
  */
 public class SortedQueryResultSet extends AbstractSet<Map.Entry> {
 

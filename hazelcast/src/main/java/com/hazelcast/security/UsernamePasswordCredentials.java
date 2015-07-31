@@ -36,6 +36,7 @@ public class UsernamePasswordCredentials extends AbstractCredentials {
     private byte[] password;
 
     public UsernamePasswordCredentials() {
+        super();
     }
 
     public UsernamePasswordCredentials(String username, String password) {

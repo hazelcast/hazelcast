@@ -65,20 +65,17 @@ import com.hazelcast.map.impl.client.MapValuesRequest;
 import com.hazelcast.map.impl.client.TxnMapRequest;
 import com.hazelcast.map.impl.client.TxnMapRequestWithSQLQuery;
 import com.hazelcast.nio.serialization.ClassDefinition;
+import com.hazelcast.nio.serialization.FactoryIdHelper;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.nio.serialization.PortableHook;
-import com.hazelcast.nio.serialization.impl.FactoryIdHelper;
 import com.hazelcast.util.ConstructorFunction;
 
 import java.util.Collection;
 
-import static com.hazelcast.nio.serialization.impl.FactoryIdHelper.MAP_PORTABLE_FACTORY;
-import static com.hazelcast.nio.serialization.impl.FactoryIdHelper.MAP_PORTABLE_FACTORY_ID;
-
 public class MapPortableHook implements PortableHook {
 
-    public static final int F_ID = FactoryIdHelper.getFactoryId(MAP_PORTABLE_FACTORY, MAP_PORTABLE_FACTORY_ID);
+    public static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.MAP_PORTABLE_FACTORY, -10);
     public static final int GET = 1;
     public static final int PUT = 2;
     public static final int PUT_IF_ABSENT = 3;

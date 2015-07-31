@@ -20,7 +20,7 @@ import com.hazelcast.collection.impl.queue.QueueContainer;
 import com.hazelcast.monitor.impl.LocalQueueStatsImpl;
 import com.hazelcast.collection.impl.queue.QueueDataSerializerHook;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.impl.SerializableList;
+import com.hazelcast.spi.impl.SerializableCollection;
 
 import java.util.List;
 
@@ -40,7 +40,7 @@ public class IteratorOperation extends QueueOperation {
     public void run() {
         QueueContainer queueContainer = getOrCreateContainer();
         List<Data> dataList = queueContainer.getAsDataList();
-        response = new SerializableList(dataList);
+        response = new SerializableCollection(dataList);
     }
 
     @Override

@@ -19,12 +19,10 @@ package com.hazelcast.client.multimap;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.MultiMap;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -346,46 +344,5 @@ public class ClientMultiMapLockTest extends HazelcastTestSupport {
             }
         }.start();
         assertOpenEventually(tryLockSuccess);
-    }
-
-    @Test(timeout = 60000)
-    public void testTryLockLeaseTime_whenLockFree() throws InterruptedException {
-        MultiMap multiMap = getMultiMapForLock();
-        String key = randomString();
-        boolean isLocked = multiMap.tryLock(key, 1000, TimeUnit.MILLISECONDS, 1000, TimeUnit.MILLISECONDS);
-        assertTrue(isLocked);
-    }
-
-    @Test(timeout = 60000)
-    public void testTryLockLeaseTime_whenLockAcquiredByOther() throws InterruptedException {
-        final MultiMap multiMap = getMultiMapForLock();
-        final String key = randomString();
-        Thread thread = new Thread() {
-            public void run() {
-                multiMap.lock(key);
-            }
-        };
-        thread.start();
-        thread.join();
-
-        boolean isLocked = multiMap.tryLock(key, 1000, TimeUnit.MILLISECONDS, 1000, TimeUnit.MILLISECONDS);
-        Assert.assertFalse(isLocked);
-    }
-
-    @Test
-    public void testTryLockLeaseTime_lockIsReleasedEventually() throws InterruptedException {
-        final MultiMap multiMap = getMultiMapForLock();
-        final String key = randomString();
-        multiMap.tryLock(key, 1000, TimeUnit.MILLISECONDS, 1000, TimeUnit.MILLISECONDS);
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                Assert.assertFalse(multiMap.isLocked(key));
-            }
-        }, 30);
-    }
-
-    private MultiMap getMultiMapForLock() {
-        return client.getMultiMap(randomString());
     }
 }

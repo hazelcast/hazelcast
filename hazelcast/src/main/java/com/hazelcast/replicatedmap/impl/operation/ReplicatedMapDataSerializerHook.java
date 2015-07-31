@@ -16,19 +16,16 @@
 
 package com.hazelcast.replicatedmap.impl.operation;
 
+import com.hazelcast.nio.serialization.ArrayDataSerializableFactory;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.DataSerializerHook;
+import com.hazelcast.nio.serialization.FactoryIdHelper;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.nio.serialization.impl.ArrayDataSerializableFactory;
-import com.hazelcast.nio.serialization.impl.FactoryIdHelper;
 import com.hazelcast.replicatedmap.impl.messages.MultiReplicationMessage;
 import com.hazelcast.replicatedmap.impl.messages.ReplicationMessage;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecord;
 import com.hazelcast.replicatedmap.impl.record.VectorClockTimestamp;
 import com.hazelcast.util.ConstructorFunction;
-
-import static com.hazelcast.nio.serialization.impl.FactoryIdHelper.REPLICATED_MAP_DS_FACTORY;
-import static com.hazelcast.nio.serialization.impl.FactoryIdHelper.REPLICATED_MAP_DS_FACTORY_ID;
 
 /**
  * This class contains all the ID hooks for IdentifiedDataSerializable classes used inside the replicated map.
@@ -38,7 +35,7 @@ import static com.hazelcast.nio.serialization.impl.FactoryIdHelper.REPLICATED_MA
 public class ReplicatedMapDataSerializerHook
         implements DataSerializerHook {
 
-    public static final int F_ID = FactoryIdHelper.getFactoryId(REPLICATED_MAP_DS_FACTORY, REPLICATED_MAP_DS_FACTORY_ID);
+    public static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.REPLICATED_MAP_DS_FACTORY, -22);
 
     public static final int VECTOR = 0;
     public static final int RECORD = 1;

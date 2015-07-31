@@ -24,8 +24,8 @@ import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.ExecutionTracingService;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.RemoteService;
+import com.hazelcast.spi.ResponseHandler;
 import com.hazelcast.spi.StatisticsAwareService;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ConcurrencyUtil;
@@ -89,9 +89,9 @@ public class DistributedExecutorService implements ManagedService, RemoteService
         reset();
     }
 
-    public void execute(String name, String uuid, Callable callable, Operation op) {
+    public void execute(String name, String uuid, Callable callable, ResponseHandler responseHandler) {
         startPending(name);
-        CallableProcessor processor = new CallableProcessor(name, uuid, callable, op);
+        CallableProcessor processor = new CallableProcessor(name, uuid, callable, responseHandler);
         if (uuid != null) {
             submittedTasks.put(uuid, processor);
         }
@@ -179,17 +179,17 @@ public class DistributedExecutorService implements ManagedService, RemoteService
 
         private final String name;
         private final String uuid;
-        private final Operation op;
+        private final ResponseHandler responseHandler;
         private final String callableToString;
         private final long creationTime = Clock.currentTimeMillis();
 
-        private CallableProcessor(String name, String uuid, Callable callable, Operation op) {
+        private CallableProcessor(String name, String uuid, Callable callable, ResponseHandler responseHandler) {
             //noinspection unchecked
             super(callable);
             this.name = name;
             this.uuid = uuid;
             this.callableToString = String.valueOf(callable);
-            this.op = op;
+            this.responseHandler = responseHandler;
         }
 
         @Override
@@ -224,7 +224,7 @@ public class DistributedExecutorService implements ManagedService, RemoteService
 
         private void sendResponse(Object result) {
             if (RESPONSE_FLAG_FIELD_UPDATER.compareAndSet(this, Boolean.FALSE, Boolean.TRUE)) {
-                op.sendResponse(result);
+                responseHandler.sendResponse(result);
             }
         }
     }

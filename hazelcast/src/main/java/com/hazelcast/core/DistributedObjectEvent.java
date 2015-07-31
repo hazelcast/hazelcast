@@ -66,20 +66,9 @@ public class DistributedObjectEvent {
      * Returns the identifier of related DistributedObject.
      *
      * @return the identifier of DistributedObject
-     * @deprecated since 3.5. Please use {@link #getObjectName()} instead.
      */
     public Object getObjectId() {
-        return getObjectName();
-    }
-
-    /**
-     * Returns the name of related DistributedObject.
-     *
-     * @return the name of DistributedObject
-     * @see DistributedObject#getName()
-     */
-    public Object getObjectName() {
-        return distributedObject.getName();
+        return distributedObject.getId();
     }
 
     /**

@@ -25,7 +25,7 @@ import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.QueuePermission;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.PortableCollection;
-import com.hazelcast.spi.impl.SerializableList;
+import com.hazelcast.spi.impl.SerializableCollection;
 
 import java.io.IOException;
 import java.security.Permission;
@@ -58,8 +58,8 @@ public class DrainRequest extends QueueRequest {
 
     @Override
     protected Object filter(Object response) {
-        if (response instanceof SerializableList) {
-            Collection<Data> coll = ((SerializableList) response).getCollection();
+        if (response instanceof SerializableCollection) {
+            Collection<Data> coll = ((SerializableCollection) response).getCollection();
             return new PortableCollection(coll);
         }
         return super.filter(response);

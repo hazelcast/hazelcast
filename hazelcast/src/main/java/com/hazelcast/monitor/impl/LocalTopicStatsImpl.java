@@ -24,7 +24,8 @@ import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
 import static com.hazelcast.util.JsonUtil.getLong;
 
-public class LocalTopicStatsImpl implements LocalTopicStats {
+public class LocalTopicStatsImpl
+        implements LocalTopicStats {
 
     private static final AtomicLongFieldUpdater<LocalTopicStatsImpl> TOTAL_PUBLISHES_UPDATER = AtomicLongFieldUpdater
             .newUpdater(LocalTopicStatsImpl.class, "totalPublishes");
@@ -77,6 +78,38 @@ public class LocalTopicStatsImpl implements LocalTopicStats {
         creationTime = getLong(json, "creationTime", -1L);
         TOTAL_PUBLISHES_UPDATER.set(this, getLong(json, "totalPublishes", -1L));
         TOTAL_RECEIVED_MESSAGES_UPDATER.set(this, getLong(json, "totalReceivedMessages", -1L));
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        LocalTopicStatsImpl that = (LocalTopicStatsImpl) o;
+
+        if (creationTime != that.creationTime) {
+            return false;
+        }
+        if (totalPublishes != that.totalPublishes) {
+            return false;
+        }
+        if (totalReceivedMessages != that.totalReceivedMessages) {
+            return false;
+        }
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = (int) (creationTime ^ (creationTime >>> 32));
+        result = 31 * result + (int) (totalPublishes ^ (totalPublishes >>> 32));
+        result = 31 * result + (int) (totalReceivedMessages ^ (totalReceivedMessages >>> 32));
+        return result;
     }
 
     @Override

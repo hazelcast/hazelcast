@@ -25,7 +25,6 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
-
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Map;
@@ -62,7 +61,10 @@ public class MultipleEntryOperation extends AbstractMultipleEntryOperation imple
             }
             final Object oldValue = getValueFor(dataKey, now);
 
-            final Map.Entry entry = createMapEntry(dataKey, oldValue);
+            final Object key = toObject(dataKey);
+            final Object value = toObject(oldValue);
+
+            final Map.Entry entry = createMapEntry(key, value);
 
             final Data response = process(entry);
 

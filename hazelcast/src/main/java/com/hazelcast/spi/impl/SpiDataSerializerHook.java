@@ -18,7 +18,7 @@ package com.hazelcast.spi.impl;
 
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.DataSerializerHook;
-import com.hazelcast.nio.serialization.impl.FactoryIdHelper;
+import com.hazelcast.nio.serialization.FactoryIdHelper;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.eventservice.impl.EventPacket;
 import com.hazelcast.spi.impl.operationservice.impl.operations.PartitionIteratingOperation;
@@ -29,12 +29,9 @@ import com.hazelcast.spi.impl.operationservice.impl.responses.CallTimeoutRespons
 import com.hazelcast.spi.impl.operationservice.impl.responses.ErrorResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
 
-import static com.hazelcast.nio.serialization.impl.FactoryIdHelper.SPI_DS_FACTORY;
-import static com.hazelcast.nio.serialization.impl.FactoryIdHelper.SPI_DS_FACTORY_ID;
-
 public final class SpiDataSerializerHook implements DataSerializerHook {
 
-    public static final int F_ID = FactoryIdHelper.getFactoryId(SPI_DS_FACTORY, SPI_DS_FACTORY_ID);
+    public static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.SPI_DS_FACTORY, -1);
 
     public static final int NORMAL_RESPONSE = 0;
     public static final int BACKUP = 1;
@@ -68,7 +65,7 @@ public final class SpiDataSerializerHook implements DataSerializerHook {
                     case EVENT_PACKET:
                         return new EventPacket();
                     case COLLECTION:
-                        return new SerializableList();
+                        return new SerializableCollection();
                     case CALL_TIMEOUT_RESPONSE:
                         return new CallTimeoutResponse();
                     case ERROR_RESPONSE:

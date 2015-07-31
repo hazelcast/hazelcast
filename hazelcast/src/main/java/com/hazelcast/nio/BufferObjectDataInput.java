@@ -67,8 +67,4 @@ public interface BufferObjectDataInput extends ObjectDataInput, Closeable {
     void position(int newPos);
 
     void reset();
-
-    void clear();
-
-    void init(byte[] data, int offset);
 }

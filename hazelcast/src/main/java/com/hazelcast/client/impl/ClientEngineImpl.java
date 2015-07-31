@@ -85,7 +85,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.Future;
 import java.util.logging.Level;
 
-import static com.hazelcast.spi.impl.OperationResponseHandlerFactory.createEmptyResponseHandler;
+import static com.hazelcast.spi.impl.ResponseHandlerFactory.createEmptyResponseHandler;
 
 /**
  * Class that requests, listeners from client handled in node side.
@@ -573,7 +573,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
         op.setNodeEngine(nodeEngine)
                 .setServiceName(SERVICE_NAME)
                 .setService(this)
-                .setOperationResponseHandler(createEmptyResponseHandler());
+                .setResponseHandler(createEmptyResponseHandler());
         return op;
     }
 

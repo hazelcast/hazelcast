@@ -85,6 +85,7 @@ public class HazelcastConnectionImpl implements HazelcastConnection {
     private final int id;
 
     public HazelcastConnectionImpl(ManagedConnectionImpl managedConnectionImpl, Subject subject) {
+        super();
         this.managedConnection = managedConnectionImpl;
         id = idGen.incrementAndGet();
     }
@@ -232,6 +233,12 @@ public class HazelcastConnectionImpl implements HazelcastConnection {
     }
 
     @Override
+    @Deprecated
+    public <T extends DistributedObject> T getDistributedObject(String serviceName, Object id) {
+        return getHazelcastInstance().getDistributedObject(serviceName, id);
+    }
+
+    @Override
     public <T extends DistributedObject> T getDistributedObject(String serviceName, String name) {
         return getHazelcastInstance().getDistributedObject(serviceName, name);
     }
@@ -313,6 +320,12 @@ public class HazelcastConnectionImpl implements HazelcastConnection {
 
     @Override
     public ILock getLock(String key) {
+        return getHazelcastInstance().getLock(key);
+    }
+
+    @Deprecated
+    @Override
+    public ILock getLock(Object key) {
         return getHazelcastInstance().getLock(key);
     }
 

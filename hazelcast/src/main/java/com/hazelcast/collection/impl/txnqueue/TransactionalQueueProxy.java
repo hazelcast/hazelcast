@@ -20,7 +20,7 @@ import com.hazelcast.core.TransactionalQueue;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.transaction.impl.Transaction;
+import com.hazelcast.transaction.impl.TransactionSupport;
 import com.hazelcast.util.EmptyStatement;
 
 import java.util.concurrent.TimeUnit;
@@ -34,7 +34,7 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
  */
 public class TransactionalQueueProxy<E> extends TransactionalQueueProxySupport implements TransactionalQueue<E> {
 
-    public TransactionalQueueProxy(NodeEngine nodeEngine, QueueService service, String name, Transaction tx) {
+    public TransactionalQueueProxy(NodeEngine nodeEngine, QueueService service, String name, TransactionSupport tx) {
         super(nodeEngine, service, name, tx);
     }
 

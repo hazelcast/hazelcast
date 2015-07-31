@@ -17,7 +17,7 @@
 package com.hazelcast.internal.metrics.metricsets;
 
 import com.hazelcast.internal.metrics.MetricsRegistry;
-import com.hazelcast.internal.metrics.LongProbeFunction;
+import com.hazelcast.internal.metrics.LongProbe;
 
 import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
@@ -43,7 +43,7 @@ public final class RuntimeMetricSet {
         Runtime runtime = Runtime.getRuntime();
         RuntimeMXBean mxBean = ManagementFactory.getRuntimeMXBean();
 
-        metricsRegistry.register(runtime, "runtime.freeMemory", new LongProbeFunction<Runtime>() {
+        metricsRegistry.register(runtime, "runtime.freeMemory", new LongProbe<Runtime>() {
                     @Override
                     public long get(Runtime runtime) {
                         return runtime.freeMemory();
@@ -51,7 +51,7 @@ public final class RuntimeMetricSet {
                 }
         );
 
-        metricsRegistry.register(runtime, "runtime.totalMemory", new LongProbeFunction<Runtime>() {
+        metricsRegistry.register(runtime, "runtime.totalMemory", new LongProbe<Runtime>() {
                     @Override
                     public long get(Runtime runtime) {
                         return runtime.totalMemory();
@@ -59,7 +59,7 @@ public final class RuntimeMetricSet {
                 }
         );
 
-        metricsRegistry.register(runtime, "runtime.maxMemory", new LongProbeFunction<Runtime>() {
+        metricsRegistry.register(runtime, "runtime.maxMemory", new LongProbe<Runtime>() {
                     @Override
                     public long get(Runtime runtime) {
                         return runtime.maxMemory();
@@ -67,7 +67,7 @@ public final class RuntimeMetricSet {
                 }
         );
 
-        metricsRegistry.register(runtime, "runtime.usedMemory", new LongProbeFunction<Runtime>() {
+        metricsRegistry.register(runtime, "runtime.usedMemory", new LongProbe<Runtime>() {
                     @Override
                     public long get(Runtime runtime) {
                         return runtime.totalMemory() - runtime.freeMemory();
@@ -75,7 +75,7 @@ public final class RuntimeMetricSet {
                 }
         );
 
-        metricsRegistry.register(runtime, "runtime.availableProcessors", new LongProbeFunction<Runtime>() {
+        metricsRegistry.register(runtime, "runtime.availableProcessors", new LongProbe<Runtime>() {
                     @Override
                     public long get(Runtime runtime) {
                         return runtime.availableProcessors();
@@ -83,7 +83,7 @@ public final class RuntimeMetricSet {
                 }
         );
 
-        metricsRegistry.register(mxBean, "runtime.uptime", new LongProbeFunction<RuntimeMXBean>() {
+        metricsRegistry.register(mxBean, "runtime.uptime", new LongProbe<RuntimeMXBean>() {
                     @Override
                     public long get(RuntimeMXBean runtimeMXBean) {
                         return runtimeMXBean.getUptime();

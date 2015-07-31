@@ -18,7 +18,7 @@ package com.hazelcast.map.impl.eviction;
 
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.PartitionContainer;
-import com.hazelcast.map.impl.recordstore.RecordStore;
+import com.hazelcast.map.impl.RecordStore;
 import com.hazelcast.map.impl.operation.ClearExpiredOperation;
 import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.spi.NodeEngine;

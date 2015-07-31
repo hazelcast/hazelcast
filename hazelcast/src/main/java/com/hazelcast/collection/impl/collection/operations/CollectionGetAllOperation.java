@@ -19,9 +19,8 @@ package com.hazelcast.collection.impl.collection.operations;
 import com.hazelcast.collection.impl.collection.CollectionContainer;
 import com.hazelcast.collection.impl.collection.CollectionDataSerializerHook;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.impl.SerializableList;
-
-import java.util.List;
+import com.hazelcast.spi.impl.SerializableCollection;
+import java.util.Collection;
 
 public class CollectionGetAllOperation extends CollectionOperation {
 
@@ -35,8 +34,8 @@ public class CollectionGetAllOperation extends CollectionOperation {
     @Override
     public void run() throws Exception {
         CollectionContainer collectionContainer = getOrCreateContainer();
-        List<Data> all = collectionContainer.getAll();
-        response = new SerializableList(all);
+        final Collection<Data> all = collectionContainer.getAll();
+        response = new SerializableCollection(all);
     }
 
     @Override

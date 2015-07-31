@@ -26,7 +26,7 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.ListPermission;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.impl.SerializableList;
+import com.hazelcast.spi.impl.SerializableCollection;
 
 import java.security.Permission;
 
@@ -53,7 +53,7 @@ public class ListSubMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return ListSubCodec.encodeResponse(((SerializableList) response).getCollection());
+        return ListSubCodec.encodeResponse(((SerializableCollection) response).getCollection());
     }
 
     @Override

@@ -25,23 +25,23 @@ import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionNotActiveException;
 import com.hazelcast.transaction.TransactionOptions;
-import com.hazelcast.transaction.impl.operations.BeginTxBackupOperation;
-import com.hazelcast.transaction.impl.operations.PurgeTxBackupOperation;
-import com.hazelcast.transaction.impl.operations.ReplicateTxOperation;
-import com.hazelcast.transaction.impl.operations.RollbackTxBackupOperation;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.FutureUtil;
 import com.hazelcast.util.UuidUtil;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.ListIterator;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
 import static com.hazelcast.transaction.TransactionOptions.TransactionType;
-import static com.hazelcast.transaction.TransactionOptions.TransactionType.TWO_PHASE;
 import static com.hazelcast.transaction.impl.Transaction.State.ACTIVE;
 import static com.hazelcast.transaction.impl.Transaction.State.COMMITTED;
 import static com.hazelcast.transaction.impl.Transaction.State.COMMITTING;
@@ -55,10 +55,8 @@ import static com.hazelcast.util.FutureUtil.ExceptionHandler;
 import static com.hazelcast.util.FutureUtil.RETHROW_TRANSACTION_EXCEPTION;
 import static com.hazelcast.util.FutureUtil.logAllExceptions;
 import static com.hazelcast.util.FutureUtil.waitWithDeadline;
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import static java.util.concurrent.TimeUnit.MINUTES;
 
-public class TransactionImpl implements Transaction {
+public class TransactionImpl implements Transaction, TransactionSupport {
 
     private static final ThreadLocal<Boolean> TRANSACTION_EXISTS = new ThreadLocal<Boolean>();
     private static final int ROLLBACK_TIMEOUT_MINUTES = 5;
@@ -67,9 +65,11 @@ public class TransactionImpl implements Transaction {
     private final ExceptionHandler commitExceptionHandler;
     private final ExceptionHandler rollbackExceptionHandler;
     private final ExceptionHandler rollbackTxExceptionHandler;
-    private final TransactionLog transactionLog;
+
     private final TransactionManagerServiceImpl transactionManagerService;
     private final NodeEngine nodeEngine;
+    private final List<TransactionLog> txLogs = new LinkedList<TransactionLog>();
+    private final Map<Object, TransactionLog> txLogMap = new HashMap<Object, TransactionLog>();
     private final String txnId;
     private Long threadId;
     private long timeoutMillis;
@@ -83,7 +83,6 @@ public class TransactionImpl implements Transaction {
 
     public TransactionImpl(TransactionManagerServiceImpl transactionManagerService, NodeEngine nodeEngine,
                            TransactionOptions options, String txOwnerUuid) {
-        this.transactionLog = new TransactionLog();
         this.transactionManagerService = transactionManagerService;
         this.nodeEngine = nodeEngine;
         this.txnId = UuidUtil.buildRandomUuidString();
@@ -101,16 +100,15 @@ public class TransactionImpl implements Transaction {
 
     // used by tx backups
     TransactionImpl(TransactionManagerServiceImpl transactionManagerService, NodeEngine nodeEngine,
-                    String txnId, List<TransactionLogRecord> transactionLog, long timeoutMillis,
-                    long startTime, String txOwnerUuid) {
-        this.transactionLog = new TransactionLog(transactionLog);
+                    String txnId, List<TransactionLog> txLogs, long timeoutMillis, long startTime, String txOwnerUuid) {
         this.transactionManagerService = transactionManagerService;
         this.nodeEngine = nodeEngine;
         this.txnId = txnId;
         this.timeoutMillis = timeoutMillis;
         this.startTime = startTime;
         this.durability = 0;
-        this.transactionType = TWO_PHASE;
+        this.transactionType = TransactionType.TWO_PHASE;
+        this.txLogs.addAll(txLogs);
         this.state = PREPARED;
         this.txOwnerUuid = txOwnerUuid;
         this.checkThreadAccess = false;
@@ -131,22 +129,40 @@ public class TransactionImpl implements Transaction {
     }
 
     @Override
-    public void add(TransactionLogRecord record) {
+    public void addTransactionLog(TransactionLog transactionLog) {
         if (state != Transaction.State.ACTIVE) {
             throw new TransactionNotActiveException("Transaction is not active!");
         }
         checkThread();
-        transactionLog.add(record);
+        // there should be just one tx log for the same key. so if there is older we are removing it
+        if (transactionLog instanceof KeyAwareTransactionLog) {
+            KeyAwareTransactionLog keyAwareTransactionLog = (KeyAwareTransactionLog) transactionLog;
+            TransactionLog removed = txLogMap.remove(keyAwareTransactionLog.getKey());
+            if (removed != null) {
+                txLogs.remove(removed);
+            }
+        }
+
+        txLogs.add(transactionLog);
+        if (transactionLog instanceof KeyAwareTransactionLog) {
+            KeyAwareTransactionLog keyAwareTransactionLog = (KeyAwareTransactionLog) transactionLog;
+            txLogMap.put(keyAwareTransactionLog.getKey(), keyAwareTransactionLog);
+        }
     }
 
-    @Override
-    public TransactionLogRecord get(Object key) {
-        return transactionLog.get(key);
+    public TransactionLog getTransactionLog(Object key) {
+        return txLogMap.get(key);
     }
 
-    @Override
-    public void remove(Object key) {
-        transactionLog.remove(key);
+    public List<TransactionLog> getTxLogs() {
+        return txLogs;
+    }
+
+    public void removeTransactionLog(Object key) {
+        TransactionLog removed = txLogMap.remove(key);
+        if (removed != null) {
+            txLogs.remove(removed);
+        }
     }
 
     private void checkThread() {
@@ -166,7 +182,7 @@ public class TransactionImpl implements Transaction {
         startTime = Clock.currentTimeMillis();
         backupAddresses = transactionManagerService.pickBackupAddresses(durability);
 
-        if (durability > 0 && backupAddresses != null && transactionType == TWO_PHASE) {
+        if (durability > 0 && backupAddresses != null && transactionType == TransactionType.TWO_PHASE) {
             List<Future> futures = startTxBackup();
             awaitTxBackupCompletion(futures);
         }
@@ -182,7 +198,7 @@ public class TransactionImpl implements Transaction {
     private void awaitTxBackupCompletion(List<Future> futures) {
         for (Future future : futures) {
             try {
-                future.get(timeoutMillis, MILLISECONDS);
+                future.get(timeoutMillis, TimeUnit.MILLISECONDS);
             } catch (MemberLeftException e) {
                 nodeEngine.getLogger(Transaction.class).warning("Member left while replicating tx begin: " + e);
             } catch (Throwable e) {
@@ -199,11 +215,11 @@ public class TransactionImpl implements Transaction {
     }
 
     private List<Future> startTxBackup() {
-        OperationService operationService = nodeEngine.getOperationService();
+        final OperationService operationService = nodeEngine.getOperationService();
         List<Future> futures = new ArrayList<Future>(backupAddresses.length);
         for (Address backupAddress : backupAddresses) {
             if (nodeEngine.getClusterService().getMember(backupAddress) != null) {
-                Future f = operationService.invokeOnTarget(TransactionManagerServiceImpl.SERVICE_NAME,
+                final Future f = operationService.invokeOnTarget(TransactionManagerServiceImpl.SERVICE_NAME,
                         new BeginTxBackupOperation(txOwnerUuid, txnId), backupAddress);
                 futures.add(f);
             }
@@ -217,7 +233,6 @@ public class TransactionImpl implements Transaction {
         }
     }
 
-    @Override
     public void prepare() throws TransactionException {
         if (state != ACTIVE) {
             throw new TransactionNotActiveException("Transaction is not active");
@@ -225,10 +240,12 @@ public class TransactionImpl implements Transaction {
         checkThread();
         checkTimeout();
         try {
+            final List<Future> futures = new ArrayList<Future>(txLogs.size());
             state = PREPARING;
-            List<Future> futures = transactionLog.prepare(nodeEngine);
-
-            waitWithDeadline(futures, timeoutMillis, MILLISECONDS, RETHROW_TRANSACTION_EXCEPTION);
+            for (TransactionLog txLog : txLogs) {
+                futures.add(txLog.prepare(nodeEngine));
+            }
+            waitWithDeadline(futures, timeoutMillis, TimeUnit.MILLISECONDS, RETHROW_TRANSACTION_EXCEPTION);
             futures.clear();
             state = PREPARED;
             if (durability > 0) {
@@ -239,29 +256,25 @@ public class TransactionImpl implements Transaction {
         }
     }
 
-    // todo: should be moved to TransactionLog?
     private void replicateTxnLog() throws InterruptedException, ExecutionException, java.util.concurrent.TimeoutException {
-        List<Future> futures = new ArrayList<Future>(transactionLog.size());
-        OperationService operationService = nodeEngine.getOperationService();
+        final List<Future> futures = new ArrayList<Future>(txLogs.size());
+        final OperationService operationService = nodeEngine.getOperationService();
         for (Address backupAddress : backupAddresses) {
-            if (nodeEngine.getClusterService().getMember(backupAddress) == null) {
-                continue;
+            if (nodeEngine.getClusterService().getMember(backupAddress) != null) {
+                final Future f = operationService.invokeOnTarget(TransactionManagerServiceImpl.SERVICE_NAME,
+                        new ReplicateTxOperation(txLogs, txOwnerUuid, txnId, timeoutMillis, startTime),
+                        backupAddress);
+                futures.add(f);
             }
-
-            Future f = operationService.invokeOnTarget(TransactionManagerServiceImpl.SERVICE_NAME,
-                    new ReplicateTxOperation(transactionLog.getRecordList(), txOwnerUuid, txnId, timeoutMillis, startTime),
-                    backupAddress);
-            futures.add(f);
         }
-        waitWithDeadline(futures, timeoutMillis, MILLISECONDS, RETHROW_TRANSACTION_EXCEPTION);
-        // todo: why clear? The futures will be gc'd
+        waitWithDeadline(futures, timeoutMillis, TimeUnit.MILLISECONDS, RETHROW_TRANSACTION_EXCEPTION);
         futures.clear();
     }
 
     @Override
     public void commit() throws TransactionException, IllegalStateException {
         try {
-            if (transactionType.equals(TWO_PHASE) && state != PREPARED) {
+            if (transactionType.equals(TransactionType.TWO_PHASE) && state != PREPARED) {
                 throw new IllegalStateException("Transaction is not prepared");
             }
             if (transactionType.equals(TransactionType.LOCAL) && state != ACTIVE) {
@@ -270,14 +283,15 @@ public class TransactionImpl implements Transaction {
             checkThread();
             checkTimeout();
             try {
+                final List<Future> futures = new ArrayList<Future>(txLogs.size());
                 state = COMMITTING;
-
-                List<Future> futures = transactionLog.commit(nodeEngine);
-
+                for (TransactionLog txLog : txLogs) {
+                    futures.add(txLog.commit(nodeEngine));
+                }
                 // We should rethrow exception if transaction is not TWO_PHASE
-                ExceptionHandler exceptionHandler = transactionType.equals(TWO_PHASE)
+                ExceptionHandler exceptionHandler = transactionType.equals(TransactionType.TWO_PHASE)
                         ? commitExceptionHandler : FutureUtil.RETHROW_TRANSACTION_EXCEPTION;
-                waitWithDeadline(futures, COMMIT_TIMEOUT_MINUTES, MINUTES, exceptionHandler);
+                waitWithDeadline(futures, COMMIT_TIMEOUT_MINUTES, TimeUnit.MINUTES, exceptionHandler);
 
                 state = COMMITTED;
 
@@ -309,8 +323,13 @@ public class TransactionImpl implements Transaction {
             try {
                 rollbackTxBackup();
 
-                List<Future> futures = transactionLog.rollback(nodeEngine);
-                waitWithDeadline(futures, ROLLBACK_TIMEOUT_MINUTES, MINUTES, rollbackExceptionHandler);
+                final List<Future> futures = new ArrayList<Future>(txLogs.size());
+                final ListIterator<TransactionLog> iterator = txLogs.listIterator(txLogs.size());
+                while (iterator.hasPrevious()) {
+                    final TransactionLog txLog = iterator.previous();
+                    futures.add(txLog.rollback(nodeEngine));
+                }
+                waitWithDeadline(futures, ROLLBACK_TIMEOUT_MINUTES, TimeUnit.MINUTES, rollbackExceptionHandler);
                 // purge tx backup
                 purgeTxBackups();
             } catch (Throwable e) {
@@ -321,14 +340,14 @@ public class TransactionImpl implements Transaction {
         } finally {
             setThreadFlag(null);
         }
+
     }
 
-    //todo: move to transactionlog?
     private void rollbackTxBackup() {
-        OperationService operationService = nodeEngine.getOperationService();
-        List<Future> futures = new ArrayList<Future>(transactionLog.size());
+        final OperationService operationService = nodeEngine.getOperationService();
+        final List<Future> futures = new ArrayList<Future>(txLogs.size());
         // rollback tx backup
-        if (durability > 0 && transactionType.equals(TWO_PHASE)) {
+        if (durability > 0 && transactionType.equals(TransactionType.TWO_PHASE)) {
             for (Address backupAddress : backupAddresses) {
                 if (nodeEngine.getClusterService().getMember(backupAddress) != null) {
                     final Future f = operationService.invokeOnTarget(TransactionManagerServiceImpl.SERVICE_NAME,
@@ -337,14 +356,14 @@ public class TransactionImpl implements Transaction {
                 }
             }
 
-            waitWithDeadline(futures, timeoutMillis, MILLISECONDS, rollbackTxExceptionHandler);
+            waitWithDeadline(futures, timeoutMillis, TimeUnit.MILLISECONDS, rollbackTxExceptionHandler);
             futures.clear();
         }
     }
 
     private void purgeTxBackups() {
-        if (durability > 0 && transactionType.equals(TWO_PHASE)) {
-            OperationService operationService = nodeEngine.getOperationService();
+        if (durability > 0 && transactionType.equals(TransactionType.TWO_PHASE)) {
+            final OperationService operationService = nodeEngine.getOperationService();
             for (Address backupAddress : backupAddresses) {
                 if (nodeEngine.getClusterService().getMember(backupAddress) != null) {
                     try {
@@ -362,7 +381,6 @@ public class TransactionImpl implements Transaction {
         return startTime;
     }
 
-    @Override
     public String getOwnerUuid() {
         return txOwnerUuid;
     }

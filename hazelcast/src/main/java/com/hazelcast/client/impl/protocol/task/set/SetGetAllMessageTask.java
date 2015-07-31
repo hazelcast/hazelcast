@@ -26,7 +26,7 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.SetPermission;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.impl.SerializableList;
+import com.hazelcast.spi.impl.SerializableCollection;
 
 import java.security.Permission;
 
@@ -52,7 +52,7 @@ public class SetGetAllMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return SetGetAllCodec.encodeResponse(((SerializableList) response).getCollection());
+        return SetGetAllCodec.encodeResponse(((SerializableCollection) response).getCollection());
     }
 
     @Override

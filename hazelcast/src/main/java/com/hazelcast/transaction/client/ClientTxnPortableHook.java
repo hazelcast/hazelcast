@@ -17,22 +17,19 @@
 package com.hazelcast.transaction.client;
 
 import com.hazelcast.nio.serialization.ClassDefinition;
+import com.hazelcast.nio.serialization.FactoryIdHelper;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.nio.serialization.PortableHook;
-import com.hazelcast.nio.serialization.impl.FactoryIdHelper;
 
 import java.util.Collection;
-
-import static com.hazelcast.nio.serialization.impl.FactoryIdHelper.CLIENT_TXN_PORTABLE_FACTORY;
-import static com.hazelcast.nio.serialization.impl.FactoryIdHelper.CLIENT_TXN_PORTABLE_FACTORY_ID;
 
 /**
  * Factory class for client transaction related classes
  */
 public class ClientTxnPortableHook implements PortableHook {
 
-    public static final int F_ID = FactoryIdHelper.getFactoryId(CLIENT_TXN_PORTABLE_FACTORY, CLIENT_TXN_PORTABLE_FACTORY_ID);
+    public static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.CLIENT_TXN_PORTABLE_FACTORY, -19);
 
     public static final int CREATE = 1;
     public static final int COMMIT = 2;

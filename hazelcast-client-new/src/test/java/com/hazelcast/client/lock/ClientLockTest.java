@@ -19,7 +19,6 @@ package com.hazelcast.client.lock;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ILock;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
@@ -35,6 +34,7 @@ import java.util.concurrent.TimeUnit;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
@@ -221,34 +221,4 @@ public class ClientLockTest extends HazelcastTestSupport {
         assertFalse("Lock obtained by 2 client ", lockObtained);
     }
 
-    @Test(timeout = 60000)
-    public void testTryLockLeaseTime_whenLockFree() throws InterruptedException {
-        boolean isLocked = lock.tryLock(1000, TimeUnit.MILLISECONDS, 1000, TimeUnit.MILLISECONDS);
-        assertTrue(isLocked);
-    }
-
-    @Test(timeout = 60000)
-    public void testTryLockLeaseTime_whenLockAcquiredByOther() throws InterruptedException {
-        Thread thread = new Thread() {
-            public void run() {
-                lock.lock();
-            }
-        };
-        thread.start();
-        thread.join();
-
-        boolean isLocked = lock.tryLock(1000, TimeUnit.MILLISECONDS, 1000, TimeUnit.MILLISECONDS);
-        assertFalse(isLocked);
-    }
-
-    @Test
-    public void testTryLockLeaseTime_lockIsReleasedEventually() throws InterruptedException {
-        lock.tryLock(1000, TimeUnit.MILLISECONDS, 1000, TimeUnit.MILLISECONDS);
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertFalse(lock.isLocked());
-            }
-        }, 30);
-    }
 }

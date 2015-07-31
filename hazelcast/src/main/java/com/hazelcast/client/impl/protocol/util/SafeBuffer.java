@@ -20,6 +20,7 @@ import com.hazelcast.nio.Bits;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.nio.charset.Charset;
 
 /**
  * Implementation of ClientProtocolBuffer that is used by default in clients.
@@ -28,6 +29,7 @@ import java.nio.ByteOrder;
  */
 public class SafeBuffer implements ClientProtocolBuffer {
 
+    public static final Charset UTF_8 = Charset.forName("utf-8");
     private ByteBuffer byteBuffer;
 
     public SafeBuffer(byte[] buffer) {
@@ -72,7 +74,7 @@ public class SafeBuffer implements ClientProtocolBuffer {
 
     @Override
     public int putStringUtf8(int index, String value, int maxEncodedSize) {
-        final byte[] bytes = value.getBytes(Bits.UTF_8);
+        final byte[] bytes = value.getBytes(UTF_8);
         if (bytes.length > maxEncodedSize) {
             throw new IllegalArgumentException("Encoded string larger than maximum size: " + maxEncodedSize);
         }
@@ -136,7 +138,7 @@ public class SafeBuffer implements ClientProtocolBuffer {
         final byte[] stringInBytes = new byte[length];
         getBytes(offset + Bits.INT_SIZE_IN_BYTES, stringInBytes);
 
-        return new String(stringInBytes, Bits.UTF_8);
+        return new String(stringInBytes, UTF_8);
     }
 
 }

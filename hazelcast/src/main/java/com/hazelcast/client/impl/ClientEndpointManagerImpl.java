@@ -18,14 +18,9 @@ package com.hazelcast.client.impl;
 
 import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.ClientEndpointManager;
-
-import com.hazelcast.internal.metrics.MetricsRegistry;
-import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.util.counters.MwCounter;
 
 import javax.security.auth.login.LoginException;
 import java.util.Collection;
@@ -37,7 +32,6 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
-import static com.hazelcast.util.counters.MwCounter.newMwCounter;
 
 /**
  * Manages and stores {@link com.hazelcast.client.impl.ClientEndpointImpl}s.
@@ -49,21 +43,13 @@ public class ClientEndpointManagerImpl implements ClientEndpointManager {
     private final ILogger logger;
     private final ClientEngineImpl clientEngine;
     private final NodeEngine nodeEngine;
-
-    @Probe(name = "count")
     private final ConcurrentMap<Connection, ClientEndpoint> endpoints =
             new ConcurrentHashMap<Connection, ClientEndpoint>();
-
-    @Probe(name = "totalRegistrations")
-    private MwCounter totalRegistrations = newMwCounter();
 
     public ClientEndpointManagerImpl(ClientEngineImpl clientEngine, NodeEngine nodeEngine) {
         this.clientEngine = clientEngine;
         this.nodeEngine = nodeEngine;
         this.logger = nodeEngine.getLogger(ClientEndpointManager.class);
-
-        MetricsRegistry metricsRegistry = ((NodeEngineImpl) nodeEngine).getMetricsRegistry();
-        metricsRegistry.scanAndRegister(this, "client.endpoint");
     }
 
     @Override
@@ -93,8 +79,6 @@ public class ClientEndpointManagerImpl implements ClientEndpointManager {
         final Connection conn = endpoint.getConnection();
         if (endpoints.putIfAbsent(conn, endpoint) != null) {
             logger.severe("An endpoint already exists for connection:" + conn);
-        } else {
-            totalRegistrations.inc();
         }
     }
 

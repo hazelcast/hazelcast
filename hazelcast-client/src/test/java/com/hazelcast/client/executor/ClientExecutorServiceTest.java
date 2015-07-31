@@ -59,7 +59,6 @@ public class ClientExecutorServiceTest {
 
     private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
     private HazelcastInstance client;
-    private HazelcastInstance instance;
 
     @After
     public void tearDown() {
@@ -68,7 +67,7 @@ public class ClientExecutorServiceTest {
 
     @Before
     public void setup() throws IOException {
-        instance = hazelcastFactory.newHazelcastInstance();
+        hazelcastFactory.newHazelcastInstance();
         hazelcastFactory.newHazelcastInstance();
         hazelcastFactory.newHazelcastInstance();
         client = hazelcastFactory.newHazelcastClient();
@@ -225,5 +224,4 @@ public class ClientExecutorServiceTest {
 
         service.execute(new MapPutRunnable(mapName), selector);
     }
-
 }

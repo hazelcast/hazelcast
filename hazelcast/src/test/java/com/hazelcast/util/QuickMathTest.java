@@ -48,10 +48,6 @@ public class QuickMathTest {
 
     @Test
     public void testNextPowerOfTwo() {
-        assertEquals(1, QuickMath.nextPowerOfTwo(-9999999));
-        assertEquals(1, QuickMath.nextPowerOfTwo(-1));
-        assertEquals(1, QuickMath.nextPowerOfTwo(0));
-        assertEquals(1, QuickMath.nextPowerOfTwo(1));
         assertEquals(2, QuickMath.nextPowerOfTwo(2));
         assertEquals(1024, QuickMath.nextPowerOfTwo(999));
         assertEquals(1 << 23, QuickMath.nextPowerOfTwo((1 << 23) - 1));
@@ -60,17 +56,6 @@ public class QuickMathTest {
         assertEquals(2048L, QuickMath.nextPowerOfTwo(2000L));
         assertEquals(1L << 33, QuickMath.nextPowerOfTwo((1L << 33) - 3));
         assertEquals(1L << 43, QuickMath.nextPowerOfTwo((1L << 43)));
-    }
-
-    @Test
-    public void testNextLongPowerOfTwo() {
-        assertEquals(1L, QuickMath.nextPowerOfTwo(-9999999L));
-        assertEquals(1L, QuickMath.nextPowerOfTwo(-1L));
-        assertEquals(1L, QuickMath.nextPowerOfTwo(0L));
-        assertEquals(1L, QuickMath.nextPowerOfTwo(1L));
-        assertEquals(2L, QuickMath.nextPowerOfTwo(2L));
-        assertEquals(4L, QuickMath.nextPowerOfTwo(3L));
-        assertEquals(1L << 62, QuickMath.nextPowerOfTwo((1L << 61) + 1));
     }
 
     @Test

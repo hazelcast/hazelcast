@@ -29,18 +29,16 @@ import java.io.IOException;
 public class TxnPrepareOperation extends MultiMapBackupAwareOperation {
 
     private static final long LOCK_EXTENSION_TIME_IN_MILLIS = 10000L;
-    private long ttl;
+    long ttl;
 
     public TxnPrepareOperation() {
     }
 
-    public TxnPrepareOperation(int partitionId, String name, Data dataKey, long ttl, long threadId) {
+    public TxnPrepareOperation(String name, Data dataKey, long ttl, long threadId) {
         super(name, dataKey, threadId);
-        setPartitionId(partitionId);
         this.ttl = ttl;
     }
 
-    @Override
     public void run() throws Exception {
         MultiMapContainer container = getOrCreateContainer();
         if (!container.extendLock(dataKey, getCallerUuid(), threadId, LOCK_EXTENSION_TIME_IN_MILLIS)) {
@@ -51,35 +49,29 @@ public class TxnPrepareOperation extends MultiMapBackupAwareOperation {
         response = true;
     }
 
-    @Override
     public boolean shouldBackup() {
         return true;
     }
 
-    @Override
     public boolean shouldWait() {
         return false;
     }
 
-    @Override
     public Operation getBackupOperation() {
         return new TxnPrepareBackupOperation(name, dataKey, getCallerUuid(), threadId);
     }
 
-    @Override
-    public int getId() {
-        return MultiMapDataSerializerHook.TXN_PREPARE;
-    }
-
-    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeLong(ttl);
     }
 
-    @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         ttl = in.readLong();
+    }
+
+    public int getId() {
+        return MultiMapDataSerializerHook.TXN_PREPARE;
     }
 }

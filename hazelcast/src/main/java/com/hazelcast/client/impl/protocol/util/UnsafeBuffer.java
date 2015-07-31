@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ * Copyright 2014 Real Logic Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,21 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.hazelcast.client.impl.protocol.util;
 
 import com.hazelcast.nio.Bits;
 import com.hazelcast.nio.UnsafeHelper;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import sun.misc.Unsafe;
 
 import java.nio.ByteOrder;
+import java.nio.charset.Charset;
+
+;
 
 /**
  * Supports regular, byte ordered, access to an underlying buffer.
  */
-@SuppressFBWarnings({ "EI_EXPOSE_REP", "EI_EXPOSE_REP2" })
+@edu.umd.cs.findbugs.annotations.SuppressWarnings({"EI_EXPOSE_REP", "EI_EXPOSE_REP2"})
 public class UnsafeBuffer implements ClientProtocolBuffer {
+    /**
+     * UTF-8 charset
+     */
+    public static final Charset UTF_8 = Charset.forName("utf-8");
+
     private static final String DISABLE_BOUNDS_CHECKS_PROP_NAME = "hazelcast.disable.bounds.checks";
     private static final boolean SHOULD_BOUNDS_CHECK = !Boolean.getBoolean(DISABLE_BOUNDS_CHECKS_PROP_NAME);
 
@@ -191,7 +197,7 @@ public class UnsafeBuffer implements ClientProtocolBuffer {
         final byte[] stringInBytes = new byte[length];
         getBytes(offset + Bits.INT_SIZE_IN_BYTES, stringInBytes);
 
-        return new String(stringInBytes, Bits.UTF_8);
+        return new String(stringInBytes, UTF_8);
     }
 
     @Override
@@ -201,7 +207,7 @@ public class UnsafeBuffer implements ClientProtocolBuffer {
 
     @Override
     public int putStringUtf8(final int index, final String value, final int maxEncodedSize) {
-        final byte[] bytes = value.getBytes(Bits.UTF_8);
+        final byte[] bytes = value.getBytes(UTF_8);
         if (bytes.length > maxEncodedSize) {
             throw new IllegalArgumentException("Encoded string larger than maximum size: " + maxEncodedSize);
         }

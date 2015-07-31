@@ -30,8 +30,8 @@ import java.util.Iterator;
 
 public class RemoveOperation extends MultiMapBackupAwareOperation {
 
-    private Data value;
-    private long recordId;
+    Data value;
+    long recordId;
 
     public RemoveOperation() {
     }
@@ -41,7 +41,6 @@ public class RemoveOperation extends MultiMapBackupAwareOperation {
         this.value = value;
     }
 
-    @Override
     public void run() throws Exception {
         response = false;
         MultiMapWrapper wrapper = getCollectionWrapper();
@@ -65,7 +64,6 @@ public class RemoveOperation extends MultiMapBackupAwareOperation {
         }
     }
 
-    @Override
     public void afterRun() throws Exception {
         if (Boolean.TRUE.equals(response)) {
             getOrCreateContainer().update();
@@ -73,34 +71,28 @@ public class RemoveOperation extends MultiMapBackupAwareOperation {
         }
     }
 
-    @Override
     public boolean shouldBackup() {
         return Boolean.TRUE.equals(response);
     }
 
-    @Override
     public Operation getBackupOperation() {
         return new RemoveBackupOperation(name, dataKey, recordId);
     }
 
-    @Override
     public void onWaitExpire() {
-        sendResponse(false);
+        getResponseHandler().sendResponse(false);
     }
 
-    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeData(value);
     }
 
-    @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         value = in.readData();
     }
 
-    @Override
     public int getId() {
         return MultiMapDataSerializerHook.REMOVE;
     }

@@ -20,6 +20,7 @@ import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.Callback;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.impl.operationservice.impl.responses.Response;
 import com.hazelcast.util.Clock;
@@ -66,12 +67,19 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
     private final Invocation invocation;
     private volatile ExecutionCallbackNode<E> callbackHead;
 
-    InvocationFuture(OperationServiceImpl operationService, Invocation invocation, ExecutionCallback callback) {
+    InvocationFuture(OperationServiceImpl operationService, Invocation invocation, Object callback) {
         this.invocation = invocation;
         this.operationService = operationService;
 
         if (callback != null) {
-            callbackHead = new ExecutionCallbackNode<E>(callback, operationService.asyncExecutor, null);
+            ExecutionCallback executionCallback;
+            if (callback instanceof ExecutionCallback) {
+                executionCallback = (ExecutionCallback) callback;
+            } else {
+                executionCallback = new ExecutorCallbackAdapter<E>((Callback) callback);
+            }
+
+            callbackHead = new ExecutionCallbackNode<E>(executionCallback, operationService.asyncExecutor, null);
         }
     }
 
@@ -415,6 +423,24 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
             this.callback = callback;
             this.executor = executor;
             this.next = next;
+        }
+    }
+
+    private static final class ExecutorCallbackAdapter<E> implements ExecutionCallback<E> {
+        private final Callback callback;
+
+        private ExecutorCallbackAdapter(Callback callback) {
+            this.callback = callback;
+        }
+
+        @Override
+        public void onResponse(E response) {
+            callback.notify(response);
+        }
+
+        @Override
+        public void onFailure(Throwable t) {
+            callback.notify(t);
         }
     }
 }

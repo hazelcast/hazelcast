@@ -16,21 +16,17 @@
 
 package com.hazelcast.internal.metrics;
 
-import com.hazelcast.internal.metrics.renderers.ProbeRenderer;
-
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 /**
  * The MetricsRegistry is responsible for recording all kinds of Hazelcast/JVM specific information to
- * help out with issues like performance or stability problems.
+ * help out with all kinds of issues.
  *
- * Each HazelcastInstance has its own MetricsRegistry instance.
+ * Each HazelcastInstance has its own MetricsRegistry.
  *
- * A MetricsRegistry can contain many {@link Probe} instances. A probe is registered under a certain name,
- * and can be read by creating a Gauge, see {@link #newLongGauge(String)}.
- *
- * This name can be any string, e.g.:
+ * A MetricsRegistry can contain many {@link Metric} instances. Each metric has an input and each metric can be
+ * identified using a name; a String. This name can be any string, the general structure is something like:
  * <ol>
  * <li>proxy.count</li>
  * <li>operation.completed.count</li>
@@ -39,69 +35,31 @@ import java.util.concurrent.TimeUnit;
  * For the time being there the MetricsRegistry doesn't require any syntax for the name content; so any String is fine.
  *
  * <h1>Duplicate Registrations</h1>
- * The MetricsRegistry is lenient regarding duplicate registrations of probes. So if there is an existing probe for a
- * given name and a new probe with the same name is registered, the old probe is overwritten. The reason to be lenient
- * is that the MetricRegistry should not throw exception. Of course there will be a log warning.
+ * The MetricsRegistry is lenient regarding duplicate registrations of metrics. If a metric is created and
+ * an input is set, and then a new registration for the same Metric is done, the old input/source is overwritten.
+ * The reason to be lenient is that the MetricRegistry should not throw exceptions. Of course, there will be a log
+ * warning.
  *
  * <h1>Performance</h1>
- * The MetricRegistry is designed for low overhead probes. So once a probe is registered, there is no overhead
- * for the provider of the probe data. The provider could have for example a volatile long field and increment
+ * The MetricRegistry is designed for low overhead metrics. Once a metric is registered, there is no overhead
+ * for the provider of the Metric data. For example, the provider could have a volatile long field and increment
  * this using a lazy-set. As long as the MetricRegistry can frequently read out this field, the MetricRegistry
- * is perfectly happy with such low overhead probes. So it is up to the provider of the probe
+ * is perfectly happy with such low overhead inputs. It is up to the provider of the metric input to determine
  * how much overhead is required.
  */
 public interface MetricsRegistry {
 
     /**
-     * Creates a LongGauge for a given metric name.
+     * Scans the source object for any fields/methods that have been given a name prefix with {@link Probe}
+     * annotation, and registering these fields/methods as metrics.
      *
-     * If no gauge exists for the name, it will be created but no probe is set. The reason to do so is that you don't want to
-     * depend on the order of registration. Perhaps you want to read out e.g. operations.count gauge, but the OperationService
-     * has not started yet and the metric is not yet available. Another cause is that perhaps a probe is not registered, but
-     * the metric is created. For example when experimenting with a new implementation, e.g. a new OperationService
-     * implementation, that doesn't provide the operation.count probe.
-     *
-     * Multiple calls with the same name, return different Gauge instances; so the Gauge instance is not cached. This is
-     * done to prevent memory leaks.
-     *
-     * @param name the name of the metric.
-     * @return the created LongGauge.
-     * @throws NullPointerException if name is null.
-     */
-    LongGauge newLongGauge(String name);
-
-    /**
-     * Creates a DoubleProbe for a given metric name.
-     *
-     * @param name name of the metric
-     * @return the create DoubleGauge
-     * @throws NullPointerException if name is null.
-     * @see #newLongGauge(String)
-     */
-    DoubleGauge newDoubleGauge(String name);
-
-    /**
-     * Gets a set of all current probe names.
-     *
-     * The returned set is immutable and is a snapshot of the names. So the reader gets a stable view on the names.
-     *
-     * @return set of all current names.
-     */
-    Set<String> getNames();
-
-    /**
-     * Scans the source object for any fields/methods that have been annotated with {@link Probe} annotation, and
-     * registering these fields/methods as probes instances.
-     *
-     * If a probe is called, 'queueSize' and the namePrefix is 'operations, then the name of the probe-instance
-     * is 'operations.queueSize'.
-     *
-     * If probes with the same name already exist, then the probes are replaced.
+     * If metrics with the same name already exist, their source/inputs will be updated. Multiple registrations
+     * of the same object are ignored.
      *
      * If an object has no @Gauge annotations, the call is ignored.
      *
-     * @param source     the object to scan.
-     * @param namePrefix the name prefix.
+     * @param source     the source object to scan.
+     * @param namePrefix search the source object for fields/methods that have this name prefix.
      * @throws NullPointerException     if namePrefix or source is null.
      * @throws IllegalArgumentException if the source contains Gauge annotation on a field/method of unsupported type.
      */
@@ -110,55 +68,79 @@ public interface MetricsRegistry {
     /**
      * Registers a probe.
      *
-     * If a probe for the given name exists, it will be overwritten.
+     * If a Metric with the given name already has an input, that input will be overwritten.
      *
-     * @param name  the name of the probe.
-     * @param probe the probe
-     * @throws NullPointerException if source, name or probe is null.
+     * @param source the source object.
+     * @param name   the name of the metric.
+     * @param input  the input for the metric.
+     * @throws NullPointerException if source, name or input is null.
      */
-    <S> void register(S source, String name, LongProbeFunction<S> probe);
+    <S> void register(S source, String name, LongProbe<S> input);
 
     /**
-     * Registers a probe
+     * Registers a probe.
      *
-     * If a probe for the given name exists, it will be overwritten.
+     * If a Metric with the given name already has an input, that input will be overwritten.
      *
-     * @param name  the name of the probe
-     * @param probe the probe
-     * @throws NullPointerException if name or probe is null.
+     * @param source the source object.
+     * @param name   the name of the metric.
+     * @param input  the input for the metric.
+     * @throws NullPointerException if name or input is null.
      */
-    <S> void register(S source, String name, DoubleProbeFunction<S> probe);
+    <S> void register(S source, String name, DoubleProbe<S> input);
+
 
     /**
-     * Deregisters all probes for a given source object.
+     * Deregisters and scans object with probe annotations. All metrics that were for this given source object are removed.
      *
      * If the object already is deregistered, the call is ignored.
      *
      * If the object was never registered, the call is ignored.
      *
-     * @param source the object to deregister
+     * @param source the object to deregister.
      * @throws NullPointerException if source is null.
      */
     <S> void deregister(S source);
 
     /**
-     * Schedules a publisher to be executed at a fixed rate.
+     * Schedules a publisher to be periodically executed.
      *
      * Probably this method will be removed in the future, but we need a mechanism for complex gauges that require some
      * calculation to provide their values.
      *
-     * @param publisher the published task that needs to be executed
-     * @param period    the time between executions
-     * @param timeUnit  the timeunit for period
+     * @param publisher the published task that needs to be periodically executed.
+     * @param period    the time between executions.
+     * @param timeUnit  the timeunit for period.
      * @throws NullPointerException if publisher or timeUnit is null.
      */
     void scheduleAtFixedRate(Runnable publisher, long period, TimeUnit timeUnit);
 
     /**
-     * Renders the content of the MetricsRegistry.
+     * Gets the Gauge for a given name.
      *
-     * @param renderer the ProbeRenderer
-     * @throws NullPointerException if renderer is null.
+     * If no gauge exists for the name, it will be created but no input is set. The reason to do so is
+     * that you don't want to depend on the order of registration. For example, you want to read out operations.count
+     * gauge, but the OperationService has not started yet and the metric is not yet available.
+     *
+     * @param name the name of the gauge to get.
+     * @return the Gauge. Multiple calls with the same name, return the same Metric instance.
+     * @throws NullPointerException if name is null.
      */
-    void render(ProbeRenderer renderer);
+    Gauge getGauge(String name);
+
+    /**
+     * Gets a set of all current metric names.
+     *
+     * @return set of all current metric names.
+     */
+    Set<String> getNames();
+
+    /**
+     * Returns the modCount. Every time a Metric is added or removed, the modCount is increased.
+     *
+     * Returned modCount will always be equal or larger than 0.
+     *
+     * @return the modCount: the number of times Metrics are added or removed.
+     */
+    int modCount();
 }

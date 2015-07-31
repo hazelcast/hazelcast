@@ -24,7 +24,7 @@ import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
-import com.hazelcast.spi.impl.SerializableList;
+import com.hazelcast.spi.impl.SerializableCollection;
 import com.hazelcast.transaction.TransactionalObject;
 import com.hazelcast.transaction.client.BaseTransactionRequest;
 import com.hazelcast.util.ExceptionUtil;
@@ -50,7 +50,7 @@ abstract class ClientTxnProxy implements TransactionalObject {
         SerializationService ss = client.getSerializationService();
         try {
             ClientInvocation invocation = new ClientInvocation(client, request, transactionContext.getConnection());
-            Future<SerializableList> future = invocation.invoke();
+            Future<SerializableCollection> future = invocation.invoke();
             return ss.toObject(future.get());
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
@@ -67,7 +67,7 @@ abstract class ClientTxnProxy implements TransactionalObject {
     }
 
     @Override
-    public String getName() {
+    public Object getId() {
         return objectName;
     }
 

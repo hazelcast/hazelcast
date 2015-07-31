@@ -16,19 +16,16 @@
 
 package com.hazelcast.spi.impl.operationservice.impl;
 
-import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationResponseHandler;
+import com.hazelcast.spi.ResponseHandler;
 import com.hazelcast.spi.WaitSupport;
 import com.hazelcast.spi.exception.ResponseAlreadySentException;
 import com.hazelcast.spi.exception.RetryableException;
@@ -42,7 +39,6 @@ import com.hazelcast.spi.impl.operationservice.impl.responses.ErrorResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
@@ -52,12 +48,12 @@ import static com.hazelcast.spi.ExecutionService.ASYNC_EXECUTOR;
 import static com.hazelcast.spi.OperationAccessor.setCallTimeout;
 import static com.hazelcast.spi.OperationAccessor.setCallerAddress;
 import static com.hazelcast.spi.OperationAccessor.setInvocationTime;
-import static com.hazelcast.spi.impl.operationservice.impl.InternalResponse.INTERRUPTED_RESPONSE;
-import static com.hazelcast.spi.impl.operationservice.impl.InternalResponse.NULL_RESPONSE;
-import static com.hazelcast.spi.impl.operationservice.impl.InternalResponse.WAIT_RESPONSE;
 import static com.hazelcast.spi.impl.operationutil.Operations.isJoinOperation;
 import static com.hazelcast.spi.impl.operationutil.Operations.isMigrationOperation;
 import static com.hazelcast.spi.impl.operationutil.Operations.isWanReplicationOperation;
+import static com.hazelcast.spi.impl.operationservice.impl.InternalResponse.INTERRUPTED_RESPONSE;
+import static com.hazelcast.spi.impl.operationservice.impl.InternalResponse.NULL_RESPONSE;
+import static com.hazelcast.spi.impl.operationservice.impl.InternalResponse.WAIT_RESPONSE;
 import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
 import static java.util.logging.Level.WARNING;
@@ -67,7 +63,7 @@ import static java.util.logging.Level.WARNING;
  * <p/>
  * Using the InvocationFuture, one can wait for the completion of a Invocation.
  */
-abstract class Invocation implements OperationResponseHandler, Runnable {
+abstract class Invocation implements ResponseHandler, Runnable {
 
     private static final AtomicReferenceFieldUpdater<Invocation, Boolean> RESPONSE_RECEIVED =
             AtomicReferenceFieldUpdater.newUpdater(Invocation.class, Boolean.class, "responseReceived");
@@ -112,7 +108,7 @@ abstract class Invocation implements OperationResponseHandler, Runnable {
     volatile int invokeCount;
 
     Invocation(NodeEngineImpl nodeEngine, String serviceName, Operation op, int partitionId,
-               int replicaIndex, int tryCount, long tryPauseMillis, long callTimeout, ExecutionCallback callback,
+               int replicaIndex, int tryCount, long tryPauseMillis, long callTimeout, Object callback,
                boolean resultDeserialized) {
         this.operationService = (OperationServiceImpl) nodeEngine.getOperationService();
         this.logger = operationService.invocationLogger;
@@ -213,7 +209,7 @@ abstract class Invocation implements OperationResponseHandler, Runnable {
         }
     }
 
-    @SuppressFBWarnings(value = "VO_VOLATILE_INCREMENT",
+    @edu.umd.cs.findbugs.annotations.SuppressWarnings(value = "VO_VOLATILE_INCREMENT",
             justification = "We have the guarantee that only a single thread at any given time can change the volatile field")
     private void doInvoke(boolean isAsync) {
         if (!engineActive()) {
@@ -242,7 +238,7 @@ abstract class Invocation implements OperationResponseHandler, Runnable {
         }
 
         responseReceived = FALSE;
-        op.setOperationResponseHandler(this);
+        op.setResponseHandler(this);
 
         OperationExecutor executor = operationService.operationExecutor;
         if (isAsync) {
@@ -320,7 +316,7 @@ abstract class Invocation implements OperationResponseHandler, Runnable {
     }
 
     @Override
-    public void sendResponse(Operation op, Object obj) {
+    public void sendResponse(Object obj) {
         if (!RESPONSE_RECEIVED.compareAndSet(this, FALSE, TRUE)) {
             throw new ResponseAlreadySentException("NormalResponse already responseReceived for callback: " + this
                     + ", current-response: : " + obj);
@@ -418,11 +414,9 @@ abstract class Invocation implements OperationResponseHandler, Runnable {
         invocationFuture.set(value);
     }
 
-    @SuppressFBWarnings(value = "VO_VOLATILE_INCREMENT",
+    @edu.umd.cs.findbugs.annotations.SuppressWarnings(value = "VO_VOLATILE_INCREMENT",
             justification = "We have the guarantee that only a single thread at any given time can change the volatile field")
     void notifyCallTimeout() {
-        operationService.callTimeoutCount.inc();
-
         if (logger.isFinestEnabled()) {
             logger.finest("Call timed-out during wait-notify phase, retrying call: " + toString());
         }
@@ -483,8 +477,6 @@ abstract class Invocation implements OperationResponseHandler, Runnable {
     }
 
     Object newOperationTimeoutException(long totalTimeoutMs) {
-        operationService.operationTimeoutCount.inc();
-
         boolean hasResponse = this.pendingResponse != null;
         int backupsExpected = this.backupsExpected;
         int backupsCompleted = this.backupsCompleted;
@@ -509,8 +501,6 @@ abstract class Invocation implements OperationResponseHandler, Runnable {
     }
 
     private void handleRetry(Object cause) {
-        operationService.retryCount.inc();
-
         if (invokeCount > LOG_MAX_INVOCATION_COUNT && invokeCount % LOG_INVOCATION_COUNT_MOD == 0) {
             if (logger.isLoggable(WARNING)) {
                 logger.warning("Retrying invocation: " + toString() + ", Reason: " + cause);
@@ -582,14 +572,6 @@ abstract class Invocation implements OperationResponseHandler, Runnable {
 
     @Override
     public String toString() {
-        String connectionStr = null;
-        Address invTarget = this.invTarget;
-        if (invTarget != null) {
-            ConnectionManager connectionManager = operationService.nodeEngine.getNode().getConnectionManager();
-            Connection connection = connectionManager.getConnection(invTarget);
-            connectionStr = connection == null ? null : connection.toString();
-        }
-
         StringBuilder sb = new StringBuilder();
         sb.append("Invocation");
         sb.append("{ serviceName='").append(serviceName).append('\'');
@@ -603,7 +585,6 @@ abstract class Invocation implements OperationResponseHandler, Runnable {
         sb.append(", target=").append(invTarget);
         sb.append(", backupsExpected=").append(backupsExpected);
         sb.append(", backupsCompleted=").append(backupsCompleted);
-        sb.append(", connection=").append(connectionStr);
         sb.append('}');
         return sb.toString();
     }

@@ -59,7 +59,6 @@ public class ClientExecutorServiceTest {
 
     private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
     private HazelcastInstance client;
-    private HazelcastInstance instance;
 
     @After
     public void tearDown() {
@@ -68,7 +67,7 @@ public class ClientExecutorServiceTest {
 
     @Before
     public void setup() throws IOException {
-        instance = hazelcastFactory.newHazelcastInstance();
+        hazelcastFactory.newHazelcastInstance();
         hazelcastFactory.newHazelcastInstance();
         hazelcastFactory.newHazelcastInstance();
         client = hazelcastFactory.newHazelcastClient();
@@ -224,46 +223,5 @@ public class ClientExecutorServiceTest {
         MemberSelector selector = new SelectNoMembers();
 
         service.execute(new MapPutRunnable(mapName), selector);
-    }
-
-    @Test
-    public void testCallableSerializedOnce() throws ExecutionException, InterruptedException {
-        String name = randomString();
-        IExecutorService service = client.getExecutorService(name);
-        SerializedCounterCallable counterCallable = new SerializedCounterCallable();
-        Future future = service.submitToKeyOwner(counterCallable, name);
-        assertEquals(2, future.get());
-    }
-
-    @Test
-    public void testCallableSerializedOnce_submitToAddress() throws ExecutionException, InterruptedException {
-        String name = randomString();
-        IExecutorService service = client.getExecutorService(name);
-        SerializedCounterCallable counterCallable = new SerializedCounterCallable();
-        Future future = service.submitToMember(counterCallable, instance.getCluster().getLocalMember());
-        assertEquals(2, future.get());
-    }
-
-    static class SerializedCounterCallable implements Callable, DataSerializable {
-
-        int counter;
-
-        public SerializedCounterCallable() {
-        }
-
-        @Override
-        public Object call() throws Exception {
-            return counter;
-        }
-
-        @Override
-        public void writeData(ObjectDataOutput out) throws IOException {
-            out.writeInt(++counter);
-        }
-
-        @Override
-        public void readData(ObjectDataInput in) throws IOException {
-            counter = in.readInt() + 1;
-        }
     }
 }

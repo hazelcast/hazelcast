@@ -146,6 +146,50 @@ public final class TimedMemberState implements Cloneable, JsonSerializable {
     }
 
     @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        TimedMemberState that = (TimedMemberState) o;
+
+        if (time != that.time) {
+            return false;
+        }
+        if (clusterName != null ? !clusterName.equals(that.clusterName) : that.clusterName != null) {
+            return false;
+        }
+        if (instanceNames != null ? !instanceNames.equals(that.instanceNames) : that.instanceNames != null) {
+            return false;
+        }
+        if (master != null ? !master.equals(that.master) : that.master != null) {
+            return false;
+        }
+        if (memberList != null ? !memberList.equals(that.memberList) : that.memberList != null) {
+            return false;
+        }
+        if (memberState != null ? !memberState.equals(that.memberState) : that.memberState != null) {
+            return false;
+        }
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = (int) (time ^ (time >>> 32));
+        result = 31 * result + (memberState != null ? memberState.hashCode() : 0);
+        result = 31 * result + (instanceNames != null ? instanceNames.hashCode() : 0);
+        result = 31 * result + (memberList != null ? memberList.hashCode() : 0);
+        result = 31 * result + (master != null ? master.hashCode() : 0);
+        result = 31 * result + (clusterName != null ? clusterName.hashCode() : 0);
+        return result;
+    }
+
+    @Override
     public String toString() {
         return "TimedMemberState{"
                 + getLineSeperator() + '\t' + memberState

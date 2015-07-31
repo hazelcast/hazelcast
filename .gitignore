@@ -5,7 +5,6 @@ target/
 .settings/
 .idea/
 .patch
-.surefire-*
 *.iml
 *.ipr
 *.iws
@@ -18,3 +17,4 @@ hazelcast-ra/*.epoch
 hazelcast-all/dependency-reduced-pom.xml
 hazelcast/dependency-reduced-pom.xml
 performance*.log
+.surefire-*
