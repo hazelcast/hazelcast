@@ -30,8 +30,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import static com.hazelcast.client.protocol.generator.CodeGenerationUtils.convertTypeToCSharp;
-
 public class CodecModel implements Model{
 
     static final Map<String, TypeElement> CUSTOM_CODEC_MAP = new HashMap<String, TypeElement>();
@@ -42,7 +40,7 @@ public class CodecModel implements Model{
     private String className;
     private String parentName;
     private String packageName;
-    String commment;
+    String comment;
 
     private int retryable;
     private int response;
@@ -227,6 +225,10 @@ public class CodecModel implements Model{
         return id;
     }
 
+    public String getComment() {
+        return comment;
+    }
+
     public String getClassName() {
         return className;
     }
@@ -297,15 +299,11 @@ public class CodecModel implements Model{
         }
 
         public String getType() {
-//            if (lang == Lang.CSHARP) {
-//                return convertTypeToCSharp(type);
-//            }
-//            if (type.startsWith("java.util.List<") || type.startsWith("java.util.Set<") || type.startsWith("java.util.Collection<")) {
-//                System.out.println(">>>>>>>>>>getType :"+type + ":" + name);
-//                return type.replaceAll("java.util.*<(.*)>", "java.util.Collection<$1>");
-//            }
             return type;
         }
 
+        public Lang getLang() {
+            return lang;
+        }
     }
 }
