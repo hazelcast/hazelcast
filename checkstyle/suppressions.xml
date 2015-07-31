@@ -181,6 +181,7 @@
     <suppress checks="MethodCount" files="com.hazelcast.client.proxy.ClientListProxy"/>
     <suppress checks="" files="com.hazelcast.client.proxy.ClientMultiMapProxy"/>
     <suppress checks="" files="com.hazelcast.client.proxy.ClientMapProxy"/>
+    <suppress checks="MethodCount" files="com.hazelcast.client.proxy.ClientReplicatedMapProxy"/>
     <suppress checks="" files="com.hazelcast.client.HazelcastClient"/>
     <suppress checks="Javadoc" files="com.hazelcast.client.impl.operations[\\/]"/>
     <suppress checks="Javadoc" files="com.hazelcast.client.impl.client[\\/]"/>

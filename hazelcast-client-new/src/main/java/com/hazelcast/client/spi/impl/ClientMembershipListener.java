@@ -17,6 +17,7 @@
 package com.hazelcast.client.spi.impl;
 
 import com.hazelcast.client.connection.nio.ClientConnectionManagerImpl;
+import com.hazelcast.client.impl.ClientMessageDecoder;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientMembershipListenerCodec;
@@ -146,7 +147,13 @@ class ClientMembershipListener extends ClientMembershipListenerCodec.AbstractEve
                         "Can not load initial members list because owner connection is null. " + "Address "
                                 + ownerConnectionAddress);
             }
-            ClientInvocation invocation = new ClientInvocation(client, this, clientMessage, connection);
+            ClientInvocation invocation = new ClientListenerInvocation(client, this, clientMessage, connection,
+                    new ClientMessageDecoder() {
+                        @Override
+                        public <T> T decodeClientMessage(ClientMessage clientMessage) {
+                            return (T) ClientMembershipListenerCodec.decodeResponse(clientMessage).response;
+                        }
+                    });
             invocation.invoke().get();
             waitInitialMemberListFetched();
 
