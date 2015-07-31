@@ -18,7 +18,7 @@ package com.hazelcast.client.impl.protocol.task.map;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
-import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.core.Member;
 import com.hazelcast.instance.Node;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.QueryResult;
@@ -63,7 +63,7 @@ public abstract class AbstractMapQueryMessageTask<P> extends AbstractCallableMes
     protected final Object call() throws Exception {
         Collection<QueryResultEntry> result = new LinkedList<QueryResultEntry>();
 
-        Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
+        Collection<Member> members = nodeEngine.getClusterService().getMembers();
         List<Future> futures = new ArrayList<Future>();
         Predicate predicate = getPredicate();
         createInvocations(members, futures, predicate);
@@ -85,9 +85,9 @@ public abstract class AbstractMapQueryMessageTask<P> extends AbstractCallableMes
 
     protected abstract Object reduce(Collection<QueryResultEntry> result);
 
-    private void createInvocations(Collection<MemberImpl> members, List<Future> futures, Predicate predicate) {
+    private void createInvocations(Collection<Member> members, List<Future> futures, Predicate predicate) {
         final InternalOperationService operationService = nodeEngine.getOperationService();
-        for (MemberImpl member : members) {
+        for (Member member : members) {
             Future future = operationService.createInvocationBuilder(SERVICE_NAME,
                     new QueryOperation(getDistributedObjectName(), predicate),
                     member.getAddress()).invoke();

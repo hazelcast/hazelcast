@@ -96,12 +96,12 @@ public class PartitionServiceProxy implements com.hazelcast.core.PartitionServic
     @Override
     public boolean isClusterSafe() {
         final Node node = getNode();
-        final Collection<MemberImpl> memberList = node.clusterService.getMemberList();
+        final Collection<Member> memberList = node.clusterService.getMembers();
         if (memberList == null || memberList.isEmpty() || memberList.size() < 2) {
             return true;
         }
         final Collection<Future> futures = new ArrayList<Future>(memberList.size());
-        for (MemberImpl member : memberList) {
+        for (Member member : memberList) {
             final Address target = member.getAddress();
             final Operation operation = new SafeStateCheckOperation();
             final InternalCompletableFuture future = node.getNodeEngine().getOperationService()

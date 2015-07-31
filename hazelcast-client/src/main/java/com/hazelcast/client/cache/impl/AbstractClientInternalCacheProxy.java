@@ -56,7 +56,6 @@ import com.hazelcast.core.Member;
 import com.hazelcast.core.MemberAttributeEvent;
 import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MembershipListener;
-import com.hazelcast.instance.AbstractMember;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
@@ -656,7 +655,7 @@ abstract class AbstractClientInternalCacheProxy<K, V>
             Client client = clientContext.getClusterService().getLocalClient();
             EventHandler handler = new NearCacheInvalidationHandler(client);
             HazelcastClientInstanceImpl clientInstance = (HazelcastClientInstanceImpl) clientContext.getHazelcastInstance();
-            Address address = ((AbstractMember) member).getAddress();
+            Address address = member.getAddress();
             ClientInvocation invocation = new ClientInvocation(clientInstance, handler, request, address);
             Future future = invocation.invoke();
             String registrationId = clientContext.getSerializationService().toObject(future.get());
@@ -676,7 +675,7 @@ abstract class AbstractClientInternalCacheProxy<K, V>
                     ClientRequest request = new CacheRemoveInvalidationListenerRequest(nameWithPrefix, registrationId);
                     HazelcastClientInstanceImpl clientInstance =
                             (HazelcastClientInstanceImpl) clientContext.getHazelcastInstance();
-                    Address address = ((AbstractMember) member).getAddress();
+                    Address address = member.getAddress();
                     ClientInvocation invocation = new ClientInvocation(clientInstance, request, address);
                     Future future = invocation.invoke();
                     Boolean result = clientContext.getSerializationService().toObject(future.get());

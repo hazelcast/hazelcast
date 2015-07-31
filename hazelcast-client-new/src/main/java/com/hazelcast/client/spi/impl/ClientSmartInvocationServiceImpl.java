@@ -23,7 +23,6 @@ import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.spi.ClientClusterService;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.Member;
-import com.hazelcast.instance.AbstractMember;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 
@@ -102,7 +101,7 @@ public final class ClientSmartInvocationServiceImpl extends ClientInvocationServ
     private Address getRandomAddress() {
         Member member = loadBalancer.next();
         if (member != null) {
-            return ((AbstractMember) member).getAddress();
+            return member.getAddress();
         }
         return null;
     }

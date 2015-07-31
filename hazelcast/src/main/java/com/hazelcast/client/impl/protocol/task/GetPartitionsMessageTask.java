@@ -20,7 +20,7 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientGetPartitionsCodec;
 import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.cluster.impl.ClusterServiceImpl;
-import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.core.Member;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
@@ -45,10 +45,10 @@ public class GetPartitionsMessageTask
         InternalPartitionService service = getService(InternalPartitionService.SERVICE_NAME);
         service.firstArrangement();
         ClusterService clusterService = getService(ClusterServiceImpl.SERVICE_NAME);
-        Collection<MemberImpl> memberList = clusterService.getMemberList();
+        Collection<Member> memberList = clusterService.getMembers();
 
         Map<Address, Set<Integer>> partitionsMap = new HashMap<Address, Set<Integer>>(memberList.size());
-        for (MemberImpl member : memberList) {
+        for (Member member : memberList) {
             Address address = member.getAddress();
             partitionsMap.put(address, new HashSet<Integer>());
         }

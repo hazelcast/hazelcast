@@ -358,7 +358,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
     }
 
     private void heartBeaterMaster(long now, long clockJump) {
-        Collection<MemberImpl> members = getMemberList();
+        Collection<MemberImpl> members = getMemberImpls();
         for (MemberImpl member : members) {
             if (!member.localMember()) {
                 try {
@@ -410,7 +410,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
     }
 
     private void heartBeaterSlave(long now, long clockJump) {
-        Collection<MemberImpl> members = getMemberList();
+        Collection<MemberImpl> members = getMemberImpls();
 
         for (MemberImpl member : members) {
             if (!member.localMember()) {
@@ -508,8 +508,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
     // Will be called just before this node becomes the master
     private void resetMemberMasterConfirmations() {
         long now = Clock.currentTimeMillis();
-        Collection<MemberImpl> memberList = getMemberList();
-        for (MemberImpl member : memberList) {
+        for (MemberImpl member : getMemberImpls()) {
             masterConfirmationTimes.put(member, now);
         }
     }
@@ -522,7 +521,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         if (thisAddress.equals(target)) {
             return;
         }
-        final Collection<MemberImpl> members = getMemberList();
+        final Collection<MemberImpl> members = getMemberImpls();
         MemberInfoUpdateOperation op = new MemberInfoUpdateOperation(
                 createMemberInfoList(members), clusterClock.getClusterTime(), false);
         nodeEngine.getOperationService().send(op, target);
@@ -532,7 +531,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         if (!isMaster()) {
             return;
         }
-        final Collection<MemberImpl> members = getMemberList();
+        final Collection<MemberImpl> members = getMemberImpls();
         MemberInfoUpdateOperation op = new MemberInfoUpdateOperation(
                 createMemberInfoList(members), clusterClock.getClusterTime(), false);
         for (MemberImpl member : members) {
@@ -583,12 +582,12 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
     private void assignNewMaster() {
         final Address oldMasterAddress = node.getMasterAddress();
         if (node.joined()) {
-            final Collection<MemberImpl> members = getMemberList();
-            MemberImpl newMaster = null;
+            final Collection<Member> members = getMembers();
+            Member newMaster = null;
             final int size = members.size();
             if (size > 1) {
-                final Iterator<MemberImpl> iter = members.iterator();
-                final MemberImpl member = iter.next();
+                final Iterator<Member> iter = members.iterator();
+                final Member member = iter.next();
                 if (member.getAddress().equals(oldMasterAddress)) {
                     newMaster = iter.next();
                 } else {
@@ -792,7 +791,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
                 final PostJoinOperation postJoinOp = postJoinOps != null && postJoinOps.length > 0
                         ? new PostJoinOperation(postJoinOps) : null;
 
-                Operation op = new FinalizeJoinOperation(createMemberInfoList(getMemberList()), postJoinOp,
+                Operation op = new FinalizeJoinOperation(createMemberInfoList(getMemberImpls()), postJoinOp,
                         clusterClock.getClusterTime(), false);
                 nodeEngine.getOperationService().send(op, target);
             } else {
@@ -976,7 +975,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
                 joinInProgress = true;
                 // pause migrations until join, member-update and post-join operations are completed.
                 node.getPartitionService().pauseMigration();
-                final Collection<MemberImpl> members = getMemberList();
+                final Collection<MemberImpl> members = getMemberImpls();
                 final Collection<MemberInfo> memberInfos = createMemberInfoList(members);
                 for (MemberInfo memberJoining : setJoins) {
                     memberInfos.add(memberJoining);
@@ -1250,7 +1249,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
     }
 
     private void invokeMemberRemoveOperation(final Address deadAddress) {
-        for (MemberImpl member : getMemberList()) {
+        for (Member member : getMembers()) {
             Address address = member.getAddress();
             if (!thisAddress.equals(address) && !address.equals(deadAddress)) {
                 nodeEngine.getOperationService().send(new MemberRemoveOperation(deadAddress), address);
@@ -1350,7 +1349,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
     }
 
     @Override
-    public Collection<MemberImpl> getMemberList() {
+    public Collection<MemberImpl> getMemberImpls() {
         return membersRef.get();
     }
 
@@ -1391,7 +1390,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
     @Probe(name = "size")
     @Override
     public int getSize() {
-        final Collection<MemberImpl> members = getMemberList();
+        final Collection<MemberImpl> members = getMemberImpls();
         return members != null ? members.size() : 0;
     }
 
@@ -1447,7 +1446,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
 
     public String membersString() {
         StringBuilder sb = new StringBuilder("\n\nMembers [");
-        final Collection<MemberImpl> members = getMemberList();
+        final Collection<MemberImpl> members = getMemberImpls();
         sb.append(members != null ? members.size() : 0);
         sb.append("] {");
         if (members != null) {

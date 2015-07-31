@@ -34,7 +34,6 @@ import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.Member;
-import com.hazelcast.instance.AbstractMember;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.impl.SerializableList;
 import com.hazelcast.util.ExceptionUtil;
@@ -88,7 +87,7 @@ public final class HazelcastClientCacheManager extends AbstractHazelcastCacheMan
         HazelcastClientInstanceImpl client = (HazelcastClientInstanceImpl) clientContext.getHazelcastInstance();
         for (Member member : members) {
             try {
-                Address address = ((AbstractMember) member).getAddress();
+                Address address = member.getAddress();
                 CacheManagementConfigRequest request =
                         new CacheManagementConfigRequest(getCacheNameWithPrefix(cacheName),
                                                          statOrMan, enabled, address);

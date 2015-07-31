@@ -16,7 +16,7 @@
 
 package com.hazelcast.map.impl;
 
-import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.core.Member;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.QueryResultSizeExceededException;
 import com.hazelcast.map.impl.operation.QueryOperation;
@@ -285,9 +285,9 @@ class BasicMapContextQuerySupport implements MapContextQuerySupport {
 
     private List<Future<QueryResult>> queryOnMembers(String mapName, Predicate predicate) {
         OperationService operationService = nodeEngine.getOperationService();
-        Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
+        Collection<Member> members = nodeEngine.getClusterService().getMembers();
         List<Future<QueryResult>> futures = new ArrayList<Future<QueryResult>>(members.size());
-        for (MemberImpl member : members) {
+        for (Member member : members) {
             QueryOperation operation = new QueryOperation(mapName, predicate);
             Future<QueryResult> future = operationService.invokeOnTarget(MapService.SERVICE_NAME, operation, member.getAddress());
             futures.add(future);

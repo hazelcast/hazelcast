@@ -16,14 +16,14 @@
 
 package com.hazelcast.map.impl.tx;
 
+import com.hazelcast.core.Member;
 import com.hazelcast.core.PartitioningStrategy;
-import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.map.QueryResultSizeExceededException;
 import com.hazelcast.map.impl.MapEntrySet;
 import com.hazelcast.map.impl.MapKeySet;
 import com.hazelcast.map.impl.MapService;
-import com.hazelcast.map.impl.nearcache.NearCache;
 import com.hazelcast.map.impl.QueryResult;
+import com.hazelcast.map.impl.nearcache.NearCache;
 import com.hazelcast.map.impl.operation.ContainsKeyOperation;
 import com.hazelcast.map.impl.operation.GetOperation;
 import com.hazelcast.map.impl.operation.MapEntrySetOperation;
@@ -46,6 +46,7 @@ import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.IterationType;
 import com.hazelcast.util.QueryResultSet;
 import com.hazelcast.util.ThreadUtil;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -282,7 +283,7 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
     protected Set queryInternal(final Predicate predicate, final IterationType iterationType, final boolean dataResult) {
         NodeEngine nodeEngine = getNodeEngine();
         OperationService operationService = nodeEngine.getOperationService();
-        Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
+        Collection<Member> members = nodeEngine.getClusterService().getMembers();
         int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
         Set<Integer> partitions = new HashSet<Integer>(partitionCount);
         QueryResultSet result = new QueryResultSet(nodeEngine.getSerializationService(), iterationType, dataResult);
@@ -314,8 +315,8 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
     }
 
     private void invokeQueryOperation(Predicate predicate, OperationService operationService,
-                                      Collection<MemberImpl> members, List<Future> futures) {
-        for (MemberImpl member : members) {
+                                      Collection<Member> members, List<Future> futures) {
+        for (Member member : members) {
             Future future = operationService
                     .invokeOnTarget(SERVICE_NAME, new QueryOperation(name, predicate), member.getAddress());
             futures.add(future);

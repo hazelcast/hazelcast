@@ -21,7 +21,7 @@ import com.hazelcast.client.impl.protocol.task.AbstractMessageTask;
 import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.config.JobTrackerConfig;
 import com.hazelcast.core.ExecutionCallback;
-import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.core.Member;
 import com.hazelcast.instance.Node;
 import com.hazelcast.mapreduce.CombinerFactory;
 import com.hazelcast.mapreduce.JobTracker;
@@ -107,7 +107,7 @@ public abstract class AbstractMapReduceTask<Parameters>
         }
 
         ClusterService cs = nodeEngine.getClusterService();
-        Collection<MemberImpl> members = cs.getMemberList();
+        Collection<Member> members = cs.getMembers();
 
         String name = getDistributedObjectName();
         String jobId = getJobId();
@@ -127,7 +127,7 @@ public abstract class AbstractMapReduceTask<Parameters>
 
         KeyPredicate predicate = getPredicate();
 
-        for (MemberImpl member : members) {
+        for (Member member : members) {
             Operation operation = new KeyValueJobOperation(name, jobId, chunkSize, keyValueSource, mapper, combinerFactory,
                     reducerFactory, communicateStats, topologyChangedStrategy);
 
@@ -135,7 +135,7 @@ public abstract class AbstractMapReduceTask<Parameters>
         }
 
         // After we prepared all the remote systems we can now start the processing
-        for (MemberImpl member : members) {
+        for (Member member : members) {
             Operation operation = new StartProcessingJobOperation(name, jobId, keyObjects, predicate);
             executeOperation(operation, member.getAddress(), mapReduceService, nodeEngine);
         }

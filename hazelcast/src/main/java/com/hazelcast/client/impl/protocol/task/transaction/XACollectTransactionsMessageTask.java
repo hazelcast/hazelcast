@@ -19,7 +19,7 @@ package com.hazelcast.client.impl.protocol.task.transaction;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.XATransactionCollectTransactionsCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractMultiTargetMessageTask;
-import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.core.Member;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
@@ -27,8 +27,8 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.security.permission.TransactionPermission;
 import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.impl.SerializableList;
-import com.hazelcast.transaction.impl.xa.operations.CollectRemoteTransactionsOperationFactory;
 import com.hazelcast.transaction.impl.xa.XAService;
+import com.hazelcast.transaction.impl.xa.operations.CollectRemoteTransactionsOperationFactory;
 
 import java.security.Permission;
 import java.util.Collection;
@@ -70,9 +70,9 @@ public class XACollectTransactionsMessageTask
 
     @Override
     public Collection<Address> getTargets() {
-        Collection<MemberImpl> memberList = clientEngine.getClusterService().getMemberList();
+        Collection<Member> memberList = clientEngine.getClusterService().getMembers();
         Collection<Address> addresses = new HashSet<Address>();
-        for (MemberImpl member : memberList) {
+        for (Member member : memberList) {
             addresses.add(member.getAddress());
         }
         return addresses;

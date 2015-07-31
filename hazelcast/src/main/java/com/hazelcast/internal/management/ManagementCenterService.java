@@ -191,8 +191,8 @@ public class ManagementCenterService {
                 return HttpCommand.RES_403;
             }
 
-            final Collection<MemberImpl> memberList = instance.node.clusterService.getMemberList();
-            for (MemberImpl member : memberList) {
+            final Collection<Member> memberList = instance.node.clusterService.getMembers();
+            for (Member member : memberList) {
                 send(member.getAddress(), new UpdateManagementCenterUrlOperation(newUrl));
             }
 

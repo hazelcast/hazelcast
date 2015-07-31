@@ -20,7 +20,7 @@ import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.JobTrackerConfig;
 import com.hazelcast.core.DistributedObject;
-import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.core.Member;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.mapreduce.JobTracker;
@@ -106,7 +106,7 @@ public class MapReduceService
     public boolean registerJobSupervisorCancellation(String name, String jobId, Address jobOwner) {
         NodeJobTracker jobTracker = (NodeJobTracker) createDistributedObject(name);
         if (jobTracker.registerJobSupervisorCancellation(jobId) && getLocalAddress().equals(jobOwner)) {
-            for (MemberImpl member : clusterService.getMemberList()) {
+            for (Member member : clusterService.getMembers()) {
                 if (!member.getAddress().equals(jobOwner)) {
                     try {
                         ProcessingOperation operation = new CancelJobSupervisorOperation(name, jobId);
@@ -200,9 +200,9 @@ public class MapReduceService
     }
 
     public boolean checkAssignedMembersAvailable(Collection<Address> assignedMembers) {
-        Collection<MemberImpl> members = clusterService.getMemberList();
+        Collection<Member> members = clusterService.getMembers();
         List<Address> addresses = new ArrayList<Address>(members.size());
-        for (MemberImpl member : members) {
+        for (Member member : members) {
             addresses.add(member.getAddress());
         }
         for (Address address : assignedMembers) {

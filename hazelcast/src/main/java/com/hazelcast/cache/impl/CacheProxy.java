@@ -18,7 +18,7 @@ package com.hazelcast.cache.impl;
 
 import com.hazelcast.cache.impl.operation.CacheListenerRegistrationOperation;
 import com.hazelcast.config.CacheConfig;
-import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.core.Member;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.InternalCompletableFuture;
@@ -26,15 +26,6 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.util.ExceptionUtil;
-
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.Future;
 
 import javax.cache.CacheException;
 import javax.cache.CacheManager;
@@ -45,6 +36,14 @@ import javax.cache.integration.CompletionListener;
 import javax.cache.processor.EntryProcessor;
 import javax.cache.processor.EntryProcessorException;
 import javax.cache.processor.EntryProcessorResult;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.Future;
 
 import static com.hazelcast.cache.impl.CacheProxyUtil.getPartitionId;
 import static com.hazelcast.cache.impl.CacheProxyUtil.validateNotNull;
@@ -325,9 +324,9 @@ public class CacheProxy<K, V>
     protected void updateCacheListenerConfigOnOtherNodes(CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration,
                                                          boolean isRegister) {
         final OperationService operationService = getNodeEngine().getOperationService();
-        final Collection<MemberImpl> members = getNodeEngine().getClusterService().getMemberList();
+        final Collection<Member> members = getNodeEngine().getClusterService().getMembers();
         Collection<Future> futures = new ArrayList<Future>();
-        for (MemberImpl member : members) {
+        for (Member member : members) {
             if (!member.localMember()) {
                 final Operation op = new CacheListenerRegistrationOperation(getDistributedObjectName(),
                         cacheEntryListenerConfiguration, isRegister);

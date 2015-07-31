@@ -49,13 +49,11 @@ public interface ClusterService extends CoreService {
     /**
      * Gets the collection of members.
      * <p/>
-     * TODO: The name of this method is confusing since it says that a list is returned, but a collection is returned.
-     * TODO: This method also is a bit of a duplicate since there already is getMembers. So I think this method can be dropped
      * if we take care of the generics.
      *
      * @return the collection of member. Null will never be returned.
      */
-    Collection<MemberImpl> getMemberList();
+    Collection<MemberImpl> getMemberImpls();
 
     /**
      * Returns a collection of all members part of the cluster.

@@ -17,6 +17,7 @@
 package com.hazelcast.transaction.impl;
 
 import com.hazelcast.cluster.ClusterService;
+import com.hazelcast.core.Member;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
@@ -155,9 +156,9 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
 
         //TODO shouldn't we remove TxBackupLog from map ?
         if (log.state == State.ACTIVE) {
-            Collection<MemberImpl> memberList = nodeEngine.getClusterService().getMemberList();
+            Collection<Member> memberList = nodeEngine.getClusterService().getMembers();
             Collection<Future> futures = new ArrayList<Future>(memberList.size());
-            for (MemberImpl member : memberList) {
+            for (Member member : memberList) {
                 Operation op = new BroadcastTxRollbackOperation(txnId);
                 Future f = operationService.invokeOnTarget(SERVICE_NAME, op, member.getAddress());
                 futures.add(f);
@@ -191,7 +192,7 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
 
     Address[] pickBackupAddresses(int durability) {
         final ClusterService clusterService = nodeEngine.getClusterService();
-        final List<MemberImpl> members = new ArrayList<MemberImpl>(clusterService.getMemberList());
+        final List<MemberImpl> members = new ArrayList<MemberImpl>(clusterService.getMemberImpls());
         members.remove(nodeEngine.getLocalMember());
         final int c = Math.min(members.size(), durability);
         Collections.shuffle(members);

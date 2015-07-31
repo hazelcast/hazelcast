@@ -33,7 +33,6 @@ import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.Member;
-import com.hazelcast.instance.AbstractMember;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
@@ -89,7 +88,7 @@ public final class HazelcastClientCacheManager
         HazelcastClientInstanceImpl client = (HazelcastClientInstanceImpl) clientContext.getHazelcastInstance();
         for (Member member : members) {
             try {
-                Address address = ((AbstractMember) member).getAddress();
+                Address address = member.getAddress();
 
                 ClientMessage request = CacheManagementConfigCodec
                         .encodeRequest(getCacheNameWithPrefix(cacheName),

@@ -24,7 +24,7 @@ import com.hazelcast.client.impl.client.ClientPrincipal;
 import com.hazelcast.client.impl.operations.ClientReAuthOperation;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.config.GroupConfig;
-import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.core.Member;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
@@ -144,8 +144,8 @@ public abstract class AuthenticationBaseMessageTask<P>
 
             principal = new ClientPrincipal(uuid, localMemberUUID);
             reAuthLocal();
-            Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
-            for (MemberImpl member : members) {
+            Collection<Member> members = nodeEngine.getClusterService().getMembers();
+            for (Member member : members) {
                 if (!member.localMember()) {
                     ClientReAuthOperation op = new ClientReAuthOperation(uuid);
                     op.setCallerUuid(localMemberUUID);

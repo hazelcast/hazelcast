@@ -550,11 +550,11 @@ public class ExecutorServiceProxy
     @Override
     public void shutdown() {
         NodeEngine nodeEngine = getNodeEngine();
-        Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
+        Collection<Member> members = nodeEngine.getClusterService().getMembers();
         OperationService operationService = nodeEngine.getOperationService();
         Collection<Future> calls = new LinkedList<Future>();
 
-        for (MemberImpl member : members) {
+        for (Member member : members) {
             if (member.localMember()) {
                 getService().shutdownExecutor(name);
             } else {
@@ -566,7 +566,7 @@ public class ExecutorServiceProxy
         waitWithDeadline(calls, 1, TimeUnit.SECONDS, WHILE_SHUTDOWN_EXCEPTION_HANDLER);
     }
 
-    private InternalCompletableFuture submitShutdownOperation(OperationService operationService, MemberImpl member) {
+    private InternalCompletableFuture submitShutdownOperation(OperationService operationService, Member member) {
         ShutdownOperation op = new ShutdownOperation(name);
         return operationService.invokeOnTarget(getServiceName(), op, member.getAddress());
     }
@@ -601,8 +601,8 @@ public class ExecutorServiceProxy
             throw new IllegalArgumentException("memberSelector must not be null");
         }
         List<Member> selected = new ArrayList<Member>();
-        Collection<MemberImpl> members = getNodeEngine().getClusterService().getMemberList();
-        for (MemberImpl member : members) {
+        Collection<Member> members = getNodeEngine().getClusterService().getMembers();
+        for (Member member : members) {
             if (memberSelector.select(member)) {
                 selected.add(member);
             }

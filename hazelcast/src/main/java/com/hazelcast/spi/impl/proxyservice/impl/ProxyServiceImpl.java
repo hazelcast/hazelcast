@@ -19,7 +19,7 @@ package com.hazelcast.spi.impl.proxyservice.impl;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.DistributedObjectListener;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
-import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.core.Member;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.EventPublishingService;
@@ -136,9 +136,9 @@ public class ProxyServiceImpl
         checkObjectNameNotNull(name);
 
         OperationService operationService = nodeEngine.getOperationService();
-        Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
+        Collection<Member> members = nodeEngine.getClusterService().getMembers();
         Collection<Future> calls = new ArrayList<Future>(members.size());
-        for (MemberImpl member : members) {
+        for (Member member : members) {
             if (member.localMember()) {
                 continue;
             }

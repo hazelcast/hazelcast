@@ -26,7 +26,6 @@ import com.hazelcast.client.spi.ClientTransactionManagerService;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.Member;
-import com.hazelcast.instance.AbstractMember;
 import com.hazelcast.nio.Address;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.transaction.TransactionContext;
@@ -137,7 +136,7 @@ public class ClientTransactionManagerServiceImpl implements ClientTransactionMan
             throw new IllegalStateException(msg);
         }
 
-        return ((AbstractMember) member).getAddress();
+        return member.getAddress();
     }
 
 

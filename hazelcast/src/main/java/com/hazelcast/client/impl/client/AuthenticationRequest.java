@@ -22,7 +22,7 @@ import com.hazelcast.client.ClientEndpointManager;
 import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.client.impl.operations.ClientReAuthOperation;
 import com.hazelcast.config.GroupConfig;
-import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.core.Member;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
@@ -139,8 +139,8 @@ public final class AuthenticationRequest extends CallableClientRequest {
             final String uuid = getUuid();
             principal = new ClientPrincipal(uuid, clientEngine.getLocalMember().getUuid());
             reAuthLocal();
-            Collection<MemberImpl> members = clientEngine.getClusterService().getMemberList();
-            for (MemberImpl member : members) {
+            Collection<Member> members = clientEngine.getClusterService().getMembers();
+            for (Member member : members) {
                 if (!member.localMember()) {
                     ClientReAuthOperation op = new ClientReAuthOperation(uuid);
                     op.setCallerUuid(clientEngine.getLocalMember().getUuid());

@@ -36,7 +36,6 @@ import com.hazelcast.client.spi.impl.ListenerRemoveCodec;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.Member;
-import com.hazelcast.instance.AbstractMember;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.util.ExceptionUtil;
@@ -353,7 +352,7 @@ public class ClientCacheProxy<K, V>
         final Collection<Future> futures = new ArrayList<Future>();
         for (Member member : members) {
             try {
-                final Address address = ((AbstractMember) member).getAddress();
+                final Address address = member.getAddress();
                 Data configData = toData(cacheEntryListenerConfiguration);
                 final ClientMessage request = CacheListenerRegistrationCodec
                         .encodeRequest(nameWithPrefix, configData, isRegister, address.getHost(), address.getPort());

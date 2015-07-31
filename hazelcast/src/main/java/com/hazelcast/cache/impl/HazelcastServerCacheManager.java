@@ -23,7 +23,7 @@ import com.hazelcast.cache.impl.operation.CacheManagementConfigOperation;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.core.Member;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.OperationService;
@@ -85,9 +85,9 @@ public class HazelcastServerCacheManager
 
     private void enableStatisticManagementOnOtherNodes(String cacheName, boolean statOrMan, boolean enabled) {
         String cacheNameWithPrefix = getCacheNameWithPrefix(cacheName);
-        Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
+        Collection<Member> members = nodeEngine.getClusterService().getMembers();
         Collection<Future> futures = new ArrayList<Future>();
-        for (MemberImpl member : members) {
+        for (Member member : members) {
             if (!member.localMember()) {
                 CacheManagementConfigOperation op =
                         new CacheManagementConfigOperation(cacheNameWithPrefix, statOrMan, enabled);

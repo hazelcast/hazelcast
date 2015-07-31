@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.monitors;
 
-import com.hazelcast.instance.AbstractMember;
+import com.hazelcast.core.Member;
 import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.instance.GroupProperties;
@@ -97,7 +97,7 @@ final class PerformanceLogFile {
     }
 
     private String getPathName() {
-        AbstractMember localMember = (AbstractMember) hazelcastInstance.getCluster().getLocalMember();
+        Member localMember = hazelcastInstance.getCluster().getLocalMember();
         Address address = localMember.getAddress();
         String addressString = address.getHost().replace(":", "_") + "#" + address.getPort();
         return "performance-" + addressString + "-" + currentTimeMillis() + "-%03d.log";

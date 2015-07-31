@@ -16,6 +16,7 @@
 
 package com.hazelcast.spi.impl.eventservice.impl;
 
+import com.hazelcast.core.Member;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.instance.MemberImpl;
@@ -216,9 +217,9 @@ public class EventServiceImpl implements InternalEventService {
 
     private void invokeRegistrationOnOtherNodes(String serviceName, Registration reg) {
         OperationService operationService = nodeEngine.getOperationService();
-        Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
+        Collection<Member> members = nodeEngine.getClusterService().getMembers();
         Collection<Future> calls = new ArrayList<Future>(members.size());
-        for (MemberImpl member : members) {
+        for (Member member : members) {
             if (!member.localMember()) {
                 RegistrationOperation operation = new RegistrationOperation(reg);
                 Future f = operationService.invokeOnTarget(serviceName, operation, member.getAddress());
@@ -231,9 +232,9 @@ public class EventServiceImpl implements InternalEventService {
 
     private void invokeDeregistrationOnOtherNodes(String serviceName, String topic, String id) {
         OperationService operationService = nodeEngine.getOperationService();
-        Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
+        Collection<Member> members = nodeEngine.getClusterService().getMembers();
         Collection<Future> calls = new ArrayList<Future>(members.size());
-        for (MemberImpl member : members) {
+        for (Member member : members) {
             if (!member.localMember()) {
                 DeregistrationOperation operation = new DeregistrationOperation(topic, id);
                 Future f = operationService.invokeOnTarget(serviceName, operation, member.getAddress());

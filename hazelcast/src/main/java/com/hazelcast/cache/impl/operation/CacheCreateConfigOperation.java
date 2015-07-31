@@ -21,7 +21,7 @@ import com.hazelcast.cache.impl.CacheDataSerializerHook;
 import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.ExecutionCallback;
-import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.core.Member;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -88,7 +88,7 @@ public class CacheCreateConfigOperation
         }
         if (createAlsoOnOthers) {
             NodeEngine nodeEngine = getNodeEngine();
-            Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
+            Collection<Member> members = nodeEngine.getClusterService().getMembers();
             int remoteNodeCount = members.size() - 1;
 
             if (remoteNodeCount > 0) {
@@ -96,7 +96,7 @@ public class CacheCreateConfigOperation
 
                 ExecutionCallback<Object> callback = new CacheConfigCreateCallback(this, remoteNodeCount);
                 OperationService operationService = nodeEngine.getOperationService();
-                for (MemberImpl member : members) {
+                for (Member member : members) {
                     if (!member.localMember()) {
                         CacheCreateConfigOperation op = new CacheCreateConfigOperation(config, false);
                         operationService

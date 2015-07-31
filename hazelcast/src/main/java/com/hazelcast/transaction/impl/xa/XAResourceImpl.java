@@ -18,7 +18,7 @@ package com.hazelcast.transaction.impl.xa;
 
 import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.config.GroupConfig;
-import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.core.Member;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
@@ -232,10 +232,10 @@ public final class XAResourceImpl extends AbstractDistributedObject<XAService> i
         XAService xaService = getService();
         OperationService operationService = nodeEngine.getOperationService();
         ClusterService clusterService = nodeEngine.getClusterService();
-        Collection<MemberImpl> memberList = clusterService.getMemberList();
+        Collection<Member> memberList = clusterService.getMembers();
         List<InternalCompletableFuture<SerializableList>> futureList
                 = new ArrayList<InternalCompletableFuture<SerializableList>>();
-        for (MemberImpl member : memberList) {
+        for (Member member : memberList) {
             if (member.localMember()) {
                 continue;
             }
