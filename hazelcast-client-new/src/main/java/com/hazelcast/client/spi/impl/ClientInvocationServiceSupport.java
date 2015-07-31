@@ -63,8 +63,8 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
     private final ResponseThread responseThread;
     private final ConcurrentMap<Integer, ClientInvocation> callIdMap
             = new ConcurrentHashMap<Integer, ClientInvocation>();
-    private final ConcurrentMap<Integer, ClientInvocation> eventHandlerMap
-            = new ConcurrentHashMap<Integer, ClientInvocation>();
+    private final ConcurrentMap<Integer, ClientListenerInvocation> eventHandlerMap
+            = new ConcurrentHashMap<Integer, ClientListenerInvocation>();
     private final AtomicInteger callIdIncrementer = new AtomicInteger();
 
     private volatile boolean isShutdown;
@@ -129,8 +129,8 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
         final int correlationId = newCorrelationId();
         clientInvocation.getClientMessage().setCorrelationId(correlationId).setVersion(protocolVersion);
         callIdMap.put(correlationId, clientInvocation);
-        if (clientInvocation.getHandler() != null) {
-            eventHandlerMap.put(correlationId, clientInvocation);
+        if (clientInvocation instanceof ClientListenerInvocation) {
+            eventHandlerMap.put(correlationId, (ClientListenerInvocation) clientInvocation);
         }
     }
 
@@ -144,7 +144,7 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
 
     @Override
     public EventHandler getEventHandler(int callId) {
-        final ClientInvocation clientInvocation = eventHandlerMap.get(callId);
+        final ClientListenerInvocation clientInvocation = eventHandlerMap.get(callId);
         if (clientInvocation == null) {
             return null;
         }
@@ -172,7 +172,7 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
                 eventHandlerMap.remove(entry.getKey());
             }
         }
-        final Iterator<ClientInvocation> iterator = eventHandlerMap.values().iterator();
+        final Iterator<ClientListenerInvocation> iterator = eventHandlerMap.values().iterator();
         while (iterator.hasNext()) {
             final ClientInvocation invocation = iterator.next();
             if (connection.equals(invocation.getSendConnection())) {
@@ -196,7 +196,7 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
         removeListenerInvocation.invoke();
 
         final Address remoteEndpoint = connection.getEndPoint();
-        final Iterator<ClientInvocation> iterator = eventHandlerMap.values().iterator();
+        final Iterator<ClientListenerInvocation> iterator = eventHandlerMap.values().iterator();
         final TargetDisconnectedException response = new TargetDisconnectedException(remoteEndpoint);
 
         while (iterator.hasNext()) {

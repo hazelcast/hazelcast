@@ -16,8 +16,8 @@
 
 package com.hazelcast.client.proxy;
 
+import com.hazelcast.client.impl.ClientMessageDecoder;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.MapAddEntryListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.MultiMapAddEntryListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.MultiMapAddEntryListenerToKeyCodec;
 import com.hazelcast.client.impl.protocol.codec.MultiMapClearCodec;
@@ -261,7 +261,13 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
         ClientMessage request = MultiMapAddEntryListenerCodec.encodeRequest(name, includeValue);
 
         EventHandler<ClientMessage> handler = createHandler(listener, includeValue);
-        return listen(request, handler);
+        ClientMessageDecoder responseDecoder = new ClientMessageDecoder() {
+            @Override
+            public <T> T decodeClientMessage(ClientMessage clientMessage) {
+                return (T) MultiMapAddEntryListenerCodec.decodeResponse(clientMessage).response;
+            }
+        };
+        return listen(request, handler, responseDecoder);
     }
 
     public boolean removeEntryListener(String registrationId) {
@@ -283,7 +289,13 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
         ClientMessage request = MultiMapAddEntryListenerToKeyCodec.encodeRequest(name, keyData, includeValue);
 
         EventHandler<ClientMessage> handler = createHandler(listener, includeValue);
-        return listen(request, keyData, handler);
+        ClientMessageDecoder responseDecoder = new ClientMessageDecoder() {
+            @Override
+            public <T> T decodeClientMessage(ClientMessage clientMessage) {
+                return (T) MultiMapAddEntryListenerToKeyCodec.decodeResponse(clientMessage).response;
+            }
+        };
+        return listen(request, keyData, handler, responseDecoder);
     }
 
     public void lock(K key) {
@@ -418,7 +430,7 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
         return "MultiMap{" + "name='" + getName() + '\'' + '}';
     }
 
-    private class ClientMultiMapEventHandler extends MapAddEntryListenerCodec.AbstractEventHandler
+    private class ClientMultiMapEventHandler extends MultiMapAddEntryListenerCodec.AbstractEventHandler
             implements EventHandler<ClientMessage> {
 
         private final ListenerAdapter listenerAdapter;

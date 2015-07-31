@@ -16,7 +16,7 @@
 
 package com.hazelcast.client.proxy;
 
-import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
+import com.hazelcast.client.impl.ClientMessageDecoder;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientAddPartitionLostListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.ClientRemovePartitionLostListenerCodec;
@@ -44,14 +44,11 @@ public final class PartitionServiceProxy implements PartitionService {
 
     private final ClientPartitionService partitionService;
     private final ClientListenerService listenerService;
-    private final HazelcastClientInstanceImpl client;
     private final Random random = new Random();
 
-    public PartitionServiceProxy(ClientPartitionService partitionService, ClientListenerService listenerService,
-                                 HazelcastClientInstanceImpl client) {
+    public PartitionServiceProxy(ClientPartitionService partitionService, ClientListenerService listenerService) {
         this.partitionService = partitionService;
         this.listenerService = listenerService;
-        this.client = client;
     }
 
     @Override
@@ -90,7 +87,12 @@ public final class PartitionServiceProxy implements PartitionService {
     public String addPartitionLostListener(PartitionLostListener partitionLostListener) {
         ClientMessage request = ClientAddPartitionLostListenerCodec.encodeRequest();
         final EventHandler<ClientMessage> handler = new ClientPartitionLostEventHandler(partitionLostListener);
-        return listenerService.startListening(request, null, handler);
+        return listenerService.startListening(request, null, handler, new ClientMessageDecoder() {
+            @Override
+            public <T> T decodeClientMessage(ClientMessage clientMessage) {
+                return (T) ClientAddPartitionLostListenerCodec.decodeResponse(clientMessage).response;
+            }
+        });
     }
 
     @Override
