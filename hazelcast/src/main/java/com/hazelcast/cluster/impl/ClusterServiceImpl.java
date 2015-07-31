@@ -1181,7 +1181,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
     private void notifyCapabilityUpdate(String uuid, Set<Capability> capabilities) {
         for (MemberImpl member : getMemberList()) {
             if (!member.localMember()) {
-                invokeClusterOperation(new MemberCapabilityChangedOperation(uuid, capabilities), member.getAddress());
+                nodeEngine.getOperationService().send(new MemberCapabilityChangedOperation(uuid, capabilities), member.getAddress());
             }
         }
     }
