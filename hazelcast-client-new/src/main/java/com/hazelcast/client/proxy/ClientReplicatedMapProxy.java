@@ -102,7 +102,8 @@ public class ClientReplicatedMapProxy<K, V>
         Data keyData = toData(key);
         ClientMessage request = ReplicatedMapPutCodec.encodeRequest(getName(), keyData, valueData, timeUnit.toMillis(ttl));
         ClientMessage response = invoke(request);
-        return toObject(response);
+        ReplicatedMapPutCodec.ResponseParameters result = ReplicatedMapPutCodec.decodeResponse(response);
+        return toObject(result.response);
 
     }
 
