@@ -20,7 +20,7 @@ import com.hazelcast.client.impl.client.CallableClientRequest;
 import com.hazelcast.client.impl.client.ClientPortableHook;
 import com.hazelcast.client.impl.client.RetryableRequest;
 import com.hazelcast.cluster.ClusterService;
-import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.core.Member;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.partition.InternalPartition;
@@ -38,11 +38,11 @@ public final class GetPartitionsRequest extends CallableClientRequest implements
         InternalPartitionService service = getService();
         service.firstArrangement();
         ClusterService clusterService = getClientEngine().getClusterService();
-        Collection<MemberImpl> memberList = clusterService.getMemberList();
+        Collection<Member> memberList = clusterService.getMembers();
         Address[] addresses = new Address[memberList.size()];
         Map<Address, Integer> addressMap = new HashMap<Address, Integer>(memberList.size());
         int k = 0;
-        for (MemberImpl member : memberList) {
+        for (Member member : memberList) {
             Address address = member.getAddress();
             addresses[k] = address;
             addressMap.put(address, k);

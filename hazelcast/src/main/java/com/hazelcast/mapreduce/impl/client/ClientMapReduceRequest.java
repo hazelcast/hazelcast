@@ -22,7 +22,7 @@ import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.config.JobTrackerConfig;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
-import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.core.Member;
 import com.hazelcast.mapreduce.CombinerFactory;
 import com.hazelcast.mapreduce.JobTracker;
 import com.hazelcast.mapreduce.KeyPredicate;
@@ -149,8 +149,8 @@ public class ClientMapReduceRequest<KeyIn, ValueIn> extends InvocationClientRequ
         }
 
         ClusterService cs = nodeEngine.getClusterService();
-        Collection<MemberImpl> members = cs.getMemberList();
-        for (MemberImpl member : members) {
+        Collection<Member> members = cs.getMembers();
+        for (Member member : members) {
             Operation operation = new KeyValueJobOperation<KeyIn, ValueIn>(name, jobId, chunkSize, keyValueSource, mapper,
                     combinerFactory, reducerFactory, communicateStats, topologyChangedStrategy);
 
@@ -158,7 +158,7 @@ public class ClientMapReduceRequest<KeyIn, ValueIn> extends InvocationClientRequ
         }
 
         // After we prepared all the remote systems we can now start the processing
-        for (MemberImpl member : members) {
+        for (Member member : members) {
             Operation operation = new StartProcessingJobOperation<KeyIn>(name, jobId, keys, predicate);
             executeOperation(operation, member.getAddress(), mapReduceService, nodeEngine);
         }

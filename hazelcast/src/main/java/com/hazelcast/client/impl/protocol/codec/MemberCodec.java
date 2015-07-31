@@ -20,7 +20,6 @@ import com.hazelcast.annotation.Codec;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.util.ParameterUtil;
 import com.hazelcast.core.Member;
-import com.hazelcast.instance.AbstractMember;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Bits;
 
@@ -48,7 +47,7 @@ public final class MemberCodec {
     }
 
     public static void encode(Member member, ClientMessage clientMessage) {
-        AddressCodec.encode(((AbstractMember) member).getAddress(), clientMessage);
+        AddressCodec.encode(member.getAddress(), clientMessage);
         clientMessage.set(member.getUuid());
         Map<String, Object> attributes = new HashMap<String, Object>(member.getAttributes());
         clientMessage.set(attributes.size());
@@ -61,7 +60,7 @@ public final class MemberCodec {
     }
 
     public static int calculateDataSize(Member member) {
-        int dataSize = AddressCodec.calculateDataSize(((AbstractMember) member).getAddress());
+        int dataSize = AddressCodec.calculateDataSize(member.getAddress());
         dataSize += ParameterUtil.calculateDataSize(member.getUuid());
         dataSize += Bits.INT_SIZE_IN_BYTES;
         Map<String, Object> attributes = member.getAttributes();

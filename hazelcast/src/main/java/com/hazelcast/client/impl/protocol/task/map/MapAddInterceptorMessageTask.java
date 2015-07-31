@@ -19,7 +19,7 @@ package com.hazelcast.client.impl.protocol.task.map;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapAddInterceptorCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractMultiTargetMessageTask;
-import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.core.Member;
 import com.hazelcast.instance.Node;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.impl.MapService;
@@ -67,9 +67,9 @@ public class MapAddInterceptorMessageTask
 
     @Override
     public Collection<Address> getTargets() {
-        Collection<MemberImpl> memberList = nodeEngine.getClusterService().getMemberList();
+        Collection<Member> memberList = nodeEngine.getClusterService().getMembers();
         Collection<Address> addresses = new HashSet<Address>();
-        for (MemberImpl member : memberList) {
+        for (Member member : memberList) {
             addresses.add(member.getAddress());
         }
         return addresses;

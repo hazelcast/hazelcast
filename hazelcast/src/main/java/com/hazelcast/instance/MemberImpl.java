@@ -209,7 +209,7 @@ public final class MemberImpl
         String uuid = nodeEngine.getLocalMember().getUuid();
         operation.setCallerUuid(uuid).setNodeEngine(nodeEngine);
         try {
-            for (MemberImpl member : nodeEngine.getClusterService().getMemberList()) {
+            for (Member member : nodeEngine.getClusterService().getMembers()) {
                 if (!member.localMember()) {
                     os.send(operation, member.getAddress());
                 } else {

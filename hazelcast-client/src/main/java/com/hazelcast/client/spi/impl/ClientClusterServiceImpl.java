@@ -33,7 +33,6 @@ import com.hazelcast.core.Member;
 import com.hazelcast.core.MemberAttributeEvent;
 import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MembershipListener;
-import com.hazelcast.instance.AbstractMember;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
@@ -109,7 +108,7 @@ public class ClientClusterServiceImpl extends ClusterListenerSupport {
     public Address getMasterAddress() {
         final Collection<Member> memberList = getMemberList();
         Member member = memberList.iterator().next();
-        return !memberList.isEmpty() ? ((AbstractMember) member).getAddress() : null;
+        return !memberList.isEmpty() ? member.getAddress() : null;
     }
 
     @Override

@@ -22,7 +22,7 @@ import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.DistributedObject;
-import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.core.Member;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.MigrationEndpoint;
@@ -167,8 +167,8 @@ public abstract class AbstractCacheService
 
     protected void destroyCacheOnAllMembers(String name, String callerUuid) {
         final OperationService operationService = nodeEngine.getOperationService();
-        final Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
-        for (MemberImpl member : members) {
+        final Collection<Member> members = nodeEngine.getClusterService().getMembers();
+        for (Member member : members) {
             if (!member.localMember() && !member.getUuid().equals(callerUuid)) {
                 final CacheDestroyOperation op = new CacheDestroyOperation(name, true);
                 operationService.invokeOnTarget(AbstractCacheService.SERVICE_NAME, op, member.getAddress());

@@ -401,7 +401,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
                     migrationQueue.add(new RepartitioningTask());
 
                     // send initial partition table to newly joined node.
-                    Collection<MemberImpl> members = node.clusterService.getMemberList();
+                    Collection<MemberImpl> members = node.clusterService.getMemberImpls();
                     PartitionStateOperation op = new PartitionStateOperation(createPartitionState(members));
                     nodeEngine.getOperationService().send(op, member.getAddress());
                 }
@@ -537,7 +537,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
 
         lock.lock();
         try {
-            Collection<MemberImpl> members = node.clusterService.getMemberList();
+            Collection<MemberImpl> members = node.clusterService.getMemberImpls();
             PartitionRuntimeState partitionState = createPartitionState(members);
             PartitionStateOperation op = new PartitionStateOperation(partitionState);
 
@@ -557,7 +557,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
     }
 
     private void syncPartitionRuntimeState() {
-        syncPartitionRuntimeState(node.clusterService.getMemberList());
+        syncPartitionRuntimeState(node.clusterService.getMemberImpls());
     }
 
     private void syncPartitionRuntimeState(Collection<MemberImpl> members) {
@@ -1664,7 +1664,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
 
                     migrationQueue.clear();
                     PartitionStateGenerator psg = partitionStateGenerator;
-                    Collection<MemberImpl> members = node.getClusterService().getMemberList();
+                    Collection<MemberImpl> members = node.getClusterService().getMemberImpls();
                     Collection<MemberGroup> memberGroups = memberGroupFactory.createMemberGroups(members);
                     Address[][] newState = psg.reArrange(memberGroups, partitions);
 

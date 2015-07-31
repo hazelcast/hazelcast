@@ -22,7 +22,7 @@ import com.hazelcast.cluster.impl.operations.MemberRemoveOperation;
 import com.hazelcast.cluster.impl.operations.MergeClustersOperation;
 import com.hazelcast.cluster.impl.operations.PrepareMergeOperation;
 import com.hazelcast.config.Config;
-import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.core.Member;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
@@ -30,7 +30,6 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
-import com.hazelcast.spi.impl.OperationResponseHandlerFactory;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.EmptyStatement;
 
@@ -45,7 +44,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 
-import static com.hazelcast.spi.impl.OperationResponseHandlerFactory.*;
+import static com.hazelcast.spi.impl.OperationResponseHandlerFactory.createEmptyResponseHandler;
 import static com.hazelcast.util.FutureUtil.ExceptionHandler;
 import static com.hazelcast.util.FutureUtil.logAllExceptions;
 import static com.hazelcast.util.FutureUtil.waitWithDeadline;
@@ -144,8 +143,8 @@ public abstract class AbstractJoiner implements Joiner {
                 }
 
                 allConnected = true;
-                Collection<MemberImpl> members = node.getClusterService().getMemberList();
-                for (MemberImpl member : members) {
+                Collection<Member> members = node.getClusterService().getMembers();
+                for (Member member : members) {
                     if (!member.localMember() && node.connectionManager.getOrConnect(member.getAddress()) == null) {
                         allConnected = false;
                         if (logger.isFinestEnabled()) {
@@ -291,9 +290,9 @@ public abstract class AbstractJoiner implements Joiner {
 
     protected void startClusterMerge(final Address targetAddress) {
         final OperationService operationService = node.nodeEngine.getOperationService();
-        final Collection<MemberImpl> memberList = node.getClusterService().getMemberList();
+        final Collection<Member> memberList = node.getClusterService().getMembers();
         final Collection<Future> calls = new ArrayList<Future>();
-        for (MemberImpl member : memberList) {
+        for (Member member : memberList) {
             if (!member.localMember()) {
                 Operation operation = new PrepareMergeOperation(targetAddress);
                 Future f = operationService.createInvocationBuilder(ClusterServiceImpl.SERVICE_NAME,
@@ -310,7 +309,7 @@ public abstract class AbstractJoiner implements Joiner {
         operationService.runOperationOnCallingThread(prepareMergeOperation);
 
 
-        for (MemberImpl member : memberList) {
+        for (Member member : memberList) {
             if (!member.localMember()) {
                 operationService.createInvocationBuilder(ClusterServiceImpl.SERVICE_NAME,
                         new MergeClustersOperation(targetAddress), member.getAddress())

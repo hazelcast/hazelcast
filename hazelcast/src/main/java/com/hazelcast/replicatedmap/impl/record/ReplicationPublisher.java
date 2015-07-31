@@ -219,7 +219,7 @@ public class ReplicationPublisher<K, V>
     }
 
     public void retryWithDifferentReplicationNode(Member member) {
-        List<MemberImpl> members = new ArrayList<MemberImpl>(nodeEngine.getClusterService().getMemberList());
+        List<MemberImpl> members = new ArrayList<MemberImpl>(nodeEngine.getClusterService().getMemberImpls());
         members.remove(member);
 
         // If there are less than two members there is not other possible candidate to replicate from
@@ -258,7 +258,7 @@ public class ReplicationPublisher<K, V>
     }
 
     private void executeRemoteClear(boolean emptyReplicationQueue) {
-        List<MemberImpl> failedMembers = new ArrayList<MemberImpl>(clusterService.getMemberList());
+        List<MemberImpl> failedMembers = new ArrayList<MemberImpl>(clusterService.getMemberImpls());
         for (int i = 0; i < MAX_CLEAR_EXECUTION_RETRY; i++) {
             Map<MemberImpl, InternalCompletableFuture> futures = executeClearOnMembers(failedMembers, emptyReplicationQueue);
 

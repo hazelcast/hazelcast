@@ -18,7 +18,7 @@ package com.hazelcast.mapreduce.impl;
 
 import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.core.ManagedContext;
-import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.core.Member;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.mapreduce.JobPartitionState;
 import com.hazelcast.mapreduce.PartitionIdAware;
@@ -77,7 +77,7 @@ public final class MapReduceUtil {
             int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
             return new JobProcessInformationImpl(partitionCount, supervisor);
         } else {
-            int partitionCount = nodeEngine.getClusterService().getMemberList().size();
+            int partitionCount = nodeEngine.getClusterService().getSize();
             return new MemberAssigningJobProcessInformationImpl(partitionCount, supervisor);
         }
     }
@@ -239,11 +239,11 @@ public final class MapReduceUtil {
         ClusterService cs = nodeEngine.getClusterService();
         OperationService os = nodeEngine.getOperationService();
 
-        Collection<MemberImpl> members = cs.getMemberList();
+        Collection<Member> members = cs.getMembers();
         List<V> results = returnsResponse ? new ArrayList<V>() : null;
 
         List<Exception> exceptions = new ArrayList<Exception>(members.size());
-        for (MemberImpl member : members) {
+        for (Member member : members) {
             try {
                 Operation operation = operationFactory.createOperation();
                 if (cs.getThisAddress().equals(member.getAddress())) {

@@ -33,7 +33,6 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapStore;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.PartitioningStrategy;
-import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.impl.EntryEventFilter;
@@ -43,11 +42,10 @@ import com.hazelcast.map.impl.MapEntrySet;
 import com.hazelcast.map.impl.MapEventPublisher;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
-import com.hazelcast.map.impl.nearcache.NearCache;
-import com.hazelcast.map.impl.nearcache.NearCacheProvider;
 import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.map.impl.QueryEventFilter;
-import com.hazelcast.map.impl.recordstore.RecordStore;
+import com.hazelcast.map.impl.nearcache.NearCache;
+import com.hazelcast.map.impl.nearcache.NearCacheProvider;
 import com.hazelcast.map.impl.operation.AddIndexOperation;
 import com.hazelcast.map.impl.operation.AddInterceptorOperation;
 import com.hazelcast.map.impl.operation.BasePutOperation;
@@ -83,6 +81,7 @@ import com.hazelcast.map.impl.operation.SetOperation;
 import com.hazelcast.map.impl.operation.SizeOperationFactory;
 import com.hazelcast.map.impl.operation.TryPutOperation;
 import com.hazelcast.map.impl.operation.TryRemoveOperation;
+import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.map.listener.MapListener;
 import com.hazelcast.map.listener.MapPartitionLostListener;
 import com.hazelcast.monitor.LocalMapStats;
@@ -912,8 +911,8 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
             ((HazelcastInstanceAware) interceptor).setHazelcastInstance(nodeEngine.getHazelcastInstance());
         }
         String id = mapServiceContext.generateInterceptorId(name, interceptor);
-        Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
-        for (MemberImpl member : members) {
+        Collection<Member> members = nodeEngine.getClusterService().getMembers();
+        for (Member member : members) {
             try {
                 Future f = nodeEngine.getOperationService()
                         .invokeOnTarget(SERVICE_NAME, new AddInterceptorOperation(id, interceptor, name),
@@ -930,15 +929,14 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         final NodeEngine nodeEngine = getNodeEngine();
         final MapService mapService = getService();
         mapService.getMapServiceContext().removeInterceptor(name, id);
-        Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
+        Collection<Member> members = nodeEngine.getClusterService().getMembers();
         for (Member member : members) {
             try {
                 if (member.localMember()) {
                     continue;
                 }
-                MemberImpl memberImpl = (MemberImpl) member;
                 Future f = nodeEngine.getOperationService()
-                        .invokeOnTarget(SERVICE_NAME, new RemoveInterceptorOperation(name, id), memberImpl.getAddress());
+                        .invokeOnTarget(SERVICE_NAME, new RemoveInterceptorOperation(name, id), member.getAddress());
                 f.get();
             } catch (Throwable t) {
                 throw ExceptionUtil.rethrow(t);

@@ -96,7 +96,7 @@ public class RegisterMembershipListenerMessageTask
         @Override
         public void init(InitialMembershipEvent membershipEvent) {
             ClusterService service = getService(ClusterServiceImpl.SERVICE_NAME);
-            Set members = (Set) service.getMemberList();
+            Set members = (Set) service.getMemberImpls();
             ClientMessage eventMessage = ClientMembershipListenerCodec.encodeMemberSetEvent(members);
             sendClientMessage(endpoint.getUuid(), eventMessage);
         }

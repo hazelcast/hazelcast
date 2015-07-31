@@ -18,7 +18,7 @@ package com.hazelcast.map.impl.client;
 
 import com.hazelcast.client.impl.client.MultiTargetClientRequest;
 import com.hazelcast.client.impl.client.SecureRequest;
-import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.core.Member;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.impl.MapPortableHook;
 import com.hazelcast.map.impl.MapService;
@@ -33,6 +33,7 @@ import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.OperationFactory;
+
 import java.io.IOException;
 import java.security.Permission;
 import java.util.Collection;
@@ -86,9 +87,9 @@ public class MapAddInterceptorRequest extends MultiTargetClientRequest implement
 
     @Override
     public Collection<Address> getTargets() {
-        Collection<MemberImpl> memberList = getClientEngine().getClusterService().getMemberList();
+        Collection<Member> memberList = getClientEngine().getClusterService().getMembers();
         Collection<Address> addresses = new HashSet<Address>();
-        for (MemberImpl member : memberList) {
+        for (Member member : memberList) {
             addresses.add(member.getAddress());
         }
         return addresses;

@@ -19,7 +19,7 @@ package com.hazelcast.map.impl.client;
 import com.hazelcast.client.impl.client.InvocationClientRequest;
 import com.hazelcast.client.impl.client.RetryableRequest;
 import com.hazelcast.client.impl.client.SecureRequest;
-import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.core.Member;
 import com.hazelcast.map.impl.MapPortableHook;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.QueryResult;
@@ -68,7 +68,7 @@ abstract class AbstractMapQueryRequest extends InvocationClientRequest implement
         try {
             Predicate predicate = getPredicate();
 
-            Collection<MemberImpl> members = getClientEngine().getClusterService().getMemberList();
+            Collection<Member> members = getClientEngine().getClusterService().getMembers();
             List<Future> futures = new ArrayList<Future>();
             createInvocations(members, futures, predicate);
 
@@ -88,8 +88,8 @@ abstract class AbstractMapQueryRequest extends InvocationClientRequest implement
         getEndpoint().sendResponse(result, getCallId());
     }
 
-    private void createInvocations(Collection<MemberImpl> members, List<Future> futures, Predicate predicate) {
-        for (MemberImpl member : members) {
+    private void createInvocations(Collection<Member> members, List<Future> futures, Predicate predicate) {
+        for (Member member : members) {
             Future future = createInvocationBuilder(SERVICE_NAME, new QueryOperation(name, predicate),
                     member.getAddress()).invoke();
             futures.add(future);

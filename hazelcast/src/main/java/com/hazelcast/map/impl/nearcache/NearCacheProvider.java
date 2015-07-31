@@ -17,7 +17,7 @@
 package com.hazelcast.map.impl.nearcache;
 
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.core.Member;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
@@ -119,8 +119,8 @@ public class NearCacheProvider {
         if (!isNearCacheEnabled(mapName)) {
             return;
         }
-        Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
-        for (MemberImpl member : members) {
+        Collection<Member> members = nodeEngine.getClusterService().getMembers();
+        for (Member member : members) {
             try {
                 if (member.localMember()) {
                     continue;
@@ -157,8 +157,8 @@ public class NearCacheProvider {
         //send operation.
         Operation operation = new NearCacheKeySetInvalidationOperation(mapName, keys)
                 .setServiceName(MapService.SERVICE_NAME);
-        Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
-        for (MemberImpl member : members) {
+        Collection<Member> members = nodeEngine.getClusterService().getMembers();
+        for (Member member : members) {
             try {
                 if (member.localMember()) {
                     continue;

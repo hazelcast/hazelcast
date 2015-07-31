@@ -33,7 +33,6 @@ import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.Member;
-import com.hazelcast.instance.AbstractMember;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.SerializableList;
@@ -333,7 +332,7 @@ public class ClientCacheProxy<K, V>
         final Collection<Future> futures = new ArrayList<Future>();
         for (Member member : members) {
             try {
-                final Address address = ((AbstractMember) member).getAddress();
+                final Address address = member.getAddress();
                 final CacheListenerRegistrationRequest request = new CacheListenerRegistrationRequest(nameWithPrefix,
                         cacheEntryListenerConfiguration, isRegister, address);
                 final ClientInvocation invocation = new ClientInvocation(client, request, address);

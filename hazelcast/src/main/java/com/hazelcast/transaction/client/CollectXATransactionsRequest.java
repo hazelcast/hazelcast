@@ -17,14 +17,14 @@
 package com.hazelcast.transaction.client;
 
 import com.hazelcast.client.impl.client.MultiTargetClientRequest;
-import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.core.Member;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.security.permission.TransactionPermission;
 import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.impl.SerializableList;
-import com.hazelcast.transaction.impl.xa.operations.CollectRemoteTransactionsOperationFactory;
 import com.hazelcast.transaction.impl.xa.XAService;
+import com.hazelcast.transaction.impl.xa.operations.CollectRemoteTransactionsOperationFactory;
 
 import java.security.Permission;
 import java.util.ArrayList;
@@ -55,9 +55,9 @@ public class CollectXATransactionsRequest extends MultiTargetClientRequest {
 
     @Override
     public Collection<Address> getTargets() {
-        Collection<MemberImpl> memberList = getClientEngine().getClusterService().getMemberList();
+        Collection<Member> memberList = getClientEngine().getClusterService().getMembers();
         Collection<Address> addresses = new HashSet<Address>();
-        for (MemberImpl member : memberList) {
+        for (Member member : memberList) {
             addresses.add(member.getAddress());
         }
         return addresses;

@@ -37,7 +37,6 @@ import com.hazelcast.core.MemberSelector;
 import com.hazelcast.core.MultiExecutionCallback;
 import com.hazelcast.core.PartitionAware;
 import com.hazelcast.executor.impl.RunnableAdapter;
-import com.hazelcast.instance.AbstractMember;
 import com.hazelcast.monitor.LocalExecutorStats;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
@@ -183,7 +182,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         final Collection<Member> memberList = getContext().getClusterService().getMemberList();
         Map<Member, Future<T>> futureMap = new HashMap<Member, Future<T>>(memberList.size());
         for (Member m : memberList) {
-            Future<T> f = submitToTargetInternal(task, ((AbstractMember) m).getAddress(), null, true);
+            Future<T> f = submitToTargetInternal(task, m.getAddress(), null, true);
             futureMap.put(m, f);
         }
         return futureMap;
@@ -639,7 +638,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         if (m == null) {
             throw new HazelcastException(member + " is not available!!!");
         }
-        return ((AbstractMember) m).getAddress();
+        return m.getAddress();
     }
 
     private int getPartitionId(Object key) {

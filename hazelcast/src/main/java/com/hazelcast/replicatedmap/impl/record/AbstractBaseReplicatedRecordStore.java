@@ -105,7 +105,7 @@ abstract class AbstractBaseReplicatedRecordStore<K, V>
     public void initialize() {
         initializeListeners();
 
-        List<MemberImpl> members = new ArrayList<MemberImpl>(nodeEngine.getClusterService().getMemberList());
+        List<MemberImpl> members = new ArrayList<MemberImpl>(nodeEngine.getClusterService().getMemberImpls());
         members.remove(localMember);
         if (members.size() == 0) {
             storage.finishLoading();

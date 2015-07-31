@@ -76,8 +76,8 @@ public final class RegisterMembershipListenerRequest extends CallableClientReque
         @Override
         public void init(InitialMembershipEvent membershipEvent) {
             ClusterService service = getService();
-            Collection<MemberImpl> memberList = service.getMemberList();
-            ClientInitialMembershipEvent event = new ClientInitialMembershipEvent(memberList);
+            Collection<MemberImpl> members = service.getMemberImpls();
+            ClientInitialMembershipEvent event = new ClientInitialMembershipEvent(members);
             endpoint.sendEvent(endpoint.getUuid(), event, getCallId());
         }
 

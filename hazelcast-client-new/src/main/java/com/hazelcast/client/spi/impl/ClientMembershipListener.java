@@ -171,7 +171,7 @@ class ClientMembershipListener extends ClientMembershipListenerCodec.AbstractEve
 
     private void memberRemoved(Member member) {
         members.remove(member);
-        final Connection connection = connectionManager.getConnection(((AbstractMember) member).getAddress());
+        final Connection connection = connectionManager.getConnection(member.getAddress());
         if (connection != null) {
             connectionManager.destroyConnection(connection);
         }
@@ -204,7 +204,7 @@ class ClientMembershipListener extends ClientMembershipListenerCodec.AbstractEve
         }
         for (Member member : prevMembers.values()) {
             events.add(new MembershipEvent(client.getCluster(), member, MembershipEvent.MEMBER_REMOVED, eventMembers));
-            Address address = ((AbstractMember) member).getAddress();
+            Address address = member.getAddress();
             if (clusterService.getMember(address) == null) {
                 final Connection connection = connectionManager.getConnection(address);
                 if (connection != null) {
@@ -226,7 +226,7 @@ class ClientMembershipListener extends ClientMembershipListenerCodec.AbstractEve
     private void updateMembersRef() {
         final Map<Address, Member> map = new LinkedHashMap<Address, Member>(members.size());
         for (Member member : members) {
-            map.put(((AbstractMember) member).getAddress(), member);
+            map.put(member.getAddress(), member);
         }
         clusterService.setMembersRef(Collections.unmodifiableMap(map));
     }

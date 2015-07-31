@@ -39,7 +39,7 @@ final class NodeShutdownLatch {
 
     NodeShutdownLatch(final Node node) {
         localMember = node.localMember;
-        Collection<MemberImpl> memberList = node.clusterService.getMemberList();
+        Collection<MemberImpl> memberList = node.clusterService.getMemberImpls();
         registrations = new HashMap<String, HazelcastInstanceImpl>(3);
         Set<MemberImpl> members = new HashSet<MemberImpl>(memberList);
         members.remove(localMember);

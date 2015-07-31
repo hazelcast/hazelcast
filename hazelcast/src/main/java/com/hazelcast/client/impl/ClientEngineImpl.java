@@ -35,6 +35,7 @@ import com.hazelcast.core.Client;
 import com.hazelcast.core.ClientListener;
 import com.hazelcast.core.ClientType;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
+import com.hazelcast.core.Member;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
@@ -554,12 +555,12 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
         }
 
         private void callDisconnectionOperation(ClientEndpointImpl endpoint) {
-            Collection<MemberImpl> memberList = nodeEngine.getClusterService().getMemberList();
+            Collection<Member> memberList = nodeEngine.getClusterService().getMembers();
             OperationService operationService = nodeEngine.getOperationService();
             ClientDisconnectionOperation op = createClientDisconnectionOperation(endpoint.getUuid());
             operationService.runOperationOnCallingThread(op);
 
-            for (MemberImpl member : memberList) {
+            for (Member member : memberList) {
                 if (!member.localMember()) {
                     op = createClientDisconnectionOperation(endpoint.getUuid());
                     operationService.send(op, member.getAddress());
@@ -623,7 +624,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
         Map<ClientType, Integer> resultMap = new HashMap<ClientType, Integer>();
         Map<String, ClientType> clientsMap = new HashMap<String, ClientType>();
 
-        for (MemberImpl member : node.getClusterService().getMemberList()) {
+        for (Member member : node.getClusterService().getMembers()) {
             Address target = member.getAddress();
             Future<Map<String, ClientType>> future
                     = operationService.invokeOnTarget(SERVICE_NAME, clientInfoOperation, target);
