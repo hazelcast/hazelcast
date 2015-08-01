@@ -8,7 +8,7 @@ import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.impl.DefaultData;
+import com.hazelcast.nio.serialization.impl.HeapData;
 import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -412,7 +412,7 @@ public class LockAdvancedTest extends HazelcastTestSupport {
         protected void readInternal(ObjectDataInput in) throws IOException {
             super.readInternal(in);
             sleepMillis = in.readLong();
-            key = new DefaultData(in.readByteArray());
+            key = new HeapData(in.readByteArray());
             ns = new InternalLockNamespace(in.readUTF());
         }
     }

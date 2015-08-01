@@ -19,7 +19,7 @@ package com.hazelcast.nio.serialization.impl.bufferpool;
 import com.hazelcast.nio.BufferObjectDataInput;
 import com.hazelcast.nio.BufferObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.impl.DefaultData;
+import com.hazelcast.nio.serialization.impl.HeapData;
 import com.hazelcast.nio.serialization.SerializationService;
 
 import java.io.Closeable;
@@ -72,7 +72,7 @@ public class BufferPoolImpl implements BufferPool {
         if (in == null) {
             in = serializationService.createObjectDataInput((byte[]) null);
         }
-        in.init(data.toByteArray(), DefaultData.DATA_OFFSET);
+        in.init(data.toByteArray(), HeapData.DATA_OFFSET);
         return in;
     }
 

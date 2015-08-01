@@ -1,6 +1,6 @@
 package com.hazelcast.nio;
 
-import com.hazelcast.nio.serialization.impl.DefaultData;
+import com.hazelcast.nio.serialization.impl.HeapData;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
@@ -28,7 +28,7 @@ public class PacketTransportTest extends HazelcastTestSupport {
     // This means that repeated calls to packet.write/packet.read are needed.
     @Test
     public void largeValue() {
-        DefaultData originalData = new DefaultData(generateRandomString(100000).getBytes());
+        HeapData originalData = new HeapData(generateRandomString(100000).getBytes());
         Packet originalPacket = new Packet(originalData);
 
         Packet clonedPacket = new Packet();
@@ -55,7 +55,7 @@ public class PacketTransportTest extends HazelcastTestSupport {
         Random random = new Random();
         for (int k = 0; k < 1000; k++) {
             byte[] bytes = generateRandomString(random.nextInt(1000) + 5).getBytes();
-            DefaultData originalData = new DefaultData(bytes);
+            HeapData originalData = new HeapData(bytes);
             Packet originalPacket = new Packet(originalData);
             originalPackets.add(originalPacket);
         }
@@ -83,7 +83,7 @@ public class PacketTransportTest extends HazelcastTestSupport {
     // same Packet (content).
     @Test
     public void cloningOfPacket() {
-        DefaultData originalData = new DefaultData("foobar".getBytes());
+        HeapData originalData = new HeapData("foobar".getBytes());
         Packet originalPacket = new Packet(originalData);
 
         ByteBuffer bb = ByteBuffer.allocate(100);

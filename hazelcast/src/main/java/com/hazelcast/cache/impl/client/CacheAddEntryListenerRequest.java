@@ -26,7 +26,7 @@ import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.impl.client.CallableClientRequest;
 import com.hazelcast.client.impl.client.RetryableRequest;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.impl.DefaultData;
+import com.hazelcast.nio.serialization.impl.HeapData;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.spi.EventRegistration;
@@ -87,7 +87,7 @@ public class CacheAddEntryListenerRequest
             if (eventObject instanceof CacheEventSet) {
                 Set<CacheEventData> events = ((CacheEventSet) eventObject).getEvents();
                 if (events.size() > 1) {
-                    partitionKey = new DefaultData();
+                    partitionKey = new HeapData();
                 } else if (events.size() == 1) {
                     partitionKey = events.iterator().next().getDataKey();
                 }

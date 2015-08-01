@@ -3,7 +3,7 @@ package com.hazelcast.nio.serialization.impl.bufferpool;
 import com.hazelcast.nio.BufferObjectDataInput;
 import com.hazelcast.nio.BufferObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.impl.DefaultData;
+import com.hazelcast.nio.serialization.impl.HeapData;
 import com.hazelcast.nio.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -91,7 +91,7 @@ public class BufferPoolTest extends HazelcastTestSupport {
 
     @Test
     public void takeInputBuffer_whenPooledInstance() {
-        Data data = new DefaultData(new byte[]{});
+        Data data = new HeapData(new byte[]{});
         BufferObjectDataInput found1 = bufferPool.takeInputBuffer(data);
         bufferPool.returnInputBuffer(found1);
         BufferObjectDataInput found2 = bufferPool.takeInputBuffer(data);
@@ -101,7 +101,7 @@ public class BufferPoolTest extends HazelcastTestSupport {
 
     @Test
     public void takeInputBuffer_whenNestedInstance() {
-        Data data = new DefaultData(new byte[]{});
+        Data data = new HeapData(new byte[]{});
         BufferObjectDataInput found1 = bufferPool.takeInputBuffer(data);
         BufferObjectDataInput found2 = bufferPool.takeInputBuffer(data);
 

@@ -34,7 +34,7 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.map.impl.MapEntrySet;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.InternalPartitionService;
-import com.hazelcast.nio.serialization.impl.DefaultData;
+import com.hazelcast.nio.serialization.impl.HeapData;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.eventservice.InternalEventService;
@@ -1357,7 +1357,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
             int orderKey = keys.hashCode();
             publishBatchedEvents(name, CacheEventType.REMOVED, orderKey);
             if (isEventsEnabled()) {
-                publishEvent(createCacheCompleteEvent(new DefaultData(), completionId));
+                publishEvent(createCacheCompleteEvent(new HeapData(), completionId));
             }
         }
     }

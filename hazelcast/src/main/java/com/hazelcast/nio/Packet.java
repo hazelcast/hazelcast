@@ -17,7 +17,7 @@
 package com.hazelcast.nio;
 
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.impl.DefaultData;
+import com.hazelcast.nio.serialization.impl.HeapData;
 
 import java.nio.ByteBuffer;
 
@@ -318,7 +318,7 @@ public final class Packet implements SocketWritable, SocketReadable {
             byte[] bytes;
             if (data == null) {
                 bytes = new byte[size];
-                data = new DefaultData(bytes);
+                data = new HeapData(bytes);
             } else {
                 bytes = data.toByteArray();
             }

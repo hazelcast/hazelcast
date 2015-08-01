@@ -29,7 +29,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.impl.DefaultData;
+import com.hazelcast.nio.serialization.impl.HeapData;
 import com.hazelcast.nio.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.spi.OperationAccessor;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -177,7 +177,7 @@ public class SerializationTest
 
     @Test
     public void testNullData() {
-        Data data = new DefaultData();
+        Data data = new HeapData();
         SerializationService ss = new DefaultSerializationServiceBuilder().build();
         assertNull(ss.toObject(data));
     }
