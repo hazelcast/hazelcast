@@ -64,7 +64,6 @@
                 <artifactId>maven-rar-plugin</artifactId>
                 <version>${maven.rar.plugin.version}</version>
                 <configuration>
-                    <raXmlFile>src/main/rar/ra.xml</raXmlFile>
                     <includeJar>false</includeJar>
                 </configuration>
             </plugin>
