@@ -471,8 +471,7 @@ public class WebFilter implements Filter {
                 String hazelcastSessionId = originalSessions.get(originalSession.getId());
                 if (hazelcastSessionId != null) {
                     hazelcastSession = sessions.get(hazelcastSessionId);
-
-                    if (!hazelcastSession.isStickySession()) {
+                    if (hazelcastSession != null && !hazelcastSession.isStickySession()) {
                         hazelcastSession.updateReloadFlag();
                     }
                     return hazelcastSession;
