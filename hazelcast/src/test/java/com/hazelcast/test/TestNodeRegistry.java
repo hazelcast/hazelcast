@@ -431,6 +431,11 @@ public final class TestNodeRegistry {
             nodeEngine.getNode().connectionManager.destroyConnection(this);
         }
 
+        @Override
+        public void setType(ConnectionType type) {
+            //NO OP
+        }
+
         public boolean isClient() {
             return false;
         }

@@ -16,7 +16,6 @@
 
 package com.hazelcast.client.connection.nio;
 
-import com.hazelcast.client.ClientTypes;
 import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.core.LifecycleService;
@@ -112,9 +111,8 @@ public class ClientConnection implements Connection, Closeable {
     }
 
     public void init() throws IOException {
-        final ByteBuffer buffer = ByteBuffer.allocate(6);
+        final ByteBuffer buffer = ByteBuffer.allocate(3);
         buffer.put(stringToBytes(Protocols.CLIENT_BINARY_NEW));
-        buffer.put(stringToBytes(ClientTypes.JAVA));
         buffer.flip();
         socketChannelWrapper.write(buffer);
     }
@@ -142,6 +140,11 @@ public class ClientConnection implements Connection, Closeable {
     @Override
     public void close() {
         close(null);
+    }
+
+    @Override
+    public void setType(ConnectionType type) {
+        //NO OP
     }
 
     @Override

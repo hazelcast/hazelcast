@@ -17,6 +17,7 @@
 package com.hazelcast.client.impl;
 
 import com.hazelcast.client.AuthenticationException;
+import com.hazelcast.client.ClientTypes;
 import com.hazelcast.client.connection.Authenticator;
 import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.client.ClientPrincipal;
@@ -60,10 +61,11 @@ public class ClusterAuthenticator implements Authenticator {
         if (credentials instanceof UsernamePasswordCredentials) {
             UsernamePasswordCredentials cr = (UsernamePasswordCredentials) credentials;
             clientMessage = ClientAuthenticationCodec.encodeRequest(cr.getUsername(),
-                    cr.getPassword(), uuid, ownerUuid, false);
+                    cr.getPassword(), uuid, ownerUuid, false, ClientTypes.JAVA);
         } else {
             Data data = ss.toData(credentials);
-            clientMessage = ClientAuthenticationCustomCodec.encodeRequest(data, uuid, ownerUuid, false);
+            clientMessage = ClientAuthenticationCustomCodec.encodeRequest(data, uuid, ownerUuid,
+                    false, ClientTypes.JAVA);
 
         }
         connection.init();

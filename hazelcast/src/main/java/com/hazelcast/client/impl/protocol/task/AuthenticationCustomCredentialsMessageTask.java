@@ -41,6 +41,11 @@ public class AuthenticationCustomCredentialsMessageTask
     }
 
     @Override
+    protected String getClientType() {
+        return parameters.clientType;
+    }
+
+    @Override
     protected ClientAuthenticationCustomCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
         ClientAuthenticationCustomCodec.RequestParameters parameters =
                 ClientAuthenticationCustomCodec.decodeRequest(clientMessage);

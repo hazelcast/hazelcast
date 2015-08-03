@@ -1,5 +1,6 @@
 package com.hazelcast.client.protocol;
 
+import com.hazelcast.client.ClientTypes;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientAuthenticationCodec;
 import com.hazelcast.client.impl.protocol.util.ClientProtocolBuffer;
@@ -74,13 +75,14 @@ public class RawProtocolTest {
     public void testAuthenticateWithUsernameAndPassword()
             throws IOException, InterruptedException {
 
-        final ByteBuffer initData = ByteBuffer.wrap("CB2JVM".getBytes());
+        final ByteBuffer initData = ByteBuffer.wrap("CB2".getBytes());
         channel.write(initData);
 
         String username = GroupConfig.DEFAULT_GROUP_NAME;
         String pass = GroupConfig.DEFAULT_GROUP_PASSWORD;
 
-        final ClientMessage parameters = ClientAuthenticationCodec.encodeRequest(username, pass, null, null, true);
+        final ClientMessage parameters = ClientAuthenticationCodec.encodeRequest(username, pass, null, null,
+                true, ClientTypes.JAVA);
         parameters.setCorrelationId(1).addFlag(ClientMessage.BEGIN_AND_END_FLAGS);
 
         final ClientProtocolBuffer byteBuffer = parameters.buffer();

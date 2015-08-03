@@ -201,7 +201,7 @@ public final class ReadHandler extends AbstractSelectionHandler {
                 } else if (Protocols.CLIENT_BINARY_NEW.equals(protocol)) {
                     configureBuffers(connectionManager.socketClientReceiveBufferSize);
                     writeHandler.setProtocol(Protocols.CLIENT_BINARY_NEW);
-                    socketReader = new SocketClientMessageReader(connection, socketChannel);
+                    socketReader = new SocketClientMessageReader(connection);
                 } else {
                     configureBuffers(connectionManager.socketClientReceiveBufferSize);
                     writeHandler.setProtocol(Protocols.TEXT);

@@ -145,6 +145,11 @@ public class ClientConnection implements Connection, Closeable {
     }
 
     @Override
+    public void setType(ConnectionType type) {
+        //NO OP
+    }
+
+    @Override
     public ConnectionType getType() {
         return ConnectionType.JAVA_CLIENT;
     }

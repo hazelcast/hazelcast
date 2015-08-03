@@ -18,6 +18,7 @@ package com.hazelcast.client.impl.protocol.task;
 
 import com.hazelcast.client.AuthenticationException;
 import com.hazelcast.client.ClientEndpoint;
+import com.hazelcast.client.ClientTypes;
 import com.hazelcast.client.impl.ClientEndpointImpl;
 import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.client.impl.client.ClientPrincipal;
@@ -29,6 +30,7 @@ import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.nio.ConnectionType;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.security.UsernamePasswordCredentials;
@@ -161,6 +163,7 @@ public abstract class AuthenticationBaseMessageTask<P>
         }
 
         endpoint.authenticated(principal, credentials, isOwnerConnection());
+        setConnectionType();
         endpointManager.registerEndpoint(endpoint);
         clientEngine.bind(endpoint);
 
@@ -168,9 +171,29 @@ public abstract class AuthenticationBaseMessageTask<P>
         return encodeAuth(thisAddress, principal.getUuid(), principal.getOwnerUuid());
     }
 
+    private void setConnectionType() {
+        String type = getClientType();
+        if (ClientTypes.JAVA.equals(type)) {
+            connection.setType(ConnectionType.JAVA_CLIENT);
+        } else if (ClientTypes.CSHARP.equals(type)) {
+            connection.setType(ConnectionType.CSHARP_CLIENT);
+        } else if (ClientTypes.CPP.equals(type)) {
+            connection.setType(ConnectionType.CPP_CLIENT);
+        } else if (ClientTypes.PYTHON.equals(type)) {
+            connection.setType(ConnectionType.PYTHON_CLIENT);
+        } else if (ClientTypes.RUBY.equals(type)) {
+            connection.setType(ConnectionType.RUBY_CLIENT);
+        } else {
+            clientEngine.getLogger(getClass()).info("Unknown client type: " + type);
+            connection.setType(ConnectionType.BINARY_CLIENT);
+        }
+    }
+
     protected abstract ClientMessage encodeAuth(Address thisAddress, String uuid, String ownerUuid);
 
     protected abstract boolean isOwnerConnection();
+
+    protected abstract String getClientType();
 
     private String getUuid() {
         if (principal != null) {
