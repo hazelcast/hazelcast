@@ -170,6 +170,12 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>nl.jqno.equalsverifier</groupId>
+            <artifactId>equalsverifier</artifactId>
+            <version>1.7.3</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>org.glassfish.extras</groupId>
             <artifactId>glassfish-embedded-all</artifactId>
             <version>3.1</version>
