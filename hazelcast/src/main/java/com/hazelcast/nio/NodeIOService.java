@@ -106,11 +106,6 @@ public class NodeIOService implements IOService {
     }
 
     @Override
-    public void handleMemberPacket(final Packet packet) {
-        packetTransceiver.receive(packet);
-    }
-
-    @Override
     public void handleClientPacket(Packet p) {
         node.clientEngine.handlePacket(p);
     }
@@ -292,6 +287,11 @@ public class NodeIOService implements IOService {
     @Override
     public SocketChannelWrapperFactory getSocketChannelWrapperFactory() {
         return node.getNodeExtension().getSocketChannelWrapperFactory();
+    }
+
+    @Override
+    public PacketTransceiver getPacketTransceiver() {
+        return node.nodeEngine.getPacketTransceiver();
     }
 
     @Override
