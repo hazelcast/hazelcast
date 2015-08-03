@@ -22,7 +22,6 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.hibernate.cache.access.AccessType;
 import org.hibernate.cfg.Environment;
-import org.hibernate.stat.CollectionStatistics;
 import org.hibernate.stat.SecondLevelCacheStatistics;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -34,6 +33,10 @@ import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+/**
+ * Read-only access cache concurrency strategy of Hibernate.
+ * Data may be added and removed, but not mutated.
+ */
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class CacheHitMissReadOnlyTest extends HibernateStatisticsTestSupport {
@@ -55,7 +58,6 @@ public class CacheHitMissReadOnlyTest extends HibernateStatisticsTestSupport {
         insertDummyEntities(10, 4);
         //all 10 entities and 40 properties are cached
         SecondLevelCacheStatistics dummyEntityCacheStats = sf.getStatistics().getSecondLevelCacheStatistics(CACHE_ENTITY);
-        CollectionStatistics collectionCacheStats = sf.getStatistics().getCollectionStatistics(CACHE_COLLECTION_ENTITY);
         SecondLevelCacheStatistics dummyPropertyCacheStats = sf.getStatistics().getSecondLevelCacheStatistics(CACHE_PROPERTY);
 
         sf.getCache().evictEntityRegions();
@@ -64,7 +66,6 @@ public class CacheHitMissReadOnlyTest extends HibernateStatisticsTestSupport {
         getDummyEntities(sf, 10);
         //hit 1 entity and 4 properties
         deleteDummyEntity(sf, 1);
-        sleep(1);
 
         assertEquals(4, dummyPropertyCacheStats.getHitCount());
         assertEquals(0, dummyPropertyCacheStats.getMissCount());

@@ -20,7 +20,6 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.hibernate.cache.spi.access.AccessType;
 import org.hibernate.cfg.Environment;
-import org.hibernate.stat.CollectionStatistics;
 import org.hibernate.stat.SecondLevelCacheStatistics;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -30,6 +29,13 @@ import java.util.Properties;
 
 import static org.junit.Assert.assertEquals;
 
+/**
+ * Read and write access (non-strict) cache concurrency strategy of Hibernate.
+ * Data may be added, removed and mutated.
+ * Nonstrict means that data integrity is not preserved as strictly as in READ_WRITE access
+ * Cache invalidations are asychrnonous
+ * Read through cache
+ */
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class CacheHitMissNonStrictTest
@@ -52,7 +58,6 @@ public class CacheHitMissNonStrictTest
         insertDummyEntities(10, 4);
         //all 10 entities and 40 properties are cached
         SecondLevelCacheStatistics dummyEntityCacheStats = sf.getStatistics().getSecondLevelCacheStatistics(CACHE_ENTITY);
-        CollectionStatistics collectionCacheStats = sf.getStatistics().getCollectionStatistics(CACHE_COLLECTION_ENTITY);
         SecondLevelCacheStatistics dummyPropertyCacheStats = sf.getStatistics().getSecondLevelCacheStatistics(CACHE_PROPERTY);
 
         sf.getCache().evictEntityRegions();
@@ -63,6 +68,8 @@ public class CacheHitMissNonStrictTest
 
         //hit 1 entity and 4 properties
         updateDummyEntityName(sf, 2, "updated");
+        //invalidation is not synchronized, so we have to wait
+        sleep(1);
         //entity 2 and its properties are invalidated
 
         //miss updated entity, hit 4 properties(they are still the same)
@@ -70,11 +77,28 @@ public class CacheHitMissNonStrictTest
 
         //hit 1 entity and 4 properties
         deleteDummyEntity(sf, 1);
-        sleep(1);
 
         assertEquals(12, dummyPropertyCacheStats.getHitCount());
         assertEquals(0, dummyPropertyCacheStats.getMissCount());
         assertEquals(2, dummyEntityCacheStats.getHitCount());
         assertEquals(11, dummyEntityCacheStats.getMissCount());
+    }
+
+    @Test
+    public void testUpdateEventuallyInvalidatesObject() {
+        insertDummyEntities(10, 4);
+        //all 10 entities and 40 properties are cached
+        final SecondLevelCacheStatistics dummyEntityCacheStats = sf.getStatistics().getSecondLevelCacheStatistics(CACHE_ENTITY);
+        SecondLevelCacheStatistics dummyPropertyCacheStats = sf.getStatistics().getSecondLevelCacheStatistics(CACHE_PROPERTY);
+
+        sf.getCache().evictEntityRegions();
+        sf.getCache().evictCollectionRegions();
+
+        //miss 10 entities
+        getDummyEntities(sf, 10);
+
+        //hit 1 entity and 4 properties
+        updateDummyEntityName(sf, 2, "updated");
+        assertSizeEventually(9, dummyEntityCacheStats.getEntries());
     }
 }
