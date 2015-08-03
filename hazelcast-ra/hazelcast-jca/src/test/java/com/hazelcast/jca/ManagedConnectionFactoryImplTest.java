@@ -20,7 +20,6 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -31,8 +30,11 @@ import javax.resource.spi.ManagedConnection;
 import javax.resource.spi.ManagedConnectionFactory;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Set;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -51,8 +53,9 @@ public class ManagedConnectionFactoryImplTest extends HazelcastTestSupport {
     public void testSetConnectionTracingEvents() {
         ManagedConnectionFactoryImpl fact = (ManagedConnectionFactoryImpl)connectionFactory;
         String controlStr = "DESTROY,  TX_START  , CLEANUP,TX_COMPLETE";
+        String failproofString = controlStr + ",,invalid_argument";
 
-        fact.setConnectionTracingEvents(controlStr);
+        fact.setConnectionTracingEvents(failproofString);
         String[] returnItems = delimitedStringToArray(fact.getConnectionTracingEvents(), ",");
         String[] controlItems = delimitedStringToArray(controlStr, ",");
 
@@ -80,6 +83,23 @@ public class ManagedConnectionFactoryImplTest extends HazelcastTestSupport {
 
         ManagedConnection retConnection = connectionFactory.matchManagedConnections(managedConnections, null, null);
         assertSame(retConnection, nullSecurityConnection);
+    }
+
+    @Test
+    public void testShouldReturnNullWhenThereIsNoInstanceOfThisResourceAdapter() throws ResourceException {
+        ResourceAdapterImpl mockResourceAdapter = mock(ResourceAdapterImpl.class);
+        when(mockResourceAdapter.getHazelcastInstance()).thenReturn(null);
+        ((ManagedConnectionFactoryImpl)connectionFactory).setResourceAdapter(mockResourceAdapter);
+
+        ((ManagedConnectionFactoryImpl)connectionFactory).setConnectionTracingEvents(null);
+
+        Set<ManagedConnection> managedConnections = new HashSet<ManagedConnection>();
+        for (int i=0; i < 10; i++) {
+            managedConnections.add(mock(ManagedConnection.class));
+        }
+
+        ManagedConnection retConnection = connectionFactory.matchManagedConnections(managedConnections, null, null);
+        assertNull(retConnection);
     }
 
     private String[] delimitedStringToArray(String str, String delimiter) {
