@@ -18,6 +18,13 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.wan.impl.WanNoDelayReplication;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Ignore;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -28,13 +35,6 @@ import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.TimeUnit;
-
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -354,25 +354,21 @@ public class WanReplicationTest extends HazelcastTestSupport {
       setupReplicateFrom(configA, configB, clusterB.length, "atob", PassThroughMergePolicy.class.getName());
       setupReplicateFrom(configB, configA, clusterA.length, "btoa", PassThroughMergePolicy.class.getName());
 
-      configA.getMapConfig("default").setTimeToLiveSeconds(5);
-      configB.getMapConfig("default").setTimeToLiveSeconds(5);
+      configA.getMapConfig("default").setTimeToLiveSeconds(60);
+      configB.getMapConfig("default").setTimeToLiveSeconds(60);
 
       initClusterA();
       initClusterB();
 
-      // Create some expiring data that will live longer than the default TTL
-      createDataIn(clusterA, "map", 0, 10, 10, TimeUnit.SECONDS);
+      // Create some expiring data that will live less than the default TTL
+      createDataIn(clusterA, "map", 0, 10, 5, TimeUnit.SECONDS);
       assertDataInFrom(clusterB, "map", 0, 10, clusterA);
-      createDataIn(clusterB, "map", 10, 20, 10, TimeUnit.SECONDS);
+      createDataIn(clusterB, "map", 10, 20, 5, TimeUnit.SECONDS);
       assertDataInFrom(clusterA, "map", 10, 20, clusterB);
 
-      sleepSeconds(5);
-      assertKeysIn(clusterA, "map", 0, 20);
-      assertKeysIn(clusterB, "map", 0, 20);
-
-      sleepSeconds(5);
-      assertKeysNotIn(clusterA, "map", 0, 20);
-      assertKeysNotIn(clusterB, "map", 0, 20);
+      sleepSeconds(10);
+      checkKeysNotIn(clusterA, "map", 0, 20);
+      checkKeysNotIn(clusterB, "map", 0, 20);
     }
 
     //"Issue #1371 this topology requested hear https://groups.google.com/forum/#!msg/hazelcast/73jJo9W_v4A/5obqKMDQAnoJ")
