@@ -200,9 +200,8 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
     public void sendResponse(ClientEndpoint endpoint, Object key, Object response, int callId, boolean isError, boolean isEvent) {
         Data data = serializationService.toData(response);
         ClientResponse clientResponse = new ClientResponse(data, callId, isError);
-        Data responseData = serializationService.toData(clientResponse);
         int partitionId = key == null ? -1 : getPartitionService().getPartitionId(key);
-        final Packet packet = new Packet(responseData, partitionId);
+        Packet packet = new Packet(serializationService.toBytes(clientResponse), partitionId);
         if (isEvent) {
             packet.setHeader(Packet.HEADER_EVENT);
         }
@@ -383,13 +382,12 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
                 }
             } catch (Throwable e) {
                 logProcessingFailure(request, e);
-                handleProcessingFailure(endpoint, request, packet.getData(), e);
+                handleProcessingFailure(endpoint, request, packet, e);
             }
         }
 
         private ClientRequest loadRequest() {
-            Data data = packet.getData();
-            return serializationService.toObject(data);
+            return serializationService.toObject(packet);
         }
 
         private void handleEndpointNotCreatedConnectionNotAlive() {

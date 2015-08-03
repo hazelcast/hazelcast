@@ -160,7 +160,7 @@ public final class ClientListenerServiceImpl implements ClientListenerService {
         @Override
         public void run() {
             final ClientConnection conn = (ClientConnection) packet.getConn();
-            final ClientResponse clientResponse = serializationService.toObject(packet.getData());
+            final ClientResponse clientResponse = serializationService.toObject(packet);
             final int callId = clientResponse.getCallId();
             final Data response = clientResponse.getResponse();
             handleEvent(response, callId, conn);

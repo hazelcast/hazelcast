@@ -25,9 +25,7 @@ import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.Packet;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.quorum.impl.QuorumServiceImpl;
 import com.hazelcast.spi.BackupAwareOperation;
@@ -51,6 +49,7 @@ import com.hazelcast.util.counters.Counter;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 
+import static com.hazelcast.nio.IOUtil.extractOperationCallId;
 import static com.hazelcast.spi.Operation.CALL_ID_LOCAL_SKIPPED;
 import static com.hazelcast.spi.OperationAccessor.setCallerAddress;
 import static com.hazelcast.spi.OperationAccessor.setConnection;
@@ -312,9 +311,8 @@ class OperationRunnerImpl extends OperationRunner {
 
         Connection connection = packet.getConn();
         Address caller = connection.getEndPoint();
-        Data data = packet.getData();
         try {
-            Object object = nodeEngine.toObject(data);
+            Object object = nodeEngine.toObject(packet);
             Operation op = (Operation) object;
             op.setNodeEngine(nodeEngine);
             setCallerAddress(op, caller);
@@ -332,7 +330,7 @@ class OperationRunnerImpl extends OperationRunner {
             run(op);
         } catch (Throwable throwable) {
             // If exception happens we need to extract the callId from the bytes directly!
-            long callId = IOUtil.extractOperationCallId(data, node.getSerializationService());
+            long callId = extractOperationCallId(packet, node.getSerializationService());
             operationService.send(new ErrorResponse(throwable, callId, packet.isUrgent()), caller);
             logOperationDeserializationException(throwable, callId);
             throw ExceptionUtil.rethrow(throwable);

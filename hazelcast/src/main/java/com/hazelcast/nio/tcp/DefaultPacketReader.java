@@ -72,7 +72,7 @@ public class DefaultPacketReader implements PacketReader {
 
     protected void handleBind(Packet packet) {
         TcpIpConnectionManager connectionManager = connection.getConnectionManager();
-        BindMessage bind = (BindMessage) ioService.toObject(packet.getData());
+        BindMessage bind = (BindMessage) ioService.toObject(packet);
         connectionManager.bind(connection, bind.getLocalAddress(), bind.getTargetAddress(), bind.shouldReply());
     }
 

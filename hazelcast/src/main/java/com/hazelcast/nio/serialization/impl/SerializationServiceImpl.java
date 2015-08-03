@@ -89,6 +89,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static com.hazelcast.util.Preconditions.checkNotNull;
 import static java.lang.Boolean.parseBoolean;
 
 public class SerializationServiceImpl implements SerializationService {
@@ -222,18 +223,13 @@ public class SerializationServiceImpl implements SerializationService {
     }
 
     @Override
-    public final Data toData(final Object obj) {
-        return toData(obj, globalPartitioningStrategy);
+    public final byte[] toBytes(Object obj) {
+        return toBytes(obj, globalPartitioningStrategy);
     }
 
     @Override
-    public final Data toData(Object obj, PartitioningStrategy strategy) {
-        if (obj == null) {
-            return null;
-        }
-        if (obj instanceof Data) {
-            return (Data) obj;
-        }
+    public final byte[] toBytes(Object obj, PartitioningStrategy strategy) {
+        checkNotNull(obj);
 
         BufferPool pool = bufferPoolThreadLocal.get();
         BufferObjectDataOutput out = pool.takeOutputBuffer();
@@ -251,12 +247,30 @@ public class SerializationServiceImpl implements SerializationService {
                 out.writeInt(partitionHash, ByteOrder.BIG_ENDIAN);
             }
 
-            return new HeapData(out.toByteArray());
+            return out.toByteArray();
         } catch (Throwable e) {
             throw handleException(e);
         } finally {
             pool.returnOutputBuffer(out);
         }
+    }
+
+    @Override
+    public final Data toData(Object obj) {
+        return toData(obj, globalPartitioningStrategy);
+    }
+
+    @Override
+    public final Data toData(Object obj, PartitioningStrategy strategy) {
+        if (obj == null) {
+            return null;
+        }
+        if (obj instanceof Data) {
+            return (Data) obj;
+        }
+
+        byte[] bytes = toBytes(obj, strategy);
+        return new HeapData(bytes);
     }
 
     @SuppressWarnings("unchecked")

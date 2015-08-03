@@ -163,8 +163,7 @@ public abstract class HazelcastTestSupport {
         SerializationService serializationService = getSerializationService(hz);
         ConnectionManager connectionManager = getConnectionManager(hz);
 
-        Data data = serializationService.toData(operation);
-        Packet packet = new Packet(data, operation.getPartitionId());
+        Packet packet = new Packet(serializationService.toBytes(operation), operation.getPartitionId());
         packet.setHeader(Packet.HEADER_OP);
         packet.setConn(connectionManager.getConnection(getAddress(hz)));
         return packet;

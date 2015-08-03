@@ -101,8 +101,8 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
         }
         registerInvocation(invocation);
         final SerializationService ss = client.getSerializationService();
-        final Data data = ss.toData(invocation.getRequest());
-        Packet packet = new Packet(data, invocation.getPartitionId());
+        final byte[] bytes = ss.toBytes(invocation.getRequest());
+        Packet packet = new Packet(bytes, invocation.getPartitionId());
         if (!isAllowedToSendRequest(connection, invocation.getRequest()) || !connection.write(packet)) {
             final int callId = invocation.getRequest().getCallId();
             deRegisterCallId(callId);
@@ -331,7 +331,7 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
         private void process(Packet packet) {
             final ClientConnection conn = (ClientConnection) packet.getConn();
             try {
-                final ClientResponse clientResponse = client.getSerializationService().toObject(packet.getData());
+                final ClientResponse clientResponse = client.getSerializationService().toObject(packet);
                 final int callId = clientResponse.getCallId();
                 final Data response = clientResponse.getResponse();
                 handlePacket(response, clientResponse.isError(), callId);

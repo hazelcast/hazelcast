@@ -134,7 +134,7 @@ public class AsyncResponsePacketHandler implements PacketHandler {
             }
         }
 
-        public void shutdown() {
+        private void shutdown() {
             shutdown = true;
             interrupt();
         }

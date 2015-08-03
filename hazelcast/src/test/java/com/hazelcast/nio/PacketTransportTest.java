@@ -1,6 +1,5 @@
 package com.hazelcast.nio;
 
-import com.hazelcast.nio.serialization.impl.HeapData;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
@@ -13,6 +12,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -28,8 +28,7 @@ public class PacketTransportTest extends HazelcastTestSupport {
     // This means that repeated calls to packet.write/packet.read are needed.
     @Test
     public void largeValue() {
-        HeapData originalData = new HeapData(generateRandomString(100000).getBytes());
-        Packet originalPacket = new Packet(originalData);
+        Packet originalPacket = new Packet(generateRandomString(100000).getBytes());
 
         Packet clonedPacket = new Packet();
 
@@ -45,8 +44,7 @@ public class PacketTransportTest extends HazelcastTestSupport {
 
         assertTrue(readCompleted);
 
-        assertEquals(originalPacket.getHeader(), clonedPacket.getHeader());
-        assertEquals(originalPacket.getData(), clonedPacket.getData());
+        assertPacketEquals(originalPacket, clonedPacket);
     }
 
     @Test
@@ -55,8 +53,7 @@ public class PacketTransportTest extends HazelcastTestSupport {
         Random random = new Random();
         for (int k = 0; k < 1000; k++) {
             byte[] bytes = generateRandomString(random.nextInt(1000) + 5).getBytes();
-            HeapData originalData = new HeapData(bytes);
-            Packet originalPacket = new Packet(originalData);
+            Packet originalPacket = new Packet(bytes);
             originalPackets.add(originalPacket);
         }
 
@@ -74,8 +71,7 @@ public class PacketTransportTest extends HazelcastTestSupport {
             } while (!writeCompleted);
 
             assertTrue(readCompleted);
-            assertEquals(originalPacket.getHeader(), clonedPacket.getHeader());
-            assertEquals(originalPacket.getData(), clonedPacket.getData());
+            assertPacketEquals(originalPacket, clonedPacket);
         }
     }
 
@@ -83,8 +79,7 @@ public class PacketTransportTest extends HazelcastTestSupport {
     // same Packet (content).
     @Test
     public void cloningOfPacket() {
-        HeapData originalData = new HeapData("foobar".getBytes());
-        Packet originalPacket = new Packet(originalData);
+        Packet originalPacket = new Packet("foobar".getBytes());
 
         ByteBuffer bb = ByteBuffer.allocate(100);
         boolean written = originalPacket.writeTo(bb);
@@ -96,7 +91,11 @@ public class PacketTransportTest extends HazelcastTestSupport {
         boolean read = clonedPacket.readFrom(bb);
         assertTrue(read);
 
+        assertPacketEquals(originalPacket, clonedPacket);
+    }
+
+    private void assertPacketEquals(Packet originalPacket, Packet clonedPacket) {
         assertEquals(originalPacket.getHeader(), clonedPacket.getHeader());
-        assertEquals(originalPacket.getData(), clonedPacket.getData());
+        assertArrayEquals(originalPacket.toByteArray(), clonedPacket.toByteArray());
     }
 }
