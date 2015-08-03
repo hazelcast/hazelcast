@@ -16,6 +16,10 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig;
+import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.DurationConfig;
+import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig;
+import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig.ExpiryPolicyType;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.util.StringUtil;
@@ -32,10 +36,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Properties;
 import java.util.Set;
-import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig;
-import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig;
-import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.DurationConfig;
-import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig.ExpiryPolicyType;
 
 import static com.hazelcast.util.Preconditions.isNotNull;
 
@@ -102,6 +102,8 @@ public class ConfigXmlGenerator {
 
         mapConfigXmlGenerator(xml, config);
 
+        replicatedMapConfigXmlGenerator(xml, config);
+
         cacheConfigXmlGenerator(xml, config);
 
         queueXmlGenerator(xml, config);
@@ -125,6 +127,31 @@ public class ConfigXmlGenerator {
         xml.append("</hazelcast>");
 
         return format(xml.toString(), INDENT);
+    }
+
+    private void replicatedMapConfigXmlGenerator(StringBuilder xml, Config config) {
+        final Collection<ReplicatedMapConfig> replicatedMapConfigs = config.getReplicatedMapConfigs().values();
+        for (ReplicatedMapConfig r : replicatedMapConfigs) {
+            xml.append("<replicatedmap name=\"").append(r.getName()).append("\">");
+            xml.append("<in-memory-format>").append(r.getInMemoryFormat()).append("</in-memory-format>");
+            xml.append("<concurrency-level>").append(r.getConcurrencyLevel()).append("</concurrency-level>");
+            xml.append("<replication-delay-millis>").append(r.getReplicationDelayMillis()).append("</replication-delay-millis>");
+            xml.append("<async-fillup>").append(r.isAsyncFillup()).append("</async-fillup>");
+            xml.append("<statistics-enabled>").append(r.isStatisticsEnabled()).append("</statistics-enabled>");
+            if (!r.getListenerConfigs().isEmpty()) {
+                xml.append("<entry-listeners>");
+                for (ListenerConfig lc : r.getListenerConfigs()) {
+                    xml.append("<entry-listener include-value=\"").append(lc.isIncludeValue())
+                            .append("\" local=\"").append(lc.isLocal()).append("\">");
+                    final String clazz = lc.getImplementation()
+                            != null ? lc.getImplementation().getClass().getName() : lc.getClassName();
+                    xml.append(clazz);
+                    xml.append("</entry-listener>");
+                }
+                xml.append("</entry-listeners>");
+            }
+                xml.append("</replicatedmap>");
+        }
     }
 
     private void listenerXmlGenerator(StringBuilder xml, Config config) {
@@ -392,8 +419,8 @@ public class ConfigXmlGenerator {
             if (expiryPolicyFactoryConfig != null) {
                 if (StringUtil.isNullOrEmpty(expiryPolicyFactoryConfig.getClassName())) {
                     xml.append("<expiry-policy-factory class-name=\"")
-                       .append(expiryPolicyFactoryConfig.getClassName())
-                       .append("\"/>");
+                            .append(expiryPolicyFactoryConfig.getClassName())
+                            .append("\"/>");
                 } else {
                     TimedExpiryPolicyFactoryConfig timedExpiryPolicyFactoryConfig =
                             expiryPolicyFactoryConfig.getTimedExpiryPolicyFactoryConfig();
@@ -416,7 +443,7 @@ public class ConfigXmlGenerator {
                 xml.append("<cache-entry-listener")
                         .append(" old-value-required=\"").append(el.isOldValueRequired()).append("\"")
                         .append(" synchronous=\"").append(el.isSynchronous()).append("\"")
-                   .append(">");
+                        .append(">");
                 xml.append("<cache-entry-listener-factory class-name=\"")
                         .append(el.getCacheEntryListenerFactory()).append("\"/>");
                 xml.append("<cache-entry-event-filter-factory class-name=\"")
@@ -539,7 +566,7 @@ public class ConfigXmlGenerator {
                     .append(" size=\"").append(e.getSize()).append("\"")
                     .append(" max-size-policy=\"").append(e.getMaximumSizePolicy()).append("\"")
                     .append(" eviction-policy=\"").append(e.getEvictionPolicy()).append("\"")
-               .append("/>");
+                    .append("/>");
         }
     }
 
@@ -627,14 +654,14 @@ public class ConfigXmlGenerator {
 
     private void symmetricEncInterceptorConfigXmlGenerator(StringBuilder xml, NetworkConfig netCfg) {
         final SymmetricEncryptionConfig sec = netCfg.getSymmetricEncryptionConfig();
-        xml.append("<symmetric-encryption enabled=\"").append(sec != null && sec.isEnabled()).append("\">");
         if (sec != null) {
+            xml.append("<symmetric-encryption enabled=\"").append(sec != null && sec.isEnabled()).append("\">");
             xml.append("<algorithm>").append(sec.getAlgorithm()).append("</algorithm>");
             xml.append("<salt>").append(sec.getSalt()).append("</salt>");
             xml.append("<password>").append(sec.getPassword()).append("</password>");
             xml.append("<iteration-count>").append(sec.getIterationCount()).append("</iteration-count>");
+            xml.append("</symmetric-encryption>");
         }
-        xml.append("</symmetric-encryption>");
     }
 
     private String format(final String input, int indent) {
