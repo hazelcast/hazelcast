@@ -30,6 +30,7 @@ import com.hazelcast.nio.tcp.PacketWriter;
 import com.hazelcast.nio.tcp.SocketChannelWrapperFactory;
 import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.spi.EventService;
+import com.hazelcast.spi.impl.packettransceiver.PacketTransceiver;
 
 import java.util.Collection;
 
@@ -54,8 +55,6 @@ public interface IOService {
     SymmetricEncryptionConfig getSymmetricEncryptionConfig();
 
     SSLConfig getSSLConfig();
-
-    void handleMemberPacket(Packet p);
 
     void handleClientPacket(Packet p);
 
@@ -139,6 +138,8 @@ public interface IOService {
     SerializationService getSerializationService();
 
     SocketChannelWrapperFactory getSocketChannelWrapperFactory();
+
+    PacketTransceiver getPacketTransceiver();
 
     MemberSocketInterceptor getMemberSocketInterceptor();
 

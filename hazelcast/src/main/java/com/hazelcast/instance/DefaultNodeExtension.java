@@ -162,7 +162,8 @@ public class DefaultNodeExtension implements NodeExtension {
 
     @Override
     public PacketReader createPacketReader(TcpIpConnection connection, IOService ioService) {
-        return new DefaultPacketReader(connection, ioService);
+        NodeEngineImpl nodeEngine = node.nodeEngine;
+        return new DefaultPacketReader(connection, nodeEngine.getSerializationService(), nodeEngine.getPacketTransceiver());
     }
 
     @Override
