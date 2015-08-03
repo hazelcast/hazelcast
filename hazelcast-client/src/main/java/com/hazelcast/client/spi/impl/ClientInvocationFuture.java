@@ -21,6 +21,7 @@ import com.hazelcast.client.impl.client.ClientRequest;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
+import com.hazelcast.core.IFunction;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.serialization.Data;
@@ -57,6 +58,8 @@ public class ClientInvocationFuture<V> implements ICompletableFuture<V> {
     private final ClientInvocation invocation;
 
     private boolean responseDeserialized;
+
+    private IFunction afterDeserializeFunction;
 
     private volatile Object response;
 
@@ -165,7 +168,11 @@ public class ClientInvocationFuture<V> implements ICompletableFuture<V> {
         }
 
         if (responseDeserialized) {
-            return serializationService.toObject(response);
+            response =  serializationService.toObject(response);
+
+            if (afterDeserializeFunction != null) {
+                response = afterDeserializeFunction.apply(response);
+            }
         }
 
         return (V) response;
@@ -238,6 +245,9 @@ public class ClientInvocationFuture<V> implements ICompletableFuture<V> {
                         }
                         if (deserialized) {
                             resp = serializationService.toObject(resp);
+                            if (afterDeserializeFunction != null) {
+                                resp = afterDeserializeFunction.apply(resp);
+                            }
                         }
                         callback.onResponse(resp);
                     } catch (Throwable t) {
@@ -249,6 +259,10 @@ public class ClientInvocationFuture<V> implements ICompletableFuture<V> {
         } catch (RejectedExecutionException e) {
             LOGGER.warning("Execution of callback: " + callback + " is rejected!", e);
         }
+    }
+
+    public void afterDeserialize(IFunction afterDeserializeFunction) {
+        this.afterDeserializeFunction = afterDeserializeFunction;
     }
 
     public ClientInvocation getInvocation() {

@@ -18,36 +18,51 @@ package com.hazelcast.ringbuffer.impl.client;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
+import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.ringbuffer.ReadResultSet;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
 import static com.hazelcast.ringbuffer.impl.client.RingbufferPortableHook.F_ID;
 import static com.hazelcast.ringbuffer.impl.client.RingbufferPortableHook.READ_RESULT_SET;
+import static java.util.Collections.unmodifiableList;
 
 public class PortableReadResultSet<E> implements Portable, ReadResultSet<E> {
 
-    private List<E> items;
+    private List<Data> items;
     private int readCount;
+    private SerializationService serializationService;
 
     public PortableReadResultSet() {
     }
 
-    public PortableReadResultSet(int readCount, List<E> items) {
+    public PortableReadResultSet(int readCount, List<Data> items) {
         this.readCount = readCount;
         this.items = items;
     }
 
+    public List<Data> getDataItems() {
+        return items;
+    }
+
+    public void setSerializationService(SerializationService serializationService) {
+        this.serializationService = serializationService;
+    }
+
     @Override
     public Iterator<E> iterator() {
-        return items.iterator();
+        List<E> result = new ArrayList<E>(items.size());
+        for (Data data : items) {
+            result.add((E) serializationService.toObject(data));
+        }
+        return unmodifiableList(result).iterator();
     }
 
     @Override
@@ -57,7 +72,8 @@ public class PortableReadResultSet<E> implements Portable, ReadResultSet<E> {
 
     @Override
     public E get(int index) {
-        return items.get(index);
+        Data data = items.get(index);
+        return serializationService.toObject(data);
     }
 
     @Override
@@ -77,8 +93,8 @@ public class PortableReadResultSet<E> implements Portable, ReadResultSet<E> {
         // writing the items
         writer.writeInt("count", items.size());
         ObjectDataOutput rawDataOutput = writer.getRawDataOutput();
-        for (E item : items) {
-            rawDataOutput.writeObject(item);
+        for (Object item : items) {
+            rawDataOutput.writeData((Data) item);
         }
     }
 
@@ -88,12 +104,11 @@ public class PortableReadResultSet<E> implements Portable, ReadResultSet<E> {
 
         // reading the items.
         int size = reader.readInt("count");
-        List<E> items = new ArrayList<E>(size);
+        this.items = new ArrayList<Data>(size);
         ObjectDataInput rawDataInput = reader.getRawDataInput();
         for (int k = 0; k < size; k++) {
-            E item = (E) rawDataInput.readObject();
+            Data item = rawDataInput.readData();
             items.add(item);
         }
-        this.items = Collections.unmodifiableList(items);
     }
 }

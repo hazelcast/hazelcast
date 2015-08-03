@@ -82,4 +82,8 @@ public interface ResponseTemplate {
     @Response(ResponseMessageConst.EXCEPTION)
     void Exception(int error, String className, String causeClassName, String message, String stacktrace);
 
+    //FIXME review this one
+    @Response(ResponseMessageConst.READ_RESULT_SET)
+    void ReadResultSet(int readCount, List<Data> items);
+
 }

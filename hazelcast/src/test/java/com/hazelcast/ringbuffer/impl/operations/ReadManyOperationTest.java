@@ -59,7 +59,7 @@ public class ReadManyOperationTest extends HazelcastTestSupport {
 
         op.run();
 
-        ReadResultSetImpl response = op.getResponse();
+        ReadResultSetImpl response = getReadResultSet(op);
         assertEquals(asList("tail"), response);
         assertEquals(1, response.readCount());
     }
@@ -75,7 +75,7 @@ public class ReadManyOperationTest extends HazelcastTestSupport {
         boolean shouldWait = op.shouldWait();
         assertTrue(shouldWait);
 
-        ReadResultSetImpl response = op.getResponse();
+        ReadResultSetImpl response = getReadResultSet(op);
         assertEquals(0, response.readCount());
     }
 
@@ -99,7 +99,7 @@ public class ReadManyOperationTest extends HazelcastTestSupport {
         boolean shouldWait = op.shouldWait();
         assertTrue(shouldWait);
 
-        ReadResultSetImpl response = op.getResponse();
+        ReadResultSetImpl response = getReadResultSet(op);
         assertEquals(0, response.readCount());
         assertEquals(0, response.size());
     }
@@ -128,7 +128,7 @@ public class ReadManyOperationTest extends HazelcastTestSupport {
 
         op.run();
 
-        ReadResultSetImpl response = op.getResponse();
+        ReadResultSetImpl response = getReadResultSet(op);
         assertEquals(asList("item2"), response);
         assertEquals(1, response.readCount());
         assertEquals(1, response.size());
@@ -149,7 +149,7 @@ public class ReadManyOperationTest extends HazelcastTestSupport {
 
         op.run();
 
-        ReadResultSetImpl response = op.getResponse();
+        ReadResultSetImpl response = getReadResultSet(op);
         assertEquals(asList("item1"), response);
         assertEquals(1, response.readCount());
         assertEquals(1, response.size());
@@ -178,7 +178,7 @@ public class ReadManyOperationTest extends HazelcastTestSupport {
 
         assertTrue(op.shouldWait());
         assertEquals(startSequence, op.sequence);
-        assertTrue(op.getResponse().isEmpty());
+        assertTrue(getReadResultSet(op).isEmpty());
 
         ringbuffer.add("item1");
         assertTrue(op.shouldWait());
@@ -244,10 +244,14 @@ public class ReadManyOperationTest extends HazelcastTestSupport {
 
 
         assertFalse(op.shouldWait());
-        ReadResultSetImpl response = op.getResponse();
+        ReadResultSetImpl response = getReadResultSet(op);
         assertEquals(startSequence + 3, op.sequence);
         assertEquals(asList("item1", "item2", "item3"), response);
         assertEquals(3, response.readCount());
+    }
+
+    private ReadResultSetImpl getReadResultSet(ReadManyOperation op) {
+        return (ReadResultSetImpl) op.getResponse();
     }
 
     @Test
@@ -265,9 +269,9 @@ public class ReadManyOperationTest extends HazelcastTestSupport {
         op.setNodeEngine(nodeEngine);
 
         assertTrue(op.shouldWait());
-        ReadResultSetImpl response = op.getResponse();
+        ReadResultSetImpl response = getReadResultSet(op);
         assertEquals(startSequence, op.sequence);
-        assertTrue(op.getResponse().isEmpty());
+        assertTrue(getReadResultSet(op).isEmpty());
 
         ringbuffer.add("bad1");
         assertTrue(op.shouldWait());

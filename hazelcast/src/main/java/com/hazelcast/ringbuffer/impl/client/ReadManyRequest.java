@@ -21,7 +21,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.nio.serialization.SerializationService;
-import com.hazelcast.ringbuffer.ReadResultSet;
+import com.hazelcast.ringbuffer.impl.ReadResultSetImpl;
 import com.hazelcast.ringbuffer.impl.operations.ReadManyOperation;
 import com.hazelcast.spi.Operation;
 
@@ -63,10 +63,10 @@ public class ReadManyRequest extends RingbufferRequest {
     // here we convert the normal ReadResultSet to a PortableReadResultSet
     @Override
     protected Object filter(Object response) {
-        ReadResultSet readResultSet = (ReadResultSet) response;
+        ReadResultSetImpl readResultSet = (ReadResultSetImpl) response;
         int readCount = readResultSet.readCount();
-        List<Object> items = new ArrayList<Object>(readCount);
-        for (Object item : readResultSet) {
+        List<Data> items = new ArrayList<Data>(readCount);
+        for (Data item : readResultSet.getItems()) {
             items.add(item);
         }
         return new PortableReadResultSet<Object>(readCount, items);

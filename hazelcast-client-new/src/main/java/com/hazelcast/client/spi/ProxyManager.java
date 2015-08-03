@@ -38,6 +38,7 @@ import com.hazelcast.client.proxy.ClientMapReduceProxy;
 import com.hazelcast.client.proxy.ClientMultiMapProxy;
 import com.hazelcast.client.proxy.ClientQueueProxy;
 import com.hazelcast.client.proxy.ClientReplicatedMapProxy;
+import com.hazelcast.client.proxy.ClientRingbufferProxy;
 import com.hazelcast.client.proxy.ClientSemaphoreProxy;
 import com.hazelcast.client.proxy.ClientSetProxy;
 import com.hazelcast.client.proxy.ClientTopicProxy;
@@ -66,6 +67,7 @@ import com.hazelcast.mapreduce.impl.MapReduceService;
 import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
+import com.hazelcast.ringbuffer.impl.RingbufferService;
 import com.hazelcast.spi.DefaultObjectNamespace;
 import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.topic.impl.TopicService;
@@ -122,6 +124,7 @@ public final class ProxyManager {
         register(MapReduceService.SERVICE_NAME, ClientMapReduceProxy.class);
         register(ReplicatedMapService.SERVICE_NAME, ClientReplicatedMapProxy.class);
         register(XAService.SERVICE_NAME, XAResourceProxy.class);
+        register(RingbufferService.SERVICE_NAME, ClientRingbufferProxy.class);
 
         register(IdGeneratorService.SERVICE_NAME, new ClientProxyFactory() {
             public ClientProxy create(String id) {
