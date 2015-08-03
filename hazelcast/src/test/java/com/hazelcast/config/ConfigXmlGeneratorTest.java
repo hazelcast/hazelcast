@@ -37,7 +37,7 @@ public class ConfigXmlGeneratorTest {
         replicatedMapConfig.setName("replicated-map-name");
         replicatedMapConfig.setStatisticsEnabled(false);
         replicatedMapConfig.setConcurrencyLevel(128);
-//        replicatedMapConfig.addEntryListenerConfig(new EntryListenerConfig());
+        replicatedMapConfig.addEntryListenerConfig(new EntryListenerConfig("com.hazelcast.entrylistener", false, false));
         config.addReplicatedMapConfig(replicatedMapConfig);
         ConfigXmlGenerator configXmlGenerator = new ConfigXmlGenerator();
         String xml = configXmlGenerator.generate(config);
@@ -47,8 +47,9 @@ public class ConfigXmlGeneratorTest {
 
         ReplicatedMapConfig xmlReplicatedMapConfig = xmlConfig.getReplicatedMapConfig("replicated-map-name");
         assertEquals("replicated-map-name", xmlReplicatedMapConfig.getName());
-        assertEquals("false", xmlReplicatedMapConfig.isStatisticsEnabled());
+        assertEquals(false, xmlReplicatedMapConfig.isStatisticsEnabled());
         assertEquals(128, xmlReplicatedMapConfig.getConcurrencyLevel());
+        assertEquals("com.hazelcast.entrylistener", xmlReplicatedMapConfig.getListenerConfigs().get(0).getClassName());
 
     }
 }
