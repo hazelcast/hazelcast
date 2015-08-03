@@ -14,11 +14,17 @@
  * limitations under the License.
  */
 
-package com.hazelcast.query;
+package com.hazelcast.query.impl.predicates;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.query.EntryObject;
+import com.hazelcast.query.IndexAwarePredicate;
+import com.hazelcast.query.Predicate;
+import com.hazelcast.query.PredicateBuilder;
+import com.hazelcast.query.Predicates;
+import com.hazelcast.query.QueryException;
 import com.hazelcast.query.impl.AttributeType;
 import com.hazelcast.query.impl.QueryContext;
 import com.hazelcast.query.impl.QueryEntry;
