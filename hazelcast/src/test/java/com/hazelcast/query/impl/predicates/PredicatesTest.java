@@ -26,6 +26,8 @@ import com.hazelcast.query.PredicateBuilder;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.query.QueryException;
 import com.hazelcast.query.impl.AttributeType;
+import com.hazelcast.query.impl.Index;
+import com.hazelcast.query.impl.IndexImpl;
 import com.hazelcast.query.impl.QueryContext;
 import com.hazelcast.query.impl.QueryEntry;
 import com.hazelcast.query.impl.QueryableEntry;
@@ -46,6 +48,8 @@ import static com.hazelcast.instance.TestUtil.toData;
 import com.hazelcast.query.impl.predicates.AndPredicate;
 
 import com.hazelcast.query.impl.predicates.EqualPredicate;
+import org.mockito.Mockito;
+
 import static com.hazelcast.query.Predicates.and;
 import static com.hazelcast.query.Predicates.between;
 import static com.hazelcast.query.Predicates.equal;
@@ -67,6 +71,9 @@ import static java.lang.Boolean.TRUE;
 import static java.util.Map.Entry;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
@@ -290,6 +297,20 @@ public class PredicatesTest extends HazelcastTestSupport {
     public void testInNullWithNullArray() {
         Predicates.in("", null);
     }
+
+    @Test
+    public void testNotEqualsPredicateDoesNotUseIndex() {
+        Index dummyIndex = new IndexImpl("foo", false);
+        QueryContext mockQueryContext = mock(QueryContext.class);
+        when(mockQueryContext.getIndex(anyString())).
+                thenReturn(dummyIndex);
+
+        NotEqualPredicate p = new NotEqualPredicate("foo", "bar");
+
+        boolean indexed = p.isIndexed(mockQueryContext);
+        assertFalse(indexed);
+    }
+
 
     private class DummyEntry extends QueryEntry {
 
