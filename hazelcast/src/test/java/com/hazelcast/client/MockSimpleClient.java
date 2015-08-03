@@ -132,6 +132,11 @@ public class MockSimpleClient implements SimpleClient {
         }
 
         @Override
+        public void setType(ConnectionType type) {
+            //NO OP
+        }
+
+        @Override
         public boolean isClient() {
             return true;
         }

@@ -17,6 +17,7 @@
 package com.hazelcast.client.spi.impl;
 
 import com.hazelcast.client.AuthenticationException;
+import com.hazelcast.client.ClientTypes;
 import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.client.connection.AddressProvider;
 import com.hazelcast.client.connection.Authenticator;
@@ -105,10 +106,11 @@ public abstract class ClusterListenerSupport implements ConnectionListener, Conn
             if (credentials instanceof UsernamePasswordCredentials) {
                 UsernamePasswordCredentials cr = (UsernamePasswordCredentials) credentials;
                 clientMessage = ClientAuthenticationCodec.encodeRequest(cr.getUsername(),
-                        cr.getPassword(), uuid, ownerUuid, true);
+                        cr.getPassword(), uuid, ownerUuid, true, ClientTypes.JAVA);
             } else {
                 Data data = ss.toData(credentials);
-                clientMessage = ClientAuthenticationCustomCodec.encodeRequest(data, uuid, ownerUuid, true);
+                clientMessage = ClientAuthenticationCustomCodec.encodeRequest(data, uuid, ownerUuid,
+                        true, ClientTypes.JAVA);
 
             }
             connection.init();

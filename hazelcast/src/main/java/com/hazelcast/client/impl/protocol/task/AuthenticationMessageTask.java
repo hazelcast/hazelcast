@@ -81,5 +81,10 @@ public class AuthenticationMessageTask
         return parameters.isOwnerConnection;
     }
 
+    @Override
+    protected String getClientType() {
+        return parameters.clientType;
+    }
+
 
 }

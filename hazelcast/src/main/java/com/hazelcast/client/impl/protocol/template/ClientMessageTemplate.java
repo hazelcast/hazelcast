@@ -27,10 +27,12 @@ import com.hazelcast.nio.serialization.Data;
 public interface ClientMessageTemplate {
 
     @Request(id = 2, retryable = true, response = ResponseMessageConst.AUTHENTICATION)
-    void authentication(String username, String password, @Nullable String uuid, @Nullable String ownerUuid, boolean isOwnerConnection);
+    void authentication(String username, String password, @Nullable String uuid,
+                        @Nullable String ownerUuid, boolean isOwnerConnection, String clientType);
 
     @Request(id = 3, retryable = true, response = ResponseMessageConst.AUTHENTICATION)
-    void authenticationCustom(Data credentials, @Nullable String uuid, @Nullable String ownerUuid, boolean isOwnerConnection);
+    void authenticationCustom(Data credentials, @Nullable String uuid,
+                              @Nullable String ownerUuid, boolean isOwnerConnection, String clientType);
 
     @Request(id = 4, retryable = false, response = ResponseMessageConst.STRING,
             event = {EventMessageConst.EVENT_MEMBER, EventMessageConst.EVENT_MEMBERSET, EventMessageConst.EVENT_MEMBERATTRIBUTECHANGE})

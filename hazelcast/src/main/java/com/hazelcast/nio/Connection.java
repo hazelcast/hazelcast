@@ -27,7 +27,7 @@ public interface Connection {
 
     /**
      * Writes a SocketWritable packet to the other side.
-     * <p/>
+     * <p>
      * The packet could be stored in an internal queue before it actually is written, so this call
      * doesn't need to be a synchronous call.
      *
@@ -61,12 +61,19 @@ public interface Connection {
 
     /**
      * Closes this connection.
-     * <p/>
+     * <p>
      * Pending packets on this connection are discarded
-     * <p/>
+     * <p>
      * If the Connection already is closed, the call is ignored. So it can safely be called multiple times.
      */
     void close();
+
+    /**
+     * Sets the type of the connection
+     *
+     * @param type to be set
+     */
+    void setType(ConnectionType type);
 
     /**
      * Returns the {@link ConnectionType} of this Connection.
@@ -94,14 +101,14 @@ public interface Connection {
      * <code>null</code> if it is unconnected.
      *
      * @return address of the endpoint.
-     * <p/>
+     * <p>
      * todo: do we really need this method because we have getInetAddress, InetSocketAddress and getEndPoint.
      */
     InetSocketAddress getRemoteSocketAddress();
 
     /**
      * Gets the {@link Address} of the other side of this Connection.
-     * <p/>
+     * <p>
      * todo: rename to get remoteAddress?
      *
      * @return the Address.
@@ -110,7 +117,7 @@ public interface Connection {
 
     /**
      * The remote port.
-     * <p/>
+     * <p>
      * todo: rename to getRemotePort?  And do we need it because we already have getEndPoint which returns an address
      * which includes port. It is only used in testing
      *
