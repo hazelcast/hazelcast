@@ -63,7 +63,7 @@ public class XmlClientConfigImportVariableReplacementTest {
     @Test
     public void readVariables() {
         String xml =
-                "<hazelcast-client>\n" +
+                "<hazelcast-client xmlns=\"http://www.hazelcast.com/schema/client-config\">\n" +
                         "<executor-pool-size>${executor.pool.size}</executor-pool-size>" +
                         "</hazelcast-client>";
 
@@ -75,7 +75,7 @@ public class XmlClientConfigImportVariableReplacementTest {
     public void testImportConfigFromResourceVariables() throws IOException {
         File file = createConfigFile("foo", "bar");
         FileOutputStream os = new FileOutputStream(file);
-        String networkConfig = "<hazelcast-client>" +
+        String networkConfig = "<hazelcast-client xmlns=\"http://www.hazelcast.com/schema/client-config\">" +
                 "<network>" +
                 "<cluster-members>" +
                 "<address>192.168.100.100</address>" +
@@ -94,7 +94,7 @@ public class XmlClientConfigImportVariableReplacementTest {
                 "</hazelcast-client>";
         writeStringToStreamAndClose(os, networkConfig);
 
-        String xml = "<hazelcast-client>\n" +
+        String xml = "<hazelcast-client xmlns=\"http://www.hazelcast.com/schema/client-config\">\n" +
                 "    <import resource=\"${config.location}\"/>\n" +
                 "</hazelcast-client>";
 
@@ -109,7 +109,7 @@ public class XmlClientConfigImportVariableReplacementTest {
     public void testImportedConfigVariableReplacement() throws IOException {
         File file = createConfigFile("foo", "bar");
         FileOutputStream os = new FileOutputStream(file);
-        String networkConfig = "<hazelcast-client>" +
+        String networkConfig = "<hazelcast-client xmlns=\"http://www.hazelcast.com/schema/client-config\">" +
                 "<network>" +
                 "<cluster-members>" +
                 "<address>${ip.address}</address>" +
@@ -118,7 +118,7 @@ public class XmlClientConfigImportVariableReplacementTest {
                 "</hazelcast-client>";
         writeStringToStreamAndClose(os, networkConfig);
 
-        String xml = "<hazelcast-client>\n" +
+        String xml = "<hazelcast-client xmlns=\"http://www.hazelcast.com/schema/client-config\">\n" +
                 "    <import resource=\"${config.location}\"/>\n" +
                 "</hazelcast-client>";
 
@@ -136,10 +136,10 @@ public class XmlClientConfigImportVariableReplacementTest {
         File config2 = createConfigFile("hz2", "xml");
         FileOutputStream os1 = new FileOutputStream(config1);
         FileOutputStream os2 = new FileOutputStream(config2);
-        String config1Xml = "<hazelcast-client>" +
+        String config1Xml = "<hazelcast-client xmlns=\"http://www.hazelcast.com/schema/client-config\">" +
                 "    <import resource=\"file://" + config2.getAbsolutePath() + "\"/>\n" +
                 "</hazelcast-client>";
-        String config2Xml = "<hazelcast-client>" +
+        String config2Xml = "<hazelcast-client xmlns=\"http://www.hazelcast.com/schema/client-config\">" +
                 "    <import resource=\"file://" + config1.getAbsolutePath() + "\"/>\n" +
                 "</hazelcast-client>";
         writeStringToStreamAndClose(os1, config1Xml);
@@ -156,13 +156,13 @@ public class XmlClientConfigImportVariableReplacementTest {
         FileOutputStream os1 = new FileOutputStream(config1);
         FileOutputStream os2 = new FileOutputStream(config2);
         FileOutputStream os3 = new FileOutputStream(config2);
-        String config1Xml = "<hazelcast-client>" +
+        String config1Xml = "<hazelcast-client xmlns=\"http://www.hazelcast.com/schema/client-config\">" +
                 "    <import resource=\"file://" + config2.getAbsolutePath() + "\"/>\n" +
                 "</hazelcast-client>";
-        String config2Xml = "<hazelcast-client>" +
+        String config2Xml = "<hazelcast-client xmlns=\"http://www.hazelcast.com/schema/client-config\">" +
                 "    <import resource=\"file://" + config3.getAbsolutePath() + "\"/>\n" +
                 "</hazelcast-client>";
-        String config3Xml = "<hazelcast-client>" +
+        String config3Xml = "<hazelcast-client xmlns=\"http://www.hazelcast.com/schema/client-config\">" +
                 "    <import resource=\"file://" + config1.getAbsolutePath() + "\"/>\n" +
                 "</hazelcast-client>";
         writeStringToStreamAndClose(os1, config1Xml);
@@ -175,7 +175,7 @@ public class XmlClientConfigImportVariableReplacementTest {
     public void testImportEmptyResourceContent() throws Exception {
         File config1 = createConfigFile("hz1", "xml");
         FileOutputStream os1 = new FileOutputStream(config1);
-        String config1Xml = "<hazelcast-client>" +
+        String config1Xml = "<hazelcast-client xmlns=\"http://www.hazelcast.com/schema/client-config\">" +
                 "    <import resource=\"file://" + config1.getAbsolutePath() + "\"/>\n" +
                 "</hazelcast-client>";
         writeStringToStreamAndClose(os1, "");
@@ -184,7 +184,7 @@ public class XmlClientConfigImportVariableReplacementTest {
 
     @Test(expected = InvalidConfigurationException.class)
     public void testImportEmptyResourceThrowsException() throws Exception {
-        String xml = "<hazelcast-client>\n" +
+        String xml = "<hazelcast-client xmlns=\"http://www.hazelcast.com/schema/client-config\">\n" +
                 "    <import resource=\"\"/>\n" +
                 "</hazelcast-client>";
 
@@ -193,7 +193,7 @@ public class XmlClientConfigImportVariableReplacementTest {
 
     @Test(expected = InvalidConfigurationException.class)
     public void testImportNotExistingResourceThrowsException() throws Exception {
-        String xml = "<hazelcast-client>\n" +
+        String xml = "<hazelcast-client xmlns=\"http://www.hazelcast.com/schema/client-config\">\n" +
                 "    <import resource=\"notexisting.xml\"/>\n" +
                 "</hazelcast-client>";
 
@@ -202,7 +202,7 @@ public class XmlClientConfigImportVariableReplacementTest {
 
     @Test
     public void testImportGroupConfigFromClassPath() throws Exception {
-        String xml = "<hazelcast-client>\n" +
+        String xml = "<hazelcast-client xmlns=\"http://www.hazelcast.com/schema/client-config\">\n" +
                 "    <import resource=\"classpath:hazelcast-client-c1.xml\"/>\n" +
                 "</hazelcast-client>";
 

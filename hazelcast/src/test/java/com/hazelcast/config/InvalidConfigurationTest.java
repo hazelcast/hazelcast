@@ -176,7 +176,7 @@ public class InvalidConfigurationTest {
     @Test(expected = InvalidConfigurationException.class)
     public void testWhenInvalidTcpIpConfiguration() {
         String xml =
-                "<hazelcast>\n" +
+                "<hazelcast  xmlns=\"http://www.hazelcast.com/schema/config\">\n" +
                     "<network\n>" +
                         "<join>\n" +
                             "<tcp-ip enabled=\"true\">\n" +
@@ -192,7 +192,7 @@ public class InvalidConfigurationTest {
     @Test
     public void invalidConfigurationTest_WhenOrderIsDifferent() {
         String xml =
-                "<hazelcast>\n" +
+                "<hazelcast xmlns=\"http://www.hazelcast.com/schema/config\">\n" +
                         "<list name=\"default\">\n" +
                             "<statistics-enabled>false</statistics-enabled>\n" +
                             "<max-size>0</max-size>\n" +
@@ -202,7 +202,7 @@ public class InvalidConfigurationTest {
                 "</hazelcast>\n";
         buildConfig(xml);
         String xml2 =
-                "<hazelcast>\n" +
+                "<hazelcast xmlns=\"http://www.hazelcast.com/schema/config\">\n" +
                         "<list name=\"default\">\n" +
                             "<backup-count>1</backup-count>\n" +
                             "<async-backup-count>0</async-backup-count>\n" +
@@ -216,7 +216,7 @@ public class InvalidConfigurationTest {
     @Test(expected = InvalidConfigurationException.class)
     public void testWanConfigSnapshotEnabledForWrongPublisher() {
         String xml =
-                "<hazelcast>\n" +
+                "<hazelcast xmlns=\"http://www.hazelcast.com/schema/config\">\n" +
                         "<wan-replication name=\"my-wan-cluster\" snapshot-enabled=\"true\">\n" +
                         "    <target-cluster group-name=\"test-cluster-1\" group-password=\"test-pass\">\n" +
                         "       <replication-impl>com.hazelcast.wan.impl.WanNoDelayReplication</replication-impl>\n" +
@@ -298,7 +298,7 @@ public class InvalidConfigurationTest {
 
     String getDraftXml() {
         return
-                "<hazelcast>\n" +
+                "<hazelcast xmlns=\"http://www.hazelcast.com/schema/config\">\n" +
 
                     " <network>\n" +
                         "<join>\n" +

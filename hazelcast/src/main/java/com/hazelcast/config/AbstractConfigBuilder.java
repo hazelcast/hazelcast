@@ -18,22 +18,21 @@ package com.hazelcast.config;
 
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-
-import java.io.InputStream;
-import java.net.URL;
-import java.util.HashSet;
-import java.util.Properties;
-import java.util.Set;
-import javax.xml.xpath.XPath;
-import javax.xml.xpath.XPathConstants;
-import javax.xml.xpath.XPathExpressionException;
-import javax.xml.xpath.XPathFactory;
-
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+
+import javax.xml.xpath.XPath;
+import javax.xml.xpath.XPathConstants;
+import javax.xml.xpath.XPathExpressionException;
+import javax.xml.xpath.XPathFactory;
+import java.io.InputStream;
+import java.net.URL;
+import java.util.HashSet;
+import java.util.Properties;
+import java.util.Set;
 
 import static com.hazelcast.config.XmlElements.IMPORT;
 
@@ -56,6 +55,7 @@ public abstract class AbstractConfigBuilder extends AbstractXmlConfigHelper {
     private Set<String> currentlyImportedFiles = new HashSet<String>();
     private XPathFactory xpathFactory = XPathFactory.newInstance();
     private XPath xpath = xpathFactory.newXPath();
+
     public AbstractConfigBuilder() {
 
     }
@@ -74,8 +74,9 @@ public abstract class AbstractConfigBuilder extends AbstractXmlConfigHelper {
         if (misplacedImports.getLength() > 0) {
             throw new InvalidConfigurationException("<import> element can appear only in the top level of the XML");
         }
-        NodeList importTags = (NodeList) xpath.evaluate("/" + this.getXmlType().name + "/" + IMPORT.name, document,
-                XPathConstants.NODESET);
+        NodeList importTags = (NodeList) xpath.evaluate("/*[name()='"
+                + this.getXmlType().name + "']/*[name()='"
+                + IMPORT.name + "']", document, XPathConstants.NODESET);
         for (Node node : new AbstractXmlConfigHelper.IterableNodeList(importTags)) {
             loadAndReplaceImportElement(root, node);
         }

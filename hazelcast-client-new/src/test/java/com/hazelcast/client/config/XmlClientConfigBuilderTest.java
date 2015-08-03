@@ -97,7 +97,7 @@ public class XmlClientConfigBuilderTest {
     @Test
     public void loadingThroughSystemProperty_existingFile() throws IOException {
         String xml =
-                "<hazelcast-client>\n" +
+                "<hazelcast-client xmlns=\"http://www.hazelcast.com/schema/client-config\">\n" +
                         "    <group>\n" +
                         "        <name>foobar</name>\n" +
                         "        <password>dev-pass</password>\n" +

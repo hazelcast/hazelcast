@@ -59,7 +59,7 @@ public class XmlConfigImportVariableReplacementTest {
     @Test
     public void readVariables() {
         String xml =
-                "<hazelcast>\n" +
+                "<hazelcast  xmlns=\"http://www.hazelcast.com/schema/config\">\n" +
                         "    <semaphore name=\"${name}\">\n" +
                         "        <initial-permits>${initial.permits}</initial-permits>\n" +
                         "        <backup-count>${backupcount.part1}${backupcount.part2}</backup-count>\n" +
@@ -83,7 +83,7 @@ public class XmlConfigImportVariableReplacementTest {
     public void testImportConfigFromResourceVariables() throws IOException {
         File file = createConfigFile("foo", "bar");
         FileOutputStream os = new FileOutputStream(file);
-        String networkConfig = "<hazelcast>" +
+        String networkConfig = "<hazelcast  xmlns=\"http://www.hazelcast.com/schema/config\">" +
                 "    <network>\n" +
                 "        <join>\n" +
                 "            <multicast enabled=\"false\"/>\n" +
@@ -93,7 +93,7 @@ public class XmlConfigImportVariableReplacementTest {
                 "</hazelcast>";
         writeStringToStreamAndClose(os, networkConfig);
 
-        String xml = "<hazelcast>\n" +
+        String xml = "<hazelcast  xmlns=\"http://www.hazelcast.com/schema/config\">\n" +
                 "    <import resource=\"${config.location}\"/>\n" +
                 "</hazelcast>";
         Config config = buildConfig(xml, "config.location", file.getAbsolutePath());
@@ -106,7 +106,7 @@ public class XmlConfigImportVariableReplacementTest {
     public void testImportedConfigVariableReplacement() throws IOException {
         File file = createConfigFile("foo", "bar");
         FileOutputStream os = new FileOutputStream(file);
-        String networkConfig = "<hazelcast>" +
+        String networkConfig = "<hazelcast xmlns=\"http://www.hazelcast.com/schema/config\">" +
                 "    <network>\n" +
                 "        <join>\n" +
                 "            <multicast enabled=\"false\"/>\n" +
@@ -116,7 +116,7 @@ public class XmlConfigImportVariableReplacementTest {
                 "</hazelcast>";
         writeStringToStreamAndClose(os, networkConfig);
 
-        String xml = "<hazelcast>\n" +
+        String xml = "<hazelcast xmlns=\"http://www.hazelcast.com/schema/config\">\n" +
                 "    <import resource=\"${config.location}\"/>\n" +
                 "</hazelcast>";
 
@@ -201,7 +201,7 @@ public class XmlConfigImportVariableReplacementTest {
     public void testImportNetworkConfigFromFile() throws Exception {
         File file = createConfigFile("foo", "bar");
         FileOutputStream os = new FileOutputStream(file);
-        String networkConfig = "<hazelcast>" +
+        String networkConfig = "<hazelcast  xmlns=\"http://www.hazelcast.com/schema/config\">" +
                 "    <network>\n" +
                 "        <join>\n" +
                 "            <multicast enabled=\"false\"/>\n" +
@@ -211,7 +211,7 @@ public class XmlConfigImportVariableReplacementTest {
                 "</hazelcast>";
         writeStringToStreamAndClose(os, networkConfig);
 
-        String xml = "<hazelcast>\n" +
+        String xml = "<hazelcast  xmlns=\"http://www.hazelcast.com/schema/config\">\n" +
                 "    <import resource=\"file:///" + file.getAbsolutePath() + "\"/>\n" +
                 "</hazelcast>";
 
@@ -225,7 +225,7 @@ public class XmlConfigImportVariableReplacementTest {
     public void testImportMapConfigFromFile() throws Exception {
         File file = createConfigFile("mymap", "config");
         FileOutputStream os = new FileOutputStream(file);
-        String mapConfig = "<hazelcast>" +
+        String mapConfig = "<hazelcast xmlns=\"http://www.hazelcast.com/schema/config\">" +
                 "    <map name=\"mymap\">\n" +
                 "       <backup-count>6</backup-count>" +
                 "       <time-to-live-seconds>10</time-to-live-seconds>" +
@@ -238,7 +238,7 @@ public class XmlConfigImportVariableReplacementTest {
                 "</hazelcast>";
         writeStringToStreamAndClose(os, mapConfig);
 
-        String xml = "<hazelcast>\n" +
+        String xml = "<hazelcast xmlns=\"http://www.hazelcast.com/schema/config\">\n" +
                 "    <import resource=\"file:///" + file.getAbsolutePath() + "\"/>\n" +
                 "</hazelcast>";
 
@@ -256,7 +256,7 @@ public class XmlConfigImportVariableReplacementTest {
 
     @Test
     public void testImportGroupConfigFromClassPath() throws Exception {
-        String xml = "<hazelcast>\n" +
+        String xml = "<hazelcast xmlns=\"http://www.hazelcast.com/schema/config\">\n" +
                 "    <import resource=\"classpath:test-hazelcast.xml\"/>\n" +
                 "</hazelcast>";
 
@@ -436,7 +436,7 @@ public class XmlConfigImportVariableReplacementTest {
 
     @Test
     public void testXmlVariableReplacementAsSubstring() throws Exception {
-        String xml = "<hazelcast>\n" +
+        String xml = "<hazelcast xmlns=\"http://www.hazelcast.com/schema/config\">\n" +
                 "    <properties>\n" +
                 "        <property name=\"${env}-with-suffix\">local-with-suffix</property>\n" +
                 "        <property name=\"with-prefix-${env}\">with-prefix-local</property>\n" +
@@ -452,7 +452,7 @@ public class XmlConfigImportVariableReplacementTest {
     public void testXmlImportWithVariableReplacementAsSubstring() throws Exception {
         File file = createConfigFile("foo", "bar");
         FileOutputStream os = new FileOutputStream(file);
-        String networkConfig = "<hazelcast>" +
+        String networkConfig = "<hazelcast xmlns=\"http://www.hazelcast.com/schema/config\">" +
                 "    <properties>\n" +
                 "        <property name=\"prop1\">value1</property>\n" +
                 "        <property name=\"prop2\">value2</property>\n" +
@@ -460,7 +460,7 @@ public class XmlConfigImportVariableReplacementTest {
                 "</hazelcast>";
         writeStringToStreamAndClose(os, networkConfig);
 
-        String xml = "<hazelcast>\n" +
+        String xml = "<hazelcast xmlns=\"http://www.hazelcast.com/schema/config\">\n" +
                 "    <import resource=\"file:///" + "${file}" + "\"/>\n" +
                 "</hazelcast>";
         Config config = buildConfig(xml, "file", file.getAbsolutePath());
