@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.proxy;
 
+import com.hazelcast.client.impl.ClientMessageDecoder;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.TopicAddMessageListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.TopicPublishCodec;
@@ -55,7 +56,13 @@ public class ClientTopicProxy<E> extends ClientProxy implements ITopic<E> {
         ClientMessage request = TopicAddMessageListenerCodec.encodeRequest(name);
 
         EventHandler<ClientMessage> handler = new TopicItemHandler(listener);
-        return listen(request, getKey(), handler);
+        ClientMessageDecoder responseDecoder = new ClientMessageDecoder() {
+            @Override
+            public <T> T decodeClientMessage(ClientMessage clientMessage) {
+                return (T) TopicAddMessageListenerCodec.decodeResponse(clientMessage).response;
+            }
+        };
+        return listen(request, getKey(), handler, responseDecoder);
     }
 
     @Override

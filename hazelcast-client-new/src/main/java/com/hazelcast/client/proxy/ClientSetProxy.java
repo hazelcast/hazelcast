@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.proxy;
 
+import com.hazelcast.client.impl.ClientMessageDecoder;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ListAddListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.SetAddAllCodec;
@@ -178,7 +179,13 @@ public class ClientSetProxy<E> extends ClientProxy implements ISet<E> {
         ClientMessage request = SetAddListenerCodec.encodeRequest(name, includeValue);
 
         EventHandler<ClientMessage> eventHandler = new ItemEventHandler(includeValue, listener);
-        return listen(request, getPartitionKey(), eventHandler);
+        ClientMessageDecoder responseDecoder = new ClientMessageDecoder() {
+            @Override
+            public <T> T decodeClientMessage(ClientMessage clientMessage) {
+                return (T) SetAddListenerCodec.decodeResponse(clientMessage).response;
+            }
+        };
+        return listen(request, getPartitionKey(), eventHandler, responseDecoder);
     }
 
     public boolean removeItemListener(String registrationId) {

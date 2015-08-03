@@ -21,6 +21,7 @@ import com.hazelcast.client.ClientExtension;
 import com.hazelcast.client.cache.impl.ClientCacheDistributedObject;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ProxyFactoryConfig;
+import com.hazelcast.client.impl.ClientMessageDecoder;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientAddDistributedObjectListenerCodec;
@@ -232,7 +233,12 @@ public final class ProxyManager {
     public String addDistributedObjectListener(final DistributedObjectListener listener) {
         ClientMessage request = ClientAddDistributedObjectListenerCodec.encodeRequest();
         final EventHandler<ClientMessage> eventHandler = new DistributedObjectEventHandler(listener);
-        return client.getListenerService().startListening(request, null, eventHandler);
+        return client.getListenerService().startListening(request, null, eventHandler, new ClientMessageDecoder() {
+            @Override
+            public <T> T decodeClientMessage(ClientMessage clientMessage) {
+                return (T) ClientAddDistributedObjectListenerCodec.decodeResponse(clientMessage).response;
+            }
+        });
     }
 
     private final class DistributedObjectEventHandler extends ClientAddDistributedObjectListenerCodec.AbstractEventHandler

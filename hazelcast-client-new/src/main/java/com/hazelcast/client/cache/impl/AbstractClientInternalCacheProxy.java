@@ -46,6 +46,7 @@ import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.ClientExecutionService;
 import com.hazelcast.client.spi.ClientListenerService;
 import com.hazelcast.client.spi.EventHandler;
+import com.hazelcast.client.spi.impl.ClientListenerInvocation;
 import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.client.spi.impl.ClientInvocationFuture;
 import com.hazelcast.client.spi.impl.ListenerRemoveCodec;
@@ -743,7 +744,13 @@ abstract class AbstractClientInternalCacheProxy<K, V>
             EventHandler handler = new NearCacheInvalidationHandler(client);
             HazelcastClientInstanceImpl clientInstance = (HazelcastClientInstanceImpl) clientContext.getHazelcastInstance();
             Address address = member.getAddress();
-            ClientInvocation invocation = new ClientInvocation(clientInstance, handler, request, address);
+            ClientInvocation invocation = new ClientListenerInvocation(clientInstance, handler, request, address,
+                    new ClientMessageDecoder() {
+                        @Override
+                        public <T> T decodeClientMessage(ClientMessage clientMessage) {
+                            return (T) CacheAddInvalidationListenerCodec.decodeResponse(clientMessage).response;
+                        }
+                    });
             Future<ClientMessage> future = invocation.invoke();
             String registrationId = CacheAddInvalidationListenerCodec.decodeResponse(future.get()).response;
             clientContext.getListenerService().registerListener(registrationId, request.getCorrelationId());

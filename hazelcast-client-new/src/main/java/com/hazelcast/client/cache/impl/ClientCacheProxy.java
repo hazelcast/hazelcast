@@ -20,6 +20,7 @@ import com.hazelcast.cache.impl.CacheEntryProcessorResult;
 import com.hazelcast.cache.impl.CacheEventListenerAdaptor;
 import com.hazelcast.cache.impl.CacheProxyUtil;
 import com.hazelcast.cache.impl.nearcache.NearCache;
+import com.hazelcast.client.impl.ClientMessageDecoder;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CacheAddEntryListenerCodec;
@@ -304,7 +305,13 @@ public class ClientCacheProxy<K, V>
                 clientContext.getSerializationService());
         final EventHandler handler = createHandler(adaptor);
         final ClientMessage registrationRequest = CacheAddEntryListenerCodec.encodeRequest(nameWithPrefix);
-        final String regId = clientContext.getListenerService().startListening(registrationRequest, null, handler);
+        final String regId = clientContext.getListenerService().startListening(registrationRequest, null, handler,
+                new ClientMessageDecoder() {
+                    @Override
+                    public <T> T decodeClientMessage(ClientMessage clientMessage) {
+                        return (T) CacheAddEntryListenerCodec.decodeResponse(clientMessage).response;
+                    }
+                });
         if (regId != null) {
             cacheConfig.addCacheEntryListenerConfiguration(cacheEntryListenerConfiguration);
             addListenerLocally(regId, cacheEntryListenerConfiguration);

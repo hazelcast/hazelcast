@@ -24,7 +24,6 @@ import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.spi.ClientExecutionService;
 import com.hazelcast.client.spi.ClientInvocationService;
-import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.LifecycleService;
 import com.hazelcast.logging.ILogger;
@@ -41,19 +40,25 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.client.config.ClientProperties.PROP_HEARTBEAT_INTERVAL_DEFAULT;
 
+/**
+ * ClientInvocation handles routing of a request from client
+ * <p>
+ * 1) Where should request be send
+ * 2) Should it be retried
+ * 3) How many times it is retried
+ */
 public class ClientInvocation implements Runnable {
 
+    protected static final int UNASSIGNED_PARTITION = -1;
     private static final long RETRY_WAIT_TIME_IN_SECONDS = 1;
-    private static final int UNASSIGNED_PARTITION = -1;
     private static final ILogger LOGGER = Logger.getLogger(ClientInvocation.class);
+
+    protected ClientInvocationFuture clientInvocationFuture;
     private final LifecycleService lifecycleService;
     private final ClientInvocationService invocationService;
     private final ClientExecutionService executionService;
-    private final ClientListenerServiceImpl listenerService;
     private final ClientMessage clientMessage;
-    private final EventHandler handler;
     private final long retryCountLimit;
-    private final ClientInvocationFuture clientInvocationFuture;
 
     private final int heartBeatInterval;
     private final AtomicInteger reSendCount = new AtomicInteger();
@@ -64,14 +69,12 @@ public class ClientInvocation implements Runnable {
     private boolean bypassHeartbeatCheck;
 
 
-    private ClientInvocation(HazelcastClientInstanceImpl client, EventHandler handler,
-                             ClientMessage clientMessage, int partitionId, Address address,
-                             Connection connection) {
+    protected ClientInvocation(HazelcastClientInstanceImpl client,
+                               ClientMessage clientMessage, int partitionId, Address address,
+                               Connection connection) {
         this.lifecycleService = client.getLifecycleService();
         this.invocationService = client.getInvocationService();
         this.executionService = client.getClientExecutionService();
-        this.listenerService = (ClientListenerServiceImpl) client.getListenerService();
-        this.handler = handler;
         this.clientMessage = clientMessage;
         this.partitionId = partitionId;
         this.address = address;
@@ -82,51 +85,32 @@ public class ClientInvocation implements Runnable {
         long retryTimeoutInSeconds = waitTime > 0 ? waitTime
                 : Integer.parseInt(ClientProperties.PROP_INVOCATION_TIMEOUT_SECONDS_DEFAULT);
 
-        clientInvocationFuture = new ClientInvocationFuture(this, client, clientMessage, handler);
+        clientInvocationFuture = new ClientInvocationFuture(this, client, clientMessage);
+
         this.retryCountLimit = retryTimeoutInSeconds / RETRY_WAIT_TIME_IN_SECONDS;
 
         int interval = clientProperties.getHeartbeatInterval().getInteger();
         this.heartBeatInterval = interval > 0 ? interval : Integer.parseInt(PROP_HEARTBEAT_INTERVAL_DEFAULT);
     }
 
-    public ClientInvocation(HazelcastClientInstanceImpl client, EventHandler handler, ClientMessage clientMessage) {
-        this(client, handler, clientMessage, UNASSIGNED_PARTITION, null, null);
-
-    }
-
-    public ClientInvocation(HazelcastClientInstanceImpl client, EventHandler handler,
-                            ClientMessage clientMessage, int partitionId) {
-        this(client, handler, clientMessage, partitionId, null, null);
-    }
-
-    public ClientInvocation(HazelcastClientInstanceImpl client, EventHandler handler,
-                            ClientMessage clientMessage, Address address) {
-        this(client, handler, clientMessage, UNASSIGNED_PARTITION, address, null);
-    }
-
-    public ClientInvocation(HazelcastClientInstanceImpl client, EventHandler handler,
-                            ClientMessage clientMessage, Connection connection) {
-        this(client, handler, clientMessage, UNASSIGNED_PARTITION, null, connection);
-
-    }
 
     public ClientInvocation(HazelcastClientInstanceImpl client, ClientMessage clientMessage) {
-        this(client, null, clientMessage);
+        this(client, clientMessage, UNASSIGNED_PARTITION, null, null);
     }
 
     public ClientInvocation(HazelcastClientInstanceImpl client, ClientMessage clientMessage,
                             int partitionId) {
-        this(client, null, clientMessage, partitionId);
+        this(client, clientMessage, partitionId, null, null);
     }
 
     public ClientInvocation(HazelcastClientInstanceImpl client, ClientMessage clientMessage,
                             Address address) {
-        this(client, null, clientMessage, address);
+        this(client, clientMessage, UNASSIGNED_PARTITION, address, null);
     }
 
     public ClientInvocation(HazelcastClientInstanceImpl client, ClientMessage clientMessage,
                             Connection connection) {
-        this(client, null, clientMessage, connection);
+        this(client, clientMessage, UNASSIGNED_PARTITION, null, connection);
     }
 
 
@@ -136,10 +120,6 @@ public class ClientInvocation implements Runnable {
 
     public ClientMessage getClientMessage() {
         return clientMessage;
-    }
-
-    public EventHandler getHandler() {
-        return handler;
     }
 
     public ClientInvocationFuture invoke() {
@@ -173,14 +153,13 @@ public class ClientInvocation implements Runnable {
         try {
             invoke();
         } catch (Throwable e) {
-            if (handler != null) {
-                listenerService.registerFailedListener(this);
-            } else {
-                clientInvocationFuture.setResponse(e);
-            }
+            onException(e);
         }
     }
 
+    protected void onException(Throwable e) {
+        clientInvocationFuture.setResponse(e);
+    }
 
     public void notify(ClientMessage clientMessage) {
         if (clientMessage == null) {
@@ -216,16 +195,14 @@ public class ClientInvocation implements Runnable {
 
 
     private boolean handleRetry() {
-
         if (isBindToSingleConnection()) {
             return false;
         }
-        if (handler == null && reSendCount.incrementAndGet() > retryCountLimit) {
+
+        if (!shouldRetry()) {
             return false;
         }
-        if (handler != null) {
-            handler.beforeListenerRegister();
-        }
+        beforeRetry();
 
         try {
             sleep();
@@ -237,6 +214,14 @@ public class ClientInvocation implements Runnable {
             clientInvocationFuture.setResponse(e);
         }
         return true;
+    }
+
+    protected void beforeRetry() {
+
+    }
+
+    protected boolean shouldRetry() {
+        return reSendCount.incrementAndGet() < retryCountLimit;
     }
 
     private void sleep() {

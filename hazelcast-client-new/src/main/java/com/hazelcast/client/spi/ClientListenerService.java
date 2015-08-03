@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.spi;
 
+import com.hazelcast.client.impl.ClientMessageDecoder;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.spi.impl.ListenerRemoveCodec;
 
@@ -24,7 +25,8 @@ import com.hazelcast.client.spi.impl.ListenerRemoveCodec;
  */
 public interface ClientListenerService {
 
-    String startListening(ClientMessage clientMessage, Object key, EventHandler handler);
+    String startListening(ClientMessage clientMessage, Object key, EventHandler handler,
+                          ClientMessageDecoder responseDecoder);
 
     boolean stopListening(String registrationId, ListenerRemoveCodec listenerRemoveCodec);
 

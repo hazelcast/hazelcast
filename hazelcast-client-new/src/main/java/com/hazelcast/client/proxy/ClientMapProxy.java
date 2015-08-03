@@ -621,14 +621,26 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
     public String addEntryListener(MapListener listener, boolean includeValue) {
         ClientMessage request = MapAddEntryListenerCodec.encodeRequest(name, includeValue);
         EventHandler<ClientMessage> handler = createHandler(listener, includeValue);
-        return listen(request, handler);
+        ClientMessageDecoder responseDecoder = new ClientMessageDecoder() {
+            @Override
+            public <T> T decodeClientMessage(ClientMessage clientMessage) {
+                return (T) MapAddEntryListenerCodec.decodeResponse(clientMessage).response;
+            }
+        };
+        return listen(request, handler, responseDecoder);
     }
 
     @Override
     public String addEntryListener(EntryListener listener, boolean includeValue) {
         ClientMessage request = MapAddEntryListenerCodec.encodeRequest(name, includeValue);
         EventHandler<ClientMessage> handler = createHandler(listener, includeValue);
-        return listen(request, handler);
+        ClientMessageDecoder responseDecoder = new ClientMessageDecoder() {
+            @Override
+            public <T> T decodeClientMessage(ClientMessage clientMessage) {
+                return (T) MapAddEntryListenerCodec.decodeResponse(clientMessage).response;
+            }
+        };
+        return listen(request, handler, responseDecoder);
     }
 
     @Override
@@ -650,7 +662,13 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
     public String addPartitionLostListener(MapPartitionLostListener listener) {
         ClientMessage request = MapAddPartitionLostListenerCodec.encodeRequest(name);
         final EventHandler<ClientMessage> handler = new ClientMapPartitionLostEventHandler(listener);
-        return listen(request, handler);
+        ClientMessageDecoder responseDecoder = new ClientMessageDecoder() {
+            @Override
+            public <T> T decodeClientMessage(ClientMessage clientMessage) {
+                return (T) MapAddPartitionLostListenerCodec.decodeResponse(clientMessage).response;
+            }
+        };
+        return listen(request, handler, responseDecoder);
     }
 
     @Override
@@ -673,7 +691,13 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
         Data keyData = toData(key);
         ClientMessage request = MapAddEntryListenerToKeyCodec.encodeRequest(name, keyData, includeValue);
         EventHandler<ClientMessage> handler = createHandler(listener, includeValue);
-        return listen(request, keyData, handler);
+        ClientMessageDecoder responseDecoder = new ClientMessageDecoder() {
+            @Override
+            public <T> T decodeClientMessage(ClientMessage clientMessage) {
+                return (T) MapAddEntryListenerToKeyCodec.decodeResponse(clientMessage).response;
+            }
+        };
+        return listen(request, keyData, handler, responseDecoder);
     }
 
     @Override
@@ -681,7 +705,13 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
         final Data keyData = toData(key);
         ClientMessage request = MapAddEntryListenerToKeyCodec.encodeRequest(name, keyData, includeValue);
         EventHandler<ClientMessage> handler = createHandler(listener, includeValue);
-        return listen(request, keyData, handler);
+        ClientMessageDecoder responseDecoder = new ClientMessageDecoder() {
+            @Override
+            public <T> T decodeClientMessage(ClientMessage clientMessage) {
+                return (T) MapAddEntryListenerToKeyCodec.decodeResponse(clientMessage).response;
+            }
+        };
+        return listen(request, keyData, handler, responseDecoder);
     }
 
     @Override
@@ -691,7 +721,13 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
         ClientMessage request =
                 MapAddEntryListenerToKeyWithPredicateCodec.encodeRequest(name, keyData, predicateData, includeValue);
         EventHandler<ClientMessage> handler = createHandler(listener, includeValue);
-        return listen(request, keyData, handler);
+        ClientMessageDecoder responseDecoder = new ClientMessageDecoder() {
+            @Override
+            public <T> T decodeClientMessage(ClientMessage clientMessage) {
+                return (T) MapAddEntryListenerToKeyWithPredicateCodec.decodeResponse(clientMessage).response;
+            }
+        };
+        return listen(request, keyData, handler, responseDecoder);
     }
 
     @Override
@@ -702,7 +738,13 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
                 MapAddEntryListenerToKeyWithPredicateCodec.encodeRequest(name, keyData, predicateData, includeValue);
 
         EventHandler<ClientMessage> handler = createHandler(listener, includeValue);
-        return listen(request, keyData, handler);
+        ClientMessageDecoder responseDecoder = new ClientMessageDecoder() {
+            @Override
+            public <T> T decodeClientMessage(ClientMessage clientMessage) {
+                return (T) MapAddEntryListenerToKeyWithPredicateCodec.decodeResponse(clientMessage).response;
+            }
+        };
+        return listen(request, keyData, handler, responseDecoder);
     }
 
     @Override
@@ -712,7 +754,13 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
                 MapAddEntryListenerWithPredicateCodec.encodeRequest(name, predicateData, includeValue);
 
         EventHandler<ClientMessage> handler = createHandler(listener, includeValue);
-        return listen(request, null, handler);
+        ClientMessageDecoder responseDecoder = new ClientMessageDecoder() {
+            @Override
+            public <T> T decodeClientMessage(ClientMessage clientMessage) {
+                return (T) MapAddEntryListenerWithPredicateCodec.decodeResponse(clientMessage).response;
+            }
+        };
+        return listen(request, null, handler, responseDecoder);
     }
 
     @Override
@@ -722,7 +770,13 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
                 MapAddEntryListenerWithPredicateCodec.encodeRequest(name, predicateData, includeValue);
 
         EventHandler<ClientMessage> handler = createHandler(listener, includeValue);
-        return listen(request, null, handler);
+        ClientMessageDecoder responseDecoder = new ClientMessageDecoder() {
+            @Override
+            public <T> T decodeClientMessage(ClientMessage clientMessage) {
+                return (T) MapAddEntryListenerWithPredicateCodec.decodeResponse(clientMessage).response;
+            }
+        };
+        return listen(request, null, handler, responseDecoder);
     }
 
     @Override
@@ -1259,7 +1313,13 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
         try {
             ClientMessage request = MapAddNearCacheEntryListenerCodec.encodeRequest(name, false);
             EventHandler handler = new ClientMapAddNearCacheEventHandler();
-            String registrationId = getContext().getListenerService().startListening(request, null, handler);
+            String registrationId = getContext().getListenerService().startListening(request, null, handler,
+                    new ClientMessageDecoder() {
+                        @Override
+                        public <T> T decodeClientMessage(ClientMessage clientMessage) {
+                            return (T) MapAddNearCacheEntryListenerCodec.decodeResponse(clientMessage).response;
+                        }
+                    });
             nearCache.setId(registrationId);
         } catch (Exception e) {
             Logger.getLogger(ClientHeapNearCache.class).severe(

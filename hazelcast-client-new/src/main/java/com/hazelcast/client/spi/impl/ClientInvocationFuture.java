@@ -18,8 +18,6 @@ package com.hazelcast.client.spi.impl;
 
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.MapAddEntryListenerCodec;
-import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.logging.ILogger;
@@ -39,30 +37,20 @@ import java.util.concurrent.TimeoutException;
 
 public class ClientInvocationFuture implements ICompletableFuture<ClientMessage> {
 
-    static final ILogger LOGGER = Logger.getLogger(ClientInvocationFuture.class);
+    protected static final ILogger LOGGER = Logger.getLogger(ClientInvocationFuture.class);
 
-    private final ClientMessage clientMessage;
+    protected final ClientMessage clientMessage;
+    protected volatile Object response;
 
     private final ClientExecutionServiceImpl executionService;
-
-    private final ClientListenerServiceImpl clientListenerService;
-
-    private final EventHandler handler;
-
     private final List<ExecutionCallbackNode> callbackNodeList = new LinkedList<ExecutionCallbackNode>();
-
     private final ClientInvocation invocation;
 
-    private volatile Object response;
-
-
     public ClientInvocationFuture(ClientInvocation invocation, HazelcastClientInstanceImpl client,
-                                  ClientMessage clientMessage, EventHandler handler) {
+                                  ClientMessage clientMessage) {
 
         this.executionService = (ClientExecutionServiceImpl) client.getClientExecutionService();
-        this.clientListenerService = (ClientListenerServiceImpl) client.getListenerService();
         this.clientMessage = clientMessage;
-        this.handler = handler;
         this.invocation = invocation;
     }
 
@@ -112,28 +100,25 @@ public class ClientInvocationFuture implements ICompletableFuture<ClientMessage>
         return resolveResponse();
     }
 
+    /**
+     * @param response coming from server
+     * @return true if response coming from server should be set
+     */
+    boolean shouldSetResponse(Object response) {
+        if (this.response != null) {
+            LOGGER.warning("The Future.set() method can only be called once. Request: " + clientMessage
+                    + ", current response: " + this.response + ", new response: " + response);
+            return false;
+        }
+        return true;
+    }
 
     void setResponse(Object response) {
         synchronized (this) {
-            if (this.response != null && handler == null) {
-                LOGGER.warning("The Future.set() method can only be called once. Request: " + clientMessage
-                        + ", current response: " + this.response + ", new response: " + response);
+            if (!shouldSetResponse(response)) {
                 return;
             }
 
-            if (handler != null && !(response instanceof Throwable)) {
-                handler.onListenerRegister();
-            }
-
-            if (this.response != null && !(response instanceof Throwable)) {
-                ClientMessage uuidMessage = (ClientMessage) this.response;
-                ClientMessage copyFlyweight = ClientMessage.createForDecode(uuidMessage.buffer(), 0);
-                String uuid = MapAddEntryListenerCodec.decodeResponse(copyFlyweight).response;
-                String alias = MapAddEntryListenerCodec.decodeResponse((ClientMessage) response).response;
-
-                clientListenerService.reRegisterListener(uuid, alias, clientMessage.getCorrelationId());
-                return;
-            }
             this.response = response;
             this.notifyAll();
             for (ExecutionCallbackNode node : callbackNodeList) {
@@ -191,10 +176,6 @@ public class ClientInvocationFuture implements ICompletableFuture<ClientMessage>
             }
             callbackNodeList.add(new ExecutionCallbackNode(callback, executor));
         }
-    }
-
-    public EventHandler getHandler() {
-        return handler;
     }
 
     private void runAsynchronous(final ExecutionCallback callback, Executor executor) {
