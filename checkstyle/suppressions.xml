@@ -450,7 +450,8 @@
 
        I don't think we want to change this class/
    -->
-    <suppress checks="" files="com/hazelcast/util/ConcurrentReferenceHashMap"/>
+    <suppress checks="MagicNumber|FileLength|DeclarationOrder|RedundantModifier|InnerAssignment|.*Complexity"
+              files="com/hazelcast/util/ConcurrentReferenceHashMap"/>
 
     <suppress checks="" files="com/hazelcast/util/DebugUtil"/>
 
