@@ -380,6 +380,35 @@ public final class Packet extends HeapData
     }
 
     @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+
+        if (!(o instanceof Packet)) {
+            return false;
+        }
+
+        Packet packet = (Packet) o;
+        if (!super.equals(packet)) {
+            return false;
+        }
+
+        if (header != packet.header) {
+            return false;
+        }
+        return partitionId == packet.partitionId;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = super.hashCode();
+        result = 31 * result + (int) header;
+        result = 31 * result + partitionId;
+        return result;
+    }
+
+    @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder("Packet{");
         sb.append("header=").append(header);
