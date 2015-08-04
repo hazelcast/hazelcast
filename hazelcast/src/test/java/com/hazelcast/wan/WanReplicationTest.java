@@ -360,13 +360,17 @@ public class WanReplicationTest extends HazelcastTestSupport {
       initClusterA();
       initClusterB();
 
+      // Make sure clusters ready
+      createDataIn(clusterA, "map", 50, 60);
+      assertDataInFrom(clusterB, "map", 50, 60, clusterA);
+
       // Create some expiring data that will live less than the default TTL
-      createDataIn(clusterA, "map", 0, 10, 5, TimeUnit.SECONDS);
+      createDataIn(clusterA, "map", 0, 10, 10, TimeUnit.SECONDS);
       assertDataInFrom(clusterB, "map", 0, 10, clusterA);
-      createDataIn(clusterB, "map", 10, 20, 5, TimeUnit.SECONDS);
+      createDataIn(clusterB, "map", 10, 20, 10, TimeUnit.SECONDS);
       assertDataInFrom(clusterA, "map", 10, 20, clusterB);
 
-      sleepSeconds(10);
+      sleepSeconds(20);
       checkKeysNotIn(clusterA, "map", 0, 20);
       checkKeysNotIn(clusterB, "map", 0, 20);
     }
