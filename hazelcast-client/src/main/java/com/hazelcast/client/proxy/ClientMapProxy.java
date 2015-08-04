@@ -899,14 +899,14 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
     public Object executeOnKey(K key, EntryProcessor entryProcessor) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         final Data keyData = toData(key);
-        MapExecuteOnKeyRequest request = new MapExecuteOnKeyRequest(name, entryProcessor, keyData);
+        MapExecuteOnKeyRequest request = new MapExecuteOnKeyRequest(name, entryProcessor, keyData, ThreadUtil.getThreadId());
         return invoke(request, keyData);
     }
 
     public void submitToKey(K key, EntryProcessor entryProcessor, final ExecutionCallback callback) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         final Data keyData = toData(key);
-        final MapExecuteOnKeyRequest request = new MapExecuteOnKeyRequest(name, entryProcessor, keyData);
+        final MapExecuteOnKeyRequest request = new MapExecuteOnKeyRequest(name, entryProcessor, keyData, ThreadUtil.getThreadId());
         request.setAsSubmitToKey();
         try {
             final ICompletableFuture future = invokeOnKeyOwner(request, keyData);
@@ -919,7 +919,7 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
     public Future submitToKey(K key, EntryProcessor entryProcessor) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         final Data keyData = toData(key);
-        final MapExecuteOnKeyRequest request = new MapExecuteOnKeyRequest(name, entryProcessor, keyData);
+        final MapExecuteOnKeyRequest request = new MapExecuteOnKeyRequest(name, entryProcessor, keyData, ThreadUtil.getThreadId());
         request.setAsSubmitToKey();
         try {
             final ICompletableFuture future = invokeOnKeyOwner(request, keyData);
