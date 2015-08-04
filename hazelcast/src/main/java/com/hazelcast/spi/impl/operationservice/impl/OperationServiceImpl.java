@@ -331,7 +331,7 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
         long invocationTime = op.getInvocationTime();
         long expireTime = invocationTime + callTimeout;
 
-        if (expireTime <= 0 || expireTime >= Long.MAX_VALUE) {
+        if (expireTime <= 0 || expireTime == Long.MAX_VALUE) {
             return false;
         }
 

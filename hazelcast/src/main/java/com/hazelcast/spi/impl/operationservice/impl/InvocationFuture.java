@@ -144,8 +144,11 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
      * 'set' calls are ignored.
      *
      * @param offeredResponse The type of response to offer.
+     * @return <tt>true</tt> if offered response, either a final response or an internal response,
+     * is set/applied, <tt>false</tt> otherwise. If <tt>false</tt> is returned, that means offered response is ignored
+     * because a final response is already set to this future.
      */
-    public void set(Object offeredResponse) {
+    public boolean set(Object offeredResponse) {
         assert !(offeredResponse instanceof Response) : "unexpected response found: " + offeredResponse;
 
         if (offeredResponse == null) {
@@ -165,12 +168,14 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
                     logger.finest("Future response is already set! Current response: "
                             + response + ", Offered response: " + offeredResponse + ", Invocation: " + invocation);
                 }
-                return;
+
+                operationService.invocationsRegistry.deregister(invocation);
+                return false;
             }
 
             response = offeredResponse;
             if (offeredResponse == WAIT_RESPONSE) {
-                return;
+                return true;
             }
             callbackChain = callbackHead;
             callbackHead = null;
@@ -181,6 +186,7 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
 
 
         notifyCallbacks(callbackChain);
+        return true;
     }
 
     private void notifyCallbacks(ExecutionCallbackNode<E> callbackChain) {
@@ -267,6 +273,9 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
                     boolean executing = operationService.getIsStillRunningService().isOperationExecuting(invocation);
                     if (!executing) {
                         Object operationTimeoutException = invocation.newOperationTimeoutException(pollCount * pollTimeoutMs);
+                        if (response != null) {
+                            continue;
+                        }
                         // tries to set an OperationTimeoutException response if response is not set yet
                         set(operationTimeoutException);
                     }

@@ -36,6 +36,7 @@ import com.hazelcast.spi.ReadonlyOperation;
 import com.hazelcast.spi.WaitSupport;
 import com.hazelcast.spi.exception.CallerNotMemberException;
 import com.hazelcast.spi.exception.PartitionMigratingException;
+import com.hazelcast.spi.exception.ResponseAlreadySentException;
 import com.hazelcast.spi.exception.RetryableException;
 import com.hazelcast.spi.exception.WrongTargetException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -199,31 +200,43 @@ class OperationRunnerImpl extends OperationRunner {
 
     private void handleResponse(Operation op) throws Exception {
         boolean returnsResponse = op.returnsResponse();
-        Object response = null;
-        if (op instanceof BackupAwareOperation) {
-            BackupAwareOperation backupAwareOp = (BackupAwareOperation) op;
-            int syncBackupCount = 0;
-            if (backupAwareOp.shouldBackup()) {
-                syncBackupCount = operationService.operationBackupHandler.backup(backupAwareOp);
-            }
-            if (returnsResponse) {
-                response = new NormalResponse(op.getResponse(), op.getCallId(), syncBackupCount, op.isUrgent());
-            }
-        }
+        int syncBackupCount = sendBackup(op);
 
         if (!returnsResponse) {
             return;
         }
 
-        if (response == null) {
-            response = op.getResponse();
+        sendResponse(op, syncBackupCount);
+    }
+
+    private int sendBackup(Operation op) throws Exception {
+        if (!(op instanceof BackupAwareOperation)) {
+            return 0;
         }
 
+        int syncBackupCount = 0;
+        BackupAwareOperation backupAwareOp = (BackupAwareOperation) op;
+        if (backupAwareOp.shouldBackup()) {
+            syncBackupCount = operationService.operationBackupHandler.backup(backupAwareOp);
+        }
+        return syncBackupCount;
+    }
+
+    private void sendResponse(Operation op, int syncBackupCount) {
         OperationResponseHandler responseHandler = op.getOperationResponseHandler();
         if (responseHandler == null) {
             throw new IllegalStateException("ResponseHandler should not be null! " + op);
         }
-        responseHandler.sendResponse(op, response);
+
+        try {
+            Object response = op.getResponse();
+            if (syncBackupCount > 0) {
+                response = new NormalResponse(response, op.getCallId(), syncBackupCount, op.isUrgent());
+            }
+            responseHandler.sendResponse(op, response);
+        } catch (ResponseAlreadySentException e) {
+            logOperationError(op, e);
+        }
     }
 
     private void afterRun(Operation op) {

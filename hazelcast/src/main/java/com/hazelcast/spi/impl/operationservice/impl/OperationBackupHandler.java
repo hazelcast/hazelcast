@@ -71,6 +71,10 @@ final class OperationBackupHandler {
             syncBackups = 0;
         }
 
+        if (syncBackups + asyncBackups == 0) {
+            return 0;
+        }
+
         return makeBackups(backupAwareOp, op.getPartitionId(), replicaVersions, syncBackups, asyncBackups);
     }
 
@@ -150,6 +154,8 @@ final class OperationBackupHandler {
         InternalPartitionService partitionService = node.getPartitionService();
         InternalPartition partition = partitionService.getPartition(partitionId);
 
+        Data backupOpData = getBackupOperationData(backupAwareOp);
+
         for (int replicaIndex = 1; replicaIndex <= syncBackups + asyncBackups; replicaIndex++) {
             Address target = partition.getReplicaAddress(replicaIndex);
 
@@ -161,7 +167,7 @@ final class OperationBackupHandler {
 
             boolean isSyncBackup = replicaIndex <= syncBackups;
 
-            Backup backup = newBackup(backupAwareOp, replicaVersions, replicaIndex, isSyncBackup);
+            Backup backup = newBackup(backupAwareOp, backupOpData, replicaVersions, replicaIndex, isSyncBackup);
             operationService.send(backup, target);
 
             if (isSyncBackup) {
@@ -172,33 +178,30 @@ final class OperationBackupHandler {
         return sendSyncBackups;
     }
 
-    private Backup newBackup(BackupAwareOperation backupAwareOp, long[] replicaVersions,
-                             int replicaIndex, boolean isSyncBackup) {
-        Operation op = (Operation) backupAwareOp;
-        Operation backupOp = newBackupOperation(backupAwareOp, replicaIndex);
-        Data backupOpData = nodeEngine.getSerializationService().toData(backupOp);
-
-        Backup backup = new Backup(backupOpData, op.getCallerAddress(), replicaVersions, isSyncBackup);
-        backup.setPartitionId(op.getPartitionId())
-                .setReplicaIndex(replicaIndex)
-                .setServiceName(op.getServiceName())
-                .setCallerUuid(nodeEngine.getLocalMember().getUuid());
-        setCallId(backup, op.getCallId());
-
-        return backup;
-    }
-
-    private Operation newBackupOperation(BackupAwareOperation backupAwareOp, int replicaIndex) {
+    private Data getBackupOperationData(BackupAwareOperation backupAwareOp) {
         Operation backupOp = backupAwareOp.getBackupOperation();
         if (backupOp == null) {
             throw new IllegalArgumentException("Backup operation should not be null! " + backupAwareOp);
         }
+        Operation op = (Operation) backupAwareOp;
+        // set service name of backup operation.
+        // if getServiceName() method is overridden to return the same name
+        // then this will have no effect.
+        backupOp.setServiceName(op.getServiceName());
+        return nodeEngine.getSerializationService().toData(backupOp);
+    }
+
+    private Backup newBackup(BackupAwareOperation backupAwareOp, Data backupOpData, long[] replicaVersions,
+            int replicaIndex, boolean respondBack) {
 
         Operation op = (Operation) backupAwareOp;
-        backupOp.setPartitionId(op.getPartitionId())
+        Backup backup = new Backup(backupOpData, op.getCallerAddress(), replicaVersions, respondBack);
+        backup.setPartitionId(op.getPartitionId())
                 .setReplicaIndex(replicaIndex)
-                .setServiceName(op.getServiceName());
-        return backupOp;
+                .setCallerUuid(nodeEngine.getLocalMember().getUuid());
+        setCallId(backup, op.getCallId());
+
+        return backup;
     }
 
     /**
