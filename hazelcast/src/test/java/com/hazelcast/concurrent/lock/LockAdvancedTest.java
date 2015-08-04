@@ -5,6 +5,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.ILock;
 import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -18,6 +19,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Lock;
 
+import static com.hazelcast.instance.TestUtil.terminateInstance;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -332,4 +334,24 @@ public class LockAdvancedTest extends HazelcastTestSupport {
         assertTrue(latch.await(15, TimeUnit.SECONDS));
     }
 
+    @Test
+    public void testLockLeaseTime_whenKeyOwnerMemberDies() {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        HazelcastInstance hz1 = factory.newHazelcastInstance();
+        HazelcastInstance hz2 = factory.newHazelcastInstance();
+        warmUpPartitions(hz1, hz2);
+
+        String key = generateKeyOwnedBy(hz1);
+        final ILock lock = hz2.getLock(key);
+        lock.lock(3, TimeUnit.SECONDS);
+
+        terminateInstance(hz1);
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertFalse("Lock should be released after lease expires!", lock.isLocked());
+            }
+        }, 30);
+    }
 }
