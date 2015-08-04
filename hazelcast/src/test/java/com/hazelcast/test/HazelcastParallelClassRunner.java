@@ -16,11 +16,13 @@
 
 package com.hazelcast.test;
 
+import com.hazelcast.test.annotation.TestProperties;
 import org.junit.runner.notification.RunNotifier;
 import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.InitializationError;
 import org.junit.runners.model.Statement;
 
+import java.lang.reflect.Constructor;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static java.lang.Math.max;
@@ -31,24 +33,48 @@ import static java.lang.Runtime.getRuntime;
  * Runs the tests in parallel with multiple threads.
  */
 public class HazelcastParallelClassRunner extends AbstractHazelcastClassRunner {
-
     private static final boolean SPAWN_MULTIPLE_THREADS = TestEnvironment.isMockNetwork() && !Boolean.getBoolean("multipleJVM");
-    private static final int MAX_THREADS = SPAWN_MULTIPLE_THREADS ? max(getRuntime().availableProcessors()/2, 1) : 1;
+    private static final int MAX_THREADS = max(getRuntime().availableProcessors()/2, 1);
 
     private final AtomicInteger numThreads = new AtomicInteger(0);
+    private final int maxThreads;
 
     public HazelcastParallelClassRunner(Class<?> klass) throws InitializationError {
         super(klass);
+        maxThreads = getMaxThreads(klass);
     }
 
     public HazelcastParallelClassRunner(Class<?> klass, Object[] parameters,
                                         String name) throws InitializationError {
         super(klass, parameters, name);
+        maxThreads =  getMaxThreads(klass);
+    }
+
+    private int getMaxThreads(Class<?> klass) {
+        if (!SPAWN_MULTIPLE_THREADS) {
+            return 1;
+        }
+        
+        TestProperties properties = klass.getAnnotation(TestProperties.class);
+
+        if (properties != null) {
+            Class<? extends MaxThreadsAware> clazz = properties.maxThreadsCalculatorClass();
+
+            try {
+                Constructor c = clazz.getConstructor();
+                MaxThreadsAware maxThreadsAware = (MaxThreadsAware) c.newInstance();
+                return maxThreadsAware.maxThreads();
+            } catch (Throwable e) {
+                return MAX_THREADS;
+            }
+        } else {
+            return MAX_THREADS;
+        }
     }
 
     @Override
     protected void runChild(final FrameworkMethod method, final RunNotifier notifier) {
-        while (numThreads.get() >= MAX_THREADS) {
+        while (numThreads.get() >= maxThreads) {
             try {
                 Thread.sleep(25);
             } catch (InterruptedException e) {
@@ -94,7 +120,7 @@ public class HazelcastParallelClassRunner extends AbstractHazelcastClassRunner {
                 numThreads.decrementAndGet();
                 float took = (float) (System.currentTimeMillis() - start) / 1000;
                 System.out.println(String.format("Finished Running Test: %s in %.3f seconds.", testName, took));
-            }finally {
+            } finally {
                 FRAMEWORK_METHOD_THREAD_LOCAL.remove();
             }
         }
