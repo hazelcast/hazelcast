@@ -382,7 +382,7 @@ public abstract class ConditionBasicTest extends HazelcastTestSupport {
         condition.signal();
         lock.unlock();
 
-        createThreadWaitsForCondition(latch, lock, condition, null).start();
+        createThreadWaitsForCondition(latch, lock, condition, new CountDownLatch(0)).start();
         // if the thread is still waiting, then the signal is not stored.
         assertFalse(latch.await(3000, TimeUnit.MILLISECONDS));
     }
