@@ -23,17 +23,15 @@ import com.hazelcast.util.Clock;
 
 public class TcpIpConnectionMonitor {
 
-    final ILogger logger;
-    final TcpIpConnectionManager connectionManager;
-    final IOService ioService;
-    final Address endPoint;
-    final long minInterval;
-    final int maxFaults;
-    int faults;
-    long lastFaultTime;
+    private final ILogger logger;
+    private final IOService ioService;
+    private final Address endPoint;
+    private final long minInterval;
+    private final int maxFaults;
+    private int faults;
+    private long lastFaultTime;
 
     public TcpIpConnectionMonitor(TcpIpConnectionManager connectionManager, Address endPoint) {
-        this.connectionManager = connectionManager;
         this.endPoint = endPoint;
         this.ioService = connectionManager.getIOHandler();
         this.minInterval = ioService.getConnectionMonitorInterval();
@@ -67,7 +65,7 @@ public class TcpIpConnectionMonitor {
         lastFaultTime = 0L;
     }
 
-    private  String getCauseDescription(Throwable t) {
+    private String getCauseDescription(Throwable t) {
         StringBuilder s = new StringBuilder(" Cause => ");
         if (t != null) {
             s.append(t.getClass().getName()).append(" {").append(t.getMessage()).append("}");
