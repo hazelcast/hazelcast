@@ -56,7 +56,6 @@ public class MapTryLockMessageTask
         return MapTryLockCodec.encodeResponse((Boolean) response);
     }
 
-
     @Override
     public String getServiceName() {
         return LockService.SERVICE_NAME;

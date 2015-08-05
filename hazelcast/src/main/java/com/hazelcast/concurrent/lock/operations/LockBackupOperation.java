@@ -33,15 +33,16 @@ public class LockBackupOperation extends BaseLockOperation implements BackupOper
     public LockBackupOperation() {
     }
 
-    public LockBackupOperation(ObjectNamespace namespace, Data key, long threadId, String originalCallerUuid) {
+    public LockBackupOperation(ObjectNamespace namespace, Data key, long threadId, long leaseTime, String originalCallerUuid) {
         super(namespace, key, threadId);
+        this.leaseTime = leaseTime;
         this.originalCallerUuid = originalCallerUuid;
     }
 
     @Override
     public void run() throws Exception {
         LockStoreImpl lockStore = getLockStore();
-        response = lockStore.lock(key, originalCallerUuid, threadId, getReferenceCallId(), ttl);
+        response = lockStore.lock(key, originalCallerUuid, threadId, getReferenceCallId(), leaseTime);
     }
 
     @Override

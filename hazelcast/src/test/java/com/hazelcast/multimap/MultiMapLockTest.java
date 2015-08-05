@@ -19,6 +19,7 @@ package com.hazelcast.multimap;
 import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.concurrent.lock.LockServiceImpl;
 import com.hazelcast.concurrent.lock.LockStoreContainer;
+import com.hazelcast.concurrent.lock.LockStoreImpl;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.core.HazelcastInstance;
@@ -34,6 +35,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.Collection;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -153,7 +155,8 @@ public class MultiMapLockTest extends HazelcastTestSupport {
         int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
         for (int i = 0; i < partitionCount; i++) {
             LockStoreContainer lockContainer = lockService.getLockContainer(i);
-            assertEquals("LockStores should be empty", 0, lockContainer.getLockStores().size());
+            Collection<LockStoreImpl> lockStores = lockContainer.getLockStores();
+            assertEquals("LockStores should be empty: " + lockStores, 0, lockStores.size());
         }
     }
 
