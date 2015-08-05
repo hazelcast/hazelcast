@@ -26,6 +26,7 @@ import com.hazelcast.nio.tcp.PacketSocketReader;
 import com.hazelcast.nio.tcp.ReadHandler;
 import com.hazelcast.nio.tcp.SocketReader;
 import com.hazelcast.nio.tcp.TcpIpConnection;
+import com.hazelcast.nio.tcp.WriteHandler;
 import com.hazelcast.util.counters.Counter;
 import com.hazelcast.util.counters.SwCounter;
 
@@ -192,7 +193,7 @@ public final class NonBlockingReadHandler extends AbstractSelectionHandler imple
 
         if (!protocolBuffer.hasRemaining()) {
             String protocol = bytesToString(protocolBuffer.array());
-            NonBlockingWriteHandler writeHandler = (NonBlockingWriteHandler) connection.getWriteHandler();
+            WriteHandler writeHandler = connection.getWriteHandler();
             if (CLUSTER.equals(protocol)) {
                 configureBuffers(ioService.getSocketReceiveBufferSize() * KILO_BYTE);
                 connection.setType(MEMBER);
