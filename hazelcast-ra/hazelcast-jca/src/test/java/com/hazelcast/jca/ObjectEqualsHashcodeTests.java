@@ -24,6 +24,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import javax.naming.Reference;
 import java.io.PrintWriter;
 
 import static org.mockito.Mockito.mock;
@@ -43,6 +44,7 @@ public class ObjectEqualsHashcodeTests {
     public void testConnectionFactoryImpl() {
         EqualsVerifier.forClass(ConnectionFactoryImpl.class).usingGetClass().withPrefabValues(ManagedConnectionFactoryImpl.class,
                 new ManagedConnectionFactoryImpl(), new ManagedConnectionFactoryImpl())
+                .withPrefabValues(Reference.class, mock(Reference.class), mock(Reference.class))
                 //using non-final fields and transient fields in equals should probably get FIXed
                 .suppress(Warning.NONFINAL_FIELDS).suppress(Warning.TRANSIENT_FIELDS).verify();
     }
