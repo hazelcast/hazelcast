@@ -229,7 +229,7 @@
         <topic-overload-policy>BLOCK</topic-overload-policy>
         <statistics-enabled>true</statistics-enabled>
     </reliable-topic>
-    
+
     <ringbuffer name="default">
         <capacity>10000</capacity>
         <backup-count>1</backup-count>
