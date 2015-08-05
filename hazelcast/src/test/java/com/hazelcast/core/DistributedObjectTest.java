@@ -27,6 +27,7 @@ import com.hazelcast.spi.impl.proxyservice.impl.ProxyServiceImpl;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
+import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Assert;
 import org.junit.Test;
@@ -45,7 +46,7 @@ import static org.junit.Assert.fail;
  * @author mdogan 8/25/13
  */
 @RunWith(HazelcastParallelClassRunner.class)
-@Category(QuickTest.class)
+@Category({QuickTest.class, ParallelTest.class})
 public class DistributedObjectTest extends HazelcastTestSupport {
 
     @Test

@@ -20,6 +20,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.tcp.nonblocking.AbstractIOSelector;
 import com.hazelcast.nio.tcp.nonblocking.MigratableHandler;
 import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
@@ -31,7 +32,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category(QuickTest.class)
+@Category({QuickTest.class, ParallelTest.class})
 public class LoadTrackerTest {
 
     private AbstractIOSelector selector1;

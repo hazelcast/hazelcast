@@ -15,6 +15,7 @@ import com.hazelcast.spi.Callback;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -25,7 +26,7 @@ import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category(QuickTest.class)
+@Category({QuickTest.class, ParallelTest.class})
 public class AsyncInvocationTest extends HazelcastTestSupport {
 
     @Test

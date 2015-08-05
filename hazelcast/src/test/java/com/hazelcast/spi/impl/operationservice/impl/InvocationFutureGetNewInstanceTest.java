@@ -11,6 +11,7 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 
 import java.io.IOException;
@@ -33,7 +34,7 @@ import org.junit.runner.RunWith;
  * on when we see that an instance is immutable.
  */
 @RunWith(HazelcastParallelClassRunner.class)
-@Category(QuickTest.class)
+@Category({QuickTest.class, ParallelTest.class})
 public class InvocationFutureGetNewInstanceTest extends HazelcastTestSupport {
 
     private HazelcastInstance[] instances;

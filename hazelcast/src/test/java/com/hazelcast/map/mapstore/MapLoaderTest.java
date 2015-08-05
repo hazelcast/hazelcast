@@ -16,6 +16,7 @@ import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
+import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.annotation.Repeat;
 
@@ -47,7 +48,7 @@ import org.junit.runner.RunWith;
 
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
+@Category({QuickTest.class, ParallelTest.class})
 public class MapLoaderTest extends HazelcastTestSupport {
 
     //https://github.com/hazelcast/hazelcast/issues/1770

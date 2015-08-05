@@ -1,6 +1,7 @@
 package com.hazelcast.config;
 
 import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.topic.TopicOverloadPolicy;
 import org.junit.Test;
@@ -19,7 +20,7 @@ import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category(QuickTest.class)
+@Category({QuickTest.class, ParallelTest.class})
 public class ReliableTopicConfigTest {
 
     @Test

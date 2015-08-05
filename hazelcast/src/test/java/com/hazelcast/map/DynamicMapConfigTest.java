@@ -36,6 +36,7 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -51,7 +52,7 @@ import static org.junit.Assert.assertTrue;
  * This test verifies that the changes will be reflected to corresponding IMap at runtime.
  */
 @RunWith(HazelcastParallelClassRunner.class)
-@Category(QuickTest.class)
+@Category({QuickTest.class, ParallelTest.class})
 public class DynamicMapConfigTest extends HazelcastTestSupport {
 
     @Test

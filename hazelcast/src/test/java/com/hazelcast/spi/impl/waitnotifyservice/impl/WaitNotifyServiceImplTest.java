@@ -23,6 +23,7 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.waitnotifyservice.impl.WaitNotifyServiceImpl;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Assert;
 import org.junit.Test;
@@ -33,7 +34,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.locks.LockSupport;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category(QuickTest.class)
+@Category({QuickTest.class, ParallelTest.class})
 public class WaitNotifyServiceImplTest extends HazelcastTestSupport {
 
     @Test
