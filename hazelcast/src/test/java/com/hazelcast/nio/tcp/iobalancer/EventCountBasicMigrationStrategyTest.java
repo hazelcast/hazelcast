@@ -16,8 +16,8 @@
 
 package com.hazelcast.nio.tcp.iobalancer;
 
-import com.hazelcast.nio.tcp.IOSelector;
-import com.hazelcast.nio.tcp.MigratableHandler;
+import com.hazelcast.nio.tcp.nonblocking.IOSelector;
+import com.hazelcast.nio.tcp.nonblocking.MigratableHandler;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;

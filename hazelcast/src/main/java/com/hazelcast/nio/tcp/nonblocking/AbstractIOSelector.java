@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.nio.tcp;
+package com.hazelcast.nio.tcp.nonblocking;
 
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.metrics.Probe;
@@ -188,6 +188,7 @@ public abstract class AbstractIOSelector extends Thread implements IOSelector {
         }
     }
 
+    @Override
     public void handleSelectionKeyFailure(Throwable e) {
         logger.warning("Selector exception at  " + getName() + ", cause= " + e.toString(), e);
         if (e instanceof OutOfMemoryError) {

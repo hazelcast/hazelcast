@@ -23,7 +23,7 @@ import com.hazelcast.nio.IOService;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
-class SocketClientMessageReader implements SocketReader {
+public class SocketClientMessageReader implements SocketReader {
 
     private final ClientMessageBuilder builder;
 

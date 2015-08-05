@@ -17,9 +17,9 @@
 package com.hazelcast.client.connection.nio;
 
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.tcp.AbstractIOSelector;
-import com.hazelcast.nio.tcp.IOSelectorOutOfMemoryHandler;
-import com.hazelcast.nio.tcp.SelectionHandler;
+import com.hazelcast.nio.tcp.nonblocking.AbstractIOSelector;
+import com.hazelcast.nio.tcp.nonblocking.IOSelectorOutOfMemoryHandler;
+import com.hazelcast.nio.tcp.nonblocking.SelectionHandler;
 
 import java.nio.channels.SelectionKey;
 

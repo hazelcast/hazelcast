@@ -34,8 +34,9 @@ public class DefaultPacketReader implements PacketReader {
     public DefaultPacketReader(TcpIpConnection connection, PacketTransceiver packetTransceiver) {
         this.connection = connection;
         this.packetTransceiver = packetTransceiver;
-        this.normalPacketsRead = connection.getReadHandler().getNormalPacketsRead();
-        this.priorityPacketsRead = connection.getReadHandler().getPriorityPacketsRead();
+        final ReadHandler readHandler = connection.getReadHandler();
+        this.normalPacketsRead = readHandler.getNormalPacketsReadCounter();
+        this.priorityPacketsRead = readHandler.getPriorityPacketsReadCounter();
     }
 
     @Override

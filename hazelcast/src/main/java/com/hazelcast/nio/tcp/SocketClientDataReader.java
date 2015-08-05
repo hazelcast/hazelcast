@@ -31,7 +31,7 @@ import static com.hazelcast.nio.ConnectionType.PYTHON_CLIENT;
 import static com.hazelcast.nio.ConnectionType.RUBY_CLIENT;
 import static com.hazelcast.util.StringUtil.bytesToString;
 
-class SocketClientDataReader implements SocketReader {
+public class SocketClientDataReader implements SocketReader {
 
     private static final int TYPE_BYTE = 3;
 
@@ -42,7 +42,7 @@ class SocketClientDataReader implements SocketReader {
 
     public SocketClientDataReader(TcpIpConnection connection) {
         this.connection = connection;
-        this.ioService = connection.getConnectionManager().ioService;
+        this.ioService = connection.getConnectionManager().getIoService();
     }
 
     public void read(ByteBuffer inBuffer) throws Exception {

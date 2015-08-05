@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.nio.tcp;
+package com.hazelcast.nio.tcp.nonblocking;
 
 /**
- * A {@link SelectionHandler} that supports migration between {@link com.hazelcast.nio.tcp.IOSelector} instances.
+ * A {@link SelectionHandler} that supports migration between {@link IOSelector} instances.
  * This API is called by the {@link com.hazelcast.nio.tcp.iobalancer.IOBalancer}.
  */
 public interface MigratableHandler extends SelectionHandler {
@@ -46,7 +46,7 @@ public interface MigratableHandler extends SelectionHandler {
 
     /**
      * Get number of events recorded by the current handler. It can be used to calculate whether
-     * this handler should be migrated to a different {@link com.hazelcast.nio.tcp.IOSelector}
+     * this handler should be migrated to a different {@link IOSelector}
      *
      * @return total number of events recorded by this handler
      */

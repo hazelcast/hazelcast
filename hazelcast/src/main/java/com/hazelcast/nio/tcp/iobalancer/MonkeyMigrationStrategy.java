@@ -16,7 +16,7 @@
 
 package com.hazelcast.nio.tcp.iobalancer;
 
-import com.hazelcast.nio.tcp.MigratableHandler;
+import com.hazelcast.nio.tcp.nonblocking.MigratableHandler;
 
 import java.util.Iterator;
 import java.util.Random;

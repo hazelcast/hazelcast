@@ -38,7 +38,7 @@ public class FirewallingTcpIpConnectionManager extends TcpIpConnectionManager {
             NodeIOService ioService,
             MetricsRegistry metricsRegistry,
             ServerSocketChannel serverSocketChannel) {
-        super(ioService, serverSocketChannel, threadGroup, metricsRegistry,loggingService);
+        super(ioService, serverSocketChannel, metricsRegistry, threadGroup, loggingService);
     }
 
     @Override

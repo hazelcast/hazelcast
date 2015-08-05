@@ -22,10 +22,10 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.Node;
-import com.hazelcast.nio.tcp.ReadHandler;
+import com.hazelcast.nio.tcp.nonblocking.NonBlockingReadHandler;
 import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.nio.tcp.TcpIpConnectionManager;
-import com.hazelcast.nio.tcp.WriteHandler;
+import com.hazelcast.nio.tcp.nonblocking.NonBlockingWriteHandler;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
@@ -57,8 +57,8 @@ public class IndependentBufferSizingTest extends HazelcastTestSupport {
         HazelcastInstance client = HazelcastClient.newHazelcastClient();
 
         TcpIpConnection clientConnection = getClientConnection(server);
-        ReadHandler readHandler = clientConnection.getReadHandler();
-        WriteHandler writeHandler = clientConnection.getWriteHandler();
+        NonBlockingReadHandler readHandler = (NonBlockingReadHandler) clientConnection.getReadHandler();
+        NonBlockingWriteHandler writeHandler = (NonBlockingWriteHandler) clientConnection.getWriteHandler();
 
         int defaultReceiveBuffer = getDefaultReceiverBufferSize(server);
         int defaultSendBuffer = getDefaultSendBufferSize(server);
@@ -80,8 +80,8 @@ public class IndependentBufferSizingTest extends HazelcastTestSupport {
         HazelcastInstance client = HazelcastClient.newHazelcastClient();
 
         TcpIpConnection clientConnection = getClientConnection(server);
-        ReadHandler readHandler = clientConnection.getReadHandler();
-        WriteHandler writeHandler = clientConnection.getWriteHandler();
+        NonBlockingReadHandler readHandler = (NonBlockingReadHandler) clientConnection.getReadHandler();
+        NonBlockingWriteHandler writeHandler = (NonBlockingWriteHandler) clientConnection.getWriteHandler();
 
         assertHasByteBufferWithSize(readHandler, "inputBuffer", receiveBufferSizeKB * 1024);
         assertHasByteBufferWithSize(writeHandler, "outputBuffer", sendBufferSizeKB * 1024);

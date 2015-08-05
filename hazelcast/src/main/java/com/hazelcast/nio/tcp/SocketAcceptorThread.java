@@ -19,6 +19,7 @@ package com.hazelcast.nio.tcp;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
+import com.hazelcast.nio.IOService;
 import com.hazelcast.nio.IOUtil;
 
 import java.io.IOException;
@@ -37,6 +38,7 @@ public class SocketAcceptorThread extends Thread {
     private final ServerSocketChannel serverSocketChannel;
     private final TcpIpConnectionManager connectionManager;
     private final ILogger logger;
+    private final IOService ioService;
 
     public SocketAcceptorThread(
             ThreadGroup threadGroup,
@@ -46,7 +48,8 @@ public class SocketAcceptorThread extends Thread {
         super(threadGroup, name);
         this.serverSocketChannel = serverSocketChannel;
         this.connectionManager = connectionManager;
-        this.logger = connectionManager.ioService.getLogger(this.getClass().getName());
+        this.ioService = connectionManager.getIoService();
+        this.logger = ioService.getLogger(this.getClass().getName());
     }
 
     @Override
@@ -130,7 +133,7 @@ public class SocketAcceptorThread extends Thread {
                 } catch (Exception ex) {
                     Logger.getLogger(SocketAcceptorThread.class).finest("Closing server socket failed", ex);
                 }
-                connectionManager.ioService.onFatalError(e);
+                ioService.onFatalError(e);
             }
         }
         if (socketChannelWrapper != null) {
@@ -139,7 +142,7 @@ public class SocketAcceptorThread extends Thread {
             if (connectionManager.isSocketInterceptorEnabled()) {
                 configureAndAssignSocket(socketChannel);
             } else {
-                connectionManager.ioService.executeAsync(new Runnable() {
+                ioService.executeAsync(new Runnable() {
                     @Override
                     public void run() {
                         configureAndAssignSocket(socketChannel);
@@ -153,7 +156,7 @@ public class SocketAcceptorThread extends Thread {
         try {
             connectionManager.initSocket(socketChannel.socket());
             connectionManager.interceptSocket(socketChannel.socket(), true);
-            socketChannel.configureBlocking(false);
+            socketChannel.configureBlocking(connectionManager.getThreadingModel().isBlocking());
             connectionManager.assignSocketChannel(socketChannel, null);
         } catch (Exception e) {
             log(Level.WARNING, e.getClass().getName() + ": " + e.getMessage(), e);

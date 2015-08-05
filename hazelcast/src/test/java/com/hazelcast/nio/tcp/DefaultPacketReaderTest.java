@@ -42,8 +42,8 @@ public class DefaultPacketReaderTest extends TcpIpConnection_AbstractTest {
         reader = new DefaultPacketReader(connection, packetTransceiver);
 
         readHandler = connection.getReadHandler();
-        oldNormalPacketsRead = readHandler.getNormalPacketsRead().get();
-        oldPriorityPacketsRead = readHandler.getPriorityPacketsRead().get();
+        oldNormalPacketsRead = readHandler.getNormalPacketsReadCounter().get();
+        oldPriorityPacketsRead = readHandler.getPriorityPacketsReadCounter().get();
     }
 
     @Test
@@ -59,8 +59,8 @@ public class DefaultPacketReaderTest extends TcpIpConnection_AbstractTest {
         assertEquals(1, packetTransceiver.packets.size());
         Packet found = packetTransceiver.packets.get(0);
         assertEquals(packet, found);
-        assertEquals(oldNormalPacketsRead, readHandler.getNormalPacketsRead().get());
-        assertEquals(oldPriorityPacketsRead + 1, readHandler.getPriorityPacketsRead().get());
+        assertEquals(oldNormalPacketsRead, readHandler.getNormalPacketsReadCounter().get());
+        assertEquals(oldPriorityPacketsRead + 1, readHandler.getPriorityPacketsReadCounter().get());
     }
 
     @Test
@@ -75,8 +75,8 @@ public class DefaultPacketReaderTest extends TcpIpConnection_AbstractTest {
         assertEquals(1, packetTransceiver.packets.size());
         Packet found = packetTransceiver.packets.get(0);
         assertEquals(packet, found);
-        assertEquals(oldNormalPacketsRead + 1, readHandler.getNormalPacketsRead().get());
-        assertEquals(oldPriorityPacketsRead, readHandler.getPriorityPacketsRead().get());
+        assertEquals(oldNormalPacketsRead + 1, readHandler.getNormalPacketsReadCounter().get());
+        assertEquals(oldPriorityPacketsRead, readHandler.getPriorityPacketsReadCounter().get());
     }
 
     @Test
@@ -104,8 +104,8 @@ public class DefaultPacketReaderTest extends TcpIpConnection_AbstractTest {
         assertEquals(packet2, packetTransceiver.packets.get(1));
         assertEquals(packet3, packetTransceiver.packets.get(2));
         assertEquals(packet4, packetTransceiver.packets.get(3));
-        assertEquals(oldNormalPacketsRead + 3, readHandler.getNormalPacketsRead().get());
-        assertEquals(oldPriorityPacketsRead+1, readHandler.getPriorityPacketsRead().get());
+        assertEquals(oldNormalPacketsRead + 3, readHandler.getNormalPacketsReadCounter().get());
+        assertEquals(oldPriorityPacketsRead+1, readHandler.getPriorityPacketsReadCounter().get());
     }
 
     class MockPacketTransceiver implements PacketTransceiver {

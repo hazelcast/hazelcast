@@ -381,7 +381,8 @@
     <suppress checks="ReturnCount" files="com/hazelcast/nio/serialization/impl/MorphingPortableReader"/>
     <suppress checks="MethodCount" files="com/hazelcast/nio/NodeIOService"/>
     <suppress checks="MagicNumber|ReturnCount|MethodCount|NPathComplexity" files="com/hazelcast/nio/Packet"/>
-    <suppress checks="NPathComplexity" files="com/hazelcast/nio/tcp/ReadHandler"/>
+    <suppress checks="NPathComplexity" files="com/hazelcast/nio/tcp/nonblocking/NonBlockingReadHandler"/>
+    <suppress checks="MagicNumber|EmptyBlock|MethodCount" files="com/hazelcast/nio/tcp/nonblocking/NonBlockingWriteHandler"/>
     <suppress checks="ClassFanOutComplexity|ClassDataAbstractionCoupling|MethodCount|ParameterNumber"
               files="com/hazelcast/nio/serialization/impl/SerializationServiceImpl"/>
     <suppress checks="MethodCount" files="com/hazelcast/nio/tcp/TcpIpConnectionManager"/>
@@ -390,7 +391,6 @@
     <suppress checks="IllegalImport" files="com/hazelcast/nio/UnsafeHelper"/>
     <suppress checks="MagicNumber" files="com/hazelcast/nio/serialization/impl/UnsafeObjectDataInput"/>
     <suppress checks="MagicNumber" files="com/hazelcast/nio/serialization/impl/UnsafeObjectDataOutput"/>
-    <suppress checks="MagicNumber|EmptyBlock" files="com/hazelcast/nio/tcp/WriteHandler"/>
     <suppress checks="MagicNumber" files="com/hazelcast/nio/UTFEncoderDecoder"/>
 
     <!-- JMX -->

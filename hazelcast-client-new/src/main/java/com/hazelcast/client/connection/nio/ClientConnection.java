@@ -27,7 +27,7 @@ import com.hazelcast.nio.ConnectionType;
 import com.hazelcast.nio.Protocols;
 import com.hazelcast.nio.SocketWritable;
 import com.hazelcast.nio.serialization.SerializationService;
-import com.hazelcast.nio.tcp.IOSelector;
+import com.hazelcast.nio.tcp.nonblocking.IOSelector;
 import com.hazelcast.nio.tcp.SocketChannelWrapper;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 

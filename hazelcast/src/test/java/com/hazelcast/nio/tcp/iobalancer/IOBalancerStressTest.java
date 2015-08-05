@@ -22,14 +22,15 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.HazelcastInstanceFactory;
-import com.hazelcast.nio.tcp.IOSelector;
-import com.hazelcast.nio.tcp.InSelectorImpl;
-import com.hazelcast.nio.tcp.MigratableHandler;
-import com.hazelcast.nio.tcp.OutSelectorImpl;
-import com.hazelcast.nio.tcp.ReadHandler;
+import com.hazelcast.nio.tcp.nonblocking.IOSelector;
+import com.hazelcast.nio.tcp.nonblocking.InSelectorImpl;
+import com.hazelcast.nio.tcp.nonblocking.MigratableHandler;
+import com.hazelcast.nio.tcp.nonblocking.NonBlockingTcpIpConnectionThreadingModel;
+import com.hazelcast.nio.tcp.nonblocking.OutSelectorImpl;
+import com.hazelcast.nio.tcp.nonblocking.NonBlockingReadHandler;
 import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.nio.tcp.TcpIpConnectionManager;
-import com.hazelcast.nio.tcp.WriteHandler;
+import com.hazelcast.nio.tcp.nonblocking.NonBlockingWriteHandler;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.NightlyTest;
@@ -105,24 +106,26 @@ public class IOBalancerStressTest extends HazelcastTestSupport {
     }
 
     public String debug(TcpIpConnectionManager connectionManager) {
+        NonBlockingTcpIpConnectionThreadingModel threadingModel = (NonBlockingTcpIpConnectionThreadingModel) connectionManager.getThreadingModel();
+
         StringBuffer sb = new StringBuffer();
         sb.append("in selectors\n");
-        for (InSelectorImpl in : connectionManager.getInSelectors()) {
+        for (InSelectorImpl in : threadingModel.getInSelectors()) {
             sb.append(in + " :" + in.getReadEvents() + "\n");
 
             for (TcpIpConnection connection : connectionManager.getActiveConnections()) {
-                ReadHandler readHandler = connection.getReadHandler();
+                NonBlockingReadHandler readHandler = (NonBlockingReadHandler) connection.getReadHandler();
                 if (readHandler.getOwner() == in) {
                     sb.append("\t" + readHandler + " eventCount:" + readHandler.getEventCount() + "\n");
                 }
             }
         }
         sb.append("out selectors\n");
-        for (OutSelectorImpl in : connectionManager.getOutSelectors()) {
+        for (OutSelectorImpl in : threadingModel.getOutSelectors()) {
             sb.append(in + " :" + in.getWriteEvents() + "\n");
 
             for (TcpIpConnection connection : connectionManager.getActiveConnections()) {
-                WriteHandler writeHandler = connection.getWriteHandler();
+                NonBlockingWriteHandler writeHandler = (NonBlockingWriteHandler) connection.getWriteHandler();
                 if (writeHandler.getOwner() == in) {
                     sb.append("\t" + writeHandler + " eventCount:" + writeHandler.getEventCount() + "\n");
                 }
@@ -136,8 +139,8 @@ public class IOBalancerStressTest extends HazelcastTestSupport {
     private Map<IOSelector, Set<MigratableHandler>> getHandlersPerSelector(TcpIpConnectionManager connectionManager) {
         Map<IOSelector, Set<MigratableHandler>> handlersPerSelector = new HashMap<IOSelector, Set<MigratableHandler>>();
         for (TcpIpConnection connection : connectionManager.getActiveConnections()) {
-            add(handlersPerSelector, connection.getReadHandler());
-            add(handlersPerSelector, connection.getWriteHandler());
+            add(handlersPerSelector, (MigratableHandler) connection.getReadHandler());
+            add(handlersPerSelector, (MigratableHandler) connection.getWriteHandler());
         }
         return handlersPerSelector;
     }

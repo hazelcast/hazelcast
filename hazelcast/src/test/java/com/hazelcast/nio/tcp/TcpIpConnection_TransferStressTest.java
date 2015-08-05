@@ -101,8 +101,8 @@ public class TcpIpConnection_TransferStressTest extends TcpIpConnection_Abstract
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                assertEquals(expectedNormalPackets, readHandler.getNormalPacketsRead().get());
-                assertEquals(expectedUrgentPackets, readHandler.getPriorityPacketsRead().get());
+                assertEquals(expectedNormalPackets, readHandler.getNormalPacketsReadCounter().get());
+                assertEquals(expectedUrgentPackets, readHandler.getPriorityPacketsReadCounter().get());
             }
         });
 
