@@ -44,7 +44,7 @@ import static com.hazelcast.transaction.TransactionOptions.TransactionType.TWO_P
 
 @RunParallel
 @RunWith(HazelcastTestRunner.class)
-@Category(QuickTest.class)
+@Category({QuickTest.class, ParallelTest.class})
 public class TransactionalMapWriteQuorumTest {
 
     static PartitionedCluster cluster;
