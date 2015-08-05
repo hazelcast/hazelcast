@@ -17,7 +17,8 @@
 package com.hazelcast.mapreduce.aggregation;
 
 import com.hazelcast.core.MultiMap;
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -29,8 +30,8 @@ import java.util.Random;
 
 import static org.junit.Assert.assertEquals;
 
-@RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
+@RunWith(HazelcastParallelClassRunner.class)
+@Category({QuickTest.class, ParallelTest.class})
 public class MultiMapSumAggregationTest
         extends AbstractAggregationTest {
 
@@ -248,7 +249,7 @@ public class MultiMapSumAggregationTest
             throws Exception {
 
         String mapName = randomMapName();
-        MultiMap<String, T> map = HAZELCAST_INSTANCE.getMultiMap(mapName);
+        MultiMap<String, T> map = instance.getMultiMap(mapName);
 
         for (int i = 0; i < values.length; i++) {
             map.put("key-" + i, values[i]);
@@ -262,7 +263,7 @@ public class MultiMapSumAggregationTest
             throws Exception {
 
         String mapName = randomMapName();
-        MultiMap<String, Value<T>> map = HAZELCAST_INSTANCE.getMultiMap(mapName);
+        MultiMap<String, Value<T>> map = instance.getMultiMap(mapName);
 
         for (int i = 0; i < values.length; i++) {
             map.put("key-" + i, values[i]);
