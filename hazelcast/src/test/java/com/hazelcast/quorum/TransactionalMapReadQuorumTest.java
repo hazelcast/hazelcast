@@ -22,6 +22,7 @@ import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.query.TruePredicate;
 import com.hazelcast.config.QuorumConfig;
 import com.hazelcast.test.HazelcastTestRunner;
+import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.annotation.RunParallel;
 import com.hazelcast.transaction.TransactionContext;

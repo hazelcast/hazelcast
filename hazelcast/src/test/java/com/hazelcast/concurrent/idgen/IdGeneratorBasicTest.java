@@ -1,18 +1,14 @@
 package com.hazelcast.concurrent.idgen;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-
-import java.util.UUID;
-
-import com.hazelcast.core.ICountDownLatch;
-import org.junit.Before;
-import org.junit.Test;
-
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IdGenerator;
 import com.hazelcast.test.HazelcastTestSupport;
+import org.junit.Before;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 public abstract class IdGeneratorBasicTest extends HazelcastTestSupport {
 

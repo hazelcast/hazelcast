@@ -5,6 +5,7 @@ import com.hazelcast.core.Member;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
+import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 
 import java.util.concurrent.TimeUnit;
@@ -20,7 +21,7 @@ import org.junit.runner.RunWith;
  * Includes tests for node and cluster safety.
  */
 @RunWith(HazelcastParallelClassRunner.class)
-@Category(QuickTest.class)
+@Category({QuickTest.class, ParallelTest.class})
 public class SafeClusterTest extends HazelcastTestSupport {
 
     @Test

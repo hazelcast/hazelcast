@@ -258,6 +258,88 @@
     <profiles>
 
         <profile>
+            <id>parallelTest</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <version>${maven.surefire.plugin.version}</version>
+                        <executions>
+                            <execution>
+                                <id>default-test</id>
+                                <phase>test</phase>
+                                <goals>
+                                    <goal>test</goal>
+                                </goals>
+                                <configuration combine.self="override">
+                                    <redirectTestOutputToFile>true</redirectTestOutputToFile>
+                                    <!-- 1C means 1 process per cpu core -->
+                                    <forkCount>4C</forkCount>
+                                    <reuseForks>true</reuseForks>
+
+                                    <!-- the argLine variable is needed for jacoco-->
+                                    <argLine>
+                                        -Xms128m -Xmx1G -XX:MaxPermSize=128M
+                                        -Dhazelcast.version.check.enabled=false
+                                        -Dhazelcast.mancenter.enabled=false
+                                        -Dhazelcast.logging.type=none
+                                        -Dhazelcast.test.use.network=false
+                                        -Dhazelcast.test.multiple.jvm=true
+                                    </argLine>
+                                    <includes>
+                                        <include>**/**.java</include>
+                                    </includes>
+                                    <excludes>
+                                        <exclude>**/jsr/**.java</exclude>
+                                    </excludes>
+                                    <groups>com.hazelcast.test.annotation.ParallelTest</groups>
+                                    <excludedGroups>
+                                        com.hazelcast.test.annotation.SlowTest,com.hazelcast.test.annotation.NightlyTest
+                                    </excludedGroups>
+                                    <systemPropertyVariables>
+                                        <multipleJVM>true</multipleJVM>
+                                    </systemPropertyVariables>
+                                </configuration>
+                            </execution>
+
+
+                            <execution>
+                                <id>singlejvm</id>
+                                <phase>test</phase>
+                                <goals>
+                                    <goal>test</goal>
+                                </goals>
+                                <configuration combine.self="override">
+                                    <redirectTestOutputToFile>true</redirectTestOutputToFile>
+
+                                    <!-- the argLine variable is needed for jacoco-->
+                                    <argLine>
+                                        -Xms128m -Xmx1G -XX:MaxPermSize=128M
+                                        -Dhazelcast.version.check.enabled=false
+                                        -Dhazelcast.mancenter.enabled=false
+                                        -Dhazelcast.logging.type=none
+                                        -Dhazelcast.test.use.network=false
+                                    </argLine>
+                                    <includes>
+                                        <include>**/**.java</include>
+                                    </includes>
+                                    <excludes>
+                                        <exclude>**/jsr/**.java</exclude>
+                                    </excludes>
+                                    <groups>com.hazelcast.test.annotation.QuickTest</groups>
+                                    <excludedGroups>
+                                        com.hazelcast.test.annotation.SlowTest,com.hazelcast.test.annotation.NightlyTest,com.hazelcast.test.annotation.ParallelTest
+                                    </excludedGroups>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <profile>
             <id>LOCAL</id>
             <build>
                 <plugins>

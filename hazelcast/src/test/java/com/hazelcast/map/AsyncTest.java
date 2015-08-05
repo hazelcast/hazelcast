@@ -22,6 +22,7 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
+import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import junit.framework.TestCase;
 import org.junit.Test;
@@ -36,7 +37,7 @@ import java.util.concurrent.TimeoutException;
 import static org.junit.Assert.*;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category(QuickTest.class)
+@Category({QuickTest.class, ParallelTest.class})
 public class AsyncTest extends HazelcastTestSupport {
 
     private final String key = "key";

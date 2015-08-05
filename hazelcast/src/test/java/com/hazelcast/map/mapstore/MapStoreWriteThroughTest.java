@@ -32,6 +32,7 @@ import com.hazelcast.query.SampleObjects.Employee;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
+import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 
 import java.util.concurrent.CountDownLatch;
@@ -54,7 +55,7 @@ import org.junit.runner.RunWith;
  * @author enesakar 1/21/13
  */
 @RunWith(HazelcastParallelClassRunner.class)
-@Category(QuickTest.class)
+@Category({QuickTest.class, ParallelTest.class})
 public class MapStoreWriteThroughTest extends HazelcastTestSupport {
 
     @Test(timeout = 120000)
