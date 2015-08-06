@@ -32,6 +32,7 @@ import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.MemberSocketInterceptor;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.tcp.iobalancer.IOBalancer;
+import com.hazelcast.spi.impl.PacketHandler;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.counters.MwCounter;
@@ -54,7 +55,7 @@ import java.util.logging.Level;
 import static com.hazelcast.util.HashUtil.hashToIndex;
 import static com.hazelcast.util.counters.MwCounter.newMwCounter;
 
-public class TcpIpConnectionManager implements ConnectionManager {
+public class TcpIpConnectionManager implements ConnectionManager, PacketHandler {
 
     private static final int DEFAULT_KILL_THREAD_MILLIS = 1000 * 10;
 
@@ -178,7 +179,6 @@ public class TcpIpConnectionManager implements ConnectionManager {
         return metricRegistry;
     }
 
-
     public void interceptSocket(Socket socket, boolean onAccept) throws IOException {
         if (!isSocketInterceptorEnabled()) {
             return;
@@ -264,7 +264,15 @@ public class TcpIpConnectionManager implements ConnectionManager {
         connectionListeners.add(listener);
     }
 
-    public boolean bind(TcpIpConnection connection, Address remoteEndPoint, Address localEndpoint, boolean reply) {
+    @Override
+    public void handle(Packet packet) throws Exception {
+        assert packet.isHeaderSet(Packet.HEADER_BIND);
+
+        BindMessage bind = ioService.getSerializationService().toObject(packet);
+        bind((TcpIpConnection) packet.getConn(), bind.getLocalAddress(), bind.getTargetAddress(), bind.shouldReply());
+    }
+
+    private boolean bind(TcpIpConnection connection, Address remoteEndPoint, Address localEndpoint, boolean reply) {
         if (logger.isFinestEnabled()) {
             log(Level.FINEST, "Binding " + connection + " to " + remoteEndPoint + ", reply is " + reply);
         }
@@ -283,10 +291,7 @@ public class TcpIpConnectionManager implements ConnectionManager {
         if (checkAlreadyConnected(connection, remoteEndPoint)) {
             return false;
         }
-        if (!registerConnection(remoteEndPoint, connection)) {
-            return false;
-        }
-        return true;
+        return registerConnection(remoteEndPoint, connection);
     }
 
     public boolean registerConnection(final Address remoteEndPoint, final Connection connection) {

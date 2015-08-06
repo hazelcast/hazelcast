@@ -30,6 +30,7 @@ import com.hazelcast.internal.storage.Storage;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingServiceImpl;
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.partition.InternalPartitionService;
@@ -38,7 +39,6 @@ import com.hazelcast.quorum.impl.QuorumServiceImpl;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PostJoinAwareService;
-import com.hazelcast.spi.impl.servicemanager.ServiceInfo;
 import com.hazelcast.spi.SharedService;
 import com.hazelcast.spi.impl.eventservice.InternalEventService;
 import com.hazelcast.spi.impl.eventservice.impl.EventServiceImpl;
@@ -46,13 +46,14 @@ import com.hazelcast.spi.impl.executionservice.InternalExecutionService;
 import com.hazelcast.spi.impl.executionservice.impl.ExecutionServiceImpl;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
+import com.hazelcast.spi.impl.packettransceiver.PacketTransceiver;
+import com.hazelcast.spi.impl.packettransceiver.impl.PacketTransceiverImpl;
 import com.hazelcast.spi.impl.proxyservice.InternalProxyService;
 import com.hazelcast.spi.impl.proxyservice.impl.ProxyServiceImpl;
+import com.hazelcast.spi.impl.servicemanager.ServiceInfo;
 import com.hazelcast.spi.impl.servicemanager.impl.ServiceManagerImpl;
 import com.hazelcast.spi.impl.waitnotifyservice.InternalWaitNotifyService;
 import com.hazelcast.spi.impl.waitnotifyservice.impl.WaitNotifyServiceImpl;
-import com.hazelcast.spi.impl.packettransceiver.PacketTransceiver;
-import com.hazelcast.spi.impl.packettransceiver.impl.PacketTransceiverImpl;
 import com.hazelcast.transaction.TransactionManagerService;
 import com.hazelcast.transaction.impl.TransactionManagerServiceImpl;
 import com.hazelcast.wan.WanReplicationService;
@@ -87,7 +88,7 @@ public class NodeEngineImpl implements NodeEngine {
     private final SerializationService serializationService;
     private final LoggingServiceImpl loggingService;
 
-    public NodeEngineImpl(Node node) {
+    public NodeEngineImpl(final Node node) {
         this.node = node;
         this.loggingService = node.loggingService;
         this.serializationService = node.getSerializationService();
@@ -107,8 +108,18 @@ public class NodeEngineImpl implements NodeEngine {
                 operationService,
                 eventService,
                 wanReplicationService,
+                new ConnectionManagerPacketHandler(),
                 executionService);
         quorumService = new QuorumServiceImpl(this);
+    }
+
+    class ConnectionManagerPacketHandler implements PacketHandler {
+        // ConnectionManager is only available after the NodeEngineImpl is available.
+        @Override
+        public void handle(Packet packet) throws Exception {
+            PacketHandler packetHandler = (PacketHandler) node.getConnectionManager();
+            packetHandler.handle(packet);
+        }
     }
 
     public MetricsRegistry getMetricsRegistry() {

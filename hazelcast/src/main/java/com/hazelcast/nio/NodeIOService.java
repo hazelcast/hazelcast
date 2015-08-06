@@ -290,11 +290,6 @@ public class NodeIOService implements IOService {
     }
 
     @Override
-    public PacketTransceiver getPacketTransceiver() {
-        return node.nodeEngine.getPacketTransceiver();
-    }
-
-    @Override
     public MemberSocketInterceptor getMemberSocketInterceptor() {
         return node.getNodeExtension().getMemberSocketInterceptor();
     }

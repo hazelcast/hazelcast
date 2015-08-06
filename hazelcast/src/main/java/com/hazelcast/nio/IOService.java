@@ -30,7 +30,6 @@ import com.hazelcast.nio.tcp.PacketWriter;
 import com.hazelcast.nio.tcp.SocketChannelWrapperFactory;
 import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.spi.EventService;
-import com.hazelcast.spi.impl.packettransceiver.PacketTransceiver;
 
 import java.util.Collection;
 
@@ -138,8 +137,6 @@ public interface IOService {
     SerializationService getSerializationService();
 
     SocketChannelWrapperFactory getSocketChannelWrapperFactory();
-
-    PacketTransceiver getPacketTransceiver();
 
     MemberSocketInterceptor getMemberSocketInterceptor();
 

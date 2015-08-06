@@ -45,18 +45,21 @@ public class PacketTransceiverImpl implements PacketTransceiver {
     private final PacketHandler eventService;
     private final PacketHandler wanReplicationService;
     private final PacketHandler operationService;
+    private final PacketHandler connectionManager;
 
     public PacketTransceiverImpl(Node node,
                                  ILogger logger,
                                  PacketHandler operationService,
                                  PacketHandler eventService,
                                  PacketHandler wanReplicationService,
+                                 PacketHandler connectionManager,
                                  ExecutionService executionService) {
         this.node = node;
         this.executionService = executionService;
         this.operationService = operationService;
         this.eventService = eventService;
         this.wanReplicationService = wanReplicationService;
+        this.connectionManager = connectionManager;
         this.logger = logger;
     }
 
@@ -77,6 +80,8 @@ public class PacketTransceiverImpl implements PacketTransceiver {
                 eventService.handle(packet);
             } else if (packet.isHeaderSet(Packet.HEADER_WAN_REPLICATION)) {
                 wanReplicationService.handle(packet);
+            } else if (packet.isHeaderSet(Packet.HEADER_BIND)) {
+                connectionManager.handle(packet);
             } else {
                 logger.severe("Unknown packet type! Header: " + packet.getHeader());
             }

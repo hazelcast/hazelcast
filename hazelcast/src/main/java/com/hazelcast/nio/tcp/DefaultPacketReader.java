@@ -16,9 +16,7 @@
 
 package com.hazelcast.nio.tcp;
 
-import com.hazelcast.cluster.impl.BindMessage;
 import com.hazelcast.nio.Packet;
-import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.spi.impl.packettransceiver.PacketTransceiver;
 import com.hazelcast.util.counters.Counter;
 
@@ -27,20 +25,14 @@ import java.nio.ByteBuffer;
 public class DefaultPacketReader implements PacketReader {
 
     protected final TcpIpConnection connection;
-    protected final SerializationService serializationService;
-    protected final TcpIpConnectionManager connectionManager;
     protected Packet packet;
 
     private final PacketTransceiver packetTransceiver;
     private final Counter normalPacketsRead;
     private final Counter priorityPacketsRead;
 
-    public DefaultPacketReader(TcpIpConnection connection,
-                               SerializationService serializationService,
-                               PacketTransceiver packetTransceiver) {
+    public DefaultPacketReader(TcpIpConnection connection, PacketTransceiver packetTransceiver) {
         this.connection = connection;
-        this.connectionManager = connection.getConnectionManager();
-        this.serializationService = serializationService;
         this.packetTransceiver = packetTransceiver;
         this.normalPacketsRead = connection.getReadHandler().getNormalPacketsRead();
         this.priorityPacketsRead = connection.getReadHandler().getPriorityPacketsRead();
@@ -71,11 +63,6 @@ public class DefaultPacketReader implements PacketReader {
 
         packet.setConn(connection);
 
-        if (packet.isHeaderSet(Packet.HEADER_BIND)) {
-            BindMessage bind = serializationService.toObject(packet);
-            connectionManager.bind(connection, bind.getLocalAddress(), bind.getTargetAddress(), bind.shouldReply());
-        } else {
-            packetTransceiver.receive(packet);
-        }
+        packetTransceiver.receive(packet);
     }
 }
