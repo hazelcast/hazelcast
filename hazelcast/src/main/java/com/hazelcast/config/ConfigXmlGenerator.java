@@ -655,7 +655,7 @@ public class ConfigXmlGenerator {
     private void symmetricEncInterceptorConfigXmlGenerator(StringBuilder xml, NetworkConfig netCfg) {
         final SymmetricEncryptionConfig sec = netCfg.getSymmetricEncryptionConfig();
         if (sec != null) {
-            xml.append("<symmetric-encryption enabled=\"").append(sec != null && sec.isEnabled()).append("\">");
+            xml.append("<symmetric-encryption enabled=\"").append(sec.isEnabled()).append("\">");
             xml.append("<algorithm>").append(sec.getAlgorithm()).append("</algorithm>");
             xml.append("<salt>").append(sec.getSalt()).append("</salt>");
             xml.append("<password>").append(sec.getPassword()).append("</password>");
