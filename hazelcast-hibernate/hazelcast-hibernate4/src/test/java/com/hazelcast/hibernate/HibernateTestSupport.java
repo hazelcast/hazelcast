@@ -17,10 +17,15 @@
 package com.hazelcast.hibernate;
 
 import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.hibernate.entity.DummyEntity;
+import com.hazelcast.hibernate.entity.DummyProperty;
+import com.hazelcast.hibernate.instance.HazelcastAccessor;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.hibernate.SessionFactory;
+import org.hibernate.cache.spi.access.AccessType;
 import org.hibernate.cfg.Configuration;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -39,6 +44,9 @@ public abstract class HibernateTestSupport extends HazelcastTestSupport{
         Hazelcast.shutdownAll();
     }
 
+    protected String getCacheStrategy() {
+        return  AccessType.READ_WRITE.getExternalName();
+    }
 
     @After
     public final void cleanup() {
@@ -53,14 +61,22 @@ public abstract class HibernateTestSupport extends HazelcastTestSupport{
         }
     }
 
-    protected static SessionFactory createSessionFactory(Properties props) {
+    protected SessionFactory createSessionFactory(Properties props) {
         Configuration conf = new Configuration();
         URL xml = HibernateTestSupport.class.getClassLoader().getResource("test-hibernate.cfg.xml");
         props.put(CacheEnvironment.EXPLICIT_VERSION_CHECK, "true");
         conf.configure(xml);
+        conf.setCacheConcurrencyStrategy(DummyEntity.class.getName(), getCacheStrategy());
+        conf.setCacheConcurrencyStrategy(DummyProperty.class.getName(), getCacheStrategy());
+        conf.setCollectionCacheConcurrencyStrategy(DummyEntity.class.getName() + ".properties", getCacheStrategy());
         conf.addProperties(props);
         final SessionFactory sf = conf.buildSessionFactory();
         sf.getStatistics().setStatisticsEnabled(true);
         return sf;
     }
+
+    protected HazelcastInstance getHazelcastInstance(SessionFactory sf) {
+        return HazelcastAccessor.getHazelcastInstance(sf);
+    }
+
 }

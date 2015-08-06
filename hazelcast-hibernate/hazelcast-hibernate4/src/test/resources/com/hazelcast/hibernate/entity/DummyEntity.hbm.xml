@@ -21,10 +21,6 @@
 
 <hibernate-mapping package="com.hazelcast.hibernate.entity">
     <class name="DummyEntity" table="dummy_entities">
-        <!--		<cache usage="read-only"/>-->
-        <!--		<cache usage="nonstrict-read-write"/>-->
-        <cache usage="read-write"/>
-
         <id name="id" column="uid" type="long" unsaved-value="null">
             <generator class="assigned"/>
         </id>
@@ -34,7 +30,6 @@
         <property name="value" column="dummy_value" type="double"/>
 
         <set name="properties" lazy="false" cascade="all" inverse="true">
-            <cache usage="read-write"/>
             <key column="parent_uid"/>
             <one-to-many class="com.hazelcast.hibernate.entity.DummyProperty"/>
         </set>
