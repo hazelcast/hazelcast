@@ -57,7 +57,7 @@ public final class LockRequest extends AbstractLockRequest {
 
     @Override
     public Object[] getParameters() {
-        if (timeout == -1 && ttl != Long.MAX_VALUE) {
+        if (timeout == -1 && ttl != -1L) {
             // lock (lease, TimeUnit)
             return new Object[]{ttl, TimeUnit.MILLISECONDS};
         } else if (timeout >= 0) {
