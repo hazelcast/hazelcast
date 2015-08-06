@@ -74,7 +74,7 @@ public final class DeleteSessionEntryProcessor
             return Boolean.FALSE;
         }
         sessionState.removeJvmId(jvmId);
-        if (invalidate) {
+        if (invalidate || sessionState.getJvmIds().isEmpty()) {
             entry.setValue(null);
             removed = true;
         } else {
