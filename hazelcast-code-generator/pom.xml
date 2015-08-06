@@ -58,6 +58,44 @@
         </plugins>
     </build>
 
+    <profiles>
+
+    <profile>
+        <id>parallelTest</id>
+        <build>
+            <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-surefire-plugin</artifactId>
+                    <version>${maven.surefire.plugin.version}</version>
+                    <executions>
+                        <execution>
+                            <id>singlejvm</id>
+                            <phase>test</phase>
+                            <goals>
+                                <goal>test</goal>
+                            </goals>
+                            <configuration combine.self="override">
+                                <redirectTestOutputToFile>true</redirectTestOutputToFile>
+                                <argLine>
+                                    -Xms128m -Xmx1G -XX:MaxPermSize=128M
+                                    -Dhazelcast.version.check.enabled=false
+                                    -Dhazelcast.mancenter.enabled=false
+                                    -Dhazelcast.logging.type=none
+                                    -Dhazelcast.test.use.network=false
+                                </argLine>
+                                <includes>
+                                    <include>**/**.java</include>
+                                </includes>
+                            </configuration>
+                        </execution>
+                    </executions>
+                </plugin>
+            </plugins>
+        </build>
+    </profile>
+    </profiles>
+
     <dependencies>
         <dependency>
             <groupId>org.freemarker</groupId>

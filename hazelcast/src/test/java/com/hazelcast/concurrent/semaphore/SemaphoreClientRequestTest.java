@@ -17,10 +17,16 @@
 package com.hazelcast.concurrent.semaphore;
 
 import com.hazelcast.client.ClientTestSupport;
-import com.hazelcast.concurrent.semaphore.client.*;
+import com.hazelcast.concurrent.semaphore.client.AcquireRequest;
+import com.hazelcast.concurrent.semaphore.client.AvailableRequest;
+import com.hazelcast.concurrent.semaphore.client.DrainRequest;
+import com.hazelcast.concurrent.semaphore.client.InitRequest;
+import com.hazelcast.concurrent.semaphore.client.ReduceRequest;
+import com.hazelcast.concurrent.semaphore.client.ReleaseRequest;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.ISemaphore;
 import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
@@ -31,13 +37,15 @@ import org.junit.runner.RunWith;
 
 import java.io.IOException;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author ali 5/13/13
  */
 @RunWith(HazelcastParallelClassRunner.class)
-@Category(QuickTest.class)
+@Category({QuickTest.class, ParallelTest.class})
 @Ignore
 public class SemaphoreClientRequestTest extends ClientTestSupport {
 

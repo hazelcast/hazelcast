@@ -6,6 +6,7 @@ import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
@@ -23,7 +24,7 @@ import static org.junit.Assert.assertEquals;
  * A test that verifies that a non smart client, can send request to a wrong node, but still can get responses to its requests.
  */
 @RunWith(HazelcastParallelClassRunner.class)
-@Category(QuickTest.class)
+@Category({QuickTest.class, ParallelTest.class})
 public class NonSmartClientRoutingTest {
 
     private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();

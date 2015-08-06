@@ -19,6 +19,7 @@ package com.hazelcast.util;
 import com.hazelcast.spi.impl.AbstractCompletableFuture;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.transaction.TransactionTimedOutException;
 import com.hazelcast.util.FutureUtil.ExceptionHandler;
@@ -50,7 +51,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category(QuickTest.class)
+@Category({QuickTest.class, ParallelTest.class})
 public class FutureUtilTest extends HazelcastTestSupport {
 
     @Test

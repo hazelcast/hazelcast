@@ -23,6 +23,7 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
+import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import java.util.concurrent.TimeUnit;
 import org.junit.Test;
@@ -34,7 +35,7 @@ import java.io.Serializable;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category(QuickTest.class)
+@Category({QuickTest.class, ParallelTest.class})
 public class EmbeddedMapInterceptorTest extends HazelcastTestSupport {
 
     private final String mapName = "testMapInterceptor";

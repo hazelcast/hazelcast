@@ -27,8 +27,8 @@ import com.hazelcast.query.TruePredicate;
 import com.hazelcast.quorum.PartitionedCluster;
 import com.hazelcast.config.QuorumConfig;
 import com.hazelcast.test.HazelcastTestRunner;
-import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.annotation.RunParallel;
+import com.hazelcast.test.annotation.SlowTest;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionOptions;
@@ -50,7 +50,7 @@ import static com.hazelcast.transaction.TransactionOptions.TransactionType.TWO_P
 
 @RunParallel
 @RunWith(HazelcastTestRunner.class)
-@Category(QuickTest.class)
+@Category(SlowTest.class)
 public class ClientTransactionalMapQuorumTest {
 
     static PartitionedCluster cluster;
