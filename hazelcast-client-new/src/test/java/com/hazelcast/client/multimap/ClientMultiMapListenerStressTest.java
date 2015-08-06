@@ -20,7 +20,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static com.hazelcast.test.HazelcastTestSupport.assertJoinable;
 import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
 import static com.hazelcast.test.HazelcastTestSupport.randomString;
-import static junit.framework.Assert.assertEquals;
+import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(NightlyTest.class)

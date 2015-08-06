@@ -1,7 +1,5 @@
 package com.hazelcast.nio.serialization;
 
-import junit.framework.Test;
-
 import java.io.IOException;
 import java.util.Arrays;
 

@@ -19,10 +19,10 @@ import static com.hazelcast.util.Preconditions.checkHasNext;
 import static com.hazelcast.util.Preconditions.checkInstanceOf;
 import static com.hazelcast.util.Preconditions.checkNotInstanceOf;
 import static com.hazelcast.util.Preconditions.checkTrue;
-import static junit.framework.Assert.assertNull;
-import static junit.framework.Assert.fail;
-import static junit.framework.TestCase.assertEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
+import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
