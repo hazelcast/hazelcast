@@ -30,6 +30,7 @@ import java.nio.ByteOrder;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 /**
@@ -198,8 +199,7 @@ public class PortableTest {
                                 .addLongField("l").addCharArrayField("c").addPortableField("p", createNamedPortableClassDefinition()).build())
                 .addClassDefinition(
                         new ClassDefinitionBuilder(PORTABLE_FACTORY_ID, TestSerializationConstants.NAMED_PORTABLE)
-                                .addUTFField("name").addIntField("myint").build()
-                );
+                                .addUTFField("name").addIntField("myint").build());
 
         SerializationService serializationService = new DefaultSerializationServiceBuilder().setConfig(serializationConfig).build();
         RawDataPortable p = new RawDataPortable(System.currentTimeMillis(), "test chars".toCharArray(),
@@ -236,8 +236,9 @@ public class PortableTest {
         assertRepeatedSerialisationGivesSameByteArrays(ss, new InnerPortable(new byte[3], new char[5], new short[2],
                 new int[10], new long[7], new float[9], new double[1], new NamedPortable[]{new NamedPortable("issue-1096", 1096)}));
 
-        assertRepeatedSerialisationGivesSameByteArrays(ss, new RawDataPortable(1096L, "issue-1096".toCharArray(),
-                new NamedPortable("issue-1096", 1096), 1096, "issue-1096", new ByteArrayDataSerializable(new byte[1])));
+        assertRepeatedSerialisationGivesSameByteArrays(ss,
+                new RawDataPortable(1096L, "issue-1096".toCharArray(), new NamedPortable("issue-1096", 1096), 1096,
+                        "issue-1096", new ByteArrayDataSerializable(new byte[1])));
     }
 
     private static void assertRepeatedSerialisationGivesSameByteArrays(SerializationService ss, Portable p) {
@@ -344,6 +345,39 @@ public class PortableTest {
         assertNotNull(fd);
         assertEquals(FieldType.LONG, fd.getType());
 
+    }
+
+    @Test
+    public void testWriteRead_withNullPortableArray() {
+        ClassDefinitionBuilder builder0 = new ClassDefinitionBuilder(PORTABLE_FACTORY_ID, 1);
+        ClassDefinitionBuilder builder1 = new ClassDefinitionBuilder(PORTABLE_FACTORY_ID, 2);
+        builder0.addPortableArrayField("list", builder1.build());
+
+        SerializationService ss = new DefaultSerializationServiceBuilder()
+                .addClassDefinition(builder0.build())
+                .addClassDefinition(builder1.build())
+                .build();
+
+        Data data = ss.toData(new TestObject1());
+
+        SerializationService ss2 = new DefaultSerializationServiceBuilder()
+                .addPortableFactory(1, new PortableFactory() {
+                    @Override
+                    public Portable create(int classId) {
+                        switch (classId) {
+                            case 1:
+                                return new TestObject1();
+                            case 2:
+                                return new TestObject2();
+                        }
+                        return null;
+                    }
+                })
+                .build();
+
+        Object object = ss2.toObject(data);
+        assertNotNull(object);
+        assertTrue(object instanceof TestObject1);
     }
 
     public static class GrandParentPortableObject implements Portable {
@@ -479,10 +513,8 @@ public class PortableTest {
 
         @Override
         public void readPortable(PortableReader reader) throws IOException {
-            throw new UnsupportedOperationException();
+            portables = reader.readPortableArray("list");
         }
-
-
     }
 
     static class TestObject2 implements Portable {
