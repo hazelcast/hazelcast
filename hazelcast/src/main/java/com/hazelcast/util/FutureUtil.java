@@ -347,4 +347,19 @@ public final class FutureUtil {
             }
         }
     }
+
+    /**
+     * Get all futures that are done
+     * @param futures
+     * @return list of completed futures
+     */
+    public static List<Future> getAllDone(Collection<Future> futures) {
+        List<Future> doneFutures = new ArrayList<Future>();
+        for (Future f: futures) {
+            if (f.isDone()) {
+                doneFutures.add(f);
+            }
+        }
+        return doneFutures;
+    }
 }
