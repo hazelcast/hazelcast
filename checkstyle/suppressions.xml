@@ -24,17 +24,15 @@
     <suppress checks="MethodCount" files="PortableHook\.java$"/>
     <suppress checks="ClassDataAbstractionCoupling" files="PortableHook\.java$"/>
     <suppress checks="ReturnCount" files="PortableHook\.java$"/>
-    <suppress checks="ExecutableStatementCount" files="PortableHook\.java$"/>
     <suppress checks="AnonInnerLength" files="PortableHook\.java$"/>
     <suppress checks="ClassFanOutComplexityCheck" files="PortableHook\.java$"/>
-    <suppress checks="CyclomaticComplexityCheck" files="PortableHook\.java$"/>
+    <suppress checks="ExecutableStatementCount" files="PortableHook\.java$"/>
 
     <!-- SerializerHook -->
     <suppress checks="MethodLength" files="SerializerHook\.java$"/>
     <suppress checks="MethodCount" files="SerializerHook\.java$"/>
     <suppress checks="ClassDataAbstractionCoupling" files="SerializerHook\.java$"/>
     <suppress checks="ReturnCount" files="SerializerHook\.java$"/>
-    <suppress checks="ExecutableStatementCount" files="SerializerHook\.java$"/>
     <suppress checks="AnonInnerLength" files="SerializerHook\.java$"/>
     <suppress checks="ClassFanOutComplexityCheck" files="SerializerHook\.java$"/>
     <suppress checks="CyclomaticComplexityCheck" files="SerializerHook\.java$"/>
@@ -44,9 +42,6 @@
     <suppress checks="FileLengthCheck" files="ConsoleApp\.java"/>
     <suppress checks="MethodCountCheck" files="ConsoleApp\.java"/>
     <suppress checks="ClassFanOutComplexityCheck" files="ConsoleApp\.java"/>
-    <suppress checks="CyclomaticComplexityCheck" files="ConsoleApp\.java"/>
-    <suppress checks="NPathComplexityCheck" files="ConsoleApp\.java"/>
-    <suppress checks="MethodLengthCheck" files="ConsoleApp\.java"/>
 
     <!-- Cluster -->
     <suppress checks="JavadocMethod" files="com/hazelcast/cluster/"/>
@@ -474,7 +469,7 @@
 
     <!-- Written by Doug Lea with assistance from members of JCP JSR-166 Expert Group and released to the public domain,
     as explained at http://creativecommons/org/licenses/publicdomain -->
-    <suppress checks="MagicNumber|FileLength|DeclarationOrder|RedundantModifier|InnerAssignment|Complexity"
+    <suppress checks="MagicNumber|FileLength|DeclarationOrder|RedundantModifier|InnerAssignment|NPath|Cyclomatic"
               files="com/hazelcast/util/ConcurrentReferenceHashMap"/>
 
     <!-- Build Utils (taken from JBOSS project) -->
