@@ -212,23 +212,39 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
     }
 
     private <T extends EventListener> T initializeListener(ListenerConfig listenerConfig) {
-        T listener = null;
-        if (listenerConfig.getImplementation() != null) {
-            listener = (T) listenerConfig.getImplementation();
-        } else if (listenerConfig.getClassName() != null) {
-            try {
-                return ClassLoaderUtil
-                        .newInstance(getNodeEngine().getConfigClassLoader(), listenerConfig.getClassName());
-            } catch (Exception e) {
-                throw ExceptionUtil.rethrow(e);
-            }
-        }
+        T listener = getListenerImplOrNull(listenerConfig);
 
         if (listener instanceof HazelcastInstanceAware) {
             ((HazelcastInstanceAware) listener).setHazelcastInstance(getNodeEngine().getHazelcastInstance());
         }
 
         return listener;
+    }
+
+    private <T extends EventListener> T getListenerImplOrNull(ListenerConfig listenerConfig) {
+        EventListener implementation = listenerConfig.getImplementation();
+        if (implementation != null) {
+
+            // For this instanceOf check please see EntryListenerConfig#toEntryListener.
+            if (implementation instanceof EntryListenerConfig.MapListenerToEntryListenerAdapter) {
+                return (T) ((EntryListenerConfig.MapListenerToEntryListenerAdapter) implementation).getMapListener();
+            }
+
+            return (T) implementation;
+        }
+
+        String className = listenerConfig.getClassName();
+        if (className != null) {
+            try {
+                ClassLoader configClassLoader = getNodeEngine().getConfigClassLoader();
+                return ClassLoaderUtil.newInstance(configClassLoader, className);
+            } catch (Exception e) {
+                throw ExceptionUtil.rethrow(e);
+            }
+        }
+
+        // returning null to preserve previous behavior.
+        return null;
     }
 
     // this operation returns the object in data format except
