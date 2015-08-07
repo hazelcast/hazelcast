@@ -17,9 +17,9 @@
 
 package com.hazelcast.util.collection;
 
-import com.hazelcast.util.function.LongLongConsumer;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.util.function.LongLongConsumer;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -27,7 +27,6 @@ import org.mockito.InOrder;
 
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -247,4 +246,13 @@ public class Long2LongHashMapTest {
         assertThat("iterator has failed to be reset", keys, hasItems(1L, 2L));
     }
 
+    @Test
+    public void sizeShouldReturnNumberOfEntries() {
+        final int count = 100;
+        for (int key = 0; key < count; key++) {
+            map.put(key, 1);
+        }
+
+        assertEquals(count, map.size());
+    }
 }

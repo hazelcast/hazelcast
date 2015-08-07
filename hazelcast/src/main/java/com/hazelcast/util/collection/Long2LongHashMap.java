@@ -478,6 +478,7 @@ public class Long2LongHashMap implements Map<Long, Long> {
         resizeThreshold = (int) (newCapacity * loadFactor);
         mask = (newCapacity * 2) - 1;
         entries = new long[newCapacity * 2];
+        size = 0;
         Arrays.fill(entries, missingValue);
     }
 }

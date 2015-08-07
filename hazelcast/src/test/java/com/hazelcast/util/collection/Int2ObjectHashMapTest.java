@@ -28,8 +28,6 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
 
 import static java.lang.Integer.valueOf;
 import static org.hamcrest.core.Is.is;
@@ -290,6 +288,16 @@ public class Int2ObjectHashMapTest {
 
         final String mapAsAString = "{7=7, 12=12, 19=19, 3=3, 11=11, 1=1}";
         assertThat(intToObjectMap.toString(), equalTo(mapAsAString));
+    }
+
+    @Test
+    public void sizeShouldReturnNumberOfEntries() {
+        final int count = 100;
+        for (int key = 0; key < count; key++) {
+            intToObjectMap.put(key, "value");
+        }
+
+        assertEquals(count, intToObjectMap.size());
     }
 }
 
