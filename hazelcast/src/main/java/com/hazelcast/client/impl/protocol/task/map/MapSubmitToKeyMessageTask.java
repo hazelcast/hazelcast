@@ -41,7 +41,9 @@ public class MapSubmitToKeyMessageTask
     @Override
     protected Operation prepareOperation() {
         final EntryProcessor processor = serializationService.toObject(parameters.entryProcessor);
-        return new EntryOperation(parameters.name, parameters.key, processor);
+        EntryOperation op = new EntryOperation(parameters.name, parameters.key, processor);
+        op.setThreadId(parameters.threadId);
+        return op;
     }
 
     @Override
