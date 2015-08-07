@@ -124,14 +124,14 @@ final class PortableContextImpl implements PortableContext {
                 }
             } else if (type == FieldType.PORTABLE_ARRAY) {
                 int k = in.readInt();
-                if (k > 0) {
-                    fieldFactoryId = in.readInt();
-                    fieldClassId = in.readInt();
+                fieldFactoryId = in.readInt();
+                fieldClassId = in.readInt();
 
+                // TODO: what there's a null inner Portable field
+                if (k > 0) {
                     int p = in.readInt();
                     in.position(p);
 
-                    // TODO: what there's a null inner Portable field
                     int fieldVersion = in.readInt();
                     readClassDefinition(in, fieldFactoryId, fieldClassId, fieldVersion);
                 } else {
