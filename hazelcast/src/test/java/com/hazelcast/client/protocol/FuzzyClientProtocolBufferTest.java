@@ -31,8 +31,8 @@ import org.junit.runner.RunWith;
 import java.nio.charset.Charset;
 import java.util.Random;
 
-import static junit.framework.TestCase.assertEquals;
 import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)

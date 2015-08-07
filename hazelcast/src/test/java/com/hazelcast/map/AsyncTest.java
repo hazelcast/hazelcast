@@ -23,7 +23,6 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
-import junit.framework.TestCase;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -33,7 +32,10 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
@@ -50,7 +52,7 @@ public class AsyncTest extends HazelcastTestSupport {
         IMap<String, String> map = factory.newHazelcastInstance().getMap("testGetAsync");
         map.put(key, value1);
         Future<String> f1 = map.getAsync(key);
-        TestCase.assertEquals(value1, f1.get());
+        assertEquals(value1, f1.get());
     }
 
     @Test
@@ -60,10 +62,10 @@ public class AsyncTest extends HazelcastTestSupport {
         IMap<String, String> map = factory.newHazelcastInstance().getMap("map:test:putAsync");
         Future<String> f1 = map.putAsync(key, value1);
         String f1Val = f1.get();
-        TestCase.assertNull(f1Val);
+        assertNull(f1Val);
         Future<String> f2 = map.putAsync(key, value2);
         String f2Val = f2.get();
-        TestCase.assertEquals(value1, f2Val);
+        assertEquals(value1, f2Val);
     }
 
     @Test
@@ -81,7 +83,7 @@ public class AsyncTest extends HazelcastTestSupport {
 
         Future<String> f1 = map.putAsync(key, value1, 3, TimeUnit.SECONDS);
         String f1Val = f1.get();
-        TestCase.assertNull(f1Val);
+        assertNull(f1Val);
         assertEquals(value1, map.get(key));
 
         assertTrue(latch.await(10, TimeUnit.SECONDS));
@@ -94,7 +96,7 @@ public class AsyncTest extends HazelcastTestSupport {
         // populate map
         map.put(key, value1);
         Future<String> f1 = map.removeAsync(key);
-        TestCase.assertEquals(value1, f1.get());
+        assertEquals(value1, f1.get());
     }
 
     @Test
@@ -117,13 +119,13 @@ public class AsyncTest extends HazelcastTestSupport {
             // expected
             return;
         }
-        TestCase.fail("Failed to throw TimeoutException with zero timeout");
+        fail("Failed to throw TimeoutException with zero timeout");
     }
 
     @Test
     public void testRemoveAsyncWithNonExistentKey() throws Exception {
        IMap<String, String> map = createHazelcastInstance().getMap("map:test:removeAsync:nonexistant");
         Future<String> f1 = map.removeAsync(key);
-        TestCase.assertNull(f1.get());
+        assertNull(f1.get());
     }
 }

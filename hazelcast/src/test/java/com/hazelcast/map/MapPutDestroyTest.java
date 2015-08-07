@@ -1,21 +1,20 @@
 package com.hazelcast.map;
 
 
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IMap;
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.NightlyTest;
 import org.junit.Test;
-import com.hazelcast.core.IMap;
-import org.junit.runner.RunWith;
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
-import com.hazelcast.test.HazelcastParallelClassRunner;
-
-import static junit.framework.TestCase.fail;
+import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(NightlyTest.class)

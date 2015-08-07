@@ -62,12 +62,12 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.map.TempData.DeleteEntryProcessor;
 import static com.hazelcast.map.TempData.LoggingEntryProcessor;
-import static junit.framework.Assert.assertFalse;
-import static junit.framework.Assert.assertNull;
-import static junit.framework.TestCase.assertEquals;
-import static junit.framework.TestCase.fail;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
