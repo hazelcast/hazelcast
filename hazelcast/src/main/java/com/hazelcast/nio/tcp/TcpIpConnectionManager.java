@@ -58,8 +58,6 @@ import static com.hazelcast.util.counters.MwCounter.newMwCounter;
 
 public class TcpIpConnectionManager implements ConnectionManager, PacketHandler {
 
-    private static final int DEFAULT_KILL_THREAD_MILLIS = 1000 * 10;
-
     final int socketReceiveBufferSize;
 
     final int socketClientReceiveBufferSize;
@@ -137,10 +135,9 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
     private final LinkedList<Integer> outboundPorts = new LinkedList<Integer>();
 
     // accessed only in synchronized block
-    private volatile Thread socketAcceptorThread;
+    private volatile SocketAcceptorThread acceptorThread;
 
     private volatile IOBalancer ioBalancer;
-
 
     @Probe
     private final MwCounter openedCount = newMwCounter();
@@ -525,15 +522,22 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
             outSelector.start();
         }
         startIOBalancer();
+        startAcceptorThread();
+    }
 
-        if (socketAcceptorThread != null) {
+    private void startAcceptorThread() {
+        if (acceptorThread != null) {
             logger.warning("SocketAcceptor thread is already live! Shutting down old acceptor...");
-            shutdownSocketAcceptor();
+            acceptorThread.shutdown();
+            acceptorThread = null;
         }
-        Runnable acceptRunnable = new SocketAcceptor(serverSocketChannel, this);
-        socketAcceptorThread = new Thread(ioService.getThreadGroup(), acceptRunnable,
-                ioService.getThreadPrefix() + "Acceptor");
-        socketAcceptorThread.start();
+
+        acceptorThread = new SocketAcceptorThread(
+                ioService.getThreadGroup(),
+                ioService.getThreadPrefix() + "Acceptor",
+                serverSocketChannel,
+                this);
+        acceptorThread.start();
     }
 
     private void startIOBalancer() {
@@ -551,23 +555,17 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
         live = false;
         log(Level.FINEST, "Stopping ConnectionManager");
         ioBalancer.stop();
-        shutdownSocketAcceptor();
+        if (acceptorThread != null) {
+            acceptorThread.shutdown();
+        }
         for (SocketChannelWrapper socketChannel : acceptedSockets) {
             IOUtil.closeResource(socketChannel);
         }
         for (Connection conn : connectionsMap.values()) {
-            try {
-                destroyConnection(conn);
-            } catch (final Throwable ignore) {
-                logger.finest(ignore);
-            }
+            destroySilently(conn);
         }
         for (TcpIpConnection conn : activeConnections) {
-            try {
-                destroyConnection(conn);
-            } catch (final Throwable ignore) {
-                logger.finest(ignore);
-            }
+            destroySilently(conn);
         }
         shutdownIOSelectors();
         acceptedSockets.clear();
@@ -575,6 +573,14 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
         connectionsMap.clear();
         monitors.clear();
         activeConnections.clear();
+    }
+
+    private void destroySilently(Connection conn) {
+        try {
+            destroyConnection(conn);
+        } catch (Throwable ignore) {
+            logger.finest(ignore);
+        }
     }
 
     private synchronized void shutdownIOSelectors() {
@@ -599,24 +605,12 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
         }
     }
 
-    private void shutdownSocketAcceptor() {
-        log(Level.FINEST, "Shutting down SocketAcceptor thread.");
-        Thread killingThread = socketAcceptorThread;
-        if (killingThread == null) {
-            return;
-        }
-        socketAcceptorThread = null;
-        killingThread.interrupt();
-        try {
-            killingThread.join(DEFAULT_KILL_THREAD_MILLIS);
-        } catch (InterruptedException e) {
-            logger.finest(e);
-        }
-    }
 
     @Override
     public synchronized void shutdown() {
-        shutdownSocketAcceptor();
+        if (acceptorThread != null) {
+            acceptorThread.shutdown();
+        }
         closeServerSocket();
         stop();
         connectionListeners.clear();
