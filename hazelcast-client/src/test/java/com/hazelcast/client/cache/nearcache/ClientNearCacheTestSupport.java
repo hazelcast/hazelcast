@@ -19,17 +19,15 @@ package com.hazelcast.client.cache.nearcache;
 import com.hazelcast.cache.ICache;
 import com.hazelcast.cache.impl.nearcache.NearCache;
 import com.hazelcast.cache.impl.nearcache.NearCacheManager;
-import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.cache.impl.HazelcastClientCacheManager;
 import com.hazelcast.client.cache.impl.HazelcastClientCachingProvider;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.HazelcastClientProxy;
+import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
-import com.hazelcast.config.JoinConfig;
 import com.hazelcast.config.NearCacheConfig;
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
@@ -44,16 +42,17 @@ import javax.cache.spi.CachingProvider;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
-public abstract class ClientNearCacheTestSupport {
+public abstract class ClientNearCacheTestSupport extends HazelcastTestSupport {
 
     protected static final String DEFAULT_CACHE_NAME = "ClientCache";
     protected static final int DEFAULT_RECORD_COUNT = 100;
 
     protected HazelcastInstance serverInstance;
+    private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
 
     @Before
     public void setup() {
-        serverInstance = Hazelcast.newHazelcastInstance(createConfig());
+        serverInstance = hazelcastFactory.newHazelcastInstance(createConfig());
     }
 
     @After
@@ -64,18 +63,11 @@ public abstract class ClientNearCacheTestSupport {
     }
 
     protected Config createConfig() {
-        Config config = new Config();
-        JoinConfig joinConfig = config.getNetworkConfig().getJoin();
-        joinConfig.getAwsConfig().setEnabled(false);
-        joinConfig.getMulticastConfig().setEnabled(false);
-        joinConfig.getTcpIpConfig().setEnabled(false);
-        return config;
+        return new Config();
     }
 
     protected ClientConfig createClientConfig() {
-        ClientConfig clientConfig = new ClientConfig();
-        clientConfig.getNetworkConfig().addAddress("127.0.0.1");
-        return clientConfig;
+        return new ClientConfig();
     }
 
     protected CacheConfig createCacheConfig(InMemoryFormat inMemoryFormat) {
@@ -124,7 +116,7 @@ public abstract class ClientNearCacheTestSupport {
     protected NearCacheTestContext createNearCacheTest(String cacheName, NearCacheConfig nearCacheConfig) {
         ClientConfig clientConfig = createClientConfig();
         clientConfig.addNearCacheConfig(nearCacheConfig);
-        HazelcastClientProxy client = (HazelcastClientProxy) HazelcastClient.newHazelcastClient(clientConfig);
+        HazelcastClientProxy client = (HazelcastClientProxy) hazelcastFactory.newHazelcastClient(clientConfig);
         NearCacheManager nearCacheManager = client.client.getNearCacheManager();
         CachingProvider provider = HazelcastClientCachingProvider.createCachingProvider(client);
         HazelcastClientCacheManager cacheManager = (HazelcastClientCacheManager) provider.getCacheManager();
