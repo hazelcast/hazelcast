@@ -53,6 +53,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 
 import static com.hazelcast.util.HashUtil.hashToIndex;
+import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.counters.MwCounter.newMwCounter;
 
 public class TcpIpConnectionManager implements ConnectionManager, PacketHandler {
@@ -68,6 +69,11 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
     final int socketSendBufferSize;
 
     final int socketClientSendBufferSize;
+
+    final LoggingService loggingService;
+
+    @Probe(name = "connectionListenerCount")
+    final Set<ConnectionListener> connectionListeners = new CopyOnWriteArraySet<ConnectionListener>();
 
     private final ConstructorFunction<Address, TcpIpConnectionMonitor> monitorConstructor
             = new ConstructorFunction<Address, TcpIpConnectionMonitor>() {
@@ -96,9 +102,6 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
     @Probe(name = "inProgressCount")
     private final Set<Address> connectionsInProgress =
             Collections.newSetFromMap(new ConcurrentHashMap<Address, Boolean>());
-
-    @Probe(name = "connectionListenerCount")
-    private final Set<ConnectionListener> connectionListeners = new CopyOnWriteArraySet<ConnectionListener>();
 
     @Probe(name = "acceptedSocketCount")
     private final Set<SocketChannelWrapper> acceptedSockets =
@@ -138,20 +141,23 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
 
     private volatile IOBalancer ioBalancer;
 
-    private final LoggingService loggingService;
 
     @Probe
     private final MwCounter openedCount = newMwCounter();
     @Probe
     private final MwCounter closedCount = newMwCounter();
 
-    public TcpIpConnectionManager(IOService ioService, ServerSocketChannel serverSocketChannel,
-                                  HazelcastThreadGroup hazelcastThreadGroup, LoggingService loggingService) {
+    public TcpIpConnectionManager(IOService ioService,
+                                  ServerSocketChannel serverSocketChannel,
+                                  HazelcastThreadGroup hazelcastThreadGroup,
+                                  MetricsRegistry metricsRegistry,
+                                  LoggingService loggingService) {
         this.ioService = ioService;
-        this.metricRegistry = ioService.getMetricRegistry();
+        this.metricRegistry = metricsRegistry;
         this.hazelcastThreadGroup = hazelcastThreadGroup;
         this.serverSocketChannel = serverSocketChannel;
-        this.logger = loggingService.getLogger(TcpIpConnectionManager.class.getName());
+        this.loggingService = loggingService;
+        this.logger = loggingService.getLogger(TcpIpConnectionManager.class);
         this.socketReceiveBufferSize = ioService.getSocketReceiveBufferSize() * IOService.KILO_BYTE;
         this.socketSendBufferSize = ioService.getSocketSendBufferSize() * IOService.KILO_BYTE;
         this.socketClientReceiveBufferSize = ioService.getSocketClientReceiveBufferSize() * IOService.KILO_BYTE;
@@ -166,7 +172,6 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
         this.outboundPortCount = ports.size();
         this.outboundPorts.addAll(ports);
         this.socketChannelWrapperFactory = ioService.getSocketChannelWrapperFactory();
-        this.loggingService = loggingService;
 
         metricRegistry.scanAndRegister(this, "tcp.connection");
 
@@ -261,6 +266,7 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
 
     @Override
     public void addConnectionListener(ConnectionListener listener) {
+        checkNotNull(listener, "listener can't be null");
         connectionListeners.add(listener);
     }
 
@@ -272,6 +278,9 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
         bind((TcpIpConnection) packet.getConn(), bind.getLocalAddress(), bind.getTargetAddress(), bind.shouldReply());
     }
 
+    /**
+     * Binding completes the connection and makes it available to be used with the ConnectionManager.
+     */
     private boolean bind(TcpIpConnection connection, Address remoteEndPoint, Address localEndpoint, boolean reply) {
         if (logger.isFinestEnabled()) {
             log(Level.FINEST, "Binding " + connection + " to " + remoteEndPoint + ", reply is " + reply);
@@ -294,6 +303,7 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
         return registerConnection(remoteEndPoint, connection);
     }
 
+    @Override
     public boolean registerConnection(final Address remoteEndPoint, final Connection connection) {
         if (remoteEndPoint.equals(ioService.getThisAddress())) {
             return false;

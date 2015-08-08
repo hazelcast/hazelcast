@@ -26,20 +26,7 @@ import java.net.InetSocketAddress;
 public interface Connection {
 
     /**
-     * Writes a SocketWritable packet to the other side.
-     * <p>
-     * The packet could be stored in an internal queue before it actually is written, so this call
-     * doesn't need to be a synchronous call.
-     *
-     * @param packet the packet to write.
-     * @return false if the packet was not accepted to be written, e.g. because the Connection was
-     * not alive.
-     * @throws NullPointerException if packet is null.
-     */
-    boolean write(SocketWritable packet);
-
-    /**
-     * Checks if the Connection is still alive.
+     * Checks if the Connection is alive.
      *
      * @return true if alive, false otherwise.
      */
@@ -60,13 +47,11 @@ public interface Connection {
     long lastWriteTime();
 
     /**
-     * Closes this connection.
-     * <p>
-     * Pending packets on this connection are discarded
-     * <p>
-     * If the Connection already is closed, the call is ignored. So it can safely be called multiple times.
+     * Returns the {@link ConnectionType} of this Connection.
+     *
+     * @return the ConnectionType. It could be that <code>null</code> is returned.
      */
-    void close();
+    ConnectionType getType();
 
     /**
      * Sets the type of the connection
@@ -74,13 +59,6 @@ public interface Connection {
      * @param type to be set
      */
     void setType(ConnectionType type);
-
-    /**
-     * Returns the {@link ConnectionType} of this Connection.
-     *
-     * @return the ConnectionType. It could be that <code>null</code> is returned.
-     */
-    ConnectionType getType();
 
     /**
      * Checks if it is a client connection.
@@ -125,4 +103,27 @@ public interface Connection {
      * 0 if the socket is not connected yet.
      */
     int getPort();
+
+    /**
+     * Writes a SocketWritable packet to the other side. No guarantees are made that the packet is going to be
+     * received on the other side of the connection.
+     * <p>
+     * The packet could be stored in an internal queue before it actually is written, so this call
+     * doesn't need to be a synchronous call.
+     *
+     * @param packet the packet to write.
+     * @return false if the packet was not accepted to be written, e.g. because the Connection was not alive.
+     * @throws NullPointerException if packet is null.
+     */
+    boolean write(SocketWritable packet);
+
+    /**
+     * Closes this connection.
+     * <p>
+     * Pending packets on this connection are discarded
+     * <p>
+     * If the Connection already is closed, the call is ignored. So it can safely be called multiple times.
+     */
+    void close();
+
 }

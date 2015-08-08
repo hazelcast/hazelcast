@@ -104,6 +104,18 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
         return socketWriter;
     }
 
+    public long getNormalPacketsWritten() {
+        return normalPacketsWritten.get();
+    }
+
+    public long getUrgentPacketsWritten() {
+        return priorityPacketsWritten.get();
+    }
+
+    public int totalPacketsPending() {
+        return writeQueue.size() + urgentWriteQueue.size();
+    }
+
     @Probe(name = "out.writeQueuePendingBytes")
     public long bytesPending() {
         return bytesPending(writeQueue);

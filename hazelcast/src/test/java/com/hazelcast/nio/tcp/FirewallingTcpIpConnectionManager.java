@@ -17,6 +17,7 @@
 package com.hazelcast.nio.tcp;
 
 import com.hazelcast.instance.HazelcastThreadGroup;
+import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
@@ -31,8 +32,13 @@ public class FirewallingTcpIpConnectionManager extends TcpIpConnectionManager {
 
     final Set<Address> blockedAddresses = Collections.newSetFromMap(new ConcurrentHashMap<Address, Boolean>());
 
-    public FirewallingTcpIpConnectionManager(LoggingService loggingService, HazelcastThreadGroup threadGroup, NodeIOService ioService, ServerSocketChannel serverSocketChannel) {
-        super(ioService, serverSocketChannel, threadGroup, loggingService);
+    public FirewallingTcpIpConnectionManager(
+            LoggingService loggingService,
+            HazelcastThreadGroup threadGroup,
+            NodeIOService ioService,
+            MetricsRegistry metricsRegistry,
+            ServerSocketChannel serverSocketChannel) {
+        super(ioService, serverSocketChannel, threadGroup, metricsRegistry,loggingService);
     }
 
     @Override
