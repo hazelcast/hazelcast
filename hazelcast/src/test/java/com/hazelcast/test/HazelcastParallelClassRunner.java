@@ -34,7 +34,7 @@ import static java.lang.Runtime.getRuntime;
  */
 public class HazelcastParallelClassRunner extends AbstractHazelcastClassRunner {
     private static final boolean SPAWN_MULTIPLE_THREADS = TestEnvironment.isMockNetwork() && !Boolean.getBoolean("multipleJVM");
-    private static final int MAX_THREADS = max(getRuntime().availableProcessors()/2, 1);
+    private static final int MAX_THREADS = max(getRuntime().availableProcessors(), 8);
 
     private final AtomicInteger numThreads = new AtomicInteger(0);
     private final int maxThreads;
