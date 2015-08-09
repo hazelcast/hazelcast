@@ -46,6 +46,11 @@ public class NotEqualPredicate extends EqualPredicate {
     }
 
     @Override
+    public boolean isIndexed(QueryContext queryContext) {
+        return false;
+    }
+
+    @Override
     public Set<QueryableEntry> filter(QueryContext queryContext) {
         Index index = getIndex(queryContext);
         if (index != null) {
