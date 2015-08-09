@@ -6,50 +6,47 @@
 
 <suppressions>
 
+    <!-- Suppress strict duplicate code checking -->
+    <suppress checks="StrictDuplicateCode" files="\.java" lines="1-15"/>
+
     <!-- Suppress checking of copyright notice -->
     <suppress checks="Header" files="com/hazelcast/logging/Log4j2Factory\.java"/>
     <suppress checks="Header" files="/hazelcast-code-generator/"/>
 
-    <!-- Suppress strict duplicate code checking -->
-    <suppress checks="StrictDuplicateCode" files="\.java" lines="1-15"/>
+    <!-- Exclude implementation packages from JavaDoc checks -->
+    <suppress checks="JavadocMethod" files="/impl/"/>
+    <suppress checks="JavadocPackage" files="/impl/"/>
+    <suppress checks="JavadocType" files="/impl/"/>
+    <suppress checks="JavadocVariable" files="/impl/"/>
 
-    <!-- Suppressing warnings on the PortableHook -->
-    <suppress checks="MethodLength" files=".*(?:PortableHook)\.java$"/>
-    <suppress checks="MethodCount" files=".*(?:PortableHook)\.java$"/>
-    <suppress checks="ClassDataAbstractionCoupling" files=".*(?:PortableHook)\.java$"/>
-    <suppress checks="ReturnCount" files=".*(?:PortableHook)\.java$"/>
-    <suppress checks="ExecutableStatementCount" files=".*(?:PortableHook)\.java$"/>
-    <suppress checks="AnonInnerLength" files=".*(?:PortableHook)\.java$"/>
-    <suppress checks="ClassFanOutComplexityCheck" files=".*(?:PortableHook)\.java$"/>
-    <suppress checks="CyclomaticComplexityCheck" files=".*(?:PortableHook)\.java$"/>
+    <!-- PortableHook -->
+    <suppress checks="MethodLength" files="PortableHook\.java$"/>
+    <suppress checks="MethodCount" files="PortableHook\.java$"/>
+    <suppress checks="ClassDataAbstractionCoupling" files="PortableHook\.java$"/>
+    <suppress checks="ReturnCount" files="PortableHook\.java$"/>
+    <suppress checks="ExecutableStatementCount" files="PortableHook\.java$"/>
+    <suppress checks="AnonInnerLength" files="PortableHook\.java$"/>
+    <suppress checks="ClassFanOutComplexityCheck" files="PortableHook\.java$"/>
+    <suppress checks="CyclomaticComplexityCheck" files="PortableHook\.java$"/>
 
-    <!-- Suppressing warnings on the SerializerHook -->
-    <suppress checks="MethodLength" files=".*(?:SerializerHook)\.java$"/>
-    <suppress checks="MethodCount" files=".*(?:SerializerHook)\.java$"/>
-    <suppress checks="ClassDataAbstractionCoupling" files=".*(?:SerializerHook)\.java$"/>
-    <suppress checks="ReturnCount" files=".*(?:SerializerHook)\.java$"/>
-    <suppress checks="ExecutableStatementCount" files=".*(?:SerializerHook)\.java$"/>
-    <suppress checks="AnonInnerLength" files=".*(?:SerializerHook)\.java$"/>
-    <suppress checks="ClassFanOutComplexityCheck" files=".*(?:SerializerHook)\.java$"/>
-    <suppress checks="CyclomaticComplexityCheck" files=".*(?:SerializerHook)\.java$"/>
-    <suppress checks="IllegalType" files=".*(?:SerializerHook)\.java$"/>
+    <!-- SerializerHook -->
+    <suppress checks="MethodLength" files="SerializerHook\.java$"/>
+    <suppress checks="MethodCount" files="SerializerHook\.java$"/>
+    <suppress checks="ClassDataAbstractionCoupling" files="SerializerHook\.java$"/>
+    <suppress checks="ReturnCount" files="SerializerHook\.java$"/>
+    <suppress checks="ExecutableStatementCount" files="SerializerHook\.java$"/>
+    <suppress checks="AnonInnerLength" files="SerializerHook\.java$"/>
+    <suppress checks="ClassFanOutComplexityCheck" files="SerializerHook\.java$"/>
+    <suppress checks="CyclomaticComplexityCheck" files="SerializerHook\.java$"/>
+    <suppress checks="IllegalType" files="SerializerHook\.java$"/>
 
-    <!--<suppress checks="" files="/examples/"/>-->
+    <!-- ConsoleApp -->
     <suppress checks="FileLengthCheck" files="ConsoleApp\.java"/>
     <suppress checks="MethodCountCheck" files="ConsoleApp\.java"/>
     <suppress checks="ClassFanOutComplexityCheck" files="ConsoleApp\.java"/>
     <suppress checks="CyclomaticComplexityCheck" files="ConsoleApp\.java"/>
     <suppress checks="NPathComplexityCheck" files="ConsoleApp\.java"/>
     <suppress checks="MethodLengthCheck" files="ConsoleApp\.java"/>
-
-    <!--Code Smells -->
-
-    <!--Exclude Clover instrumented sources-->
-    <suppress checks="" files="/src-instrumented/"/>
-
-    <!-- Exclude implementation packages from JavaDoc on public methods checkstyle enforcement -->
-    <suppress checks="JavadocMethod" files="/impl/"/>
-    <suppress checks="JavadocPackage" files="/impl/"/>
 
     <!-- Cluster -->
     <suppress checks="JavadocMethod" files="com/hazelcast/cluster/"/>
@@ -63,20 +60,10 @@
     <suppress checks="" files="com/hazelcast/cluster/impl/TcpIpJoiner"/>
     <suppress checks="" files="com/hazelcast/cluster/impl/AbstractJoiner"/>
     <suppress checks="" files="com/hazelcast/cluster/impl/MulticastJoiner"/>
-
-    <suppress checks="JavadocMethod" files="com/hazelcast/cluster/impl/operations/"/>
-    <suppress checks="JavadocType" files="com/hazelcast/cluster/impl/operations/"/>
-    <suppress checks="JavadocMethod" files="com/hazelcast/cluster/impl/operations/"/>
-    <suppress checks="JavadocVariable" files="com/hazelcast/cluster/impl/operations/"/>
-    <!-- TODO: Needs to be fixed -->
     <suppress checks="" files="com/hazelcast/cluster/impl/operations/FinalizeJoinOperation"/>
     <suppress checks="" files="com/hazelcast/cluster/impl/operations/JoinCheckOperation"/>
 
-    <!-- Cache-->
-    <suppress checks="JavadocMethod" files="com/hazelcast/cache/impl/"/>
-    <suppress checks="JavadocType" files="com/hazelcast/cache/impl/"/>
-    <suppress checks="JavadocMethod" files="com/hazelcast/cache/impl/"/>
-    <suppress checks="JavadocVariable" files="com/hazelcast/cache/impl/"/>
+    <!-- Cache -->
     <suppress checks="MethodCount" files="com/hazelcast/cache/ICache"/>
     <suppress checks="MethodCount" files="com/hazelcast/client/cache/impl/AbstractClientCacheProxy"/>
     <suppress checks="ClassDataAbstractionCoupling|MethodCount|"
@@ -91,11 +78,10 @@
               files="com/hazelcast/cache/impl/AbstractCacheRecordStore"/>
     <suppress checks="MethodCount" files="com/hazelcast/cache/impl/AbstractCacheService"/>
     <suppress checks="MethodCount" files="com/hazelcast/cache/impl/nearcache/impl/store/AbstractNearCacheRecordStore"/>
-    <suppress checks="NPathComplexity"
-              files="com/hazelcast/cache/impl/eviction/impl/evaluator/AbstractEvictionPolicyEvaluator"/>
+    <suppress checks="NPathComplexity" files="com/hazelcast/cache/impl/eviction/impl/evaluator/AbstractEvictionPolicyEvaluator"/>
     <suppress checks="MethodCount" files="com/hazelcast/cache/impl/AbstractHazelcastCacheManager"/>
 
-    <!-- Core-->
+    <!-- Core -->
     <suppress checks="JavadocMethod" files="com/hazelcast/core/"/>
     <suppress checks="JavadocType" files="com/hazelcast/core/"/>
     <suppress checks="JavadocMethod" files="com/hazelcast/core/"/>
@@ -103,14 +89,14 @@
     <suppress checks="MethodCount" files="com/hazelcast/core/HazelcastInstance"/>
     <suppress checks="MethodCount" files="com/hazelcast/core/IMap"/>
 
-    <!-- Config-->
+    <!-- Config -->
     <suppress checks="MethodCount" files="com/hazelcast/config/Config"/>
     <suppress checks="ClassDataAbstractionCoupling" files="com/hazelcast/config/Config"/>
     <suppress checks="CyclomaticComplexity" files="com/hazelcast/config/AbstractXmlConfigHelper"/>
     <suppress checks="ClassDataAbstractionCoupling" files="com/hazelcast/config/AbstractXmlConfigHelper"/>
     <suppress checks="FanOutComplexity" files="com/hazelcast/config/ConfigXmlGenerator"/>
 
-    <!--Couldn't change structure because of API -->
+    <!-- Couldn't change structure because of API -->
     <suppress checks="CyclomaticComplexity" files="com/hazelcast/config/MapConfig"/>
     <suppress checks="BooleanExpressionComplexity" files="com/hazelcast/config/MapConfig"/>
     <suppress checks="NPathComplexity" files="com/hazelcast/config/MapConfig"/>
@@ -118,7 +104,6 @@
     <suppress checks="MethodCount" files="com/hazelcast/config/CacheSimpleConfig"/>
     <suppress checks="ExecutableStatementCount" files="com/hazelcast/config/CacheConfig"/>
     <suppress checks="ExecutableStatementCount" files="com/hazelcast/config/MapConfig"/>
-    <!---->
     <suppress checks="MethodCount" files="com/hazelcast/config/SerializationConfig"/>
     <suppress checks="MethodCount" files="com/hazelcast/config/XmlConfigBuilder"/>
     <suppress checks="FileLengthCheck" files="com/hazelcast/config/XmlConfigBuilder"/>
@@ -133,22 +118,12 @@
     <suppress checks="JavadocMethod" files="com/hazelcast/concurrent/"/>
     <suppress checks="JavadocVariable" files="com/hazelcast/concurrent/"/>
 
-    <!-- concurrent/atomiclong-->
+    <!-- Concurrent -->
     <suppress checks="MethodCount" files="com/hazelcast/concurrent/atomiclong/AtomicLongProxy"/>
-
-    <!-- concurrent/lock -->
     <suppress checks="MethodCount" files="com/hazelcast/concurrent/lock/LockServiceImpl"/>
     <suppress checks="MethodCount" files="com/hazelcast/concurrent/lock/LockResourceImpl"/>
     <suppress checks="MethodCount" files="com/hazelcast/concurrent/lock/LockStoreImpl"/>
     <suppress checks="Todo" files="com/hazelcast/concurrent/lock/ConditionImpl"/>
-
-    <!-- ringbuffer -->
-    <suppress checks="JavadocMethod" files="com/hazelcast/ringbuffer/impl/operations/"/>
-    <suppress checks="JavadocType" files="com/hazelcast/ringbuffer/impl/operations/"/>
-    <suppress checks="JavadocMethod" files="com/hazelcast/ringbuffer/impl/operations/"/>
-    <suppress checks="JavadocVariable" files="com/hazelcast/ringbuffer/impl/operations/"/>
-    <suppress checks="JavadocPackage" files="com/hazelcast/ringbuffer/impl/operations/"/>
-    <suppress checks="JavadocVariable" files="com/hazelcast/ringbuffer/impl/RingbufferDataSerializerHook"/>
 
     <!-- Storage -->
     <suppress checks="JavadocMethod" files="com/hazelcast/internal/storage/"/>
@@ -156,9 +131,8 @@
     <suppress checks="JavadocMethod" files="com/hazelcast/internal/storage/"/>
     <suppress checks="JavadocVariable" files="com/hazelcast/internal/storage/"/>
 
-
-    <!-- client -->
-    <!-- TODO: These javadoc issues need to be addressed -->
+    <!-- Client -->
+    <!-- TODO: These JavaDoc issues need to be addressed -->
     <suppress checks="JavadocMethod" files="com/hazelcast/client/"/>
     <suppress checks="JavadocMethod" files="com/hazelcast/client/proxy/"/>
     <suppress checks="JavadocType" files="com/hazelcast/client/proxy/"/>
@@ -175,7 +149,6 @@
     <suppress checks="JavadocMethod" files="com/hazelcast/client/spi/"/>
     <suppress checks="JavadocVariable" files="com/hazelcast/client/spi/"/>
 
-
     <!-- TODO: We need to get these wildcard suppressions fixed -->
     <suppress checks="" files="com/hazelcast/client/proxy/ClientQueueProxy"/>
     <suppress checks="MethodCount" files="com/hazelcast/client/proxy/ClientListProxy"/>
@@ -183,8 +156,6 @@
     <suppress checks="" files="com/hazelcast/client/proxy/ClientMapProxy"/>
     <suppress checks="MethodCount" files="com/hazelcast/client/proxy/ClientReplicatedMapProxy"/>
     <suppress checks="" files="com/hazelcast/client/HazelcastClient"/>
-    <suppress checks="Javadoc" files="com/hazelcast/client/impl/operations/"/>
-    <suppress checks="Javadoc" files="com/hazelcast/client/impl/client/"/>
     <suppress checks="" files="com/hazelcast/client/impl/HazelcastClientInstance"/>
     <suppress checks="" files="com/hazelcast/client/impl/HazelcastClientProxy"/>
     <suppress checks="ClassDataAbstractionCoupling" files="com/hazelcast/client/proxy/ClientExecutorServiceProxy"/>
@@ -196,7 +167,6 @@
     <suppress checks="MethodCount" files="com/hazelcast/client/connection/nio/ClientConnection"/>
     <suppress checks="MethodCount" files="com/hazelcast/client/impl/ClientEngineImpl"/>
     <suppress checks="ClassFanOutComplexity" files="com/hazelcast/client/impl/ClientEngineImpl"/>
-    <!-- TODO: We need to get this wildcard suppressions fixed -->
     <suppress checks="" files="com/hazelcast/client/connection/nio/ClientConnectionManagerImpl"/>
     <suppress checks="CyclomaticComplexity" files="com/hazelcast/client/config/XmlClientConfigBuilder"/>
     <suppress checks="ClassDataAbstractionCoupling" files="com/hazelcast/client/config/XmlClientConfigBuilder"/>
@@ -204,18 +174,12 @@
 
     <suppress checks="JavadocMethod" files="com/hazelcast/client/"/>
     <suppress checks="JavadocType" files="com/hazelcast/client/"/>
-    <suppress checks="JavadocMethod" files="com/hazelcast/client/"/>
     <suppress checks="ClassFanOutComplexity|ClassDataAbstractionCoupling"
               files="com/hazelcast/client/connection/nio/ClientConnectionManagerImpl"/>
 
-
-    <suppress checks="JavadocMethod" files="com/hazelcast/client/impl/"/>
-    <suppress checks="JavadocType" files="com/hazelcast/client/impl/"/>
-    <suppress checks="JavadocMethod" files="com/hazelcast/client/impl/"/>
-
-    <!--CLIENT PROTOCOL-->
+    <!-- Client Protocol -->
     <suppress checks="IllegalImport" files="com/hazelcast/client/impl/protocol/util/UnsafeBuffer"/>
-    <!--Parameters classes are auto-generated-->
+    <!-- Parameters classes are auto-generated -->
     <suppress checks="" files="com/hazelcast/client/impl/protocol/map/.*Parameters"/>
     <suppress checks="" files="com/hazelcast/client/impl/protocol/.*Parameters"/>
     <suppress checks="" files="com/hazelcast/client/impl/protocol/.*Codec"/>
@@ -226,14 +190,7 @@
     <suppress checks="MethodCount" files="com/hazelcast/client/impl/protocol/parameters/CacheTemplate"/>
     <suppress checks="ParameterNumber" files="com/hazelcast/client/impl/protocol/parameters/MapReduceTemplate"/>
     <suppress checks="ParameterNumber" files="com/hazelcast/client/proxy/ClientMapReduceProxy"/>
-
     <suppress checks="MethodCount" files="com/hazelcast/client/impl/protocol/ClientMessage"/>
-    <suppress checks="JavadocType" files="com/hazelcast/client/impl/protocol/ClientMessageType"/>
-    <suppress checks="JavadocVariable" files="com/hazelcast/client/impl/protocol/ClientMessageType"/>
-
-    <suppress checks="JavadocMethod" files="com/hazelcast/client/impl/"/>
-    <suppress checks="JavadocType" files="com/hazelcast/client/impl/"/>
-
     <suppress checks="ClassFanOutComplexity" files="com/hazelcast/client/cache/impl/AbstractClientInternalCacheProxy"/>
 
     <!-- Monitor -->
@@ -253,14 +210,13 @@
     <suppress checks="CyclomaticComplexity" files="com/hazelcast/monitor/impl/LocalQueueStatsImpl"/>
     <suppress checks="NPathComplexity" files="com/hazelcast/monitor/impl/LocalQueueStatsImpl"/>
 
-    <!-- jca -->
+    <!-- JCA -->
     <suppress checks="ClassFanOutComplexityCheck" files="HazelcastConnectionImpl\.java"/>
     <suppress checks="MethodCount" files="HazelcastConnectionImpl\.java"/>
     <suppress checks="JavadocMethod" files="com/hazelcast/jca/"/>
     <suppress checks="JavadocType" files="com/hazelcast/jca/"/>
     <suppress checks="JavadocMethod" files="com/hazelcast/jca/"/>
     <suppress checks="JavadocVariable" files="com/hazelcast/jca/"/>
-
     <suppress checks="EmptyStatement" files="com/hazelcast/jca/ResourceAdapterImpl"/>
 
     <!-- Query -->
@@ -277,7 +233,6 @@
     <suppress checks="JavadocType" files="com/hazelcast/web/"/>
     <suppress checks="JavadocMethod" files="com/hazelcast/web/"/>
     <suppress checks="JavadocVariable" files="com/hazelcast/web/"/>
-
 
     <!-- Instance -->
     <suppress checks="JavadocMethod" files="com/hazelcast/instance/"/>
@@ -296,7 +251,6 @@
     <suppress checks="VariableName" files="com/hazelcast/instance/GroupProperties"/>
     <suppress checks="MethodLength" files="com/hazelcast/instance/GroupProperties"/>
     <suppress checks="ExecutableStatementCount" files="com/hazelcast/instance/GroupProperties"/>
-    <!-- todo-->
     <suppress checks="" files="com/hazelcast/instance/DefaultAddressPicker"/>
     <suppress checks="" files="com/hazelcast/instance/HazelcastInstanceFactory"/>
     <suppress checks="" files="com/hazelcast/instance/Node"/>
@@ -309,26 +263,18 @@
     <suppress checks="MethodCount|NPathComplexity|MagicNumber" files="com/hazelcast/spi/Operation"/>
     <suppress checks="MethodCount" files="com/hazelcast/spi/impl/NodeEngineImpl"/>
     <suppress checks="ClassFanOutComplexity" files="com/hazelcast/spi/impl/NodeEngineImpl"/>
-    <!-- since this class needs to manage services, it knows about them/ So it is fine to have lots
-         of dependencies on these classes-->
+    <!-- since this class needs to manage services, it knows about them, so it is fine to have lots of dependencies on these classes -->
     <suppress checks="ClassDataAbstractionCoupling" files="com/hazelcast/spi/impl/servicemanager/impl/ServiceManager"/>
-
     <suppress checks="MethodCount|ExecutableStatementCount"
               files="com/hazelcast/spi/impl/operationservice/impl/OperationServiceImpl"/>
-    <!-- the invocation just has many parameters because there are a lot of things to tune/-->
-    <suppress checks="ParameterNumber"
-              files="com/hazelcast/spi/impl/operationservice/impl/InvocationImpl"/>
-    <!-- the partition-invocation just has many parameters because there are a lot of things to tune/-->
-    <suppress checks="ParameterNumber"
-              files="com/hazelcast/spi/impl/operationservice/impl/PartitionInvocation"/>
-    <!-- these need to be solved-->
-    <suppress checks="NPathComplexity"
-              files="com/hazelcast/spi/impl/operationservice/impl/InvocationFuture"/>
-    <suppress checks="ReturnCount"
-              files="com/hazelcast/spi/impl/operationservice/impl/InvocationFuture"/>
-    <suppress checks="CyclomaticComplexity"
-              files="com/hazelcast/spi/impl/operationservice/impl/InvocationFuture"/>
-
+    <!-- the invocation just has many parameters because there are a lot of things to tune/ -->
+    <suppress checks="ParameterNumber" files="com/hazelcast/spi/impl/operationservice/impl/InvocationImpl"/>
+    <!-- the partition-invocation just has many parameters because there are a lot of things to tune/ -->
+    <suppress checks="ParameterNumber" files="com/hazelcast/spi/impl/operationservice/impl/PartitionInvocation"/>
+    <!-- these need to be solved -->
+    <suppress checks="NPathComplexity" files="com/hazelcast/spi/impl/operationservice/impl/InvocationFuture"/>
+    <suppress checks="ReturnCount" files="com/hazelcast/spi/impl/operationservice/impl/InvocationFuture"/>
+    <suppress checks="CyclomaticComplexity" files="com/hazelcast/spi/impl/operationservice/impl/InvocationFuture"/>
     <suppress checks="ClassDataAbstractionCoupling|MethodCount"
               files="com/hazelcast/spi/impl/eventservice/impl/EventServiceImpl"/>
 
@@ -344,8 +290,7 @@
     <suppress checks="JavadocMethod" files="com/hazelcast/security/"/>
     <suppress checks="JavadocVariable" files="com/hazelcast/security/"/>
     <suppress checks="BooleanExpressionComplexityCheck" files="com/hazelcast/security/permission/QueuePermission"/>
-    <suppress checks="BooleanExpressionComplexityCheck"
-              files="com/hazelcast/security/permission/ReplicatedMapPermission"/>
+    <suppress checks="BooleanExpressionComplexityCheck" files="com/hazelcast/security/permission/ReplicatedMapPermission"/>
     <suppress checks="BooleanExpressionComplexityCheck" files="com/hazelcast/security/permission/MapPermission"/>
     <suppress checks="BooleanExpressionComplexityCheck" files="com/hazelcast/security/permission/ListPermission"/>
     <suppress checks="NPathComplexity" files="com/hazelcast/security/permission/InstancePermission"/>
@@ -362,12 +307,6 @@
     <suppress checks="JavadocType" files="com/hazelcast/partition/"/>
     <suppress checks="JavadocMethod" files="com/hazelcast/partition/"/>
     <suppress checks="JavadocVariable" files="com/hazelcast/partition/"/>
-
-    <suppress checks="JavadocMethod" files="com/hazelcast/partition/impl/"/>
-    <suppress checks="JavadocType" files="com/hazelcast/partition/impl/"/>
-    <suppress checks="JavadocMethod" files="com/hazelcast/partition/impl/"/>
-    <suppress checks="JavadocVariable" files="com/hazelcast/partition/impl/"/>
-
     <suppress checks="MagicNumber" files="com/hazelcast/partition/impl/InternalPartitionServiceImpl"/>
     <suppress checks="ClassFanOutComplexity" files="com/hazelcast/partition/impl/InternalPartitionServiceImpl"/>
     <suppress checks="ClassDataAbstractionCoupling" files="com/hazelcast/partition/impl/InternalPartitionServiceImpl"/>
@@ -375,26 +314,19 @@
     <suppress checks="MethodCount" files="com/hazelcast/partition/InternalPartitionService"/>
     <suppress checks="MethodCount" files="com/hazelcast/partition/impl/InternalPartitionServiceImpl"/>
     <suppress checks="ExecutableStatementCount" files="com/hazelcast/partition/impl/InternalPartitionServiceImpl"/>
-    <!-- one method left -->
     <suppress checks="CyclomaticComplexity" files="com/hazelcast/partition/impl/PartitionStateGeneratorImpl"/>
     <suppress checks="NPathComplexity" files="com/hazelcast/partition/impl/PartitionStateGeneratorImpl"/>
 
     <!-- Topic -->
-    <suppress checks="JavadocMethod" files="com/hazelcast/topic/impl/"/>
-    <suppress checks="JavadocType" files="com/hazelcast/topic/impl/"/>
-    <suppress checks="JavadocMethod" files="com/hazelcast/topic/impl/"/>
-    <suppress checks="JavadocVariable" files="com/hazelcast/topic/impl/"/>
     <suppress checks="VisibilityModifier" files="com/hazelcast/topic/impl/TopicEvent"/>
     <suppress checks="" files="com/hazelcast/topic/DataAwareMessage"/>
     <suppress checks="Todo" files="com/hazelcast/topic/impl/TopicEvent"/>
 
-    <!-- Ascii-->
-
+    <!-- Ascii -->
     <suppress checks="JavadocMethod" files="com/hazelcast/internal/ascii/"/>
     <suppress checks="JavadocType" files="com/hazelcast/internal/ascii/"/>
     <suppress checks="JavadocMethod" files="com/hazelcast/internal/ascii/"/>
     <suppress checks="JavadocVariable" files="com/hazelcast/internal/ascii/"/>
-
     <suppress checks="ExecutableStatement" files="com/hazelcast/internal/ascii/TextCommandServiceImpl"/>
     <suppress checks="ClassDataAbstractionCoupling" files="com/hazelcast/internal/ascii/TextCommandServiceImpl"/>
     <suppress checks="MethodCount" files="com/hazelcast/internal/ascii/TextCommandServiceImpl"/>
@@ -402,34 +334,16 @@
     <suppress checks="MethodCount" files="com/hazelcast/internal/ascii/memcache/Stats"/>
 
     <!-- Executor -->
-    <suppress checks="JavadocMethod" files="com/hazelcast/executor/impl/"/>
-    <suppress checks="JavadocType" files="com/hazelcast/executor/impl/"/>
-    <suppress checks="JavadocMethod" files="com/hazelcast/executor/impl/"/>
-    <suppress checks="JavadocVariable" files="com/hazelcast/executor/impl/"/>
     <suppress checks="ClassFanOutComplexity|MethodCount" files="com/hazelcast/executor/impl/ExecutorServiceProxy"/>
 
-    <!-- Ringbuffer -->
-    <suppress checks="JavadocMethod|JavadocType|JavadocMethod|JavadocVariable|JavadocPackage"
-              files="com/hazelcast/ringbuffer/impl/"/>
-
-    <!-- Collections -->
-    <suppress checks="JavadocMethod" files="com/hazelcast/collection/impl/"/>
-    <suppress checks="JavadocType" files="com/hazelcast/collection/impl/"/>
-    <suppress checks="JavadocMethod" files="com/hazelcast/collection/impl/"/>
-    <suppress checks="JavadocVariable" files="com/hazelcast/collection/impl/"/>
-    <suppress checks="JavadocPackage" files="com/hazelcast/collection/impl/"/>
-
+    <!-- Collections (incl. Agrona backport) -->
+    <suppress checks="JavadocType" files="com/hazelcast/util/collection/\w*2ObjectHashMap"/>
+    <suppress checks="MethodCount" files="com/hazelcast/util/collection/\w*HashSet"/>
     <suppress checks="MethodCount" files="com/hazelcast/collection/impl/collection/CollectionContainer"/>
+    <suppress checks="MagicNumber|Header" files="com/hazelcast/util/collection/"/>
 
-    <!-- List -->
-    <suppress checks="JavadocMethod" files="com/hazelcast/collection/impl/list/"/>
-    <suppress checks="JavadocType" files="com/hazelcast/collection/impl/list/"/>
-    <suppress checks="JavadocMethod" files="com/hazelcast/collection/impl/list/"/>
-    <suppress checks="JavadocVariable" files="com/hazelcast/collection/impl/list/"/>
-
-    <!--<suppress checks="" files="com/hazelcast/queue/DataAwareItemEvent"/>-->
+    <!-- Queue -->
     <suppress checks="MethodCount" files="com/hazelcast/collection/impl/queue/QueueContainer"/>
-
 
     <!-- Multimap -->
     <suppress checks="JavadocMethod" files="com/hazelcast/multimap/"/>
@@ -442,40 +356,6 @@
               files="com/hazelcast/multimap/impl/MultiMapService"/>
     <suppress checks="MethodCount" files="com/hazelcast/multimap/impl/MultiMapService"/>
 
-    <!-- Util -->
-    <!-- /*
-         * Written by Doug Lea with assistance from members of JCP JSR-166
-         * Expert Group and released to the public domain, as explained at
-         * http://creativecommons/org/licenses/publicdomain
-
-       I don't think we want to change this class/
-   -->
-    <suppress checks="MagicNumber|FileLength|DeclarationOrder|RedundantModifier|InnerAssignment|.*Complexity"
-              files="com/hazelcast/util/ConcurrentReferenceHashMap"/>
-
-    <suppress checks="" files="com/hazelcast/util/DebugUtil"/>
-
-    <!-- Too complex to change, I am leaving it to implementer -->
-    <suppress checks="" files="com/hazelcast/util/Base64"/>
-
-    <suppress checks="" files="com/hazelcast/util/DebugUtil"/>
-
-    <suppress checks="IllegalImport" files="com/hazelcast/util/counters/SwCounter"/>
-    <suppress checks="InnerAssignment" files="com/hazelcast/util/counters/SwCounter"/>
-
-    <suppress checks="" files="com/hazelcast/util/HashUtil"/>
-    <suppress checks="MagicNumber" files="com/hazelcast/util/QuickMath"/>
-    <suppress checks="MagicNumber" files="com/hazelcast/nio/Bits"/>
-    <suppress checks="MethodCount" files="com/hazelcast/nio/Bits"/>
-
-    <!-- Util executor package javadocs, leaving javadocs to someone who can explain better -->
-    <suppress checks="JavadocMethod" files="com/hazelcast/util/executor/"/>
-    <suppress checks="JavadocType" files="com/hazelcast/util/executor/"/>
-    <suppress checks="JavadocMethod" files="com/hazelcast/util/executor/"/>
-    <suppress checks="JavadocVariable" files="com/hazelcast/util/executor/"/>
-    <suppress checks="JavadocType" files="com/hazelcast/util/scheduler/SecondsBasedEntryTaskScheduler"/>
-    <suppress checks="" files="com/hazelcast/util/scheduler/ScheduleType"/>
-
     <!-- ReplicatedMap -->
     <suppress checks="ClassDataAbstractionCouplingC" files="com/hazelcast/client/proxy/ClientReplicatedMapProxy"/>
     <suppress checks="MethodCountCheck" files="com/hazelcast/monitor/impl/LocalReplicatedMapStatsImpl"/>
@@ -487,14 +367,14 @@
     <suppress checks="JavadocMethod" files="com/hazelcast/nio/"/>
     <suppress checks="JavadocType" files="com/hazelcast/nio/"/>
     <suppress checks="JavadocVariable" files="com/hazelcast/nio/"/>
+    <suppress checks="MagicNumber" files="com/hazelcast/nio/Bits"/>
+    <suppress checks="MethodCount" files="com/hazelcast/nio/Bits"/>
     <suppress checks="ExecutableStatementCount|ClassDataAbstractionCoupling|ClassFanOutComplexity"
               files="com/hazelcast/nio/tcp/TcpIpConnectionManager"/>
-
     <suppress checks="MethodCount|MagicNumber" files="com/hazelcast/nio/serialization/impl/ByteArrayObjectDataInput"/>
     <suppress checks="MethodCount|MagicNumber" files="com/hazelcast/nio/serialization/impl/ByteArrayObjectDataOutput"/>
     <suppress checks="MethodCount|MagicNumber" files="com/hazelcast/nio/serialization/impl/ByteBufferObjectDataInput"/>
     <suppress checks="MethodCount" files="com/hazelcast/nio/serialization/ObjectDataInputStream"/>
-
     <suppress checks="MethodCount" files="com/hazelcast/nio/serialization/impl/ByteBufferObjectDataOutput"/>
     <suppress checks="MagicNumber" files="com/hazelcast/nio/CipherHelper"/>
     <suppress checks="MagicNumber|NPathComplexity" files="com/hazelcast/nio/ClassLoaderUtil"/>
@@ -518,31 +398,31 @@
     <suppress checks="MagicNumber|EmptyBlock" files="com/hazelcast/nio/tcp/WriteHandler"/>
     <suppress checks="MagicNumber" files="com/hazelcast/nio/UTFEncoderDecoder"/>
 
-    <!-- Jmx-->
+    <!-- JMX -->
     <suppress checks="CyclomaticComplexity" files="com/hazelcast/jmx/ManagementService"/>
-    <!-- Since IMap interface has a lot of methods/// -->
+    <!-- IMap interface has a lot of methods -->
     <suppress checks="MethodCount" files="com/hazelcast/jmx/MapMBean"/>
     <suppress checks="MethodCount" files="com/hazelcast/jmx/ReplicatedMapMBean"/>
 
-    <!-- Aws-->
+    <!-- AWS -->
     <suppress checks="JavadocMethod" files="com/hazelcast/aws/"/>
     <suppress checks="JavadocType" files="com/hazelcast/aws/"/>
     <suppress checks="JavadocMethod" files="com/hazelcast/aws/"/>
     <suppress checks="JavadocVariable" files="com/hazelcast/aws/"/>
     <suppress checks="HideUtilityClassConstructor" files="com/hazelcast/aws/impl/Constants"/>
 
-    <!-- Hibernate-->
+    <!-- Hibernate -->
     <suppress checks="IllegalImport" files="com/hazelcast/hibernate/serialization/Hibernate3CacheEntrySerializer"/>
     <suppress checks="IllegalImport" files="com/hazelcast/hibernate/serialization/Hibernate41CacheEntrySerializer"/>
     <suppress checks="IllegalImport" files="com/hazelcast/hibernate/serialization/Hibernate3CacheKeySerializer"/>
     <suppress checks="IllegalImport" files="com/hazelcast/hibernate/serialization/Hibernate4CacheKeySerializer"/>
 
-    <!-- Spring-->
+    <!-- Spring -->
     <suppress checks="MethodCount" files="com/hazelcast/spring/HazelcastConfigBeanDefinitionParser"/>
     <suppress checks="MethodLength" files="com/hazelcast/spring/HazelcastConfigBeanDefinitionParser"/>
     <suppress checks="CyclomaticComplexity|NPathComplexity" files="com/hazelcast/spring/HazelcastConfigBeanDefinitionParser"/>
 
-    <!-- Spring Framework breaks the rule IllegalTypeCheck in its own implementation -->
+    <!-- Spring framework breaks the IllegalType check in its own implementation -->
     <suppress checks="IllegalType" files="com/hazelcast/spring/HazelcastClientBeanDefinitionParser"/>
     <suppress checks="IllegalType" files="com/hazelcast/spring/HazelcastInstanceDefinitionParser"/>
     <suppress checks="IllegalType" files="com/hazelcast/spring/HazelcastConfigBeanDefinitionParser"/>
@@ -555,17 +435,11 @@
     <suppress checks="JavadocVariable" files="com/hazelcast/internal/management/request/ConsoleRequestConstants"/>
     <suppress checks="JavadocVariable|VisibilityModifier" files="com/hazelcast/internal/management/dto/\w*"/>
 
-    <!-- Agrona backport -->
-    <suppress checks="MagicNumber|Header" files="com/hazelcast/util/collection/" />
-    <suppress checks="JavadocType" files="com/hazelcast/util/collection/\w*2ObjectHashMap" />
-    <suppress checks="MethodCount" files="com/hazelcast/util/collection/\w*HashSet" />
-
     <!-- Map -->
     <suppress checks="JavadocMethod" files="com/hazelcast/map/"/>
     <suppress checks="JavadocType" files="com/hazelcast/map/"/>
     <suppress checks="JavadocMethod" files="com/hazelcast/map/"/>
     <suppress checks="JavadocVariable" files="com/hazelcast/map/"/>
-
     <suppress checks="MethodCountCheck" files="com/hazelcast/map/impl/recordstore/RecordStore"/>
     <suppress checks="MethodCountCheck" files="com/hazelcast/map/impl/recordstore/DefaultRecordStore"/>
     <suppress checks="MethodCountCheck" files="com/hazelcast/map/impl/proxy/MapProxyImpl"/>
@@ -575,17 +449,38 @@
     <suppress checks="CyclomaticComplexity" files="com/hazelcast/map/impl/client/AbstractTxnMapRequest"/>
     <suppress checks="MethodCount|ClassDataAbstractionCoupling" files="com/hazelcast/map/impl/MapServiceContextImpl"/>
     <suppress checks="MethodCount" files="com/hazelcast/map/impl/MapServiceContext"/>
-
-    <!-- map/proxy-->
-    <!--<suppress checks="" files="com/hazelcast/map/impl/proxy/"/>-->
     <suppress checks="ClassDataAbstractionCoupling" files="com/hazelcast/map/impl/tx/TransactionalMapProxySupport"/>
 
-    <!-- build utils -->
-    <!-- Taken from JBOSS project, suppress checkstyles -->
-    <suppress checks="" files="com/hazelcast/buildutils/ElementParser"/>
-
-
+    <!-- Metrics -->
     <suppress checks="ReturnCount" files="com.hazelcast.internal.metrics.impl.FieldProbe"/>
     <suppress checks="ReturnCount" files="com.hazelcast.internal.metrics.impl.MethodProbe"/>
-</suppressions>
 
+    <!-- Util -->
+    <suppress checks="" files="com/hazelcast/util/Base64"/>
+    <suppress checks="" files="com/hazelcast/util/DebugUtil"/>
+    <suppress checks="" files="com/hazelcast/util/HashUtil"/>
+    <suppress checks="" files="com/hazelcast/util/scheduler/ScheduleType"/>
+
+    <suppress checks="MagicNumber" files="com/hazelcast/util/QuickMath"/>
+    <suppress checks="JavadocType" files="com/hazelcast/util/scheduler/SecondsBasedEntryTaskScheduler"/>
+
+    <suppress checks="IllegalImport" files="com/hazelcast/util/counters/SwCounter"/>
+    <suppress checks="InnerAssignment" files="com/hazelcast/util/counters/SwCounter"/>
+
+    <suppress checks="JavadocMethod" files="com/hazelcast/util/executor/"/>
+    <suppress checks="JavadocType" files="com/hazelcast/util/executor/"/>
+    <suppress checks="JavadocMethod" files="com/hazelcast/util/executor/"/>
+    <suppress checks="JavadocVariable" files="com/hazelcast/util/executor/"/>
+
+    <!-- Written by Doug Lea with assistance from members of JCP JSR-166 Expert Group and released to the public domain,
+    as explained at http://creativecommons/org/licenses/publicdomain -->
+    <suppress checks="MagicNumber|FileLength|DeclarationOrder|RedundantModifier|InnerAssignment|Complexity"
+              files="com/hazelcast/util/ConcurrentReferenceHashMap"/>
+
+    <!-- Build Utils (taken from JBOSS project) -->
+    <suppress checks="" files="com/hazelcast/buildutils/ElementParser"/>
+
+    <!-- Exclude Clover instrumented sources -->
+    <suppress checks="" files="/src-instrumented/"/>
+
+</suppressions>

@@ -4,7 +4,6 @@
         "http://www.puppycrawl.com/dtds/configuration_1_3.dtd">
 
 <!--
-
   Checkstyle configuration that checks the sun coding conventions from:
 
     - the Java Language Specification at
@@ -27,10 +26,10 @@
   To completely disable a check, just comment it out or delete it from the file.
 
   Finally, it is worth reading the documentation.
-
 -->
 
 <module name="Checker">
+
     <!--
         If you set the basedir property below, then all reported file
         names will be relative to the specified directory. See
@@ -81,38 +80,34 @@
     <!-- Checks for Headers                                -->
     <!-- See http://checkstyle.sf.net/config_header.html   -->
     <module name="Header">
-       <property name="headerFile" value="${main.basedir}/checkstyle/ClassHeader.txt"/>
-       <property name="fileExtensions" value="java"/>
-     </module>
+        <property name="headerFile" value="${main.basedir}/checkstyle/ClassHeader.txt"/>
+        <property name="fileExtensions" value="java"/>
+    </module>
 
     <module name="TreeWalker">
+
         <!-- Activate comment suppression filters -->
         <module name="FileContentsHolder"/>
 
         <!-- Checks for Javadoc comments.                     -->
         <!-- See http://checkstyle.sf.net/config_javadoc.html -->
-        <!-- All types should have JavaDoc -->
-
-        <!-- Only some methods, on public APIs we agreed to JavaDoc. TODO figure out how to do that -->
+        <!-- Only for methods on public APIs we agreed to have JavaDoc. -->
+        <!-- TODO: figure out how to do that -->
         <!--<module name="JavadocMethod">-->
-            <!--<property name="scope" value="public"/>-->
-            <!--<property name="allowMissingParamTags" value="true"/>-->
+        <!--<property name="scope" value="public"/>-->
+        <!--<property name="allowMissingParamTags" value="true"/>-->
         <!--</module>-->
-
         <module name="JavadocType">
             <property name="scope" value="public"/>
         </module>
-
         <module name="JavadocVariable">
             <property name="scope" value="public"/>
         </module>
-
         <module name="JavadocStyle">
             <property name="checkFirstSentence" value="false"/>
         </module>
 
         <module name="TrailingComment"/>
-
 
         <!-- Checks for Naming Conventions.                  -->
         <!-- See http://checkstyle.sf.net/config_naming.html -->
@@ -127,7 +122,6 @@
         <module name="TypeName"/>
         <module name="UpperEll"/>
 
-
         <!-- Checks for imports                              -->
         <!-- See http://checkstyle.sf.net/config_import.html -->
         <module name="AvoidStarImport"/>
@@ -136,7 +130,6 @@
         <module name="UnusedImports">
             <property name="processJavadoc" value="true"/>
         </module>
-
 
         <!-- Checks for Size Violations.                    -->
         <!-- See http://checkstyle.sf.net/config_sizes.html -->
@@ -178,7 +171,6 @@
             <property name="maxTotal" value="30"/>
         </module>
 
-
         <!-- Checks for whitespace                               -->
         <!-- See http://checkstyle.sf.net/config_whitespace.html -->
         <!-- module name="EmptyForIteratorPad"/ -->
@@ -192,12 +184,10 @@
         <module name="WhitespaceAfter"/>
         <module name="WhitespaceAround"/>
 
-
         <!-- Modifier Checks                                    -->
         <!-- See http://checkstyle.sf.net/config_modifiers.html -->
         <module name="ModifierOrder"/>
         <module name="RedundantModifier"/>
-
 
         <!-- Checks for blocks. You know, those {}'s         -->
         <!-- See http://checkstyle.sf.net/config_blocks.html -->
@@ -207,10 +197,8 @@
         <module name="NeedBraces"/>
         <module name="RightCurly"/>
 
-
         <!-- Checks for common coding problems               -->
         <!-- See http://checkstyle.sf.net/config_coding.html -->
-        <!-- Coding Problems -->
         <module name="ArrayTrailingComma"/>
         <module name="CovariantEquals"/>
         <module name="DeclarationOrder"/>
@@ -220,7 +208,7 @@
         <module name="MultipleVariableDeclarations"/>
         <module name="EmptyStatement"/>
         <!--<module name="HiddenField">-->
-            <!--<property name="tokens" value="VARIABLE_DEF"/>-->
+        <!--<property name="tokens" value="VARIABLE_DEF"/>-->
         <!--</module>-->
         <module name="IllegalInstantiation">
             <property name="classes" value="java.lang.Boolean"/>
@@ -260,10 +248,8 @@
         <module name="InnerAssignment"/>
         <module name="MissingSwitchDefault"/>
 
-
         <!-- Checks for class design                         -->
         <!-- See http://checkstyle.sf.net/config_design.html -->
-        <!-- module name="DesignForExtension"/ -->
         <module name="FinalClass"/>
         <module name="HideUtilityClassConstructor"/>
         <module name="InterfaceIsType"/>
@@ -289,7 +275,6 @@
         <module name="NPathComplexity">
             <property name="max" value="50"/>
         </module>
-
 
         <!-- Miscellaneous other checks.                   -->
         <!-- See http://checkstyle.sf.net/config_misc.html -->
