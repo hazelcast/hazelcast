@@ -105,11 +105,11 @@ public class NodeEngineImpl implements NodeEngine {
         this.packetTransceiver = new PacketTransceiverImpl(
                 node,
                 logger,
-                operationService,
+                executionService, operationService,
                 eventService,
                 wanReplicationService,
-                new ConnectionManagerPacketHandler(),
-                executionService);
+                new ConnectionManagerPacketHandler()
+        );
         quorumService = new QuorumServiceImpl(this);
     }
 

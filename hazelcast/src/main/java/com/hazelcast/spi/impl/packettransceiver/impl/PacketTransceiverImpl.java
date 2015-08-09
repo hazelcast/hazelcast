@@ -30,6 +30,10 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.inspectOutputMemoryError;
+import static com.hazelcast.nio.Packet.HEADER_BIND;
+import static com.hazelcast.nio.Packet.HEADER_EVENT;
+import static com.hazelcast.nio.Packet.HEADER_OP;
+import static com.hazelcast.nio.Packet.HEADER_WAN_REPLICATION;
 
 /**
  * Default {@link com.hazelcast.spi.impl.packettransceiver.PacketTransceiver} implementation.
@@ -42,25 +46,45 @@ public class PacketTransceiverImpl implements PacketTransceiver {
     private final Node node;
     private final ExecutionService executionService;
     private final ILogger logger;
-    private final PacketHandler eventService;
-    private final PacketHandler wanReplicationService;
-    private final PacketHandler operationService;
-    private final PacketHandler connectionManager;
+    private final PacketHandler eventPacketHandler;
+    private final PacketHandler wanReplicationPacketHandler;
+    private final PacketHandler operationPacketHandler;
+    private final PacketHandler connectionPacketHandler;
 
     public PacketTransceiverImpl(Node node,
                                  ILogger logger,
-                                 PacketHandler operationService,
-                                 PacketHandler eventService,
-                                 PacketHandler wanReplicationService,
-                                 PacketHandler connectionManager,
-                                 ExecutionService executionService) {
+                                 ExecutionService executionService,
+                                 PacketHandler operationPacketHandler,
+                                 PacketHandler eventPacketHandler,
+                                 PacketHandler wanReplicationPacketHandler,
+                                 PacketHandler connectionPacketHandler) {
         this.node = node;
-        this.executionService = executionService;
-        this.operationService = operationService;
-        this.eventService = eventService;
-        this.wanReplicationService = wanReplicationService;
-        this.connectionManager = connectionManager;
         this.logger = logger;
+        this.executionService = executionService;
+        this.operationPacketHandler = operationPacketHandler;
+        this.eventPacketHandler = eventPacketHandler;
+        this.wanReplicationPacketHandler = wanReplicationPacketHandler;
+        this.connectionPacketHandler = connectionPacketHandler;
+    }
+
+    @Override
+    public void receive(Packet packet) {
+        try {
+            if (packet.isHeaderSet(HEADER_OP)) {
+                operationPacketHandler.handle(packet);
+            } else if (packet.isHeaderSet(HEADER_EVENT)) {
+                eventPacketHandler.handle(packet);
+            } else if (packet.isHeaderSet(HEADER_WAN_REPLICATION)) {
+                wanReplicationPacketHandler.handle(packet);
+            } else if (packet.isHeaderSet(HEADER_BIND)) {
+                connectionPacketHandler.handle(packet);
+            } else {
+                logger.severe("Unknown packet type! Header: " + packet.getHeader());
+            }
+        } catch (Throwable t) {
+            inspectOutputMemoryError(t);
+            logger.severe("Failed to process packet:" + packet, t);
+        }
     }
 
     @Override
@@ -69,26 +93,6 @@ public class PacketTransceiverImpl implements PacketTransceiver {
             return false;
         }
         return connection.write(packet);
-    }
-
-    @Override
-    public void receive(Packet packet) {
-        try {
-            if (packet.isHeaderSet(Packet.HEADER_OP)) {
-                operationService.handle(packet);
-            } else if (packet.isHeaderSet(Packet.HEADER_EVENT)) {
-                eventService.handle(packet);
-            } else if (packet.isHeaderSet(Packet.HEADER_WAN_REPLICATION)) {
-                wanReplicationService.handle(packet);
-            } else if (packet.isHeaderSet(Packet.HEADER_BIND)) {
-                connectionManager.handle(packet);
-            } else {
-                logger.severe("Unknown packet type! Header: " + packet.getHeader());
-            }
-        } catch (Throwable t) {
-            inspectOutputMemoryError(t);
-            logger.severe("Failed to process packet:" + packet, t);
-        }
     }
 
     /**
