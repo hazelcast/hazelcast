@@ -176,7 +176,7 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
             return (T) MapRemoveAsyncCodec.decodeResponse(clientMessage).response;
         }
     };
-
+    
     private static final ClientMessageDecoder submitToKeyResponseDecoder = new ClientMessageDecoder() {
         @Override
         public <T> T decodeClientMessage(ClientMessage clientMessage) {
@@ -1086,7 +1086,9 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         final Data keyData = toData(key);
         ClientMessage request = MapExecuteOnKeyCodec.encodeRequest(name, toData(entryProcessor), keyData, ThreadUtil.getThreadId());
-        return invoke(request, keyData);
+        ClientMessage response = invoke(request, keyData);
+        MapExecuteOnKeyCodec.ResponseParameters resultParameters = MapExecuteOnKeyCodec.decodeResponse(response);
+        return toObject(resultParameters.response);
     }
 
     public void submitToKey(K key, EntryProcessor entryProcessor, final ExecutionCallback callback) {

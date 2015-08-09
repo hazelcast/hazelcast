@@ -87,6 +87,7 @@ public class MapExecuteOnKeyRequest extends KeyBasedClientRequest implements Por
         final ObjectDataOutput out = writer.getRawDataOutput();
         out.writeData(key);
         out.writeObject(processor);
+        out.writeLong(threadId);
     }
 
     public void read(PortableReader reader) throws IOException {
@@ -95,6 +96,7 @@ public class MapExecuteOnKeyRequest extends KeyBasedClientRequest implements Por
         final ObjectDataInput in = reader.getRawDataInput();
         key = in.readData();
         processor = in.readObject();
+        threadId = in.readLong();
     }
 
     public Permission getRequiredPermission() {
