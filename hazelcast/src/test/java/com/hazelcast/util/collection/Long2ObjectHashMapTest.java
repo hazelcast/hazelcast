@@ -26,12 +26,9 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
 
 import static java.lang.Long.valueOf;
 import static org.hamcrest.core.Is.is;
@@ -285,6 +282,16 @@ public class Long2ObjectHashMapTest {
 
         final String mapAsAString = "{7=7, 12=12, 19=19, 3=3, 11=11, 1=1}";
         assertThat(longToObjectMap.toString(), equalTo(mapAsAString));
+    }
+
+    @Test
+    public void sizeShouldReturnNumberOfEntries() {
+        final int count = 100;
+        for (int key = 0; key < count; key++) {
+            longToObjectMap.put(key, "value");
+        }
+
+        assertEquals(count, longToObjectMap.size());
     }
 }
 
