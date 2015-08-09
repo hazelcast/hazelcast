@@ -63,11 +63,6 @@ public class AtomicReferenceService implements ManagedService, RemoteService, Mi
         return getOrPutIfAbsent(containers, name, atomicReferenceConstructorFunction);
     }
 
-    // need for testing..
-    public boolean containsReferenceContainer(String name) {
-        return containers.containsKey(name);
-    }
-
     @Override
     public void init(NodeEngine nodeEngine, Properties properties) {
         this.nodeEngine = nodeEngine;
