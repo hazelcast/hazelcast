@@ -17,7 +17,7 @@
 package com.hazelcast.client.connection.nio;
 
 import com.hazelcast.nio.Packet;
-import com.hazelcast.nio.tcp.nonblocking.IOSelector;
+import com.hazelcast.nio.tcp.nonblocking.NonBlockingIOThread;
 import com.hazelcast.util.Clock;
 
 import java.io.EOFException;
@@ -33,8 +33,8 @@ public class ClientReadHandler extends AbstractClientSelectionHandler {
 
     private Packet packet;
 
-    public ClientReadHandler(ClientConnection connection, IOSelector ioSelector, int bufferSize) {
-        super(connection, ioSelector);
+    public ClientReadHandler(ClientConnection connection, NonBlockingIOThread ioThread, int bufferSize) {
+        super(connection, ioThread);
         buffer = ByteBuffer.allocate(bufferSize);
         lastHandle = Clock.currentTimeMillis();
     }

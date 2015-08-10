@@ -37,9 +37,8 @@ class EventCountBasicMigrationStrategy implements MigrationStrategy {
      * the more likely the migration will be attempted. Too higher number will result in unnecessary overhead, too
      * low number will cause performance degradation due selector imbalance.
      *
-     * Try to schedule a migration if the least busy IOSelector receives less events
-     * then (MIN_MAX_RATIO_MIGRATION_THRESHOLD * no. of events received by the busiest IOSelector)
-     *
+     * Try to schedule a migration if the least busy NonBlockingIOThread receives less events
+     * then (MIN_MAX_RATIO_MIGRATION_THRESHOLD * no. of events received by the busiest NonBlockingIOThread)
      */
     private static final double MIN_MAX_RATIO_MIGRATION_THRESHOLD = 0.8;
 
@@ -68,10 +67,10 @@ class EventCountBasicMigrationStrategy implements MigrationStrategy {
     }
 
     /**
-     * Attempt to find a handler to migrate to a new IOSelector.
+     * Attempt to find a handler to migrate to a new NonBlockingIOThread.
      *
-     * @param imbalance describing a snapshot of IOSelector load
-     * @return the handler to migrate to a new IOSelector or null if no handler needs to be migrated.
+     * @param imbalance describing a snapshot of NonBlockingIOThread load
+     * @return the handler to migrate to a new NonBlockingIOThread or null if no handler needs to be migrated.
      */
     @Override
     public MigratableHandler findHandlerToMigrate(LoadImbalance imbalance) {

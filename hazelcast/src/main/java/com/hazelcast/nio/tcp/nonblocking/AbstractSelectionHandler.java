@@ -37,14 +37,14 @@ public abstract class AbstractSelectionHandler implements MigratableHandler {
     protected final TcpIpConnectionManager connectionManager;
     protected final IOService ioService;
     protected Selector selector;
-    protected IOSelector ioSelector;
+    protected NonBlockingIOThread ioThread;
     protected SelectionKey selectionKey;
     private final int initialOps;
 
-    public AbstractSelectionHandler(TcpIpConnection connection, IOSelector ioSelector, int initialOps) {
+    public AbstractSelectionHandler(TcpIpConnection connection, NonBlockingIOThread ioThread, int initialOps) {
         this.connection = connection;
-        this.ioSelector = ioSelector;
-        this.selector = ioSelector.getSelector();
+        this.ioThread = ioThread;
+        this.selector = ioThread.getSelector();
         this.socketChannel = connection.getSocketChannelWrapper();
         this.connectionManager = connection.getConnectionManager();
         this.ioService = connectionManager.getIoService();
@@ -53,8 +53,8 @@ public abstract class AbstractSelectionHandler implements MigratableHandler {
     }
 
     @Override
-    public IOSelector getOwner() {
-        return ioSelector;
+    public NonBlockingIOThread getOwner() {
+        return ioThread;
     }
 
     protected SelectionKey getSelectionKey() {
@@ -112,10 +112,10 @@ public abstract class AbstractSelectionHandler implements MigratableHandler {
         }
     }
 
-    // This method run on the oldOwner IOSelector(thread)
-    void startMigration(final IOSelector newOwner) {
-        assert ioSelector == Thread.currentThread() : "startMigration can only run on the owning IOSelector thread";
-        assert ioSelector != newOwner : "newOwner can't be the same as the existing owner";
+    // This method run on the oldOwner NonBlockingIOThread
+    void startMigration(final NonBlockingIOThread newOwner) {
+        assert ioThread == Thread.currentThread() : "startMigration can only run on the owning NonBlockingIOThread";
+        assert ioThread != newOwner : "newOwner can't be the same as the existing owner";
 
         if (!socketChannel.isOpen()) {
             // if the channel is closed, we are done.
@@ -123,7 +123,7 @@ public abstract class AbstractSelectionHandler implements MigratableHandler {
         }
 
         unregisterOp(initialOps);
-        ioSelector = newOwner;
+        ioThread = newOwner;
         selectionKey.cancel();
         selectionKey = null;
         selector = null;
@@ -136,8 +136,8 @@ public abstract class AbstractSelectionHandler implements MigratableHandler {
         });
     }
 
-    private void completeMigration(IOSelector newOwner) {
-        assert ioSelector == newOwner;
+    private void completeMigration(NonBlockingIOThread newOwner) {
+        assert ioThread == newOwner;
 
         NonBlockingTcpIpConnectionThreadingModel threadingModel =
                 (NonBlockingTcpIpConnectionThreadingModel) connection.getConnectionManager().getThreadingModel();

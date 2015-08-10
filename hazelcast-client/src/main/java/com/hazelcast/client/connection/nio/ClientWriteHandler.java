@@ -17,7 +17,7 @@
 package com.hazelcast.client.connection.nio;
 
 import com.hazelcast.nio.SocketWritable;
-import com.hazelcast.nio.tcp.nonblocking.IOSelector;
+import com.hazelcast.nio.tcp.nonblocking.NonBlockingIOThread;
 import com.hazelcast.util.Clock;
 
 import java.nio.ByteBuffer;
@@ -40,8 +40,8 @@ public class ClientWriteHandler extends AbstractClientSelectionHandler implement
 
     private volatile long lastHandle;
 
-    public ClientWriteHandler(ClientConnection connection, IOSelector ioSelector, int bufferSize) {
-        super(connection, ioSelector);
+    public ClientWriteHandler(ClientConnection connection, NonBlockingIOThread ioThread, int bufferSize) {
+        super(connection, ioThread);
         buffer = ByteBuffer.allocate(bufferSize);
     }
 

@@ -19,6 +19,7 @@ package com.hazelcast.nio.tcp.nonblocking;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.spi.impl.operationexecutor.OperationHostileThread;
 
 import java.io.IOException;
 import java.nio.channels.SelectionKey;
@@ -28,7 +29,7 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-public abstract class AbstractIOSelector extends Thread implements IOSelector {
+public abstract class NonBlockingIOThread extends Thread implements OperationHostileThread {
 
     private static final int SELECT_WAIT_TIME_MILLIS = 5000;
     private static final int SELECT_FAILURE_PAUSE_MILLIS = 1000;
@@ -42,15 +43,15 @@ public abstract class AbstractIOSelector extends Thread implements IOSelector {
 
     private final Selector selector;
 
-    private final IOSelectorOutOfMemoryHandler oomeHandler;
+    private final NonBlockingIOThreadOutOfMemoryHandler oomeHandler;
 
-    // field doesn't need to be volatile, is only accessed by the IOSelector-thread.
+    // field doesn't need to be volatile, is only accessed by this thread.
     private boolean running = true;
 
     private volatile long lastSelectTimeMs;
 
-    public AbstractIOSelector(ThreadGroup threadGroup, String threadName, ILogger logger,
-                              IOSelectorOutOfMemoryHandler oomeHandler) {
+    public NonBlockingIOThread(ThreadGroup threadGroup, String threadName, ILogger logger,
+                               NonBlockingIOThreadOutOfMemoryHandler oomeHandler) {
         super(threadGroup, threadName);
         this.logger = logger;
         this.oomeHandler = oomeHandler;
@@ -63,7 +64,6 @@ public abstract class AbstractIOSelector extends Thread implements IOSelector {
         }
     }
 
-    @Override
     public final void shutdown() {
         selectorQueue.clear();
         try {
@@ -79,12 +79,16 @@ public abstract class AbstractIOSelector extends Thread implements IOSelector {
         }
     }
 
-    @Override
     public final void addTask(Runnable task) {
         selectorQueue.add(task);
     }
 
-    @Override
+    /**
+     * Adds a task to be executed by the NonBlockingIOThread and wakes up the selector so that it will
+     * eventually pick up the task.
+     *
+     * @param task the task to add.
+     */
     public final void addTaskAndWakeup(Runnable task) {
         selectorQueue.add(task);
         selector.wakeup();
@@ -108,7 +112,7 @@ public abstract class AbstractIOSelector extends Thread implements IOSelector {
     }
 
     private void executeTask(Runnable task) {
-        IOSelector target = getTargetIOSelector(task);
+        NonBlockingIOThread target = getTargetIoThread(task);
         if (target == this) {
             task.run();
         } else {
@@ -116,7 +120,7 @@ public abstract class AbstractIOSelector extends Thread implements IOSelector {
         }
     }
 
-    private IOSelector getTargetIOSelector(Runnable task) {
+    private NonBlockingIOThread getTargetIoThread(Runnable task) {
         if (task instanceof MigratableHandler) {
             return ((MigratableHandler) task).getOwner();
         } else {
@@ -188,7 +192,6 @@ public abstract class AbstractIOSelector extends Thread implements IOSelector {
         }
     }
 
-    @Override
     public void handleSelectionKeyFailure(Throwable e) {
         logger.warning("Selector exception at  " + getName() + ", cause= " + e.toString(), e);
         if (e instanceof OutOfMemoryError) {
@@ -196,7 +199,6 @@ public abstract class AbstractIOSelector extends Thread implements IOSelector {
         }
     }
 
-    @Override
     public final Selector getSelector() {
         return selector;
     }

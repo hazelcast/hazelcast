@@ -27,8 +27,8 @@ import com.hazelcast.nio.ConnectionType;
 import com.hazelcast.nio.Protocols;
 import com.hazelcast.nio.SocketWritable;
 import com.hazelcast.nio.serialization.SerializationService;
-import com.hazelcast.nio.tcp.nonblocking.IOSelector;
 import com.hazelcast.nio.tcp.SocketChannelWrapper;
+import com.hazelcast.nio.tcp.nonblocking.NonBlockingIOThread;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.Closeable;
@@ -59,7 +59,7 @@ public class ClientConnection implements Connection, Closeable {
     private volatile Address remoteEndpoint;
     private volatile boolean heartBeating = true;
 
-    public ClientConnection(HazelcastClientInstanceImpl client, IOSelector in, IOSelector out,
+    public ClientConnection(HazelcastClientInstanceImpl client, NonBlockingIOThread in, NonBlockingIOThread out,
                             int connectionId, SocketChannelWrapper socketChannelWrapper) throws IOException {
         final Socket socket = socketChannelWrapper.socket();
         this.connectionManager = client.getConnectionManager();

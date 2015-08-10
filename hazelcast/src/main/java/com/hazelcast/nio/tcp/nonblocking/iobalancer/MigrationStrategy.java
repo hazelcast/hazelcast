@@ -16,8 +16,8 @@
 
 package com.hazelcast.nio.tcp.nonblocking.iobalancer;
 
+import com.hazelcast.nio.tcp.nonblocking.NonBlockingIOThread;
 import com.hazelcast.nio.tcp.nonblocking.MigratableHandler;
-import com.hazelcast.nio.tcp.nonblocking.IOSelector;
 
 /**
  * Decides if a {@link MigratableHandler handler} migration should be attempted
@@ -28,7 +28,7 @@ import com.hazelcast.nio.tcp.nonblocking.IOSelector;
 interface MigrationStrategy {
 
     /**
-     * Looks for imbalance in {@link MigratableHandler handler} to {@link IOSelector ioSelector}
+     * Looks for imbalance in {@link MigratableHandler handler} to {@link NonBlockingIOThread ioThread}
      * mapping.
      *
      * @param imbalance

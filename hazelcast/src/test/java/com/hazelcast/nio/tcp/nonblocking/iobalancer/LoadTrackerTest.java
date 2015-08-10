@@ -17,7 +17,7 @@
 package com.hazelcast.nio.tcp.nonblocking.iobalancer;
 
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.tcp.nonblocking.AbstractIOSelector;
+import com.hazelcast.nio.tcp.nonblocking.NonBlockingIOThread;
 import com.hazelcast.nio.tcp.nonblocking.MigratableHandler;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
@@ -34,17 +34,17 @@ import static org.mockito.Mockito.when;
 @Category(QuickTest.class)
 public class LoadTrackerTest {
 
-    private AbstractIOSelector selector1;
-    private AbstractIOSelector selector2;
+    private NonBlockingIOThread selector1;
+    private NonBlockingIOThread selector2;
 
-    private AbstractIOSelector[] selectors;
+    private NonBlockingIOThread[] selectors;
     private LoadTracker loadTracker;
 
     @Before
     public void setUp() {
-        selector1 = mock(AbstractIOSelector.class);
-        selector2 = mock(AbstractIOSelector.class);
-        selectors = new AbstractIOSelector[]{selector1, selector2};
+        selector1 = mock(NonBlockingIOThread.class);
+        selector2 = mock(NonBlockingIOThread.class);
+        selectors = new NonBlockingIOThread[]{selector1, selector2};
 
         ILogger logger = mock(ILogger.class);
         when(logger.isFinestEnabled()).thenReturn(true);

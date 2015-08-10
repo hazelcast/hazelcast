@@ -40,9 +40,9 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionListener;
 import com.hazelcast.nio.SocketInterceptor;
-import com.hazelcast.nio.tcp.nonblocking.IOSelector;
-import com.hazelcast.nio.tcp.nonblocking.IOSelectorOutOfMemoryHandler;
-import com.hazelcast.nio.tcp.nonblocking.InSelectorImpl;
+import com.hazelcast.nio.tcp.nonblocking.NonBlockingIOThreadOutOfMemoryHandler;
+import com.hazelcast.nio.tcp.nonblocking.NonBlockingIOThread;
+import com.hazelcast.nio.tcp.nonblocking.NonBlockingInputThread;
 import com.hazelcast.nio.tcp.SocketChannelWrapper;
 import com.hazelcast.nio.tcp.SocketChannelWrapperFactory;
 import com.hazelcast.util.Clock;
@@ -68,7 +68,7 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
 
     private static final ILogger LOGGER = Logger.getLogger(ClientConnectionManagerImpl.class);
 
-    private static final IOSelectorOutOfMemoryHandler OUT_OF_MEMORY_HANDLER = new IOSelectorOutOfMemoryHandler() {
+    private static final NonBlockingIOThreadOutOfMemoryHandler OUT_OF_MEMORY_HANDLER = new NonBlockingIOThreadOutOfMemoryHandler() {
         @Override
         public void handle(OutOfMemoryError error) {
             LOGGER.severe(error);
@@ -85,8 +85,8 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     private final HazelcastClientInstanceImpl client;
     private final SocketInterceptor socketInterceptor;
     private final SocketOptions socketOptions;
-    private IOSelector inSelector;
-    private IOSelector outSelector;
+    private NonBlockingIOThread inputThread;
+    private NonBlockingIOThread outputThread;
 
     private final SocketChannelWrapperFactory socketChannelWrapperFactory;
     private final ClientExecutionServiceImpl executionService;
@@ -128,15 +128,15 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     }
 
     protected void initializeSelectors(HazelcastClientInstanceImpl client) {
-        inSelector = new InSelectorImpl(
+        inputThread = new NonBlockingInputThread(
                 client.getThreadGroup(),
                 client.getName() + ".ClientInSelector",
-                Logger.getLogger(InSelectorImpl.class),
+                Logger.getLogger(NonBlockingInputThread.class),
                 OUT_OF_MEMORY_HANDLER);
-        outSelector = new ClientOutSelectorImpl(
+        outputThread = new ClientNonBlockingOutputThread(
                 client.getThreadGroup(),
                 client.getName() + ".ClientOutSelector",
-                Logger.getLogger(ClientOutSelectorImpl.class),
+                Logger.getLogger(ClientNonBlockingOutputThread.class),
                 OUT_OF_MEMORY_HANDLER);
     }
 
@@ -165,8 +165,8 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     }
 
     protected void startSelectors() {
-        inSelector.start();
-        outSelector.start();
+        inputThread.start();
+        outputThread.start();
     }
 
     @Override
@@ -185,8 +185,8 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     }
 
     protected void shutdownSelectors() {
-        inSelector.shutdown();
-        outSelector.shutdown();
+        inputThread.shutdown();
+        outputThread.shutdown();
     }
 
     public ClientConnection getConnection(Address target) {
@@ -255,8 +255,8 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
             socketChannel.socket().connect(inetSocketAddress, connectionTimeout);
             SocketChannelWrapper socketChannelWrapper =
                     socketChannelWrapperFactory.wrapSocketChannel(socketChannel, true);
-            final ClientConnection clientConnection = new ClientConnection(client, inSelector,
-                    outSelector, connectionIdGen.incrementAndGet(), socketChannelWrapper);
+            final ClientConnection clientConnection = new ClientConnection(client, inputThread,
+                    outputThread, connectionIdGen.incrementAndGet(), socketChannelWrapper);
             socketChannel.configureBlocking(true);
             if (socketInterceptor != null) {
                 socketInterceptor.onConnect(socket);
