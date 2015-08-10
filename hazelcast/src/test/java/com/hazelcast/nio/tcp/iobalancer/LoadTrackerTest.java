@@ -17,9 +17,8 @@
 package com.hazelcast.nio.tcp.iobalancer;
 
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.LoggingService;
-import com.hazelcast.nio.tcp.AbstractIOSelector;
-import com.hazelcast.nio.tcp.MigratableHandler;
+import com.hazelcast.nio.tcp.nonblocking.AbstractIOSelector;
+import com.hazelcast.nio.tcp.nonblocking.MigratableHandler;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;

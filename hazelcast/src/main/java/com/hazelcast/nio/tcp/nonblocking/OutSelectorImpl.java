@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.nio.tcp;
+package com.hazelcast.nio.tcp.nonblocking;
 
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.logging.ILogger;
@@ -30,8 +30,8 @@ public final class OutSelectorImpl extends AbstractIOSelector {
     @Probe
     private final SwCounter writeEvents = newSwCounter();
 
-    public OutSelectorImpl(ThreadGroup threadGroup, String tname, ILogger logger, IOSelectorOutOfMemoryHandler oomeHandler) {
-        super(threadGroup, tname, logger, oomeHandler);
+    public OutSelectorImpl(ThreadGroup threadGroup, String threadName, ILogger logger, IOSelectorOutOfMemoryHandler oomeHandler) {
+        super(threadGroup, threadName, logger, oomeHandler);
     }
 
     /**

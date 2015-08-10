@@ -17,7 +17,7 @@
 package com.hazelcast.client.connection.nio;
 
 import com.hazelcast.nio.SocketWritable;
-import com.hazelcast.nio.tcp.IOSelector;
+import com.hazelcast.nio.tcp.nonblocking.IOSelector;
 import com.hazelcast.util.Clock;
 
 import java.nio.ByteBuffer;

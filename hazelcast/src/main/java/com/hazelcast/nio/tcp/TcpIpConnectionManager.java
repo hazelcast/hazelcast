@@ -31,13 +31,12 @@ import com.hazelcast.nio.IOService;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.MemberSocketInterceptor;
 import com.hazelcast.nio.Packet;
-import com.hazelcast.nio.tcp.iobalancer.IOBalancer;
+import com.hazelcast.nio.tcp.nonblocking.NonBlockingTcpIpConnectionThreadingModel;
 import com.hazelcast.spi.impl.PacketHandler;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.counters.MwCounter;
 import com.hazelcast.util.executor.StripedRunnable;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 import java.net.Socket;
@@ -52,26 +51,25 @@ import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 
-import static com.hazelcast.util.HashUtil.hashToIndex;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.counters.MwCounter.newMwCounter;
 
 public class TcpIpConnectionManager implements ConnectionManager, PacketHandler {
 
-    final int socketReceiveBufferSize;
-
-    final int socketClientReceiveBufferSize;
-
-    final IOService ioService;
-
-    final int socketSendBufferSize;
-
-    final int socketClientSendBufferSize;
-
     final LoggingService loggingService;
 
     @Probe(name = "connectionListenerCount")
     final Set<ConnectionListener> connectionListeners = new CopyOnWriteArraySet<ConnectionListener>();
+
+    private final int socketReceiveBufferSize;
+
+    private final int socketClientReceiveBufferSize;
+
+    private final int socketSendBufferSize;
+
+    private final int socketClientSendBufferSize;
+
+    private final IOService ioService;
 
     private final ConstructorFunction<Address, TcpIpConnectionMonitor> monitorConstructor
             = new ConstructorFunction<Address, TcpIpConnectionMonitor>() {
@@ -113,31 +111,22 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
     private final AtomicInteger allTextConnections = new AtomicInteger();
 
     private final AtomicInteger connectionIdGen = new AtomicInteger();
-    private final MetricsRegistry metricRegistry;
+
+    private final TcpIpConnectionThreadingModel threadingModel;
 
     private volatile boolean live;
 
     private final ServerSocketChannel serverSocketChannel;
 
-    private final InSelectorImpl[] inSelectors;
-
-    private final OutSelectorImpl[] outSelectors;
-
-    private final AtomicInteger nextSelectorIndex = new AtomicInteger();
-
     private final SocketChannelWrapperFactory socketChannelWrapperFactory;
 
     private final int outboundPortCount;
-
-    private final HazelcastThreadGroup hazelcastThreadGroup;
 
     // accessed only in synchronized block
     private final LinkedList<Integer> outboundPorts = new LinkedList<Integer>();
 
     // accessed only in synchronized block
     private volatile SocketAcceptorThread acceptorThread;
-
-    private volatile IOBalancer ioBalancer;
 
     @Probe
     private final MwCounter openedCount = newMwCounter();
@@ -146,12 +135,20 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
 
     public TcpIpConnectionManager(IOService ioService,
                                   ServerSocketChannel serverSocketChannel,
-                                  HazelcastThreadGroup hazelcastThreadGroup,
                                   MetricsRegistry metricsRegistry,
+                                  HazelcastThreadGroup threadGroup,
                                   LoggingService loggingService) {
+        this(ioService, serverSocketChannel, loggingService, metricsRegistry,
+                new NonBlockingTcpIpConnectionThreadingModel(ioService, loggingService, metricsRegistry, threadGroup));
+    }
+
+    public TcpIpConnectionManager(IOService ioService,
+                                  ServerSocketChannel serverSocketChannel,
+                                  LoggingService loggingService,
+                                  MetricsRegistry metricsRegistry,
+                                  TcpIpConnectionThreadingModel tcpIpConnectionThreadingModel) {
         this.ioService = ioService;
-        this.metricRegistry = metricsRegistry;
-        this.hazelcastThreadGroup = hazelcastThreadGroup;
+        this.threadingModel = tcpIpConnectionThreadingModel;
         this.serverSocketChannel = serverSocketChannel;
         this.loggingService = loggingService;
         this.logger = loggingService.getLogger(TcpIpConnectionManager.class);
@@ -163,22 +160,36 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
         this.socketConnectTimeoutSeconds = ioService.getSocketConnectTimeoutSeconds();
         this.socketKeepAlive = ioService.getSocketKeepAlive();
         this.socketNoDelay = ioService.getSocketNoDelay();
-        this.inSelectors = new InSelectorImpl[ioService.getInputSelectorThreadCount()];
-        this.outSelectors = new OutSelectorImpl[ioService.getOutputSelectorThreadCount()];
         final Collection<Integer> ports = ioService.getOutboundPorts();
         this.outboundPortCount = ports.size();
         this.outboundPorts.addAll(ports);
         this.socketChannelWrapperFactory = ioService.getSocketChannelWrapperFactory();
 
-        metricRegistry.scanAndRegister(this, "tcp.connection");
-
-        logger.info("TcpIpConnection managed configured with "
-                + inSelectors.length + " input threads and "
-                + outSelectors.length + " output threads");
+        metricsRegistry.scanAndRegister(this, "tcp.connection");
     }
 
-    public MetricsRegistry getMetricRegistry() {
-        return metricRegistry;
+    public int getSocketReceiveBufferSize() {
+        return socketReceiveBufferSize;
+    }
+
+    public int getSocketClientReceiveBufferSize() {
+        return socketClientReceiveBufferSize;
+    }
+
+    public int getSocketSendBufferSize() {
+        return socketSendBufferSize;
+    }
+
+    public int getSocketClientSendBufferSize() {
+        return socketClientSendBufferSize;
+    }
+
+    public IOService getIoService() {
+        return ioService;
+    }
+
+    public TcpIpConnectionThreadingModel getThreadingModel() {
+        return threadingModel;
     }
 
     public void interceptSocket(Socket socket, boolean onAccept) throws IOException {
@@ -217,16 +228,6 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
         return activeConnections;
     }
 
-    @SuppressFBWarnings(value = "EI_EXPOSE_REP", justification = "used only for testing")
-    public InSelectorImpl[] getInSelectors() {
-        return inSelectors;
-    }
-
-    @SuppressFBWarnings(value = "EI_EXPOSE_REP", justification = "used only for testing")
-    public OutSelectorImpl[] getOutSelectors() {
-        return outSelectors;
-    }
-
     @Override
     public int getActiveConnectionCount() {
         return activeConnections.size();
@@ -239,10 +240,6 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
     @Override
     public int getConnectionCount() {
         return connectionsMap.size();
-    }
-
-    public IOBalancer getIOBalancer() {
-        return ioBalancer;
     }
 
     public boolean isSSLEnabled() {
@@ -375,20 +372,18 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
     }
 
     TcpIpConnection assignSocketChannel(SocketChannelWrapper channel, Address endpoint) {
-        int value = nextSelectorIndex.getAndIncrement();
-
-        TcpIpConnection connection = new TcpIpConnection(this,
-                inSelectors[hashToIndex(value, inSelectors.length)],
-                outSelectors[hashToIndex(value, outSelectors.length)],
+        TcpIpConnection connection = new TcpIpConnection(
+                this,
                 connectionIdGen.incrementAndGet(),
-                channel);
+                channel,
+                threadingModel);
 
         connection.setEndPoint(endpoint);
         activeConnections.add(connection);
         acceptedSockets.remove(channel);
 
         connection.start();
-        ioBalancer.connectionAdded(connection);
+        threadingModel.onConnectionAdded(connection);
 
         log(Level.INFO, "Established socket connection between "
                 + channel.socket().getLocalSocketAddress() + " and " + channel.socket().getRemoteSocketAddress());
@@ -449,7 +444,10 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
         if (endPoint != null) {
             connectionsInProgress.remove(endPoint);
             connectionsMap.remove(endPoint, connection);
-            ioBalancer.connectionRemoved(connection);
+            // this should not be needed; but some tests are using DroppingConnection which is not a TcpIpConnection.
+            if (connection instanceof TcpIpConnection) {
+                threadingModel.onConnectionRemoved((TcpIpConnection) connection);
+            }
             if (live) {
                 ioService.getEventService().executeEventCallback(new StripedRunnable() {
                     @Override
@@ -493,35 +491,8 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
 
         live = true;
         log(Level.FINEST, "Starting ConnectionManager and IO selectors.");
-        IOSelectorOutOfMemoryHandler oomeHandler = new IOSelectorOutOfMemoryHandler() {
-            @Override
-            public void handle(OutOfMemoryError error) {
-                ioService.onOutOfMemory(error);
-            }
-        };
-        for (int i = 0; i < inSelectors.length; i++) {
-            InSelectorImpl inSelector = new InSelectorImpl(
-                    ioService.getThreadGroup(),
-                    ioService.getThreadPrefix() + "in-" + i,
-                    ioService.getLogger(InSelectorImpl.class.getName()),
-                    oomeHandler
-            );
-            inSelectors[i] = inSelector;
-            metricRegistry.scanAndRegister(inSelector, "tcp." + inSelector.getName());
-            inSelector.start();
-        }
 
-        for (int i = 0; i < outSelectors.length; i++) {
-            OutSelectorImpl outSelector = new OutSelectorImpl(
-                    ioService.getThreadGroup(),
-                    ioService.getThreadPrefix() + "out-" + i,
-                    ioService.getLogger(OutSelectorImpl.class.getName()),
-                    oomeHandler);
-            outSelectors[i] = outSelector;
-            metricRegistry.scanAndRegister(outSelector, "tcp." + outSelector.getName());
-            outSelector.start();
-        }
-        startIOBalancer();
+        threadingModel.start();
         startAcceptorThread();
     }
 
@@ -540,13 +511,6 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
         acceptorThread.start();
     }
 
-    private void startIOBalancer() {
-        ioBalancer = new IOBalancer(inSelectors, outSelectors,
-                hazelcastThreadGroup, ioService.getBalancerIntervalSeconds(), loggingService);
-        ioBalancer.start();
-        metricRegistry.scanAndRegister(ioBalancer, "tcp.balancer");
-    }
-
     @Override
     public synchronized void stop() {
         if (!live) {
@@ -554,10 +518,11 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
         }
         live = false;
         log(Level.FINEST, "Stopping ConnectionManager");
-        ioBalancer.stop();
+
         if (acceptorThread != null) {
             acceptorThread.shutdown();
         }
+
         for (SocketChannelWrapper socketChannel : acceptedSockets) {
             IOUtil.closeResource(socketChannel);
         }
@@ -567,7 +532,7 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
         for (TcpIpConnection conn : activeConnections) {
             destroySilently(conn);
         }
-        shutdownIOSelectors();
+        threadingModel.shutdown();
         acceptedSockets.clear();
         connectionsInProgress.clear();
         connectionsMap.clear();
@@ -582,29 +547,6 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
             logger.finest(ignore);
         }
     }
-
-    private synchronized void shutdownIOSelectors() {
-        if (logger.isFinestEnabled()) {
-            log(Level.FINEST, "Shutting down IO selectors... Total: " + (inSelectors.length + outSelectors.length));
-        }
-
-        for (int i = 0; i < inSelectors.length; i++) {
-            IOSelector ioSelector = inSelectors[i];
-            if (ioSelector != null) {
-                ioSelector.shutdown();
-            }
-            inSelectors[i] = null;
-        }
-
-        for (int i = 0; i < outSelectors.length; i++) {
-            IOSelector ioSelector = outSelectors[i];
-            if (ioSelector != null) {
-                ioSelector.shutdown();
-            }
-            outSelectors[i] = null;
-        }
-    }
-
 
     @Override
     public synchronized void shutdown() {

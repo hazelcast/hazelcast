@@ -34,12 +34,9 @@ import java.net.SocketException;
  *
  * A Connection has 2 sides:
  * <ol>
- * <li>the side where it receives data from the remote  machine</li>
- * <li>the side where it sends data to the remote machine</li>
+ * <li>{@link ReadHandler}: the side where it receives data from the remote  machine</li>
+ * <li>{@link WriteHandler}: the side where it sends data to the remote machine</li>
  * </ol>
- *
- * The reading side is the {@link com.hazelcast.nio.tcp.ReadHandler} and the writing side of this connection
- * is the {@link com.hazelcast.nio.tcp.WriteHandler}.
  */
 public final class TcpIpConnection implements Connection {
 
@@ -64,25 +61,23 @@ public final class TcpIpConnection implements Connection {
     private TcpIpConnectionMonitor monitor;
 
     public TcpIpConnection(TcpIpConnectionManager connectionManager,
-                           IOSelector in,
-                           IOSelector out,
                            int connectionId,
-                           SocketChannelWrapper socketChannel) {
+                           SocketChannelWrapper socketChannel,
+                           TcpIpConnectionThreadingModel threadingModel) {
         this.connectionId = connectionId;
-        this.logger = connectionManager.ioService.getLogger(TcpIpConnection.class.getName());
+        this.logger = connectionManager.getIoService().getLogger(TcpIpConnection.class.getName());
         this.connectionManager = connectionManager;
         this.socketChannel = socketChannel;
-        this.writeHandler = new WriteHandler(this, out);
-        this.readHandler = new ReadHandler(this, in);
+        this.writeHandler = threadingModel.newWriteHandler(this);
+        this.readHandler = threadingModel.newReadHandler(this);
     }
 
-    /**
-     * Starts this connection.
-     *
-     * Starting means that the connection is going to register itself to listen to incoming traffic.
-     */
-    public void start() {
-        readHandler.start();
+    public ReadHandler getReadHandler() {
+        return readHandler;
+    }
+
+    public WriteHandler getWriteHandler() {
+        return writeHandler;
     }
 
     @Override
@@ -90,32 +85,15 @@ public final class TcpIpConnection implements Connection {
         return type;
     }
 
-    public TcpIpConnectionManager getConnectionManager() {
-        return connectionManager;
-    }
-
     @Override
-    public boolean write(SocketWritable packet) {
-        if (!live) {
-            if (logger.isFinestEnabled()) {
-                logger.finest("Connection is closed, won't write packet -> " + packet);
-            }
-            return false;
-        }
-        writeHandler.offer(packet);
-        return true;
-    }
-
-    @Override
-    public boolean isClient() {
-        final ConnectionType t = type;
-        return (t != null) && t != ConnectionType.NONE && t.isClient();
-    }
-
     public void setType(ConnectionType type) {
         if (this.type == ConnectionType.NONE) {
             this.type = type;
         }
+    }
+
+    public TcpIpConnectionManager getConnectionManager() {
+        return connectionManager;
     }
 
     public SocketChannelWrapper getSocketChannelWrapper() {
@@ -135,14 +113,6 @@ public final class TcpIpConnection implements Connection {
     @Override
     public InetSocketAddress getRemoteSocketAddress() {
         return (InetSocketAddress) socketChannel.socket().getRemoteSocketAddress();
-    }
-
-    public ReadHandler getReadHandler() {
-        return readHandler;
-    }
-
-    public WriteHandler getWriteHandler() {
-        return writeHandler;
     }
 
     @Override
@@ -177,7 +147,58 @@ public final class TcpIpConnection implements Connection {
         return monitor;
     }
 
+    public int getConnectionId() {
+        return connectionId;
+    }
+
+    Object getConnectionAddress() {
+        return (endPoint == null) ? socketChannel.socket().getRemoteSocketAddress() : endPoint;
+    }
+
+    public Object getMetricsId() {
+        Socket socket = socketChannel.socket();
+        SocketAddress localSocketAddress = socket != null ? socket.getLocalSocketAddress() : null;
+        SocketAddress remoteSocketAddress = socket != null ? socket.getRemoteSocketAddress() : null;
+        return getType() + "#" + localSocketAddress + "->" + remoteSocketAddress;
+    }
+
+    public void setSendBufferSize(int size) throws SocketException {
+        socketChannel.socket().setSendBufferSize(size);
+    }
+
+    public void setReceiveBufferSize(int size) throws SocketException {
+        socketChannel.socket().setReceiveBufferSize(size);
+    }
+
     @Override
+    public boolean isClient() {
+        final ConnectionType t = type;
+        return (t != null) && t != ConnectionType.NONE && t.isClient();
+    }
+
+    /**
+     * Starts this connection.
+     *
+     * Starting means that the connection is going to register itself to listen to incoming traffic.
+     */
+    public void start() {
+        writeHandler.start();
+        readHandler.start();
+    }
+
+    @Override
+    public boolean write(SocketWritable packet) {
+        if (!live) {
+            if (logger.isFinestEnabled()) {
+                logger.finest("Connection is closed, won't write packet -> " + packet);
+            }
+            return false;
+        }
+        writeHandler.offer(packet);
+        return true;
+    }
+
+   @Override
     public boolean equals(Object o) {
         if (this == o) {
             return true;
@@ -232,38 +253,15 @@ public final class TcpIpConnection implements Connection {
 
         logger.info(message);
         connectionManager.destroyConnection(this);
-        connectionManager.ioService.onDisconnect(endPoint);
+        connectionManager.getIoService().onDisconnect(endPoint);
         if (t != null && monitor != null) {
             monitor.onError(t);
         }
     }
 
-    Object getConnectionAddress() {
-        return (endPoint == null) ? socketChannel.socket().getRemoteSocketAddress() : endPoint;
-    }
-
-    Object getMetricsId() {
-        Socket socket = this.socketChannel.socket();
-        SocketAddress localSocketAddress = socket != null ? socket.getLocalSocketAddress() : null;
-        SocketAddress remoteSocketAddress = socket != null ? socket.getRemoteSocketAddress() : null;
-        return getType() + "#" + localSocketAddress + "->" + remoteSocketAddress;
-    }
-
-    public int getConnectionId() {
-        return connectionId;
-    }
-
-    public void setSendBufferSize(int size) throws SocketException {
-        socketChannel.socket().setSendBufferSize(size);
-    }
-
-    public void setReceiveBufferSize(int size) throws SocketException {
-        socketChannel.socket().setReceiveBufferSize(size);
-    }
-
     @Override
     public String toString() {
-        Socket socket = this.socketChannel.socket();
+        Socket socket = socketChannel.socket();
         SocketAddress localSocketAddress = socket != null ? socket.getLocalSocketAddress() : null;
         SocketAddress remoteSocketAddress = socket != null ? socket.getRemoteSocketAddress() : null;
         return "Connection [" + localSocketAddress + " -> " + remoteSocketAddress

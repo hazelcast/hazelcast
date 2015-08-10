@@ -48,10 +48,10 @@ public abstract class TcpIpConnection_AbstractTest extends HazelcastTestSupport 
         ioServiceA = (MockIOService) connManagerA.getIOHandler();
 
         connManagerB = newConnectionManager(addressB.getPort());
-        ioServiceB = (MockIOService) connManagerB.ioService;
+        ioServiceB = (MockIOService) connManagerB.getIOHandler();
 
         connManagerC = newConnectionManager(addressC.getPort());
-        ioServiceC = (MockIOService) connManagerB.ioService;
+        ioServiceC = (MockIOService) connManagerB.getIOHandler();
 
         serializationService = new DefaultSerializationServiceBuilder()
                 .addDataSerializableFactory(TestDataFactory.FACTORY_ID, new TestDataFactory())
@@ -78,8 +78,8 @@ public abstract class TcpIpConnection_AbstractTest extends HazelcastTestSupport 
         return new TcpIpConnectionManager(
                 ioService,
                 ioService.serverSocketChannel,
-                ioService.hazelcastThreadGroup,
                 metricsRegistry,
+                ioService.hazelcastThreadGroup,
                 ioService.loggingService);
     }
 

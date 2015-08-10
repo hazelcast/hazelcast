@@ -19,6 +19,7 @@ package com.hazelcast.nio.tcp;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.IOService;
 import com.hazelcast.nio.Protocols;
 import com.hazelcast.util.AddressUtil;
 
@@ -41,11 +42,13 @@ public class SocketConnector implements Runnable {
     private final Address address;
     private final ILogger logger;
     private final boolean silent;
+    private final IOService ioService;
 
     public SocketConnector(TcpIpConnectionManager connectionManager, Address address, boolean silent) {
         this.connectionManager = connectionManager;
+        this.ioService = connectionManager.getIoService();
         this.address = address;
-        this.logger = connectionManager.ioService.getLogger(this.getClass().getName());
+        this.logger = ioService.getLogger(this.getClass().getName());
         this.silent = silent;
     }
 
@@ -62,7 +65,7 @@ public class SocketConnector implements Runnable {
             if (logger.isFinestEnabled()) {
                 log(Level.FINEST, "Starting to connect to " + address);
             }
-            final Address thisAddress = connectionManager.ioService.getThisAddress();
+            final Address thisAddress = ioService.getThisAddress();
             if (address.isIPv4()) {
                 // remote is IPv4; connect...
                 tryToConnect(address.getInetSocketAddress(),
@@ -118,13 +121,13 @@ public class SocketConnector implements Runnable {
     private void tryToConnect(final InetSocketAddress socketAddress, final int timeout) throws Exception {
         final SocketChannel socketChannel = SocketChannel.open();
         connectionManager.initSocket(socketChannel.socket());
-        if (connectionManager.ioService.isSocketBind()) {
+        if (ioService.isSocketBind()) {
             bindSocket(socketChannel);
         }
         final Level level = silent ? Level.FINEST : Level.INFO;
         if (logger.isLoggable(level)) {
             final String message = "Connecting to " + socketAddress + ", timeout: " + timeout
-                    + ", bind-any: " + connectionManager.ioService.isSocketBindAny();
+                    + ", bind-any: " + ioService.isSocketBindAny();
             log(level, message);
         }
         try {
@@ -166,10 +169,10 @@ public class SocketConnector implements Runnable {
 
     private void bindSocket(final SocketChannel socketChannel) throws IOException {
         final InetAddress inetAddress;
-        if (connectionManager.ioService.isSocketBindAny()) {
+        if (ioService.isSocketBindAny()) {
             inetAddress = null;
         } else {
-            final Address thisAddress = connectionManager.ioService.getThisAddress();
+            final Address thisAddress = ioService.getThisAddress();
             inetAddress = thisAddress.getInetAddress();
         }
         final Socket socket = socketChannel.socket();

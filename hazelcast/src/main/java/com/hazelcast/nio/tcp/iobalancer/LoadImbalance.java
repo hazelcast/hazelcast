@@ -16,8 +16,9 @@
 
 package com.hazelcast.nio.tcp.iobalancer;
 
-import com.hazelcast.nio.tcp.IOSelector;
-import com.hazelcast.nio.tcp.MigratableHandler;
+import com.hazelcast.nio.tcp.nonblocking.IOSelector;
+import com.hazelcast.nio.tcp.nonblocking.MigratableHandler;
+import com.hazelcast.nio.tcp.nonblocking.SelectionHandler;
 import com.hazelcast.util.ItemCounter;
 
 import java.util.Map;
@@ -27,7 +28,7 @@ import java.util.Set;
  * Describes a state of IOSelector (im-)balance.
  *
  * It's used by {@link MigrationStrategy} to decide whether and what
- * {@link com.hazelcast.nio.tcp.SelectionHandler} should be migrated.
+ * {@link SelectionHandler} should be migrated.
  *
  *
  */

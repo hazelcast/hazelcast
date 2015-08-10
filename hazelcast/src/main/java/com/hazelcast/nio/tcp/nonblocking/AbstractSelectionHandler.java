@@ -14,10 +14,14 @@
  * limitations under the License.
  */
 
-package com.hazelcast.nio.tcp;
+package com.hazelcast.nio.tcp.nonblocking;
 
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ConnectionType;
+import com.hazelcast.nio.IOService;
+import com.hazelcast.nio.tcp.SocketChannelWrapper;
+import com.hazelcast.nio.tcp.TcpIpConnection;
+import com.hazelcast.nio.tcp.TcpIpConnectionManager;
 
 import java.io.IOException;
 import java.nio.channels.ClosedChannelException;
@@ -31,9 +35,9 @@ public abstract class AbstractSelectionHandler implements MigratableHandler {
     protected final SocketChannelWrapper socketChannel;
     protected final TcpIpConnection connection;
     protected final TcpIpConnectionManager connectionManager;
+    protected final IOService ioService;
     protected Selector selector;
     protected IOSelector ioSelector;
-
     protected SelectionKey selectionKey;
     private final int initialOps;
 
@@ -43,8 +47,14 @@ public abstract class AbstractSelectionHandler implements MigratableHandler {
         this.selector = ioSelector.getSelector();
         this.socketChannel = connection.getSocketChannelWrapper();
         this.connectionManager = connection.getConnectionManager();
-        this.logger = connectionManager.ioService.getLogger(this.getClass().getName());
+        this.ioService = connectionManager.getIoService();
+        this.logger = ioService.getLogger(this.getClass().getName());
         this.initialOps = initialOps;
+    }
+
+    @Override
+    public IOSelector getOwner() {
+        return ioSelector;
     }
 
     protected SelectionKey getSelectionKey() {
@@ -58,9 +68,9 @@ public abstract class AbstractSelectionHandler implements MigratableHandler {
         return selectionKey;
     }
 
-    void handleSocketException(Throwable e) {
+    public void handleSocketException(Throwable e) {
         if (e instanceof OutOfMemoryError) {
-            connectionManager.ioService.onOutOfMemory((OutOfMemoryError) e);
+            ioService.onOutOfMemory((OutOfMemoryError) e);
         }
         if (selectionKey != null) {
             selectionKey.cancel();
@@ -75,7 +85,7 @@ public abstract class AbstractSelectionHandler implements MigratableHandler {
         sb.append(" Closing socket to endpoint ");
         sb.append(connection.getEndPoint());
         sb.append(", Cause:").append(e);
-        Level level = connectionManager.ioService.isActive() ? Level.WARNING : Level.FINEST;
+        Level level = ioService.isActive() ? Level.WARNING : Level.FINEST;
         if (e instanceof IOException) {
             logger.log(level, sb.toString());
         } else {
@@ -100,11 +110,6 @@ public abstract class AbstractSelectionHandler implements MigratableHandler {
         } catch (Throwable e) {
             handleSocketException(e);
         }
-    }
-
-    @Override
-    public IOSelector getOwner() {
-        return ioSelector;
     }
 
     // This method run on the oldOwner IOSelector(thread)
@@ -134,7 +139,9 @@ public abstract class AbstractSelectionHandler implements MigratableHandler {
     private void completeMigration(IOSelector newOwner) {
         assert ioSelector == newOwner;
 
-        connectionManager.getIOBalancer().signalMigrationComplete();
+        NonBlockingTcpIpConnectionThreadingModel threadingModel =
+                (NonBlockingTcpIpConnectionThreadingModel) connection.getConnectionManager().getThreadingModel();
+        threadingModel.getIOBalancer().signalMigrationComplete();
 
         if (!socketChannel.isOpen()) {
             return;

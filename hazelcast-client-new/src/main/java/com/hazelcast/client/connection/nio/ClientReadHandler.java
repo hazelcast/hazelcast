@@ -18,7 +18,7 @@ package com.hazelcast.client.connection.nio;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.util.ClientMessageBuilder;
-import com.hazelcast.nio.tcp.IOSelector;
+import com.hazelcast.nio.tcp.nonblocking.IOSelector;
 import com.hazelcast.util.Clock;
 
 import java.io.EOFException;

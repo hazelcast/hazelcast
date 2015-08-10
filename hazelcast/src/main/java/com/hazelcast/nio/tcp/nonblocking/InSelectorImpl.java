@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.nio.tcp;
+package com.hazelcast.nio.tcp.nonblocking;
 
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.logging.ILogger;
@@ -30,9 +30,9 @@ public final class InSelectorImpl extends AbstractIOSelector {
     @Probe
     private final SwCounter readEvents = newSwCounter();
 
-    public InSelectorImpl(ThreadGroup threadGroup, String tname, ILogger logger,
+    public InSelectorImpl(ThreadGroup threadGroup, String threadName, ILogger logger,
                           IOSelectorOutOfMemoryHandler oomeHandler) {
-        super(threadGroup, tname, logger, oomeHandler);
+        super(threadGroup, threadName, logger, oomeHandler);
     }
 
 

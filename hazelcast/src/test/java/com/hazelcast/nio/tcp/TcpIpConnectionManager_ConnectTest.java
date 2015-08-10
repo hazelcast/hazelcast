@@ -130,7 +130,7 @@ public class TcpIpConnectionManager_ConnectTest extends TcpIpConnection_Abstract
         assertEquals(ConnectionType.MEMBER, connBA.getType());
         assertEquals(1, connManagerB.getActiveConnectionCount());
 
-        assertEquals(connManagerA.ioService.getThisAddress(), connBA.getEndPoint());
-        assertEquals(connManagerB.ioService.getThisAddress(), connAB.getEndPoint());
+        assertEquals(connManagerA.getIOHandler().getThisAddress(), connBA.getEndPoint());
+        assertEquals(connManagerB.getIOHandler().getThisAddress(), connAB.getEndPoint());
     }
 }

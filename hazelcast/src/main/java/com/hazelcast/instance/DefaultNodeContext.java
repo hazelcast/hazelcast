@@ -20,6 +20,7 @@ import com.hazelcast.cluster.Joiner;
 import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.nio.NodeIOService;
 import com.hazelcast.nio.tcp.TcpIpConnectionManager;
+import com.hazelcast.nio.tcp.nonblocking.NonBlockingTcpIpConnectionThreadingModel;
 
 import java.nio.channels.ServerSocketChannel;
 
@@ -38,11 +39,17 @@ public class DefaultNodeContext implements NodeContext {
     @Override
     public ConnectionManager createConnectionManager(Node node, ServerSocketChannel serverSocketChannel) {
         NodeIOService ioService = new NodeIOService(node, node.nodeEngine);
+        NonBlockingTcpIpConnectionThreadingModel threadingModel = new NonBlockingTcpIpConnectionThreadingModel(
+                ioService,
+                node.loggingService,
+                node.nodeEngine.getMetricsRegistry(),
+                node.getHazelcastThreadGroup());
+
         return new TcpIpConnectionManager(
                 ioService,
                 serverSocketChannel,
-                node.getHazelcastThreadGroup(),
+                node.loggingService,
                 node.nodeEngine.getMetricsRegistry(),
-                node.loggingService);
+                threadingModel);
     }
 }

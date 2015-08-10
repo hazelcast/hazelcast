@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-package com.hazelcast.nio.tcp;
-
-public interface SelectionHandler {
-    void handle();
-}
+/**
+ * Contains the non blocking {@link com.hazelcast.nio.tcp.TcpIpConnectionMonitor}. It relies
+ * on {@link java.nio.channels.Selector} to be notified if there is something to read/write.
+ */
+package com.hazelcast.nio.tcp.nonblocking;

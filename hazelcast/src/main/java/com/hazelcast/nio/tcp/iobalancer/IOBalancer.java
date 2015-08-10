@@ -21,20 +21,20 @@ import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.tcp.IOSelector;
-import com.hazelcast.nio.tcp.InSelectorImpl;
-import com.hazelcast.nio.tcp.MigratableHandler;
-import com.hazelcast.nio.tcp.OutSelectorImpl;
-import com.hazelcast.nio.tcp.ReadHandler;
 import com.hazelcast.nio.tcp.TcpIpConnection;
-import com.hazelcast.nio.tcp.WriteHandler;
+import com.hazelcast.nio.tcp.nonblocking.IOSelector;
+import com.hazelcast.nio.tcp.nonblocking.InSelectorImpl;
+import com.hazelcast.nio.tcp.nonblocking.MigratableHandler;
+import com.hazelcast.nio.tcp.nonblocking.NonBlockingReadHandler;
+import com.hazelcast.nio.tcp.nonblocking.NonBlockingWriteHandler;
+import com.hazelcast.nio.tcp.nonblocking.OutSelectorImpl;
 import com.hazelcast.util.counters.MwCounter;
 import com.hazelcast.util.counters.SwCounter;
-import static com.hazelcast.util.counters.MwCounter.newMwCounter;
-import static com.hazelcast.util.counters.SwCounter.newSwCounter;
 
 import static com.hazelcast.instance.GroupProperties.PROP_IO_BALANCER_INTERVAL_SECONDS;
 import static com.hazelcast.instance.GroupProperties.PROP_IO_THREAD_COUNT;
+import static com.hazelcast.util.counters.MwCounter.newMwCounter;
+import static com.hazelcast.util.counters.SwCounter.newSwCounter;
 
 /**
  * It attempts to detect and fix a selector imbalance problem.
@@ -43,7 +43,7 @@ import static com.hazelcast.instance.GroupProperties.PROP_IO_THREAD_COUNT;
  * We have measured significant fluctuations of performance when the threads are not utilized equally.
  *
  * <code>com.hazelcast.nio.tcp.iobalancer.HandlerBalancer</code> tries to detect such situations and fix
- * them by moving {@link com.hazelcast.nio.tcp.ReadHandler} and {@link com.hazelcast.nio.tcp.WriteHandler} between
+ * them by moving {@link NonBlockingReadHandler} and {@link NonBlockingWriteHandler} between
  * threads.
  *
  * It measures number of events serviced by each handler in a given interval and if imbalance is detected then it
@@ -99,8 +99,8 @@ public class IOBalancer {
         }
 
         TcpIpConnection tcpIpConnection = (TcpIpConnection) connection;
-        ReadHandler readHandler = tcpIpConnection.getReadHandler();
-        WriteHandler writeHandler = tcpIpConnection.getWriteHandler();
+        NonBlockingReadHandler readHandler = (NonBlockingReadHandler) tcpIpConnection.getReadHandler();
+        NonBlockingWriteHandler writeHandler = (NonBlockingWriteHandler) tcpIpConnection.getWriteHandler();
 
         if (logger.isFinestEnabled()) {
             logger.finest("Connection " + connection + " uses read handler "
@@ -117,13 +117,13 @@ public class IOBalancer {
         }
 
         TcpIpConnection tcpIpConnection = (TcpIpConnection) connection;
-        ReadHandler readHandler = tcpIpConnection.getReadHandler();
+        NonBlockingReadHandler readHandler = (NonBlockingReadHandler) tcpIpConnection.getReadHandler();
         if (logger.isFinestEnabled()) {
             logger.finest("Removing read handler " + readHandler);
         }
         inLoadTracker.removeHandler(readHandler);
 
-        WriteHandler writeHandler = tcpIpConnection.getWriteHandler();
+        NonBlockingWriteHandler writeHandler = (NonBlockingWriteHandler) tcpIpConnection.getWriteHandler();
         if (logger.isFinestEnabled()) {
             logger.finest("Removing write handler " + readHandler);
         }

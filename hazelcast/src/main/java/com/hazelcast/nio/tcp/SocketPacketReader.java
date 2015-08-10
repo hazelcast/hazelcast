@@ -18,7 +18,7 @@ package com.hazelcast.nio.tcp;
 
 import java.nio.ByteBuffer;
 
-class SocketPacketReader implements SocketReader {
+public class SocketPacketReader implements SocketReader {
 
     private final PacketReader packetReader;
 

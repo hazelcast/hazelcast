@@ -20,11 +20,11 @@ import com.hazelcast.nio.Packet;
 
 import java.nio.ByteBuffer;
 
-class SocketPacketWriter implements SocketWriter<Packet> {
+public class SocketPacketWriter implements SocketWriter<Packet> {
 
     private final PacketWriter packetWriter;
 
-    SocketPacketWriter(TcpIpConnection connection) {
+    public SocketPacketWriter(TcpIpConnection connection) {
         TcpIpConnectionManager connectionManager = connection.getConnectionManager();
         packetWriter = connectionManager.createPacketWriter(connection);
     }

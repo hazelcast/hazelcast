@@ -14,29 +14,8 @@
  * limitations under the License.
  */
 
-package com.hazelcast.nio.tcp;
+package com.hazelcast.nio.tcp.nonblocking;
 
-import com.hazelcast.spi.impl.operationexecutor.OperationHostileThread;
-
-import java.nio.channels.Selector;
-
-public interface IOSelector extends OperationHostileThread {
-
-    Selector getSelector();
-
-    void addTask(Runnable runnable);
-
-    /**
-     * Adds a task to be executed by the IOSelector and wakes up the IOSelector so that it will
-     * eventually pick up the task.
-     *
-     * @param runnable the task to add.
-     */
-    void addTaskAndWakeup(Runnable runnable);
-
-    void start();
-
-    void shutdown();
-
-    void handleSelectionKeyFailure(Throwable e);
+public interface SelectionHandler {
+    void handle();
 }

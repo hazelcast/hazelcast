@@ -36,7 +36,7 @@ import javax.cache.spi.CachingProvider;
 @Category(QuickTest.class)
 public class ClientCacheContextTest extends CacheContextTest {
 
-    @Override
+     @Override
     protected CachingProvider initAndGetCachingProvider() {
         Config config = new Config();
         JoinConfig joinConfig = config.getNetworkConfig().getJoin();
