@@ -16,20 +16,21 @@
 
 package com.hazelcast.mapreduce.impl.task;
 
+import com.hazelcast.core.IFunction;
 import com.hazelcast.mapreduce.Combiner;
 import com.hazelcast.mapreduce.CombinerFactory;
 import com.hazelcast.mapreduce.Context;
 import com.hazelcast.mapreduce.impl.CombinerResultList;
 import com.hazelcast.mapreduce.impl.HashMapAdapter;
 import com.hazelcast.mapreduce.impl.MapReduceUtil;
+import com.hazelcast.util.ConcurrentReferenceHashMap;
+import com.hazelcast.util.IConcurrentMap;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
-
+import static com.hazelcast.util.ConcurrentReferenceHashMap.ReferenceType.STRONG;
 /**
  * This is the internal default implementation of a map reduce context mappers emit values to. It controls the emitted
  * values to be combined using either the set {@link com.hazelcast.mapreduce.Combiner} or by utilizing the internal
@@ -45,10 +46,20 @@ public class DefaultContext<KeyIn, ValueIn>
 
     private static final AtomicIntegerFieldUpdater<DefaultContext> COLLECTED_UPDATER = AtomicIntegerFieldUpdater
             .newUpdater(DefaultContext.class, "collected");
+    private final IConcurrentMap<KeyIn, Combiner<ValueIn, ?>> combiners =
+            new ConcurrentReferenceHashMap<KeyIn, Combiner<ValueIn, ?>>(STRONG, STRONG);
 
-    private final ConcurrentMap<KeyIn, Combiner<ValueIn, ?>> combiners = new ConcurrentHashMap<KeyIn, Combiner<ValueIn, ?>>();
     private final CombinerFactory<KeyIn, ValueIn, ?> combinerFactory;
     private final MapCombineTask mapCombineTask;
+
+    private final IFunction<KeyIn, Combiner<ValueIn, ?>> combinerFunction = new IFunction<KeyIn, Combiner<ValueIn, ?>>() {
+        @Override
+        public Combiner<ValueIn, ?> apply(KeyIn keyIn) {
+            Combiner<ValueIn, ?> combiner = combinerFactory.newCombiner(keyIn);
+            combiner.beginCombine();
+            return combiner;
+        }
+    };
 
     // This field is only accessed through the updater
     private volatile int collected;
@@ -99,17 +110,7 @@ public class DefaultContext<KeyIn, ValueIn>
     }
 
     public Combiner<ValueIn, ?> getOrCreateCombiner(KeyIn key) {
-        Combiner<ValueIn, ?> combiner = combiners.get(key);
-        if (combiner == null) {
-            combiner = combinerFactory.newCombiner(key);
-            combiner.beginCombine();
-
-            Combiner<ValueIn, ?> temp = combiners.putIfAbsent(key, combiner);
-            if (temp != null) {
-                combiner = temp;
-            }
-        }
-        return combiner;
+        return combiners.applyIfAbsent(key , combinerFunction);
     }
 
     /**

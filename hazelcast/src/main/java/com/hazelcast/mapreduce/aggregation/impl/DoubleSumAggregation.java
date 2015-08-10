@@ -108,7 +108,7 @@ public class DoubleSumAggregation<Key, Value>
     private static final class DoubleSumCombiner
             extends Combiner<Double, Double> {
 
-        private long chunkSum;
+        private double chunkSum;
 
         @Override
         public void combine(Double value) {
