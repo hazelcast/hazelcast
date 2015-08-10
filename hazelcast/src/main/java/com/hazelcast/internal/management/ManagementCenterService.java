@@ -296,10 +296,10 @@ public class ManagementCenterService {
         public void run() {
             try {
                 while (isRunning()) {
-                    long start = Clock.currentTimeMillis();
+                    long startMs = Clock.currentTimeMillis();
                     sendState();
-                    long end = Clock.currentTimeMillis();
-                    sleepIfPossible(end - start);
+                    long endMs = Clock.currentTimeMillis();
+                    sleepIfPossible(endMs - startMs);
                 }
             } catch (Throwable throwable) {
                 inspectOutputMemoryError(throwable);
@@ -310,10 +310,10 @@ public class ManagementCenterService {
             }
         }
 
-        private void sleepIfPossible(long elapsed) throws InterruptedException {
-            long sleepTime = updateIntervalMs - elapsed;
-            if (sleepTime > 0) {
-                Thread.sleep(sleepTime);
+        private void sleepIfPossible(long elapsedMs) throws InterruptedException {
+            long sleepTimeMs = updateIntervalMs - elapsedMs;
+            if (sleepTimeMs > 0) {
+                Thread.sleep(sleepTimeMs);
             }
         }
 
