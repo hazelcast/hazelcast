@@ -140,7 +140,7 @@ public class SocketConnector implements Runnable {
             connectionManager.interceptSocket(socketChannel.socket(), false);
 
             socketChannelWrapper.configureBlocking(false);
-            TcpIpConnection connection = connectionManager.assignSocketChannel(socketChannelWrapper, address);
+            TcpIpConnection connection = connectionManager.newConnection(socketChannelWrapper, address);
             connection.getWriteHandler().setProtocol(Protocols.CLUSTER);
             connectionManager.sendBindRequest(connection, address, true);
         } catch (Exception e) {

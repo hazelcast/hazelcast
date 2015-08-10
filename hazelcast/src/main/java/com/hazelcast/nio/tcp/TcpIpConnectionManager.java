@@ -371,7 +371,7 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
         return wrapper;
     }
 
-    TcpIpConnection assignSocketChannel(SocketChannelWrapper channel, Address endpoint) {
+    TcpIpConnection newConnection(SocketChannelWrapper channel, Address endpoint) {
         TcpIpConnection connection = new TcpIpConnection(
                 this,
                 connectionIdGen.incrementAndGet(),

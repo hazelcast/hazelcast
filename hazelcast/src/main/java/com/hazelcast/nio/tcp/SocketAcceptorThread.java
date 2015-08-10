@@ -18,7 +18,6 @@ package com.hazelcast.nio.tcp;
 
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.IOService;
 import com.hazelcast.nio.IOUtil;
 
@@ -30,7 +29,6 @@ import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.Iterator;
 import java.util.Set;
-import java.util.logging.Level;
 
 public class SocketAcceptorThread extends Thread {
     private static final int SHUTDOWN_TIMEOUT_MILLIS = 1000 * 10;
@@ -54,11 +52,12 @@ public class SocketAcceptorThread extends Thread {
 
     @Override
     public void run() {
+        if (logger.isFinestEnabled()) {
+            logger.finest("Starting SocketAcceptor on " + serverSocketChannel);
+        }
+
         Selector selector = null;
         try {
-            if (logger.isFinestEnabled()) {
-                log(Level.FINEST, "Starting SocketAcceptor on " + serverSocketChannel);
-            }
             selector = Selector.open();
             serverSocketChannel.configureBlocking(false);
             serverSocketChannel.register(selector, SelectionKey.OP_ACCEPT);
@@ -66,7 +65,7 @@ public class SocketAcceptorThread extends Thread {
         } catch (OutOfMemoryError e) {
             OutOfMemoryErrorDispatcher.onOutOfMemory(e);
         } catch (IOException e) {
-            log(Level.SEVERE, e.getClass().getName() + ": " + e.getMessage(), e);
+            logger.severe(e.getClass().getName() + ": " + e.getMessage(), e);
         } finally {
             closeSelector(selector);
         }
@@ -75,17 +74,16 @@ public class SocketAcceptorThread extends Thread {
     private void acceptLoop(Selector selector) throws IOException {
         while (connectionManager.isLive()) {
             // block until new connection or interruption.
-            final int keyCount = selector.select();
+            int keyCount = selector.select();
             if (isInterrupted()) {
                 break;
             }
             if (keyCount == 0) {
                 continue;
             }
-            final Set<SelectionKey> setSelectedKeys = selector.selectedKeys();
-            final Iterator<SelectionKey> it = setSelectedKeys.iterator();
+            Iterator<SelectionKey> it = selector.selectedKeys().iterator();
             while (it.hasNext()) {
-                final SelectionKey sk = it.next();
+                SelectionKey sk = it.next();
                 it.remove();
                 // of course it is acceptable!
                 if (sk.isValid() && sk.isAcceptable()) {
@@ -96,15 +94,18 @@ public class SocketAcceptorThread extends Thread {
     }
 
     private void closeSelector(Selector selector) {
-        if (selector != null) {
-            try {
-                if (logger.isFinestEnabled()) {
-                    logger.finest("Closing selector " + Thread.currentThread().getName());
-                }
-                selector.close();
-            } catch (final Exception e) {
-                Logger.getLogger(SocketAcceptorThread.class).finest("Exception while closing selector", e);
-            }
+        if (selector == null) {
+            return;
+        }
+
+        if (logger.isFinestEnabled()) {
+            logger.finest("Closing selector " + Thread.currentThread().getName());
+        }
+
+        try {
+            selector.close();
+        } catch (Exception e) {
+            logger.finest("Exception while closing selector", e);
         }
     }
 
@@ -112,6 +113,7 @@ public class SocketAcceptorThread extends Thread {
         if (!connectionManager.isLive()) {
             return;
         }
+
         SocketChannelWrapper socketChannelWrapper = null;
         try {
             final SocketChannel socketChannel = serverSocketChannel.accept();
@@ -125,20 +127,20 @@ public class SocketAcceptorThread extends Thread {
                 // or ClosedByInterruptException
                 logger.finest("Terminating socket acceptor thread...", e);
             } else {
-                String error = "Unexpected error while accepting connection! "
-                        + e.getClass().getName() + ": " + e.getMessage();
-                log(Level.WARNING, error);
+                logger.warning("Unexpected error while accepting connection! "
+                        + e.getClass().getName() + ": " + e.getMessage());
                 try {
                     serverSocketChannel.close();
                 } catch (Exception ex) {
-                    Logger.getLogger(SocketAcceptorThread.class).finest("Closing server socket failed", ex);
+                    logger.finest("Closing server socket failed", ex);
                 }
                 ioService.onFatalError(e);
             }
         }
+
         if (socketChannelWrapper != null) {
             final SocketChannelWrapper socketChannel = socketChannelWrapper;
-            log(Level.INFO, "Accepting socket connection from " + socketChannel.socket().getRemoteSocketAddress());
+            logger.info("Accepting socket connection from " + socketChannel.socket().getRemoteSocketAddress());
             if (connectionManager.isSocketInterceptorEnabled()) {
                 configureAndAssignSocket(socketChannel);
             } else {
@@ -157,23 +159,15 @@ public class SocketAcceptorThread extends Thread {
             connectionManager.initSocket(socketChannel.socket());
             connectionManager.interceptSocket(socketChannel.socket(), true);
             socketChannel.configureBlocking(connectionManager.getThreadingModel().isBlocking());
-            connectionManager.assignSocketChannel(socketChannel, null);
+            connectionManager.newConnection(socketChannel, null);
         } catch (Exception e) {
-            log(Level.WARNING, e.getClass().getName() + ": " + e.getMessage(), e);
+            logger.warning(e.getClass().getName() + ": " + e.getMessage(), e);
             IOUtil.closeResource(socketChannel);
         }
     }
 
-    private void log(Level level, String message) {
-        log(level, message, null);
-    }
-
-    private void log(Level level, String message, Exception e) {
-        logger.log(level, message, e);
-    }
-
     public void shutdown() {
-        log(Level.FINEST, "Shutting down SocketAcceptor thread.");
+        logger.finest("Shutting down SocketAcceptor thread.");
         interrupt();
         try {
             join(SHUTDOWN_TIMEOUT_MILLIS);
