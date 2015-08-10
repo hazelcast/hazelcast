@@ -55,9 +55,11 @@ import com.hazelcast.monitor.LocalQueueStats;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -334,7 +336,7 @@ public final class ClientQueueProxy<E> extends ClientProxy implements IQueue<E> 
     }
 
     public boolean addAll(Collection<? extends E> c) {
-        ClientMessage request = QueueAddAllCodec.encodeRequest(name, getDataSet(c));
+        ClientMessage request = QueueAddAllCodec.encodeRequest(name, getDataList(c));
         ClientMessage response = invoke(request);
         QueueAddAllCodec.ResponseParameters resultParameters = QueueAddAllCodec.decodeResponse(response);
         return resultParameters.response;
@@ -373,6 +375,14 @@ public final class ClientQueueProxy<E> extends ClientProxy implements IQueue<E> 
             dataSet.add(toData(o));
         }
         return dataSet;
+    }
+
+    private List<Data> getDataList(Collection<?> objects) {
+        List<Data> dataList = new ArrayList<Data>(objects.size());
+        for (Object o : objects) {
+            dataList.add(toData(o));
+        }
+        return dataList;
     }
 
     @Override
