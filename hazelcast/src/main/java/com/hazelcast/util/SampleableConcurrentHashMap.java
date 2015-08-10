@@ -18,7 +18,6 @@ package com.hazelcast.util;
 
 import com.hazelcast.cache.impl.eviction.Expirable;
 import com.hazelcast.nio.serialization.Data;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.Collections;
 import java.util.EnumSet;
@@ -130,68 +129,8 @@ public class SampleableConcurrentHashMap<K, V> extends ConcurrentReferenceHashMa
 
     }
 
-    /**
-     * Iterable sampling entry to preventing from extra object creation for iteration.
-     *
-     * NOTE: Assumed that it is not accessed by multiple threads. So there is no synchronization.
-     */
-    @SuppressFBWarnings("PZ_DONT_REUSE_ENTRY_OBJECTS_IN_ITERATORS")
-    public class IterableSamplingEntry
-            extends SamplingEntry
-            implements Iterable<IterableSamplingEntry>, Iterator<IterableSamplingEntry> {
-
-        private boolean iterated;
-
-        public IterableSamplingEntry(K key, V value) {
-            super(key, value);
-        }
-
-        @Override
-        public Iterator<IterableSamplingEntry> iterator() {
-            return this;
-        }
-
-        @Override
-        public boolean hasNext() {
-            return !iterated;
-        }
-
-        @Override
-        public IterableSamplingEntry next() {
-            if (iterated) {
-                throw new NoSuchElementException();
-            }
-            iterated = true;
-            return this;
-        }
-
-        @Override
-        public void remove() {
-            throw new UnsupportedOperationException("Removing is supported");
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            // Because of "Illegal generic type for instanceof” compile error, check types via class instance.
-            // See "http://stackoverflow.com/questions/4001938/why-do-i-get-illegal-generic-type-for-instanceof"
-            // for more details.
-            if (IterableSamplingEntry.class.isInstance(o)) {
-                return super.equals(o);
-            } else {
-                return false;
-            }
-        }
-
-        @Override
-        public int hashCode() {
-            return (key == null ? 0 : key.hashCode())
-                    ^ (value == null ? 0 : value.hashCode());
-        }
-
-    }
-
     protected <E extends SamplingEntry> E createSamplingEntry(K key, V value) {
-        return (E) new IterableSamplingEntry(key, value);
+        return (E) new SamplingEntry(key, value);
     }
 
     /**
