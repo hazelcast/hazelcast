@@ -43,13 +43,17 @@ import org.junit.runner.RunWith;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.Externalizable;
 import java.io.IOException;
+import java.io.ObjectInput;
 import java.io.ObjectInputStream;
+import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.LinkedList;
+import java.util.Properties;
 import java.util.Random;
 
 import static org.junit.Assert.assertArrayEquals;
@@ -274,6 +278,62 @@ public class SerializationTest
         }
     }
 
+
+    /**
+     * Ensures that SerializationService correctly handles compressed Serializables,
+     * using a Properties object as a test case.
+     */
+    @Test
+    public void testCompressionOnSerializables() throws Exception {
+        SerializationService serializationService = new DefaultSerializationServiceBuilder().setEnableCompression(true).build();
+        long key = 1, value = 5000;
+        Properties properties = new Properties();
+        properties.put(key, value);
+        Data data = serializationService.toData(properties);
+        
+        Properties output = serializationService.toObject(data);
+        assertEquals(value, output.get(key));
+    }
+
+    /**
+     * Ensures that SerializationService correctly handles compressed Serializables,
+     * using a test-specific object as a test case.
+     */
+    @Test
+    public void testCompressionOnExternalizables() throws Exception {
+        SerializationService serializationService = new DefaultSerializationServiceBuilder().setEnableCompression(true).build();
+        String test = "test";
+        ExternalizableString ex = new ExternalizableString(test);  
+        Data data = serializationService.toData(ex);
+        
+        ExternalizableString actual = serializationService.toObject(data);
+        assertEquals(test, actual.value);
+    }
+    
+    private static class ExternalizableString implements Externalizable {
+        
+        String value; 
+        
+        public ExternalizableString() {
+            
+        }
+        
+        public ExternalizableString(String value) {
+            this.value = value;
+        }
+        
+        @Override
+        public void writeExternal(ObjectOutput out) throws IOException {
+            out.writeUTF(value);            
+        }
+
+        @Override
+        public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+            value = in.readUTF();           
+        }
+        
+    }
+    
     @Test
     public void testMemberLeftException_usingMemberImpl() throws IOException, ClassNotFoundException {
         String uuid = UuidUtil.buildRandomUuidString();
