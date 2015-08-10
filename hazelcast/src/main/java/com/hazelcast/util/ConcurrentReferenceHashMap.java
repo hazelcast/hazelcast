@@ -146,7 +146,7 @@ import java.util.concurrent.locks.ReentrantLock;
  */
 @SuppressWarnings("all")
 public class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V>
-        implements com.hazelcast.util.ConcurrentMap<K, V>, Serializable {
+        implements com.hazelcast.util.IConcurrentMap<K, V>, Serializable {
 
     /*
      * The basic strategy is to subdivide the table among Segments,
