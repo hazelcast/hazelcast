@@ -22,7 +22,7 @@ import com.hazelcast.client.impl.protocol.EventMessageConst;
 import com.hazelcast.client.impl.protocol.ResponseMessageConst;
 import com.hazelcast.nio.serialization.Data;
 
-@GenerateCodec(id = TemplateConstants.TOPIC_TEMPLATE_ID, name = "Topic", ns = "Hazelcast.Client.Protocol.Topic")
+@GenerateCodec(id = TemplateConstants.TOPIC_TEMPLATE_ID, name = "Topic", ns = "Hazelcast.Client.Protocol.Codec")
 public interface TopicCodecTemplate {
     /**
      *

@@ -17,12 +17,35 @@
 package com.hazelcast.client.protocol.generator;
 
 import javax.lang.model.element.TypeElement;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 
 public final class CodeGenerationUtils {
 
     public static final int BYTE_BIT_COUNT = 8;
     public static final String CODEC_PACKAGE = "com.hazelcast.client.impl.protocol.codec.";
     public static final String DATA_FULL_NAME = "com.hazelcast.nio.serialization.Data";
+
+
+    private static final Map<String, String> JAVA_TO_CSHARP_TYPES = new HashMap<String, String>() {{
+        put(DATA_FULL_NAME, "IData");
+        put("java.lang.String", "string");
+        put("java.lang.Integer", "int");
+        put("boolean", "bool");
+        put("java.util.List", "IList");
+        put("java.util.Set", "ISet");
+        put("java.util.Collection", "ICollection");
+        put("java.util.Map", "IDictionary");
+        put("java.util.Map.Entry", "KeyValuePair");
+        put("com.hazelcast.nio.Address", "Address");
+        put("com.hazelcast.client.impl.client.DistributedObjectInfo", "DistributedObjectInfo");
+        put("com.hazelcast.core.Member", "Core.IMember");
+        put("com.hazelcast.cluster.client.MemberAttributeChange", "Hazelcast.Client.Request.Cluster.MemberAttributeChange");
+        put("com.hazelcast.map.impl.SimpleEntryView", "Hazelcast.Map.SimpleEntryView");
+    }};
 
     private CodeGenerationUtils() {
     }
@@ -55,6 +78,11 @@ public final class CodeGenerationUtils {
         return type.substring(beg + 1, end).trim();
     }
 
+    public static String getSimpleType(String type) {
+        int beg = type.indexOf("<");
+        return type.substring(0, beg);
+    }
+
     public static String getFirstGenericParameterType(String type) {
         int beg = type.indexOf("<");
         int end = type.lastIndexOf(",");
@@ -70,6 +98,10 @@ public final class CodeGenerationUtils {
     public static boolean isPrimitive(String type) {
         return type.equals("int") || type.equals("long") || type.equals("short") || type.equals("byte") || type
                 .equals("boolean");
+    }
+
+    public static boolean isGeneric(String type) {
+        return type.contains("<");
     }
 
     public static String getTypeCategory(String type) {
@@ -124,7 +156,6 @@ public final class CodeGenerationUtils {
 
                         // replace any new line with <br>
                         result = result.replace("\n", "<br>");
-
                         result = result.trim();
 
                         break; // found the parameter, hence stop here
@@ -169,5 +200,54 @@ public final class CodeGenerationUtils {
         return result;
     }
 
+    // parse generic type parameters, making sure nested generics are taken into account
+    private static List<String> getGenericTypeParameters(String parameters) {
+        List<String> paramList = new ArrayList<String>();
+        int balanced = 0;
+        StringBuilder current = new StringBuilder();
+        for (int i = 0; i < parameters.length(); i++) {
+            char c = parameters.charAt(i);
+            if (balanced == 0 && c == ',') {
+                paramList.add(current.toString().trim());
+                current = new StringBuilder();
+                continue;
+            }
+            else if (c == '<') {
+                balanced++;
+            } else if (c == '>') {
+                balanced--;
+            }
+            current.append(c);
+        }
+        paramList.add(current.toString());
+        return paramList;
+    }
+
+    public static String getCSharpType(String type) {
+        type = type.trim();
+        if (isGeneric(type)) {
+            String simpleType = getCSharpType(getSimpleType(type));
+            String genericParameters = getGenericType(type);
+
+            List<String> typeParameters = getGenericTypeParameters(genericParameters);
+            StringBuilder builder = new StringBuilder();
+
+            builder.append(simpleType).append('<');
+
+            Iterator<String> iterator = typeParameters.iterator();
+            while (iterator.hasNext()) {
+                builder.append(getCSharpType(iterator.next()));
+                if (iterator.hasNext()) {
+                    builder.append(',');
+                }
+            }
+            builder.append(">");
+            return builder.toString();
+        }
+
+        String convertedType = JAVA_TO_CSHARP_TYPES.get(type);
+
+        return convertedType == null ? type : convertedType;
+    }
 
 }

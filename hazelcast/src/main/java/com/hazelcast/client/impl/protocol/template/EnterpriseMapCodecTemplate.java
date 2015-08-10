@@ -22,7 +22,7 @@ import com.hazelcast.client.impl.protocol.EventMessageConst;
 import com.hazelcast.client.impl.protocol.ResponseMessageConst;
 import com.hazelcast.nio.serialization.Data;
 
-@GenerateCodec(id = TemplateConstants.ENTERPRISE_MAP_TEMPLATE_ID, name = "EnterpriseMap", ns = "Hazelcast.Client.Protocol.Map")
+@GenerateCodec(id = TemplateConstants.ENTERPRISE_MAP_TEMPLATE_ID, name = "EnterpriseMap", ns = "Hazelcast.Client.Protocol.Codec")
 public interface EnterpriseMapCodecTemplate {
 
     /**

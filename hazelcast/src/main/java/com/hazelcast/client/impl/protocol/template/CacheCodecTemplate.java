@@ -27,7 +27,7 @@ import com.hazelcast.nio.serialization.Data;
 import java.util.List;
 import java.util.Set;
 
-@GenerateCodec(id = TemplateConstants.JCACHE_TEMPLATE_ID, name = "Cache", ns = "Hazelcast.Client.Protocol.Cache")
+@GenerateCodec(id = TemplateConstants.JCACHE_TEMPLATE_ID, name = "Cache", ns = "Hazelcast.Client.Protocol.Codec")
 public interface CacheCodecTemplate {
 
     /**

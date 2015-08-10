@@ -22,7 +22,7 @@ import com.hazelcast.client.impl.protocol.EventMessageConst;
 import com.hazelcast.client.impl.protocol.ResponseMessageConst;
 import com.hazelcast.nio.serialization.Data;
 
-@GenerateCodec(id = TemplateConstants.MULTIMAP_TEMPLATE_ID, name = "MultiMap", ns = "Hazelcast.Client.Protocol.MultiMap")
+@GenerateCodec(id = TemplateConstants.MULTIMAP_TEMPLATE_ID, name = "MultiMap", ns = "Hazelcast.Client.Protocol.Codec")
 public interface MultiMapCodecTemplate {
     /**
      *

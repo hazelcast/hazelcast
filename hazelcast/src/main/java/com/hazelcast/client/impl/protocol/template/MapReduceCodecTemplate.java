@@ -24,7 +24,7 @@ import com.hazelcast.nio.serialization.Data;
 
 import java.util.List;
 
-@GenerateCodec(id = TemplateConstants.MAP_REDUCE_TEMPLATE_ID, name = "MapReduce", ns = "Hazelcast.Client.Protocol.MapReduce")
+@GenerateCodec(id = TemplateConstants.MAP_REDUCE_TEMPLATE_ID, name = "MapReduce", ns = "Hazelcast.Client.Protocol.Codec")
 public interface MapReduceCodecTemplate {
 
     /**

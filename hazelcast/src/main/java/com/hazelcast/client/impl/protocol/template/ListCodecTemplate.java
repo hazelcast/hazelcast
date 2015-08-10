@@ -25,7 +25,7 @@ import com.hazelcast.nio.serialization.Data;
 import java.util.List;
 import java.util.Set;
 
-@GenerateCodec(id = TemplateConstants.LIST_TEMPLATE_ID, name = "List", ns = "Hazelcast.Client.Protocol.List")
+@GenerateCodec(id = TemplateConstants.LIST_TEMPLATE_ID, name = "List", ns = "Hazelcast.Client.Protocol.Codec")
 public interface ListCodecTemplate {
     /**
      *
