@@ -105,11 +105,11 @@ public interface Connection {
     int getPort();
 
     /**
-     * Writes a SocketWritable packet to the other side. No guarantees are made that the packet is going to be
-     * received on the other side of the connection.
+     * Writes a SocketWritable packet to the other side of the connection. No guarantees are made that the
+     * packet is going to be received on the other side.
      * <p>
      * The packet could be stored in an internal queue before it actually is written, so this call
-     * doesn't need to be a synchronous call.
+     * does not need to be a synchronous call.
      *
      * @param packet the packet to write.
      * @return false if the packet was not accepted to be written, e.g. because the Connection was not alive.
@@ -122,7 +122,7 @@ public interface Connection {
      * <p>
      * Pending packets on this connection are discarded
      * <p>
-     * If the Connection already is closed, the call is ignored. So it can safely be called multiple times.
+     * If the Connection is already closed, the call is ignored. So it can safely be called multiple times.
      */
     void close();
 
