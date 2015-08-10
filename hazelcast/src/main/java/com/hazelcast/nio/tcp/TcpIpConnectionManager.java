@@ -416,7 +416,7 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
         if (connection == null && live) {
             if (connectionsInProgress.add(address)) {
                 ioService.shouldConnectTo(address);
-                ioService.executeAsync(new SocketConnector(this, address, silent));
+                ioService.executeAsync(new InitConnectionTask(this, address, silent));
             }
         }
         return connection;

@@ -17,7 +17,6 @@
 package com.hazelcast.nio.tcp;
 
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.IOService;
 import com.hazelcast.nio.Protocols;
@@ -30,21 +29,27 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketAddress;
 import java.net.SocketException;
+import java.net.UnknownHostException;
 import java.nio.channels.SocketChannel;
 import java.util.Collection;
 import java.util.logging.Level;
 
-public class SocketConnector implements Runnable {
+/**
+ * A Task that initiates a TcpConnection to be build. It does this be connecting the serverport and once completed,
+ * it will send the protocol and a bind-message.
+ */
+public class InitConnectionTask implements Runnable {
 
     private static final int DEFAULT_IPV6_SOCKET_CONNECT_TIMEOUT_SECONDS = 3;
     private static final int MILLIS_PER_SECOND = 1000;
+
     private final TcpIpConnectionManager connectionManager;
     private final Address address;
     private final ILogger logger;
     private final boolean silent;
     private final IOService ioService;
 
-    public SocketConnector(TcpIpConnectionManager connectionManager, Address address, boolean silent) {
+    public InitConnectionTask(TcpIpConnectionManager connectionManager, Address address, boolean silent) {
         this.connectionManager = connectionManager;
         this.ioService = connectionManager.getIoService();
         this.address = address;
@@ -56,16 +61,17 @@ public class SocketConnector implements Runnable {
     public void run() {
         if (!connectionManager.isLive()) {
             if (logger.isFinestEnabled()) {
-                String message = "ConnectionManager is not live, connection attempt to " + address + " is cancelled!";
-                log(Level.FINEST, message);
+                logger.finest("ConnectionManager is not live, connection attempt to " + address + " is cancelled!");
             }
             return;
         }
+
+        if (logger.isFinestEnabled()) {
+            logger.finest("Starting to connect to " + address);
+        }
+
         try {
-            if (logger.isFinestEnabled()) {
-                log(Level.FINEST, "Starting to connect to " + address);
-            }
-            final Address thisAddress = ioService.getThisAddress();
+            Address thisAddress = ioService.getThisAddress();
             if (address.isIPv4()) {
                 // remote is IPv4; connect...
                 tryToConnect(address.getInetSocketAddress(),
@@ -74,7 +80,7 @@ public class SocketConnector implements Runnable {
                 // Both remote and this addresses are IPv6.
                 // This is a local IPv6 address and scope id is known.
                 // find correct inet6 address for remote and connect...
-                final Inet6Address inetAddress = AddressUtil
+                Inet6Address inetAddress = AddressUtil
                         .getInetAddressFor((Inet6Address) address.getInetAddress(), thisAddress.getScopeId());
                 tryToConnect(new InetSocketAddress(inetAddress, address.getPort()),
                         connectionManager.getSocketConnectTimeoutSeconds() * MILLIS_PER_SECOND);
@@ -89,14 +95,13 @@ public class SocketConnector implements Runnable {
         }
     }
 
-    private void tryConnectToIPv6()
-            throws Exception {
-        final Collection<Inet6Address> possibleInetAddresses = AddressUtil
+    private void tryConnectToIPv6() throws Exception {
+        Collection<Inet6Address> possibleInetAddresses = AddressUtil
                 .getPossibleInetAddressesFor((Inet6Address) address.getInetAddress());
-        final Level level = silent ? Level.FINEST : Level.INFO;
+        Level level = silent ? Level.FINEST : Level.INFO;
         //TODO: collection.toString() will likely not produce any useful output!
         if (logger.isLoggable(level)) {
-            log(level, "Trying to connect possible IPv6 addresses: " + possibleInetAddresses);
+            logger.log(level, "Trying to connect possible IPv6 addresses: " + possibleInetAddresses);
         }
         boolean connected = false;
         Exception error = null;
@@ -118,25 +123,26 @@ public class SocketConnector implements Runnable {
         }
     }
 
-    private void tryToConnect(final InetSocketAddress socketAddress, final int timeout) throws Exception {
-        final SocketChannel socketChannel = SocketChannel.open();
+    private void tryToConnect(InetSocketAddress socketAddress, int timeout) throws Exception {
+        SocketChannel socketChannel = SocketChannel.open();
         connectionManager.initSocket(socketChannel.socket());
         if (ioService.isSocketBind()) {
             bindSocket(socketChannel);
         }
-        final Level level = silent ? Level.FINEST : Level.INFO;
+
+        Level level = silent ? Level.FINEST : Level.INFO;
         if (logger.isLoggable(level)) {
-            final String message = "Connecting to " + socketAddress + ", timeout: " + timeout
-                    + ", bind-any: " + ioService.isSocketBindAny();
-            log(level, message);
+            logger.log(level, "Connecting to " + socketAddress + ", timeout: " + timeout
+                    + ", bind-any: " + ioService.isSocketBindAny());
         }
+
         try {
             socketChannel.configureBlocking(true);
             connectSocketChannel(socketAddress, timeout, socketChannel);
             if (logger.isFinestEnabled()) {
-                log(Level.FINEST, "Successfully connected to: " + address + " using socket " + socketChannel.socket());
+                logger.finest("Successfully connected to: " + address + " using socket " + socketChannel.socket());
             }
-            final SocketChannelWrapper socketChannelWrapper = connectionManager.wrapSocketChannel(socketChannel, true);
+            SocketChannelWrapper socketChannelWrapper = connectionManager.wrapSocketChannel(socketChannel, true);
             connectionManager.interceptSocket(socketChannel.socket(), false);
 
             socketChannelWrapper.configureBlocking(false);
@@ -145,55 +151,56 @@ public class SocketConnector implements Runnable {
             connectionManager.sendBindRequest(connection, address, true);
         } catch (Exception e) {
             closeSocket(socketChannel);
-            log(level, "Could not connect to: " + socketAddress + ". Reason: " + e.getClass().getSimpleName()
+            logger.log(level, "Could not connect to: " + socketAddress + ". Reason: " + e.getClass().getSimpleName()
                     + "[" + e.getMessage() + "]");
             throw e;
         }
     }
 
-    private void connectSocketChannel(InetSocketAddress socketAddress, int timeout, SocketChannel socketChannel)
-            throws IOException {
+    private void connectSocketChannel(InetSocketAddress address, int timeout, SocketChannel socketChannel) throws IOException {
         try {
             if (timeout > 0) {
-                socketChannel.socket().connect(socketAddress, timeout);
+                socketChannel.socket().connect(address, timeout);
             } else {
-                socketChannel.connect(socketAddress);
+                socketChannel.connect(address);
             }
         } catch (SocketException ex) {
-            //we want to include the socketAddress in the exception.
-            SocketException newEx = new SocketException(ex.getMessage() + " to address " + socketAddress);
+            //we want to include the address in the exception.
+            SocketException newEx = new SocketException(ex.getMessage() + " to address " + address);
             newEx.setStackTrace(ex.getStackTrace());
             throw newEx;
         }
     }
 
-    private void bindSocket(final SocketChannel socketChannel) throws IOException {
-        final InetAddress inetAddress;
-        if (ioService.isSocketBindAny()) {
-            inetAddress = null;
-        } else {
-            final Address thisAddress = ioService.getThisAddress();
-            inetAddress = thisAddress.getInetAddress();
-        }
-        final Socket socket = socketChannel.socket();
+    private void bindSocket(SocketChannel socketChannel) throws IOException {
+        InetAddress inetAddress = getInetAddress();
+        Socket socket = socketChannel.socket();
         if (connectionManager.useAnyOutboundPort()) {
-            final SocketAddress socketAddress = new InetSocketAddress(inetAddress, 0);
+            SocketAddress socketAddress = new InetSocketAddress(inetAddress, 0);
             socket.bind(socketAddress);
         } else {
             IOException ex = null;
-            final int retryCount = connectionManager.getOutboundPortCount() * 2;
+            int retryCount = connectionManager.getOutboundPortCount() * 2;
             for (int i = 0; i < retryCount; i++) {
-                final int port = connectionManager.acquireOutboundPort();
-                final SocketAddress socketAddress = new InetSocketAddress(inetAddress, port);
+                int port = connectionManager.acquireOutboundPort();
+                SocketAddress socketAddress = new InetSocketAddress(inetAddress, port);
                 try {
                     socket.bind(socketAddress);
                     return;
                 } catch (IOException e) {
                     ex = e;
-                    log(Level.FINEST, "Could not bind port[ " + port + "]: " + e.getMessage());
+                    logger.finest("Could not bind port[ " + port + "]: " + e.getMessage());
                 }
             }
             throw ex;
+        }
+    }
+
+    private InetAddress getInetAddress() throws UnknownHostException {
+        if (ioService.isSocketBindAny()) {
+            return null;
+        } else {
+            return ioService.getThisAddress().getInetAddress();
         }
     }
 
@@ -202,12 +209,8 @@ public class SocketConnector implements Runnable {
             try {
                 socketChannel.close();
             } catch (final IOException e) {
-                Logger.getLogger(SocketConnector.class).finest("Closing socket channel failed", e);
+                logger.finest("Closing socket channel failed", e);
             }
         }
-    }
-
-    private void log(Level level, String message) {
-        logger.log(level, message);
     }
 }
