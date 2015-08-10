@@ -18,7 +18,7 @@ package com.hazelcast.nio.tcp.nonblocking;
 
 /**
  * A {@link SelectionHandler} that supports migration between {@link IOSelector} instances.
- * This API is called by the {@link com.hazelcast.nio.tcp.iobalancer.IOBalancer}.
+ * This API is called by the {@link com.hazelcast.nio.tcp.nonblocking.iobalancer.IOBalancer}.
  */
 public interface MigratableHandler extends SelectionHandler {
 
@@ -27,7 +27,7 @@ public interface MigratableHandler extends SelectionHandler {
      * migration to complete.
      *
      * This method can be called by any thread, and will probably be called by the
-     * {@link com.hazelcast.nio.tcp.iobalancer.IOBalancer}.
+     * {@link com.hazelcast.nio.tcp.nonblocking.iobalancer.IOBalancer}.
      *
      * Call is ignored when handler is moving to the same IOSelector.
      *
@@ -37,7 +37,7 @@ public interface MigratableHandler extends SelectionHandler {
 
     /**
      * Get IOSelector currently owning this handler. Handler owner is a thread running this handler.
-     * {@link com.hazelcast.nio.tcp.iobalancer.IOBalancer IOBalancer} can decide to migrate
+     * {@link com.hazelcast.nio.tcp.nonblocking.iobalancer.IOBalancer IOBalancer} can decide to migrate
      * a handler to another owner.
      *
      * @return current owner

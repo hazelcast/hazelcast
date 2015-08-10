@@ -25,7 +25,7 @@ import com.hazelcast.nio.tcp.TcpIpConnectionThreadingModel;
 import com.hazelcast.nio.tcp.ReadHandler;
 import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.nio.tcp.WriteHandler;
-import com.hazelcast.nio.tcp.iobalancer.IOBalancer;
+import com.hazelcast.nio.tcp.nonblocking.iobalancer.IOBalancer;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.concurrent.atomic.AtomicInteger;

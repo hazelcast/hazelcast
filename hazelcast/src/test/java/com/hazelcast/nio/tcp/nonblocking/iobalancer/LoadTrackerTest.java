@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.nio.tcp.iobalancer;
+package com.hazelcast.nio.tcp.nonblocking.iobalancer;
 
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.tcp.nonblocking.AbstractIOSelector;
@@ -26,7 +26,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 

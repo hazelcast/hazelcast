@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.nio.tcp.iobalancer;
+package com.hazelcast.nio.tcp.nonblocking.iobalancer;
 
 import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.internal.metrics.Probe;
@@ -48,7 +48,7 @@ import static com.hazelcast.util.counters.SwCounter.newSwCounter;
  *
  * It measures number of events serviced by each handler in a given interval and if imbalance is detected then it
  * schedules handler migration to fix the situation. The exact migration strategy can be customized via
- * {@link com.hazelcast.nio.tcp.iobalancer.MigrationStrategy}.
+ * {@link com.hazelcast.nio.tcp.nonblocking.iobalancer.MigrationStrategy}.
  *
  * Measuring interval can be customized via {@link com.hazelcast.instance.GroupProperties#IO_BALANCER_INTERVAL_SECONDS}
  *
