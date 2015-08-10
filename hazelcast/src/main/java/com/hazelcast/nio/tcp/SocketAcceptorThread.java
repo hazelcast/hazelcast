@@ -28,7 +28,6 @@ import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.Iterator;
-import java.util.Set;
 
 public class SocketAcceptorThread extends Thread {
     private static final int SHUTDOWN_TIMEOUT_MILLIS = 1000 * 10;
