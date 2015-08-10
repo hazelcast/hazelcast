@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.nio.tcp.iobalancer;
+package com.hazelcast.nio.tcp.nonblocking.iobalancer;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
