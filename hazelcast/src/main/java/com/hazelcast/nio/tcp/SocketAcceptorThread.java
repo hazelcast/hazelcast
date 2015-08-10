@@ -31,17 +31,25 @@ import java.util.Iterator;
 import java.util.Set;
 import java.util.logging.Level;
 
-public class SocketAcceptor implements Runnable {
+public class SocketAcceptorThread extends Thread {
+    private static final int SHUTDOWN_TIMEOUT_MILLIS = 1000 * 10;
+
     private final ServerSocketChannel serverSocketChannel;
     private final TcpIpConnectionManager connectionManager;
     private final ILogger logger;
 
-    public SocketAcceptor(ServerSocketChannel serverSocketChannel, TcpIpConnectionManager connectionManager) {
+    public SocketAcceptorThread(
+            ThreadGroup threadGroup,
+            String name,
+            ServerSocketChannel serverSocketChannel,
+            TcpIpConnectionManager connectionManager) {
+        super(threadGroup, name);
         this.serverSocketChannel = serverSocketChannel;
         this.connectionManager = connectionManager;
         this.logger = connectionManager.ioService.getLogger(this.getClass().getName());
     }
 
+    @Override
     public void run() {
         Selector selector = null;
         try {
@@ -51,32 +59,36 @@ public class SocketAcceptor implements Runnable {
             selector = Selector.open();
             serverSocketChannel.configureBlocking(false);
             serverSocketChannel.register(selector, SelectionKey.OP_ACCEPT);
-            while (connectionManager.isLive()) {
-                // block until new connection or interruption.
-                final int keyCount = selector.select();
-                if (Thread.currentThread().isInterrupted()) {
-                    break;
-                }
-                if (keyCount == 0) {
-                    continue;
-                }
-                final Set<SelectionKey> setSelectedKeys = selector.selectedKeys();
-                final Iterator<SelectionKey> it = setSelectedKeys.iterator();
-                while (it.hasNext()) {
-                    final SelectionKey sk = it.next();
-                    it.remove();
-                    // of course it is acceptable!
-                    if (sk.isValid() && sk.isAcceptable()) {
-                        acceptSocket();
-                    }
-                }
-            }
+            acceptLoop(selector);
         } catch (OutOfMemoryError e) {
             OutOfMemoryErrorDispatcher.onOutOfMemory(e);
         } catch (IOException e) {
             log(Level.SEVERE, e.getClass().getName() + ": " + e.getMessage(), e);
         } finally {
             closeSelector(selector);
+        }
+    }
+
+    private void acceptLoop(Selector selector) throws IOException {
+        while (connectionManager.isLive()) {
+            // block until new connection or interruption.
+            final int keyCount = selector.select();
+            if (isInterrupted()) {
+                break;
+            }
+            if (keyCount == 0) {
+                continue;
+            }
+            final Set<SelectionKey> setSelectedKeys = selector.selectedKeys();
+            final Iterator<SelectionKey> it = setSelectedKeys.iterator();
+            while (it.hasNext()) {
+                final SelectionKey sk = it.next();
+                it.remove();
+                // of course it is acceptable!
+                if (sk.isValid() && sk.isAcceptable()) {
+                    acceptSocket();
+                }
+            }
         }
     }
 
@@ -88,7 +100,7 @@ public class SocketAcceptor implements Runnable {
                 }
                 selector.close();
             } catch (final Exception e) {
-                Logger.getLogger(SocketAcceptor.class).finest("Exception while closing selector", e);
+                Logger.getLogger(SocketAcceptorThread.class).finest("Exception while closing selector", e);
             }
         }
     }
@@ -116,7 +128,7 @@ public class SocketAcceptor implements Runnable {
                 try {
                     serverSocketChannel.close();
                 } catch (Exception ex) {
-                    Logger.getLogger(SocketAcceptor.class).finest("Closing server socket failed", ex);
+                    Logger.getLogger(SocketAcceptorThread.class).finest("Closing server socket failed", ex);
                 }
                 connectionManager.ioService.onFatalError(e);
             }
@@ -128,6 +140,7 @@ public class SocketAcceptor implements Runnable {
                 configureAndAssignSocket(socketChannel);
             } else {
                 connectionManager.ioService.executeAsync(new Runnable() {
+                    @Override
                     public void run() {
                         configureAndAssignSocket(socketChannel);
                     }
@@ -156,4 +169,13 @@ public class SocketAcceptor implements Runnable {
         logger.log(level, message, e);
     }
 
+    public void shutdown() {
+        log(Level.FINEST, "Shutting down SocketAcceptor thread.");
+        interrupt();
+        try {
+            join(SHUTDOWN_TIMEOUT_MILLIS);
+        } catch (InterruptedException e) {
+            logger.finest(e);
+        }
+    }
 }
