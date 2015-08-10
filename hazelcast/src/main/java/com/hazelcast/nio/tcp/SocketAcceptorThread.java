@@ -59,7 +59,7 @@ public class SocketAcceptorThread extends Thread {
             selector = Selector.open();
             serverSocketChannel.configureBlocking(false);
             serverSocketChannel.register(selector, SelectionKey.OP_ACCEPT);
-            mainLoop(selector);
+            acceptLoop(selector);
         } catch (OutOfMemoryError e) {
             OutOfMemoryErrorDispatcher.onOutOfMemory(e);
         } catch (IOException e) {
@@ -69,7 +69,7 @@ public class SocketAcceptorThread extends Thread {
         }
     }
 
-    private void mainLoop(Selector selector) throws IOException {
+    private void acceptLoop(Selector selector) throws IOException {
         while (connectionManager.isLive()) {
             // block until new connection or interruption.
             final int keyCount = selector.select();
@@ -140,6 +140,7 @@ public class SocketAcceptorThread extends Thread {
                 configureAndAssignSocket(socketChannel);
             } else {
                 connectionManager.ioService.executeAsync(new Runnable() {
+                    @Override
                     public void run() {
                         configureAndAssignSocket(socketChannel);
                     }
