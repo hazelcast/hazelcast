@@ -120,5 +120,140 @@ public final class CodeGenerationUtils {
         return getterString;
     }
 
+    public static String convertTypeToDocumentType(String javaType) {
+        String result;
+
+        String type = javaType.trim();
+
+        if (type.equals("int")) {
+            return "int32";
+        } else if (type.equalsIgnoreCase("integer")) {
+            return "int32";
+        }else if (type.equalsIgnoreCase("short")) {
+            return "int16";
+        } else if (type.equalsIgnoreCase("boolean")) {
+            return "boolean";
+        } else if (type.equalsIgnoreCase("byte")) {
+            return "uint8";
+        } else if (type.equalsIgnoreCase("long")) {
+            return "int64";
+        } else if (type.equals("char")) {
+            return "int8";
+        } else if (type.equals(DATA_FULL_NAME)) {
+            result = "byte-array";
+        } else if (type.equals("java.lang.String")) {
+            result = "string";
+        } else if (type.equals("boolean")) {
+            result = "boolean";
+        } else if (type.equals("java.util.List<" + DATA_FULL_NAME + ">")) {
+            result = "array of byte-array";
+        } else if (type.equals("java.util.Set<" + DATA_FULL_NAME + ">")) {
+            result = "array of byte-array";
+        } else if (type.equals("java.util.Set<com.hazelcast.core.Member>")) {
+            result = "array of Member";
+        } else if (type.equals("java.util.Set<com.hazelcast.client.impl.client.DistributedObjectInfo>")) {
+            result = "array of Distributed Object Info";
+        } else if (type.equals("java.util.Map<com.hazelcast.nio.Address,java.util.Set<java.lang.Integer>>")) {
+            result = "array of Address-Partition Id pair";
+        } else if (type.equals("java.util.Collection<" + DATA_FULL_NAME + ">")) {
+            result = "array of byte-array";
+        } else if (type.equals("java.util.Map<" + DATA_FULL_NAME + "," + DATA_FULL_NAME + ">")) {
+            result = "array of key-value byte array pair";
+        } else if (type.equals("java.util.Set<java.util.Map.Entry<"+ DATA_FULL_NAME + "," + DATA_FULL_NAME + ">>")) {
+            result = "array of key-value byte array pair";
+        } else if (type.equals("com.hazelcast.map.impl.SimpleEntryView<" + DATA_FULL_NAME +"," + DATA_FULL_NAME +">")) {
+            result = "array of Entry View";
+        } else if (type.equals("com.hazelcast.nio.Address")) {
+            result = "Address";
+        } else if (type.equals("com.hazelcast.core.Member")) {
+            result = "Member";
+        } else if (type.equals("javax.transaction.xa.Xid")) {
+            result = "Transaction Id";
+        } else if (type.equals("com.hazelcast.cluster.client.MemberAttributeChange")) {
+            result = "Member Attribute Change";
+        } else if (type.equals("com.hazelcast.map.impl.querycache.event.QueryCacheEventData")) {
+            result = "Query Cache Event Data";
+        } else if (type.equals("java.util.List<com.hazelcast.mapreduce.JobPartitionState>")) {
+            result = "array of Job Partition State";
+        } else if (type.equals("java.util.Set<com.hazelcast.cache.impl.CacheEventData>")) {
+            result = "array of Cache Event Data";
+        } else if (type.equals("java.util.List<com.hazelcast.map.impl.querycache.event.QueryCacheEventData>")) {
+            result = "array of Query Cache Event Data";
+        } else if (type.equals("java.util.List<java.lang.String>")) {
+            result = "array of string";
+        } else {
+            result = "Unknown Data Type " + type;
+        }
+        return result;
+    }
+
+    public static String getDescription(String parameterName, String commentString) {
+        String result  = "";
+        if (null != parameterName && null != commentString) {
+            int start = commentString.indexOf("@param");
+            if (start >= 0) {
+                String paramString = commentString.substring(start);
+                String[] paramStrings = paramString.split("@param");
+                for (String parameterString : paramStrings) {
+                    /**
+                     * Example such string is
+                     * key      key of the entry
+                     */
+
+                    String trimmedParameterString = parameterString.trim();
+                    if (trimmedParameterString.length() > parameterName.length() && trimmedParameterString.startsWith(parameterName)) {
+                        result = trimmedParameterString.substring(parameterName.length());
+                        int endIndex = result.indexOf('@');
+                        if (endIndex >= 0) {
+                            result = result.substring(0, endIndex);
+                        }
+
+                        // replace any new line with <br>
+                        result = result.replace("\n", "<br>");
+
+                        result = result.trim();
+
+                        break; // found the parameter, hence stop here
+                    }
+                }
+            }
+        }
+        return result;
+    }
+
+    public static String getReturnDescription(String commentString) {
+        String result  = "";
+        final String RETURN_TAG = "@return";
+        int returnTagStartIndex = commentString.indexOf(RETURN_TAG);
+        if (returnTagStartIndex >= 0) {
+            int descriptionStartIndex = returnTagStartIndex + RETURN_TAG.length();
+            int nextTagIndex = commentString.indexOf("@", descriptionStartIndex);
+            if (nextTagIndex >= 0) {
+                result = commentString.substring(descriptionStartIndex, nextTagIndex);
+            } else {
+                result = commentString.substring(descriptionStartIndex);
+            }
+            result.trim();
+
+            // replace any new line with <br>
+            result = result.replace("\n", "<br>");
+        }
+        return result;
+    }
+
+    public static String getDistributedObjectName(String templateClassName) {
+        String result = templateClassName;
+
+        int startIndex = templateClassName.lastIndexOf('.');
+        if (startIndex >= 0) {
+            int endIndex = templateClassName.indexOf("CodecTemplate", startIndex);
+            if (endIndex > startIndex) {
+                result = templateClassName.substring(startIndex + 1, endIndex);
+            }
+        }
+
+        return result;
+    }
+
 
 }

@@ -207,7 +207,10 @@ public class CodecCodeGenerator
             for (Map.Entry<String, ExecutableElement> entrySub : entry.getValue().entrySet()) {
                 ExecutableElement methodElement = entrySub.getValue();
                 CodecModel codecModel = createCodecModel(methodElement, lang);
-                codecModel.comment = elementUtils.getDocComment(methodElement);
+                String docComment = elementUtils.getDocComment(methodElement);
+                if (null != docComment) {
+                    codecModel.setComment(docComment);
+                }
                 map.put(entrySub.getKey(), codecModel);
             }
         }
