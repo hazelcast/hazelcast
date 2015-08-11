@@ -200,7 +200,14 @@ public class CacheService extends AbstractCacheService {
                  CacheBatchInvalidationMessage batchInvalidationMessage =
                          new CacheBatchInvalidationMessage(cacheName, invalidationMessageQueue.size());
                  CacheSingleInvalidationMessage invalidationMessage;
-                 while ((invalidationMessage = invalidationMessageQueue.poll()) != null) {
+                 final int size = invalidationMessageQueue.size();
+                 // At most, poll from the invalidation queue as the current size of the queue before start to polling.
+                 // So skip new invalidation queue items offered while the polling in progress in this round.
+                 for (int i = 0; i < size; i++) {
+                     invalidationMessage = invalidationMessageQueue.poll();
+                     if (invalidationMessage == null) {
+                         break;
+                     }
                      batchInvalidationMessage.addInvalidationMessage(invalidationMessage);
                  }
                  EventService eventService = nodeEngine.getEventService();
