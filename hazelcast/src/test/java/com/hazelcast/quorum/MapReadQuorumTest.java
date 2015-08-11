@@ -53,7 +53,7 @@ public class MapReadQuorumTest {
     public static void initialize() throws InterruptedException {
         QuorumConfig quorumConfig = new QuorumConfig();
         quorumConfig.setName(QUORUM_ID);
-        quorumConfig.setType(QuorumType.READ_WRITE);
+        quorumConfig.setType(QuorumType.READ);
         quorumConfig.setEnabled(true);
         quorumConfig.setSize(3);
         MapConfig mapConfig = new MapConfig(MAP_NAME_PREFIX + "*");
