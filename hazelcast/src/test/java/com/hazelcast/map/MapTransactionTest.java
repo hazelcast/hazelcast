@@ -1257,6 +1257,29 @@ public class MapTransactionTest extends HazelcastTestSupport {
         });
         node.shutdown();
     }
+    @Test
+    public void testValues_shouldNotDeduplicateEntriesWhenGettingByPredicate() throws TransactionException {
+        final int nodeCount = 1;
+        final String mapName = randomMapName();
+        final Config config = new Config();
+        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(nodeCount);
+        final HazelcastInstance node = factory.newHazelcastInstance(config);
+        final IMap map = node.getMap(mapName);
+
+        final Employee emp = new Employee("name", 77, true, 10D);
+        map.put(1, emp);
+
+        node.executeTransaction(options, new TransactionalTask<Boolean>() {
+            public Boolean execute(TransactionalTaskContext context) throws TransactionException {
+                final TransactionalMap<Integer, Employee> txMap = context.getMap(mapName);
+                txMap.put(2, emp);
+                Collection<Employee> coll = txMap.values(new SqlPredicate("age = 77"));
+                assertEquals(2, coll.size());
+                return true;
+            }
+        });
+        node.shutdown();
+    }
 
     @Test
     public void testValues_resultSetContainsUpdatedEntry() throws TransactionException {

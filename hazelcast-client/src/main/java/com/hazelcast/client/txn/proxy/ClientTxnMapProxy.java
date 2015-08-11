@@ -25,8 +25,10 @@ import com.hazelcast.map.impl.client.TxnMapRequest;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
@@ -161,7 +163,7 @@ public class ClientTxnMapProxy<K, V> extends ClientTxnProxy implements Transacti
         TxnMapRequest request = new TxnMapRequest(getName(), TxnMapRequest.TxnMapRequestType.VALUES);
         MapValueCollection result = invoke(request);
         Collection<Data> dataValues = result.getValues();
-        HashSet<V> values = new HashSet<V>(dataValues.size());
+        List<V> values = new ArrayList<V>(dataValues.size());
         for (Data value : dataValues) {
             values.add((V) toObject(value));
         }
@@ -177,7 +179,7 @@ public class ClientTxnMapProxy<K, V> extends ClientTxnProxy implements Transacti
         TxnMapRequest request = new TxnMapRequest(getName(), TxnMapRequest.TxnMapRequestType.VALUES_BY_PREDICATE, predicate);
         MapValueCollection result = invoke(request);
         Collection<Data> dataValues = result.getValues();
-        HashSet<V> values = new HashSet<V>(dataValues.size());
+        List<V> values = new ArrayList<V>(dataValues.size());
         for (Data value : dataValues) {
             values.add((V) toObject(value));
         }
