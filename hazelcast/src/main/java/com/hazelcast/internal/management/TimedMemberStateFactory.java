@@ -20,6 +20,7 @@ import com.hazelcast.cache.CacheStatistics;
 import com.hazelcast.cache.impl.CacheDistributedObject;
 import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.ICacheService;
+import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.GroupConfig;
@@ -49,7 +50,6 @@ import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.nio.Address;
 import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.partition.InternalPartitionService;
-import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.spi.StatisticsAwareService;
 import com.hazelcast.topic.impl.TopicService;
 
@@ -78,7 +78,6 @@ public class TimedMemberStateFactory {
 
     public TimedMemberStateFactory(HazelcastInstanceImpl instance) {
         this.instance = instance;
-
         Node node = instance.node;
         maxVisibleInstanceCount = node.groupProperties.MC_MAX_INSTANCE_COUNT.getInteger();
         cacheServiceEnabled = node.nodeEngine.getService(CacheService.SERVICE_NAME) != null;
@@ -97,9 +96,9 @@ public class TimedMemberStateFactory {
     public TimedMemberState createTimedMemberState() {
         MemberStateImpl memberState = new MemberStateImpl();
         Collection<StatisticsAwareService> services = instance.node.nodeEngine.getServices(StatisticsAwareService.class);
-        createMemberState(memberState, services);
 
         TimedMemberState timedMemberState = new TimedMemberState();
+        createMemberState(timedMemberState, memberState, services);
         timedMemberState.setMaster(instance.node.isMaster());
         timedMemberState.setMemberList(new ArrayList<String>());
         if (timedMemberState.getMaster()) {
@@ -113,7 +112,6 @@ public class TimedMemberStateFactory {
         timedMemberState.setMemberState(memberState);
         GroupConfig groupConfig = instance.getConfig().getGroupConfig();
         timedMemberState.setClusterName(groupConfig.getName());
-        timedMemberState.setInstanceNames(getLongInstanceNames(services));
 
         return timedMemberState;
     }
@@ -126,7 +124,8 @@ public class TimedMemberStateFactory {
         return new LocalOperationStatsImpl(instance.node);
     }
 
-    private void createMemberState(MemberStateImpl memberState, Collection<StatisticsAwareService> services) {
+    private void createMemberState(TimedMemberState timedMemberState, MemberStateImpl memberState,
+                                   Collection<StatisticsAwareService> services) {
         Node node = instance.node;
 
         HashSet<ClientEndPointDTO> serializableClientEndPoints = new HashSet<ClientEndPointDTO>();
@@ -155,25 +154,27 @@ public class TimedMemberStateFactory {
         memberState.setLocalMemoryStats(getMemoryStats());
         memberState.setOperationStats(getOperationStats());
         TimedMemberStateFactoryHelper.createRuntimeProps(memberState);
-        createMemState(memberState, services);
+        createMemState(timedMemberState, memberState, services);
     }
 
-    private void createMemState(MemberStateImpl memberState, Collection<StatisticsAwareService> services) {
+    private void createMemState(TimedMemberState timedMemberState, MemberStateImpl memberState,
+                                Collection<StatisticsAwareService> services) {
         int count = 0;
         Config config = instance.getConfig();
-
+        Set<String> longInstanceNames = new HashSet<String>(maxVisibleInstanceCount);
         for (StatisticsAwareService service : services) {
             if (count < maxVisibleInstanceCount) {
                 if (service instanceof MapService) {
-                    count = handleMap(memberState, count, config, ((MapService) service).getStats());
+                    count = handleMap(memberState, count, config, ((MapService) service).getStats(), longInstanceNames);
                 } else if (service instanceof MultiMapService) {
-                    count = handleMultimap(memberState, count, config, ((MultiMapService) service).getStats());
+                    count = handleMultimap(memberState, count, config, ((MultiMapService) service).getStats(), longInstanceNames);
                 } else if (service instanceof QueueService) {
-                    count = handleQueue(memberState, count, config, ((QueueService) service).getStats());
+                    count = handleQueue(memberState, count, config, ((QueueService) service).getStats(), longInstanceNames);
                 } else if (service instanceof TopicService) {
-                    count = handleTopic(memberState, count, config, ((TopicService) service).getStats());
+                    count = handleTopic(memberState, count, config, ((TopicService) service).getStats(), longInstanceNames);
                 } else if (service instanceof DistributedExecutorService) {
-                    count = handleExecutorService(memberState, count, config, ((DistributedExecutorService) service).getStats());
+                    count = handleExecutorService(memberState, count, config,
+                            ((DistributedExecutorService) service).getStats(), longInstanceNames);
                 }
             }
         }
@@ -181,16 +182,18 @@ public class TimedMemberStateFactory {
         if (cacheServiceEnabled) {
             ICacheService cacheService = getCacheService();
             for (CacheConfig cacheConfig : cacheService.getCacheConfigs()) {
-                if (cacheConfig.isStatisticsEnabled()) {
+                if (cacheConfig.isStatisticsEnabled() && count < maxVisibleInstanceCount) {
                     CacheStatistics statistics = cacheService.getStatistics(cacheConfig.getNameWithPrefix());
-                    count = handleCache(memberState, count, cacheConfig, statistics);
+                    count = handleCache(memberState, count, cacheConfig, statistics, longInstanceNames);
                 }
             }
         }
+        timedMemberState.setInstanceNames(longInstanceNames);
     }
 
     private int handleExecutorService(MemberStateImpl memberState, int count, Config config,
-                                      Map<String, LocalExecutorStats> executorServices) {
+                                      Map<String, LocalExecutorStats> executorServices,
+                                      Set<String> longInstanceNames) {
 
         for (Map.Entry<String, LocalExecutorStats> entry : executorServices.entrySet()) {
             String name = entry.getKey();
@@ -199,13 +202,15 @@ public class TimedMemberStateFactory {
             } else if (config.findExecutorConfig(name).isStatisticsEnabled()) {
                 LocalExecutorStats stats = entry.getValue();
                 memberState.putLocalExecutorStats(name, stats);
+                longInstanceNames.add("e:" + name);
                 ++count;
             }
         }
         return count;
     }
 
-    private int handleMultimap(MemberStateImpl memberState, int count, Config config, Map<String, LocalMultiMapStats> multiMaps) {
+    private int handleMultimap(MemberStateImpl memberState, int count, Config config, Map<String, LocalMultiMapStats> multiMaps,
+                               Set<String> longInstanceNames) {
         for (Map.Entry<String, LocalMultiMapStats> entry : multiMaps.entrySet()) {
             String name = entry.getKey();
             if (count >= maxVisibleInstanceCount) {
@@ -213,13 +218,15 @@ public class TimedMemberStateFactory {
             } else if (config.findMultiMapConfig(name).isStatisticsEnabled()) {
                 LocalMultiMapStats stats = entry.getValue();
                 memberState.putLocalMultiMapStats(name, stats);
+                longInstanceNames.add("m:" + name);
                 ++count;
             }
         }
         return count;
     }
 
-    private int handleTopic(MemberStateImpl memberState, int count, Config config, Map<String, LocalTopicStats> topics) {
+    private int handleTopic(MemberStateImpl memberState, int count, Config config, Map<String, LocalTopicStats> topics,
+                            Set<String> longInstanceNames) {
         for (Map.Entry<String, LocalTopicStats> entry : topics.entrySet()) {
             String name = entry.getKey();
             if (count >= maxVisibleInstanceCount) {
@@ -227,13 +234,15 @@ public class TimedMemberStateFactory {
             } else if (config.findTopicConfig(name).isStatisticsEnabled()) {
                 LocalTopicStats stats = entry.getValue();
                 memberState.putLocalTopicStats(name, stats);
+                longInstanceNames.add("t:" + name);
                 ++count;
             }
         }
         return count;
     }
 
-    private int handleQueue(MemberStateImpl memberState, int count, Config config, Map<String, LocalQueueStats> queues) {
+    private int handleQueue(MemberStateImpl memberState, int count, Config config, Map<String, LocalQueueStats> queues,
+                            Set<String> longInstanceNames) {
         for (Map.Entry<String, LocalQueueStats> entry : queues.entrySet()) {
             String name = entry.getKey();
             if (count >= maxVisibleInstanceCount) {
@@ -241,13 +250,15 @@ public class TimedMemberStateFactory {
             } else if (config.findQueueConfig(name).isStatisticsEnabled()) {
                 LocalQueueStats stats = entry.getValue();
                 memberState.putLocalQueueStats(name, stats);
+                longInstanceNames.add("q:" + name);
                 ++count;
             }
         }
         return count;
     }
 
-    private int handleMap(MemberStateImpl memberState, int count, Config config, Map<String, LocalMapStats> maps) {
+    private int handleMap(MemberStateImpl memberState, int count, Config config, Map<String, LocalMapStats> maps,
+                          Set<String> longInstanceNames) {
         for (Map.Entry<String, LocalMapStats> entry : maps.entrySet()) {
             String name = entry.getKey();
             if (count >= maxVisibleInstanceCount) {
@@ -255,114 +266,18 @@ public class TimedMemberStateFactory {
             } else if (config.findMapConfig(name).isStatisticsEnabled()) {
                 LocalMapStats stats = entry.getValue();
                 memberState.putLocalMapStats(name, stats);
+                longInstanceNames.add("c:" + name);
                 ++count;
             }
         }
         return count;
     }
 
-    private int handleCache(MemberStateImpl memberState, int count, CacheConfig config, CacheStatistics cacheStatistics) {
+    private int handleCache(MemberStateImpl memberState, int count, CacheConfig config, CacheStatistics cacheStatistics,
+                            Set<String> longInstanceNames) {
         memberState.putLocalCacheStats(config.getNameWithPrefix(), new LocalCacheStatsImpl(cacheStatistics));
-        return count + 1;
-    }
-
-    private Set<String> getLongInstanceNames(Collection<StatisticsAwareService> services) {
-        Set<String> setLongInstanceNames = new HashSet<String>(maxVisibleInstanceCount);
-        collectInstanceNames(setLongInstanceNames, services);
-        return setLongInstanceNames;
-    }
-
-    private void collectInstanceNames(Set<String> setLongInstanceNames, Collection<StatisticsAwareService> services) {
-        int count = 0;
-        Config config = instance.getConfig();
-        for (StatisticsAwareService service : services) {
-            if (count < maxVisibleInstanceCount) {
-                if (service instanceof MapService) {
-                    count = collectMapName(setLongInstanceNames, count, config, service.getStats().keySet());
-                } else if (service instanceof MultiMapService) {
-                    count = collectMultiMapName(setLongInstanceNames, count, config, service.getStats().keySet());
-                } else if (service instanceof QueueService) {
-                    count = collectQueueName(setLongInstanceNames, count, config, service.getStats().keySet());
-                } else if (service instanceof TopicService) {
-                    count = collectTopicName(setLongInstanceNames, count, config, service.getStats().keySet());
-                } else if (service instanceof DistributedExecutorService) {
-                    count = collectExecutorServiceName(setLongInstanceNames, count, config, service.getStats().keySet());
-                } else {
-                    logger.finest("Statistics service ignored for monitoring: " + service.getClass().getName());
-                }
-            } else {
-                break;
-            }
-        }
-
-        if (cacheServiceEnabled) {
-            for (CacheConfig cacheConfig : getCacheService().getCacheConfigs()) {
-                if (cacheConfig.isStatisticsEnabled()) {
-                    count = collectCacheName(setLongInstanceNames, count, cacheConfig);
-                }
-            }
-        }
-
-    }
-
-    private int collectExecutorServiceName(Set<String> setLongInstanceNames, int count, Config config,
-                                           Set<String> executorServiceNames) {
-        for (String name : executorServiceNames) {
-            if (config.findExecutorConfig(name).isStatisticsEnabled() && count < maxVisibleInstanceCount) {
-                setLongInstanceNames.add("e:" + name);
-                ++count;
-            }
-        }
-        return count;
-
-    }
-
-    private int collectTopicName(Set<String> setLongInstanceNames, int count, Config config, Set<String> topicNames) {
-        for (String name : topicNames) {
-            if (config.findTopicConfig(name).isStatisticsEnabled() && count < maxVisibleInstanceCount) {
-                setLongInstanceNames.add("t:" + name);
-                ++count;
-            }
-        }
-        return count;
-    }
-
-    private int collectQueueName(Set<String> setLongInstanceNames, int count, Config config, Set<String> queueNames) {
-        for (String name : queueNames) {
-            if (config.findQueueConfig(name).isStatisticsEnabled() && count < maxVisibleInstanceCount) {
-                setLongInstanceNames.add("q:" + name);
-                ++count;
-            }
-        }
-        return count;
-    }
-
-    private int collectMapName(Set<String> setLongInstanceNames, int count, Config config, Set<String> mapNames) {
-        for (String name : mapNames) {
-            if (config.findMapConfig(name).isStatisticsEnabled() && count < maxVisibleInstanceCount) {
-                setLongInstanceNames.add("c:" + name);
-                ++count;
-            }
-        }
-        return count;
-    }
-
-    private int collectCacheName(Set<String> setLongInstanceNames, int count, CacheConfig config) {
-        if (config.isStatisticsEnabled()) {
-            setLongInstanceNames.add("j:" + config.getNameWithPrefix());
-            return count + 1;
-        }
-        return count;
-    }
-
-    private int collectMultiMapName(Set<String> setLongInstanceNames, int count, Config config, Set<String> multiMapNames) {
-        for (String name : multiMapNames) {
-            if (config.findMultiMapConfig(name).isStatisticsEnabled() && count < maxVisibleInstanceCount) {
-                setLongInstanceNames.add("m:" + name);
-                ++count;
-            }
-        }
-        return count;
+        longInstanceNames.add("j:" + config.getNameWithPrefix());
+        return ++count;
     }
 
     private ICacheService getCacheService() {
