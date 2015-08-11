@@ -47,16 +47,24 @@ import static com.hazelcast.util.Preconditions.checkTrue;
 public class ClientRingbufferProxy<E> extends ClientProxy implements Ringbuffer<E> {
 
     private volatile long capacity = -1;
+    private volatile int partitionId = -1;
 
     public ClientRingbufferProxy(String serviceName, String objectName) {
         super(serviceName, objectName);
+    }
+
+    private int getPartitionId() {
+        if (partitionId == -1) {
+            partitionId = getContext().getPartitionService().getPartitionId(getName());
+        }
+        return partitionId;
     }
 
     @Override
     public long capacity() {
         if (capacity == -1) {
             CapacityRequest request = new CapacityRequest(getName());
-            capacity = (Long) invoke(request);
+            capacity = (Long) invokeOnPartition(request, getPartitionId());
         }
 
         return capacity;
@@ -65,28 +73,28 @@ public class ClientRingbufferProxy<E> extends ClientProxy implements Ringbuffer<
     @Override
     public long size() {
         SizeRequest request = new SizeRequest(getName());
-        Long result = invoke(request);
+        Long result = invokeOnPartition(request, getPartitionId());
         return result;
     }
 
     @Override
     public long tailSequence() {
         TailSequenceRequest request = new TailSequenceRequest(getName());
-        Long result = invoke(request);
+        Long result = invokeOnPartition(request, getPartitionId());
         return result;
     }
 
     @Override
     public long headSequence() {
         HeadSequenceRequest request = new HeadSequenceRequest(getName());
-        Long result = invoke(request);
+        Long result = invokeOnPartition(request, getPartitionId());
         return result;
     }
 
     @Override
     public long remainingCapacity() {
         RemainingCapacityRequest request = new RemainingCapacityRequest(getName());
-        Long result = invoke(request);
+        Long result = invokeOnPartition(request, getPartitionId());
         return result;
     }
 
@@ -95,7 +103,7 @@ public class ClientRingbufferProxy<E> extends ClientProxy implements Ringbuffer<
         checkNotNull(item, "item can't be null");
 
         AddRequest request = new AddRequest(getName(), toData(item));
-        Long result = invoke(request);
+        Long result = invokeOnPartition(request, getPartitionId());
         return result;
     }
 
@@ -105,7 +113,7 @@ public class ClientRingbufferProxy<E> extends ClientProxy implements Ringbuffer<
         checkNotNull(overflowPolicy, "overflowPolicy can't be null");
 
         AddAsyncRequest request = new AddAsyncRequest(getName(), toData(item), overflowPolicy);
-        ClientInvocationFuture f  = new ClientInvocation(getClient(), request).invoke();
+        ClientInvocationFuture f  = new ClientInvocation(getClient(), request, getPartitionId()).invoke();
         f.setResponseDeserialized(true);
         return f;
     }
@@ -115,7 +123,7 @@ public class ClientRingbufferProxy<E> extends ClientProxy implements Ringbuffer<
         checkSequence(sequence);
 
         ReadOneRequest request = new ReadOneRequest(getName(), sequence);
-        E result = invoke(request);
+        E result = invokeOnPartition(request, getPartitionId());
         return result;
     }
 
@@ -127,7 +135,7 @@ public class ClientRingbufferProxy<E> extends ClientProxy implements Ringbuffer<
         checkTrue(collection.size() <= MAX_BATCH_SIZE, "collection can't be larger than " + MAX_BATCH_SIZE);
 
         AddAllRequest request = new AddAllRequest(getName(), toDataArray(collection), overflowPolicy);
-        ClientInvocationFuture f = new ClientInvocation(getClient(), request).invoke();
+        ClientInvocationFuture f = new ClientInvocation(getClient(), request, getPartitionId()).invoke();
         f.setResponseDeserialized(true);
         return f;
     }
@@ -143,7 +151,7 @@ public class ClientRingbufferProxy<E> extends ClientProxy implements Ringbuffer<
         checkTrue(maxCount <= MAX_BATCH_SIZE, "maxCount can't be larger than " + MAX_BATCH_SIZE);
 
         ReadManyRequest request = new ReadManyRequest(getName(), startSequence, minCount, maxCount, toData(filter));
-        ClientInvocationFuture f = new ClientInvocation(getClient(), request).invoke();
+        ClientInvocationFuture f = new ClientInvocation(getClient(), request, getPartitionId()).invoke();
         f.setResponseDeserialized(true);
         return f;
     }
