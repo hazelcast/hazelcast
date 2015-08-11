@@ -172,14 +172,19 @@ public final class DefaultSerializers {
             out.writeUTF(obj.getClass().getName());
             final ObjectOutputStream objectOutputStream;
             final OutputStream outputStream = (OutputStream) out;
+            GZIPOutputStream gzip = null;
             if (gzipEnabled) {
-                objectOutputStream = new ObjectOutputStream(new GZIPOutputStream(outputStream));
+                gzip = new GZIPOutputStream(outputStream);
+                objectOutputStream = new ObjectOutputStream(gzip);
             } else {
                 objectOutputStream = new ObjectOutputStream(outputStream);
             }
             obj.writeExternal(objectOutputStream);
             // Force flush if not yet written due to internal behavior if pos < 1024
             objectOutputStream.flush();
+            if (gzipEnabled) {
+                gzip.finish();
+            }
         }
     }
 
@@ -226,8 +231,10 @@ public final class DefaultSerializers {
         public void write(final ObjectDataOutput out, final Object obj) throws IOException {
             final ObjectOutputStream objectOutputStream;
             final OutputStream outputStream = (OutputStream) out;
+            GZIPOutputStream gzip = null;
             if (gzipEnabled) {
-                objectOutputStream = new ObjectOutputStream(new GZIPOutputStream(outputStream));
+                gzip = new GZIPOutputStream(outputStream);
+                objectOutputStream = new ObjectOutputStream(gzip);
             } else {
                 objectOutputStream = new ObjectOutputStream(outputStream);
             }
@@ -238,6 +245,9 @@ public final class DefaultSerializers {
             }
             // Force flush if not yet written due to internal behavior if pos < 1024
             objectOutputStream.flush();
+            if (gzipEnabled) {
+                gzip.finish();
+            }
         }
     }
 
