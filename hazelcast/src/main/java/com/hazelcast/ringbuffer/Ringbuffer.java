@@ -233,7 +233,7 @@ public interface Ringbuffer<E> extends DistributedObject {
      * Reads a batch of items from the Ringbuffer. If the number of available items after the first read item is smaller than
      * the maxCount, these items are returned. So it could be the number of items read is smaller than the maxCount.
      *
-     * If there are no items available, this call
+     * If there are less items available than minCount, then this call blacks.
      *
      * Reading a batch of items is likely to perform better because less overhead is involved.
      *
@@ -245,7 +245,8 @@ public interface Ringbuffer<E> extends DistributedObject {
      * @param startSequence the startSequence of the first item to read.
      * @param minCount      the minimum number of items to read.
      * @param maxCount      the maximum number of items to read.
-     * @return a future containing the items read. Filter is allowed to be null, indicating there is no filter.
+     * @param filter        the filter. Filter is allowed to be null, indicating there is no filter.
+     * @return a future containing the items read.
      * @throws java.lang.IllegalArgumentException if startSequence is smaller than 0
      *                                            or if startSequence larger than {@link #tailSequence()}
      *                                            or if minCount smaller than 0
