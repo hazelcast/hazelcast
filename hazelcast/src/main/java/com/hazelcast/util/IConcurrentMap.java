@@ -32,7 +32,7 @@ import com.hazelcast.core.IFunction;
  * @param <K> the type of keys maintained by this map
  * @param <V> the type of mapped values
  */
-public interface ConcurrentMap<K, V> extends java.util.concurrent.ConcurrentMap<K, V> {
+public interface IConcurrentMap<K, V> extends java.util.concurrent.ConcurrentMap<K, V> {
     /**
      * {@inheritDoc}
      *
