@@ -19,7 +19,7 @@ package com.hazelcast.mapreduce.aggregation;
 import com.hazelcast.core.IMap;
 import com.hazelcast.mapreduce.KeyPredicate;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -33,7 +33,7 @@ import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 
-@RunWith(HazelcastSerialClassRunner.class)
+@RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
 public class MapBaseAggregationTest
         extends AbstractAggregationTest {
@@ -43,7 +43,7 @@ public class MapBaseAggregationTest
             throws Exception {
 
         String mapName = randomMapName();
-        IMap<String, Integer> map = HAZELCAST_INSTANCE.getMap(mapName);
+        IMap<String, Integer> map = instance.getMap(mapName);
 
         Integer[] values = buildPlainValues(new ValueProvider<Integer>() {
             @Override
@@ -67,7 +67,7 @@ public class MapBaseAggregationTest
             throws Exception {
 
         String mapName = randomMapName();
-        IMap<Integer, Integer> map = HAZELCAST_INSTANCE.getMap(mapName);
+        IMap<Integer, Integer> map = instance.getMap(mapName);
 
         Integer[] values = buildPlainValues(new ValueProvider<Integer>() {
             @Override
@@ -92,7 +92,7 @@ public class MapBaseAggregationTest
             throws Exception {
 
         String mapName = randomMapName();
-        IMap<Integer, Integer> map = HAZELCAST_INSTANCE.getMap(mapName);
+        IMap<Integer, Integer> map = instance.getMap(mapName);
 
         Integer[] values = buildPlainValues(new ValueProvider<Integer>() {
             @Override
@@ -118,7 +118,7 @@ public class MapBaseAggregationTest
             throws Exception {
 
         String mapName = randomMapName();
-        IMap<Integer, Integer> map = HAZELCAST_INSTANCE.getMap(mapName);
+        IMap<Integer, Integer> map = instance.getMap(mapName);
 
         Integer[] values = buildPlainValues(new ValueProvider<Integer>() {
             @Override
@@ -143,7 +143,7 @@ public class MapBaseAggregationTest
             throws Exception {
 
         String mapName = randomMapName();
-        IMap<Integer, Integer> map = HAZELCAST_INSTANCE.getMap(mapName);
+        IMap<Integer, Integer> map = instance.getMap(mapName);
 
         Integer[] values = buildPlainValues(new ValueProvider<Integer>() {
             @Override
@@ -172,7 +172,7 @@ public class MapBaseAggregationTest
         Set<String> expectation = new HashSet<String>(Arrays.asList(probes));
 
         String mapName = randomMapName();
-        IMap<String, String> map = HAZELCAST_INSTANCE.getMap(mapName);
+        IMap<String, String> map = instance.getMap(mapName);
 
         String[] values = buildPlainValues(new ValueProvider<String>() {
             @Override
