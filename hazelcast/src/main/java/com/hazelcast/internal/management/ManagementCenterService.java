@@ -52,6 +52,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
+import com.hazelcast.util.Clock;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -295,8 +296,10 @@ public class ManagementCenterService {
         public void run() {
             try {
                 while (isRunning()) {
+                    long startMs = Clock.currentTimeMillis();
                     sendState();
-                    sleep();
+                    long endMs = Clock.currentTimeMillis();
+                    sleepIfPossible(endMs - startMs);
                 }
             } catch (Throwable throwable) {
                 inspectOutputMemoryError(throwable);
@@ -307,8 +310,11 @@ public class ManagementCenterService {
             }
         }
 
-        private void sleep() throws InterruptedException {
-            Thread.sleep(updateIntervalMs);
+        private void sleepIfPossible(long elapsedMs) throws InterruptedException {
+            long sleepTimeMs = updateIntervalMs - elapsedMs;
+            if (sleepTimeMs > 0) {
+                Thread.sleep(sleepTimeMs);
+            }
         }
 
         private void sendState() throws InterruptedException, MalformedURLException {
