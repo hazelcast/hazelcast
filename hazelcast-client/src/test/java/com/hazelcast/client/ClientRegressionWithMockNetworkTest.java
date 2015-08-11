@@ -27,7 +27,6 @@ import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IExecutorService;
 import com.hazelcast.core.ILock;
@@ -72,13 +71,12 @@ import static com.hazelcast.core.LifecycleEvent.LifecycleState;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class ClientRegressionTest
+public class ClientRegressionWithMockNetworkTest
         extends HazelcastTestSupport {
 
     private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
@@ -127,32 +125,6 @@ public class ClientRegressionTest
 
         public void memberAttributeChanged(MemberAttributeEvent memberAttributeEvent) {
         }
-    }
-
-    @Test
-    public void testClientPortConnection() {
-        final Config config1 = new Config();
-        config1.getGroupConfig().setName("foo");
-        config1.getNetworkConfig().setPort(5701);
-        final HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(config1);
-        instance1.getMap("map").put("key", "value");
-
-        final Config config2 = new Config();
-        config2.getGroupConfig().setName("bar");
-        config2.getNetworkConfig().setPort(5702);
-        HazelcastInstance instance2 = Hazelcast.newHazelcastInstance(config2);
-
-        final ClientConfig clientConfig = new ClientConfig();
-        clientConfig.getGroupConfig().setName("bar");
-        final HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
-
-        final IMap<Object, Object> map = client.getMap("map");
-        assertNull(map.put("key", "value"));
-        assertEquals(1, map.size());
-
-        client.shutdown();
-        instance1.getLifecycleService().terminate();
-        instance2.getLifecycleService().terminate();
     }
 
     /**
