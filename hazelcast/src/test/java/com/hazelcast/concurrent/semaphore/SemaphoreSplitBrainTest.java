@@ -25,6 +25,9 @@ import org.junit.runner.RunWith;
 import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
 
+import java.io.IOException;
+import java.util.concurrent.CountDownLatch;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 

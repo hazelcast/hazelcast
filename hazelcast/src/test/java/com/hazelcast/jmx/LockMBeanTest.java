@@ -3,6 +3,7 @@ package com.hazelcast.jmx;
 import com.hazelcast.core.ILock;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.Clock;
 
@@ -18,7 +19,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category(QuickTest.class)
+@Category({QuickTest.class, ParallelTest.class})
 public class LockMBeanTest extends HazelcastTestSupport {
 
     private JmxTestDataHolder holder = new JmxTestDataHolder(createHazelcastInstanceFactory(1));

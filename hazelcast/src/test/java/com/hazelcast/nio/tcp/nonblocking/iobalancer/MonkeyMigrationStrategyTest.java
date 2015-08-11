@@ -20,6 +20,7 @@ import com.hazelcast.nio.tcp.nonblocking.IOSelector;
 import com.hazelcast.nio.tcp.nonblocking.MigratableHandler;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.ItemCounter;
 import org.junit.Before;
@@ -41,7 +42,7 @@ import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category(QuickTest.class)
+@Category({QuickTest.class, ParallelTest.class})
 public class MonkeyMigrationStrategyTest extends HazelcastTestSupport {
     private MigrationStrategy strategy;
 

@@ -24,6 +24,7 @@ import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 
 import org.junit.After;
@@ -37,7 +38,7 @@ import static com.hazelcast.test.HazelcastTestSupport.assertOpenEventually;
 
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category(QuickTest.class)
+@Category({QuickTest.class, ParallelTest.class})
 public class NodeShutdownEventsTest {
 
     @After
