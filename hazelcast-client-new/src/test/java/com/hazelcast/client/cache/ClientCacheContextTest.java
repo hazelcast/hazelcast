@@ -17,13 +17,10 @@
 package com.hazelcast.client.cache;
 
 import com.hazelcast.cache.CacheContextTest;
-import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.cache.impl.HazelcastClientCachingProvider;
-import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.config.Config;
-import com.hazelcast.config.JoinConfig;
-import com.hazelcast.core.Hazelcast;
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.client.test.TestHazelcastFactory;
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Test;
@@ -32,26 +29,17 @@ import org.junit.runner.RunWith;
 
 import javax.cache.spi.CachingProvider;
 
-@RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
+@RunWith(HazelcastParallelClassRunner.class)
+@Category({QuickTest.class, ParallelTest.class})
 public class ClientCacheContextTest extends CacheContextTest {
+    private TestHazelcastFactory factory = new TestHazelcastFactory();
 
     @Override
     protected CachingProvider initAndGetCachingProvider() {
-        Config config = new Config();
-        JoinConfig joinConfig = config.getNetworkConfig().getJoin();
-        joinConfig.getAwsConfig().setEnabled(false);
-        joinConfig.getMulticastConfig().setEnabled(false);
-        joinConfig.getTcpIpConfig().setEnabled(true).addMember("127.0.0.1");
+        hazelcastInstance1 = factory.newHazelcastInstance();
+        hazelcastInstance2 = factory.newHazelcastInstance();
 
-        hazelcastInstance1 = Hazelcast.newHazelcastInstance(config);
-        hazelcastInstance2 = Hazelcast.newHazelcastInstance(config);
-
-        ClientConfig clientConfig = new ClientConfig();
-        clientConfig.getNetworkConfig().addAddress("127.0.0.1");
-
-        driverInstance = HazelcastClient.newHazelcastClient(clientConfig);
-
+        driverInstance = factory.newHazelcastClient();
         return HazelcastClientCachingProvider.createCachingProvider(driverInstance);
     }
 
