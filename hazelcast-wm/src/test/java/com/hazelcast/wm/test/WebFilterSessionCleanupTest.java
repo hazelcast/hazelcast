@@ -83,7 +83,7 @@ public class WebFilterSessionCleanupTest extends AbstractWebFilterTest {
         // Wait for the session to timeout on the other server, at which point it should be
         // fully removed from the map
         Thread.sleep(TimeUnit.SECONDS.toMillis(30L));
-        //assertTrue("Session timeout on both nodes should have removed the IMap entries", map.isEmpty());
+        assertTrue("Session timeout on both nodes should have removed the IMap entries", map.isEmpty());
     }
 
     @Override
