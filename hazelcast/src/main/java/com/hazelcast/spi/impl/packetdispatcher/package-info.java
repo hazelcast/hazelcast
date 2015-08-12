@@ -15,6 +15,6 @@
  */
 
 /**
- * Contains the implementation of the {@link com.hazelcast.spi.impl.packettransceiver.PacketTransceiver}.
+ * Contains the API for the dispatching packets to the appropriate internal services.
  */
-package com.hazelcast.spi.impl.packettransceiver.impl;
+package com.hazelcast.spi.impl.packetdispatcher;

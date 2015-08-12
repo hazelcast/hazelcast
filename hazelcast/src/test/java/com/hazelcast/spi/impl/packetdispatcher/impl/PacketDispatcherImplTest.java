@@ -1,9 +1,8 @@
-package com.hazelcast.spi.impl.packettransceiver.impl;
+package com.hazelcast.spi.impl.packetdispatcher.impl;
 
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Packet;
-import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.impl.PacketHandler;
 import com.hazelcast.test.ExpectedRuntimeException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -21,14 +20,13 @@ import static org.mockito.Mockito.verifyZeroInteractions;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
-public class PacketTransceiverImplTest extends HazelcastTestSupport {
+public class PacketDispatcherImplTest extends HazelcastTestSupport {
 
     private PacketHandler operationPacketHandler;
     private PacketHandler eventPacketHandler;
-    private PacketTransceiverImpl transceiver;
+    private PacketDispatcherImpl packetDispatcher;
     private PacketHandler wanPacketHandler;
     private PacketHandler connectionManagerPacketHandler;
-    private ExecutionService executionService;
 
     @Before
     public void setup() {
@@ -37,11 +35,9 @@ public class PacketTransceiverImplTest extends HazelcastTestSupport {
         eventPacketHandler = mock(PacketHandler.class);
         wanPacketHandler = mock(PacketHandler.class);
         connectionManagerPacketHandler = mock(PacketHandler.class);
-        executionService = mock(ExecutionService.class);
-        transceiver = new PacketTransceiverImpl(
-                null,
+        packetDispatcher = new PacketDispatcherImpl(
                 logger,
-                executionService, operationPacketHandler,
+                operationPacketHandler,
                 eventPacketHandler,
                 wanPacketHandler,
                 connectionManagerPacketHandler
@@ -53,7 +49,7 @@ public class PacketTransceiverImplTest extends HazelcastTestSupport {
         Packet packet = new Packet();
         packet.setHeader(Packet.HEADER_OP);
 
-        transceiver.receive(packet);
+        packetDispatcher.dispatch(packet);
 
         verify(operationPacketHandler).handle(packet);
         verifyZeroInteractions(eventPacketHandler);
@@ -66,7 +62,7 @@ public class PacketTransceiverImplTest extends HazelcastTestSupport {
         Packet packet = new Packet();
         packet.setHeader(Packet.HEADER_WAN_REPLICATION);
 
-        transceiver.receive(packet);
+        packetDispatcher.dispatch(packet);
 
         verify(wanPacketHandler).handle(packet);
         verifyZeroInteractions(operationPacketHandler);
@@ -79,7 +75,7 @@ public class PacketTransceiverImplTest extends HazelcastTestSupport {
         Packet packet = new Packet();
         packet.setHeader(Packet.HEADER_EVENT);
 
-        transceiver.receive(packet);
+        packetDispatcher.dispatch(packet);
 
         verify(eventPacketHandler).handle(packet);
         verifyZeroInteractions(operationPacketHandler);
@@ -92,7 +88,7 @@ public class PacketTransceiverImplTest extends HazelcastTestSupport {
         Packet packet = new Packet();
         packet.setHeader(Packet.HEADER_BIND);
 
-        transceiver.receive(packet);
+        packetDispatcher.dispatch(packet);
 
         verify(connectionManagerPacketHandler).handle(packet);
         verifyZeroInteractions(operationPacketHandler);
@@ -105,7 +101,7 @@ public class PacketTransceiverImplTest extends HazelcastTestSupport {
     public void whenUnrecognizedPacket_thenSwallowed() throws Exception {
         Packet packet = new Packet();
 
-        transceiver.receive(packet);
+        packetDispatcher.dispatch(packet);
 
         verifyZeroInteractions(connectionManagerPacketHandler);
         verifyZeroInteractions(operationPacketHandler);
@@ -121,6 +117,6 @@ public class PacketTransceiverImplTest extends HazelcastTestSupport {
 
         Mockito.doThrow(new ExpectedRuntimeException()).when(operationPacketHandler).handle(packet);
 
-        transceiver.receive(packet);
+        packetDispatcher.dispatch(packet);
     }
 }

@@ -23,6 +23,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.AddressPicker;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.NodeContext;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionListener;
@@ -37,6 +38,7 @@ import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.executor.StripedRunnable;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -52,6 +54,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 public final class TestNodeRegistry {
 
@@ -233,12 +238,17 @@ public final class TestNodeRegistry {
     }
 
     public static class MockConnectionManager implements ConnectionManager {
-        private final Set<ConnectionListener> connectionListeners = new CopyOnWriteArraySet<ConnectionListener>();
-        private final IOService ioService;
+        private static final int RETRY_NUMBER = 5;
+        private static final int DELAY_FACTOR = 100;
+
         final ConcurrentMap<Address, NodeEngineImpl> nodes;
         final Map<Address, MockConnection> mapConnections = new ConcurrentHashMap<Address, MockConnection>(10);
         final Node node;
         final Object joinerLock;
+        private final Set<ConnectionListener> connectionListeners = new CopyOnWriteArraySet<ConnectionListener>();
+        private final IOService ioService;
+        private final ILogger logger;
+        private final ScheduledExecutorService scheduler = new ScheduledThreadPoolExecutor(4);
 
         public MockConnectionManager(IOService ioService, ConcurrentMap<Address, NodeEngineImpl> nodes,
                                      Node node, Object joinerLock) {
@@ -246,6 +256,7 @@ public final class TestNodeRegistry {
             this.nodes = nodes;
             this.node = node;
             this.joinerLock = joinerLock;
+            this.logger = ioService.getLogger(MockConnectionManager.class.getName());
             synchronized (this.joinerLock) {
                 this.nodes.put(node.getThisAddress(), node.nodeEngine);
             }
@@ -360,6 +371,63 @@ public final class TestNodeRegistry {
         public int getAllTextConnections() {
             return 0;
         }
+
+        @Override
+        public boolean transmit(Packet packet, Connection connection) {
+            if (connection == null) {
+                return false;
+            }
+            return connection.write(packet);
+        }
+
+        /**
+         * Retries sending packet maximum 5 times until connection to target becomes available.
+         */
+        @Override
+        public boolean transmit(Packet packet, Address target) {
+            return send(packet, target, null);
+        }
+
+        private boolean send(Packet packet, Address target, SendTask sendTask) {
+            Connection connection = getConnection(target);
+            if (connection != null) {
+                return transmit(packet, connection);
+            }
+
+            if (sendTask == null) {
+                sendTask = new SendTask(packet, target);
+            }
+
+            int retries = sendTask.retries;
+            if (retries < RETRY_NUMBER && ioService.isActive()) {
+                getOrConnect(target, true);
+                // TODO: Caution: may break the order guarantee of the packets sent from the same thread!
+                scheduler.schedule(sendTask, (retries + 1) * DELAY_FACTOR, TimeUnit.MILLISECONDS);
+                return true;
+            }
+            return false;
+        }
+
+        private final class SendTask implements Runnable {
+            private final Packet packet;
+            private final Address target;
+            private volatile int retries;
+
+            private SendTask(Packet packet, Address target) {
+                this.packet = packet;
+                this.target = target;
+            }
+
+            @SuppressFBWarnings(value = "VO_VOLATILE_INCREMENT", justification = "single-writer, many-reader")
+            @Override
+            public void run() {
+                retries++;
+                if (logger.isFinestEnabled()) {
+                    logger.finest("Retrying[" + retries + "] packet send operation to: " + target);
+                }
+                send(packet, target, this);
+            }
+        }
     }
 
     public static class MockConnection implements Connection {
@@ -387,7 +455,7 @@ public final class TestNodeRegistry {
             final Packet packet = (Packet) socketWritable;
             if (nodeEngine.getNode().isActive()) {
                 Packet newPacket = readFromPacket(packet);
-                nodeEngine.getPacketTransceiver().receive(newPacket);
+                nodeEngine.getPacketDispatcher().dispatch(newPacket);
                 return true;
             }
             return false;

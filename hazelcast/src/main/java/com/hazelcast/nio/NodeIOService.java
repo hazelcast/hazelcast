@@ -35,7 +35,7 @@ import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.impl.packettransceiver.PacketTransceiver;
+import com.hazelcast.spi.impl.packetdispatcher.PacketDispatcher;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -46,12 +46,12 @@ public class NodeIOService implements IOService {
 
     private final Node node;
     private final NodeEngineImpl nodeEngine;
-    private final PacketTransceiver packetTransceiver;
+    private final PacketDispatcher packetDispatcher;
 
     public NodeIOService(Node node, NodeEngineImpl nodeEngine) {
         this.node = node;
         this.nodeEngine = nodeEngine;
-        this.packetTransceiver = nodeEngine.getPacketTransceiver();
+        this.packetDispatcher = nodeEngine.getPacketDispatcher();
     }
 
     @Override

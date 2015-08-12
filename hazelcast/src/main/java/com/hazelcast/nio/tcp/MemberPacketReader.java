@@ -17,7 +17,7 @@
 package com.hazelcast.nio.tcp;
 
 import com.hazelcast.nio.Packet;
-import com.hazelcast.spi.impl.packettransceiver.PacketTransceiver;
+import com.hazelcast.spi.impl.packetdispatcher.PacketDispatcher;
 import com.hazelcast.util.counters.Counter;
 
 import java.nio.ByteBuffer;
@@ -27,14 +27,14 @@ public class MemberPacketReader implements PacketReader {
     protected final TcpIpConnection connection;
     protected Packet packet;
 
-    private final PacketTransceiver packetTransceiver;
+    private final PacketDispatcher packetDispatcher;
     private final Counter normalPacketsRead;
     private final Counter priorityPacketsRead;
 
-    public MemberPacketReader(TcpIpConnection connection, PacketTransceiver packetTransceiver) {
+    public MemberPacketReader(TcpIpConnection connection, PacketDispatcher packetDispatcher) {
         this.connection = connection;
-        this.packetTransceiver = packetTransceiver;
-        ReadHandler readHandler = connection.getReadHandler();
+        this.packetDispatcher = packetDispatcher;
+        final ReadHandler readHandler = connection.getReadHandler();
         this.normalPacketsRead = readHandler.getNormalPacketsReadCounter();
         this.priorityPacketsRead = readHandler.getPriorityPacketsReadCounter();
     }
@@ -64,6 +64,6 @@ public class MemberPacketReader implements PacketReader {
 
         packet.setConn(connection);
 
-        packetTransceiver.receive(packet);
+        packetDispatcher.dispatch(packet);
     }
 }

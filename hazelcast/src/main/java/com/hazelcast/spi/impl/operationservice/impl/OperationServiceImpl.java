@@ -27,6 +27,7 @@ import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.partition.InternalPartitionService;
@@ -388,8 +389,9 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
             packet.setHeader(Packet.HEADER_URGENT);
         }
 
-        Connection connection = node.getConnectionManager().getOrConnect(target);
-        return nodeEngine.getPacketTransceiver().transmit(packet, connection);
+        ConnectionManager connectionManager = node.getConnectionManager();
+        Connection connection = connectionManager.getOrConnect(target);
+        return connectionManager.transmit(packet, connection);
     }
 
     @Override
@@ -411,8 +413,9 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
             packet.setHeader(Packet.HEADER_URGENT);
         }
 
-        Connection connection = node.getConnectionManager().getOrConnect(target);
-        return nodeEngine.getPacketTransceiver().transmit(packet, connection);
+        ConnectionManager connectionManager = node.getConnectionManager();
+        Connection connection = connectionManager.getOrConnect(target);
+        return connectionManager.transmit(packet, connection);
     }
 
     public void onMemberLeft(MemberImpl member) {
