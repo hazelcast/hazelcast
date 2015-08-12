@@ -16,6 +16,8 @@
 
 package com.hazelcast.nio.tcp;
 
+import com.hazelcast.internal.metrics.CompositeProbe;
+import com.hazelcast.internal.metrics.ProbeTraverse;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
@@ -38,12 +40,15 @@ import java.net.SocketException;
  * <li>{@link WriteHandler}: the side where it sends data to the remote machine</li>
  * </ol>
  */
+@CompositeProbe
 public final class TcpIpConnection implements Connection {
 
     private final SocketChannelWrapper socketChannel;
 
+    @ProbeTraverse
     private final ReadHandler readHandler;
 
+    @ProbeTraverse
     private final WriteHandler writeHandler;
 
     private final TcpIpConnectionManager connectionManager;

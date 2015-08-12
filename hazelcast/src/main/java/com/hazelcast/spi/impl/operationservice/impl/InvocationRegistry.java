@@ -20,6 +20,7 @@ import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.internal.metrics.CompositeProbe;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
@@ -61,7 +62,8 @@ import static com.hazelcast.util.counters.SwCounter.newSwCounter;
  * - pre-allocate all invocations. Because the ringbuffer has a fixed capacity, pre-allocation should be easy. Also
  * the PartitionInvocation and TargetInvocation can be folded into Invocation.
  */
-public class InvocationRegistry {
+@CompositeProbe
+public class InvocationRegistry{
 
     private static final long SCHEDULE_DELAY = 1111;
     private static final int INITIAL_CAPACITY = 1000;
@@ -101,8 +103,6 @@ public class InvocationRegistry {
         this.slowInvocationThresholdMs = initSlowInvocationThresholdMs(props);
         this.backupTimeoutMillis = props.OPERATION_BACKUP_TIMEOUT_MILLIS.getLong();
         this.invocations = new ConcurrentHashMap<Long, Invocation>(INITIAL_CAPACITY, LOAD_FACTOR, concurrencyLevel);
-
-        nodeEngine.getMetricsRegistry().scanAndRegister(this, "operation");
 
         this.inspectionThread = new InspectionThread();
         inspectionThread.start();

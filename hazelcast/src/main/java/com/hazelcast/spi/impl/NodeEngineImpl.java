@@ -24,6 +24,7 @@ import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.internal.metrics.MetricsRegistry;
+import com.hazelcast.internal.metrics.ProbeTraverse;
 import com.hazelcast.internal.metrics.impl.MetricsRegistryImpl;
 import com.hazelcast.internal.storage.DataRef;
 import com.hazelcast.internal.storage.Storage;
@@ -74,18 +75,31 @@ public class NodeEngineImpl implements NodeEngine {
 
     private final Node node;
     private final ILogger logger;
+    @ProbeTraverse
     private final EventServiceImpl eventService;
+    @ProbeTraverse
     private final OperationServiceImpl operationService;
+    @ProbeTraverse
     private final ExecutionServiceImpl executionService;
+    @ProbeTraverse
     private final WaitNotifyServiceImpl waitNotifyService;
+    @ProbeTraverse
     private final ServiceManagerImpl serviceManager;
+    @ProbeTraverse
     private final TransactionManagerServiceImpl transactionManagerService;
+    @ProbeTraverse
     private final ProxyServiceImpl proxyService;
+    @ProbeTraverse
     private final WanReplicationService wanReplicationService;
+    @ProbeTraverse
     private final PacketTransceiver packetTransceiver;
+    @ProbeTraverse
     private final QuorumServiceImpl quorumService;
+    @ProbeTraverse
     private final MetricsRegistryImpl metricsRegistry;
+    @ProbeTraverse
     private final SerializationService serializationService;
+    @ProbeTraverse
     private final LoggingServiceImpl loggingService;
 
     public NodeEngineImpl(final Node node) {
@@ -111,6 +125,8 @@ public class NodeEngineImpl implements NodeEngine {
                 new ConnectionManagerPacketHandler()
         );
         quorumService = new QuorumServiceImpl(this);
+
+        metricsRegistry.scanAndRegister(this);
     }
 
     class ConnectionManagerPacketHandler implements PacketHandler {

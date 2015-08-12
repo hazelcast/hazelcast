@@ -166,9 +166,17 @@ public class Node {
             nodeEngine = new NodeEngineImpl(this);
 
             clientEngine = new ClientEngineImpl(this);
+            nodeEngine.getMetricsRegistry().scanAndRegister(clientEngine);
+
             connectionManager = nodeContext.createConnectionManager(this, serverSocketChannel);
+            nodeEngine.getMetricsRegistry().scanAndRegister(connectionManager);
+
             partitionService = new InternalPartitionServiceImpl(this);
+            nodeEngine.getMetricsRegistry().scanAndRegister(partitionService);
+
             clusterService = new ClusterServiceImpl(this);
+            nodeEngine.getMetricsRegistry().scanAndRegister(clusterService);
+
             textCommandService = new TextCommandServiceImpl(this);
             nodeExtension.printNodeInfo(this);
             this.multicastService = createMulticastService(addressPicker.getBindAddress(), this, config, logger);

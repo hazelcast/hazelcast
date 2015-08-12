@@ -17,7 +17,9 @@
 package com.hazelcast.nio.tcp.nonblocking;
 
 import com.hazelcast.instance.HazelcastThreadGroup;
+import com.hazelcast.internal.metrics.CompositeProbe;
 import com.hazelcast.internal.metrics.MetricsRegistry;
+import com.hazelcast.internal.metrics.ProbeTraverse;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.nio.IOService;
@@ -32,27 +34,28 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.util.HashUtil.hashToIndex;
 
+@CompositeProbe
 public class NonBlockingTcpIpConnectionThreadingModel implements TcpIpConnectionThreadingModel {
 
+    @ProbeTraverse
     private final NonBlockingInputThread[] inputThreads;
+    @ProbeTraverse
     private final NonBlockingOutputThread[] outputThreads;
     private final AtomicInteger nextInputThreadIndex = new AtomicInteger();
     private final AtomicInteger nextOutputThreadIndex = new AtomicInteger();
     private final ILogger logger;
     private final IOService ioService;
-    private final MetricsRegistry metricsRegistry;
     private final LoggingService loggingService;
     private final HazelcastThreadGroup hazelcastThreadGroup;
+    @ProbeTraverse
     private volatile IOBalancer ioBalancer;
 
     public NonBlockingTcpIpConnectionThreadingModel(
             IOService ioService,
             LoggingService loggingService,
-            MetricsRegistry metricsRegistry,
             HazelcastThreadGroup hazelcastThreadGroup) {
         this.ioService = ioService;
         this.hazelcastThreadGroup = hazelcastThreadGroup;
-        this.metricsRegistry = metricsRegistry;
         this.loggingService = loggingService;
         this.logger = ioService.getLogger(NonBlockingTcpIpConnectionThreadingModel.class.getName());
         this.inputThreads = new NonBlockingInputThread[ioService.getInputSelectorThreadCount()];
@@ -99,7 +102,6 @@ public class NonBlockingTcpIpConnectionThreadingModel implements TcpIpConnection
                     oomeHandler
             );
             inputThreads[i] = thread;
-            metricsRegistry.scanAndRegister(thread, "tcp." + thread.getName());
             thread.start();
         }
 
@@ -110,7 +112,6 @@ public class NonBlockingTcpIpConnectionThreadingModel implements TcpIpConnection
                     ioService.getLogger(NonBlockingOutputThread.class.getName()),
                     oomeHandler);
             outputThreads[i] = thread;
-            metricsRegistry.scanAndRegister(thread, "tcp." + thread.getName());
             thread.start();
         }
         startIOBalancer();
@@ -130,7 +131,6 @@ public class NonBlockingTcpIpConnectionThreadingModel implements TcpIpConnection
         ioBalancer = new IOBalancer(inputThreads, outputThreads,
                 hazelcastThreadGroup, ioService.getBalancerIntervalSeconds(), loggingService);
         ioBalancer.start();
-        metricsRegistry.scanAndRegister(ioBalancer, "tcp.balancer");
     }
 
     @Override
@@ -161,12 +161,12 @@ public class NonBlockingTcpIpConnectionThreadingModel implements TcpIpConnection
     @Override
     public WriteHandler newWriteHandler(TcpIpConnection connection) {
         int index = hashToIndex(nextOutputThreadIndex.getAndIncrement(), outputThreads.length);
-        return new NonBlockingWriteHandler(connection, outputThreads[index], metricsRegistry);
+        return new NonBlockingWriteHandler(connection, outputThreads[index]);
     }
 
     @Override
     public ReadHandler newReadHandler(TcpIpConnection connection) {
         int index = hashToIndex(nextInputThreadIndex.getAndIncrement(), inputThreads.length);
-        return new NonBlockingReadHandler(connection, inputThreads[index], metricsRegistry);
+        return new NonBlockingReadHandler(connection, inputThreads[index]);
     }
 }

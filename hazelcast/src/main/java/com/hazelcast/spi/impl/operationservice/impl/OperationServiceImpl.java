@@ -22,8 +22,11 @@ import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.management.dto.SlowOperationDTO;
+import com.hazelcast.internal.metrics.CompositeProbe;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.metrics.ProbeName;
+import com.hazelcast.internal.metrics.ProbeTraverse;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
@@ -86,6 +89,7 @@ import static com.hazelcast.spi.impl.operationutil.Operations.isJoinOperation;
  * @see PartitionInvocation
  * @see TargetInvocation
  */
+@CompositeProbe
 public final class OperationServiceImpl implements InternalOperationService, PacketHandler {
 
     private static final int CORE_SIZE_CHECK = 8;
@@ -99,7 +103,7 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
     final ILogger invocationLogger;
     final ManagedExecutorService asyncExecutor;
 
-    @Probe(name = "completed.count")
+    @Probe(name = "completedCount")
     final AtomicLong completedOperationsCount = new AtomicLong();
 
     @Probe(name = "operationTimeoutCount")
@@ -112,6 +116,8 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
     final MwCounter retryCount = MwCounter.newMwCounter();
 
     final NodeEngineImpl nodeEngine;
+
+    @ProbeTraverse
     final MetricsRegistry metricsRegistry;
     final Node node;
     final ILogger logger;
@@ -167,7 +173,11 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
         this.asyncExecutor = executionService.register(ExecutionService.ASYNC_EXECUTOR, coreSize,
                 ASYNC_QUEUE_CAPACITY, ExecutorType.CONCRETE);
         this.slowOperationDetector = initSlowOperationDetector();
-        metricsRegistry.scanAndRegister(this, "operation");
+    }
+
+    @ProbeName
+    public String getProbeName() {
+        return "operation";
     }
 
     private SlowOperationDetector initSlowOperationDetector() {

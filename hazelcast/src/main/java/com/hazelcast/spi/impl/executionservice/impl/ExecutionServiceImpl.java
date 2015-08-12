@@ -20,7 +20,9 @@ import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.instance.Node;
+import com.hazelcast.internal.metrics.CompositeProbe;
 import com.hazelcast.internal.metrics.MetricsRegistry;
+import com.hazelcast.internal.metrics.ProbeTraverse;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -53,6 +55,7 @@ import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.util.EmptyStatement.ignore;
 
+@CompositeProbe(name = "executor")
 public final class ExecutionServiceImpl implements InternalExecutionService {
 
     private static final int CORE_POOL_SIZE = 3;
@@ -71,6 +74,7 @@ public final class ExecutionServiceImpl implements InternalExecutionService {
     private final ILogger logger;
     private final CompletableFutureTask completableFutureTask;
 
+    @ProbeTraverse
     private final ConcurrentMap<String, ManagedExecutorService> executors
             = new ConcurrentHashMap<String, ManagedExecutorService>();
 
@@ -84,11 +88,8 @@ public final class ExecutionServiceImpl implements InternalExecutionService {
                 }
             };
 
-    private final MetricsRegistry metricsRegistry;
-
     public ExecutionServiceImpl(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
-        this.metricsRegistry = nodeEngine.getMetricsRegistry();
         final Node node = nodeEngine.getNode();
         logger = node.getLogger(ExecutionService.class.getName());
         HazelcastThreadGroup threadGroup = node.getHazelcastThreadGroup();
@@ -152,8 +153,6 @@ public final class ExecutionServiceImpl implements InternalExecutionService {
         if (executors.putIfAbsent(name, executor) != null) {
             throw new IllegalArgumentException("ExecutorService['" + name + "'] already exists!");
         }
-
-        metricsRegistry.scanAndRegister(executor, "executor." + name);
 
         return executor;
     }

@@ -16,8 +16,9 @@
 
 package com.hazelcast.nio.tcp.nonblocking;
 
-import com.hazelcast.internal.metrics.MetricsRegistry;
+import com.hazelcast.internal.metrics.CompositeProbe;
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.metrics.ProbeName;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.SocketWritable;
 import com.hazelcast.nio.ascii.SocketTextWriter;
@@ -52,6 +53,7 @@ import static com.hazelcast.util.counters.SwCounter.newSwCounter;
 /**
  * The writing side of the {@link TcpIpConnection}.
  */
+@CompositeProbe
 public final class NonBlockingWriteHandler extends AbstractSelectionHandler implements Runnable, WriteHandler {
 
     private static final long TIMEOUT = 3;
@@ -70,7 +72,6 @@ public final class NonBlockingWriteHandler extends AbstractSelectionHandler impl
     private final SwCounter priorityPacketsWritten = newSwCounter();
     @Probe(name = "out.exceptionCount")
     private final SwCounter exceptionCount = newSwCounter();
-    private final MetricsRegistry metricsRegistry;
 
     private volatile SocketWritable currentPacket;
     private SocketWriter socketWriter;
@@ -84,12 +85,13 @@ public final class NonBlockingWriteHandler extends AbstractSelectionHandler impl
     // This prevents running into an NonBlockingIOThread that is migrating.
     private NonBlockingIOThread newOwner;
 
-    NonBlockingWriteHandler(TcpIpConnection connection, NonBlockingIOThread ioThread, MetricsRegistry metricsRegistry) {
+    NonBlockingWriteHandler(TcpIpConnection connection, NonBlockingIOThread ioThread) {
         super(connection, ioThread, SelectionKey.OP_WRITE);
+    }
 
-        // sensors
-        this.metricsRegistry = metricsRegistry;
-        metricsRegistry.scanAndRegister(this, "tcp.connection[" + connection.getMetricsId() + "]");
+    @ProbeName
+    public String getProbeName() {
+        return "tcp.connection[" + connection.getMetricsId() + "]";
     }
 
     @Probe(name = "out.interestedOps")
@@ -447,7 +449,6 @@ public final class NonBlockingWriteHandler extends AbstractSelectionHandler impl
 
     @Override
     public void shutdown() {
-        metricsRegistry.deregister(this);
         writeQueue.clear();
         urgentWriteQueue.clear();
 

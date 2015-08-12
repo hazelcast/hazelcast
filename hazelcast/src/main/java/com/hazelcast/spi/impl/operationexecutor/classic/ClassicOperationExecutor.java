@@ -19,7 +19,9 @@ package com.hazelcast.spi.impl.operationexecutor.classic;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.instance.NodeExtension;
+import com.hazelcast.internal.metrics.CompositeProbe;
 import com.hazelcast.internal.metrics.MetricsRegistry;
+import com.hazelcast.internal.metrics.ProbeTraverse;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.nio.Address;
@@ -57,6 +59,7 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
  * </li>
  * </ol>
  */
+@CompositeProbe
 public final class ClassicOperationExecutor implements OperationExecutor {
 
     public static final int TERMINATION_TIMEOUT_SECONDS = 3;
@@ -64,12 +67,14 @@ public final class ClassicOperationExecutor implements OperationExecutor {
     private final ILogger logger;
 
     // all operations for specific partitions will be executed on these threads, e.g. map.put(key, value)
+    @ProbeTraverse
     private final PartitionOperationThread[] partitionOperationThreads;
     private final OperationRunner[] partitionOperationRunners;
 
     private final ScheduleQueue genericScheduleQueue;
 
     // all operations that are not specific for a partition will be executed here, e.g. heartbeat or map.size()
+    @ProbeTraverse
     private final GenericOperationThread[] genericOperationThreads;
     private final OperationRunner[] genericOperationRunners;
 
@@ -146,8 +151,6 @@ public final class ClassicOperationExecutor implements OperationExecutor {
 
             threads[threadId] = operationThread;
             operationThread.start();
-
-            metricsRegistry.scanAndRegister(operationThread, "operation." + operationThread.getName());
         }
 
         // we need to assign the PartitionOperationThreads to all OperationRunners they own
@@ -178,8 +181,6 @@ public final class ClassicOperationExecutor implements OperationExecutor {
             operationThread.start();
 
             operationRunner.setCurrentThread(operationThread);
-
-            metricsRegistry.scanAndRegister(operationThread, "operation." + operationThread.getName());
         }
 
         return threads;

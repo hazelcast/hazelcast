@@ -20,6 +20,7 @@ import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.DistributedObjectListener;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.Member;
+import com.hazelcast.internal.metrics.CompositeProbe;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.EventPublishingService;
@@ -56,6 +57,7 @@ import static com.hazelcast.util.FutureUtil.waitWithDeadline;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.counters.MwCounter.newMwCounter;
 
+@CompositeProbe(name = "proxy")
 public class ProxyServiceImpl
         implements InternalProxyService, PostJoinAwareService, EventPublishingService<DistributedObjectEventPacket, Object> {
 
@@ -89,7 +91,6 @@ public class ProxyServiceImpl
     public ProxyServiceImpl(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
         this.logger = nodeEngine.getLogger(ProxyService.class.getName());
-        nodeEngine.getMetricsRegistry().scanAndRegister(this, "proxy");
     }
 
     public void init() {

@@ -42,14 +42,12 @@ public class DefaultNodeContext implements NodeContext {
         NonBlockingTcpIpConnectionThreadingModel threadingModel = new NonBlockingTcpIpConnectionThreadingModel(
                 ioService,
                 node.loggingService,
-                node.nodeEngine.getMetricsRegistry(),
                 node.getHazelcastThreadGroup());
 
         return new TcpIpConnectionManager(
                 ioService,
                 serverSocketChannel,
                 node.loggingService,
-                node.nodeEngine.getMetricsRegistry(),
                 threadingModel);
     }
 }

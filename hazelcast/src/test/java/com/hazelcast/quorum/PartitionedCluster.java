@@ -142,7 +142,6 @@ public class PartitionedCluster {
                     node.loggingService,
                     node.getHazelcastThreadGroup(),
                     ioService,
-                    node.nodeEngine.getMetricsRegistry(),
                     serverSocketChannel);
         }
     }
