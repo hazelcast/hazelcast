@@ -19,10 +19,10 @@ import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class DefaultPacketReaderTest extends TcpIpConnection_AbstractTest {
+public class MemberPacketReaderTest extends TcpIpConnection_AbstractTest {
 
     private MockPacketTransceiver packetTransceiver;
-    private DefaultPacketReader reader;
+    private MemberPacketReader reader;
     private long oldPriorityPacketsRead;
     private long oldNormalPacketsRead;
     private ReadHandler readHandler;
@@ -39,7 +39,7 @@ public class DefaultPacketReaderTest extends TcpIpConnection_AbstractTest {
         TcpIpConnection connection = connect(connManagerA, addressB);
 
         packetTransceiver = new MockPacketTransceiver();
-        reader = new DefaultPacketReader(connection, packetTransceiver);
+        reader = new MemberPacketReader(connection, packetTransceiver);
 
         readHandler = connection.getReadHandler();
         oldNormalPacketsRead = readHandler.getNormalPacketsReadCounter().get();
@@ -54,7 +54,7 @@ public class DefaultPacketReaderTest extends TcpIpConnection_AbstractTest {
         packet.writeTo(buffer);
 
         buffer.flip();
-        reader.readPacket(buffer);
+        reader.read(buffer);
 
         assertEquals(1, packetTransceiver.packets.size());
         Packet found = packetTransceiver.packets.get(0);
@@ -70,7 +70,7 @@ public class DefaultPacketReaderTest extends TcpIpConnection_AbstractTest {
         packet.writeTo(buffer);
 
         buffer.flip();
-        reader.readPacket(buffer);
+        reader.read(buffer);
 
         assertEquals(1, packetTransceiver.packets.size());
         Packet found = packetTransceiver.packets.get(0);
@@ -97,7 +97,7 @@ public class DefaultPacketReaderTest extends TcpIpConnection_AbstractTest {
         packet4.writeTo(buffer);
 
         buffer.flip();
-        reader.readPacket(buffer);
+        reader.read(buffer);
 
         assertEquals(4, packetTransceiver.packets.size());
         assertEquals(packet1, packetTransceiver.packets.get(0));

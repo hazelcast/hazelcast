@@ -3,7 +3,8 @@ package com.hazelcast.nio.tcp;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.nio.serialization.impl.DefaultSerializationServiceBuilder;
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
@@ -15,17 +16,17 @@ import java.nio.ByteBuffer;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-@RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
-public class SocketClientDataWriterTest {
+@RunWith(HazelcastParallelClassRunner.class)
+@Category({QuickTest.class, ParallelTest.class})
+public class ClientPacketSocketWriterTest {
 
     private SerializationService serializationService;
-    private SocketClientDataWriter writer;
+    private ClientPacketSocketWriter writer;
 
     @Before
     public void setup() {
         serializationService = new DefaultSerializationServiceBuilder().build();
-        writer = new SocketClientDataWriter();
+        writer = new ClientPacketSocketWriter();
     }
 
     @Test

@@ -20,10 +20,10 @@ import com.hazelcast.nio.Packet;
 
 import java.nio.ByteBuffer;
 
-public class SocketClientDataWriter implements SocketWriter<Packet> {
+public class ClientPacketSocketWriter implements SocketWriter<Packet> {
 
     @Override
-    public boolean write(Packet packet, ByteBuffer socketBuffer) throws Exception {
-        return packet.writeTo(socketBuffer);
+    public boolean write(Packet packet, ByteBuffer dst) throws Exception {
+        return packet.writeTo(dst);
     }
 }

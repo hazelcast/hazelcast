@@ -31,9 +31,9 @@ import static org.mockito.Mockito.when;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class SocketClientDataReaderTest extends HazelcastTestSupport {
+public class ClientPacketSocketReaderTest extends HazelcastTestSupport {
 
-    private SocketClientDataReader reader;
+    private ClientPacketSocketReader reader;
     private Connection connection;
     private IOService ioService;
     private SerializationService serializationService;
@@ -45,7 +45,7 @@ public class SocketClientDataReaderTest extends HazelcastTestSupport {
         when(ioService.getLogger(anyString())).thenReturn(logger);
         serializationService = new DefaultSerializationServiceBuilder().build();
         connection = mock(Connection.class);
-        reader = new SocketClientDataReader(connection, ioService);
+        reader = new ClientPacketSocketReader(connection, ioService);
     }
 
     @Test

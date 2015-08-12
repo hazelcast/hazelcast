@@ -16,19 +16,14 @@
 
 package com.hazelcast.nio.tcp;
 
+import com.hazelcast.client.impl.protocol.ClientMessage;
+
 import java.nio.ByteBuffer;
 
-public class SocketPacketReader implements SocketReader {
-
-    private final PacketReader packetReader;
-
-    public SocketPacketReader(TcpIpConnection connection) {
-        TcpIpConnectionManager connectionManager = connection.getConnectionManager();
-        this.packetReader = connectionManager.createPacketReader(connection);
-    }
+public class ClientMessageSocketWriter implements SocketWriter<ClientMessage> {
 
     @Override
-    public void read(ByteBuffer inBuffer) throws Exception {
-        packetReader.readPacket(inBuffer);
+    public boolean write(ClientMessage message, ByteBuffer dst) throws Exception {
+        return message.writeTo(dst);
     }
 }

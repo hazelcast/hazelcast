@@ -32,23 +32,23 @@ import static com.hazelcast.nio.ConnectionType.PYTHON_CLIENT;
 import static com.hazelcast.nio.ConnectionType.RUBY_CLIENT;
 import static com.hazelcast.util.StringUtil.bytesToString;
 
-public class SocketClientDataReader implements SocketReader {
+public class ClientPacketSocketReader implements SocketReader {
 
     private final Connection connection;
     private final IOService ioService;
     private Packet packet;
     private boolean connectionTypeSet;
 
-    public SocketClientDataReader(Connection connection, IOService ioService) {
+    public ClientPacketSocketReader(Connection connection, IOService ioService) {
         this.connection = connection;
         this.ioService = ioService;
     }
 
     @Override
-    public void read(ByteBuffer inBuffer) throws Exception {
-        while (inBuffer.hasRemaining()) {
+    public void read(ByteBuffer src) throws Exception {
+        while (src.hasRemaining()) {
             if (!connectionTypeSet) {
-                if (!setConnectionType(inBuffer)) {
+                if (!setConnectionType(src)) {
                     return;
                 }
                 connectionTypeSet = true;
@@ -56,7 +56,7 @@ public class SocketClientDataReader implements SocketReader {
             if (packet == null) {
                 packet = new Packet();
             }
-            boolean complete = packet.readFrom(inBuffer);
+            boolean complete = packet.readFrom(src);
             if (complete) {
                 packet.setConn(connection);
                 ioService.handleClientPacket(packet);

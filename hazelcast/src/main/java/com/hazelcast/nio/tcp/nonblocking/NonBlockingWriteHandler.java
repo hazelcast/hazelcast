@@ -21,9 +21,9 @@ import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.SocketWritable;
 import com.hazelcast.nio.ascii.SocketTextWriter;
-import com.hazelcast.nio.tcp.SocketClientDataWriter;
-import com.hazelcast.nio.tcp.SocketClientMessageWriter;
-import com.hazelcast.nio.tcp.SocketPacketWriter;
+import com.hazelcast.nio.tcp.ClientPacketSocketWriter;
+import com.hazelcast.nio.tcp.ClientMessageSocketWriter;
+import com.hazelcast.nio.tcp.MemberPacketSocketWriter;
 import com.hazelcast.nio.tcp.SocketWriter;
 import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.nio.tcp.WriteHandler;
@@ -105,16 +105,6 @@ public final class NonBlockingWriteHandler extends AbstractSelectionHandler impl
     }
 
     @Override
-    public long getNormalPacketsWritten() {
-        return normalPacketsWritten.get();
-    }
-
-    @Override
-    public long getUrgentPacketsWritten() {
-        return priorityPacketsWritten.get();
-    }
-
-    @Override
     public int totalPacketsPending() {
         return writeQueue.size() + urgentWriteQueue.size();
     }
@@ -186,15 +176,15 @@ public final class NonBlockingWriteHandler extends AbstractSelectionHandler impl
         if (socketWriter == null) {
             if (CLUSTER.equals(protocol)) {
                 configureBuffers(connectionManager.getSocketSendBufferSize());
-                socketWriter = new SocketPacketWriter(connection);
+                socketWriter = new MemberPacketSocketWriter(ioService.createPacketWriter(connection));
                 outputBuffer.put(stringToBytes(CLUSTER));
                 registerOp(SelectionKey.OP_WRITE);
             } else if (CLIENT_BINARY.equals(protocol)) {
                 configureBuffers(connectionManager.getSocketClientSendBufferSize());
-                socketWriter = new SocketClientDataWriter();
+                socketWriter = new ClientPacketSocketWriter();
             } else if (CLIENT_BINARY_NEW.equals(protocol)) {
                 configureBuffers(connectionManager.getSocketClientSendBufferSize());
-                socketWriter = new SocketClientMessageWriter();
+                socketWriter = new ClientMessageSocketWriter();
             } else {
                 configureBuffers(connectionManager.getSocketClientSendBufferSize());
                 socketWriter = new SocketTextWriter(connection);

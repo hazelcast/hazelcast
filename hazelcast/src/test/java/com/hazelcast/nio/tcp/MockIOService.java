@@ -375,7 +375,7 @@ public class MockIOService implements IOService {
 
     @Override
     public PacketReader createPacketReader(final TcpIpConnection connection) {
-        return new DefaultPacketReader(connection, new PacketTransceiver() {
+        return new MemberPacketReader(connection, new PacketTransceiver() {
             private ILogger logger = getLogger("PacketTransceiver");
 
             @Override
@@ -408,7 +408,7 @@ public class MockIOService implements IOService {
 
     @Override
     public PacketWriter createPacketWriter(TcpIpConnection connection) {
-        return new DefaultPacketWriter();
+        return new MemberPacketWriter();
     }
 
 }

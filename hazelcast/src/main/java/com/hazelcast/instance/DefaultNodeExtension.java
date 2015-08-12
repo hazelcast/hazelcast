@@ -35,8 +35,8 @@ import com.hazelcast.nio.MemberSocketInterceptor;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.nio.serialization.SerializationServiceBuilder;
 import com.hazelcast.nio.serialization.impl.DefaultSerializationServiceBuilder;
-import com.hazelcast.nio.tcp.DefaultPacketReader;
-import com.hazelcast.nio.tcp.DefaultPacketWriter;
+import com.hazelcast.nio.tcp.MemberPacketReader;
+import com.hazelcast.nio.tcp.MemberPacketWriter;
 import com.hazelcast.nio.tcp.DefaultSocketChannelWrapperFactory;
 import com.hazelcast.nio.tcp.PacketReader;
 import com.hazelcast.nio.tcp.PacketWriter;
@@ -163,12 +163,12 @@ public class DefaultNodeExtension implements NodeExtension {
     @Override
     public PacketReader createPacketReader(TcpIpConnection connection, IOService ioService) {
         NodeEngineImpl nodeEngine = node.nodeEngine;
-        return new DefaultPacketReader(connection, nodeEngine.getPacketTransceiver());
+        return new MemberPacketReader(connection, nodeEngine.getPacketTransceiver());
     }
 
     @Override
     public PacketWriter createPacketWriter(final TcpIpConnection connection, final IOService ioService) {
-        return new DefaultPacketWriter();
+        return new MemberPacketWriter();
     }
 
     @Override

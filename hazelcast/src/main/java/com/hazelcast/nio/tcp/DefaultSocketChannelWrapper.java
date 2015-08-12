@@ -55,13 +55,13 @@ public class DefaultSocketChannelWrapper implements SocketChannelWrapper {
     }
 
     @Override
-    public int read(ByteBuffer byteBuffer) throws IOException {
-        return socketChannel.read(byteBuffer);
+    public int read(ByteBuffer dst) throws IOException {
+        return socketChannel.read(dst);
     }
 
     @Override
-    public int write(ByteBuffer byteBuffer) throws IOException {
-        return socketChannel.write(byteBuffer);
+    public int write(ByteBuffer src) throws IOException {
+        return socketChannel.write(src);
     }
 
     @Override

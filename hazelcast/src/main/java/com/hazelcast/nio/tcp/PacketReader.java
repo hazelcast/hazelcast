@@ -20,6 +20,5 @@ import java.nio.ByteBuffer;
 
 public interface PacketReader {
 
-    void readPacket(ByteBuffer inBuffer) throws Exception;
-
+    void read(ByteBuffer src) throws Exception;
 }
