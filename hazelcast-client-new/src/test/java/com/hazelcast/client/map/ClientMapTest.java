@@ -39,6 +39,7 @@ import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.SqlPredicate;
 import com.hazelcast.security.UsernamePasswordCredentials;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -61,6 +62,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.test.HazelcastTestSupport.assertOpenEventually;
+import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
 import static com.hazelcast.test.HazelcastTestSupport.randomString;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -312,8 +314,12 @@ public class ClientMapTest {
         final IMap map = createMap();
         map.put("key1", "value1", 1, TimeUnit.SECONDS);
         assertNotNull(map.get("key1"));
-        Thread.sleep(2000);
-        assertNull(map.get("key1"));
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertNull(map.get("key1"));
+            }
+        });
     }
 
     @Test
@@ -328,7 +334,12 @@ public class ClientMapTest {
         final IMap map = createMap();
         assertNull(map.putIfAbsent("key1", "value1", 1, TimeUnit.SECONDS));
         assertEquals("value1", map.putIfAbsent("key1", "value3", 1, TimeUnit.SECONDS));
-        Thread.sleep(6000);
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertNull(map.get("key1"));
+            }
+        });
         assertNull(map.putIfAbsent("key1", "value3", 1, TimeUnit.SECONDS));
         assertEquals("value3", map.putIfAbsent("key1", "value4", 1, TimeUnit.SECONDS));
     }
@@ -345,8 +356,12 @@ public class ClientMapTest {
         map.set("key1", "value3", 1, TimeUnit.SECONDS);
         assertEquals("value3", map.get("key1"));
 
-        Thread.sleep(2000);
-        assertNull(map.get("key1"));
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertNull(map.get("key1"));
+            }
+        });
 
     }
 
