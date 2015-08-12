@@ -411,6 +411,10 @@
     <suppress checks="JavadocVariable" files="com.hazelcast.executor.impl[\\/]"/>
     <suppress checks="ClassFanOutComplexity|MethodCount" files="com.hazelcast.executor.impl.ExecutorServiceProxy"/>
 
+    <!-- Ringbuffer -->
+    <suppress checks="JavadocMethod|JavadocType|JavadocMethod|JavadocVariable|JavadocPackage"
+              files="com.hazelcast.ringbuffer.impl[\\/]"/>
+
     <!-- Collections -->
     <suppress checks="JavadocMethod" files="com.hazelcast.collection.impl[\\/]"/>
     <suppress checks="JavadocType" files="com.hazelcast.collection.impl[\\/]"/>

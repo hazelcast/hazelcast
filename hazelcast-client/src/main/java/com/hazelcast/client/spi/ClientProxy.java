@@ -134,6 +134,16 @@ public abstract class ClientProxy implements DistributedObject {
         }
     }
 
+    protected <T> T invokeOnPartition(ClientRequest req, int partitionId) {
+        try {
+            final Future future = new ClientInvocation(getClient(), req, partitionId).invoke();
+            Object result = future.get();
+            return toObject(result);
+        } catch (Exception e) {
+            throw ExceptionUtil.rethrow(e);
+        }
+    }
+
     protected <T> T invokeInterruptibly(ClientRequest req, Object key) throws InterruptedException {
         try {
             final int partitionId = context.getPartitionService().getPartitionId(key);

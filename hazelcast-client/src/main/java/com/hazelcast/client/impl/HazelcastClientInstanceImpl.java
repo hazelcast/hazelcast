@@ -85,6 +85,7 @@ import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.quorum.QuorumService;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.ringbuffer.Ringbuffer;
+import com.hazelcast.ringbuffer.impl.RingbufferService;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.UsernamePasswordCredentials;
 import com.hazelcast.spi.impl.SerializableCollection;
@@ -338,7 +339,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
 
     @Override
     public <E> Ringbuffer<E> getRingbuffer(String name) {
-        throw new UnsupportedOperationException();
+        return getDistributedObject(RingbufferService.SERVICE_NAME, name);
     }
 
     @Override
