@@ -20,12 +20,10 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 
 import java.nio.ByteBuffer;
 
-public class SocketClientMessageWriter
-        implements SocketWriter<ClientMessage> {
+public class SocketClientMessageWriter implements SocketWriter<ClientMessage> {
 
     @Override
-    public boolean write(ClientMessage clientMessage, ByteBuffer socketBuffer)
-            throws Exception {
+    public boolean write(ClientMessage clientMessage, ByteBuffer socketBuffer) throws Exception {
         return clientMessage.writeTo(socketBuffer);
     }
 }

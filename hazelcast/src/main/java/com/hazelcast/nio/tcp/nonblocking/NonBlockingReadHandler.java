@@ -225,7 +225,7 @@ public final class NonBlockingReadHandler
             } else if (CLIENT_BINARY.equals(protocol)) {
                 configureBuffers(connectionManager.getSocketClientReceiveBufferSize());
                 writeHandler.setProtocol(CLIENT_BINARY);
-                socketReader = new SocketClientDataReader(connection);
+                socketReader = new SocketClientDataReader(connection, connectionManager.getIoService());
             } else if (CLIENT_BINARY_NEW.equals(protocol)) {
                 configureBuffers(connectionManager.getSocketClientReceiveBufferSize());
                 writeHandler.setProtocol(CLIENT_BINARY_NEW);

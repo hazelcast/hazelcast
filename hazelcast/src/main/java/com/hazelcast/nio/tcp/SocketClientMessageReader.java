@@ -32,6 +32,7 @@ public class SocketClientMessageReader implements SocketReader {
         this.builder = new ClientMessageBuilder(new ClientSocketMessageHandler(connection));
     }
 
+    @Override
     public void read(ByteBuffer inBuffer) throws Exception {
         builder.onData(inBuffer);
     }
