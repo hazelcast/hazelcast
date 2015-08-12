@@ -157,30 +157,6 @@ public class ClientMapNearCacheTest {
     }
 
     @Test
-    public void testNearCacheFasterThanGoingToTheCluster() {
-        final IMap map = client.getMap(randomMapName(NEAR_CACHE_WITH_INVALIDATION));
-
-        final int size = 2007;
-        for (int i = 0; i < size; i++) {
-            map.put(i, i);
-        }
-
-        long begin = System.currentTimeMillis();
-        for (int i = 0; i < size; i++) {
-            map.get(i);
-        }
-        long readFromClusterTime = System.currentTimeMillis() - begin;
-
-        begin = System.currentTimeMillis();
-        for (int i = 0; i < size; i++) {
-            map.get(i);
-        }
-        long readFromCacheTime = System.currentTimeMillis() - begin;
-
-        assertTrue("readFromCacheTime > readFromClusterTime", readFromCacheTime < readFromClusterTime);
-    }
-
-    @Test
     public void testGetAllChecksNearCacheFirst() throws Exception {
         final IMap map = client.getMap(randomMapName(NEAR_CACHE_WITH_NO_INVALIDATION));
         final HashSet keys = new HashSet();
