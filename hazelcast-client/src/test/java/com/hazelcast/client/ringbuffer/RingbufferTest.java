@@ -1,20 +1,18 @@
 package com.hazelcast.client.ringbuffer;
 
-import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.RingbufferConfig;
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.ringbuffer.ReadResultSet;
 import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.ringbuffer.impl.client.PortableReadResultSet;
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.AfterClass;
+import org.junit.After;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -25,37 +23,34 @@ import static com.hazelcast.ringbuffer.OverflowPolicy.OVERWRITE;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 
-@RunWith(HazelcastSerialClassRunner.class)
+@RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
-public class RingbufferTest extends HazelcastTestSupport{
+public class RingbufferTest extends HazelcastTestSupport {
 
     public static int CAPACITY = 10;
 
-    static HazelcastInstance client;
-    static HazelcastInstance server;
+    private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
     private Ringbuffer<String> clientRingbuffer;
     private Ringbuffer<String> serverRingbuffer;
-
-    @BeforeClass
-    public static void init() {
-        Config config = new Config();
-        config.addRingBufferConfig(new RingbufferConfig("rb*").setCapacity(CAPACITY));
-
-        server = Hazelcast.newHazelcastInstance(config);
-        client = HazelcastClient.newHazelcastClient();
-    }
+    private HazelcastInstance server;
+    private HazelcastInstance client;
 
     @Before
     public void setup() {
+        Config config = new Config();
+        config.addRingBufferConfig(new RingbufferConfig("rb*").setCapacity(CAPACITY));
+
+        server = hazelcastFactory.newHazelcastInstance(config);
+        client = hazelcastFactory.newHazelcastClient();
+
         String name = "rb-" + HazelcastTestSupport.randomString();
         clientRingbuffer = client.getRingbuffer(name);
         serverRingbuffer = server.getRingbuffer(name);
     }
 
-    @AfterClass
-    public static void destroy() {
-        HazelcastClient.shutdownAll();
-        Hazelcast.shutdownAll();
+    @After
+    public void destroy() {
+        hazelcastFactory.shutdownAll();
     }
 
     @Test
