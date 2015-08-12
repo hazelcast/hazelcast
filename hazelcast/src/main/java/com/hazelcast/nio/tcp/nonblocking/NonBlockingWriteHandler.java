@@ -16,8 +16,8 @@
 
 package com.hazelcast.nio.tcp.nonblocking;
 
-import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.metrics.ProbeName;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.SocketWritable;
 import com.hazelcast.nio.ascii.SocketTextWriter;
@@ -56,48 +56,47 @@ public final class NonBlockingWriteHandler extends AbstractSelectionHandler impl
 
     private static final long TIMEOUT = 3;
 
-    @Probe(name = "out.writeQueueSize")
+    @Probe(name = "writeQueueSize")
     private final Queue<SocketWritable> writeQueue = new ConcurrentLinkedQueue<SocketWritable>();
-    @Probe(name = "out.priorityWriteQueueSize")
+    @Probe(name = "priorityWriteQueueSize")
     private final Queue<SocketWritable> urgentWriteQueue = new ConcurrentLinkedQueue<SocketWritable>();
     private final AtomicBoolean scheduled = new AtomicBoolean(false);
     private ByteBuffer outputBuffer;
-    @Probe(name = "out.bytesWritten")
+    @Probe(name = "bytesWritten")
     private final SwCounter bytesWritten = newSwCounter();
-    @Probe(name = "out.normalPacketsWritten")
+    @Probe(name = "normalPacketsWritten")
     private final SwCounter normalPacketsWritten = newSwCounter();
-    @Probe(name = "out.priorityPacketsWritten")
+    @Probe(name = "priorityPacketsWritten")
     private final SwCounter priorityPacketsWritten = newSwCounter();
-    private final MetricsRegistry metricsRegistry;
 
     private volatile SocketWritable currentPacket;
     private SocketWriter socketWriter;
     private volatile long lastWriteTime;
-    @Probe(name = "out.eventCount")
+    @Probe(name = "eventCount")
     //This field will be incremented by a single thread. It can be read by multiple threads.
     private final SwCounter eventCount = newSwCounter();
-
     private boolean shutdown;
     // this field will be accessed by the NonBlockingIOThread or
     // it is accessed by any other thread but only that thread managed to cas the scheduled flag to true.
     // This prevents running into an NonBlockingIOThread that is migrating.
     private NonBlockingIOThread newOwner;
 
-    NonBlockingWriteHandler(TcpIpConnection connection, NonBlockingIOThread ioThread, MetricsRegistry metricsRegistry) {
+    NonBlockingWriteHandler(TcpIpConnection connection, NonBlockingIOThread ioThread) {
         super(connection, ioThread, SelectionKey.OP_WRITE);
-
-        // sensors
-        this.metricsRegistry = metricsRegistry;
-        metricsRegistry.scanAndRegister(this, "tcp.connection[" + connection.getMetricsId() + "]");
     }
 
-    @Probe(name = "out.interestedOps")
+    @ProbeName
+    public String probeName() {
+        return "out";
+    }
+
+    @Probe(name = "interestedOps")
     private long interestOps() {
         SelectionKey selectionKey = this.selectionKey;
         return selectionKey == null ? -1 : selectionKey.interestOps();
     }
 
-    @Probe(name = "out.readyOps")
+    @Probe(name = "readyOps")
     private long readyOps() {
         SelectionKey selectionKey = this.selectionKey;
         return selectionKey == null ? -1 : selectionKey.readyOps();
@@ -118,12 +117,12 @@ public final class NonBlockingWriteHandler extends AbstractSelectionHandler impl
         return socketWriter;
     }
 
-    @Probe(name = "out.writeQueuePendingBytes")
+    @Probe
     public long bytesPending() {
         return bytesPending(writeQueue);
     }
 
-    @Probe(name = "out.priorityWriteQueuePendingBytes")
+    @Probe
     public long priorityBytesPending() {
         return bytesPending(urgentWriteQueue);
     }
@@ -138,17 +137,17 @@ public final class NonBlockingWriteHandler extends AbstractSelectionHandler impl
         return bytesPending;
     }
 
-    @Probe(name = "out.currentPacketSet")
+    @Probe
     private long currentPacketSet() {
         return currentPacket == null ? 0 : 1;
     }
 
-    @Probe(name = "out.idleTimeMs")
+    @Probe
     private long idleTimeMs() {
         return Math.max(System.currentTimeMillis() - lastWriteTime, 0);
     }
 
-    @Probe(name = "out.isScheduled")
+    @Probe
     private long isScheduled() {
         return scheduled.get() ? 1 : 0;
     }
@@ -434,7 +433,6 @@ public final class NonBlockingWriteHandler extends AbstractSelectionHandler impl
 
     @Override
     public void shutdown() {
-        metricsRegistry.deregister(this);
         writeQueue.clear();
         urgentWriteQueue.clear();
 

@@ -45,7 +45,6 @@ public final class NonBlockingInputThread extends NonBlockingIOThread {
         super(threadGroup, threadName, logger, oomeHandler, selectNow);
     }
 
-
     /**
      * Returns the current number of read events that have been processed by this NonBlockingInputThread.
      *

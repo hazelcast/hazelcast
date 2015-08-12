@@ -19,6 +19,7 @@ package com.hazelcast.internal.metrics.metricsets;
 
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.metrics.ProbeName;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.lang.management.GarbageCollectorMXBean;
@@ -61,7 +62,7 @@ public final class GarbageCollectionMetricSet {
 
         GcStats stats = new GcStats();
         metricsRegistry.scheduleAtFixedRate(stats, PUBLISH_FREQUENCY_SECONDS, SECONDS);
-        metricsRegistry.scanAndRegister(stats, "gc");
+        metricsRegistry.registerRoot(stats);
     }
 
 
@@ -113,6 +114,11 @@ public final class GarbageCollectionMetricSet {
             this.majorTime = majorTime;
             this.unknownCount = unknownCount;
             this.unknownTime = unknownTime;
+        }
+
+        @ProbeName
+        public String probeName() {
+            return "gc";
         }
     }
 }

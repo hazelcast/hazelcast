@@ -47,8 +47,10 @@ import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.LifecycleServiceImpl;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
+import com.hazelcast.internal.metrics.ContainsProbes;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.metrics.ProbeName;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
@@ -174,6 +176,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
 
     private final ExceptionHandler whileFinalizeJoinsExceptionHandler;
 
+    @ContainsProbes
     private final ClusterClockImpl clusterClock;
 
     private String clusterId;
@@ -214,8 +217,6 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         icmpTimeout = node.groupProperties.ICMP_TIMEOUT.getInteger();
 
         node.connectionManager.addConnectionListener(this);
-
-        registerMetrics();
     }
 
     private static long getAsMilliSeconds(GroupProperties.GroupProperty groupProperty) {
@@ -227,10 +228,9 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         return heartbeatInterval > 0 ? heartbeatInterval : TimeUnit.SECONDS.toMillis(1);
     }
 
-    private void registerMetrics() {
-        MetricsRegistry metricsRegistry = node.nodeEngine.getMetricsRegistry();
-        metricsRegistry.scanAndRegister(clusterClock, "cluster.clock");
-        metricsRegistry.scanAndRegister(this, "cluster");
+    @ProbeName
+    public String probeName(){
+        return "cluster";
     }
 
     @Override

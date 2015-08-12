@@ -82,7 +82,6 @@ public abstract class TcpIpConnection_AbstractTest extends HazelcastTestSupport 
                 ioService,
                 ioService.serverSocketChannel,
                 ioService.loggingService,
-                metricsRegistry,
                 threadingModelFactory.create(ioService, metricsRegistry));
     }
 

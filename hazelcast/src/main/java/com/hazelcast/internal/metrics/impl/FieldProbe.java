@@ -44,29 +44,29 @@ import static java.lang.String.format;
  */
 abstract class FieldProbe implements ProbeFunction {
 
-    final Probe probe;
+    final Probe probeAnnotation;
     final Field field;
     final int type;
 
-    FieldProbe(Field field, Probe probe, int type) {
+    FieldProbe(Field field, Probe probeAnnotation, int type) {
         this.field = field;
-        this.probe = probe;
+        this.probeAnnotation = probeAnnotation;
         this.type = type;
         field.setAccessible(true);
     }
 
-    void register(MetricsRegistryImpl metricsRegistry, Object source, String namePrefix) {
-        String name = getName(namePrefix);
-        metricsRegistry.registerInternal(source, name, this);
-    }
-
-    private String getName(String namePrefix) {
+    public String getName() {
         String name = field.getName();
-        if (!probe.name().equals("")) {
-            name = probe.name();
+        if (!probeAnnotation.name().equals("")) {
+            name = probeAnnotation.name();
         }
 
-        return namePrefix + "." + name;
+        return name;
+    }
+
+    @Override
+    public String toString() {
+        return field.toString();
     }
 
     static <S> FieldProbe createFieldProbe(Field field, Probe probe) {

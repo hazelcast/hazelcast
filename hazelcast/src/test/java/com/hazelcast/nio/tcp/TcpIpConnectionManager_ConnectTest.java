@@ -1,5 +1,7 @@
 package com.hazelcast.nio.tcp;
 
+import com.hazelcast.internal.metrics.MetricsRegistry;
+import com.hazelcast.internal.metrics.impl.MetricsRegistryImpl;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionType;
 import com.hazelcast.test.AssertTask;
@@ -46,6 +48,13 @@ public abstract class TcpIpConnectionManager_ConnectTest extends TcpIpConnection
 
         assertEquals(1, connManagerA.getActiveConnectionCount());
         assertEquals(1, connManagerB.getActiveConnectionCount());
+
+        MetricsRegistry metricsRegistry = new MetricsRegistryImpl(logger);
+        metricsRegistry.registerRoot(connManagerA);
+
+        for(String name: metricsRegistry.getNames()){
+            System.out.println(name);
+        }
     }
 
     @Test

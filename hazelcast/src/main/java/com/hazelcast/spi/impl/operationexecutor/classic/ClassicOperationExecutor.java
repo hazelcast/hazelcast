@@ -19,7 +19,9 @@ package com.hazelcast.spi.impl.operationexecutor.classic;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.instance.NodeExtension;
-import com.hazelcast.internal.metrics.MetricsRegistry;
+import com.hazelcast.internal.metrics.CompositeProbe;
+import com.hazelcast.internal.metrics.ContainsProbes;
+import com.hazelcast.internal.metrics.ProbeName;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.nio.Address;
@@ -57,6 +59,7 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
  * </li>
  * </ol>
  */
+@CompositeProbe
 public final class ClassicOperationExecutor implements OperationExecutor {
 
     public static final int TERMINATION_TIMEOUT_SECONDS = 3;
@@ -64,32 +67,33 @@ public final class ClassicOperationExecutor implements OperationExecutor {
     private final ILogger logger;
 
     // all operations for specific partitions will be executed on these threads, e.g. map.put(key, value)
+    @ContainsProbes
     private final PartitionOperationThread[] partitionOperationThreads;
+    @ContainsProbes
     private final OperationRunner[] partitionOperationRunners;
 
     private final ScheduleQueue genericScheduleQueue;
 
     // all operations that are not specific for a partition will be executed here, e.g. heartbeat or map.size()
+    @ContainsProbes
     private final GenericOperationThread[] genericOperationThreads;
+    @ContainsProbes
     private final OperationRunner[] genericOperationRunners;
 
     private final Address thisAddress;
     private final NodeExtension nodeExtension;
     private final HazelcastThreadGroup threadGroup;
     private final OperationRunner adHocOperationRunner;
-    private final MetricsRegistry metricsRegistry;
 
     public ClassicOperationExecutor(GroupProperties properties,
                                     LoggingService loggerService,
                                     Address thisAddress,
                                     OperationRunnerFactory operationRunnerFactory,
                                     HazelcastThreadGroup hazelcastThreadGroup,
-                                    NodeExtension nodeExtension,
-                                    MetricsRegistry metricsRegistry) {
+                                    NodeExtension nodeExtension) {
         this.thisAddress = thisAddress;
         this.nodeExtension = nodeExtension;
         this.threadGroup = hazelcastThreadGroup;
-        this.metricsRegistry = metricsRegistry;
         this.logger = loggerService.getLogger(ClassicOperationExecutor.class);
         this.genericScheduleQueue = new DefaultScheduleQueue();
 
@@ -103,6 +107,11 @@ public final class ClassicOperationExecutor implements OperationExecutor {
 
         logger.info("Starting with " + genericOperationThreads.length + " generic operation threads and "
                 + partitionOperationThreads.length + " partition operation threads.");
+    }
+
+    @ProbeName
+    public String probeName() {
+        return "executor";
     }
 
     private OperationRunner[] initPartitionOperationRunners(GroupProperties properties, OperationRunnerFactory handlerFactory) {
@@ -146,8 +155,6 @@ public final class ClassicOperationExecutor implements OperationExecutor {
 
             threads[threadId] = operationThread;
             operationThread.start();
-
-            metricsRegistry.scanAndRegister(operationThread, "operation." + operationThread.getName());
         }
 
         // we need to assign the PartitionOperationThreads to all OperationRunners they own
@@ -178,8 +185,6 @@ public final class ClassicOperationExecutor implements OperationExecutor {
             operationThread.start();
 
             operationRunner.setCurrentThread(operationThread);
-
-            metricsRegistry.scanAndRegister(operationThread, "operation." + operationThread.getName());
         }
 
         return threads;

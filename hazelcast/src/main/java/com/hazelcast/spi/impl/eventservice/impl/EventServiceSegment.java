@@ -16,6 +16,7 @@
 
 package com.hazelcast.spi.impl.eventservice.impl;
 
+import com.hazelcast.internal.metrics.CompositeProbe;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.EventFilter;
@@ -31,6 +32,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
 
+@CompositeProbe
 public class EventServiceSegment<S> {
 
     private final String serviceName;
