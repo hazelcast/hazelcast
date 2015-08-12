@@ -17,6 +17,7 @@
 package com.hazelcast.nio.tcp;
 
 import com.hazelcast.client.ClientTypes;
+import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.IOService;
 import com.hazelcast.nio.Packet;
 
@@ -33,18 +34,17 @@ import static com.hazelcast.util.StringUtil.bytesToString;
 
 public class SocketClientDataReader implements SocketReader {
 
-    private static final int TYPE_BYTE = 3;
-
-    private final TcpIpConnection connection;
+    private final Connection connection;
     private final IOService ioService;
     private Packet packet;
     private boolean connectionTypeSet;
 
-    public SocketClientDataReader(TcpIpConnection connection) {
+    public SocketClientDataReader(Connection connection, IOService ioService) {
         this.connection = connection;
-        this.ioService = connection.getConnectionManager().getIoService();
+        this.ioService = ioService;
     }
 
+    @Override
     public void read(ByteBuffer inBuffer) throws Exception {
         while (inBuffer.hasRemaining()) {
             if (!connectionTypeSet) {
@@ -68,11 +68,11 @@ public class SocketClientDataReader implements SocketReader {
     }
 
     private boolean setConnectionType(ByteBuffer inBuffer) {
-        if (inBuffer.remaining() < TYPE_BYTE) {
+        if (inBuffer.remaining() < ClientTypes.TYPE_LENGTH) {
             return false;
         }
 
-        byte[] typeBytes = new byte[TYPE_BYTE];
+        byte[] typeBytes = new byte[ClientTypes.TYPE_LENGTH];
         inBuffer.get(typeBytes);
         String type = bytesToString(typeBytes);
         if (JAVA.equals(type)) {
@@ -89,6 +89,7 @@ public class SocketClientDataReader implements SocketReader {
             ioService.getLogger(getClass().getName()).info("Unknown client type: " + type);
             connection.setType(BINARY_CLIENT);
         }
+
         return true;
     }
 }
