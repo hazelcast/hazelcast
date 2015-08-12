@@ -101,7 +101,7 @@ public class LongGaugeImplTest {
     @Test
     public void whenLongProbeField() {
         SomeObject someObject = new SomeObject();
-        metricsRegistry.scanAndRegister(someObject, "foo");
+      //  metricsRegistry.registerRoot(someObject, "foo");
 
         LongGauge gauge = metricsRegistry.newLongGauge("foo.longField");
         assertEquals(10, gauge.read());
@@ -110,7 +110,7 @@ public class LongGaugeImplTest {
     @Test
     public void whenDoubleProbeField() {
         SomeObject someObject = new SomeObject();
-        metricsRegistry.scanAndRegister(someObject, "foo");
+     //   metricsRegistry.registerRoot(someObject, "foo");
 
         LongGauge gauge = metricsRegistry.newLongGauge("foo.doubleField");
         assertEquals(round(someObject.doubleField), gauge.read());

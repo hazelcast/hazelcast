@@ -16,16 +16,16 @@
 
 package com.hazelcast.nio.tcp.nonblocking;
 
-import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.metrics.ProbeName;
 import com.hazelcast.nio.Protocols;
 import com.hazelcast.nio.ascii.SocketTextReader;
-import com.hazelcast.nio.tcp.ClientPacketSocketReader;
 import com.hazelcast.nio.tcp.ClientMessageSocketReader;
+import com.hazelcast.nio.tcp.ClientPacketSocketReader;
 import com.hazelcast.nio.tcp.PacketSocketReader;
+import com.hazelcast.nio.tcp.ReadHandler;
 import com.hazelcast.nio.tcp.SocketReader;
 import com.hazelcast.nio.tcp.TcpIpConnection;
-import com.hazelcast.nio.tcp.ReadHandler;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.counters.Counter;
 import com.hazelcast.util.counters.SwCounter;
@@ -51,45 +51,41 @@ public final class NonBlockingReadHandler extends AbstractSelectionHandler imple
 
     private ByteBuffer inputBuffer;
 
-    @Probe(name = "in.bytesRead")
+    @Probe
     private final SwCounter bytesRead = newSwCounter();
-    @Probe(name = "in.normalPacketsRead")
+    @Probe
     private final SwCounter normalPacketsRead = newSwCounter();
-    @Probe(name = "in.priorityPacketsRead")
+    @Probe
     private final SwCounter priorityPacketsRead = newSwCounter();
-    private final MetricsRegistry metricRegistry;
+    @Probe
+    private final SwCounter eventCount = newSwCounter();
 
     private SocketReader socketReader;
 
     private volatile long lastReadTime;
 
-    //This field will be incremented by a single thread. It can be read by multiple threads.
-    @Probe(name = "in.eventCount")
-    private final SwCounter eventCount = newSwCounter();
-
-    public NonBlockingReadHandler(
-            TcpIpConnection connection,
-            NonBlockingIOThread ioThread,
-            MetricsRegistry metricsRegistry) {
+    public NonBlockingReadHandler(TcpIpConnection connection, NonBlockingIOThread ioThread) {
         super(connection, ioThread, SelectionKey.OP_READ);
         this.ioThread = ioThread;
-
-        this.metricRegistry = metricsRegistry;
-        metricRegistry.scanAndRegister(this, "tcp.connection[" + connection.getMetricsId() + "]");
     }
 
-    @Probe(name = "in.idleTimeMs")
+    @ProbeName
+    public String probeName() {
+        return "in";
+    }
+
+    @Probe
     private long idleTimeMs() {
         return Math.max(System.currentTimeMillis() - lastReadTime, 0);
     }
 
-    @Probe(name = "in.interestedOps")
+    @Probe
     private long interestOps() {
         SelectionKey selectionKey = this.selectionKey;
         return selectionKey == null ? -1 : selectionKey.interestOps();
     }
 
-    @Probe(name = "in.readyOps")
+    @Probe
     private long readyOps() {
         SelectionKey selectionKey = this.selectionKey;
         return selectionKey == null ? -1 : selectionKey.readyOps();
@@ -245,7 +241,6 @@ public final class NonBlockingReadHandler extends AbstractSelectionHandler imple
     public void shutdown() {
         //todo:
         // ioThread race, shutdown can end up on the old selector
-        metricRegistry.deregister(this);
         ioThread.addTaskAndWakeup(new Runnable() {
             @Override
             public void run() {

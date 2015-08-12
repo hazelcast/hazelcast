@@ -112,24 +112,4 @@ public class RenderTest {
         verify(renderer).finish();
         verifyNoMoreInteractions(renderer);
     }
-
-    @Test
-    public void getSortedProbes_whenProbeAdded() {
-        SortedProbesInstances instances1 = metricsRegistry.getSortedProbeInstances();
-
-        registerLongMetric("foo", 10);
-
-        SortedProbesInstances instances2 = metricsRegistry.getSortedProbeInstances();
-
-        assertEquals(instances1.modCount + 1, instances2.modCount);
-    }
-
-    @Test
-    public void getSortedProbes_whenNoChange() {
-        SortedProbesInstances instances1 = metricsRegistry.getSortedProbeInstances();
-
-         SortedProbesInstances instances2 = metricsRegistry.getSortedProbeInstances();
-
-        assertSame(instances1, instances2);
-    }
 }

@@ -17,17 +17,19 @@
 package com.hazelcast.nio.tcp.nonblocking.iobalancer;
 
 import com.hazelcast.instance.HazelcastThreadGroup;
+import com.hazelcast.internal.metrics.CompositeProbe;
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.metrics.ProbeName;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.tcp.TcpIpConnection;
+import com.hazelcast.nio.tcp.nonblocking.MigratableHandler;
 import com.hazelcast.nio.tcp.nonblocking.NonBlockingIOThread;
 import com.hazelcast.nio.tcp.nonblocking.NonBlockingInputThread;
-import com.hazelcast.nio.tcp.nonblocking.MigratableHandler;
+import com.hazelcast.nio.tcp.nonblocking.NonBlockingOutputThread;
 import com.hazelcast.nio.tcp.nonblocking.NonBlockingReadHandler;
 import com.hazelcast.nio.tcp.nonblocking.NonBlockingWriteHandler;
-import com.hazelcast.nio.tcp.nonblocking.NonBlockingOutputThread;
 import com.hazelcast.util.counters.MwCounter;
 import com.hazelcast.util.counters.SwCounter;
 
@@ -57,6 +59,7 @@ import static com.hazelcast.util.counters.SwCounter.newSwCounter;
  * right after a physical TCP connection is created whilst <code>ConnectionListener</code> is notified only
  * after a successful (Hazelcast) binding process.
  */
+@CompositeProbe(name = "balancer")
 public class IOBalancer {
     private static final String PROP_MONKEY_BALANCER = "hazelcast.io.balancer.monkey";
     private final ILogger logger;
@@ -93,6 +96,11 @@ public class IOBalancer {
         this.outLoadTracker = new LoadTracker(outputThreads, logger);
 
         this.enabled = isEnabled(inputThreads, outputThreads);
+    }
+
+    @ProbeName
+    public String probeName() {
+        return "balancer";
     }
 
     public void connectionAdded(Connection connection) {

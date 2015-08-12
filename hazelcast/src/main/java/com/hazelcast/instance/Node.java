@@ -24,13 +24,11 @@ import com.hazelcast.cluster.impl.JoinMessage;
 import com.hazelcast.cluster.impl.JoinRequest;
 import com.hazelcast.cluster.impl.MulticastJoiner;
 import com.hazelcast.cluster.impl.MulticastService;
-import com.hazelcast.cluster.impl.NodeMulticastListener;
 import com.hazelcast.cluster.impl.TcpIpJoiner;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.JoinConfig;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.MemberAttributeConfig;
-import com.hazelcast.config.MulticastConfig;
 import com.hazelcast.core.ClientListener;
 import com.hazelcast.core.DistributedObjectListener;
 import com.hazelcast.core.HazelcastInstanceAware;
@@ -60,9 +58,6 @@ import com.hazelcast.util.UuidUtil;
 import com.hazelcast.util.VersionCheck;
 
 import java.lang.reflect.Constructor;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.MulticastSocket;
 import java.nio.channels.ServerSocketChannel;
 import java.util.HashMap;
 import java.util.Map;
@@ -166,9 +161,17 @@ public class Node {
             nodeEngine = new NodeEngineImpl(this);
 
             clientEngine = new ClientEngineImpl(this);
+            nodeEngine.getMetricsRegistry().registerRoot(clientEngine);
+
             connectionManager = nodeContext.createConnectionManager(this, serverSocketChannel);
+            nodeEngine.getMetricsRegistry().registerRoot(connectionManager);
+
             partitionService = new InternalPartitionServiceImpl(this);
+            nodeEngine.getMetricsRegistry().registerRoot(partitionService);
+
             clusterService = new ClusterServiceImpl(this);
+            nodeEngine.getMetricsRegistry().registerRoot(clusterService);
+
             textCommandService = new TextCommandServiceImpl(this);
             nodeExtension.printNodeInfo(this);
             this.multicastService = createMulticastService(addressPicker.getBindAddress(), this, config, logger);

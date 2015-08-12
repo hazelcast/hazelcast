@@ -16,6 +16,9 @@
 
 package com.hazelcast.nio.tcp;
 
+import com.hazelcast.internal.metrics.CompositeProbe;
+import com.hazelcast.internal.metrics.ContainsProbes;
+import com.hazelcast.internal.metrics.ProbeName;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
@@ -38,12 +41,15 @@ import java.net.SocketException;
  * <li>{@link WriteHandler}: the side that takes care of writing data to the other side</li>
  * </ol>
  */
+@CompositeProbe
 public final class TcpIpConnection implements Connection {
 
     private final SocketChannelWrapper socketChannel;
 
+    @ContainsProbes
     private final ReadHandler readHandler;
 
+    @ContainsProbes
     private final WriteHandler writeHandler;
 
     private final TcpIpConnectionManager connectionManager;
@@ -72,7 +78,7 @@ public final class TcpIpConnection implements Connection {
         this.readHandler = threadingModel.newReadHandler(this);
     }
 
-    public ReadHandler getReadHandler() {
+     public ReadHandler getReadHandler() {
         return readHandler;
     }
 
@@ -155,11 +161,13 @@ public final class TcpIpConnection implements Connection {
         return (endPoint == null) ? socketChannel.socket().getRemoteSocketAddress() : endPoint;
     }
 
-    public Object getMetricsId() {
+    @ProbeName
+    private String getProbeName() {
         Socket socket = socketChannel.socket();
         SocketAddress localSocketAddress = socket != null ? socket.getLocalSocketAddress() : null;
         SocketAddress remoteSocketAddress = socket != null ? socket.getRemoteSocketAddress() : null;
-        return getType() + "#" + localSocketAddress + "->" + remoteSocketAddress;
+        String id = getType() + "#" + localSocketAddress + "->" + remoteSocketAddress;
+        return "connection[" + id + "]";
     }
 
     public void setSendBufferSize(int size) throws SocketException {

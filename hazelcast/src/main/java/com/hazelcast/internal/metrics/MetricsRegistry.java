@@ -18,7 +18,7 @@ package com.hazelcast.internal.metrics;
 
 import com.hazelcast.internal.metrics.renderers.ProbeRenderer;
 
-import java.util.Set;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -87,7 +87,7 @@ public interface MetricsRegistry {
      *
      * @return set of all current names.
      */
-    Set<String> getNames();
+    List<String> getNames();
 
     /**
      * Scans the source object for any fields/methods that have been annotated with {@link Probe} annotation, and
@@ -101,11 +101,10 @@ public interface MetricsRegistry {
      * If an object has no @Gauge annotations, the call is ignored.
      *
      * @param source     the object to scan.
-     * @param namePrefix the name prefix.
      * @throws NullPointerException     if namePrefix or source is null.
      * @throws IllegalArgumentException if the source contains Gauge annotation on a field/method of unsupported type.
      */
-    <S> void scanAndRegister(S source, String namePrefix);
+    <S> void registerRoot(S source);
 
     /**
      * Registers a probe.

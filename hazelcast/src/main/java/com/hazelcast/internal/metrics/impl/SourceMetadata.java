@@ -16,16 +16,23 @@
 
 package com.hazelcast.internal.metrics.impl;
 
+import com.hazelcast.internal.metrics.ContainsProbes;
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.metrics.ProbeFunction;
+import com.hazelcast.internal.metrics.ProbeName;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
-import static com.hazelcast.internal.metrics.impl.ProbeUtils.flatten;
 import static com.hazelcast.internal.metrics.impl.FieldProbe.createFieldProbe;
 import static com.hazelcast.internal.metrics.impl.MethodProbe.createMethodProbe;
+import static com.hazelcast.internal.metrics.impl.ProbeUtils.flatten;
 
 /**
  * Contains the metadata for an object with @Probe fields/methods.
@@ -33,8 +40,12 @@ import static com.hazelcast.internal.metrics.impl.MethodProbe.createMethodProbe;
  * This object is effectively immutable after construction.
  */
 final class SourceMetadata {
-    private final List<FieldProbe> fields = new ArrayList<FieldProbe>();
-    private final List<MethodProbe> methods = new ArrayList<MethodProbe>();
+
+    // todo: we need to deal with conflicting ones
+    private final Map<String, ProbeFunction> functions = new HashMap<String, ProbeFunction>();
+    private final List<Field> traversableFields = new ArrayList<Field>();
+    private Method nameMethod;
+    private String probeName;
 
     SourceMetadata(Class clazz) {
         // we scan all the methods/fields of the class/interface hierarchy.
@@ -42,22 +53,77 @@ final class SourceMetadata {
         flatten(clazz, classList);
 
         for (Class flattenedClass : classList) {
-            scanFields(flattenedClass);
-            scanMethods(flattenedClass);
+            scanFieldsProbes(flattenedClass);
+            scanMethodProbes(flattenedClass);
+            scanContainsProbesFields(flattenedClass);
+            scanNameMethods(flattenedClass);
+            scanCompositeProbe(flattenedClass);
         }
     }
 
-    void register(MetricsRegistryImpl metricsRegistry, Object source, String namePrefix) {
-        for (FieldProbe field : fields) {
-            field.register(metricsRegistry, source, namePrefix);
+    public Set<String> getProbeNames() {
+        return functions.keySet();
+    }
+
+    // todo: object name can be cached.
+    public String getObjectName(Object instance) {
+        if (nameMethod != null) {
+            try {
+                return (String) nameMethod.invoke(instance);
+            } catch (IllegalAccessException e) {
+                throw new RuntimeException(e);
+            } catch (InvocationTargetException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        if (probeName != null) {
+            return probeName;
         }
 
-        for (MethodProbe method : methods) {
-            method.register(metricsRegistry, source, namePrefix);
+        String string = instance.getClass().getSimpleName();
+        char[] c = string.toCharArray();
+        c[0] = Character.toLowerCase(c[0]);
+        return new String(c);
+    }
+
+    private void scanNameMethods(Class clazz) {
+        for (Method method : clazz.getDeclaredMethods()) {
+            ProbeName probeName = method.getAnnotation(ProbeName.class);
+
+            if (probeName == null) {
+                continue;
+            }
+            method.setAccessible(true);
+            nameMethod = method;
+            return;
         }
     }
 
-    void scanFields(Class<?> clazz) {
+    private void scanCompositeProbe(Class clazz) {
+//        CompositeProbe compositeProbe  = clazz.getAnnotation(CompositeProbe.class);
+//
+//
+//        for (Method method : clazz.getDeclaredMethods()) {
+//            CompositeProbe compositeProbe = method.getAnnotation();
+//
+//            if (compositeProbe == null) {
+//                continue;
+//            }
+//
+//            this.probeName = compositeProbe.name();
+//            return;
+//        }
+    }
+
+    ProbeFunction findFunction(String name) {
+        return functions.get(name);
+    }
+
+    List<Field> getTraversableFields() {
+        return traversableFields;
+    }
+
+    void scanFieldsProbes(Class<?> clazz) {
         for (Field field : clazz.getDeclaredFields()) {
             Probe probe = field.getAnnotation(Probe.class);
 
@@ -66,11 +132,24 @@ final class SourceMetadata {
             }
 
             FieldProbe fieldProbe = createFieldProbe(field, probe);
-            fields.add(fieldProbe);
+            functions.put(fieldProbe.getName(), fieldProbe);
         }
     }
 
-    void scanMethods(Class<?> clazz) {
+    void scanContainsProbesFields(Class<?> clazz) {
+        for (Field field : clazz.getDeclaredFields()) {
+            ContainsProbes containsProbes = field.getAnnotation(ContainsProbes.class);
+
+            if (containsProbes == null) {
+                continue;
+            }
+
+            field.setAccessible(true);
+            traversableFields.add(field);
+        }
+    }
+
+    void scanMethodProbes(Class<?> clazz) {
         for (Method method : clazz.getDeclaredMethods()) {
             Probe probe = method.getAnnotation(Probe.class);
 
@@ -78,8 +157,11 @@ final class SourceMetadata {
                 continue;
             }
 
+            method.setAccessible(true);
             MethodProbe methodProbe = createMethodProbe(method, probe);
-            methods.add(methodProbe);
+            functions.put(methodProbe.getName(), methodProbe);
         }
     }
+
+
 }

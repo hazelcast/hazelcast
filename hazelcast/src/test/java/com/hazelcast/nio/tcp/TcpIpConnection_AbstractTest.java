@@ -72,13 +72,11 @@ public abstract class TcpIpConnection_AbstractTest extends HazelcastTestSupport 
     }
 
     protected TcpIpConnectionManager newConnectionManager(int port) throws Exception {
-        MetricsRegistryImpl metricsRegistry = new MetricsRegistryImpl(loggingService.getLogger(MetricsRegistryImpl.class));
         MockIOService ioService = new MockIOService(port);
 
         return new TcpIpConnectionManager(
                 ioService,
                 ioService.serverSocketChannel,
-                metricsRegistry,
                 ioService.hazelcastThreadGroup,
                 ioService.loggingService);
     }

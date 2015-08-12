@@ -38,6 +38,7 @@ import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
+import com.hazelcast.internal.metrics.ContainsProbes;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
@@ -110,6 +111,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
     // client uuid -> member uuid
     private final ConcurrentMap<String, String> ownershipMappings = new ConcurrentHashMap<String, String>();
 
+    @ContainsProbes
     private final ClientEndpointManagerImpl endpointManager;
     private final ILogger logger;
     private final ConnectionListener connectionListener = new ConnectionListenerImpl();
@@ -122,6 +124,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
         this.serializationService = node.getSerializationService();
         this.nodeEngine = node.nodeEngine;
         this.endpointManager = new ClientEndpointManagerImpl(this, nodeEngine);
+
         this.executor = newExecutor();
         this.messageTaskFactory = node.getNodeExtension().createMessageTaskFactory(node);
 
@@ -617,10 +620,10 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
     @Override
     public Map<ClientType, Integer> getConnectedClientStats() {
 
-        int numberOfCppClients    = 0;
+        int numberOfCppClients = 0;
         int numberOfDotNetClients = 0;
-        int numberOfJavaClients   = 0;
-        int numberOfOtherClients  = 0;
+        int numberOfJavaClients = 0;
+        int numberOfOtherClients = 0;
 
         Operation clientInfoOperation = new GetConnectedClientsOperation();
         OperationService operationService = node.nodeEngine.getOperationService();

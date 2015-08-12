@@ -22,8 +22,10 @@ import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.management.dto.SlowOperationDTO;
-import com.hazelcast.internal.metrics.MetricsRegistry;
+import com.hazelcast.internal.metrics.CompositeProbe;
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.metrics.ProbeName;
+import com.hazelcast.internal.metrics.ContainsProbes;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
@@ -87,6 +89,7 @@ import static com.hazelcast.spi.impl.operationutil.Operations.isJoinOperation;
  * @see PartitionInvocation
  * @see TargetInvocation
  */
+@CompositeProbe
 public final class OperationServiceImpl implements InternalOperationService, PacketHandler {
 
     private static final int CORE_SIZE_CHECK = 8;
@@ -95,12 +98,15 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
     private static final int ASYNC_QUEUE_CAPACITY = 100000;
     private static final long TERMINATION_TIMEOUT_MILLIS = TimeUnit.SECONDS.toMillis(10);
 
+    @ContainsProbes
     final InvocationRegistry invocationsRegistry;
+    @ContainsProbes
     final OperationExecutor operationExecutor;
     final ILogger invocationLogger;
+
     final ManagedExecutorService asyncExecutor;
 
-    @Probe(name = "completed.count")
+    @Probe(name = "completedCount")
     final AtomicLong completedOperationsCount = new AtomicLong();
 
     @Probe(name = "operationTimeoutCount")
@@ -113,7 +119,7 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
     final MwCounter retryCount = MwCounter.newMwCounter();
 
     final NodeEngineImpl nodeEngine;
-    final MetricsRegistry metricsRegistry;
+
     final Node node;
     final ILogger logger;
     final OperationBackupHandler operationBackupHandler;
@@ -129,7 +135,6 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
         this.nodeEngine = nodeEngine;
         this.node = nodeEngine.getNode();
         this.logger = node.getLogger(OperationService.class);
-        this.metricsRegistry = nodeEngine.getMetricsRegistry();
         this.serializationService = nodeEngine.getSerializationService();
 
         this.invocationLogger = nodeEngine.getLogger(Invocation.class);
@@ -158,8 +163,7 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
                 node.getThisAddress(),
                 new OperationRunnerFactoryImpl(this),
                 node.getHazelcastThreadGroup(),
-                node.getNodeExtension(),
-                metricsRegistry
+                node.getNodeExtension()
         );
 
         this.isStillRunningService = new IsStillRunningService(operationExecutor, nodeEngine, logger);
@@ -168,7 +172,11 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
         this.asyncExecutor = executionService.register(ExecutionService.ASYNC_EXECUTOR, coreSize,
                 ASYNC_QUEUE_CAPACITY, ExecutorType.CONCRETE);
         this.slowOperationDetector = initSlowOperationDetector();
-        metricsRegistry.scanAndRegister(this, "operation");
+    }
+
+    @ProbeName
+    public String getProbeName() {
+        return "operations";
     }
 
     private SlowOperationDetector initSlowOperationDetector() {
@@ -222,13 +230,13 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
         return invocationsRegistry.size();
     }
 
-    @Probe(name = "queue.size")
+    @Probe(name = "queueSize")
     @Override
     public int getOperationExecutorQueueSize() {
         return operationExecutor.getOperationExecutorQueueSize();
     }
 
-    @Probe(name = "priority-queue.size")
+    @Probe(name = "priorityQueueSize")
     @Override
     public int getPriorityOperationExecutorQueueSize() {
         return operationExecutor.getPriorityOperationExecutorQueueSize();
@@ -238,7 +246,7 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
         return operationExecutor;
     }
 
-    @Probe(name = "response-queue.size")
+    @Probe(name = "responseQueueSize")
     @Override
     public int getResponseQueueSize() {
         return responsePacketExecutor.getQueueSize();
