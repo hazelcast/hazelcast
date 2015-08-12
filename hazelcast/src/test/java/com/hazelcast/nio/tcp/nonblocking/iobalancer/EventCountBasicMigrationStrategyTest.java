@@ -16,7 +16,7 @@
 
 package com.hazelcast.nio.tcp.nonblocking.iobalancer;
 
-import com.hazelcast.nio.tcp.nonblocking.IOSelector;
+import com.hazelcast.nio.tcp.nonblocking.NonBlockingIOThread;
 import com.hazelcast.nio.tcp.nonblocking.MigratableHandler;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -27,6 +27,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+
 
 import java.util.HashMap;
 import java.util.Map;
@@ -41,7 +42,7 @@ import static org.mockito.Mockito.mock;
 @Category({QuickTest.class, ParallelTest.class})
 public class EventCountBasicMigrationStrategyTest extends HazelcastTestSupport {
 
-    private Map<IOSelector, Set<MigratableHandler>> selectorToHandlers;
+    private Map<NonBlockingIOThread, Set<MigratableHandler>> selectorToHandlers;
     private ItemCounter<MigratableHandler> handlerEventsCounter;
     private LoadImbalance imbalance;
 
@@ -49,7 +50,7 @@ public class EventCountBasicMigrationStrategyTest extends HazelcastTestSupport {
 
     @Before
     public void setUp() {
-        selectorToHandlers = new HashMap<IOSelector, Set<MigratableHandler>>();
+        selectorToHandlers = new HashMap<NonBlockingIOThread, Set<MigratableHandler>>();
         handlerEventsCounter = new ItemCounter<MigratableHandler>();
         imbalance = new LoadImbalance(selectorToHandlers, handlerEventsCounter);
         strategy = new EventCountBasicMigrationStrategy();
@@ -92,8 +93,8 @@ public class EventCountBasicMigrationStrategyTest extends HazelcastTestSupport {
 
     @Test
     public void testFindHandlerToMigrate() throws Exception {
-        IOSelector sourceSelector = mock(IOSelector.class);
-        IOSelector destinationSelector = mock(IOSelector.class);
+        NonBlockingIOThread sourceSelector = mock(NonBlockingIOThread.class);
+        NonBlockingIOThread destinationSelector = mock(NonBlockingIOThread.class);
         imbalance.sourceSelector = sourceSelector;
         imbalance.destinationSelector = destinationSelector;
 

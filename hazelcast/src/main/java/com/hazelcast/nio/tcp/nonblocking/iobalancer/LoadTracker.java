@@ -17,8 +17,7 @@
 package com.hazelcast.nio.tcp.nonblocking.iobalancer;
 
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.tcp.nonblocking.AbstractIOSelector;
-import com.hazelcast.nio.tcp.nonblocking.IOSelector;
+import com.hazelcast.nio.tcp.nonblocking.NonBlockingIOThread;
 import com.hazelcast.nio.tcp.nonblocking.MigratableHandler;
 import com.hazelcast.util.ItemCounter;
 
@@ -31,7 +30,7 @@ import java.util.concurrent.CopyOnWriteArraySet;
 import static com.hazelcast.util.StringUtil.getLineSeperator;
 
 /**
- * Tracks the load of of IOSelector(s) and creates a mapping between IOSelector -> Handler.
+ * Tracks the load of of NonBlockingIOThread(s) and creates a mapping between NonBlockingIOThread -> Handler.
  *
  * This class is not thread-safe with the exception of
  * {@link #addHandler(MigratableHandler)}   and
@@ -40,15 +39,15 @@ import static com.hazelcast.util.StringUtil.getLineSeperator;
 class LoadTracker {
     private final ILogger logger;
 
-    //all known IO selectors. we assume no. of selectors is constant during a lifespan of a member
-    private final AbstractIOSelector[] selectors;
-    private final Map<IOSelector, Set<MigratableHandler>> selectorToHandlers;
+    //all known IO ioThreads. we assume no. of ioThreads is constant during a lifespan of a member
+    private final NonBlockingIOThread[] ioThreads;
+    private final Map<NonBlockingIOThread, Set<MigratableHandler>> selectorToHandlers;
 
     //no. of events per handler since an instance started
     private final ItemCounter<MigratableHandler> lastEventCounter = new ItemCounter<MigratableHandler>();
 
-    //no. of events per IOSelector since last calculation
-    private final ItemCounter<IOSelector> selectorEvents = new ItemCounter<IOSelector>();
+    //no. of events per NonBlockingIOThread since last calculation
+    private final ItemCounter<NonBlockingIOThread> selectorEvents = new ItemCounter<NonBlockingIOThread>();
     //no. of events per handler since last calculation
     private final ItemCounter<MigratableHandler> handlerEventsCounter = new ItemCounter<MigratableHandler>();
 
@@ -57,14 +56,14 @@ class LoadTracker {
 
     private final LoadImbalance imbalance;
 
-    LoadTracker(AbstractIOSelector[] selectors, ILogger logger) {
+    LoadTracker(NonBlockingIOThread[] ioThreads, ILogger logger) {
         this.logger = logger;
 
-        this.selectors = new AbstractIOSelector[selectors.length];
-        System.arraycopy(selectors, 0, this.selectors, 0, selectors.length);
+        this.ioThreads = new NonBlockingIOThread[ioThreads.length];
+        System.arraycopy(ioThreads, 0, this.ioThreads, 0, ioThreads.length);
 
-        this.selectorToHandlers = new HashMap<IOSelector, Set<MigratableHandler>>();
-        for (AbstractIOSelector selector : selectors) {
+        this.selectorToHandlers = new HashMap<NonBlockingIOThread, Set<MigratableHandler>>();
+        for (NonBlockingIOThread selector : ioThreads) {
             selectorToHandlers.put(selector, new HashSet<MigratableHandler>());
         }
         this.imbalance = new LoadImbalance(selectorToHandlers, handlerEventsCounter);
@@ -89,7 +88,7 @@ class LoadTracker {
         imbalance.maximumEvents = Long.MIN_VALUE;
         imbalance.sourceSelector = null;
         imbalance.destinationSelector = null;
-        for (AbstractIOSelector selector : selectors) {
+        for (NonBlockingIOThread selector : ioThreads) {
             long eventCount = selectorEvents.get(selector);
             int handlerCount = selectorToHandlers.get(selector).size();
 
@@ -117,7 +116,7 @@ class LoadTracker {
     private void updateHandlerState(MigratableHandler handler) {
         long handlerEventCount = getEventCountSinceLastCheck(handler);
         handlerEventsCounter.set(handler, handlerEventCount);
-        IOSelector owner = handler.getOwner();
+        NonBlockingIOThread owner = handler.getOwner();
         selectorEvents.add(owner, handlerEventCount);
         Set<MigratableHandler> handlersOwnedBy = selectorToHandlers.get(owner);
         handlersOwnedBy.add(handler);
@@ -150,40 +149,40 @@ class LoadTracker {
             return;
         }
 
-        IOSelector minSelector = imbalance.destinationSelector;
-        IOSelector maxSelector = imbalance.sourceSelector;
-        if (minSelector == null || maxSelector == null) {
+        NonBlockingIOThread minThread = imbalance.destinationSelector;
+        NonBlockingIOThread maxThread = imbalance.sourceSelector;
+        if (minThread == null || maxThread == null) {
             return;
         }
         StringBuilder sb = new StringBuilder(getLineSeperator())
                 .append("------------")
                 .append(getLineSeperator());
-        Long eventCountPerSelector = selectorEvents.get(minSelector);
+        Long eventCountPerSelector = selectorEvents.get(minThread);
 
         sb.append("Min Selector ")
-                .append(minSelector)
+                .append(minThread)
                 .append(" received ")
                 .append(eventCountPerSelector)
                 .append(" events. ");
         sb.append("It contains following handlers: ").
                 append(getLineSeperator());
-        appendSelectorInfo(minSelector, selectorToHandlers, sb);
+        appendSelectorInfo(minThread, selectorToHandlers, sb);
 
-        eventCountPerSelector = selectorEvents.get(maxSelector);
+        eventCountPerSelector = selectorEvents.get(maxThread);
         sb.append("Max Selector ")
-                .append(maxSelector)
+                .append(maxThread)
                 .append(" received ")
                 .append(eventCountPerSelector)
                 .append(" events. ");
         sb.append("It contains following handlers: ")
                 .append(getLineSeperator());
-        appendSelectorInfo(maxSelector, selectorToHandlers, sb);
+        appendSelectorInfo(maxThread, selectorToHandlers, sb);
 
         sb.append("Other Selectors: ")
                 .append(getLineSeperator());
 
-        for (AbstractIOSelector selector : selectors) {
-            if (!selector.equals(minSelector) && !selector.equals(maxSelector)) {
+        for (NonBlockingIOThread selector : ioThreads) {
+            if (!selector.equals(minThread) && !selector.equals(maxThread)) {
                 eventCountPerSelector = selectorEvents.get(selector);
                 sb.append("Selector ")
                         .append(selector)
@@ -199,9 +198,11 @@ class LoadTracker {
         logger.finest(sb.toString());
     }
 
-    private void appendSelectorInfo(IOSelector minSelector, Map<IOSelector,
-            Set<MigratableHandler>> selectorToHandlers, StringBuilder sb) {
-        Set<MigratableHandler> handlerSet = selectorToHandlers.get(minSelector);
+    private void appendSelectorInfo(
+            NonBlockingIOThread minThread,
+            Map<NonBlockingIOThread, Set<MigratableHandler>> threadHandlers,
+            StringBuilder sb) {
+        Set<MigratableHandler> handlerSet = threadHandlers.get(minThread);
         for (MigratableHandler selectionHandler : handlerSet) {
             Long eventCountPerHandler = handlerEventsCounter.get(selectionHandler);
             sb.append(selectionHandler)

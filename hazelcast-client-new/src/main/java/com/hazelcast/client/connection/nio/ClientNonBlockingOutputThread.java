@@ -14,43 +14,30 @@
  * limitations under the License.
  */
 
-package com.hazelcast.nio.tcp.nonblocking;
+package com.hazelcast.client.connection.nio;
 
-import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.util.counters.SwCounter;
+import com.hazelcast.nio.tcp.nonblocking.NonBlockingIOThread;
+import com.hazelcast.nio.tcp.nonblocking.NonBlockingIOThreadOutOfMemoryHandler;
+import com.hazelcast.nio.tcp.nonblocking.SelectionHandler;
 
 import java.nio.channels.SelectionKey;
 
-import static com.hazelcast.util.counters.SwCounter.newSwCounter;
 
-public final class OutSelectorImpl extends AbstractIOSelector {
+public final class ClientNonBlockingOutputThread extends NonBlockingIOThread {
 
-    // This field will be incremented by a single thread --> the OutSelectorImpl. It can be read by multiple threads.
-    @Probe
-    private final SwCounter writeEvents = newSwCounter();
-
-    public OutSelectorImpl(ThreadGroup threadGroup, String threadName, ILogger logger, IOSelectorOutOfMemoryHandler oomeHandler) {
+    public ClientNonBlockingOutputThread(ThreadGroup threadGroup, String threadName, ILogger logger,
+                                         NonBlockingIOThreadOutOfMemoryHandler oomeHandler) {
         super(threadGroup, threadName, logger, oomeHandler);
-    }
-
-    /**
-     * Returns the current number of write events that have been processed by this OutSelectorImpl.
-     *
-     * This method is thread-safe.
-     *
-     * @return the number of write events.
-     */
-    public long getWriteEvents() {
-        return writeEvents.get();
     }
 
     @Override
     protected void handleSelectionKey(SelectionKey sk) {
         if (sk.isValid() && sk.isWritable()) {
-            writeEvents.inc();
+            sk.interestOps(sk.interestOps() & ~SelectionKey.OP_WRITE);
             SelectionHandler handler = (SelectionHandler) sk.attachment();
             handler.handle();
         }
     }
 }
+

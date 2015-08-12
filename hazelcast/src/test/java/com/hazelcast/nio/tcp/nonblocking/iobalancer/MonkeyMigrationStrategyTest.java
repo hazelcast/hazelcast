@@ -16,7 +16,7 @@
 
 package com.hazelcast.nio.tcp.nonblocking.iobalancer;
 
-import com.hazelcast.nio.tcp.nonblocking.IOSelector;
+import com.hazelcast.nio.tcp.nonblocking.NonBlockingIOThread;
 import com.hazelcast.nio.tcp.nonblocking.MigratableHandler;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -46,7 +46,7 @@ import static org.mockito.Mockito.mock;
 public class MonkeyMigrationStrategyTest extends HazelcastTestSupport {
     private MigrationStrategy strategy;
 
-    private Map<IOSelector, Set<MigratableHandler>> selectorToHandlers;
+    private Map<NonBlockingIOThread, Set<MigratableHandler>> selectorToHandlers;
     private ItemCounter<MigratableHandler> handlerEventsCounter;
     private LoadImbalance imbalance;
 
@@ -60,10 +60,10 @@ public class MonkeyMigrationStrategyTest extends HazelcastTestSupport {
 
     @Before
     public void setUp() {
-        selectorToHandlers = new HashMap<IOSelector, Set<MigratableHandler>>();
+        selectorToHandlers = new HashMap<NonBlockingIOThread, Set<MigratableHandler>>();
         handlerEventsCounter = new ItemCounter<MigratableHandler>();
         imbalance = new LoadImbalance(selectorToHandlers, handlerEventsCounter);
-        imbalance.sourceSelector = mock(IOSelector.class);
+        imbalance.sourceSelector = mock(NonBlockingIOThread.class);
 
         this.strategy = new MonkeyMigrationStrategy();
     }
@@ -105,7 +105,7 @@ public class MonkeyMigrationStrategyTest extends HazelcastTestSupport {
             MigratableHandler candidate = strategy.findHandlerToMigrate(imbalance);
             if (candidate == handler1) {
                 handler1Count++;
-            } else if (candidate == handler2){
+            } else if (candidate == handler2) {
                 handler2Count++;
             } else {
                 fail("No handler selected");

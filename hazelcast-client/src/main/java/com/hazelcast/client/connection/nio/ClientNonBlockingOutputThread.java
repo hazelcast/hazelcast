@@ -17,18 +17,18 @@
 package com.hazelcast.client.connection.nio;
 
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.tcp.nonblocking.AbstractIOSelector;
-import com.hazelcast.nio.tcp.nonblocking.IOSelectorOutOfMemoryHandler;
+import com.hazelcast.nio.tcp.nonblocking.NonBlockingIOThread;
+import com.hazelcast.nio.tcp.nonblocking.NonBlockingIOThreadOutOfMemoryHandler;
 import com.hazelcast.nio.tcp.nonblocking.SelectionHandler;
 
 import java.nio.channels.SelectionKey;
 
 
-public final class ClientOutSelectorImpl extends AbstractIOSelector {
+public final class ClientNonBlockingOutputThread extends NonBlockingIOThread {
 
-    public ClientOutSelectorImpl(ThreadGroup threadGroup, String tname, ILogger logger,
-                                 IOSelectorOutOfMemoryHandler oomeHandler) {
-        super(threadGroup, tname, logger, oomeHandler);
+    public ClientNonBlockingOutputThread(ThreadGroup threadGroup, String threadName, ILogger logger,
+                                         NonBlockingIOThreadOutOfMemoryHandler oomeHandler) {
+        super(threadGroup, threadName, logger, oomeHandler);
     }
 
     @Override

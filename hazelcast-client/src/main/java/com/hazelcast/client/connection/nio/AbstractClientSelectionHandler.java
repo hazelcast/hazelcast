@@ -19,7 +19,7 @@ package com.hazelcast.client.connection.nio;
 import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.nio.tcp.nonblocking.IOSelector;
+import com.hazelcast.nio.tcp.nonblocking.NonBlockingIOThread;
 import com.hazelcast.nio.tcp.nonblocking.SelectionHandler;
 import com.hazelcast.nio.tcp.SocketChannelWrapper;
 
@@ -31,12 +31,12 @@ public abstract class AbstractClientSelectionHandler implements SelectionHandler
     protected final SocketChannelWrapper socketChannel;
     protected final ClientConnection connection;
     protected final ClientConnectionManager connectionManager;
-    private final IOSelector ioSelector;
+    private final NonBlockingIOThread ioThread;
     private SelectionKey sk;
 
-    public AbstractClientSelectionHandler(final ClientConnection connection, IOSelector ioSelector) {
+    public AbstractClientSelectionHandler(final ClientConnection connection, NonBlockingIOThread ioThread) {
         this.connection = connection;
-        this.ioSelector = ioSelector;
+        this.ioThread = ioThread;
         this.socketChannel = connection.getSocketChannelWrapper();
         this.connectionManager = connection.getConnectionManager();
         this.logger = Logger.getLogger(getClass().getName());
@@ -64,10 +64,10 @@ public abstract class AbstractClientSelectionHandler implements SelectionHandler
                 return;
             }
             if (sk == null) {
-                sk = socketChannel.keyFor(ioSelector.getSelector());
+                sk = socketChannel.keyFor(ioThread.getSelector());
             }
             if (sk == null) {
-                sk = socketChannel.register(ioSelector.getSelector(), operation, this);
+                sk = socketChannel.register(ioThread.getSelector(), operation, this);
             } else {
                 sk.interestOps(sk.interestOps() | operation);
                 if (sk.attachment() != this) {
@@ -80,7 +80,7 @@ public abstract class AbstractClientSelectionHandler implements SelectionHandler
     }
 
     public void register() {
-        ioSelector.addTaskAndWakeup(this);
+        ioThread.addTaskAndWakeup(this);
     }
 
 }

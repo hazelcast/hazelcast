@@ -22,11 +22,11 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.HazelcastInstanceFactory;
-import com.hazelcast.nio.tcp.nonblocking.IOSelector;
-import com.hazelcast.nio.tcp.nonblocking.InSelectorImpl;
+import com.hazelcast.nio.tcp.nonblocking.NonBlockingIOThread;
+import com.hazelcast.nio.tcp.nonblocking.NonBlockingInputThread;
 import com.hazelcast.nio.tcp.nonblocking.MigratableHandler;
 import com.hazelcast.nio.tcp.nonblocking.NonBlockingTcpIpConnectionThreadingModel;
-import com.hazelcast.nio.tcp.nonblocking.OutSelectorImpl;
+import com.hazelcast.nio.tcp.nonblocking.NonBlockingOutputThread;
 import com.hazelcast.nio.tcp.nonblocking.NonBlockingReadHandler;
 import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.nio.tcp.TcpIpConnectionManager;
@@ -90,11 +90,11 @@ public class IOBalancerStressTest extends HazelcastTestSupport {
     private void assertBalanced(HazelcastInstance hz) {
         TcpIpConnectionManager connectionManager = (TcpIpConnectionManager) getConnectionManager(hz);
 
-        Map<IOSelector, Set<MigratableHandler>> handlersPerSelector = getHandlersPerSelector(connectionManager);
+        Map<NonBlockingIOThread, Set<MigratableHandler>> handlersPerSelector = getHandlersPerSelector(connectionManager);
 
         try {
-            for (Map.Entry<IOSelector, Set<MigratableHandler>> entry : handlersPerSelector.entrySet()) {
-                IOSelector selector = entry.getKey();
+            for (Map.Entry<NonBlockingIOThread, Set<MigratableHandler>> entry : handlersPerSelector.entrySet()) {
+                NonBlockingIOThread selector = entry.getKey();
                 Set<MigratableHandler> handlers = entry.getValue();
                 assertBalanced(selector, handlers);
             }
@@ -110,7 +110,7 @@ public class IOBalancerStressTest extends HazelcastTestSupport {
 
         StringBuffer sb = new StringBuffer();
         sb.append("in selectors\n");
-        for (InSelectorImpl in : threadingModel.getInSelectors()) {
+        for (NonBlockingInputThread in : threadingModel.getInputThreads()) {
             sb.append(in + " :" + in.getReadEvents() + "\n");
 
             for (TcpIpConnection connection : connectionManager.getActiveConnections()) {
@@ -121,7 +121,7 @@ public class IOBalancerStressTest extends HazelcastTestSupport {
             }
         }
         sb.append("out selectors\n");
-        for (OutSelectorImpl in : threadingModel.getOutSelectors()) {
+        for (NonBlockingOutputThread in : threadingModel.getOutputThreads()) {
             sb.append(in + " :" + in.getWriteEvents() + "\n");
 
             for (TcpIpConnection connection : connectionManager.getActiveConnections()) {
@@ -136,8 +136,8 @@ public class IOBalancerStressTest extends HazelcastTestSupport {
     }
 
 
-    private Map<IOSelector, Set<MigratableHandler>> getHandlersPerSelector(TcpIpConnectionManager connectionManager) {
-        Map<IOSelector, Set<MigratableHandler>> handlersPerSelector = new HashMap<IOSelector, Set<MigratableHandler>>();
+    private Map<NonBlockingIOThread, Set<MigratableHandler>> getHandlersPerSelector(TcpIpConnectionManager connectionManager) {
+        Map<NonBlockingIOThread, Set<MigratableHandler>> handlersPerSelector = new HashMap<NonBlockingIOThread, Set<MigratableHandler>>();
         for (TcpIpConnection connection : connectionManager.getActiveConnections()) {
             add(handlersPerSelector, (MigratableHandler) connection.getReadHandler());
             add(handlersPerSelector, (MigratableHandler) connection.getWriteHandler());
@@ -153,7 +153,7 @@ public class IOBalancerStressTest extends HazelcastTestSupport {
      * @param selector
      * @param handlers
      */
-    public void assertBalanced(IOSelector selector, Set<MigratableHandler> handlers) {
+    public void assertBalanced(NonBlockingIOThread selector, Set<MigratableHandler> handlers) {
         assertTrue("no handlers were found for selector:" + selector, handlers.size() > 0);
         assertTrue("too many handlers were found for selector:" + selector, handlers.size() <= 2);
 
@@ -177,7 +177,7 @@ public class IOBalancerStressTest extends HazelcastTestSupport {
                 activeHandler.getEventCount() > 1000);
     }
 
-    private void add(Map<IOSelector, Set<MigratableHandler>> handlersPerSelector, MigratableHandler handler) {
+    private void add(Map<NonBlockingIOThread, Set<MigratableHandler>> handlersPerSelector, MigratableHandler handler) {
         Set<MigratableHandler> handlers = handlersPerSelector.get(handler.getOwner());
         if (handlers == null) {
             handlers = new HashSet<MigratableHandler>();

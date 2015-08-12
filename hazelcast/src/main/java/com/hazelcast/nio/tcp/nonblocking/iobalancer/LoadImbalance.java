@@ -16,7 +16,7 @@
 
 package com.hazelcast.nio.tcp.nonblocking.iobalancer;
 
-import com.hazelcast.nio.tcp.nonblocking.IOSelector;
+import com.hazelcast.nio.tcp.nonblocking.NonBlockingIOThread;
 import com.hazelcast.nio.tcp.nonblocking.MigratableHandler;
 import com.hazelcast.nio.tcp.nonblocking.SelectionHandler;
 import com.hazelcast.util.ItemCounter;
@@ -25,27 +25,25 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Describes a state of IOSelector (im-)balance.
+ * Describes a state of NonBlockingIOThread (im-)balance.
  *
  * It's used by {@link MigrationStrategy} to decide whether and what
  * {@link SelectionHandler} should be migrated.
- *
- *
  */
 class LoadImbalance {
-    //number of events recorded by the busiest IOSelector
+    //number of events recorded by the busiest NonBlockingIOThread
     long maximumEvents;
-    //number of events recorded by the least busy IOSelector
+    //number of events recorded by the least busy NonBlockingIOThread
     long minimumEvents;
-    //busiest IOSelector
-    IOSelector sourceSelector;
-    //least busy selector
-    IOSelector destinationSelector;
+    //busiest NonBlockingIOThread
+    NonBlockingIOThread sourceSelector;
+    //least busy NonBlockingIOThread
+    NonBlockingIOThread destinationSelector;
 
-    private final Map<IOSelector, Set<MigratableHandler>> selectorToHandlers;
+    private final Map<NonBlockingIOThread, Set<MigratableHandler>> selectorToHandlers;
     private final ItemCounter<MigratableHandler> handlerEventsCounter;
 
-    LoadImbalance(Map<IOSelector, Set<MigratableHandler>> selectorToHandlers,
+    LoadImbalance(Map<NonBlockingIOThread, Set<MigratableHandler>> selectorToHandlers,
                   ItemCounter<MigratableHandler> handlerEventsCounter) {
         this.selectorToHandlers = selectorToHandlers;
         this.handlerEventsCounter = handlerEventsCounter;
@@ -55,7 +53,7 @@ class LoadImbalance {
      * @param selector
      * @return A set of Handlers owned by the selector
      */
-    Set<MigratableHandler> getHandlersOwnerBy(IOSelector selector) {
+    Set<MigratableHandler> getHandlersOwnerBy(NonBlockingIOThread selector) {
         return selectorToHandlers.get(selector);
     }
 

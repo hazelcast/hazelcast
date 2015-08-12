@@ -17,36 +17,36 @@
 package com.hazelcast.nio.tcp.nonblocking;
 
 /**
- * A {@link SelectionHandler} that supports migration between {@link IOSelector} instances.
+ * A {@link SelectionHandler} that supports migration between {@link NonBlockingIOThread} instances.
  * This API is called by the {@link com.hazelcast.nio.tcp.nonblocking.iobalancer.IOBalancer}.
  */
 public interface MigratableHandler extends SelectionHandler {
 
     /**
-     * Requests the MigratableHandler to move to the new IOSelector. This call will not wait for the
+     * Requests the MigratableHandler to move to the new NonBlockingIOThread. This call will not wait for the
      * migration to complete.
      *
      * This method can be called by any thread, and will probably be called by the
      * {@link com.hazelcast.nio.tcp.nonblocking.iobalancer.IOBalancer}.
      *
-     * Call is ignored when handler is moving to the same IOSelector.
+     * Call is ignored when handler is moving to the same NonBlockingIOThread.
      *
-     * @param newOwner the IOSelector that is going to own this MigratableHandler
+     * @param newOwner the NonBlockingIOThread that is going to own this MigratableHandler
      */
-    void requestMigration(IOSelector newOwner);
+    void requestMigration(NonBlockingIOThread newOwner);
 
     /**
-     * Get IOSelector currently owning this handler. Handler owner is a thread running this handler.
+     * Get NonBlockingIOThread currently owning this handler. Handler owner is a thread running this handler.
      * {@link com.hazelcast.nio.tcp.nonblocking.iobalancer.IOBalancer IOBalancer} can decide to migrate
      * a handler to another owner.
      *
      * @return current owner
      */
-    IOSelector getOwner();
+    NonBlockingIOThread getOwner();
 
     /**
      * Get number of events recorded by the current handler. It can be used to calculate whether
-     * this handler should be migrated to a different {@link IOSelector}
+     * this handler should be migrated to a different {@link NonBlockingIOThread}
      *
      * @return total number of events recorded by this handler
      */

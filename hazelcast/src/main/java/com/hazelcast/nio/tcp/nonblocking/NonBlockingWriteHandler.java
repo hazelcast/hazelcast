@@ -79,13 +79,13 @@ public final class NonBlockingWriteHandler extends AbstractSelectionHandler impl
     @Probe(name = "out.eventCount")
     private volatile long eventCount;
     private boolean shutdown;
-    // this field will be accessed by the IOSelector-thread or
+    // this field will be accessed by the NonBlockingIOThread or
     // it is accessed by any other thread but only that thread managed to cas the scheduled flag to true.
-    // This prevents running into an IOSelector that is migrating.
-    private IOSelector newOwner;
+    // This prevents running into an NonBlockingIOThread that is migrating.
+    private NonBlockingIOThread newOwner;
 
-    NonBlockingWriteHandler(TcpIpConnection connection, IOSelector ioSelector, MetricsRegistry metricsRegistry) {
-        super(connection, ioSelector, SelectionKey.OP_WRITE);
+    NonBlockingWriteHandler(TcpIpConnection connection, NonBlockingIOThread ioThread, MetricsRegistry metricsRegistry) {
+        super(connection, ioThread, SelectionKey.OP_WRITE);
 
         // sensors
         this.metricsRegistry = metricsRegistry;
@@ -168,7 +168,7 @@ public final class NonBlockingWriteHandler extends AbstractSelectionHandler impl
     @Override
     public void setProtocol(final String protocol) {
         final CountDownLatch latch = new CountDownLatch(1);
-        ioSelector.addTaskAndWakeup(new Runnable() {
+        ioThread.addTaskAndWakeup(new Runnable() {
             @Override
             public void run() {
                 createWriter(protocol);
@@ -274,7 +274,7 @@ public final class NonBlockingWriteHandler extends AbstractSelectionHandler impl
 
         // We managed to schedule this WriteHandler. This means we need to add a task to
         // the ioReactor and to give the reactor-thread a kick so that it processes our packets.
-        ioSelector.addTaskAndWakeup(this);
+        ioThread.addTaskAndWakeup(this);
     }
 
     /**
@@ -320,10 +320,10 @@ public final class NonBlockingWriteHandler extends AbstractSelectionHandler impl
             return;
         }
 
-        // We managed to reschedule. So lets add ourselves to the ioSelector so we are processed again.
+        // We managed to reschedule. So lets add ourselves to the ioThread so we are processed again.
         // We don't need to call wakeup because the current thread is the IO-thread and the selectionQueue will be processed
         // till it is empty. So it will also pick up tasks that are added while it is processing the selectionQueue.
-        ioSelector.addTask(this);
+        ioThread.addTask(this);
     }
 
     @Override
@@ -361,7 +361,7 @@ public final class NonBlockingWriteHandler extends AbstractSelectionHandler impl
         if (newOwner == null) {
             unschedule();
         } else {
-            IOSelector newOwner = this.newOwner;
+            NonBlockingIOThread newOwner = this.newOwner;
             this.newOwner = null;
             startMigration(newOwner);
         }
@@ -441,7 +441,7 @@ public final class NonBlockingWriteHandler extends AbstractSelectionHandler impl
         try {
             handle();
         } catch (Throwable e) {
-            ioSelector.handleSelectionKeyFailure(e);
+            ioThread.handleSelectionKeyFailure(e);
         }
     }
 
@@ -462,7 +462,7 @@ public final class NonBlockingWriteHandler extends AbstractSelectionHandler impl
     }
 
     @Override
-    public void requestMigration(IOSelector newOwner) {
+    public void requestMigration(NonBlockingIOThread newOwner) {
         offer(new StartMigrationTask(newOwner));
     }
 
@@ -474,8 +474,8 @@ public final class NonBlockingWriteHandler extends AbstractSelectionHandler impl
     /**
      * The taskPacket is not really a Packet. It is a way to put a task on one of the packet queues. Using this approach we
      * can lift on top of the packet scheduling mechanism and we can prevent having:
-     * - multiple IOSelector-tasks for a WriteHandler on multiple IOSelectors
-     * - multiple IOSelector-tasks for a WriteHandler on the same IOSelector.
+     * - multiple NonBlockingIOThread-tasks for a WriteHandler on multiple NonBlockingIOThread
+     * - multiple NonBlockingIOThread-tasks for a WriteHandler on the same NonBlockingIOThread.
      */
     private abstract class TaskPacket implements SocketWritable {
         abstract void run();
@@ -495,14 +495,14 @@ public final class NonBlockingWriteHandler extends AbstractSelectionHandler impl
      * Triggers the migration when executed by setting the WriteHandler.newOwner field. When the handle method completes, it
      * checks if this field if set, if so, the migration starts.
      *
-     * If the current ioSelector is the same as 'theNewOwner' then the call is ignored.
+     * If the current ioThread is the same as 'theNewOwner' then the call is ignored.
      */
     private class StartMigrationTask extends TaskPacket {
         // field is called 'theNewOwner' to prevent any ambiguity problems with the writeHandler.newOwner.
         // Else you get a lot of ugly WriteHandler.this.newOwner is ...
-        private final IOSelector theNewOwner;
+        private final NonBlockingIOThread theNewOwner;
 
-        public StartMigrationTask(IOSelector theNewOwner) {
+        public StartMigrationTask(NonBlockingIOThread theNewOwner) {
             this.theNewOwner = theNewOwner;
         }
 
@@ -510,7 +510,7 @@ public final class NonBlockingWriteHandler extends AbstractSelectionHandler impl
         void run() {
             assert newOwner == null : "No migration can be in progress";
 
-            if (ioSelector == theNewOwner) {
+            if (ioThread == theNewOwner) {
                 // if there is no change, we are done
                 return;
             }

@@ -24,33 +24,34 @@ import java.nio.channels.SelectionKey;
 
 import static com.hazelcast.util.counters.SwCounter.newSwCounter;
 
-public final class InSelectorImpl extends AbstractIOSelector {
+public final class NonBlockingOutputThread extends NonBlockingIOThread {
 
-    // This field will be incremented by a single thread --> the InSelectorImpl. It can be read by multiple threads.
+    // This field will be incremented by a single thread --> the OutSelectorImpl. It can be read by multiple threads.
     @Probe
-    private final SwCounter readEvents = newSwCounter();
+    private final SwCounter writeEvents = newSwCounter();
 
-    public InSelectorImpl(ThreadGroup threadGroup, String threadName, ILogger logger,
-                          IOSelectorOutOfMemoryHandler oomeHandler) {
+    public NonBlockingOutputThread(ThreadGroup threadGroup,
+                                   String threadName,
+                                   ILogger logger,
+                                   NonBlockingIOThreadOutOfMemoryHandler oomeHandler) {
         super(threadGroup, threadName, logger, oomeHandler);
     }
 
-
     /**
-     * Returns the current number of read events that have been processed by this InSelectorImpl.
+     * Returns the current number of write events that have been processed by this OutSelectorImpl.
      *
      * This method is thread-safe.
      *
-     * @return the number of read events.
+     * @return the number of write events.
      */
-    public long getReadEvents() {
-        return readEvents.get();
+    public long getWriteEvents() {
+        return writeEvents.get();
     }
 
     @Override
     protected void handleSelectionKey(SelectionKey sk) {
-        if (sk.isValid() && sk.isReadable()) {
-            readEvents.inc();
+        if (sk.isValid() && sk.isWritable()) {
+            writeEvents.inc();
             SelectionHandler handler = (SelectionHandler) sk.attachment();
             handler.handle();
         }

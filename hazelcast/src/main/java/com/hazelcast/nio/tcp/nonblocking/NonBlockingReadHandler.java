@@ -72,10 +72,10 @@ public final class NonBlockingReadHandler
 
     public NonBlockingReadHandler(
             TcpIpConnection connection,
-            IOSelector ioSelector,
+            NonBlockingIOThread ioThread,
             MetricsRegistry metricsRegistry) {
-        super(connection, ioSelector, SelectionKey.OP_READ);
-        this.ioSelector = ioSelector;
+        super(connection, ioThread, SelectionKey.OP_READ);
+        this.ioThread = ioThread;
 
         this.metricRegistry = metricsRegistry;
         metricRegistry.scanAndRegister(this, "tcp.connection[" + connection.getMetricsId() + "]");
@@ -120,7 +120,7 @@ public final class NonBlockingReadHandler
 
     @Override
     public void start() {
-        ioSelector.addTaskAndWakeup(new Runnable() {
+        ioThread.addTaskAndWakeup(new Runnable() {
             @Override
             public void run() {
                 getSelectionKey();
@@ -131,18 +131,18 @@ public final class NonBlockingReadHandler
 
 
     /**
-     * Migrates this handler to a new IOSelector thread.
+     * Migrates this handler to a new NonBlockingIOThread.
      * The migration logic is rather simple:
      * <p><ul>
-     * <li>Submit a de-registration task to a current IOSelector thread</li>
-     * <li>The de-registration task submits a registration task to the new IOSelector thread</li>
+     * <li>Submit a de-registration task to a current NonBlockingIOThread</li>
+     * <li>The de-registration task submits a registration task to the new NonBlockingIOThread</li>
      * </ul></p>
      *
-     * @param newOwner target IOSelector this handler migrates to
+     * @param newOwner target NonBlockingIOThread this handler migrates to
      */
     @Override
-    public void requestMigration(IOSelector newOwner) {
-        ioSelector.addTaskAndWakeup(new StartMigrationTask(newOwner));
+    public void requestMigration(NonBlockingIOThread newOwner) {
+        ioThread.addTaskAndWakeup(new StartMigrationTask(newOwner));
     }
 
     @Override
@@ -257,9 +257,9 @@ public final class NonBlockingReadHandler
     @Override
     public void shutdown() {
         //todo:
-        // ioSelector race, shutdown can end up on the old selector
+        // ioThread race, shutdown can end up on the old selector
         metricRegistry.deregister(this);
-        ioSelector.addTaskAndWakeup(new Runnable() {
+        ioThread.addTaskAndWakeup(new Runnable() {
             @Override
             public void run() {
                 try {
@@ -277,16 +277,16 @@ public final class NonBlockingReadHandler
     }
 
     private class StartMigrationTask implements Runnable {
-        private final IOSelector newOwner;
+        private final NonBlockingIOThread newOwner;
 
-        public StartMigrationTask(IOSelector newOwner) {
+        public StartMigrationTask(NonBlockingIOThread newOwner) {
             this.newOwner = newOwner;
         }
 
         @Override
         public void run() {
             // if there is no change, we are done
-            if (ioSelector == newOwner) {
+            if (ioThread == newOwner) {
                 return;
             }
 

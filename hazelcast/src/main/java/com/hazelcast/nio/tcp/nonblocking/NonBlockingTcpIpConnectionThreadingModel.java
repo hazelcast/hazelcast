@@ -34,10 +34,10 @@ import static com.hazelcast.util.HashUtil.hashToIndex;
 
 public class NonBlockingTcpIpConnectionThreadingModel implements TcpIpConnectionThreadingModel {
 
-    private final InSelectorImpl[] inSelectors;
-    private final OutSelectorImpl[] outSelectors;
-    private final AtomicInteger nextInSelectorIndex = new AtomicInteger();
-    private final AtomicInteger nextOutSelectorIndex = new AtomicInteger();
+    private final NonBlockingInputThread[] inputThreads;
+    private final NonBlockingOutputThread[] outputThreads;
+    private final AtomicInteger nextInputThreadIndex = new AtomicInteger();
+    private final AtomicInteger nextOutputThreadIndex = new AtomicInteger();
     private final ILogger logger;
     private final IOService ioService;
     private final MetricsRegistry metricsRegistry;
@@ -55,12 +55,12 @@ public class NonBlockingTcpIpConnectionThreadingModel implements TcpIpConnection
         this.metricsRegistry = metricsRegistry;
         this.loggingService = loggingService;
         this.logger = ioService.getLogger(NonBlockingTcpIpConnectionThreadingModel.class.getName());
-        this.inSelectors = new InSelectorImpl[ioService.getInputSelectorThreadCount()];
-        this.outSelectors = new OutSelectorImpl[ioService.getOutputSelectorThreadCount()];
+        this.inputThreads = new NonBlockingInputThread[ioService.getInputSelectorThreadCount()];
+        this.outputThreads = new NonBlockingOutputThread[ioService.getOutputSelectorThreadCount()];
 
         logger.info("TcpIpConnection managed configured with "
-                + inSelectors.length + " input threads and "
-                + outSelectors.length + " output threads");
+                + inputThreads.length + " input threads and "
+                + outputThreads.length + " output threads");
     }
 
     @Override
@@ -69,13 +69,13 @@ public class NonBlockingTcpIpConnectionThreadingModel implements TcpIpConnection
     }
 
     @SuppressFBWarnings(value = "EI_EXPOSE_REP", justification = "used only for testing")
-    public InSelectorImpl[] getInSelectors() {
-        return inSelectors;
+    public NonBlockingInputThread[] getInputThreads() {
+        return inputThreads;
     }
 
     @SuppressFBWarnings(value = "EI_EXPOSE_REP", justification = "used only for testing")
-    public OutSelectorImpl[] getOutSelectors() {
-        return outSelectors;
+    public NonBlockingOutputThread[] getOutputThreads() {
+        return outputThreads;
     }
 
     public IOBalancer getIOBalancer() {
@@ -84,34 +84,34 @@ public class NonBlockingTcpIpConnectionThreadingModel implements TcpIpConnection
 
     @Override
     public void start() {
-        IOSelectorOutOfMemoryHandler oomeHandler = new IOSelectorOutOfMemoryHandler() {
+        NonBlockingIOThreadOutOfMemoryHandler oomeHandler = new NonBlockingIOThreadOutOfMemoryHandler() {
             @Override
             public void handle(OutOfMemoryError error) {
                 ioService.onOutOfMemory(error);
             }
         };
 
-        for (int i = 0; i < inSelectors.length; i++) {
-            InSelectorImpl inSelector = new InSelectorImpl(
+        for (int i = 0; i < inputThreads.length; i++) {
+            NonBlockingInputThread thread = new NonBlockingInputThread(
                     ioService.getThreadGroup(),
                     ioService.getThreadPrefix() + "in-" + i,
-                    ioService.getLogger(InSelectorImpl.class.getName()),
+                    ioService.getLogger(NonBlockingInputThread.class.getName()),
                     oomeHandler
             );
-            inSelectors[i] = inSelector;
-            metricsRegistry.scanAndRegister(inSelector, "tcp." + inSelector.getName());
-            inSelector.start();
+            inputThreads[i] = thread;
+            metricsRegistry.scanAndRegister(thread, "tcp." + thread.getName());
+            thread.start();
         }
 
-        for (int i = 0; i < outSelectors.length; i++) {
-            OutSelectorImpl outSelector = new OutSelectorImpl(
+        for (int i = 0; i < outputThreads.length; i++) {
+            NonBlockingOutputThread thread = new NonBlockingOutputThread(
                     ioService.getThreadGroup(),
                     ioService.getThreadPrefix() + "out-" + i,
-                    ioService.getLogger(OutSelectorImpl.class.getName()),
+                    ioService.getLogger(NonBlockingOutputThread.class.getName()),
                     oomeHandler);
-            outSelectors[i] = outSelector;
-            metricsRegistry.scanAndRegister(outSelector, "tcp." + outSelector.getName());
-            outSelector.start();
+            outputThreads[i] = thread;
+            metricsRegistry.scanAndRegister(thread, "tcp." + thread.getName());
+            thread.start();
         }
         startIOBalancer();
     }
@@ -127,7 +127,7 @@ public class NonBlockingTcpIpConnectionThreadingModel implements TcpIpConnection
     }
 
     private void startIOBalancer() {
-        ioBalancer = new IOBalancer(inSelectors, outSelectors,
+        ioBalancer = new IOBalancer(inputThreads, outputThreads,
                 hazelcastThreadGroup, ioService.getBalancerIntervalSeconds(), loggingService);
         ioBalancer.start();
         metricsRegistry.scanAndRegister(ioBalancer, "tcp.balancer");
@@ -138,35 +138,35 @@ public class NonBlockingTcpIpConnectionThreadingModel implements TcpIpConnection
         ioBalancer.stop();
 
         if (logger.isFinestEnabled()) {
-            logger.finest("Shutting down IO selectors... Total: " + (inSelectors.length + outSelectors.length));
+            logger.finest("Shutting down IO selectors... Total: " + (inputThreads.length + outputThreads.length));
         }
 
-        for (int i = 0; i < inSelectors.length; i++) {
-            IOSelector ioSelector = inSelectors[i];
-            if (ioSelector != null) {
-                ioSelector.shutdown();
+        for (int i = 0; i < inputThreads.length; i++) {
+            NonBlockingIOThread ioThread = inputThreads[i];
+            if (ioThread != null) {
+                ioThread.shutdown();
             }
-            inSelectors[i] = null;
+            inputThreads[i] = null;
         }
 
-        for (int i = 0; i < outSelectors.length; i++) {
-            IOSelector ioSelector = outSelectors[i];
-            if (ioSelector != null) {
-                ioSelector.shutdown();
+        for (int i = 0; i < outputThreads.length; i++) {
+            NonBlockingIOThread ioThread = outputThreads[i];
+            if (ioThread != null) {
+                ioThread.shutdown();
             }
-            outSelectors[i] = null;
+            outputThreads[i] = null;
         }
     }
 
     @Override
     public WriteHandler newWriteHandler(TcpIpConnection connection) {
-        int index = hashToIndex(nextOutSelectorIndex.getAndIncrement(), outSelectors.length);
-        return new NonBlockingWriteHandler(connection, outSelectors[index], metricsRegistry);
+        int index = hashToIndex(nextOutputThreadIndex.getAndIncrement(), outputThreads.length);
+        return new NonBlockingWriteHandler(connection, outputThreads[index], metricsRegistry);
     }
 
     @Override
     public ReadHandler newReadHandler(TcpIpConnection connection) {
-        int index = hashToIndex(nextInSelectorIndex.getAndIncrement(), inSelectors.length);
-        return new NonBlockingReadHandler(connection, inSelectors[index], metricsRegistry);
+        int index = hashToIndex(nextInputThreadIndex.getAndIncrement(), inputThreads.length);
+        return new NonBlockingReadHandler(connection, inputThreads[index], metricsRegistry);
     }
 }

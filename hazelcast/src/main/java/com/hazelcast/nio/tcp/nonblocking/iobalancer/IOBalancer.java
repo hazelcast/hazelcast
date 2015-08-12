@@ -22,12 +22,12 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.tcp.TcpIpConnection;
-import com.hazelcast.nio.tcp.nonblocking.IOSelector;
-import com.hazelcast.nio.tcp.nonblocking.InSelectorImpl;
+import com.hazelcast.nio.tcp.nonblocking.NonBlockingIOThread;
+import com.hazelcast.nio.tcp.nonblocking.NonBlockingInputThread;
 import com.hazelcast.nio.tcp.nonblocking.MigratableHandler;
 import com.hazelcast.nio.tcp.nonblocking.NonBlockingReadHandler;
 import com.hazelcast.nio.tcp.nonblocking.NonBlockingWriteHandler;
-import com.hazelcast.nio.tcp.nonblocking.OutSelectorImpl;
+import com.hazelcast.nio.tcp.nonblocking.NonBlockingOutputThread;
 import com.hazelcast.util.counters.MwCounter;
 import com.hazelcast.util.counters.SwCounter;
 
@@ -79,7 +79,9 @@ public class IOBalancer {
     @Probe
     private final MwCounter migrationCompletedCount = newMwCounter();
 
-    public IOBalancer(InSelectorImpl[] inSelectors, OutSelectorImpl[] outSelectors, HazelcastThreadGroup threadGroup,
+    public IOBalancer(NonBlockingInputThread[] inputThreads,
+                      NonBlockingOutputThread[] outputThreads,
+                      HazelcastThreadGroup threadGroup,
                       int balancerIntervalSeconds, LoggingService loggingService) {
         this.logger = loggingService.getLogger(IOBalancer.class);
         this.balancerIntervalSeconds = balancerIntervalSeconds;
@@ -87,10 +89,10 @@ public class IOBalancer {
         this.strategy = createMigrationStrategy();
         this.threadGroup = threadGroup;
 
-        this.inLoadTracker = new LoadTracker(inSelectors, logger);
-        this.outLoadTracker = new LoadTracker(outSelectors, logger);
+        this.inLoadTracker = new LoadTracker(inputThreads, logger);
+        this.outLoadTracker = new LoadTracker(outputThreads, logger);
 
-        this.enabled = isEnabled(inSelectors, outSelectors);
+        this.enabled = isEnabled(inputThreads, outputThreads);
     }
 
     public void connectionAdded(Connection connection) {
@@ -176,7 +178,7 @@ public class IOBalancer {
         }
     }
 
-    private boolean isEnabled(InSelectorImpl[] inSelectors, OutSelectorImpl[] outSelectors) {
+    private boolean isEnabled(NonBlockingInputThread[] inputThreads, NonBlockingOutputThread[] outputThreads) {
         if (balancerIntervalSeconds <= 0) {
             logger.warning("I/O Balancer is disabled as the '"
                     + PROP_IO_BALANCER_INTERVAL_SECONDS + "' property is set to "
@@ -184,7 +186,7 @@ public class IOBalancer {
             return false;
         }
 
-        if (inSelectors.length == 1 && outSelectors.length == 1) {
+        if (inputThreads.length == 1 && outputThreads.length == 1) {
             logger.finest("I/O Balancer is disabled as there is only a single a pair of I/O threads. Use the '"
                     + PROP_IO_THREAD_COUNT + "' property to increase number of I/O Threads.");
             return false;
@@ -204,9 +206,9 @@ public class IOBalancer {
             return;
         }
 
-        IOSelector destinationSelector = loadImbalance.destinationSelector;
+        NonBlockingIOThread destinationSelector = loadImbalance.destinationSelector;
         if (logger.isFinestEnabled()) {
-            IOSelector sourceSelector = loadImbalance.sourceSelector;
+            NonBlockingIOThread sourceSelector = loadImbalance.sourceSelector;
             logger.finest("Scheduling migration of handler " + handler
                     + " from selector thread " + sourceSelector + " to " + destinationSelector);
         }
