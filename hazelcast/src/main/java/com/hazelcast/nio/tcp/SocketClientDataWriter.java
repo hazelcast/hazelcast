@@ -23,7 +23,7 @@ import java.nio.ByteBuffer;
 public class SocketClientDataWriter implements SocketWriter<Packet> {
 
     @Override
-    public boolean write(Packet writer, ByteBuffer socketBuffer) throws Exception {
-        return writer.writeTo(socketBuffer);
+    public boolean write(Packet packet, ByteBuffer socketBuffer) throws Exception {
+        return packet.writeTo(socketBuffer);
     }
 }
