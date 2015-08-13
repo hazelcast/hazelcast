@@ -121,7 +121,7 @@ Request Message Type Id:${cm.id}, Retryable:<#if cm.retryable == 1 >Yes<#else>No
 | Name| Type| Nullable| Description|
 |-----|-----|---------|------------|
         <#list cm.requestParams as param>
-|${param.name}| ${util.convertTypeToDocumentType(param.type)}| <#if param.nullable >Yes<#else>No</#if>|${util.getDescription(param.name, cm.comment)}|
+|${param.name}| ${convertTypeToDocumentType(param.type)}| <#if param.nullable >Yes<#else>No</#if>|${util.getDescription(param.name, cm.comment)}|
         </#list>
     <#else>
 Header only request message, no message body exist.
@@ -136,7 +136,7 @@ ${util.getReturnDescription(cm.comment)}
 | Name| Type| Nullable|
 |-------|------------|----------|
         <#list cm.responseParams as param>
-|${param.name}| ${util.convertTypeToDocumentType(param.type)}| <#if param.nullable >Yes<#else>No</#if>|
+|${param.name}| ${convertTypeToDocumentType(param.type)}| <#if param.nullable >Yes<#else>No</#if>|
         </#list>
 
     <#else>
@@ -156,7 +156,7 @@ Message Type Id:${event.type}
 | Name| Type| Nullable| Description|
 |-------|------------|----------|------------|
         <#list event.eventParams as param>
-|${param.name}| ${util.convertTypeToDocumentType(param.type)}| <#if param.nullable >Yes<#else>No</#if>|${util.getDescription(param.name, cm.comment)}|
+|${param.name}| ${convertTypeToDocumentType(param.type)}| <#if param.nullable >Yes<#else>No</#if>|${util.getDescription(param.name, cm.comment)}|
         </#list>
     <#else>
 
@@ -170,4 +170,67 @@ Header only event message, no message body exist.
 </#list>
 </#if>
 </#list>
+
+<#function convertTypeToDocumentType javaType>
+    <#switch javaType?trim>
+        <#case "int">
+            <#return "int32">
+        <#case "integer">
+            <#return "int32">
+        <#case "short">
+            <#return "int16">
+        <#case "boolean">
+            <#return "boolean">
+        <#case "byte">
+            <#return "uint8">
+        <#case "long">
+            <#return "int64">
+        <#case "char">
+            <#return "int8">
+        <#case util.DATA_FULL_NAME>
+            <#return "byte-array">
+        <#case "java.lang.String">
+            <#return "string">
+        <#case "boolean">
+            <#return "boolean">
+        <#case "java.util.List<" + util.DATA_FULL_NAME + ">">
+            <#return "array of byte-array">
+        <#case "java.util.Set<" + util.DATA_FULL_NAME + ">">
+            <#return "array of byte-array">
+        <#case "java.util.Set<com.hazelcast.core.Member>">
+            <#return "array of Member">
+        <#case "java.util.Set<com.hazelcast.client.impl.client.DistributedObjectInfo>">
+            <#return "array of Distributed Object Info">
+        <#case "java.util.Map<com.hazelcast.nio.Address,java.util.Set<java.lang.Integer>>">
+            <#return "array of Address-Partition Id pair">
+        <#case "java.util.Collection<" + util.DATA_FULL_NAME + ">">
+            <#return "array of byte-array">
+        <#case "java.util.Map<" + util.DATA_FULL_NAME + "," + util.DATA_FULL_NAME + ">">
+            <#return "array of key-value byte array pair">
+        <#case "java.util.Set<java.util.Map.Entry<"+ util.DATA_FULL_NAME + "," + util.DATA_FULL_NAME + ">>">
+            <#return "array of key-value byte array pair">
+        <#case "com.hazelcast.map.impl.SimpleEntryView<" + util.DATA_FULL_NAME +"," + util.DATA_FULL_NAME +">">
+            <#return "array of Entry View">
+        <#case "com.hazelcast.nio.Address">
+            <#return "Address">
+        <#case "com.hazelcast.core.Member">
+            <#return "Member">
+        <#case "javax.transaction.xa.Xid">
+            <#return "Transaction Id">
+        <#case "com.hazelcast.cluster.client.MemberAttributeChange">
+            <#return "Member Attribute Change">
+        <#case "com.hazelcast.map.impl.querycache.event.QueryCacheEventData">
+            <#return "Query Cache Event Data">
+        <#case "java.util.List<com.hazelcast.mapreduce.JobPartitionState>">
+            <#return "array of Job Partition State">
+        <#case "java.util.Set<com.hazelcast.cache.impl.CacheEventData>">
+            <#return "array of Cache Event Data">
+        <#case "java.util.List<com.hazelcast.map.impl.querycache.event.QueryCacheEventData>">
+            <#return "array of Query Cache Event Data">
+        <#case "java.util.List<java.lang.String>">
+            <#return "array of string">
+        <#default>
+            <#return "Unknown Data Type " + javaType>
+    </#switch>
+</#function>
 

@@ -57,7 +57,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-@SupportedAnnotationTypes("com.hazelcast.annotation.GenerateCodec")
+@SupportedAnnotationTypes({"com.hazelcast.annotation.GenerateCodec","com.hazelcast.annotation.Codec"})
 @SupportedSourceVersion(SourceVersion.RELEASE_6)
 public class CodecCodeGenerator
         extends AbstractProcessor {
@@ -106,8 +106,9 @@ public class CodecCodeGenerator
     @Override
     public boolean process(Set<? extends TypeElement> elements, RoundEnvironment env) {
         try {
-            TypeElement te = elementUtils.getTypeElement("com.hazelcast.annotation.GenerateCodec");
-            if (!elements.contains(te)) {
+            TypeElement genCodecElement = elementUtils.getTypeElement("com.hazelcast.annotation.GenerateCodec");
+            TypeElement codecElement = elementUtils.getTypeElement("com.hazelcast.annotation.Codec");
+            if (!elements.contains(genCodecElement) || !elements.contains(codecElement)) {
                 return false;
             }
 
