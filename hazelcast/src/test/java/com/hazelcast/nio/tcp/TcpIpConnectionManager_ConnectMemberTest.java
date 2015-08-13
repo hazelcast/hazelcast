@@ -3,7 +3,11 @@ package com.hazelcast.nio.tcp;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionType;
 import com.hazelcast.test.AssertTask;
+import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import java.net.UnknownHostException;
 
@@ -13,25 +17,10 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
-public abstract class TcpIpConnectionManager_ConnectTest extends TcpIpConnection_AbstractTest {
-
-    @Test
-    public void start() {
-        connManagerA.start();
-
-        assertTrue(connManagerA.isLive());
-    }
-
-    @Test
-    public void start_whenAlreadyStarted_thenCallIgnored() {
-        //first time
-        connManagerA.start();
-
-        //second time
-        connManagerA.start();
-
-        assertTrue(connManagerA.isLive());
-    }
+/**
+ * A test that verifies if 2 members can connect to each other.
+ */
+public abstract class TcpIpConnectionManager_ConnectMemberTest extends TcpIpConnection_AbstractTest {
 
     // ================== getOrConnect ======================================================
 
@@ -85,7 +74,7 @@ public abstract class TcpIpConnectionManager_ConnectTest extends TcpIpConnection
         });
     }
 
-    @Test
+     @Test
     public void destroyConnection_whenAlreadyDestroyed_thenCallIgnored() throws Exception {
         startAllConnectionManagers();
 
