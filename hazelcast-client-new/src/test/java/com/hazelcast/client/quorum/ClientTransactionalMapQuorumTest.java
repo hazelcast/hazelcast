@@ -16,17 +16,17 @@
 
 package com.hazelcast.client.quorum;
 
-import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.QuorumConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.TransactionalMap;
-import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.nio.Address;
 import com.hazelcast.query.TruePredicate;
 import com.hazelcast.quorum.PartitionedCluster;
-import com.hazelcast.config.QuorumConfig;
 import com.hazelcast.test.HazelcastTestRunner;
+import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.annotation.RunParallel;
 import com.hazelcast.transaction.TransactionContext;
@@ -50,7 +50,7 @@ import static com.hazelcast.transaction.TransactionOptions.TransactionType.TWO_P
 
 @RunParallel
 @RunWith(HazelcastTestRunner.class)
-@Category(QuickTest.class)
+@Category({QuickTest.class, ParallelTest.class})
 public class ClientTransactionalMapQuorumTest {
 
     static PartitionedCluster cluster;
@@ -61,6 +61,7 @@ public class ClientTransactionalMapQuorumTest {
     static HazelcastInstance c3;
     static HazelcastInstance c4;
     static HazelcastInstance c5;
+    private static TestHazelcastFactory factory;
 
 
     @Parameterized.Parameter(0)
@@ -91,18 +92,18 @@ public class ClientTransactionalMapQuorumTest {
 
         MapConfig mapConfig = new MapConfig(MAP_NAME_PREFIX + "*");
         mapConfig.setQuorumName(QUORUM_ID);
-        cluster = new PartitionedCluster().partitionFiveMembersThreeAndTwo(mapConfig, quorumConfig);
+        factory = new TestHazelcastFactory();
+        cluster = new PartitionedCluster(factory).partitionFiveMembersThreeAndTwo(mapConfig, quorumConfig);
         initializeClients();
     }
 
     private static void initializeClients() {
-        c1 = HazelcastClient.newHazelcastClient(getClientConfig(cluster.h1));
-        c2 = HazelcastClient.newHazelcastClient(getClientConfig(cluster.h2));
-        c3 = HazelcastClient.newHazelcastClient(getClientConfig(cluster.h3));
-        c4 = HazelcastClient.newHazelcastClient(getClientConfig(cluster.h4));
-        c5 = HazelcastClient.newHazelcastClient(getClientConfig(cluster.h5));
+        c1 = factory.newHazelcastClient(getClientConfig(cluster.h1));
+        c2 = factory.newHazelcastClient(getClientConfig(cluster.h2));
+        c3 = factory.newHazelcastClient(getClientConfig(cluster.h3));
+        c4 = factory.newHazelcastClient(getClientConfig(cluster.h4));
+        c5 = factory.newHazelcastClient(getClientConfig(cluster.h5));
     }
-
     private static ClientConfig getClientConfig(HazelcastInstance instance) {
         ClientConfig clientConfig = new ClientConfig();
         Address address = getNode(instance).address;
@@ -114,7 +115,7 @@ public class ClientTransactionalMapQuorumTest {
 
     @AfterClass
     public static void killAllHazelcastInstances() throws IOException {
-        HazelcastInstanceFactory.terminateAll();
+        factory.terminateAll();
     }
 
 

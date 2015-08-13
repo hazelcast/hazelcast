@@ -21,6 +21,8 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.config.QuorumConfig;
 import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.TestHazelcastInstanceFactory;
+import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import java.io.IOException;
 import java.util.HashMap;
@@ -41,7 +43,7 @@ import static com.hazelcast.map.TempData.LoggingEntryProcessor;
 import static com.hazelcast.test.HazelcastTestSupport.randomMapName;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
+@Category({QuickTest.class, ParallelTest.class})
 public class MapWriteQuorumTest {
 
     static PartitionedCluster cluster;
@@ -63,7 +65,7 @@ public class MapWriteQuorumTest {
         quorumConfig.setSize(3);
         MapConfig mapConfig = new MapConfig(MAP_NAME_PREFIX + "*");
         mapConfig.setQuorumName(QUORUM_ID);
-        cluster = new PartitionedCluster().partitionFiveMembersThreeAndTwo(mapConfig, quorumConfig);
+        cluster = new PartitionedCluster(new TestHazelcastInstanceFactory()).partitionFiveMembersThreeAndTwo(mapConfig, quorumConfig);
     }
 
     @Before
