@@ -178,10 +178,10 @@ public interface MapCodecTemplate {
     void clear(String name);
 
     @Request(id = 50, retryable = false, response = ResponseMessageConst.DATA)
-    void executeOnKey(String name, Data entryProcessor, Data key);
+    void executeOnKey(String name, Data entryProcessor, Data key, long threadId);
 
     @Request(id = 51, retryable = false, response = ResponseMessageConst.DATA)
-    void submitToKey(String name, Data entryProcessor, Data key);
+    void submitToKey(String name, Data entryProcessor, Data key, long threadId);
 
     @Request(id = 52, retryable = false, response = ResponseMessageConst.SET_ENTRY)
     void executeOnAllKeys(String name, Data entryProcessor);

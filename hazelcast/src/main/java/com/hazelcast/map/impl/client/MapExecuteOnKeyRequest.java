@@ -40,14 +40,16 @@ public class MapExecuteOnKeyRequest extends KeyBasedClientRequest implements Por
     private Data key;
     private EntryProcessor processor;
     private boolean submitToKey;
+    private long threadId;
 
     public MapExecuteOnKeyRequest() {
     }
 
-    public MapExecuteOnKeyRequest(String name, EntryProcessor processor, Data key) {
+    public MapExecuteOnKeyRequest(String name, EntryProcessor processor, Data key, long threadId) {
         this.name = name;
         this.processor = processor;
         this.key = key;
+        this.threadId = threadId;
     }
 
     @Override
@@ -57,7 +59,9 @@ public class MapExecuteOnKeyRequest extends KeyBasedClientRequest implements Por
 
     @Override
     protected Operation prepareOperation() {
-        return new EntryOperation(name, key, processor);
+        EntryOperation op = new EntryOperation(name, key, processor);
+        op.setThreadId(threadId);
+        return op;
     }
 
     public String getServiceName() {
@@ -83,6 +87,7 @@ public class MapExecuteOnKeyRequest extends KeyBasedClientRequest implements Por
         final ObjectDataOutput out = writer.getRawDataOutput();
         out.writeData(key);
         out.writeObject(processor);
+        out.writeLong(threadId);
     }
 
     public void read(PortableReader reader) throws IOException {
@@ -91,6 +96,7 @@ public class MapExecuteOnKeyRequest extends KeyBasedClientRequest implements Por
         final ObjectDataInput in = reader.getRawDataInput();
         key = in.readData();
         processor = in.readObject();
+        threadId = in.readLong();
     }
 
     public Permission getRequiredPermission() {

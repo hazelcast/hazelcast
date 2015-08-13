@@ -176,7 +176,7 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
             return (T) MapRemoveAsyncCodec.decodeResponse(clientMessage).response;
         }
     };
-
+    
     private static final ClientMessageDecoder submitToKeyResponseDecoder = new ClientMessageDecoder() {
         @Override
         public <T> T decodeClientMessage(ClientMessage clientMessage) {
@@ -1085,14 +1085,16 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
     public Object executeOnKey(K key, EntryProcessor entryProcessor) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         final Data keyData = toData(key);
-        ClientMessage request = MapExecuteOnKeyCodec.encodeRequest(name, toData(entryProcessor), keyData);
-        return invoke(request, keyData);
+        ClientMessage request = MapExecuteOnKeyCodec.encodeRequest(name, toData(entryProcessor), keyData, ThreadUtil.getThreadId());
+        ClientMessage response = invoke(request, keyData);
+        MapExecuteOnKeyCodec.ResponseParameters resultParameters = MapExecuteOnKeyCodec.decodeResponse(response);
+        return toObject(resultParameters.response);
     }
 
     public void submitToKey(K key, EntryProcessor entryProcessor, final ExecutionCallback callback) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         final Data keyData = toData(key);
-        ClientMessage request = MapSubmitToKeyCodec.encodeRequest(name, toData(entryProcessor), keyData);
+        ClientMessage request = MapSubmitToKeyCodec.encodeRequest(name, toData(entryProcessor), keyData, ThreadUtil.getThreadId());
         try {
             final ICompletableFuture future = invokeOnKeyOwner(request, keyData);
             future.andThen(callback);
@@ -1104,7 +1106,7 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
     public Future submitToKey(K key, EntryProcessor entryProcessor) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         final Data keyData = toData(key);
-        ClientMessage request = MapSubmitToKeyCodec.encodeRequest(name, toData(entryProcessor), keyData);
+        ClientMessage request = MapSubmitToKeyCodec.encodeRequest(name, toData(entryProcessor), keyData, ThreadUtil.getThreadId());
 
         try {
             final ClientInvocationFuture future = invokeOnKeyOwner(request, keyData);
