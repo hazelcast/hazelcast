@@ -26,39 +26,107 @@ import com.hazelcast.nio.serialization.Data;
         name = "AtomicReference", ns = "Hazelcast.Client.Protocol.AtomicReference")
 public interface AtomicReferenceCodecTemplate {
 
+    /**
+     *
+     * @param name Name of the AtomicReference distributed object instance.
+     * @param function the function applied on the value, the stored value does not change
+     * @return  the result of the function application
+     */
     @Request(id = 1, retryable = false, response = ResponseMessageConst.DATA)
-    void apply(String name, Data function);
+    Object apply(String name, Data function);
 
+    /**
+     *
+     * @param name Name of the AtomicReference distributed object instance.
+     * @param function the function that alters the currently stored reference
+     */
     @Request(id = 2, retryable = false, response = ResponseMessageConst.VOID)
     void alter(String name, Data function);
 
+    /**
+     *
+     * @param name Name of the AtomicReference distributed object instance.
+     * @param function the function that alters the currently stored reference
+     * @return the new value, the result of the applied function.
+     */
     @Request(id = 3, retryable = false, response = ResponseMessageConst.DATA)
-    void alterAndGet(String name, Data function);
+    Object alterAndGet(String name, Data function);
 
+    /**
+     *
+     * @param name Name of the AtomicReference distributed object instance.
+     * @param function the function that alters the currently stored reference
+     * @return  the old value, the value before the function is applied
+     */
     @Request(id = 4, retryable = false, response = ResponseMessageConst.DATA)
-    void getAndAlter(String name, Data function);
+    Object getAndAlter(String name, Data function);
 
+    /**
+     *
+     * @param name Name of the AtomicReference distributed object instance.
+     * @param expected the value to check (is allowed to be null).
+     * @return true if the value is found, false otherwise.
+     */
     @Request(id = 5, retryable = true, response = ResponseMessageConst.BOOLEAN)
-    void contains(String name, @Nullable Data expected);
+    Object contains(String name, @Nullable Data expected);
 
+    /**
+     *
+     * @param name Name of the AtomicReference distributed object instance.
+     * @param expected the expected value
+     * @param updated the new value
+     * @return true if successful; or false if the actual value
+     *         was not equal to the expected value.
+     */
     @Request(id = 6, retryable = false, response = ResponseMessageConst.BOOLEAN)
-    void compareAndSet(String name, @Nullable Data expected, @Nullable Data updated);
+    Object compareAndSet(String name, @Nullable Data expected, @Nullable Data updated);
 
+    /**
+     *
+     * @param name Name of the AtomicReference distributed object instance.
+     * @return the current value
+     */
     @Request(id = 8, retryable = true, response = ResponseMessageConst.DATA)
-    void get(String name);
+    Object get(String name);
 
+    /**
+     *
+     * @param name Name of the AtomicReference distributed object instance.
+     * @param newValue the new value
+     */
     @Request(id = 9, retryable = false, response = ResponseMessageConst.VOID)
     void set(String name, @Nullable Data newValue);
 
+    /**
+     *
+     * @param name Name of the AtomicReference distributed object instance.
+     */
     @Request(id = 10, retryable = false, response = ResponseMessageConst.VOID)
     void clear(String name);
 
+    /**
+     *
+     * @param name Name of the AtomicReference distributed object instance.
+     * @param newValue the new value.
+     * @return the old value.
+     */
     @Request(id = 11, retryable = false, response = ResponseMessageConst.DATA)
-    void getAndSet(String name, @Nullable Data newValue);
+    Object getAndSet(String name, @Nullable Data newValue);
 
+    /**
+     *
+     * @param name Name of the AtomicReference distributed object instance.
+     * @param newValue the new value
+     * @return  the new value
+     */
     @Request(id = 12, retryable = false, response = ResponseMessageConst.DATA)
-    void setAndGet(String name, @Nullable Data newValue);
+    Object setAndGet(String name, @Nullable Data newValue);
 
+    /**
+     *
+     * @param name Name of the AtomicReference distributed object instance.
+     * @return true if null, false otherwise.
+     */
     @Request(id = 13, retryable = true, response = ResponseMessageConst.BOOLEAN)
-    void isNull(String name);
+    Object isNull(String name);
 }
