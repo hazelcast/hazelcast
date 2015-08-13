@@ -32,10 +32,10 @@ import java.net.SocketException;
 /**
  * The Tcp/Ip implementation of the {@link com.hazelcast.nio.Connection}.
  *
- * A Connection has 2 sides:
+ * A {@link TcpIpConnection} has 2 sides:
  * <ol>
- * <li>{@link ReadHandler}: the side where it receives data from the remote  machine</li>
- * <li>{@link WriteHandler}: the side where it sends data to the remote machine</li>
+ * <li>{@link ReadHandler}: the side  that takes care of reading from the other side</li>
+ * <li>{@link WriteHandler}: the side that takes care of writing data to the other side</li>
  * </ol>
  */
 public final class TcpIpConnection implements Connection {

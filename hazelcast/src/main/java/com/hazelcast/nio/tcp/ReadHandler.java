@@ -23,13 +23,34 @@ import com.hazelcast.util.counters.Counter;
  */
 public interface ReadHandler {
 
+    /**
+     * Returns the last {@link com.hazelcast.util.Clock#currentTimeMillis()} a read of network was done.
+     *
+     * @return the last time a read from the network was done.
+     */
     long getLastReadTime();
 
+    /**
+     * Gets the Counter that counts the number of normal packets that have been read.
+     *
+     * @return the normal packets counter.
+     */
     Counter getNormalPacketsReadCounter();
 
+    /**
+     * Gets the Counter that counts the number of priority packets that have been read.
+     *
+     * @return the priority packets counter.
+     */
     Counter getPriorityPacketsReadCounter();
 
+    /**
+     * Starts this ReadHandler.
+     */
     void start();
 
+    /**
+     * Shutdown this ReadHandler.
+     */
     void shutdown();
 }
