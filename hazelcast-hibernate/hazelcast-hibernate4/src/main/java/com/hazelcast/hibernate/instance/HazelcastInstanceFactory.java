@@ -50,6 +50,13 @@ public final class HazelcastInstanceFactory {
             if (useNativeClient) {
                 loaderClass = cl.loadClass(HZ_CLIENT_LOADER_CLASSNAME);
             } else {
+                final String loaderConfig = System.getProperty("com.hazelcast.hibernate.instance.loader");
+                if(loaderConfig != null) {
+                    loaderClass = cl.loadClass(loaderConfig);
+                    loader = (IHazelcastInstanceLoader) loaderClass.newInstance();
+                    loader.configure(props);
+                    return loader;
+                }
                 loaderClass = cl.loadClass(HZ_INSTANCE_LOADER_CLASSNAME);
             }
             loader = (IHazelcastInstanceLoader) loaderClass.newInstance();

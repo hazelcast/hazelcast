@@ -23,6 +23,7 @@ import com.hazelcast.hibernate.entity.DummyEntity;
 import com.hazelcast.hibernate.entity.DummyProperty;
 import com.hazelcast.hibernate.instance.HazelcastAccessor;
 import com.hazelcast.hibernate.region.HazelcastQueryResultsRegion;
+import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.NightlyTest;
 import org.hibernate.Query;
 import org.hibernate.Session;
@@ -53,10 +54,10 @@ public abstract class HibernateStatisticsTestSupport extends HibernateTestSuppor
 
     protected final String CACHE_ENTITY = DummyEntity.class.getName();
     protected final String CACHE_PROPERTY = DummyProperty.class.getName();
-    protected final String CACHE_COLLECTION_ENTITY = DummyEntity.class.getName() + ".properties";
 
     @Before
     public void postConstruct() {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         sf = createSessionFactory(getCacheProperties());
         sf2 = createSessionFactory(getCacheProperties());
     }
