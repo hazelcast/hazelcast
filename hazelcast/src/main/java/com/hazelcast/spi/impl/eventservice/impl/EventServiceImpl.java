@@ -21,7 +21,9 @@ import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
+import com.hazelcast.internal.metrics.CompositeProbe;
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.metrics.ProbeTraverse;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
@@ -61,6 +63,7 @@ import static com.hazelcast.util.FutureUtil.ExceptionHandler;
 import static com.hazelcast.util.FutureUtil.waitWithDeadline;
 import static com.hazelcast.util.counters.MwCounter.newMwCounter;
 
+@CompositeProbe(name = "event")
 public class EventServiceImpl implements InternalEventService {
 
     private static final EventRegistration[] EMPTY_REGISTRATIONS = new EventRegistration[0];
@@ -77,6 +80,7 @@ public class EventServiceImpl implements InternalEventService {
 
     private final ExceptionHandler registrationExceptionHandler;
     private final ExceptionHandler deregistrationExceptionHandler;
+    @ProbeTraverse
     private final ConcurrentMap<String, EventServiceSegment> segments;
     private final StripedExecutor eventExecutor;
     private final int eventQueueTimeoutMs;
@@ -112,8 +116,6 @@ public class EventServiceImpl implements InternalEventService {
         this.deregistrationExceptionHandler
                 = new FutureUtilExceptionHandler(logger, "Member left while de-registering listener...");
         this.segments = new ConcurrentHashMap<String, EventServiceSegment>();
-
-        nodeEngine.getMetricsRegistry().scanAndRegister(this, "event");
     }
 
     @Override
@@ -398,7 +400,6 @@ public class EventServiceImpl implements InternalEventService {
             EventServiceSegment existingSegment = segments.putIfAbsent(service, newSegment);
             if (existingSegment == null) {
                 segment = newSegment;
-                nodeEngine.getMetricsRegistry().scanAndRegister(newSegment, "event." + service);
             } else {
                 segment = existingSegment;
             }

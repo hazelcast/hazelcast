@@ -108,6 +108,11 @@ public class MetricsRegistryImpl implements MetricsRegistry {
     }
 
     @Override
+    public <S> void scanAndRegister(S source) {
+        //throw new UnsupportedOperationException();
+    }
+
+    @Override
     public <S> void scanAndRegister(S source, String namePrefix) {
         checkNotNull(source, "source can't be null");
         checkNotNull(namePrefix, "namePrefix can't be null");

@@ -17,7 +17,9 @@
 package com.hazelcast.nio.tcp.nonblocking;
 
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.internal.metrics.CompositeProbe;
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.metrics.ProbeName;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.operationexecutor.OperationHostileThread;
 
@@ -29,6 +31,7 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+@CompositeProbe
 public abstract class NonBlockingIOThread extends Thread implements OperationHostileThread {
 
     private static final int SELECT_WAIT_TIME_MILLIS = 5000;
@@ -92,6 +95,11 @@ public abstract class NonBlockingIOThread extends Thread implements OperationHos
     public final void addTaskAndWakeup(Runnable task) {
         selectorQueue.add(task);
         selector.wakeup();
+    }
+
+    @ProbeName
+    public String getProbeName() {
+        return getName();
     }
 
     // shows how long this probe has been idle.

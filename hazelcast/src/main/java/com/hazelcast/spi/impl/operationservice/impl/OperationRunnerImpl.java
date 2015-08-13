@@ -21,7 +21,9 @@ import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
+import com.hazelcast.internal.metrics.CompositeProbe;
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.metrics.ProbeName;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
@@ -66,7 +68,8 @@ import static java.util.logging.Level.WARNING;
 /**
  * Responsible for processing an Operation.
  */
-class OperationRunnerImpl extends OperationRunner {
+@CompositeProbe
+class OperationRunnerImpl extends OperationRunner  {
 
     static final int AD_HOC_PARTITION_ID = -2;
 
@@ -101,10 +104,17 @@ class OperationRunnerImpl extends OperationRunner {
 
         if (partitionId >= 0) {
             this.count = newSwCounter();
-            nodeEngine.getMetricsRegistry().scanAndRegister(this, "operation.partition[" + partitionId + "]");
         } else {
             this.count = null;
         }
+    }
+
+    @ProbeName
+    public String getProbeName() {
+        if(partitionId>=0) {
+            return "operation.partition[" + partitionId + "]";
+        }
+        return null;
     }
 
     @Override

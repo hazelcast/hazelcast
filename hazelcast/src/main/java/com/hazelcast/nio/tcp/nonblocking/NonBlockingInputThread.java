@@ -16,7 +16,9 @@
 
 package com.hazelcast.nio.tcp.nonblocking;
 
+import com.hazelcast.internal.metrics.CompositeProbe;
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.metrics.ProbeName;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.util.counters.SwCounter;
 
@@ -24,7 +26,7 @@ import java.nio.channels.SelectionKey;
 
 import static com.hazelcast.util.counters.SwCounter.newSwCounter;
 
-public final class NonBlockingInputThread extends NonBlockingIOThread {
+public final class NonBlockingInputThread extends NonBlockingIOThread  {
 
     // This field will be incremented by this thread. It can be read by multiple threads.
     @Probe
@@ -34,7 +36,6 @@ public final class NonBlockingInputThread extends NonBlockingIOThread {
                                   NonBlockingIOThreadOutOfMemoryHandler oomeHandler) {
         super(threadGroup, threadName, logger, oomeHandler);
     }
-
 
     /**
      * Returns the current number of read events that have been processed by this NonBlockingInputThread.

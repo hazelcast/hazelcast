@@ -19,8 +19,11 @@ package com.hazelcast.nio.tcp;
 import com.hazelcast.cluster.impl.BindMessage;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.instance.HazelcastThreadGroup;
+import com.hazelcast.internal.metrics.CompositeProbe;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.metrics.ProbeName;
+import com.hazelcast.internal.metrics.ProbeTraverse;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.nio.Address;
@@ -54,6 +57,7 @@ import java.util.logging.Level;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.counters.MwCounter.newMwCounter;
 
+@CompositeProbe(name = "tcp.connection")
 public class TcpIpConnectionManager implements ConnectionManager, PacketHandler {
 
     final LoggingService loggingService;
@@ -103,6 +107,7 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
     private final Set<SocketChannelWrapper> acceptedSockets =
             Collections.newSetFromMap(new ConcurrentHashMap<SocketChannelWrapper, Boolean>());
 
+    @ProbeTraverse
     @Probe(name = "activeCount")
     private final Set<TcpIpConnection> activeConnections =
             Collections.newSetFromMap(new ConcurrentHashMap<TcpIpConnection, Boolean>());
@@ -112,6 +117,7 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
 
     private final AtomicInteger connectionIdGen = new AtomicInteger();
 
+    @ProbeTraverse
     private final TcpIpConnectionThreadingModel threadingModel;
 
     private volatile boolean live;
@@ -135,17 +141,15 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
 
     public TcpIpConnectionManager(IOService ioService,
                                   ServerSocketChannel serverSocketChannel,
-                                  MetricsRegistry metricsRegistry,
                                   HazelcastThreadGroup threadGroup,
                                   LoggingService loggingService) {
-        this(ioService, serverSocketChannel, loggingService, metricsRegistry,
-                new NonBlockingTcpIpConnectionThreadingModel(ioService, loggingService, metricsRegistry, threadGroup));
+        this(ioService, serverSocketChannel, loggingService,
+                new NonBlockingTcpIpConnectionThreadingModel(ioService, loggingService, threadGroup));
     }
 
     public TcpIpConnectionManager(IOService ioService,
                                   ServerSocketChannel serverSocketChannel,
                                   LoggingService loggingService,
-                                  MetricsRegistry metricsRegistry,
                                   TcpIpConnectionThreadingModel tcpIpConnectionThreadingModel) {
         this.ioService = ioService;
         this.threadingModel = tcpIpConnectionThreadingModel;
@@ -164,8 +168,6 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
         this.outboundPortCount = ports.size();
         this.outboundPorts.addAll(ports);
         this.socketChannelWrapperFactory = ioService.getSocketChannelWrapperFactory();
-
-        metricsRegistry.scanAndRegister(this, "tcp.connection");
     }
 
     public int getSocketReceiveBufferSize() {

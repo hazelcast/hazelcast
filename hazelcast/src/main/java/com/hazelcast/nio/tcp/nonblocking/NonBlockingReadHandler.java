@@ -16,16 +16,17 @@
 
 package com.hazelcast.nio.tcp.nonblocking;
 
-import com.hazelcast.internal.metrics.MetricsRegistry;
+import com.hazelcast.internal.metrics.CompositeProbe;
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.metrics.ProbeName;
 import com.hazelcast.nio.Protocols;
 import com.hazelcast.nio.ascii.SocketTextReader;
+import com.hazelcast.nio.tcp.ReadHandler;
 import com.hazelcast.nio.tcp.SocketClientDataReader;
 import com.hazelcast.nio.tcp.SocketClientMessageReader;
 import com.hazelcast.nio.tcp.SocketPacketReader;
 import com.hazelcast.nio.tcp.SocketReader;
 import com.hazelcast.nio.tcp.TcpIpConnection;
-import com.hazelcast.nio.tcp.ReadHandler;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.counters.Counter;
 import com.hazelcast.util.counters.SwCounter;
@@ -46,6 +47,7 @@ import static com.hazelcast.util.counters.SwCounter.newSwCounter;
 /**
  * The reading side of the {@link com.hazelcast.nio.Connection}.
  */
+@CompositeProbe
 public final class NonBlockingReadHandler
         extends AbstractSelectionHandler
         implements ReadHandler {
@@ -60,7 +62,6 @@ public final class NonBlockingReadHandler
     private final SwCounter priorityPacketsRead = newSwCounter();
     @Probe(name = "in.exceptionCount")
     private final SwCounter exceptionCount = newSwCounter();
-    private final MetricsRegistry metricRegistry;
 
     private SocketReader socketReader;
 
@@ -70,15 +71,14 @@ public final class NonBlockingReadHandler
     @Probe(name = "in.eventCount")
     private final SwCounter eventCount = newSwCounter();
 
-    public NonBlockingReadHandler(
-            TcpIpConnection connection,
-            NonBlockingIOThread ioThread,
-            MetricsRegistry metricsRegistry) {
+    public NonBlockingReadHandler(TcpIpConnection connection, NonBlockingIOThread ioThread) {
         super(connection, ioThread, SelectionKey.OP_READ);
         this.ioThread = ioThread;
+    }
 
-        this.metricRegistry = metricsRegistry;
-        metricRegistry.scanAndRegister(this, "tcp.connection[" + connection.getMetricsId() + "]");
+    @ProbeName
+    public String getProbeName() {
+        return "tcp.connection[" + connection.getMetricsId() + "]";
     }
 
     @Probe(name = "in.idleTimeMs")
@@ -197,8 +197,7 @@ public final class NonBlockingReadHandler
         super.handleSocketException(e);
     }
 
-    private void initializeSocketReader()
-            throws IOException {
+    private void initializeSocketReader() throws IOException {
         if (socketReader != null) {
             return;
         }
@@ -258,7 +257,6 @@ public final class NonBlockingReadHandler
     public void shutdown() {
         //todo:
         // ioThread race, shutdown can end up on the old selector
-        metricRegistry.deregister(this);
         ioThread.addTaskAndWakeup(new Runnable() {
             @Override
             public void run() {

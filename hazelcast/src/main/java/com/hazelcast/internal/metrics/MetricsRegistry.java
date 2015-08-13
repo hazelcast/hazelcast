@@ -107,6 +107,8 @@ public interface MetricsRegistry {
      */
     <S> void scanAndRegister(S source, String namePrefix);
 
+    <S> void scanAndRegister(S source);
+
     /**
      * Registers a probe.
      *

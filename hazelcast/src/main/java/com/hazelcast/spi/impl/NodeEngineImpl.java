@@ -24,6 +24,7 @@ import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.internal.metrics.MetricsRegistry;
+import com.hazelcast.internal.metrics.ProbeTraverse;
 import com.hazelcast.internal.metrics.impl.MetricsRegistryImpl;
 import com.hazelcast.internal.storage.DataRef;
 import com.hazelcast.internal.storage.Storage;
@@ -72,28 +73,33 @@ import java.util.LinkedList;
  */
 public class NodeEngineImpl implements NodeEngine {
 
-    private final Node node;
-    private final ILogger logger;
+    @ProbeTraverse
     private final EventServiceImpl eventService;
+    @ProbeTraverse
     private final OperationServiceImpl operationService;
+    @ProbeTraverse
     private final ExecutionServiceImpl executionService;
     private final WaitNotifyServiceImpl waitNotifyService;
     private final ServiceManagerImpl serviceManager;
     private final TransactionManagerServiceImpl transactionManagerService;
+    @ProbeTraverse
     private final ProxyServiceImpl proxyService;
     private final WanReplicationService wanReplicationService;
     private final PacketTransceiver packetTransceiver;
     private final QuorumServiceImpl quorumService;
+
+    private final Node node;
+    private final ILogger logger;
     private final MetricsRegistryImpl metricsRegistry;
     private final SerializationService serializationService;
     private final LoggingServiceImpl loggingService;
 
-    public NodeEngineImpl(final Node node) {
+    public NodeEngineImpl(Node node) {
         this.node = node;
         this.loggingService = node.loggingService;
         this.serializationService = node.getSerializationService();
         this.logger = node.getLogger(NodeEngine.class.getName());
-        this.metricsRegistry = new MetricsRegistryImpl(node.getLogger(MetricsRegistryImpl.class));
+        this.metricsRegistry = new MetricsRegistryImpl(loggingService.getLogger(MetricsRegistryImpl.class));
         this.proxyService = new ProxyServiceImpl(this);
         this.serviceManager = new ServiceManagerImpl(this);
         this.executionService = new ExecutionServiceImpl(this);
@@ -111,6 +117,8 @@ public class NodeEngineImpl implements NodeEngine {
                 new ConnectionManagerPacketHandler()
         );
         quorumService = new QuorumServiceImpl(this);
+
+        metricsRegistry.scanAndRegister(this);
     }
 
     class ConnectionManagerPacketHandler implements PacketHandler {

@@ -17,6 +17,7 @@
 package com.hazelcast.nio.tcp.nonblocking.iobalancer;
 
 import com.hazelcast.instance.HazelcastThreadGroup;
+import com.hazelcast.internal.metrics.CompositeProbe;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
@@ -57,6 +58,7 @@ import static com.hazelcast.util.counters.SwCounter.newSwCounter;
  * right after a physical TCP connection is created whilst <code>ConnectionListener</code> is notified only
  * after a successful (Hazelcast) binding process.
  */
+@CompositeProbe(name = "balancer")
 public class IOBalancer {
     private static final String PROP_MONKEY_BALANCER = "hazelcast.io.balancer.monkey";
     private final ILogger logger;

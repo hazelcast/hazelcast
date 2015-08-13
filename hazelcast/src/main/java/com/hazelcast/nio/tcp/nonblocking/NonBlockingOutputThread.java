@@ -17,6 +17,7 @@
 package com.hazelcast.nio.tcp.nonblocking;
 
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.metrics.ProbeName;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.util.counters.SwCounter;
 
