@@ -16,24 +16,24 @@
 
 package com.hazelcast.client.quorum;
 
-import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.QuorumConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.nio.Address;
 import com.hazelcast.quorum.PartitionedCluster;
-import com.hazelcast.config.QuorumConfig;
 import com.hazelcast.quorum.QuorumException;
 import com.hazelcast.quorum.QuorumType;
 import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
-
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -45,7 +45,7 @@ import static com.hazelcast.test.HazelcastTestSupport.getNode;
 import static com.hazelcast.test.HazelcastTestSupport.randomMapName;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
+@Category({QuickTest.class, ParallelTest.class})
 public class ClientMapReadQuorumTest {
 
     static PartitionedCluster cluster;
@@ -63,6 +63,7 @@ public class ClientMapReadQuorumTest {
 
     private static final String MAP_NAME_PREFIX = "quorum";
     private static final String QUORUM_ID = "threeNodeQuorumRule";
+    private static TestHazelcastFactory factory;
 
     @BeforeClass
     public static void initialize() throws InterruptedException {
@@ -73,16 +74,17 @@ public class ClientMapReadQuorumTest {
         quorumConfig.setType(QuorumType.READ);
         MapConfig mapConfig = new MapConfig(MAP_NAME_PREFIX + "*");
         mapConfig.setQuorumName(QUORUM_ID);
-        cluster = new PartitionedCluster().partitionFiveMembersThreeAndTwo(mapConfig, quorumConfig);
+        factory = new TestHazelcastFactory();
+        cluster = new PartitionedCluster(factory).partitionFiveMembersThreeAndTwo(mapConfig, quorumConfig);
         initializeClients();
     }
 
     private static void initializeClients() {
-        c1 = HazelcastClient.newHazelcastClient(getClientConfig(cluster.h1));
-        c2 = HazelcastClient.newHazelcastClient(getClientConfig(cluster.h2));
-        c3 = HazelcastClient.newHazelcastClient(getClientConfig(cluster.h3));
-        c4 = HazelcastClient.newHazelcastClient(getClientConfig(cluster.h4));
-        c5 = HazelcastClient.newHazelcastClient(getClientConfig(cluster.h5));
+        c1 = factory.newHazelcastClient(getClientConfig(cluster.h1));
+        c2 = factory.newHazelcastClient(getClientConfig(cluster.h2));
+        c3 = factory.newHazelcastClient(getClientConfig(cluster.h3));
+        c4 = factory.newHazelcastClient(getClientConfig(cluster.h4));
+        c5 = factory.newHazelcastClient(getClientConfig(cluster.h5));
     }
 
     private static ClientConfig getClientConfig(HazelcastInstance instance) {
@@ -105,7 +107,7 @@ public class ClientMapReadQuorumTest {
 
     @AfterClass
     public static void killAllHazelcastInstances() throws IOException {
-        HazelcastInstanceFactory.terminateAll();
+        factory.terminateAll();
     }
 
     @Test
