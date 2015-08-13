@@ -24,6 +24,9 @@ import com.hazelcast.nio.IOService;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
+/**
+ * A {@link SocketReader} that reads ClientMessage for the new-client.
+ */
 public class ClientMessageSocketReader implements SocketReader, ClientMessageBuilder.MessageHandler {
 
     private final ClientMessageBuilder builder;

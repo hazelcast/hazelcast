@@ -20,6 +20,11 @@ import com.hazelcast.nio.Packet;
 
 import java.nio.ByteBuffer;
 
+/**
+ * A {@link SocketWriter} that write Packets for the old-client.
+ *
+ * Once the old client is deleted, this code can be deleted.
+ */
 public class ClientPacketSocketWriter implements SocketWriter<Packet> {
 
     @Override

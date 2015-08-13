@@ -32,6 +32,11 @@ import static com.hazelcast.nio.ConnectionType.PYTHON_CLIENT;
 import static com.hazelcast.nio.ConnectionType.RUBY_CLIENT;
 import static com.hazelcast.util.StringUtil.bytesToString;
 
+/**
+ * A {@link SocketReader} that reads Packets for the old-client.
+ *
+ * Once the old client is deleted, this code can be deleted.
+ */
 public class ClientPacketSocketReader implements SocketReader {
 
     private final Connection connection;

@@ -20,6 +20,9 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 
 import java.nio.ByteBuffer;
 
+/**
+ * A {@link SocketWriter} that write ClientMessage for the new-client.
+ */
 public class ClientMessageSocketWriter implements SocketWriter<ClientMessage> {
 
     @Override
