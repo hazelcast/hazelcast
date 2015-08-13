@@ -215,14 +215,6 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
         return false;
     }
 
-    public PacketReader createPacketReader(TcpIpConnection connection) {
-        return ioService.createPacketReader(connection);
-    }
-
-    public PacketWriter createPacketWriter(TcpIpConnection connection) {
-        return ioService.createPacketWriter(connection);
-    }
-
     // just for testing
     public Set<TcpIpConnection> getActiveConnections() {
         return activeConnections;

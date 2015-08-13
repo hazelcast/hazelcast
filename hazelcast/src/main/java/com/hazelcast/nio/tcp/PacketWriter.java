@@ -21,5 +21,6 @@ import com.hazelcast.nio.Packet;
 import java.nio.ByteBuffer;
 
 public interface PacketWriter {
-    boolean writePacket(Packet packet, ByteBuffer socketBB) throws Exception;
+
+    boolean write(Packet packet, ByteBuffer dst) throws Exception;
 }

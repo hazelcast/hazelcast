@@ -18,7 +18,10 @@ package com.hazelcast.nio.tcp;
 
 import java.nio.ByteBuffer;
 
+/**
+ * Reads content from a {@link ByteBuffer}.
+ */
 public interface SocketReader {
 
-    void read(ByteBuffer bb) throws Exception;
+    void read(ByteBuffer src) throws Exception;
 }

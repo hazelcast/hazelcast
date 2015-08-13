@@ -58,7 +58,7 @@ public class SocketTextWriter implements SocketWriter<TextCommand> {
     }
 
     @Override
-    public boolean write(TextCommand socketWritable, ByteBuffer socketBuffer) throws Exception {
-        return socketWritable.writeTo(socketBuffer);
+    public boolean write(TextCommand socketWritable, ByteBuffer dst) throws Exception {
+        return socketWritable.writeTo(dst);
     }
 }

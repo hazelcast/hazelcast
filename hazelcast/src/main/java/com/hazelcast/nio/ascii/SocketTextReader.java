@@ -109,9 +109,9 @@ public class SocketTextReader implements SocketReader {
     }
 
     @Override
-    public void read(ByteBuffer inBuffer) {
-        while (inBuffer.hasRemaining()) {
-            doRead(inBuffer);
+    public void read(ByteBuffer src) {
+        while (src.hasRemaining()) {
+            doRead(src);
         }
     }
 

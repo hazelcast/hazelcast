@@ -18,37 +18,31 @@ package com.hazelcast.nio.tcp;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.util.ClientMessageBuilder;
+import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.IOService;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
-public class SocketClientMessageReader implements SocketReader {
+public class ClientMessageSocketReader implements SocketReader, ClientMessageBuilder.MessageHandler {
 
     private final ClientMessageBuilder builder;
+    private final Connection connection;
+    private final IOService ioService;
 
-    public SocketClientMessageReader(TcpIpConnection connection)
-            throws IOException {
-        this.builder = new ClientMessageBuilder(new ClientSocketMessageHandler(connection));
+    public ClientMessageSocketReader(Connection connection, IOService ioService) throws IOException {
+        this.connection = connection;
+        this.ioService = ioService;
+        this.builder = new ClientMessageBuilder(this);
     }
 
     @Override
-    public void read(ByteBuffer inBuffer) throws Exception {
-        builder.onData(inBuffer);
+    public void read(ByteBuffer src) throws Exception {
+        builder.onData(src);
     }
 
-    private static class ClientSocketMessageHandler implements ClientMessageBuilder.MessageHandler {
-        private final TcpIpConnection connection;
-        private final IOService ioService;
-
-        public ClientSocketMessageHandler(TcpIpConnection connection) {
-            this.connection = connection;
-            ioService = connection.getConnectionManager().getIOHandler();
-        }
-
-        @Override
-        public void handleMessage(ClientMessage message) {
-            ioService.handleClientMessage(message, connection);
-        }
+    @Override
+    public void handleMessage(ClientMessage message) {
+        ioService.handleClientMessage(message, connection);
     }
 }

@@ -20,17 +20,16 @@ import com.hazelcast.nio.Packet;
 
 import java.nio.ByteBuffer;
 
-public class SocketPacketWriter implements SocketWriter<Packet> {
+public class MemberPacketSocketWriter implements SocketWriter<Packet> {
 
     private final PacketWriter packetWriter;
 
-    public SocketPacketWriter(TcpIpConnection connection) {
-        TcpIpConnectionManager connectionManager = connection.getConnectionManager();
-        packetWriter = connectionManager.createPacketWriter(connection);
+    public MemberPacketSocketWriter(PacketWriter packetWriter) {
+        this.packetWriter = packetWriter;
     }
 
     @Override
-    public boolean write(Packet packet, ByteBuffer socketBuffer) throws Exception {
-        return packetWriter.writePacket(packet, socketBuffer);
+    public boolean write(Packet packet, ByteBuffer dst) throws Exception {
+        return packetWriter.write(packet, dst);
     }
 }

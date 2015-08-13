@@ -21,14 +21,6 @@ import com.hazelcast.nio.SocketWritable;
 
 public interface WriteHandler {
 
-    /**
-     * Returns the
-     * @return
-     */
-    long getNormalPacketsWritten();
-
-    long getUrgentPacketsWritten();
-
     int totalPacketsPending();
 
     void offer(SocketWritable packet);

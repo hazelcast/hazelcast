@@ -20,7 +20,12 @@ import com.hazelcast.nio.SocketWritable;
 
 import java.nio.ByteBuffer;
 
+/**
+ * Writes a {@link SocketWriter} to a {@link ByteBuffer}.
+ *
+ * @param <T>
+ */
 public interface SocketWriter<T extends SocketWritable> {
 
-    boolean write(T socketWritable, ByteBuffer socketBuffer) throws Exception;
+    boolean write(T socketWritable, ByteBuffer dst) throws Exception;
 }

@@ -39,9 +39,9 @@ public interface SocketChannelWrapper extends Closeable {
 
     SelectionKey register(Selector selector, int ops, Object attachment) throws ClosedChannelException;
 
-    int read(ByteBuffer byteBuffer) throws IOException;
+    int read(ByteBuffer dst) throws IOException;
 
-    int write(ByteBuffer byteBuffer) throws IOException;
+    int write(ByteBuffer src) throws IOException;
 
     SelectableChannel configureBlocking(boolean b) throws IOException;
 
