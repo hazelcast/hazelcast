@@ -195,29 +195,6 @@ public class RegionFactoryDefaultTest extends HibernateStatisticsTestSupport {
     }
 
     @Test
-    @Category(NightlyTest.class)
-    public void testQueryCacheCleanup() {
-
-        MapConfig mapConfig = getHazelcastInstance(sf).getConfig().getMapConfig("org.hibernate.cache.*");
-        final float baseEvictionRate = 0.2f;
-        final int numberOfEntities = 100;
-        final int defaultCleanupPeriod = 60;
-        final int maxSize = mapConfig.getMaxSizeConfig().getSize();
-        final int evictedItemCount = numberOfEntities - maxSize + (int) (maxSize * baseEvictionRate);
-        insertDummyEntities(numberOfEntities);
-        sleep(1);
-        for (int i = 0; i < numberOfEntities; i++) {
-            executeQuery(sf, i);
-        }
-
-        HazelcastQueryResultsRegion queryRegion = ((HazelcastQueryResultsRegion) (((SessionFactoryImpl) sf).getQueryCache()).getRegion());
-        assertEquals(numberOfEntities, queryRegion.getCache().size());
-        sleep(defaultCleanupPeriod);
-
-        assertEquals(numberOfEntities - evictedItemCount, queryRegion.getCache().size());
-    }
-
-    @Test
     public void testSpecificQueryRegionEviction() {
         int entityCount = 10;
         insertDummyEntities(entityCount, 0);
