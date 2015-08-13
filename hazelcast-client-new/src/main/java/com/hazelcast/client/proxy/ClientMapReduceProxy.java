@@ -19,7 +19,10 @@ package com.hazelcast.client.proxy;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapReduceCancelCodec;
 import com.hazelcast.client.impl.protocol.codec.MapReduceForCustomCodec;
+import com.hazelcast.client.impl.protocol.codec.MapReduceForListCodec;
 import com.hazelcast.client.impl.protocol.codec.MapReduceForMapCodec;
+import com.hazelcast.client.impl.protocol.codec.MapReduceForMultiMapCodec;
+import com.hazelcast.client.impl.protocol.codec.MapReduceForSetCodec;
 import com.hazelcast.client.impl.protocol.codec.MapReduceJobProcessInformationCodec;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.spi.impl.ClientInvocation;
@@ -213,17 +216,17 @@ public class ClientMapReduceProxy
                             source.getMapName(), chunkSize, list, topologyChangedStrategyName);
         } else if (keyValueSource instanceof ListKeyValueSource) {
             ListKeyValueSource source = (ListKeyValueSource) keyValueSource;
-            return MapReduceForMapCodec
+            return MapReduceForListCodec
                     .encodeRequest(name, jobId, predicateData, mapperData, combinerFactoryData, reducerFactoryData,
                             source.getListName(), chunkSize, list, topologyChangedStrategyName);
         } else if (keyValueSource instanceof SetKeyValueSource) {
             SetKeyValueSource source = (SetKeyValueSource) keyValueSource;
-            return MapReduceForMapCodec
+            return MapReduceForSetCodec
                     .encodeRequest(name, jobId, predicateData, mapperData, combinerFactoryData, reducerFactoryData,
                             source.getSetName(), chunkSize, list, topologyChangedStrategyName);
         } else if (keyValueSource instanceof MultiMapKeyValueSource) {
             MultiMapKeyValueSource source = (MultiMapKeyValueSource) keyValueSource;
-            return MapReduceForMapCodec
+            return MapReduceForMultiMapCodec
                     .encodeRequest(name, jobId, predicateData, mapperData, combinerFactoryData, reducerFactoryData,
                             source.getMultiMapName(), chunkSize, list, topologyChangedStrategyName);
         }
