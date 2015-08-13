@@ -1,6 +1,7 @@
 package com.hazelcast.nio.tcp;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.task.MessageTask;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.config.SymmetricEncryptionConfig;
@@ -105,7 +106,6 @@ public class MockIOService implements IOService {
 
     @Override
     public void handleClientMessage(ClientMessage cm, Connection connection) {
-
     }
 
     @Override

@@ -1,6 +1,5 @@
 package com.hazelcast.nio.tcp;
 
-import com.hazelcast.client.ClientTypes;
 import com.hazelcast.nio.ConnectionType;
 import com.hazelcast.nio.Protocols;
 import com.hazelcast.test.AssertTask;
@@ -15,6 +14,17 @@ import org.junit.runner.RunWith;
 import java.io.IOException;
 import java.net.Socket;
 
+import static com.hazelcast.client.ClientTypes.CPP;
+import static com.hazelcast.client.ClientTypes.CSHARP;
+import static com.hazelcast.client.ClientTypes.JAVA;
+import static com.hazelcast.client.ClientTypes.PYTHON;
+import static com.hazelcast.client.ClientTypes.RUBY;
+import static com.hazelcast.nio.ConnectionType.BINARY_CLIENT;
+import static com.hazelcast.nio.ConnectionType.CPP_CLIENT;
+import static com.hazelcast.nio.ConnectionType.CSHARP_CLIENT;
+import static com.hazelcast.nio.ConnectionType.JAVA_CLIENT;
+import static com.hazelcast.nio.ConnectionType.PYTHON_CLIENT;
+import static com.hazelcast.nio.ConnectionType.RUBY_CLIENT;
 import static com.hazelcast.nio.IOUtil.closeResource;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -40,32 +50,32 @@ public class TcpIpConnectionManager_OldClientConnectTest extends TcpIpConnection
 
     @Test
     public void connectOldClient_whenJava() throws IOException {
-        connectOldClient(ClientTypes.JAVA, ConnectionType.JAVA_CLIENT);
+        connectOldClient(JAVA, JAVA_CLIENT);
     }
 
     @Test
     public void connectOldClient_whenCPP() throws IOException {
-        connectOldClient(ClientTypes.CPP, ConnectionType.CPP_CLIENT);
+        connectOldClient(CPP, CPP_CLIENT);
     }
 
     @Test
     public void connectOldClient_whenCSHARP() throws IOException {
-        connectOldClient(ClientTypes.CSHARP, ConnectionType.CSHARP_CLIENT);
+        connectOldClient(CSHARP, CSHARP_CLIENT);
     }
 
     @Test
     public void connectOldClient_whenRUBY() throws IOException {
-        connectOldClient(ClientTypes.RUBY, ConnectionType.RUBY_CLIENT);
+        connectOldClient(RUBY, RUBY_CLIENT);
     }
 
     @Test
     public void connectOldClient_whenPython() throws IOException {
-        connectOldClient(ClientTypes.PYTHON, ConnectionType.PYTHON_CLIENT);
+        connectOldClient(PYTHON, PYTHON_CLIENT);
     }
 
     @Test
     public void connectOldClient_whenUnknown() throws IOException {
-        connectOldClient("???", ConnectionType.BINARY_CLIENT);
+        connectOldClient("???", BINARY_CLIENT);
     }
 
     public void connectOldClient(String clientType, final ConnectionType expectedConnectionType) throws IOException {

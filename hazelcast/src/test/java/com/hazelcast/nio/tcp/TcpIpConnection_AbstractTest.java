@@ -106,7 +106,7 @@ public abstract class TcpIpConnection_AbstractTest extends HazelcastTestSupport 
     }
 
 
-    public TcpIpConnection getConnection(TcpIpConnectionManager connManager, SocketAddress localSocketAddress) {
+    public static TcpIpConnection getConnection(TcpIpConnectionManager connManager, SocketAddress localSocketAddress) {
         long startMs = System.currentTimeMillis();
 
         for (; ; ) {
