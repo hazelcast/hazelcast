@@ -514,6 +514,14 @@ public class ClientMapTest {
     }
 
     @Test
+    public void testExecuteOnKey() throws Exception {
+        final IMap map = createMap();
+        map.put(1, 1);
+        Object result = map.executeOnKey(1, new IncrementorEntryProcessor());
+        assertEquals(2, result);
+    }
+
+    @Test
     public void testSubmitToKey() throws Exception {
         final IMap map = createMap();
         map.put(1, 1);
