@@ -95,7 +95,7 @@ public class SocketTextReader implements SocketReader {
     private final ILogger logger;
 
     public SocketTextReader(TcpIpConnection connection) {
-        IOService ioService = connection.getConnectionManager().getIOHandler();
+        IOService ioService = connection.getConnectionManager().getIoService();
         this.textCommandService = ioService.getTextCommandService();
         this.socketTextWriter = (SocketTextWriter) connection.getWriteHandler().getSocketWriter();
         this.connection = connection;

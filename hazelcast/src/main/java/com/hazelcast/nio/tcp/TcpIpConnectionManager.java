@@ -242,10 +242,6 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
         allTextConnections.incrementAndGet();
     }
 
-    public IOService getIOHandler() {
-        return ioService;
-    }
-
     public int getSocketConnectTimeoutSeconds() {
         return socketConnectTimeoutSeconds;
     }
