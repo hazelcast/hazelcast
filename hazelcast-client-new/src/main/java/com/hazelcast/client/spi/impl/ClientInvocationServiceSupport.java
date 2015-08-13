@@ -96,10 +96,17 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
         ClientMessage clientMessage = invocation.getClientMessage();
         if (!isAllowedToSendRequest(connection, invocation) || !writeToConnection(connection, clientMessage)) {
             final int callId = clientMessage.getCorrelationId();
-            deRegisterCallId(callId);
+            ClientInvocation clientInvocation = deRegisterCallId(callId);
             deRegisterEventHandler(callId);
-            throw new IOException("Packet not send to " + connection.getRemoteEndpoint());
+            if (clientInvocation != null) {
+                throw new IOException("Packet not send to " + connection.getRemoteEndpoint());
+            } else {
+                if (logger.isFinestEnabled()) {
+                    logger.finest("Invocation not found to deregister for call id " + callId);
+                }
+            }
         }
+
         invocation.setSendConnection(connection);
     }
 
