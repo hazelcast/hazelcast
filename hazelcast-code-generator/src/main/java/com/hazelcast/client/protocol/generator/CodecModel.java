@@ -40,7 +40,7 @@ public class CodecModel implements Model{
     private String className;
     private String parentName;
     private String packageName;
-    String comment;
+    private String comment = "";
 
     private int retryable;
     private int response;
@@ -266,6 +266,10 @@ public class CodecModel implements Model{
         return retryable;
     }
 
+    public void setComment(String comment) {
+        this.comment = comment;
+    }
+
     public static class EventModel {
         private String name;
         private List<ParameterModel> eventParams;
@@ -305,5 +309,6 @@ public class CodecModel implements Model{
         public Lang getLang() {
             return lang;
         }
+
     }
 }
