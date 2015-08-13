@@ -73,41 +73,33 @@ import java.util.LinkedList;
  */
 public class NodeEngineImpl implements NodeEngine {
 
-    private final Node node;
-    private final ILogger logger;
     @ProbeTraverse
     private final EventServiceImpl eventService;
     @ProbeTraverse
     private final OperationServiceImpl operationService;
     @ProbeTraverse
     private final ExecutionServiceImpl executionService;
-    @ProbeTraverse
     private final WaitNotifyServiceImpl waitNotifyService;
-    @ProbeTraverse
     private final ServiceManagerImpl serviceManager;
-    @ProbeTraverse
     private final TransactionManagerServiceImpl transactionManagerService;
     @ProbeTraverse
     private final ProxyServiceImpl proxyService;
-    @ProbeTraverse
     private final WanReplicationService wanReplicationService;
-    @ProbeTraverse
     private final PacketTransceiver packetTransceiver;
-    @ProbeTraverse
     private final QuorumServiceImpl quorumService;
-    @ProbeTraverse
+
+    private final Node node;
+    private final ILogger logger;
     private final MetricsRegistryImpl metricsRegistry;
-    @ProbeTraverse
     private final SerializationService serializationService;
-    @ProbeTraverse
     private final LoggingServiceImpl loggingService;
 
-    public NodeEngineImpl(final Node node) {
+    public NodeEngineImpl(Node node) {
         this.node = node;
         this.loggingService = node.loggingService;
         this.serializationService = node.getSerializationService();
         this.logger = node.getLogger(NodeEngine.class.getName());
-        this.metricsRegistry = new MetricsRegistryImpl(node.getLogger(MetricsRegistryImpl.class));
+        this.metricsRegistry = new MetricsRegistryImpl(loggingService.getLogger(MetricsRegistryImpl.class));
         this.proxyService = new ProxyServiceImpl(this);
         this.serviceManager = new ServiceManagerImpl(this);
         this.executionService = new ExecutionServiceImpl(this);
