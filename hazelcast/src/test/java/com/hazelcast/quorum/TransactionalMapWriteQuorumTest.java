@@ -21,6 +21,7 @@ import com.hazelcast.core.TransactionalMap;
 import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.config.QuorumConfig;
 import com.hazelcast.test.HazelcastTestRunner;
+import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.annotation.RunParallel;
@@ -80,7 +81,7 @@ public class TransactionalMapWriteQuorumTest {
 
         MapConfig mapConfig = new MapConfig(MAP_NAME_PREFIX + "*");
         mapConfig.setQuorumName(QUORUM_ID);
-        cluster = new PartitionedCluster().partitionFiveMembersThreeAndTwo(mapConfig, quorumConfig);
+        cluster = new PartitionedCluster(new TestHazelcastInstanceFactory()).partitionFiveMembersThreeAndTwo(mapConfig, quorumConfig);
     }
 
     @AfterClass

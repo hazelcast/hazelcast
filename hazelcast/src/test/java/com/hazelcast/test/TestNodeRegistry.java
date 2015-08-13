@@ -32,6 +32,7 @@ import com.hazelcast.nio.IOService;
 import com.hazelcast.nio.NodeIOService;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.SocketWritable;
+import com.hazelcast.nio.tcp.FirewallingMockConnectionManager;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.util.ExceptionUtil;
@@ -122,7 +123,7 @@ public final class TestNodeRegistry {
 
         public ConnectionManager createConnectionManager(Node node, ServerSocketChannel serverSocketChannel) {
             NodeIOService ioService = new NodeIOService(node, node.nodeEngine);
-            return new MockConnectionManager(ioService, nodes, node, joinerLock);
+            return new FirewallingMockConnectionManager(ioService, nodes, node, joinerLock);
         }
     }
 
@@ -231,7 +232,7 @@ public final class TestNodeRegistry {
         }
     }
 
-    private static class MockConnectionManager implements ConnectionManager {
+    public static class MockConnectionManager implements ConnectionManager {
         private final Set<ConnectionListener> connectionListeners = new CopyOnWriteArraySet<ConnectionListener>();
         private final IOService ioService;
         final ConcurrentMap<Address, NodeEngineImpl> nodes;
@@ -239,8 +240,8 @@ public final class TestNodeRegistry {
         final Node node;
         final Object joinerLock;
 
-        MockConnectionManager(IOService ioService, ConcurrentMap<Address, NodeEngineImpl> nodes,
-                              Node node, Object joinerLock) {
+        public MockConnectionManager(IOService ioService, ConcurrentMap<Address, NodeEngineImpl> nodes,
+                                     Node node, Object joinerLock) {
             this.ioService = ioService;
             this.nodes = nodes;
             this.node = node;
@@ -250,8 +251,8 @@ public final class TestNodeRegistry {
             }
         }
 
-      @Override
-      public Connection getConnection(Address address) {
+        @Override
+        public Connection getConnection(Address address) {
             MockConnection conn = mapConnections.get(address);
             if (conn == null) {
                 NodeEngineImpl nodeEngine = nodes.get(address);
