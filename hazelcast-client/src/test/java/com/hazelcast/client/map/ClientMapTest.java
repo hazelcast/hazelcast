@@ -544,10 +544,12 @@ public class ClientMapTest {
         final IMap map = createMap();
         map.put(1, 1);
         final CountDownLatch latch = new CountDownLatch(1);
+        final AtomicInteger result = new AtomicInteger();
         ExecutionCallback executionCallback = new ExecutionCallback() {
             @Override
             public void onResponse(Object response) {
                 latch.countDown();
+                result.set((Integer) response);
             }
 
             @Override
@@ -557,6 +559,7 @@ public class ClientMapTest {
 
         map.submitToKey(1, new IncrementorEntryProcessor(), executionCallback);
         assertTrue(latch.await(5, TimeUnit.SECONDS));
+        assertEquals(2, result.get());
         assertEquals(2, map.get(1));
     }
 
