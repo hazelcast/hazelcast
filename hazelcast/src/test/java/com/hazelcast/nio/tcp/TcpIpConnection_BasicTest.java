@@ -5,6 +5,7 @@ import com.hazelcast.spi.impl.PacketHandler;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.NightlyTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -22,7 +23,7 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(NightlyTest.class)
+@Category(QuickTest.class)
 public class TcpIpConnection_BasicTest extends TcpIpConnection_AbstractTest {
 
     private List<Packet> packetsB = Collections.synchronizedList(new ArrayList<Packet>());

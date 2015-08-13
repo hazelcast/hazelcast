@@ -224,9 +224,9 @@ public class ClientConnection implements Connection, Closeable {
         }
 
         if (lifecycleService.isRunning()) {
-            logger.warning(message);
+            logger.warning(message, t);
         } else {
-            logger.finest(message);
+            logger.finest(message, t);
         }
     }
 

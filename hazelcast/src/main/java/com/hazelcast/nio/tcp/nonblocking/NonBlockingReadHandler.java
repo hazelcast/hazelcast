@@ -197,8 +197,7 @@ public final class NonBlockingReadHandler
         super.handleSocketException(e);
     }
 
-    private void initializeSocketReader()
-            throws IOException {
+    private void initializeSocketReader() throws IOException {
         if (socketReader != null) {
             return;
         }
