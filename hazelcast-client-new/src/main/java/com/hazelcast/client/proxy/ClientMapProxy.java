@@ -1080,7 +1080,8 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         final Data keyData = toData(key);
         ClientMessage request = MapExecuteOnKeyCodec.encodeRequest(name, toData(entryProcessor), keyData);
-        return invoke(request, keyData);
+        ClientMessage response = invoke(request, keyData);
+        return toObject(MapExecuteOnKeyCodec.decodeResponse(response).response);
     }
 
     public void submitToKey(K key, EntryProcessor entryProcessor, final ExecutionCallback callback) {
