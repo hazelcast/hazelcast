@@ -1088,8 +1088,11 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
         final Data keyData = toData(key);
         ClientMessage request = MapSubmitToKeyCodec.encodeRequest(name, toData(entryProcessor), keyData);
         try {
-            final ICompletableFuture future = invokeOnKeyOwner(request, keyData);
-            future.andThen(callback);
+            ClientInvocationFuture future = invokeOnKeyOwner(request, keyData);
+            SerializationService serializationService = getContext().getSerializationService();
+            ClientDelegatingFuture clientDelegatingFuture =
+                    new ClientDelegatingFuture(future, serializationService, submitToKeyResponseDecoder);
+            clientDelegatingFuture.andThen(callback);
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }
