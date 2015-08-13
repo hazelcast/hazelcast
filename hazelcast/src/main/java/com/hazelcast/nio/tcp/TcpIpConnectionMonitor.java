@@ -33,7 +33,7 @@ public class TcpIpConnectionMonitor {
 
     public TcpIpConnectionMonitor(TcpIpConnectionManager connectionManager, Address endPoint) {
         this.endPoint = endPoint;
-        this.ioService = connectionManager.getIOHandler();
+        this.ioService = connectionManager.getIoService();
         this.minInterval = ioService.getConnectionMonitorInterval();
         this.maxFaults = ioService.getConnectionMonitorMaxFaults();
         this.logger = ioService.getLogger(getClass().getName());
