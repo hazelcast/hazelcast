@@ -17,12 +17,11 @@
 package com.hazelcast.cluster.impl;
 
 import com.hazelcast.cluster.ClusterClock;
-import com.hazelcast.internal.metrics.CompositeProbe;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.util.Clock;
 
-@CompositeProbe(name = "clock")
+
 public class ClusterClockImpl implements ClusterClock {
 
     private final ILogger logger;

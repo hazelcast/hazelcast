@@ -18,11 +18,13 @@ package com.hazelcast.client.impl;
 
 import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.ClientEndpointManager;
-import com.hazelcast.internal.metrics.CompositeProbe;
+
+import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.util.counters.MwCounter;
 
 import javax.security.auth.login.LoginException;
@@ -40,7 +42,6 @@ import static com.hazelcast.util.counters.MwCounter.newMwCounter;
 /**
  * Manages and stores {@link com.hazelcast.client.impl.ClientEndpointImpl}s.
  */
-@CompositeProbe(name = "client.endpoint")
 public class ClientEndpointManagerImpl implements ClientEndpointManager {
 
     private static final int DESTROY_ENDPOINT_DELAY_MS = 1111;
@@ -60,6 +61,9 @@ public class ClientEndpointManagerImpl implements ClientEndpointManager {
         this.clientEngine = clientEngine;
         this.nodeEngine = nodeEngine;
         this.logger = nodeEngine.getLogger(ClientEndpointManager.class);
+
+        MetricsRegistry metricsRegistry = ((NodeEngineImpl) nodeEngine).getMetricsRegistry();
+        metricsRegistry.scanAndRegister(this, "client.endpoint");
     }
 
     @Override
