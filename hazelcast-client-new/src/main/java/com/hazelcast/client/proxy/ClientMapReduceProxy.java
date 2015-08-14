@@ -19,7 +19,10 @@ package com.hazelcast.client.proxy;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapReduceCancelCodec;
 import com.hazelcast.client.impl.protocol.codec.MapReduceForCustomCodec;
+import com.hazelcast.client.impl.protocol.codec.MapReduceForListCodec;
 import com.hazelcast.client.impl.protocol.codec.MapReduceForMapCodec;
+import com.hazelcast.client.impl.protocol.codec.MapReduceForMultiMapCodec;
+import com.hazelcast.client.impl.protocol.codec.MapReduceForSetCodec;
 import com.hazelcast.client.impl.protocol.codec.MapReduceJobProcessInformationCodec;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.spi.impl.ClientInvocation;
@@ -207,28 +210,26 @@ public class ClientMapReduceProxy
 
         if (keyValueSource instanceof MapKeyValueSource) {
             MapKeyValueSource source = (MapKeyValueSource) keyValueSource;
-            return MapReduceForMapCodec.encodeRequest(name, jobId, predicateData, mapperData,
-                    combinerFactoryData, reducerFactoryData, source.getMapName(), chunkSize,
-                    list, topologyChangedStrategyName);
+            return MapReduceForMapCodec.encodeRequest(name, jobId, predicateData, mapperData, combinerFactoryData,
+                    reducerFactoryData, source.getMapName(), chunkSize, list, topologyChangedStrategyName);
         } else if (keyValueSource instanceof ListKeyValueSource) {
             ListKeyValueSource source = (ListKeyValueSource) keyValueSource;
-            return MapReduceForMapCodec.encodeRequest(name, jobId, predicateData, mapperData,
-                    combinerFactoryData, reducerFactoryData, source.getListName(), chunkSize,
-                    list, topologyChangedStrategyName);
+            return MapReduceForListCodec
+                    .encodeRequest(name, jobId, predicateData, mapperData, combinerFactoryData, reducerFactoryData,
+                            source.getListName(), chunkSize, list, topologyChangedStrategyName);
         } else if (keyValueSource instanceof SetKeyValueSource) {
             SetKeyValueSource source = (SetKeyValueSource) keyValueSource;
-            return MapReduceForMapCodec.encodeRequest(name, jobId, predicateData, mapperData,
-                    combinerFactoryData, reducerFactoryData, source.getSetName(), chunkSize,
-                    list, topologyChangedStrategyName);
+            return MapReduceForSetCodec
+                    .encodeRequest(name, jobId, predicateData, mapperData, combinerFactoryData, reducerFactoryData,
+                            source.getSetName(), chunkSize, list, topologyChangedStrategyName);
         } else if (keyValueSource instanceof MultiMapKeyValueSource) {
             MultiMapKeyValueSource source = (MultiMapKeyValueSource) keyValueSource;
-            return MapReduceForMapCodec.encodeRequest(name, jobId, predicateData, mapperData,
-                    combinerFactoryData, reducerFactoryData, source.getMultiMapName(), chunkSize,
-                    list, topologyChangedStrategyName);
+            return MapReduceForMultiMapCodec
+                    .encodeRequest(name, jobId, predicateData, mapperData, combinerFactoryData, reducerFactoryData,
+                            source.getMultiMapName(), chunkSize, list, topologyChangedStrategyName);
         }
-        return MapReduceForCustomCodec.encodeRequest(name, jobId, predicateData, mapperData,
-                combinerFactoryData, reducerFactoryData, toData(keyValueSource), chunkSize,
-                list, topologyChangedStrategyName);
+        return MapReduceForCustomCodec.encodeRequest(name, jobId, predicateData, mapperData, combinerFactoryData,
+                reducerFactoryData, toData(keyValueSource), chunkSize, list, topologyChangedStrategyName);
 
     }
 
