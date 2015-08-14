@@ -96,7 +96,7 @@ public interface CacheCodecTemplate {
     @Request(id = 22, retryable = false, response = ResponseMessageConst.BOOLEAN)
     void removeInvalidationListener(String name, String registrationId);
 
-    @Request(id = 23, retryable = false, response = ResponseMessageConst.DATA)
+    @Request(id = 23, retryable = false, response = ResponseMessageConst.BOOLEAN)
     void remove(String name, Data key, @Nullable Data currentValue, int completionId);
 
     @Request(id = 24, retryable = false, response = ResponseMessageConst.DATA)

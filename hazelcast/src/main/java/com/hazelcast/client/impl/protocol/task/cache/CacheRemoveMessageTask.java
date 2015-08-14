@@ -49,7 +49,7 @@ public class CacheRemoveMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return CacheRemoveCodec.encodeResponse(serializationService.toData(response));
+        return CacheRemoveCodec.encodeResponse((Boolean) response);
     }
 
     @Override

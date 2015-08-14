@@ -112,7 +112,7 @@ abstract class AbstractClientInternalCacheProxy<K, V>
     private static final ClientMessageDecoder removeResponseDecoder = new ClientMessageDecoder() {
         @Override
         public <T> T decodeClientMessage(ClientMessage clientMessage) {
-            return (T) CacheRemoveCodec.decodeResponse(clientMessage).response;
+            return (T) Boolean.valueOf(CacheRemoveCodec.decodeResponse(clientMessage).response);
         }
     };
 
