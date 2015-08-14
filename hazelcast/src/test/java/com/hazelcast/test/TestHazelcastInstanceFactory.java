@@ -76,7 +76,8 @@ public class TestHazelcastInstanceFactory {
         if (mockNetwork) {
             init(config);
             NodeContext nodeContext = registry.createNodeContext(pickAddress());
-            return HazelcastInstanceFactory.newHazelcastInstance(config, config.getInstanceName(), nodeContext);
+            final String name = (config == null ? null : config.getInstanceName());
+            return HazelcastInstanceFactory.newHazelcastInstance(config, name, nodeContext);
         }
         return HazelcastInstanceFactory.newHazelcastInstance(config);
     }

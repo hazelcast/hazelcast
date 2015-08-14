@@ -150,12 +150,14 @@
             <artifactId>hazelcast-client</artifactId>
             <scope>test</scope>
             <version>${project.parent.version}</version>
+            <optional>true</optional>
             <classifier>tests</classifier>
         </dependency>
         <dependency>
             <groupId>com.hazelcast</groupId>
             <artifactId>hazelcast</artifactId>
             <scope>test</scope>
+            <optional>true</optional>
             <version>${project.parent.version}</version>
             <classifier>tests</classifier>
         </dependency>
