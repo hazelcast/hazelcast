@@ -5,6 +5,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ICompletableFuture;
+import com.hazelcast.core.IFunction;
 import com.hazelcast.ringbuffer.ReadResultSet;
 import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.ringbuffer.impl.client.PortableReadResultSet;
@@ -128,7 +129,7 @@ public class RingbufferTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void readManyAsync() throws Exception {
+    public void readManyAsync_noFilter() throws Exception {
         serverRingbuffer.add("1");
         serverRingbuffer.add("2");
         serverRingbuffer.add("3");
@@ -142,5 +143,77 @@ public class RingbufferTest extends HazelcastTestSupport {
         assertEquals("1", rs.get(0));
         assertEquals("2", rs.get(1));
         assertEquals("3", rs.get(2));
+    }
+
+    // checks if the max count works. So if more results are available than needed, the surplus results should not be read.
+    @Test
+    public void readManyAsync_maxCount() throws Exception {
+        serverRingbuffer.add("1");
+        serverRingbuffer.add("2");
+        serverRingbuffer.add("3");
+        serverRingbuffer.add("4");
+        serverRingbuffer.add("5");
+        serverRingbuffer.add("6");
+
+        ICompletableFuture<ReadResultSet<String>> f = clientRingbuffer.readManyAsync(0, 3, 3, null);
+
+        ReadResultSet rs = f.get();
+        assertInstanceOf(PortableReadResultSet.class, rs);
+
+        assertEquals(3, rs.readCount());
+        assertEquals("1", rs.get(0));
+        assertEquals("2", rs.get(1));
+        assertEquals("3", rs.get(2));
+    }
+
+    @Test
+    public void readManyAsync_withFilter() throws Exception {
+        serverRingbuffer.add("good1");
+        serverRingbuffer.add("bad1");
+        serverRingbuffer.add("good2");
+        serverRingbuffer.add("bad2");
+        serverRingbuffer.add("good3");
+        serverRingbuffer.add("bad3");
+
+        ICompletableFuture<ReadResultSet<String>> f = clientRingbuffer.readManyAsync(0, 3, 3, new Filter());
+
+        ReadResultSet rs = f.get();
+        assertInstanceOf(PortableReadResultSet.class, rs);
+
+        assertEquals(5, rs.readCount());
+        assertEquals("good1", rs.get(0));
+        assertEquals("good2", rs.get(1));
+        assertEquals("good3", rs.get(2));
+    }
+
+    // checks if the max count works in combination with a filter.
+    // So if more results are available than needed, the surplus results should not be read.
+    @Test
+    public void readManyAsync_withFilter_andMaxCount() throws Exception {
+        serverRingbuffer.add("good1");
+        serverRingbuffer.add("bad1");
+        serverRingbuffer.add("good2");
+        serverRingbuffer.add("bad2");
+        serverRingbuffer.add("good3");
+        serverRingbuffer.add("bad3");
+        serverRingbuffer.add("good4");
+        serverRingbuffer.add("bad4");
+
+        ICompletableFuture<ReadResultSet<String>> f = clientRingbuffer.readManyAsync(0, 3, 3, new Filter());
+
+        ReadResultSet rs = f.get();
+        assertInstanceOf(PortableReadResultSet.class, rs);
+
+        assertEquals(5, rs.readCount());
+        assertEquals("good1", rs.get(0));
+        assertEquals("good2", rs.get(1));
+        assertEquals("good3", rs.get(2));
+    }
+
+    static class Filter implements IFunction<String, Boolean> {
+        @Override
+        public Boolean apply(String input) {
+            return input.startsWith("good");
+        }
     }
 }

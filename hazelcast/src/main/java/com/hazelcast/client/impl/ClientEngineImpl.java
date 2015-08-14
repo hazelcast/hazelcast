@@ -80,9 +80,9 @@ import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
+import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.Future;
 import java.util.logging.Level;
 
 import static com.hazelcast.spi.impl.ResponseHandlerFactory.createEmptyResponseHandler;
@@ -146,6 +146,11 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
     //needed for testing purposes
     public ConnectionListener getConnectionListener() {
         return connectionListener;
+    }
+
+    @Override
+    public SerializationService getSerializationService() {
+        return serializationService;
     }
 
     @Override
