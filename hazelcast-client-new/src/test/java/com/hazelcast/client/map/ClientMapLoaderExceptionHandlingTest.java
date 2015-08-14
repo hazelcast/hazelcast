@@ -2,6 +2,7 @@ package com.hazelcast.client.map;
 
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapStore;
@@ -55,12 +56,12 @@ public class ClientMapLoaderExceptionHandlingTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void test_initial_map_load_propagates_exception_to_client() throws Exception {
+    public void test_initial_map_load_propagates_exception_to_client() {
         final IMap<Integer, Integer> map = client.getMap(mapName);
 
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run() {
                 Exception exception = null;
                 try {
                     map.get(1);
@@ -68,13 +69,13 @@ public class ClientMapLoaderExceptionHandlingTest extends HazelcastTestSupport {
                     exception = e;
                 }
                 assertNotNull("Exception not propagated to client", exception);
-                assertEquals(ClassCastException.class, exception.getClass());
+                assertEquals(HazelcastException.class, exception.getClass());
             }
         });
     }
 
     @Test
-    public void testClientGetsException_whenLoadAllKeysThrowsOne() throws Exception {
+    public void testClientGetsException_whenLoadAllKeysThrowsOne() {
         mapStore.setLoadAllKeysThrows(true);
 
         IMap<Integer, Integer> map = client.getMap(mapName);

@@ -21,6 +21,7 @@ import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes;
 import com.hazelcast.client.impl.protocol.codec.ClientRemoveAllListenersCodec;
 import com.hazelcast.client.impl.protocol.parameters.ExceptionResultParameters;
 import com.hazelcast.client.spi.ClientExecutionService;
@@ -36,7 +37,6 @@ import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.util.ConstructorFunction;
 
 import java.io.IOException;
-import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Iterator;
 import java.util.Map;
@@ -376,23 +376,8 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
 
             if (ExceptionResultParameters.TYPE == clientMessage.getMessageType()) {
                 ExceptionResultParameters exceptionResultParameters = ExceptionResultParameters.decode(clientMessage);
-                Throwable exception;
-                if (exceptionResultParameters.causeClassName != null) {
-                    Class<?> causeClazz = Class.forName(exceptionResultParameters.causeClassName);
-                    Constructor<?> causeConstructor = causeClazz.getDeclaredConstructor(new Class[]{String.class});
-                    causeConstructor.setAccessible(true);
-                    Throwable cause = (Throwable) causeConstructor.newInstance(exceptionResultParameters.message);
-
-                    Class<?> clazz = Class.forName(exceptionResultParameters.className);
-                    Constructor<?> constructor = clazz.getDeclaredConstructor(new Class[]{String.class, Throwable.class});
-                    constructor.setAccessible(true);
-                    exception = (Throwable) constructor.newInstance(exceptionResultParameters.message, cause);
-                } else {
-                    Class<?> clazz = Class.forName(exceptionResultParameters.className);
-                    Constructor<?> constructor = clazz.getDeclaredConstructor(new Class[]{String.class});
-                    constructor.setAccessible(true);
-                    exception = (Throwable) constructor.newInstance(exceptionResultParameters.message);
-                }
+                Throwable exception = ClientProtocolErrorCodes.createException(exceptionResultParameters.errorCode,
+                        exceptionResultParameters.message, exceptionResultParameters.stackTrace);
                 future.notifyException(exception);
             } else {
                 future.notify(clientMessage);

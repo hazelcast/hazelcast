@@ -18,6 +18,7 @@ package com.hazelcast.client.impl.protocol.parameters;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.ResponseMessageConst;
+import com.hazelcast.client.impl.protocol.codec.StackTraceElementCodec;
 import com.hazelcast.client.impl.protocol.util.ParameterUtil;
 import com.hazelcast.nio.Bits;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -33,24 +34,23 @@ public class ExceptionResultParameters {
      * ClientMessageType of this message
      */
     public static final int TYPE = ResponseMessageConst.EXCEPTION;
-    public String className;
-    public String causeClassName;
+    public int errorCode;
     public String message;
-    public String stacktrace;
+    public StackTraceElement[] stackTrace;
+//    public String stackTrace;
 
     private ExceptionResultParameters(ClientMessage flyweight) {
-        className = flyweight.getStringUtf8();
-        boolean causeClassName_isNull = flyweight.getBoolean();
-        if (!causeClassName_isNull) {
-            causeClassName = flyweight.getStringUtf8();
-        }
+        errorCode = flyweight.getInt();
         boolean message_isNull = flyweight.getBoolean();
         if (!message_isNull) {
             message = flyweight.getStringUtf8();
         }
-        boolean stackTrace_isNull = flyweight.getBoolean();
-        if (!stackTrace_isNull) {
-            stacktrace = flyweight.getStringUtf8();
+
+//        stackTrace = flyweight.getStringUtf8();
+        int stackTraceCount = flyweight.getInt();
+        stackTrace = new StackTraceElement[stackTraceCount];
+        for (int i = 0; i < stackTraceCount; i++) {
+            stackTrace[i] = StackTraceElementCodec.decode(flyweight);
         }
     }
 
@@ -58,27 +58,22 @@ public class ExceptionResultParameters {
         return new ExceptionResultParameters(flyweight);
     }
 
-    public static ClientMessage encode(String className, String causeClassName, String message, String stacktrace) {
-        final int requiredDataSize = calculateDataSize(className, causeClassName, message, stacktrace);
+    public static ClientMessage encode(int errorCode, String message, StackTraceElement[] stackTrace) {
+//    public static ClientMessage encode(int errorCode, String message, String stackTrace) {
+        final int requiredDataSize = calculateDataSize(errorCode, message, stackTrace);
         ClientMessage clientMessage = ClientMessage.createForEncode(requiredDataSize);
         clientMessage.setMessageType(TYPE);
-        clientMessage.set(className);
-        boolean causeClassName_isNull = causeClassName == null;
-        clientMessage.set(causeClassName_isNull);
-        if (!causeClassName_isNull) {
-            clientMessage.set(causeClassName);
-        }
+        clientMessage.set(errorCode);
         boolean message_isNull = message == null;
         clientMessage.set(message_isNull);
         if (!message_isNull) {
             clientMessage.set(message);
         }
-        boolean stackTrace_isNull = stacktrace == null;
-        clientMessage.set(stackTrace_isNull);
-        if (!stackTrace_isNull) {
-            clientMessage.set(stacktrace);
+//        clientMessage.set(stackTrace);
+        clientMessage.set(stackTrace.length);
+        for (StackTraceElement stackTraceElement : stackTrace) {
+            StackTraceElementCodec.encode(stackTraceElement, clientMessage);
         }
-
         clientMessage.updateFrameLength();
         return clientMessage;
     }
@@ -88,22 +83,17 @@ public class ExceptionResultParameters {
      *
      * @return size
      */
-    public static int calculateDataSize(String className, String causeClassName, String message, String stacktrace) {
-        int dataSize = ClientMessage.HEADER_SIZE + ParameterUtil.calculateDataSize(className);
-        if (causeClassName == null) {
-            dataSize += Bits.BOOLEAN_SIZE_IN_BYTES;
-        } else {
-            dataSize += ParameterUtil.calculateDataSize(causeClassName);
-        }
+//    public static int calculateDataSize(int errorCode, String message, String stackTrace) {
+    public static int calculateDataSize(int errorCode, String message, StackTraceElement[] stackTrace) {
+        int dataSize = ClientMessage.HEADER_SIZE + Bits.INT_SIZE_IN_BYTES;
         if (message == null) {
             dataSize += Bits.BOOLEAN_SIZE_IN_BYTES;
         } else {
             dataSize += ParameterUtil.calculateDataSize(message);
         }
-        if (stacktrace == null) {
-            dataSize += Bits.BOOLEAN_SIZE_IN_BYTES;
-        } else {
-            dataSize += ParameterUtil.calculateDataSize(stacktrace);
+//        dataSize += ParameterUtil.calculateDataSize(stackTrace);
+        for (StackTraceElement stackTraceElement : stackTrace) {
+            dataSize += StackTraceElementCodec.calculateDataSize(stackTraceElement);
         }
         return dataSize;
     }

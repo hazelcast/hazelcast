@@ -60,7 +60,7 @@ public abstract class AbstractMapQueryMessageTask<P> extends AbstractCallableMes
     }
 
     @Override
-    protected final Object call() throws Exception {
+    protected final Object call() {
         Collection<QueryResultEntry> result = new LinkedList<QueryResultEntry>();
 
         Collection<Member> members = nodeEngine.getClusterService().getMembers();
@@ -95,17 +95,21 @@ public abstract class AbstractMapQueryMessageTask<P> extends AbstractCallableMes
         }
     }
 
-    private void collectResults(Collection<QueryResultEntry> result, List<Future> futures, Set<Integer> finishedPartitions)
-            throws InterruptedException, java.util.concurrent.ExecutionException {
+    private void collectResults(Collection<QueryResultEntry> result, List<Future> futures, Set<Integer> finishedPartitions) {
 
         for (Future future : futures) {
-            QueryResult queryResult = (QueryResult) future.get();
-            if (queryResult != null) {
-                Collection<Integer> partitionIds = queryResult.getPartitionIds();
-                if (partitionIds != null) {
-                    finishedPartitions.addAll(partitionIds);
-                    result.addAll(queryResult.getResult());
+            try {
+                QueryResult queryResult = (QueryResult) future.get();
+                if (queryResult != null) {
+                    Collection<Integer> partitionIds = queryResult.getPartitionIds();
+                    if (partitionIds != null) {
+                        finishedPartitions.addAll(partitionIds);
+                        result.addAll(queryResult.getResult());
+                    }
                 }
+
+            } catch (Exception e) {
+                ExceptionUtil.rethrow(e);
             }
         }
     }
@@ -140,11 +144,14 @@ public abstract class AbstractMapQueryMessageTask<P> extends AbstractCallableMes
         }
     }
 
-    private void collectResultsFromMissingPartitions(Collection<QueryResultEntry> result, List<Future> futures)
-            throws InterruptedException, java.util.concurrent.ExecutionException {
+    private void collectResultsFromMissingPartitions(Collection<QueryResultEntry> result, List<Future> futures) {
         for (Future future : futures) {
-            QueryResult queryResult = (QueryResult) future.get();
-            result.addAll(queryResult.getResult());
+            try {
+                QueryResult queryResult = (QueryResult) future.get();
+                result.addAll(queryResult.getResult());
+            } catch (Exception e) {
+                ExceptionUtil.rethrow(e);
+            }
         }
     }
 }

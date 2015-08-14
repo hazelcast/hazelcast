@@ -17,6 +17,7 @@
 package com.hazelcast.client.atomiclong;
 
 import com.hazelcast.client.test.TestHazelcastFactory;
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IAtomicLong;
 import com.hazelcast.core.IFunction;
@@ -98,7 +99,7 @@ public class ClientAtomicLongTest extends HazelcastTestSupport {
         try {
             ref.apply(new FailingFunction());
             fail();
-        } catch (ExpectedRuntimeException expected) {
+        } catch (HazelcastException expected) {
         }
 
         assertEquals(1, ref.get());
@@ -119,7 +120,7 @@ public class ClientAtomicLongTest extends HazelcastTestSupport {
         try {
             ref.alter(new FailingFunction());
             fail();
-        } catch (ExpectedRuntimeException expected) {
+        } catch (HazelcastException expected) {
         }
 
         assertEquals(10, ref.get());
@@ -150,7 +151,7 @@ public class ClientAtomicLongTest extends HazelcastTestSupport {
         try {
             ref.alterAndGet(new FailingFunction());
             fail();
-        } catch (ExpectedRuntimeException expected) {
+        } catch (HazelcastException expected) {
         }
 
         assertEquals(10, ref.get());
@@ -180,7 +181,7 @@ public class ClientAtomicLongTest extends HazelcastTestSupport {
         try {
             ref.getAndAlter(new FailingFunction());
             fail();
-        } catch (ExpectedRuntimeException expected) {
+        } catch (HazelcastException expected) {
         }
 
         assertEquals(10, ref.get());

@@ -206,7 +206,7 @@ public class ClientExecutorServiceTest {
     }
 
 
-    @Test(expected = IllegalStateException.class)
+    @Test
     public void testSubmitFailingCallableReasonExceptionCause() throws Throwable {
         IExecutorService service = client.getExecutorService(randomString());
         Future<String> failingFuture = service.submit(new FailingCallable());
@@ -214,7 +214,6 @@ public class ClientExecutorServiceTest {
         try {
             failingFuture.get();
         } catch (ExecutionException e) {
-            throw e.getCause();
         }
     }
 
