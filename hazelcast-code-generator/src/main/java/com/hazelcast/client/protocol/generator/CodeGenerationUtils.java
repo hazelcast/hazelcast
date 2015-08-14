@@ -144,7 +144,7 @@ public final class CodeGenerationUtils {
             } else {
                 result = commentString.substring(descriptionStartIndex);
             }
-            result.trim();
+            result = result.trim();
 
             // replace any new line with <br>
             result = result.replace("\n", "<br>");
