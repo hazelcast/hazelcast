@@ -37,6 +37,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 
 import static com.hazelcast.nio.ConnectionType.MEMBER;
+import static com.hazelcast.nio.IOService.KILO_BYTE;
 import static com.hazelcast.nio.Protocols.CLIENT_BINARY;
 import static com.hazelcast.nio.Protocols.CLIENT_BINARY_NEW;
 import static com.hazelcast.nio.Protocols.CLUSTER;
@@ -129,7 +130,6 @@ public final class NonBlockingReadHandler
         });
     }
 
-
     /**
      * Migrates this handler to a new NonBlockingIOThread.
      * The migration logic is rather simple:
@@ -218,20 +218,20 @@ public final class NonBlockingReadHandler
             String protocol = bytesToString(protocolBuffer.array());
             NonBlockingWriteHandler writeHandler = (NonBlockingWriteHandler) connection.getWriteHandler();
             if (CLUSTER.equals(protocol)) {
-                configureBuffers(connectionManager.getSocketReceiveBufferSize());
+                configureBuffers(ioService.getSocketReceiveBufferSize() * KILO_BYTE);
                 connection.setType(MEMBER);
                 writeHandler.setProtocol(CLUSTER);
                 socketReader = new PacketSocketReader(ioService.createPacketReader(connection));
             } else if (CLIENT_BINARY.equals(protocol)) {
-                configureBuffers(connectionManager.getSocketClientReceiveBufferSize());
+                configureBuffers(ioService.getSocketClientReceiveBufferSize() * KILO_BYTE);
                 writeHandler.setProtocol(CLIENT_BINARY);
                 socketReader = new ClientPacketSocketReader(connection, ioService);
             } else if (CLIENT_BINARY_NEW.equals(protocol)) {
-                configureBuffers(connectionManager.getSocketClientReceiveBufferSize());
+                configureBuffers(ioService.getSocketClientReceiveBufferSize() * KILO_BYTE);
                 writeHandler.setProtocol(CLIENT_BINARY_NEW);
                 socketReader = new ClientMessageSocketReader(connection, ioService);
             } else {
-                configureBuffers(connectionManager.getSocketReceiveBufferSize());
+                configureBuffers(ioService.getSocketReceiveBufferSize() * KILO_BYTE);
                 writeHandler.setProtocol(Protocols.TEXT);
                 inputBuffer.put(protocolBuffer.array());
                 socketReader = new SocketTextReader(connection);

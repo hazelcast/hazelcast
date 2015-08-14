@@ -43,6 +43,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 
+import static com.hazelcast.nio.IOService.KILO_BYTE;
 import static com.hazelcast.nio.Protocols.CLIENT_BINARY;
 import static com.hazelcast.nio.Protocols.CLIENT_BINARY_NEW;
 import static com.hazelcast.nio.Protocols.CLUSTER;
@@ -175,18 +176,18 @@ public final class NonBlockingWriteHandler extends AbstractSelectionHandler impl
     private void createWriter(String protocol) {
         if (socketWriter == null) {
             if (CLUSTER.equals(protocol)) {
-                configureBuffers(connectionManager.getSocketSendBufferSize());
+                configureBuffers(ioService.getSocketSendBufferSize() * KILO_BYTE);
                 socketWriter = new MemberPacketSocketWriter(ioService.createPacketWriter(connection));
                 outputBuffer.put(stringToBytes(CLUSTER));
                 registerOp(SelectionKey.OP_WRITE);
             } else if (CLIENT_BINARY.equals(protocol)) {
-                configureBuffers(connectionManager.getSocketClientSendBufferSize());
+                configureBuffers(ioService.getSocketClientSendBufferSize() * KILO_BYTE);
                 socketWriter = new ClientPacketSocketWriter();
             } else if (CLIENT_BINARY_NEW.equals(protocol)) {
-                configureBuffers(connectionManager.getSocketClientSendBufferSize());
+                configureBuffers(ioService.getSocketClientReceiveBufferSize() * KILO_BYTE);
                 socketWriter = new ClientMessageSocketWriter();
             } else {
-                configureBuffers(connectionManager.getSocketClientSendBufferSize());
+                configureBuffers(ioService.getSocketClientSendBufferSize() * KILO_BYTE);
                 socketWriter = new SocketTextWriter(connection);
             }
         }

@@ -75,7 +75,7 @@ public class InitConnectionTask implements Runnable {
             if (address.isIPv4()) {
                 // remote is IPv4; connect...
                 tryToConnect(address.getInetSocketAddress(),
-                        connectionManager.getSocketConnectTimeoutSeconds() * MILLIS_PER_SECOND);
+                        ioService.getSocketConnectTimeoutSeconds() * MILLIS_PER_SECOND);
             } else if (thisAddress.isIPv6() && thisAddress.getScopeId() != null) {
                 // Both remote and this addresses are IPv6.
                 // This is a local IPv6 address and scope id is known.
@@ -83,7 +83,7 @@ public class InitConnectionTask implements Runnable {
                 Inet6Address inetAddress = AddressUtil
                         .getInetAddressFor((Inet6Address) address.getInetAddress(), thisAddress.getScopeId());
                 tryToConnect(new InetSocketAddress(inetAddress, address.getPort()),
-                        connectionManager.getSocketConnectTimeoutSeconds() * MILLIS_PER_SECOND);
+                        ioService.getSocketConnectTimeoutSeconds() * MILLIS_PER_SECOND);
             } else {
                 // remote is IPv6 and this is either IPv4 or a global IPv6.
                 // find possible remote inet6 addresses and try each one to connect...
@@ -105,7 +105,7 @@ public class InitConnectionTask implements Runnable {
         }
         boolean connected = false;
         Exception error = null;
-        int configuredTimeoutMillis = connectionManager.getSocketConnectTimeoutSeconds() * MILLIS_PER_SECOND;
+        int configuredTimeoutMillis = ioService.getSocketConnectTimeoutSeconds() * MILLIS_PER_SECOND;
         int timeoutMillis = configuredTimeoutMillis > 0 && configuredTimeoutMillis < Integer.MAX_VALUE
                 ? configuredTimeoutMillis : DEFAULT_IPV6_SOCKET_CONNECT_TIMEOUT_SECONDS * MILLIS_PER_SECOND;
         for (Inet6Address inetAddress : possibleInetAddresses) {

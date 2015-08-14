@@ -19,19 +19,63 @@ package com.hazelcast.nio.tcp;
 import com.hazelcast.nio.SocketWritable;
 
 
+/**
+ * Each {@link TcpIpConnection} has a WriteHandler. It reads data from the network into the system.
+ */
 public interface WriteHandler {
 
+    /**
+     * Returns the total number of packets (urgent and non normal priority) pending.
+     *
+     * @return total number of packets.
+     */
     int totalPacketsPending();
 
-    void offer(SocketWritable packet);
-
+    /**
+     * Returns the last {@link com.hazelcast.util.Clock#currentTimeMillis()} a write completes.
+     *
+     * Completes means that it is written to the network buffers; not that it has been offered.
+     *
+     * @return the lst time a write completed.
+     */
     long getLastWriteTime();
 
+    /**
+     * Offers a SocketWritable to be written.
+     *
+     * No guarantees are made that the packet is going to be written or received by the other side.
+     *
+     * @param packet the SocketWritable
+     */
+    void offer(SocketWritable packet);
+
+    /**
+     * Gets the {@link SocketWriter} that belongs to this WriteHandler.
+     *
+     * This method exists for the SocketTextReader, but probably should be deleted.
+     *
+     * @return the socket writer.
+     */
     SocketWriter getSocketWriter();
 
-    void setProtocol(String cluster);
+    /**
+     * Sets the protocol this WriteHandler should use.
+     *
+     * This should be called only once at the beginning of the connection.
+     *
+     * See {@link com.hazelcast.nio.Protocols}
+     *
+     * @param protocol the protocol
+     */
+    void setProtocol(String protocol);
 
+    /**
+     * Starts this WriteHandler.
+     */
     void start();
 
+    /**
+     * Shuts down this WriteHandler.
+     */
     void shutdown();
 }
