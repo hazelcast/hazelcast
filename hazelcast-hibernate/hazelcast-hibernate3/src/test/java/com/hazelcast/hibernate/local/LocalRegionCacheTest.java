@@ -6,6 +6,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ITopic;
 import com.hazelcast.core.MessageListener;
 import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.hibernate.cache.CacheDataDescription;
 import org.junit.Test;
@@ -17,7 +18,7 @@ import java.util.Comparator;
 import static org.mockito.Mockito.*;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
+@Category({QuickTest.class, ParallelTest.class})
 @SuppressWarnings("unchecked")
 public class LocalRegionCacheTest {
 

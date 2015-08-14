@@ -16,36 +16,28 @@
 
 package com.hazelcast.hibernate;
 
-import com.hazelcast.config.MapConfig;
+
+import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.Hazelcast;
-import com.hazelcast.core.HazelcastInstance;
+
 import com.hazelcast.hibernate.entity.DummyEntity;
 import com.hazelcast.hibernate.entity.DummyProperty;
-import com.hazelcast.hibernate.instance.HazelcastAccessor;
-import com.hazelcast.hibernate.region.HazelcastQueryResultsRegion;
-import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.NightlyTest;
+import com.hazelcast.hibernate.instance.HazelcastMockInstanceLoader;
 import org.hibernate.Query;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
-import org.hibernate.internal.SessionFactoryImpl;
 import org.hibernate.stat.SecondLevelCacheStatistics;
-import org.hibernate.stat.Statistics;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
-
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
 
 public abstract class HibernateStatisticsTestSupport extends HibernateTestSupport {
 
@@ -54,12 +46,15 @@ public abstract class HibernateStatisticsTestSupport extends HibernateTestSuppor
 
     protected final String CACHE_ENTITY = DummyEntity.class.getName();
     protected final String CACHE_PROPERTY = DummyProperty.class.getName();
+    private static  TestHazelcastFactory factory;
 
     @Before
     public void postConstruct() {
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
-        sf = createSessionFactory(getCacheProperties());
-        sf2 = createSessionFactory(getCacheProperties());
+        HazelcastMockInstanceLoader loader = new HazelcastMockInstanceLoader();
+        factory = new TestHazelcastFactory();
+        loader.setInstanceFactory(factory);
+        sf = createSessionFactory(getCacheProperties(),  loader);
+        sf2 = createSessionFactory(getCacheProperties(), loader);
     }
 
     @After
@@ -73,6 +68,7 @@ public abstract class HibernateStatisticsTestSupport extends HibernateTestSuppor
             sf2 = null;
         }
         Hazelcast.shutdownAll();
+        factory.shutdownAll();
     }
 
     protected abstract Properties getCacheProperties();
@@ -108,17 +104,6 @@ public abstract class HibernateStatisticsTestSupport extends HibernateTestSuppor
             Query query = session.createQuery("from " + DummyEntity.class.getName());
             query.setCacheable(true);
             return query.list();
-        } finally {
-            session.close();
-        }
-    }
-
-    protected DummyEntity executeQuery(SessionFactory factory, long id) {
-        Session session = factory.openSession();
-        try {
-            Query query = session.createQuery("from " + DummyEntity.class.getName() + " where id = " + id);
-            query.setCacheable(true);
-            return (DummyEntity) query.list().get(0);
         } finally {
             session.close();
         }
