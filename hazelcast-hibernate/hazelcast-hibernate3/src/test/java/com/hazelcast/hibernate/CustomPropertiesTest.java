@@ -18,12 +18,13 @@ package com.hazelcast.hibernate;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.HazelcastClientProxy;
+import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.ClasspathXmlConfig;
 import com.hazelcast.config.Config;
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.hibernate.entity.DummyEntity;
 import com.hazelcast.hibernate.instance.HazelcastAccessor;
+import com.hazelcast.hibernate.instance.HazelcastMockInstanceLoader;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.NightlyTest;
 import org.hibernate.Session;
@@ -46,7 +47,10 @@ public class CustomPropertiesTest extends HibernateTestSupport {
 
     @Test
     public void testNativeClient() throws Exception {
-        HazelcastInstance main = Hazelcast.newHazelcastInstance(new ClasspathXmlConfig("hazelcast-custom.xml"));
+
+        TestHazelcastFactory factory = new TestHazelcastFactory();
+        Config config = new ClasspathXmlConfig("hazelcast-custom.xml");
+        HazelcastInstance main = factory.newHazelcastInstance(config);
         Properties props = getDefaultProperties();
         props.remove(CacheEnvironment.CONFIG_FILE_PATH_LEGACY);
         props.setProperty(Environment.CACHE_REGION_FACTORY, HazelcastCacheRegionFactory.class.getName());
@@ -55,7 +59,10 @@ public class CustomPropertiesTest extends HibernateTestSupport {
         props.setProperty(CacheEnvironment.NATIVE_CLIENT_PASSWORD, "dev-pass");
         props.setProperty(CacheEnvironment.NATIVE_CLIENT_ADDRESS, "localhost");
         props.setProperty(CacheEnvironment.CONFIG_FILE_PATH,"hazelcast-client-custom.xml");
-        SessionFactory sf = createSessionFactory(props);
+        HazelcastMockInstanceLoader loader = new HazelcastMockInstanceLoader();
+        loader.configure(props);
+        loader.setInstanceFactory(factory);
+        SessionFactory sf = createSessionFactory(props, loader);
         HazelcastInstance hz = HazelcastAccessor.getHazelcastInstance(sf);
         assertTrue(hz instanceof HazelcastClientProxy);
         assertEquals(1, main.getCluster().getMembers().size());
@@ -65,36 +72,38 @@ public class CustomPropertiesTest extends HibernateTestSupport {
         assertEquals("dev-pass", clientConfig.getGroupConfig().getPassword());
         assertTrue(clientConfig.getNetworkConfig().isSmartRouting());
         assertTrue(clientConfig.getNetworkConfig().isRedoOperation());
-        Hazelcast.newHazelcastInstance(new ClasspathXmlConfig("hazelcast-custom.xml"));
+        factory.newHazelcastInstance(config);
         assertEquals(2, hz.getCluster().getMembers().size());
         main.shutdown();
-        Thread.sleep(1000 * 3); // let client to reconnect
+        Thread.sleep(1000 * 1); // let client to reconnect
         assertEquals(1, hz.getCluster().getMembers().size());
-
         Session session = sf.openSession();
         Transaction tx = session.beginTransaction();
         session.save(new DummyEntity(1L, "dummy", 0, new Date()));
         tx.commit();
         session.close();
-
         sf.close();
-        Hazelcast.shutdownAll();
+        factory.shutdownAll();
     }
 
     @Test
     public void testNamedInstance() {
+        TestHazelcastFactory factory = new TestHazelcastFactory();
         Config config = new Config();
         config.setInstanceName("hibernate");
-        HazelcastInstance hz = Hazelcast.newHazelcastInstance(config);
+        HazelcastInstance hz = factory.newHazelcastInstance(config);
         Properties props = getDefaultProperties();
         props.setProperty(Environment.CACHE_REGION_FACTORY, HazelcastCacheRegionFactory.class.getName());
         props.put(CacheEnvironment.HAZELCAST_INSTANCE_NAME, "hibernate");
         props.put(CacheEnvironment.SHUTDOWN_ON_STOP, "false");
-        final SessionFactory sf = createSessionFactory(props);
-        assertTrue(hz == HazelcastAccessor.getHazelcastInstance(sf));
+        HazelcastMockInstanceLoader instanceLoader = new HazelcastMockInstanceLoader();
+        instanceLoader.configure(props);
+        instanceLoader.setInstanceFactory(factory);
+        final SessionFactory sf = createSessionFactory(props, instanceLoader);
+        assertTrue(hz.equals(HazelcastAccessor.getHazelcastInstance(sf)));
         sf.close();
         assertTrue(hz.getLifecycleService().isRunning());
-        hz.shutdown();
+        factory.shutdownAll();
     }
 
     private Properties getDefaultProperties() {

@@ -104,6 +104,10 @@ public abstract class AbstractHazelcastCacheRegionFactory implements RegionFacto
         return instance;
     }
 
+    public IHazelcastInstanceLoader getHazelcastInstanceLoader() {
+        return instanceLoader;
+    }
+
     public AccessType getDefaultAccessType() {
         return AccessType.READ_WRITE;
     }

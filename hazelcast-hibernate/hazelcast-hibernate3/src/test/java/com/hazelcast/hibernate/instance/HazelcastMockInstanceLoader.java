@@ -14,7 +14,7 @@ import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import org.hibernate.cache.CacheException;
-import org.hibernate.internal.util.config.ConfigurationHelper;
+import org.hibernate.util.PropertiesHelper;
 
 import java.io.IOException;
 import java.util.Properties;
@@ -41,11 +41,11 @@ public class HazelcastMockInstanceLoader implements IHazelcastInstanceLoader {
                 LOGGER.warning("Current HazelcastClient is already active! Shutting it down...");
                 unloadInstance();
             }
-            String address = ConfigurationHelper.getString(CacheEnvironment.NATIVE_CLIENT_ADDRESS, props, null);
-            String group = ConfigurationHelper.getString(CacheEnvironment.NATIVE_CLIENT_GROUP, props, null);
-            String pass = ConfigurationHelper.getString(CacheEnvironment.NATIVE_CLIENT_PASSWORD, props, null);
-            String configResourcePath = CacheEnvironment.getConfigFilePath(props);
 
+            String address = PropertiesHelper.getString(CacheEnvironment.NATIVE_CLIENT_ADDRESS, props, null);
+            String group = PropertiesHelper.getString(CacheEnvironment.NATIVE_CLIENT_GROUP, props, null);
+            String pass = PropertiesHelper.getString(CacheEnvironment.NATIVE_CLIENT_PASSWORD, props, null);
+            String configResourcePath = CacheEnvironment.getConfigFilePath(props);
             ClientConfig clientConfig = buildClientConfig(configResourcePath);
             if (group != null) {
                 clientConfig.getGroupConfig().setName(group);

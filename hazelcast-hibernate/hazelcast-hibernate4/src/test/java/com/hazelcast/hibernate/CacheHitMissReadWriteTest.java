@@ -17,6 +17,7 @@
 package com.hazelcast.hibernate;
 
 import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.hibernate.cache.spi.access.AccessType;
 import org.hibernate.cfg.Environment;
@@ -36,7 +37,7 @@ import static org.junit.Assert.assertEquals;
  * Write through cache
  */
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
+@Category({QuickTest.class, ParallelTest.class})
 public class CacheHitMissReadWriteTest
         extends HibernateStatisticsTestSupport {
 
