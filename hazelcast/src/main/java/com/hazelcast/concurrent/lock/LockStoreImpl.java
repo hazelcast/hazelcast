@@ -48,12 +48,12 @@ public final class LockStoreImpl implements DataSerializable, LockStore {
     private int backupCount;
     private int asyncBackupCount;
 
-    private LockServiceImpl lockService;
+    private InternalLockService lockService;
 
     public LockStoreImpl() {
     }
 
-    public LockStoreImpl(LockServiceImpl lockService, ObjectNamespace name, int backupCount, int asyncBackupCount) {
+    public LockStoreImpl(InternalLockService lockService, ObjectNamespace name, int backupCount, int asyncBackupCount) {
         this.namespace = name;
         this.backupCount = backupCount;
         this.asyncBackupCount = asyncBackupCount;
