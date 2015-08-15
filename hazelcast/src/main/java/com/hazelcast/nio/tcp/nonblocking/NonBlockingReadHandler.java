@@ -146,8 +146,6 @@ public final class NonBlockingReadHandler
     }
 
     @Override
-    @edu.umd.cs.findbugs.annotations.SuppressWarnings(value = "VO_VOLATILE_INCREMENT",
-            justification = "eventCount is accessed by a single thread only.")
     public void handle() {
         eventCount.inc();
         lastReadTime = Clock.currentTimeMillis();
