@@ -69,8 +69,6 @@ public final class NonBlockingWriteHandler extends AbstractSelectionHandler impl
     private final SwCounter normalPacketsWritten = newSwCounter();
     @Probe(name = "out.priorityPacketsWritten")
     private final SwCounter priorityPacketsWritten = newSwCounter();
-    @Probe(name = "out.exceptionCount")
-    private final SwCounter exceptionCount = newSwCounter();
     private final MetricsRegistry metricsRegistry;
 
     private volatile SocketWritable currentPacket;
@@ -345,7 +343,6 @@ public final class NonBlockingWriteHandler extends AbstractSelectionHandler impl
                 writeOutputBufferToSocket();
             }
         } catch (Throwable t) {
-            exceptionCount.inc();
             logger.severe("Fatal Error at WriteHandler for endPoint: " + connection.getEndPoint(), t);
         }
 
