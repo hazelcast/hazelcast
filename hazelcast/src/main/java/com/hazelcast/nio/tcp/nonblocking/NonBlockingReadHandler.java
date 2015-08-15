@@ -20,12 +20,12 @@ import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.nio.Protocols;
 import com.hazelcast.nio.ascii.SocketTextReader;
-import com.hazelcast.nio.tcp.ClientPacketSocketReader;
 import com.hazelcast.nio.tcp.ClientMessageSocketReader;
+import com.hazelcast.nio.tcp.ClientPacketSocketReader;
 import com.hazelcast.nio.tcp.PacketSocketReader;
+import com.hazelcast.nio.tcp.ReadHandler;
 import com.hazelcast.nio.tcp.SocketReader;
 import com.hazelcast.nio.tcp.TcpIpConnection;
-import com.hazelcast.nio.tcp.ReadHandler;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.counters.Counter;
 import com.hazelcast.util.counters.SwCounter;
@@ -145,14 +145,17 @@ public final class NonBlockingReadHandler extends AbstractSelectionHandler imple
 
     @Override
     public void handle() {
-        eventCount.inc();
-        lastReadTime = Clock.currentTimeMillis();
-        if (!connection.isAlive()) {
-            String message = "We are being asked to read, but connection is not live so we won't";
-            logger.finest(message);
-            return;
-        }
         try {
+            eventCount.inc();
+            // we are going to set the timestamp even if the socketChannel is going to fail reading. In that case
+            // the connection is going to be closed anyway.
+            lastReadTime = Clock.currentTimeMillis();
+
+            if (!connection.isAlive()) {
+                logger.finest("We are being asked to read, but connection is not live so we won't");
+                return;
+            }
+
             if (socketReader == null) {
                 initializeSocketReader();
                 if (socketReader == null) {
@@ -160,21 +163,17 @@ public final class NonBlockingReadHandler extends AbstractSelectionHandler imple
                     return;
                 }
             }
-            int readBytes = socketChannel.read(inputBuffer);
 
-            if (readBytes == -1) {
-                throw new EOFException("Remote socket closed!");
-            } else {
-                bytesRead.inc(readBytes);
-            }
-        } catch (Throwable e) {
-            handleSocketException(e);
-            return;
-        }
-        try {
-            if (inputBuffer.position() == 0) {
+            int readBytes = socketChannel.read(inputBuffer);
+            if (readBytes <= 0) {
+                if (readBytes == -1) {
+                    throw new EOFException("Remote socket closed!");
+                }
                 return;
             }
+
+            bytesRead.inc(readBytes);
+
             inputBuffer.flip();
             socketReader.read(inputBuffer);
             if (inputBuffer.hasRemaining()) {
