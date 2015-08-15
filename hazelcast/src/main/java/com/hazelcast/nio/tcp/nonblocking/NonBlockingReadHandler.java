@@ -47,9 +47,7 @@ import static com.hazelcast.util.counters.SwCounter.newSwCounter;
 /**
  * The reading side of the {@link com.hazelcast.nio.Connection}.
  */
-public final class NonBlockingReadHandler
-        extends AbstractSelectionHandler
-        implements ReadHandler {
+public final class NonBlockingReadHandler extends AbstractSelectionHandler implements ReadHandler {
 
     private ByteBuffer inputBuffer;
 
@@ -195,8 +193,7 @@ public final class NonBlockingReadHandler
         super.handleSocketException(e);
     }
 
-    private void initializeSocketReader()
-            throws IOException {
+    private void initializeSocketReader() throws IOException {
         if (socketReader != null) {
             return;
         }
