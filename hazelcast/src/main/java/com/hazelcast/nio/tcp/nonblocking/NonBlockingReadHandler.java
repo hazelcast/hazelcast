@@ -57,8 +57,6 @@ public final class NonBlockingReadHandler extends AbstractSelectionHandler imple
     private final SwCounter normalPacketsRead = newSwCounter();
     @Probe(name = "in.priorityPacketsRead")
     private final SwCounter priorityPacketsRead = newSwCounter();
-    @Probe(name = "in.exceptionCount")
-    private final SwCounter exceptionCount = newSwCounter();
     private final MetricsRegistry metricRegistry;
 
     private SocketReader socketReader;
@@ -185,12 +183,6 @@ public final class NonBlockingReadHandler extends AbstractSelectionHandler imple
         } catch (Throwable t) {
             handleSocketException(t);
         }
-    }
-
-    @Override
-    public void handleSocketException(Throwable e) {
-        exceptionCount.inc();
-        super.handleSocketException(e);
     }
 
     private void initializeSocketReader() throws IOException {
