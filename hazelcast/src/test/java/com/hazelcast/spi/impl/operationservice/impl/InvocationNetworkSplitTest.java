@@ -105,9 +105,9 @@ public class InvocationNetworkSplitTest extends HazelcastTestSupport {
         clusterService3.prepareToMerge(node1.address);
         clusterService3.merge(node1.address);
 
-        assertEquals(3, node1.getClusterService().getSize());
-        assertEquals(3, node2.getClusterService().getSize());
-        assertEquals(3, node3.getClusterService().getSize());
+        assertClusterSizeEventually(3, hz1);
+        assertClusterSizeEventually(3, hz2);
+        assertClusterSizeEventually(3, hz3);
 
         try {
             future.get(1, TimeUnit.MINUTES);
