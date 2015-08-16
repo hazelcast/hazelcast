@@ -22,6 +22,7 @@ import com.hazelcast.core.ClientType;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.spi.EventService;
@@ -57,6 +58,13 @@ public interface ClientEngine {
     MemberImpl getLocalMember();
 
     SecurityContext getSecurityContext();
+
+    /**
+     * Returns the SerializationService.
+     *
+     * @return the SerializationService
+     */
+    SerializationService getSerializationService();
 
     /**
      * Returns Map which contains number of connected clients to the cluster.
