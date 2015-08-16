@@ -21,6 +21,7 @@ package com.hazelcast.nio;
  */
 public interface ConnectionManager {
 
+
     /**
      * Gets the number of client connections.
      *
@@ -101,6 +102,33 @@ public interface ConnectionManager {
      * @throws NullPointerException if listener is null.
      */
     void addConnectionListener(ConnectionListener listener);
+
+    /**
+     * Transmits a packet to a certain connection.
+     *
+     * If this method is called with a null connection, the call returns false
+     *
+     * @param packet The Packet to transmit.
+     * @param connection The connection to where the Packet should be transmitted.
+     * @return true if the transmit was a success, false if a failure. There is no guarantee that the packet is actually going
+     * to be received since the Packet perhaps is stuck in some buffer. It just means that it is buffered somewhere.
+     * @throws NullPointerException if packet is null.
+     */
+    boolean transmit(Packet packet, Connection connection);
+
+    /**
+     * Transmits a packet to a certain address.
+     *
+     * If the connection to the target doesn't exist yet, the system will try to make the connection. In this case
+     * true can be returned, even though the connection eventually can't be established.
+     *
+     * @param packet The Packet to transmit.
+     * @param target The address of the target machine where the Packet should be transmitted.
+     * @return true if the transmit was a success, false if a failure.
+     * @see #transmit(com.hazelcast.nio.Packet, com.hazelcast.nio.Connection)
+     * @throws NullPointerException if packet or target is null.
+     */
+    boolean transmit(Packet packet, Address target);
 
     /**
      * Starts ConnectionManager, initializes its resources, starts threads, etc. After start, ConnectionManager

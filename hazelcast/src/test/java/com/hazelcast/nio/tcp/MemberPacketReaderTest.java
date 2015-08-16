@@ -1,9 +1,7 @@
 package com.hazelcast.nio.tcp;
 
-import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.Packet;
-import com.hazelcast.spi.impl.packettransceiver.PacketTransceiver;
+import com.hazelcast.spi.impl.packetdispatcher.PacketDispatcher;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
@@ -21,7 +19,7 @@ import static org.junit.Assert.assertEquals;
 @Category(QuickTest.class)
 public class MemberPacketReaderTest extends TcpIpConnection_AbstractTest {
 
-    private MockPacketTransceiver packetTransceiver;
+    private MockPacketDispatcher dispatcher;
     private MemberPacketReader reader;
     private long oldPriorityPacketsRead;
     private long oldNormalPacketsRead;
@@ -38,8 +36,8 @@ public class MemberPacketReaderTest extends TcpIpConnection_AbstractTest {
         // we we create a real connection.
         TcpIpConnection connection = connect(connManagerA, addressB);
 
-        packetTransceiver = new MockPacketTransceiver();
-        reader = new MemberPacketReader(connection, packetTransceiver);
+        dispatcher = new MockPacketDispatcher();
+        reader = new MemberPacketReader(connection, dispatcher);
 
         readHandler = connection.getReadHandler();
         oldNormalPacketsRead = readHandler.getNormalPacketsReadCounter().get();
@@ -56,8 +54,8 @@ public class MemberPacketReaderTest extends TcpIpConnection_AbstractTest {
         buffer.flip();
         reader.read(buffer);
 
-        assertEquals(1, packetTransceiver.packets.size());
-        Packet found = packetTransceiver.packets.get(0);
+        assertEquals(1, dispatcher.packets.size());
+        Packet found = dispatcher.packets.get(0);
         assertEquals(packet, found);
         assertEquals(oldNormalPacketsRead, readHandler.getNormalPacketsReadCounter().get());
         assertEquals(oldPriorityPacketsRead + 1, readHandler.getPriorityPacketsReadCounter().get());
@@ -72,8 +70,8 @@ public class MemberPacketReaderTest extends TcpIpConnection_AbstractTest {
         buffer.flip();
         reader.read(buffer);
 
-        assertEquals(1, packetTransceiver.packets.size());
-        Packet found = packetTransceiver.packets.get(0);
+        assertEquals(1, dispatcher.packets.size());
+        Packet found = dispatcher.packets.get(0);
         assertEquals(packet, found);
         assertEquals(oldNormalPacketsRead + 1, readHandler.getNormalPacketsReadCounter().get());
         assertEquals(oldPriorityPacketsRead, readHandler.getPriorityPacketsReadCounter().get());
@@ -99,30 +97,20 @@ public class MemberPacketReaderTest extends TcpIpConnection_AbstractTest {
         buffer.flip();
         reader.read(buffer);
 
-        assertEquals(4, packetTransceiver.packets.size());
-        assertEquals(packet1, packetTransceiver.packets.get(0));
-        assertEquals(packet2, packetTransceiver.packets.get(1));
-        assertEquals(packet3, packetTransceiver.packets.get(2));
-        assertEquals(packet4, packetTransceiver.packets.get(3));
+        assertEquals(4, dispatcher.packets.size());
+        assertEquals(packet1, dispatcher.packets.get(0));
+        assertEquals(packet2, dispatcher.packets.get(1));
+        assertEquals(packet3, dispatcher.packets.get(2));
+        assertEquals(packet4, dispatcher.packets.get(3));
         assertEquals(oldNormalPacketsRead + 3, readHandler.getNormalPacketsReadCounter().get());
-        assertEquals(oldPriorityPacketsRead+1, readHandler.getPriorityPacketsReadCounter().get());
+        assertEquals(oldPriorityPacketsRead + 1, readHandler.getPriorityPacketsReadCounter().get());
     }
 
-    class MockPacketTransceiver implements PacketTransceiver {
+    class MockPacketDispatcher implements PacketDispatcher {
         private List<Packet> packets = new LinkedList<Packet>();
 
         @Override
-        public boolean transmit(Packet packet, Connection connection) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public boolean transmit(Packet packet, Address target) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void receive(Packet packet) {
+        public void dispatch(Packet packet) {
             packets.add(packet);
         }
     }

@@ -260,7 +260,7 @@
     <suppress checks="ClassFanOutComplexity" files="com/hazelcast/spi/impl/NodeEngineImpl"/>
     <!-- since this class needs to manage services, it knows about them, so it is fine to have lots of dependencies on these classes -->
     <suppress checks="ClassDataAbstractionCoupling" files="com/hazelcast/spi/impl/servicemanager/impl/ServiceManager"/>
-    <suppress checks="MethodCount|ExecutableStatementCount"
+    <suppress checks="MethodCount|ExecutableStatementCount|ClassFanOutComplexity"
               files="com/hazelcast/spi/impl/operationservice/impl/OperationServiceImpl"/>
     <!-- the invocation just has many parameters because there are a lot of things to tune/ -->
     <suppress checks="ParameterNumber" files="com/hazelcast/spi/impl/operationservice/impl/InvocationImpl"/>

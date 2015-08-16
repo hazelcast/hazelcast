@@ -46,8 +46,8 @@ import com.hazelcast.spi.impl.executionservice.InternalExecutionService;
 import com.hazelcast.spi.impl.executionservice.impl.ExecutionServiceImpl;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
-import com.hazelcast.spi.impl.packettransceiver.PacketTransceiver;
-import com.hazelcast.spi.impl.packettransceiver.impl.PacketTransceiverImpl;
+import com.hazelcast.spi.impl.packetdispatcher.PacketDispatcher;
+import com.hazelcast.spi.impl.packetdispatcher.impl.PacketDispatcherImpl;
 import com.hazelcast.spi.impl.proxyservice.InternalProxyService;
 import com.hazelcast.spi.impl.proxyservice.impl.ProxyServiceImpl;
 import com.hazelcast.spi.impl.servicemanager.ServiceInfo;
@@ -82,7 +82,7 @@ public class NodeEngineImpl implements NodeEngine {
     private final TransactionManagerServiceImpl transactionManagerService;
     private final ProxyServiceImpl proxyService;
     private final WanReplicationService wanReplicationService;
-    private final PacketTransceiver packetTransceiver;
+    private final PacketDispatcher packetDispatcher;
     private final QuorumServiceImpl quorumService;
     private final MetricsRegistryImpl metricsRegistry;
     private final SerializationService serializationService;
@@ -102,10 +102,9 @@ public class NodeEngineImpl implements NodeEngine {
         this.waitNotifyService = new WaitNotifyServiceImpl(this);
         this.transactionManagerService = new TransactionManagerServiceImpl(this);
         this.wanReplicationService = node.getNodeExtension().createService(WanReplicationService.class);
-        this.packetTransceiver = new PacketTransceiverImpl(
-                node,
+        this.packetDispatcher = new PacketDispatcherImpl(
                 logger,
-                executionService, operationService,
+                operationService,
                 eventService,
                 wanReplicationService,
                 new ConnectionManagerPacketHandler()
@@ -126,8 +125,8 @@ public class NodeEngineImpl implements NodeEngine {
         return metricsRegistry;
     }
 
-    public PacketTransceiver getPacketTransceiver() {
-        return packetTransceiver;
+    public PacketDispatcher getPacketDispatcher() {
+        return packetDispatcher;
     }
 
     public void start() {
