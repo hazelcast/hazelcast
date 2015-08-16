@@ -32,7 +32,7 @@ import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(NightlyTest.class)
-public class RegionFactoryDefaultNightlyTest extends HibernateStatisticsTestSupport {
+public class RegionFactoryDefaultNightlyTest extends HibernateSlowTestSupport {
 
     protected Properties getCacheProperties() {
         Properties props = new Properties();
@@ -50,7 +50,6 @@ public class RegionFactoryDefaultNightlyTest extends HibernateStatisticsTestSupp
         final int maxSize = mapConfig.getMaxSizeConfig().getSize();
         final int evictedItemCount = numberOfEntities - maxSize + (int) (maxSize * baseEvictionRate);
         insertDummyEntities(numberOfEntities);
-        sleep(1);
         for (int i = 0; i < numberOfEntities; i++) {
             executeQuery(sf, i);
         }

@@ -85,7 +85,7 @@ final class LockResourceImpl implements DataSerializable, LockResource {
             this.transactional = transactional;
             return true;
         } else if (isLockedBy(owner, threadId)) {
-            if (this.referenceId == referenceId) {
+            if (!transactional && this.referenceId == referenceId) {
                 return true;
             }
             this.referenceId = referenceId;
@@ -94,7 +94,6 @@ final class LockResourceImpl implements DataSerializable, LockResource {
             this.transactional = transactional;
             return true;
         }
-        this.transactional = false;
         return false;
     }
 
@@ -134,7 +133,7 @@ final class LockResourceImpl implements DataSerializable, LockResource {
             return false;
         }
 
-        if (this.referenceId == referenceId) {
+        if (!this.transactional && this.referenceId == referenceId) {
             return true;
         }
 

@@ -17,6 +17,7 @@
 package com.hazelcast.hibernate;
 
 import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.hibernate.cache.spi.access.AccessType;
 import org.hibernate.cfg.Environment;
@@ -37,7 +38,7 @@ import static org.junit.Assert.assertEquals;
  * Read through cache
  */
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
+@Category({QuickTest.class, ParallelTest.class})
 public class CacheHitMissNonStrictTest
         extends HibernateStatisticsTestSupport {
 
@@ -68,8 +69,7 @@ public class CacheHitMissNonStrictTest
 
         //hit 1 entity and 4 properties
         updateDummyEntityName(sf, 2, "updated");
-        //invalidation is not synchronized, so we have to wait
-        sleep(1);
+
         //entity 2 and its properties are invalidated
 
         //miss updated entity, hit 4 properties(they are still the same)

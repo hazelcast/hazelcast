@@ -21,6 +21,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.hibernate.entity.DummyEntity;
 import com.hazelcast.hibernate.entity.DummyProperty;
 import com.hazelcast.hibernate.instance.HazelcastAccessor;
+import com.hazelcast.hibernate.instance.IHazelcastInstanceLoader;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -38,14 +39,14 @@ public abstract class HibernateTestSupport extends HazelcastTestSupport {
 
     private final ILogger logger = Logger.getLogger(getClass());
 
-    protected String getCacheStrategy() {
-        return  AccessType.READ_WRITE.getName();
-    }
-
     @BeforeClass
     @AfterClass
     public static void tearUpAndDown() {
         Hazelcast.shutdownAll();
+    }
+
+    protected String getCacheStrategy() {
+        return  AccessType.READ_WRITE.getName();
     }
 
     @After
@@ -61,10 +62,16 @@ public abstract class HibernateTestSupport extends HazelcastTestSupport {
         }
     }
 
-    protected SessionFactory createSessionFactory(Properties props) {
+    protected SessionFactory createSessionFactory(Properties props, IHazelcastInstanceLoader customInstanceLoader) {
         Configuration conf = new Configuration();
         URL xml = HibernateTestSupport.class.getClassLoader().getResource("test-hibernate.cfg.xml");
         props.put(CacheEnvironment.EXPLICIT_VERSION_CHECK, "true");
+        if(customInstanceLoader != null) {
+            props.put("com.hazelcast.hibernate.instance.loader", customInstanceLoader);
+            customInstanceLoader.configure(props);
+        } else {
+            props.remove("com.hazelcast.hibernate.instance.loader");
+        }
         conf.configure(xml);
         conf.setCacheConcurrencyStrategy(DummyEntity.class.getName(), getCacheStrategy());
         conf.setCacheConcurrencyStrategy(DummyProperty.class.getName(), getCacheStrategy());
@@ -78,4 +85,7 @@ public abstract class HibernateTestSupport extends HazelcastTestSupport {
     protected HazelcastInstance getHazelcastInstance(SessionFactory sf) {
         return HazelcastAccessor.getHazelcastInstance(sf);
     }
+
+
+
 }

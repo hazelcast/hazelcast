@@ -1,6 +1,7 @@
 package com.hazelcast.hibernate.serialization;
 
 import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.hibernate.internal.util.compare.ComparableComparator;
 import org.junit.Test;
@@ -10,7 +11,7 @@ import org.junit.runner.RunWith;
 import static org.junit.Assert.*;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
+@Category({QuickTest.class, ParallelTest.class})
 public class ValueTest {
 
     @Test

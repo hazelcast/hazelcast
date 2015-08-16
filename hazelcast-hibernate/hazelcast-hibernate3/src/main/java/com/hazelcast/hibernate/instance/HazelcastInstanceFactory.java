@@ -48,6 +48,11 @@ public final class HazelcastInstanceFactory {
         Class loaderClass = null;
         ClassLoader cl = HazelcastInstanceFactory.class.getClassLoader();
         try {
+            final IHazelcastInstanceLoader instanceLoader =
+                    (IHazelcastInstanceLoader) props.get("com.hazelcast.hibernate.instance.loader");
+            if (instanceLoader != null) {
+                return instanceLoader;
+            }
             if (useNativeClient) {
                 loaderClass = cl.loadClass(HZ_CLIENT_LOADER_CLASSNAME);
             } else {
