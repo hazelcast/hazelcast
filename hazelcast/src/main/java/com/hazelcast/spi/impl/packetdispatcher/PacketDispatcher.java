@@ -40,7 +40,7 @@ public interface PacketDispatcher {
      * not be bothered by such a task.
      *
      * Important:
-     * Don't do anything time consuming on the thread that call the dispatch method. It can quickly cause bad performance on the
+     * Don't do anything time consuming on the thread that calls the dispatch method. It can quickly cause bad performance on the
      * io system.
      *
      * @param packet the Packet to dispatch.
