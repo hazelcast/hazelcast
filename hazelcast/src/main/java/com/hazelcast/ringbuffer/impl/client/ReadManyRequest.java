@@ -16,9 +16,11 @@
 
 package com.hazelcast.ringbuffer.impl.client;
 
+import com.hazelcast.core.IFunction;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
+import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.ringbuffer.ReadResultSet;
 import com.hazelcast.ringbuffer.impl.operations.ReadManyOperation;
 import com.hazelcast.spi.Operation;
@@ -33,6 +35,7 @@ public class ReadManyRequest extends RingbufferRequest {
     private long startSequence;
     private int minCount;
     private int maxCount;
+    private Data filterData;
 
     public ReadManyRequest() {
     }
@@ -42,11 +45,14 @@ public class ReadManyRequest extends RingbufferRequest {
         this.startSequence = startSequence;
         this.minCount = minCount;
         this.maxCount = maxCount;
+        this.filterData = filter;
     }
 
     @Override
     protected Operation prepareOperation() {
-        return new ReadManyOperation(name, startSequence, minCount, maxCount, null);
+        SerializationService serializationService = getClientEngine().getSerializationService();
+        IFunction filter = serializationService.toObject(filterData);
+        return new ReadManyOperation(name, startSequence, minCount, maxCount, filter);
     }
 
     @Override
@@ -77,6 +83,7 @@ public class ReadManyRequest extends RingbufferRequest {
         writer.writeLong("s", startSequence);
         writer.writeInt("i", minCount);
         writer.writeInt("a", maxCount);
+        writer.getRawDataOutput().writeData(filterData);
     }
 
     @Override
@@ -85,5 +92,6 @@ public class ReadManyRequest extends RingbufferRequest {
         this.startSequence = reader.readLong("s");
         this.minCount = reader.readInt("i");
         this.maxCount = reader.readInt("a");
+        filterData = reader.getRawDataInput().readData();
     }
 }
