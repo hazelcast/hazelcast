@@ -30,6 +30,7 @@ import com.hazelcast.ringbuffer.impl.client.AddAsyncRequest;
 import com.hazelcast.ringbuffer.impl.client.AddRequest;
 import com.hazelcast.ringbuffer.impl.client.CapacityRequest;
 import com.hazelcast.ringbuffer.impl.client.HeadSequenceRequest;
+import com.hazelcast.ringbuffer.impl.client.PortableReadResultSet;
 import com.hazelcast.ringbuffer.impl.client.ReadManyRequest;
 import com.hazelcast.ringbuffer.impl.client.ReadOneRequest;
 import com.hazelcast.ringbuffer.impl.client.RemainingCapacityRequest;
@@ -153,6 +154,13 @@ public class ClientRingbufferProxy<E> extends ClientProxy implements Ringbuffer<
         ReadManyRequest request = new ReadManyRequest(getName(), startSequence, minCount, maxCount, toData(filter));
         ClientInvocationFuture f = new ClientInvocation(getClient(), request, getPartitionId()).invoke();
         f.setResponseDeserialized(true);
+        f.afterDeserialize(new IFunction<PortableReadResultSet, PortableReadResultSet>() {
+            @Override
+            public PortableReadResultSet apply(PortableReadResultSet input) {
+                input.setSerializationService(getContext().getSerializationService());
+                return input;
+            }
+        });
         return f;
     }
 

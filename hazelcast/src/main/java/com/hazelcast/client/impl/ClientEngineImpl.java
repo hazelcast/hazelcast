@@ -617,10 +617,10 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
     @Override
     public Map<ClientType, Integer> getConnectedClientStats() {
 
-        int numberOfCppClients    = 0;
+        int numberOfCppClients = 0;
         int numberOfDotNetClients = 0;
-        int numberOfJavaClients   = 0;
-        int numberOfOtherClients  = 0;
+        int numberOfJavaClients = 0;
+        int numberOfOtherClients = 0;
 
         Operation clientInfoOperation = new GetConnectedClientsOperation();
         OperationService operationService = node.nodeEngine.getOperationService();
