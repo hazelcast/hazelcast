@@ -57,7 +57,7 @@ public class PaddedAtomicReference<V> {
     static {
         try {
             valueOffset = unsafe.objectFieldOffset
-                    (AtomicReference.class.getDeclaredField("v8"));
+                    (PaddedAtomicReference.class.getDeclaredField("v8"));
         } catch (Exception ex) {
             throw new Error(ex);
         }
