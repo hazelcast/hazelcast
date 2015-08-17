@@ -22,8 +22,6 @@ import com.hazelcast.internal.metrics.LongProbeFunction;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.ProbeFunction;
 import com.hazelcast.internal.metrics.metricsets.ClassLoadingMetricSet;
-import com.hazelcast.internal.metrics.metricsets.GarbageCollectionMetricSet;
-import com.hazelcast.internal.metrics.metricsets.OperatingSystemMetricsSet;
 import com.hazelcast.internal.metrics.metricsets.RuntimeMetricSet;
 import com.hazelcast.internal.metrics.metricsets.ThreadMetricSet;
 import com.hazelcast.internal.metrics.renderers.ProbeRenderer;
@@ -36,9 +34,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static java.lang.String.format;
@@ -49,8 +44,6 @@ import static java.lang.String.format;
 public class MetricsRegistryImpl implements MetricsRegistry {
 
     final ILogger logger;
-
-    private final ScheduledExecutorService scheduledExecutorService = new ScheduledThreadPoolExecutor(2);
 
     private final ConcurrentMap<Class<?>, SourceMetadata> metadataMap
             = new ConcurrentHashMap<Class<?>, SourceMetadata>();
@@ -69,9 +62,9 @@ public class MetricsRegistryImpl implements MetricsRegistry {
         this.logger = checkNotNull(logger, "logger can't be null");
 
         RuntimeMetricSet.register(this);
-       // GarbageCollectionMetricSet.register(this);
-       // OperatingSystemMetricsSet.register(this);
-       // ThreadMetricSet.register(this);
+        // GarbageCollectionMetricSet.register(this);
+        // OperatingSystemMetricsSet.register(this);
+        ThreadMetricSet.register(this);
         ClassLoadingMetricSet.register(this);
     }
 
@@ -386,12 +379,8 @@ public class MetricsRegistryImpl implements MetricsRegistry {
         }
     }
 
-    @Override
-    public void scheduleAtFixedRate(final Runnable publisher, long period, TimeUnit timeUnit) {
-        scheduledExecutorService.scheduleAtFixedRate(publisher, 0, period, timeUnit);
-    }
-
     public void shutdown() {
-        scheduledExecutorService.shutdown();
+        roots.clear();
+        metadataMap.clear();
     }
 }

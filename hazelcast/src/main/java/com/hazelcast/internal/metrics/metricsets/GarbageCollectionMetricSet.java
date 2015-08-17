@@ -28,7 +28,6 @@ import java.util.HashSet;
 import java.util.Set;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
-import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * A metrics set for exposing {@link GarbageCollectorMXBean} metrics.
@@ -37,8 +36,7 @@ public final class GarbageCollectionMetricSet {
 
     private static final Set<String> YOUNG_GC = new HashSet<String>(3);
     private static final Set<String> OLD_GC = new HashSet<String>(3);
-    private static final int PUBLISH_FREQUENCY_SECONDS = 1;
-
+ 
     static {
         YOUNG_GC.add("PS Scavenge");
         YOUNG_GC.add("ParNew");
@@ -59,30 +57,33 @@ public final class GarbageCollectionMetricSet {
      */
     public static void register(MetricsRegistry metricsRegistry) {
         checkNotNull(metricsRegistry, "metricsRegistry");
-
-        GcStats stats = new GcStats();
-        metricsRegistry.scheduleAtFixedRate(stats, PUBLISH_FREQUENCY_SECONDS, SECONDS);
-        metricsRegistry.registerRoot(stats);
+        metricsRegistry.registerRoot(new GcProbes());
     }
 
 
     @SuppressFBWarnings(value = "URF_UNREAD_FIELD", justification = "used by instrumentation tools")
-    static class GcStats implements Runnable {
-        @Probe
+    static final class GcProbes {
+        final int EXPIRATION_MS = 100;
+
+        volatile long lastUpdateMs;
+
         volatile long minorCount;
-        @Probe
         volatile long minorTime;
-        @Probe
         volatile long majorCount;
-        @Probe
         volatile long majorTime;
-        @Probe
         volatile long unknownCount;
-        @Probe
         volatile long unknownTime;
 
-        @Override
-        public void run() {
+        void update() {
+            long nowMs = System.currentTimeMillis();
+
+            if (lastUpdateMs + EXPIRATION_MS > nowMs) {
+                // this isn't thread safe since multiple thread could decide at the same time to update. But that it will only
+                // lead to multiple concurrent updates of the fields; which doesn't lead to incorrect results. This is cheaper
+                // than relying on locks.
+                return;
+            }
+
             long minorCount = 0;
             long minorTime = 0;
             long majorCount = 0;
@@ -114,6 +115,44 @@ public final class GarbageCollectionMetricSet {
             this.majorTime = majorTime;
             this.unknownCount = unknownCount;
             this.unknownTime = unknownTime;
+
+            lastUpdateMs = nowMs;
+        }
+
+        @Probe
+        long minorCount() {
+            update();
+            return minorCount;
+        }
+
+        @Probe
+        long minorTime() {
+            update();
+            return minorTime;
+        }
+
+        @Probe
+        long majorCount() {
+            update();
+            return majorCount;
+        }
+
+        @Probe
+        long majorTime() {
+            update();
+            return majorTime;
+        }
+
+        @Probe
+        long unknownCount() {
+            update();
+            return unknownCount;
+        }
+
+        @Probe
+        long unknownTime() {
+            update();
+            return unknownTime;
         }
 
         @ProbeName
