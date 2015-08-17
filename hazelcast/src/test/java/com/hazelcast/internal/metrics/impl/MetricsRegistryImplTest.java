@@ -11,6 +11,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
@@ -27,21 +28,6 @@ public class MetricsRegistryImplTest extends HazelcastTestSupport {
     @Before
     public void setup() {
         metricsRegistry = new MetricsRegistryImpl(Logger.getLogger(MetricsRegistryImpl.class));
-    }
-
-    @Test
-    public void modCount() {
-        long modCount = metricsRegistry.modCount();
-        metricsRegistry.register(this, "foo", new LongProbeFunction() {
-            @Override
-            public long get(Object obj) throws Exception {
-                return 1;
-            }
-        });
-        assertEquals(modCount + 1, metricsRegistry.modCount());
-
-        metricsRegistry.deregister(this);
-        assertEquals(modCount + 2, metricsRegistry.modCount());
     }
 
     // ================ newLongGauge ======================
@@ -86,7 +72,7 @@ public class MetricsRegistryImplTest extends HazelcastTestSupport {
             });
         }
 
-        Set<String> names = metricsRegistry.getNames();
+        List<String> names = metricsRegistry.getNames();
         for (String name : expected) {
             assertTrue(names.contains(name));
         }

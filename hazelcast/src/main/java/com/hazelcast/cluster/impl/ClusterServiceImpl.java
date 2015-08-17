@@ -46,8 +46,10 @@ import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.LifecycleServiceImpl;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
-import com.hazelcast.internal.metrics.MetricsRegistry;
+import com.hazelcast.internal.metrics.CompositeProbe;
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.metrics.ContainsProbes;
+import com.hazelcast.internal.metrics.ProbeName;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
@@ -114,6 +116,7 @@ import static com.hazelcast.util.Preconditions.isNotNull;
 import static java.util.Collections.unmodifiableMap;
 import static java.util.Collections.unmodifiableSet;
 
+@CompositeProbe(name = "cluster")
 public final class ClusterServiceImpl implements ClusterService, ConnectionListener, ManagedService,
         EventPublishingService<MembershipEvent, MembershipListener> {
 
@@ -176,6 +179,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
 
     private final ExceptionHandler whileFinalizeJoinsExceptionHandler;
 
+    @ContainsProbes
     private final ClusterClockImpl clusterClock;
 
     private String clusterId = null;
@@ -202,14 +206,11 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         heartbeatIntervalMillis = heartbeatInterval > 0 ? heartbeatInterval * 1000L : 1000L;
         pingIntervalMillis = heartbeatIntervalMillis * 10;
         node.connectionManager.addConnectionListener(this);
-
-        registerMetrics();
     }
 
-    void registerMetrics() {
-        MetricsRegistry metricsRegistry = node.nodeEngine.getMetricsRegistry();
-        metricsRegistry.scanAndRegister(clusterClock, "cluster.clock");
-        metricsRegistry.scanAndRegister(this, "cluster");
+    @ProbeName
+    public String probeName(){
+        return "cluster";
     }
 
     @Override

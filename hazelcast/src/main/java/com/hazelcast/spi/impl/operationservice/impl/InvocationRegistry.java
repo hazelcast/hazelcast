@@ -20,7 +20,9 @@ import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.internal.metrics.CompositeProbe;
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.metrics.ProbeName;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.partition.ReplicaErrorLogger;
@@ -61,6 +63,7 @@ import static com.hazelcast.util.counters.SwCounter.newSwCounter;
  * - pre-allocate all invocations. Because the ringbuffer has a fixed capacity, pre-allocation should be easy. Also
  * the PartitionInvocation and TargetInvocation can be folded into Invocation.
  */
+@CompositeProbe
 public class InvocationRegistry {
 
     private static final long SCHEDULE_DELAY = 1111;
@@ -102,10 +105,13 @@ public class InvocationRegistry {
         this.backupTimeoutMillis = props.OPERATION_BACKUP_TIMEOUT_MILLIS.getLong();
         this.invocations = new ConcurrentHashMap<Long, Invocation>(INITIAL_CAPACITY, LOAD_FACTOR, concurrencyLevel);
 
-        nodeEngine.getMetricsRegistry().scanAndRegister(this, "operation");
-
         this.inspectionThread = new InspectionThread();
         inspectionThread.start();
+    }
+
+    @ProbeName
+    public String probeName() {
+        return "invocation";
     }
 
     @Probe(name = "invocations.usedPercentage")
@@ -196,7 +202,7 @@ public class InvocationRegistry {
      * Notifies the invocation that a Response is available.
      *
      * @param response The response that is available.
-     * @param sender Endpoint who sent the response
+     * @param sender   Endpoint who sent the response
      */
     public void notify(Response response, Address sender) {
         if (response instanceof NormalResponse) {

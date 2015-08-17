@@ -24,8 +24,8 @@ import java.util.concurrent.atomic.AtomicLong;
 import static com.hazelcast.util.counters.SwCounter.newSwCounter;
 import static org.junit.Assert.assertEquals;
 
-//todo: testing of null return value
-//todo: testing of exception return value
+//todo: testing of null return field
+//todo: testing of exception return field
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class RegisterAnnotatedMethodsTest extends HazelcastTestSupport {
@@ -40,7 +40,7 @@ public class RegisterAnnotatedMethodsTest extends HazelcastTestSupport {
     @Test(expected = IllegalArgumentException.class)
     public void register_methodWithArguments() {
         MethodWithArgument object = new MethodWithArgument();
-        metricsRegistry.scanAndRegister(object, "foo");
+        metricsRegistry.registerRoot(object);
     }
 
     public class MethodWithArgument {
@@ -53,9 +53,9 @@ public class RegisterAnnotatedMethodsTest extends HazelcastTestSupport {
     @Test
     public void register_withCustomName() {
         GaugeMethodWithName object = new GaugeMethodWithName();
-        metricsRegistry.scanAndRegister(object, "foo");
+        metricsRegistry.registerRoot(object);
 
-        LongGauge gauge = metricsRegistry.newLongGauge("foo.mymethod");
+        LongGauge gauge = metricsRegistry.newLongGauge("gaugeMethodWithName.mymethod");
         assertEquals(10, gauge.read());
     }
 
@@ -69,7 +69,7 @@ public class RegisterAnnotatedMethodsTest extends HazelcastTestSupport {
     @Test(expected = IllegalArgumentException.class)
     public void register_methodReturnsVoid() {
         VoidMethod object = new VoidMethod();
-        metricsRegistry.scanAndRegister(object, "foo");
+        metricsRegistry.registerRoot(object);
     }
 
     public class VoidMethod {
@@ -81,9 +81,9 @@ public class RegisterAnnotatedMethodsTest extends HazelcastTestSupport {
     @Test
     public void register_primitiveByte() {
         PrimitiveByteMethod object = new PrimitiveByteMethod();
-        metricsRegistry.scanAndRegister(object, "foo");
+        metricsRegistry.registerRoot(object);
 
-        LongGauge gauge = metricsRegistry.newLongGauge("foo.method");
+        LongGauge gauge = metricsRegistry.newLongGauge("primitiveByteMethod.method");
         assertEquals(object.method(), gauge.read());
     }
 
@@ -97,9 +97,9 @@ public class RegisterAnnotatedMethodsTest extends HazelcastTestSupport {
     @Test
     public void register_primitiveShort() {
         PrimitiveShortMethod object = new PrimitiveShortMethod();
-        metricsRegistry.scanAndRegister(object, "foo");
+        metricsRegistry.registerRoot(object);
 
-        LongGauge gauge = metricsRegistry.newLongGauge("foo.method");
+        LongGauge gauge = metricsRegistry.newLongGauge("primitiveShortMethod.method");
         assertEquals(object.method(), gauge.read());
     }
 
@@ -110,13 +110,12 @@ public class RegisterAnnotatedMethodsTest extends HazelcastTestSupport {
         }
     }
 
-
     @Test
     public void register_primitiveInt() {
         PrimitiveIntMethod object = new PrimitiveIntMethod();
-        metricsRegistry.scanAndRegister(object, "foo");
+        metricsRegistry.registerRoot(object);
 
-        LongGauge gauge = metricsRegistry.newLongGauge("foo.method");
+        LongGauge gauge = metricsRegistry.newLongGauge("primitiveIntMethod.method");
         assertEquals(10, gauge.read());
     }
 
@@ -130,9 +129,9 @@ public class RegisterAnnotatedMethodsTest extends HazelcastTestSupport {
     @Test
     public void register_primitiveLong() {
         PrimitiveLongMethod object = new PrimitiveLongMethod();
-        metricsRegistry.scanAndRegister(object, "foo");
+        metricsRegistry.registerRoot(object);
 
-        LongGauge gauge = metricsRegistry.newLongGauge("foo.method");
+        LongGauge gauge = metricsRegistry.newLongGauge("primitiveLongMethod.method");
         assertEquals(10, gauge.read());
     }
 
@@ -147,9 +146,9 @@ public class RegisterAnnotatedMethodsTest extends HazelcastTestSupport {
     @Test
     public void register_primitiveFloat() {
         PrimitiveFloatMethod object = new PrimitiveFloatMethod();
-        metricsRegistry.scanAndRegister(object, "foo");
+       metricsRegistry.registerRoot(object);
 
-        DoubleGauge gauge = metricsRegistry.newDoubleGauge("foo.method");
+        DoubleGauge gauge = metricsRegistry.newDoubleGauge("primitiveFloatMethod.method");
         assertEquals(object.method(), gauge.read(), 0.1);
     }
 
@@ -163,9 +162,9 @@ public class RegisterAnnotatedMethodsTest extends HazelcastTestSupport {
     @Test
     public void register_primitiveDouble() {
         PrimitiveDoubleMethod object = new PrimitiveDoubleMethod();
-        metricsRegistry.scanAndRegister(object, "foo");
+        metricsRegistry.registerRoot(object);
 
-        DoubleGauge gauge = metricsRegistry.newDoubleGauge("foo.method");
+        DoubleGauge gauge = metricsRegistry.newDoubleGauge("primitiveDoubleMethod.method");
         assertEquals(object.method(), gauge.read(), 0.1);
     }
 
@@ -179,9 +178,9 @@ public class RegisterAnnotatedMethodsTest extends HazelcastTestSupport {
     @Test
     public void register_atomicLong() {
         AtomicLongMethod object = new AtomicLongMethod();
-        metricsRegistry.scanAndRegister(object, "foo");
+        metricsRegistry.registerRoot(object);
 
-        LongGauge gauge = metricsRegistry.newLongGauge("foo.method");
+        LongGauge gauge = metricsRegistry.newLongGauge("atomicLongMethod.method");
         assertEquals(object.method().get(), gauge.read());
     }
 
@@ -195,9 +194,9 @@ public class RegisterAnnotatedMethodsTest extends HazelcastTestSupport {
     @Test
     public void register_atomicInteger() {
         AtomicIntegerMethod object = new AtomicIntegerMethod();
-        metricsRegistry.scanAndRegister(object, "foo");
+        metricsRegistry.registerRoot(object);
 
-        LongGauge gauge = metricsRegistry.newLongGauge("foo.method");
+        LongGauge gauge = metricsRegistry.newLongGauge("atomicIntegerMethod.method");
         assertEquals(object.method().get(), gauge.read());
     }
 
@@ -211,9 +210,9 @@ public class RegisterAnnotatedMethodsTest extends HazelcastTestSupport {
     @Test
     public void register_counter() {
         CounterMethod object = new CounterMethod();
-        metricsRegistry.scanAndRegister(object, "foo");
+        metricsRegistry.registerRoot(object);
 
-        LongGauge gauge = metricsRegistry.newLongGauge("foo.method");
+        LongGauge gauge = metricsRegistry.newLongGauge("counterMethod.method");
         assertEquals(object.method().get(), gauge.read());
     }
 
@@ -229,9 +228,9 @@ public class RegisterAnnotatedMethodsTest extends HazelcastTestSupport {
     @Test
     public void register_collection() {
         CollectionMethod object = new CollectionMethod();
-        metricsRegistry.scanAndRegister(object, "foo");
+        metricsRegistry.registerRoot(object);
 
-        LongGauge gauge = metricsRegistry.newLongGauge("foo.method");
+        LongGauge gauge = metricsRegistry.newLongGauge("collectionMethod.method");
         assertEquals(object.method().size(), gauge.read());
     }
 
@@ -249,9 +248,9 @@ public class RegisterAnnotatedMethodsTest extends HazelcastTestSupport {
     @Test
     public void register_map() {
         MapMethod object = new MapMethod();
-        metricsRegistry.scanAndRegister(object, "foo");
+        metricsRegistry.registerRoot(object);
 
-        LongGauge gauge = metricsRegistry.newLongGauge("foo.method");
+        LongGauge gauge = metricsRegistry.newLongGauge("mapMethod.method");
         assertEquals(object.method().size(), gauge.read());
     }
 
@@ -269,9 +268,9 @@ public class RegisterAnnotatedMethodsTest extends HazelcastTestSupport {
     @Test
     public void register_subclass() {
         SubclassMethod object = new SubclassMethod();
-        metricsRegistry.scanAndRegister(object, "foo");
+        metricsRegistry.registerRoot(object);
 
-        LongGauge gauge = metricsRegistry.newLongGauge("foo.method");
+        LongGauge gauge = metricsRegistry.newLongGauge("subclassMethod.method");
         assertEquals(object.method().size(), gauge.read());
     }
 
@@ -290,9 +289,9 @@ public class RegisterAnnotatedMethodsTest extends HazelcastTestSupport {
     @Test
     public void register_staticMethod() {
         StaticMethod object = new StaticMethod();
-        metricsRegistry.scanAndRegister(object, "foo");
+        metricsRegistry.registerRoot(object);
 
-        LongGauge gauge = metricsRegistry.newLongGauge("foo.method");
+        LongGauge gauge = metricsRegistry.newLongGauge("staticMethod.method");
         assertEquals(StaticMethod.method(), gauge.read());
     }
 
@@ -306,9 +305,9 @@ public class RegisterAnnotatedMethodsTest extends HazelcastTestSupport {
     @Test
     public void register_interfaceWithGauges() {
         SomeInterfaceImplementation object = new SomeInterfaceImplementation();
-        metricsRegistry.scanAndRegister(object, "foo");
+        metricsRegistry.registerRoot(object);
 
-        LongGauge gauge = metricsRegistry.newLongGauge("foo.method");
+        LongGauge gauge = metricsRegistry.newLongGauge("someInterfaceImplementation.method");
         assertEquals(10, gauge.read());
     }
 
@@ -327,12 +326,12 @@ public class RegisterAnnotatedMethodsTest extends HazelcastTestSupport {
     @Test
     public void register_superclassWithGaugeMethods() {
         SubclassWithGauges object = new SubclassWithGauges();
-        metricsRegistry.scanAndRegister(object, "foo");
+        metricsRegistry.registerRoot(object);
 
-        LongGauge methodGauge = metricsRegistry.newLongGauge("foo.method");
+        LongGauge methodGauge = metricsRegistry.newLongGauge("subclassWithGauges.method");
         assertEquals(object.method(), methodGauge.read());
 
-        LongGauge fieldGauge = metricsRegistry.newLongGauge("foo.field");
+        LongGauge fieldGauge = metricsRegistry.newLongGauge("subclassWithGauges.field");
         assertEquals(object.field, fieldGauge.read());
     }
 

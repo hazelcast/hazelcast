@@ -36,9 +36,8 @@ public class FirewallingTcpIpConnectionManager extends TcpIpConnectionManager {
             LoggingService loggingService,
             HazelcastThreadGroup threadGroup,
             NodeIOService ioService,
-            MetricsRegistry metricsRegistry,
             ServerSocketChannel serverSocketChannel) {
-        super(ioService, serverSocketChannel, metricsRegistry, threadGroup, loggingService);
+        super(ioService, serverSocketChannel, threadGroup, loggingService);
     }
 
     @Override

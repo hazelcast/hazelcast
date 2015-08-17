@@ -18,7 +18,9 @@ package com.hazelcast.spi.impl.operationexecutor.classic;
 
 import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.instance.NodeExtension;
+import com.hazelcast.internal.metrics.CompositeProbe;
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.metrics.ProbeName;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.Operation;
@@ -41,6 +43,7 @@ import static com.hazelcast.util.counters.SwCounter.newSwCounter;
  * <p/>
  * The actual processing of an operation is forwarded to the {@link com.hazelcast.spi.impl.operationexecutor.OperationRunner}.
  */
+@CompositeProbe
 public abstract class OperationThread extends HazelcastManagedThread {
 
     final int threadId;
@@ -72,6 +75,11 @@ public abstract class OperationThread extends HazelcastManagedThread {
         this.threadId = threadId;
         this.logger = logger;
         this.nodeExtension = nodeExtension;
+    }
+
+    @ProbeName
+    public String probeName() {
+        return "[" + super.getName() + "]";
     }
 
     @Probe

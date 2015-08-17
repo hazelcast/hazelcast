@@ -708,7 +708,6 @@ public class SplitBrainHandlerTest extends HazelcastTestSupport {
                     node.loggingService,
                     node.getHazelcastThreadGroup(),
                     ioService,
-                    node.nodeEngine.getMetricsRegistry(),
                     serverSocketChannel);
         }
     }

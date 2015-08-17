@@ -72,8 +72,6 @@ import java.util.LinkedList;
  */
 public class NodeEngineImpl implements NodeEngine {
 
-    private final Node node;
-    private final ILogger logger;
     private final EventServiceImpl eventService;
     private final OperationServiceImpl operationService;
     private final ExecutionServiceImpl executionService;
@@ -84,16 +82,19 @@ public class NodeEngineImpl implements NodeEngine {
     private final WanReplicationService wanReplicationService;
     private final PacketDispatcher packetDispatcher;
     private final QuorumServiceImpl quorumService;
+
+    private final Node node;
+    private final ILogger logger;
     private final MetricsRegistryImpl metricsRegistry;
     private final SerializationService serializationService;
     private final LoggingServiceImpl loggingService;
 
-    public NodeEngineImpl(final Node node) {
+    public NodeEngineImpl(Node node) {
         this.node = node;
         this.loggingService = node.loggingService;
         this.serializationService = node.getSerializationService();
         this.logger = node.getLogger(NodeEngine.class.getName());
-        this.metricsRegistry = new MetricsRegistryImpl(node.getLogger(MetricsRegistryImpl.class));
+        this.metricsRegistry = new MetricsRegistryImpl(loggingService.getLogger(MetricsRegistryImpl.class));
         this.proxyService = new ProxyServiceImpl(this);
         this.serviceManager = new ServiceManagerImpl(this);
         this.executionService = new ExecutionServiceImpl(this);
@@ -110,6 +111,11 @@ public class NodeEngineImpl implements NodeEngine {
                 new ConnectionManagerPacketHandler()
         );
         quorumService = new QuorumServiceImpl(this);
+
+        metricsRegistry.registerRoot(eventService);
+        metricsRegistry.registerRoot(operationService);
+        metricsRegistry.registerRoot(proxyService);
+        metricsRegistry.registerRoot(executionService);
     }
 
     class ConnectionManagerPacketHandler implements PacketHandler {

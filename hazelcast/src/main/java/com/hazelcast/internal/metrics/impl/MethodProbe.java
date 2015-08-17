@@ -45,28 +45,23 @@ import static java.lang.String.format;
 abstract class MethodProbe implements ProbeFunction {
 
     final Method method;
-    final Probe probe;
+    final Probe probeAnnotation;
     final int type;
 
-    MethodProbe(Method method, Probe probe, int type) {
+    MethodProbe(Method method, Probe probeAnnotation, int type) {
         this.method = method;
-        this.probe = probe;
+        this.probeAnnotation = probeAnnotation;
         this.type = type;
         method.setAccessible(true);
     }
 
-    void register(MetricsRegistryImpl metricsRegistry, Object source, String namePrefix) {
-        String name = getName(namePrefix);
-        metricsRegistry.registerInternal(source, name, this);
-    }
-
-    private String getName(String namePrefix) {
+    public String getName() {
         String name = method.getName();
-        if (!probe.name().equals("")) {
-            name = probe.name();
+        if (!probeAnnotation.name().equals("")) {
+            name = probeAnnotation.name();
         }
 
-        return namePrefix + "." + name;
+        return name;
     }
 
     static <S> MethodProbe createMethodProbe(Method method, Probe probe) {

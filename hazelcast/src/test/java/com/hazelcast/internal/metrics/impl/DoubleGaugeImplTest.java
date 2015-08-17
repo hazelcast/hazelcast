@@ -91,7 +91,7 @@ public class DoubleGaugeImplTest {
     @Test
     public void whenLongGaugeField() {
         SomeObject someObject = new SomeObject();
-        metricsRegistry.scanAndRegister(someObject, "foo");
+        metricsRegistry.registerRoot(someObject);
 
         DoubleGauge gauge = metricsRegistry.newDoubleGauge("foo.longField");
         assertEquals(someObject.longField, gauge.read(), 0.1);
@@ -100,7 +100,7 @@ public class DoubleGaugeImplTest {
     @Test
     public void whenDoubleGaugeField() {
         SomeObject someObject = new SomeObject();
-        metricsRegistry.scanAndRegister(someObject, "foo");
+        metricsRegistry.registerRoot(someObject);
 
         DoubleGauge gauge = metricsRegistry.newDoubleGauge("foo.doubleField");
         assertEquals(someObject.doubleField, gauge.read(), 0.1);
