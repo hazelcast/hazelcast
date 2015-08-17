@@ -27,11 +27,11 @@ import static org.junit.Assume.assumeTrue;
 @Category(QuickTest.class)
 public class OperatingSystemMetricSetTest extends HazelcastTestSupport {
 
-    private MetricsRegistryImpl blackbox;
+    private MetricsRegistryImpl metricsRegistry;
 
     @Before
     public void setup() {
-        blackbox = new MetricsRegistryImpl(Logger.getLogger(MetricsRegistryImpl.class));
+        metricsRegistry = new MetricsRegistryImpl(Logger.getLogger(MetricsRegistryImpl.class));
     }
 
     @Test
@@ -79,7 +79,7 @@ public class OperatingSystemMetricSetTest extends HazelcastTestSupport {
     }
 
     private void assertContainsSensor(String parameter) {
-        boolean contains = blackbox.getNames().contains(parameter);
+        boolean contains = metricsRegistry.getNames().contains(parameter);
         assertTrue("sensor:" + parameter + " is not found", contains);
     }
 
@@ -94,31 +94,31 @@ public class OperatingSystemMetricSetTest extends HazelcastTestSupport {
     @Test
     public void registerMethod_whenDouble() {
         FakeOperatingSystemBean fakeOperatingSystemBean = new FakeOperatingSystemBean();
-        registerMethod(blackbox, fakeOperatingSystemBean, "doubleMethod", "doubleMethod");
+        registerMethod(metricsRegistry, fakeOperatingSystemBean, "doubleMethod", "doubleMethod");
 
-        DoubleGauge gauge = blackbox.newDoubleGauge("doubleMethod");
+        DoubleGauge gauge = metricsRegistry.newDoubleGauge("doubleMethod");
         assertEquals(fakeOperatingSystemBean.doubleMethod(), gauge.read(), 0.1);
     }
 
     @Test
     public void registerMethod_whenLong() {
-        blackbox = new MetricsRegistryImpl(Logger.getLogger(MetricsRegistryImpl.class));
+        metricsRegistry = new MetricsRegistryImpl(Logger.getLogger(MetricsRegistryImpl.class));
 
         FakeOperatingSystemBean fakeOperatingSystemBean = new FakeOperatingSystemBean();
-        registerMethod(blackbox, fakeOperatingSystemBean, "longMethod", "longMethod");
+        registerMethod(metricsRegistry, fakeOperatingSystemBean, "longMethod", "longMethod");
 
-        LongGauge gauge = blackbox.newLongGauge("longMethod");
+        LongGauge gauge = metricsRegistry.newLongGauge("longMethod");
         assertEquals(fakeOperatingSystemBean.longMethod(), gauge.read());
     }
 
     @Test
     public void registerMethod_whenNotExist() {
-        blackbox = new MetricsRegistryImpl(Logger.getLogger(MetricsRegistryImpl.class));
+        metricsRegistry = new MetricsRegistryImpl(Logger.getLogger(MetricsRegistryImpl.class));
 
         FakeOperatingSystemBean fakeOperatingSystemBean = new FakeOperatingSystemBean();
-        registerMethod(blackbox, fakeOperatingSystemBean, "notexist", "notexist");
+        registerMethod(metricsRegistry, fakeOperatingSystemBean, "notexist", "notexist");
 
-        boolean parameterExist = blackbox.getNames().contains("notexist");
+        boolean parameterExist = metricsRegistry.getNames().contains("notexist");
         assertFalse(parameterExist);
     }
 

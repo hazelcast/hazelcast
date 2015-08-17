@@ -23,11 +23,11 @@ public class ClassLoadingMetricSetTest extends HazelcastTestSupport {
 
     private static final ClassLoadingMXBean BEAN = ManagementFactory.getClassLoadingMXBean();
 
-    private MetricsRegistryImpl blackbox;
+    private MetricsRegistryImpl metricsRegistry;
 
     @Before
     public void setup() {
-        blackbox = new MetricsRegistryImpl(Logger.getLogger(MetricsRegistryImpl.class));
+        metricsRegistry = new MetricsRegistryImpl(Logger.getLogger(MetricsRegistryImpl.class));
     }
 
     @Test
@@ -37,7 +37,7 @@ public class ClassLoadingMetricSetTest extends HazelcastTestSupport {
 
     @Test
     public void loadedClassesCount() {
-        final LongGauge gauge = blackbox.newLongGauge("classloading.loadedClassCount");
+        final LongGauge gauge = metricsRegistry.newLongGauge("classloading.loadedClassCount");
 
         assertTrueEventually(new AssertTask() {
             @Override
@@ -49,7 +49,7 @@ public class ClassLoadingMetricSetTest extends HazelcastTestSupport {
 
     @Test
     public void totalLoadedClassCount() {
-        final LongGauge gauge = blackbox.newLongGauge("classloading.totalLoadedClassCount");
+        final LongGauge gauge = metricsRegistry.newLongGauge("classloading.totalLoadedClassCount");
 
         assertTrueEventually(new AssertTask() {
             @Override
@@ -61,7 +61,7 @@ public class ClassLoadingMetricSetTest extends HazelcastTestSupport {
 
     @Test
     public void unloadedClassCount() {
-        final LongGauge gauge = blackbox.newLongGauge("classloading.unloadedClassCount");
+        final LongGauge gauge = metricsRegistry.newLongGauge("classloading.unloadedClassCount");
 
         assertTrueEventually(new AssertTask() {
             @Override

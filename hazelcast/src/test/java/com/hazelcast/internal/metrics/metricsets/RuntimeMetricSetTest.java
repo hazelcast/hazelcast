@@ -23,12 +23,12 @@ public class RuntimeMetricSetTest extends HazelcastTestSupport {
 
     private final static int TEN_MB = 10 * 1024 * 1024;
 
-    private MetricsRegistryImpl blackbox;
+    private MetricsRegistryImpl metricsRegistry;
     private Runtime runtime;
 
     @Before
     public void setup() {
-        blackbox = new MetricsRegistryImpl(Logger.getLogger(MetricsRegistryImpl.class));
+        metricsRegistry = new MetricsRegistryImpl(Logger.getLogger(MetricsRegistryImpl.class));
         runtime = Runtime.getRuntime();
     }
 
@@ -39,7 +39,7 @@ public class RuntimeMetricSetTest extends HazelcastTestSupport {
 
     @Test
     public void freeMemory() {
-        final LongGauge gauge = blackbox.newLongGauge("runtime.freeMemory");
+        final LongGauge gauge = metricsRegistry.newLongGauge("runtime.freeMemory");
 
         assertTrueEventually(new AssertTask() {
             @Override
@@ -51,7 +51,7 @@ public class RuntimeMetricSetTest extends HazelcastTestSupport {
 
     @Test
     public void totalMemory() {
-        final LongGauge gauge = blackbox.newLongGauge("runtime.totalMemory");
+        final LongGauge gauge = metricsRegistry.newLongGauge("runtime.totalMemory");
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
@@ -62,7 +62,7 @@ public class RuntimeMetricSetTest extends HazelcastTestSupport {
 
     @Test
     public void maxMemory() {
-        final LongGauge gauge = blackbox.newLongGauge("runtime.maxMemory");
+        final LongGauge gauge = metricsRegistry.newLongGauge("runtime.maxMemory");
 
         assertTrueEventually(new AssertTask() {
             @Override
@@ -74,7 +74,7 @@ public class RuntimeMetricSetTest extends HazelcastTestSupport {
 
     @Test
     public void usedMemory() {
-        final LongGauge gauge = blackbox.newLongGauge("runtime.usedMemory");
+        final LongGauge gauge = metricsRegistry.newLongGauge("runtime.usedMemory");
 
         assertTrueEventually(new AssertTask() {
             @Override
@@ -87,13 +87,13 @@ public class RuntimeMetricSetTest extends HazelcastTestSupport {
 
     @Test
     public void availableProcessors() {
-        LongGauge gauge = blackbox.newLongGauge("runtime.availableProcessors");
+        LongGauge gauge = metricsRegistry.newLongGauge("runtime.availableProcessors");
         assertEquals(runtime.availableProcessors(), gauge.read());
     }
 
     @Test
     public void uptime() {
-        final LongGauge gauge = blackbox.newLongGauge("runtime.uptime");
+        final LongGauge gauge = metricsRegistry.newLongGauge("runtime.uptime");
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
