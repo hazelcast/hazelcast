@@ -29,4 +29,8 @@ public class PartitionMigratingException extends RetryableHazelcastException {
         super("Partition is migrating! this:" + thisAddress
                 + ", partitionId: " + partitionId + ", operation: " + operationName + ", service: " + serviceName);
     }
+
+    public PartitionMigratingException(String message) {
+        super(message);
+    }
 }
