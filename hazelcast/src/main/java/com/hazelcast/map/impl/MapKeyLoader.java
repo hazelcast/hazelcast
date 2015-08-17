@@ -22,6 +22,7 @@ import com.hazelcast.core.MapLoader;
 import com.hazelcast.map.impl.mapstore.MapStoreContext;
 import com.hazelcast.map.impl.operation.LoadAllOperation;
 import com.hazelcast.map.impl.operation.LoadStatusOperation;
+import com.hazelcast.map.impl.operation.LoadStatusOperationFactory;
 import com.hazelcast.map.impl.operation.PartitionCheckIfLoadedOperation;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.InternalPartitionService;
@@ -236,7 +237,7 @@ public class MapKeyLoader {
         return state.is(State.NOT_LOADED);
     }
 
-    private void sendKeysInBatches(MapStoreContext mapStoreContext, boolean replaceExistingValues) {
+    private void sendKeysInBatches(MapStoreContext mapStoreContext, boolean replaceExistingValues) throws Exception {
 
         int clusterSize = partitionService.getMemberPartitionsMap().size();
         Iterator<Object> keys = null;
@@ -292,18 +293,16 @@ public class MapKeyLoader {
     }
 
     private void sendLoadCompleted(int clusterSize, int partitions,
-            boolean replaceExistingValues, Throwable exception) {
-        for (int partitionId = 0; partitionId < partitions; partitionId++) {
-            Operation op = new LoadStatusOperation(mapName, exception);
-            opService.invokeOnPartition(SERVICE_NAME, op, partitionId);
-        }
+            boolean replaceExistingValues, Throwable exception) throws Exception {
+
+        // notify all partitions about loading status: finished or exception encountered
+        opService.invokeOnAllPartitions(SERVICE_NAME, new LoadStatusOperationFactory(mapName, exception));
 
         // notify SENDER_BACKUP
         if (hasBackup && clusterSize > 1) {
             Operation op = new LoadStatusOperation(mapName, exception);
             opService.createInvocationBuilder(SERVICE_NAME, op, mapNamePartition).setReplicaIndex(1).invoke();
         }
-
     }
 
     public void setMaxBatch(int maxBatch) {
@@ -382,5 +381,9 @@ public class MapKeyLoader {
         public String toString() {
             return getClass().getSimpleName() + "{done=" + isDone() + "}";
         }
+    }
+
+    public void onKeyLoad(ExecutionCallback<Boolean> callback) {
+        loadFinished.andThen(callback, execService.getExecutor(MAP_LOAD_ALL_KEYS_EXECUTOR));
     }
 }
