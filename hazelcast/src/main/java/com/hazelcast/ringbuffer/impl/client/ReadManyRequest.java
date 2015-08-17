@@ -64,11 +64,15 @@ public class ReadManyRequest extends RingbufferRequest {
     @Override
     protected Object filter(Object response) {
         ReadResultSetImpl readResultSet = (ReadResultSetImpl) response;
-        int readCount = readResultSet.readCount();
-        List<Data> items = new ArrayList<Data>(readCount);
-        for (Data item : readResultSet.getDataItems()) {
-            items.add(item);
+
+        int size = readResultSet.size();
+        List<Data> items = new ArrayList<Data>(size);
+        Data[] dataItems = readResultSet.getDataItems();
+        for (int k = 0; k < size; k++) {
+            items.add(dataItems[k]);
         }
+
+        int readCount = readResultSet.readCount();
         return new PortableReadResultSet<Object>(readCount, items);
     }
 

@@ -12,6 +12,8 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.NightlyTest;
+import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.topic.impl.reliable.ReliableMessageListenerMock;
 import com.hazelcast.util.Clock;
 import org.junit.After;
@@ -34,7 +36,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category(NightlyTest.class)
+@Category({QuickTest.class, ParallelTest.class})
 public class ClientReliableTopicTest extends HazelcastTestSupport {
 
     private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
@@ -92,6 +94,7 @@ public class ClientReliableTopicTest extends HazelcastTestSupport {
 
         boolean removed = topic.removeMessageListener(id);
         assertTrue(removed);
+
         topic.publish("1");
 
         // it should not receive any events.
@@ -248,8 +251,8 @@ public class ClientReliableTopicTest extends HazelcastTestSupport {
     @Test
     public void testListener() throws InterruptedException {
         ITopic topic = client.getReliableTopic(randomString());
-
-        final CountDownLatch latch = new CountDownLatch(10);
+        int messageCount = 10;
+        final CountDownLatch latch = new CountDownLatch(messageCount);
         MessageListener listener = new MessageListener() {
             public void onMessage(Message message) {
                 System.out.println("Message received");
@@ -258,7 +261,7 @@ public class ClientReliableTopicTest extends HazelcastTestSupport {
         };
         topic.addMessageListener(listener);
 
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < messageCount; i++) {
             topic.publish(i);
         }
         assertTrue(latch.await(20, TimeUnit.SECONDS));
