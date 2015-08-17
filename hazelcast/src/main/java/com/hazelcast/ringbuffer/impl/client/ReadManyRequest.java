@@ -66,7 +66,7 @@ public class ReadManyRequest extends RingbufferRequest {
         ReadResultSetImpl readResultSet = (ReadResultSetImpl) response;
         int readCount = readResultSet.readCount();
         List<Data> items = new ArrayList<Data>(readCount);
-        for (Data item : readResultSet.getItems()) {
+        for (Data item : readResultSet.getDataItems()) {
             items.add(item);
         }
         return new PortableReadResultSet<Object>(readCount, items);

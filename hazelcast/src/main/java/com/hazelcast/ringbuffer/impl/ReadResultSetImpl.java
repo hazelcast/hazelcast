@@ -77,7 +77,7 @@ public class ReadResultSetImpl<E> extends AbstractList<E>
     }
 
     @SuppressFBWarnings({"EI_EXPOSE_REP" })
-    public Data[] getItems() {
+    public Data[] getDataItems() {
         return items;
     }
 
