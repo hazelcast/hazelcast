@@ -29,7 +29,7 @@ import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.nio.tcp.WriteHandler;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.EmptyStatement;
-import com.hazelcast.util.FastQueue;
+import com.hazelcast.util.MPSCQueue;
 import com.hazelcast.util.counters.SwCounter;
 
 import java.io.IOException;
@@ -92,8 +92,8 @@ public final class NonBlockingWriteHandler extends AbstractSelectionHandler impl
         metricsRegistry.scanAndRegister(this, "tcp.connection[" + connection.getMetricsId() + "]");
 
         if (Boolean.getBoolean("fastqueue")) {
-            writeQueue = new FastQueue<SocketWritable>(null);
-            urgentWriteQueue = new FastQueue<SocketWritable>(null);
+            writeQueue = new MPSCQueue<SocketWritable>(null);
+            urgentWriteQueue = new MPSCQueue<SocketWritable>(null);
         } else {
             writeQueue = new ConcurrentLinkedQueue<SocketWritable>();
             urgentWriteQueue = new ConcurrentLinkedQueue<SocketWritable>();

@@ -20,7 +20,7 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.operationexecutor.OperationHostileThread;
-import com.hazelcast.util.FastQueue;
+import com.hazelcast.util.MPSCQueue;
 
 import java.io.IOException;
 import java.nio.channels.SelectionKey;
@@ -55,7 +55,7 @@ public abstract class NonBlockingIOThread extends Thread implements OperationHos
         super(threadGroup, threadName);
 
         if (Boolean.getBoolean("fastqueuue")) {
-            selectorQueue = new FastQueue<Runnable>(null);
+            selectorQueue = new MPSCQueue<Runnable>(null);
         } else {
             selectorQueue = new ConcurrentLinkedQueue<Runnable>();
         }
