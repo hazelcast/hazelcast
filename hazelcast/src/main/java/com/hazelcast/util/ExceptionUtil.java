@@ -68,6 +68,26 @@ public final class ExceptionUtil {
         }
     }
 
+    public static Throwable getCause(final Throwable t) {
+        if (t instanceof Error) {
+            if (t instanceof OutOfMemoryError) {
+                OutOfMemoryErrorDispatcher.onOutOfMemory((OutOfMemoryError) t);
+            }
+            return (Error) t;
+        } else if (t instanceof RuntimeException) {
+            return (RuntimeException) t;
+        } else if (t instanceof ExecutionException) {
+            final Throwable cause = t.getCause();
+            if (cause != null) {
+                return rethrow(cause);
+            } else {
+                return new HazelcastException(t);
+            }
+        } else {
+            return new HazelcastException(t);
+        }
+    }
+
     public static <T extends Throwable> RuntimeException rethrow(final Throwable t, Class<T> allowedType) throws T {
         if (t instanceof Error) {
             if (t instanceof OutOfMemoryError) {

@@ -20,6 +20,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.impl.operations.PartitionIteratingOperation;
+import com.hazelcast.util.ExceptionUtil;
 
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -104,7 +105,7 @@ final class InvokeOnPartitions {
                 }
                 List<Integer> partitions = memberPartitions.get(response.getKey());
                 for (Integer partition : partitions) {
-                    partitionResults.put(partition, t);
+                    partitionResults.put(partition, ExceptionUtil.getCause(t));
                 }
             }
         }
@@ -128,8 +129,12 @@ final class InvokeOnPartitions {
 
         for (Integer failedPartition : failedPartitions) {
             Future f = (Future) partitionResults.get(failedPartition);
-            Object result = f.get();
-            partitionResults.put(failedPartition, result);
+            try {
+                Object result = f.get();
+                partitionResults.put(failedPartition, result);
+            } catch (Throwable exception) {
+                ExceptionUtil.rethrow(exception);
+            }
         }
     }
 }

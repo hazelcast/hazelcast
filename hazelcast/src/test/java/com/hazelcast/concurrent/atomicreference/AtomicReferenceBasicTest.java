@@ -16,6 +16,7 @@
 
 package com.hazelcast.concurrent.atomicreference;
 
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IAtomicReference;
 import com.hazelcast.core.IFunction;
@@ -184,7 +185,7 @@ public abstract class AtomicReferenceBasicTest extends HazelcastTestSupport {
         try {
             ref.apply(new FailingFunction());
             fail();
-        } catch (ExpectedRuntimeException expected) {
+        } catch (Exception expected) {
         }
 
         assertEquals("foo", ref.get());
@@ -202,7 +203,7 @@ public abstract class AtomicReferenceBasicTest extends HazelcastTestSupport {
         try {
             ref.alter(new FailingFunction());
             fail();
-        } catch (ExpectedRuntimeException expected) {
+        } catch (Exception expected) {
         }
 
         assertEquals("foo", ref.get());
@@ -233,7 +234,7 @@ public abstract class AtomicReferenceBasicTest extends HazelcastTestSupport {
         try {
             ref.alterAndGet(new FailingFunction());
             fail();
-        } catch (ExpectedRuntimeException expected) {
+        } catch (Exception expected) {
         }
 
         assertEquals("foo", ref.get());
@@ -264,7 +265,7 @@ public abstract class AtomicReferenceBasicTest extends HazelcastTestSupport {
         try {
             ref.getAndAlter(new FailingFunction());
             fail();
-        } catch (ExpectedRuntimeException expected) {
+        } catch (Exception expected) {
         }
 
         assertEquals("foo", ref.get());
