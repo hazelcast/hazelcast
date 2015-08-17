@@ -22,12 +22,12 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionType;
 import com.hazelcast.nio.SocketWritable;
 
-import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketAddress;
 import java.net.SocketException;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * The Tcp/Ip implementation of the {@link com.hazelcast.nio.Connection}.
@@ -48,7 +48,7 @@ public final class TcpIpConnection implements Connection {
 
     private final TcpIpConnectionManager connectionManager;
 
-    private volatile boolean live = true;
+    private final AtomicBoolean alive = new AtomicBoolean(true);
 
     private volatile ConnectionType type = ConnectionType.NONE;
 
@@ -117,7 +117,7 @@ public final class TcpIpConnection implements Connection {
 
     @Override
     public boolean isAlive() {
-        return live;
+        return alive.get();
     }
 
     @Override
@@ -188,7 +188,7 @@ public final class TcpIpConnection implements Connection {
 
     @Override
     public boolean write(SocketWritable packet) {
-        if (!live) {
+        if (!alive.get()) {
             if (logger.isFinestEnabled()) {
                 logger.finest("Connection is closed, won't write packet -> " + packet);
             }
@@ -198,7 +198,7 @@ public final class TcpIpConnection implements Connection {
         return true;
     }
 
-   @Override
+    @Override
     public boolean equals(Object o) {
         if (this == o) {
             return true;
@@ -215,40 +215,33 @@ public final class TcpIpConnection implements Connection {
         return connectionId;
     }
 
-    private void close0() throws IOException {
-        if (!live) {
-            return;
-        }
-        live = false;
-
-        if (socketChannel != null && socketChannel.isOpen()) {
-            readHandler.shutdown();
-            writeHandler.shutdown();
-            socketChannel.close();
-        }
-    }
-
     @Override
     public void close() {
         close(null);
     }
 
     public void close(Throwable t) {
-        if (!live) {
+        if (!alive.compareAndSet(true, false)) {
+            // it is already closed.
             return;
         }
+
         try {
-            close0();
+            if (socketChannel != null && socketChannel.isOpen()) {
+                readHandler.shutdown();
+                writeHandler.shutdown();
+                socketChannel.close();
+            }
         } catch (Exception e) {
             logger.warning(e);
         }
 
         Object connAddress = getConnectionAddress();
         String message = "Connection [" + connAddress + "] lost. Reason: ";
-        if (t != null) {
-            message += t.getClass().getName() + "[" + t.getMessage() + "]";
-        } else {
+        if (t == null) {
             message += "Socket explicitly closed";
+        } else {
+            message += t.getClass().getName() + "[" + t.getMessage() + "]";
         }
 
         logger.info(message);
@@ -265,6 +258,6 @@ public final class TcpIpConnection implements Connection {
         SocketAddress localSocketAddress = socket != null ? socket.getLocalSocketAddress() : null;
         SocketAddress remoteSocketAddress = socket != null ? socket.getRemoteSocketAddress() : null;
         return "Connection [" + localSocketAddress + " -> " + remoteSocketAddress
-                + "], endpoint=" + endPoint + ", live=" + live + ", type=" + type;
+                + "], endpoint=" + endPoint + ", alive=" + alive + ", type=" + type;
     }
 }
