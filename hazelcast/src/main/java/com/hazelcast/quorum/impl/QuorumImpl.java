@@ -63,18 +63,6 @@ public class QuorumImpl implements Quorum {
         setLocalResult(quorumFunction.apply(members));
     }
 
-    public String getName() {
-        return quorumName;
-    }
-
-    public int getSize() {
-        return size;
-    }
-
-    public QuorumConfig getConfig() {
-        return config;
-    }
-
     public boolean isInitialized() {
         return initialized;
     }
@@ -178,18 +166,6 @@ public class QuorumImpl implements Quorum {
         public boolean apply(Collection<Member> members) {
             return members.size() >= size;
         }
-    }
-
-    @Override
-    public String toString() {
-        return "QuorumImpl{"
-                + "quorumName='" + quorumName + '\''
-                + ", isPresent=" + isPresent
-                + ", size=" + size
-                + ", config=" + config
-                + ", quorumFunction=" + quorumFunction
-                + ", initialized=" + initialized
-                + '}';
     }
 
 

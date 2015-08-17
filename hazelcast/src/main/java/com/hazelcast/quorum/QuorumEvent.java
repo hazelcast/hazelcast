@@ -65,12 +65,4 @@ public class QuorumEvent extends EventObject {
         return presence;
     }
 
-    @Override
-    public String toString() {
-        return "QuorumEvent{"
-                + "threshold=" + threshold
-                + ", currentMembers=" + currentMembers
-                + ", presence=" + presence
-                + '}';
-    }
 }

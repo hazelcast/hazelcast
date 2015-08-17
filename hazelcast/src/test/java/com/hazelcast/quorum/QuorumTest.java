@@ -205,4 +205,9 @@ public class QuorumTest extends HazelcastTestSupport {
         }
     }
 
+    @Test(expected = IllegalArgumentException.class)
+    public void testQuorumServiceThrowsExceptionIfQuorumNotFound() throws Exception {
+        HazelcastInstance hazelcastInstance = createHazelcastInstance();
+        hazelcastInstance.getQuorumService().getQuorum("NOT_EXISTS");
+    }
 }
