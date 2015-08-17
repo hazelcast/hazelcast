@@ -112,9 +112,6 @@ public class HazelcastHttpSession implements HttpSession {
         if (cacheEntry == null || cacheEntry.isReload()) {
             try {
                 value = webFilter.getClusteredSessionService().getAttribute(id, name);
-                if (value == null) {
-                    return null;
-                }
                 cacheEntry = new LocalCacheEntry(false, value);
                 cacheEntry.setReload(false);
                 localCache.put(name, cacheEntry);
