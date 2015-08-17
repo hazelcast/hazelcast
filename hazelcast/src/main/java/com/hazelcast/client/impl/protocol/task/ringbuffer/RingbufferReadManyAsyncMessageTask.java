@@ -22,12 +22,15 @@ import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.core.IFunction;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.ringbuffer.impl.ReadResultSetImpl;
 import com.hazelcast.ringbuffer.impl.RingbufferService;
-import com.hazelcast.ringbuffer.impl.client.PortableReadResultSet;
 import com.hazelcast.ringbuffer.impl.operations.ReadManyOperation;
 import com.hazelcast.spi.Operation;
 
 import java.security.Permission;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Client Protocol Task for handling messages with type id:
@@ -48,15 +51,19 @@ public class RingbufferReadManyAsyncMessageTask
                 parameters.startSequence,
                 parameters.minCount,
                 parameters.maxCount,
-                function,
-                true);
+                function);
     }
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
         // we are not deserializing the whole content, only the enclosing portable. The actual items remain un
-        PortableReadResultSet resultSet = nodeEngine.getSerializationService().toObject(response);
-        return RingbufferReadManyAsyncCodec.encodeResponse(resultSet.readCount(), resultSet.getDataItems());
+        ReadResultSetImpl resultSet = nodeEngine.getSerializationService().toObject(response);
+        List<Data> items = new ArrayList<Data>(resultSet.size());
+        for (int k = 0; k < resultSet.size(); k++) {
+            items.add(resultSet.getDataItems()[k]);
+        }
+
+        return RingbufferReadManyAsyncCodec.encodeResponse(resultSet.readCount(), items);
     }
 
     @Override

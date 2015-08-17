@@ -96,8 +96,8 @@ public class ReadManyOperation extends AbstractRingBufferOperation implements Wa
     public Object getResponse() {
         if (returnPortable) {
             List<Data> items = new ArrayList<Data>(resultSet.size());
-            for (Data data : resultSet.getItems()) {
-                items.add(data);
+            for (int k = 0; k < resultSet.size(); k++) {
+                items.add(resultSet.getDataItems()[k]);
             }
 
             PortableReadResultSet portableReadResultSet = new PortableReadResultSet(resultSet.readCount(), items);

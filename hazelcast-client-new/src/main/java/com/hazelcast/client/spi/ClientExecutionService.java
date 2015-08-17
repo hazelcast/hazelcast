@@ -19,6 +19,7 @@ package com.hazelcast.client.spi;
 import com.hazelcast.core.ICompletableFuture;
 
 import java.util.concurrent.Callable;
+import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -26,7 +27,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * @author mdogan 5/16/13
  */
-public interface ClientExecutionService {
+public interface ClientExecutionService extends Executor {
 
     void execute(Runnable command);
 

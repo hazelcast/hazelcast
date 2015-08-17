@@ -92,6 +92,9 @@ public class ClientConfig {
 
     private Map<String, NearCacheConfig> nearCacheConfigMap = new ConcurrentHashMap<String, NearCacheConfig>();
 
+    private Map<String, ClientReliableTopicConfig> reliableTopicConfigMap
+            = new ConcurrentHashMap<String, ClientReliableTopicConfig>();
+
     private Map<String, Map<String, QueryCacheConfig>> queryCacheConfigsPerMap;
 
     private SerializationConfig serializationConfig = new SerializationConfig();
@@ -199,6 +202,32 @@ public class ClientConfig {
     public ClientConfig setNetworkConfig(ClientNetworkConfig networkConfig) {
         this.networkConfig = networkConfig;
         return this;
+    }
+
+    /**
+     * Adds a ClientReliableTopicConfig.
+     *
+     * @param reliableTopicConfig the ClientReliableTopicConfig to add
+     * @return configured {@link com.hazelcast.client.config.ClientConfig} for chaining
+     */
+    public ClientConfig addReliableTopicConfig(ClientReliableTopicConfig reliableTopicConfig) {
+        reliableTopicConfigMap.put(reliableTopicConfig.getName(), reliableTopicConfig);
+        return this;
+    }
+
+    /**
+     * Gets the ClientReliableTopicConfig for a given reliable topic name.
+     *
+     * @param name the name of the reliable topic
+     * @return the found config. If none is found, a default configured one is returned.
+     */
+    public ClientReliableTopicConfig getReliableTopicConfig(String name) {
+        ClientReliableTopicConfig nearCacheConfig = lookupByPattern(reliableTopicConfigMap, name);
+        if (nearCacheConfig == null) {
+            nearCacheConfig = new ClientReliableTopicConfig(name);
+            addReliableTopicConfig(nearCacheConfig);
+        }
+        return nearCacheConfig;
     }
 
     /**
