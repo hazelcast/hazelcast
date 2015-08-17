@@ -175,6 +175,7 @@
     <!-- Client Protocol -->
     <suppress checks="IllegalImport" files="com/hazelcast/client/impl/protocol/util/UnsafeBuffer"/>
     <!-- Parameters classes are auto-generated -->
+    <suppress checks="" files="com/hazelcast/client/impl/protocol/ClientExceptionFactory.java"/>
     <suppress checks="" files="com/hazelcast/client/impl/protocol/map/.*Parameters"/>
     <suppress checks="" files="com/hazelcast/client/impl/protocol/.*Parameters"/>
     <suppress checks="" files="com/hazelcast/client/impl/protocol/.*Codec"/>

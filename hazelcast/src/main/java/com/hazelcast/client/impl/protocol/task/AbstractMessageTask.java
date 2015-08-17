@@ -21,8 +21,10 @@ import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.ClientEndpointManager;
 import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.client.impl.client.SecureRequest;
+import com.hazelcast.client.impl.protocol.ClientExceptionFactory;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.parameters.ExceptionResultParameters;
+import com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes;
+import com.hazelcast.client.impl.protocol.parameters.ErrorCodec;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
@@ -32,8 +34,6 @@ import com.hazelcast.security.Credentials;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.security.Permission;
 import java.util.logging.Level;
 
@@ -191,13 +191,23 @@ public abstract class AbstractMessageTask<P>
     }
 
     private ClientMessage createExceptionMessage(Throwable throwable) {
-        String className = throwable.getClass().getName();
+        ClientExceptionFactory clientExceptionFactory = clientEngine.getClientExceptionFactory();
+        int errorCode = clientExceptionFactory.getErrorCode(throwable);
         String message = throwable.getMessage();
-        StringWriter sw = new StringWriter();
-        throwable.printStackTrace(new PrintWriter(sw));
+        StackTraceElement[] stackTrace = throwable.getStackTrace();
         Throwable cause = throwable.getCause();
-        String causeClassName = cause != null ? cause.getClass().getName() : null;
-        return ExceptionResultParameters.encode(className, causeClassName, message, sw.toString());
+        boolean hasCause = cause != null;
+        String className = throwable.getClass().getName();
+        if (hasCause) {
+            int causeErrorCode = clientExceptionFactory.getErrorCode(cause);
+            String causeClassName = cause.getClass().getName();
+            return ErrorCodec.encode(errorCode, className, message, stackTrace,
+                    causeErrorCode, causeClassName);
+        } else {
+            return ErrorCodec.encode(errorCode, className, message, stackTrace,
+                    ClientProtocolErrorCodes.UNDEFINED, null);
+        }
+
     }
 
     protected abstract void processMessage();

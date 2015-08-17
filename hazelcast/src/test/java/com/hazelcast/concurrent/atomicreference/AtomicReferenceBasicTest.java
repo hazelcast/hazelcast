@@ -16,10 +16,10 @@
 
 package com.hazelcast.concurrent.atomicreference;
 
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IAtomicReference;
 import com.hazelcast.core.IFunction;
-import com.hazelcast.test.ExpectedRuntimeException;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.After;
 import org.junit.Before;
@@ -184,7 +184,7 @@ public abstract class AtomicReferenceBasicTest extends HazelcastTestSupport {
         try {
             ref.apply(new FailingFunction());
             fail();
-        } catch (ExpectedRuntimeException expected) {
+        } catch (HazelcastException expected) {
         }
 
         assertEquals("foo", ref.get());
@@ -202,7 +202,7 @@ public abstract class AtomicReferenceBasicTest extends HazelcastTestSupport {
         try {
             ref.alter(new FailingFunction());
             fail();
-        } catch (ExpectedRuntimeException expected) {
+        } catch (HazelcastException expected) {
         }
 
         assertEquals("foo", ref.get());
@@ -233,7 +233,7 @@ public abstract class AtomicReferenceBasicTest extends HazelcastTestSupport {
         try {
             ref.alterAndGet(new FailingFunction());
             fail();
-        } catch (ExpectedRuntimeException expected) {
+        } catch (HazelcastException expected) {
         }
 
         assertEquals("foo", ref.get());
@@ -264,7 +264,7 @@ public abstract class AtomicReferenceBasicTest extends HazelcastTestSupport {
         try {
             ref.getAndAlter(new FailingFunction());
             fail();
-        } catch (ExpectedRuntimeException expected) {
+        } catch (HazelcastException expected) {
         }
 
         assertEquals("foo", ref.get());
@@ -306,7 +306,7 @@ public abstract class AtomicReferenceBasicTest extends HazelcastTestSupport {
     private static class FailingFunction implements IFunction<String, String> {
         @Override
         public String apply(String input) {
-            throw new ExpectedRuntimeException();
+            throw new HazelcastException();
         }
     }
 

@@ -30,4 +30,8 @@ public class TargetDisconnectedException extends RetryableHazelcastException {
     public TargetDisconnectedException(Address address) {
         super("Target[" + address + "] disconnected.");
     }
+
+    public TargetDisconnectedException(String message) {
+        super(message);
+    }
 }

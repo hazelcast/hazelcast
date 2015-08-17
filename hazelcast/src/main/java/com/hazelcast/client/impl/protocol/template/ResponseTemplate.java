@@ -78,9 +78,17 @@ public interface ResponseTemplate {
     @Response(ResponseMessageConst.JOB_PROCESS_INFO)
     void JobProcessInfo(List<JobPartitionState> jobPartitionStates, int processRecords);
 
-    //FIXME review this one
+    /**
+     * @param errorCode      error code of this exception
+     * @param className      java class name of exception
+     * @param message        details of exception
+     * @param stacktrace     array of stack trace
+     * @param causeErrorCode error code of cause of this exception, if there is no cause -1
+     * @param causeClassName java class name of the cause of this exception
+     */
     @Response(ResponseMessageConst.EXCEPTION)
-    void Exception(int error, String className, String causeClassName, String message, String stacktrace);
+    void Exception(int errorCode, String className, @Nullable String message, StackTraceElement[] stacktrace
+            , int causeErrorCode, @Nullable String causeClassName);
 
     //FIXME review this one
     @Response(ResponseMessageConst.READ_RESULT_SET)

@@ -39,6 +39,10 @@ public class WrongTargetException extends RetryableHazelcastException {
         this.target = target;
     }
 
+    public WrongTargetException(String message) {
+        super(message);
+    }
+
     public Address getTarget() {
         return target;
     }

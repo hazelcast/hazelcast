@@ -26,6 +26,7 @@ import com.hazelcast.client.impl.client.ClientResponse;
 import com.hazelcast.client.impl.operations.ClientDisconnectionOperation;
 import com.hazelcast.client.impl.operations.GetConnectedClientsOperation;
 import com.hazelcast.client.impl.operations.PostJoinClientOperation;
+import com.hazelcast.client.impl.protocol.ClientExceptionFactory;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.MessageTaskFactory;
 import com.hazelcast.client.impl.protocol.task.MessageTask;
@@ -115,6 +116,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
     private final ConnectionListener connectionListener = new ConnectionListenerImpl();
 
     private final MessageTaskFactory messageTaskFactory;
+    private final ClientExceptionFactory clientExceptionFactory = new ClientExceptionFactory();
 
     public ClientEngineImpl(Node node) {
         this.logger = node.getLogger(ClientEngine.class);
@@ -241,6 +243,10 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
 
     public ClientEndpointManager getEndpointManager() {
         return endpointManager;
+    }
+
+    public ClientExceptionFactory getClientExceptionFactory() {
+        return clientExceptionFactory;
     }
 
     @Override

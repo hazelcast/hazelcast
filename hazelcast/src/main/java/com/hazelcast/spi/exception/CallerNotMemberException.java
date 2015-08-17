@@ -28,4 +28,8 @@ public class CallerNotMemberException extends RetryableHazelcastException {
         super("Not Member! caller:" + target + ", partitionId: " + partitionId
                 + ", operation: " + operationName + ", service: " + serviceName);
     }
+
+    public CallerNotMemberException(String message) {
+        super(message);
+    }
 }
