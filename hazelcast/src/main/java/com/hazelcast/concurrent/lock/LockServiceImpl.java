@@ -56,7 +56,7 @@ import java.util.concurrent.TimeUnit;
 import static com.hazelcast.spi.impl.OperationResponseHandlerFactory.createEmptyResponseHandler;
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
 
-public final class LockServiceImpl implements LockService, ManagedService, RemoteService, MembershipAwareService,
+public final class LockServiceImpl implements InternalLockService, ManagedService, RemoteService, MembershipAwareService,
         MigrationAwareService, ClientAwareService {
 
     private final NodeEngine nodeEngine;
