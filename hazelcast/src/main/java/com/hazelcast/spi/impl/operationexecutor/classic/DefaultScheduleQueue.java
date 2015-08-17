@@ -16,6 +16,7 @@
 
 package com.hazelcast.spi.impl.operationexecutor.classic;
 
+import java.util.Queue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -31,13 +32,13 @@ public final class DefaultScheduleQueue implements ScheduleQueue {
     };
 
     private final BlockingQueue normalQueue;
-    private final ConcurrentLinkedQueue priorityQueue;
+    private final Queue priorityQueue;
 
     public DefaultScheduleQueue() {
         this(new LinkedBlockingQueue(), new ConcurrentLinkedQueue());
     }
 
-    public DefaultScheduleQueue(BlockingQueue normalQueue, ConcurrentLinkedQueue priorityQueue) {
+    public DefaultScheduleQueue(BlockingQueue normalQueue, Queue priorityQueue) {
         this.normalQueue = checkNotNull(normalQueue, "normalQueue");
         this.priorityQueue = checkNotNull(priorityQueue, "priorityQueue");
     }
@@ -74,7 +75,7 @@ public final class DefaultScheduleQueue implements ScheduleQueue {
 
     @Override
     public Object take() throws InterruptedException {
-        ConcurrentLinkedQueue priorityQueue = this.priorityQueue;
+        Queue priorityQueue = this.priorityQueue;
         for (; ; ) {
             Object priorityItem = priorityQueue.poll();
             if (priorityItem != null) {

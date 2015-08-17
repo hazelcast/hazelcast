@@ -29,6 +29,7 @@ import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.nio.tcp.WriteHandler;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.EmptyStatement;
+import com.hazelcast.util.FastQueue;
 import com.hazelcast.util.counters.SwCounter;
 
 import java.io.IOException;
@@ -57,9 +58,9 @@ public final class NonBlockingWriteHandler extends AbstractSelectionHandler impl
     private static final long TIMEOUT = 3;
 
     @Probe(name = "out.writeQueueSize")
-    private final Queue<SocketWritable> writeQueue = new ConcurrentLinkedQueue<SocketWritable>();
+    private final Queue<SocketWritable> writeQueue;
     @Probe(name = "out.priorityWriteQueueSize")
-    private final Queue<SocketWritable> urgentWriteQueue = new ConcurrentLinkedQueue<SocketWritable>();
+    private final Queue<SocketWritable> urgentWriteQueue;
     private final AtomicBoolean scheduled = new AtomicBoolean(false);
     private ByteBuffer outputBuffer;
     @Probe(name = "out.bytesWritten")
@@ -89,6 +90,14 @@ public final class NonBlockingWriteHandler extends AbstractSelectionHandler impl
         // sensors
         this.metricsRegistry = metricsRegistry;
         metricsRegistry.scanAndRegister(this, "tcp.connection[" + connection.getMetricsId() + "]");
+
+        if (Boolean.getBoolean("fastqueue")) {
+            writeQueue = new FastQueue<SocketWritable>(null);
+            urgentWriteQueue = new FastQueue<SocketWritable>(null);
+        } else {
+            writeQueue = new ConcurrentLinkedQueue<SocketWritable>();
+            urgentWriteQueue = new ConcurrentLinkedQueue<SocketWritable>();
+        }
     }
 
     @Probe(name = "out.interestedOps")
