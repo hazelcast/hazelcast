@@ -22,6 +22,7 @@ import com.hazelcast.client.impl.protocol.EventMessageConst;
 import com.hazelcast.client.impl.protocol.ResponseMessageConst;
 import com.hazelcast.nio.serialization.Data;
 
+import java.util.List;
 import java.util.Set;
 
 @GenerateCodec(id = TemplateConstants.QUEUE_TEMPLATE_ID, name = "Queue", ns = "Hazelcast.Client.Protocol.Queue")
@@ -73,7 +74,7 @@ public interface QueueCodecTemplate {
     void clear(String name);
 
     @Request(id = 16, retryable = false, response = ResponseMessageConst.BOOLEAN)
-    void addAll(String name, Set<Data> dataList);
+    void addAll(String name, List<Data> dataList);
 
     @Request(id = 17, retryable = true, response = ResponseMessageConst.STRING,
              event = {EventMessageConst.EVENT_ITEM})

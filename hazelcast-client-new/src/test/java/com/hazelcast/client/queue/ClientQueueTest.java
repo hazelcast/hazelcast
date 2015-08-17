@@ -341,9 +341,16 @@ public class ClientQueueTest {
         for (int i = 0; i < maxItems; i++) {
             coll.add(i);
         }
-
         assertTrue(q.addAll(coll));
         assertEquals(coll.size(), q.size());
+
+        // assert queue is same
+        ArrayList actual = new ArrayList();
+        for (Object item : q) {
+            actual.add(item);
+        }
+
+        assertEquals(coll, actual);
     }
 
     @Test
