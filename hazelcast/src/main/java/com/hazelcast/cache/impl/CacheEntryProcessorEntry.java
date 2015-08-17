@@ -55,8 +55,7 @@ public class CacheEntryProcessorEntry<K, V, R extends CacheRecord>
     protected final ExpiryPolicy expiryPolicy;
     protected final int completionId;
 
-    public CacheEntryProcessorEntry(Data keyData,
-                                    R record,
+    public CacheEntryProcessorEntry(Data keyData, R record,
                                     AbstractCacheRecordStore cacheRecordStore,
                                     long now, int completionId) {
         this.keyData = keyData;
@@ -154,33 +153,58 @@ public class CacheEntryProcessorEntry<K, V, R extends CacheRecord>
             case ACCESS:
                 cacheRecordStore.accessRecord(keyData, record, expiryPolicy, now);
                 break;
+            case CREATE:
+                if (isStatisticsEnabled) {
+                    statistics.increaseCachePuts(1);
+                    statistics.addGetTimeNanos(System.nanoTime() - start);
+                }
+                boolean saved =
+                        cacheRecordStore.createRecordWithExpiry(keyData, value, expiryPolicy,
+                                                                now, false, completionId) != null;
+                onCreate(keyData, value, expiryPolicy, now, false, completionId, saved);
+                break;
+            case LOAD:
+                saved = cacheRecordStore.createRecordWithExpiry(keyData, valueLoaded, expiryPolicy,
+                                                                now, true, completionId) != null;
+                onLoad(keyData, valueLoaded, expiryPolicy, now, true, completionId, saved);
+                break;
             case UPDATE:
-                cacheRecordStore.updateRecordWithExpiry(keyData, value, record, expiryPolicy, now, false, completionId);
+                saved = cacheRecordStore.updateRecordWithExpiry(keyData, value, record,
+                                                                expiryPolicy, now, false, completionId);
+                onUpdate(keyData, value, record, expiryPolicy, now, false, completionId, saved);
                 if (isStatisticsEnabled) {
                     statistics.increaseCachePuts(1);
                     statistics.addGetTimeNanos(System.nanoTime() - start);
                 }
                 break;
             case REMOVE:
-                cacheRecordStore.remove(keyData, null, completionId);
-                break;
-            case CREATE:
-                if (isStatisticsEnabled) {
-                    statistics.increaseCachePuts(1);
-                    statistics.addGetTimeNanos(System.nanoTime() - start);
-                }
-                cacheRecordStore.createRecordWithExpiry(keyData, value, expiryPolicy, now, false, completionId);
-                break;
-            case LOAD:
-                cacheRecordStore.createRecordWithExpiry(keyData, valueLoaded, expiryPolicy, now, true, completionId);
+                boolean removed = cacheRecordStore.remove(keyData, null, completionId);
+                onRemove(keyData, null, completionId, removed);
                 break;
             case NONE:
-                cacheRecordStore.publishEvent(CacheEventContextUtil.createCacheCompleteEvent(keyData,
-                        completionId));
+                cacheRecordStore.publishEvent(
+                        CacheEventContextUtil.createCacheCompleteEvent(
+                                cacheRecordStore.toEventData(keyData),
+                                completionId));
                 break;
             default:
                 break;
         }
+    }
+
+    protected void onCreate(Data key, Object value, ExpiryPolicy expiryPolicy,
+                            long now, boolean disableWriteThrough, int completionId, boolean saved) {
+    }
+
+    protected void onLoad(Data key, Object value, ExpiryPolicy expiryPolicy,
+                          long now, boolean disableWriteThrough, int completionId, boolean saved) {
+    }
+
+    protected void onUpdate(Data key, Object value, R record, ExpiryPolicy expiryPolicy,
+                            long now, boolean disableWriteThrough, int completionId, boolean saved) {
+    }
+
+    protected void onRemove(Data key, String source, int completionId, boolean removed) {
     }
 
     @Override
