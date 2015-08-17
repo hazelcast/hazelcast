@@ -36,6 +36,11 @@ public class MemberLeftException extends ExecutionException implements Retryable
     public MemberLeftException() {
     }
 
+
+    public MemberLeftException(String message) {
+        super(message);
+    }
+
     public MemberLeftException(Member member) {
         super(member + " has left cluster!");
         this.member = member;
