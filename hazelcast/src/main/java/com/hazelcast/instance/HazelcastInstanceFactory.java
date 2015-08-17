@@ -115,6 +115,15 @@ public final class HazelcastInstanceFactory {
         return "_hzInstance_" + FACTORY_ID_GEN.incrementAndGet() + "_" + config.getGroupConfig().getName();
     }
 
+    /**
+     * Creates a new Hazelcast instance.
+     *
+     * @param config the configuration to use; if <code>null</code>, the set of defaults
+     *               as specified in the XSD for the configuration XML will be used.
+     * @param instanceName
+     * @param nodeContext
+     * @return
+     */
     public static HazelcastInstance newHazelcastInstance(Config config, String instanceName,
                                                          NodeContext nodeContext) {
         if (config == null) {
