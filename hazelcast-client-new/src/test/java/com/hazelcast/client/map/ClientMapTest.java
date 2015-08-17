@@ -547,8 +547,8 @@ public class ClientMapTest {
         ExecutionCallback executionCallback = new ExecutionCallback() {
             @Override
             public void onResponse(Object response) {
-                latch.countDown();
                 result.set((Integer) response);
+                latch.countDown();
             }
 
             @Override
