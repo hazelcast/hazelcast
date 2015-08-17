@@ -28,6 +28,7 @@ import com.hazelcast.instance.Node;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
 import com.hazelcast.internal.metrics.CompositeProbe;
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.metrics.ProbeName;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
@@ -226,6 +227,11 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         backupSyncCheckInterval = definedBackupSyncCheckInterval > 0 ? definedBackupSyncCheckInterval : 1;
         maxParallelReplications = node.groupProperties.PARTITION_MAX_PARALLEL_REPLICATIONS.getInteger();
         replicaSyncProcessLock = new Semaphore(maxParallelReplications);
+    }
+
+    @ProbeName
+    String probeNames() {
+        return "partitions";
     }
 
     private long calculateMaxMigrationDelayOnMemberRemoved() {

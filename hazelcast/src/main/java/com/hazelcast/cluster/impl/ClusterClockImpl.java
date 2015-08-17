@@ -40,7 +40,7 @@ public class ClusterClockImpl implements ClusterClock {
         return "clock";
     }
 
-    @Probe(name = "clusterTime")
+    @Probe(name = "time")
     @Override
     public long getClusterTime() {
         return Clock.currentTimeMillis() + ((clusterTimeDiff == Long.MAX_VALUE) ? 0 : clusterTimeDiff);
@@ -58,13 +58,13 @@ public class ClusterClockImpl implements ClusterClock {
         this.clusterTimeDiff = Long.MAX_VALUE;
     }
 
-    @Probe(name = "clusterTimeDiff")
+    @Probe(name = "timeDiff")
     @Override
     public long getClusterTimeDiff() {
         return (clusterTimeDiff == Long.MAX_VALUE) ? 0 : clusterTimeDiff;
     }
 
-    @Probe(name = "clusterUpTime")
+    @Probe(name = "upTime")
     @Override
     public long getClusterUpTime() {
         return Clock.currentTimeMillis() - clusterStartTime;
@@ -76,12 +76,12 @@ public class ClusterClockImpl implements ClusterClock {
         }
     }
 
-    @Probe(name = "localClockTime")
-    private long getLocalClockTime() {
+    @Probe(name = "localTime")
+    private long getLocalTime() {
         return Clock.currentTimeMillis();
     }
 
-    @Probe(name = "clusterStartTime")
+    @Probe(name = "startTime")
     public long getClusterStartTime() {
         return clusterStartTime;
     }
