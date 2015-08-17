@@ -34,20 +34,20 @@
  */
 
 package com.hazelcast.util;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.UnaryOperator;
-import java.util.function.BinaryOperator;
 
 import com.hazelcast.nio.UnsafeHelper;
 import sun.misc.Unsafe;
+
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * An object reference that may be updated atomically. See the {@link
  * java.util.concurrent.atomic} package specification for description
  * of the properties of atomic variables.
- * @since 1.5
- * @author Doug Lea
+ *
  * @param <V> The type of object referred to by this reference
+ * @author Doug Lea
+ * @since 1.5
  */
 public class PaddedAtomicReference<V> {
 
