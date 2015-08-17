@@ -48,9 +48,9 @@ public final class MPSCQueue<E> extends AbstractQueue<E> implements BlockingQueu
     }
 
     public MPSCQueue(Thread owningThread, boolean spin) {
-        if (owningThread == null) {
-            throw new IllegalArgumentException("owningThread can't be null");
-        }
+//        if (owningThread == null) {
+//            throw new IllegalArgumentException("owningThread can't be null");
+//        }
         this.owningThread = owningThread;
         this.array = new Object[INITIAL_ARRAY_SIZE];
         this.spin = spin;
