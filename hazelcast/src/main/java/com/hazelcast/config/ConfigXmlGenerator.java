@@ -456,6 +456,10 @@ public class ConfigXmlGenerator {
 
             evictionConfigXmlGenerator(xml, c.getEvictionConfig());
 
+            if (c.getQuorumName() != null) {
+                xml.append("<quorum-ref>").append(c.getQuorumName()).append("</quorum-ref>");
+            }
+
             xml.append("</cache>");
         }
     }

@@ -24,6 +24,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupOperation;
+import com.hazelcast.spi.impl.MutatingOperation;
 
 import java.io.IOException;
 
@@ -37,7 +38,7 @@ import java.io.IOException;
  */
 public class CachePutBackupOperation
         extends AbstractCacheOperation
-        implements BackupOperation {
+        implements BackupOperation, MutatingOperation {
 
     private CacheRecord cacheRecord;
 

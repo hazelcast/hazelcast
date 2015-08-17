@@ -19,13 +19,14 @@ package com.hazelcast.cache.impl.operation;
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupOperation;
+import com.hazelcast.spi.impl.MutatingOperation;
 
 /**
  * Backup operation used by remove operations.
  */
 public class CacheRemoveBackupOperation
         extends AbstractCacheOperation
-        implements BackupOperation {
+        implements BackupOperation, MutatingOperation {
 
     public CacheRemoveBackupOperation() {
     }

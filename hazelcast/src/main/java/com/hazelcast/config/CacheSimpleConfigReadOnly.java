@@ -49,6 +49,11 @@ public class CacheSimpleConfigReadOnly
         }
         return Collections.unmodifiableList(readOnlyListenerConfigs);
     }
+    
+    @Override
+    public String getQuorumName() {
+        return super.getQuorumName();
+    }
 
     @Override
     public CacheSimpleConfig setAsyncBackupCount(int asyncBackupCount) {
@@ -136,6 +141,11 @@ public class CacheSimpleConfigReadOnly
 
     @Override
     public void setWanReplicationRef(WanReplicationRef wanReplicationRef) {
+        throw new UnsupportedOperationException("This config is read-only cache: " + getName());
+    }
+
+    @Override
+    public CacheSimpleConfig setQuorumName(String quorumName) {
         throw new UnsupportedOperationException("This config is read-only cache: " + getName());
     }
 

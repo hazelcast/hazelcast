@@ -1031,6 +1031,8 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
                 cacheWanReplicationRefHandle(n, cacheConfig);
             } else if ("eviction".equals(nodeName)) {
                 cacheConfig.setEvictionConfig(getEvictionConfig(n));
+            } else if ("quorum-ref".equals(nodeName)) {
+                cacheConfig.setQuorumName(value);
             }
         }
         this.config.addCacheConfig(cacheConfig);

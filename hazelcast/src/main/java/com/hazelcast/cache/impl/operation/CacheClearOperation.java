@@ -22,6 +22,7 @@ import com.hazelcast.cache.impl.ICacheRecordStore;
 import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.MutatingOperation;
 
 import javax.cache.CacheException;
 
@@ -30,7 +31,7 @@ import javax.cache.CacheException;
  */
 public class CacheClearOperation
         extends PartitionWideCacheOperation
-        implements BackupAwareOperation {
+        implements BackupAwareOperation, MutatingOperation {
 
     private transient ICacheRecordStore cache;
 

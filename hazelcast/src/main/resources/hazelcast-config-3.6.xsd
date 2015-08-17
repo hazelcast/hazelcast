@@ -465,6 +465,7 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
+            <xs:element name="quorum-ref" minOccurs="0" maxOccurs="1"/>
         </xs:all>
 
         <xs:attribute name="name" use="required">

@@ -22,13 +22,14 @@ import com.hazelcast.cache.impl.ICacheRecordStore;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.BackupOperation;
 import com.hazelcast.spi.impl.AbstractNamedOperation;
+import com.hazelcast.spi.impl.MutatingOperation;
 
 /**
  * Backup operation of {@link com.hazelcast.cache.impl.operation.CacheClearOperation}.
  * <p>It simply clears the records.</p>
  */
 public class CacheClearBackupOperation extends AbstractNamedOperation
-        implements BackupOperation, IdentifiedDataSerializable {
+        implements BackupOperation, IdentifiedDataSerializable, MutatingOperation {
 
     private transient ICacheRecordStore cache;
 

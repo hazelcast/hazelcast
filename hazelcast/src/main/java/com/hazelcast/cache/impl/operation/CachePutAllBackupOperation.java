@@ -26,6 +26,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.BackupOperation;
 import com.hazelcast.spi.impl.AbstractNamedOperation;
+import com.hazelcast.spi.impl.MutatingOperation;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -38,7 +39,7 @@ import java.util.Map;
  */
 public class CachePutAllBackupOperation
         extends AbstractNamedOperation
-        implements BackupOperation, IdentifiedDataSerializable {
+        implements BackupOperation, IdentifiedDataSerializable, MutatingOperation {
 
     private Map<Data, CacheRecord> cacheRecords;
     private transient ICacheRecordStore cache;

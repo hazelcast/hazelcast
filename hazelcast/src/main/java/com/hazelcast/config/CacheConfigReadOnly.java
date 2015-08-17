@@ -53,6 +53,11 @@ public class CacheConfigReadOnly<K, V> extends CacheConfig<K, V> {
     }
 
     @Override
+    public String getQuorumName() {
+        return super.getQuorumName();
+    }
+
+    @Override
     public Iterable<CacheEntryListenerConfiguration<K, V>> getCacheEntryListenerConfigurations() {
         Iterable<CacheEntryListenerConfiguration<K, V>> listenerConfigurations = super.getCacheEntryListenerConfigurations();
         return Collections.unmodifiableSet((Set<CacheEntryListenerConfiguration<K, V>>) listenerConfigurations);
@@ -122,6 +127,11 @@ public class CacheConfigReadOnly<K, V> extends CacheConfig<K, V> {
 
     @Override
     public CacheConfig setWanReplicationRef(final WanReplicationRef wanReplicationRef) {
+        throw new UnsupportedOperationException("This config is read-only cache: " + getName());
+    }
+
+    @Override
+    public CacheConfig setQuorumName(String quorumName) {
         throw new UnsupportedOperationException("This config is read-only cache: " + getName());
     }
 

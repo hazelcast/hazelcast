@@ -52,4 +52,22 @@ public class ConfigXmlGeneratorTest {
         assertEquals("com.hazelcast.entrylistener", xmlReplicatedMapConfig.getListenerConfigs().get(0).getClassName());
 
     }
+
+    @Test
+    public void testCacheQuorumRef() {
+        Config config = new Config();
+        CacheSimpleConfig cacheConfig = new CacheSimpleConfig();
+        cacheConfig.setName("testCache");
+        cacheConfig.setQuorumName("testQuorum");
+        config.addCacheConfig(cacheConfig);
+        ConfigXmlGenerator configXmlGenerator = new ConfigXmlGenerator();
+        String xml = configXmlGenerator.generate(config);
+        ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes());
+        XmlConfigBuilder configBuilder = new XmlConfigBuilder(bis);
+        Config xmlConfig = configBuilder.build();
+
+        CacheSimpleConfig xmlCacheConfig = xmlConfig.getCacheConfig("testCache");
+        assertEquals("testQuorum",xmlCacheConfig.getQuorumName());
+    }
+
 }

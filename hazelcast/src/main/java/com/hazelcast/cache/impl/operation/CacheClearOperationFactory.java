@@ -22,6 +22,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationFactory;
+import com.hazelcast.spi.impl.MutatingOperation;
 
 import java.io.IOException;
 
@@ -32,7 +33,7 @@ import java.io.IOException;
  * @see OperationFactory
  */
 public class CacheClearOperationFactory
-        implements OperationFactory, IdentifiedDataSerializable {
+        implements OperationFactory, IdentifiedDataSerializable, MutatingOperation {
 
     private String name;
 

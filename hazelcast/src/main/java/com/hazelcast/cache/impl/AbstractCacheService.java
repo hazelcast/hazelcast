@@ -34,6 +34,7 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.spi.PostJoinAwareService;
+import com.hazelcast.spi.QuorumAwareService;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -50,7 +51,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 public abstract class AbstractCacheService
-        implements ICacheService, PostJoinAwareService {
+        implements ICacheService, PostJoinAwareService, QuorumAwareService {
 
     protected final ConcurrentMap<String, CacheConfig> configs = new ConcurrentHashMap<String, CacheConfig>();
     protected final ConcurrentMap<String, CacheContext> cacheContexts = new ConcurrentHashMap<String, CacheContext>();
@@ -487,6 +488,13 @@ public abstract class AbstractCacheService
             throw new IllegalStateException("CacheConfig does not exist for cache " + name);
         }
         cacheConfig.removeCacheEntryListenerConfiguration(cacheEntryListenerConfiguration);
+    }
+
+    @Override
+    public String getQuorumName(String cacheName) {
+        if (configs == null || configs.get(cacheName) == null)
+            return null;
+        return configs.get(cacheName).getQuorumName();
     }
 
 }
