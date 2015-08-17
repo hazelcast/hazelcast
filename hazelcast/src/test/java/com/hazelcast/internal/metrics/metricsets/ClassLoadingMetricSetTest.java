@@ -37,7 +37,7 @@ public class ClassLoadingMetricSetTest extends HazelcastTestSupport {
 
     @Test
     public void loadedClassesCount() {
-        final LongGauge gauge = blackbox.newLongGauge("classloading.loadedClassesCount");
+        final LongGauge gauge = blackbox.newLongGauge("classloading.loadedClassCount");
 
         assertTrueEventually(new AssertTask() {
             @Override
@@ -48,8 +48,8 @@ public class ClassLoadingMetricSetTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void totalLoadedClassesCount() {
-        final LongGauge gauge = blackbox.newLongGauge("classloading.totalLoadedClassesCount");
+    public void totalLoadedClassCount() {
+        final LongGauge gauge = blackbox.newLongGauge("classloading.totalLoadedClassCount");
 
         assertTrueEventually(new AssertTask() {
             @Override

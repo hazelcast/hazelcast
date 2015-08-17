@@ -21,6 +21,11 @@ import com.hazelcast.internal.metrics.DoubleProbeFunction;
 import com.hazelcast.internal.metrics.LongProbeFunction;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.ProbeFunction;
+import com.hazelcast.internal.metrics.metricsets.ClassLoadingMetricSet;
+import com.hazelcast.internal.metrics.metricsets.GarbageCollectionMetricSet;
+import com.hazelcast.internal.metrics.metricsets.OperatingSystemMetricsSet;
+import com.hazelcast.internal.metrics.metricsets.RuntimeMetricSet;
+import com.hazelcast.internal.metrics.metricsets.ThreadMetricSet;
 import com.hazelcast.internal.metrics.renderers.ProbeRenderer;
 import com.hazelcast.logging.ILogger;
 
@@ -63,11 +68,11 @@ public class MetricsRegistryImpl implements MetricsRegistry {
     public MetricsRegistryImpl(ILogger logger) {
         this.logger = checkNotNull(logger, "logger can't be null");
 
-//        RuntimeMetricSet.register(this);
-//        GarbageCollectionMetricSet.register(this);
-//        OperatingSystemMetricsSet.register(this);
-//        ThreadMetricSet.register(this);
-//        ClassLoadingMetricSet.register(this);
+        RuntimeMetricSet.register(this);
+       // GarbageCollectionMetricSet.register(this);
+       // OperatingSystemMetricsSet.register(this);
+       // ThreadMetricSet.register(this);
+        ClassLoadingMetricSet.register(this);
     }
 
     @Override

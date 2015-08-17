@@ -17,7 +17,8 @@
 package com.hazelcast.internal.metrics.metricsets;
 
 import com.hazelcast.internal.metrics.MetricsRegistry;
-import com.hazelcast.internal.metrics.LongProbeFunction;
+import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.metrics.ProbeName;
 
 import java.lang.management.ClassLoadingMXBean;
 import java.lang.management.ManagementFactory;
@@ -38,35 +39,31 @@ public final class ClassLoadingMetricSet {
      * @param metricsRegistry the MetricsRegistry upon which the metrics are registered.
      */
     public static void register(MetricsRegistry metricsRegistry) {
-        checkNotNull(metricsRegistry, "metricsRegistry");
+        checkNotNull(metricsRegistry, "metricsRegistry can't be null");
+        metricsRegistry.registerRoot(new ClassLoadingProbes());
+    }
 
-        ClassLoadingMXBean mxBean = ManagementFactory.getClassLoadingMXBean();
+    private static final class ClassLoadingProbes {
+        private final ClassLoadingMXBean mxBean = ManagementFactory.getClassLoadingMXBean();
 
-        metricsRegistry.register(mxBean, "classloading.loadedClassesCount",
-                new LongProbeFunction<ClassLoadingMXBean>() {
-                    @Override
-                    public long get(ClassLoadingMXBean classLoadingMXBean) {
-                        return classLoadingMXBean.getLoadedClassCount();
-                    }
-                }
-        );
+        @Probe
+        int loadedClassCount() {
+            return mxBean.getLoadedClassCount();
+        }
 
-        metricsRegistry.register(mxBean, "classloading.totalLoadedClassesCount",
-                new LongProbeFunction<ClassLoadingMXBean>() {
-                    @Override
-                    public long get(ClassLoadingMXBean classLoadingMXBean) {
-                        return classLoadingMXBean.getTotalLoadedClassCount();
-                    }
-                }
-        );
+        @Probe
+        long totalLoadedClassCount() {
+            return mxBean.getTotalLoadedClassCount();
+        }
 
-        metricsRegistry.register(mxBean, "classloading.unloadedClassCount",
-                new LongProbeFunction<ClassLoadingMXBean>() {
-                    @Override
-                    public long get(ClassLoadingMXBean classLoadingMXBean) {
-                        return classLoadingMXBean.getUnloadedClassCount();
-                    }
-                }
-        );
+        @Probe
+        long unloadedClassCount() {
+            return mxBean.getUnloadedClassCount();
+        }
+
+        @ProbeName
+        String probeName() {
+            return "classloading";
+        }
     }
 }

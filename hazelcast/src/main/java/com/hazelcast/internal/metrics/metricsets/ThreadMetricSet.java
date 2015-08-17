@@ -17,7 +17,8 @@
 package com.hazelcast.internal.metrics.metricsets;
 
 import com.hazelcast.internal.metrics.MetricsRegistry;
-import com.hazelcast.internal.metrics.LongProbeFunction;
+import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.metrics.ProbeName;
 
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadMXBean;
@@ -39,39 +40,35 @@ public final class ThreadMetricSet {
      */
     public static void register(MetricsRegistry metricsRegistry) {
         checkNotNull(metricsRegistry, "metricsRegistry");
+        metricsRegistry.registerRoot(new ThreadProbes());
+    }
 
+    private static class ThreadProbes {
         ThreadMXBean mxBean = ManagementFactory.getThreadMXBean();
 
-        metricsRegistry.register(mxBean, "thread.threadCount", new LongProbeFunction<ThreadMXBean>() {
-                    @Override
-                    public long get(ThreadMXBean threadMXBean) {
-                        return threadMXBean.getThreadCount();
-                    }
-                }
-        );
+        @Probe
+        int threadCount() {
+            return mxBean.getThreadCount();
+        }
 
-        metricsRegistry.register(mxBean, "thread.peakThreadCount", new LongProbeFunction<ThreadMXBean>() {
-                    @Override
-                    public long get(ThreadMXBean threadMXBean) {
-                        return threadMXBean.getPeakThreadCount();
-                    }
-                }
-        );
+        @Probe
+        int peakThreadCount() {
+            return mxBean.getPeakThreadCount();
+        }
 
-        metricsRegistry.register(mxBean, "thread.daemonThreadCount", new LongProbeFunction<ThreadMXBean>() {
-                    @Override
-                    public long get(ThreadMXBean threadMXBean) {
-                        return threadMXBean.getDaemonThreadCount();
-                    }
-                }
-        );
+        @Probe
+        int daemonThreadCount() {
+            return mxBean.getDaemonThreadCount();
+        }
 
-        metricsRegistry.register(mxBean, "thread.totalStartedThreadCount", new LongProbeFunction<ThreadMXBean>() {
-                    @Override
-                    public long get(ThreadMXBean threadMXBean) {
-                        return threadMXBean.getTotalStartedThreadCount();
-                    }
-                }
-        );
+        @Probe
+        long totalStartedThreadCount() {
+            return mxBean.getTotalStartedThreadCount();
+        }
+
+        @ProbeName
+        String probeName() {
+            return "thread";
+        }
     }
 }
