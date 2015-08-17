@@ -18,18 +18,14 @@ package com.hazelcast.quorum;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.QuorumConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.MembershipAdapter;
 import com.hazelcast.core.MembershipEvent;
-import com.hazelcast.instance.DefaultNodeContext;
 import com.hazelcast.instance.GroupProperties;
-import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.instance.Node;
-import com.hazelcast.nio.ConnectionManager;
-import com.hazelcast.nio.NodeIOService;
-import com.hazelcast.nio.tcp.FirewallingTcpIpConnectionManager;
-import com.hazelcast.config.QuorumConfig;
-import java.nio.channels.ServerSocketChannel;
+import com.hazelcast.nio.tcp.FirewallingMockConnectionManager;
+import com.hazelcast.test.TestHazelcastInstanceFactory;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -39,12 +35,17 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 public class PartitionedCluster {
+    protected TestHazelcastInstanceFactory factory;
     public HazelcastInstance h1;
     public HazelcastInstance h2;
     public HazelcastInstance h3;
     public HazelcastInstance h4;
     public HazelcastInstance h5;
 
+
+    public PartitionedCluster(TestHazelcastInstanceFactory factory) {
+        this.factory = factory;
+    }
 
     public PartitionedCluster partitionFiveMembersThreeAndTwo(MapConfig mapConfig, QuorumConfig quorumConfig) throws InterruptedException {
         Config config = new Config();
@@ -81,11 +82,11 @@ public class PartitionedCluster {
     }
 
     private void createInstances(Config config) {
-        h1 = HazelcastInstanceFactory.newHazelcastInstance(config, "node1", new FirewallingNodeContext());
-        h2 = HazelcastInstanceFactory.newHazelcastInstance(config, "node2", new FirewallingNodeContext());
-        h3 = HazelcastInstanceFactory.newHazelcastInstance(config, "node3", new FirewallingNodeContext());
-        h4 = HazelcastInstanceFactory.newHazelcastInstance(config, "node4", new FirewallingNodeContext());
-        h5 = HazelcastInstanceFactory.newHazelcastInstance(config, "node5", new FirewallingNodeContext());
+        h1 = factory.newHazelcastInstance(config);
+        h2 = factory.newHazelcastInstance(config);
+        h3 = factory.newHazelcastInstance(config);
+        h4 = factory.newHazelcastInstance(config);
+        h5 = factory.newHazelcastInstance(config);
     }
 
     private void splitCluster() {
@@ -95,11 +96,11 @@ public class PartitionedCluster {
         Node n4 = getNode(h4);
         Node n5 = getNode(h5);
 
-        FirewallingTcpIpConnectionManager cm1 = getConnectionManager(n1);
-        FirewallingTcpIpConnectionManager cm2 = getConnectionManager(n2);
-        FirewallingTcpIpConnectionManager cm3 = getConnectionManager(n3);
-        FirewallingTcpIpConnectionManager cm4 = getConnectionManager(n4);
-        FirewallingTcpIpConnectionManager cm5 = getConnectionManager(n5);
+        FirewallingMockConnectionManager cm1 = getConnectionManager(n1);
+        FirewallingMockConnectionManager cm2 = getConnectionManager(n2);
+        FirewallingMockConnectionManager cm3 = getConnectionManager(n3);
+        FirewallingMockConnectionManager cm4 = getConnectionManager(n4);
+        FirewallingMockConnectionManager cm5 = getConnectionManager(n5);
 
         cm1.block(n4.address);
         cm2.block(n4.address);
@@ -134,21 +135,8 @@ public class PartitionedCluster {
         n3.clusterService.removeAddress(n5.address);
     }
 
-    private static class FirewallingNodeContext extends DefaultNodeContext {
-        @Override
-        public ConnectionManager createConnectionManager(Node node, ServerSocketChannel serverSocketChannel) {
-            NodeIOService ioService = new NodeIOService(node, node.nodeEngine);
-            return new FirewallingTcpIpConnectionManager(
-                    node.loggingService,
-                    node.getHazelcastThreadGroup(),
-                    ioService,
-                    node.nodeEngine.getMetricsRegistry(),
-                    serverSocketChannel);
-        }
-    }
-
-    private static FirewallingTcpIpConnectionManager getConnectionManager(Node node) {
-        return (FirewallingTcpIpConnectionManager) node.getConnectionManager();
+    private static FirewallingMockConnectionManager getConnectionManager(Node node) {
+        return (FirewallingMockConnectionManager) node.getConnectionManager();
     }
 
 }

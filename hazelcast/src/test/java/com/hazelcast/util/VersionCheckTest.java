@@ -15,6 +15,7 @@ import org.junit.runner.RunWith;
 
 import java.util.Map;
 
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 
@@ -55,7 +56,7 @@ public class VersionCheckTest extends HazelcastTestSupport {
         assertEquals(parameters.get("ccpp"), "0");
         assertEquals(parameters.get("cdn"), "0");
         assertEquals(parameters.get("cjv"), "0");
-        assertNotEquals(parameters.get("cuptm"), "0");
+        assertFalse(Integer.parseInt(parameters.get("cuptm")) < 0);
         assertNotEquals(parameters.get("nuptm"), "0");
         assertNotEquals(parameters.get("nuptm"), parameters.get("cuptm"));
     }

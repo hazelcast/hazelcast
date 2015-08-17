@@ -37,6 +37,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 
 import static com.hazelcast.nio.ConnectionType.MEMBER;
+import static com.hazelcast.nio.IOService.KILO_BYTE;
 import static com.hazelcast.nio.Protocols.CLIENT_BINARY;
 import static com.hazelcast.nio.Protocols.CLIENT_BINARY_NEW;
 import static com.hazelcast.nio.Protocols.CLUSTER;
@@ -46,9 +47,7 @@ import static com.hazelcast.util.counters.SwCounter.newSwCounter;
 /**
  * The reading side of the {@link com.hazelcast.nio.Connection}.
  */
-public final class NonBlockingReadHandler
-        extends AbstractSelectionHandler
-        implements ReadHandler {
+public final class NonBlockingReadHandler extends AbstractSelectionHandler implements ReadHandler {
 
     private ByteBuffer inputBuffer;
 
@@ -58,8 +57,6 @@ public final class NonBlockingReadHandler
     private final SwCounter normalPacketsRead = newSwCounter();
     @Probe(name = "in.priorityPacketsRead")
     private final SwCounter priorityPacketsRead = newSwCounter();
-    @Probe(name = "in.exceptionCount")
-    private final SwCounter exceptionCount = newSwCounter();
     private final MetricsRegistry metricRegistry;
 
     private SocketReader socketReader;
@@ -129,7 +126,6 @@ public final class NonBlockingReadHandler
         });
     }
 
-
     /**
      * Migrates this handler to a new NonBlockingIOThread.
      * The migration logic is rather simple:
@@ -146,8 +142,6 @@ public final class NonBlockingReadHandler
     }
 
     @Override
-    @edu.umd.cs.findbugs.annotations.SuppressWarnings(value = "VO_VOLATILE_INCREMENT",
-            justification = "eventCount is accessed by a single thread only.")
     public void handle() {
         eventCount.inc();
         lastReadTime = Clock.currentTimeMillis();
@@ -191,14 +185,7 @@ public final class NonBlockingReadHandler
         }
     }
 
-    @Override
-    public void handleSocketException(Throwable e) {
-        exceptionCount.inc();
-        super.handleSocketException(e);
-    }
-
-    private void initializeSocketReader()
-            throws IOException {
+    private void initializeSocketReader() throws IOException {
         if (socketReader != null) {
             return;
         }
@@ -218,20 +205,20 @@ public final class NonBlockingReadHandler
             String protocol = bytesToString(protocolBuffer.array());
             NonBlockingWriteHandler writeHandler = (NonBlockingWriteHandler) connection.getWriteHandler();
             if (CLUSTER.equals(protocol)) {
-                configureBuffers(connectionManager.getSocketReceiveBufferSize());
+                configureBuffers(ioService.getSocketReceiveBufferSize() * KILO_BYTE);
                 connection.setType(MEMBER);
                 writeHandler.setProtocol(CLUSTER);
                 socketReader = new PacketSocketReader(ioService.createPacketReader(connection));
             } else if (CLIENT_BINARY.equals(protocol)) {
-                configureBuffers(connectionManager.getSocketClientReceiveBufferSize());
+                configureBuffers(ioService.getSocketClientReceiveBufferSize() * KILO_BYTE);
                 writeHandler.setProtocol(CLIENT_BINARY);
                 socketReader = new ClientPacketSocketReader(connection, ioService);
             } else if (CLIENT_BINARY_NEW.equals(protocol)) {
-                configureBuffers(connectionManager.getSocketClientReceiveBufferSize());
+                configureBuffers(ioService.getSocketClientReceiveBufferSize() * KILO_BYTE);
                 writeHandler.setProtocol(CLIENT_BINARY_NEW);
                 socketReader = new ClientMessageSocketReader(connection, ioService);
             } else {
-                configureBuffers(connectionManager.getSocketReceiveBufferSize());
+                configureBuffers(ioService.getSocketReceiveBufferSize() * KILO_BYTE);
                 writeHandler.setProtocol(Protocols.TEXT);
                 inputBuffer.put(protocolBuffer.array());
                 socketReader = new SocketTextReader(connection);

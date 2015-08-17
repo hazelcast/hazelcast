@@ -26,42 +26,117 @@ import com.hazelcast.nio.serialization.Data;
 public interface
         AtomicLongCodecTemplate {
 
+    /**
+     *
+     * @param name The name of this IAtomicLong instance.
+     * @param function The function applied to the value, the value is not changed.
+     * @return The result of the function application.
+     */
     @Request(id = 1, retryable = false, response = ResponseMessageConst.DATA)
-    void apply(String name, Data function);
+    Object apply(String name, Data function);
 
+    /**
+     *
+     * @param name The name of this IAtomicLong instance.
+     * @param function The function applied to the currently stored value.
+     * @return The result of the function application.
+     */
     @Request(id = 2, retryable = false, response = ResponseMessageConst.LONG)
-    void alter(String name, Data function);
+    Object alter(String name, Data function);
 
+    /**
+     *
+     * @param name The name of this IAtomicLong instance.
+     * @param function The function applied to the currently stored value.
+     * @return The result of the function application.
+     */
     @Request(id = 3, retryable = false, response = ResponseMessageConst.LONG)
-    void alterAndGet(String name, Data function);
+    Object alterAndGet(String name, Data function);
 
+    /**
+     *
+     * @param name The name of this IAtomicLong instance.
+     * @param function The function applied to the currently stored value.
+     * @return The old value before the function application.
+     */
     @Request(id = 4, retryable = false, response = ResponseMessageConst.LONG)
-    void getAndAlter(String name, Data function);
+    Object getAndAlter(String name, Data function);
 
+    /**
+     *
+     * @param name The name of this IAtomicLong instance.
+     * @param delta the value to add to the current value
+     * @return the updated value, the given value added to the current value
+     */
     @Request(id = 5, retryable = false, response = ResponseMessageConst.LONG)
-    void addAndGet(String name, long delta);
+    Object addAndGet(String name, long delta);
 
+    /**
+     *
+     * @param name The name of this IAtomicLong instance.
+     * @param expected the expected value
+     * @param updated the new value
+     * @return true if successful; or false if the actual value
+     *         was not equal to the expected value.
+     */
     @Request(id = 6, retryable = false, response = ResponseMessageConst.BOOLEAN)
-    void compareAndSet(String name, long expected, long updated);
+    Object compareAndSet(String name, long expected, long updated);
 
+    /**
+     *
+     * @param name The name of this IAtomicLong instance.
+     * @return the updated value, the current value decremented by one
+     */
     @Request(id = 7, retryable = false, response = ResponseMessageConst.LONG)
-    void decrementAndGet(String name);
+    Object decrementAndGet(String name);
 
+    /**
+     *
+     * @param name The name of this IAtomicLong instance.
+     * @return the current value
+     */
     @Request(id = 8, retryable = false, response = ResponseMessageConst.LONG)
-    void get(String name);
+    Object get(String name);
 
+    /**
+     *
+     * @param name The name of this IAtomicLong instance.
+     * @param delta the value to add to the current value
+     * @return the old value before the add
+     */
     @Request(id = 9, retryable = false, response = ResponseMessageConst.LONG)
-    void getAndAdd(String name, long delta);
+    Object getAndAdd(String name, long delta);
 
+    /**
+     *
+     * @param name The name of this IAtomicLong instance.
+     * @param newValue the new value
+     * @return the old value
+     */
     @Request(id = 10, retryable = false, response = ResponseMessageConst.LONG)
-    void getAndSet(String name, long newValue);
+    Object getAndSet(String name, long newValue);
 
+    /**
+     *
+     * @param name The name of this IAtomicLong instance.
+     * @return The updated value, the current value incremented by one
+     */
     @Request(id = 11, retryable = false, response = ResponseMessageConst.LONG)
-    void incrementAndGet(String name);
+    Object incrementAndGet(String name);
 
+    /**
+     *
+     * @param name The name of this IAtomicLong instance.
+     * @return the old value
+     */
     @Request(id = 12, retryable = false, response = ResponseMessageConst.LONG)
-    void getAndIncrement(String name);
+    Object getAndIncrement(String name);
 
+    /**
+     *
+     * @param name The name of this IAtomicLong instance.
+     * @param newValue The new value
+     */
     @Request(id = 13, retryable = false, response = ResponseMessageConst.VOID)
     void set(String name, long newValue);
 }

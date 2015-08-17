@@ -26,7 +26,6 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.util.Iterator;
 import java.util.Queue;
-import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 public abstract class NonBlockingIOThread extends Thread implements OperationHostileThread {
@@ -179,10 +178,9 @@ public abstract class NonBlockingIOThread extends Thread implements OperationHos
     protected abstract void handleSelectionKey(SelectionKey sk);
 
     private void handleSelectionKeys() {
-        final Set<SelectionKey> setSelectedKeys = selector.selectedKeys();
-        final Iterator<SelectionKey> it = setSelectedKeys.iterator();
+        Iterator<SelectionKey> it = selector.selectedKeys().iterator();
         while (it.hasNext()) {
-            final SelectionKey sk = it.next();
+            SelectionKey sk = it.next();
             it.remove();
             try {
                 handleSelectionKey(sk);

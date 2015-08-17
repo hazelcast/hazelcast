@@ -25,6 +25,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.hibernate.entity.DummyEntity;
 import com.hazelcast.hibernate.instance.HazelcastAccessor;
 import com.hazelcast.hibernate.instance.HazelcastMockInstanceLoader;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.NightlyTest;
 import org.hibernate.Session;
@@ -63,7 +64,7 @@ public class CustomPropertiesTest extends HibernateTestSupport {
         loader.configure(props);
         loader.setInstanceFactory(factory);
         SessionFactory sf = createSessionFactory(props, loader);
-        HazelcastInstance hz = HazelcastAccessor.getHazelcastInstance(sf);
+        final HazelcastInstance hz = HazelcastAccessor.getHazelcastInstance(sf);
         assertTrue(hz instanceof HazelcastClientProxy);
         assertEquals(1, main.getCluster().getMembers().size());
         HazelcastClientProxy client = (HazelcastClientProxy) hz;
@@ -75,8 +76,13 @@ public class CustomPropertiesTest extends HibernateTestSupport {
         factory.newHazelcastInstance(config);
         assertEquals(2, hz.getCluster().getMembers().size());
         main.shutdown();
-        Thread.sleep(1000 * 1); // let client to reconnect
-        assertEquals(1, hz.getCluster().getMembers().size());
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertTrue(((HazelcastClientProxy) hz).client.getConnectionManager().isAlive());
+                assertEquals(1, hz.getCluster().getMembers().size());
+            }
+        });
         Session session = sf.openSession();
         Transaction tx = session.beginTransaction();
         session.save(new DummyEntity(1L, "dummy", 0, new Date()));

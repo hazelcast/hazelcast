@@ -16,10 +16,12 @@
 
 package com.hazelcast.ringbuffer.impl.client;
 
+import com.hazelcast.core.IFunction;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
-import com.hazelcast.ringbuffer.ReadResultSet;
+import com.hazelcast.nio.serialization.SerializationService;
+import com.hazelcast.ringbuffer.impl.ReadResultSetImpl;
 import com.hazelcast.ringbuffer.impl.operations.ReadManyOperation;
 import com.hazelcast.spi.Operation;
 
@@ -33,6 +35,7 @@ public class ReadManyRequest extends RingbufferRequest {
     private long startSequence;
     private int minCount;
     private int maxCount;
+    private Data filterData;
 
     public ReadManyRequest() {
     }
@@ -42,11 +45,14 @@ public class ReadManyRequest extends RingbufferRequest {
         this.startSequence = startSequence;
         this.minCount = minCount;
         this.maxCount = maxCount;
+        this.filterData = filter;
     }
 
     @Override
     protected Operation prepareOperation() {
-        return new ReadManyOperation(name, startSequence, minCount, maxCount, null);
+        SerializationService serializationService = getClientEngine().getSerializationService();
+        IFunction filter = serializationService.toObject(filterData);
+        return new ReadManyOperation(name, startSequence, minCount, maxCount, filter);
     }
 
     @Override
@@ -57,10 +63,10 @@ public class ReadManyRequest extends RingbufferRequest {
     // here we convert the normal ReadResultSet to a PortableReadResultSet
     @Override
     protected Object filter(Object response) {
-        ReadResultSet readResultSet = (ReadResultSet) response;
+        ReadResultSetImpl readResultSet = (ReadResultSetImpl) response;
         int readCount = readResultSet.readCount();
-        List<Object> items = new ArrayList<Object>(readCount);
-        for (Object item : readResultSet) {
+        List<Data> items = new ArrayList<Data>(readCount);
+        for (Data item : readResultSet.getItems()) {
             items.add(item);
         }
         return new PortableReadResultSet<Object>(readCount, items);
@@ -77,6 +83,7 @@ public class ReadManyRequest extends RingbufferRequest {
         writer.writeLong("s", startSequence);
         writer.writeInt("i", minCount);
         writer.writeInt("a", maxCount);
+        writer.getRawDataOutput().writeData(filterData);
     }
 
     @Override
@@ -85,5 +92,6 @@ public class ReadManyRequest extends RingbufferRequest {
         this.startSequence = reader.readLong("s");
         this.minCount = reader.readInt("i");
         this.maxCount = reader.readInt("a");
+        filterData = reader.getRawDataInput().readData();
     }
 }

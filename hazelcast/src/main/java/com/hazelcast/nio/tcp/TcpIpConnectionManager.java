@@ -28,7 +28,6 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionListener;
 import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.nio.IOService;
-import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.MemberSocketInterceptor;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.tcp.nonblocking.NonBlockingTcpIpConnectionThreadingModel;
@@ -37,6 +36,7 @@ import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.counters.MwCounter;
 import com.hazelcast.util.executor.StripedRunnable;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 import java.net.Socket;
@@ -48,26 +48,25 @@ import java.util.LinkedList;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.logging.Level;
 
+import static com.hazelcast.nio.IOService.KILO_BYTE;
+import static com.hazelcast.nio.IOUtil.closeResource;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.counters.MwCounter.newMwCounter;
 
 public class TcpIpConnectionManager implements ConnectionManager, PacketHandler {
 
+    private static final int RETRY_NUMBER = 5;
+    private static final int DELAY_FACTOR = 100;
+
     final LoggingService loggingService;
 
     @Probe(name = "connectionListenerCount")
     final Set<ConnectionListener> connectionListeners = new CopyOnWriteArraySet<ConnectionListener>();
-
-    private final int socketReceiveBufferSize;
-
-    private final int socketClientReceiveBufferSize;
-
-    private final int socketSendBufferSize;
-
-    private final int socketClientSendBufferSize;
 
     private final IOService ioService;
 
@@ -79,14 +78,6 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
     };
 
     private final ILogger logger;
-
-    private final int socketLingerSeconds;
-
-    private final int socketConnectTimeoutSeconds;
-
-    private final boolean socketKeepAlive;
-
-    private final boolean socketNoDelay;
 
     @Probe(name = "count")
     private final ConcurrentHashMap<Address, Connection> connectionsMap = new ConcurrentHashMap<Address, Connection>(100);
@@ -133,6 +124,8 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
     @Probe
     private final MwCounter closedCount = newMwCounter();
 
+    private final ScheduledExecutorService scheduler = new ScheduledThreadPoolExecutor(4);
+
     public TcpIpConnectionManager(IOService ioService,
                                   ServerSocketChannel serverSocketChannel,
                                   MetricsRegistry metricsRegistry,
@@ -152,36 +145,12 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
         this.serverSocketChannel = serverSocketChannel;
         this.loggingService = loggingService;
         this.logger = loggingService.getLogger(TcpIpConnectionManager.class);
-        this.socketReceiveBufferSize = ioService.getSocketReceiveBufferSize() * IOService.KILO_BYTE;
-        this.socketSendBufferSize = ioService.getSocketSendBufferSize() * IOService.KILO_BYTE;
-        this.socketClientReceiveBufferSize = ioService.getSocketClientReceiveBufferSize() * IOService.KILO_BYTE;
-        this.socketClientSendBufferSize = ioService.getSocketClientSendBufferSize() * IOService.KILO_BYTE;
-        this.socketLingerSeconds = ioService.getSocketLingerSeconds();
-        this.socketConnectTimeoutSeconds = ioService.getSocketConnectTimeoutSeconds();
-        this.socketKeepAlive = ioService.getSocketKeepAlive();
-        this.socketNoDelay = ioService.getSocketNoDelay();
         final Collection<Integer> ports = ioService.getOutboundPorts();
         this.outboundPortCount = ports.size();
         this.outboundPorts.addAll(ports);
         this.socketChannelWrapperFactory = ioService.getSocketChannelWrapperFactory();
 
         metricsRegistry.scanAndRegister(this, "tcp.connection");
-    }
-
-    public int getSocketReceiveBufferSize() {
-        return socketReceiveBufferSize;
-    }
-
-    public int getSocketClientReceiveBufferSize() {
-        return socketClientReceiveBufferSize;
-    }
-
-    public int getSocketSendBufferSize() {
-        return socketSendBufferSize;
-    }
-
-    public int getSocketClientSendBufferSize() {
-        return socketClientSendBufferSize;
     }
 
     public IOService getIoService() {
@@ -242,14 +211,6 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
         allTextConnections.incrementAndGet();
     }
 
-    public IOService getIOHandler() {
-        return ioService;
-    }
-
-    public int getSocketConnectTimeoutSeconds() {
-        return socketConnectTimeoutSeconds;
-    }
-
     @Override
     public void addConnectionListener(ConnectionListener listener) {
         checkNotNull(listener, "listener can't be null");
@@ -269,11 +230,11 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
      */
     private boolean bind(TcpIpConnection connection, Address remoteEndPoint, Address localEndpoint, boolean reply) {
         if (logger.isFinestEnabled()) {
-            log(Level.FINEST, "Binding " + connection + " to " + remoteEndPoint + ", reply is " + reply);
+            logger.finest("Binding " + connection + " to " + remoteEndPoint + ", reply is " + reply);
         }
         final Address thisAddress = ioService.getThisAddress();
         if (ioService.isSocketBindAny() && !connection.isClient() && !thisAddress.equals(localEndpoint)) {
-            log(Level.WARNING, "Wrong bind request from " + remoteEndPoint
+            logger.warning("Wrong bind request from " + remoteEndPoint
                     + "! This node is not requested endpoint: " + localEndpoint);
             connection.close();
             return false;
@@ -332,7 +293,7 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
         if (existingConnection != null && existingConnection.isAlive()) {
             if (existingConnection != connection) {
                 if (logger.isFinestEnabled()) {
-                    log(Level.FINEST, existingConnection + " is already bound to " + remoteEndPoint
+                    logger.finest(existingConnection + " is already bound to " + remoteEndPoint
                             + ", new one is " + connection);
                 }
                 activeConnections.add(connection);
@@ -347,7 +308,7 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
         ioService.onSuccessfulConnection(remoteEndPoint);
         //make sure bind packet is the first packet sent to the end point.
         if (logger.isFinestEnabled()) {
-            log(Level.FINEST, "Sending bind packet to " + remoteEndPoint);
+            logger.finest("Sending bind packet to " + remoteEndPoint);
         }
         BindMessage bind = new BindMessage(ioService.getThisAddress(), remoteEndPoint, replyBack);
         byte[] bytes = ioService.getSerializationService().toBytes(bind);
@@ -377,7 +338,7 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
         connection.start();
         threadingModel.onConnectionAdded(connection);
 
-        log(Level.INFO, "Established socket connection between "
+        logger.info("Established socket connection between "
                 + channel.socket().getLocalSocketAddress() + " and " + channel.socket().getRemoteSocketAddress());
         openedCount.inc();
 
@@ -428,7 +389,7 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
             return;
         }
         if (logger.isFinestEnabled()) {
-            log(Level.FINEST, "Destroying " + connection);
+            logger.finest("Destroying " + connection);
         }
 
         activeConnections.remove(connection);
@@ -463,13 +424,13 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
     }
 
     protected void initSocket(Socket socket) throws Exception {
-        if (socketLingerSeconds > 0) {
-            socket.setSoLinger(true, socketLingerSeconds);
+        if (ioService.getSocketLingerSeconds() > 0) {
+            socket.setSoLinger(true, ioService.getSocketLingerSeconds());
         }
-        socket.setKeepAlive(socketKeepAlive);
-        socket.setTcpNoDelay(socketNoDelay);
-        socket.setReceiveBufferSize(socketReceiveBufferSize);
-        socket.setSendBufferSize(socketSendBufferSize);
+        socket.setKeepAlive(ioService.getSocketKeepAlive());
+        socket.setTcpNoDelay(ioService.getSocketNoDelay());
+        socket.setReceiveBufferSize(ioService.getSocketReceiveBufferSize() * KILO_BYTE);
+        socket.setSendBufferSize(ioService.getSocketSendBufferSize() * KILO_BYTE);
     }
 
     @Override
@@ -482,7 +443,7 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
         }
 
         live = true;
-        log(Level.FINEST, "Starting ConnectionManager and IO selectors.");
+        logger.finest("Starting ConnectionManager and IO selectors.");
 
         threadingModel.start();
         startAcceptorThread();
@@ -509,14 +470,14 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
             return;
         }
         live = false;
-        log(Level.FINEST, "Stopping ConnectionManager");
+        logger.finest("Stopping ConnectionManager");
 
         if (acceptorThread != null) {
             acceptorThread.shutdown();
         }
 
         for (SocketChannelWrapper socketChannel : acceptedSockets) {
-            IOUtil.closeResource(socketChannel);
+            closeResource(socketChannel);
         }
         for (Connection conn : connectionsMap.values()) {
             destroySilently(conn);
@@ -553,7 +514,7 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
     private void closeServerSocket() {
         try {
             if (logger.isFinestEnabled()) {
-                log(Level.FINEST, "Closing server socket channel: " + serverSocketChannel);
+                logger.finest("Closing server socket channel: " + serverSocketChannel);
             }
             serverSocketChannel.close();
         } catch (IOException ignore) {
@@ -566,10 +527,8 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
     public int getCurrentClientConnections() {
         int count = 0;
         for (TcpIpConnection conn : activeConnections) {
-            if (conn.isAlive()) {
-                if (conn.isClient()) {
-                    count++;
-                }
+            if (conn.isAlive() && conn.isClient()) {
+                count++;
             }
         }
         return count;
@@ -577,10 +536,6 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
 
     public boolean isLive() {
         return live;
-    }
-
-    private void log(Level level, String message) {
-        logger.log(level, message);
     }
 
     boolean useAnyOutboundPort() {
@@ -599,6 +554,70 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
             final Integer port = outboundPorts.removeFirst();
             outboundPorts.addLast(port);
             return port;
+        }
+    }
+
+
+    @Override
+    public boolean transmit(Packet packet, Connection connection) {
+        checkNotNull(packet, "Packet can't be null");
+
+        if (connection == null) {
+            return false;
+        }
+
+        return connection.write(packet);
+    }
+
+    /**
+     * Retries sending packet maximum 5 times until connection to target becomes available.
+     */
+    @Override
+    public boolean transmit(Packet packet, Address target) {
+        checkNotNull(packet, "Packet can't be null");
+        checkNotNull(target, "target can't be null");
+
+        return send(packet, target, null);
+    }
+
+    private boolean send(Packet packet, Address target, SendTask sendTask) {
+        Connection connection = getConnection(target);
+        if (connection != null) {
+            return connection.write(packet);
+        }
+
+        if (sendTask == null) {
+            sendTask = new SendTask(packet, target);
+        }
+
+        int retries = sendTask.retries;
+        if (retries < RETRY_NUMBER && ioService.isActive()) {
+            getOrConnect(target, true);
+            // TODO: Caution: may break the order guarantee of the packets sent from the same thread!
+            scheduler.schedule(sendTask, (retries + 1) * DELAY_FACTOR, TimeUnit.MILLISECONDS);
+            return true;
+        }
+        return false;
+    }
+
+    private final class SendTask implements Runnable {
+        private final Packet packet;
+        private final Address target;
+        private volatile int retries;
+
+        private SendTask(Packet packet, Address target) {
+            this.packet = packet;
+            this.target = target;
+        }
+
+        @SuppressFBWarnings(value = "VO_VOLATILE_INCREMENT", justification = "single-writer, many-reader")
+        @Override
+        public void run() {
+            retries++;
+            if (logger.isFinestEnabled()) {
+                logger.finest("Retrying[" + retries + "] packet send operation to: " + target);
+            }
+            send(packet, target, this);
         }
     }
 

@@ -26,6 +26,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.ringbuffer.ReadResultSet;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 import java.util.AbstractList;
@@ -73,6 +74,11 @@ public class ReadResultSetImpl<E> extends AbstractList<E>
 
     public boolean isMinSizeReached() {
         return size >= minSize;
+    }
+
+    @SuppressFBWarnings({"EI_EXPOSE_REP" })
+    public Data[] getItems() {
+        return items;
     }
 
     @Override

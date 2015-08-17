@@ -80,7 +80,7 @@ public final class HazelcastClientProxy implements HazelcastInstance, Serializat
 
     @Override
     public <E> Ringbuffer<E> getRingbuffer(String name) {
-        throw new UnsupportedOperationException();
+        return getClient().getRingbuffer(name);
     }
 
     @Override

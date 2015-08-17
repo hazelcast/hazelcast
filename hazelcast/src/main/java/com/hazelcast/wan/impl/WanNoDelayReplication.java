@@ -86,10 +86,12 @@ public class WanNoDelayReplication
         }
     }
 
+    @Override
     public void shutdown() {
         running = false;
     }
 
+    @Override
     public void run() {
         Connection conn = null;
         while (running) {
@@ -105,7 +107,7 @@ public class WanNoDelayReplication
                     byte[] bytes = node.nodeEngine.getSerializationService().toBytes(event);
                     Packet packet = new Packet(bytes);
                     packet.setHeader(Packet.HEADER_WAN_REPLICATION);
-                    node.nodeEngine.getPacketTransceiver().transmit(packet, conn);
+                    conn.write(packet);
                 } else {
                     failureQ.addFirst(event);
                     conn = null;

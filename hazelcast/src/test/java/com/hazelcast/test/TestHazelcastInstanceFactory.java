@@ -69,15 +69,15 @@ public class TestHazelcastInstanceFactory {
     }
 
     public HazelcastInstance newHazelcastInstance() {
-        return newHazelcastInstance(new Config());
+        return newHazelcastInstance(null);
     }
 
     public HazelcastInstance newHazelcastInstance(Config config) {
+        final String instanceName = config != null? config.getInstanceName() : null;
         if (mockNetwork) {
             init(config);
             NodeContext nodeContext = registry.createNodeContext(pickAddress());
-            final String name = (config == null ? null : config.getInstanceName());
-            return HazelcastInstanceFactory.newHazelcastInstance(config, name, nodeContext);
+            return HazelcastInstanceFactory.newHazelcastInstance(config, instanceName, nodeContext);
         }
         return HazelcastInstanceFactory.newHazelcastInstance(config);
     }

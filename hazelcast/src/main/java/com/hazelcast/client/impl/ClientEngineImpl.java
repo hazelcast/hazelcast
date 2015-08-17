@@ -81,9 +81,9 @@ import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
+import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.Future;
 import java.util.logging.Level;
 
 import static com.hazelcast.spi.impl.OperationResponseHandlerFactory.createEmptyResponseHandler;
@@ -147,6 +147,11 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
     //needed for testing purposes
     public ConnectionListener getConnectionListener() {
         return connectionListener;
+    }
+
+    @Override
+    public SerializationService getSerializationService() {
+        return serializationService;
     }
 
     @Override
@@ -612,10 +617,10 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
     @Override
     public Map<ClientType, Integer> getConnectedClientStats() {
 
-        int numberOfCppClients    = 0;
+        int numberOfCppClients = 0;
         int numberOfDotNetClients = 0;
-        int numberOfJavaClients   = 0;
-        int numberOfOtherClients  = 0;
+        int numberOfJavaClients = 0;
+        int numberOfOtherClients = 0;
 
         Operation clientInfoOperation = new GetConnectedClientsOperation();
         OperationService operationService = node.nodeEngine.getOperationService();

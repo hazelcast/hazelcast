@@ -45,13 +45,13 @@ public abstract class TcpIpConnection_AbstractTest extends HazelcastTestSupport 
         logger = loggingService.getLogger(TcpIpConnection_AbstractTest.class);
 
         connManagerA = newConnectionManager(addressA.getPort());
-        ioServiceA = (MockIOService) connManagerA.getIOHandler();
+        ioServiceA = (MockIOService) connManagerA.getIoService();
 
         connManagerB = newConnectionManager(addressB.getPort());
-        ioServiceB = (MockIOService) connManagerB.getIOHandler();
+        ioServiceB = (MockIOService) connManagerB.getIoService();
 
         connManagerC = newConnectionManager(addressC.getPort());
-        ioServiceC = (MockIOService) connManagerB.getIOHandler();
+        ioServiceC = (MockIOService) connManagerB.getIoService();
 
         serializationService = new DefaultSerializationServiceBuilder()
                 .addDataSerializableFactory(TestDataFactory.FACTORY_ID, new TestDataFactory())

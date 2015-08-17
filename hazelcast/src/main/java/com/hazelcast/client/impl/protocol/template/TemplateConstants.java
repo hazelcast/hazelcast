@@ -43,6 +43,7 @@ public final class TemplateConstants {
     public static final int XA_TRANSACTION_TEMPLATE_ID = 22;
     public static final int TRANSACTION_TEMPLATE_ID = 23;
     public static final int ENTERPRISE_MAP_TEMPLATE_ID = 24;
+    public static final int RINGBUFFER_TEMPLATE_ID = 25;
 
     private TemplateConstants() {
     }

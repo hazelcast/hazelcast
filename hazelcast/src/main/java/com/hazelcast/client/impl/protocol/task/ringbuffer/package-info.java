@@ -15,6 +15,8 @@
  */
 
 /**
- * Contains the code for the {@link com.hazelcast.spi.impl.packettransceiver.PacketTransceiver}.
+ * <p>Client protocol tasks implementations for Ringbuffer</p>
  */
-package com.hazelcast.spi.impl.packettransceiver;
+@GenerateMessageTaskFactory package com.hazelcast.client.impl.protocol.task.ringbuffer;
+
+import com.hazelcast.annotation.GenerateMessageTaskFactory;

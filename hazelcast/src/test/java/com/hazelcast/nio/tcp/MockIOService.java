@@ -21,7 +21,7 @@ import com.hazelcast.spi.EventFilter;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.impl.PacketHandler;
-import com.hazelcast.spi.impl.packettransceiver.PacketTransceiver;
+import com.hazelcast.spi.impl.packetdispatcher.PacketDispatcher;
 
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
@@ -375,21 +375,11 @@ public class MockIOService implements IOService {
 
     @Override
     public PacketReader createPacketReader(final TcpIpConnection connection) {
-        return new MemberPacketReader(connection, new PacketTransceiver() {
-            private ILogger logger = getLogger("PacketTransceiver");
+        return new MemberPacketReader(connection, new PacketDispatcher() {
+            private ILogger logger = getLogger("MockIOService");
 
             @Override
-            public boolean transmit(Packet packet, Connection connection) {
-                return false;
-            }
-
-            @Override
-            public boolean transmit(Packet packet, Address target) {
-                return false;
-            }
-
-            @Override
-            public void receive(Packet packet) {
+            public void dispatch(Packet packet) {
                 try {
                     if (packet.isHeaderSet(Packet.HEADER_BIND)) {
                         connection.getConnectionManager().handle(packet);
