@@ -23,8 +23,9 @@ import org.hibernate.cache.CacheException;
 import java.util.Properties;
 
 /**
- * A factory class to build up a {@link com.hazelcast.core.HazelcastInstance} depending
- * on configuration either based on Hazelcast client or node implementation.
+ * A factory class to build up implementations of {@link com.hazelcast.hibernate.instance.IHazelcastInstanceLoader}
+ * that returns a {@link com.hazelcast.core.HazelcastInstance} depending on configuration either backed by Hazelcast
+ * client or node implementation.
  */
 public final class HazelcastInstanceFactory {
 
@@ -39,24 +40,33 @@ public final class HazelcastInstanceFactory {
     }
 
     public static IHazelcastInstanceLoader createInstanceLoader(Properties props) throws CacheException {
+        try {
+            IHazelcastInstanceLoader instanceLoader = (IHazelcastInstanceLoader) props.
+                    get("com.hazelcast.hibernate.instance.loader");
+            if (instanceLoader != null) {
+                return instanceLoader;
+            }
+            Class loaderClass = getInstanceLoaderClass(props);
+            instanceLoader = (IHazelcastInstanceLoader) loaderClass.newInstance();
+            instanceLoader.configure(props);
+            return instanceLoader;
+        } catch (Exception e) {
+            throw new CacheException(e);
+        }
+    }
+
+    private static Class getInstanceLoaderClass(Properties props) throws ClassNotFoundException {
         boolean useNativeClient = false;
         if (props != null) {
             useNativeClient = CacheEnvironment.isNativeClient(props);
         }
-        IHazelcastInstanceLoader loader = null;
         Class loaderClass = null;
         ClassLoader cl = HazelcastInstanceFactory.class.getClassLoader();
-        try {
-            if (useNativeClient) {
-                loaderClass = cl.loadClass(HZ_CLIENT_LOADER_CLASSNAME);
-            } else {
-                loaderClass = cl.loadClass(HZ_INSTANCE_LOADER_CLASSNAME);
-            }
-            loader = (IHazelcastInstanceLoader) loaderClass.newInstance();
-        } catch (Exception e) {
-            throw new CacheException(e);
+        if (useNativeClient) {
+            loaderClass = cl.loadClass(HZ_CLIENT_LOADER_CLASSNAME);
+        } else {
+            loaderClass = cl.loadClass(HZ_INSTANCE_LOADER_CLASSNAME);
         }
-        loader.configure(props);
-        return loader;
+        return loaderClass;
     }
 }
