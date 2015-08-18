@@ -34,8 +34,10 @@ import com.hazelcast.transaction.TransactionContext;
 
 import java.io.IOException;
 import java.security.Permission;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
@@ -154,7 +156,7 @@ public abstract class AbstractTxnMapRequest extends BaseTransactionRequest {
     }
 
     private MapValueCollection getMapValueCollection(Collection coll) {
-        final HashSet<Data> valuesCollection = new HashSet<Data>(coll.size());
+        final List<Data> valuesCollection = new ArrayList<Data>(coll.size());
         for (Object value : coll) {
             final Data dataValue = serializationService.toData(value);
             valuesCollection.add(dataValue);
