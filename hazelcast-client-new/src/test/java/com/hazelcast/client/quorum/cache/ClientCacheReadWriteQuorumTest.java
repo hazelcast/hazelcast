@@ -133,14 +133,9 @@ public class ClientCacheReadWriteQuorumTest
         return clientConfig;
     }
 
-    @Before
-    public void sss() {
-        return;
-    }
-
     @AfterClass
     public static void killAllHazelcastInstances() throws IOException {
-        HazelcastInstanceFactory.terminateAll();
+        factory.terminateAll();
     }
 
     @Test
