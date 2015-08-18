@@ -116,6 +116,44 @@ public class PartitionedCluster {
         return this;
     }
 
+    public PartitionedCluster createFiveMemberCluster(CacheSimpleConfig cacheSimpleConfig, QuorumConfig quorumConfig) {
+        Config config = new Config();
+        config.setProperty(GroupProperties.PROP_MERGE_FIRST_RUN_DELAY_SECONDS, "9999");
+        config.setProperty(GroupProperties.PROP_MERGE_NEXT_RUN_DELAY_SECONDS, "9999");
+        config.getGroupConfig().setName(generateRandomString(10));
+        config.addCacheConfig(cacheSimpleConfig);
+        config.addQuorumConfig(quorumConfig);
+        createInstances(config);
+
+        return this;
+    }
+
+    public PartitionedCluster splitFiveMembersThreeAndTwo() throws InterruptedException {
+        final CountDownLatch splitLatch = new CountDownLatch(6);
+        h4.getCluster().addMembershipListener(new MembershipAdapter() {
+            @Override
+            public void memberRemoved(MembershipEvent membershipEvent) {
+                splitLatch.countDown();
+            }
+        });
+        h5.getCluster().addMembershipListener(new MembershipAdapter() {
+            @Override
+            public void memberRemoved(MembershipEvent membershipEvent) {
+                splitLatch.countDown();
+            }
+        });
+
+        splitCluster();
+
+        assertTrue(splitLatch.await(30, TimeUnit.SECONDS));
+        assertEquals(3, h1.getCluster().getMembers().size());
+        assertEquals(3, h2.getCluster().getMembers().size());
+        assertEquals(3, h3.getCluster().getMembers().size());
+        assertEquals(2, h4.getCluster().getMembers().size());
+        assertEquals(2, h5.getCluster().getMembers().size());
+        return this;
+    }
+
     private void createInstances(Config config) {
         h1 = factory.newHazelcastInstance(config);
         h2 = factory.newHazelcastInstance(config);

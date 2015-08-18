@@ -9,10 +9,14 @@ import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.quorum.QuorumType;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import javax.cache.Caching;
 import java.io.IOException;
@@ -24,16 +28,11 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+@RunWith(HazelcastSerialClassRunner.class)
+@Category(QuickTest.class)
 public class CacheQuorumConfigTest extends HazelcastTestSupport {
 
     private final URL configUrl = getClass().getClassLoader().getResource("test-hazelcast-jcache-with-quorum.xml");
-
-    @Before
-    @After
-    public void cleanup() {
-        HazelcastInstanceFactory.terminateAll();
-        Caching.getCachingProvider().close();
-    }
 
     @Test
     public void cacheConfigXmlTest() throws IOException {

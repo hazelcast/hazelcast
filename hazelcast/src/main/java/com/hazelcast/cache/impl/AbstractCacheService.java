@@ -490,10 +490,18 @@ public abstract class AbstractCacheService
         cacheConfig.removeCacheEntryListenerConfiguration(cacheEntryListenerConfiguration);
     }
 
+    /**
+     * Gets the name of the quorum associated with specified cache
+     *
+     * @param cacheName name of the cache
+     * @return name of the associated quorum
+     *         null if there is no associated quorum
+     */
     @Override
     public String getQuorumName(String cacheName) {
-        if (configs == null || configs.get(cacheName) == null)
+        if (configs.get(cacheName) == null) {
             return null;
+        }
         return configs.get(cacheName).getQuorumName();
     }
 

@@ -49,7 +49,13 @@ public class CacheSimpleConfigReadOnly
         }
         return Collections.unmodifiableList(readOnlyListenerConfigs);
     }
-    
+
+    /**
+     * Gets the name of the quorum associated with this configuration
+     *
+     * @return name of the associated quorum
+     *         null if no quorum is set
+     */
     @Override
     public String getQuorumName() {
         return super.getQuorumName();
@@ -148,5 +154,4 @@ public class CacheSimpleConfigReadOnly
     public CacheSimpleConfig setQuorumName(String quorumName) {
         throw new UnsupportedOperationException("This config is read-only cache: " + getName());
     }
-
 }

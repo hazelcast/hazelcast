@@ -482,10 +482,22 @@ public class CacheSimpleConfig {
         this.wanReplicationRef = wanReplicationRef;
     }
 
+    /**
+     * Gets name of the associated quorum if any
+     *
+     * @return
+     */
     public String getQuorumName() {
         return quorumName;
     }
 
+    /**
+     * Associates this cache configuration to a quorum
+     *
+     * @param quorumName name of the desired quorum
+     *
+     * @return the updated CacheSimpleConfig.
+     */
     public CacheSimpleConfig setQuorumName(String quorumName) {
         this.quorumName = quorumName;
         return this;

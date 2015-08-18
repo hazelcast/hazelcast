@@ -522,7 +522,7 @@ public class CacheConfig<K, V>
         if (uriString != null ? !uriString.equals(that.uriString) : that.uriString != null) {
             return false;
         }
-        if (quorumName != null ? !quorumName.equals(that.quorumName) : that.quorumName !=null ) {
+        if (quorumName != null ? !quorumName.equals(that.quorumName) : that.quorumName != null) {
             return false;
         }
 
@@ -531,12 +531,11 @@ public class CacheConfig<K, V>
 
     @Override
     public String toString() {
-        return "CacheConfig{" +
-                "name='" + name + '\'' +
-                ", managerPrefix='" + managerPrefix + '\'' +
-                ", inMemoryFormat=" + inMemoryFormat +
-                ", backupCount=" + backupCount +
-                ", quorumName='" + quorumName + '\'' +
-                '}';
+        return "CacheConfig{"
+                + "name='" + name + '\''
+                + ", managerPrefix='" + managerPrefix + '\''
+                + ", inMemoryFormat=" + inMemoryFormat
+                + ", backupCount=" + backupCount
+                + '}';
     }
 }
