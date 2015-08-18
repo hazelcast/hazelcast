@@ -105,7 +105,9 @@ public abstract class NonBlockingIOThread extends Thread implements OperationHos
      */
     public final void addTaskAndWakeup(Runnable task) {
         taskQueue.add(task);
-        selector.wakeup();
+        if (!selectNow) {
+            selector.wakeup();
+        }
     }
 
     @Override
