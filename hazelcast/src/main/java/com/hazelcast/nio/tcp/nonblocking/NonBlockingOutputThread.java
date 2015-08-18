@@ -33,8 +33,9 @@ public final class NonBlockingOutputThread extends NonBlockingIOThread {
     public NonBlockingOutputThread(ThreadGroup threadGroup,
                                    String threadName,
                                    ILogger logger,
-                                   NonBlockingIOThreadOutOfMemoryHandler oomeHandler) {
-        super(threadGroup, threadName, logger, oomeHandler);
+                                   NonBlockingIOThreadOutOfMemoryHandler oomeHandler,
+                                   boolean selectNow) {
+        super(threadGroup, threadName, logger, oomeHandler, selectNow);
     }
 
     /**

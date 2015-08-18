@@ -39,7 +39,6 @@ public class TcpIpConnectionManager_TransmitTest extends TcpIpConnection_Abstrac
                 packetsB.add(packet);
             }
         };
-
     }
 
     // =============== tests {@link TcpIpConnectionManager#write(Packet,Connection)} ===========

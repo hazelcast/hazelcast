@@ -30,9 +30,19 @@ public final class NonBlockingInputThread extends NonBlockingIOThread {
     @Probe
     private final SwCounter readEvents = newSwCounter();
 
-    public NonBlockingInputThread(ThreadGroup threadGroup, String threadName, ILogger logger,
+    public NonBlockingInputThread(ThreadGroup threadGroup,
+                                  String threadName,
+                                  ILogger logger,
                                   NonBlockingIOThreadOutOfMemoryHandler oomeHandler) {
-        super(threadGroup, threadName, logger, oomeHandler);
+        super(threadGroup, threadName, logger, oomeHandler, false);
+    }
+
+    public NonBlockingInputThread(ThreadGroup threadGroup,
+                                  String threadName,
+                                  ILogger logger,
+                                  NonBlockingIOThreadOutOfMemoryHandler oomeHandler,
+                                  boolean selectNow) {
+        super(threadGroup, threadName, logger, oomeHandler, selectNow);
     }
 
 
