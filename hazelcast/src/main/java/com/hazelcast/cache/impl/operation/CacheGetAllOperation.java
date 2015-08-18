@@ -53,7 +53,7 @@ public class CacheGetAllOperation
 
     public void run() {
         CacheService service = getService();
-        ICacheRecordStore cache = service.getOrCreateCache(name, getPartitionId());
+        ICacheRecordStore cache = service.getOrCreateRecordStore(name, getPartitionId());
 
         int partitionId = getPartitionId();
         Set<Data> partitionKeySet = new HashSet<Data>();

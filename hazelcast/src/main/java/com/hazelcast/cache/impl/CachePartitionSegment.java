@@ -26,31 +26,22 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 /**
- * <h1>Cache Partition Segment</h1>
  * <p>
- * CachePartitionSegment is a data access structure responsible for all cache data of a partition. It's responsible
- * for creating and/or returning the actual cache data object by
- * name {@link com.hazelcast.cache.impl.ICacheRecordStore}
+ *     Responsible for all cache data of a partition. Creates and
+ * looks up {@link com.hazelcast.cache.impl.ICacheRecordStore CacheRecordStore}s by name.
  * </p>
- *
- * {@link CacheService} manages all {@linkplain CachePartitionSegment}s.
- *
- * @see com.hazelcast.cache.impl.CacheService
+ * A {@link CacheService} manages all <code>CachePartitionSegment</code>s.
  */
 public final class CachePartitionSegment {
 
     private final AbstractCacheService cacheService;
     private final int partitionId;
-    // *** NOTE ***
-    //      CacheInfo is implemented by considering comparison with String in hash-map.
-    private final ConstructorFunction<String, ICacheRecordStore> cacheConstructorFunction;
-    private final ConcurrentMap<String, ICacheRecordStore> caches =
-            new ConcurrentHashMap<String, ICacheRecordStore>();
+    private final ConstructorFunction<String, ICacheRecordStore> storeConstructorFunction;
+    private final ConcurrentMap<String, ICacheRecordStore> recordStores = new ConcurrentHashMap<String, ICacheRecordStore>();
     private final Object mutex = new Object();
 
-    CachePartitionSegment(final AbstractCacheService cacheService,
-                          final int partitionId) {
-        this.cacheConstructorFunction = new ConstructorFunction<String, ICacheRecordStore>() {
+    CachePartitionSegment(final AbstractCacheService cacheService, final int partitionId) {
+        this.storeConstructorFunction = new ConstructorFunction<String, ICacheRecordStore>() {
             @Override
             public ICacheRecordStore createNew(String arg) {
                 return cacheService.createNewRecordStore(arg, partitionId);
@@ -60,8 +51,8 @@ public final class CachePartitionSegment {
         this.partitionId = partitionId;
     }
 
-    public Iterator<ICacheRecordStore> cacheIterator() {
-        return caches.values().iterator();
+    public Iterator<ICacheRecordStore> recordStoreIterator() {
+        return recordStores.values().iterator();
     }
 
     public Collection<CacheConfig> getCacheConfigs() {
@@ -72,43 +63,39 @@ public final class CachePartitionSegment {
         return partitionId;
     }
 
-    public ICacheRecordStore getOrCreateCache(String name) {
-        return
-             ConcurrencyUtil.getOrPutSynchronized(caches,
-                                                  name,
-                                                  mutex,
-                                                  cacheConstructorFunction);
+    public ICacheRecordStore getOrCreateRecordStore(String name) {
+        return ConcurrencyUtil.getOrPutSynchronized(recordStores, name, mutex, storeConstructorFunction);
     }
 
-    public ICacheRecordStore getCache(String name) {
-        return caches.get(name);
+    public ICacheRecordStore getRecordStore(String name) {
+        return recordStores.get(name);
     }
 
-    public void deleteCache(String name) {
-        ICacheRecordStore cache = caches.remove(name);
-        if (cache != null) {
-            cache.destroy();
+    public void deleteRecordStore(String name) {
+        ICacheRecordStore store = recordStores.remove(name);
+        if (store != null) {
+            store.destroy();
         }
     }
 
     public void clear() {
         synchronized (mutex) {
-            for (ICacheRecordStore cache : caches.values()) {
-                cache.destroy();
+            for (ICacheRecordStore store : recordStores.values()) {
+                store.destroy();
             }
         }
-        caches.clear();
+        recordStores.clear();
     }
 
     public void destroy() {
         clear();
     }
 
-    public boolean hasAnyCache() {
-        return !caches.isEmpty();
+    public boolean hasAnyRecordStore() {
+        return !recordStores.isEmpty();
     }
 
-    public boolean hasCache(String name) {
-        return caches.containsKey(name);
+    public boolean hasRecordStore(String name) {
+        return recordStores.containsKey(name);
     }
 }

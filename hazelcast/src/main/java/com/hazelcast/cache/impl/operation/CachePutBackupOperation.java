@@ -53,7 +53,7 @@ public class CachePutBackupOperation
     public void run()
             throws Exception {
         CacheService service = getService();
-        ICacheRecordStore cache = service.getOrCreateCache(name, getPartitionId());
+        ICacheRecordStore cache = service.getOrCreateRecordStore(name, getPartitionId());
         cache.putRecord(key, cacheRecord);
         response = Boolean.TRUE;
     }

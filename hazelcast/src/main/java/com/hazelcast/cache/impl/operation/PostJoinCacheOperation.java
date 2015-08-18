@@ -43,7 +43,7 @@ public class PostJoinCacheOperation extends AbstractOperation {
     public void run() throws Exception {
         CacheService cacheService = getService();
         for (CacheConfig cacheConfig : configs) {
-            cacheService.createCacheConfigIfAbsent(cacheConfig);
+            cacheService.putCacheConfigIfAbsent(cacheConfig);
         }
     }
 

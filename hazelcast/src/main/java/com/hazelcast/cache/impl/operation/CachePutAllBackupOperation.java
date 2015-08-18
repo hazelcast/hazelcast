@@ -55,7 +55,7 @@ public class CachePutAllBackupOperation
     public void beforeRun()
             throws Exception {
         CacheService service = getService();
-        cache = service.getOrCreateCache(name, getPartitionId());
+        cache = service.getOrCreateRecordStore(name, getPartitionId());
     }
 
     @Override

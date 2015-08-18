@@ -41,10 +41,10 @@ import java.util.concurrent.atomic.AtomicInteger;
  * <li>Find partition id using the distributed object name of cache as a key.</li>
  * <li>Send the <code>CacheCreateConfigOperation</code> operation to the calculated partition which will force all
  * clusters to be single threaded.</li>
- * <li>{@link CacheService#createCacheConfigIfAbsent(com.hazelcast.config.CacheConfig)} is called.</li>
+ * <li>{@link CacheService#putCacheConfigIfAbsent(com.hazelcast.config.CacheConfig)} is called.</li>
  * </ul></p>
  * <p>This operation's purpose is to pass the required parameters into
- * {@link CacheService#createCacheConfigIfAbsent(com.hazelcast.config.CacheConfig)}.</p>
+ * {@link CacheService#putCacheConfigIfAbsent(com.hazelcast.config.CacheConfig)}.</p>
  */
 public class CacheCreateConfigOperation
         extends AbstractNamedOperation
@@ -84,7 +84,7 @@ public class CacheCreateConfigOperation
     public void run() throws Exception {
         AbstractCacheService service = getService();
         if (!ignoreLocal) {
-            response = service.createCacheConfigIfAbsent(config);
+            response = service.putCacheConfigIfAbsent(config);
         }
         if (createAlsoOnOthers) {
             NodeEngine nodeEngine = getNodeEngine();

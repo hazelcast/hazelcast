@@ -125,13 +125,13 @@ public abstract class AbstractCacheService
     }
 
     @Override
-    public ICacheRecordStore getOrCreateCache(String name, int partitionId) {
-        return segments[partitionId].getOrCreateCache(name);
+    public ICacheRecordStore getOrCreateRecordStore(String name, int partitionId) {
+        return segments[partitionId].getOrCreateRecordStore(name);
     }
 
     @Override
-    public ICacheRecordStore getCacheRecordStore(String name, int partitionId) {
-        return segments[partitionId].getCache(name);
+    public ICacheRecordStore getRecordStore(String name, int partitionId) {
+        return segments[partitionId].getRecordStore(name);
     }
 
     @Override
@@ -141,7 +141,7 @@ public abstract class AbstractCacheService
 
     protected void destroySegments(String name) {
         for (CachePartitionSegment segment : segments) {
-            segment.deleteCache(name);
+            segment.deleteRecordStore(name);
         }
     }
 
@@ -177,7 +177,7 @@ public abstract class AbstractCacheService
     }
 
     @Override
-    public CacheConfig createCacheConfigIfAbsent(CacheConfig config) {
+    public CacheConfig putCacheConfigIfAbsent(CacheConfig config) {
         final CacheConfig localConfig = configs.putIfAbsent(config.getNameWithPrefix(), config);
         if (localConfig == null) {
             if (config.isStatisticsEnabled()) {

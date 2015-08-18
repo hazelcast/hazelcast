@@ -80,7 +80,7 @@ public class CacheRemoveAllOperation extends PartitionWideCacheOperation impleme
     @Override
     public void beforeRun() throws Exception {
         ICacheService service = getService();
-        cache = service.getCacheRecordStore(name, getPartitionId());
+        cache = service.getRecordStore(name, getPartitionId());
     }
 
     @Override

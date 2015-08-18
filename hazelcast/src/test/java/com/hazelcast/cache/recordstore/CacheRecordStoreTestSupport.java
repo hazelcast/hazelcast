@@ -85,7 +85,7 @@ public abstract class CacheRecordStoreTestSupport
         NodeEngine nodeEngine = getNodeEngine(instance);
         ICacheService cacheService = getCacheService(instance);
         CacheConfig cacheConfig = createCacheConfig(cacheName, inMemoryFormat);
-        cacheService.createCacheConfigIfAbsent(cacheConfig);
+        cacheService.putCacheConfigIfAbsent(cacheConfig);
         return new CacheRecordStore(CACHE_NAME_PREFIX + cacheName, partitionId, nodeEngine, (AbstractCacheService) cacheService);
     }
 

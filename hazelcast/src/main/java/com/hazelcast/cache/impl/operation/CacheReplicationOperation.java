@@ -64,7 +64,7 @@ public class CacheReplicationOperation extends AbstractOperation {
     public CacheReplicationOperation(CachePartitionSegment segment, int replicaIndex) {
         data = new HashMap<String, Map<Data, CacheRecord>>();
 
-        Iterator<ICacheRecordStore> iter = segment.cacheIterator();
+        Iterator<ICacheRecordStore> iter = segment.recordStoreIterator();
         while (iter.hasNext()) {
             ICacheRecordStore cacheRecordStore = iter.next();
             CacheConfig cacheConfig = cacheRecordStore.getConfig();
@@ -81,7 +81,7 @@ public class CacheReplicationOperation extends AbstractOperation {
         //        //migrate CacheConfigs first
         CacheService service = getService();
         for (CacheConfig config : configs) {
-            service.createCacheConfigIfAbsent(config);
+            service.putCacheConfigIfAbsent(config);
         }
     }
 
@@ -90,7 +90,7 @@ public class CacheReplicationOperation extends AbstractOperation {
             throws Exception {
         CacheService service = getService();
         for (Map.Entry<String, Map<Data, CacheRecord>> entry : data.entrySet()) {
-            ICacheRecordStore cache = service.getOrCreateCache(entry.getKey(), getPartitionId());
+            ICacheRecordStore cache = service.getOrCreateRecordStore(entry.getKey(), getPartitionId());
             Map<Data, CacheRecord> map = entry.getValue();
 
             Iterator<Map.Entry<Data, CacheRecord>> iter = map.entrySet().iterator();

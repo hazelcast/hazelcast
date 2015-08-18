@@ -117,7 +117,7 @@ public class HazelcastServerCacheManager
 
     @Override
     protected <K, V> void addCacheConfigIfAbsent(CacheConfig<K, V> cacheConfig) {
-        cacheService.createCacheConfigIfAbsent(cacheConfig);
+        cacheService.putCacheConfigIfAbsent(cacheConfig);
     }
 
     @Override
