@@ -21,7 +21,6 @@ import com.hazelcast.client.impl.protocol.codec.ExecutorServiceCancelOnAddressCo
 import com.hazelcast.executor.impl.DistributedExecutorService;
 import com.hazelcast.executor.impl.operations.CancellationOperation;
 import com.hazelcast.instance.Node;
-import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
@@ -40,8 +39,7 @@ public class ExecutorServiceCancelOnAddressMessageTask
         final InternalOperationService operationService = nodeEngine.getOperationService();
         final String serviceName = DistributedExecutorService.SERVICE_NAME;
         CancellationOperation op = new CancellationOperation(parameters.uuid, parameters.interrupt);
-        final Address address = new Address(parameters.hostname, parameters.port);
-        return operationService.createInvocationBuilder(serviceName, op, address);
+        return operationService.createInvocationBuilder(serviceName, op, parameters.address);
     }
 
 

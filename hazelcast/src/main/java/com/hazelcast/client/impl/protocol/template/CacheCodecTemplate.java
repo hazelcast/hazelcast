@@ -21,6 +21,7 @@ import com.hazelcast.annotation.Nullable;
 import com.hazelcast.annotation.Request;
 import com.hazelcast.client.impl.protocol.EventMessageConst;
 import com.hazelcast.client.impl.protocol.ResponseMessageConst;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 
 import java.util.List;
@@ -76,13 +77,13 @@ public interface CacheCodecTemplate {
     void iterate(String name, int partitionId, int tableIndex, int batch);
 
     @Request(id = 16, retryable = false, response = ResponseMessageConst.VOID)
-    void listenerRegistration(String name, Data listenerConfig, boolean register, String hostname, int port);
+    void listenerRegistration(String name, Data listenerConfig, boolean register, Address address);
 
     @Request(id = 17, retryable = false, response = ResponseMessageConst.VOID)
     void loadAll(String name, Set<Data> keys, boolean replaceExistingValues);
 
     @Request(id = 18, retryable = true, response = ResponseMessageConst.DATA)
-    void managementConfig(String name, boolean isStat, boolean enabled, String hostname, int port);
+    void managementConfig(String name, boolean isStat, boolean enabled, Address address);
 
     @Request(id = 19, retryable = false, response = ResponseMessageConst.BOOLEAN)
     void putIfAbsent(String name, Data key, Data value, @Nullable Data expiryPolicy, int completionId);

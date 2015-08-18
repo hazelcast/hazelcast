@@ -36,7 +36,7 @@ public interface ExecutorServiceCodecTemplate {
     void cancelOnPartition(String uuid, int partitionId, boolean interrupt);
 
     @Request(id = 4, retryable = false, response = ResponseMessageConst.BOOLEAN)
-    void cancelOnAddress(String uuid, String hostname, int port, boolean interrupt);
+    void cancelOnAddress(String uuid, Address address, boolean interrupt);
 
     @Request(id = 5, retryable = false, response = ResponseMessageConst.DATA)
     void submitToPartition(String name, String uuid, Data callable, int partitionId);

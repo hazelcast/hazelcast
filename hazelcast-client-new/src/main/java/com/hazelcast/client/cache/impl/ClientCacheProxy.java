@@ -362,7 +362,7 @@ public class ClientCacheProxy<K, V>
                 final Address address = member.getAddress();
                 Data configData = toData(cacheEntryListenerConfiguration);
                 final ClientMessage request = CacheListenerRegistrationCodec
-                        .encodeRequest(nameWithPrefix, configData, isRegister, address.getHost(), address.getPort());
+                        .encodeRequest(nameWithPrefix, configData, isRegister, address);
                 final ClientInvocation invocation = new ClientInvocation(client, request, address);
                 final Future future = invocation.invoke();
                 futures.add(future);
