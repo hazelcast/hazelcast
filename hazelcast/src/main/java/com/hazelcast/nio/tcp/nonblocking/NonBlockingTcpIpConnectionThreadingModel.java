@@ -46,8 +46,8 @@ public class NonBlockingTcpIpConnectionThreadingModel implements TcpIpConnection
     private final MetricsRegistry metricsRegistry;
     private final LoggingService loggingService;
     private final HazelcastThreadGroup hazelcastThreadGroup;
-    private boolean inputSelectNow = getBoolean("hazelcast.io.in.selectNow");
-    private boolean outputSelectNow = getBoolean("hazelcast.io.out.selectNow");
+    private boolean inputSelectNow = getBoolean("hazelcast.io.input.thread.selectNow");
+    private boolean outputSelectNow = getBoolean("hazelcast.io.output.thread.selectNow");
     private volatile IOBalancer ioBalancer;
 
     public NonBlockingTcpIpConnectionThreadingModel(
