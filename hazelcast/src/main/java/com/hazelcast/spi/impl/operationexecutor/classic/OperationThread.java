@@ -24,6 +24,7 @@ import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunner;
+import com.hazelcast.util.MPSCQueue;
 import com.hazelcast.util.counters.SwCounter;
 import com.hazelcast.util.executor.HazelcastManagedThread;
 
@@ -64,14 +65,33 @@ public abstract class OperationThread extends HazelcastManagedThread {
     // for any form of synchronization.
     private OperationRunner currentOperationRunner;
 
+    private static final boolean FAST_QUEUE_ENABLED = Boolean.getBoolean("operation.partition.fastqueue.enabled");
+    private static final boolean FAST_QUEUE_SPIN = Boolean.getBoolean("operation.partition.fastqueue.spin");
+
     public OperationThread(String name, int threadId, ScheduleQueue scheduleQueue,
                            ILogger logger, HazelcastThreadGroup threadGroup, NodeExtension nodeExtension) {
         super(threadGroup.getInternalThreadGroup(), name);
         setContextClassLoader(threadGroup.getClassLoader());
-        this.scheduleQueue = scheduleQueue;
-        this.threadId = threadId;
+
         this.logger = logger;
+        this.threadId = threadId;
         this.nodeExtension = nodeExtension;
+        this.scheduleQueue = initScheduledQueue(scheduleQueue);
+    }
+
+    private ScheduleQueue initScheduledQueue(ScheduleQueue scheduleQueue) {
+        if (!(this instanceof PartitionOperationThread)) {
+            return scheduleQueue;
+        }
+
+        if (!FAST_QUEUE_ENABLED) {
+            logger.info(getName() + " is using regular scheduleQueue");
+            return scheduleQueue;
+        }
+
+        logger.info(getName() + " using fastqueue with spinning=" + FAST_QUEUE_SPIN);
+
+        return new DefaultScheduleQueue(new MPSCQueue(this, FAST_QUEUE_SPIN), new MPSCQueue(this, FAST_QUEUE_SPIN));
     }
 
     @Probe

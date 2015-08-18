@@ -20,6 +20,7 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.operationexecutor.OperationHostileThread;
+import com.hazelcast.util.MPSCQueue;
 
 import java.io.IOException;
 import java.nio.channels.SelectionKey;
@@ -34,7 +35,7 @@ public abstract class NonBlockingIOThread extends Thread implements OperationHos
     private static final int SELECT_FAILURE_PAUSE_MILLIS = 1000;
 
     @Probe(name = "selectorQueueSize")
-    protected final Queue<Runnable> selectorQueue = new ConcurrentLinkedQueue<Runnable>();
+    protected final Queue<Runnable> selectorQueue;
 
     private final ILogger logger;
 
@@ -52,6 +53,13 @@ public abstract class NonBlockingIOThread extends Thread implements OperationHos
     public NonBlockingIOThread(ThreadGroup threadGroup, String threadName, ILogger logger,
                                NonBlockingIOThreadOutOfMemoryHandler oomeHandler) {
         super(threadGroup, threadName);
+
+        if (Boolean.getBoolean("fastqueuue")) {
+            selectorQueue = new MPSCQueue<Runnable>(null);
+        } else {
+            selectorQueue = new ConcurrentLinkedQueue<Runnable>();
+        }
+
         this.logger = logger;
         this.oomeHandler = oomeHandler;
         // WARNING: This value has significant effect on idle CPU usage!
