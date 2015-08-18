@@ -126,7 +126,7 @@ public class ClientCacheReadQuorumTest {
 
     @AfterClass
     public static void killAllHazelcastInstances() throws IOException {
-        HazelcastInstanceFactory.terminateAll();
+        factory.terminateAll();
     }
 
     @Test
