@@ -16,30 +16,23 @@
 
 package com.hazelcast.hibernate;
 
-import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.hibernate.entity.DummyEntity;
 import com.hazelcast.hibernate.entity.DummyProperty;
-import com.hazelcast.hibernate.region.HazelcastQueryResultsRegion;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.annotation.NightlyTest;
+import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.hibernate.Query;
 import org.hibernate.Session;
 import org.hibernate.Transaction;
-import org.hibernate.cache.access.AccessType;
 import org.hibernate.cfg.Environment;
-import org.hibernate.impl.SessionFactoryImpl;
 import org.hibernate.stat.Statistics;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -51,7 +44,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
+@Category({QuickTest.class, ParallelTest.class})
 public class RegionFactoryDefaultTest extends HibernateStatisticsTestSupport {
 
     protected Properties getCacheProperties() {
@@ -67,7 +60,6 @@ public class RegionFactoryDefaultTest extends HibernateStatisticsTestSupport {
         final int count = 100;
         final int childCount = 3;
         insertDummyEntities(count, childCount);
-        sleep(1);
         List<DummyEntity> list = new ArrayList<DummyEntity>(count);
         Session session = sf.openSession();
         try {
@@ -121,7 +113,6 @@ public class RegionFactoryDefaultTest extends HibernateStatisticsTestSupport {
         final int entityCount = 10;
         final int queryCount = 3;
         insertDummyEntities(entityCount);
-        sleep(2);
         List<DummyEntity> list = null;
         for (int i = 0; i < queryCount; i++) {
             list = executeQuery(sf);
@@ -163,48 +154,9 @@ public class RegionFactoryDefaultTest extends HibernateStatisticsTestSupport {
     }
 
     @Test
-    public void testQuery2() {
-        final int entityCount = 10;
-        final int queryCount = 2;
-        insertDummyEntities(entityCount);
-        sleep(1);
-        List<DummyEntity> list = null;
-        for (int i = 0; i < queryCount; i++) {
-            list = executeQuery(sf);
-            assertEquals(entityCount, list.size());
-            sleep(1);
-        }
-
-        for (int i = 0; i < queryCount; i++) {
-            list = executeQuery(sf2);
-            assertEquals(entityCount, list.size());
-            sleep(1);
-        }
-
-        assertNotNull(list);
-        DummyEntity toDelete = list.get(0);
-        Session session = sf.openSession();
-        Transaction tx = session.beginTransaction();
-        try {
-            session.delete(toDelete);
-            tx.commit();
-        } catch (Exception e) {
-            tx.rollback();
-            e.printStackTrace();
-        } finally {
-            session.close();
-        }
-        sleep(1);
-        assertEquals(entityCount - 1, executeQuery(sf).size());
-        assertEquals(entityCount - 1, executeQuery(sf2).size());
-    }
-
-    @Test
     public void testSpecificQueryRegionEviction() {
         int entityCount = 10;
         insertDummyEntities(entityCount, 0);
-        sleep(1);
-
         //miss 1 query list entities
         Session session = sf.openSession();
         Transaction txn = session.beginTransaction();
