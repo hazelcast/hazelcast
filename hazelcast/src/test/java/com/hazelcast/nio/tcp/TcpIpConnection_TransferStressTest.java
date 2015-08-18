@@ -22,7 +22,7 @@ import static org.junit.Assert.assertEquals;
 public abstract class TcpIpConnection_TransferStressTest extends TcpIpConnection_AbstractTest {
 
     // total running time.
-    private static final long DURATION_SECONDS = TimeUnit.SECONDS.toSeconds(1);
+    private static final long DURATION_SECONDS = TimeUnit.MINUTES.toSeconds(2);
     // maximum number of pending packets
     private static final int maxPendingPacketCount = 10000;
     // we create the payloads up front and select randomly from them. This is the number of payloads we are creating.
