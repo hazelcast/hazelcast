@@ -1,10 +1,9 @@
 
-In this Release Notes document, you will find the new features, enhancements and fixes of the Hazelcast 3.5 release.
+In this Release Notes document, you will find the new features, enhancements and fixes of the Hazelcast 3.5 and 3.5.x releases.
 The numbers in the square brackets refer to the number of the issues in Hazelcast’s GitHub repository. You can reach
 to the full descriptions of the issues at https://github.com/hazelcast/hazelcast/issues/<issue number>.
 
 1. New Features
-This section provides the new features introduced with Hazelcast 3.5 release. 
 
 - Async Back Pressure: The Back Pressure introduced with Hazelcast 3.4 now supports async operations.
 
@@ -38,7 +37,18 @@ This section provides the new features introduced with Hazelcast 3.5 release.
 
 2. Enhancements
 
-This section lists the enhancements performed for Hazelcast 3.5 release.
+*3.5.1*
+
+The following are the enhancements performed for Hazelcast 3.5.1 release.
+
+- Client instances should spawn threads with their instance names added as prefix [#5671].
+- The method `com.hazelcast.spi.impl.classicscheduler.ResponseThread::process` may catch throwables. When this occurs, it logs an unhelpful message, and ignores the actual exception. This method should be improved to additionally log the cause, or at least the exception class and message [#5619].
+- The element `min-eviction-check-millis` in the map configuration does not exist in documentation [#5614].
+
+
+*3.5*
+
+The following are the enhancements performed for Hazelcast 3.5 release.
 
 - Eventing System Improvements: RingBuffer and Reliable Topic structures are introduced.
 - XA Transactions Improvements: With this improvement, you can now obtain a Hazelcast XA Resource instance through `HazelcastInstance`. 
@@ -64,6 +74,34 @@ resolver [#2431].
 
 
 3. Fixes
+
+*3.5.2 Fixes*
+
+The following are the issues solved for Hazelcast 3.5.2 release.
+
+- MapLoader blocks the entire partition when loading a single entry [#5818].
+- The method `IMap.getAll` by-passes interceptors in the Hazelcast 3.3 and higher versions [#5775].
+- `AWSJoiner` fails for the regions except us-east-1 [#5653].
+- Getting an instance of `sun.misc.Unsafe` class does not work on HP-UX operating system [#5518].
+- `AWSAddressTranslator` always uses the default region and this causes the HazelcastClient to be unable to join a Hazelcast AWS cluster in a non-default region [#5446].
+- The test code `JettyWebFilterTest.java` does not fail properly [#5188].
+- Management Center behaves unfriendly when map entries increase [#4895].
+- In `hazelcast-client.xml`, if the region is configured but `host-header` is not provided, the configuration gives a default endpoint value of `ec2.amazonaws.com`. It should give, for example, `ec2.eu-west-1.amazonaws.com` when the region is eu-west-1 and `host-header` is not provided [#4731].
+
+
+*3.5.1 Fixes*
+
+The following are the issues solved for Hazelcast 3.5.1 release.
+
+- Hazelcast Management Center uses `UpdateMapConfigOperation` to update map configurations. This operation simply replaces the map configuration of the related map container. However, this replacement has no effect for `maxIdleSeconds` and `timeToLiveSeconds` properties of the map configuration since they are not used in the map container directly. They are assigned to the final variables during map container creation and never touched again [#5593].
+- Destroying a map just after creating it produces double create/destroy events for `DistributedObjectListener` [#5592].
+- Map does not allow changing its maximum size, TTL and maximum idle properties. However, these fields are editable in the "Map Config" popup of Management Center. These fields should be disabled to prevent misguiding [#5591].
+- Map is destroyed using `IMap.destroy()` but then it is immediately recreated [#5554].
+- There should be a better calculation when calling the method `getApproximateMaxSize()` related to casting. Its return type is `int` and this causes the map entries to be evicted all the time when, for example, the eviction policy for an IMap is set to heap percentage with the value 1% [#5516].
+- All `onResponse()` calls on a `MultiExecutionCallback` should be made before the method `onComplete()` is called. There exists a race condition in `ExecutionCallbackAdapterFactory` which permits the method `onComplete()` to be called before all `onReponse()` calls are made [#5490].
+- Hazelcast Management Center "Scripting" tab is not refreshed when a new node joins to the cluster [#4738].
+- When updating a map entry which is replicated over WAN, the TTL (time to live) is not honored in the remote cluster map. When the timeout expires, the entry disappears from the cluster in which the key is owned, however it remains in the remote cluster [#254].
+
 
 *3.5 Fixes*
 
