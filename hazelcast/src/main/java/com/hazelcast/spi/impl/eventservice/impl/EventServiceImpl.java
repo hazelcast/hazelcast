@@ -18,6 +18,7 @@ package com.hazelcast.spi.impl.eventservice.impl;
 
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
@@ -79,7 +80,7 @@ public class EventServiceImpl implements InternalEventService {
     private final ExceptionHandler deregistrationExceptionHandler;
     private final ConcurrentMap<String, EventServiceSegment> segments;
     private final StripedExecutor eventExecutor;
-    private final int eventQueueTimeoutMs;
+    private final long eventQueueTimeoutMs;
 
     @Probe(name = "threadCount")
     private final int eventThreadCount;
@@ -97,9 +98,9 @@ public class EventServiceImpl implements InternalEventService {
         this.logger = nodeEngine.getLogger(EventService.class.getName());
         final Node node = nodeEngine.getNode();
         GroupProperties groupProperties = node.getGroupProperties();
-        this.eventThreadCount = groupProperties.EVENT_THREAD_COUNT.getInteger();
-        this.eventQueueCapacity = groupProperties.EVENT_QUEUE_CAPACITY.getInteger();
-        this.eventQueueTimeoutMs = groupProperties.EVENT_QUEUE_TIMEOUT_MILLIS.getInteger();
+        this.eventThreadCount = groupProperties.getInteger(GroupProperty.EVENT_THREAD_COUNT);
+        this.eventQueueCapacity = groupProperties.getInteger(GroupProperty.EVENT_QUEUE_CAPACITY);
+        this.eventQueueTimeoutMs = groupProperties.getMillis(GroupProperty.EVENT_QUEUE_TIMEOUT_MILLIS);
         HazelcastThreadGroup threadGroup = node.getHazelcastThreadGroup();
         this.eventExecutor = new StripedExecutor(
                 node.getLogger(EventServiceImpl.class),

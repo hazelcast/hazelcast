@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.monitors;
 
-import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
 import com.hazelcast.internal.metrics.DoubleGauge;
@@ -76,7 +76,7 @@ public class HealthMonitor {
             return null;
         }
 
-        int delaySeconds = node.getGroupProperties().HEALTH_MONITORING_DELAY_SECONDS.getInteger();
+        int delaySeconds = node.getGroupProperties().getSeconds(GroupProperty.HEALTH_MONITORING_DELAY_SECONDS);
         return new HealthMonitorThread(delaySeconds);
     }
 
@@ -92,9 +92,8 @@ public class HealthMonitor {
     }
 
     private HealthMonitorLevel getHealthMonitorLevel() {
-        GroupProperties properties = node.getGroupProperties();
-        String healthMonitorLevelString = properties.HEALTH_MONITORING_LEVEL.getString();
-        return valueOf(healthMonitorLevelString);
+        String healthMonitorLevel = node.getGroupProperties().getString(GroupProperty.HEALTH_MONITORING_LEVEL);
+        return valueOf(healthMonitorLevel);
     }
 
     private final class HealthMonitorThread extends Thread {
@@ -106,7 +105,7 @@ public class HealthMonitor {
                     node.getHazelcastThreadGroup().getThreadNamePrefix("HealthMonitor"));
             setDaemon(true);
             this.delaySeconds = delaySeconds;
-            this.performanceLogHint = node.getGroupProperties().PERFORMANCE_MONITOR_ENABLED.getBoolean();
+            this.performanceLogHint = node.getGroupProperties().getBoolean(GroupProperty.PERFORMANCE_MONITOR_ENABLED);
         }
 
         @Override
@@ -151,11 +150,9 @@ public class HealthMonitor {
             // we only log the hint once.
             performanceLogHint = false;
 
-            logger.info(
-                    "The HealthMonitor has detected a high load on the system. For more detailed information, "
-                            + getLineSeperator()
-                            + "enable the PerformanceMonitor by adding -D" + GroupProperties.PROP_PERFORMANCE_MONITOR_ENABLED
-                            + "=true");
+            logger.info(String.format("The HealthMonitor has detected a high load on the system. For more detailed information,%s"
+                            + "enable the PerformanceMonitor by adding the property -D%s=true",
+                    getLineSeperator(), GroupProperty.PERFORMANCE_MONITOR_ENABLED));
         }
     }
 

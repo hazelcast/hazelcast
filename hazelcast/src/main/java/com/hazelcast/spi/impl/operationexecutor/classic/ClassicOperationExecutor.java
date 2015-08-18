@@ -17,6 +17,7 @@
 package com.hazelcast.spi.impl.operationexecutor.classic;
 
 import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.instance.NodeExtension;
 import com.hazelcast.internal.metrics.MetricsRegistry;
@@ -106,7 +107,7 @@ public final class ClassicOperationExecutor implements OperationExecutor {
     }
 
     private OperationRunner[] initPartitionOperationRunners(GroupProperties properties, OperationRunnerFactory handlerFactory) {
-        OperationRunner[] operationRunners = new OperationRunner[properties.PARTITION_COUNT.getInteger()];
+        OperationRunner[] operationRunners = new OperationRunner[properties.getInteger(GroupProperty.PARTITION_COUNT)];
         for (int partitionId = 0; partitionId < operationRunners.length; partitionId++) {
             operationRunners[partitionId] = handlerFactory.createPartitionRunner(partitionId);
         }
@@ -114,7 +115,7 @@ public final class ClassicOperationExecutor implements OperationExecutor {
     }
 
     private OperationRunner[] initGenericOperationRunners(GroupProperties properties, OperationRunnerFactory runnerFactory) {
-        int genericThreadCount = properties.GENERIC_OPERATION_THREAD_COUNT.getInteger();
+        int genericThreadCount = properties.getInteger(GroupProperty.GENERIC_OPERATION_THREAD_COUNT);
         if (genericThreadCount <= 0) {
             // default generic operation thread count
             int coreSize = Runtime.getRuntime().availableProcessors();
@@ -129,7 +130,7 @@ public final class ClassicOperationExecutor implements OperationExecutor {
     }
 
     private PartitionOperationThread[] initPartitionThreads(GroupProperties properties) {
-        int threadCount = properties.PARTITION_OPERATION_THREAD_COUNT.getInteger();
+        int threadCount = properties.getInteger(GroupProperty.PARTITION_OPERATION_THREAD_COUNT);
         if (threadCount <= 0) {
             // default partition operation thread count
             int coreSize = Runtime.getRuntime().availableProcessors();

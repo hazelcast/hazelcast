@@ -16,14 +16,15 @@
 
 package com.hazelcast.internal.monitors;
 
-import com.hazelcast.instance.GroupProperties;
-import com.hazelcast.instance.GroupProperties.GroupProperty;
+import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+
+import static java.lang.String.format;
 
 /**
  * The PerformanceMonitor is a tool that provides insights in internal metrics. Currently the content of the
@@ -47,8 +48,8 @@ public class PerformanceMonitor {
         this.operationService = node.nodeEngine.getOperationService();
         this.logger = node.getLogger(PerformanceMonitor.class);
         this.metricRegistry = hazelcastInstance.node.nodeEngine.getMetricsRegistry();
-        this.enabled = node.getGroupProperties().PERFORMANCE_MONITOR_ENABLED.getBoolean();
-        this.humanFriendlyFormat = node.getGroupProperties().PERFORMANCE_MONITOR_HUMAN_FRIENDLY_FORMAT.getBoolean();
+        this.enabled = node.getGroupProperties().getBoolean(GroupProperty.PERFORMANCE_MONITOR_ENABLED);
+        this.humanFriendlyFormat = node.getGroupProperties().getBoolean(GroupProperty.PERFORMANCE_MONITOR_HUMAN_FRIENDLY_FORMAT);
         this.performanceLogFile = new PerformanceLogFile(this);
         this.monitorThread = initMonitorThread();
     }
@@ -58,10 +59,9 @@ public class PerformanceMonitor {
             return null;
         }
 
-        GroupProperties props = node.getGroupProperties();
-        int delaySeconds = props.PERFORMANCE_MONITOR_DELAY_SECONDS.getInteger();
-
         HazelcastThreadGroup threadGroup = node.getHazelcastThreadGroup();
+        int delaySeconds = node.getGroupProperties().getSeconds(GroupProperty.PERFORMANCE_MONITOR_DELAY_SECONDS);
+
         return new MonitorThread(threadGroup, delaySeconds);
     }
 
@@ -73,10 +73,9 @@ public class PerformanceMonitor {
 
         logger.info("PerformanceMonitor started");
 
-        GroupProperty slowOperationDetectorEnabled = node.getGroupProperties().SLOW_OPERATION_DETECTOR_ENABLED;
-        if (!slowOperationDetectorEnabled.getBoolean()) {
-            logger.info("To enable the SlowOperationDetector in the Performance log, set the following property: "
-                    + "-D" + slowOperationDetectorEnabled.getName() + "=true");
+        if (!node.getGroupProperties().getBoolean(GroupProperty.SLOW_OPERATION_DETECTOR_ENABLED)) {
+            logger.info(format("To enable the SlowOperationDetector in the Performance log,"
+                    + " set the following property: -D%s=true", GroupProperty.SLOW_OPERATION_DETECTOR_ENABLED));
         }
 
         monitorThread.start();

@@ -4,6 +4,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.DefaultNodeExtension;
 import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.impl.MetricsRegistryImpl;
@@ -62,9 +63,9 @@ public abstract class AbstractClassicOperationExecutorTest extends HazelcastTest
 
         serializationService = new DefaultSerializationServiceBuilder().build();
         config = new Config();
-        config.setProperty(GroupProperties.PROP_PARTITION_COUNT, "10");
-        config.setProperty(GroupProperties.PROP_PARTITION_OPERATION_THREAD_COUNT, "10");
-        config.setProperty(GroupProperties.PROP_GENERIC_OPERATION_THREAD_COUNT, "10");
+        config.setProperty(GroupProperty.PARTITION_COUNT, "10");
+        config.setProperty(GroupProperty.PARTITION_OPERATION_THREAD_COUNT, "10");
+        config.setProperty(GroupProperty.GENERIC_OPERATION_THREAD_COUNT, "10");
         thisAddress = new Address("localhost", 5701);
         threadGroup = new HazelcastThreadGroup(
                 "foo",

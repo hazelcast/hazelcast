@@ -1,5 +1,6 @@
 package com.hazelcast.spi.impl.operationexecutor.classic;
 
+import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -9,7 +10,6 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
@@ -19,13 +19,13 @@ public class ClassicOperationExecutorTest extends AbstractClassicOperationExecut
     public void testConstruction() {
         initExecutor();
 
-        assertEquals(groupProperties.PARTITION_COUNT.getInteger(), executor.getPartitionOperationRunners().length);
+        assertEquals(groupProperties.getInteger(GroupProperty.PARTITION_COUNT), executor.getPartitionOperationRunners().length);
         assertEquals(executor.getGenericOperationThreadCount(), executor.getGenericOperationRunners().length);
 
-        assertEquals(groupProperties.PARTITION_OPERATION_THREAD_COUNT.getInteger(),
+        assertEquals(groupProperties.getInteger(GroupProperty.PARTITION_OPERATION_THREAD_COUNT),
                 executor.getPartitionOperationThreadCount());
 
-        assertEquals(groupProperties.GENERIC_OPERATION_THREAD_COUNT.getInteger(),
+        assertEquals(groupProperties.getInteger(GroupProperty.GENERIC_OPERATION_THREAD_COUNT),
                 executor.getGenericOperationThreadCount());
     }
 

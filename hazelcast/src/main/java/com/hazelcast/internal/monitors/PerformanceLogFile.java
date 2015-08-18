@@ -20,6 +20,7 @@ import com.hazelcast.core.Member;
 import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.management.dto.SlowOperationDTO;
@@ -85,10 +86,10 @@ final class PerformanceLogFile {
         this.operationService = node.nodeEngine.getOperationService();
         this.pathname = getPathName();
         GroupProperties props = node.getGroupProperties();
-        this.maxRollingFileCount = props.PERFORMANCE_MONITOR_MAX_ROLLED_FILE_COUNT.getInteger();
+        this.maxRollingFileCount = props.getInteger(GroupProperty.PERFORMANCE_MONITOR_MAX_ROLLED_FILE_COUNT);
 
         // we accept a float so it becomes easier to testing to create a small file.
-        this.maxRollingFileSizeBytes = round(ONE_MB * props.PERFORMANCE_MONITOR_MAX_ROLLED_FILE_SIZE.getFloat());
+        this.maxRollingFileSizeBytes = round(ONE_MB * props.getFloat(GroupProperty.PERFORMANCE_MONITOR_MAX_ROLLED_FILE_SIZE_MB));
 
         if (logger.isFinestEnabled()) {
             logger.finest("max rolling file size: " + maxRollingFileSizeBytes);

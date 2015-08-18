@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.recordstore;
 
+import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
@@ -269,6 +270,6 @@ class BasicRecordStoreLoader implements RecordStoreLoader {
     }
 
     private int getLoadBatchSize() {
-        return mapServiceContext.getNodeEngine().getGroupProperties().MAP_LOAD_CHUNK_SIZE.getInteger();
+        return mapServiceContext.getNodeEngine().getGroupProperties().getInteger(GroupProperty.MAP_LOAD_CHUNK_SIZE);
     }
 }

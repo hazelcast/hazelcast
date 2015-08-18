@@ -9,7 +9,7 @@ import com.hazelcast.config.PartitionGroupConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.Member;
-import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
@@ -77,16 +77,16 @@ public class MulticastJoinTest extends AbstractJoinTest {
     @Test
     public void test_whenDifferentGroupNames() throws Exception {
         Config config1 = new Config();
-        config1.setProperty(GroupProperties.PROP_WAIT_SECONDS_BEFORE_JOIN, "0");
-        config1.setProperty(GroupProperties.PROP_MAX_JOIN_SECONDS, "3");
+        config1.setProperty(GroupProperty.WAIT_SECONDS_BEFORE_JOIN, "0");
+        config1.setProperty(GroupProperty.MAX_JOIN_SECONDS, "3");
         config1.getGroupConfig().setName("group1");
         config1.getNetworkConfig().getJoin().getMulticastConfig()
                 .setEnabled(true).setMulticastTimeoutSeconds(3);
         config1.getNetworkConfig().getJoin().getTcpIpConfig().setEnabled(false);
 
         Config config2 = new Config();
-        config2.setProperty(GroupProperties.PROP_WAIT_SECONDS_BEFORE_JOIN, "0");
-        config2.setProperty(GroupProperties.PROP_MAX_JOIN_SECONDS, "3");
+        config2.setProperty(GroupProperty.WAIT_SECONDS_BEFORE_JOIN, "0");
+        config2.setProperty(GroupProperty.MAX_JOIN_SECONDS, "3");
         config2.getGroupConfig().setName("group2");
         config2.getNetworkConfig().getJoin().getMulticastConfig()
                 .setEnabled(true).setMulticastTimeoutSeconds(3);
@@ -98,16 +98,16 @@ public class MulticastJoinTest extends AbstractJoinTest {
     @Test
     public void test_whenSameGroupNamesButDifferentPassword() throws Exception {
         Config config1 = new Config();
-        config1.setProperty(GroupProperties.PROP_WAIT_SECONDS_BEFORE_JOIN, "0");
-        config1.setProperty(GroupProperties.PROP_MAX_JOIN_SECONDS, "3");
+        config1.setProperty(GroupProperty.WAIT_SECONDS_BEFORE_JOIN, "0");
+        config1.setProperty(GroupProperty.MAX_JOIN_SECONDS, "3");
         config1.getGroupConfig().setName("group").setPassword("password1");
         config1.getNetworkConfig().getJoin().getMulticastConfig()
                 .setEnabled(true).setMulticastTimeoutSeconds(3);
         config1.getNetworkConfig().getJoin().getTcpIpConfig().setEnabled(false);
 
         Config config2 = new Config();
-        config2.setProperty(GroupProperties.PROP_WAIT_SECONDS_BEFORE_JOIN, "0");
-        config2.setProperty(GroupProperties.PROP_MAX_JOIN_SECONDS, "3");
+        config2.setProperty(GroupProperty.WAIT_SECONDS_BEFORE_JOIN, "0");
+        config2.setProperty(GroupProperty.MAX_JOIN_SECONDS, "3");
         config2.getGroupConfig().setName("group").setPassword("password2");
         config2.getNetworkConfig().getJoin().getMulticastConfig()
                 .setEnabled(true).setMulticastTimeoutSeconds(3);
@@ -119,8 +119,8 @@ public class MulticastJoinTest extends AbstractJoinTest {
     @Test
     public void test_whenIncompatiblePartitionGroups() throws Exception {
         Config config1 = new Config();
-        config1.setProperty(GroupProperties.PROP_WAIT_SECONDS_BEFORE_JOIN, "0");
-        config1.setProperty(GroupProperties.PROP_MAX_JOIN_SECONDS, "3");
+        config1.setProperty(GroupProperty.WAIT_SECONDS_BEFORE_JOIN, "0");
+        config1.setProperty(GroupProperty.MAX_JOIN_SECONDS, "3");
         config1.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(true);
         config1.getNetworkConfig().getJoin().getMulticastConfig().setMulticastTimeoutSeconds(3);
         config1.getNetworkConfig().getJoin().getTcpIpConfig().setEnabled(false);
@@ -128,8 +128,8 @@ public class MulticastJoinTest extends AbstractJoinTest {
                 .setGroupType(PartitionGroupConfig.MemberGroupType.HOST_AWARE);
 
         Config config2 = new Config();
-        config2.setProperty(GroupProperties.PROP_WAIT_SECONDS_BEFORE_JOIN, "0");
-        config2.setProperty(GroupProperties.PROP_MAX_JOIN_SECONDS, "3");
+        config2.setProperty(GroupProperty.WAIT_SECONDS_BEFORE_JOIN, "0");
+        config2.setProperty(GroupProperty.MAX_JOIN_SECONDS, "3");
         config2.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(true);
         config2.getNetworkConfig().getJoin().getMulticastConfig().setMulticastTimeoutSeconds(3);
         config2.getNetworkConfig().getJoin().getTcpIpConfig().setEnabled(false);
@@ -144,21 +144,21 @@ public class MulticastJoinTest extends AbstractJoinTest {
     @Test
     public void test_issue247() throws Exception {
         Config c1 = new Config();
-        c1.setProperty(GroupProperties.PROP_WAIT_SECONDS_BEFORE_JOIN, "0");
+        c1.setProperty(GroupProperty.WAIT_SECONDS_BEFORE_JOIN, "0");
         c1.getNetworkConfig().setPort(5701).setPortAutoIncrement(false);
         c1.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
         c1.getNetworkConfig().getJoin().getTcpIpConfig()
                 .setEnabled(true).clear().addMember("127.0.0.1:5701");
 
         Config c2 = new Config();
-        c2.setProperty(GroupProperties.PROP_WAIT_SECONDS_BEFORE_JOIN, "0");
+        c2.setProperty(GroupProperty.WAIT_SECONDS_BEFORE_JOIN, "0");
         c2.getNetworkConfig().setPort(5702).setPortAutoIncrement(false);
         c2.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
         c2.getNetworkConfig().getJoin().getTcpIpConfig()
                 .setEnabled(true).clear().addMember("127.0.0.1:5702");
 
         Config c3 = new Config();
-        c3.setProperty(GroupProperties.PROP_WAIT_SECONDS_BEFORE_JOIN, "0");
+        c3.setProperty(GroupProperty.WAIT_SECONDS_BEFORE_JOIN, "0");
         c3.getNetworkConfig().setPort(5703).setPortAutoIncrement(false);
         c3.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
         c3.getNetworkConfig().getJoin().getTcpIpConfig()

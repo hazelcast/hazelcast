@@ -20,7 +20,7 @@ import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.tcp.nonblocking.NonBlockingSocketReader;
 import com.hazelcast.nio.tcp.TcpIpConnection;
@@ -73,8 +73,8 @@ public class IndependentBufferSizingTest extends HazelcastTestSupport {
         int sendBufferSizeKB = 4;
 
         Config config = new Config();
-        config.setProperty(GroupProperties.PROP_SOCKET_CLIENT_RECEIVE_BUFFER_SIZE, Integer.toString(receiveBufferSizeKB));
-        config.setProperty(GroupProperties.PROP_SOCKET_CLIENT_SEND_BUFFER_SIZE, Integer.toString(sendBufferSizeKB));
+        config.setProperty(GroupProperty.SOCKET_CLIENT_RECEIVE_BUFFER_SIZE, Integer.toString(receiveBufferSizeKB));
+        config.setProperty(GroupProperty.SOCKET_CLIENT_SEND_BUFFER_SIZE, Integer.toString(sendBufferSizeKB));
 
         HazelcastInstance server = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance client = HazelcastClient.newHazelcastClient();
@@ -89,12 +89,12 @@ public class IndependentBufferSizingTest extends HazelcastTestSupport {
 
     private int getDefaultSendBufferSize(HazelcastInstance instance) {
         Node node = getNode(instance);
-        return node.getGroupProperties().SOCKET_SEND_BUFFER_SIZE.getInteger() * 1024;
+        return node.getGroupProperties().getInteger(GroupProperty.SOCKET_SEND_BUFFER_SIZE) * 1024;
     }
 
     private int getDefaultReceiverBufferSize(HazelcastInstance instance) {
         Node node = getNode(instance);
-        return node.getGroupProperties().SOCKET_RECEIVE_BUFFER_SIZE.getInteger() * 1024;
+        return node.getGroupProperties().getInteger(GroupProperty.SOCKET_RECEIVE_BUFFER_SIZE) * 1024;
     }
 
     private TcpIpConnection getClientConnection(HazelcastInstance server) {

@@ -123,7 +123,7 @@ public class DefaultNodeExtension implements NodeExtension {
     }
 
     protected PartitioningStrategy getPartitioningStrategy(ClassLoader configClassLoader) throws Exception {
-        String partitioningStrategyClassName = node.groupProperties.PARTITIONING_STRATEGY_CLASS.getString();
+        String partitioningStrategyClassName = node.groupProperties.getString(GroupProperty.PARTITIONING_STRATEGY_CLASS);
         if (partitioningStrategyClassName != null && partitioningStrategyClassName.length() > 0) {
             return ClassLoaderUtil.newInstance(configClassLoader, partitioningStrategyClassName);
         } else {

@@ -31,6 +31,11 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.instance.GroupProperty.SLOW_OPERATION_DETECTOR_ENABLED;
+import static com.hazelcast.instance.GroupProperty.SLOW_OPERATION_DETECTOR_LOG_PURGE_INTERVAL_SECONDS;
+import static com.hazelcast.instance.GroupProperty.SLOW_OPERATION_DETECTOR_LOG_RETENTION_SECONDS;
+import static com.hazelcast.instance.GroupProperty.SLOW_OPERATION_DETECTOR_STACK_TRACE_LOGGING_ENABLED;
+import static com.hazelcast.instance.GroupProperty.SLOW_OPERATION_DETECTOR_THRESHOLD_MILLIS;
 import static java.lang.String.format;
 
 /**
@@ -74,10 +79,10 @@ public final class SlowOperationDetector {
 
         this.logger = loggingServices.getLogger(SlowOperationDetector.class);
 
-        this.slowOperationThresholdNanos = getMillisAsNanos(groupProperties.SLOW_OPERATION_DETECTOR_THRESHOLD_MILLIS);
-        this.logPurgeIntervalNanos = getSecAsNanos(groupProperties.SLOW_OPERATION_DETECTOR_LOG_PURGE_INTERVAL_SECONDS);
-        this.logRetentionNanos = getSecAsNanos(groupProperties.SLOW_OPERATION_DETECTOR_LOG_RETENTION_SECONDS);
-        this.isStackTraceLoggingEnabled = groupProperties.SLOW_OPERATION_DETECTOR_STACK_TRACE_LOGGING_ENABLED.getBoolean();
+        this.slowOperationThresholdNanos = groupProperties.getNanos(SLOW_OPERATION_DETECTOR_THRESHOLD_MILLIS);
+        this.logPurgeIntervalNanos = groupProperties.getNanos(SLOW_OPERATION_DETECTOR_LOG_PURGE_INTERVAL_SECONDS);
+        this.logRetentionNanos = groupProperties.getNanos(SLOW_OPERATION_DETECTOR_LOG_RETENTION_SECONDS);
+        this.isStackTraceLoggingEnabled = groupProperties.getBoolean(SLOW_OPERATION_DETECTOR_STACK_TRACE_LOGGING_ENABLED);
 
         this.genericOperationRunners = genericOperationRunners;
         this.partitionOperationRunners = partitionOperationRunners;
@@ -100,14 +105,6 @@ public final class SlowOperationDetector {
         detectorThread.shutdown();
     }
 
-    private long getMillisAsNanos(GroupProperties.GroupProperty groupProperty) {
-        return TimeUnit.MILLISECONDS.toNanos(groupProperty.getInteger());
-    }
-
-    private long getSecAsNanos(GroupProperties.GroupProperty groupProperty) {
-        return TimeUnit.SECONDS.toNanos(groupProperty.getInteger());
-    }
-
     private CurrentOperationData[] initCurrentOperationData(OperationRunner[] operationRunners) {
         CurrentOperationData[] currentOperationDataArray = new CurrentOperationData[operationRunners.length];
         for (int i = 0; i < currentOperationDataArray.length; i++) {
@@ -118,9 +115,9 @@ public final class SlowOperationDetector {
     }
 
     private DetectorThread initDetectorThread(HazelcastThreadGroup hazelcastThreadGroup,
-                                                           GroupProperties groupProperties) {
+                                              GroupProperties groupProperties) {
         DetectorThread thread = new DetectorThread(hazelcastThreadGroup);
-        if (groupProperties.SLOW_OPERATION_DETECTOR_ENABLED.getBoolean()) {
+        if (groupProperties.getBoolean(SLOW_OPERATION_DETECTOR_ENABLED)) {
             thread.start();
         } else {
             logger.warning("The SlowOperationDetector is disabled! Slow operations will not be reported.");
@@ -264,9 +261,8 @@ public final class SlowOperationDetector {
         private void logWithConfigHint(SlowOperationLog log) {
             // print a hint once how to enable logging of stacktraces
             logger.warning(format("Slow operation detected: %s"
-                            + "%nHint: You can enable the logging of stacktraces with the following config property: "
-                            + GroupProperties.PROP_SLOW_OPERATION_DETECTOR_STACK_TRACE_LOGGING_ENABLED,
-                    log.operation));
+                            + "%nHint: You can enable the logging of stacktraces with the following system property: -D%s",
+                    log.operation, SLOW_OPERATION_DETECTOR_STACK_TRACE_LOGGING_ENABLED));
             isFirstLog = false;
         }
 

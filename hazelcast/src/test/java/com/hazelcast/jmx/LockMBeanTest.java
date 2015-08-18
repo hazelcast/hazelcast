@@ -22,7 +22,7 @@ import org.junit.runner.RunWith;
 @Category({QuickTest.class, ParallelTest.class})
 public class LockMBeanTest extends HazelcastTestSupport {
 
-    private JmxTestDataHolder holder = new JmxTestDataHolder(createHazelcastInstanceFactory(1));
+    private MBeanDataHolder holder = new MBeanDataHolder(createHazelcastInstanceFactory(1));
     private ILock lock = holder.getHz().getLock("lock");
 
     @Before

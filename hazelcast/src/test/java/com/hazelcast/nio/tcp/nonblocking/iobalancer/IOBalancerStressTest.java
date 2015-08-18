@@ -20,7 +20,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
-import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.nio.tcp.nonblocking.NonBlockingIOThread;
 import com.hazelcast.nio.tcp.nonblocking.MigratableHandler;
@@ -63,8 +63,8 @@ public class IOBalancerStressTest extends HazelcastTestSupport {
     @Test
     public void testEachConnectionUseDifferentSelectorEventually() {
         Config config = new Config();
-        config.setProperty(GroupProperties.PROP_IO_BALANCER_INTERVAL_SECONDS, "1");
-        config.setProperty(GroupProperties.PROP_IO_THREAD_COUNT, "2");
+        config.setProperty(GroupProperty.IO_BALANCER_INTERVAL_SECONDS, "1");
+        config.setProperty(GroupProperty.IO_THREAD_COUNT, "2");
 
         HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance instance2 = Hazelcast.newHazelcastInstance(config);

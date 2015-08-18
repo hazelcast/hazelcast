@@ -32,7 +32,7 @@ import com.hazelcast.core.MapStore;
 import com.hazelcast.core.MapStoreAdapter;
 import com.hazelcast.core.MapStoreFactory;
 import com.hazelcast.core.PostProcessingMapStore;
-import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.instance.TestUtil;
 import com.hazelcast.map.AbstractEntryProcessor;
 import com.hazelcast.map.impl.MapContainer;
@@ -78,7 +78,6 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-
 
 /**
  * @author enesakar 1/21/13
@@ -777,9 +776,8 @@ public class MapStoreTest extends HazelcastTestSupport {
 
     private Config createChunkedMapLoaderConfig(String mapName, int chunkSize, ChunkedLoader chunkedLoader) {
         Config cfg = new Config();
-        cfg.setProperty(GroupProperties.PROP_PARTITION_COUNT, "1");
-        cfg.setProperty(GroupProperties.PROP_MAP_LOAD_CHUNK_SIZE, String.valueOf(chunkSize));
-
+        cfg.setProperty(GroupProperty.PARTITION_COUNT, "1");
+        cfg.setProperty(GroupProperty.MAP_LOAD_CHUNK_SIZE, String.valueOf(chunkSize));
 
         MapStoreConfig mapStoreConfig = new MapStoreConfig();
         mapStoreConfig.setEnabled(true);

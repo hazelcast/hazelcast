@@ -2,6 +2,7 @@ package com.hazelcast.internal.monitors;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.internal.metrics.DoubleProbeFunction;
 import com.hazelcast.internal.metrics.Metric;
 import com.hazelcast.internal.metrics.MetricsRegistry;
@@ -13,14 +14,13 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.instance.GroupProperties.PROP_HEALTH_MONITORING_DELAY_SECONDS;
-import static com.hazelcast.instance.GroupProperties.PROP_HEALTH_MONITORING_LEVEL;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class HealthMonitorTest extends HazelcastTestSupport {
+
     private HealthMonitor healthMonitor;
     private HealthMonitor.HealthMetrics metrics;
     private MetricsRegistry metricsRegistry;
@@ -28,8 +28,8 @@ public class HealthMonitorTest extends HazelcastTestSupport {
     @Before
     public void setup() {
         Config config = new Config();
-        config.setProperty(PROP_HEALTH_MONITORING_LEVEL, HealthMonitorLevel.NOISY.toString());
-        config.setProperty(PROP_HEALTH_MONITORING_DELAY_SECONDS, "1");
+        config.setProperty(GroupProperty.HEALTH_MONITORING_LEVEL, HealthMonitorLevel.NOISY.toString());
+        config.setProperty(GroupProperty.HEALTH_MONITORING_DELAY_SECONDS, "1");
 
         HazelcastInstance hz = createHazelcastInstance(config);
         healthMonitor = new HealthMonitor(getNode(hz));

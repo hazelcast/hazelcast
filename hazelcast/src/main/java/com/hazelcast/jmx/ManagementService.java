@@ -19,6 +19,7 @@ package com.hazelcast.jmx;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.DistributedObjectEvent;
 import com.hazelcast.core.DistributedObjectListener;
+import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.logging.ILogger;
 
@@ -52,7 +53,7 @@ public class ManagementService implements DistributedObjectListener {
     public ManagementService(HazelcastInstanceImpl instance) {
         this.instance = instance;
         this.logger = instance.getLoggingService().getLogger(getClass());
-        this.enabled = instance.node.groupProperties.ENABLE_JMX.getBoolean();
+        this.enabled = instance.node.groupProperties.getBoolean(GroupProperty.ENABLE_JMX);
         if (!enabled) {
             this.instanceMBean = null;
             this.registrationId = null;

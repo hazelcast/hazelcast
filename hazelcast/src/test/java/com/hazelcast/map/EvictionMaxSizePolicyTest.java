@@ -6,7 +6,7 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MaxSizeConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
-import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.map.impl.recordstore.DefaultRecordStore;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
@@ -278,7 +278,7 @@ public class EvictionMaxSizePolicyTest extends HazelcastTestSupport {
 
     private Config createConfig(MaxSizeConfig.MaxSizePolicy maxSizePolicy, int maxSize, String mapName) {
         Config config = new Config();
-        config.setProperty(GroupProperties.PROP_PARTITION_COUNT, String.valueOf(PARTITION_COUNT));
+        config.setProperty(GroupProperty.PARTITION_COUNT, String.valueOf(PARTITION_COUNT));
 
         MapConfig mapConfig = config.getMapConfig(mapName);
         mapConfig.setEvictionPolicy(EvictionPolicy.LRU);

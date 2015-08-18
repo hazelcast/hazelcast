@@ -10,19 +10,17 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.concurrent.ExecutionException;
 
-import static com.hazelcast.instance.GroupProperties.*;
+import static com.hazelcast.instance.GroupProperty.BACKPRESSURE_ENABLED;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.fail;
-
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
@@ -36,7 +34,7 @@ public class InvocationRegistryTest extends HazelcastTestSupport {
     @Before
     public void setup() {
         Config config = new Config();
-        config.setProperty(PROP_BACKPRESSURE_ENABLED, "false");
+        config.setProperty(BACKPRESSURE_ENABLED, "false");
         local = createHazelcastInstance(config);
         warmUpPartitions(local);
         nodeEngine = getNodeEngineImpl(local);

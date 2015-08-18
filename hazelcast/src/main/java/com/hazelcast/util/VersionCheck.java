@@ -19,6 +19,7 @@ package com.hazelcast.util;
 import com.hazelcast.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.core.ClientType;
+import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.instance.Node;
 import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.nio.IOUtil;
@@ -56,7 +57,7 @@ public final class VersionCheck {
     }
 
     public void check(final Node hazelcastNode, final String version, final boolean isEnterprise) {
-        if (!hazelcastNode.getGroupProperties().VERSION_CHECK_ENABLED.getBoolean()) {
+        if (!hazelcastNode.getGroupProperties().getBoolean(GroupProperty.VERSION_CHECK_ENABLED)) {
             return;
         }
         hazelcastNode.nodeEngine.getExecutionService().scheduleAtFixedRate(new Runnable() {

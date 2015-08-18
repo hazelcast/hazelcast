@@ -22,7 +22,7 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.Partition;
-import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -137,7 +137,7 @@ public class PartitionDistributionTest extends HazelcastTestSupport {
     }
 
     private void testPartitionDistribution(int partitionCount, int nodeCount, Config config) throws InterruptedException {
-        config.setProperty(GroupProperties.PROP_PARTITION_COUNT, String.valueOf(partitionCount));
+        config.setProperty(GroupProperty.PARTITION_COUNT, String.valueOf(partitionCount));
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(nodeCount);
         final BlockingQueue<Integer> counts = new ArrayBlockingQueue<Integer>(nodeCount);
         final HazelcastInstance[] instances = new HazelcastInstance[nodeCount];

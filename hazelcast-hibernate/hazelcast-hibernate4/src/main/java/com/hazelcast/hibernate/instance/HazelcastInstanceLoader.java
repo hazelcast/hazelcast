@@ -23,7 +23,7 @@ import com.hazelcast.core.DuplicateInstanceNameException;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.hibernate.CacheEnvironment;
-import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import org.hibernate.cache.CacheException;
@@ -99,7 +99,7 @@ class HazelcastInstanceLoader implements IHazelcastInstanceLoader {
         if (!shutDown) {
             LOGGER.warning(CacheEnvironment.SHUTDOWN_ON_STOP + " property is set to 'false'. "
                     + "Leaving current HazelcastInstance active! (Warning: Do not disable Hazelcast "
-                    + GroupProperties.PROP_SHUTDOWNHOOK_ENABLED + " property!)");
+                    + GroupProperty.SHUTDOWNHOOK_ENABLED + " property!)");
             return;
         }
         try {

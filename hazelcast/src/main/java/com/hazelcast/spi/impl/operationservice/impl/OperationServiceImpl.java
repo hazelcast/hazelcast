@@ -19,6 +19,7 @@ package com.hazelcast.spi.impl.operationservice.impl;
 import com.hazelcast.cluster.ClusterClock;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.management.dto.SlowOperationDTO;
@@ -134,7 +135,7 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
 
         this.invocationLogger = nodeEngine.getLogger(Invocation.class);
         GroupProperties groupProperties = node.getGroupProperties();
-        this.defaultCallTimeoutMillis = groupProperties.OPERATION_CALL_TIMEOUT_MILLIS.getLong();
+        this.defaultCallTimeoutMillis = groupProperties.getMillis(GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS);
         this.backpressureRegulator = new BackpressureRegulator(groupProperties, logger);
 
         int coreSize = Runtime.getRuntime().availableProcessors();

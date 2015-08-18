@@ -37,6 +37,7 @@ import com.hazelcast.core.ClientListener;
 import com.hazelcast.core.ClientType;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.Member;
+import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
@@ -144,7 +145,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
         final ExecutionService executionService = nodeEngine.getExecutionService();
         int coreSize = Runtime.getRuntime().availableProcessors();
 
-        int threadCount = node.getGroupProperties().CLIENT_ENGINE_THREAD_COUNT.getInteger();
+        int threadCount = node.getGroupProperties().getInteger(GroupProperty.CLIENT_ENGINE_THREAD_COUNT);
         if (threadCount <= 0) {
             threadCount = coreSize * THREADS_PER_CORE;
         }

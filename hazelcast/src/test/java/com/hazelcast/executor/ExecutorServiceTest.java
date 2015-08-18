@@ -29,7 +29,7 @@ import com.hazelcast.core.Member;
 import com.hazelcast.core.MemberSelector;
 import com.hazelcast.core.MultiExecutionCallback;
 import com.hazelcast.core.PartitionAware;
-import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.monitor.LocalExecutorStats;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -73,8 +73,6 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
     public static final int NODE_COUNT = 3;
 
     public static final int TASK_COUNT = 1000;
-
-
 
     /* ############ andThen ############ */
 
@@ -247,8 +245,6 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
         assertOpenEventually(callback.getLatch());
         assertTrue(callback.getResult() instanceof Throwable);
     }
-
-
 
     /* ############ submit runnable ############ */
 
@@ -457,8 +453,6 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
         assertEquals(NODE_COUNT * NODE_COUNT, nullResponseCount.get());
     }
 
-
-
     /* ############ submit callable ############ */
 
     /**
@@ -634,8 +628,6 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
         assertEquals(NODE_COUNT * NODE_COUNT, count.get());
     }
 
-
-
     /* ############ cancellation ############ */
 
     @Test
@@ -696,8 +688,6 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
         }
     }
 
-
-
     /* ############ future ############ */
 
     /**
@@ -755,8 +745,6 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
         assertOpenEventually(callback.getLatch());
         assertTrue(callback.getResult() instanceof Member);
     }
-
-
 
     /**
      * Execute a task that is executing
@@ -971,28 +959,25 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
         }
     }
 
-
     @Test
     public void testLongRunningCallable() throws ExecutionException, InterruptedException, TimeoutException {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
 
         Config config = new Config();
-        long callTimeout = 3000;
-        config.setProperty(GroupProperties.PROP_OPERATION_CALL_TIMEOUT_MILLIS, String.valueOf(callTimeout));
+        long callTimeoutMillis = 3000;
+        config.setProperty(GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS, String.valueOf(callTimeoutMillis));
 
         HazelcastInstance hz1 = factory.newHazelcastInstance(config);
         HazelcastInstance hz2 = factory.newHazelcastInstance(config);
 
         IExecutorService executor = hz1.getExecutorService("test");
         Future<Boolean> f = executor
-                .submitToMember(new SleepingTask(TimeUnit.MILLISECONDS.toSeconds(callTimeout) * 3),
+                .submitToMember(new SleepingTask(TimeUnit.MILLISECONDS.toSeconds(callTimeoutMillis) * 3),
                         hz2.getCluster().getLocalMember());
 
         Boolean result = f.get(1, TimeUnit.MINUTES);
         assertTrue(result);
     }
-
-
 
     static class ICountDownLatchAwaitCallable implements Callable<Boolean>, HazelcastInstanceAware, Serializable {
 
@@ -1043,6 +1028,4 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
             return "key";
         }
     }
-
 }
-

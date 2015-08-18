@@ -74,7 +74,6 @@ import com.hazelcast.core.Member;
 import com.hazelcast.core.MembershipListener;
 import com.hazelcast.core.MultiMap;
 import com.hazelcast.core.ReplicatedMap;
-import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.nio.SocketInterceptor;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
@@ -106,6 +105,8 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 
+import static com.hazelcast.instance.GroupProperty.MERGE_FIRST_RUN_DELAY_SECONDS;
+import static com.hazelcast.instance.GroupProperty.MERGE_NEXT_RUN_DELAY_SECONDS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -455,15 +456,16 @@ public class TestFullApplicationContext {
 
     @Test
     public void testProperties() {
-        final Properties properties = config.getProperties();
+        Properties properties = config.getProperties();
         assertNotNull(properties);
-        assertEquals("5", properties.get(GroupProperties.PROP_MERGE_FIRST_RUN_DELAY_SECONDS));
-        assertEquals("5", properties.get(GroupProperties.PROP_MERGE_NEXT_RUN_DELAY_SECONDS));
-        final Config config2 = instance.getConfig();
-        final Properties properties2 = config2.getProperties();
+        assertEquals("5", properties.get(MERGE_FIRST_RUN_DELAY_SECONDS.getName()));
+        assertEquals("5", properties.get(MERGE_NEXT_RUN_DELAY_SECONDS.getName()));
+
+        Config config2 = instance.getConfig();
+        Properties properties2 = config2.getProperties();
         assertNotNull(properties2);
-        assertEquals("5", properties2.get(GroupProperties.PROP_MERGE_FIRST_RUN_DELAY_SECONDS));
-        assertEquals("5", properties2.get(GroupProperties.PROP_MERGE_NEXT_RUN_DELAY_SECONDS));
+        assertEquals("5", properties2.get(MERGE_FIRST_RUN_DELAY_SECONDS.getName()));
+        assertEquals("5", properties2.get(MERGE_NEXT_RUN_DELAY_SECONDS.getName()));
     }
 
     @Test

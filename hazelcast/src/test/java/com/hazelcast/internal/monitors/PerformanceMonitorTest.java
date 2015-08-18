@@ -3,6 +3,7 @@ package com.hazelcast.internal.monitors;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.metrics.MetricsRegistry;
@@ -12,7 +13,6 @@ import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.Test;
@@ -25,12 +25,6 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.lang.reflect.Field;
 
-import static com.hazelcast.instance.GroupProperties.PROP_PERFORMANCE_MONITOR_DELAY_SECONDS;
-import static com.hazelcast.instance.GroupProperties.PROP_PERFORMANCE_MONITOR_ENABLED;
-import static com.hazelcast.instance.GroupProperties.PROP_PERFORMANCE_MONITOR_MAX_ROLLED_FILE_COUNT;
-import static com.hazelcast.instance.GroupProperties.PROP_PERFORMANCE_MONITOR_MAX_ROLLED_FILE_SIZE_MB;
-import static com.hazelcast.instance.GroupProperties.PROP_SLOW_OPERATION_DETECTOR_ENABLED;
-import static com.hazelcast.instance.GroupProperties.PROP_SLOW_OPERATION_DETECTOR_THRESHOLD_MILLIS;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -48,13 +42,13 @@ public class PerformanceMonitorTest extends HazelcastTestSupport {
     @Before
     public void setup() {
         Config config = new Config();
-        config.setProperty(PROP_PERFORMANCE_MONITOR_ENABLED, "true");
-        config.setProperty(PROP_PERFORMANCE_MONITOR_DELAY_SECONDS, "1");
-        config.setProperty(PROP_PERFORMANCE_MONITOR_MAX_ROLLED_FILE_SIZE_MB, "0.2");
-        config.setProperty(PROP_PERFORMANCE_MONITOR_MAX_ROLLED_FILE_COUNT, "3");
+        config.setProperty(GroupProperty.PERFORMANCE_MONITOR_ENABLED, "true");
+        config.setProperty(GroupProperty.PERFORMANCE_MONITOR_DELAY_SECONDS, "1");
+        config.setProperty(GroupProperty.PERFORMANCE_MONITOR_MAX_ROLLED_FILE_SIZE_MB, "0.2");
+        config.setProperty(GroupProperty.PERFORMANCE_MONITOR_MAX_ROLLED_FILE_COUNT, "3");
 
-        config.setProperty(PROP_SLOW_OPERATION_DETECTOR_ENABLED, "true");
-        config.setProperty(PROP_SLOW_OPERATION_DETECTOR_THRESHOLD_MILLIS, "2000");
+        config.setProperty(GroupProperty.SLOW_OPERATION_DETECTOR_ENABLED, "true");
+        config.setProperty(GroupProperty.SLOW_OPERATION_DETECTOR_THRESHOLD_MILLIS, "2000");
 
         hz = createHazelcastInstance(config);
 
@@ -80,7 +74,7 @@ public class PerformanceMonitorTest extends HazelcastTestSupport {
     @Test
     public void testDisabledByDefault() {
         GroupProperties groupProperties = new GroupProperties(new Config());
-        assertFalse(groupProperties.PERFORMANCE_MONITOR_ENABLED.getBoolean());
+        assertFalse(groupProperties.getBoolean(GroupProperty.PERFORMANCE_MONITOR_ENABLED));
     }
 
     @Test

@@ -22,6 +22,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IExecutorService;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.core.PartitionAware;
+import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.monitor.LocalExecutorStats;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -37,7 +38,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static com.hazelcast.instance.GroupProperties.PROP_OPERATION_CALL_TIMEOUT_MILLIS;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
@@ -123,7 +123,7 @@ public class SpecificSetupTest extends ExecutorServiceTestSupport {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         Config config = new Config();
         int timeoutSeconds = 3;
-        config.setProperty(PROP_OPERATION_CALL_TIMEOUT_MILLIS, String.valueOf(SECONDS.toMillis(timeoutSeconds)));
+        config.setProperty(GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS, String.valueOf(SECONDS.toMillis(timeoutSeconds)));
         HazelcastInstance hz1 = factory.newHazelcastInstance(config);
         HazelcastInstance hz2 = factory.newHazelcastInstance(config);
         IExecutorService executor = hz1.getExecutorService(randomString());

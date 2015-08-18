@@ -19,7 +19,7 @@ package com.hazelcast.map;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
-import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.instance.TestUtil;
 import com.hazelcast.monitor.LocalMapStats;
@@ -282,7 +282,7 @@ public class BackupTest extends HazelcastTestSupport {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(nodeCount);
         final String name = MAP_NAME;
         final Config config = new Config();
-        config.setProperty(GroupProperties.PROP_PARTITION_BACKUP_SYNC_INTERVAL, "5");
+        config.setProperty(GroupProperty.PARTITION_BACKUP_SYNC_INTERVAL, "5");
         config.getMapConfig(name).setBackupCount(backupCount).setStatisticsEnabled(true);
 
         final HazelcastInstance[] instances = new HazelcastInstance[nodeCount];
@@ -310,7 +310,6 @@ public class BackupTest extends HazelcastTestSupport {
             TestUtil.terminateInstance(instances[ix]);
             instances[ix] = null;
             checkMapSizes(mapSize, backupCount, instances);
-
         }
     }
 
@@ -577,7 +576,7 @@ public class BackupTest extends HazelcastTestSupport {
     @Test
     public void testGracefulShutdown_Issue2804() {
         Config config = new Config();
-        config.setProperty(GroupProperties.PROP_PARTITION_COUNT, "1111");
+        config.setProperty(GroupProperty.PARTITION_COUNT, "1111");
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
 
         HazelcastInstance h1 = factory.newHazelcastInstance(config);

@@ -9,7 +9,7 @@ import com.hazelcast.core.ILock;
 import com.hazelcast.core.IQueue;
 import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.core.Partition;
-import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -79,7 +79,7 @@ public class InvocationTimeoutTest extends HazelcastTestSupport {
     @Test
     public void testWaitingIndefinitely() throws InterruptedException {
         final Config config = new Config();
-        config.setProperty(GroupProperties.PROP_OPERATION_CALL_TIMEOUT_MILLIS, "3000");
+        config.setProperty(GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS, "3000");
 
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         final HazelcastInstance[] instances = factory.newInstances(config);
@@ -116,7 +116,7 @@ public class InvocationTimeoutTest extends HazelcastTestSupport {
     @Test
     public void testWaitingInfinitelyForTryLock() throws InterruptedException {
         final Config config = new Config();
-        config.setProperty(GroupProperties.PROP_OPERATION_CALL_TIMEOUT_MILLIS, "3000");
+        config.setProperty(GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS, "3000");
         final HazelcastInstance hz = createHazelcastInstance(config);
         final CountDownLatch latch = new CountDownLatch(1);
 
@@ -170,11 +170,10 @@ public class InvocationTimeoutTest extends HazelcastTestSupport {
         }
     }
 
-
     @Test(expected = ExecutionException.class)
     public void testInvocationThrowsOperationTimeoutExceptionWhenTimeout() throws Exception {
         final Config config = new Config();
-        config.setProperty(GroupProperties.PROP_OPERATION_CALL_TIMEOUT_MILLIS, "300");
+        config.setProperty(GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS, "300");
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         HazelcastInstance local = factory.newHazelcastInstance(config);
         HazelcastInstance remote = factory.newHazelcastInstance(config);

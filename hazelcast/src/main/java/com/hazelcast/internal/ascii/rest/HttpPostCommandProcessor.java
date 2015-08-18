@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.ascii.rest;
 
+import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.internal.ascii.TextCommandService;
 
@@ -86,7 +87,7 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
     }
 
     private void handleManagementCenterUrlChange(HttpPostCommand command) throws UnsupportedEncodingException {
-        if (textCommandService.getNode().getGroupProperties().MC_URL_CHANGE_ENABLED.getBoolean()) {
+        if (textCommandService.getNode().getGroupProperties().getBoolean(GroupProperty.MC_URL_CHANGE_ENABLED)) {
             byte[] res = HttpCommand.RES_204;
             byte[] data = command.getData();
             String[] strList = bytesToString(data).split("&");

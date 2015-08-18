@@ -22,7 +22,7 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MemberLeftException;
-import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
@@ -312,12 +312,12 @@ public class MemberListTest {
     private static Config buildConfig(boolean multicastEnabled) {
         Config c = new Config();
         c.getGroupConfig().setName("group").setPassword("pass");
-        c.setProperty(GroupProperties.PROP_MERGE_FIRST_RUN_DELAY_SECONDS, "10");
-        c.setProperty(GroupProperties.PROP_MERGE_NEXT_RUN_DELAY_SECONDS, "5");
-        c.setProperty(GroupProperties.PROP_MAX_NO_HEARTBEAT_SECONDS, "10");
-        c.setProperty(GroupProperties.PROP_MASTER_CONFIRMATION_INTERVAL_SECONDS, "2");
-        c.setProperty(GroupProperties.PROP_MAX_NO_MASTER_CONFIRMATION_SECONDS, "10");
-        c.setProperty(GroupProperties.PROP_MEMBER_LIST_PUBLISH_INTERVAL_SECONDS, "10");
+        c.setProperty(GroupProperty.MERGE_FIRST_RUN_DELAY_SECONDS, "10");
+        c.setProperty(GroupProperty.MERGE_NEXT_RUN_DELAY_SECONDS, "5");
+        c.setProperty(GroupProperty.MAX_NO_HEARTBEAT_SECONDS, "10");
+        c.setProperty(GroupProperty.MASTER_CONFIRMATION_INTERVAL_SECONDS, "2");
+        c.setProperty(GroupProperty.MAX_NO_MASTER_CONFIRMATION_SECONDS, "10");
+        c.setProperty(GroupProperty.MEMBER_LIST_PUBLISH_INTERVAL_SECONDS, "10");
         final NetworkConfig networkConfig = c.getNetworkConfig();
         networkConfig.getJoin().getMulticastConfig().setEnabled(multicastEnabled);
         networkConfig.getJoin().getTcpIpConfig().setEnabled(!multicastEnabled);

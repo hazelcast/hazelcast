@@ -43,6 +43,7 @@ import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MembershipListener;
 import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.LifecycleServiceImpl;
 import com.hazelcast.instance.MemberImpl;
@@ -170,7 +171,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
 
     private final boolean icmpEnabled;
     private final int icmpTtl;
-    private final int icmpTimeout;
+    private final int icmpTimeoutMillis;
 
     private final ExceptionHandler whileFinalizeJoinsExceptionHandler;
 
@@ -201,29 +202,25 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         setMembers(thisMember);
         sendMembershipEvents(Collections.<MemberImpl>emptySet(), Collections.singleton(thisMember));
 
-        maxWaitMillisBeforeJoin = getAsMilliSeconds(node.groupProperties.MAX_WAIT_SECONDS_BEFORE_JOIN);
-        waitMillisBeforeJoin = getAsMilliSeconds(node.groupProperties.WAIT_SECONDS_BEFORE_JOIN);
-        maxNoHeartbeatMillis = getAsMilliSeconds(node.groupProperties.MAX_NO_HEARTBEAT_SECONDS);
-        maxNoMasterConfirmationMillis = getAsMilliSeconds(node.groupProperties.MAX_NO_MASTER_CONFIRMATION_SECONDS);
+        maxWaitMillisBeforeJoin = node.groupProperties.getMillis(GroupProperty.MAX_WAIT_SECONDS_BEFORE_JOIN);
+        waitMillisBeforeJoin = node.groupProperties.getMillis(GroupProperty.WAIT_SECONDS_BEFORE_JOIN);
+        maxNoHeartbeatMillis = node.groupProperties.getMillis(GroupProperty.MAX_NO_HEARTBEAT_SECONDS);
+        maxNoMasterConfirmationMillis = node.groupProperties.getMillis(GroupProperty.MAX_NO_MASTER_CONFIRMATION_SECONDS);
 
-        heartbeatIntervalMillis = getHeartBeatInterval(node.groupProperties.HEARTBEAT_INTERVAL_SECONDS);
+        heartbeatIntervalMillis = getHeartBeatInterval(node.groupProperties);
         pingIntervalMillis = heartbeatIntervalMillis * HEART_BEAT_INTERVAL_FACTOR;
 
-        icmpEnabled = node.groupProperties.ICMP_ENABLED.getBoolean();
-        icmpTtl = node.groupProperties.ICMP_TTL.getInteger();
-        icmpTimeout = node.groupProperties.ICMP_TIMEOUT.getInteger();
+        icmpEnabled = node.groupProperties.getBoolean(GroupProperty.ICMP_ENABLED);
+        icmpTtl = node.groupProperties.getInteger(GroupProperty.ICMP_TTL);
+        icmpTimeoutMillis = (int) node.groupProperties.getMillis(GroupProperty.ICMP_TIMEOUT);
 
         node.connectionManager.addConnectionListener(this);
 
         registerMetrics();
     }
 
-    private static long getAsMilliSeconds(GroupProperties.GroupProperty groupProperty) {
-        return TimeUnit.SECONDS.toMillis(groupProperty.getLong());
-    }
-
-    private static long getHeartBeatInterval(GroupProperties.GroupProperty groupProperty) {
-        long heartbeatInterval = getAsMilliSeconds(groupProperty);
+    private static long getHeartBeatInterval(GroupProperties groupProperties) {
+        long heartbeatInterval = groupProperties.getMillis(GroupProperty.HEARTBEAT_INTERVAL_SECONDS);
         return heartbeatInterval > 0 ? heartbeatInterval : TimeUnit.SECONDS.toMillis(1);
     }
 
@@ -251,13 +248,13 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
 
     @Override
     public void init(NodeEngine nodeEngine, Properties properties) {
-        long mergeFirstRunDelayMs = getAsMilliSeconds(node.getGroupProperties().MERGE_FIRST_RUN_DELAY_SECONDS);
+        long mergeFirstRunDelayMs = node.groupProperties.getMillis(GroupProperty.MERGE_FIRST_RUN_DELAY_SECONDS);
         mergeFirstRunDelayMs = (mergeFirstRunDelayMs > 0 ? mergeFirstRunDelayMs : DEFAULT_MERGE_RUN_DELAY_MILLIS);
 
         ExecutionService executionService = nodeEngine.getExecutionService();
         executionService.register(EXECUTOR_NAME, 2, MERGE_EXECUTOR_SERVICE_QUEUE_CAPACITY, ExecutorType.CACHED);
 
-        long mergeNextRunDelayMs = getAsMilliSeconds(node.getGroupProperties().MERGE_NEXT_RUN_DELAY_SECONDS);
+        long mergeNextRunDelayMs = node.groupProperties.getMillis(GroupProperty.MERGE_NEXT_RUN_DELAY_SECONDS);
         mergeNextRunDelayMs = (mergeNextRunDelayMs > 0 ? mergeNextRunDelayMs : DEFAULT_MERGE_RUN_DELAY_MILLIS);
         executionService.scheduleWithFixedDelay(EXECUTOR_NAME, new SplitBrainHandler(node),
                 mergeFirstRunDelayMs, mergeNextRunDelayMs, TimeUnit.MILLISECONDS);
@@ -268,7 +265,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
             }
         }, heartbeatIntervalMillis, heartbeatIntervalMillis, TimeUnit.MILLISECONDS);
 
-        long masterConfirmationInterval = node.groupProperties.MASTER_CONFIRMATION_INTERVAL_SECONDS.getInteger();
+        long masterConfirmationInterval = node.groupProperties.getSeconds(GroupProperty.MASTER_CONFIRMATION_INTERVAL_SECONDS);
         masterConfirmationInterval = (masterConfirmationInterval > 0 ? masterConfirmationInterval : 1);
         executionService.scheduleWithFixedDelay(EXECUTOR_NAME, new Runnable() {
             public void run() {
@@ -276,7 +273,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
             }
         }, masterConfirmationInterval, masterConfirmationInterval, TimeUnit.SECONDS);
 
-        long memberListPublishInterval = node.groupProperties.MEMBER_LIST_PUBLISH_INTERVAL_SECONDS.getInteger();
+        long memberListPublishInterval = node.groupProperties.getSeconds(GroupProperty.MEMBER_LIST_PUBLISH_INTERVAL_SECONDS);
         memberListPublishInterval = (memberListPublishInterval > 0 ? memberListPublishInterval : 1);
         executionService.scheduleWithFixedDelay(EXECUTOR_NAME, new Runnable() {
             public void run() {
@@ -465,7 +462,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
                     logger.warning(format("%s will ping %s", thisAddress, address));
                     for (int i = 0; i < MAX_PING_RETRY_COUNT; i++) {
                         try {
-                            if (address.getInetAddress().isReachable(null, icmpTtl, icmpTimeout)) {
+                            if (address.getInetAddress().isReachable(null, icmpTtl, icmpTimeoutMillis)) {
                                 logger.info(format("%s pinged %s successfully", thisAddress, address));
                                 return;
                             }
@@ -1557,10 +1554,10 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
                 Future f = nodeEngine.getExecutionService().submit("hz:system", task);
                 futures.add(f);
             }
-            long callTimeout = node.groupProperties.OPERATION_CALL_TIMEOUT_MILLIS.getLong();
+            long callTimeoutMillis = node.groupProperties.getMillis(GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS);
             for (Future f : futures) {
                 try {
-                    waitOnFutureInterruptible(f, callTimeout, TimeUnit.MILLISECONDS);
+                    waitOnFutureInterruptible(f, callTimeoutMillis, TimeUnit.MILLISECONDS);
                 } catch (HazelcastInstanceNotActiveException e) {
                     EmptyStatement.ignore(e);
                 } catch (Exception e) {

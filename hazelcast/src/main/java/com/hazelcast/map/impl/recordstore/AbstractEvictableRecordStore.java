@@ -19,7 +19,7 @@ package com.hazelcast.map.impl.recordstore;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.EntryView;
-import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.eviction.EvictionOperator;
@@ -31,7 +31,6 @@ import com.hazelcast.spi.NodeEngine;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
-import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.map.impl.ExpirationTimeSetter.calculateExpirationWithDelay;
 import static com.hazelcast.map.impl.ExpirationTimeSetter.calculateMaxIdleMillis;
@@ -97,14 +96,11 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
     }
 
     /**
-     * @see com.hazelcast.instance.GroupProperties#PROP_MAP_EXPIRY_DELAY_SECONDS
+     * @see com.hazelcast.instance.GroupProperty#MAP_EXPIRY_DELAY_SECONDS
      */
     private long getBackupExpiryDelayMillis() {
         NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
-        GroupProperties groupProperties = nodeEngine.getGroupProperties();
-        GroupProperties.GroupProperty delaySecondsProperty = groupProperties.MAP_EXPIRY_DELAY_SECONDS;
-        int delaySeconds = delaySecondsProperty.getInteger();
-        return TimeUnit.SECONDS.toMillis(delaySeconds);
+        return nodeEngine.getGroupProperties().getMillis(GroupProperty.MAP_EXPIRY_DELAY_SECONDS);
     }
 
     @Override

@@ -27,8 +27,8 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-import static com.hazelcast.instance.GroupProperties.PROP_APPLICATION_VALIDATION_TOKEN;
-import static com.hazelcast.instance.GroupProperties.PROP_PARTITION_COUNT;
+import static com.hazelcast.instance.GroupProperty.APPLICATION_VALIDATION_TOKEN;
+import static com.hazelcast.instance.GroupProperty.PARTITION_COUNT;
 
 /**
  * Contains enough information about Hazelcast Config, to do a validation check so that clusters with different configurations
@@ -60,11 +60,11 @@ public final class ConfigCheck implements IdentifiedDataSerializable {
     public ConfigCheck(Config config, String joinerType) {
         this.joinerType = joinerType;
 
-        // Copying all properties relevant for checking.
-        this.properties.put(PROP_PARTITION_COUNT, config.getProperty(PROP_PARTITION_COUNT));
-        this.properties.put(PROP_APPLICATION_VALIDATION_TOKEN, config.getProperty(PROP_APPLICATION_VALIDATION_TOKEN));
+        // Copying all properties relevant for checking
+        properties.put(PARTITION_COUNT.getName(), config.getProperty(PARTITION_COUNT));
+        properties.put(APPLICATION_VALIDATION_TOKEN.getName(), config.getProperty(APPLICATION_VALIDATION_TOKEN));
 
-        // Copying group-config settings/
+        // Copying group-config settings
         GroupConfig groupConfig = config.getGroupConfig();
         if (groupConfig != null) {
             this.groupName = groupConfig.getName();
@@ -84,12 +84,12 @@ public final class ConfigCheck implements IdentifiedDataSerializable {
     }
 
     /**
-     * Checks if 2 Hazelcast configurations are compatible.
+     * Checks if two Hazelcast configurations are compatible.
      *
      * @param found
      * @return true if compatible. False if part of another group.
-     * @throws ConfigMismatchException if the configuration isn't compatible. An exception is thrown so
-     *                                                       we can pass a nice message.
+     * @throws ConfigMismatchException if the configuration is not compatible.
+     * An exception is thrown so we can pass a nice message.
      */
     public boolean isCompatible(ConfigCheck found) {
         // check group-properties.
@@ -119,17 +119,17 @@ public final class ConfigCheck implements IdentifiedDataSerializable {
     }
 
     private void verifyApplicationValidationToken(ConfigCheck found) {
-        String expectedValidationToken = properties.get(PROP_APPLICATION_VALIDATION_TOKEN);
-        String foundValidationToken = found.properties.get(PROP_APPLICATION_VALIDATION_TOKEN);
+        String expectedValidationToken = properties.get(APPLICATION_VALIDATION_TOKEN.getName());
+        String foundValidationToken = found.properties.get(APPLICATION_VALIDATION_TOKEN.getName());
         if (!equals(expectedValidationToken, foundValidationToken)) {
-            throw new ConfigMismatchException("Incompatible '" + PROP_APPLICATION_VALIDATION_TOKEN + "'! expected: " +
+            throw new ConfigMismatchException("Incompatible '" + APPLICATION_VALIDATION_TOKEN + "'! expected: " +
                     expectedValidationToken + ", found: " + foundValidationToken);
         }
     }
 
     private void verifyPartitionCount(ConfigCheck found) {
-        String expectedPartitionCount = properties.get(PROP_PARTITION_COUNT);
-        String foundPartitionCount = found.properties.get(PROP_PARTITION_COUNT);
+        String expectedPartitionCount = properties.get(PARTITION_COUNT.getName());
+        String foundPartitionCount = found.properties.get(PARTITION_COUNT.getName());
         if (!equals(expectedPartitionCount, foundPartitionCount)) {
             throw new ConfigMismatchException("Incompatible partition count! expected: " + expectedPartitionCount + ", found: "
                     + foundPartitionCount);

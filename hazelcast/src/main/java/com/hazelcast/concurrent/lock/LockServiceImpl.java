@@ -21,6 +21,7 @@ import com.hazelcast.concurrent.lock.operations.LockReplicationOperation;
 import com.hazelcast.concurrent.lock.operations.UnlockOperation;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.MigrationEndpoint;
@@ -51,7 +52,6 @@ import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.spi.impl.OperationResponseHandlerFactory.createEmptyResponseHandler;
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutSynchronized;
@@ -90,9 +90,7 @@ public final class LockServiceImpl implements InternalLockService, ManagedServic
     }
 
     public static long getMaxLeaseTimeInMillis(GroupProperties groupProperties) {
-        long maxLeaseTime = groupProperties.LOCK_MAX_LEASE_TIME_SECONDS.getLong();
-        maxLeaseTime = TimeUnit.SECONDS.toMillis(maxLeaseTime);
-        return maxLeaseTime;
+        return groupProperties.getMillis(GroupProperty.LOCK_MAX_LEASE_TIME_SECONDS);
     }
 
     @Override

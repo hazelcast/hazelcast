@@ -25,7 +25,7 @@ import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.PartitioningStrategy;
-import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.map.impl.MapService;
@@ -80,7 +80,7 @@ public class DefaultClientExtension implements ClientExtension {
     }
 
     protected PartitioningStrategy getPartitioningStrategy(ClassLoader configClassLoader) throws Exception {
-        String partitioningStrategyClassName = System.getProperty(GroupProperties.PROP_PARTITIONING_STRATEGY_CLASS);
+        String partitioningStrategyClassName = GroupProperty.PARTITIONING_STRATEGY_CLASS.getSystemProperty();
         if (partitioningStrategyClassName != null && partitioningStrategyClassName.length() > 0) {
             return ClassLoaderUtil.newInstance(configClassLoader, partitioningStrategyClassName);
         } else {

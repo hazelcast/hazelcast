@@ -134,7 +134,7 @@ public class Node {
         this.groupProperties = new GroupProperties(config);
         this.buildInfo = BuildInfoProvider.getBuildInfo();
 
-        String loggingType = groupProperties.LOGGING_TYPE.getString();
+        String loggingType = groupProperties.getString(GroupProperty.LOGGING_TYPE);
         loggingService = new LoggingServiceImpl(config.getGroupConfig().getName(), loggingType, buildInfo);
         final AddressPicker addressPicker = nodeContext.createAddressPicker(this);
         try {
@@ -288,7 +288,7 @@ public class Node {
             multicastServiceThread.start();
         }
         setActive(true);
-        if (!completelyShutdown && groupProperties.SHUTDOWNHOOK_ENABLED.getBoolean()) {
+        if (!completelyShutdown && groupProperties.getBoolean(GroupProperty.SHUTDOWNHOOK_ENABLED)) {
             logger.finest("Adding ShutdownHook");
             Runtime.getRuntime().addShutdownHook(shutdownHookThread);
         }
@@ -319,14 +319,14 @@ public class Node {
             logger.finest("** we are being asked to shutdown when active = " + String.valueOf(active));
         }
         if (!terminate && isActive() && joined()) {
-            final int maxWaitSeconds = groupProperties.GRACEFUL_SHUTDOWN_MAX_WAIT.getInteger();
+            final int maxWaitSeconds = groupProperties.getSeconds(GroupProperty.GRACEFUL_SHUTDOWN_MAX_WAIT);
             if (!partitionService.prepareToSafeShutdown(maxWaitSeconds, TimeUnit.SECONDS)) {
                 logger.warning("Graceful shutdown could not be completed in " + maxWaitSeconds + " seconds!");
             }
         }
         if (isActive()) {
             if (!terminate) {
-                final int maxWaitSeconds = groupProperties.GRACEFUL_SHUTDOWN_MAX_WAIT.getInteger();
+                final int maxWaitSeconds = groupProperties.getSeconds(GroupProperty.GRACEFUL_SHUTDOWN_MAX_WAIT);
                 if (!partitionService.prepareToSafeShutdown(maxWaitSeconds, TimeUnit.SECONDS)) {
                     logger.warning("Graceful shutdown could not be completed in " + maxWaitSeconds + " seconds!");
                 }
@@ -341,7 +341,7 @@ public class Node {
             setActive(false);
             setMasterAddress(null);
             try {
-                if (groupProperties.SHUTDOWNHOOK_ENABLED.getBoolean())
+                if (groupProperties.getBoolean(GroupProperty.SHUTDOWNHOOK_ENABLED))
                     Runtime.getRuntime().removeShutdownHook(shutdownHookThread);
             } catch (Throwable ignored) {
             }
@@ -494,8 +494,8 @@ public class Node {
         }
 
         if (!joined()) {
-            long maxJoinTime = groupProperties.MAX_JOIN_SECONDS.getInteger() * 1000L;
-            logger.severe("Could not join cluster in " + maxJoinTime + " ms. Shutting down now!");
+            long maxJoinTimeMillis = groupProperties.getMillis(GroupProperty.MAX_JOIN_SECONDS);
+            logger.severe("Could not join cluster in " + maxJoinTimeMillis + " ms. Shutting down now!");
             shutdownNodeByFiringEvents(Node.this, true);
         }
     }

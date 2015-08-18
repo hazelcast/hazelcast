@@ -6,7 +6,7 @@ import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapStore;
-import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 
 import static com.hazelcast.test.HazelcastTestSupport.randomMapName;
@@ -45,7 +45,6 @@ public class TestMapUsingMapStoreBuilder<K, V> {
     public static <K, V> TestMapUsingMapStoreBuilder<K, V> create() {
         return new TestMapUsingMapStoreBuilder<K, V>();
     }
-
 
     public TestMapUsingMapStoreBuilder<K, V> mapName(String mapName) {
         if (mapName == null) {
@@ -100,7 +99,6 @@ public class TestMapUsingMapStoreBuilder<K, V> {
         return this;
     }
 
-
     public TestMapUsingMapStoreBuilder<K, V> withMapStore(MapStore<K, V> mapStore) {
         this.mapStore = mapStore;
         return this;
@@ -124,12 +122,10 @@ public class TestMapUsingMapStoreBuilder<K, V> {
         return this;
     }
 
-
     public TestMapUsingMapStoreBuilder<K, V> withWriteBatchSize(int writeBatchSize) {
         this.writeBatchSize = writeBatchSize;
         return this;
     }
-
 
     public IMap<K, V> build() {
         if (backupCount != 0 && backupCount > nodeCount - 1) {
@@ -149,17 +145,15 @@ public class TestMapUsingMapStoreBuilder<K, V> {
                 .setInMemoryFormat(inMemoryFormat);
 
         if (writeBehindQueueCapacity > 0) {
-            config.setProperty(GroupProperties.PROP_MAP_WRITE_BEHIND_QUEUE_CAPACITY,
-                    String.valueOf(writeBehindQueueCapacity));
+            config.setProperty(GroupProperty.MAP_WRITE_BEHIND_QUEUE_CAPACITY, String.valueOf(writeBehindQueueCapacity));
         }
 
-
-        config.setProperty(GroupProperties.PROP_PARTITION_COUNT, String.valueOf(partitionCount));
+        config.setProperty(GroupProperty.PARTITION_COUNT, String.valueOf(partitionCount));
         if (backupDelaySeconds > 0) {
-            config.setProperty(GroupProperties.PROP_MAP_REPLICA_SCHEDULED_TASK_DELAY_SECONDS,
-                    String.valueOf(backupCount));
+            config.setProperty(GroupProperty.MAP_REPLICA_SCHEDULED_TASK_DELAY_SECONDS, String.valueOf(backupCount));
         }
-        // nodes.
+
+        // nodes
         nodes = new HazelcastInstance[nodeCount];
         for (int i = 0; i < nodeCount; i++) {
             nodes[i] = instanceFactory.newHazelcastInstance(config);
