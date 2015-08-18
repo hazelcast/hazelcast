@@ -68,8 +68,7 @@ public class ClientAddressCancellableDelegatingFuture<V> extends ClientCancellab
     private ClientInvocationFuture invokeCancelRequest(boolean mayInterruptIfRunning) {
         ClientInvocation clientInvocation;
         final HazelcastClientInstanceImpl client = (HazelcastClientInstanceImpl) context.getHazelcastInstance();
-        ClientMessage request = ExecutorServiceCancelOnAddressCodec.encodeRequest(uuid, target.getHost(),
-                target.getPort(), mayInterruptIfRunning);
+        ClientMessage request = ExecutorServiceCancelOnAddressCodec.encodeRequest(uuid, target, mayInterruptIfRunning);
         clientInvocation = new ClientInvocation(client, request, target);
         try {
             return clientInvocation.invoke();

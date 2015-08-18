@@ -91,8 +91,7 @@ public final class HazelcastClientCacheManager
                 Address address = member.getAddress();
 
                 ClientMessage request = CacheManagementConfigCodec
-                        .encodeRequest(getCacheNameWithPrefix(cacheName),
-                                statOrMan, enabled, address.getHost(), address.getPort());
+                        .encodeRequest(getCacheNameWithPrefix(cacheName), statOrMan, enabled, address);
                 ClientInvocation clientInvocation = new ClientInvocation(client, request, address);
                 Future<ClientMessage> future = clientInvocation.invoke();
                 futures.add(future);

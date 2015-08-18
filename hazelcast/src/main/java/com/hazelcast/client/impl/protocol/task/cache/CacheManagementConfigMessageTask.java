@@ -22,13 +22,11 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CacheManagementConfigCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractInvocationMessageTask;
 import com.hazelcast.instance.Node;
-import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 
-import java.net.UnknownHostException;
 import java.security.Permission;
 
 /**
@@ -61,13 +59,7 @@ public class CacheManagementConfigMessageTask
     @Override
     protected InvocationBuilder getInvocationBuilder(Operation op) {
         InternalOperationService operationService = nodeEngine.getOperationService();
-        Address target = null;
-        try {
-            target = new Address(parameters.hostname, parameters.port);
-        } catch (UnknownHostException e) {
-            logger.warning("Cannot parse address : " + parameters.hostname);
-        }
-        return operationService.createInvocationBuilder(getServiceName(), op, target);
+        return operationService.createInvocationBuilder(getServiceName(), op, parameters.address);
     }
 
     @Override
