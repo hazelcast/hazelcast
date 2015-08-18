@@ -49,7 +49,8 @@
     <suppress checks="JavadocMethod" files="com/hazelcast/cluster/"/>
     <suppress checks="JavadocVariable" files="com/hazelcast/cluster/"/>
     <!-- TODO: Needs to be fixed -->
-    <suppress checks="" files="com/hazelcast/cluster/impl/ClusterServiceImpl"/>
+    <suppress checks="MethodCount|FileLengthCheck|ClassDataAbstractionCoupling|ClassFanOutComplexityCheck"
+              files="com/hazelcast/cluster/impl/ClusterServiceImpl"/>
     <suppress checks="" files="com/hazelcast/cluster/impl/MulticastService"/>
     <suppress checks="" files="com/hazelcast/cluster/impl/ConfigCheck"/>
     <suppress checks="" files="com/hazelcast/cluster/impl/TcpIpJoiner"/>
