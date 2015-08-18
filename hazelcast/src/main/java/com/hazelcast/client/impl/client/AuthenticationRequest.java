@@ -75,8 +75,6 @@ public final class AuthenticationRequest extends CallableClientRequest {
     }
 
     private boolean authenticate() {
-        ClientEngineImpl clientEngine = getService();
-        Connection connection = endpoint.getConnection();
         ILogger logger = clientEngine.getLogger(getClass());
         boolean authenticated;
         if (credentials == null) {
@@ -94,9 +92,6 @@ public final class AuthenticationRequest extends CallableClientRequest {
                     + "Current credentials type is: " + credentials.getClass().getName());
         }
 
-
-        logger.log((authenticated ? Level.INFO : Level.WARNING), "Received auth from " + connection
-                + ", " + (authenticated ? "successfully authenticated" : "authentication failed"));
         return authenticated;
     }
 
@@ -126,11 +121,14 @@ public final class AuthenticationRequest extends CallableClientRequest {
     }
 
     private Object handleUnauthenticated() {
+        Connection connection = endpoint.getConnection();
+        ILogger logger = clientEngine.getLogger(getClass());
+        logger.log(Level.WARNING, "Received auth from " + connection
+                + " with principal " + principal + " , authentication failed");
         return new AuthenticationException("Invalid credentials!");
     }
 
     private Object handleAuthenticated() {
-        ClientEngineImpl clientEngine = getService();
 
         if (ownerConnection) {
             final String uuid = getUuid();
@@ -150,6 +148,12 @@ public final class AuthenticationRequest extends CallableClientRequest {
             return new AuthenticationException("Invalid owner-uuid: " + principal.getOwnerUuid()
                     + ", it's not member of this cluster!");
         }
+
+
+        Connection connection = endpoint.getConnection();
+        ILogger logger = clientEngine.getLogger(getClass());
+        logger.log(Level.INFO, "Received auth from " + connection + ", successfully authenticated"
+                + ", principal : " + principal + ", owner connection : " + ownerConnection);
 
         endpoint.authenticated(principal, credentials, ownerConnection);
         clientEngine.getEndpointManager().registerEndpoint(endpoint);
@@ -171,6 +175,7 @@ public final class AuthenticationRequest extends CallableClientRequest {
         for (ClientEndpoint endpoint : endpoints) {
             endpoint.authenticated(principal);
         }
+        clientEngine.addOwnershipMapping(principal.getUuid(), principal.getOwnerUuid());
     }
 
     @Override
