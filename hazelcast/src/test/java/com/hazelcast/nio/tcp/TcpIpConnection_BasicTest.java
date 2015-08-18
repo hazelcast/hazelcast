@@ -21,9 +21,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
-@RunWith(HazelcastSerialClassRunner.class)
-@Category(NightlyTest.class)
-public class TcpIpConnection_BasicTest extends TcpIpConnection_AbstractTest {
+public abstract class TcpIpConnection_BasicTest extends TcpIpConnection_AbstractTest {
 
     private List<Packet> packetsB = Collections.synchronizedList(new ArrayList<Packet>());
 

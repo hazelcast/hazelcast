@@ -2,13 +2,9 @@ package com.hazelcast.nio.tcp;
 
 import com.hazelcast.nio.Packet;
 import com.hazelcast.test.AssertTask;
-import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.TestThread;
-import com.hazelcast.test.annotation.NightlyTest;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
@@ -23,12 +19,10 @@ import static org.junit.Assert.assertEquals;
  * In the past we had some issues with packet not getting written. So this test will write various size packets (from small
  * to very large).
  */
-@RunWith(HazelcastSerialClassRunner.class)
-@Category(NightlyTest.class)
-public class TcpIpConnection_TransferStressTest extends TcpIpConnection_AbstractTest {
+public abstract class TcpIpConnection_TransferStressTest extends TcpIpConnection_AbstractTest {
 
     // total running time.
-    private static final long DURATION_SECONDS = TimeUnit.MINUTES.toSeconds(2);
+    private static final long DURATION_SECONDS = TimeUnit.SECONDS.toSeconds(1);
     // maximum number of pending packets
     private static final int maxPendingPacketCount = 10000;
     // we create the payloads up front and select randomly from them. This is the number of payloads we are creating.

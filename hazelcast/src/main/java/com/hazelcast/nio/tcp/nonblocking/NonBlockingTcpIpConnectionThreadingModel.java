@@ -21,9 +21,9 @@ import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.nio.IOService;
-import com.hazelcast.nio.tcp.TcpIpConnectionThreadingModel;
 import com.hazelcast.nio.tcp.ReadHandler;
 import com.hazelcast.nio.tcp.TcpIpConnection;
+import com.hazelcast.nio.tcp.TcpIpConnectionThreadingModel;
 import com.hazelcast.nio.tcp.WriteHandler;
 import com.hazelcast.nio.tcp.nonblocking.iobalancer.IOBalancer;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -31,6 +31,9 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.util.HashUtil.hashToIndex;
+import static java.lang.Boolean.getBoolean;
+import static java.util.logging.Level.FINE;
+import static java.util.logging.Level.INFO;
 
 public class NonBlockingTcpIpConnectionThreadingModel implements TcpIpConnectionThreadingModel {
 
@@ -43,6 +46,8 @@ public class NonBlockingTcpIpConnectionThreadingModel implements TcpIpConnection
     private final MetricsRegistry metricsRegistry;
     private final LoggingService loggingService;
     private final HazelcastThreadGroup hazelcastThreadGroup;
+    private boolean inputSelectNow = getBoolean("tcp.in.selectNow");
+    private boolean outputSelectNow = getBoolean("tcp.out.selectNow");
     private volatile IOBalancer ioBalancer;
 
     public NonBlockingTcpIpConnectionThreadingModel(
@@ -57,10 +62,14 @@ public class NonBlockingTcpIpConnectionThreadingModel implements TcpIpConnection
         this.logger = ioService.getLogger(NonBlockingTcpIpConnectionThreadingModel.class.getName());
         this.inputThreads = new NonBlockingInputThread[ioService.getInputSelectorThreadCount()];
         this.outputThreads = new NonBlockingOutputThread[ioService.getOutputSelectorThreadCount()];
+    }
 
-        logger.info("TcpIpConnection managed configured with "
-                + inputThreads.length + " input threads and "
-                + outputThreads.length + " output threads");
+    public void setInputSelectNow(boolean enabled) {
+        this.inputSelectNow = enabled;
+    }
+
+    public void setOutputSelectNow(boolean enabled) {
+        this.outputSelectNow = enabled;
     }
 
     @Override
@@ -84,6 +93,13 @@ public class NonBlockingTcpIpConnectionThreadingModel implements TcpIpConnection
 
     @Override
     public void start() {
+        logger.info("TcpIpConnection managed configured NonBlocking threading model:  "
+                + inputThreads.length + " input threads and "
+                + outputThreads.length + " output threads");
+
+        logger.log(inputSelectNow ? INFO : FINE, "InputThreads selectNow enabled=" + inputSelectNow);
+        logger.log(outputSelectNow ? INFO : FINE, "OutputThreads selectNow enabled=" + outputSelectNow);
+
         NonBlockingIOThreadOutOfMemoryHandler oomeHandler = new NonBlockingIOThreadOutOfMemoryHandler() {
             @Override
             public void handle(OutOfMemoryError error) {
@@ -96,7 +112,8 @@ public class NonBlockingTcpIpConnectionThreadingModel implements TcpIpConnection
                     ioService.getThreadGroup(),
                     ioService.getThreadPrefix() + "in-" + i,
                     ioService.getLogger(NonBlockingInputThread.class.getName()),
-                    oomeHandler
+                    oomeHandler,
+                    inputSelectNow
             );
             inputThreads[i] = thread;
             metricsRegistry.scanAndRegister(thread, "tcp." + thread.getName());
@@ -108,7 +125,8 @@ public class NonBlockingTcpIpConnectionThreadingModel implements TcpIpConnection
                     ioService.getThreadGroup(),
                     ioService.getThreadPrefix() + "out-" + i,
                     ioService.getLogger(NonBlockingOutputThread.class.getName()),
-                    oomeHandler);
+                    oomeHandler,
+                    outputSelectNow);
             outputThreads[i] = thread;
             metricsRegistry.scanAndRegister(thread, "tcp." + thread.getName());
             thread.start();
@@ -141,20 +159,17 @@ public class NonBlockingTcpIpConnectionThreadingModel implements TcpIpConnection
             logger.finest("Shutting down IO selectors... Total: " + (inputThreads.length + outputThreads.length));
         }
 
-        for (int i = 0; i < inputThreads.length; i++) {
-            NonBlockingIOThread ioThread = inputThreads[i];
-            if (ioThread != null) {
-                ioThread.shutdown();
-            }
-            inputThreads[i] = null;
-        }
+        shutdown(inputThreads);
+        shutdown(outputThreads);
+    }
 
-        for (int i = 0; i < outputThreads.length; i++) {
-            NonBlockingIOThread ioThread = outputThreads[i];
+    private void shutdown(NonBlockingIOThread[] threads) {
+        for (int i = 0; i < threads.length; i++) {
+            NonBlockingIOThread ioThread = threads[i];
             if (ioThread != null) {
                 ioThread.shutdown();
             }
-            outputThreads[i] = null;
+            threads[i] = null;
         }
     }
 

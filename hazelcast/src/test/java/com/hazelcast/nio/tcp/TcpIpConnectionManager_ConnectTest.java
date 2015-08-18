@@ -3,11 +3,7 @@ package com.hazelcast.nio.tcp;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionType;
 import com.hazelcast.test.AssertTask;
-import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
 import java.net.UnknownHostException;
 
@@ -17,9 +13,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
-@RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
-public class TcpIpConnectionManager_ConnectTest extends TcpIpConnection_AbstractTest {
+public abstract class TcpIpConnectionManager_ConnectTest extends TcpIpConnection_AbstractTest {
 
     @Test
     public void start() {
@@ -91,7 +85,7 @@ public class TcpIpConnectionManager_ConnectTest extends TcpIpConnection_Abstract
         });
     }
 
-     @Test
+    @Test
     public void destroyConnection_whenAlreadyDestroyed_thenCallIgnored() throws Exception {
         startAllConnectionManagers();
 

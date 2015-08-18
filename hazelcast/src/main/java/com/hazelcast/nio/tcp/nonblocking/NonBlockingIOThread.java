@@ -30,56 +30,70 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 public abstract class NonBlockingIOThread extends Thread implements OperationHostileThread {
 
+    // WARNING: This value has significant effect on idle CPU usage!
     private static final int SELECT_WAIT_TIME_MILLIS = 5000;
     private static final int SELECT_FAILURE_PAUSE_MILLIS = 1000;
 
-    @Probe(name = "selectorQueueSize")
-    protected final Queue<Runnable> selectorQueue = new ConcurrentLinkedQueue<Runnable>();
+    @Probe(name = "taskQueueSize")
+    private final Queue<Runnable> taskQueue = new ConcurrentLinkedQueue<Runnable>();
 
     private final ILogger logger;
-
-    private final int waitTime;
 
     private final Selector selector;
 
     private final NonBlockingIOThreadOutOfMemoryHandler oomeHandler;
 
-    // field doesn't need to be volatile, is only accessed by this thread.
-    private boolean running = true;
+    private final boolean selectNow;
 
     private volatile long lastSelectTimeMs;
 
-    public NonBlockingIOThread(ThreadGroup threadGroup, String threadName, ILogger logger,
+    public NonBlockingIOThread(ThreadGroup threadGroup,
+                               String threadName,
+                               ILogger logger,
                                NonBlockingIOThreadOutOfMemoryHandler oomeHandler) {
+        this(threadGroup, threadName, logger, oomeHandler, false);
+    }
+
+    public NonBlockingIOThread(ThreadGroup threadGroup,
+                               String threadName,
+                               ILogger logger,
+                               NonBlockingIOThreadOutOfMemoryHandler oomeHandler,
+                               boolean selectNow) {
         super(threadGroup, threadName);
         this.logger = logger;
+        this.selectNow = selectNow;
         this.oomeHandler = oomeHandler;
-        // WARNING: This value has significant effect on idle CPU usage!
-        this.waitTime = SELECT_WAIT_TIME_MILLIS;
         try {
             selector = Selector.open();
-        } catch (final IOException e) {
+        } catch (IOException e) {
             throw new HazelcastException("Failed to open a Selector", e);
         }
     }
 
-    public final void shutdown() {
-        selectorQueue.clear();
-        try {
-            addTask(new Runnable() {
-                @Override
-                public void run() {
-                    running = false;
-                }
-            });
-            interrupt();
-        } catch (Throwable t) {
-            logger.finest("Exception while waiting for shutdown", t);
-        }
+    /**
+     * Gets the Selector
+     *
+     * @return the Selector
+     */
+    public final Selector getSelector() {
+        return selector;
     }
 
+    // shows how long this NonBlockingIOThread has been idle.
+    // value only has meaning when spinning is disabled.
+    @Probe
+    private long idleTime() {
+        return Math.max(System.currentTimeMillis() - lastSelectTimeMs, 0);
+    }
+
+    /**
+     * Adds a task to this NonBlockingIOThread without notifying the thread.
+     *
+     * @param task the task to add
+     * @throws NullPointerException if task is null
+     */
     public final void addTask(Runnable task) {
-        selectorQueue.add(task);
+        taskQueue.add(task);
     }
 
     /**
@@ -87,22 +101,84 @@ public abstract class NonBlockingIOThread extends Thread implements OperationHos
      * eventually pick up the task.
      *
      * @param task the task to add.
+     * @throws NullPointerException if task is null
      */
     public final void addTaskAndWakeup(Runnable task) {
-        selectorQueue.add(task);
+        taskQueue.add(task);
         selector.wakeup();
     }
 
-    // shows how long this probe has been idle.
-    @Probe
-    private long idleTime() {
-        return Math.max(System.currentTimeMillis() - lastSelectTimeMs, 0);
+    @Override
+    public final void run() {
+        // This outer loop is a bit complex but it takes care of a lot of stuff:
+        // * it calls runSelectNowLoop or runSelectLoop based on selectNow enabled or not.
+        // * handles backoff and retrying in case if io exception is thrown
+        // * it takes care of other exception handling.
+        //
+        // The idea about this approach is that the runSelectNowLoop and runSelectLoop are as clean as possible and don't contain
+        // any logic that isn't happening on the happy-path.
+        try {
+            for (; ; ) {
+                try {
+                    if (selectNow) {
+                        runSelectNowLoop();
+                    } else {
+                        runSelectLoop();
+                    }
+                    // break the for loop; we are done
+                    break;
+                } catch (IOException nonFatalException) {
+                    // an IOException happened, we are going to do some waiting and retry.
+                    // If we don't wait, it can be that a subsequent call will run into an IOException immediately.
+                    // This can lead to a very hot loop and we don't want that. The same approach is used in Netty.
+
+                    logger.warning(getName() + " " + nonFatalException.toString(), nonFatalException);
+
+                    try {
+                        Thread.sleep(SELECT_FAILURE_PAUSE_MILLIS);
+                    } catch (InterruptedException i) {
+                        interrupt();
+                    }
+                }
+            }
+        } catch (OutOfMemoryError e) {
+            oomeHandler.handle(e);
+        } catch (Throwable e) {
+            logger.warning("Unhandled exception in " + getName(), e);
+        } finally {
+            closeSelector();
+        }
+
+        logger.finest(getName() + " finished");
     }
 
-    private void processSelectionQueue() {
-        //noinspection WhileLoopSpinsOnField
-        while (running) {
-            final Runnable task = selectorQueue.poll();
+    private void runSelectLoop() throws IOException {
+        while (!isInterrupted()) {
+            processTaskQueue();
+
+            int selectedKeys = selector.select(SELECT_WAIT_TIME_MILLIS);
+            lastSelectTimeMs = System.currentTimeMillis();
+            if (selectedKeys > 0) {
+                handleSelectionKeys();
+            }
+        }
+    }
+
+    private void runSelectNowLoop() throws IOException {
+        while (!isInterrupted()) {
+            processTaskQueue();
+
+            int selectedKeys = selector.selectNow();
+            // we don't set the lastSelectTime when spinning
+            if (selectedKeys > 0) {
+                handleSelectionKeys();
+            }
+        }
+    }
+
+    private void processTaskQueue() {
+        while (!isInterrupted()) {
+            Runnable task = taskQueue.poll();
             if (task == null) {
                 return;
             }
@@ -127,55 +203,17 @@ public abstract class NonBlockingIOThread extends Thread implements OperationHos
         }
     }
 
-    @Override
-    public final void run() {
-        try {
-            //noinspection WhileLoopSpinsOnField
-            while (running) {
-                processSelectionQueue();
-                if (!running || isInterrupted()) {
-                    if (logger.isFinestEnabled()) {
-                        logger.finest(getName() + " is interrupted!");
-                    }
-                    running = false;
-                    return;
-                }
-
-                try {
-                    int selectedKeyCount = selector.select(waitTime);
-                    lastSelectTimeMs = System.currentTimeMillis();
-
-                    if (selectedKeyCount == 0) {
-                        continue;
-                    }
-                } catch (Throwable e) {
-                    handleSelectFailure(e);
-                    continue;
-                }
-                handleSelectionKeys();
-            }
-        } catch (OutOfMemoryError e) {
-            oomeHandler.handle(e);
-        } catch (Throwable e) {
-            logger.warning("Unhandled exception in " + getName(), e);
-        } finally {
-            closeSelector();
-        }
-    }
-
     private void closeSelector() {
         if (logger.isFinestEnabled()) {
-            logger.finest("Closing selector " + getName());
+            logger.finest("Closing selector for:" + getName());
         }
 
         try {
             selector.close();
         } catch (Exception e) {
-            logger.finest("Exception while closing selector", e);
+            logger.finest("Failed to close selector", e);
         }
     }
-
-    protected abstract void handleSelectionKey(SelectionKey sk);
 
     private void handleSelectionKeys() {
         Iterator<SelectionKey> it = selector.selectedKeys().iterator();
@@ -190,6 +228,8 @@ public abstract class NonBlockingIOThread extends Thread implements OperationHos
         }
     }
 
+    protected abstract void handleSelectionKey(SelectionKey sk);
+
     public void handleSelectionKeyFailure(Throwable e) {
         logger.warning("Selector exception at  " + getName() + ", cause= " + e.toString(), e);
         if (e instanceof OutOfMemoryError) {
@@ -197,20 +237,9 @@ public abstract class NonBlockingIOThread extends Thread implements OperationHos
         }
     }
 
-    public final Selector getSelector() {
-        return selector;
-    }
-
-    private void handleSelectFailure(Throwable e) {
-        logger.warning(e.toString(), e);
-
-        // If we don't wait, it can be that a subsequent call will run into an IOException immediately. This can lead to a very
-        // hot loop and we don't want that. The same approach is used in Netty.
-        try {
-            Thread.sleep(SELECT_FAILURE_PAUSE_MILLIS);
-        } catch (InterruptedException i) {
-            Thread.currentThread().interrupt();
-        }
+    public final void shutdown() {
+        taskQueue.clear();
+        interrupt();
     }
 
     @Override
