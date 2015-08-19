@@ -37,7 +37,7 @@ import static org.junit.Assert.assertEquals;
 public class MinAggregationTest
         extends AbstractAggregationTest {
 
-    @Test
+    @Test(timeout = 60000)
     public void testBigDecimalMin()
             throws Exception {
 
@@ -59,7 +59,7 @@ public class MinAggregationTest
         assertEquals(expectation, result);
     }
 
-    @Test
+    @Test(timeout = 60000)
     public void testBigIntegerMin()
             throws Exception {
 
@@ -81,7 +81,7 @@ public class MinAggregationTest
         assertEquals(expectation, result);
     }
 
-    @Test
+    @Test(timeout = 60000)
     public void testDoubleMin()
             throws Exception {
 
@@ -105,7 +105,7 @@ public class MinAggregationTest
         assertEquals(expectation, result, 0.0);
     }
 
-    @Test
+    @Test(timeout = 60000)
     public void testIntegerMin()
             throws Exception {
 
@@ -129,7 +129,7 @@ public class MinAggregationTest
         assertEquals(expectation, result);
     }
 
-    @Test
+    @Test(timeout = 60000)
     public void testLongMin()
             throws Exception {
 
@@ -153,7 +153,7 @@ public class MinAggregationTest
         assertEquals(expectation, result);
     }
 
-    @Test
+    @Test(timeout = 60000)
     public void testBigDecimalMinWithExtractor()
             throws Exception {
 
@@ -175,7 +175,7 @@ public class MinAggregationTest
         assertEquals(expectation, result);
     }
 
-    @Test
+    @Test(timeout = 60000)
     public void testBigIntegerMinWithExtractor()
             throws Exception {
 
@@ -197,7 +197,7 @@ public class MinAggregationTest
         assertEquals(expectation, result);
     }
 
-    @Test
+    @Test(timeout = 60000)
     public void testDoubleMinWithExtractor()
             throws Exception {
 
@@ -221,7 +221,7 @@ public class MinAggregationTest
         assertEquals(expectation, result, 0.0);
     }
 
-    @Test
+    @Test(timeout = 60000)
     public void testIntegerMinWithExtractor()
             throws Exception {
 
@@ -245,7 +245,7 @@ public class MinAggregationTest
         assertEquals(expectation, result);
     }
 
-    @Test
+    @Test(timeout = 60000)
     public void testLongMinWithExtractor()
             throws Exception {
 
