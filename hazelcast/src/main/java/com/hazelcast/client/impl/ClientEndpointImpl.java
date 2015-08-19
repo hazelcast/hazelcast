@@ -115,7 +115,6 @@ public final class ClientEndpointImpl implements Client, ClientEndpoint {
     public void authenticated(ClientPrincipal principal) {
         this.principal = principal;
         this.authenticated = true;
-        clientEngine.addOwnershipMapping(principal.getUuid(), principal.getOwnerUuid());
     }
 
     @Override
