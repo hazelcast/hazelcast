@@ -18,30 +18,27 @@ package com.hazelcast.client.impl.protocol.task.replicatedmap;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ReplicatedMapPutCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
+import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
-import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
+import com.hazelcast.replicatedmap.impl.operation.PutOperation;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.ReplicatedMapPermission;
-
+import com.hazelcast.spi.Operation;
 import java.security.Permission;
 import java.util.concurrent.TimeUnit;
 
 public class ReplicatedMapPutMessageTask
-        extends AbstractCallableMessageTask<ReplicatedMapPutCodec.RequestParameters> {
+        extends AbstractPartitionMessageTask<ReplicatedMapPutCodec.RequestParameters> {
 
     public ReplicatedMapPutMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected Object call() throws Exception {
-        ReplicatedMapService replicatedMapService = getService(ReplicatedMapService.SERVICE_NAME);
-        ReplicatedRecordStore recordStore = replicatedMapService.getReplicatedRecordStore(parameters.name, true);
-        Object returnValue = recordStore.put(parameters.key, parameters.value, parameters.ttl, TimeUnit.MILLISECONDS);
-        return serializationService.toData(returnValue);
+    protected Operation prepareOperation() {
+        return new PutOperation(parameters.name, parameters.key, parameters.value, parameters.ttl);
     }
 
     @Override

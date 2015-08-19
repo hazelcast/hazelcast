@@ -37,9 +37,10 @@ public class ReplicatedMapContainsKeyMessageTask
 
     @Override
     protected Object call() throws Exception {
+        int partitionId = nodeEngine.getPartitionService().getPartitionId(parameters.key);
         ReplicatedMapService replicatedMapService = getService(ReplicatedMapService.SERVICE_NAME);
-        ReplicatedRecordStore recordStore = replicatedMapService.getReplicatedRecordStore(parameters.name, true);
-        return recordStore.containsKey(parameters.key);
+        ReplicatedRecordStore store = replicatedMapService.getReplicatedRecordStore(parameters.name, false , partitionId);
+        return store.containsKey(parameters.key);
     }
 
 

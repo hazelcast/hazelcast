@@ -30,10 +30,10 @@ import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
-import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
+import com.hazelcast.replicatedmap.impl.record.ReplicatedEntryEventFilter;
+import com.hazelcast.replicatedmap.impl.record.ReplicatedQueryEventFilter;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.ReplicatedMapPermission;
-
 import java.io.IOException;
 import java.security.Permission;
 
@@ -59,13 +59,13 @@ public class ClientReplicatedMapAddEntryListenerRequest extends AbstractReplicat
     @Override
     public Object call() throws Exception {
         final ClientEndpoint endpoint = getEndpoint();
-        final ReplicatedRecordStore replicatedRecordStore = getReplicatedRecordStore();
+        ReplicatedMapService service = getService();
         final EntryListener listener = new ClientReplicatedMapEntryListener();
         String registrationId;
         if (predicate == null) {
-            registrationId = replicatedRecordStore.addEntryListener(listener, key);
+            registrationId = service.addEventListener(listener, new ReplicatedEntryEventFilter(key), getMapName());
         } else {
-            registrationId = replicatedRecordStore.addEntryListener(listener, predicate, key);
+            registrationId = service.addEventListener(listener, new ReplicatedQueryEventFilter(key, predicate), getMapName());
         }
         endpoint.setListenerRegistration(ReplicatedMapService.SERVICE_NAME, getMapName(), registrationId);
         return registrationId;

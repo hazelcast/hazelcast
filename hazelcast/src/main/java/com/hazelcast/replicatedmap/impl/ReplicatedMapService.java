@@ -16,45 +16,57 @@
 
 package com.hazelcast.replicatedmap.impl;
 
+import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.config.Config;
-import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.core.DistributedObject;
-import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
-import com.hazelcast.core.Member;
+import com.hazelcast.core.HazelcastInstanceAware;
+import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.instance.MemberImpl;
-import com.hazelcast.map.impl.DataAwareEntryEvent;
-import com.hazelcast.map.impl.EntryEventData;
-import com.hazelcast.map.impl.EventData;
-import com.hazelcast.monitor.impl.LocalReplicatedMapStatsImpl;
+import com.hazelcast.nio.Address;
+import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.replicatedmap.impl.messages.MultiReplicationMessage;
+import com.hazelcast.partition.InternalPartition;
+import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.replicatedmap.impl.messages.ReplicationMessage;
-import com.hazelcast.replicatedmap.impl.record.AbstractReplicatedRecordStore;
-import com.hazelcast.replicatedmap.impl.record.DataReplicatedRecordStore;
-import com.hazelcast.replicatedmap.impl.record.ObjectReplicatedRecordStorage;
+import com.hazelcast.replicatedmap.impl.operation.CheckReplicaVersion;
+import com.hazelcast.replicatedmap.impl.operation.ProcessReplicationMessageOperation;
+import com.hazelcast.replicatedmap.impl.operation.ReplicatedMapClearOperation;
+import com.hazelcast.replicatedmap.impl.operation.ReplicationOperation;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
-import com.hazelcast.replicatedmap.impl.record.ReplicationPublisher;
 import com.hazelcast.spi.EventFilter;
 import com.hazelcast.spi.EventPublishingService;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
+import com.hazelcast.spi.InternalCompletableFuture;
+import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.ManagedService;
+import com.hazelcast.spi.MigrationAwareService;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.OperationService;
+import com.hazelcast.spi.PartitionMigrationEvent;
+import com.hazelcast.spi.PartitionReplicationEvent;
 import com.hazelcast.spi.RemoteService;
-import com.hazelcast.util.ConcurrencyUtil;
-import com.hazelcast.util.ConstructorFunction;
+import com.hazelcast.util.ExceptionUtil;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.EventListener;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 
 /**
  * This is the main service implementation to handle replication and manages the backing
  * {@link com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore}s that actually hold the data
  */
-public class ReplicatedMapService
-        implements ManagedService, RemoteService, EventPublishingService<Object, Object> {
+public class ReplicatedMapService implements ManagedService, RemoteService, EventPublishingService<Object, Object>,
+        MigrationAwareService {
 
     /**
      * Public constant for the internal service name of the ReplicatedMapService
@@ -66,24 +78,54 @@ public class ReplicatedMapService
      */
     public static final String EVENT_TOPIC_NAME = SERVICE_NAME + ".replication";
 
-    private final ConcurrentHashMap<String, ReplicatedRecordStore> replicatedStorages = initReplicatedRecordStoreMapping();
-
-    private final ConstructorFunction<String, ReplicatedRecordStore> constructor = buildConstructorFunction();
+    private static final int SYNC_INTERVAL_SECONDS = 30;
+    private static final int MAX_CLEAR_EXECUTION_RETRY = 5;
 
     private final Config config;
     private final NodeEngine nodeEngine;
     private final EventService eventService;
-    private final EventRegistration eventRegistration;
+    private final PartitionContainer[] partitionContainers;
+    private final InternalPartitionService partitionService;
+    private final ClusterService clusterService;
+    private final OperationService operationService;
+    private final ReplicatedMapEventPublishingService replicatedMapEventPublishingService;
 
     public ReplicatedMapService(NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
         this.config = nodeEngine.getConfig();
         this.eventService = nodeEngine.getEventService();
-        this.eventRegistration = eventService.registerListener(SERVICE_NAME, EVENT_TOPIC_NAME, new ReplicationListener());
+        this.partitionService = nodeEngine.getPartitionService();
+        this.clusterService = nodeEngine.getClusterService();
+        this.operationService = nodeEngine.getOperationService();
+        this.partitionContainers = new PartitionContainer[nodeEngine.getPartitionService().getPartitionCount()];
+        this.eventService.registerListener(SERVICE_NAME, EVENT_TOPIC_NAME, new ReplicationListener());
+        this.replicatedMapEventPublishingService = new ReplicatedMapEventPublishingService(this);
     }
 
     @Override
     public void init(NodeEngine nodeEngine, Properties properties) {
+        for (int i = 0; i < nodeEngine.getPartitionService().getPartitionCount(); i++) {
+            partitionContainers[i] = new PartitionContainer(this, i);
+        }
+        nodeEngine.getExecutionService().getDefaultScheduledExecutor().scheduleWithFixedDelay(new Runnable() {
+            @Override
+            public void run() {
+                for (int i = 0; i < partitionContainers.length; i++) {
+                    InternalPartition partition = partitionService.getPartition(i);
+                    if (partition.isLocal()) {
+                        continue;
+                    }
+                    PartitionContainer partitionContainer = partitionContainers[i];
+                    ConcurrentHashMap<String, ReplicatedRecordStore> stores = partitionContainer.getStores();
+                    for (Map.Entry<String, ReplicatedRecordStore> storeEntry : stores.entrySet()) {
+                        String name = storeEntry.getKey();
+                        ReplicatedRecordStore store = storeEntry.getValue();
+                        long version = store.getPartitionVersion();
+                        operationService.invokeOnPartition(SERVICE_NAME, new CheckReplicaVersion(name, version), i);
+                    }
+                }
+            }
+        }, 0, SYNC_INTERVAL_SECONDS, TimeUnit.SECONDS);
     }
 
     @Override
@@ -93,76 +135,29 @@ public class ReplicatedMapService
 
     @Override
     public void shutdown(boolean terminate) {
-        for (ReplicatedRecordStore replicatedRecordStore : replicatedStorages.values()) {
-            replicatedRecordStore.destroy();
+        for (PartitionContainer container : partitionContainers) {
+            container.shutdown();
         }
-        replicatedStorages.clear();
     }
 
     @Override
     public DistributedObject createDistributedObject(String objectName) {
-        ReplicatedRecordStore replicatedRecordStore = ConcurrencyUtil
-                .getOrPutSynchronized(replicatedStorages, objectName, replicatedStorages, constructor);
-        return new ReplicatedMapProxy(nodeEngine, (AbstractReplicatedRecordStore) replicatedRecordStore);
+        for (int i = 0; i < nodeEngine.getPartitionService().getPartitionCount(); i++) {
+            partitionContainers[i].getOrCreateRecordStore(objectName);
+        }
+        return new ReplicatedMapProxy(nodeEngine, objectName, this);
     }
 
     @Override
     public void destroyDistributedObject(String objectName) {
-        ReplicatedRecordStore replicatedRecordStore = replicatedStorages.remove(objectName);
-        if (replicatedRecordStore != null) {
-            replicatedRecordStore.destroy();
+        for (int i = 0; i < nodeEngine.getPartitionService().getPartitionCount(); i++) {
+            partitionContainers[i].destroy(objectName);
         }
     }
 
     @Override
     public void dispatchEvent(Object event, Object listener) {
-        if (event instanceof EntryEventData) {
-            EntryEventData entryEventData = (EntryEventData) event;
-            Member member = getMember(entryEventData);
-            EntryEvent entryEvent = createDataAwareEntryEvent(entryEventData, member);
-            EntryListener entryListener = (EntryListener) listener;
-            switch (entryEvent.getEventType()) {
-                case ADDED:
-                    entryListener.entryAdded(entryEvent);
-                    break;
-                case EVICTED:
-                    entryListener.entryEvicted(entryEvent);
-                    break;
-                case UPDATED:
-                    entryListener.entryUpdated(entryEvent);
-                    break;
-                case REMOVED:
-                    entryListener.entryRemoved(entryEvent);
-                    break;
-                // TODO handle evictAll and clearAll event
-                default:
-                    throw new IllegalArgumentException("event type " + entryEvent.getEventType() + " not supported");
-            }
-            String mapName = ((EntryEventData)event).getMapName();
-            if (config.findReplicatedMapConfig(mapName).isStatisticsEnabled()) {
-                ReplicatedRecordStore recordStore = replicatedStorages.get(mapName);
-                if (recordStore instanceof AbstractReplicatedRecordStore) {
-                    LocalReplicatedMapStatsImpl stats = ((AbstractReplicatedRecordStore) recordStore).getReplicatedMapStats();
-                    stats.incrementReceivedEvents();
-                }
-            }
-        } else if (listener instanceof ReplicatedMessageListener) {
-            ((ReplicatedMessageListener) listener).onMessage((IdentifiedDataSerializable) event);
-        }
-    }
-
-    private Member getMember(EventData eventData) {
-        Member member = nodeEngine.getClusterService().getMember(eventData.getCaller());
-        if (member == null) {
-            member = new MemberImpl(eventData.getCaller(), false);
-        }
-        return member;
-    }
-
-    private DataAwareEntryEvent createDataAwareEntryEvent(EntryEventData entryEventData, Member member) {
-        return new DataAwareEntryEvent(member, entryEventData.getEventType(), entryEventData.getMapName(),
-                entryEventData.getDataKey(), entryEventData.getDataNewValue(), entryEventData.getDataOldValue(),
-                entryEventData.getDataMergingValue(), nodeEngine.getSerializationService());
+        replicatedMapEventPublishingService.dispatchEvent(event, listener);
     }
 
 
@@ -170,75 +165,170 @@ public class ReplicatedMapService
         return config.getReplicatedMapConfig(name).getAsReadOnly();
     }
 
-    public ReplicatedRecordStore getReplicatedRecordStore(String name, boolean create) {
+    public ReplicatedRecordStore getReplicatedRecordStore(String name, boolean create, Object key) {
+        return getReplicatedRecordStore(name, create, partitionService.getPartitionId(key));
+    }
+
+    public ReplicatedRecordStore getReplicatedRecordStore(String name, boolean create, int partitionId) {
+        PartitionContainer partitionContainer = partitionContainers[partitionId];
         if (create) {
-            return ConcurrencyUtil.getOrPutSynchronized(replicatedStorages, name, replicatedStorages, constructor);
+            return partitionContainer.getOrCreateRecordStore(name);
         }
-        return replicatedStorages.get(name);
+        return partitionContainer.getRecordStore(name);
+    }
+
+    public Collection<ReplicatedRecordStore> getAllReplicatedRecordStores(String name) {
+        int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
+        ArrayList<ReplicatedRecordStore> stores = new ArrayList<ReplicatedRecordStore>(partitionCount);
+        for (int i = 0; i < partitionCount; i++) {
+            ReplicatedRecordStore recordStore = partitionContainers[i].getRecordStore(name);
+            if (recordStore == null) {
+                continue;
+            }
+            stores.add(recordStore);
+        }
+        return stores;
+    }
+
+    public void clearLocalRecordStores(String name, boolean emptyReplicationQueue) {
+        for (int i = 0; i < nodeEngine.getPartitionService().getPartitionCount(); i++) {
+            ReplicatedRecordStore recordStore = partitionContainers[i].getRecordStore(name);
+            if (recordStore != null) {
+                recordStore.clear(emptyReplicationQueue);
+            }
+        }
+    }
+
+
+    public void clearLocalAndRemoteRecordStores(String name, boolean emptyReplicationQueue) {
+        Collection<MemberImpl> failedMembers = clusterService.getMemberImpls();
+        for (int i = 0; i < MAX_CLEAR_EXECUTION_RETRY; i++) {
+            Map<MemberImpl, InternalCompletableFuture> futures =
+                    executeClearOnMembers(failedMembers, emptyReplicationQueue, name);
+            // Clear to collect new failing members
+            failedMembers.clear();
+            for (Map.Entry<MemberImpl, InternalCompletableFuture> future : futures.entrySet()) {
+                try {
+                    future.getValue().get();
+                } catch (Exception e) {
+                    nodeEngine.getLogger(ReplicatedMapService.class).finest(e);
+                    failedMembers.add(future.getKey());
+                }
+            }
+
+            if (failedMembers.size() == 0) {
+                return;
+            }
+        }
+        // If we get here we does not seem to have finished the operation
+        throw new OperationTimeoutException("ReplicatedMap::clear couldn't be finished, failed nodes: "
+                + failedMembers);
+    }
+
+    private Map executeClearOnMembers(Collection<MemberImpl> members, boolean emptyReplicationQueue, String name) {
+        Map<MemberImpl, InternalCompletableFuture> futures = new HashMap<MemberImpl, InternalCompletableFuture>(members.size());
+        for (MemberImpl member : members) {
+            Address address = member.getAddress();
+            Operation operation = new ReplicatedMapClearOperation(name, emptyReplicationQueue);
+            InvocationBuilder ib = operationService.createInvocationBuilder(SERVICE_NAME, operation, address);
+            futures.put(member, ib.invoke());
+        }
+        return futures;
+    }
+
+    public void initializeListeners(String name) {
+        List<ListenerConfig> listenerConfigs = config.getReplicatedMapConfig(name).getListenerConfigs();
+        for (ListenerConfig listenerConfig : listenerConfigs) {
+            EntryListener listener = null;
+            if (listenerConfig.getImplementation() != null) {
+                listener = (EntryListener) listenerConfig.getImplementation();
+            } else if (listenerConfig.getClassName() != null) {
+                try {
+                    listener = ClassLoaderUtil.newInstance(nodeEngine.getConfigClassLoader(),
+                            listenerConfig.getClassName());
+                } catch (Exception e) {
+                    throw ExceptionUtil.rethrow(e);
+                }
+            }
+            if (listener != null) {
+                if (listener instanceof HazelcastInstanceAware) {
+                    ((HazelcastInstanceAware) listener).setHazelcastInstance(nodeEngine.getHazelcastInstance());
+                }
+                addEventListener(listener, null, name);
+            }
+        }
+    }
+
+    public PartitionContainer getPartitionContainer(int partitionId) {
+        return partitionContainers[partitionId];
+    }
+
+    public Config getConfig() {
+        return config;
+    }
+
+    public NodeEngine getNodeEngine() {
+        return nodeEngine;
     }
 
     public String addEventListener(EventListener entryListener, EventFilter eventFilter, String mapName) {
-        EventRegistration registration = eventService.registerLocalListener(SERVICE_NAME, mapName, eventFilter, entryListener);
+        EventRegistration registration = eventService.registerLocalListener(SERVICE_NAME, mapName, eventFilter,
+                entryListener);
         return registration.getId();
     }
 
     public boolean removeEventListener(String mapName, String registrationId) {
+        if (registrationId == null) {
+            throw new IllegalArgumentException("registrationId cannot be null");
+        }
         return eventService.deregisterListener(SERVICE_NAME, mapName, registrationId);
     }
 
-    private ConcurrentHashMap<String, ReplicatedRecordStore> initReplicatedRecordStoreMapping() {
-        return new ConcurrentHashMap<String, ReplicatedRecordStore>();
+    @Override
+    public Operation prepareReplicationOperation(PartitionReplicationEvent event) {
+        final PartitionContainer container = partitionContainers[event.getPartitionId()];
+        final ReplicationOperation operation = new ReplicationOperation(nodeEngine.getSerializationService(),
+                container, event.getPartitionId());
+        operation.setService(this);
+        return operation.isEmpty() ? null : operation;
     }
 
-    private ConstructorFunction<String, ReplicatedRecordStore> buildConstructorFunction() {
-        return new ConstructorFunction<String, ReplicatedRecordStore>() {
+    @Override
+    public void beforeMigration(PartitionMigrationEvent event) {
+        // no-op
+    }
 
-            @Override
-            public ReplicatedRecordStore createNew(String name) {
-                ReplicatedMapConfig replicatedMapConfig = getReplicatedMapConfig(name);
-                InMemoryFormat inMemoryFormat = replicatedMapConfig.getInMemoryFormat();
-                AbstractReplicatedRecordStore replicatedRecordStorage = null;
-                switch (inMemoryFormat) {
-                    case OBJECT:
-                        replicatedRecordStorage = new ObjectReplicatedRecordStorage(name, nodeEngine,
-                                ReplicatedMapService.this);
-                        break;
-                    case BINARY:
-                        replicatedRecordStorage = new DataReplicatedRecordStore(name, nodeEngine,
-                                ReplicatedMapService.this);
-                        break;
-                    case NATIVE:
-                        throw new IllegalStateException("native memory not yet supported for replicated map");
-                    default:
-                        throw new IllegalStateException("Unhandled in memory format:" + inMemoryFormat);
-                }
-                return replicatedRecordStorage;
-            }
-        };
+    @Override
+    public void commitMigration(PartitionMigrationEvent event) {
+        // no-op
+    }
+
+    @Override
+    public void rollbackMigration(PartitionMigrationEvent event) {
+        // no-op
+    }
+
+    @Override
+    public void clearPartitionReplica(int partitionId) {
+        // no-op
     }
 
     /**
      * Listener implementation to listen on replication messages from other nodes
      */
-    private final class ReplicationListener
-            implements ReplicatedMessageListener {
+    private final class ReplicationListener implements ReplicatedMessageListener {
 
         public void onMessage(IdentifiedDataSerializable message) {
-            if (message instanceof ReplicationMessage) {
-                ReplicationMessage replicationMessage = (ReplicationMessage) message;
-                ReplicatedRecordStore replicatedRecordStorage = replicatedStorages.get(replicationMessage.getName());
-                ReplicationPublisher replicationPublisher = replicatedRecordStorage.getReplicationPublisher();
-                if (replicatedRecordStorage instanceof AbstractReplicatedRecordStore) {
-                    replicationPublisher.queueUpdateMessage(replicationMessage);
-                }
-            } else if (message instanceof MultiReplicationMessage) {
-                MultiReplicationMessage multiReplicationMessage = (MultiReplicationMessage) message;
-                ReplicatedRecordStore replicatedRecordStorage = replicatedStorages.get(multiReplicationMessage.getName());
-                ReplicationPublisher replicationPublisher = replicatedRecordStorage.getReplicationPublisher();
-                if (replicatedRecordStorage instanceof AbstractReplicatedRecordStore) {
-                    replicationPublisher.queueUpdateMessages(multiReplicationMessage);
-                }
-            }
+            ReplicationMessage replicationMessage = (ReplicationMessage) message;
+            int partitionId = partitionService.getPartitionId(replicationMessage.getDataKey());
+            ReplicatedRecordStore replicatedRecordStorage = partitionContainers[partitionId]
+                    .getOrCreateRecordStore(replicationMessage.getName());
+            ProcessReplicationMessageOperation op = new ProcessReplicationMessageOperation(replicatedRecordStorage,
+                    replicationMessage);
+            op.setNodeEngine(nodeEngine);
+            op.setPartitionId(partitionId);
+            op.setValidateTarget(false);
+            nodeEngine.getOperationService().executeOperation(op);
         }
     }
 }

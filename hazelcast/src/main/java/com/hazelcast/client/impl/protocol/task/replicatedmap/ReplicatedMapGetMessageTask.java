@@ -22,6 +22,7 @@ import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
+import com.hazelcast.replicatedmap.impl.record.ReplicatedRecord;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.ReplicatedMapPermission;
@@ -38,9 +39,13 @@ public class ReplicatedMapGetMessageTask
     @Override
     protected Object call() throws Exception {
         ReplicatedMapService replicatedMapService = getService(ReplicatedMapService.SERVICE_NAME);
-        ReplicatedRecordStore recordStore = replicatedMapService.getReplicatedRecordStore(parameters.name, true);
-        Object returnValue = recordStore.get(serializationService.toObject(parameters.key));
-        return serializationService.toData(returnValue);
+        int partitionId = nodeEngine.getPartitionService().getPartitionId(parameters.key);
+        ReplicatedRecordStore recordStore = replicatedMapService.getReplicatedRecordStore(parameters.name, false, partitionId);
+        ReplicatedRecord record = recordStore.getReplicatedRecord(parameters.key);
+        if (record != null) {
+            return serializationService.toData(record.getValueInternal());
+        }
+        return null;
     }
 
     @Override

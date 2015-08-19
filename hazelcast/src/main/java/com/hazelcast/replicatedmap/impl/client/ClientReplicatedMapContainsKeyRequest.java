@@ -30,8 +30,7 @@ import java.security.Permission;
 /**
  * Client request class for {@link java.util.Map#containsKey(Object)} implementation
  */
-public class ClientReplicatedMapContainsKeyRequest
-        extends AbstractReplicatedMapClientRequest {
+public class ClientReplicatedMapContainsKeyRequest extends AbstractReplicatedMapClientRequest {
 
     private Data key;
 
@@ -46,8 +45,9 @@ public class ClientReplicatedMapContainsKeyRequest
 
     @Override
     public Object call() throws Exception {
-        ReplicatedRecordStore recordStore = getReplicatedRecordStore();
-        return recordStore.containsKey(key);
+        int partitionId = getPartitionId(key);
+        ReplicatedRecordStore store = getReplicatedRecordStore(partitionId, false);
+        return store.containsKey(key);
     }
 
     @Override

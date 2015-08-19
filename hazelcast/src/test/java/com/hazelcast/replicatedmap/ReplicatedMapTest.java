@@ -25,6 +25,7 @@ import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecord;
+import com.hazelcast.replicatedmap.impl.record.ReplicationPublisher;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -99,12 +100,12 @@ public class ReplicatedMapTest extends ReplicatedMapBaseTest {
             }
         }, 60, EntryEventType.ADDED, operations, 1, map1, map2);
 
-        for (Map.Entry<String, String> entry : map2.entrySet()) {
+        for (Entry<String, String> entry : map2.entrySet()) {
             assertStartsWith("foo-", entry.getKey());
             assertEquals("bar", entry.getValue());
         }
 
-        for (Map.Entry<String, String> entry : map1.entrySet()) {
+        for (Entry<String, String> entry : map1.entrySet()) {
             assertStartsWith("foo-", entry.getKey());
             assertEquals("bar", entry.getValue());
         }
@@ -150,11 +151,11 @@ public class ReplicatedMapTest extends ReplicatedMapBaseTest {
             }
         }, 60, EntryEventType.ADDED, map1, map2);
 
-        for (Map.Entry<String, String> entry : map2.entrySet()) {
+        for (Entry<String, String> entry : map2.entrySet()) {
             assertStartsWith("foo-", entry.getKey());
             assertEquals("bar", entry.getValue());
         }
-        for (Map.Entry<String, String> entry : map1.entrySet()) {
+        for (Entry<String, String> entry : map1.entrySet()) {
             assertStartsWith("foo-", entry.getKey());
             assertEquals("bar", entry.getValue());
         }
@@ -200,12 +201,12 @@ public class ReplicatedMapTest extends ReplicatedMapBaseTest {
             }
         }, 60, EntryEventType.ADDED, operations, 1, map1, map2);
 
-        for (Map.Entry<String, String> entry : map2.entrySet()) {
+        for (Entry<String, String> entry : map2.entrySet()) {
             assertStartsWith("foo-", entry.getKey());
             assertEquals("bar", entry.getValue());
         }
 
-        for (Map.Entry<String, String> entry : map1.entrySet()) {
+        for (Entry<String, String> entry : map1.entrySet()) {
             assertStartsWith("foo-", entry.getKey());
             assertEquals("bar", entry.getValue());
         }
@@ -268,14 +269,14 @@ public class ReplicatedMapTest extends ReplicatedMapBaseTest {
         }, 60, EntryEventType.ADDED, operations, 1, map1, map2);
 
         // Prevent further updates
-        getReplicationPublisher(map2).emptyReplicationQueue();
-        getReplicationPublisher(map1).emptyReplicationQueue();
+        emptyReplicationQueues(map2);
+        emptyReplicationQueues(map1);
 
         // Give a bit of time to process last batch of updates
         TimeUnit.SECONDS.sleep(2);
 
         Set<Entry<String, String>> map2entries = map2.entrySet();
-        for (Map.Entry<String, String> entry : map2entries) {
+        for (Entry<String, String> entry : map2entries) {
             assertStartsWith("foo-", entry.getKey());
             assertEquals("bar", entry.getValue());
 
@@ -287,7 +288,7 @@ public class ReplicatedMapTest extends ReplicatedMapBaseTest {
         }
 
         Set<Entry<String, String>> map1entries = map1.entrySet();
-        for (Map.Entry<String, String> entry : map1entries) {
+        for (Entry<String, String> entry : map1entries) {
             assertStartsWith("foo-", entry.getKey());
             assertEquals("bar", entry.getValue());
 
@@ -301,20 +302,26 @@ public class ReplicatedMapTest extends ReplicatedMapBaseTest {
         TimeUnit.SECONDS.sleep(1);
 
         int map2Updated = 0;
-        for (Map.Entry<String, String> entry : map2entries) {
+        for (Entry<String, String> entry : map2entries) {
             if (map2.get(entry.getKey()) == null) {
                 map2Updated++;
             }
         }
 
         int map1Updated = 0;
-        for (Map.Entry<String, String> entry : map1entries) {
+        for (Entry<String, String> entry : map1entries) {
             if (map1.get(entry.getKey()) == null) {
                 map1Updated++;
             }
         }
 
         assertMatchSuccessfulOperationQuota(1, operations, map1Updated, map2Updated);
+    }
+
+    private void emptyReplicationQueues(ReplicatedMap<String, String> map) throws Exception {
+        for (ReplicationPublisher<String, String> publisher : getReplicationPublisher(map)) {
+            publisher.emptyReplicationQueue();
+        }
     }
 
     @Test
@@ -357,11 +364,11 @@ public class ReplicatedMapTest extends ReplicatedMapBaseTest {
             }
         }, 60, EntryEventType.ADDED, operations, 1, map1, map2);
 
-        for (Map.Entry<String, String> entry : map2.entrySet()) {
+        for (Entry<String, String> entry : map2.entrySet()) {
             assertStartsWith("foo-", entry.getKey());
             assertEquals("bar", entry.getValue());
         }
-        for (Map.Entry<String, String> entry : map1.entrySet()) {
+        for (Entry<String, String> entry : map1.entrySet()) {
             assertStartsWith("foo-", entry.getKey());
             assertEquals("bar", entry.getValue());
         }
@@ -376,13 +383,13 @@ public class ReplicatedMapTest extends ReplicatedMapBaseTest {
         }, 60, EntryEventType.UPDATED, operations, 1, map1, map2);
 
         int map2Updated = 0;
-        for (Map.Entry<String, String> entry : map2.entrySet()) {
+        for (Entry<String, String> entry : map2.entrySet()) {
             if ("bar2".equals(entry.getValue())) {
                 map2Updated++;
             }
         }
         int map1Updated = 0;
-        for (Map.Entry<String, String> entry : map1.entrySet()) {
+        for (Entry<String, String> entry : map1.entrySet()) {
             if ("bar2".equals(entry.getValue())) {
                 map1Updated++;
             }
@@ -431,11 +438,11 @@ public class ReplicatedMapTest extends ReplicatedMapBaseTest {
             }
         }, 60, EntryEventType.ADDED, operations, 1, map1, map2);
 
-        for (Map.Entry<String, String> entry : map2.entrySet()) {
+        for (Entry<String, String> entry : map2.entrySet()) {
             assertStartsWith("foo-", entry.getKey());
             assertEquals("bar", entry.getValue());
         }
-        for (Map.Entry<String, String> entry : map1.entrySet()) {
+        for (Entry<String, String> entry : map1.entrySet()) {
             assertStartsWith("foo-", entry.getKey());
             assertEquals("bar", entry.getValue());
         }
@@ -450,14 +457,14 @@ public class ReplicatedMapTest extends ReplicatedMapBaseTest {
         }, 60, EntryEventType.UPDATED, operations, 1, map1, map2);
 
         int map2Updated = 0;
-        for (Map.Entry<String, String> entry : map2.entrySet()) {
+        for (Entry<String, String> entry : map2.entrySet()) {
             ReplicatedRecord record = getReplicatedRecord(map2, entry.getKey());
             if (record.getTtlMillis() > 0) {
                 map2Updated++;
             }
         }
         int map1Updated = 0;
-        for (Map.Entry<String, String> entry : map1.entrySet()) {
+        for (Entry<String, String> entry : map1.entrySet()) {
             ReplicatedRecord record = getReplicatedRecord(map1, entry.getKey());
             if (record.getTtlMillis() > 0) {
                 map1Updated++;
@@ -578,11 +585,11 @@ public class ReplicatedMapTest extends ReplicatedMapBaseTest {
             }
         }, 60, EntryEventType.ADDED, operations, 1, map1, map2);
 
-        for (Map.Entry<String, String> entry : map2.entrySet()) {
+        for (Entry<String, String> entry : map2.entrySet()) {
             assertStartsWith("foo-", entry.getKey());
             assertEquals("bar", entry.getValue());
         }
-        for (Map.Entry<String, String> entry : map1.entrySet()) {
+        for (Entry<String, String> entry : map1.entrySet()) {
             assertStartsWith("foo-", entry.getKey());
             assertEquals("bar", entry.getValue());
         }

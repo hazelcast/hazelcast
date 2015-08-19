@@ -27,6 +27,7 @@ import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.ReplicatedMapPermission;
 
 import java.security.Permission;
+import java.util.Collection;
 
 public class ReplicatedMapContainsValueMessageTask
         extends AbstractCallableMessageTask<ReplicatedMapContainsValueCodec.RequestParameters> {
@@ -37,9 +38,14 @@ public class ReplicatedMapContainsValueMessageTask
 
     @Override
     protected Object call() throws Exception {
-        ReplicatedMapService replicatedMapService = getService(ReplicatedMapService.SERVICE_NAME);
-        ReplicatedRecordStore recordStore = replicatedMapService.getReplicatedRecordStore(parameters.name, true);
-        return recordStore.containsValue(parameters.value);
+        ReplicatedMapService service = getService(ReplicatedMapService.SERVICE_NAME);
+        Collection<ReplicatedRecordStore> stores = service.getAllReplicatedRecordStores(parameters.name);
+        for (ReplicatedRecordStore store : stores) {
+            if (store.containsValue(parameters.value)) {
+                return true;
+            }
+        }
+        return false;
     }
 
 

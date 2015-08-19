@@ -17,10 +17,12 @@
 package com.hazelcast.replicatedmap.impl.client;
 
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.ReplicatedMapPermission;
 import java.security.Permission;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -39,8 +41,12 @@ public class ClientReplicatedMapKeySetRequest extends AbstractReplicatedMapClien
 
     @Override
     public Object call() throws Exception {
-        ReplicatedRecordStore recordStore = getReplicatedRecordStore();
-        Set keySet = recordStore.keySet(false);
+        ReplicatedMapService service = getService();
+        Collection<ReplicatedRecordStore> stores = service.getAllReplicatedRecordStores(getMapName());
+        Set keySet = new HashSet();
+        for (ReplicatedRecordStore store : stores) {
+            keySet.addAll(store.keySet(false));
+        }
         Set<Data> dataKeys = new HashSet<Data>(keySet.size());
         for (Object key : keySet) {
             dataKeys.add(serializationService.toData(key));

@@ -22,10 +22,8 @@ import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
-import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.ReplicatedMapPermission;
-
 import java.security.Permission;
 
 public class ReplicatedMapClearMessageTask
@@ -38,8 +36,7 @@ public class ReplicatedMapClearMessageTask
     @Override
     protected Object call() throws Exception {
         ReplicatedMapService replicatedMapService = getService(ReplicatedMapService.SERVICE_NAME);
-        ReplicatedRecordStore recordStore = replicatedMapService.getReplicatedRecordStore(parameters.name, true);
-        recordStore.clear(true, true);
+        replicatedMapService.clearLocalAndRemoteRecordStores(getDistributedObjectName(), true);
         return null;
     }
 

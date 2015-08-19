@@ -17,14 +17,12 @@
 package com.hazelcast.replicatedmap.impl.record;
 
 import com.hazelcast.replicatedmap.impl.record.LazySet.IteratorFactory;
-
 import java.util.AbstractMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.NoSuchElementException;
 
-class EntrySetIteratorFactory<K, V>
-        implements IteratorFactory<K, V, Map.Entry<K, V>> {
+class EntrySetIteratorFactory<K, V> implements IteratorFactory<K, V, Map.Entry<K, V>> {
 
     private final ReplicatedRecordStore recordStore;
 
@@ -37,8 +35,7 @@ class EntrySetIteratorFactory<K, V>
         return new EntrySetIterator(iterator);
     }
 
-    private final class EntrySetIterator
-            implements Iterator<Map.Entry<K, V>> {
+    private final class EntrySetIterator implements Iterator<Map.Entry<K, V>> {
 
         private final Iterator<Map.Entry<K, ReplicatedRecord<K, V>>> iterator;
 

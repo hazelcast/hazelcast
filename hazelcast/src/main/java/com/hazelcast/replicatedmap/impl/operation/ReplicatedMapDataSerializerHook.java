@@ -21,7 +21,6 @@ import com.hazelcast.nio.serialization.DataSerializerHook;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.nio.serialization.impl.ArrayDataSerializableFactory;
 import com.hazelcast.nio.serialization.impl.FactoryIdHelper;
-import com.hazelcast.replicatedmap.impl.messages.MultiReplicationMessage;
 import com.hazelcast.replicatedmap.impl.messages.ReplicationMessage;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecord;
 import com.hazelcast.util.ConstructorFunction;
@@ -34,8 +33,7 @@ import static com.hazelcast.nio.serialization.impl.FactoryIdHelper.REPLICATED_MA
  */
 //Deactivated all checkstyle rules because those classes will never comply
 //CHECKSTYLE:OFF
-public class ReplicatedMapDataSerializerHook
-        implements DataSerializerHook {
+public class ReplicatedMapDataSerializerHook implements DataSerializerHook {
 
     public static final int F_ID = FactoryIdHelper.getFactoryId(REPLICATED_MAP_DS_FACTORY, REPLICATED_MAP_DS_FACTORY_ID);
 
@@ -68,24 +66,24 @@ public class ReplicatedMapDataSerializerHook
                 return new ReplicationMessage();
             }
         };
-        constructors[REPL_MULTI_UPDATE_MESSAGE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            @Override
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new MultiReplicationMessage();
-            }
-        };
-        constructors[OP_INIT_CHUNK] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            @Override
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new ReplicatedMapInitChunkOperation();
-            }
-        };
-        constructors[OP_POST_JOIN] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            @Override
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new ReplicatedMapPostJoinOperation();
-            }
-        };
+//        constructors[REPL_MULTI_UPDATE_MESSAGE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+//            @Override
+//            public IdentifiedDataSerializable createNew(Integer arg) {
+//                return new MultiReplicationMessage();
+//            }
+//        };
+//        constructors[OP_INIT_CHUNK] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+//            @Override
+//            public IdentifiedDataSerializable createNew(Integer arg) {
+//                return new ReplicatedMapInitChunkOperation();
+//            }
+//        };
+//        constructors[OP_POST_JOIN] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+//            @Override
+//            public IdentifiedDataSerializable createNew(Integer arg) {
+//                return new ReplicatedMapPostJoinOperation();
+//            }
+//        };
         constructors[OP_CLEAR] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             @Override
             public IdentifiedDataSerializable createNew(Integer arg) {

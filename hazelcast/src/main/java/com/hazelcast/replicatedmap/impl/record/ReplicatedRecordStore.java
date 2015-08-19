@@ -16,11 +16,9 @@
 
 package com.hazelcast.replicatedmap.impl.record;
 
-import com.hazelcast.core.EntryListener;
-import com.hazelcast.query.Predicate;
-
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.Iterator;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
@@ -59,7 +57,7 @@ public interface ReplicatedRecordStore {
 
     int size();
 
-    void clear(boolean distribute, boolean emptyReplicationQueue);
+    void clear(boolean emptyReplicationQueue);
 
     boolean isEmpty();
 
@@ -71,14 +69,13 @@ public interface ReplicatedRecordStore {
 
     Object marshallValue(Object value);
 
-    String addEntryListener(EntryListener listener, Object key);
-
-    String addEntryListener(EntryListener listener, Predicate predicate, Object key);
-
-    boolean removeEntryListenerInternal(String id);
-
     ReplicationPublisher getReplicationPublisher();
 
     void destroy();
 
+    long getPartitionVersion();
+
+    Iterator<ReplicatedRecord> recordIterator();
+
+    void putRecord(RecordMigrationInfo record);
 }

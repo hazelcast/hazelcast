@@ -16,15 +16,18 @@
 
 package com.hazelcast.replicatedmap.impl.client;
 
+import com.hazelcast.client.impl.client.PartitionClientRequest;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
-import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
+import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
+import com.hazelcast.replicatedmap.impl.operation.PutOperation;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.ReplicatedMapPermission;
-
+import com.hazelcast.spi.Operation;
 import java.io.IOException;
 import java.security.Permission;
 import java.util.concurrent.TimeUnit;
@@ -33,35 +36,31 @@ import java.util.concurrent.TimeUnit;
  * Client request class for {@link com.hazelcast.core.ReplicatedMap#put(Object, Object, long, java.util.concurrent.TimeUnit)}
  * implementation
  */
-public class ClientReplicatedMapPutTtlRequest
-        extends AbstractReplicatedMapClientRequest {
+public class ClientReplicatedMapPutTtlRequest extends PartitionClientRequest {
 
+    private String name;
     private Data key;
     private Data value;
     private long ttlMillis;
 
-    ClientReplicatedMapPutTtlRequest() {
-        super(null);
+    public ClientReplicatedMapPutTtlRequest() {
     }
 
-    public ClientReplicatedMapPutTtlRequest(String mapName, Data key, Data value, long ttlMillis) {
-        super(mapName);
+    public ClientReplicatedMapPutTtlRequest(String name, Data key, Data value, long ttlMillis) {
+        this.name = name;
         this.key = key;
         this.value = value;
         this.ttlMillis = ttlMillis;
     }
 
     @Override
-    public Object call()
-            throws Exception {
-        ReplicatedRecordStore recordStore = getReplicatedRecordStore();
-        return recordStore.put(key, value, ttlMillis, TimeUnit.MILLISECONDS);
+    public String getServiceName() {
+        return ReplicatedMapService.SERVICE_NAME;
     }
 
     @Override
-    public void write(PortableWriter writer)
-            throws IOException {
-        super.write(writer);
+    public void write(PortableWriter writer) throws IOException {
+        writer.writeUTF("n", name);
         writer.writeLong("ttlMillis", ttlMillis);
         ObjectDataOutput out = writer.getRawDataOutput();
         out.writeData(key);
@@ -69,13 +68,17 @@ public class ClientReplicatedMapPutTtlRequest
     }
 
     @Override
-    public void read(PortableReader reader)
-            throws IOException {
-        super.read(reader);
+    public void read(PortableReader reader) throws IOException {
+        name = reader.readUTF("n");
         ttlMillis = reader.readLong("ttlMillis");
         ObjectDataInput in = reader.getRawDataInput();
         key = in.readData();
         value = in.readData();
+    }
+
+    @Override
+    public int getFactoryId() {
+        return ReplicatedMapPortableHook.F_ID;
     }
 
     @Override
@@ -85,7 +88,7 @@ public class ClientReplicatedMapPutTtlRequest
 
     @Override
     public Permission getRequiredPermission() {
-        return new ReplicatedMapPermission(getMapName(), ActionConstants.ACTION_PUT);
+        return new ReplicatedMapPermission(name, ActionConstants.ACTION_PUT);
     }
 
     @Override
@@ -99,5 +102,16 @@ public class ClientReplicatedMapPutTtlRequest
             return new Object[]{key, value};
         }
         return new Object[]{key, value, ttlMillis, TimeUnit.MILLISECONDS};
+    }
+
+    @Override
+    protected Operation prepareOperation() {
+        return new PutOperation(name, key, value, ttlMillis);
+    }
+
+    @Override
+    protected int getPartition() {
+        InternalPartitionService partitionService = clientEngine.getPartitionService();
+        return partitionService.getPartitionId(key);
     }
 }

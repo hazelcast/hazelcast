@@ -35,7 +35,7 @@ public class ReplicatedMapEntrySet implements Portable {
 
     private final Set<Map.Entry<Data, Data>> entrySet;
 
-    ReplicatedMapEntrySet() {
+    public ReplicatedMapEntrySet() {
         entrySet = new HashSet<Map.Entry<Data, Data>>();
     }
 

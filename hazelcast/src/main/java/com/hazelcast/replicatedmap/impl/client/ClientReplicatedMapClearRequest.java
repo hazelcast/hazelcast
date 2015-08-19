@@ -16,10 +16,9 @@
 
 package com.hazelcast.replicatedmap.impl.client;
 
-import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
+import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.ReplicatedMapPermission;
-
 import java.security.Permission;
 
 /**
@@ -37,8 +36,8 @@ public class ClientReplicatedMapClearRequest extends AbstractReplicatedMapClient
 
     @Override
     public Object call() throws Exception {
-        ReplicatedRecordStore recordStore = getReplicatedRecordStore();
-        recordStore.clear(true, true);
+        ReplicatedMapService service = getService();
+        service.clearLocalAndRemoteRecordStores(getMapName(), true);
         return Boolean.TRUE;
     }
 

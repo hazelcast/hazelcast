@@ -46,7 +46,7 @@ public class ClientReplicatedMapGetRequest extends AbstractReplicatedMapClientRe
 
     @Override
     public Object call() throws Exception {
-        ReplicatedRecordStore recordStore = getReplicatedRecordStore();
+        ReplicatedRecordStore recordStore = getReplicatedRecordStore(getPartitionId(key), false);
         ReplicatedRecord record = recordStore.getReplicatedRecord(key);
 
         if (record != null) {

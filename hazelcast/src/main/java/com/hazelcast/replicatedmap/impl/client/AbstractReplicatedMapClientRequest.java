@@ -18,12 +18,12 @@ package com.hazelcast.replicatedmap.impl.client;
 
 import com.hazelcast.client.impl.client.CallableClientRequest;
 import com.hazelcast.client.impl.client.RetryableRequest;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
-
 import java.io.IOException;
 
 /**
@@ -69,9 +69,13 @@ public abstract class AbstractReplicatedMapClientRequest extends CallableClientR
         return ReplicatedMapPortableHook.F_ID;
     }
 
-    protected ReplicatedRecordStore getReplicatedRecordStore() {
+    protected ReplicatedRecordStore getReplicatedRecordStore(int partitionId, boolean create) {
         ReplicatedMapService replicatedMapService = getService();
-        return replicatedMapService.getReplicatedRecordStore(mapName, true);
+        return replicatedMapService.getReplicatedRecordStore(mapName, create, partitionId);
+    }
+
+    protected int getPartitionId(Data key) {
+        return getClientEngine().getPartitionService().getPartitionId(key);
     }
 
     @Override

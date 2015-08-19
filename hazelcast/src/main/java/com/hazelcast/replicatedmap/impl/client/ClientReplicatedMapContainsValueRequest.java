@@ -21,12 +21,13 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
+import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.ReplicatedMapPermission;
-
 import java.io.IOException;
 import java.security.Permission;
+import java.util.Collection;
 
 /**
  * Client request class for {@link java.util.Map#containsValue(Object)} implementation
@@ -46,8 +47,14 @@ public class ClientReplicatedMapContainsValueRequest extends AbstractReplicatedM
 
     @Override
     public Object call() throws Exception {
-        ReplicatedRecordStore recordStore = getReplicatedRecordStore();
-        return recordStore.containsValue(value);
+        ReplicatedMapService service = getService();
+        Collection<ReplicatedRecordStore> stores = service.getAllReplicatedRecordStores(getMapName());
+        for (ReplicatedRecordStore store : stores) {
+            if (store.containsValue(value)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override

@@ -43,10 +43,13 @@ public class ReplicatedMapValuesMessageTask
     @Override
     protected Object call() throws Exception {
         ReplicatedMapService replicatedMapService = getService(getServiceName());
-        final ReplicatedRecordStore recordStore = replicatedMapService.getReplicatedRecordStore(parameters.name, true);
-        final Collection<ReplicatedRecord> values = recordStore.values(false);
-        List<Data> res = new ArrayList<Data>(values.size());
-        for (ReplicatedRecord record : values) {
+        Collection<ReplicatedRecordStore> stores = replicatedMapService.getAllReplicatedRecordStores(getDistributedObjectName());
+        Collection<ReplicatedRecord> records = new ArrayList<ReplicatedRecord>();
+        for (ReplicatedRecordStore store : stores) {
+            records.addAll(store.values(false));
+        }
+        List<Data> res = new ArrayList<Data>(records.size());
+        for (ReplicatedRecord record : records) {
             res.add(serializationService.toData(record.getValue()));
         }
         return res;

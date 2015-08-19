@@ -17,7 +17,6 @@
 package com.hazelcast.replicatedmap.impl;
 
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
-
 import java.util.concurrent.ScheduledFuture;
 
 /**

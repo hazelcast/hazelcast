@@ -27,9 +27,10 @@ import com.hazelcast.replicatedmap.impl.record.ReplicatedRecord;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.ReplicatedMapPermission;
-
 import java.security.Permission;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -42,14 +43,19 @@ public class ReplicatedMapEntrySetMessageTask
 
     @Override
     protected Object call() throws Exception {
-        ReplicatedMapService replicatedMapService = getService(getServiceName());
-        final ReplicatedRecordStore recordStore = replicatedMapService.getReplicatedRecordStore(parameters.name, true);
-        final Set<Map.Entry<Object, ReplicatedRecord>> entrySet = recordStore.entrySet(false);
-        HashMap<Data, Data> dataMap = new HashMap<Data, Data>();
-        for (Map.Entry<Object, ReplicatedRecord> entry : entrySet) {
-            dataMap.put(serializationService.toData(entry.getKey()), serializationService.toData(entry.getValue().getValue()));
+        ReplicatedMapService service = getService(ReplicatedMapService.SERVICE_NAME);
+        Collection<ReplicatedRecordStore> stores = service.getAllReplicatedRecordStores(parameters.name);
+        Set<Map.Entry<Object, ReplicatedRecord>> entrySet = new HashSet<Map.Entry<Object, ReplicatedRecord>>();
+        for (ReplicatedRecordStore store : stores) {
+            entrySet.addAll(store.entrySet(false));
         }
-        return dataMap;
+        HashMap<Data, Data> dataMap = new HashMap<Data, Data>(entrySet.size());
+        for (Map.Entry<Object, ReplicatedRecord> entry : entrySet) {
+            Data key = serializationService.toData(entry.getKey());
+            Data value = serializationService.toData(entry.getValue().getValue());
+            dataMap.put(key, value);
+        }
+        return dataMap.entrySet();
     }
 
 
@@ -60,7 +66,7 @@ public class ReplicatedMapEntrySetMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return ReplicatedMapEntrySetCodec.encodeResponse((Map<Data, Data>) response);
+        return ReplicatedMapEntrySetCodec.encodeResponse((Set<Map.Entry<Data, Data>>) response);
     }
 
     @Override

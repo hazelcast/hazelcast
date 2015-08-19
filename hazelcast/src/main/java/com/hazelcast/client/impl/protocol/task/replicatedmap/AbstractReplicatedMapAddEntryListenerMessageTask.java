@@ -26,32 +26,32 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
-import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
+import com.hazelcast.replicatedmap.impl.record.ReplicatedEntryEventFilter;
+import com.hazelcast.replicatedmap.impl.record.ReplicatedQueryEventFilter;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
-
 import java.security.Permission;
 
 public abstract class AbstractReplicatedMapAddEntryListenerMessageTask<Parameter>
         extends AbstractCallableMessageTask<Parameter>
         implements EntryListener<Object, Object> {
 
-    public AbstractReplicatedMapAddEntryListenerMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
+    public AbstractReplicatedMapAddEntryListenerMessageTask(ClientMessage clientMessage, Node node,
+                                                            Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
     protected Object call() {
         ReplicatedMapService replicatedMapService = getService(ReplicatedMapService.SERVICE_NAME);
-        ReplicatedRecordStore recordStore = replicatedMapService.getReplicatedRecordStore(getDistributedObjectName(), true);
-
-
         String registrationId;
         Predicate predicate = getPredicate();
         if (predicate == null) {
-            registrationId = recordStore.addEntryListener(this, getKey());
+            registrationId = replicatedMapService.addEventListener(this,
+                    new ReplicatedEntryEventFilter(getKey()), getDistributedObjectName());
         } else {
-            registrationId = recordStore.addEntryListener(this, predicate, getKey());
+            registrationId = replicatedMapService.addEventListener(this,
+                    new ReplicatedQueryEventFilter(getKey(), predicate), getDistributedObjectName());
         }
         endpoint.setListenerRegistration(ReplicatedMapService.SERVICE_NAME, getDistributedObjectName(), registrationId);
         return registrationId;

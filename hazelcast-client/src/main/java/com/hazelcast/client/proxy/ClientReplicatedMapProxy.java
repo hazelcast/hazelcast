@@ -163,14 +163,15 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
 
     @Override
     public boolean removeEntryListener(String id) {
-        final ClientReplicatedMapRemoveEntryListenerRequest request = new ClientReplicatedMapRemoveEntryListenerRequest(getName(),
-                id);
+        final ClientReplicatedMapRemoveEntryListenerRequest request =
+                new ClientReplicatedMapRemoveEntryListenerRequest(getName(), id);
         return stopListening(request, id);
     }
 
     @Override
     public String addEntryListener(EntryListener<K, V> listener) {
-        ClientReplicatedMapAddEntryListenerRequest request = new ClientReplicatedMapAddEntryListenerRequest(getName(), null, null);
+        ClientReplicatedMapAddEntryListenerRequest request = new ClientReplicatedMapAddEntryListenerRequest(getName()
+                , null, null);
         EventHandler<ReplicatedMapPortableEntryEvent> handler = createHandler(listener);
         return listen(request, null, handler);
     }
@@ -178,14 +179,16 @@ public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements Repli
     @Override
     public String addEntryListener(EntryListener<K, V> listener, K key) {
         Data dataKey = toData(key);
-        ClientReplicatedMapAddEntryListenerRequest request = new ClientReplicatedMapAddEntryListenerRequest(getName(), null, dataKey);
+        ClientReplicatedMapAddEntryListenerRequest request = new ClientReplicatedMapAddEntryListenerRequest(getName()
+                , null, dataKey);
         EventHandler<ReplicatedMapPortableEntryEvent> handler = createHandler(listener);
         return listen(request, null, handler);
     }
 
     @Override
     public String addEntryListener(EntryListener<K, V> listener, Predicate<K, V> predicate) {
-        ClientReplicatedMapAddEntryListenerRequest request = new ClientReplicatedMapAddEntryListenerRequest(getName(), predicate, null);
+        ClientReplicatedMapAddEntryListenerRequest request = new ClientReplicatedMapAddEntryListenerRequest(getName()
+                , predicate, null);
         EventHandler<ReplicatedMapPortableEntryEvent> handler = createHandler(listener);
         return listen(request, null, handler);
     }

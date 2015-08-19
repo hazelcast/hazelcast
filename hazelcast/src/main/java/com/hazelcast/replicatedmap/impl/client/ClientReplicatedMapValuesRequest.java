@@ -17,6 +17,7 @@
 package com.hazelcast.replicatedmap.impl.client;
 
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecord;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
 import com.hazelcast.security.permission.ActionConstants;
@@ -40,8 +41,12 @@ public class ClientReplicatedMapValuesRequest extends AbstractReplicatedMapClien
 
     @Override
     public Object call() throws Exception {
-        ReplicatedRecordStore recordStore = getReplicatedRecordStore();
-        Collection<ReplicatedRecord> values = recordStore.values(false);
+        ReplicatedMapService service = getService();
+        Collection<ReplicatedRecordStore> stores = service.getAllReplicatedRecordStores(getMapName());
+        Collection<ReplicatedRecord> values = new ArrayList<ReplicatedRecord>();
+        for (ReplicatedRecordStore store : stores) {
+            values.addAll(store.values(false));
+        }
         Collection<Data> dataValues = new ArrayList<Data>(values.size());
         for (ReplicatedRecord value : values) {
             dataValues.add(serializationService.toData(value.getValue()));

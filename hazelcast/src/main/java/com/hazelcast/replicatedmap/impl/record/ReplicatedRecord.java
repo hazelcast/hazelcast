@@ -45,15 +45,17 @@ public class ReplicatedRecord<K, V> implements IdentifiedDataSerializable {
     private int latestUpdateHash;
     private long ttlMillis;
     private volatile long updateTime = Clock.currentTimeMillis();
+    private int partitionId;
 
     public ReplicatedRecord() {
     }
 
-    public ReplicatedRecord(K key, V value, int hash, long ttlMillis) {
+    public ReplicatedRecord(K key, V value, int hash, long ttlMillis, int partitionId) {
         this.key = key;
         this.value = value;
         this.latestUpdateHash = hash;
         this.ttlMillis = ttlMillis;
+        this.partitionId = partitionId;
     }
 
     public K getKey() {
@@ -117,6 +119,10 @@ public class ReplicatedRecord<K, V> implements IdentifiedDataSerializable {
         lastAccessTime = Clock.currentTimeMillis();
     }
 
+    public int getPartitionId() {
+        return partitionId;
+    }
+
     @Override
     public int getFactoryId() {
         return ReplicatedMapDataSerializerHook.F_ID;
@@ -128,21 +134,21 @@ public class ReplicatedRecord<K, V> implements IdentifiedDataSerializable {
     }
 
     @Override
-    public void writeData(ObjectDataOutput out)
-            throws IOException {
+    public void writeData(ObjectDataOutput out) throws IOException {
         out.writeObject(key);
         out.writeObject(value);
         out.writeInt(latestUpdateHash);
         out.writeLong(ttlMillis);
+        out.writeInt(partitionId);
     }
 
     @Override
-    public void readData(ObjectDataInput in)
-            throws IOException {
+    public void readData(ObjectDataInput in) throws IOException {
         key = in.readObject();
         value = in.readObject();
         latestUpdateHash = in.readInt();
         ttlMillis = in.readLong();
+        partitionId = in.readInt();
     }
 
     //CHECKSTYLE:OFF

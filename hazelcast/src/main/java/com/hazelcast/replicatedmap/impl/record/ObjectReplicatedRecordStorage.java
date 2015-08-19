@@ -18,7 +18,6 @@ package com.hazelcast.replicatedmap.impl.record;
 
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
-import com.hazelcast.spi.NodeEngine;
 
 /**
  * This is a {@link com.hazelcast.config.InMemoryFormat#OBJECT} based
@@ -29,8 +28,8 @@ import com.hazelcast.spi.NodeEngine;
  */
 public class ObjectReplicatedRecordStorage<K, V> extends AbstractReplicatedRecordStore<K, V> {
 
-    public ObjectReplicatedRecordStorage(String name, NodeEngine nodeEngine, ReplicatedMapService replicatedMapService) {
-        super(name, nodeEngine, replicatedMapService);
+    public ObjectReplicatedRecordStorage(String name, ReplicatedMapService replicatedMapService) {
+        super(name, replicatedMapService);
     }
 
     @Override

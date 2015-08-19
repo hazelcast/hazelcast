@@ -18,31 +18,38 @@ package com.hazelcast.client.impl.protocol.task.replicatedmap;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ReplicatedMapPutAllCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
+import com.hazelcast.client.impl.protocol.task.AbstractAllPartitionsMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
-import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
+import com.hazelcast.replicatedmap.impl.client.ReplicatedMapEntrySet;
+import com.hazelcast.replicatedmap.impl.operation.PutAllOperationFactory;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.ReplicatedMapPermission;
-
+import com.hazelcast.spi.OperationFactory;
+import com.hazelcast.util.ExceptionUtil;
 import java.security.Permission;
 import java.util.Map;
 
 public class ReplicatedMapPutAllMessageTask
-        extends AbstractCallableMessageTask<ReplicatedMapPutAllCodec.RequestParameters> {
+        extends AbstractAllPartitionsMessageTask<ReplicatedMapPutAllCodec.RequestParameters> {
 
     public ReplicatedMapPutAllMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected Object call() throws Exception {
-        ReplicatedMapService replicatedMapService = getService(ReplicatedMapService.SERVICE_NAME);
-        ReplicatedRecordStore recordStore = replicatedMapService.getReplicatedRecordStore(parameters.name, true);
-        for (Map.Entry<Data, Data> entry : parameters.map.entrySet()) {
-            recordStore.put(entry.getKey(), entry.getValue());
+    protected OperationFactory createOperationFactory() {
+        return new PutAllOperationFactory(parameters.name, new ReplicatedMapEntrySet(parameters.map.entrySet()));
+    }
+
+    @Override
+    protected Object reduce(Map<Integer, Object> map) {
+        for (Map.Entry<Integer, Object> entry : map.entrySet()) {
+            Object result = serializationService.toObject(entry.getValue());
+            if (result instanceof Throwable) {
+                throw ExceptionUtil.rethrow((Throwable) result);
+            }
         }
         return null;
     }

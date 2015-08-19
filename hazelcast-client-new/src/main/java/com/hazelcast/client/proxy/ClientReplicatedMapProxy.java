@@ -72,9 +72,7 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
  * @param <K> key type
  * @param <V> value type
  */
-public class ClientReplicatedMapProxy<K, V>
-        extends ClientProxy
-        implements ReplicatedMap<K, V> {
+public class ClientReplicatedMapProxy<K, V> extends ClientProxy implements ReplicatedMap<K, V> {
 
     protected static final String NULL_KEY_IS_NOT_ALLOWED = "Null key is not allowed!";
     protected static final String NULL_VALUE_IS_NOT_ALLOWED = "Null value is not allowed!";
@@ -102,10 +100,9 @@ public class ClientReplicatedMapProxy<K, V>
         Data valueData = toData(value);
         Data keyData = toData(key);
         ClientMessage request = ReplicatedMapPutCodec.encodeRequest(getName(), keyData, valueData, timeUnit.toMillis(ttl));
-        ClientMessage response = invoke(request);
+        ClientMessage response = invoke(request, keyData);
         ReplicatedMapPutCodec.ResponseParameters result = ReplicatedMapPutCodec.decodeResponse(response);
         return toObject(result.response);
-
     }
 
     @Override
@@ -181,7 +178,7 @@ public class ClientReplicatedMapProxy<K, V>
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         Data keyData = toData(key);
         ClientMessage request = ReplicatedMapRemoveCodec.encodeRequest(getName(), keyData);
-        ClientMessage response = invoke(request);
+        ClientMessage response = invoke(request, keyData);
         ReplicatedMapRemoveCodec.ResponseParameters result = ReplicatedMapRemoveCodec.decodeResponse(response);
         return toObject(result.response);
     }

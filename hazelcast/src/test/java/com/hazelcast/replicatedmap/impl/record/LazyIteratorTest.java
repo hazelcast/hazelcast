@@ -17,8 +17,6 @@
 package com.hazelcast.replicatedmap.impl.record;
 
 import com.hazelcast.config.ReplicatedMapConfig;
-import com.hazelcast.core.EntryListener;
-import com.hazelcast.query.Predicate;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -54,14 +52,14 @@ public class LazyIteratorTest
         for (int i = 0; i < 100; i++) {
             String key = "key-" + i;
             int hash = HashUtil.hashCode(key);
-            TEST_DATA_SIMPLE.put(key, new ReplicatedRecord<String, Integer>(key, i, hash, -1));
+            TEST_DATA_SIMPLE.put(key, new ReplicatedRecord<String, Integer>(key, i, hash, -1, 0));
         }
         TEST_DATA_TOMBS = new InternalReplicatedMapStorage<String, Integer>(new ReplicatedMapConfig());
         for (int i = 0; i < 100; i++) {
             String key = "key-" + i;
             int hash = HashUtil.hashCode(key);
             Integer value = i % 2 == 0 ? i : null;
-            ReplicatedRecord<String, Integer> record = new ReplicatedRecord<String, Integer>(key, value, hash, -1);
+            ReplicatedRecord<String, Integer> record = new ReplicatedRecord<String, Integer>(key, value, hash, -1, 0);
             TEST_DATA_TOMBS.put(key, record);
         }
     }
@@ -552,8 +550,7 @@ public class LazyIteratorTest
         assertEquals(50, array.length);
     }
 
-    private static class NoOpReplicatedRecordStore
-            implements ReplicatedRecordStore {
+    private static class NoOpReplicatedRecordStore implements ReplicatedRecordStore {
 
         @Override
         public String getName() {
@@ -631,7 +628,7 @@ public class LazyIteratorTest
         }
 
         @Override
-        public void clear(boolean distribute, boolean emptyReplicationQueue) {
+        public void clear(boolean emptyReplicationQueue) {
         }
 
         @Override
@@ -660,27 +657,27 @@ public class LazyIteratorTest
         }
 
         @Override
-        public String addEntryListener(EntryListener listener, Object key) {
-            return null;
-        }
-
-        @Override
-        public String addEntryListener(EntryListener listener, Predicate predicate, Object key) {
-            return null;
-        }
-
-        @Override
-        public boolean removeEntryListenerInternal(String id) {
-            return false;
-        }
-
-        @Override
         public ReplicationPublisher getReplicationPublisher() {
             return null;
         }
 
         @Override
         public void destroy() {
+        }
+
+        @Override
+        public long getPartitionVersion() {
+            return 0;
+        }
+
+        @Override
+        public Iterator<ReplicatedRecord> recordIterator() {
+            return null;
+        }
+
+        @Override
+        public void putRecord(RecordMigrationInfo record) {
+
         }
     }
 
