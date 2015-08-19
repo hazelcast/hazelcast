@@ -25,9 +25,6 @@ import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IExecutorService;
 import com.hazelcast.core.MemberSelector;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -39,7 +36,6 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
-import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
@@ -50,7 +46,6 @@ import java.util.concurrent.TimeoutException;
 
 import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
 import static com.hazelcast.test.HazelcastTestSupport.randomString;
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -60,7 +55,6 @@ public class ClientExecutorServiceTest {
 
     private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
     private HazelcastInstance client;
-    private HazelcastInstance instance;
 
     @After
     public void tearDown() {
@@ -69,7 +63,7 @@ public class ClientExecutorServiceTest {
 
     @Before
     public void setup() throws IOException {
-        instance = hazelcastFactory.newHazelcastInstance();
+        hazelcastFactory.newHazelcastInstance();
         hazelcastFactory.newHazelcastInstance();
         hazelcastFactory.newHazelcastInstance();
         client = hazelcastFactory.newHazelcastClient();
@@ -125,7 +119,7 @@ public class ClientExecutorServiceTest {
     @Test(expected = TimeoutException.class)
     public void testCancellationAwareTask_whenTimeOut() throws InterruptedException, ExecutionException, TimeoutException {
         IExecutorService service = client.getExecutorService(randomString());
-        CancellationAwareTask task = new CancellationAwareTask(5000);
+        CancellationAwareTask task = new CancellationAwareTask(Long.MAX_VALUE);
 
         Future future = service.submit(task);
 
@@ -135,7 +129,7 @@ public class ClientExecutorServiceTest {
     @Test
     public void testFutureAfterCancellationAwareTaskTimeOut() throws InterruptedException, ExecutionException, TimeoutException {
         IExecutorService service = client.getExecutorService(randomString());
-        CancellationAwareTask task = new CancellationAwareTask(5000);
+        CancellationAwareTask task = new CancellationAwareTask(Long.MAX_VALUE);
 
         Future future = service.submit(task);
 
@@ -151,7 +145,7 @@ public class ClientExecutorServiceTest {
     @Test
     public void testCancelFutureAfterCancellationAwareTaskTimeOut() throws InterruptedException, ExecutionException, TimeoutException {
         IExecutorService service = client.getExecutorService(randomString());
-        CancellationAwareTask task = new CancellationAwareTask(5000);
+        CancellationAwareTask task = new CancellationAwareTask(Long.MAX_VALUE);
 
         Future future = service.submit(task);
 
@@ -168,7 +162,7 @@ public class ClientExecutorServiceTest {
     @Test(expected = CancellationException.class)
     public void testGetFutureAfterCancel() throws InterruptedException, ExecutionException, TimeoutException {
         IExecutorService service = client.getExecutorService(randomString());
-        CancellationAwareTask task = new CancellationAwareTask(5000);
+        CancellationAwareTask task = new CancellationAwareTask(Long.MAX_VALUE);
 
         Future future = service.submit(task);
         try {
