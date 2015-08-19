@@ -17,19 +17,22 @@
 package com.hazelcast.internal.monitors;
 
 /**
- *  Health monitor can be configured with system properties
+ * Health monitor can be configured with system properties.
  *
- * "hazelcast.health.monitoring.level"
+ * {@link com.hazelcast.instance.GroupProperty#HEALTH_MONITORING_LEVEL}
  */
 public enum HealthMonitorLevel {
+
     /**
      * Does not print anything.
      */
     OFF,
+
     /**
      * (default) Prints only if metrics are above threshold.
      */
     SILENT,
+
     /**
      * Does not check threshold , always prints.
      */

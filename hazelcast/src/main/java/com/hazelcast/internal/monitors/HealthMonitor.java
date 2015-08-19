@@ -38,15 +38,15 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * Health monitor periodically prints logs about related internal metrics using the {@link MetricsRegistry} to provides some clues
  * about the internal Hazelcast state.
  * <p/>
- * Health monitor can be configured with system properties
+ * Health monitor can be configured with system properties.
  * <p/>
- * "hazelcast.health.monitoring.level"
- * This property can be one of the following
- * NOISY           => does not check threshold , always prints.
- * SILENT(default) => prints only if metrics are above threshold.
- * OFF             => Does not print anything.
+ * {@link com.hazelcast.instance.GroupProperty#HEALTH_MONITORING_LEVEL}
+ * This property can be one of the following:
+ * {@link HealthMonitorLevel#NOISY}  => does not check threshold, always prints.
+ * {@link HealthMonitorLevel#SILENT} => prints only if metrics are above threshold (default).
+ * {@link HealthMonitorLevel#OFF}    => does not print anything.
  * <p/>
- * "hazelcast.health.monitoring.delay.seconds"
+ * {@link com.hazelcast.instance.GroupProperty#HEALTH_MONITORING_DELAY_SECONDS}
  * Time between printing two logs of health monitor. Default values is 30 seconds.
  */
 public class HealthMonitor {
