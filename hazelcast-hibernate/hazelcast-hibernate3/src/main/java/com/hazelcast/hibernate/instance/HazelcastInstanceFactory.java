@@ -40,24 +40,33 @@ public final class HazelcastInstanceFactory {
     }
 
     public static IHazelcastInstanceLoader createInstanceLoader(Properties props) throws CacheException {
-        boolean useNativeClient = false;
-        if (props != null) {
-            useNativeClient = CacheEnvironment.isNativeClient(props);
-        }
-        IHazelcastInstanceLoader loader = null;
-        Class loaderClass = null;
-        ClassLoader cl = HazelcastInstanceFactory.class.getClassLoader();
         try {
-            if (useNativeClient) {
-                loaderClass = cl.loadClass(HZ_CLIENT_LOADER_CLASSNAME);
-            } else {
-                loaderClass = cl.loadClass(HZ_INSTANCE_LOADER_CLASSNAME);
+            boolean useNativeClient = false;
+            IHazelcastInstanceLoader instanceLoader = (IHazelcastInstanceLoader) props.
+                    get("com.hazelcast.hibernate.instance.loader");
+            if (instanceLoader != null) {
+                return instanceLoader;
             }
-            loader = (IHazelcastInstanceLoader) loaderClass.newInstance();
+            Class loaderClass = getInstanceLoaderClass(props, useNativeClient);
+            instanceLoader = (IHazelcastInstanceLoader) loaderClass.newInstance();
+            instanceLoader.configure(props);
+            return instanceLoader;
         } catch (Exception e) {
             throw new CacheException(e);
         }
-        loader.configure(props);
-        return loader;
+    }
+
+    private static Class getInstanceLoaderClass(Properties props, boolean useNativeClient) throws ClassNotFoundException {
+        if (props != null) {
+            useNativeClient = CacheEnvironment.isNativeClient(props);
+        }
+        Class loaderClass = null;
+        ClassLoader cl = HazelcastInstanceFactory.class.getClassLoader();
+        if (useNativeClient) {
+            loaderClass = cl.loadClass(HZ_CLIENT_LOADER_CLASSNAME);
+        } else {
+            loaderClass = cl.loadClass(HZ_INSTANCE_LOADER_CLASSNAME);
+        }
+        return loaderClass;
     }
 }

@@ -32,7 +32,7 @@ import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(NightlyTest.class)
-public class RegionFactoryDefaultNightlyTest extends HibernateStatisticsTestSupport {
+public class RegionFactoryDefaultNightlyTest extends HibernateSlowTestSupport {
 
     protected Properties getCacheProperties() {
         Properties props = new Properties();
