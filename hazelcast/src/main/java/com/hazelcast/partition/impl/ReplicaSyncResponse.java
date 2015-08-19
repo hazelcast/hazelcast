@@ -29,6 +29,7 @@ import com.hazelcast.spi.OperationResponseHandler;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.UrgentSystemOperation;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import com.hazelcast.spi.exception.WrongTargetException;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -71,7 +72,7 @@ public class ReplicaSyncResponse extends Operation
             if (replicaIndex == currentReplicaIndex) {
                 executeTasks();
             } else {
-                logNodeNotOwnsBackup(partitionId, replicaIndex, currentReplicaIndex);
+                nodeNotOwnsBackup(partition);
             }
             if (tasks != null) {
                 tasks.clear();
@@ -97,38 +98,60 @@ public class ReplicaSyncResponse extends Operation
         }
     }
 
-    private void logNodeNotOwnsBackup(int partitionId, int replicaIndex, int currentReplicaIndex) {
+    private void nodeNotOwnsBackup(InternalPartitionImpl partition) {
+        int partitionId = getPartitionId();
+        int replicaIndex = getReplicaIndex();
+        Address thisAddress = getNodeEngine().getThisAddress();
+        int currentReplicaIndex = partition.getReplicaIndex(thisAddress);
+
         ILogger logger = getLogger();
         if (logger.isFinestEnabled()) {
-            logger.finest("This node is not backup replica of partitionId=" + partitionId + ", replicaIndex=" + replicaIndex
-                    + " anymore. current replicaIndex=" + currentReplicaIndex);
+            logger.finest(
+                    "This node is not backup replica of partitionId=" + partitionId + ", replicaIndex=" + replicaIndex
+                            + " anymore. current replicaIndex=" + currentReplicaIndex);
+        }
+
+        if (tasks != null) {
+            Throwable throwable = new WrongTargetException(thisAddress, partition.getReplicaAddress(replicaIndex),
+                    partitionId, replicaIndex, getClass().getName());
+            for (Operation op : tasks) {
+                prepareOperation(op);
+                onOperationFailure(op, throwable);
+            }
         }
     }
 
     private void executeTasks() {
         int partitionId = getPartitionId();
         int replicaIndex = getReplicaIndex();
-        if (tasks != null && tasks.size() > 0) {
-            NodeEngine nodeEngine = getNodeEngine();
+        if (tasks != null && !tasks.isEmpty()) {
             logApplyReplicaSync(partitionId, replicaIndex);
             for (Operation op : tasks) {
+                prepareOperation(op);
                 try {
-                    ILogger opLogger = nodeEngine.getLogger(op.getClass());
-                    OperationResponseHandler responseHandler = createErrorLoggingResponseHandler(opLogger);
-                    op.setNodeEngine(nodeEngine)
-                            .setPartitionId(partitionId)
-                            .setReplicaIndex(replicaIndex)
-                            .setOperationResponseHandler(responseHandler);
                     op.beforeRun();
                     op.run();
                     op.afterRun();
                 } catch (Throwable e) {
+                    onOperationFailure(op, e);
                     logException(op, e);
                 }
             }
         } else {
             logEmptyTaskList(partitionId, replicaIndex);
         }
+    }
+
+    private void prepareOperation(Operation op) {
+        int partitionId = getPartitionId();
+        int replicaIndex = getReplicaIndex();
+        NodeEngine nodeEngine = getNodeEngine();
+
+        ILogger opLogger = nodeEngine.getLogger(op.getClass());
+        OperationResponseHandler responseHandler = createErrorLoggingResponseHandler(opLogger);
+
+        op.setNodeEngine(nodeEngine).setPartitionId(partitionId)
+                .setReplicaIndex(replicaIndex).setOperationResponseHandler(responseHandler);
     }
 
     private void logEmptyTaskList(int partitionId, int replicaIndex) {
@@ -177,6 +200,24 @@ public class ReplicaSyncResponse extends Operation
     @Override
     public String getServiceName() {
         return InternalPartitionService.SERVICE_NAME;
+    }
+
+    @Override
+    public void onExecutionFailure(Throwable e) {
+        if (tasks != null) {
+            for (Operation op : tasks) {
+                prepareOperation(op);
+                onOperationFailure(op, e);
+            }
+        }
+    }
+
+    private void onOperationFailure(Operation op, Throwable e) {
+        try {
+            op.onExecutionFailure(e);
+        } catch (Throwable t) {
+            getLogger().warning("While calling operation.onFailure(). op: " + op, t);
+        }
     }
 
     @Override

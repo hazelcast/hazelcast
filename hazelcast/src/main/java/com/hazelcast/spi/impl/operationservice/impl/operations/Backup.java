@@ -141,6 +141,17 @@ public final class Backup extends Operation implements BackupOperation, Identifi
     }
 
     @Override
+    public void onExecutionFailure(Throwable e) {
+        if (backupOp != null) {
+            try {
+                backupOp.onExecutionFailure(e);
+            } catch (Throwable t) {
+                getLogger().warning("While calling operation.onFailure(). op: " + backupOp, t);
+            }
+        }
+    }
+
+    @Override
     public void logError(Throwable e) {
         if (backupOp != null) {
             backupOp.logError(e);
