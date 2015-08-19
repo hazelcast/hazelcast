@@ -23,6 +23,7 @@ import com.hazelcast.mapreduce.aggregation.Supplier;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.Repeat;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -38,7 +39,7 @@ import static org.junit.Assert.assertEquals;
 public class MaxAggregationTest
         extends AbstractAggregationTest {
 
-    @Test
+    @Test(timeout = 60000)
     public void testBigDecimalMax()
             throws Exception {
 
@@ -60,7 +61,7 @@ public class MaxAggregationTest
         assertEquals(expectation, result);
     }
 
-    @Test
+    @Test(timeout = 60000)
     public void testBigIntegerMax()
             throws Exception {
 
@@ -82,7 +83,7 @@ public class MaxAggregationTest
         assertEquals(expectation, result);
     }
 
-    @Test
+    @Test(timeout = 60000)
     public void testDoubleMax()
             throws Exception {
 
@@ -106,7 +107,7 @@ public class MaxAggregationTest
         assertEquals(expectation, result, 0.0);
     }
 
-    @Test
+    @Test(timeout = 60000)
     public void testIntegerMax()
             throws Exception {
 
@@ -130,7 +131,7 @@ public class MaxAggregationTest
         assertEquals(expectation, result);
     }
 
-    @Test
+    @Test(timeout = 60000)
     public void testLongMax()
             throws Exception {
 
@@ -154,7 +155,7 @@ public class MaxAggregationTest
         assertEquals(expectation, result);
     }
 
-    @Test
+    @Test(timeout = 60000)
     public void testBigDecimalMaxWithExtractor()
             throws Exception {
 
@@ -176,7 +177,7 @@ public class MaxAggregationTest
         assertEquals(expectation, result);
     }
 
-    @Test
+    @Test(timeout = 60000)
     public void testBigIntegerMaxWithExtractor()
             throws Exception {
 
@@ -198,7 +199,7 @@ public class MaxAggregationTest
         assertEquals(expectation, result);
     }
 
-    @Test
+    @Test(timeout = 60000)
     public void testDoubleMaxWithExtractor()
             throws Exception {
 
@@ -222,7 +223,7 @@ public class MaxAggregationTest
         assertEquals(expectation, result, 0.0);
     }
 
-    @Test
+    @Test(timeout = 60000)
     public void testIntegerMaxWithExtractor()
             throws Exception {
 
@@ -246,7 +247,7 @@ public class MaxAggregationTest
         assertEquals(expectation, result);
     }
 
-    @Test
+    @Test(timeout = 60000)
     public void testLongMaxWithExtractor()
             throws Exception {
 

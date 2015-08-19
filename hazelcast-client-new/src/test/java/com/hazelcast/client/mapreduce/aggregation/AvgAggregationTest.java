@@ -38,7 +38,7 @@ import static org.junit.Assert.assertEquals;
 public class AvgAggregationTest
         extends AbstractAggregationTest {
 
-    @Test
+    @Test(timeout = 60000)
     public void testBigDecimalAvg()
             throws Exception {
 
@@ -60,7 +60,7 @@ public class AvgAggregationTest
         assertEquals(expectation, result);
     }
 
-    @Test
+    @Test(timeout = 60000)
     public void testBigIntegerAvg()
             throws Exception {
 
@@ -82,7 +82,7 @@ public class AvgAggregationTest
         assertEquals(expectation, result);
     }
 
-    @Test
+    @Test(timeout = 60000)
     public void testDoubleAvg()
             throws Exception {
 
@@ -104,7 +104,7 @@ public class AvgAggregationTest
         assertEquals(expectation, result, 0.0);
     }
 
-    @Test
+    @Test(timeout = 60000)
     public void testIntegerAvg()
             throws Exception {
 
@@ -126,7 +126,7 @@ public class AvgAggregationTest
         assertEquals(expectation, result);
     }
 
-    @Test
+    @Test(timeout = 60000)
     public void testLongAvg()
             throws Exception {
 
@@ -148,7 +148,7 @@ public class AvgAggregationTest
         assertEquals(expectation, result);
     }
 
-    @Test
+    @Test(timeout = 60000)
     public void testBigDecimalAvgWithExtractor()
             throws Exception {
 
@@ -170,7 +170,7 @@ public class AvgAggregationTest
         assertEquals(expectation, result);
     }
 
-    @Test
+    @Test(timeout = 60000)
     public void testBigIntegerAvgWithExtractor()
             throws Exception {
 
@@ -192,7 +192,7 @@ public class AvgAggregationTest
         assertEquals(expectation, result);
     }
 
-    @Test
+    @Test(timeout = 60000)
     public void testDoubleAvgWithExtractor()
             throws Exception {
 
@@ -214,7 +214,7 @@ public class AvgAggregationTest
         assertEquals(expectation, result, 0.0);
     }
 
-    @Test
+    @Test(timeout = 60000)
     public void testIntegerAvgWithExtractor()
             throws Exception {
 
@@ -236,7 +236,7 @@ public class AvgAggregationTest
         assertEquals(expectation, result);
     }
 
-    @Test
+    @Test(timeout = 60000)
     public void testLongAvgWithExtractor()
             throws Exception {
 
