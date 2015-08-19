@@ -102,6 +102,9 @@
                     <hz:timed-expiry-policy-factory expiry-policy-type="ETERNAL"/>
                 </hz:expiry-policy-factory>
             </hz:cache>
+            <hz:cache name="cacheWithQuorumRef">
+                <hz:quorum-ref>cacheQuorumRefString</hz:quorum-ref>
+            </hz:cache>
         </hz:config>
     </hz:hazelcast>
 

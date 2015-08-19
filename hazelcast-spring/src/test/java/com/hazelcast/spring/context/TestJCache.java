@@ -211,4 +211,14 @@ public class TestJCache {
         assertEquals(ExpiryPolicyType.ETERNAL, timedExpiryPolicyFactoryConfig.getExpiryPolicyType());
     }
 
+    @Test
+    public void testCacheQuorumConfig() {
+        assertNotNull(instance1);
+
+        CacheSimpleConfig simpleConfig = instance1.getConfig().getCacheConfigs().get("cacheWithQuorumRef");
+
+        assertNotNull(simpleConfig);
+
+        assertEquals("cacheQuorumRefString", simpleConfig.getQuorumName());
+    }
 }
