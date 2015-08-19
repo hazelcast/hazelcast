@@ -20,7 +20,6 @@ import com.hazelcast.client.AuthenticationException;
 import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.ClientTypes;
 import com.hazelcast.client.impl.ClientEndpointImpl;
-import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.client.impl.client.ClientPrincipal;
 import com.hazelcast.client.impl.operations.ClientReAuthOperation;
 import com.hazelcast.client.impl.protocol.ClientMessage;
@@ -87,8 +86,6 @@ public abstract class AuthenticationBaseMessageTask<P>
     }
 
     private boolean authenticate() {
-        ClientEngineImpl clientEngine = getService(ClientEngineImpl.SERVICE_NAME);
-        Connection connection = endpoint.getConnection();
         ILogger logger = clientEngine.getLogger(getClass());
         boolean authenticated;
         if (credentials == null) {
@@ -106,9 +103,6 @@ public abstract class AuthenticationBaseMessageTask<P>
                     + "Current credentials type is: " + credentials.getClass().getName());
         }
 
-
-        logger.log((authenticated ? Level.INFO : Level.WARNING), "Received auth from " + connection
-                + ", " + (authenticated ? "successfully authenticated" : "authentication failed"));
         return authenticated;
     }
 
@@ -136,7 +130,11 @@ public abstract class AuthenticationBaseMessageTask<P>
     }
 
     private Object handleUnauthenticated() {
-        throw new AuthenticationException("Invalid credentials!");
+        Connection connection = endpoint.getConnection();
+        ILogger logger = clientEngine.getLogger(getClass());
+        logger.log(Level.WARNING, "Received auth from " + connection
+                + " with principal " + principal + " , authentication failed");
+        return new AuthenticationException("Invalid credentials!");
     }
 
     private Object handleAuthenticated() {
@@ -161,6 +159,11 @@ public abstract class AuthenticationBaseMessageTask<P>
             throw new AuthenticationException("Invalid owner-uuid: " + principal.getOwnerUuid()
                     + ", it's not member of this cluster!");
         }
+
+        Connection connection = endpoint.getConnection();
+        ILogger logger = clientEngine.getLogger(getClass());
+        logger.log(Level.INFO, "Received auth from " + connection + ", successfully authenticated"
+        + ", principal : " + principal + ", owner connection : " + isOwnerConnection());
 
         endpoint.authenticated(principal, credentials, isOwnerConnection());
         setConnectionType();
@@ -207,6 +210,7 @@ public abstract class AuthenticationBaseMessageTask<P>
         for (ClientEndpoint endpoint : endpoints) {
             endpoint.authenticated(principal);
         }
+        clientEngine.addOwnershipMapping(principal.getUuid(), principal.getOwnerUuid());
     }
 
     @Override
