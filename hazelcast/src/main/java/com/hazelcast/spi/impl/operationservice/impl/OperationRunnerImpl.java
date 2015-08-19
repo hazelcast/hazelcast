@@ -256,6 +256,12 @@ class OperationRunnerImpl extends OperationRunner {
         if (e instanceof OutOfMemoryError) {
             OutOfMemoryErrorDispatcher.onOutOfMemory((OutOfMemoryError) e);
         }
+        try {
+            operation.onExecutionFailure(e);
+        } catch (Throwable t) {
+            logger.warning("While calling 'operation.onFailure(e)'... op: " + operation + ", error: " + e, t);
+        }
+
         operation.logError(e);
 
         ResponseHandler responseHandler = operation.getResponseHandler();
