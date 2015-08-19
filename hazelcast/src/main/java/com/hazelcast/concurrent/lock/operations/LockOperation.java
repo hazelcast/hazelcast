@@ -46,7 +46,7 @@ public class LockOperation extends BaseLockOperation implements WaitSupport, Bac
 
     @Override
     public Operation getBackupOperation() {
-        return new LockBackupOperation(namespace, key, threadId, getCallerUuid());
+        return new LockBackupOperation(namespace, key, threadId, ttl, getCallerUuid());
     }
 
     @Override

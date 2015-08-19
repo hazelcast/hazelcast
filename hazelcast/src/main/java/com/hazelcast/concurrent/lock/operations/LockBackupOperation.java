@@ -33,8 +33,9 @@ public class LockBackupOperation extends BaseLockOperation implements BackupOper
     public LockBackupOperation() {
     }
 
-    public LockBackupOperation(ObjectNamespace namespace, Data key, long threadId, String originalCallerUuid) {
+    public LockBackupOperation(ObjectNamespace namespace, Data key, long threadId, long ttl, String originalCallerUuid) {
         super(namespace, key, threadId);
+        this.ttl = ttl;
         this.originalCallerUuid = originalCallerUuid;
     }
 
