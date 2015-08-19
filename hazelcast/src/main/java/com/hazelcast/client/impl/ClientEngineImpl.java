@@ -41,6 +41,7 @@ import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionListener;
 import com.hazelcast.nio.Packet;
@@ -116,7 +117,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
     private final ConnectionListener connectionListener = new ConnectionListenerImpl();
 
     private final MessageTaskFactory messageTaskFactory;
-    private final ClientExceptionFactory clientExceptionFactory = new ClientExceptionFactory();
+    private final ClientExceptionFactory clientExceptionFactory;
 
     public ClientEngineImpl(Node node) {
         this.logger = node.getLogger(ClientEngine.class);
@@ -126,10 +127,17 @@ public class ClientEngineImpl implements ClientEngine, CoreService, PostJoinAwar
         this.endpointManager = new ClientEndpointManagerImpl(this, nodeEngine);
         this.executor = newExecutor();
         this.messageTaskFactory = node.getNodeExtension().createMessageTaskFactory(node);
+        this.clientExceptionFactory = initClientExceptionFactory();
 
         ClientHeartbeatMonitor heartBeatMonitor = new ClientHeartbeatMonitor(
                 endpointManager, this, nodeEngine.getExecutionService(), node.groupProperties);
         heartBeatMonitor.start();
+    }
+
+    private ClientExceptionFactory initClientExceptionFactory() {
+        ClassLoader classLoader = nodeEngine.getConfigClassLoader();
+        boolean jcacheAvailable = ClassLoaderUtil.isClassAvailable(classLoader, "javax.cache.Caching");
+        return new ClientExceptionFactory(jcacheAvailable);
     }
 
     private Executor newExecutor() {

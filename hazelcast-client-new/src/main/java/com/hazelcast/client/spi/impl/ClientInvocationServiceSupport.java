@@ -31,6 +31,7 @@ import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionListener;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
@@ -66,7 +67,7 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
     private final ConcurrentMap<Integer, ClientListenerInvocation> eventHandlerMap
             = new ConcurrentHashMap<Integer, ClientListenerInvocation>();
     private final AtomicInteger callIdIncrementer = new AtomicInteger();
-    private final ClientExceptionFactory clientExceptionFactory = new ClientExceptionFactory();
+    private final ClientExceptionFactory clientExceptionFactory;
     private volatile boolean isShutdown;
 
 
@@ -77,9 +78,16 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
         connectionManager.addConnectionListener(this);
         connectionManager.addConnectionHeartbeatListener(this);
         this.partitionService = client.getClientPartitionService();
+        this.clientExceptionFactory = initClientExceptionFactory();
         responseThread = new ResponseThread(client.getThreadGroup(), client.getName() + ".response-",
                 client.getClientConfig().getClassLoader());
         responseThread.start();
+    }
+
+    private ClientExceptionFactory initClientExceptionFactory() {
+        ClassLoader classLoader = client.getClientConfig().getClassLoader();
+        boolean jcacheAvailable = ClassLoaderUtil.isClassAvailable(classLoader, "javax.cache.Caching");
+        return new ClientExceptionFactory(jcacheAvailable);
     }
 
     @Override
