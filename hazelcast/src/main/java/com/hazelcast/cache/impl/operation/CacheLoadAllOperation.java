@@ -30,6 +30,7 @@ import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.impl.AbstractNamedOperation;
+import com.hazelcast.spi.impl.MutatingOperation;
 
 import javax.cache.CacheException;
 import java.io.IOException;
@@ -46,7 +47,7 @@ import java.util.Set;
  */
 public class CacheLoadAllOperation
         extends AbstractNamedOperation
-        implements PartitionAwareOperation, IdentifiedDataSerializable, BackupAwareOperation {
+        implements PartitionAwareOperation, IdentifiedDataSerializable, BackupAwareOperation, MutatingOperation {
 
     private Set<Data> keys;
     private boolean replaceExistingValues;

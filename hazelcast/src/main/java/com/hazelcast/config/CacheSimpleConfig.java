@@ -86,6 +86,8 @@ public class CacheSimpleConfig {
 
     private CacheSimpleConfig readOnly;
 
+    private String quorumName;
+
     public CacheSimpleConfig(CacheSimpleConfig cacheSimpleConfig) {
         this.name = cacheSimpleConfig.name;
         this.keyType = cacheSimpleConfig.keyType;
@@ -106,6 +108,7 @@ public class CacheSimpleConfig {
             this.evictionConfig = cacheSimpleConfig.evictionConfig;
         }
         this.wanReplicationRef = cacheSimpleConfig.wanReplicationRef;
+        this.quorumName = cacheSimpleConfig.quorumName;
     }
 
     public CacheSimpleConfig() {
@@ -477,6 +480,27 @@ public class CacheSimpleConfig {
      */
     public void setWanReplicationRef(WanReplicationRef wanReplicationRef) {
         this.wanReplicationRef = wanReplicationRef;
+    }
+
+    /**
+     * Gets name of the associated quorum if any
+     *
+     * @return
+     */
+    public String getQuorumName() {
+        return quorumName;
+    }
+
+    /**
+     * Associates this cache configuration to a quorum
+     *
+     * @param quorumName name of the desired quorum
+     *
+     * @return the updated CacheSimpleConfig.
+     */
+    public CacheSimpleConfig setQuorumName(String quorumName) {
+        this.quorumName = quorumName;
+        return this;
     }
 
     /**

@@ -14,7 +14,7 @@
 *  limitations under the License.
 */
 
-package com.hazelcast.quorum;
+package com.hazelcast.quorum.map;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
@@ -23,6 +23,11 @@ import com.hazelcast.config.QuorumListenerConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.Member;
+import com.hazelcast.quorum.Quorum;
+import com.hazelcast.quorum.QuorumEvent;
+import com.hazelcast.quorum.QuorumFunction;
+import com.hazelcast.quorum.QuorumListener;
+import com.hazelcast.quorum.QuorumService;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;

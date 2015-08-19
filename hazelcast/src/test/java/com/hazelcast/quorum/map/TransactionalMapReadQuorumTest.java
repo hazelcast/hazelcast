@@ -14,12 +14,15 @@
  *  limitations under the License.
  */
 
-package com.hazelcast.quorum;
+package com.hazelcast.quorum.map;
 
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.TransactionalMap;
 import com.hazelcast.instance.HazelcastInstanceFactory;
+import com.hazelcast.query.TruePredicate;
 import com.hazelcast.config.QuorumConfig;
+import com.hazelcast.quorum.PartitionedCluster;
+import com.hazelcast.quorum.QuorumType;
 import com.hazelcast.test.HazelcastTestRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -31,7 +34,6 @@ import com.hazelcast.transaction.TransactionOptions;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.concurrent.TimeUnit;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -46,7 +48,7 @@ import static com.hazelcast.transaction.TransactionOptions.TransactionType.TWO_P
 @RunParallel
 @RunWith(HazelcastTestRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class TransactionalMapWriteQuorumTest {
+public class TransactionalMapReadQuorumTest {
 
     static PartitionedCluster cluster;
     private static final String MAP_NAME_PREFIX = "quorum";
@@ -77,7 +79,7 @@ public class TransactionalMapWriteQuorumTest {
         quorumConfig.setEnabled(true);
         quorumConfig.setSize(3);
         quorumConfig.setName(QUORUM_ID);
-        quorumConfig.setType(QuorumType.WRITE);
+        quorumConfig.setType(QuorumType.READ);
 
         MapConfig mapConfig = new MapConfig(MAP_NAME_PREFIX + "*");
         mapConfig.setQuorumName(QUORUM_ID);
@@ -91,93 +93,76 @@ public class TransactionalMapWriteQuorumTest {
 
 
     @Test(expected = TransactionException.class)
-    public void testTxPutThrowsExceptionWhenQuorumSizeNotMet() {
+    public void testTxGetThrowsExceptionWhenQuorumSizeNotMet() {
         TransactionContext transactionContext = cluster.h4.newTransactionContext(options);
         transactionContext.beginTransaction();
         TransactionalMap<Object, Object> map = transactionContext.getMap(randomMapName(MAP_NAME_PREFIX));
-        map.put("foo", "bar");
-        transactionContext.commitTransaction();
-    }
-
-    @Test(expected = TransactionException.class)
-    public void testTxGetForUpdateThrowsExceptionWhenQuorumSizeNotMet() {
-        TransactionContext transactionContext = cluster.h4.newTransactionContext(options);
-        transactionContext.beginTransaction();
-        TransactionalMap<Object, Object> map = transactionContext.getMap(randomMapName(MAP_NAME_PREFIX));
-        map.getForUpdate("foo");
-        transactionContext.commitTransaction();
-    }
-
-    @Test(expected = TransactionException.class)
-    public void testTxRemoveThrowsExceptionWhenQuorumSizeNotMet() {
-        TransactionContext transactionContext = cluster.h4.newTransactionContext(options);
-        transactionContext.beginTransaction();
-        TransactionalMap<Object, Object> map = transactionContext.getMap(randomMapName(MAP_NAME_PREFIX));
-        map.remove("foo");
+        map.get("foo");
         transactionContext.commitTransaction();
     }
 
 
     @Test(expected = TransactionException.class)
-    public void testTxRemoveValueThrowsExceptionWhenQuorumSizeNotMet() {
+    public void testTxSizeThrowsExceptionWhenQuorumSizeNotMet() {
         TransactionContext transactionContext = cluster.h4.newTransactionContext(options);
         transactionContext.beginTransaction();
         TransactionalMap<Object, Object> map = transactionContext.getMap(randomMapName(MAP_NAME_PREFIX));
-        map.remove("foo", "bar");
+        map.size();
         transactionContext.commitTransaction();
     }
 
     @Test(expected = TransactionException.class)
-    public void testTxDeleteThrowsExceptionWhenQuorumSizeNotMet() {
+    public void testTxContainsKeyThrowsExceptionWhenQuorumSizeNotMet() {
         TransactionContext transactionContext = cluster.h4.newTransactionContext(options);
         transactionContext.beginTransaction();
         TransactionalMap<Object, Object> map = transactionContext.getMap(randomMapName(MAP_NAME_PREFIX));
-        map.delete("foo");
+        map.containsKey("foo");
+        transactionContext.commitTransaction();
+    }
+
+
+    @Test(expected = TransactionException.class)
+    public void testTxIsEmptyThrowsExceptionWhenQuorumSizeNotMet() {
+        TransactionContext transactionContext = cluster.h4.newTransactionContext(options);
+        transactionContext.beginTransaction();
+        TransactionalMap<Object, Object> map = transactionContext.getMap(randomMapName(MAP_NAME_PREFIX));
+        map.isEmpty();
         transactionContext.commitTransaction();
     }
 
     @Test(expected = TransactionException.class)
-    public void testTxSetThrowsExceptionWhenQuorumSizeNotMet() {
+    public void testTxKeySetThrowsExceptionWhenQuorumSizeNotMet() {
         TransactionContext transactionContext = cluster.h4.newTransactionContext(options);
         transactionContext.beginTransaction();
         TransactionalMap<Object, Object> map = transactionContext.getMap(randomMapName(MAP_NAME_PREFIX));
-        map.set("foo", "bar");
+        map.keySet();
         transactionContext.commitTransaction();
     }
 
     @Test(expected = TransactionException.class)
-    public void testTxPutWithTTLThrowsExceptionWhenQuorumSizeNotMet() {
+    public void testTxKeySetWithPredicateThrowsExceptionWhenQuorumSizeNotMet() {
         TransactionContext transactionContext = cluster.h4.newTransactionContext(options);
         transactionContext.beginTransaction();
         TransactionalMap<Object, Object> map = transactionContext.getMap(randomMapName(MAP_NAME_PREFIX));
-        map.put("foo", "bar", 10, TimeUnit.SECONDS);
+        map.keySet(TruePredicate.INSTANCE);
         transactionContext.commitTransaction();
     }
 
     @Test(expected = TransactionException.class)
-    public void testTxPutIfAbsentThrowsExceptionWhenQuorumSizeNotMet() {
+    public void testTxValuesThrowsExceptionWhenQuorumSizeNotMet() {
         TransactionContext transactionContext = cluster.h4.newTransactionContext(options);
         transactionContext.beginTransaction();
         TransactionalMap<Object, Object> map = transactionContext.getMap(randomMapName(MAP_NAME_PREFIX));
-        map.putIfAbsent("foo", "bar");
+        map.values();
         transactionContext.commitTransaction();
     }
 
     @Test(expected = TransactionException.class)
-    public void testTxReplaceThrowsExceptionWhenQuorumSizeNotMet() {
+    public void testTxValuesWithPredicateThrowsExceptionWhenQuorumSizeNotMet() {
         TransactionContext transactionContext = cluster.h4.newTransactionContext(options);
         transactionContext.beginTransaction();
         TransactionalMap<Object, Object> map = transactionContext.getMap(randomMapName(MAP_NAME_PREFIX));
-        map.replace("foo", "bar");
-        transactionContext.commitTransaction();
-    }
-
-    @Test(expected = TransactionException.class)
-    public void testTxReplaceExpectedValueThrowsExceptionWhenQuorumSizeNotMet() {
-        TransactionContext transactionContext = cluster.h4.newTransactionContext(options);
-        transactionContext.beginTransaction();
-        TransactionalMap<Object, Object> map = transactionContext.getMap(randomMapName(MAP_NAME_PREFIX));
-        map.replace("foo", "bar", "baz");
+        map.values(TruePredicate.INSTANCE);
         transactionContext.commitTransaction();
     }
 

@@ -20,6 +20,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupAwareOperation;
+import com.hazelcast.spi.impl.MutatingOperation;
 
 import java.io.IOException;
 
@@ -30,7 +31,7 @@ import java.io.IOException;
  */
 public abstract class AbstractMutatingCacheOperation
         extends AbstractCacheOperation
-        implements BackupAwareOperation, MutableOperation {
+        implements BackupAwareOperation, MutableOperation, MutatingOperation {
 
     protected int completionId;
 

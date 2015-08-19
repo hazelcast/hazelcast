@@ -69,6 +69,8 @@ public class CacheConfig<K, V>
 
     private WanReplicationRef wanReplicationRef;
 
+    private String quorumName;
+
     public CacheConfig() {
     }
 
@@ -93,6 +95,7 @@ public class CacheConfig<K, V>
             if (config.wanReplicationRef != null) {
                 this.wanReplicationRef = new WanReplicationRef(config.wanReplicationRef);
             }
+            this.quorumName = config.quorumName;
         }
     }
 
@@ -141,6 +144,8 @@ public class CacheConfig<K, V>
                     listenerFactory, filterFactory, isOldValueRequired, synchronous);
             addCacheEntryListenerConfiguration(listenerConfiguration);
         }
+
+        this.quorumName = simpleConfig.getQuorumName();
     }
 
     private void initExpiryPolicyFactoryConfig(CacheSimpleConfig simpleConfig) throws Exception {
@@ -399,6 +404,27 @@ public class CacheConfig<K, V>
         return this;
     }
 
+    /**
+     * Gets name of the associated quorum if any
+     *
+     * @return
+     */
+    public String getQuorumName() {
+        return quorumName;
+    }
+
+    /**
+     * Associates this cache configuration to a quorum
+     *
+     * @param quorumName name of the desired quorum
+     *
+     * @return the updated CacheConfig.
+     */
+    public CacheConfig setQuorumName(String quorumName) {
+        this.quorumName = quorumName;
+        return this;
+    }
+
     @Override
     public void writeData(ObjectDataOutput out)
             throws IOException {
@@ -424,6 +450,8 @@ public class CacheConfig<K, V>
         out.writeBoolean(isStoreByValue);
         out.writeBoolean(isManagementEnabled);
         out.writeBoolean(isStatisticsEnabled);
+
+        out.writeUTF(quorumName);
 
         final boolean listNotEmpty = listenerConfigurations != null && !listenerConfigurations.isEmpty();
         out.writeBoolean(listNotEmpty);
@@ -463,6 +491,8 @@ public class CacheConfig<K, V>
         isManagementEnabled = in.readBoolean();
         isStatisticsEnabled = in.readBoolean();
 
+        quorumName = in.readUTF();
+
         final boolean listNotEmpty = in.readBoolean();
         if (listNotEmpty) {
             final int size = in.readInt();
@@ -479,6 +509,7 @@ public class CacheConfig<K, V>
         result = 31 * result + (name != null ? name.hashCode() : 0);
         result = 31 * result + (managerPrefix != null ? managerPrefix.hashCode() : 0);
         result = 31 * result + (uriString != null ? uriString.hashCode() : 0);
+        result = 31 * result + (quorumName != null ? quorumName.hashCode() : 0);
         return result;
     }
 
@@ -501,6 +532,9 @@ public class CacheConfig<K, V>
             return false;
         }
         if (uriString != null ? !uriString.equals(that.uriString) : that.uriString != null) {
+            return false;
+        }
+        if (quorumName != null ? !quorumName.equals(that.quorumName) : that.quorumName != null) {
             return false;
         }
 

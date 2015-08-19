@@ -1,26 +1,28 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
- *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
- *
- *  http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
- */
+* Copyright (c) 2008-2014, Hazelcast, Inc. All Rights Reserved.
+*
+*  Licensed under the Apache License, Version 2.0 (the "License");
+*  you may not use this file except in compliance with the License.
+*  You may obtain a copy of the License at
+*
+*  http://www.apache.org/licenses/LICENSE-2.0
+*
+*  Unless required by applicable law or agreed to in writing, software
+*  distributed under the License is distributed on an "AS IS" BASIS,
+*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+*  See the License for the specific language governing permissions and
+*  limitations under the License.
+*/
 
-package com.hazelcast.quorum;
+package com.hazelcast.quorum.map;
 
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.TransactionalMap;
 import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.query.TruePredicate;
 import com.hazelcast.config.QuorumConfig;
+import com.hazelcast.quorum.PartitionedCluster;
+import com.hazelcast.quorum.QuorumType;
 import com.hazelcast.test.HazelcastTestRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -32,6 +34,7 @@ import com.hazelcast.transaction.TransactionOptions;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.concurrent.TimeUnit;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -46,7 +49,7 @@ import static com.hazelcast.transaction.TransactionOptions.TransactionType.TWO_P
 @RunParallel
 @RunWith(HazelcastTestRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class TransactionalMapReadQuorumTest {
+public class TransactionalMapReadWriteQuorumTest {
 
     static PartitionedCluster cluster;
     private static final String MAP_NAME_PREFIX = "quorum";
@@ -77,7 +80,7 @@ public class TransactionalMapReadQuorumTest {
         quorumConfig.setEnabled(true);
         quorumConfig.setSize(3);
         quorumConfig.setName(QUORUM_ID);
-        quorumConfig.setType(QuorumType.READ);
+        quorumConfig.setType(QuorumType.READ_WRITE);
 
         MapConfig mapConfig = new MapConfig(MAP_NAME_PREFIX + "*");
         mapConfig.setQuorumName(QUORUM_ID);
@@ -91,6 +94,15 @@ public class TransactionalMapReadQuorumTest {
 
 
     @Test(expected = TransactionException.class)
+    public void testTxPutThrowsExceptionWhenQuorumSizeNotMet() {
+        TransactionContext transactionContext = cluster.h4.newTransactionContext(options);
+        transactionContext.beginTransaction();
+        TransactionalMap<Object, Object> map = transactionContext.getMap(randomMapName(MAP_NAME_PREFIX));
+        map.put("foo", "bar");
+        transactionContext.commitTransaction();
+    }
+
+    @Test(expected = TransactionException.class)
     public void testTxGetThrowsExceptionWhenQuorumSizeNotMet() {
         TransactionContext transactionContext = cluster.h4.newTransactionContext(options);
         transactionContext.beginTransaction();
@@ -99,6 +111,88 @@ public class TransactionalMapReadQuorumTest {
         transactionContext.commitTransaction();
     }
 
+
+    @Test(expected = TransactionException.class)
+    public void testTxGetForUpdateThrowsExceptionWhenQuorumSizeNotMet() {
+        TransactionContext transactionContext = cluster.h4.newTransactionContext(options);
+        transactionContext.beginTransaction();
+        TransactionalMap<Object, Object> map = transactionContext.getMap(randomMapName(MAP_NAME_PREFIX));
+        map.getForUpdate("foo");
+        transactionContext.commitTransaction();
+    }
+
+    @Test(expected = TransactionException.class)
+    public void testTxRemoveThrowsExceptionWhenQuorumSizeNotMet() {
+        TransactionContext transactionContext = cluster.h4.newTransactionContext(options);
+        transactionContext.beginTransaction();
+        TransactionalMap<Object, Object> map = transactionContext.getMap(randomMapName(MAP_NAME_PREFIX));
+        map.remove("foo");
+        transactionContext.commitTransaction();
+    }
+
+
+    @Test(expected = TransactionException.class)
+    public void testTxRemoveValueThrowsExceptionWhenQuorumSizeNotMet() {
+        TransactionContext transactionContext = cluster.h4.newTransactionContext(options);
+        transactionContext.beginTransaction();
+        TransactionalMap<Object, Object> map = transactionContext.getMap(randomMapName(MAP_NAME_PREFIX));
+        map.remove("foo", "bar");
+        transactionContext.commitTransaction();
+    }
+
+    @Test(expected = TransactionException.class)
+    public void testTxDeleteThrowsExceptionWhenQuorumSizeNotMet() {
+        TransactionContext transactionContext = cluster.h4.newTransactionContext(options);
+        transactionContext.beginTransaction();
+        TransactionalMap<Object, Object> map = transactionContext.getMap(randomMapName(MAP_NAME_PREFIX));
+        map.delete("foo");
+        transactionContext.commitTransaction();
+    }
+
+    @Test(expected = TransactionException.class)
+    public void testTxSetThrowsExceptionWhenQuorumSizeNotMet() {
+        TransactionContext transactionContext = cluster.h4.newTransactionContext(options);
+        transactionContext.beginTransaction();
+        TransactionalMap<Object, Object> map = transactionContext.getMap(randomMapName(MAP_NAME_PREFIX));
+        map.set("foo", "bar");
+        transactionContext.commitTransaction();
+    }
+
+    @Test(expected = TransactionException.class)
+    public void testTxPutWithTTLThrowsExceptionWhenQuorumSizeNotMet() {
+        TransactionContext transactionContext = cluster.h4.newTransactionContext(options);
+        transactionContext.beginTransaction();
+        TransactionalMap<Object, Object> map = transactionContext.getMap(randomMapName(MAP_NAME_PREFIX));
+        map.put("foo", "bar", 10, TimeUnit.SECONDS);
+        transactionContext.commitTransaction();
+    }
+
+    @Test(expected = TransactionException.class)
+    public void testTxPutIfAbsentThrowsExceptionWhenQuorumSizeNotMet() {
+        TransactionContext transactionContext = cluster.h4.newTransactionContext(options);
+        transactionContext.beginTransaction();
+        TransactionalMap<Object, Object> map = transactionContext.getMap(randomMapName(MAP_NAME_PREFIX));
+        map.putIfAbsent("foo", "bar");
+        transactionContext.commitTransaction();
+    }
+
+    @Test(expected = TransactionException.class)
+    public void testTxReplaceThrowsExceptionWhenQuorumSizeNotMet() {
+        TransactionContext transactionContext = cluster.h4.newTransactionContext(options);
+        transactionContext.beginTransaction();
+        TransactionalMap<Object, Object> map = transactionContext.getMap(randomMapName(MAP_NAME_PREFIX));
+        map.replace("foo", "bar");
+        transactionContext.commitTransaction();
+    }
+
+    @Test(expected = TransactionException.class)
+    public void testTxReplaceExpectedValueThrowsExceptionWhenQuorumSizeNotMet() {
+        TransactionContext transactionContext = cluster.h4.newTransactionContext(options);
+        transactionContext.beginTransaction();
+        TransactionalMap<Object, Object> map = transactionContext.getMap(randomMapName(MAP_NAME_PREFIX));
+        map.replace("foo", "bar", "baz");
+        transactionContext.commitTransaction();
+    }
 
     @Test(expected = TransactionException.class)
     public void testTxSizeThrowsExceptionWhenQuorumSizeNotMet() {

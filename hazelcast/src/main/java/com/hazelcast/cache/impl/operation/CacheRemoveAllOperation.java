@@ -26,6 +26,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.MutatingOperation;
 
 import javax.cache.CacheException;
 import java.io.IOException;
@@ -35,7 +36,7 @@ import java.util.Set;
 /**
  * TODO add a proper JavaDoc
  */
-public class CacheRemoveAllOperation extends PartitionWideCacheOperation implements BackupAwareOperation {
+public class CacheRemoveAllOperation extends PartitionWideCacheOperation implements BackupAwareOperation, MutatingOperation {
 
     private Set<Data> keys;
     private int completionId;
