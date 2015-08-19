@@ -70,6 +70,7 @@ public class ClientExecutorServiceTest {
         hazelcastFactory.newHazelcastInstance();
         hazelcastFactory.newHazelcastInstance();
         hazelcastFactory.newHazelcastInstance();
+        hazelcastFactory.newHazelcastInstance();
         client = hazelcastFactory.newHazelcastClient();
     }
 
@@ -123,7 +124,7 @@ public class ClientExecutorServiceTest {
     @Test(expected = TimeoutException.class)
     public void testCancellationAwareTask_whenTimeOut() throws InterruptedException, ExecutionException, TimeoutException {
         IExecutorService service = client.getExecutorService(randomString());
-        CancellationAwareTask task = new CancellationAwareTask(5000);
+        CancellationAwareTask task = new CancellationAwareTask(Long.MAX_VALUE);
 
         Future future = service.submit(task);
 
@@ -133,7 +134,7 @@ public class ClientExecutorServiceTest {
     @Test
     public void testFutureAfterCancellationAwareTaskTimeOut() throws InterruptedException, ExecutionException, TimeoutException {
         IExecutorService service = client.getExecutorService(randomString());
-        CancellationAwareTask task = new CancellationAwareTask(5000);
+        CancellationAwareTask task = new CancellationAwareTask(Long.MAX_VALUE);
 
         Future future = service.submit(task);
 
@@ -149,7 +150,7 @@ public class ClientExecutorServiceTest {
     @Test
     public void testCancelFutureAfterCancellationAwareTaskTimeOut() throws InterruptedException, ExecutionException, TimeoutException {
         IExecutorService service = client.getExecutorService(randomString());
-        CancellationAwareTask task = new CancellationAwareTask(5000);
+        CancellationAwareTask task = new CancellationAwareTask(Long.MAX_VALUE);
 
         Future future = service.submit(task);
 
@@ -166,7 +167,7 @@ public class ClientExecutorServiceTest {
     @Test(expected = CancellationException.class)
     public void testGetFutureAfterCancel() throws InterruptedException, ExecutionException, TimeoutException {
         IExecutorService service = client.getExecutorService(randomString());
-        CancellationAwareTask task = new CancellationAwareTask(5000);
+        CancellationAwareTask task = new CancellationAwareTask(Long.MAX_VALUE);
 
         Future future = service.submit(task);
         try {
