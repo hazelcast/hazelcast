@@ -421,6 +421,28 @@ public abstract class Operation implements DataSerializable {
         return flags;
     }
 
+
+    /**
+     * Called when an <tt>Exception</tt>/<tt>Error</tt> is thrown during operation execution.
+     * <p/>
+     * By default this method does nothing.
+     * Operation implementations can override this behaviour due to their needs.
+     * <p/>
+     * This method is called on node & thread that's executing the operation.
+     *
+     * @param e Exception/Error thrown during operation execution
+     */
+    public void onExecutionFailure(Throwable e) {
+    }
+
+    /**
+     * Logs <tt>Exception</tt>/<tt>Error</tt> thrown during operation execution.
+     * Operation implementations can override this behaviour due to their needs.
+     * <p/>
+     * This method is called on node & thread that's executing the operation.
+     *
+     * @param e Exception/Error thrown during operation execution
+     */
     public void logError(Throwable e) {
         final ILogger logger = getLogger();
         if (e instanceof RetryableException) {
