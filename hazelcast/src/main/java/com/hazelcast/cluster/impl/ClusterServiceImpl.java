@@ -48,7 +48,6 @@ import com.hazelcast.instance.LifecycleServiceImpl;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.metrics.ContainsProbes;
-import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.ProbeName;
 import com.hazelcast.logging.ILogger;
@@ -229,7 +228,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
     }
 
     @ProbeName
-    public String probeName(){
+    public String probeName() {
         return "cluster";
     }
 

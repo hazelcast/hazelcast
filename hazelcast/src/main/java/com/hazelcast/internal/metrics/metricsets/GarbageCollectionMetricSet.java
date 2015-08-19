@@ -36,7 +36,7 @@ public final class GarbageCollectionMetricSet {
 
     private static final Set<String> YOUNG_GC = new HashSet<String>(3);
     private static final Set<String> OLD_GC = new HashSet<String>(3);
- 
+
     static {
         YOUNG_GC.add("PS Scavenge");
         YOUNG_GC.add("ParNew");
@@ -63,7 +63,7 @@ public final class GarbageCollectionMetricSet {
 
     @SuppressFBWarnings(value = "URF_UNREAD_FIELD", justification = "used by instrumentation tools")
     static final class GcProbes {
-        final int EXPIRATION_MS = 100;
+        static final int EXPIRATION_MS = 100;
 
         volatile long lastUpdateMs;
 
@@ -156,7 +156,7 @@ public final class GarbageCollectionMetricSet {
         }
 
         @ProbeName
-        public String probeName() {
+        String probeName() {
             return "gc";
         }
     }

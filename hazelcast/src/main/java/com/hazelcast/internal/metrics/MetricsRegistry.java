@@ -19,7 +19,6 @@ package com.hazelcast.internal.metrics;
 import com.hazelcast.internal.metrics.renderers.ProbeRenderer;
 
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 /**
  * The MetricsRegistry is responsible for recording all kinds of Hazelcast/JVM specific information to
@@ -100,7 +99,7 @@ public interface MetricsRegistry {
      *
      * If an object has no @Gauge annotations, the call is ignored.
      *
-     * @param source     the object to scan.
+     * @param source the object to scan.
      * @throws NullPointerException     if namePrefix or source is null.
      * @throws IllegalArgumentException if the source contains Gauge annotation on a field/method of unsupported type.
      */
@@ -140,7 +139,7 @@ public interface MetricsRegistry {
      */
     <S> void deregister(S source);
 
-     /**
+    /**
      * Renders the content of the MetricsRegistry.
      *
      * @param renderer the ProbeRenderer

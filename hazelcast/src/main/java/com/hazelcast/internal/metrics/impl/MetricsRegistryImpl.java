@@ -23,6 +23,7 @@ import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.ProbeFunction;
 import com.hazelcast.internal.metrics.metricsets.ClassLoadingMetricSet;
 import com.hazelcast.internal.metrics.metricsets.GarbageCollectionMetricSet;
+import com.hazelcast.internal.metrics.metricsets.OperatingSystemMetricsSet;
 import com.hazelcast.internal.metrics.metricsets.RuntimeMetricSet;
 import com.hazelcast.internal.metrics.metricsets.ThreadMetricSet;
 import com.hazelcast.internal.metrics.renderers.ProbeRenderer;
@@ -64,7 +65,7 @@ public class MetricsRegistryImpl implements MetricsRegistry {
 
         RuntimeMetricSet.register(this);
         GarbageCollectionMetricSet.register(this);
-        // OperatingSystemMetricsSet.register(this);
+        OperatingSystemMetricsSet.register(this);
         ThreadMetricSet.register(this);
         ClassLoadingMetricSet.register(this);
     }
@@ -182,7 +183,7 @@ public class MetricsRegistryImpl implements MetricsRegistry {
         return getProbeInstance(name, root, path, 0);
     }
 
-    private ProbeInstance getProbeInstance(String fullName, Object root, String path[], int index) {
+    private ProbeInstance getProbeInstance(String fullName, Object root, String[] path, int index) {
         //if you are at the last field, you are on the field.
 
         if (root == null) {
@@ -219,8 +220,7 @@ public class MetricsRegistryImpl implements MetricsRegistry {
 
                 if (field instanceof Collection) {
                     for (Object value : (Collection) field) {
-                        System.out.println("value: " + value);
-                        ProbeInstance probeInstance = getProbeInstance(fullName, value, path, index);
+                         ProbeInstance probeInstance = getProbeInstance(fullName, value, path, index);
                         if (probeInstance != null) {
                             return probeInstance;
                         }

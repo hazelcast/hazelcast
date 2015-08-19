@@ -1,7 +1,5 @@
 package com.hazelcast.internal.metrics.metricsets;
 
-import com.hazelcast.internal.metrics.DoubleGauge;
-import com.hazelcast.internal.metrics.LongGauge;
 import com.hazelcast.internal.metrics.impl.MetricsRegistryImpl;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -15,9 +13,6 @@ import org.junit.runner.RunWith;
 import java.lang.management.ManagementFactory;
 import java.lang.management.OperatingSystemMXBean;
 
-import static com.hazelcast.internal.metrics.metricsets.OperatingSystemMetricsSet.registerMethod;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assume.assumeTrue;
 
@@ -35,24 +30,29 @@ public class OperatingSystemMetricSetTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void utilityConstructor(){
+    public void utilityConstructor() {
         assertUtilityConstructor(OperatingSystemMetricsSet.class);
     }
 
     @Test
     public void testComSunManagementUnixOperatingSystem() {
-        assertContainsSensor("os.systemLoadAverage");
+        for (String s : metricsRegistry.getNames()) {
+            System.out.println(s);
+        }
+
+
+        assertContainsProbe("os.systemLoadAverage");
 
         assumeOperatingSystemMXBean("com.sun.management.UnixOperatingSystem");
 
-        assertContainsSensor("os.committedVirtualMemorySize");
-        assertContainsSensor("os.freePhysicalMemorySize");
-        assertContainsSensor("os.freeSwapSpaceSize");
-        assertContainsSensor("os.processCpuTime");
-        assertContainsSensor("os.totalPhysicalMemorySize");
-        assertContainsSensor("os.totalSwapSpaceSize");
-        assertContainsSensor("os.maxFileDescriptorCount");
-        assertContainsSensor("os.openFileDescriptorCount");
+        assertContainsProbe("os.committedVirtualMemorySize");
+        assertContainsProbe("os.freePhysicalMemorySize");
+        assertContainsProbe("os.freeSwapSpaceSize");
+        assertContainsProbe("os.processCpuTime");
+        assertContainsProbe("os.totalPhysicalMemorySize");
+        assertContainsProbe("os.totalSwapSpaceSize");
+        assertContainsProbe("os.maxFileDescriptorCount");
+        assertContainsProbe("os.openFileDescriptorCount");
 
         //only available on java 7+
         //assertContainsSensor("os.processCpuLoad");
@@ -61,26 +61,26 @@ public class OperatingSystemMetricSetTest extends HazelcastTestSupport {
 
     @Test
     public void testSunManagementOperatingSystemImpl() {
-        assertContainsSensor("os.systemLoadAverage");
+        assertContainsProbe("os.systemLoadAverage");
 
         assumeOperatingSystemMXBean("sun.management.OperatingSystemImpl");
 
-        assertContainsSensor("os.committedVirtualMemorySize");
-        assertContainsSensor("os.freePhysicalMemorySize");
-        assertContainsSensor("os.freeSwapSpaceSize");
-        assertContainsSensor("os.processCpuTime");
-        assertContainsSensor("os.totalPhysicalMemorySize");
-        assertContainsSensor("os.totalSwapSpaceSize");
-        assertContainsSensor("os.maxFileDescriptorCount");
-        assertContainsSensor("os.openFileDescriptorCount");
+        assertContainsProbe("os.committedVirtualMemorySize");
+        assertContainsProbe("os.freePhysicalMemorySize");
+        assertContainsProbe("os.freeSwapSpaceSize");
+        assertContainsProbe("os.processCpuTime");
+        assertContainsProbe("os.totalPhysicalMemorySize");
+        assertContainsProbe("os.totalSwapSpaceSize");
+        assertContainsProbe("os.maxFileDescriptorCount");
+        assertContainsProbe("os.openFileDescriptorCount");
 
-        assertContainsSensor("os.processCpuLoad");
-        assertContainsSensor("os.systemCpuLoad");
+        assertContainsProbe("os.processCpuLoad");
+        assertContainsProbe("os.systemCpuLoad");
     }
 
-    private void assertContainsSensor(String parameter) {
-        boolean contains = metricsRegistry.getNames().contains(parameter);
-        assertTrue("sensor:" + parameter + " is not found", contains);
+    private void assertContainsProbe(String probeName) {
+        boolean contains = metricsRegistry.getNames().contains(probeName);
+        assertTrue("sensor:" + probeName + " is not found", contains);
     }
 
     private void assumeOperatingSystemMXBean(String expected) {
@@ -90,46 +90,4 @@ public class OperatingSystemMetricSetTest extends HazelcastTestSupport {
 
         assumeTrue(foundClass + " is not usable", expected.equals(foundClass));
     }
-
-    @Test
-    public void registerMethod_whenDouble() {
-        FakeOperatingSystemBean fakeOperatingSystemBean = new FakeOperatingSystemBean();
-        registerMethod(metricsRegistry, fakeOperatingSystemBean, "doubleMethod", "doubleMethod");
-
-        DoubleGauge gauge = metricsRegistry.newDoubleGauge("doubleMethod");
-        assertEquals(fakeOperatingSystemBean.doubleMethod(), gauge.read(), 0.1);
-    }
-
-    @Test
-    public void registerMethod_whenLong() {
-        metricsRegistry = new MetricsRegistryImpl(Logger.getLogger(MetricsRegistryImpl.class));
-
-        FakeOperatingSystemBean fakeOperatingSystemBean = new FakeOperatingSystemBean();
-        registerMethod(metricsRegistry, fakeOperatingSystemBean, "longMethod", "longMethod");
-
-        LongGauge gauge = metricsRegistry.newLongGauge("longMethod");
-        assertEquals(fakeOperatingSystemBean.longMethod(), gauge.read());
-    }
-
-    @Test
-    public void registerMethod_whenNotExist() {
-        metricsRegistry = new MetricsRegistryImpl(Logger.getLogger(MetricsRegistryImpl.class));
-
-        FakeOperatingSystemBean fakeOperatingSystemBean = new FakeOperatingSystemBean();
-        registerMethod(metricsRegistry, fakeOperatingSystemBean, "notexist", "notexist");
-
-        boolean parameterExist = metricsRegistry.getNames().contains("notexist");
-        assertFalse(parameterExist);
-    }
-
-    public class FakeOperatingSystemBean {
-        double doubleMethod() {
-            return 10;
-        }
-
-        long longMethod() {
-            return 10;
-        }
-    }
-
 }

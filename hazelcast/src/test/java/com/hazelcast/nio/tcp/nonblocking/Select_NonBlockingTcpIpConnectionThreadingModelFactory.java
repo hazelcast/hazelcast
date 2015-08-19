@@ -12,7 +12,6 @@ public class Select_NonBlockingTcpIpConnectionThreadingModelFactory implements T
         NonBlockingTcpIpConnectionThreadingModel threadingModel = new NonBlockingTcpIpConnectionThreadingModel(
                 ioService,
                 ioService.loggingService,
-                metricsRegistry,
                 ioService.hazelcastThreadGroup);
         threadingModel.setInputSelectNow(false);
         threadingModel.setOutputSelectNow(false);
