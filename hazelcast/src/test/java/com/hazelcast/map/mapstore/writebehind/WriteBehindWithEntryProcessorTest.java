@@ -161,7 +161,7 @@ public class WriteBehindWithEntryProcessorTest extends HazelcastTestSupport {
             public void run() throws Exception {
                 assertEquals(numberOfSubscriptions, store.subscriptionCount());
             }
-        }, 20);
+        });
     }
 
     private void assertStoreCallCount(MapStore mapStore, final int expectedStoreCallcount) {
