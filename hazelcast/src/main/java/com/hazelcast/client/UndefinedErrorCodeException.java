@@ -14,22 +14,27 @@
  * limitations under the License.
  */
 
-package com.hazelcast.config;
+package com.hazelcast.client;
 
 import com.hazelcast.core.HazelcastException;
 
 /**
- * A {@link HazelcastException} that is thrown when something is wrong with the server or client configuration.
+ * This exception is thrown when an exception that is coming from server is not recognized by the protocol.
+ * Class name of the original exception is included in the exception
  */
-public class ConfigurationException extends HazelcastException {
+public class UndefinedErrorCodeException extends HazelcastException {
 
-    public ConfigurationException(String itemName, String candidate, String duplicate) {
-        super(String
-                .format("Found ambiguous configurations for item \"%s\": \"%s\" vs. \"%s\"%nPlease specify your configuration.",
-                        itemName, candidate, duplicate));
+    private final String className;
+
+    public UndefinedErrorCodeException(String message, String className) {
+        super("Class name : " + className + " , Message : " + message);
+        this.className = className;
     }
 
-    public ConfigurationException(String message) {
-        super(message);
+    /**
+     * @return name of the original class name
+     */
+    public String getOriginClassName() {
+        return className;
     }
 }
