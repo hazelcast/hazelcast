@@ -40,7 +40,7 @@ public class CacheSizeOperation
     public void run()
             throws Exception {
         CacheService service = getService();
-        ICacheRecordStore cache = service.getCacheRecordStore(name, getPartitionId());
+        ICacheRecordStore cache = service.getRecordStore(name, getPartitionId());
         response = cache != null ? cache.size() : 0;
     }
 

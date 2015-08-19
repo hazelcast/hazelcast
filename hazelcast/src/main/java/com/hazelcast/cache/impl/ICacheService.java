@@ -37,31 +37,31 @@ public interface ICacheService extends ManagedService, RemoteService, MigrationA
      */
     String SERVICE_NAME = "hz:impl:cacheService";
 
-    ICacheRecordStore getOrCreateCache(String name, int partitionId);
+    ICacheRecordStore getOrCreateRecordStore(String name, int partitionId);
 
-    ICacheRecordStore getCacheRecordStore(String name, int partitionId);
+    ICacheRecordStore getRecordStore(String name, int partitionId);
 
     CachePartitionSegment getSegment(int partitionId);
 
-    void destroyCache(String objectName, boolean isLocal, String callerUuid);
+    CacheConfig putCacheConfigIfAbsent(CacheConfig config);
+
+    CacheConfig getCacheConfig(String name);
 
     CacheSimpleConfig findCacheConfig(String simpleName);
 
-    CacheConfig createCacheConfigIfAbsent(CacheConfig config);
+    Collection<CacheConfig> getCacheConfigs();
 
     CacheConfig deleteCacheConfig(String name);
 
     CacheStatisticsImpl createCacheStatIfAbsent(String name);
+
+    void destroyCache(String objectName, boolean isLocal, String callerUuid);
 
     void deleteCacheStat(String name);
 
     void setStatisticsEnabled(CacheConfig cacheConfig, String cacheNameWithPrefix, boolean enabled);
 
     void setManagementEnabled(CacheConfig cacheConfig, String cacheNameWithPrefix, boolean enabled);
-
-    CacheConfig getCacheConfig(String name);
-
-    Collection<CacheConfig> getCacheConfigs();
 
     void publishEvent(CacheEventContext cacheEventContext);
 
@@ -85,6 +85,4 @@ public interface ICacheService extends ManagedService, RemoteService, MigrationA
     CacheOperationProvider getCacheOperationProvider(String nameWithPrefix, InMemoryFormat storageType);
 
     void sendInvalidationEvent(String name, Data key, String sourceUuid);
-
-
 }

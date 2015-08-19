@@ -43,7 +43,7 @@ public class CacheClearBackupOperation extends AbstractNamedOperation
     public void beforeRun()
             throws Exception {
         CacheService service = getService();
-        cache = service.getOrCreateCache(name, getPartitionId());
+        cache = service.getOrCreateRecordStore(name, getPartitionId());
     }
 
     @Override

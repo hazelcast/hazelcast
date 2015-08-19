@@ -449,7 +449,7 @@ public class CacheConfigTest extends HazelcastTestSupport {
 
         assertNull(cacheService1.getCacheConfig(fullCacheName));
 
-        cacheService1.createCacheConfigIfAbsent(cacheConfig);
+        cacheService1.putCacheConfigIfAbsent(cacheConfig);
 
         assertNotNull(cacheService1.getCacheConfig(fullCacheName));
 
