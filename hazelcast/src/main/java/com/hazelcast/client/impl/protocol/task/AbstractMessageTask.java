@@ -129,7 +129,7 @@ public abstract class AbstractMessageTask<P>
         } else {
             exception = new HazelcastInstanceNotActiveException();
         }
-        endpoint.sendResponse(exception, clientMessage.getCorrelationId());
+        sendClientMessage(exception);
         endpointManager.removeEndpoint(endpoint);
     }
 
