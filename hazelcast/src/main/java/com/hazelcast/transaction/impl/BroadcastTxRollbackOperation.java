@@ -75,11 +75,11 @@ public final class BroadcastTxRollbackOperation extends Operation {
     }
 
     @Override
-    public ExceptionAction onException(Throwable throwable) {
+    public ExceptionAction onInvocationException(Throwable throwable) {
         if (throwable instanceof MemberLeftException) {
             return ExceptionAction.THROW_EXCEPTION;
         }
-        return super.onException(throwable);
+        return super.onInvocationException(throwable);
     }
 
     @Override
