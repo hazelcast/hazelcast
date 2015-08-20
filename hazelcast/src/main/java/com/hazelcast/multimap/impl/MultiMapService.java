@@ -31,7 +31,7 @@ import com.hazelcast.multimap.impl.operations.MultiMapMigrationOperation;
 import com.hazelcast.multimap.impl.txn.TransactionalMultiMapProxy;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.SerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.spi.EventPublishingService;

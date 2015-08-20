@@ -17,18 +17,18 @@
 package com.hazelcast.replicatedmap.impl.operation;
 
 import com.hazelcast.nio.serialization.DataSerializableFactory;
-import com.hazelcast.nio.serialization.DataSerializerHook;
+import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.nio.serialization.impl.ArrayDataSerializableFactory;
-import com.hazelcast.nio.serialization.impl.FactoryIdHelper;
+import com.hazelcast.internal.serialization.impl.ArrayDataSerializableFactory;
+import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 import com.hazelcast.replicatedmap.impl.messages.MultiReplicationMessage;
 import com.hazelcast.replicatedmap.impl.messages.ReplicationMessage;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecord;
 import com.hazelcast.replicatedmap.impl.record.VectorClockTimestamp;
 import com.hazelcast.util.ConstructorFunction;
 
-import static com.hazelcast.nio.serialization.impl.FactoryIdHelper.REPLICATED_MAP_DS_FACTORY;
-import static com.hazelcast.nio.serialization.impl.FactoryIdHelper.REPLICATED_MAP_DS_FACTORY_ID;
+import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.REPLICATED_MAP_DS_FACTORY;
+import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.REPLICATED_MAP_DS_FACTORY_ID;
 
 /**
  * This class contains all the ID hooks for IdentifiedDataSerializable classes used inside the replicated map.

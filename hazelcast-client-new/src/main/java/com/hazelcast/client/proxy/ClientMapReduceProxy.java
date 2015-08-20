@@ -51,7 +51,7 @@ import com.hazelcast.mapreduce.impl.SetKeyValueSource;
 import com.hazelcast.mapreduce.impl.task.TransferableJobProcessInformation;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.SerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.spi.impl.AbstractCompletableFuture;
 import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.UuidUtil;

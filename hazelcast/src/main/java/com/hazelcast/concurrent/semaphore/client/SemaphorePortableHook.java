@@ -19,13 +19,13 @@ package com.hazelcast.concurrent.semaphore.client;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableFactory;
-import com.hazelcast.nio.serialization.PortableHook;
-import com.hazelcast.nio.serialization.impl.FactoryIdHelper;
+import com.hazelcast.internal.serialization.PortableHook;
+import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 
 import java.util.Collection;
 
-import static com.hazelcast.nio.serialization.impl.FactoryIdHelper.SEMAPHORE_PORTABLE_FACTORY;
-import static com.hazelcast.nio.serialization.impl.FactoryIdHelper.SEMAPHORE_PORTABLE_FACTORY_ID;
+import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.SEMAPHORE_PORTABLE_FACTORY;
+import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.SEMAPHORE_PORTABLE_FACTORY_ID;
 
 public class SemaphorePortableHook implements PortableHook {
 

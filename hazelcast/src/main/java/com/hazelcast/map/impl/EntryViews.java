@@ -20,7 +20,7 @@ import com.hazelcast.core.EntryView;
 import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.RecordStatistics;
-import com.hazelcast.nio.serialization.SerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
 
 /**
  * A class providing static factory methods that create various entry view objects.

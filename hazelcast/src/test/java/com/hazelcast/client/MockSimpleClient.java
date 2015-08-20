@@ -25,8 +25,7 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionType;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.SocketWritable;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.SerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.security.UsernamePasswordCredentials;
 
 import java.io.IOException;

@@ -27,7 +27,7 @@ import com.hazelcast.logging.Logger;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.MapEntrySimple;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.SerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.spi.impl.SerializationServiceSupport;
 import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.web.entryprocessor.DeleteSessionEntryProcessor;

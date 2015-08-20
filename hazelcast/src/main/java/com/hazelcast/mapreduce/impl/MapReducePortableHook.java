@@ -23,14 +23,14 @@ import com.hazelcast.mapreduce.impl.task.TransferableJobProcessInformation;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableFactory;
-import com.hazelcast.nio.serialization.PortableHook;
-import com.hazelcast.nio.serialization.impl.FactoryIdHelper;
+import com.hazelcast.internal.serialization.PortableHook;
+import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 import com.hazelcast.util.ConstructorFunction;
 
 import java.util.Collection;
 
-import static com.hazelcast.nio.serialization.impl.FactoryIdHelper.MAP_REDUCE_PORTABLE_FACTORY;
-import static com.hazelcast.nio.serialization.impl.FactoryIdHelper.MAP_REDUCE_PORTABLE_FACTORY_ID;
+import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.MAP_REDUCE_PORTABLE_FACTORY;
+import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.MAP_REDUCE_PORTABLE_FACTORY_ID;
 
 /**
  * This class registers all Portable serializers that are needed for communication between nodes and clients

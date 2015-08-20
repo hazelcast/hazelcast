@@ -26,7 +26,7 @@ import com.hazelcast.map.impl.mapstore.writebehind.WriteBehindProcessor;
 import com.hazelcast.map.impl.mapstore.writebehind.WriteBehindQueue;
 import com.hazelcast.map.impl.mapstore.writebehind.WriteBehindStore;
 import com.hazelcast.map.impl.mapstore.writethrough.WriteThroughStore;
-import com.hazelcast.nio.serialization.SerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.spi.NodeEngine;
 
 import java.util.concurrent.TimeUnit;

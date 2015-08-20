@@ -19,7 +19,7 @@ package com.hazelcast.map.impl.record;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.SerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
 
 public class ObjectRecordFactory implements RecordFactory<Object> {
 

@@ -54,17 +54,17 @@ import com.hazelcast.collection.impl.txnqueue.operations.TxnReservePollOperation
 import com.hazelcast.collection.impl.txnqueue.operations.TxnRollbackBackupOperation;
 import com.hazelcast.collection.impl.txnqueue.operations.TxnRollbackOperation;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
-import com.hazelcast.nio.serialization.DataSerializerHook;
+import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.nio.serialization.impl.ArrayDataSerializableFactory;
-import com.hazelcast.nio.serialization.impl.FactoryIdHelper;
+import com.hazelcast.internal.serialization.impl.ArrayDataSerializableFactory;
+import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 import com.hazelcast.util.ConstructorFunction;
 
-import static com.hazelcast.nio.serialization.impl.FactoryIdHelper.QUEUE_DS_FACTORY;
-import static com.hazelcast.nio.serialization.impl.FactoryIdHelper.QUEUE_DS_FACTORY_ID;
+import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.QUEUE_DS_FACTORY;
+import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.QUEUE_DS_FACTORY_ID;
 
 /**
- * A {@link com.hazelcast.nio.serialization.DataSerializerHook} for the queue operations and support structures.
+ * A {@link DataSerializerHook} for the queue operations and support structures.
  */
 public final class QueueDataSerializerHook implements DataSerializerHook {
 

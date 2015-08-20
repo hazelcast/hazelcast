@@ -17,7 +17,7 @@
 package com.hazelcast.wm.test;
 
 import com.hazelcast.core.IMap;
-import com.hazelcast.nio.serialization.SerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.web.SessionState;

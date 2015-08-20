@@ -19,14 +19,14 @@ package com.hazelcast.client.impl.client;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.ClassDefinitionBuilder;
 import com.hazelcast.nio.serialization.PortableFactory;
-import com.hazelcast.nio.serialization.PortableHook;
-import com.hazelcast.nio.serialization.impl.FactoryIdHelper;
+import com.hazelcast.internal.serialization.PortableHook;
+import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 
 import java.util.Collection;
 import java.util.Collections;
 
-import static com.hazelcast.nio.serialization.impl.FactoryIdHelper.CLIENT_PORTABLE_FACTORY;
-import static com.hazelcast.nio.serialization.impl.FactoryIdHelper.CLIENT_PORTABLE_FACTORY_ID;
+import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.CLIENT_PORTABLE_FACTORY;
+import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.CLIENT_PORTABLE_FACTORY_ID;
 
 /**
  * Portable that creates a lot of the client related Portable instances.

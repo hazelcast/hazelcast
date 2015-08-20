@@ -16,8 +16,8 @@
 
 package com.hazelcast.nio.serialization;
 
-import com.hazelcast.nio.serialization.impl.ClassDefinitionImpl;
-import com.hazelcast.nio.serialization.impl.FieldDefinitionImpl;
+import com.hazelcast.internal.serialization.impl.ClassDefinitionImpl;
+import com.hazelcast.internal.serialization.impl.FieldDefinitionImpl;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -25,7 +25,7 @@ import java.util.List;
 /**
  * ClassDefinitionBuilder is used to build and register ClassDefinitions manually.
  *
- * @see com.hazelcast.nio.serialization.ClassDefinition
+ * @see ClassDefinition
  * @see com.hazelcast.nio.serialization.Portable
  * @see com.hazelcast.config.SerializationConfig#addClassDefinition(ClassDefinition)
  */

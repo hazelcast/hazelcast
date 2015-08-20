@@ -17,7 +17,7 @@
 package com.hazelcast.concurrent.lock;
 
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.impl.HeapData;
+import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.spi.DefaultObjectNamespace;
 import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.test.HazelcastParallelClassRunner;

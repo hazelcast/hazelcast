@@ -18,7 +18,7 @@ package com.hazelcast.hibernate.serialization;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.impl.SerializationConstants;
+import com.hazelcast.internal.serialization.impl.SerializationConstants;
 import com.hazelcast.nio.serialization.StreamSerializer;
 import org.hibernate.cache.spi.entry.CacheEntry;
 import org.hibernate.cache.spi.entry.StandardCacheEntryImpl;

@@ -287,7 +287,7 @@ public class SerializationConfig {
 
     /**
      * @return registered class definitions of portable classes
-     * @see {@link com.hazelcast.nio.serialization.ClassDefinition}
+     * @see {@link ClassDefinition}
      */
     public Set<ClassDefinition> getClassDefinitions() {
         if (classDefinitions == null) {
@@ -299,7 +299,7 @@ public class SerializationConfig {
     /**
      * @param classDefinition the class definition to be registered
      * @return configured {@link com.hazelcast.config.SerializerConfig} for chaining
-     * @see {@link com.hazelcast.nio.serialization.ClassDefinition}
+     * @see {@link ClassDefinition}
      */
     public SerializationConfig addClassDefinition(ClassDefinition classDefinition) {
         if (!getClassDefinitions().add(classDefinition)) {
@@ -312,7 +312,7 @@ public class SerializationConfig {
     /**
      * @param classDefinitions set of class definitions to be registered
      * @return configured {@link com.hazelcast.config.SerializerConfig} for chaining
-     * @see {@link com.hazelcast.nio.serialization.ClassDefinition}
+     * @see {@link ClassDefinition}
      */
     public SerializationConfig setClassDefinitions(Set<ClassDefinition> classDefinitions) {
         this.classDefinitions = classDefinitions;

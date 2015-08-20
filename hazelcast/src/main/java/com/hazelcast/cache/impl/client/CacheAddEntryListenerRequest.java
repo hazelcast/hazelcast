@@ -26,7 +26,7 @@ import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.impl.client.CallableClientRequest;
 import com.hazelcast.client.impl.client.RetryableRequest;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.impl.HeapData;
+import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.spi.EventRegistration;

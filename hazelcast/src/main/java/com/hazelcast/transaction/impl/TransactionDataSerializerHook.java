@@ -17,17 +17,17 @@
 package com.hazelcast.transaction.impl;
 
 import com.hazelcast.nio.serialization.DataSerializableFactory;
-import com.hazelcast.nio.serialization.DataSerializerHook;
+import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.nio.serialization.impl.FactoryIdHelper;
+import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 import com.hazelcast.transaction.impl.operations.BeginTxBackupOperation;
 import com.hazelcast.transaction.impl.operations.BroadcastTxRollbackOperation;
 import com.hazelcast.transaction.impl.operations.PurgeTxBackupOperation;
 import com.hazelcast.transaction.impl.operations.ReplicateTxOperation;
 import com.hazelcast.transaction.impl.operations.RollbackTxBackupOperation;
 
-import static com.hazelcast.nio.serialization.impl.FactoryIdHelper.TRANSACTION_DS_FACTORY;
-import static com.hazelcast.nio.serialization.impl.FactoryIdHelper.TRANSACTION_DS_FACTORY_ID;
+import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.TRANSACTION_DS_FACTORY;
+import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.TRANSACTION_DS_FACTORY_ID;
 
 public final class TransactionDataSerializerHook implements DataSerializerHook {
 

@@ -20,9 +20,9 @@ import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.FieldDefinition;
 import com.hazelcast.nio.serialization.FieldType;
-import com.hazelcast.nio.serialization.PortableContext;
+import com.hazelcast.internal.serialization.PortableContext;
 import com.hazelcast.nio.serialization.PortableReader;
-import com.hazelcast.nio.serialization.SerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.query.QueryException;
 
 import java.io.IOException;

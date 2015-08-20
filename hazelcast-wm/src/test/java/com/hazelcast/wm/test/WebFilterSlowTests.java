@@ -3,7 +3,7 @@ package com.hazelcast.wm.test;
 import com.hazelcast.config.FileSystemXmlConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.IMap;
-import com.hazelcast.nio.serialization.SerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.web.SessionState;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.CookieStore;

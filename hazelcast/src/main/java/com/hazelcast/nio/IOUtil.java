@@ -18,7 +18,7 @@ package com.hazelcast.nio;
 
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.SerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
 
 import java.io.ByteArrayOutputStream;
 import java.io.Closeable;

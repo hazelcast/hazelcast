@@ -23,7 +23,7 @@ import com.hazelcast.map.impl.operation.QueryOperation;
 import com.hazelcast.map.impl.operation.QueryPartitionOperation;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.SerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.PagingPredicateAccessor;
 import com.hazelcast.query.Predicate;
