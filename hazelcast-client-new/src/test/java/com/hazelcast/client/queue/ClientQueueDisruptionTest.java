@@ -1,6 +1,5 @@
 package com.hazelcast.client.queue;
 
-import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.AssertTask;
@@ -9,7 +8,6 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -18,8 +16,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(SlowTest.class)
@@ -42,8 +40,8 @@ public class ClientQueueDisruptionTest extends HazelcastTestSupport {
             cluster.add(hazelcastFactory.newHazelcastInstance());
         }
 
-        client1 = HazelcastClient.newHazelcastClient();
-        client2 = HazelcastClient.newHazelcastClient();
+        client1 = hazelcastFactory.newHazelcastClient();
+        client2 = hazelcastFactory.newHazelcastClient();
     }
 
     @After
@@ -52,7 +50,6 @@ public class ClientQueueDisruptionTest extends HazelcastTestSupport {
     }
 
     @Test
-    @Ignore
     public void clientsConsume_withNodeShutdown() throws InterruptedException {
 
         final int initial = 2000, max = 8000;
@@ -111,7 +108,7 @@ public class ClientQueueDisruptionTest extends HazelcastTestSupport {
     }
 
     private HazelcastInstance getRandomNode() {
-        int index = random.nextInt(CLUSTER_SIZE);
+        int index = random.nextInt(cluster.size());
         return cluster.get(index);
     }
 
