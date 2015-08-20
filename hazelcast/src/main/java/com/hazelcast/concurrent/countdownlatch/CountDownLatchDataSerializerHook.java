@@ -23,12 +23,12 @@ import com.hazelcast.concurrent.countdownlatch.operations.CountDownOperation;
 import com.hazelcast.concurrent.countdownlatch.operations.GetCountOperation;
 import com.hazelcast.concurrent.countdownlatch.operations.SetCountOperation;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
-import com.hazelcast.nio.serialization.DataSerializerHook;
+import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.nio.serialization.impl.FactoryIdHelper;
+import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 
-import static com.hazelcast.nio.serialization.impl.FactoryIdHelper.CDL_DS_FACTORY;
-import static com.hazelcast.nio.serialization.impl.FactoryIdHelper.CDL_DS_FACTORY_ID;
+import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.CDL_DS_FACTORY;
+import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.CDL_DS_FACTORY_ID;
 
 public final class CountDownLatchDataSerializerHook implements DataSerializerHook {
 

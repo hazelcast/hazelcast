@@ -19,14 +19,14 @@ package com.hazelcast.spi.impl;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableFactory;
-import com.hazelcast.nio.serialization.PortableHook;
-import com.hazelcast.nio.serialization.impl.FactoryIdHelper;
+import com.hazelcast.internal.serialization.PortableHook;
+import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 import com.hazelcast.security.UsernamePasswordCredentials;
 
 import java.util.Collection;
 
-import static com.hazelcast.nio.serialization.impl.FactoryIdHelper.SPI_PORTABLE_FACTORY;
-import static com.hazelcast.nio.serialization.impl.FactoryIdHelper.SPI_PORTABLE_FACTORY_ID;
+import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.SPI_PORTABLE_FACTORY;
+import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.SPI_PORTABLE_FACTORY_ID;
 
 public final class SpiPortableHook implements PortableHook {
 

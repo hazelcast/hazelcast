@@ -22,8 +22,8 @@ import com.hazelcast.hibernate.distributed.UpdateEntryProcessor;
 import com.hazelcast.hibernate.local.Invalidation;
 import com.hazelcast.hibernate.local.Timestamp;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
-import com.hazelcast.nio.serialization.DataSerializerHook;
-import com.hazelcast.nio.serialization.impl.FactoryIdHelper;
+import com.hazelcast.internal.serialization.DataSerializerHook;
+import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 /**

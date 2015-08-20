@@ -31,12 +31,12 @@ import com.hazelcast.concurrent.lock.operations.SignalOperation;
 import com.hazelcast.concurrent.lock.operations.UnlockBackupOperation;
 import com.hazelcast.concurrent.lock.operations.UnlockOperation;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
-import com.hazelcast.nio.serialization.DataSerializerHook;
+import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.nio.serialization.impl.FactoryIdHelper;
+import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 
-import static com.hazelcast.nio.serialization.impl.FactoryIdHelper.LOCK_DS_FACTORY;
-import static com.hazelcast.nio.serialization.impl.FactoryIdHelper.LOCK_DS_FACTORY_ID;
+import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.LOCK_DS_FACTORY;
+import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.LOCK_DS_FACTORY_ID;
 
 public final class LockDataSerializerHook implements DataSerializerHook {
 

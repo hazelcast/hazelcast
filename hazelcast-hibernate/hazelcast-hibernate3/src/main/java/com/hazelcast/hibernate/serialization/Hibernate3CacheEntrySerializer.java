@@ -19,7 +19,7 @@ package com.hazelcast.hibernate.serialization;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.UnsafeHelper;
-import com.hazelcast.nio.serialization.impl.SerializationConstants;
+import com.hazelcast.internal.serialization.impl.SerializationConstants;
 import com.hazelcast.nio.serialization.StreamSerializer;
 import org.hibernate.cache.entry.CacheEntry;
 import sun.misc.Unsafe;

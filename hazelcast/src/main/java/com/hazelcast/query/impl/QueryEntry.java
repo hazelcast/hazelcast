@@ -18,8 +18,8 @@ package com.hazelcast.query.impl;
 
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.Portable;
-import com.hazelcast.nio.serialization.PortableContext;
-import com.hazelcast.nio.serialization.SerializationService;
+import com.hazelcast.internal.serialization.PortableContext;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.query.QueryException;
 import com.hazelcast.query.impl.getters.ReflectionHelper;
 

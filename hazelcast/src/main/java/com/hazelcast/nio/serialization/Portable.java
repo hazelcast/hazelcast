@@ -33,9 +33,9 @@ import java.io.IOException;
  * </ul>
  *
  * @see com.hazelcast.nio.serialization.PortableFactory
- * @see com.hazelcast.nio.serialization.PortableWriter
- * @see com.hazelcast.nio.serialization.PortableReader
- * @see com.hazelcast.nio.serialization.ClassDefinition
+ * @see PortableWriter
+ * @see PortableReader
+ * @see ClassDefinition
  * @see com.hazelcast.nio.serialization.DataSerializable
  * @see com.hazelcast.nio.serialization.IdentifiedDataSerializable
  * @see com.hazelcast.config.SerializationConfig

@@ -20,7 +20,7 @@ import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.MapStoreWrapper;
-import com.hazelcast.nio.serialization.SerializationService;
+import com.hazelcast.internal.serialization.SerializationService;
 
 /**
  * A context which provides/initializes map store specific functionality.

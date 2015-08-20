@@ -51,14 +51,14 @@ import com.hazelcast.collection.impl.txncollection.operations.CollectionTxnAddOp
 import com.hazelcast.collection.impl.txncollection.operations.CollectionTxnRemoveBackupOperation;
 import com.hazelcast.collection.impl.txncollection.operations.CollectionTxnRemoveOperation;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
-import com.hazelcast.nio.serialization.DataSerializerHook;
+import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.nio.serialization.impl.ArrayDataSerializableFactory;
-import com.hazelcast.nio.serialization.impl.FactoryIdHelper;
+import com.hazelcast.internal.serialization.impl.ArrayDataSerializableFactory;
+import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 import com.hazelcast.util.ConstructorFunction;
 
-import static com.hazelcast.nio.serialization.impl.FactoryIdHelper.COLLECTION_DS_FACTORY;
-import static com.hazelcast.nio.serialization.impl.FactoryIdHelper.COLLECTION_DS_FACTORY_ID;
+import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.COLLECTION_DS_FACTORY;
+import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.COLLECTION_DS_FACTORY_ID;
 
 public class CollectionDataSerializerHook implements DataSerializerHook {
 

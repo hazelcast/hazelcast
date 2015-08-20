@@ -30,12 +30,12 @@ import com.hazelcast.concurrent.atomiclong.operations.GetOperation;
 import com.hazelcast.concurrent.atomiclong.operations.SetBackupOperation;
 import com.hazelcast.concurrent.atomiclong.operations.SetOperation;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
-import com.hazelcast.nio.serialization.DataSerializerHook;
+import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.nio.serialization.impl.FactoryIdHelper;
+import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 
-import static com.hazelcast.nio.serialization.impl.FactoryIdHelper.ATOMIC_LONG_DS_FACTORY;
-import static com.hazelcast.nio.serialization.impl.FactoryIdHelper.ATOMIC_LONG_DS_FACTORY_ID;
+import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.ATOMIC_LONG_DS_FACTORY;
+import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.ATOMIC_LONG_DS_FACTORY_ID;
 
 public final class AtomicLongDataSerializerHook implements DataSerializerHook {
 

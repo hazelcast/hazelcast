@@ -22,7 +22,7 @@ import com.hazelcast.cluster.impl.operations.HeartbeatOperation;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
-import com.hazelcast.nio.serialization.DataSerializerHook;
+import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 public final class ClusterDataSerializerHook implements DataSerializerHook {

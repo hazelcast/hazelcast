@@ -31,12 +31,12 @@ import com.hazelcast.concurrent.semaphore.operations.ReleaseOperation;
 import com.hazelcast.concurrent.semaphore.operations.SemaphoreDeadMemberOperation;
 import com.hazelcast.concurrent.semaphore.operations.SemaphoreReplicationOperation;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
-import com.hazelcast.nio.serialization.DataSerializerHook;
+import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.nio.serialization.impl.FactoryIdHelper;
+import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 
-import static com.hazelcast.nio.serialization.impl.FactoryIdHelper.SEMAPHORE_DS_FACTORY;
-import static com.hazelcast.nio.serialization.impl.FactoryIdHelper.SEMAPHORE_DS_FACTORY_ID;
+import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.SEMAPHORE_DS_FACTORY;
+import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.SEMAPHORE_DS_FACTORY_ID;
 
 public class SemaphoreDataSerializerHook implements DataSerializerHook {
 

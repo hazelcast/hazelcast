@@ -22,9 +22,9 @@ import com.hazelcast.hibernate.distributed.UpdateEntryProcessor;
 import com.hazelcast.hibernate.local.Invalidation;
 import com.hazelcast.hibernate.local.Timestamp;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
-import com.hazelcast.nio.serialization.DataSerializerHook;
+import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.nio.serialization.impl.FactoryIdHelper;
+import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 
 /**
  * An implementation of {@link DataSerializerHook} which constructs any of the
