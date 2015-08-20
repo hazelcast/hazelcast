@@ -41,87 +41,99 @@ public class CacheEventContext {
         return cacheName;
     }
 
-    public void setCacheName(String cacheName) {
+    public CacheEventContext setCacheName(String cacheName) {
         this.cacheName = cacheName;
+        return this;
     }
 
     public CacheEventType getEventType() {
         return eventType;
     }
 
-    public void setEventType(CacheEventType eventType) {
+    public CacheEventContext setEventType(CacheEventType eventType) {
         this.eventType = eventType;
+        return this;
     }
 
     public Data getDataKey() {
         return dataKey;
     }
 
-    public void setDataKey(Data dataKey) {
+    public CacheEventContext setDataKey(Data dataKey) {
         this.dataKey = dataKey;
+        return this;
     }
 
     public Data getDataValue() {
         return dataValue;
     }
 
-    public void setDataValue(Data dataValue) {
+    public CacheEventContext setDataValue(Data dataValue) {
         this.dataValue = dataValue;
+        return this;
     }
 
     public Data getDataOldValue() {
         return dataOldValue;
     }
 
-    public void setDataOldValue(Data dataOldValue) {
+    public CacheEventContext setDataOldValue(Data dataOldValue) {
         this.dataOldValue = dataOldValue;
+        return this;
     }
 
     public boolean isOldValueAvailable() {
         return isOldValueAvailable;
     }
 
-    public void setIsOldValueAvailable(boolean isOldValueAvailable) {
+    public CacheEventContext setIsOldValueAvailable(boolean isOldValueAvailable) {
         this.isOldValueAvailable = isOldValueAvailable;
+        return this;
     }
 
     public long getExpirationTime() {
         return expirationTime;
     }
 
-    public void setExpirationTime(long expirationTime) {
+    public CacheEventContext setExpirationTime(long expirationTime) {
         this.expirationTime = expirationTime;
+        return this;
     }
 
     public long getAccessHit() {
         return accessHit;
     }
 
-    public void setAccessHit(long accessHit) {
+    public CacheEventContext setAccessHit(long accessHit) {
         this.accessHit = accessHit;
+        return this;
     }
 
     public String getOrigin() {
         return origin;
     }
 
-    public void setOrigin(String origin) {
+    public CacheEventContext setOrigin(String origin) {
         this.origin = origin;
+        return this;
     }
 
     public int getOrderKey() {
         return orderKey;
     }
 
-    public void setOrderKey(int orderKey) {
+    public CacheEventContext setOrderKey(int orderKey) {
         this.orderKey = orderKey;
+        return this;
     }
 
     public int getCompletionId() {
         return completionId;
     }
 
-    public void setCompletionId(int completionId) {
+    public CacheEventContext setCompletionId(int completionId) {
         this.completionId = completionId;
+        return this;
     }
+
 }
