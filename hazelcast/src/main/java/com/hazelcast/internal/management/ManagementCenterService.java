@@ -71,6 +71,7 @@ import java.util.Map;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.inspectOutputMemoryError;
 import static com.hazelcast.nio.IOUtil.closeResource;
@@ -91,6 +92,7 @@ public class ManagementCenterService {
     private final HazelcastInstanceImpl instance;
     private final TaskPollThread taskPollThread;
     private final StateSendThread stateSendThread;
+    private final PrepareStateThread prepareStateThread;
     private final ILogger logger;
 
     private final ConsoleCommandHandler commandHandler;
@@ -104,6 +106,7 @@ public class ManagementCenterService {
     private volatile boolean urlChanged;
     private volatile boolean manCenterConnectionLost;
     private volatile boolean taskPollFailed;
+    private AtomicReference<TimedMemberState> timedMemberState = new AtomicReference<TimedMemberState>();
 
     public ManagementCenterService(HazelcastInstanceImpl instance) {
         this.instance = instance;
@@ -114,6 +117,7 @@ public class ManagementCenterService {
         commandHandler = new ConsoleCommandHandler(instance);
         taskPollThread = new TaskPollThread();
         stateSendThread = new StateSendThread();
+        prepareStateThread = new PrepareStateThread();
         timedMemberStateFactory = new TimedMemberStateFactory(instance);
         identifier = newManagementCenterIdentifier();
         registerListeners();
@@ -166,6 +170,7 @@ public class ManagementCenterService {
 
         timedMemberStateFactory.init();
         taskPollThread.start();
+        prepareStateThread.start();
         stateSendThread.start();
         logger.info("Hazelcast will connect to Hazelcast Management Center on address: \n" + managementCenterUrl);
     }
@@ -180,6 +185,7 @@ public class ManagementCenterService {
         try {
             interruptThread(stateSendThread);
             interruptThread(taskPollThread);
+            interruptThread(prepareStateThread);
         } catch (Throwable ignored) {
             ignore(ignored);
         }
@@ -276,6 +282,40 @@ public class ManagementCenterService {
         return responseCode == HTTP_SUCCESS;
     }
 
+    private final class PrepareStateThread extends Thread {
+        private final long updateIntervalMs;
+
+        private PrepareStateThread() {
+            super(threadGroup.getInternalThreadGroup(), threadGroup.getThreadNamePrefix("MC.State.Sender"));
+            updateIntervalMs = calcUpdateInterval();
+        }
+
+        private long calcUpdateInterval() {
+            long updateInterval = managementCenterConfig.getUpdateInterval();
+            return updateInterval > 0 ? TimeUnit.SECONDS.toMillis(updateInterval) : DEFAULT_UPDATE_INTERVAL;
+        }
+
+        @Override
+        public void run() {
+            try {
+                while (isRunning()) {
+                    timedMemberState.set(timedMemberStateFactory.createTimedMemberState());
+                    sleep();
+                }
+            } catch (Throwable throwable) {
+                inspectOutputMemoryError(throwable);
+                if (!(throwable instanceof InterruptedException)) {
+                    logger.warning("Hazelcast Management Center Service will be shutdown due to exception.", throwable);
+                    shutdown();
+                }
+            }
+        }
+
+        private void sleep() throws InterruptedException {
+            Thread.sleep(updateIntervalMs);
+        }
+    }
+
     /**
      * Thread for sending cluster state to the Management Center.
      */
@@ -328,18 +368,20 @@ public class ManagementCenterService {
 
                 JsonObject root = new JsonObject();
                 root.add("identifier", identifier.toJson());
-                TimedMemberState timedMemberState = timedMemberStateFactory.createTimedMemberState();
-                root.add("timedMemberState", timedMemberState.toJson());
-                root.writeTo(writer);
+                TimedMemberState memberState = timedMemberState.get();
+                if (memberState != null) {
+                    root.add("timedMemberState", memberState.toJson());
+                    root.writeTo(writer);
 
-                writer.flush();
-                outputStream.flush();
-                boolean success = post(connection);
-                if (manCenterConnectionLost && success) {
-                    logger.info("Connection to management center restored.");
-                    manCenterConnectionLost = false;
-                } else if (!success) {
-                    manCenterConnectionLost = true;
+                    writer.flush();
+                    outputStream.flush();
+                    boolean success = post(connection);
+                    if (manCenterConnectionLost && success) {
+                        logger.info("Connection to management center restored.");
+                        manCenterConnectionLost = false;
+                    } else if (!success) {
+                        manCenterConnectionLost = true;
+                    }
                 }
             } catch (Exception e) {
                 if (!manCenterConnectionLost) {
