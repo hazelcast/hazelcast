@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.nio;
+package com.hazelcast.internal.serialization;
 
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;

@@ -1,10 +1,14 @@
-package com.hazelcast.nio.serialization;
+package com.hazelcast.internal.serialization;
+
+import com.hazelcast.nio.serialization.Portable;
+import com.hazelcast.nio.serialization.PortableReader;
+import com.hazelcast.nio.serialization.PortableWriter;
 
 import java.io.IOException;
 
 /**
-* @author mdogan 22/05/14
-*/
+ * @author mdogan 22/05/14
+ */
 class MainPortable implements Portable {
 
     byte b;

@@ -1,12 +1,13 @@
-package com.hazelcast.nio.serialization;
+package com.hazelcast.internal.serialization;
 
 import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.serialization.PortableReader;
 
 import java.io.IOException;
 
 /**
-* @author mdogan 22/05/14
-*/
+ * @author mdogan 22/05/14
+ */
 class InvalidRawDataPortable2 extends RawDataPortable {
 
     InvalidRawDataPortable2() {

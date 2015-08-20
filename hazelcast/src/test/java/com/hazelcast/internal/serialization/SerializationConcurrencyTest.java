@@ -14,12 +14,17 @@
  * limitations under the License.
  */
 
-package com.hazelcast.nio.serialization;
+package com.hazelcast.internal.serialization;
 
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.Portable;
+import com.hazelcast.nio.serialization.PortableFactory;
+import com.hazelcast.nio.serialization.PortableReader;
+import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Assert;
@@ -118,7 +123,7 @@ public class SerializationConcurrencyTest {
 
         private String street;
 
-        private int no ;
+        private int no;
 
         public Address() {
         }
@@ -230,9 +235,9 @@ public class SerializationConcurrencyTest {
 
     static class PortableAddress implements Portable {
 
-        private String street ;
+        private String street;
 
-        private int no ;
+        private int no;
 
         public PortableAddress() {
         }

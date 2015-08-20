@@ -17,8 +17,8 @@
 package com.hazelcast.internal.serialization.impl;
 
 import com.hazelcast.nio.Bits;
-import com.hazelcast.nio.BufferObjectDataInput;
-import com.hazelcast.nio.UTFEncoderDecoder;
+import com.hazelcast.internal.serialization.BufferObjectDataInput;
+import com.hazelcast.internal.serialization.UTFEncoderDecoder;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 

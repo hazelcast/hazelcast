@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.nio.serialization;
+package com.hazelcast.internal.serialization;
 
 import com.hazelcast.config.GlobalSerializerConfig;
 import com.hazelcast.config.SerializationConfig;
@@ -25,13 +25,15 @@ import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.executor.impl.operations.CancellationOperation;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.SimpleMemberImpl;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.SerializationConcurrencyTest.Person;
+import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
+import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.internal.serialization.impl.HeapData;
-import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.StreamSerializer;
 import com.hazelcast.spi.OperationAccessor;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -203,8 +205,8 @@ public class SerializationTest
     public void testLinkedListSerialization() {
         SerializationService ss = new DefaultSerializationServiceBuilder().build();
         LinkedList linkedList = new LinkedList();
-        linkedList.add(new SerializationConcurrencyTest.Person(35, 180, 100, "Orhan", null));
-        linkedList.add(new SerializationConcurrencyTest.Person(12, 120, 60, "Osman", null));
+        linkedList.add(new Person(35, 180, 100, "Orhan", null));
+        linkedList.add(new Person(12, 120, 60, "Osman", null));
         Data data = ss.toData(linkedList);
         LinkedList deserialized = ss.toObject(data);
         assertTrue("Objects are not identical!", linkedList.equals(deserialized));
@@ -214,8 +216,8 @@ public class SerializationTest
     public void testArrayListSerialization() {
         SerializationService ss = new DefaultSerializationServiceBuilder().build();
         ArrayList arrayList = new ArrayList();
-        arrayList.add(new SerializationConcurrencyTest.Person(35, 180, 100, "Orhan", null));
-        arrayList.add(new SerializationConcurrencyTest.Person(12, 120, 60, "Osman", null));
+        arrayList.add(new Person(35, 180, 100, "Orhan", null));
+        arrayList.add(new Person(12, 120, 60, "Osman", null));
         Data data = ss.toData(arrayList);
         ArrayList deserialized = ss.toObject(data);
         assertTrue("Objects are not identical!", arrayList.equals(deserialized));
@@ -227,7 +229,7 @@ public class SerializationTest
         byte[] array = new byte[1024];
         new Random().nextBytes(array);
         Data data = ss.toData(array);
-        byte[] deserialized =  ss.toObject(data);
+        byte[] deserialized = ss.toObject(data);
         assertArrayEquals(array, deserialized);
     }
 
@@ -291,7 +293,7 @@ public class SerializationTest
         Properties properties = new Properties();
         properties.put(key, value);
         Data data = serializationService.toData(properties);
-        
+
         Properties output = serializationService.toObject(data);
         assertEquals(value, output.get(key));
     }
@@ -304,37 +306,37 @@ public class SerializationTest
     public void testCompressionOnExternalizables() throws Exception {
         SerializationService serializationService = new DefaultSerializationServiceBuilder().setEnableCompression(true).build();
         String test = "test";
-        ExternalizableString ex = new ExternalizableString(test);  
+        ExternalizableString ex = new ExternalizableString(test);
         Data data = serializationService.toData(ex);
-        
+
         ExternalizableString actual = serializationService.toObject(data);
         assertEquals(test, actual.value);
     }
-    
+
     private static class ExternalizableString implements Externalizable {
-        
-        String value; 
-        
+
+        String value;
+
         public ExternalizableString() {
-            
+
         }
-        
+
         public ExternalizableString(String value) {
             this.value = value;
         }
-        
+
         @Override
         public void writeExternal(ObjectOutput out) throws IOException {
-            out.writeUTF(value);            
+            out.writeUTF(value);
         }
 
         @Override
         public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
-            value = in.readUTF();           
+            value = in.readUTF();
         }
-        
+
     }
-    
+
     @Test
     public void testMemberLeftException_usingMemberImpl() throws IOException, ClassNotFoundException {
         String uuid = UuidUtil.buildRandomUuidString();

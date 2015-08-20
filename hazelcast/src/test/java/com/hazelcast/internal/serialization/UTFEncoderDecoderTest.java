@@ -14,12 +14,13 @@
  * limitations under the License.
  */
 
-package com.hazelcast.nio;
+package com.hazelcast.internal.serialization;
 
-import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -42,14 +43,14 @@ import java.util.List;
 import java.util.Random;
 import java.util.Set;
 
-import static com.hazelcast.nio.UTFEncoderDecoder.ReflectionBasedCharArrayUtfWriter;
-import static com.hazelcast.nio.UTFEncoderDecoder.UnsafeBasedCharArrayUtfWriter;
+import static com.hazelcast.internal.serialization.UTFEncoderDecoder.ReflectionBasedCharArrayUtfWriter;
+import static com.hazelcast.internal.serialization.UTFEncoderDecoder.UnsafeBasedCharArrayUtfWriter;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class UTFEncoderDecoderTest  {
+public class UTFEncoderDecoderTest {
 
     private static final Random RANDOM = new Random();
     private final int BENCHMARK_ROUNDS = 3; // 100;
@@ -572,8 +573,8 @@ public class UTFEncoderDecoderTest  {
             if (letters && Character.isLetter(ch)
                     || numbers && Character.isDigit(ch)
                     || !letters && !numbers) {
-                if(ch >= 56320 && ch <= 57343) {
-                    if(count == 0) {
+                if (ch >= 56320 && ch <= 57343) {
+                    if (count == 0) {
                         count++;
                     } else {
                         // low surrogate, insert high surrogate after putting it in
@@ -581,8 +582,8 @@ public class UTFEncoderDecoderTest  {
                         count--;
                         buffer[count] = (char) (55296 + random.nextInt(128));
                     }
-                } else if(ch >= 55296 && ch <= 56191) {
-                    if(count == 0) {
+                } else if (ch >= 55296 && ch <= 56191) {
+                    if (count == 0) {
                         count++;
                     } else {
                         // high surrogate, insert low surrogate before putting it in
@@ -590,7 +591,7 @@ public class UTFEncoderDecoderTest  {
                         count--;
                         buffer[count] = ch;
                     }
-                } else if(ch >= 56192 && ch <= 56319) {
+                } else if (ch >= 56192 && ch <= 56319) {
                     // private high surrogate, no effing clue, so skip it
                     count++;
                 } else {

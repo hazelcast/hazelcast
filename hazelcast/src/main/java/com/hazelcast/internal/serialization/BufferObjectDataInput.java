@@ -14,7 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.nio;
+package com.hazelcast.internal.serialization;
+
+import com.hazelcast.nio.ObjectDataInput;
 
 import java.io.Closeable;
 import java.io.IOException;

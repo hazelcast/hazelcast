@@ -17,7 +17,6 @@
 package com.hazelcast.internal.serialization;
 
 import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.UTFEncoderDecoder;
 import com.hazelcast.nio.serialization.Data;
 
 import java.io.Closeable;

@@ -14,12 +14,12 @@
 * limitations under the License.
 */
 
-package com.hazelcast.nio.serialization;
+package com.hazelcast.internal.serialization;
 
-import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.internal.serialization.SerializationServiceBuilder;
-import com.hazelcast.nio.Packet;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
+import com.hazelcast.nio.Packet;
+import com.hazelcast.nio.serialization.Portable;
+import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
@@ -29,11 +29,7 @@ import org.junit.runner.RunWith;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
-import static com.hazelcast.nio.serialization.SerializationConcurrencyTest.Address;
-import static com.hazelcast.nio.serialization.SerializationConcurrencyTest.FACTORY_ID;
-import static com.hazelcast.nio.serialization.SerializationConcurrencyTest.Person;
-import static com.hazelcast.nio.serialization.SerializationConcurrencyTest.PortableAddress;
-import static com.hazelcast.nio.serialization.SerializationConcurrencyTest.PortablePerson;
+import static com.hazelcast.internal.serialization.SerializationConcurrencyTest.*;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -43,8 +39,7 @@ public class PacketTest {
 
     private final Person person = new Person(111, 123L, 89.56d, "test-person", new Address("street", 987));
 
-    private final PortablePerson portablePerson = new PortablePerson(222, 456L, "portable-person",
-                                                             new PortableAddress("street", 567));
+    private final PortablePerson portablePerson = new PortablePerson(222, 456L, "portable-person", new PortableAddress("street", 567));
 
     private SerializationServiceBuilder createSerializationServiceBuilder() {
         final PortableFactory portableFactory = new PortableFactory() {
