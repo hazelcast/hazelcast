@@ -707,6 +707,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                             .getBeanDefinition();
                     fillValues(childNode, wanReplicationRefBuilder);
                     cacheConfigBuilder.addPropertyValue("wanReplicationRef", wanReplicationRefBeanDefinition);
+                } else if ("quorum-ref".equals(cleanNodeName(childNode))) {
+                    cacheConfigBuilder.addPropertyValue("quorumName", getTextContent(childNode));
                 }
             }
             cacheConfigManagedMap.put(name, cacheConfigBuilder.getBeanDefinition());
