@@ -88,6 +88,9 @@ public final class ClientProtocolErrorCodes {
     public static final int UNSUPPORTED_OPERATION = 63;
     public static final int WRONG_TARGET = 64;
     public static final int XA = 65;
+    public static final int ACCESS_CONTROL = 66;
+    public static final int LOGIN = 67;
+    public static final int UNSUPPORTED_CALLBACK = 68;
 
     private ClientProtocolErrorCodes() {
 

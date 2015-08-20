@@ -55,6 +55,8 @@ import javax.cache.CacheException;
 import javax.cache.integration.CacheLoaderException;
 import javax.cache.integration.CacheWriterException;
 import javax.cache.processor.EntryProcessorException;
+import javax.security.auth.callback.UnsupportedCallbackException;
+import javax.security.auth.login.LoginException;
 import javax.transaction.xa.XAException;
 import java.io.EOFException;
 import java.io.IOException;
@@ -62,6 +64,7 @@ import java.io.NotSerializableException;
 import java.io.UTFDataFormatException;
 import java.net.SocketException;
 import java.net.URISyntaxException;
+import java.security.AccessControlException;
 import java.util.Collections;
 import java.util.ConcurrentModificationException;
 import java.util.HashMap;
@@ -478,6 +481,25 @@ public class ClientExceptionFactory {
                 return new XAException(message);
             }
         });
+        register(ClientProtocolErrorCodes.ACCESS_CONTROL, AccessControlException.class, new ExceptionFactory() {
+            @Override
+            public Throwable createException(String message, Throwable cause) {
+                return new AccessControlException(message);
+            }
+        });
+        register(ClientProtocolErrorCodes.LOGIN, LoginException.class, new ExceptionFactory() {
+            @Override
+            public Throwable createException(String message, Throwable cause) {
+                return new LoginException(message);
+            }
+        });
+        register(ClientProtocolErrorCodes.UNSUPPORTED_CALLBACK, UnsupportedCallbackException.class, new ExceptionFactory() {
+            @Override
+            public Throwable createException(String message, Throwable cause) {
+                return new UnsupportedCallbackException(null, message);
+            }
+        });
+
 
     }
 
