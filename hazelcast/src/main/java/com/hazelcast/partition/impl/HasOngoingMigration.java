@@ -33,14 +33,14 @@ public final class HasOngoingMigration extends AbstractOperation {
     }
 
     @Override
-    public ExceptionAction onException(Throwable throwable) {
+    public ExceptionAction onInvocationException(Throwable throwable) {
         if (throwable instanceof MemberLeftException) {
             return ExceptionAction.THROW_EXCEPTION;
         }
         if (throwable instanceof TargetNotMemberException) {
             return ExceptionAction.THROW_EXCEPTION;
         }
-        return super.onException(throwable);
+        return super.onInvocationException(throwable);
     }
 
     @Override

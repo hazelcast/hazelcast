@@ -37,14 +37,15 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.EmptyStatement;
-import java.util.concurrent.Callable;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+
+import java.util.concurrent.Callable;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
@@ -210,7 +211,7 @@ public class InvocationNetworkSplitTest extends HazelcastTestSupport {
         }
 
         @Override
-        public ExceptionAction onException(Throwable throwable) {
+        public ExceptionAction onInvocationException(Throwable throwable) {
             return ExceptionAction.THROW_EXCEPTION;
         }
     }

@@ -309,9 +309,27 @@ public abstract class Operation implements DataSerializable {
         setFlag(timeout != -1, BITMASK_WAIT_TIMEOUT_SET);
     }
 
+    /**
+     * @deprecated Use & override {@link #onInvocationException(Throwable)} instead.
+     */
+    @Deprecated
     public ExceptionAction onException(Throwable throwable) {
         return (throwable instanceof RetryableException)
                 ? ExceptionAction.RETRY_INVOCATION : ExceptionAction.THROW_EXCEPTION;
+    }
+
+    /**
+     * Called when an <tt>Exception</tt>/<tt>Error</tt> is thrown
+     * during an invocation. Invocation process will continue, retry
+     * or fail according to returned <tt>ExceptionAction</tt> result.
+     * <p/>
+     * This method is called on caller side of the invocation.
+     *
+     * @param throwable <tt>Exception</tt>/<tt>Error</tt> thrown during invocation
+     * @return <tt>ExceptionAction</tt>
+     */
+    public ExceptionAction onInvocationException(Throwable throwable) {
+        return onException(throwable);
     }
 
     public String getCallerUuid() {
@@ -345,6 +363,28 @@ public abstract class Operation implements DataSerializable {
         return flags;
     }
 
+
+    /**
+     * Called when an <tt>Exception</tt>/<tt>Error</tt> is thrown during operation execution.
+     * <p/>
+     * By default this method does nothing.
+     * Operation implementations can override this behaviour due to their needs.
+     * <p/>
+     * This method is called on node & thread that's executing the operation.
+     *
+     * @param e Exception/Error thrown during operation execution
+     */
+    public void onExecutionFailure(Throwable e) {
+    }
+
+    /**
+     * Logs <tt>Exception</tt>/<tt>Error</tt> thrown during operation execution.
+     * Operation implementations can override this behaviour due to their needs.
+     * <p/>
+     * This method is called on node & thread that's executing the operation.
+     *
+     * @param e Exception/Error thrown during operation execution
+     */
     public void logError(Throwable e) {
         final ILogger logger = getLogger();
         if (e instanceof RetryableException) {

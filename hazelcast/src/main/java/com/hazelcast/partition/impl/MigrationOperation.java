@@ -55,6 +55,8 @@ public final class MigrationOperation extends BaseMigrationOperation {
     private long[] replicaVersions;
     private Collection<Operation> tasks;
 
+    private Throwable failureReason;
+
     public MigrationOperation() {
     }
 
@@ -77,6 +79,11 @@ public final class MigrationOperation extends BaseMigrationOperation {
             doRun();
         } catch (Throwable t) {
             logMigrationFailure(t);
+            failureReason = t;
+        } finally {
+            if (!success) {
+                onExecutionFailure(failureReason);
+            }
         }
     }
 
@@ -86,11 +93,13 @@ public final class MigrationOperation extends BaseMigrationOperation {
                 migrate();
             } catch (Throwable e) {
                 success = false;
+                failureReason = e;
                 getLogger().severe("Error while processing " + migrationInfo, e);
             } finally {
                 afterMigrate();
             }
         } else {
+            success = false;
             logMigrationCancelled();
         }
     }
@@ -141,10 +150,13 @@ public final class MigrationOperation extends BaseMigrationOperation {
         addActiveMigration();
 
         for (Operation op : tasks) {
+            prepareOperation(op);
             try {
                 runMigrationTask(op);
             } catch (Throwable e) {
                 getLogger().severe("An exception occurred while executing migration operation " + op, e);
+                success = false;
+                failureReason = e;
                 return;
             }
         }
@@ -157,11 +169,6 @@ public final class MigrationOperation extends BaseMigrationOperation {
     }
 
     private void runMigrationTask(Operation op) throws Exception {
-        op.setNodeEngine(getNodeEngine())
-                .setPartitionId(getPartitionId())
-                .setReplicaIndex(getReplicaIndex());
-        op.setResponseHandler(ERROR_RESPONSE_HANDLER);
-        OperationAccessor.setCallerAddress(op, migrationInfo.getSource());
         MigrationAwareService service = op.getService();
         PartitionMigrationEvent event =
                 new PartitionMigrationEvent(MigrationEndpoint.DESTINATION, migrationInfo.getPartitionId());
@@ -169,6 +176,32 @@ public final class MigrationOperation extends BaseMigrationOperation {
         op.beforeRun();
         op.run();
         op.afterRun();
+    }
+
+    private void prepareOperation(Operation op) {
+        op.setNodeEngine(getNodeEngine())
+                .setPartitionId(getPartitionId())
+                .setReplicaIndex(getReplicaIndex());
+        op.setResponseHandler(ERROR_RESPONSE_HANDLER);
+        OperationAccessor.setCallerAddress(op, migrationInfo.getSource());
+    }
+
+    @Override
+    public void onExecutionFailure(Throwable e) {
+        if (tasks != null) {
+            for (Operation op : tasks) {
+                prepareOperation(op);
+                onOperationFailure(op, e);
+            }
+        }
+    }
+
+    private void onOperationFailure(Operation op, Throwable e) {
+        try {
+            op.onExecutionFailure(e);
+        } catch (Throwable t) {
+            getLogger().warning("While calling operation.onFailure(). op: " + op, t);
+        }
     }
 
     @Override

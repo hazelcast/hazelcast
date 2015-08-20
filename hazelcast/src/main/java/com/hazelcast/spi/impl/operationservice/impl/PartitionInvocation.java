@@ -41,7 +41,7 @@ public final class PartitionInvocation extends Invocation {
 
     @Override
     ExceptionAction onException(Throwable t) {
-        final ExceptionAction action = op.onException(t);
+        final ExceptionAction action = op.onInvocationException(t);
         return action != null ? action : ExceptionAction.THROW_EXCEPTION;
     }
 }
