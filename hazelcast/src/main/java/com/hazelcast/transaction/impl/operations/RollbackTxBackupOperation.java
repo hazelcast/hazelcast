@@ -51,11 +51,11 @@ public final class RollbackTxBackupOperation extends TxBaseOperation {
     }
 
     @Override
-    public ExceptionAction onException(Throwable throwable) {
+    public ExceptionAction onInvocationException(Throwable throwable) {
         if (throwable instanceof MemberLeftException || throwable instanceof TargetNotMemberException) {
             return THROW_EXCEPTION;
         }
-        return super.onException(throwable);
+        return super.onInvocationException(throwable);
     }
 
     @Override

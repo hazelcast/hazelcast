@@ -46,6 +46,6 @@ public final class TargetInvocation extends Invocation {
 
     @Override
     ExceptionAction onException(Throwable t) {
-        return t instanceof MemberLeftException ? ExceptionAction.THROW_EXCEPTION : op.onException(t);
+        return t instanceof MemberLeftException ? ExceptionAction.THROW_EXCEPTION : op.onInvocationException(t);
     }
 }

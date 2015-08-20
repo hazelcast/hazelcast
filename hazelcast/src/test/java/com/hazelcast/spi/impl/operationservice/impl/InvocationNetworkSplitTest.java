@@ -218,7 +218,7 @@ public class InvocationNetworkSplitTest extends HazelcastTestSupport {
         }
 
         @Override
-        public ExceptionAction onException(Throwable throwable) {
+        public ExceptionAction onInvocationException(Throwable throwable) {
             return ExceptionAction.THROW_EXCEPTION;
         }
     }
