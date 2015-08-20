@@ -16,17 +16,15 @@
 
 package com.hazelcast.replicatedmap.impl.client;
 
-import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
+import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.ReplicatedMapPermission;
-
 import java.security.Permission;
 
 /**
  * Client request class for {@link java.util.Map#clear()} implementation
  */
-public class ClientReplicatedMapClearRequest
-        extends AbstractReplicatedMapClientRequest {
+public class ClientReplicatedMapClearRequest extends AbstractReplicatedMapClientRequest {
 
     ClientReplicatedMapClearRequest() {
         super(null);
@@ -37,10 +35,9 @@ public class ClientReplicatedMapClearRequest
     }
 
     @Override
-    public Object call()
-            throws Exception {
-        ReplicatedRecordStore recordStore = getReplicatedRecordStore();
-        recordStore.clear(true, true);
+    public Object call() throws Exception {
+        ReplicatedMapService service = getService();
+        service.clearLocalAndRemoteRecordStores(getMapName(), true);
         return Boolean.TRUE;
     }
 

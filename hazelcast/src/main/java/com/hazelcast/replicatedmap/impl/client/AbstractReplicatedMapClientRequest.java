@@ -18,19 +18,18 @@ package com.hazelcast.replicatedmap.impl.client;
 
 import com.hazelcast.client.impl.client.CallableClientRequest;
 import com.hazelcast.client.impl.client.RetryableRequest;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
-
 import java.io.IOException;
 
 /**
  * Base class for all ReplicatedMap client request.
  */
-public abstract class AbstractReplicatedMapClientRequest
-        extends CallableClientRequest
+public abstract class AbstractReplicatedMapClientRequest extends CallableClientRequest
         implements RetryableRequest, Portable {
 
     private String mapName;
@@ -56,14 +55,12 @@ public abstract class AbstractReplicatedMapClientRequest
     }
 
     @Override
-    public void write(PortableWriter writer)
-            throws IOException {
+    public void write(PortableWriter writer) throws IOException {
         writer.writeUTF("mapName", mapName);
     }
 
     @Override
-    public void read(PortableReader reader)
-            throws IOException {
+    public void read(PortableReader reader) throws IOException {
         mapName = reader.readUTF("mapName");
     }
 
@@ -72,9 +69,13 @@ public abstract class AbstractReplicatedMapClientRequest
         return ReplicatedMapPortableHook.F_ID;
     }
 
-    protected ReplicatedRecordStore getReplicatedRecordStore() {
+    protected ReplicatedRecordStore getReplicatedRecordStore(int partitionId, boolean create) {
         ReplicatedMapService replicatedMapService = getService();
-        return replicatedMapService.getReplicatedRecordStore(mapName, true);
+        return replicatedMapService.getReplicatedRecordStore(mapName, create, partitionId);
+    }
+
+    protected int getPartitionId(Data key) {
+        return getClientEngine().getPartitionService().getPartitionId(key);
     }
 
     @Override

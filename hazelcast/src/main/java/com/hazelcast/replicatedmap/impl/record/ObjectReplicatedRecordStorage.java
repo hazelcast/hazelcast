@@ -16,8 +16,8 @@
 
 package com.hazelcast.replicatedmap.impl.record;
 
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
-import com.hazelcast.spi.NodeEngine;
 
 /**
  * This is a {@link com.hazelcast.config.InMemoryFormat#OBJECT} based
@@ -26,32 +26,38 @@ import com.hazelcast.spi.NodeEngine;
  * @param <K> key type
  * @param <V> value type
  */
-public class ObjectReplicatedRecordStorage<K, V>
-        extends AbstractReplicatedRecordStore<K, V> {
+public class ObjectReplicatedRecordStorage<K, V> extends AbstractReplicatedRecordStore<K, V> {
 
-    public ObjectReplicatedRecordStorage(String name, NodeEngine nodeEngine,
-                                         ReplicatedMapService replicatedMapService) {
-        super(name, nodeEngine, replicatedMapService);
+    public ObjectReplicatedRecordStorage(String name, ReplicatedMapService replicatedMapService) {
+        super(name, replicatedMapService);
     }
 
     @Override
     public Object unmarshallKey(Object key) {
-        return key;
+        return getObject(key);
     }
 
     @Override
     public Object unmarshallValue(Object value) {
-        return value;
+        return getObject(value);
     }
 
     @Override
     public Object marshallKey(Object key) {
-        return key;
+        return getObject(key);
     }
 
     @Override
     public Object marshallValue(Object value) {
-        return value;
+        return getObject(value);
     }
+
+    private Object getObject(Object object) {
+        if (object instanceof Data) {
+            return nodeEngine.toObject(object);
+        }
+        return object;
+    }
+
 
 }

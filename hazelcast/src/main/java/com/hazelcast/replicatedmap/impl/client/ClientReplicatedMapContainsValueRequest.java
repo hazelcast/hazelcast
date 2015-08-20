@@ -18,45 +18,50 @@ package com.hazelcast.replicatedmap.impl.client;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
+import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.ReplicatedMapPermission;
-
 import java.io.IOException;
 import java.security.Permission;
+import java.util.Collection;
 
 /**
  * Client request class for {@link java.util.Map#containsValue(Object)} implementation
  */
-public class ClientReplicatedMapContainsValueRequest
-        extends AbstractReplicatedMapClientRequest {
+public class ClientReplicatedMapContainsValueRequest extends AbstractReplicatedMapClientRequest {
 
-    private Object value;
+    private Data value;
 
     ClientReplicatedMapContainsValueRequest() {
         super(null);
     }
 
-    public ClientReplicatedMapContainsValueRequest(String mapName, Object value) {
+    public ClientReplicatedMapContainsValueRequest(String mapName, Data value) {
         super(mapName);
         this.value = value;
     }
 
     @Override
-    public Object call()
-            throws Exception {
-        ReplicatedRecordStore recordStore = getReplicatedRecordStore();
-        return recordStore.containsValue(value);
+    public Object call() throws Exception {
+        ReplicatedMapService service = getService();
+        Collection<ReplicatedRecordStore> stores = service.getAllReplicatedRecordStores(getMapName());
+        for (ReplicatedRecordStore store : stores) {
+            if (store.containsValue(value)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override
-    public void write(PortableWriter writer)
-            throws IOException {
+    public void write(PortableWriter writer) throws IOException {
         super.write(writer);
         ObjectDataOutput out = writer.getRawDataOutput();
-        out.writeObject(value);
+        out.writeData(value);
     }
 
     @Override
@@ -64,7 +69,7 @@ public class ClientReplicatedMapContainsValueRequest
             throws IOException {
         super.read(reader);
         ObjectDataInput in = reader.getRawDataInput();
-        value = in.readObject();
+        value = in.readData();
     }
 
     @Override

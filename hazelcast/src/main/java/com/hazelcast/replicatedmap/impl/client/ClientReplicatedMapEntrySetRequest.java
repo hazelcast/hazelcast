@@ -16,17 +16,23 @@
 
 package com.hazelcast.replicatedmap.impl.client;
 
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
+import com.hazelcast.replicatedmap.impl.record.ReplicatedRecord;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.ReplicatedMapPermission;
-
 import java.security.Permission;
+import java.util.AbstractMap;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Client request class for {@link java.util.Map#entrySet()} implementation
  */
-public class ClientReplicatedMapEntrySetRequest
-        extends AbstractReplicatedMapClientRequest {
+public class ClientReplicatedMapEntrySetRequest extends AbstractReplicatedMapClientRequest {
 
     ClientReplicatedMapEntrySetRequest() {
         super(null);
@@ -37,10 +43,20 @@ public class ClientReplicatedMapEntrySetRequest
     }
 
     @Override
-    public Object call()
-            throws Exception {
-        ReplicatedRecordStore recordStore = getReplicatedRecordStore();
-        return new ReplicatedMapEntrySet(recordStore.entrySet());
+    public Object call() throws Exception {
+        ReplicatedMapService service = getService();
+        Collection<ReplicatedRecordStore> stores = service.getAllReplicatedRecordStores(getMapName());
+        Set<Map.Entry<Object, ReplicatedRecord>> entrySet = new HashSet<Map.Entry<Object, ReplicatedRecord>>();
+        for (ReplicatedRecordStore store : stores) {
+            entrySet.addAll(store.entrySet(false));
+        }
+        Set<Map.Entry<Data, Data>> entries = new HashSet<Map.Entry<Data, Data>>(entrySet.size());
+        for (Map.Entry<Object, ReplicatedRecord> entry : entrySet) {
+            Data key = serializationService.toData(entry.getKey());
+            Data value = serializationService.toData(entry.getValue().getValue());
+            entries.add(new AbstractMap.SimpleImmutableEntry<Data, Data>(key, value));
+        }
+        return new ReplicatedMapEntrySet(entries);
     }
 
     @Override

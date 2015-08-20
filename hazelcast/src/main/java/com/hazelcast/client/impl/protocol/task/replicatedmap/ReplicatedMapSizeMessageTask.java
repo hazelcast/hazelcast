@@ -27,6 +27,7 @@ import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.ReplicatedMapPermission;
 
 import java.security.Permission;
+import java.util.Collection;
 
 public class ReplicatedMapSizeMessageTask
         extends AbstractCallableMessageTask<ReplicatedMapSizeCodec.RequestParameters> {
@@ -37,9 +38,13 @@ public class ReplicatedMapSizeMessageTask
 
     @Override
     protected Object call() throws Exception {
-        ReplicatedMapService replicatedMapService = getService(getServiceName());
-        final ReplicatedRecordStore recordStore = replicatedMapService.getReplicatedRecordStore(parameters.name, true);
-        return recordStore.size();
+        ReplicatedMapService service = getService(getServiceName());
+        Collection<ReplicatedRecordStore> stores = service.getAllReplicatedRecordStores(parameters.name);
+        int size = 0;
+        for (ReplicatedRecordStore store : stores) {
+            size += store.size();
+        }
+        return size;
     }
 
 

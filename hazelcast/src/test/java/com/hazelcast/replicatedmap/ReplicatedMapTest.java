@@ -25,17 +25,13 @@ import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecord;
-import com.hazelcast.replicatedmap.impl.record.VectorClockTimestamp;
+import com.hazelcast.replicatedmap.impl.record.ReplicationPublisher;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.WatchedOperationExecutor;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
-
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -45,12 +41,14 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -100,14 +98,14 @@ public class ReplicatedMapTest extends ReplicatedMapBaseTest {
                     map1.put("foo-" + i, "bar");
                 }
             }
-        }, 60, EntryEventType.ADDED, operations, 0.75, map1, map2);
+        }, 60, EntryEventType.ADDED, operations, 1, map1, map2);
 
-        for (Map.Entry<String, String> entry : map2.entrySet()) {
+        for (Entry<String, String> entry : map2.entrySet()) {
             assertStartsWith("foo-", entry.getKey());
             assertEquals("bar", entry.getValue());
         }
 
-        for (Map.Entry<String, String> entry : map1.entrySet()) {
+        for (Entry<String, String> entry : map1.entrySet()) {
             assertStartsWith("foo-", entry.getKey());
             assertEquals("bar", entry.getValue());
         }
@@ -153,11 +151,11 @@ public class ReplicatedMapTest extends ReplicatedMapBaseTest {
             }
         }, 60, EntryEventType.ADDED, map1, map2);
 
-        for (Map.Entry<String, String> entry : map2.entrySet()) {
+        for (Entry<String, String> entry : map2.entrySet()) {
             assertStartsWith("foo-", entry.getKey());
             assertEquals("bar", entry.getValue());
         }
-        for (Map.Entry<String, String> entry : map1.entrySet()) {
+        for (Entry<String, String> entry : map1.entrySet()) {
             assertStartsWith("foo-", entry.getKey());
             assertEquals("bar", entry.getValue());
         }
@@ -201,14 +199,14 @@ public class ReplicatedMapTest extends ReplicatedMapBaseTest {
                     map1.put("foo-" + i, "bar");
                 }
             }
-        }, 60, EntryEventType.ADDED, operations, 0.75, map1, map2);
+        }, 60, EntryEventType.ADDED, operations, 1, map1, map2);
 
-        for (Map.Entry<String, String> entry : map2.entrySet()) {
+        for (Entry<String, String> entry : map2.entrySet()) {
             assertStartsWith("foo-", entry.getKey());
             assertEquals("bar", entry.getValue());
         }
 
-        for (Map.Entry<String, String> entry : map1.entrySet()) {
+        for (Entry<String, String> entry : map1.entrySet()) {
             assertStartsWith("foo-", entry.getKey());
             assertEquals("bar", entry.getValue());
         }
@@ -268,17 +266,17 @@ public class ReplicatedMapTest extends ReplicatedMapBaseTest {
                     map1.put("foo-" + i, "bar", 10, TimeUnit.MINUTES);
                 }
             }
-        }, 60, EntryEventType.ADDED, operations, 0.75, map1, map2);
+        }, 60, EntryEventType.ADDED, operations, 1, map1, map2);
 
         // Prevent further updates
-        getReplicationPublisher(map2).emptyReplicationQueue();
-        getReplicationPublisher(map1).emptyReplicationQueue();
+        emptyReplicationQueues(map2);
+        emptyReplicationQueues(map1);
 
         // Give a bit of time to process last batch of updates
         TimeUnit.SECONDS.sleep(2);
 
         Set<Entry<String, String>> map2entries = map2.entrySet();
-        for (Map.Entry<String, String> entry : map2entries) {
+        for (Entry<String, String> entry : map2entries) {
             assertStartsWith("foo-", entry.getKey());
             assertEquals("bar", entry.getValue());
 
@@ -290,7 +288,7 @@ public class ReplicatedMapTest extends ReplicatedMapBaseTest {
         }
 
         Set<Entry<String, String>> map1entries = map1.entrySet();
-        for (Map.Entry<String, String> entry : map1entries) {
+        for (Entry<String, String> entry : map1entries) {
             assertStartsWith("foo-", entry.getKey());
             assertEquals("bar", entry.getValue());
 
@@ -304,20 +302,26 @@ public class ReplicatedMapTest extends ReplicatedMapBaseTest {
         TimeUnit.SECONDS.sleep(1);
 
         int map2Updated = 0;
-        for (Map.Entry<String, String> entry : map2entries) {
+        for (Entry<String, String> entry : map2entries) {
             if (map2.get(entry.getKey()) == null) {
                 map2Updated++;
             }
         }
 
         int map1Updated = 0;
-        for (Map.Entry<String, String> entry : map1entries) {
+        for (Entry<String, String> entry : map1entries) {
             if (map1.get(entry.getKey()) == null) {
                 map1Updated++;
             }
         }
 
-        assertMatchSuccessfulOperationQuota(0.75, operations, map1Updated, map2Updated);
+        assertMatchSuccessfulOperationQuota(1, operations, map1Updated, map2Updated);
+    }
+
+    private void emptyReplicationQueues(ReplicatedMap<String, String> map) throws Exception {
+        for (ReplicationPublisher<String, String> publisher : getReplicationPublisher(map)) {
+            publisher.emptyReplicationQueue();
+        }
     }
 
     @Test
@@ -340,79 +344,6 @@ public class ReplicatedMapTest extends ReplicatedMapBaseTest {
         testUpdate(buildConfig(InMemoryFormat.BINARY, ReplicatedMapConfig.DEFAULT_REPLICATION_DELAY_MILLIS));
     }
 
-    @Test
-    public void testVectorClocksAreSameAfterConflictResolutionBinaryDelay0() throws Exception {
-        Config config = buildConfig(InMemoryFormat.BINARY, 0);
-        testVectorClocksAreSameAfterConflictResolution(config);
-    }
-
-    @Test
-    public void testVectorClocksAreSameAfterConflictResolutionBinaryDelayDefault() throws Exception {
-        Config config = buildConfig(InMemoryFormat.BINARY, ReplicatedMapConfig.DEFAULT_REPLICATION_DELAY_MILLIS);
-        testVectorClocksAreSameAfterConflictResolution(config);
-    }
-
-    @Test
-    public void testVectorClocksAreSameAfterConflictResolutionObjectDelay0() throws Exception {
-        Config config = buildConfig(InMemoryFormat.OBJECT, 0);
-        testVectorClocksAreSameAfterConflictResolution(config);
-    }
-
-    @Test
-    public void testVectorClocksAreSameAfterConflictResolutionObjectDelayDefault() throws Exception {
-        Config config = buildConfig(InMemoryFormat.OBJECT, ReplicatedMapConfig.DEFAULT_REPLICATION_DELAY_MILLIS);
-        testVectorClocksAreSameAfterConflictResolution(config);
-    }
-
-    private void testVectorClocksAreSameAfterConflictResolution(Config config) throws InterruptedException {
-        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
-        final HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(config);
-        final HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(config);
-        final String replicatedMapName = randomMapName();
-        final ReplicatedMap<String, String> map1 = instance1.getReplicatedMap(replicatedMapName);
-        final ReplicatedMap<String, String> map2 = instance2.getReplicatedMap(replicatedMapName);
-
-        final int collidingKeyCount = 15;
-        final int operations = 1000;
-        final Random random = new Random();
-        Thread thread1 = createPutOperationThread(map1, collidingKeyCount, operations, random);
-        Thread thread2 = createPutOperationThread(map2, collidingKeyCount, operations, random);
-        thread1.start();
-        thread2.start();
-        thread1.join();
-        thread2.join();
-
-        for (int i = 0; i < collidingKeyCount; i++) {
-            final String key = "foo-" + i;
-            assertTrueEventually(new AssertTask() {
-                @Override
-                public void run() throws Exception {
-                    VectorClockTimestamp v1 = getVectorClockForKey(map1, key);
-                    VectorClockTimestamp v2 = getVectorClockForKey(map2, key);
-                    assertEquals(v1, v2);
-                    assertEquals(map1.get(key), map2.get(key));
-                }
-            });
-        }
-    }
-
-    private Thread createPutOperationThread(final ReplicatedMap<String, String> map, final int collidingKeyCount,
-                                            final int operations, final Random random) {
-        return new Thread(new Runnable() {
-            @Override
-            public void run() {
-                for (int i = 0; i < operations; i++) {
-                    map.put("foo-" + random.nextInt(collidingKeyCount), "bar");
-                }
-            }
-        });
-    }
-
-    private VectorClockTimestamp getVectorClockForKey(ReplicatedMap map, Object key) throws Exception {
-        ReplicatedRecord foo = getReplicatedRecord(map, key);
-        return foo.getVectorClockTimestamp();
-    }
-
     private void testUpdate(Config config) throws Exception {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
 
@@ -431,13 +362,13 @@ public class ReplicatedMapTest extends ReplicatedMapBaseTest {
                     map1.put("foo-" + i, "bar");
                 }
             }
-        }, 60, EntryEventType.ADDED, operations, 0.75, map1, map2);
+        }, 60, EntryEventType.ADDED, operations, 1, map1, map2);
 
-        for (Map.Entry<String, String> entry : map2.entrySet()) {
+        for (Entry<String, String> entry : map2.entrySet()) {
             assertStartsWith("foo-", entry.getKey());
             assertEquals("bar", entry.getValue());
         }
-        for (Map.Entry<String, String> entry : map1.entrySet()) {
+        for (Entry<String, String> entry : map1.entrySet()) {
             assertStartsWith("foo-", entry.getKey());
             assertEquals("bar", entry.getValue());
         }
@@ -449,22 +380,22 @@ public class ReplicatedMapTest extends ReplicatedMapBaseTest {
                     map2.put("foo-" + i, "bar2");
                 }
             }
-        }, 60, EntryEventType.UPDATED, operations, 0.75, map1, map2);
+        }, 60, EntryEventType.UPDATED, operations, 1, map1, map2);
 
         int map2Updated = 0;
-        for (Map.Entry<String, String> entry : map2.entrySet()) {
+        for (Entry<String, String> entry : map2.entrySet()) {
             if ("bar2".equals(entry.getValue())) {
                 map2Updated++;
             }
         }
         int map1Updated = 0;
-        for (Map.Entry<String, String> entry : map1.entrySet()) {
+        for (Entry<String, String> entry : map1.entrySet()) {
             if ("bar2".equals(entry.getValue())) {
                 map1Updated++;
             }
         }
 
-        assertMatchSuccessfulOperationQuota(0.75, operations, map1Updated, map2Updated);
+        assertMatchSuccessfulOperationQuota(1, operations, map1Updated, map2Updated);
     }
 
     @Test
@@ -505,13 +436,13 @@ public class ReplicatedMapTest extends ReplicatedMapBaseTest {
                     map1.put("foo-" + i, "bar");
                 }
             }
-        }, 60, EntryEventType.ADDED, operations, 0.75, map1, map2);
+        }, 60, EntryEventType.ADDED, operations, 1, map1, map2);
 
-        for (Map.Entry<String, String> entry : map2.entrySet()) {
+        for (Entry<String, String> entry : map2.entrySet()) {
             assertStartsWith("foo-", entry.getKey());
             assertEquals("bar", entry.getValue());
         }
-        for (Map.Entry<String, String> entry : map1.entrySet()) {
+        for (Entry<String, String> entry : map1.entrySet()) {
             assertStartsWith("foo-", entry.getKey());
             assertEquals("bar", entry.getValue());
         }
@@ -523,24 +454,24 @@ public class ReplicatedMapTest extends ReplicatedMapBaseTest {
                     map2.put("foo-" + i, "bar", 10, TimeUnit.MINUTES);
                 }
             }
-        }, 60, EntryEventType.UPDATED, operations, 0.75, map1, map2);
+        }, 60, EntryEventType.UPDATED, operations, 1, map1, map2);
 
         int map2Updated = 0;
-        for (Map.Entry<String, String> entry : map2.entrySet()) {
+        for (Entry<String, String> entry : map2.entrySet()) {
             ReplicatedRecord record = getReplicatedRecord(map2, entry.getKey());
             if (record.getTtlMillis() > 0) {
                 map2Updated++;
             }
         }
         int map1Updated = 0;
-        for (Map.Entry<String, String> entry : map1.entrySet()) {
+        for (Entry<String, String> entry : map1.entrySet()) {
             ReplicatedRecord record = getReplicatedRecord(map1, entry.getKey());
             if (record.getTtlMillis() > 0) {
                 map1Updated++;
             }
         }
 
-        assertMatchSuccessfulOperationQuota(0.75, operations, map1Updated, map2Updated);
+        assertMatchSuccessfulOperationQuota(1, operations, map1Updated, map2Updated);
     }
 
     @Test
@@ -652,13 +583,13 @@ public class ReplicatedMapTest extends ReplicatedMapBaseTest {
                     map1.put("foo-" + i, "bar");
                 }
             }
-        }, 60, EntryEventType.ADDED, operations, 0.75, map1, map2);
+        }, 60, EntryEventType.ADDED, operations, 1, map1, map2);
 
-        for (Map.Entry<String, String> entry : map2.entrySet()) {
+        for (Entry<String, String> entry : map2.entrySet()) {
             assertStartsWith("foo-", entry.getKey());
             assertEquals("bar", entry.getValue());
         }
-        for (Map.Entry<String, String> entry : map1.entrySet()) {
+        for (Entry<String, String> entry : map1.entrySet()) {
             assertStartsWith("foo-", entry.getKey());
             assertEquals("bar", entry.getValue());
         }
@@ -669,7 +600,7 @@ public class ReplicatedMapTest extends ReplicatedMapBaseTest {
                     map2.remove("foo-" + i);
                 }
             }
-        }, 60, EntryEventType.REMOVED, operations, 0.75, map1, map2);
+        }, 60, EntryEventType.REMOVED, operations, 1, map1, map2);
 
         int map2Updated = 0;
         for (int i = 0; i < operations; i++) {
@@ -686,7 +617,7 @@ public class ReplicatedMapTest extends ReplicatedMapBaseTest {
             }
         }
 
-        assertMatchSuccessfulOperationQuota(0.75, operations, map1Updated, map2Updated);
+        assertMatchSuccessfulOperationQuota(1, operations, map1Updated, map2Updated);
     }
 
     @Test
@@ -731,9 +662,9 @@ public class ReplicatedMapTest extends ReplicatedMapBaseTest {
                     map.put(entry.getKey(), entry.getValue());
                 }
             }
-        }, 60, EntryEventType.ADDED, 100, 0.75, map1, map2);
+        }, 60, EntryEventType.ADDED, 100, 1, map1, map2);
 
-        assertMatchSuccessfulOperationQuota(0.75, map1.size(), map2.size());
+        assertMatchSuccessfulOperationQuota(1, map1.size(), map2.size());
     }
 
     @Test
@@ -774,7 +705,7 @@ public class ReplicatedMapTest extends ReplicatedMapBaseTest {
                     map1.put("foo-" + i, "bar");
                 }
             }
-        }, 60, EntryEventType.ADDED, operations, 0.75, map1, map2);
+        }, 60, EntryEventType.ADDED, operations, 1, map1, map2);
 
         int map2Contains = 0;
         for (int i = 0; i < operations; i++) {
@@ -789,7 +720,7 @@ public class ReplicatedMapTest extends ReplicatedMapBaseTest {
             }
         }
 
-        assertMatchSuccessfulOperationQuota(0.75, operations, map1Contains, map2Contains);
+        assertMatchSuccessfulOperationQuota(1, operations, map1Contains, map2Contains);
     }
 
     @Test
@@ -834,7 +765,7 @@ public class ReplicatedMapTest extends ReplicatedMapBaseTest {
                     map.put(entry.getKey(), entry.getValue());
                 }
             }
-        }, 60, EntryEventType.ADDED, testValues.length, 0.75, map1, map2);
+        }, 60, EntryEventType.ADDED, testValues.length, 1, map1, map2);
 
         int map2Contains = 0;
         for (AbstractMap.SimpleEntry<Integer, Integer> testValue : testValues) {
@@ -849,7 +780,7 @@ public class ReplicatedMapTest extends ReplicatedMapBaseTest {
             }
         }
 
-        assertMatchSuccessfulOperationQuota(0.75, testValues.length, map1Contains, map2Contains);
+        assertMatchSuccessfulOperationQuota(1, testValues.length, map1Contains, map2Contains);
     }
 
     @Test
@@ -896,7 +827,7 @@ public class ReplicatedMapTest extends ReplicatedMapBaseTest {
                     valuesTestValues.add(entry.getValue());
                 }
             }
-        }, 60, EntryEventType.ADDED, 100, 0.75, map1, map2);
+        }, 60, EntryEventType.ADDED, 100, 1, map1, map2);
 
         List<Integer> values1 = copyToList(map1.values());
         List<Integer> values2 = copyToList(map2.values());
@@ -912,7 +843,7 @@ public class ReplicatedMapTest extends ReplicatedMapBaseTest {
             }
         }
 
-        assertMatchSuccessfulOperationQuota(0.75, testValues.length, map1Contains, map2Contains);
+        assertMatchSuccessfulOperationQuota(1, testValues.length, map1Contains, map2Contains);
     }
 
     @Test
@@ -959,7 +890,7 @@ public class ReplicatedMapTest extends ReplicatedMapBaseTest {
                     keySetTestValues.add(entry.getKey());
                 }
             }
-        }, 60, EntryEventType.ADDED, 100, 0.75, map1, map2);
+        }, 60, EntryEventType.ADDED, 100, 1, map1, map2);
 
         List<Integer> keySet1 = copyToList(map1.keySet());
         List<Integer> keySet2 = copyToList(map2.keySet());
@@ -975,7 +906,7 @@ public class ReplicatedMapTest extends ReplicatedMapBaseTest {
             }
         }
 
-        assertMatchSuccessfulOperationQuota(0.75, testValues.length, map1Contains, map2Contains);
+        assertMatchSuccessfulOperationQuota(1, testValues.length, map1Contains, map2Contains);
     }
 
     @Test
@@ -1019,7 +950,7 @@ public class ReplicatedMapTest extends ReplicatedMapBaseTest {
                     map.put(entry.getKey(), entry.getValue());
                 }
             }
-        }, 60, EntryEventType.ADDED, 100, 0.75, map1, map2);
+        }, 60, EntryEventType.ADDED, 100, 1, map1, map2);
 
         List<Entry<Integer, Integer>> entrySet1 = copyToList(map1.entrySet());
         List<Entry<Integer, Integer>> entrySet2 = copyToList(map2.entrySet());
@@ -1041,7 +972,7 @@ public class ReplicatedMapTest extends ReplicatedMapBaseTest {
             }
         }
 
-        assertMatchSuccessfulOperationQuota(0.75, testValues.length, map1Contains, map2Contains);
+        assertMatchSuccessfulOperationQuota(1, testValues.length, map1Contains, map2Contains);
     }
 
     private Integer findValue(int key, AbstractMap.SimpleEntry<Integer, Integer>[] values) {
@@ -1220,7 +1151,7 @@ public class ReplicatedMapTest extends ReplicatedMapBaseTest {
     private <V> List<V> copyToList(Collection<V> collection) {
         List<V> values = new ArrayList<V>();
         Iterator<V> iterator = collection.iterator();
-        while (iterator.hasNext())  {
+        while (iterator.hasNext()) {
             values.add(iterator.next());
         }
         return values;

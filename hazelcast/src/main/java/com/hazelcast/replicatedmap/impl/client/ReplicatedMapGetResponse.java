@@ -21,14 +21,12 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
-
 import java.io.IOException;
 
 /**
  * Response class for client replicated map get requests
  */
-public class ReplicatedMapGetResponse
-        implements Portable {
+public class ReplicatedMapGetResponse implements Portable {
 
     private Object value;
     private long ttlMillis;

@@ -16,17 +16,20 @@
 
 package com.hazelcast.replicatedmap.impl.client;
 
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.ReplicatedMapPermission;
-
 import java.security.Permission;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Client request class for {@link java.util.Map#keySet()} implementation
  */
-public class ClientReplicatedMapKeySetRequest
-        extends AbstractReplicatedMapClientRequest {
+public class ClientReplicatedMapKeySetRequest extends AbstractReplicatedMapClientRequest {
 
     ClientReplicatedMapKeySetRequest() {
         super(null);
@@ -37,10 +40,18 @@ public class ClientReplicatedMapKeySetRequest
     }
 
     @Override
-    public Object call()
-            throws Exception {
-        ReplicatedRecordStore recordStore = getReplicatedRecordStore();
-        return new ReplicatedMapKeySet(recordStore.keySet());
+    public Object call() throws Exception {
+        ReplicatedMapService service = getService();
+        Collection<ReplicatedRecordStore> stores = service.getAllReplicatedRecordStores(getMapName());
+        Set keySet = new HashSet();
+        for (ReplicatedRecordStore store : stores) {
+            keySet.addAll(store.keySet(false));
+        }
+        Set<Data> dataKeys = new HashSet<Data>(keySet.size());
+        for (Object key : keySet) {
+            dataKeys.add(serializationService.toData(key));
+        }
+        return new ReplicatedMapKeySet(dataKeys);
     }
 
     @Override

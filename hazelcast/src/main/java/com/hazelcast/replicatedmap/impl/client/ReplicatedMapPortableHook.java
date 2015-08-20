@@ -22,7 +22,6 @@ import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.nio.serialization.PortableHook;
 import com.hazelcast.nio.serialization.impl.FactoryIdHelper;
 import com.hazelcast.util.ConstructorFunction;
-
 import java.util.Collection;
 
 import static com.hazelcast.nio.serialization.impl.FactoryIdHelper.REPLICATED_PORTABLE_FACTORY;

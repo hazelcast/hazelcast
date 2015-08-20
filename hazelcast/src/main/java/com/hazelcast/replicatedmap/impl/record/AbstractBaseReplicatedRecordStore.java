@@ -16,17 +16,15 @@
 
 package com.hazelcast.replicatedmap.impl.record;
 
-import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.ReplicatedMapConfig;
-import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryEventType;
-import com.hazelcast.core.EntryListener;
-import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.Member;
-import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.map.impl.EntryEventData;
 import com.hazelcast.monitor.LocalReplicatedMapStats;
 import com.hazelcast.monitor.impl.LocalReplicatedMapStatsImpl;
-import com.hazelcast.nio.ClassLoaderUtil;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.SerializationService;
+import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapEvictionProcessor;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.spi.EventFilter;
@@ -34,19 +32,15 @@ import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.InitializingObject;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.scheduler.EntryTaskScheduler;
 import com.hazelcast.util.scheduler.EntryTaskSchedulerFactory;
 import com.hazelcast.util.scheduler.ScheduleType;
 import com.hazelcast.util.scheduler.ScheduledEntry;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-
-import static com.hazelcast.util.HashUtil.hashToIndex;
 
 /**
  * Internal base class to encapsulate the internals from the interface methods of ReplicatedRecordStore
@@ -66,18 +60,19 @@ abstract class AbstractBaseReplicatedRecordStore<K, V>
     protected final NodeEngine nodeEngine;
     protected final int localMemberHash;
     protected final Member localMember;
+    protected final SerializationService serializationService;
+    protected final InternalPartitionService partitionService;
 
     private final EntryTaskScheduler ttlEvictionScheduler;
     private final EventService eventService;
 
-    private final Object[] mutexes;
     private final String name;
 
-    protected AbstractBaseReplicatedRecordStore(String name, NodeEngine nodeEngine,
-                                                ReplicatedMapService replicatedMapService) {
+    protected AbstractBaseReplicatedRecordStore(String name, ReplicatedMapService replicatedMapService) {
         this.name = name;
-
-        this.nodeEngine = nodeEngine;
+        this.nodeEngine = replicatedMapService.getNodeEngine();
+        this.serializationService = nodeEngine.getSerializationService();
+        this.partitionService = nodeEngine.getPartitionService();
         this.localMember = nodeEngine.getLocalMember();
         this.eventService = nodeEngine.getEventService();
         this.localMemberHash = localMember.getUuid().hashCode();
@@ -85,15 +80,14 @@ abstract class AbstractBaseReplicatedRecordStore<K, V>
         this.replicatedMapConfig = replicatedMapService.getReplicatedMapConfig(name);
         this.storage = new InternalReplicatedMapStorage<K, V>(replicatedMapConfig);
         this.replicationPublisher = new ReplicationPublisher(this, nodeEngine);
-
         this.ttlEvictionScheduler = EntryTaskSchedulerFactory
                 .newScheduler(nodeEngine.getExecutionService().getDefaultScheduledExecutor(),
-                        new ReplicatedMapEvictionProcessor(nodeEngine, replicatedMapService, name), ScheduleType.POSTPONE);
+                        new ReplicatedMapEvictionProcessor(nodeEngine, replicatedMapService, name)
+                        , ScheduleType.POSTPONE);
+    }
 
-        this.mutexes = new Object[replicatedMapConfig.getConcurrencyLevel()];
-        for (int i = 0; i < mutexes.length; i++) {
-            mutexes[i] = new Object();
-        }
+    public InternalReplicatedMapStorage<K, V> getStorage() {
+        return storage;
     }
 
     @Override
@@ -103,15 +97,6 @@ abstract class AbstractBaseReplicatedRecordStore<K, V>
 
     @Override
     public void initialize() {
-        initializeListeners();
-
-        List<MemberImpl> members = new ArrayList<MemberImpl>(nodeEngine.getClusterService().getMemberImpls());
-        members.remove(localMember);
-        if (members.size() == 0) {
-            storage.finishLoading();
-        } else {
-            replicationPublisher.sendPreProvisionRequest(members);
-        }
     }
 
     @Override
@@ -123,6 +108,11 @@ abstract class AbstractBaseReplicatedRecordStore<K, V>
 
     public ReplicationPublisher<K, V> getReplicationPublisher() {
         return replicationPublisher;
+    }
+
+
+    public long getPartitionVersion() {
+        return storage.getPartitionVersion();
     }
 
     public LocalReplicatedMapStats createReplicatedMapStats() {
@@ -145,13 +135,6 @@ abstract class AbstractBaseReplicatedRecordStore<K, V>
         return mapStats;
     }
 
-    public void finalChunkReceived() {
-        storage.finishLoading();
-    }
-
-    public boolean isLoaded() {
-        return storage.isLoaded();
-    }
 
     public int getLocalMemberHash() {
         return localMemberHash;
@@ -162,14 +145,9 @@ abstract class AbstractBaseReplicatedRecordStore<K, V>
     }
 
     public Set<ReplicatedRecord> getRecords() {
-        storage.checkState();
         return new HashSet<ReplicatedRecord>(storage.values());
     }
 
-    protected Object getMutex(Object key) {
-        int hashCode = key.hashCode();
-        return hashToIndex(hashCode, mutexes.length);
-    }
 
     ScheduledEntry<K, V> cancelTtlEntry(K key) {
         return ttlEvictionScheduler.cancel(key);
@@ -190,40 +168,22 @@ abstract class AbstractBaseReplicatedRecordStore<K, V>
         Collection<EventRegistration> registrations = eventService.getRegistrations(
                 ReplicatedMapService.SERVICE_NAME, name);
         if (registrations.size() > 0) {
-            EntryEvent event = new EntryEvent(name, nodeEngine.getLocalMember(), eventType.getType(),
-                    key, oldValue, value);
-
+            Data dataKey = serializationService.toData(key);
+            Data dataValue = serializationService.toData(value);
+            Data dataOldValue = serializationService.toData(oldValue);
+            EntryEventData eventData = new EntryEventData(name, name, nodeEngine.getThisAddress(),
+                    dataKey, dataValue, dataOldValue, eventType.getType());
             for (EventRegistration registration : registrations) {
                 EventFilter filter = registration.getFilter();
-                boolean publish = filter == null || filter.eval(marshallKey(key));
+                boolean publish = filter == null || filter.eval(dataKey);
                 if (publish) {
-                    eventService.publishEvent(ReplicatedMapService.SERVICE_NAME, registration, event, name.hashCode());
+                    eventService.publishEvent(ReplicatedMapService.SERVICE_NAME, registration,
+                            eventData, dataKey.hashCode());
                 }
             }
         }
     }
 
-    private void initializeListeners() {
-        List<ListenerConfig> listenerConfigs = replicatedMapConfig.getListenerConfigs();
-        for (ListenerConfig listenerConfig : listenerConfigs) {
-            EntryListener listener = null;
-            if (listenerConfig.getImplementation() != null) {
-                listener = (EntryListener) listenerConfig.getImplementation();
-            } else if (listenerConfig.getClassName() != null) {
-                try {
-                    listener = ClassLoaderUtil.newInstance(nodeEngine.getConfigClassLoader(), listenerConfig.getClassName());
-                } catch (Exception e) {
-                    throw ExceptionUtil.rethrow(e);
-                }
-            }
-            if (listener != null) {
-                if (listener instanceof HazelcastInstanceAware) {
-                    ((HazelcastInstanceAware) listener).setHazelcastInstance(nodeEngine.getHazelcastInstance());
-                }
-                addEntryListener(listener, null);
-            }
-        }
-    }
 
     @Override
     public boolean equals(Object o) {

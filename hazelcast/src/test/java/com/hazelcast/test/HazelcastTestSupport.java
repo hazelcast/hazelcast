@@ -35,14 +35,9 @@ import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.partition.impl.InternalPartitionServiceState;
-import com.hazelcast.replicatedmap.impl.record.VectorClockTimestamp;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.ComparisonFailure;
-
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Modifier;
 import java.util.Collection;
@@ -59,6 +54,9 @@ import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.ComparisonFailure;
 
 import static com.hazelcast.test.TestPartitionUtils.getInternalPartitionServiceState;
 import static java.lang.String.format;
@@ -66,7 +64,6 @@ import static java.util.Arrays.asList;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -97,14 +94,6 @@ public abstract class HazelcastTestSupport {
             constructor.newInstance();
         } catch (Exception e) {
         }
-    }
-
-    public static void assertHappensBefore(VectorClockTimestamp clock1, VectorClockTimestamp clock2) {
-        assertTrue(VectorClockTimestamp.happenedBefore(clock1, clock2));
-    }
-
-    public static void assertNotHappensBefore(VectorClockTimestamp clock1, VectorClockTimestamp clock2) {
-        assertFalse(VectorClockTimestamp.happenedBefore(clock1, clock2));
     }
 
     public HazelcastInstance createHazelcastInstance() {

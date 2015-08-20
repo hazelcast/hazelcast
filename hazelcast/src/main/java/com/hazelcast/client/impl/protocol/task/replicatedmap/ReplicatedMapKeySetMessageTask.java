@@ -26,10 +26,11 @@ import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.ReplicatedMapPermission;
-
 import java.security.Permission;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 public class ReplicatedMapKeySetMessageTask
@@ -41,14 +42,17 @@ public class ReplicatedMapKeySetMessageTask
 
     @Override
     protected Object call() throws Exception {
-        ReplicatedMapService replicatedMapService = getService(getServiceName());
-        final ReplicatedRecordStore recordStore = replicatedMapService.getReplicatedRecordStore(parameters.name, true);
-        final Collection values = recordStore.keySet();
-        Set<Data> res = new HashSet<Data>(values.size());
-        for (Object o : values) {
-            res.add(serializationService.toData(o));
+        ReplicatedMapService service = getService(getServiceName());
+        Collection<ReplicatedRecordStore> stores = service.getAllReplicatedRecordStores(parameters.name);
+        Set keySet = new HashSet();
+        for (ReplicatedRecordStore store : stores) {
+            keySet.addAll(store.keySet(false));
         }
-        return res;
+        List<Data> dataKeys = new ArrayList<Data>(keySet.size());
+        for (Object key : keySet) {
+            dataKeys.add(serializationService.toData(key));
+        }
+        return dataKeys;
     }
 
 

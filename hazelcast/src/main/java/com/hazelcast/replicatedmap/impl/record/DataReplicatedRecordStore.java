@@ -24,15 +24,13 @@ import com.hazelcast.spi.NodeEngine;
  * This is a {@link com.hazelcast.nio.serialization.Data} based {@link ReplicatedRecordStore}
  * implementation
  */
-public class DataReplicatedRecordStore
-        extends AbstractReplicatedRecordStore<Data, Data> {
+public class DataReplicatedRecordStore extends AbstractReplicatedRecordStore<Data, Data> {
 
     private final NodeEngine nodeEngine;
 
-    public DataReplicatedRecordStore(String name, NodeEngine nodeEngine,
-                                     ReplicatedMapService replicatedMapService) {
-        super(name, nodeEngine, replicatedMapService);
-        this.nodeEngine = nodeEngine;
+    public DataReplicatedRecordStore(String name, ReplicatedMapService replicatedMapService) {
+        super(name, replicatedMapService);
+        this.nodeEngine = replicatedMapService.getNodeEngine();
     }
 
     @Override

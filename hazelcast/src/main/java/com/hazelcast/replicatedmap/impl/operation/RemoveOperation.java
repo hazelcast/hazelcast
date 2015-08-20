@@ -18,60 +18,53 @@ package com.hazelcast.replicatedmap.impl.operation;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
+import com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore;
 import com.hazelcast.spi.AbstractOperation;
+import com.hazelcast.spi.PartitionAwareOperation;
 import java.io.IOException;
 
-/**
- * This operation will execute the remote clear on replicated map if
- * {@link com.hazelcast.core.ReplicatedMap#clear()} is called.
- */
-public class ReplicatedMapClearOperation extends AbstractOperation implements IdentifiedDataSerializable {
+public class RemoveOperation extends AbstractOperation implements PartitionAwareOperation {
 
-    private String mapName;
-    private boolean emptyReplicationQueue;
+    private String name;
+    private Data key;
+    private transient Object response;
 
-    public ReplicatedMapClearOperation() {
+    public RemoveOperation() {
     }
 
-    public ReplicatedMapClearOperation(String mapName, boolean emptyReplicationQueue) {
-        this.mapName = mapName;
-        this.emptyReplicationQueue = emptyReplicationQueue;
+    public RemoveOperation(String name, Data key) {
+        this.name = name;
+        this.key = key;
     }
 
     @Override
     public void run() throws Exception {
         ReplicatedMapService service = getService();
-        service.clearLocalRecordStores(mapName, emptyReplicationQueue);
+        ReplicatedRecordStore recordStore = service.getReplicatedRecordStore(name, true, getPartitionId());
+        response = recordStore.remove(key);
     }
 
     @Override
-    public String getServiceName() {
-        return ReplicatedMapService.SERVICE_NAME;
+    public boolean returnsResponse() {
+        return true;
     }
 
     @Override
-    public int getFactoryId() {
-        return ReplicatedMapDataSerializerHook.F_ID;
-    }
-
-    @Override
-    public int getId() {
-        return ReplicatedMapDataSerializerHook.OP_CLEAR;
+    public Object getResponse() {
+        return response;
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
-        super.writeInternal(out);
-        out.writeUTF(mapName);
-        out.writeBoolean(emptyReplicationQueue);
+        out.writeUTF(name);
+        out.writeData(key);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
-        super.readInternal(in);
-        mapName = in.readUTF();
-        emptyReplicationQueue = in.readBoolean();
+        name = in.readUTF();
+        key = in.readData();
     }
 }

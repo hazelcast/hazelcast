@@ -16,7 +16,6 @@
 
 package com.hazelcast.replicatedmap.impl;
 
-import com.hazelcast.replicatedmap.impl.messages.MultiReplicationMessage;
 import com.hazelcast.replicatedmap.impl.messages.ReplicationMessage;
 
 /**
@@ -25,7 +24,5 @@ import com.hazelcast.replicatedmap.impl.messages.ReplicationMessage;
 public interface ReplicationChannel {
 
     void replicate(ReplicationMessage message);
-
-    void replicate(MultiReplicationMessage message);
 
 }
