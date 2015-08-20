@@ -24,7 +24,7 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class ClientConditionTest extends HazelcastTestSupport{
+public class ClientConditionTest extends HazelcastTestSupport {
 
     private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
     private HazelcastInstance client;
@@ -45,14 +45,16 @@ public class ClientConditionTest extends HazelcastTestSupport{
 
     @Test
     public void testLockConditionSimpleUsage() throws InterruptedException {
-        final String name = "testLockConditionSimpleUsage";
+        final String name = randomString();
         final ILock lock = client.getLock(name);
-        final ICondition condition = lock.newCondition(name + "c");
+        final ICondition condition = lock.newCondition(randomString());
         final AtomicInteger count = new AtomicInteger(0);
+        final CountDownLatch threadGetTheLock = new CountDownLatch(1);
 
         Thread t = new Thread(new Runnable() {
             public void run() {
                 lock.lock();
+                threadGetTheLock.countDown();
                 try {
                     if (lock.isLockedByCurrentThread()) {
                         count.incrementAndGet();
@@ -68,9 +70,8 @@ public class ClientConditionTest extends HazelcastTestSupport{
             }
         });
         t.start();
-        Thread.sleep(1000);
+        assertOpenEventually(threadGetTheLock);
 
-        assertEquals(false, lock.isLocked());
         lock.lock();
         assertEquals(true, lock.isLocked());
         condition.signal();
