@@ -185,6 +185,7 @@ public class BasicCacheTest
         config.addCacheEntryListenerConfiguration(listenerConfiguration);
 
         Cache<Integer, String> cache = cacheManager.createCache(cacheName, config);
+
         assertNotNull(cache);
 
         Integer key1 = 1;
@@ -211,6 +212,61 @@ public class BasicCacheTest
         keys.add(key1);
         keys.add(key2);
         cache.removeAll(keys);
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertEquals(2, listener.removed.get());
+            }
+        });
+    }
+
+    // Issue https://github.com/hazelcast/hazelcast/issues/5865
+    @Test
+    public void testCompletionTestByPuttingAndRemovingFromDifferentNodes()
+            throws InterruptedException {
+        String cacheName = "simpleCache";
+
+        CacheManager cacheManager1 = cachingProvider1.getCacheManager();
+        CacheManager cacheManager2 = cachingProvider2.getCacheManager();
+
+        CacheConfig<Integer, String> config = new CacheConfig<Integer, String>();
+        final SimpleEntryListener<Integer, String> listener = new SimpleEntryListener<Integer, String>();
+        MutableCacheEntryListenerConfiguration<Integer, String> listenerConfiguration =
+                new MutableCacheEntryListenerConfiguration<Integer, String>(
+                        FactoryBuilder.factoryOf(listener), null, true, true);
+
+        config.addCacheEntryListenerConfiguration(listenerConfiguration);
+
+        Cache<Integer, String> cache1 = cacheManager1.createCache(cacheName, config);
+        Cache<Integer, String> cache2 = cacheManager2.getCache(cacheName);
+
+        assertNotNull(cache1);
+        assertNotNull(cache2);
+
+        Integer key1 = 1;
+        String value1 = "value1";
+        cache1.put(key1, value1);
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertEquals(1, listener.created.get());
+            }
+        });
+
+        Integer key2 = 2;
+        String value2 = "value2";
+        cache1.put(key2, value2);
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertEquals(2, listener.created.get());
+            }
+        });
+
+        Set<Integer> keys = new HashSet<Integer>();
+        keys.add(key1);
+        keys.add(key2);
+        cache2.removeAll(keys);
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
