@@ -7,11 +7,9 @@ import com.hazelcast.core.ILock;
 import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.concurrent.CountDownLatch;
@@ -22,8 +20,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category(QuickTest.class)
-public class ClientConditionTest extends HazelcastTestSupport{
+public class ClientConditionTest extends HazelcastTestSupport {
 
     private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
     private HazelcastInstance client;
@@ -44,14 +41,16 @@ public class ClientConditionTest extends HazelcastTestSupport{
 
     @Test
     public void testLockConditionSimpleUsage() throws InterruptedException {
-        final String name = "testLockConditionSimpleUsage";
+        final String name = randomString();
         final ILock lock = client.getLock(name);
-        final ICondition condition = lock.newCondition(name + "c");
+        final ICondition condition = lock.newCondition(randomString());
         final AtomicInteger count = new AtomicInteger(0);
+        final CountDownLatch threadGetTheLock = new CountDownLatch(1);
 
         Thread t = new Thread(new Runnable() {
             public void run() {
                 lock.lock();
+                threadGetTheLock.countDown();
                 try {
                     if (lock.isLockedByCurrentThread()) {
                         count.incrementAndGet();
@@ -67,9 +66,8 @@ public class ClientConditionTest extends HazelcastTestSupport{
             }
         });
         t.start();
-        Thread.sleep(1000);
+        assertOpenEventually(threadGetTheLock);
 
-        assertEquals(false, lock.isLocked());
         lock.lock();
         assertEquals(true, lock.isLocked());
         condition.signal();
