@@ -1,9 +1,9 @@
 package com.hazelcast.client.impl.querycache.subscriber;
 
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.map.impl.client.DestroyQueryCacheRequest;
 import com.hazelcast.map.impl.client.SetReadCursorRequest;
 import com.hazelcast.map.impl.querycache.subscriber.SubscriberContextSupport;
-import com.hazelcast.nio.serialization.SerializationService;
 
 /**
  * {@code SubscriberContextSupport} implementation for client side.
