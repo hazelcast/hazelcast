@@ -17,6 +17,7 @@
 package com.hazelcast.nio;
 
 import com.hazelcast.util.ConcurrentReferenceHashMap;
+import com.hazelcast.util.EmptyStatement;
 
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Constructor;
@@ -114,6 +115,17 @@ public final class ClassLoaderUtil {
             return tryLoadClass(className, theClassLoader);
         }
         return Class.forName(className);
+    }
+
+    public static boolean isClassAvailable(final ClassLoader classLoader, final String className) {
+        try {
+            Class<?> clazz = loadClass(classLoader, className);
+            return clazz != null;
+        } catch (ClassNotFoundException e) {
+            EmptyStatement.ignore(e);
+        }
+        return false;
+
     }
 
     private static Class<?> tryLoadClass(String className, ClassLoader classLoader)

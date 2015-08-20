@@ -79,10 +79,38 @@ import java.util.concurrent.TimeoutException;
  */
 public class ClientExceptionFactory {
 
-    private Map<Class, Integer> classToInt = new HashMap<Class, Integer>();
-    private Map<Integer, ExceptionFactory> intToFactory = new HashMap<Integer, ExceptionFactory>();
+    private final Map<Class, Integer> classToInt = new HashMap<Class, Integer>();
+    private final Map<Integer, ExceptionFactory> intToFactory = new HashMap<Integer, ExceptionFactory>();
 
-    public ClientExceptionFactory() {
+    public ClientExceptionFactory(boolean jcacheAvailable) {
+        if (jcacheAvailable) {
+            register(ClientProtocolErrorCodes.CACHE, CacheException.class, new ExceptionFactory() {
+                @Override
+                public Throwable createException(String message, Throwable cause) {
+                    return new CacheException(message, cause);
+                }
+            });
+            register(ClientProtocolErrorCodes.CACHE_LOADER, CacheLoaderException.class, new ExceptionFactory() {
+                @Override
+                public Throwable createException(String message, Throwable cause) {
+                    return new CacheLoaderException(message, cause);
+                }
+            });
+            register(ClientProtocolErrorCodes.CACHE_WRITER, CacheWriterException.class, new ExceptionFactory() {
+                @Override
+                public Throwable createException(String message, Throwable cause) {
+                    return new CacheWriterException(message, cause);
+                }
+            });
+
+            register(ClientProtocolErrorCodes.ENTRY_PROCESSOR, EntryProcessorException.class, new ExceptionFactory() {
+                @Override
+                public Throwable createException(String message, Throwable cause) {
+                    return new EntryProcessorException(message, cause);
+                }
+            });
+        }
+
         register(ClientProtocolErrorCodes.ARRAY_INDEX_OUT_OF_BOUNDS, ArrayIndexOutOfBoundsException.class, new ExceptionFactory() {
             @Override
             public Throwable createException(String message, Throwable cause) {
@@ -101,28 +129,10 @@ public class ClientExceptionFactory {
                 return new AuthenticationException(message);
             }
         });
-        register(ClientProtocolErrorCodes.CACHE, CacheException.class, new ExceptionFactory() {
-            @Override
-            public Throwable createException(String message, Throwable cause) {
-                return new CacheException(message, cause);
-            }
-        });
-        register(ClientProtocolErrorCodes.CACHE_LOADER, CacheLoaderException.class, new ExceptionFactory() {
-            @Override
-            public Throwable createException(String message, Throwable cause) {
-                return new CacheLoaderException(message, cause);
-            }
-        });
         register(ClientProtocolErrorCodes.CACHE_NOT_EXISTS, CacheNotExistsException.class, new ExceptionFactory() {
             @Override
             public Throwable createException(String message, Throwable cause) {
                 return new CacheNotExistsException(message);
-            }
-        });
-        register(ClientProtocolErrorCodes.CACHE_WRITER, CacheWriterException.class, new ExceptionFactory() {
-            @Override
-            public Throwable createException(String message, Throwable cause) {
-                return new CacheWriterException(message, cause);
             }
         });
         register(ClientProtocolErrorCodes.CALLER_NOT_MEMBER, CallerNotMemberException.class, new ExceptionFactory() {
@@ -183,12 +193,6 @@ public class ClientExceptionFactory {
             @Override
             public Throwable createException(String message, Throwable cause) {
                 return new EOFException(message);
-            }
-        });
-        register(ClientProtocolErrorCodes.ENTRY_PROCESSOR, EntryProcessorException.class, new ExceptionFactory() {
-            @Override
-            public Throwable createException(String message, Throwable cause) {
-                return new EntryProcessorException(message, cause);
             }
         });
         register(ClientProtocolErrorCodes.EXECUTION, ExecutionException.class, new ExceptionFactory() {
