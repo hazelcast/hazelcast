@@ -1,10 +1,10 @@
 package com.hazelcast.client;
 
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
+import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.LifecycleEvent;
@@ -14,6 +14,7 @@ import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.NightlyTest;
+import com.hazelcast.util.EmptyStatement;
 import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -30,24 +31,22 @@ import static org.junit.Assert.assertTrue;
 @Category(NightlyTest.class)
 public class ClientSplitBrainTest extends HazelcastTestSupport {
 
-    private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
-
     @After
     public void cleanup() {
-        hazelcastFactory.terminateAll();
+        HazelcastClient.shutdownAll();
+        Hazelcast.shutdownAll();
     }
-
 
     @Test
     public void testClientListeners_InSplitBrain() throws Throwable {
         Config config = new Config();
         config.setProperty(GroupProperties.PROP_MERGE_FIRST_RUN_DELAY_SECONDS, "5");
         config.setProperty(GroupProperties.PROP_MERGE_NEXT_RUN_DELAY_SECONDS, "5");
-        HazelcastInstance h1 = hazelcastFactory.newHazelcastInstance(config);
-        HazelcastInstance h2 = hazelcastFactory.newHazelcastInstance(config);
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
 
         final ClientConfig clientConfig = new ClientConfig();
-        final HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
+        final HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
 
         final String mapName = randomMapName();
         final IMap mapNode1 = h1.getMap(mapName);
@@ -79,13 +78,15 @@ public class ClientSplitBrainTest extends HazelcastTestSupport {
         assertEquals(2, h1.getCluster().getMembers().size());
         assertEquals(2, h2.getCluster().getMembers().size());
 
-        final Thread clientThread = startClientPutThread(mapClient);
+        AtomicBoolean testFinished = new AtomicBoolean(false);
+        final Thread clientThread = startClientPutThread(mapClient, testFinished);
 
         try {
             checkEventsEventually(listenerGotEventFlags);
         } catch (Throwable t) {
             throw t;
         } finally {
+            testFinished.set(true);
             clientThread.interrupt();
             clientThread.join();
         }
@@ -104,12 +105,16 @@ public class ClientSplitBrainTest extends HazelcastTestSupport {
         }
     }
 
-    private Thread startClientPutThread(final IMap<Object, Object> mapClient) {
+    private Thread startClientPutThread(final IMap<Object, Object> mapClient, final AtomicBoolean testFinished) {
         final Thread clientThread = new Thread() {
             @Override
             public void run() {
-                while (!Thread.interrupted()) {
-                    mapClient.put(1, 1);
+                while (!testFinished.get()) {
+                    try {
+                        mapClient.put(1, 1);
+                    } catch (Throwable t) {
+                        EmptyStatement.ignore(t);
+                    }
                 }
             }
         };
