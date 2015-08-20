@@ -16,33 +16,32 @@
 
 package com.hazelcast.spring.context;
 
+import com.hazelcast.config.CachePartitionLostListenerConfig;
+import com.hazelcast.config.CacheSimpleConfig;
+import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig;
+import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.DurationConfig;
+import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig;
+import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig.ExpiryPolicyType;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.EvictionConfig;
-import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.spring.CustomSpringJUnit4ClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig;
-import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig;
-import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.DurationConfig;
-import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig.ExpiryPolicyType;
-
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.test.context.ContextConfiguration;
 
 import javax.annotation.Resource;
-
 import java.io.IOException;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
@@ -210,6 +209,23 @@ public class TestJCache {
 
         assertEquals(ExpiryPolicyType.ETERNAL, timedExpiryPolicyFactoryConfig.getExpiryPolicyType());
     }
+    
+    @Test
+    public void cacheConfigXmlTest_PartitionLostListener() throws IOException {
+        Config config = instance1.getConfig();
+
+        CacheSimpleConfig cacheWithPartitionLostListenerConfig =
+                config.getCacheConfig("cacheWithPartitionLostListener");
+        List<CachePartitionLostListenerConfig> partitionLostListenerConfigs =
+                cacheWithPartitionLostListenerConfig.getPartitionLostListenerConfigs();
+
+        assertNotNull(partitionLostListenerConfigs);
+        assertEquals(1, partitionLostListenerConfigs.size());
+        assertEquals(partitionLostListenerConfigs.get(0).getClassName(),"DummyCachePartitionLostListenerImpl");
+        assertNotNull(partitionLostListenerConfigs);
+        assertEquals(1, partitionLostListenerConfigs.size());
+        assertEquals(partitionLostListenerConfigs.get(0).getClassName(),"DummyCachePartitionLostListenerImpl");
+    }    
 
     @Test
     public void testCacheQuorumConfig() {

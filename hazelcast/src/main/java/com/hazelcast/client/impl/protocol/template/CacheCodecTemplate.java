@@ -106,4 +106,11 @@ public interface CacheCodecTemplate {
     @Request(id = 25, retryable = true, response = ResponseMessageConst.INTEGER)
     void size(String name);
 
+    @Request(id = 26, retryable = true, response = ResponseMessageConst.STRING,
+            event = EventMessageConst.EVENT_CACHEPARTITIONLOST)
+    void addPartitionLostListener(String name);
+
+    @Request(id = 27, retryable = false, response = ResponseMessageConst.BOOLEAN)
+    void removePartitionLostListener(String name, String registrationId);
+
 }

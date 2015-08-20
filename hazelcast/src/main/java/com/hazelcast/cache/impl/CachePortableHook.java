@@ -18,6 +18,7 @@ package com.hazelcast.cache.impl;
 
 import com.hazelcast.cache.impl.client.CacheAddEntryListenerRequest;
 import com.hazelcast.cache.impl.client.CacheAddInvalidationListenerRequest;
+import com.hazelcast.cache.impl.client.CacheAddPartitionLostListenerRequest;
 import com.hazelcast.cache.impl.client.CacheBatchInvalidationMessage;
 import com.hazelcast.cache.impl.client.CacheClearRequest;
 import com.hazelcast.cache.impl.client.CacheContainsKeyRequest;
@@ -37,6 +38,7 @@ import com.hazelcast.cache.impl.client.CachePutIfAbsentRequest;
 import com.hazelcast.cache.impl.client.CachePutRequest;
 import com.hazelcast.cache.impl.client.CacheRemoveEntryListenerRequest;
 import com.hazelcast.cache.impl.client.CacheRemoveInvalidationListenerRequest;
+import com.hazelcast.cache.impl.client.CacheRemovePartitionLostListenerRequest;
 import com.hazelcast.cache.impl.client.CacheRemoveRequest;
 import com.hazelcast.cache.impl.client.CacheReplaceRequest;
 import com.hazelcast.cache.impl.client.CacheSingleInvalidationMessage;
@@ -88,8 +90,10 @@ public class CachePortableHook
     public static final int REMOVE_ENTRY_LISTENER = 23;
     public static final int LISTENER_REGISTRATION = 24;
     public static final int DESTROY_CACHE = 25;
+    public static final int ADD_CACHE_PARTITION_LOST_LISTENER = 26;
+    public static final int REMOVE_CACHE_PARTITION_LOST_LISTENER = 27;
 
-    public static final int LEN = 26;
+    public static final int LEN = 28;
 
     public int getFactoryId() {
         return F_ID;
@@ -223,6 +227,16 @@ public class CachePortableHook
                 constructors[DESTROY_CACHE] = new ConstructorFunction<Integer, Portable>() {
                     public Portable createNew(Integer arg) {
                         return new CacheDestroyRequest();
+                    }
+                };
+                constructors[ADD_CACHE_PARTITION_LOST_LISTENER] = new ConstructorFunction<Integer, Portable>() {
+                    public Portable createNew(Integer arg) {
+                        return new CacheAddPartitionLostListenerRequest();
+                    }
+                };
+                constructors[REMOVE_CACHE_PARTITION_LOST_LISTENER] = new ConstructorFunction<Integer, Portable>() {
+                    public Portable createNew(Integer arg) {
+                        return new CacheRemovePartitionLostListenerRequest();
                     }
                 };
             }

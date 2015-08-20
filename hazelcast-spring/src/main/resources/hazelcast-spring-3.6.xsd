@@ -434,6 +434,18 @@
                                             </xs:sequence>
                                         </xs:complexType>
                                     </xs:element>
+                                    <xs:element name="partition-lost-listeners" minOccurs="0" maxOccurs="1">
+                                        <xs:annotation>
+                                            <xs:documentation>List of partition lost listeners</xs:documentation>
+                                        </xs:annotation>
+                                        <xs:complexType>
+                                            <xs:sequence>
+                                                <xs:element name="partition-lost-listener" type="listener"
+                                                            minOccurs="0"
+                                                            maxOccurs="unbounded"/>
+                                            </xs:sequence>
+                                        </xs:complexType>
+                                    </xs:element>
                                     <xs:element name="expiry-policy-factory" minOccurs="0" maxOccurs="1">
                                         <xs:annotation>
                                             <xs:documentation>

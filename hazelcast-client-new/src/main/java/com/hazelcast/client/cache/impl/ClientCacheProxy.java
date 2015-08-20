@@ -18,17 +18,22 @@ package com.hazelcast.client.cache.impl;
 
 import com.hazelcast.cache.impl.CacheEntryProcessorResult;
 import com.hazelcast.cache.impl.CacheEventListenerAdaptor;
+import com.hazelcast.cache.impl.CacheEventType;
 import com.hazelcast.cache.impl.CacheProxyUtil;
+import com.hazelcast.cache.impl.event.CachePartitionLostEvent;
+import com.hazelcast.cache.impl.event.CachePartitionLostListener;
 import com.hazelcast.cache.impl.nearcache.NearCache;
 import com.hazelcast.client.impl.ClientMessageDecoder;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CacheAddEntryListenerCodec;
+import com.hazelcast.client.impl.protocol.codec.CacheAddPartitionLostListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.CacheContainsKeyCodec;
 import com.hazelcast.client.impl.protocol.codec.CacheEntryProcessorCodec;
 import com.hazelcast.client.impl.protocol.codec.CacheListenerRegistrationCodec;
 import com.hazelcast.client.impl.protocol.codec.CacheLoadAllCodec;
 import com.hazelcast.client.impl.protocol.codec.CacheRemoveEntryListenerCodec;
+import com.hazelcast.client.impl.protocol.codec.CacheRemovePartitionLostListenerCodec;
 import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.ClientListenerService;
 import com.hazelcast.client.spi.EventHandler;
@@ -385,4 +390,58 @@ public class ClientCacheProxy<K, V>
         return new ClientClusterWideIterator<K, V>(this, clientContext);
     }
 
+    @Override
+    public String addPartitionLostListener(CachePartitionLostListener listener) {
+        ClientMessage request = CacheAddPartitionLostListenerCodec.encodeRequest(name);
+        final EventHandler<ClientMessage> handler = new ClientCachePartitionLostEventHandler(listener);
+        return  clientContext.getListenerService().startListening(request, null, handler,
+                new ClientMessageDecoder() {
+                    @Override
+                    public <T> T decodeClientMessage(ClientMessage clientMessage) {
+                        return (T) CacheAddPartitionLostListenerCodec.decodeResponse(clientMessage).response;
+                    }
+                });
+    }
+
+    @Override
+    public boolean removePartitionLostListener(String id) {
+        return clientContext.getListenerService().stopListening(id,  new ListenerRemoveCodec() {
+            @Override
+            public ClientMessage encodeRequest(String realRegistrationId) {
+                return CacheRemovePartitionLostListenerCodec.encodeRequest(name, realRegistrationId);
+            }
+
+            @Override
+            public boolean decodeResponse(ClientMessage clientMessage) {
+                return CacheRemovePartitionLostListenerCodec.decodeResponse(clientMessage).response;
+            }
+        });
+    }
+
+    private class ClientCachePartitionLostEventHandler extends CacheAddPartitionLostListenerCodec.AbstractEventHandler
+            implements EventHandler<ClientMessage> {
+
+        private CachePartitionLostListener listener;
+
+        public ClientCachePartitionLostEventHandler(CachePartitionLostListener listener) {
+            this.listener = listener;
+        }
+
+        @Override
+        public void beforeListenerRegister() {
+
+        }
+
+        @Override
+        public void onListenerRegister() {
+
+        }
+
+        @Override
+        public void handle(int partitionId, String uuid) {
+            final Member member = clientContext.getClusterService().getMember(uuid);
+            listener.partitionLost(new CachePartitionLostEvent(name, member, CacheEventType.PARTITION_LOST.getType(),
+                    partitionId));
+        }
+    }
 }

@@ -691,6 +691,43 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
                 "</hazelcast>\n";
     }
 
+    @Test
+    public void testCachePartitionLostListenerConfig() {
+        String cacheName = "cache1";
+        String listenerName = "DummyCachePartitionLostListenerImpl";
+        String xml = createCachePartitionLostListenerConfiguredXml(cacheName, listenerName);
+
+        Config config = buildConfig(xml);
+        CacheSimpleConfig cacheConfig = config.getCacheConfig("cache1");
+        assertCachePartitionLostListener(listenerName, cacheConfig);
+    }
+
+    @Test
+    public void testCachePartitionLostListenerConfigReadOnly() {
+        String cacheName = "cache1";
+        String listenerName = "DummyCachePartitionLostListenerImpl";
+        String xml = createCachePartitionLostListenerConfiguredXml(cacheName, listenerName);
+
+        Config config = buildConfig(xml);
+        CacheSimpleConfig cacheConfig = config.findCacheConfig("cache1");
+        assertCachePartitionLostListener(listenerName, cacheConfig);
+    }
+
+    private void assertCachePartitionLostListener(String listenerName, CacheSimpleConfig cacheConfig) {
+        assertFalse(cacheConfig.getPartitionLostListenerConfigs().isEmpty());
+        assertEquals(listenerName, cacheConfig.getPartitionLostListenerConfigs().get(0).getClassName());
+    }
+
+    private String createCachePartitionLostListenerConfiguredXml(String cacheName, String listenerName) {
+        return "<hazelcast xmlns=\"http://www.hazelcast.com/schema/config\">\n" +
+                "<cache name=\"" + cacheName + "\">\n" +
+                "<partition-lost-listeners>\n" +
+                "<partition-lost-listener>" + listenerName + "</partition-lost-listener>\n" +
+                "</partition-lost-listeners>\n" +
+                "</cache>\n" +
+                "</hazelcast>\n";
+    }
+
     private void testXSDConfigXML(String xmlFileName) throws SAXException, IOException {
         SchemaFactory factory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
         URL schemaResource = XMLConfigBuilderTest.class.getClassLoader().getResource("hazelcast-config-3.5.xsd");

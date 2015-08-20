@@ -16,6 +16,9 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.DurationConfig;
+import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig;
+import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig.ExpiryPolicyType;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -33,10 +36,8 @@ import javax.cache.expiry.EternalExpiryPolicy;
 import javax.cache.expiry.ModifiedExpiryPolicy;
 import javax.cache.expiry.TouchedExpiryPolicy;
 import java.io.IOException;
-
-import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig;
-import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.DurationConfig;
-import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig.ExpiryPolicyType;
+import java.util.ArrayList;
+import java.util.List;
 
 import static com.hazelcast.config.CacheSimpleConfig.DEFAULT_BACKUP_COUNT;
 import static com.hazelcast.config.CacheSimpleConfig.DEFAULT_IN_MEMORY_FORMAT;
@@ -68,7 +69,7 @@ public class CacheConfig<K, V>
     private CacheEvictionConfig evictionConfig = new CacheEvictionConfig();
 
     private WanReplicationRef wanReplicationRef;
-
+    private List<CachePartitionLostListenerConfig> partitionLostListenerConfigs;
     private String quorumName;
 
     public CacheConfig() {
@@ -94,6 +95,10 @@ public class CacheConfig<K, V>
             }
             if (config.wanReplicationRef != null) {
                 this.wanReplicationRef = new WanReplicationRef(config.wanReplicationRef);
+            }
+            if (config.partitionLostListenerConfigs != null) {
+                this.partitionLostListenerConfigs = new ArrayList<CachePartitionLostListenerConfig>(
+                        config.partitionLostListenerConfigs);
             }
             this.quorumName = config.quorumName;
         }
@@ -143,6 +148,9 @@ public class CacheConfig<K, V>
                     new MutableCacheEntryListenerConfiguration<K, V>(
                     listenerFactory, filterFactory, isOldValueRequired, synchronous);
             addCacheEntryListenerConfiguration(listenerConfiguration);
+        }
+        for (CachePartitionLostListenerConfig listenerConfig : simpleConfig.getPartitionLostListenerConfigs()) {
+            getPartitionLostListenerConfigs().add(listenerConfig);
         }
 
         this.quorumName = simpleConfig.getQuorumName();
@@ -377,6 +385,28 @@ public class CacheConfig<K, V>
 
     public CacheConfig setWanReplicationRef(WanReplicationRef wanReplicationRef) {
         this.wanReplicationRef = wanReplicationRef;
+        return this;
+    }
+
+    /**
+     * Gets the partition lost listener references added to cache config
+     *
+     * @return List of CachePartitionLostListenerConfig.
+     */
+    public List<CachePartitionLostListenerConfig> getPartitionLostListenerConfigs() {
+        if (partitionLostListenerConfigs == null) {
+            partitionLostListenerConfigs = new ArrayList<CachePartitionLostListenerConfig>();
+        }
+        return partitionLostListenerConfigs;
+    }
+
+    /**
+     * Sets the Wan target replication reference.
+     *
+     * @param partitionLostListenerConfigs CachePartitionLostListenerConfig list.
+     */
+    public CacheConfig setPartitionLostListenerConfigs(List<CachePartitionLostListenerConfig> partitionLostListenerConfigs) {
+        this.partitionLostListenerConfigs = partitionLostListenerConfigs;
         return this;
     }
 
