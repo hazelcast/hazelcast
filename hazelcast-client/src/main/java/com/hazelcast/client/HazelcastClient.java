@@ -64,7 +64,6 @@ public final class HazelcastClient {
     private static final ConcurrentMap<String, HazelcastClientProxy> CLIENTS
             = new ConcurrentHashMap<String, HazelcastClientProxy>(5);
 
-    // we don't want instances.
     private HazelcastClient() {
     }
 
@@ -87,9 +86,10 @@ public final class HazelcastClient {
             client.start();
             OutOfMemoryErrorDispatcher.registerClient(client);
             proxy = new HazelcastClientProxy(client);
-            if(CLIENTS.containsKey(client.getName())) {
-                throw new DuplicateInstanceNameException("HazelcastClientInstance with name '" + client.getName() + "' already exists!");
-             }
+            if (CLIENTS.containsKey(client.getName())) {
+                throw new DuplicateInstanceNameException("HazelcastClientInstance with name '" + client.getName()
+                        + "' already exists!");
+            }
             CLIENTS.put(client.getName(), proxy);
         } finally {
             Thread.currentThread().setContextClassLoader(tccl);
@@ -99,7 +99,6 @@ public final class HazelcastClient {
 
     /**
      * Returns an existing HazelcastClient with instanceName.
-     * <p/>
      *
      * @param instanceName Name of the HazelcastInstance (client) which can be retrieved by {@link HazelcastInstance#getName()}
      * @return HazelcastInstance
@@ -107,7 +106,6 @@ public final class HazelcastClient {
     public static HazelcastInstance getHazelcastClientByName(String instanceName) {
         return CLIENTS.get(instanceName);
     }
-
 
     /**
      * Gets an immutable collection of all client HazelcastInstances created in this JVM.
@@ -123,7 +121,7 @@ public final class HazelcastClient {
      */
     public static Collection<HazelcastInstance> getAllHazelcastClients() {
         Collection<HazelcastClientProxy> values = CLIENTS.values();
-        return Collections.<HazelcastInstance>unmodifiableCollection(new HashSet<HazelcastInstance>(values));
+        return Collections.unmodifiableCollection(new HashSet<HazelcastInstance>(values));
     }
 
     /**
@@ -220,5 +218,4 @@ public final class HazelcastClient {
     public static void setOutOfMemoryHandler(OutOfMemoryHandler outOfMemoryHandler) {
         OutOfMemoryErrorDispatcher.setClientHandler(outOfMemoryHandler);
     }
-
 }
