@@ -19,7 +19,7 @@ package com.hazelcast.cache.impl.event;
 import com.hazelcast.core.Member;
 
 /**
- * Used for providing information about the lost partition for a cache
+ * Used to provide information about the lost partition of a cache.
  *
  * @see CachePartitionLostEvent
  * @since 3.6
@@ -36,9 +36,9 @@ public class CachePartitionLostEvent extends AbstractICacheEvent {
     }
 
     /**
-     * Returns the partition id that has been lost for the given cache
+     * Returns the partition ID that has been lost for the given cache.
      *
-     * @return the partition id that has been lost for the given cache
+     * @return the partition ID that has been lost for the given cache.
      */
     public int getPartitionId() {
         return partitionId;
