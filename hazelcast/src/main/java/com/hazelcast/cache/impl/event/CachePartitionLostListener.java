@@ -19,16 +19,16 @@ package com.hazelcast.cache.impl.event;
 import java.util.EventListener;
 
 /**
- * Invoked when owner and all backups of a partition is lost for a specific cache
+ * Invoked when owner and all backups of a partition are lost for a specific cache.
  * @see CachePartitionLostEvent
  * @since 3.6
  */
 public interface CachePartitionLostListener extends EventListener {
 
     /**
-     * Invoked when owner and all backups of a partition is lost for a specific cache
+     * Invoked when owner and all backups of a partition are lost for a specific cache.
      *
-     * @param event the event object that contains cache name and lost partition id
+     * @param event the event object that contains the cache name and lost partition ID.
      */
     void partitionLost(CachePartitionLostEvent event);
 
