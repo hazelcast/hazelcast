@@ -60,6 +60,7 @@ public class MemberStateImplTest extends HazelcastTestSupport {
         memberState.putLocalQueueStats("queueStats", new LocalQueueStatsImpl());
         memberState.putLocalTopicStats("topicStats", new LocalTopicStatsImpl());
         memberState.putLocalExecutorStats("executorStats", new LocalExecutorStatsImpl());
+        memberState.putLocalReplicatedMapStats("replicatedMapStats", new LocalReplicatedMapStatsImpl());
         memberState.putLocalCacheStats("cacheStats", new LocalCacheStatsImpl(cacheStatistics));
         memberState.setRuntimeProps(runtimeProps);
         memberState.setLocalMemoryStats(new LocalMemoryStatsImpl());
@@ -73,6 +74,7 @@ public class MemberStateImplTest extends HazelcastTestSupport {
         assertNotNull(deserialized.getLocalMapStats("mapStats").toString());
         assertNotNull(deserialized.getLocalMultiMapStats("multiMapStats").toString());
         assertNotNull(deserialized.getLocalQueueStats("queueStats").toString());
+        assertNotNull(deserialized.getLocalReplicatedMapStats("replicatedMapStats").toString());
         assertNotNull(deserialized.getLocalTopicStats("topicStats").toString());
         assertNotNull(deserialized.getLocalExecutorStats("executorStats").toString());
         assertNotNull(deserialized.getLocalCacheStats("cacheStats").toString());

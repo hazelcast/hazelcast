@@ -315,7 +315,7 @@ public class MemberStateImpl implements MemberState {
                 + ", runtimeProps=" + runtimeProps
                 + ", mapStats=" + mapStats
                 + ", multiMapStats=" + multiMapStats
-                + ". replicatedMapStats=" + replicatedMapStats
+                + ", replicatedMapStats=" + replicatedMapStats
                 + ", queueStats=" + queueStats
                 + ", topicStats=" + topicStats
                 + ", executorStats=" + executorStats
