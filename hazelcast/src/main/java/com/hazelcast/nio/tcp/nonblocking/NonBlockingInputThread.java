@@ -62,7 +62,12 @@ public final class NonBlockingInputThread extends NonBlockingIOThread {
         if (sk.isValid() && sk.isReadable()) {
             readEvents.inc();
             SelectionHandler handler = (SelectionHandler) sk.attachment();
-            handler.handle();
+
+            try {
+                handler.handle();
+            } catch (Throwable t) {
+                handler.onFailure(t);
+            }
         }
     }
 }

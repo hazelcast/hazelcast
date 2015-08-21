@@ -22,7 +22,6 @@ import com.hazelcast.nio.tcp.nonblocking.NonBlockingIOThread;
 import com.hazelcast.util.Clock;
 
 import java.io.EOFException;
-import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 
@@ -52,41 +51,32 @@ public class ClientReadHandler
     }
 
     @Override
-    public void handle() {
+    public void handle() throws Exception {
         lastHandle = Clock.currentTimeMillis();
         if (!connection.isAlive()) {
             if (logger.isFinestEnabled()) {
-                String message = "We are being asked to read, but connection is not live so we won't";
-                logger.finest(message);
+                logger.finest("We are being asked to read, but connection is not live so we won't");
             }
             return;
         }
-        try {
-            int readBytes = socketChannel.read(buffer);
+
+        int readBytes = socketChannel.read(buffer);
+        if (readBytes <= 0) {
             if (readBytes == -1) {
                 throw new EOFException("Remote socket closed!");
             }
-        } catch (IOException e) {
-            handleSocketException(e);
             return;
         }
-        try {
-            if (buffer.position() == 0) {
-                return;
-            }
-            buffer.flip();
 
-            builder.onData(buffer);
+        buffer.flip();
 
-            if (buffer.hasRemaining()) {
-                buffer.compact();
-            } else {
-                buffer.clear();
-            }
-        } catch (Throwable t) {
-            handleSocketException(t);
+        builder.onData(buffer);
+
+        if (buffer.hasRemaining()) {
+            buffer.compact();
+        } else {
+            buffer.clear();
         }
-
     }
 
     long getLastHandle() {

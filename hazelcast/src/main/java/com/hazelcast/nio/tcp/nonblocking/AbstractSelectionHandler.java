@@ -62,13 +62,14 @@ public abstract class AbstractSelectionHandler implements MigratableHandler {
             try {
                 selectionKey = socketChannel.register(selector, initialOps, this);
             } catch (ClosedChannelException e) {
-                handleSocketException(e);
+                onFailure(e);
             }
         }
         return selectionKey;
     }
 
-    public void handleSocketException(Throwable e) {
+    @Override
+    public void onFailure(Throwable e) {
         if (e instanceof OutOfMemoryError) {
             ioService.onOutOfMemory((OutOfMemoryError) e);
         }
@@ -99,7 +100,7 @@ public abstract class AbstractSelectionHandler implements MigratableHandler {
         try {
             selectionKey.interestOps(selectionKey.interestOps() | operation);
         } catch (Throwable e) {
-            handleSocketException(e);
+            onFailure(e);
         }
     }
 
@@ -108,7 +109,7 @@ public abstract class AbstractSelectionHandler implements MigratableHandler {
         try {
             selectionKey.interestOps(selectionKey.interestOps() & ~operation);
         } catch (Throwable e) {
-            handleSocketException(e);
+            onFailure(e);
         }
     }
 
