@@ -948,7 +948,8 @@ public interface ICache<K, V>
     /**
      * Adds a CachePartitionLostListener.
      * <p/>
-     * The addPartitionLostListener returns a register-id. This id is needed to remove the CachePartitionLostListener using the
+     * The addPartitionLostListener returns a registration ID. This ID is needed to remove the
+     * CachePartitionLostListener using the
      * {@link #removePartitionLostListener(String)} method.
      * <p/>
      * There is no check for duplicate registrations, so if you register the listener twice, it will get events twice.
@@ -967,9 +968,9 @@ public interface ICache<K, V>
      * Removes the specified cache partition lost listener.
      * Returns silently if there is no such listener added before.
      *
-     * @param id id of registered listener.
+     * @param id ID of registered listener.
      * @return true if registration is removed, false otherwise.
-     * @throws java.lang.NullPointerException if the given id is null.
+     * @throws java.lang.NullPointerException if the given ID is null.
      */
     boolean removePartitionLostListener(String id);
 
