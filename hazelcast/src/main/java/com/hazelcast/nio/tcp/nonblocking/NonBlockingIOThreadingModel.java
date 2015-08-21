@@ -45,8 +45,8 @@ import static java.util.logging.Level.INFO;
  */
 public class NonBlockingIOThreadingModel implements IOThreadingModel {
 
-    private final NonBlockingInputThread[] inputThreads;
-    private final NonBlockingOutputThread[] outputThreads;
+    private final NonBlockingIOThread[] inputThreads;
+    private final NonBlockingIOThread[] outputThreads;
     private final AtomicInteger nextInputThreadIndex = new AtomicInteger();
     private final AtomicInteger nextOutputThreadIndex = new AtomicInteger();
     private final ILogger logger;
@@ -69,8 +69,8 @@ public class NonBlockingIOThreadingModel implements IOThreadingModel {
         this.metricsRegistry = metricsRegistry;
         this.loggingService = loggingService;
         this.logger = loggingService.getLogger(NonBlockingIOThreadingModel.class);
-        this.inputThreads = new NonBlockingInputThread[ioService.getInputSelectorThreadCount()];
-        this.outputThreads = new NonBlockingOutputThread[ioService.getOutputSelectorThreadCount()];
+        this.inputThreads = new NonBlockingIOThread[ioService.getInputSelectorThreadCount()];
+        this.outputThreads = new NonBlockingIOThread[ioService.getOutputSelectorThreadCount()];
     }
 
     public void setInputSelectNow(boolean enabled) {
@@ -87,12 +87,12 @@ public class NonBlockingIOThreadingModel implements IOThreadingModel {
     }
 
     @SuppressFBWarnings(value = "EI_EXPOSE_REP", justification = "used only for testing")
-    public NonBlockingInputThread[] getInputThreads() {
+    public NonBlockingIOThread[] getInputThreads() {
         return inputThreads;
     }
 
     @SuppressFBWarnings(value = "EI_EXPOSE_REP", justification = "used only for testing")
-    public NonBlockingOutputThread[] getOutputThreads() {
+    public NonBlockingIOThread[] getOutputThreads() {
         return outputThreads;
     }
 
@@ -117,10 +117,10 @@ public class NonBlockingIOThreadingModel implements IOThreadingModel {
         };
 
         for (int i = 0; i < inputThreads.length; i++) {
-            NonBlockingInputThread thread = new NonBlockingInputThread(
+            NonBlockingIOThread thread = new NonBlockingIOThread(
                     ioService.getThreadGroup(),
                     ioService.getThreadPrefix() + "in-" + i,
-                    ioService.getLogger(NonBlockingInputThread.class.getName()),
+                    ioService.getLogger(NonBlockingIOThread.class.getName()),
                     oomeHandler,
                     inputSelectNow
             );
@@ -130,10 +130,10 @@ public class NonBlockingIOThreadingModel implements IOThreadingModel {
         }
 
         for (int i = 0; i < outputThreads.length; i++) {
-            NonBlockingOutputThread thread = new NonBlockingOutputThread(
+            NonBlockingIOThread thread = new NonBlockingIOThread(
                     ioService.getThreadGroup(),
                     ioService.getThreadPrefix() + "out-" + i,
-                    ioService.getLogger(NonBlockingOutputThread.class.getName()),
+                    ioService.getLogger(NonBlockingIOThread.class.getName()),
                     oomeHandler,
                     outputSelectNow);
             outputThreads[i] = thread;

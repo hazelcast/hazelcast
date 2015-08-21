@@ -20,6 +20,7 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.operationexecutor.OperationHostileThread;
+import com.hazelcast.util.counters.SwCounter;
 
 import java.io.IOException;
 import java.nio.channels.SelectionKey;
@@ -28,10 +29,11 @@ import java.util.Iterator;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+import static com.hazelcast.util.counters.SwCounter.newSwCounter;
 import static java.lang.Math.max;
 import static java.lang.System.currentTimeMillis;
 
-public abstract class NonBlockingIOThread extends Thread implements OperationHostileThread {
+public class NonBlockingIOThread extends Thread implements OperationHostileThread {
 
     // WARNING: This value has significant effect on idle CPU usage!
     private static final int SELECT_WAIT_TIME_MILLIS = 5000;
@@ -49,6 +51,9 @@ public abstract class NonBlockingIOThread extends Thread implements OperationHos
     private final boolean selectNow;
 
     private volatile long lastSelectTimeMs;
+
+    @Probe
+    private final SwCounter eventCount = newSwCounter();
 
     public NonBlockingIOThread(ThreadGroup threadGroup,
                                String threadName,
@@ -80,6 +85,15 @@ public abstract class NonBlockingIOThread extends Thread implements OperationHos
      */
     public final Selector getSelector() {
         return selector;
+    }
+
+    /**
+     * Returns the total number of selection-key events that have been processed by this thread.
+     *
+     * @return total number of selection-key events.
+     */
+    public long getEventCount() {
+        return eventCount.get();
     }
 
     /**
@@ -211,6 +225,39 @@ public abstract class NonBlockingIOThread extends Thread implements OperationHos
         }
     }
 
+    private void handleSelectionKeys() {
+        Iterator<SelectionKey> it = selector.selectedKeys().iterator();
+        while (it.hasNext()) {
+            SelectionKey sk = it.next();
+            it.remove();
+
+            handleSelectionKey(sk);
+        }
+    }
+
+    protected void handleSelectionKey(SelectionKey sk) {
+        if (!sk.isValid()) {
+            return;
+        }
+
+        // we don't need to check for sk.isReadable/sk.isWritable since the handler has only registered for events it can handle.
+
+        eventCount.inc();
+        SelectionHandler handler = (SelectionHandler) sk.attachment();
+        try {
+            handler.handle();
+        } catch (Throwable t) {
+            handler.onFailure(t);
+        }
+    }
+
+    public void handleSelectionKeyFailure(Throwable e) {
+        logger.warning("Selector exception at  " + getName() + ", cause= " + e.toString(), e);
+        if (e instanceof OutOfMemoryError) {
+            oomeHandler.handle((OutOfMemoryError) e);
+        }
+    }
+
     private void closeSelector() {
         if (logger.isFinestEnabled()) {
             logger.finest("Closing selector for:" + getName());
@@ -220,28 +267,6 @@ public abstract class NonBlockingIOThread extends Thread implements OperationHos
             selector.close();
         } catch (Exception e) {
             logger.finest("Failed to close selector", e);
-        }
-    }
-
-    private void handleSelectionKeys() {
-        Iterator<SelectionKey> it = selector.selectedKeys().iterator();
-        while (it.hasNext()) {
-            SelectionKey sk = it.next();
-            it.remove();
-            try {
-                handleSelectionKey(sk);
-            } catch (Throwable e) {
-                handleSelectionKeyFailure(e);
-            }
-        }
-    }
-
-    protected abstract void handleSelectionKey(SelectionKey sk);
-
-    public void handleSelectionKeyFailure(Throwable e) {
-        logger.warning("Selector exception at  " + getName() + ", cause= " + e.toString(), e);
-        if (e instanceof OutOfMemoryError) {
-            oomeHandler.handle((OutOfMemoryError) e);
         }
     }
 

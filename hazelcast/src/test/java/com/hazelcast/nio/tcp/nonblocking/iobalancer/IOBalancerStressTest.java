@@ -23,10 +23,8 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.nio.tcp.nonblocking.NonBlockingIOThread;
-import com.hazelcast.nio.tcp.nonblocking.NonBlockingInputThread;
 import com.hazelcast.nio.tcp.nonblocking.MigratableHandler;
 import com.hazelcast.nio.tcp.nonblocking.NonBlockingIOThreadingModel;
-import com.hazelcast.nio.tcp.nonblocking.NonBlockingOutputThread;
 import com.hazelcast.nio.tcp.nonblocking.NonBlockingReadHandler;
 import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.nio.tcp.TcpIpConnectionManager;
@@ -110,8 +108,8 @@ public class IOBalancerStressTest extends HazelcastTestSupport {
 
         StringBuffer sb = new StringBuffer();
         sb.append("in selectors\n");
-        for (NonBlockingInputThread in : threadingModel.getInputThreads()) {
-            sb.append(in + " :" + in.getReadEvents() + "\n");
+        for (NonBlockingIOThread in : threadingModel.getInputThreads()) {
+            sb.append(in + " :" + in.getEventCount() + "\n");
 
             for (TcpIpConnection connection : connectionManager.getActiveConnections()) {
                 NonBlockingReadHandler readHandler = (NonBlockingReadHandler) connection.getReadHandler();
@@ -121,8 +119,8 @@ public class IOBalancerStressTest extends HazelcastTestSupport {
             }
         }
         sb.append("out selectors\n");
-        for (NonBlockingOutputThread in : threadingModel.getOutputThreads()) {
-            sb.append(in + " :" + in.getWriteEvents() + "\n");
+        for (NonBlockingIOThread in : threadingModel.getOutputThreads()) {
+            sb.append(in + " :" + in.getEventCount() + "\n");
 
             for (TcpIpConnection connection : connectionManager.getActiveConnections()) {
                 NonBlockingWriteHandler writeHandler = (NonBlockingWriteHandler) connection.getWriteHandler();

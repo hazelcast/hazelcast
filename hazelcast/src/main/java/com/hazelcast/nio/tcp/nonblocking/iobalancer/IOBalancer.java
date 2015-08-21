@@ -23,11 +23,9 @@ import com.hazelcast.logging.LoggingService;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.nio.tcp.nonblocking.NonBlockingIOThread;
-import com.hazelcast.nio.tcp.nonblocking.NonBlockingInputThread;
 import com.hazelcast.nio.tcp.nonblocking.MigratableHandler;
 import com.hazelcast.nio.tcp.nonblocking.NonBlockingReadHandler;
 import com.hazelcast.nio.tcp.nonblocking.NonBlockingWriteHandler;
-import com.hazelcast.nio.tcp.nonblocking.NonBlockingOutputThread;
 import com.hazelcast.util.counters.MwCounter;
 import com.hazelcast.util.counters.SwCounter;
 
@@ -79,8 +77,8 @@ public class IOBalancer {
     @Probe
     private final MwCounter migrationCompletedCount = newMwCounter();
 
-    public IOBalancer(NonBlockingInputThread[] inputThreads,
-                      NonBlockingOutputThread[] outputThreads,
+    public IOBalancer(NonBlockingIOThread[] inputThreads,
+                      NonBlockingIOThread[] outputThreads,
                       HazelcastThreadGroup threadGroup,
                       int balancerIntervalSeconds, LoggingService loggingService) {
         this.logger = loggingService.getLogger(IOBalancer.class);
@@ -178,7 +176,7 @@ public class IOBalancer {
         }
     }
 
-    private boolean isEnabled(NonBlockingInputThread[] inputThreads, NonBlockingOutputThread[] outputThreads) {
+    private boolean isEnabled(NonBlockingIOThread[] inputThreads, NonBlockingIOThread[] outputThreads) {
         if (balancerIntervalSeconds <= 0) {
             logger.warning("I/O Balancer is disabled as the '"
                     + PROP_IO_BALANCER_INTERVAL_SECONDS + "' property is set to "
