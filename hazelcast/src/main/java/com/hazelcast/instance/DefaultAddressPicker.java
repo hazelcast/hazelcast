@@ -43,12 +43,17 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
 class DefaultAddressPicker implements AddressPicker {
 
-    private final ILogger logger;
+    private static final int SOCKET_BACKLOG_LENGTH = 100;
+    private static final int SOCKET_TIMEOUT_MILLIS = (int) TimeUnit.SECONDS.toMillis(1);
+
     private final Node node;
+    private final ILogger logger;
+
     private ServerSocketChannel serverSocketChannel;
     private Address publicAddress;
     private Address bindAddress;
@@ -64,11 +69,11 @@ class DefaultAddressPicker implements AddressPicker {
             return;
         }
         try {
-            final NetworkConfig networkConfig = node.getConfig().getNetworkConfig();
-            final AddressDefinition bindAddressDef = pickAddress(networkConfig);
-            final boolean reuseAddress = networkConfig.isReuseAddress();
-            final boolean bindAny = node.getGroupProperties().SOCKET_SERVER_BIND_ANY.getBoolean();
-            final int portCount = networkConfig.getPortCount();
+            NetworkConfig networkConfig = node.getConfig().getNetworkConfig();
+            AddressDefinition bindAddressDef = pickAddress(networkConfig);
+            boolean reuseAddress = networkConfig.isReuseAddress();
+            boolean bindAny = node.getGroupProperties().SOCKET_SERVER_BIND_ANY.getBoolean();
+            int portCount = networkConfig.getPortCount();
 
             log(Level.FINEST, "inet reuseAddress:" + reuseAddress);
             InetSocketAddress inetSocketAddress;
@@ -87,7 +92,7 @@ class DefaultAddressPicker implements AddressPicker {
                 serverSocketChannel = ServerSocketChannel.open();
                 serverSocket = serverSocketChannel.socket();
                 serverSocket.setReuseAddress(reuseAddress);
-                serverSocket.setSoTimeout(1000);
+                serverSocket.setSoTimeout(SOCKET_TIMEOUT_MILLIS);
                 try {
                     if (bindAny) {
                         inetSocketAddress = new InetSocketAddress(port);
@@ -95,10 +100,10 @@ class DefaultAddressPicker implements AddressPicker {
                         inetSocketAddress = new InetSocketAddress(bindAddressDef.inetAddress, port);
                     }
                     log(Level.FINEST, "Trying to bind inet socket address:" + inetSocketAddress);
-                    serverSocket.bind(inetSocketAddress, 100);
+                    serverSocket.bind(inetSocketAddress, SOCKET_BACKLOG_LENGTH);
                     log(Level.FINEST, "Bind successful to inet socket address:" + inetSocketAddress);
                     break;
-                } catch (final Exception e) {
+                } catch (Exception e) {
                     serverSocket.close();
                     serverSocketChannel.close();
 
@@ -106,21 +111,20 @@ class DefaultAddressPicker implements AddressPicker {
                         port++;
                         error = e;
                     } else {
-                        String msg = "Port [" + port + "] is already in use and auto-increment is "
-                                + "disabled. Hazelcast cannot start.";
+                        String msg = "Port [" + port + "] is already in use and auto-increment is disabled."
+                                + " Hazelcast cannot start.";
                         logger.severe(msg, e);
                         throw new HazelcastException(msg, error);
                     }
                 }
             }
             if (serverSocket == null || !serverSocket.isBound()) {
-                throw new HazelcastException("ServerSocket bind has failed. Hazelcast cannot start! "
-                        + "config-port: " + networkConfig.getPort() + ", latest-port: " + port, error);
+                throw new HazelcastException("ServerSocket bind has failed. Hazelcast cannot start!"
+                        + " config-port: " + networkConfig.getPort() + ", latest-port: " + port, error);
             }
             serverSocketChannel.configureBlocking(false);
             bindAddress = createAddress(bindAddressDef, port);
-            log(Level.INFO, "Picked " + bindAddress + ", using socket " + serverSocket + ", bind any local is "
-                    + bindAny);
+            log(Level.INFO, "Picked " + bindAddress + ", using socket " + serverSocket + ", bind any local is " + bindAny);
             AddressDefinition publicAddressDef = getPublicAddress(node.getConfig(), port);
             if (publicAddressDef != null) {
                 publicAddress = createAddress(publicAddressDef, publicAddressDef.port);
@@ -138,16 +142,15 @@ class DefaultAddressPicker implements AddressPicker {
         }
     }
 
-    private Address createAddress(final AddressDefinition addressDef, final int port) throws UnknownHostException {
+    private Address createAddress(AddressDefinition addressDef, int port) throws UnknownHostException {
         return addressDef.host != null ? new Address(addressDef.host, port)
                 : new Address(addressDef.inetAddress, port);
     }
 
-    private AddressDefinition pickAddress(final NetworkConfig networkConfig)
-            throws UnknownHostException, SocketException {
+    private AddressDefinition pickAddress(NetworkConfig networkConfig) throws UnknownHostException, SocketException {
         AddressDefinition addressDef = getSystemConfiguredAddress(node.getConfig());
         if (addressDef == null) {
-            final Collection<InterfaceDefinition> interfaces = getInterfaces(networkConfig);
+            Collection<InterfaceDefinition> interfaces = getInterfaces(networkConfig);
             if (interfaces.contains(new InterfaceDefinition("127.0.0.1"))
                     || interfaces.contains(new InterfaceDefinition("localhost"))) {
                 addressDef = pickLoopbackAddress();
@@ -160,14 +163,14 @@ class DefaultAddressPicker implements AddressPicker {
                 }
                 if (addressDef == null) {
                     if (networkConfig.getInterfaces().isEnabled()) {
-                        String msg = "Hazelcast CANNOT start on this node. No matching network interface found. ";
-                        msg += "\nInterface matching must be either disabled or updated in the hazelcast.xml config file.";
+                        String msg = "Hazelcast CANNOT start on this node. No matching network interface found.\n"
+                                + "Interface matching must be either disabled or updated in the hazelcast.xml config file.";
                         logger.severe(msg);
                         throw new RuntimeException(msg);
                     } else {
                         if (networkConfig.getJoin().getTcpIpConfig().isEnabled()) {
-                            logger.warning("Could not find a matching address to start with! "
-                                    + "Picking one of non-loopback addresses.");
+                            logger.warning("Could not find a matching address to start with!"
+                                    + " Picking one of non-loopback addresses.");
                         }
                         addressDef = pickMatchingAddress(null);
                     }
@@ -184,53 +187,52 @@ class DefaultAddressPicker implements AddressPicker {
         return addressDef;
     }
 
-    private Collection<InterfaceDefinition> getInterfaces(final NetworkConfig networkConfig)
-            throws UnknownHostException {
-        final Map<String, String> addressDomainMap; // address -> domain
-        final TcpIpConfig tcpIpConfig = networkConfig.getJoin().getTcpIpConfig();
+    private Collection<InterfaceDefinition> getInterfaces(NetworkConfig networkConfig) throws UnknownHostException {
+        // address -> domain
+        Map<String, String> addressDomainMap;
+        TcpIpConfig tcpIpConfig = networkConfig.getJoin().getTcpIpConfig();
         if (tcpIpConfig.isEnabled()) {
-            addressDomainMap = new LinkedHashMap<String, String>();  // LinkedHashMap is to guarantee order
-            final Collection<String> possibleAddresses = TcpIpJoiner.getConfigurationMembers(node.config);
+            // LinkedHashMap is to guarantee order
+            addressDomainMap = new LinkedHashMap<String, String>();
+            Collection<String> possibleAddresses = TcpIpJoiner.getConfigurationMembers(node.config);
             for (String possibleAddress : possibleAddresses) {
-                final String s = AddressUtil.getAddressHolder(possibleAddress).getAddress();
-                if (AddressUtil.isIpAddress(s)) {
-                    if (!addressDomainMap.containsKey(s)) { // there may be a domain registered for this address
-                        addressDomainMap.put(s, null);
+                String addressHolder = AddressUtil.getAddressHolder(possibleAddress).getAddress();
+                if (AddressUtil.isIpAddress(addressHolder)) {
+                    // there may be a domain registered for this address
+                    if (!addressDomainMap.containsKey(addressHolder)) {
+                        addressDomainMap.put(addressHolder, null);
                     }
                 } else {
                     try {
-                        final Collection<String> addresses = resolveDomainNames(s);
+                        Collection<String> addresses = resolveDomainNames(addressHolder);
                         for (String address : addresses) {
-                            addressDomainMap.put(address, s);
+                            addressDomainMap.put(address, addressHolder);
                         }
                     } catch (UnknownHostException e) {
-                        logger.warning("Cannot resolve hostname: '" + s + "'");
+                        logger.warning("Cannot resolve hostname: '" + addressHolder + "'");
                     }
                 }
             }
         } else {
             addressDomainMap = Collections.emptyMap();
         }
-        final Collection<InterfaceDefinition> interfaces = new HashSet<InterfaceDefinition>();
+        Collection<InterfaceDefinition> interfaces = new HashSet<InterfaceDefinition>();
         if (networkConfig.getInterfaces().isEnabled()) {
-            final Collection<String> configInterfaces = networkConfig.getInterfaces().getInterfaces();
+            Collection<String> configInterfaces = networkConfig.getInterfaces().getInterfaces();
             for (String configInterface : configInterfaces) {
                 if (AddressUtil.isIpAddress(configInterface)) {
                     String hostname = findHostnameMatchingInterface(addressDomainMap, configInterface);
                     interfaces.add(new InterfaceDefinition(hostname, configInterface));
                 } else {
-                    logger.info("'" + configInterface
-                            + "' is not an IP address! Removing from interface list.");
+                    logger.info("'" + configInterface + "' is not an IP address! Removing from interface list.");
                 }
             }
-            log(Level.INFO, "Interfaces is enabled, trying to pick one address matching "
-                    + "to one of: " + interfaces);
+            log(Level.INFO, "Interfaces is enabled, trying to pick one address matching to one of: " + interfaces);
         } else if (tcpIpConfig.isEnabled()) {
             for (Entry<String, String> entry : addressDomainMap.entrySet()) {
                 interfaces.add(new InterfaceDefinition(entry.getValue(), entry.getKey()));
             }
-            log(Level.INFO, "Interfaces is disabled, trying to pick one address from TCP-IP config "
-                    + "addresses: " + interfaces);
+            log(Level.INFO, "Interfaces is disabled, trying to pick one address from TCP-IP config addresses: " + interfaces);
         }
         return interfaces;
     }
@@ -249,10 +251,9 @@ class DefaultAddressPicker implements AddressPicker {
         return null;
     }
 
-    private Collection<String> resolveDomainNames(final String domainName)
-            throws UnknownHostException {
-        final InetAddress[] inetAddresses = InetAddress.getAllByName(domainName);
-        final Collection<String> addresses = new LinkedList<String>();
+    private Collection<String> resolveDomainNames(String domainName) throws UnknownHostException {
+        InetAddress[] inetAddresses = InetAddress.getAllByName(domainName);
+        Collection<String> addresses = new LinkedList<String>();
         for (InetAddress inetAddress : inetAddresses) {
             addresses.add(inetAddress.getHostAddress());
         }
@@ -284,7 +285,7 @@ class DefaultAddressPicker implements AddressPicker {
             if ("127.0.0.1".equals(address) || "localhost".equals(address)) {
                 return pickLoopbackAddress();
             } else {
-                // Allow port to be defined in same string in the form of <host>:<port>. i.e. 10.0.0.0:1234
+                // allow port to be defined in same string in the form of <host>:<port>, e.g. 10.0.0.0:1234
                 AddressUtil.AddressHolder holder = AddressUtil.getAddressHolder(address, defaultPort);
                 return new AddressDefinition(holder.getAddress(), holder.getPort(), InetAddress.getByName(holder.getAddress()));
             }
@@ -296,20 +297,20 @@ class DefaultAddressPicker implements AddressPicker {
         return new AddressDefinition(InetAddress.getByName("127.0.0.1"));
     }
 
-    private AddressDefinition pickMatchingAddress(final Collection<InterfaceDefinition> interfaces) throws SocketException {
-        final Enumeration<NetworkInterface> networkInterfaces = NetworkInterface.getNetworkInterfaces();
-        final boolean preferIPv4Stack = preferIPv4Stack();
+    private AddressDefinition pickMatchingAddress(Collection<InterfaceDefinition> interfaces) throws SocketException {
+        Enumeration<NetworkInterface> networkInterfaces = NetworkInterface.getNetworkInterfaces();
+        boolean preferIPv4Stack = preferIPv4Stack();
         while (networkInterfaces.hasMoreElements()) {
-            final NetworkInterface ni = networkInterfaces.nextElement();
-            final Enumeration<InetAddress> e = ni.getInetAddresses();
+            NetworkInterface ni = networkInterfaces.nextElement();
+            Enumeration<InetAddress> e = ni.getInetAddresses();
             while (e.hasMoreElements()) {
-                final InetAddress inetAddress = e.nextElement();
+                InetAddress inetAddress = e.nextElement();
                 if (preferIPv4Stack && inetAddress instanceof Inet6Address) {
                     continue;
                 }
                 if (interfaces != null && !interfaces.isEmpty()) {
-                    final AddressDefinition address;
-                    if ((address = match(inetAddress, interfaces)) != null) {
+                    AddressDefinition address = match(inetAddress, interfaces);
+                    if (address != null) {
                         return address;
                     }
                 } else if (!inetAddress.isLoopbackAddress()) {
@@ -320,8 +321,8 @@ class DefaultAddressPicker implements AddressPicker {
         return null;
     }
 
-    private AddressDefinition match(final InetAddress address, final Collection<InterfaceDefinition> interfaces) {
-        for (final InterfaceDefinition inf : interfaces) {
+    private AddressDefinition match(InetAddress address, Collection<InterfaceDefinition> interfaces) {
+        for (InterfaceDefinition inf : interfaces) {
             if (AddressUtil.matchInterface(address.getHostAddress(), inf.address)) {
                 return new AddressDefinition(inf.host, address);
             }
@@ -332,7 +333,7 @@ class DefaultAddressPicker implements AddressPicker {
     private boolean preferIPv4Stack() {
         boolean preferIPv4Stack = Boolean.getBoolean("java.net.preferIPv4Stack")
                 || node.groupProperties.PREFER_IPv4_STACK.getBoolean();
-        // AWS does not support IPv6.
+        // AWS does not support IPv6
         JoinConfig join = node.getConfig().getNetworkConfig().getJoin();
         AwsConfig awsConfig = join.getAwsConfig();
         boolean awsEnabled = awsConfig != null && awsConfig.isEnabled();
@@ -364,18 +365,16 @@ class DefaultAddressPicker implements AddressPicker {
     }
 
     private class InterfaceDefinition {
+
         String host;
         String address;
 
-        private InterfaceDefinition() {
-        }
-
-        private InterfaceDefinition(final String address) {
+        InterfaceDefinition(String address) {
             this.host = null;
             this.address = address;
         }
 
-        private InterfaceDefinition(final String host, final String address) {
+        InterfaceDefinition(String host, String address) {
             this.host = host;
             this.address = address;
         }
@@ -386,14 +385,14 @@ class DefaultAddressPicker implements AddressPicker {
         }
 
         @Override
-        public boolean equals(final Object o) {
+        public boolean equals(Object o) {
             if (this == o) {
                 return true;
             }
             if (o == null || getClass() != o.getClass()) {
                 return false;
             }
-            final InterfaceDefinition that = (InterfaceDefinition) o;
+            InterfaceDefinition that = (InterfaceDefinition) o;
             if (address != null ? !address.equals(that.address) : that.address != null) {
                 return false;
             }
@@ -412,23 +411,21 @@ class DefaultAddressPicker implements AddressPicker {
     }
 
     private class AddressDefinition extends InterfaceDefinition {
+
         InetAddress inetAddress;
         int port;
 
-        private AddressDefinition() {
-        }
-
-        private AddressDefinition(final InetAddress inetAddress) {
+        AddressDefinition(InetAddress inetAddress) {
             super(inetAddress.getHostAddress());
             this.inetAddress = inetAddress;
         }
 
-        private AddressDefinition(final String host, final InetAddress inetAddress) {
+        AddressDefinition(String host, InetAddress inetAddress) {
             super(host, inetAddress.getHostAddress());
             this.inetAddress = inetAddress;
         }
 
-        private AddressDefinition(final String host, final int port, final InetAddress inetAddress) {
+        AddressDefinition(String host, int port, InetAddress inetAddress) {
             super(host, inetAddress.getHostAddress());
             this.inetAddress = inetAddress;
             this.port = port;
@@ -442,7 +439,7 @@ class DefaultAddressPicker implements AddressPicker {
             if (o == null || getClass() != o.getClass()) {
                 return false;
             }
-            if (!super.equals(o)){
+            if (!super.equals(o)) {
                 return false;
             }
 
