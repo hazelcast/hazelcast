@@ -716,7 +716,16 @@ public final class UTFEncoderDecoder {
     }
 
     static StringCreator createStringCreator(boolean fastStringEnabled) {
-        return fastStringEnabled ? buildFastStringCreator() : new DefaultStringCreator();
+        StringCreator stringCreator =
+                fastStringEnabled
+                        ? buildFastStringCreator()
+                        : new DefaultStringCreator();
+        if (stringCreator == null) {
+            // Fast string creation may return null due to issues about reflection.
+            // In this case, use default string creator.
+            stringCreator = new DefaultStringCreator();
+        }
+        return stringCreator;
     }
 
     static UtfWriter createUtfWriter() {
