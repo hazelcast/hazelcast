@@ -54,7 +54,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * {@link com.hazelcast.replicatedmap.impl.record.ReplicatedRecordStore}s that actually hold the data
  */
 public class ReplicatedMapService
-        implements ManagedService, RemoteService, EventPublishingService<Object, Object> , StatisticsAwareService{
+        implements ManagedService, RemoteService, EventPublishingService<Object, Object>, StatisticsAwareService {
 
     /**
      * Public constant for the internal service name of the ReplicatedMapService
@@ -205,7 +205,8 @@ public class ReplicatedMapService
         Map<String, LocalReplicatedMapStats> replicatedMapStats = MapUtil.createHashMap(replicatedStorages.size());
         for (Map.Entry<String, ReplicatedRecordStore> entry : replicatedStorages.entrySet()) {
             String name = entry.getKey();
-            LocalReplicatedMapStats replicatedMapStat= ((AbstractReplicatedRecordStore) entry.getValue()).createReplicatedMapStats();
+            LocalReplicatedMapStats replicatedMapStat =
+                    ((AbstractReplicatedRecordStore) entry.getValue()).createReplicatedMapStats();
             replicatedMapStats.put(name, replicatedMapStat);
         }
         return replicatedMapStats;

@@ -178,7 +178,8 @@ public class TimedMemberStateFactory {
                     count = handleExecutorService(memberState, count, config,
                             ((DistributedExecutorService) service).getStats(), longInstanceNames);
                 } else if (service instanceof ReplicatedMapService) {
-                    count = handleReplicatedMap(memberState, count, config, ((ReplicatedMapService) service).getStats(), longInstanceNames);
+                    count = handleReplicatedMap(memberState, count, config, ((ReplicatedMapService) service).getStats(),
+                            longInstanceNames);
                 }
             }
         }

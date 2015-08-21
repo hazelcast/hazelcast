@@ -243,6 +243,7 @@ public class MemberStateImpl implements MemberState {
         return root;
     }
 
+    //CHECKSTYLE:OFF
     @Override
     public void fromJson(JsonObject json) {
         address = getString(json, "address");
@@ -306,7 +307,7 @@ public class MemberStateImpl implements MemberState {
             memberPartitionState.fromJson(jsonMemberPartitionState);
         }
     }
-
+    //CHECKSTYLE:ON
     @Override
     public String toString() {
         return "MemberStateImpl{"
