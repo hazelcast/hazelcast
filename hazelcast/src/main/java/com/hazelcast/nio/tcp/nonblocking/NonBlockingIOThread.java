@@ -28,6 +28,9 @@ import java.util.Iterator;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+import static java.lang.Math.max;
+import static java.lang.System.currentTimeMillis;
+
 public abstract class NonBlockingIOThread extends Thread implements OperationHostileThread {
 
     // WARNING: This value has significant effect on idle CPU usage!
@@ -79,11 +82,14 @@ public abstract class NonBlockingIOThread extends Thread implements OperationHos
         return selector;
     }
 
-    // shows how long this NonBlockingIOThread has been idle.
-    // value only has meaning when spinning is disabled.
+    /**
+     * A probe that measure how long this NonBlockingIOThread has not received any events.
+     *
+     * @return the idle time in ms.
+     */
     @Probe
-    private long idleTime() {
-        return Math.max(System.currentTimeMillis() - lastSelectTimeMs, 0);
+    private long idleTimeMs() {
+        return max(currentTimeMillis() - lastSelectTimeMs, 0);
     }
 
     /**
@@ -159,8 +165,8 @@ public abstract class NonBlockingIOThread extends Thread implements OperationHos
             processTaskQueue();
 
             int selectedKeys = selector.select(SELECT_WAIT_TIME_MILLIS);
-            lastSelectTimeMs = System.currentTimeMillis();
             if (selectedKeys > 0) {
+                lastSelectTimeMs = currentTimeMillis();
                 handleSelectionKeys();
             }
         }
@@ -171,8 +177,8 @@ public abstract class NonBlockingIOThread extends Thread implements OperationHos
             processTaskQueue();
 
             int selectedKeys = selector.selectNow();
-            // we don't set the lastSelectTime when spinning
             if (selectedKeys > 0) {
+                lastSelectTimeMs = currentTimeMillis();
                 handleSelectionKeys();
             }
         }
