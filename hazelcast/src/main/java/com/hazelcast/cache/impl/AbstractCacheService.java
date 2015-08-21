@@ -16,6 +16,7 @@
 
 package com.hazelcast.cache.impl;
 
+import com.hazelcast.cache.impl.event.CachePartitionLostEventFilter;
 import com.hazelcast.cache.impl.operation.CacheDestroyOperation;
 import com.hazelcast.cache.impl.operation.PostJoinCacheOperation;
 import com.hazelcast.config.CacheConfig;
@@ -25,6 +26,7 @@ import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.Member;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.partition.InternalPartitionLostEvent;
 import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.spi.EventFilter;
 import com.hazelcast.spi.EventRegistration;
@@ -32,6 +34,7 @@ import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
+import com.hazelcast.spi.PartitionAwareService;
 import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.spi.PostJoinAwareService;
 import com.hazelcast.spi.QuorumAwareService;
@@ -44,6 +47,7 @@ import javax.cache.event.CacheEntryListener;
 import java.io.Closeable;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
@@ -51,7 +55,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 public abstract class AbstractCacheService
-        implements ICacheService, PostJoinAwareService, QuorumAwareService {
+        implements ICacheService, PostJoinAwareService, PartitionAwareService, QuorumAwareService {
 
     protected final ConcurrentMap<String, CacheConfig> configs = new ConcurrentHashMap<String, CacheConfig>();
     protected final ConcurrentMap<String, CacheContext> cacheContexts = new ConcurrentHashMap<String, CacheContext>();
@@ -470,6 +474,42 @@ public abstract class AbstractCacheService
             postJoinCacheOperation.addCacheConfig(cacheConfigEntry.getValue());
         }
         return postJoinCacheOperation;
+    }
+
+
+    protected  void publishCachePartitionLostEvent(String cacheName, int partitionId) {
+        final Collection<EventRegistration> registrations = new LinkedList<EventRegistration>();
+        for (EventRegistration registration : getRegistrations(cacheName)) {
+            if (registration.getFilter() instanceof CachePartitionLostEventFilter) {
+                registrations.add(registration);
+            }
+        }
+
+        if (registrations.isEmpty()) {
+            return;
+        }
+        final Member member = nodeEngine.getLocalMember();
+        final CacheEventData eventData = new CachePartitionEventData(cacheName, partitionId, member);
+        final EventService eventService = nodeEngine.getEventService();
+
+        eventService.publishEvent(SERVICE_NAME, registrations, eventData, partitionId);
+
+    }
+
+    Collection<EventRegistration> getRegistrations(String cacheName) {
+        final EventService eventService = nodeEngine.getEventService();
+        return eventService.getRegistrations(SERVICE_NAME, cacheName);
+    }
+
+    @Override
+    public void onPartitionLost(InternalPartitionLostEvent partitionLostEvent) {
+        final int partitionId = partitionLostEvent.getPartitionId();
+        for (CacheConfig config : getCacheConfigs()) {
+            final String cacheName = config.getName();
+            if (config.getBackupCount() <= partitionLostEvent.getLostReplicaIndex()) {
+                publishCachePartitionLostEvent(cacheName, partitionId);
+            }
+        }
     }
 
     public void cacheEntryListenerRegistered(String name,

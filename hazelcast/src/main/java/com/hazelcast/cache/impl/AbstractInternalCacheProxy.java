@@ -16,10 +16,17 @@
 
 package com.hazelcast.cache.impl;
 
+import com.hazelcast.cache.impl.event.CachePartitionLostEventFilter;
+import com.hazelcast.cache.impl.event.CachePartitionLostListener;
+import com.hazelcast.cache.impl.event.InternalCachePartitionLostListenerAdapter;
 import com.hazelcast.cache.impl.operation.MutableOperation;
 import com.hazelcast.config.CacheConfig;
+import com.hazelcast.config.CachePartitionLostListenerConfig;
+import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
+import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.EventFilter;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
@@ -31,8 +38,10 @@ import javax.cache.CacheException;
 import javax.cache.configuration.CacheEntryListenerConfiguration;
 import javax.cache.expiry.ExpiryPolicy;
 import java.util.Collection;
+import java.util.EventListener;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -76,6 +85,19 @@ abstract class AbstractInternalCacheProxy<K, V>
         asyncListenerRegistrations = new ConcurrentHashMap<CacheEntryListenerConfiguration, String>();
         syncListenerRegistrations = new ConcurrentHashMap<CacheEntryListenerConfiguration, String>();
         syncLocks = new ConcurrentHashMap<Integer, CountDownLatch>();
+
+        final List<CachePartitionLostListenerConfig> configs = cacheConfig.getPartitionLostListenerConfigs();
+        for (CachePartitionLostListenerConfig listenerConfig : configs) {
+            final CachePartitionLostListener listener = initializeListener(listenerConfig);
+            if (listener != null) {
+                final InternalCachePartitionLostListenerAdapter listenerAdapter =
+                        new InternalCachePartitionLostListenerAdapter(listener);
+                final EventFilter filter = new CachePartitionLostEventFilter();
+                final ICacheService service = getService();
+                service.getNodeEngine().getEventService().registerListener(AbstractCacheService.SERVICE_NAME,
+                        name, filter, listenerAdapter);
+            }
+        }
     }
 
     protected <T> InternalCompletableFuture<T> invoke(Operation op, Data keyData, boolean completionOperation) {
@@ -357,4 +379,20 @@ abstract class AbstractInternalCacheProxy<K, V>
         }
     }
     //endregion Listener operations
+
+    private <T extends EventListener> T initializeListener(ListenerConfig listenerConfig) {
+        T listener = null;
+        if (listenerConfig.getImplementation() != null) {
+            listener = (T) listenerConfig.getImplementation();
+        } else if (listenerConfig.getClassName() != null) {
+            try {
+                return ClassLoaderUtil
+                        .newInstance(getNodeEngine().getConfigClassLoader(), listenerConfig.getClassName());
+            } catch (Exception e) {
+                throw ExceptionUtil.rethrow(e);
+            }
+        }
+        return listener;
+    }
+
 }

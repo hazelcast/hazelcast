@@ -16,11 +16,16 @@
 
 package com.hazelcast.cache.impl;
 
+import com.hazelcast.cache.impl.event.CachePartitionLostEventFilter;
+import com.hazelcast.cache.impl.event.CachePartitionLostListener;
+import com.hazelcast.cache.impl.event.InternalCachePartitionLostListenerAdapter;
 import com.hazelcast.cache.impl.operation.CacheListenerRegistrationOperation;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.Member;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.EventFilter;
+import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
@@ -348,5 +353,27 @@ public class CacheProxy<K, V>
     public Iterator<Entry<K, V>> iterator() {
         ensureOpen();
         return new ClusterWideIterator<K, V>(this);
+    }
+
+    @Override
+    public String addPartitionLostListener(CachePartitionLostListener listener) {
+        checkNotNull(listener, "CachePartitionLostListener can't be null");
+        final InternalCachePartitionLostListenerAdapter listenerAdapter =
+                new InternalCachePartitionLostListenerAdapter(listener);
+
+        final EventFilter filter = new CachePartitionLostEventFilter();
+        final ICacheService service = getService();
+        final EventRegistration registration = service.getNodeEngine().getEventService().
+                registerListener(AbstractCacheService.SERVICE_NAME, name, filter, listenerAdapter);
+        return registration.getId();
+    }
+
+    @Override
+    public boolean removePartitionLostListener(String id) {
+        checkNotNull(id, "Listener id should not be null!");
+        final ICacheService service = getService();
+        return service.getNodeEngine().getEventService().
+                deregisterListener(AbstractCacheService.SERVICE_NAME,
+                        name, id);
     }
 }

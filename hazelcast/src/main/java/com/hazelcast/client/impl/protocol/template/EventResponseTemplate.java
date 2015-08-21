@@ -79,5 +79,7 @@ public interface EventResponseTemplate {
     @EventResponse(EventMessageConst.EVENT_QUERYCACHEBATCH)
     void QueryCacheBatch(List<QueryCacheEventData> events, String source, int partitionId);
 
+    @EventResponse(EventMessageConst.EVENT_CACHEPARTITIONLOST)
+    void CachePartitionLost(int partitionId, String uuid);
 
 }

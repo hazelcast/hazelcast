@@ -16,6 +16,7 @@
 
 package com.hazelcast.cache;
 
+import com.hazelcast.cache.impl.event.CachePartitionLostListener;
 import com.hazelcast.core.ICompletableFuture;
 
 import javax.cache.expiry.ExpiryPolicy;
@@ -943,5 +944,33 @@ public interface ICache<K, V>
      * @return CacheStatistics instance or an empty statistics if not enabled.
      */
     CacheStatistics getLocalCacheStatistics();
+
+    /**
+     * Adds a CachePartitionLostListener.
+     * <p/>
+     * The addPartitionLostListener returns a register-id. This id is needed to remove the CachePartitionLostListener using the
+     * {@link #removePartitionLostListener(String)} method.
+     * <p/>
+     * There is no check for duplicate registrations, so if you register the listener twice, it will get events twice.
+     * IMPORTANT: Please @see com.hazelcast.partition.PartitionLostListener for weaknesses.
+     * IMPORTANT: Listeners registered from HazelcastClient may miss some of the cache partition lost events due
+     * to design limitations.
+     *
+     * @param listener the added CachePartitionLostListener.
+     * @return returns the registration id for the CachePartitionLostListener.
+     * @throws java.lang.NullPointerException if listener is null.
+     * @see #removePartitionLostListener(String)
+     */
+    String addPartitionLostListener(CachePartitionLostListener listener);
+
+    /**
+     * Removes the specified cache partition lost listener.
+     * Returns silently if there is no such listener added before.
+     *
+     * @param id id of registered listener.
+     * @return true if registration is removed, false otherwise.
+     * @throws java.lang.NullPointerException if the given id is null.
+     */
+    boolean removePartitionLostListener(String id);
 
 }

@@ -1033,6 +1033,8 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
                 cacheConfig.setEvictionConfig(getEvictionConfig(n));
             } else if ("quorum-ref".equals(nodeName)) {
                 cacheConfig.setQuorumName(value);
+            } else if ("partition-lost-listeners".equals(nodeName)) {
+                cachePartitionLostListenerHandle(n, cacheConfig);
             }
         }
         this.config.addCacheConfig(cacheConfig);
@@ -1168,6 +1170,16 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
             }
         }
         cacheConfig.setWanReplicationRef(wanReplicationRef);
+    }
+
+    private void cachePartitionLostListenerHandle(Node n, CacheSimpleConfig cacheConfig) {
+        for (org.w3c.dom.Node listenerNode : new IterableNodeList(n.getChildNodes())) {
+            if ("partition-lost-listener".equals(cleanNodeName(listenerNode))) {
+                String listenerClass = getTextContent(listenerNode);
+                cacheConfig.addCachePartitionLostListenerConfig(
+                        new CachePartitionLostListenerConfig(listenerClass));
+            }
+        }
     }
 
     private void cacheListenerHandle(Node n, CacheSimpleConfig cacheSimpleConfig) {

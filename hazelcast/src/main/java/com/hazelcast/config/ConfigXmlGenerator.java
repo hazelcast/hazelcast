@@ -454,6 +454,9 @@ public class ConfigXmlGenerator {
 
             wanReplicationConfigXmlGenerator(xml, c.getWanReplicationRef());
 
+            cachePartitionLostListenerConfigXmlGenerator(xml,
+                    c.getPartitionLostListenerConfigs());
+
             evictionConfigXmlGenerator(xml, c.getEvictionConfig());
 
             if (c.getQuorumName() != null) {
@@ -463,6 +466,21 @@ public class ConfigXmlGenerator {
             xml.append("</cache>");
         }
     }
+
+    private void cachePartitionLostListenerConfigXmlGenerator(StringBuilder xml, List<CachePartitionLostListenerConfig> configs) {
+        if (!configs.isEmpty()) {
+            xml.append("<partition-lost-listeners>");
+            for (CachePartitionLostListenerConfig c : configs) {
+                xml.append("<partition-lost-listener>");
+                final String clazz = c.getImplementation()
+                        != null ? c.getImplementation().getClass().getName() : c.getClassName();
+                xml.append(clazz);
+                xml.append("</partition-lost-listener>");
+            }
+            xml.append("</partition-lost-listeners>");
+        }
+    }
+
 
     private void mapPartitionStrategyConfigXmlGenerator(StringBuilder xml, MapConfig m) {
         if (m.getPartitioningStrategyConfig() != null) {

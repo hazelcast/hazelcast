@@ -18,13 +18,18 @@ package com.hazelcast.client.cache.impl;
 
 import com.hazelcast.cache.impl.CacheEntryProcessorResult;
 import com.hazelcast.cache.impl.CacheEventListenerAdaptor;
+import com.hazelcast.cache.impl.CacheEventType;
 import com.hazelcast.cache.impl.CacheProxyUtil;
 import com.hazelcast.cache.impl.client.CacheAddEntryListenerRequest;
+import com.hazelcast.cache.impl.client.CacheAddPartitionLostListenerRequest;
 import com.hazelcast.cache.impl.client.CacheContainsKeyRequest;
 import com.hazelcast.cache.impl.client.CacheEntryProcessorRequest;
 import com.hazelcast.cache.impl.client.CacheListenerRegistrationRequest;
 import com.hazelcast.cache.impl.client.CacheLoadAllRequest;
 import com.hazelcast.cache.impl.client.CacheRemoveEntryListenerRequest;
+import com.hazelcast.cache.impl.client.CacheRemovePartitionLostListenerRequest;
+import com.hazelcast.cache.impl.event.CachePartitionLostEvent;
+import com.hazelcast.cache.impl.event.CachePartitionLostListener;
 import com.hazelcast.cache.impl.nearcache.NearCache;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.spi.ClientContext;
@@ -35,6 +40,7 @@ import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.Member;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.impl.PortableCachePartitionLostEvent;
 import com.hazelcast.spi.impl.SerializableList;
 import com.hazelcast.util.ExceptionUtil;
 
@@ -357,4 +363,52 @@ public class ClientCacheProxy<K, V>
         return new ClientClusterWideIterator<K, V>(this, clientContext);
     }
 
+
+    @Override
+    public String addPartitionLostListener(CachePartitionLostListener listener) {
+        ensureOpen();
+        if (listener == null) {
+            throw new NullPointerException("CachePartitionLostListener can't be null");
+        }
+        final EventHandler<PortableCachePartitionLostEvent> handler = new ClientCachePartitionLostEventHandler(listener);
+        final CacheAddPartitionLostListenerRequest registrationRequest =
+                new CacheAddPartitionLostListenerRequest(name);
+        return  clientContext.getListenerService().startListening(registrationRequest, null, handler);
+    }
+
+    @Override
+    public boolean removePartitionLostListener(String id) {
+        ensureOpen();
+        if (id == null) {
+            throw new NullPointerException("Registration id can't be null");
+        }
+        final CacheRemovePartitionLostListenerRequest request = new CacheRemovePartitionLostListenerRequest(name, id);
+        return clientContext.getListenerService().stopListening(request, id);
+    }
+
+    private class ClientCachePartitionLostEventHandler implements EventHandler<PortableCachePartitionLostEvent> {
+
+        private CachePartitionLostListener listener;
+
+        public ClientCachePartitionLostEventHandler(CachePartitionLostListener listener) {
+            this.listener = listener;
+        }
+
+        @Override
+        public void handle(PortableCachePartitionLostEvent event) {
+            final Member member = clientContext.getClusterService().getMember(event.getUuid());
+            listener.partitionLost(new CachePartitionLostEvent(name, member, CacheEventType.PARTITION_LOST.getType(),
+                    event.getPartitionId()));
+        }
+
+        @Override
+        public void beforeListenerRegister() {
+
+        }
+
+        @Override
+        public void onListenerRegister() {
+
+        }
+    }
 }

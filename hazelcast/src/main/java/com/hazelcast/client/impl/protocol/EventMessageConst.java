@@ -44,4 +44,6 @@ public final class EventMessageConst {
     //ENTERPRISE
     public static final int EVENT_QUERYCACHESINGLE = 212;
     public static final int EVENT_QUERYCACHEBATCH = 213;
+
+    public static final int EVENT_CACHEPARTITIONLOST = 214;
 }

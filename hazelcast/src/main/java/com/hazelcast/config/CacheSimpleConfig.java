@@ -88,6 +88,8 @@ public class CacheSimpleConfig {
 
     private String quorumName;
 
+    private List<CachePartitionLostListenerConfig> partitionLostListenerConfigs;
+
     public CacheSimpleConfig(CacheSimpleConfig cacheSimpleConfig) {
         this.name = cacheSimpleConfig.name;
         this.keyType = cacheSimpleConfig.keyType;
@@ -108,6 +110,8 @@ public class CacheSimpleConfig {
             this.evictionConfig = cacheSimpleConfig.evictionConfig;
         }
         this.wanReplicationRef = cacheSimpleConfig.wanReplicationRef;
+        this.partitionLostListenerConfigs =
+                new ArrayList<CachePartitionLostListenerConfig>(cacheSimpleConfig.getPartitionLostListenerConfigs());
         this.quorumName = cacheSimpleConfig.quorumName;
     }
 
@@ -500,6 +504,39 @@ public class CacheSimpleConfig {
      */
     public CacheSimpleConfig setQuorumName(String quorumName) {
         this.quorumName = quorumName;
+        return this;
+    }
+
+    /**
+     * Gets the partition lost listener references added to cache config
+     *
+     * @return List of CachePartitionLostListenerConfig.
+     */
+    public List<CachePartitionLostListenerConfig> getPartitionLostListenerConfigs() {
+        if (partitionLostListenerConfigs == null) {
+            partitionLostListenerConfigs = new ArrayList<CachePartitionLostListenerConfig>();
+        }
+        return partitionLostListenerConfigs;
+    }
+
+    /**
+     * Sets the PartitionLostListenerConfigs
+     *
+     * @param partitionLostListenerConfigs CachePartitionLostListenerConfig list.
+     */
+    public CacheSimpleConfig setPartitionLostListenerConfigs(
+            List<CachePartitionLostListenerConfig> partitionLostListenerConfigs) {
+        this.partitionLostListenerConfigs = partitionLostListenerConfigs;
+        return this;
+    }
+
+    /**
+     * Adds the CachePartitionLostListenerConfig to partitionLostListenerConfigs
+     *
+     * @param listenerConfig CachePartitionLostListenerConfig to be added.
+     */
+    public CacheSimpleConfig addCachePartitionLostListenerConfig(CachePartitionLostListenerConfig listenerConfig) {
+        getPartitionLostListenerConfigs().add(listenerConfig);
         return this;
     }
 

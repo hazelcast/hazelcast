@@ -101,6 +101,10 @@ public abstract class AbstractPartitionLostListenerTest
         return "map-" + i;
     }
 
+    final protected String getIthCacheName(final int i) {
+        return "cache-" + i;
+    }
+
     final protected Map<Integer, Integer> getMinReplicaIndicesByPartitionId(final List<HazelcastInstance> instances) {
         final Map<Integer, Integer> survivingPartitions = new HashMap<Integer, Integer>();
         for (HazelcastInstance instance : instances) {
