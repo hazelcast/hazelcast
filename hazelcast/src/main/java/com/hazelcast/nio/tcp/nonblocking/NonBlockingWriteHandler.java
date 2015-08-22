@@ -322,34 +322,29 @@ public final class NonBlockingWriteHandler extends AbstractSelectionHandler impl
 
     @Override
     @SuppressWarnings("unchecked")
-    public void handle() {
-        try {
-            eventCount.inc();
-            lastWriteTime = Clock.currentTimeMillis();
+    public void handle() throws Exception {
+        eventCount.inc();
+        lastWriteTime = Clock.currentTimeMillis();
 
-            if (shutdown) {
-                return;
-            }
+        if (shutdown) {
+            return;
+        }
 
-            if (socketWriter == null) {
-                logger.log(Level.WARNING, "SocketWriter is not set, creating SocketWriter with CLUSTER protocol!");
-                createWriter(CLUSTER);
-            }
+        if (socketWriter == null) {
+            logger.log(Level.WARNING, "SocketWriter is not set, creating SocketWriter with CLUSTER protocol!");
+            createWriter(CLUSTER);
+        }
 
-            fillOutputBuffer();
+        fillOutputBuffer();
 
-            if (dirtyOutputBuffer()) {
-                writeOutputBufferToSocket();
-            }
+        if (dirtyOutputBuffer()) {
+            writeOutputBufferToSocket();
+        }
 
-            if (newOwner == null) {
-                unschedule();
-            } else {
-                startMigration();
-            }
-        } catch (Throwable t) {
-            logger.severe("Fatal Error at WriteHandler for endPoint: " + connection.getEndPoint(), t);
-            handleSocketException(t);
+        if (newOwner == null) {
+            unschedule();
+        } else {
+            startMigration();
         }
     }
 

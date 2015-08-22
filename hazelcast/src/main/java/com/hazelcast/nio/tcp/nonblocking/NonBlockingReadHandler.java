@@ -121,7 +121,6 @@ public final class NonBlockingReadHandler extends AbstractSelectionHandler imple
             @Override
             public void run() {
                 getSelectionKey();
-
             }
         });
     }
@@ -142,45 +141,41 @@ public final class NonBlockingReadHandler extends AbstractSelectionHandler imple
     }
 
     @Override
-    public void handle() {
-        try {
-            eventCount.inc();
-            // we are going to set the timestamp even if the socketChannel is going to fail reading. In that case
-            // the connection is going to be closed anyway.
-            lastReadTime = Clock.currentTimeMillis();
+    public void handle() throws Exception {
+        eventCount.inc();
+        // we are going to set the timestamp even if the socketChannel is going to fail reading. In that case
+        // the connection is going to be closed anyway.
+        lastReadTime = Clock.currentTimeMillis();
 
-            if (!connection.isAlive()) {
-                logger.finest("We are being asked to read, but connection is not live so we won't");
-                return;
-            }
+        if (!connection.isAlive()) {
+            logger.finest("We are being asked to read, but connection is not live so we won't");
+            return;
+        }
 
+        if (socketReader == null) {
+            initializeSocketReader();
             if (socketReader == null) {
-                initializeSocketReader();
-                if (socketReader == null) {
-                    // when using SSL, we can read 0 bytes since data read from socket can be handshake packets.
-                    return;
-                }
-            }
-
-            int readBytes = socketChannel.read(inputBuffer);
-            if (readBytes <= 0) {
-                if (readBytes == -1) {
-                    throw new EOFException("Remote socket closed!");
-                }
+                // when using SSL, we can read 0 bytes since data read from socket can be handshake packets.
                 return;
             }
+        }
 
-            bytesRead.inc(readBytes);
-
-            inputBuffer.flip();
-            socketReader.read(inputBuffer);
-            if (inputBuffer.hasRemaining()) {
-                inputBuffer.compact();
-            } else {
-                inputBuffer.clear();
+        int readBytes = socketChannel.read(inputBuffer);
+        if (readBytes <= 0) {
+            if (readBytes == -1) {
+                throw new EOFException("Remote socket closed!");
             }
-        } catch (Throwable t) {
-            handleSocketException(t);
+            return;
+        }
+
+        bytesRead.inc(readBytes);
+
+        inputBuffer.flip();
+        socketReader.read(inputBuffer);
+        if (inputBuffer.hasRemaining()) {
+            inputBuffer.compact();
+        } else {
+            inputBuffer.clear();
         }
     }
 

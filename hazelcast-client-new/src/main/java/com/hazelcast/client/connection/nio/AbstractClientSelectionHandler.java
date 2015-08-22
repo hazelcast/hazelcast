@@ -45,7 +45,8 @@ public abstract class AbstractClientSelectionHandler implements SelectionHandler
     protected void shutdown() {
     }
 
-    final void handleSocketException(Throwable e) {
+    @Override
+    public final void onFailure(Throwable e) {
         if (sk != null) {
             sk.cancel();
         }
@@ -75,7 +76,7 @@ public abstract class AbstractClientSelectionHandler implements SelectionHandler
                 }
             }
         } catch (Throwable e) {
-            handleSocketException(e);
+            onFailure(e);
         }
     }
 
