@@ -41,11 +41,11 @@ import com.hazelcast.spi.impl.MutatingOperation;
 import com.hazelcast.util.Clock;
 
 import java.io.IOException;
-import java.util.AbstractMap;
 import java.util.Map;
 
 import static com.hazelcast.map.impl.EntryViews.createSimpleEntryView;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
+import static com.hazelcast.map.impl.recordstore.RecordStore.DEFAULT_TTL;
 
 /**
  * GOTCHA : This operation LOADS missing keys from map-store, in contrast with PartitionWideEntryOperation.
@@ -185,7 +185,7 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
     private boolean entryAddedOrUpdated(Map.Entry entry, long now) {
         final Object value = entry.getValue();
         if (value != null) {
-            put(value);
+            recordStore.put(dataKey, value, DEFAULT_TTL, false);
             getLocalMapStats().incrementPuts(getLatencyFrom(now));
             eventType = pickEventTypeOrNull(entry);
             return true;
@@ -209,10 +209,6 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
         }
         // return null for read only operations.
         return null;
-    }
-
-    private void put(Object value) {
-        recordStore.put(new AbstractMap.SimpleImmutableEntry<Data, Object>(dataKey, value));
     }
 
 

@@ -80,7 +80,7 @@ public class TxnSetOperation extends BasePutOperation implements MapTxnOperation
                 dataOldValue = record == null ? null : mapServiceContext.toData(record.getValue());
             }
             eventType = record == null ? EntryEventType.ADDED : EntryEventType.UPDATED;
-            recordStore.set(dataKey, dataValue, ttl);
+            recordStore.put(dataKey, dataValue, ttl, false);
             shouldBackup = true;
         }
     }

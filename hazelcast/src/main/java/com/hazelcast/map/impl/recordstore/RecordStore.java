@@ -36,11 +36,11 @@ import java.util.Set;
  */
 public interface RecordStore {
 
+    long DEFAULT_TTL = -1L;
+
     String getName();
 
-    Object put(Data dataKey, Object dataValue, long ttl);
-
-    void put(Map.Entry<Data, Object> entry);
+    Object put(Data dataKey, Object dataValue, long ttl, boolean fetchOldValue);
 
     Object putIfAbsent(Data dataKey, Object value, long ttl);
 
@@ -54,10 +54,6 @@ public interface RecordStore {
      * @return previous record if exists otherwise null.
      */
     Record putBackup(Data key, Object value, long ttl, boolean putTransient);
-
-    boolean tryPut(Data dataKey, Object value, long ttl);
-
-    boolean set(Data dataKey, Object value, long ttl);
 
     Object remove(Data dataKey);
 
@@ -292,6 +288,8 @@ public interface RecordStore {
      **/
     void loadAll(boolean replaceExistingValues);
 
-    /** Performs initial loading from a MapLoader if it has not been done before  **/
+    /**
+     * Performs initial loading from a MapLoader if it has not been done before
+     **/
     void maybeDoInitialLoad();
 }

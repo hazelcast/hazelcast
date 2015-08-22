@@ -31,7 +31,7 @@ public final class PutOperation extends BasePutOperation implements IdentifiedDa
 
     @Override
     public void run() {
-        dataOldValue = mapService.getMapServiceContext().toData(recordStore.put(dataKey, dataValue, ttl));
+        dataOldValue = mapService.getMapServiceContext().toData(recordStore.put(dataKey, dataValue, ttl, true));
     }
 
     @Override
