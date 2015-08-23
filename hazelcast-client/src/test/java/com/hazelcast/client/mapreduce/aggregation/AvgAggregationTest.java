@@ -23,8 +23,6 @@ import com.hazelcast.mapreduce.aggregation.Supplier;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.test.annotation.Repeat;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -151,7 +149,6 @@ public class AvgAggregationTest
     }
 
     @Test(timeout = 60000)
-    @Repeat(100)
     public void testBigDecimalAvgWithExtractor()
             throws Exception {
 
