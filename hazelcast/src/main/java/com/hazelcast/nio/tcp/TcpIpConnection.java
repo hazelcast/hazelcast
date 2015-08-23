@@ -63,13 +63,13 @@ public final class TcpIpConnection implements Connection {
     public TcpIpConnection(TcpIpConnectionManager connectionManager,
                            int connectionId,
                            SocketChannelWrapper socketChannel,
-                           TcpIpConnectionThreadingModel threadingModel) {
+                           IOThreadingModel ioThreadingModel) {
         this.connectionId = connectionId;
         this.logger = connectionManager.getIoService().getLogger(TcpIpConnection.class.getName());
         this.connectionManager = connectionManager;
         this.socketChannel = socketChannel;
-        this.writeHandler = threadingModel.newWriteHandler(this);
-        this.readHandler = threadingModel.newReadHandler(this);
+        this.writeHandler = ioThreadingModel.newWriteHandler(this);
+        this.readHandler = ioThreadingModel.newReadHandler(this);
     }
 
     public ReadHandler getReadHandler() {

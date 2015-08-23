@@ -140,8 +140,8 @@ public abstract class AbstractSelectionHandler implements MigratableHandler {
     private void completeMigration(NonBlockingIOThread newOwner) {
         assert ioThread == newOwner;
 
-        NonBlockingTcpIpConnectionThreadingModel threadingModel =
-                (NonBlockingTcpIpConnectionThreadingModel) connection.getConnectionManager().getThreadingModel();
+        NonBlockingIOThreadingModel threadingModel =
+                (NonBlockingIOThreadingModel) connection.getConnectionManager().getIoThreadingModel();
         threadingModel.getIOBalancer().signalMigrationComplete();
 
         if (!socketChannel.isOpen()) {

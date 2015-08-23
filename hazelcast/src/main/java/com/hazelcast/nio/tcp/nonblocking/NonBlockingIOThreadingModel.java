@@ -23,7 +23,7 @@ import com.hazelcast.logging.LoggingService;
 import com.hazelcast.nio.IOService;
 import com.hazelcast.nio.tcp.ReadHandler;
 import com.hazelcast.nio.tcp.TcpIpConnection;
-import com.hazelcast.nio.tcp.TcpIpConnectionThreadingModel;
+import com.hazelcast.nio.tcp.IOThreadingModel;
 import com.hazelcast.nio.tcp.WriteHandler;
 import com.hazelcast.nio.tcp.nonblocking.iobalancer.IOBalancer;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -35,7 +35,15 @@ import static java.lang.Boolean.getBoolean;
 import static java.util.logging.Level.FINE;
 import static java.util.logging.Level.INFO;
 
-public class NonBlockingTcpIpConnectionThreadingModel implements TcpIpConnectionThreadingModel {
+/**
+ * A non blocking {@link IOThreadingModel} implementation that makes use of {@link java.nio.channels.Selector} to have a
+ * limited set of io threads, handle an arbitrary number of connections.
+ *
+ * By default the {@link NonBlockingIOThread} blocks on the Selector, but it can be put in a 'selectNow' mode that makes it
+ * spinning on the selector. This is an experimental feature and will cause the io threads to run hot. For this reason, when
+ * this feature is enabled, the number of io threads should be reduced (preferably 1).
+ */
+public class NonBlockingIOThreadingModel implements IOThreadingModel {
 
     private final NonBlockingInputThread[] inputThreads;
     private final NonBlockingOutputThread[] outputThreads;
@@ -46,11 +54,12 @@ public class NonBlockingTcpIpConnectionThreadingModel implements TcpIpConnection
     private final MetricsRegistry metricsRegistry;
     private final LoggingService loggingService;
     private final HazelcastThreadGroup hazelcastThreadGroup;
+    // experimental settings; will be disabled by default.
     private boolean inputSelectNow = getBoolean("hazelcast.io.input.thread.selectNow");
     private boolean outputSelectNow = getBoolean("hazelcast.io.output.thread.selectNow");
     private volatile IOBalancer ioBalancer;
 
-    public NonBlockingTcpIpConnectionThreadingModel(
+    public NonBlockingIOThreadingModel(
             IOService ioService,
             LoggingService loggingService,
             MetricsRegistry metricsRegistry,
@@ -59,7 +68,7 @@ public class NonBlockingTcpIpConnectionThreadingModel implements TcpIpConnection
         this.hazelcastThreadGroup = hazelcastThreadGroup;
         this.metricsRegistry = metricsRegistry;
         this.loggingService = loggingService;
-        this.logger = ioService.getLogger(NonBlockingTcpIpConnectionThreadingModel.class.getName());
+        this.logger = loggingService.getLogger(NonBlockingIOThreadingModel.class);
         this.inputThreads = new NonBlockingInputThread[ioService.getInputSelectorThreadCount()];
         this.outputThreads = new NonBlockingOutputThread[ioService.getOutputSelectorThreadCount()];
     }

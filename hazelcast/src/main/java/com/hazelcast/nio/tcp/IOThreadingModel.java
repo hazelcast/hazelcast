@@ -16,17 +16,19 @@
 
 package com.hazelcast.nio.tcp;
 
+import com.hazelcast.nio.tcp.nonblocking.NonBlockingIOThreadingModel;
+
 /**
  * An abstract of the threading model used by the {@link TcpIpConnection}.
  *
- * The default implementation of this is the {@link com.hazelcast.nio.tcp.nonblocking.NonBlockingTcpIpConnectionThreadingModel}
- * that relies on selectors. But also different implementations can be added like spinning, thread per connection etc.
+ * The default implementation of this is the {@link NonBlockingIOThreadingModel} that relies on selectors. But also
+ * different implementations can be added like spinning, thread per connection etc.
  *
  * Apart from providing a hook to add new functionality, it also simplifies the {@link TcpIpConnection} and
- * {@link TcpIpConnectionManager} since a lot of complexity is moved out into a self contained module; keeping them
- * more pure.
+ * {@link TcpIpConnectionManager} since the IOThreadingModel provides a separation of concerns. The TcpIpConnectManager
+ * is responsible for managing connections, the IOThreadingModel is responsible for providing threads to the connections.
  */
-public interface TcpIpConnectionThreadingModel {
+public interface IOThreadingModel {
 
     /**
      * Tells whether or not every I/O operation on SocketChannel should block until it completes.

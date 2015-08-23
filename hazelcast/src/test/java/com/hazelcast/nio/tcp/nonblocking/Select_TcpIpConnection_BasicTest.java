@@ -13,7 +13,7 @@ public class Select_TcpIpConnection_BasicTest extends TcpIpConnection_BasicTest 
 
     @Before
     public void setup() throws Exception {
-        threadingModelFactory = new Select_NonBlockingTcpIpConnectionThreadingModelFactory();
+        threadingModelFactory = new Select_NonBlockingIOThreadingModelFactory();
         super.setup();
     }
 }
