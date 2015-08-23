@@ -7,6 +7,7 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.annotation.Repeat;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -112,6 +113,8 @@ public abstract class TcpIpConnection_BasicTest extends TcpIpConnection_Abstract
         assertTrue(current - marginOfErrorMs < result);
     }
 
+    @Ignore
+    @Repeat
     @Test
     public void lastWriteTime_whenNothingWritten() {
         TcpIpConnection c = connect(connManagerA, addressB);
@@ -124,8 +127,9 @@ public abstract class TcpIpConnection_BasicTest extends TcpIpConnection_Abstract
 
     // we check the lastReadTime by sending a packet on the local connection, and
     // on the remote side we check the if the lastReadTime is updated
-    //@Test
-    //@Repeat(100)
+    @Test
+    @Ignore
+    @Repeat(100)
     public void lastReadTime() {
         TcpIpConnection connAB = connect(connManagerA, addressB);
         TcpIpConnection connBA = connect(connManagerB, addressA);
