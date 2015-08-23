@@ -2,14 +2,14 @@ package com.hazelcast.nio.tcp.nonblocking;
 
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.nio.tcp.MockIOService;
-import com.hazelcast.nio.tcp.TcpIpConnectionThreadingModelFactory;
+import com.hazelcast.nio.tcp.IOThreadingModelFactory;
 
-public class SelectNow_NonBlockingTcpIpConnectionThreadingModelFactory implements TcpIpConnectionThreadingModelFactory {
+public class SelectNow_NonBlockingIOThreadingModelFactory implements IOThreadingModelFactory {
 
     @Override
-    public NonBlockingTcpIpConnectionThreadingModel create(
+    public NonBlockingIOThreadingModel create(
             MockIOService ioService, MetricsRegistry metricsRegistry) {
-        NonBlockingTcpIpConnectionThreadingModel threadingModel = new NonBlockingTcpIpConnectionThreadingModel(
+        NonBlockingIOThreadingModel threadingModel = new NonBlockingIOThreadingModel(
                 ioService,
                 ioService.loggingService,
                 metricsRegistry,

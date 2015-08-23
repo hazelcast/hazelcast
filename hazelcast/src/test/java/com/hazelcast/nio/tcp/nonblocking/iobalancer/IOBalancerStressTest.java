@@ -25,7 +25,7 @@ import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.nio.tcp.nonblocking.NonBlockingIOThread;
 import com.hazelcast.nio.tcp.nonblocking.NonBlockingInputThread;
 import com.hazelcast.nio.tcp.nonblocking.MigratableHandler;
-import com.hazelcast.nio.tcp.nonblocking.NonBlockingTcpIpConnectionThreadingModel;
+import com.hazelcast.nio.tcp.nonblocking.NonBlockingIOThreadingModel;
 import com.hazelcast.nio.tcp.nonblocking.NonBlockingOutputThread;
 import com.hazelcast.nio.tcp.nonblocking.NonBlockingReadHandler;
 import com.hazelcast.nio.tcp.TcpIpConnection;
@@ -106,7 +106,7 @@ public class IOBalancerStressTest extends HazelcastTestSupport {
     }
 
     public String debug(TcpIpConnectionManager connectionManager) {
-        NonBlockingTcpIpConnectionThreadingModel threadingModel = (NonBlockingTcpIpConnectionThreadingModel) connectionManager.getThreadingModel();
+        NonBlockingIOThreadingModel threadingModel = (NonBlockingIOThreadingModel) connectionManager.getIoThreadingModel();
 
         StringBuffer sb = new StringBuffer();
         sb.append("in selectors\n");

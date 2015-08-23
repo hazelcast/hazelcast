@@ -13,7 +13,7 @@ public class SelectNow_TcpIpConnection_TransferStressTest extends TcpIpConnectio
 
     @Before
     public void setup() throws Exception {
-        threadingModelFactory = new SelectNow_NonBlockingTcpIpConnectionThreadingModelFactory();
+        threadingModelFactory = new SelectNow_NonBlockingIOThreadingModelFactory();
         super.setup();
     }
 }

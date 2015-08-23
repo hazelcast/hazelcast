@@ -8,7 +8,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
-import com.hazelcast.nio.tcp.nonblocking.Select_NonBlockingTcpIpConnectionThreadingModelFactory;
+import com.hazelcast.nio.tcp.nonblocking.Select_NonBlockingIOThreadingModelFactory;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.After;
@@ -20,7 +20,7 @@ import static org.junit.Assert.assertNotNull;
 
 public abstract class TcpIpConnection_AbstractTest extends HazelcastTestSupport {
 
-    protected TcpIpConnectionThreadingModelFactory threadingModelFactory = new Select_NonBlockingTcpIpConnectionThreadingModelFactory();
+    protected IOThreadingModelFactory threadingModelFactory = new Select_NonBlockingIOThreadingModelFactory();
 
     protected ILogger logger;
     protected LoggingServiceImpl loggingService;

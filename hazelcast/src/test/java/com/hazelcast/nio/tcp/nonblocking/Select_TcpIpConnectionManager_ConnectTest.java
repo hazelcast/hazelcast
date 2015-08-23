@@ -13,7 +13,7 @@ public class Select_TcpIpConnectionManager_ConnectTest extends TcpIpConnectionMa
 
     @Before
     public void setup() throws Exception {
-        threadingModelFactory = new Select_NonBlockingTcpIpConnectionThreadingModelFactory();
+        threadingModelFactory = new Select_NonBlockingIOThreadingModelFactory();
         super.setup();
     }
 

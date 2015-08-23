@@ -30,7 +30,7 @@ import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.nio.IOService;
 import com.hazelcast.nio.MemberSocketInterceptor;
 import com.hazelcast.nio.Packet;
-import com.hazelcast.nio.tcp.nonblocking.NonBlockingTcpIpConnectionThreadingModel;
+import com.hazelcast.nio.tcp.nonblocking.NonBlockingIOThreadingModel;
 import com.hazelcast.spi.impl.PacketHandler;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
@@ -103,7 +103,7 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
 
     private final AtomicInteger connectionIdGen = new AtomicInteger();
 
-    private final TcpIpConnectionThreadingModel threadingModel;
+    private final IOThreadingModel ioThreadingModel;
 
     private volatile boolean live;
 
@@ -132,16 +132,16 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
                                   HazelcastThreadGroup threadGroup,
                                   LoggingService loggingService) {
         this(ioService, serverSocketChannel, loggingService, metricsRegistry,
-                new NonBlockingTcpIpConnectionThreadingModel(ioService, loggingService, metricsRegistry, threadGroup));
+                new NonBlockingIOThreadingModel(ioService, loggingService, metricsRegistry, threadGroup));
     }
 
     public TcpIpConnectionManager(IOService ioService,
                                   ServerSocketChannel serverSocketChannel,
                                   LoggingService loggingService,
                                   MetricsRegistry metricsRegistry,
-                                  TcpIpConnectionThreadingModel tcpIpConnectionThreadingModel) {
+                                  IOThreadingModel ioThreadingModel) {
         this.ioService = ioService;
-        this.threadingModel = tcpIpConnectionThreadingModel;
+        this.ioThreadingModel = ioThreadingModel;
         this.serverSocketChannel = serverSocketChannel;
         this.loggingService = loggingService;
         this.logger = loggingService.getLogger(TcpIpConnectionManager.class);
@@ -157,8 +157,8 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
         return ioService;
     }
 
-    public TcpIpConnectionThreadingModel getThreadingModel() {
-        return threadingModel;
+    public IOThreadingModel getIoThreadingModel() {
+        return ioThreadingModel;
     }
 
     public void interceptSocket(Socket socket, boolean onAccept) throws IOException {
@@ -329,14 +329,14 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
                 this,
                 connectionIdGen.incrementAndGet(),
                 channel,
-                threadingModel);
+                ioThreadingModel);
 
         connection.setEndPoint(endpoint);
         activeConnections.add(connection);
         acceptedSockets.remove(channel);
 
         connection.start();
-        threadingModel.onConnectionAdded(connection);
+        ioThreadingModel.onConnectionAdded(connection);
 
         logger.info("Established socket connection between "
                 + channel.socket().getLocalSocketAddress() + " and " + channel.socket().getRemoteSocketAddress());
@@ -399,7 +399,7 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
             connectionsMap.remove(endPoint, connection);
             // this should not be needed; but some tests are using DroppingConnection which is not a TcpIpConnection.
             if (connection instanceof TcpIpConnection) {
-                threadingModel.onConnectionRemoved((TcpIpConnection) connection);
+                ioThreadingModel.onConnectionRemoved((TcpIpConnection) connection);
             }
             if (live) {
                 ioService.getEventService().executeEventCallback(new StripedRunnable() {
@@ -445,7 +445,7 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
         live = true;
         logger.finest("Starting ConnectionManager and IO selectors.");
 
-        threadingModel.start();
+        ioThreadingModel.start();
         startAcceptorThread();
     }
 
@@ -485,7 +485,7 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
         for (TcpIpConnection conn : activeConnections) {
             destroySilently(conn);
         }
-        threadingModel.shutdown();
+        ioThreadingModel.shutdown();
         acceptedSockets.clear();
         connectionsInProgress.clear();
         connectionsMap.clear();
