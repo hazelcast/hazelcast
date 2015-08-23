@@ -40,7 +40,7 @@ public interface ClassDefinition {
      *
      * @param fieldIndex index of the field
      * @return field definition by given index
-     * @throws java.lang.IndexOutOfBoundsException
+     * @throws java.lang.IndexOutOfBoundsException if the fieldIndex is invalid.
      */
     FieldDefinition getField(int fieldIndex);
 
