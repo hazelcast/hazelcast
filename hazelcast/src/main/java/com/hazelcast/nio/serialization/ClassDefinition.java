@@ -28,12 +28,16 @@ import java.util.Set;
 public interface ClassDefinition {
 
     /**
+     * Gets the FieldDefinition for a particular field.
+     *
      * @param name name of the field
      * @return field definition by given name or null
      */
     FieldDefinition getField(String name);
 
     /**
+     * Gets the FieldDefinition for a given fieldIndex.
+     *
      * @param fieldIndex index of the field
      * @return field definition by given index
      * @throws java.lang.IndexOutOfBoundsException
@@ -41,27 +45,35 @@ public interface ClassDefinition {
     FieldDefinition getField(int fieldIndex);
 
     /**
+     * Checks if there exists a FieldDefinition with the given fieldName.
+     *
      * @param fieldName field name
      * @return true if this class definition contains a field named by given name
      */
     boolean hasField(String fieldName);
 
     /**
+     * Returns a Set of all field names.
+     *
      * @return all field names contained in this class definition
      */
     Set<String> getFieldNames();
 
     /**
+     * Get the FieldType for a given fieldName.
+     *
      * @param fieldName name of the field
      * @return type of given field
-     * @throws java.lang.IllegalArgumentException
+     * @throws java.lang.IllegalArgumentException if the field does not exist.
      */
     FieldType getFieldType(String fieldName);
 
     /**
+     * Gets the class id of a field.
+     *
      * @param fieldName name of the field
      * @return class id of given field
-     * @throws java.lang.IllegalArgumentException
+     * @throws java.lang.IllegalArgumentException if the field does not not exist
      */
     int getFieldClassId(String fieldName);
 
