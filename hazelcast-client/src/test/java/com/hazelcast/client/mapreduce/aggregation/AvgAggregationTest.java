@@ -149,7 +149,6 @@ public class AvgAggregationTest
     }
 
     @Test(timeout = 60000)
-    @Repeat(100)
     public void testBigDecimalAvgWithExtractor()
             throws Exception {
 
