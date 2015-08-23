@@ -120,7 +120,11 @@ public final class NonBlockingSocketReader extends AbstractHandler implements So
         ioThread.addTaskAndWakeup(new Runnable() {
             @Override
             public void run() {
-                getSelectionKey();
+                try {
+                    getSelectionKey();
+                } catch (Throwable t) {
+                    onFailure(t);
+                }
             }
         });
     }
@@ -271,7 +275,11 @@ public final class NonBlockingSocketReader extends AbstractHandler implements So
                 return;
             }
 
-            startMigration(newOwner);
+            try {
+                startMigration(newOwner);
+            } catch (Throwable t) {
+                onFailure(t);
+            }
         }
     }
 }
