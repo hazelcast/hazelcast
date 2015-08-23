@@ -20,8 +20,7 @@ import java.util.Set;
 
 /**
  * ClassDefinition defines a class schema for Portable classes. It allows to query field names, types, class id etc.
- * It can be created manually using {@link ClassDefinitionBuilder}
- * or ondemand during serialization phase.
+ * It can be created manually using {@link ClassDefinitionBuilder} or on-demand during serialization phase.
  *
  * @see com.hazelcast.nio.serialization.Portable
  * @see ClassDefinitionBuilder
