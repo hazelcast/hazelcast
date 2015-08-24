@@ -42,7 +42,6 @@ import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.SocketInterceptor;
 import com.hazelcast.nio.tcp.nonblocking.NonBlockingIOThreadOutOfMemoryHandler;
 import com.hazelcast.nio.tcp.nonblocking.NonBlockingIOThread;
-import com.hazelcast.nio.tcp.nonblocking.NonBlockingInputThread;
 import com.hazelcast.nio.tcp.SocketChannelWrapper;
 import com.hazelcast.nio.tcp.SocketChannelWrapperFactory;
 import com.hazelcast.util.Clock;
@@ -127,10 +126,10 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     }
 
     protected void initializeSelectors(HazelcastClientInstanceImpl client) {
-        inputThread = new NonBlockingInputThread(
+        inputThread = new NonBlockingIOThread(
                 client.getThreadGroup(),
                 client.getName() + ".ClientInSelector",
-                Logger.getLogger(NonBlockingInputThread.class),
+                Logger.getLogger(NonBlockingIOThread.class),
                 OUT_OF_MEMORY_HANDLER);
         outSelector = new ClientNonBlockingOutputThread(
                 client.getThreadGroup(),
