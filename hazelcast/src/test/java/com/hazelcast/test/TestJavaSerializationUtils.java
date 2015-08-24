@@ -44,4 +44,34 @@ public final class TestJavaSerializationUtils {
         oos.writeObject(entry);
         return bos.toByteArray();
     }
+
+    public static Serializable newSerializableObject(int id) {
+        return new SerializableObject(id);
+    }
+
+
+
+    private static final class SerializableObject implements Serializable {
+        private final int id;
+
+        public SerializableObject(int id) {
+            this.id = id;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            SerializableObject that = (SerializableObject) o;
+
+            return id == that.id;
+
+        }
+
+        @Override
+        public int hashCode() {
+            return id;
+        }
+    }
 }
