@@ -234,6 +234,13 @@ public class NetworkConfig {
         return publicAddress;
     }
 
+    /**
+     * Overrides the public address of a member.
+     * Behind a NAT, two endpoints may not be able to see/access each other. 
+     * If both nodes set their public addresses to their defined addresses on NAT, then that way 
+     * they can communicate with each other.
+     * It should be set in the format “host IP address:port number”.
+     */
     public NetworkConfig setPublicAddress(String publicAddress) {
         this.publicAddress = publicAddress;
         return this;
