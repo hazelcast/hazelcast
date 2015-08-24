@@ -56,6 +56,8 @@ public final class NonBlockingWriteHandler extends AbstractSelectionHandler impl
 
     private static final long TIMEOUT = 3;
 
+    @Probe(name = "out.eventCount")
+    private final SwCounter eventCount = newSwCounter();
     @Probe(name = "out.writeQueueSize")
     private final Queue<SocketWritable> writeQueue = new ConcurrentLinkedQueue<SocketWritable>();
     @Probe(name = "out.priorityWriteQueueSize")
@@ -73,9 +75,6 @@ public final class NonBlockingWriteHandler extends AbstractSelectionHandler impl
     private volatile SocketWritable currentPacket;
     private SocketWriter socketWriter;
     private volatile long lastWriteTime;
-    @Probe(name = "out.eventCount")
-    //This field will be incremented by a single thread. It can be read by multiple threads.
-    private final SwCounter eventCount = newSwCounter();
 
     private boolean shutdown;
     // this field will be accessed by the NonBlockingIOThread or

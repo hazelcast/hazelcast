@@ -41,6 +41,8 @@ public class NonBlockingIOThread extends Thread implements OperationHostileThrea
 
     @Probe(name = "taskQueueSize")
     private final Queue<Runnable> taskQueue = new ConcurrentLinkedQueue<Runnable>();
+    @Probe
+    private final SwCounter eventCount = newSwCounter();
 
     private final ILogger logger;
 
@@ -51,9 +53,6 @@ public class NonBlockingIOThread extends Thread implements OperationHostileThrea
     private final boolean selectNow;
 
     private volatile long lastSelectTimeMs;
-
-    @Probe
-    private final SwCounter eventCount = newSwCounter();
 
     public NonBlockingIOThread(ThreadGroup threadGroup,
                                String threadName,
