@@ -39,6 +39,7 @@ import com.hazelcast.monitor.LocalMemoryStats;
 import com.hazelcast.monitor.LocalMultiMapStats;
 import com.hazelcast.monitor.LocalOperationStats;
 import com.hazelcast.monitor.LocalQueueStats;
+import com.hazelcast.monitor.LocalReplicatedMapStats;
 import com.hazelcast.monitor.LocalTopicStats;
 import com.hazelcast.monitor.TimedMemberState;
 import com.hazelcast.monitor.impl.LocalCacheStatsImpl;
@@ -50,6 +51,7 @@ import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.nio.Address;
 import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.spi.StatisticsAwareService;
 import com.hazelcast.topic.impl.TopicService;
 
@@ -175,6 +177,9 @@ public class TimedMemberStateFactory {
                 } else if (service instanceof DistributedExecutorService) {
                     count = handleExecutorService(memberState, count, config,
                             ((DistributedExecutorService) service).getStats(), longInstanceNames);
+                } else if (service instanceof ReplicatedMapService) {
+                    count = handleReplicatedMap(memberState, count, config, ((ReplicatedMapService) service).getStats(),
+                            longInstanceNames);
                 }
             }
         }
@@ -219,6 +224,22 @@ public class TimedMemberStateFactory {
                 LocalMultiMapStats stats = entry.getValue();
                 memberState.putLocalMultiMapStats(name, stats);
                 longInstanceNames.add("m:" + name);
+                ++count;
+            }
+        }
+        return count;
+    }
+
+    private int handleReplicatedMap(MemberStateImpl memberState, int count, Config
+            config, Map<String, LocalReplicatedMapStats> replicatedMaps, Set<String> longInstanceNames) {
+        for (Map.Entry<String, LocalReplicatedMapStats> entry : replicatedMaps.entrySet()) {
+            String name = entry.getKey();
+            if (count >= maxVisibleInstanceCount) {
+                break;
+            } else if (config.findReplicatedMapConfig(name).isStatisticsEnabled()) {
+                LocalReplicatedMapStats stats = entry.getValue();
+                memberState.putLocalReplicatedMapStats(name, stats);
+                longInstanceNames.add("r:" + name);
                 ++count;
             }
         }
@@ -279,6 +300,7 @@ public class TimedMemberStateFactory {
         longInstanceNames.add("j:" + config.getNameWithPrefix());
         return ++count;
     }
+
 
     private ICacheService getCacheService() {
         CacheDistributedObject setupRef = instance.getDistributedObject(CacheService.SERVICE_NAME, "setupRef");

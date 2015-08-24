@@ -37,8 +37,11 @@ public class MemberStateImplTest extends HazelcastTestSupport {
     public void testSerialization() {
         HazelcastInstance hazelcastInstance = createHazelcastInstance();
 
+        LocalReplicatedMapStatsImpl replicatedMapStats = new LocalReplicatedMapStatsImpl();
+        replicatedMapStats.incrementPuts(30);
         CacheStatisticsImpl cacheStatistics = new CacheStatisticsImpl();
         cacheStatistics.increaseCacheHits(5);
+        
 
         Collection<ClientEndPointDTO> clients = new ArrayList<ClientEndPointDTO>();
         ClientEndPointDTO client = new ClientEndPointDTO();
@@ -60,6 +63,7 @@ public class MemberStateImplTest extends HazelcastTestSupport {
         memberState.putLocalQueueStats("queueStats", new LocalQueueStatsImpl());
         memberState.putLocalTopicStats("topicStats", new LocalTopicStatsImpl());
         memberState.putLocalExecutorStats("executorStats", new LocalExecutorStatsImpl());
+        memberState.putLocalReplicatedMapStats("replicatedMapStats", replicatedMapStats);
         memberState.putLocalCacheStats("cacheStats", new LocalCacheStatsImpl(cacheStatistics));
         memberState.setRuntimeProps(runtimeProps);
         memberState.setLocalMemoryStats(new LocalMemoryStatsImpl());
@@ -75,6 +79,8 @@ public class MemberStateImplTest extends HazelcastTestSupport {
         assertNotNull(deserialized.getLocalQueueStats("queueStats").toString());
         assertNotNull(deserialized.getLocalTopicStats("topicStats").toString());
         assertNotNull(deserialized.getLocalExecutorStats("executorStats").toString());
+        assertNotNull(deserialized.getLocalReplicatedMapStats("replicatedMapStats").toString());
+        assertEquals(1,deserialized.getLocalReplicatedMapStats("replicatedMapStats").getPutOperationCount());
         assertNotNull(deserialized.getLocalCacheStats("cacheStats").toString());
         assertEquals(5, deserialized.getLocalCacheStats("cacheStats").getCacheHits());
         assertNotNull(deserialized.getRuntimeProps());
