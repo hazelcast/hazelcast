@@ -36,10 +36,12 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.core.IMapEvent;
 import com.hazelcast.core.MapEvent;
 import com.hazelcast.core.Member;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.MapPartitionLostEvent;
+import com.hazelcast.map.impl.LazyMapEntry;
 import com.hazelcast.map.impl.ListenerAdapter;
 import com.hazelcast.map.impl.MapEntrySet;
 import com.hazelcast.map.impl.MapKeySet;
@@ -114,6 +116,7 @@ import com.hazelcast.util.IterationType;
 import com.hazelcast.util.Preconditions;
 import com.hazelcast.util.QueryResultSet;
 import com.hazelcast.util.ThreadUtil;
+import com.hazelcast.util.collection.InflatableSet;
 import com.hazelcast.util.executor.CompletedFuture;
 import com.hazelcast.util.executor.DelegatingFuture;
 
@@ -699,11 +702,12 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
         MapKeySetRequest request = new MapKeySetRequest(name);
         MapKeySet mapKeySet = invoke(request);
         Set<Data> keySetData = mapKeySet.getKeySet();
-        Set<K> keySet = new HashSet<K>(keySetData.size());
+        InflatableSet<K> keySet = new InflatableSet<K>(keySetData.size());
         for (Data data : keySetData) {
             final K key = toObject(data);
             keySet.add(key);
         }
+        keySet.close();
         return keySet;
     }
 
@@ -763,8 +767,8 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
         MapEntrySetRequest request = new MapEntrySetRequest(name);
         MapEntrySet result = invoke(request);
 
-        Set<Entry<K, V>> entrySet = new HashSet<Entry<K, V>>();
         Set<Entry<Data, Data>> entries = result.getEntrySet();
+        InflatableSet<Entry<K, V>> entrySet = new InflatableSet<Entry<K, V>>(entries.size());
         for (Entry<Data, Data> dataEntry : entries) {
             Data keyData = dataEntry.getKey();
             Data valueData = dataEntry.getValue();
@@ -772,6 +776,7 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
             V value = toObject(valueData);
             entrySet.add(new AbstractMap.SimpleEntry<K, V>(key, value));
         }
+        entrySet.close();
         return entrySet;
     }
 
@@ -786,11 +791,12 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
         MapQueryRequest request = new MapQueryRequest(name, predicate, IterationType.KEY);
         QueryResultSet result = invoke(request);
         if (pagingPredicate == null) {
-            final HashSet<K> keySet = new HashSet<K>();
+            final InflatableSet<K> keySet = new InflatableSet<K>(result.size());
             for (Object o : result) {
                 final K key = toObject(o);
                 keySet.add(key);
             }
+            keySet.close();
             return keySet;
         }
 
@@ -816,13 +822,14 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
         MapQueryRequest request = new MapQueryRequest(name, predicate, IterationType.ENTRY);
         QueryResultSet result = invoke(request);
         if (pagingPredicate == null) {
-            Set<Entry<K, V>> entrySet = new HashSet<Entry<K, V>>(result.size());
+            SerializationService serializationService = getContext().getSerializationService();
+            InflatableSet<Entry<K, V>> entrySet = new InflatableSet<Entry<K, V>>(result.size());
             for (Object data : result) {
                 AbstractMap.SimpleImmutableEntry<Data, Data> dataEntry = (AbstractMap.SimpleImmutableEntry<Data, Data>) data;
-                K key = toObject(dataEntry.getKey());
-                V value = toObject(dataEntry.getValue());
-                entrySet.add(new AbstractMap.SimpleEntry<K, V>(key, value));
+                LazyMapEntry lazyEntry = new LazyMapEntry(dataEntry.getKey(), dataEntry.getValue(), serializationService);
+                entrySet.add(lazyEntry);
             }
+            entrySet.close();
             return entrySet;
         }
         ArrayList<Map.Entry> resultList = new ArrayList<Map.Entry>();
