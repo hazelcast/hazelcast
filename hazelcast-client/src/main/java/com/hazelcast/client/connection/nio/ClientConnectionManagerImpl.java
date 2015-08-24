@@ -325,13 +325,13 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
             }
             final long now = Clock.currentTimeMillis();
             for (ClientConnection connection : connections.values()) {
-                if (now - connection.lastReadTime() > heartBeatTimeout) {
+                if (now - connection.lastReadTimeMillis() > heartBeatTimeout) {
                     if (connection.isHeartBeating()) {
                         connection.heartBeatingFailed();
                         fireHeartBeatStopped(connection);
                     }
                 }
-                if (now - connection.lastReadTime() > heartBeatInterval) {
+                if (now - connection.lastReadTimeMillis() > heartBeatInterval) {
                     final ClientPingRequest request = new ClientPingRequest();
                     new ClientInvocation(client, request, connection).invoke();
                 } else {

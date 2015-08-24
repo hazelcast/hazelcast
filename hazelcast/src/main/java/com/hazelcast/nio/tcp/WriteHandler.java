@@ -20,7 +20,7 @@ import com.hazelcast.nio.SocketWritable;
 
 
 /**
- * Each {@link TcpIpConnection} has a WriteHandler. It reads data from the network into the system.
+ * Each {@link TcpIpConnection} has a WriteHandler. It reads data from the network on behalf of a Connection.
  */
 public interface WriteHandler {
 
@@ -32,13 +32,13 @@ public interface WriteHandler {
     int totalPacketsPending();
 
     /**
-     * Returns the last {@link com.hazelcast.util.Clock#currentTimeMillis()} a write completes.
+     * Returns the last {@link com.hazelcast.util.Clock#currentTimeMillis()} that a write to the local network buffers completed.
      *
-     * Completes means that it is written to the network buffers; not that it has been offered.
+     * It is important to realize that this doesn't say anything about the remote side actually receiving any data.
      *
-     * @return the lst time a write completed.
+     * @return the last time a write completed.
      */
-    long getLastWriteTime();
+    long getLastWriteTimeMillis();
 
     /**
      * Offers a SocketWritable to be written.

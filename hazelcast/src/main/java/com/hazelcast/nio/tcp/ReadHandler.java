@@ -19,7 +19,8 @@ package com.hazelcast.nio.tcp;
 import com.hazelcast.util.counters.Counter;
 
 /**
- * Each {@link TcpIpConnection} has a ReadHandler. It reads data from the socket of that connection.
+ * Each {@link TcpIpConnection} has a ReadHandler and it is responsible to read data from the socket on behalf of that
+ * connection.
  */
 public interface ReadHandler {
 
@@ -28,7 +29,7 @@ public interface ReadHandler {
      *
      * @return the last time a read from the network was done.
      */
-    long getLastReadTime();
+    long getLastReadTimeMillis();
 
     /**
      * Gets the Counter that counts the number of normal packets that have been read.

@@ -109,7 +109,7 @@ public final class NonBlockingWriteHandler extends AbstractSelectionHandler impl
     }
 
     @Override
-    public long getLastWriteTime() {
+    public long getLastWriteTimeMillis() {
         return lastWriteTime;
     }
 

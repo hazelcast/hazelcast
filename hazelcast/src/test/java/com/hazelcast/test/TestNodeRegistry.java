@@ -484,11 +484,11 @@ public final class TestNodeRegistry {
             return newPacket;
         }
 
-        public long lastReadTime() {
+        public long lastReadTimeMillis() {
             return System.currentTimeMillis();
         }
 
-        public long lastWriteTime() {
+        public long lastWriteTimeMillis() {
             return System.currentTimeMillis();
         }
 

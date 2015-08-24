@@ -3,14 +3,8 @@ package com.hazelcast.nio.tcp;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.spi.impl.PacketHandler;
 import com.hazelcast.test.AssertTask;
-import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.annotation.NightlyTest;
-import com.hazelcast.test.annotation.Repeat;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -18,6 +12,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import static java.lang.System.currentTimeMillis;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
@@ -25,14 +20,13 @@ import static org.junit.Assert.assertTrue;
 
 public abstract class TcpIpConnection_BasicTest extends TcpIpConnection_AbstractTest {
 
-    private List<Packet> packetsB = Collections.synchronizedList(new ArrayList<Packet>());
+    private List<Packet> packetsB;
 
     @Before
     public void setup() throws Exception {
         super.setup();
-
+        packetsB = Collections.synchronizedList(new ArrayList<Packet>());
         startAllConnectionManagers();
-
         ioServiceB.packetHandler = new PacketHandler() {
             @Override
             public void handle(Packet packet) throws Exception {
@@ -83,7 +77,7 @@ public abstract class TcpIpConnection_BasicTest extends TcpIpConnection_Abstract
     }
 
     @Test
-    public void lastWriteTime_whenPacketWritten() {
+    public void lastWriteTimeMillis_whenPacketWritten() {
         TcpIpConnection connAB = connect(connManagerA, addressB);
 
         // we need to sleep some so that the lastWriteTime of the connection gets nice and old.
@@ -102,71 +96,71 @@ public abstract class TcpIpConnection_BasicTest extends TcpIpConnection_Abstract
             }
         });
 
-        long result = connAB.lastWriteTime();
+        long lastWriteTimeMs = connAB.lastWriteTimeMillis();
 
-        long current = System.currentTimeMillis();
-
+        long nowMs = currentTimeMillis();
         // make sure that the lastWrite time is within the given marginOfErrorMs.
         // if we make this marginOfError very small, there is a high chance of spurious failures
-        final int marginOfErrorMs = 1000;
-        assertTrue(current + marginOfErrorMs > result);
-        assertTrue(current - marginOfErrorMs < result);
+        int marginOfErrorMs = 1000;
+        // last read time should be equal or smaller than now.
+        assertTrue("nowMs = " + nowMs + " lastReadTimeMs:" + lastWriteTimeMs, lastWriteTimeMs <= nowMs);
+        // last read time should be larger or equal than the now-marginOfError
+        assertTrue("nowMs = " + nowMs + " lastReadTimeMs:" + lastWriteTimeMs, lastWriteTimeMs >= nowMs - marginOfErrorMs);
     }
 
-    @Ignore
-    @Repeat
     @Test
     public void lastWriteTime_whenNothingWritten() {
         TcpIpConnection c = connect(connManagerA, addressB);
 
-        long result1 = c.lastWriteTime();
-        long result2 = c.lastWriteTime();
+        long result1 = c.lastWriteTimeMillis();
+        long result2 = c.lastWriteTimeMillis();
 
         assertEquals(result1, result2);
     }
 
-    // we check the lastReadTime by sending a packet on the local connection, and
+    // we check the lastReadTimeMillis by sending a packet on the local connection, and
     // on the remote side we check the if the lastReadTime is updated
     @Test
-    @Ignore
-    @Repeat(100)
-    public void lastReadTime() {
+    public void lastReadTimeMillis() {
         TcpIpConnection connAB = connect(connManagerA, addressB);
         TcpIpConnection connBA = connect(connManagerB, addressA);
 
         // we need to sleep some so that the lastReadTime of the connection gets nice and old.
         // we need this so we can determine the lastReadTime got updated
-        sleepSeconds(5);
+        sleepSeconds(3);
 
         Packet packet = new Packet(serializationService.toBytes("foo"));
 
         connAB.write(packet);
 
-        // wait for the packet to get written.
+        // wait for the packet to get read.
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
                 assertEquals(1, packetsB.size());
+                System.out.println("Packet processed");
             }
         });
 
-        long result = connBA.lastReadTime();
-
-        long current = System.currentTimeMillis();
+        long lastReadTimeMs = connBA.lastReadTimeMillis();
+        long nowMs = currentTimeMillis();
 
         // make sure that the lastWrite time is within the given marginOfErrorMs.
         // if we make this marginOfError very small, there is a high chance of spurious failures
-        final int marginOfErrorMs = 1000;
-        assertTrue(current + marginOfErrorMs > result);
-        assertTrue(current - marginOfErrorMs < result);
+        int marginOfErrorMs = 1000;
+
+        // last read time should be equal or smaller than now.
+        assertTrue("nowMs = " + nowMs + " lastReadTimeMs:" + lastReadTimeMs, lastReadTimeMs <= nowMs);
+        // last read time should be larger or equal than the now-marginOfError
+        assertTrue("nowMs = " + nowMs + " lastReadTimeMs:" + lastReadTimeMs, lastReadTimeMs >= nowMs - marginOfErrorMs);
     }
 
     @Test
     public void lastReadTime_whenNothingWritten() {
         TcpIpConnection c = connect(connManagerA, addressB);
 
-        long result1 = c.lastReadTime();
-        long result2 = c.lastReadTime();
+        long result1 = c.lastReadTimeMillis();
+        long result2 = c.lastReadTimeMillis();
 
         assertEquals(result1, result2);
     }

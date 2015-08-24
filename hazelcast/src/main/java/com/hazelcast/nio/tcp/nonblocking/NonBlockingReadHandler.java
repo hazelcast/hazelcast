@@ -106,7 +106,7 @@ public final class NonBlockingReadHandler extends AbstractSelectionHandler imple
     }
 
     @Override
-    public long getLastReadTime() {
+    public long getLastReadTimeMillis() {
         return lastReadTime;
     }
 
