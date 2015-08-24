@@ -46,7 +46,7 @@ public class CacheDestroyMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return CacheDestroyCodec.encodeResponse(serializationService.toData(response));
+        return CacheDestroyCodec.encodeResponse();
     }
 
     @Override

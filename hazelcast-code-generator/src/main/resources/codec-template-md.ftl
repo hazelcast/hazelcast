@@ -100,6 +100,102 @@ In the protocol specification an array of a data type is frequently used. An arr
 |Global Transaction Id|byte-array|No|The global id for the transaction|
 |Branch Qualifier|byte-array|No|The qualifier for the branch|
 
+### Stack Trace Data type
+| Field| Type| Nullable| Description|
+|------|-----|---------|------------|
+|Declaring Class|string|No|The name of the class|
+|Method Name|string|No|The name of the method|
+|File Name|string|Yes|The name of the class|
+|Line Number|int32|No|The line number in the source code file|
+
+## Error Message
+Response Message Type Id: 109
+
+| Field| Type| Nullable| Description|
+|------|-----|---------|------------|
+|Error Code|int32|No|The unique code identifying the error|
+|Class Name|string|No|The class name which caused the error at the server side|
+|Message|string|Yes|The brief description of the error|
+|Stack Trace|array of stack-trace|The stack trace at the server side when the error occured.|
+|Cause Error Code|int32|No|The error code for the actual cause of the error. If no cause exists, it is set to -1.|
+|Cause Class Name|string|Yes|The name of the class that actually cause the error|
+
+The following error codes are defined in the system:
+
+| Error Name| Error Code| Description|
+|-----------|-----------|------------|
+|UNDEFINED|0|The error is not in the defined list of protocol errors.|
+|ARRAY_INDEX_OUT_OF_BOUNDS|1|Thrown to indicate that an array has been accessed with an illegal index. The index is either negative or greater than or equal to the size of the array.|
+|ARRAY_STORE|2| Thrown to indicate that an attempt has been made to store the wrong type of object into an array of objects. For example, the following code generates an ArrayStoreException:<br>Object x[] = new String[3];<br>x[0] = new Integer(0);|
+|AUTHENTICATION|3|The authentication failed.|
+|CACHE|4||
+|CACHE_LOADER|5||
+|CACHE_NOT_EXISTS|6|This exception class is thrown while creating com.hazelcast.cache.impl.CacheRecordStore instances but the cache config does not exist on the node to create the instance on. This can happen in either of two cases:<br>the cache's config is not yet distributed to the node, or <br>the cache has been already destroyed.<br> For the first option, the caller can decide to just retry the operation a couple of times since distribution is executed in a asynchronous way.
+|
+|CACHE_WRITER|7||
+|CALLER_NOT_MEMBER|8|A Retryable Hazelcast Exception that indicates that an operation was sent by a machine which isn't member in the cluster when the operation is executed.
+|
+|CANCELLATION|9|Exception indicating that the result of a value-producing task, such as a FutureTask, cannot be retrieved because the task was cancelled.|
+|CLASS_CAST|10|The class conversion (cast) failed.|
+|CLASS_NOT_FOUND|11|The class does not exists in the loaded jars at the server member.|
+|CONCURRENT_MODIFICATION|12|You are trying to modify a resource concurrently which is not allowed.|
+|CONFIG_MISMATCH|13|Thrown when 2 nodes want to join, but their configuration doesn't match.|
+|CONFIGURATION|14|Thrown when something is wrong with the server or client configuration.|
+|DISTRIBUTED_OBJECT_DESTROYED|15|The distributed object that you are trying to access is destroyed and does not exist.|
+|DUPLICATE_INSTANCE_NAME|16|An instance with the same name already exists in the system.|
+|EOF|17|End of file is reached (May be for a file or a socket)|
+|ENTRY_PROCESSOR|18||
+|EXECUTION|19|Thrown when attempting to retrieve the result of a task that aborted by throwing an exception.|
+|HAZELCAST|20|General internal error of Hazelcast.|
+|HAZELCAST_INSTANCE_NOT_ACTIVE|21|The Hazelcast server instance is not active, the server is possibly initialising.|
+|HAZELCAST_OVERLOAD|22|Thrown when the system won't handle more load due to an overload. This exception is thrown when backpressure is enabled.|
+|HAZELCAST_SERIALIZATION|23|Error during serialisation/de-serialisation of data.|
+|IO|24|An IO error occured.|
+|ILLEGAL_ARGUMENT|25||
+|ILLEGAL_MONITOR_STATE|26|When an operation on a distributed object is being attempted by a thread which did not initially own the lock on the object.|
+|ILLEGAL_STATE|27||
+|ILLEGAL_THREAD_STATE|28|Thrown to indicate that a thread is not in an appropriate state for the requested operation.|
+|INDEX_OUT_OF_BOUNDS|29|Thrown to indicate that an index of some sort (such as to a list) is out of range.|
+|INTERRUPTED|30||
+|INVALID_ADDRESS|31|Thrown when given address is not valid.|
+|INVALID_CONFIGURATION|32|An InvalidConfigurationException is thrown when there is an Invalid Configuration. Invalid Configuration can be a wrong Xml Config or logical config errors that are found at real time.|
+|MEMBER_LEFT|33|Thrown when a member left during an invocation or execution.|
+|NEGATIVE_ARRAY_SIZE|34|The provided size of the array can not be negative but a negative number is provided.|
+|NO_SUCH_ELEMENT|35|The requested element does not exist in the distributed object.|
+|NOT_SERIALIZABLE|36|The object could not be serialised|
+|NULL_POINTER|37|The server faced a null pointer exception during the operation.|
+|OPERATION_TIMEOUT|38| An unchecked version of java.util.concurrent.TimeoutException. <p>Some of the Hazelcast operations may throw an <tt>OperationTimeoutException</tt>. Hazelcast uses OperationTimeoutException to pass TimeoutException up through interfaces that don't have TimeoutException in their signatures.</p>
+|
+|PARTITION_MIGRATING|39|Thrown when an operation is executed on a partition, but that partition is currently being moved around.|
+|QUERY|40|Error during query.|
+|QUERY_RESULT_SIZE_EXCEEDED|41|Thrown when a query exceeds a configurable result size limit.|
+|QUORUM|42|An exception thrown when the cluster size is below the defined threshold.|
+|REACHED_MAX_SIZE|43|Exception thrown when a write-behind MapStore rejects to accept a new element.|
+|REJECTED_EXECUTION|44|Exception thrown by an Executor when a task cannot be accepted for execution.|
+|REMOTE_MAP_REDUCE|45|This is used for failed remote operations. This can happen if the get result operation fails to retrieve values for some reason.|
+|RESPONSE_ALREADY_SENT|46|There is some kind of system error causing a response to be send multiple times for some operation.|
+|RETRYABLE_HAZELCAST|47|The operation request can be retried.|
+|RETRYABLE_IO|48|Indicates that an operation can be retried. E.g. if map.get is send to a partition that is currently migrating, a subclass of this exception is thrown, so the caller can deal with it (e.g. sending the request to the new partition owner).|
+|RUNTIME|49||
+|SECURITY|50|There is a security violation.|
+|SOCKET|51|There is an error in the underlying TCP protocol|
+|STALE_SEQUENCE|52|Thrown when accessing an item in the Ringbuffer using a sequence that is smaller than the current head sequence. This means that the and old item is read, but it isn't available anymore in the ringbuffer.|
+|TARGET_DISCONNECTED|53|Indicates that an operation is about to be sent to a non existing machine.|
+|TARGET_NOT_MEMBER|54|Indicates operation is sent to a machine that isn't member of the cluster.|
+|TIMEOUT|55||
+|TOPIC_OVERLOAD|56|Thrown when a publisher wants to write to a topic, but there is not sufficient storage to deal with the event. This exception is only thrown in combination with the reliable topic.|
+|TOPOLOGY_CHANGED|57|Thrown when a topology change happens during the execution of a map reduce job and the com.hazelcast.mapreduce.TopologyChangedStrategy is set to com.hazelcast.mapreduce.TopologyChangedStrategy#CANCEL_RUNNING_OPERATION}.|
+|TRANSACTION|58|Thrown when something goes wrong while dealing with transactions and transactional data-structures.|
+|TRANSACTION_NOT_ACTIVE|59|Thrown when an a transactional operation is executed without an active transaction.|
+|TRANSACTION_TIMED_OUT|60|Thrown when a transaction has timed out.|
+|URI_SYNTAX|61||
+|UTF_DATA_FORMAT|62||
+|UNSUPPORTED_OPERATION|63|The message type id for the operation request is not a recognised id.|
+|WRONG_TARGET|64|An operation is executed on the wrong machine.|
+|XA|65|An error occured during an XA operation.|
+|ACCESS_CONTROL|66|Indicates that a requested access to a system resource is denied.|
+|LOGIN|67||
+|UNSUPPORTED_CALLBACK|68|Signals that a CallbackHandler does not recognize a particular Callback.|
 
 <#list model?keys as key>
 <#assign map=model?values[key_index]?values/>
@@ -156,7 +252,7 @@ Message Type Id:${event.type}
 | Name| Type| Nullable| Description|
 |-------|------------|----------|------------|
         <#list event.eventParams as param>
-|${param.name}| ${convertTypeToDocumentType(param.type)}| <#if param.nullable >Yes<#else>No</#if>|${util.getDescription(param.name, cm.comment)}|
+|${param.name}| ${convertTypeToDocumentType(param.type)}| <#if param.nullable >Yes<#else>No</#if>|${param.description}|
         </#list>
     <#else>
 
@@ -168,6 +264,11 @@ Header only event message, no message body exist.
     </#if>
 
 </#list>
+
+<#if key == "com.hazelcast.client.impl.protocol.template.EnterpriseMapCodecTemplate">
+<b>Note:</b> All operation defined for the Map Object can also be executed against the EnterpriseMap Object as well.
+</#if>
+
 </#if>
 </#list>
 

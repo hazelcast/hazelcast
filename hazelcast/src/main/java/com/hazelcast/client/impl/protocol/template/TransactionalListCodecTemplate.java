@@ -24,14 +24,36 @@ import com.hazelcast.nio.serialization.Data;
 @GenerateCodec(id = TemplateConstants.TX_LIST_TEMPLATE_ID,
         name = "TransactionalList", ns = "Hazelcast.Client.Protocol.TransactionalList")
 public interface TransactionalListCodecTemplate {
-
+    /**
+     *
+     * @param name Name of the Transactional List
+     * @param txnId ID of the this transaction operation
+     * @param threadId The id of the user thread performing the operation. It is used to guarantee that only the lock holder thread (if a lock exists on the entry) can perform the requested operation.
+     * @param item The new item added to the transactionalList
+     * @return True if the item is added successfully, false otherwise
+     */
     @Request(id = 1, retryable = false, response = ResponseMessageConst.BOOLEAN)
-    void add(String name, String txnId, long threadId, Data item);
+    Object add(String name, String txnId, long threadId, Data item);
 
+    /**
+     *
+     * @param name Name of the Transactional List
+     * @param txnId ID of the this transaction operation
+     * @param threadId The id of the user thread performing the operation. It is used to guarantee that only the lock holder thread (if a lock exists on the entry) can perform the requested operation.
+     * @param item Item to remove to transactional List
+     * @return True if the removed succesfully,false otherwise
+     */
     @Request(id = 2, retryable = false, response = ResponseMessageConst.BOOLEAN)
-    void remove(String name, String txnId, long threadId, Data item);
+    Object remove(String name, String txnId, long threadId, Data item);
 
+    /**
+     *
+     * @param name Name of the Transactional List
+     * @param txnId ID of the this transaction operation
+     * @param threadId The id of the user thread performing the operation. It is used to guarantee that only the lock holder thread (if a lock exists on the entry) can perform the requested operation.
+     * @return The size of the list
+     */
     @Request(id = 3, retryable = false, response = ResponseMessageConst.INTEGER)
-    void size(String name, String txnId, long threadId);
+    Object size(String name, String txnId, long threadId);
 
 }

@@ -23,16 +23,37 @@ import com.hazelcast.client.impl.protocol.ResponseMessageConst;
 @GenerateCodec(id = TemplateConstants.COUNTDOWN_LATCH_TEMPLATE_ID,
         name = "CountDownLatch", ns = "Hazelcast.Client.Protocol.CountDownLatch")
 public interface CountdownLatchCodecTemplate {
-
+    /**
+     *
+     * @param name Name of the CountDownLatch
+     * @param timeout The maximum time in milliseconds to wait
+     * @return True if the count reached zero, false if the waiting time elapsed before the count reached zero
+     */
     @Request(id = 1, retryable = false, response = ResponseMessageConst.BOOLEAN)
-    void await(String name, long timeout);
+    Object await(String name, long timeout);
 
+    /**
+     *
+     * @param name Name of the CountDownLatch
+     */
     @Request(id = 2, retryable = false, response = ResponseMessageConst.VOID)
     void countDown(String name);
 
+    /**
+     *
+     * @param name Name of the CountDownLatch
+     * @return The current count for the latch.
+     */
     @Request(id = 3, retryable = true, response = ResponseMessageConst.INTEGER)
-    void getCount(String name);
+    Object getCount(String name);
 
+    /**
+     *
+     * @param name Name of the CountDownLatch
+     * @param count The number of times countDown must be invoked before threads can pass through await
+     * @return True if the new count was set, false if the current count is not zero.
+     */
     @Request(id = 4, retryable = false, response = ResponseMessageConst.BOOLEAN)
-    void trySetCount(String name, int count);
+    Object trySetCount(String name, int count);
+
 }
