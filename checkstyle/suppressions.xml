@@ -152,7 +152,6 @@
     <suppress checks="" files="com/hazelcast/client/proxy/ClientMultiMapProxy"/>
     <suppress checks="" files="com/hazelcast/client/proxy/ClientMapProxy"/>
     <suppress checks="MethodCount" files="com/hazelcast/client/proxy/ClientReplicatedMapProxy"/>
-    <suppress checks="" files="com/hazelcast/client/HazelcastClient"/>
     <suppress checks="" files="com/hazelcast/client/impl/HazelcastClientInstance"/>
     <suppress checks="" files="com/hazelcast/client/impl/HazelcastClientProxy"/>
     <suppress checks="ClassDataAbstractionCoupling" files="com/hazelcast/client/proxy/ClientExecutorServiceProxy"/>
