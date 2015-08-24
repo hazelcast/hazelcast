@@ -128,12 +128,12 @@ public class ClientConnection implements Connection, Closeable {
     }
 
     @Override
-    public long lastReadTime() {
+    public long lastReadTimeMillis() {
         return readHandler.getLastHandle();
     }
 
     @Override
-    public long lastWriteTime() {
+    public long lastWriteTimeMillis() {
         return writeHandler.getLastHandle();
     }
 

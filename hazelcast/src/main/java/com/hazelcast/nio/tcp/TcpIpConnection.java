@@ -50,15 +50,15 @@ public final class TcpIpConnection implements Connection {
 
     private final AtomicBoolean alive = new AtomicBoolean(true);
 
-    private volatile ConnectionType type = ConnectionType.NONE;
-
-    private Address endPoint;
-
     private final ILogger logger;
 
     private final int connectionId;
 
+    private Address endPoint;
+
     private TcpIpConnectionMonitor monitor;
+
+    private volatile ConnectionType type = ConnectionType.NONE;
 
     public TcpIpConnection(TcpIpConnectionManager connectionManager,
                            int connectionId,
@@ -121,13 +121,13 @@ public final class TcpIpConnection implements Connection {
     }
 
     @Override
-    public long lastWriteTime() {
-        return writeHandler.getLastWriteTime();
+    public long lastWriteTimeMillis() {
+        return writeHandler.getLastWriteTimeMillis();
     }
 
     @Override
-    public long lastReadTime() {
-        return readHandler.getLastReadTime();
+    public long lastReadTimeMillis() {
+        return readHandler.getLastReadTimeMillis();
     }
 
     @Override

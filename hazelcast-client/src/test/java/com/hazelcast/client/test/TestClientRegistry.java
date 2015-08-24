@@ -200,12 +200,12 @@ public class TestClientRegistry {
         }
 
         @Override
-        public long lastReadTime() {
+        public long lastReadTimeMillis() {
             return lastReadTime;
         }
 
         @Override
-        public long lastWriteTime() {
+        public long lastWriteTimeMillis() {
             return lastWriteTime;
         }
 

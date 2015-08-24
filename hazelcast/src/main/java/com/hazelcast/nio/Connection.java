@@ -33,18 +33,18 @@ public interface Connection {
     boolean isAlive();
 
     /**
-     * Returns the clock time of the most recent read using this connection.
+     * Returns the clock time in milliseconds of the most recent read using this connection.
      *
      * @return the clock time of the most recent read
      */
-    long lastReadTime();
+    long lastReadTimeMillis();
 
     /**
-     * Returns the clock time of the most recent write using this connection.
+     * Returns the clock time in milliseconds of the most recent write using this connection.
      *
      * @return the clock time of the most recent write.
      */
-    long lastWriteTime();
+    long lastWriteTimeMillis();
 
     /**
      * Returns the {@link ConnectionType} of this Connection.

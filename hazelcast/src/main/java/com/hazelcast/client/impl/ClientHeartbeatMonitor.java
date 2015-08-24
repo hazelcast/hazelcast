@@ -82,7 +82,7 @@ public class ClientHeartbeatMonitor implements Runnable {
         }
 
         final Connection connection = clientEndpoint.getConnection();
-        final long lastTimePackageReceived = connection.lastReadTime();
+        final long lastTimePackageReceived = connection.lastReadTimeMillis();
         final long timeoutInMillis = TimeUnit.SECONDS.toMillis(heartbeatTimeoutSeconds);
         final long currentTimeInMillis = Clock.currentTimeMillis();
         if (lastTimePackageReceived + timeoutInMillis < currentTimeInMillis) {

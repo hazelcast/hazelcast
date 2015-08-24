@@ -115,12 +115,12 @@ public class MockSimpleClient implements SimpleClient {
         }
 
         @Override
-        public long lastReadTime() {
+        public long lastReadTimeMillis() {
             return 0;
         }
 
         @Override
-        public long lastWriteTime() {
+        public long lastWriteTimeMillis() {
             return 0;
         }
 
