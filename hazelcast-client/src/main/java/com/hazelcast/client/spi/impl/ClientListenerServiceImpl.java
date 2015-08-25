@@ -29,6 +29,7 @@ import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.executor.StripedExecutor;
@@ -48,7 +49,7 @@ public final class ClientListenerServiceImpl implements ClientListenerService {
     private final ILogger logger = Logger.getLogger(ClientInvocationService.class);
     private final HazelcastClientInstanceImpl client;
     private final ClientInvocationService invocationService;
-    private final InternalSerializationService serializationService;
+    private final SerializationService serializationService;
     private final ConcurrentMap<String, Integer> registrationMap = new ConcurrentHashMap<String, Integer>();
     private final ConcurrentMap<String, String> registrationAliasMap = new ConcurrentHashMap<String, String>();
     private final StripedExecutor eventExecutor;

@@ -26,6 +26,7 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.monitor.NearCacheStats;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.nio.serialization.SerializationService;
 
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -38,7 +39,7 @@ public class DefaultNearCache<K, V> implements NearCache<K, V> {
     protected final String name;
     protected final NearCacheConfig nearCacheConfig;
     protected final NearCacheContext nearCacheContext;
-    protected final InternalSerializationService serializationService;
+    protected final SerializationService serializationService;
     protected NearCacheRecordStore<K, V> nearCacheRecordStore;
     protected ScheduledFuture expirationTaskFuture;
 

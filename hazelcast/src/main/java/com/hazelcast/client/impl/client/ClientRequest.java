@@ -21,7 +21,7 @@ import com.hazelcast.client.ClientEngine;
 import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
-import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.nio.serialization.VersionedPortable;
 import com.hazelcast.spi.OperationService;
 
@@ -32,7 +32,7 @@ public abstract class ClientRequest implements SecureRequest, VersionedPortable 
     protected volatile int callId = -1;
     protected transient ClientEngineImpl clientEngine;
     protected transient OperationService operationService;
-    protected transient InternalSerializationService serializationService;
+    protected transient SerializationService serializationService;
     protected transient Object service;
     protected transient ClientEndpoint endpoint;
 
@@ -40,7 +40,7 @@ public abstract class ClientRequest implements SecureRequest, VersionedPortable 
         this.operationService = operationService;
     }
 
-    public void setSerializationService(InternalSerializationService serializationService) {
+    public void setSerializationService(SerializationService serializationService) {
         this.serializationService = serializationService;
     }
 

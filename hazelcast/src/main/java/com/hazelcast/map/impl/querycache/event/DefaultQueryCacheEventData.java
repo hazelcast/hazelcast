@@ -21,6 +21,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.util.Clock;
 
 import java.io.IOException;
@@ -37,7 +38,7 @@ public class DefaultQueryCacheEventData
     private Data dataNewValue;
     private Data dataOldValue;
     private long sequence;
-    private InternalSerializationService serializationService;
+    private SerializationService serializationService;
     private final long creationTime;
     private int eventType;
     private int partitionId;

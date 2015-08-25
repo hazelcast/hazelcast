@@ -26,6 +26,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.partition.strategy.StringAndPartitionAwarePartitioningStrategy;
 import com.hazelcast.spi.NodeEngine;
@@ -53,7 +54,7 @@ public class SetKeyValueSource<V>
 
     private String setName;
 
-    private transient InternalSerializationService ss;
+    private transient SerializationService ss;
     private transient Iterator<CollectionItem> iterator;
     private transient CollectionItem nextElement;
 
