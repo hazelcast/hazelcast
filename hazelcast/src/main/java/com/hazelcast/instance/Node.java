@@ -44,7 +44,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.nio.Packet;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.partition.PartitionLostListener;
 import com.hazelcast.partition.impl.InternalPartitionServiceImpl;
@@ -81,7 +81,7 @@ public class Node {
 
     private final NodeShutdownHookThread shutdownHookThread = new NodeShutdownHookThread("hz.ShutdownThread");
 
-    private final SerializationService serializationService;
+    private final InternalSerializationService serializationService;
 
     public final NodeEngineImpl nodeEngine;
 
@@ -234,7 +234,7 @@ public class Node {
         return managementCenterService;
     }
 
-    public SerializationService getSerializationService() {
+    public InternalSerializationService getSerializationService() {
         return serializationService;
     }
 

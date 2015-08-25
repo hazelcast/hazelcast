@@ -53,7 +53,7 @@ import com.hazelcast.core.ItemListener;
 import com.hazelcast.core.Member;
 import com.hazelcast.monitor.LocalQueueStats;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -103,7 +103,7 @@ public final class ClientQueueProxy<E> extends ClientProxy implements IQueue<E> 
 
         @Override
         public void handle(Data dataItem, String uuid, int eventType) {
-            SerializationService serializationService = getContext().getSerializationService();
+            InternalSerializationService serializationService = getContext().getSerializationService();
             ClientClusterService clusterService = getContext().getClusterService();
 
             E item = includeValue ? (E) serializationService.toObject(dataItem) : null;

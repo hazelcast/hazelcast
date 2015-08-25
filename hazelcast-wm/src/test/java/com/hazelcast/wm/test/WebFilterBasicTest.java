@@ -17,7 +17,7 @@
 package com.hazelcast.wm.test;
 
 import com.hazelcast.core.IMap;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.web.SessionState;
@@ -106,7 +106,7 @@ public class WebFilterBasicTest extends AbstractWebFilterTest {
         assertEquals("value-updated", executeRequest("read", serverPort1, cookieStore));
         String newSessionId = map.keySet().iterator().next();
         SessionState sessionState = (SessionState) map.get(newSessionId);
-        SerializationService ss = getNode(hz).getSerializationService();
+        InternalSerializationService ss = getNode(hz).getSerializationService();
         assertSizeEventually(1, map);
         assertSizeEventually(1, sessionState.getAttributes());
     }

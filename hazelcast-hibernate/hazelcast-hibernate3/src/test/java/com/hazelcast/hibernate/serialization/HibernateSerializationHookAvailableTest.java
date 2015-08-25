@@ -20,7 +20,7 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.HazelcastInstanceProxy;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.SerializationServiceImpl;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -67,7 +67,7 @@ public class HibernateSerializationHookAvailableTest {
 
         HazelcastInstance hz = Hazelcast.newHazelcastInstance();
         HazelcastInstanceImpl impl = (HazelcastInstanceImpl) ORIGINAL.get(hz);
-        SerializationService ss = impl.getSerializationService();
+        InternalSerializationService ss = impl.getSerializationService();
         ConcurrentMap<Class, ?> typeMap = (ConcurrentMap<Class, ?>) TYPE_MAP.get(ss);
 
         boolean cacheKeySerializerFound = false;

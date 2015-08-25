@@ -27,7 +27,7 @@ import com.hazelcast.client.impl.protocol.codec.ClientAuthenticationCustomCodec;
 import com.hazelcast.client.spi.impl.ClientClusterServiceImpl;
 import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.UsernamePasswordCredentials;
 import com.hazelcast.util.ExceptionUtil;
@@ -51,7 +51,7 @@ public class ClusterAuthenticator implements Authenticator {
 
     @Override
     public void authenticate(ClientConnection connection) throws AuthenticationException, IOException {
-        final SerializationService ss = client.getSerializationService();
+        final InternalSerializationService ss = client.getSerializationService();
         final ClientClusterServiceImpl clusterService = (ClientClusterServiceImpl) client.getClientClusterService();
         final ClientPrincipal principal = clusterService.getPrincipal();
         String uuid = principal.getUuid();

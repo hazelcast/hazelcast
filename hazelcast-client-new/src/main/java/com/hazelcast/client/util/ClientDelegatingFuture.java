@@ -21,7 +21,7 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.spi.impl.ClientInvocationFuture;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.util.concurrent.CancellationException;
@@ -39,7 +39,7 @@ import java.util.concurrent.TimeoutException;
 public class ClientDelegatingFuture<V> implements ICompletableFuture<V> {
 
     private final ClientInvocationFuture future;
-    private final SerializationService serializationService;
+    private final InternalSerializationService serializationService;
     private final ClientMessageDecoder clientMessageDecoder;
     private final V defaultValue;
     private final Object mutex = new Object();
@@ -49,7 +49,7 @@ public class ClientDelegatingFuture<V> implements ICompletableFuture<V> {
     private volatile boolean done;
 
     public ClientDelegatingFuture(ClientInvocationFuture clientInvocationFuture,
-                                  SerializationService serializationService,
+                                  InternalSerializationService serializationService,
                                   ClientMessageDecoder clientMessageDecoder, V defaultValue) {
         this.future = clientInvocationFuture;
         this.serializationService = serializationService;
@@ -58,7 +58,7 @@ public class ClientDelegatingFuture<V> implements ICompletableFuture<V> {
     }
 
     public ClientDelegatingFuture(ClientInvocationFuture clientInvocationFuture,
-                                  SerializationService serializationService, ClientMessageDecoder clientMessageDecoder) {
+                                  InternalSerializationService serializationService, ClientMessageDecoder clientMessageDecoder) {
         this.future = clientInvocationFuture;
         this.serializationService = serializationService;
         this.clientMessageDecoder = clientMessageDecoder;

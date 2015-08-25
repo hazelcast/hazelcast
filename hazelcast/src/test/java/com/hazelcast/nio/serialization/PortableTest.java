@@ -18,8 +18,7 @@ package com.hazelcast.nio.serialization;
 
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.SerializerConfig;
-import com.hazelcast.internal.serialization.PortableContext;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
@@ -66,8 +65,8 @@ public class PortableTest {
     }
 
     private void testBasics(ByteOrder order, boolean allowUnsafe) {
-        final SerializationService serializationService = createSerializationService(1, order, allowUnsafe);
-        final SerializationService serializationService2 = createSerializationService(2, order, allowUnsafe);
+        final InternalSerializationService serializationService = createSerializationService(1, order, allowUnsafe);
+        final InternalSerializationService serializationService2 = createSerializationService(2, order, allowUnsafe);
         Data data;
 
         NamedPortable[] nn = new NamedPortable[5];
@@ -96,11 +95,11 @@ public class PortableTest {
         assertEquals(main, serializationService2.toObject(data));
     }
 
-    static SerializationService createSerializationService(int version) {
+    static InternalSerializationService createSerializationService(int version) {
         return createSerializationService(version, ByteOrder.BIG_ENDIAN, false);
     }
 
-    static SerializationService createSerializationService(int version, ByteOrder order, boolean allowUnsafe) {
+    static InternalSerializationService createSerializationService(int version, ByteOrder order, boolean allowUnsafe) {
         return new DefaultSerializationServiceBuilder()
                 .setUseNativeByteOrder(false).setAllowUnsafe(allowUnsafe).setByteOrder(order).setVersion(version)
                 .addPortableFactory(PORTABLE_FACTORY_ID, new TestPortableFactory())
@@ -116,7 +115,7 @@ public class PortableTest {
 
     @Test
     public void testRawData() {
-        final SerializationService serializationService = createSerializationService(1);
+        final InternalSerializationService serializationService = createSerializationService(1);
         RawDataPortable p = new RawDataPortable(System.currentTimeMillis(), "test chars".toCharArray(),
                 new NamedPortable("named portable", 34567),
                 9876, "Testing raw portable", new ByteArrayDataSerializable("test bytes".getBytes()));
@@ -130,7 +129,7 @@ public class PortableTest {
 
     @Test
     public void testRawDataWithoutRegistering() {
-        final SerializationService serializationService = createSerializationService(1);
+        final InternalSerializationService serializationService = createSerializationService(1);
         RawDataPortable p = new RawDataPortable(System.currentTimeMillis(), "test chars".toCharArray(),
                 new NamedPortable("named portable", 34567),
                 9876, "Testing raw portable", new ByteArrayDataSerializable("test bytes".getBytes()));
@@ -141,7 +140,7 @@ public class PortableTest {
 
     @Test(expected = HazelcastSerializationException.class)
     public void testRawDataInvalidWrite() {
-        final SerializationService serializationService = createSerializationService(1);
+        final InternalSerializationService serializationService = createSerializationService(1);
         RawDataPortable p = new InvalidRawDataPortable(System.currentTimeMillis(), "test chars".toCharArray(),
                 new NamedPortable("named portable", 34567),
                 9876, "Testing raw portable", new ByteArrayDataSerializable("test bytes".getBytes()));
@@ -155,7 +154,7 @@ public class PortableTest {
 
     @Test(expected = HazelcastSerializationException.class)
     public void testRawDataInvalidRead() {
-        final SerializationService serializationService = createSerializationService(1);
+        final InternalSerializationService serializationService = createSerializationService(1);
         RawDataPortable p = new InvalidRawDataPortable2(System.currentTimeMillis(), "test chars".toCharArray(),
                 new NamedPortable("named portable", 34567),
                 9876, "Testing raw portable", new ByteArrayDataSerializable("test bytes".getBytes()));
@@ -203,7 +202,7 @@ public class PortableTest {
                         new ClassDefinitionBuilder(PORTABLE_FACTORY_ID, TestSerializationConstants.NAMED_PORTABLE)
                                 .addUTFField("name").addIntField("myint").build());
 
-        SerializationService serializationService = new DefaultSerializationServiceBuilder().setConfig(serializationConfig).build();
+        InternalSerializationService serializationService = new DefaultSerializationServiceBuilder().setConfig(serializationConfig).build();
         RawDataPortable p = new RawDataPortable(System.currentTimeMillis(), "test chars".toCharArray(),
                 new NamedPortable("named portable", 34567),
                 9876, "Testing raw portable", new ByteArrayDataSerializable("test bytes".getBytes()));
@@ -214,14 +213,14 @@ public class PortableTest {
 
     @Test
     public void testPortableNestedInOthers() {
-        SerializationService serializationService = createSerializationService(1);
+        InternalSerializationService serializationService = createSerializationService(1);
         Object o1 = new ComplexDataSerializable(new NamedPortable("test-portable", 137),
                 new ByteArrayDataSerializable("test-data-serializable".getBytes()),
                 new ByteArrayDataSerializable("test-data-serializable-2".getBytes()));
 
         Data data = serializationService.toData(o1);
 
-        SerializationService serializationService2 = createSerializationService(2);
+        InternalSerializationService serializationService2 = createSerializationService(2);
 
         Object o2 = serializationService2.toObject(data);
         assertEquals(o1, o2);
@@ -230,7 +229,7 @@ public class PortableTest {
     //https://github.com/hazelcast/hazelcast/issues/1096
     @Test
     public void test_1096_ByteArrayContentSame() {
-        SerializationService ss = new DefaultSerializationServiceBuilder()
+        InternalSerializationService ss = new DefaultSerializationServiceBuilder()
                 .addPortableFactory(PORTABLE_FACTORY_ID, new TestPortableFactory()).build();
 
         assertRepeatedSerialisationGivesSameByteArrays(ss, new NamedPortable("issue-1096", 1096));
@@ -243,7 +242,7 @@ public class PortableTest {
                         "issue-1096", new ByteArrayDataSerializable(new byte[1])));
     }
 
-    private static void assertRepeatedSerialisationGivesSameByteArrays(SerializationService ss, Portable p) {
+    private static void assertRepeatedSerialisationGivesSameByteArrays(InternalSerializationService ss, Portable p) {
         Data data1 = ss.toData(p);
         for (int k = 0; k < 100; k++) {
             Data data2 = ss.toData(p);
@@ -254,7 +253,7 @@ public class PortableTest {
     //https://github.com/hazelcast/hazelcast/issues/2172
     @Test
     public void test_issue2172_WritePortableArray() {
-        final SerializationService ss = new DefaultSerializationServiceBuilder().setInitialOutputBufferSize(16).build();
+        final InternalSerializationService ss = new DefaultSerializationServiceBuilder().setInitialOutputBufferSize(16).build();
         final TestObject2[] testObject2s = new TestObject2[100];
         for (int i = 0; i < testObject2s.length; i++) {
             testObject2s[i] = new TestObject2();
@@ -266,7 +265,7 @@ public class PortableTest {
 
     @Test
     public void testClassDefinitionLookupBigEndianHeapData() throws IOException {
-        SerializationService ss = new DefaultSerializationServiceBuilder()
+        InternalSerializationService ss = new DefaultSerializationServiceBuilder()
                 .setByteOrder(ByteOrder.BIG_ENDIAN)
                 .build();
 
@@ -275,7 +274,7 @@ public class PortableTest {
 
     @Test
     public void testClassDefinitionLookupLittleEndianHeapData() throws IOException {
-        SerializationService ss = new DefaultSerializationServiceBuilder()
+        InternalSerializationService ss = new DefaultSerializationServiceBuilder()
                 .setByteOrder(ByteOrder.LITTLE_ENDIAN)
                 .build();
 
@@ -284,14 +283,14 @@ public class PortableTest {
 
     @Test
     public void testClassDefinitionLookupNativeOrderHeapData() throws IOException {
-        SerializationService ss = new DefaultSerializationServiceBuilder()
+        InternalSerializationService ss = new DefaultSerializationServiceBuilder()
                 .setUseNativeByteOrder(true)
                 .build();
 
         testClassDefinitionLookup(ss);
     }
 
-    static void testClassDefinitionLookup(SerializationService ss) throws IOException {
+    static void testClassDefinitionLookup(InternalSerializationService ss) throws IOException {
         NamedPortableV2 p = new NamedPortableV2("test-portable", 123456789);
         Data data = ss.toData(p);
 
@@ -306,7 +305,7 @@ public class PortableTest {
 
     @Test
     public void testSerializationService_createPortableReader() throws IOException {
-        SerializationService serializationService = new DefaultSerializationServiceBuilder().build();
+        InternalSerializationService serializationService = new DefaultSerializationServiceBuilder().build();
 
         long timestamp1 = System.nanoTime();
         ChildPortableObject child = new ChildPortableObject(timestamp1);
@@ -325,7 +324,7 @@ public class PortableTest {
 
     @Test
     public void testClassDefinition_getNestedField() throws IOException {
-        SerializationService serializationService = new DefaultSerializationServiceBuilder().build();
+        InternalSerializationService serializationService = new DefaultSerializationServiceBuilder().build();
         PortableContext portableContext = serializationService.getPortableContext();
 
         ChildPortableObject child = new ChildPortableObject(System.nanoTime());
@@ -355,14 +354,14 @@ public class PortableTest {
         ClassDefinitionBuilder builder1 = new ClassDefinitionBuilder(PORTABLE_FACTORY_ID, 2);
         builder0.addPortableArrayField("list", builder1.build());
 
-        SerializationService ss = new DefaultSerializationServiceBuilder()
+        InternalSerializationService ss = new DefaultSerializationServiceBuilder()
                 .addClassDefinition(builder0.build())
                 .addClassDefinition(builder1.build())
                 .build();
 
         Data data = ss.toData(new TestObject1());
 
-        SerializationService ss2 = new DefaultSerializationServiceBuilder()
+        InternalSerializationService ss2 = new DefaultSerializationServiceBuilder()
                 .addPortableFactory(1, new PortableFactory() {
                     @Override
                     public Portable create(int classId) {
@@ -585,7 +584,7 @@ public class PortableTest {
 
     @Test
     public void testWriteObject_withPortable() {
-        SerializationService ss = new DefaultSerializationServiceBuilder()
+        InternalSerializationService ss = new DefaultSerializationServiceBuilder()
                 .addPortableFactory(PORTABLE_FACTORY_ID, new PortableFactory() {
                     @Override
                     public Portable create(int classId) {
@@ -594,7 +593,7 @@ public class PortableTest {
                 })
                 .build();
 
-        SerializationService ss2 = new DefaultSerializationServiceBuilder()
+        InternalSerializationService ss2 = new DefaultSerializationServiceBuilder()
                 .addPortableFactory(PORTABLE_FACTORY_ID, new PortableFactory() {
                     @Override
                     public Portable create(int classId) {
@@ -614,7 +613,7 @@ public class PortableTest {
 
     @Test
     public void testWriteData_withPortable() {
-        SerializationService ss = new DefaultSerializationServiceBuilder()
+        InternalSerializationService ss = new DefaultSerializationServiceBuilder()
                 .addPortableFactory(PORTABLE_FACTORY_ID, new PortableFactory() {
                     @Override
                     public Portable create(int classId) {
@@ -623,7 +622,7 @@ public class PortableTest {
                 })
                 .build();
 
-        SerializationService ss2 = new DefaultSerializationServiceBuilder()
+        InternalSerializationService ss2 = new DefaultSerializationServiceBuilder()
                 .addPortableFactory(PORTABLE_FACTORY_ID, new PortableFactory() {
                     @Override
                     public Portable create(int classId) {
@@ -647,7 +646,7 @@ public class PortableTest {
 
     @Test(expected = HazelcastSerializationException.class)
     public void testGenericPortable_whenMultipleTypesAreUsed() {
-        SerializationService ss = new DefaultSerializationServiceBuilder()
+        InternalSerializationService ss = new DefaultSerializationServiceBuilder()
                 .addPortableFactory(1, new PortableFactory() {
                     @Override
                     public Portable create(int classId) {
@@ -673,7 +672,7 @@ public class PortableTest {
 
     @Test
     public void testWriteObjectWithPortable() {
-        SerializationService serializationService = createSerializationService(1);
+        InternalSerializationService serializationService = createSerializationService(1);
 
         NamedPortable namedPortable = new NamedPortable("name", 2);
         ObjectCarryingPortable objectCarryingPortable1 = new ObjectCarryingPortable(namedPortable);
@@ -684,7 +683,7 @@ public class PortableTest {
 
     @Test
     public void testWriteObjectWithIdentifiedDataSerializable() {
-        SerializationService serializationService = createSerializationService(1);
+        InternalSerializationService serializationService = createSerializationService(1);
 
         SampleIdentifiedDataSerializable namedPortable = new SampleIdentifiedDataSerializable('c', 2);
         ObjectCarryingPortable objectCarryingPortable1 = new ObjectCarryingPortable(namedPortable);
@@ -700,7 +699,7 @@ public class PortableTest {
                 .setImplementation(new CustomSerializationTest.FooXmlSerializer())
                 .setTypeClass(CustomSerializationTest.Foo.class);
         config.addSerializerConfig(sc);
-        SerializationService serializationService = new DefaultSerializationServiceBuilder().setVersion(1)
+        InternalSerializationService serializationService = new DefaultSerializationServiceBuilder().setVersion(1)
                 .addPortableFactory(PORTABLE_FACTORY_ID, new TestPortableFactory()).setConfig(config).build();
 
         CustomSerializationTest.Foo foo = new CustomSerializationTest.Foo("f");

@@ -7,7 +7,7 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionType;
 import com.hazelcast.nio.IOService;
 import com.hazelcast.nio.Packet;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 
@@ -36,7 +36,7 @@ public class ClientPacketSocketReaderTest extends HazelcastTestSupport {
     private ClientPacketSocketReader reader;
     private Connection connection;
     private IOService ioService;
-    private SerializationService serializationService;
+    private InternalSerializationService serializationService;
 
     @Before
     public void setup() throws Exception {

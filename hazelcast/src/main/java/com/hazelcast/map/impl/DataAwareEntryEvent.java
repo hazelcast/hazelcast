@@ -19,7 +19,7 @@ package com.hazelcast.map.impl;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.Member;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.nio.serialization.SerializationService;
 
 import java.io.IOException;
 import java.io.NotSerializableException;

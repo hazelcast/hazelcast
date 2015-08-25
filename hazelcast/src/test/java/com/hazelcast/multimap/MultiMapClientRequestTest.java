@@ -34,7 +34,7 @@ import com.hazelcast.multimap.impl.client.SizeRequest;
 import com.hazelcast.multimap.impl.client.ValuesRequest;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.spi.impl.PortableCollection;
 import com.hazelcast.spi.impl.PortableEntryEvent;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -60,7 +60,7 @@ import static org.junit.Assert.*;
 public class MultiMapClientRequestTest extends ClientTestSupport {
 
     static final String name = "test";
-    static final SerializationService ss = new DefaultSerializationServiceBuilder().build();
+    static final InternalSerializationService ss = new DefaultSerializationServiceBuilder().build();
     static final Data dataKey = ss.toData(name);
 
     protected Config createConfig() {

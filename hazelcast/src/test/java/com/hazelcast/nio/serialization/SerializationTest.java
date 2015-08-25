@@ -25,7 +25,7 @@ import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.executor.impl.operations.CancellationOperation;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.SimpleMemberImpl;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
@@ -92,19 +92,19 @@ public class SerializationTest
                     }
                 }));
 
-        SerializationService ss1 = new DefaultSerializationServiceBuilder().setConfig(serializationConfig).build();
+        InternalSerializationService ss1 = new DefaultSerializationServiceBuilder().setConfig(serializationConfig).build();
         DummyValue value = new DummyValue("test", 111);
         Data data = ss1.toData(value);
         Assert.assertNotNull(data);
 
-        SerializationService ss2 = new DefaultSerializationServiceBuilder().setConfig(serializationConfig).build();
+        InternalSerializationService ss2 = new DefaultSerializationServiceBuilder().setConfig(serializationConfig).build();
         Object o = ss2.toObject(data);
         Assert.assertEquals(value, o);
     }
 
     @Test
     public void test_callid_on_correct_stream_position() throws Exception {
-        SerializationService serializationService = new DefaultSerializationServiceBuilder().build();
+        InternalSerializationService serializationService = new DefaultSerializationServiceBuilder().build();
         CancellationOperation operation = new CancellationOperation(UuidUtil.buildRandomUuidString(), true);
         operation.setCallerUuid(UuidUtil.buildRandomUuidString());
         OperationAccessor.setCallId(operation, 12345);
@@ -165,11 +165,11 @@ public class SerializationTest
                             }
                         }));
 
-        SerializationService ss1 = new DefaultSerializationServiceBuilder().setConfig(serializationConfig).build();
+        InternalSerializationService ss1 = new DefaultSerializationServiceBuilder().setConfig(serializationConfig).build();
         Data data = ss1.toData(new SingletonValue());
         Assert.assertNotNull(data);
 
-        SerializationService ss2 = new DefaultSerializationServiceBuilder().setConfig(serializationConfig).build();
+        InternalSerializationService ss2 = new DefaultSerializationServiceBuilder().setConfig(serializationConfig).build();
         Object o = ss2.toObject(data);
         Assert.assertEquals(new SingletonValue(), o);
     }
@@ -183,7 +183,7 @@ public class SerializationTest
     @Test
     public void testNullData() {
         Data data = new HeapData();
-        SerializationService ss = new DefaultSerializationServiceBuilder().build();
+        InternalSerializationService ss = new DefaultSerializationServiceBuilder().build();
         assertNull(ss.toObject(data));
     }
 
@@ -192,7 +192,7 @@ public class SerializationTest
      */
     @Test
     public void testSharedJavaSerialization() {
-        SerializationService ss = new DefaultSerializationServiceBuilder().setEnableSharedObject(true).build();
+        InternalSerializationService ss = new DefaultSerializationServiceBuilder().setEnableSharedObject(true).build();
         Data data = ss.toData(new Foo());
         Foo foo = (Foo) ss.toObject(data);
 
@@ -201,7 +201,7 @@ public class SerializationTest
 
     @Test
     public void testLinkedListSerialization() {
-        SerializationService ss = new DefaultSerializationServiceBuilder().build();
+        InternalSerializationService ss = new DefaultSerializationServiceBuilder().build();
         LinkedList linkedList = new LinkedList();
         linkedList.add(new SerializationConcurrencyTest.Person(35, 180, 100, "Orhan", null));
         linkedList.add(new SerializationConcurrencyTest.Person(12, 120, 60, "Osman", null));
@@ -212,7 +212,7 @@ public class SerializationTest
 
     @Test
     public void testArrayListSerialization() {
-        SerializationService ss = new DefaultSerializationServiceBuilder().build();
+        InternalSerializationService ss = new DefaultSerializationServiceBuilder().build();
         ArrayList arrayList = new ArrayList();
         arrayList.add(new SerializationConcurrencyTest.Person(35, 180, 100, "Orhan", null));
         arrayList.add(new SerializationConcurrencyTest.Person(12, 120, 60, "Osman", null));
@@ -223,7 +223,7 @@ public class SerializationTest
 
     @Test
     public void testArraySerialization() {
-        SerializationService ss = new DefaultSerializationServiceBuilder().build();
+        InternalSerializationService ss = new DefaultSerializationServiceBuilder().build();
         byte[] array = new byte[1024];
         new Random().nextBytes(array);
         Data data = ss.toData(array);
@@ -240,7 +240,7 @@ public class SerializationTest
             }
         };
 
-        SerializationService ss = new DefaultSerializationServiceBuilder().build();
+        InternalSerializationService ss = new DefaultSerializationServiceBuilder().build();
 
         String obj = String.valueOf(System.nanoTime());
         Data data = ss.toData(obj, partitionStrategy);
@@ -254,7 +254,7 @@ public class SerializationTest
      */
     @Test
     public void testUnsharedJavaSerialization() {
-        SerializationService ss = new DefaultSerializationServiceBuilder().setEnableSharedObject(false).build();
+        InternalSerializationService ss = new DefaultSerializationServiceBuilder().setEnableSharedObject(false).build();
         Data data = ss.toData(new Foo());
         Foo foo = ss.toObject(data);
 
@@ -286,7 +286,7 @@ public class SerializationTest
      */
     @Test
     public void testCompressionOnSerializables() throws Exception {
-        SerializationService serializationService = new DefaultSerializationServiceBuilder().setEnableCompression(true).build();
+        InternalSerializationService serializationService = new DefaultSerializationServiceBuilder().setEnableCompression(true).build();
         long key = 1, value = 5000;
         Properties properties = new Properties();
         properties.put(key, value);
@@ -302,7 +302,7 @@ public class SerializationTest
      */
     @Test
     public void testCompressionOnExternalizables() throws Exception {
-        SerializationService serializationService = new DefaultSerializationServiceBuilder().setEnableCompression(true).build();
+        InternalSerializationService serializationService = new DefaultSerializationServiceBuilder().setEnableCompression(true).build();
         String test = "test";
         ExternalizableString ex = new ExternalizableString(test);  
         Data data = serializationService.toData(ex);

@@ -19,7 +19,7 @@ package com.hazelcast.concurrent.lock;
 import com.hazelcast.core.ICondition;
 import com.hazelcast.core.ILock;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.ObjectNamespace;

@@ -1,7 +1,7 @@
 package com.hazelcast.nio.tcp;
 
 import com.hazelcast.nio.Packet;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -20,7 +20,7 @@ import static org.junit.Assert.assertTrue;
 @Category({QuickTest.class, ParallelTest.class})
 public class ClientPacketSocketWriterTest {
 
-    private SerializationService serializationService;
+    private InternalSerializationService serializationService;
     private ClientPacketSocketWriter writer;
 
     @Before

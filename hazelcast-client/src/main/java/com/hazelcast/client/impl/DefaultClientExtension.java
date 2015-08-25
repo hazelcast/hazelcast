@@ -32,7 +32,7 @@ import com.hazelcast.map.impl.MapService;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.SocketInterceptor;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationServiceBuilder;
 import com.hazelcast.nio.tcp.DefaultSocketChannelWrapperFactory;
 import com.hazelcast.nio.tcp.SocketChannelWrapperFactory;
@@ -55,8 +55,8 @@ public class DefaultClientExtension implements ClientExtension {
 
     }
 
-    public SerializationService createSerializationService() {
-        SerializationService ss;
+    public InternalSerializationService createSerializationService() {
+        InternalSerializationService ss;
         try {
             ClientConfig config = client.getClientConfig();
             ClassLoader configClassLoader = config.getClassLoader();

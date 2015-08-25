@@ -29,7 +29,7 @@ import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.internal.serialization.InputOutputFactory;
 import com.hazelcast.nio.serialization.PortableFactory;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationServiceBuilder;
 import com.hazelcast.nio.serialization.Serializer;
 import com.hazelcast.nio.serialization.SerializerHook;
@@ -191,7 +191,7 @@ public class DefaultSerializationServiceBuilder implements SerializationServiceB
     }
 
     @Override
-    public SerializationService build() {
+    public InternalSerializationService build() {
         if (version < 0) {
             version = 0;
         }

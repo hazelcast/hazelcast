@@ -52,10 +52,10 @@ import com.hazelcast.internal.serialization.InputOutputFactory;
 import com.hazelcast.internal.serialization.ObjectDataInputStream;
 import com.hazelcast.internal.serialization.ObjectDataOutputStream;
 import com.hazelcast.nio.serialization.Portable;
-import com.hazelcast.internal.serialization.PortableContext;
+import com.hazelcast.nio.serialization.PortableContext;
 import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.nio.serialization.PortableReader;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.serialization.Serializer;
 import com.hazelcast.nio.serialization.StreamSerializer;
 import com.hazelcast.internal.serialization.impl.DefaultSerializers.BigDecimalSerializer;
@@ -92,7 +92,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static java.lang.Boolean.parseBoolean;
 
-public class SerializationServiceImpl implements SerializationService {
+public class SerializationServiceImpl implements InternalSerializationService {
 
     protected static final PartitioningStrategy EMPTY_PARTITIONING_STRATEGY = new PartitioningStrategy() {
         public Object getPartitionKey(Object key) {

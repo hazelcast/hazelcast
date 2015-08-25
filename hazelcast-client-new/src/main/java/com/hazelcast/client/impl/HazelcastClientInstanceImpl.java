@@ -76,7 +76,7 @@ import com.hazelcast.mapreduce.JobTracker;
 import com.hazelcast.mapreduce.impl.MapReduceService;
 import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.nio.ClassLoaderUtil;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.quorum.QuorumService;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.ringbuffer.Ringbuffer;
@@ -116,7 +116,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     private final ClientConfig config;
     private final ThreadGroup threadGroup;
     private final LifecycleServiceImpl lifecycleService;
-    private final SerializationService serializationService;
+    private final InternalSerializationService serializationService;
     private final ClientConnectionManager connectionManager;
     private final ClientClusterServiceImpl clusterService;
     private final ClientPartitionServiceImpl partitionService;
@@ -476,7 +476,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         return config;
     }
 
-    public SerializationService getSerializationService() {
+    public InternalSerializationService getSerializationService() {
         return serializationService;
     }
 

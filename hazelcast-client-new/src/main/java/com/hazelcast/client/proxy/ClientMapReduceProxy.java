@@ -51,7 +51,7 @@ import com.hazelcast.mapreduce.impl.SetKeyValueSource;
 import com.hazelcast.mapreduce.impl.task.TransferableJobProcessInformation;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.spi.impl.AbstractCompletableFuture;
 import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.UuidUtil;
@@ -177,7 +177,7 @@ public class ClientMapReduceProxy
     }
 
     private Map toObjectMap(ClientMessage res) {
-        SerializationService serializationService = getContext().getSerializationService();
+        InternalSerializationService serializationService = getContext().getSerializationService();
         Set<Map.Entry<Data, Data>> entrySet = MapReduceForCustomCodec.decodeResponse(res).entrySet;
         HashMap hashMap = new HashMap();
         for (Map.Entry<Data, Data> entry : entrySet) {

@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.serialization.impl.bufferpool;
 
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 
 /**
  * Default {@link BufferPoolFactory} implementation. Creates {@link BufferPoolImpl} instances.
@@ -24,7 +24,7 @@ import com.hazelcast.internal.serialization.SerializationService;
 public class BufferPoolFactoryImpl implements BufferPoolFactory {
 
     @Override
-    public BufferPool create(SerializationService serializationService) {
+    public BufferPool create(InternalSerializationService serializationService) {
         return new BufferPoolImpl(serializationService);
     }
 }

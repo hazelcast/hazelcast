@@ -25,7 +25,7 @@ import com.hazelcast.client.spi.impl.ClientClusterServiceImpl;
 import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.spi.impl.SerializableList;
 import com.hazelcast.util.ExceptionUtil;
@@ -54,7 +54,7 @@ public class ClusterAuthenticator implements Authenticator {
     public void authenticate(ClientConnection connection) throws AuthenticationException, IOException {
         final ClientClusterServiceImpl clusterService = (ClientClusterServiceImpl) client.getClientClusterService();
         final ClientPrincipal principal = clusterService.getPrincipal();
-        final SerializationService ss = client.getSerializationService();
+        final InternalSerializationService ss = client.getSerializationService();
         AuthenticationRequest auth = new AuthenticationRequest(credentials, principal);
         connection.init();
         //contains remoteAddress and principal

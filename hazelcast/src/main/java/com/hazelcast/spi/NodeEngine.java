@@ -26,7 +26,7 @@ import com.hazelcast.internal.storage.Storage;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.quorum.QuorumService;
 import com.hazelcast.transaction.TransactionManagerService;

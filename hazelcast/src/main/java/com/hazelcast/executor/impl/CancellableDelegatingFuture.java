@@ -18,6 +18,7 @@ package com.hazelcast.executor.impl;
 
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.executor.impl.operations.CancellationOperation;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.NodeEngine;
@@ -41,7 +42,7 @@ final class CancellableDelegatingFuture<V> extends DelegatingFuture<V> {
     private volatile boolean cancelled;
 
     CancellableDelegatingFuture(ICompletableFuture future, NodeEngine nodeEngine, String uuid, int partitionId) {
-        super(future, nodeEngine.getSerializationService());
+        super(future, (InternalSerializationService) nodeEngine.getSerializationService());
         this.nodeEngine = nodeEngine;
         this.uuid = uuid;
         this.partitionId = partitionId;
@@ -49,7 +50,7 @@ final class CancellableDelegatingFuture<V> extends DelegatingFuture<V> {
     }
 
     CancellableDelegatingFuture(ICompletableFuture future, NodeEngine nodeEngine, String uuid, Address target) {
-        super(future, nodeEngine.getSerializationService());
+        super(future, (InternalSerializationService) nodeEngine.getSerializationService());
         this.nodeEngine = nodeEngine;
         this.uuid = uuid;
         this.target = target;
@@ -58,7 +59,7 @@ final class CancellableDelegatingFuture<V> extends DelegatingFuture<V> {
 
     CancellableDelegatingFuture(ICompletableFuture future, V defaultValue, NodeEngine nodeEngine,
                                 String uuid, int partitionId) {
-        super(future, nodeEngine.getSerializationService(), defaultValue);
+        super(future, (InternalSerializationService) nodeEngine.getSerializationService(), defaultValue);
         this.nodeEngine = nodeEngine;
         this.uuid = uuid;
         this.partitionId = partitionId;

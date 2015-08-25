@@ -25,7 +25,7 @@ import com.hazelcast.core.IFunction;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
@@ -49,7 +49,7 @@ public class ClientInvocationFuture<V> implements ICompletableFuture<V> {
 
     private final ClientListenerServiceImpl clientListenerService;
 
-    private final SerializationService serializationService;
+    private final InternalSerializationService serializationService;
 
     private final EventHandler handler;
 

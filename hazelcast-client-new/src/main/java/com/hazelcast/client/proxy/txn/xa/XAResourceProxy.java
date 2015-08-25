@@ -26,7 +26,7 @@ import com.hazelcast.client.spi.ClientTransactionManagerService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.transaction.HazelcastXAResource;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionOptions;
@@ -162,7 +162,7 @@ public class XAResourceProxy extends ClientProxy implements HazelcastXAResource 
     private void finalizeTransactionRemotely(Xid xid, boolean isCommit) {
         SerializableXID serializableXID =
                 new SerializableXID(xid.getFormatId(), xid.getGlobalTransactionId(), xid.getBranchQualifier());
-        SerializationService serializationService = getContext().getSerializationService();
+        InternalSerializationService serializationService = getContext().getSerializationService();
         Data xidData = serializationService.toData(serializableXID);
         ClientMessage request = XATransactionFinalizeCodec.encodeRequest(serializableXID, isCommit);
         invoke(request, xidData);
@@ -180,7 +180,7 @@ public class XAResourceProxy extends ClientProxy implements HazelcastXAResource 
     private void clearRemoteTransactions(Xid xid) {
         SerializableXID serializableXID =
                 new SerializableXID(xid.getFormatId(), xid.getGlobalTransactionId(), xid.getBranchQualifier());
-        SerializationService serializationService = getContext().getSerializationService();
+        InternalSerializationService serializationService = getContext().getSerializationService();
         Data xidData = serializationService.toData(serializableXID);
         ClientMessage request = XATransactionClearRemoteCodec.encodeRequest(serializableXID);
         invoke(request, xidData);
@@ -207,7 +207,7 @@ public class XAResourceProxy extends ClientProxy implements HazelcastXAResource 
         ClientMessage response = invoke(request);
         Collection<Data> list = XATransactionCollectTransactionsCodec.decodeResponse(response).set;
         SerializableXID[] xidArray = new SerializableXID[list.size()];
-        SerializationService serializationService = getContext().getSerializationService();
+        InternalSerializationService serializationService = getContext().getSerializationService();
         int index = 0;
         for (Data xidData : list) {
             xidArray[index++] = serializationService.toObject(xidData);

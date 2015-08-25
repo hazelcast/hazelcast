@@ -120,7 +120,7 @@ import com.hazelcast.mapreduce.aggregation.Supplier;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.util.ExceptionUtil;
@@ -304,7 +304,7 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         initNearCache();
         final Data keyData = toData(key);
-        SerializationService serializationService = getContext().getSerializationService();
+        InternalSerializationService serializationService = getContext().getSerializationService();
         if (nearCache != null) {
             Object cached = nearCache.get(keyData);
             if (cached != null && !ClientNearCache.NULL_OBJECT.equals(cached)) {
@@ -1097,7 +1097,7 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
         ClientMessage request = MapSubmitToKeyCodec.encodeRequest(name, toData(entryProcessor), keyData, ThreadUtil.getThreadId());
         try {
             ClientInvocationFuture future = invokeOnKeyOwner(request, keyData);
-            SerializationService serializationService = getContext().getSerializationService();
+            InternalSerializationService serializationService = getContext().getSerializationService();
             ClientDelegatingFuture clientDelegatingFuture =
                     new ClientDelegatingFuture(future, serializationService, submitToKeyResponseDecoder);
             clientDelegatingFuture.andThen(callback);

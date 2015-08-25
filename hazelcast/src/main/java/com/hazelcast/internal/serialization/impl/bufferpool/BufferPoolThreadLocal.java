@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.serialization.impl.bufferpool;
 
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.util.ConcurrentReferenceHashMap;
 
 import java.util.concurrent.ConcurrentMap;
@@ -35,10 +35,10 @@ public final class BufferPoolThreadLocal {
     private static final float LOAD_FACTOR = 0.91f;
 
     private final ConcurrentMap<Thread, BufferPool> pools;
-    private final SerializationService serializationService;
+    private final InternalSerializationService serializationService;
     private final BufferPoolFactory bufferPoolFactory;
 
-    public BufferPoolThreadLocal(SerializationService serializationService, BufferPoolFactory bufferPoolFactory) {
+    public BufferPoolThreadLocal(InternalSerializationService serializationService, BufferPoolFactory bufferPoolFactory) {
         this.serializationService = serializationService;
         this.bufferPoolFactory = bufferPoolFactory;
         int initialCapacity = Runtime.getRuntime().availableProcessors();

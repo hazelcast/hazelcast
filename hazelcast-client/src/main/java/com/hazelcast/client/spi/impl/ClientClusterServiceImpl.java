@@ -37,7 +37,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ClassLoaderUtil;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.UuidUtil;
 
@@ -131,7 +131,7 @@ public class ClientClusterServiceImpl extends ClusterListenerSupport {
         return new ClientImpl(uuid, inetSocketAddress);
     }
 
-    SerializationService getSerializationService() {
+    InternalSerializationService getSerializationService() {
         return client.getSerializationService();
     }
 

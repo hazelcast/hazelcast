@@ -16,8 +16,8 @@
 
 package com.hazelcast.spi.impl;
 
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 
 public interface SerializationServiceSupport {
-    SerializationService getSerializationService();
+    InternalSerializationService getSerializationService();
 }

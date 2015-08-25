@@ -30,7 +30,7 @@ import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.nio.Packet;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.partition.impl.InternalPartitionServiceState;
@@ -159,7 +159,7 @@ public abstract class HazelcastTestSupport {
     }
 
     public static Packet toPacket(HazelcastInstance hz, Operation operation) {
-        SerializationService serializationService = getSerializationService(hz);
+        InternalSerializationService serializationService = getSerializationService(hz);
         ConnectionManager connectionManager = getConnectionManager(hz);
 
         Packet packet = new Packet(serializationService.toBytes(operation), operation.getPartitionId());
@@ -178,7 +178,7 @@ public abstract class HazelcastTestSupport {
         return node.clusterService;
     }
 
-    public static SerializationService getSerializationService(HazelcastInstance hz) {
+    public static InternalSerializationService getSerializationService(HazelcastInstance hz) {
         Node node = getNode(hz);
         return node.getSerializationService();
     }

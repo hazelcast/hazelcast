@@ -31,7 +31,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.monitor.LocalTopicStats;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.ringbuffer.OverflowPolicy;
 import com.hazelcast.ringbuffer.ReadResultSet;
 import com.hazelcast.ringbuffer.Ringbuffer;
@@ -64,7 +64,7 @@ public class ClientReliableTopicProxy<E> extends ClientProxy implements ITopic<E
 
     private final String name;
     private final Ringbuffer ringbuffer;
-    private final SerializationService serializationService;
+    private final InternalSerializationService serializationService;
     private final ClientReliableTopicConfig config;
     private final Executor executor;
     private final TopicOverloadPolicy overloadPolicy;

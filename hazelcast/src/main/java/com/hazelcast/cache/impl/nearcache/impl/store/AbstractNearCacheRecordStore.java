@@ -34,7 +34,7 @@ import com.hazelcast.monitor.NearCacheStats;
 import com.hazelcast.monitor.impl.NearCacheStatsImpl;
 import com.hazelcast.nio.UnsafeHelper;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
 
@@ -61,7 +61,7 @@ public abstract class AbstractNearCacheRecordStore<
     protected final long maxIdleMillis;
 
     protected final NearCacheConfig nearCacheConfig;
-    protected final SerializationService serializationService;
+    protected final InternalSerializationService serializationService;
     protected final NearCacheStatsImpl nearCacheStats;
     protected NCRM records;
 

@@ -36,7 +36,7 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionListener;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.util.ConstructorFunction;
 
@@ -100,7 +100,7 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
             throw new HazelcastClientNotActiveException("Client is shut down");
         }
         registerInvocation(invocation);
-        final SerializationService ss = client.getSerializationService();
+        final InternalSerializationService ss = client.getSerializationService();
         final byte[] bytes = ss.toBytes(invocation.getRequest());
         Packet packet = new Packet(bytes, invocation.getPartitionId());
         if (!isAllowedToSendRequest(connection, invocation.getRequest()) || !connection.write(packet)) {

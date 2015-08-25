@@ -26,7 +26,7 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionType;
 import com.hazelcast.nio.Protocols;
 import com.hazelcast.nio.SocketWritable;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.tcp.SocketChannelWrapper;
 import com.hazelcast.nio.tcp.nonblocking.NonBlockingIOThread;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -53,7 +53,7 @@ public class ClientConnection implements Connection, Closeable {
     private final ClientReadHandler readHandler;
     private final SocketChannelWrapper socketChannelWrapper;
     private final ClientConnectionManager connectionManager;
-    private final SerializationService serializationService;
+    private final InternalSerializationService serializationService;
     private final LifecycleService lifecycleService;
 
     private volatile Address remoteEndpoint;
@@ -94,7 +94,7 @@ public class ClientConnection implements Connection, Closeable {
         return packetCount.get();
     }
 
-    public SerializationService getSerializationService() {
+    public InternalSerializationService getSerializationService() {
         return serializationService;
     }
 

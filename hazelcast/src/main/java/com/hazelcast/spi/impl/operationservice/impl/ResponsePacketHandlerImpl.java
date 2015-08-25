@@ -18,7 +18,7 @@ package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Packet;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.spi.impl.PacketHandler;
 import com.hazelcast.spi.impl.operationservice.impl.responses.Response;
 
@@ -28,11 +28,11 @@ import com.hazelcast.spi.impl.operationservice.impl.responses.Response;
 final class ResponsePacketHandlerImpl implements PacketHandler {
 
     private final ILogger logger;
-    private final SerializationService serializationService;
+    private final InternalSerializationService serializationService;
     private final InvocationRegistry invocationRegistry;
 
     public ResponsePacketHandlerImpl(ILogger logger,
-                                     SerializationService serializationService,
+                                     InternalSerializationService serializationService,
                                      InvocationRegistry invocationRegistry) {
         this.logger = logger;
         this.serializationService = serializationService;

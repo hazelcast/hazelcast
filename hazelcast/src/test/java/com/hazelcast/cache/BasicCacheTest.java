@@ -22,7 +22,7 @@ import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -404,7 +404,7 @@ public class BasicCacheTest
     @Test
     public void testInitableIterator() {
         int testSize = 3007;
-        SerializationService ss = new DefaultSerializationServiceBuilder().build();
+        InternalSerializationService ss = new DefaultSerializationServiceBuilder().build();
         for (int fetchSize = 1; fetchSize < 102; fetchSize++) {
             CacheConcurrentHashMap<Data, String> cmap = new CacheConcurrentHashMap<Data, String>(1000);
             for (int i = 0; i < testSize; i++) {

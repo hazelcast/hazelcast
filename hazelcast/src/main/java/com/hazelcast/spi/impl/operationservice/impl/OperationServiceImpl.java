@@ -29,7 +29,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.nio.Packet;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.InternalCompletableFuture;
@@ -123,7 +123,7 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
     private final SlowOperationDetector slowOperationDetector;
     private final IsStillRunningService isStillRunningService;
     private final AsyncResponsePacketHandler responsePacketExecutor;
-    private final SerializationService serializationService;
+    private final InternalSerializationService serializationService;
 
     public OperationServiceImpl(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;

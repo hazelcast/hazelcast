@@ -23,7 +23,8 @@ import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.InternalCompletableFuture;
@@ -54,7 +55,7 @@ import static com.hazelcast.cache.impl.CacheProxyUtil.validateResults;
 
 /**
  * Abstract class providing cache open/close operations and {@link NodeEngine}, {@link CacheService} and
- * {@link SerializationService} accessor which will be used by implementation of {@link com.hazelcast.cache.ICache}
+ * {@link InternalSerializationService} accessor which will be used by implementation of {@link com.hazelcast.cache.ICache}
  * in server or embedded mode.
  *
  * @param <K> the type of key.

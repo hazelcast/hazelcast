@@ -19,7 +19,7 @@ package com.hazelcast.internal.serialization.impl;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.serialization.Serializer;
 import com.hazelcast.nio.serialization.StreamSerializer;
 
@@ -27,10 +27,10 @@ import java.io.IOException;
 
 class StreamSerializerAdapter implements SerializerAdapter {
 
-    protected final SerializationService service;
+    protected final InternalSerializationService service;
     protected final StreamSerializer serializer;
 
-    public StreamSerializerAdapter(SerializationService service, StreamSerializer serializer) {
+    public StreamSerializerAdapter(InternalSerializationService service, StreamSerializer serializer) {
         this.service = service;
         this.serializer = serializer;
     }

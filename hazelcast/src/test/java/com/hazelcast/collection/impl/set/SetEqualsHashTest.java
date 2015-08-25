@@ -3,7 +3,7 @@ package com.hazelcast.collection.impl.set;
 import com.hazelcast.collection.impl.collection.CollectionItem;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationServiceBuilder;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -23,7 +23,7 @@ public class SetEqualsHashTest extends HazelcastTestSupport {
     @Test
     public void testCollectionItem_equalsAndHash(){
         SerializationServiceBuilder serializationServiceBuilder = new DefaultSerializationServiceBuilder();
-        SerializationService build = serializationServiceBuilder.build();
+        InternalSerializationService build = serializationServiceBuilder.build();
         Data value = build.toData(randomString());
         CollectionItem firstItem = new CollectionItem(1, value);
         CollectionItem secondItem = new CollectionItem(2, value);

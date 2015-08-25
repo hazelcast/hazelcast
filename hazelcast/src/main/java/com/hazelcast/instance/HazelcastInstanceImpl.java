@@ -62,7 +62,7 @@ import com.hazelcast.mapreduce.JobTracker;
 import com.hazelcast.mapreduce.impl.MapReduceService;
 import com.hazelcast.memory.MemoryStats;
 import com.hazelcast.multimap.impl.MultiMapService;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.quorum.QuorumService;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.ringbuffer.Ringbuffer;
@@ -375,7 +375,7 @@ public class HazelcastInstanceImpl implements HazelcastInstance {
         return proxyService.removeProxyListener(registrationId);
     }
 
-    public SerializationService getSerializationService() {
+    public InternalSerializationService getSerializationService() {
         return node.getSerializationService();
     }
 

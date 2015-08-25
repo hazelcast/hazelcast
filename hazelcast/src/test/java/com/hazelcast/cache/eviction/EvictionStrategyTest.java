@@ -16,7 +16,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.TestUtil;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
@@ -74,7 +74,7 @@ public class EvictionStrategyTest extends HazelcastTestSupport {
 
         Node node = TestUtil.getNode(instance);
 
-        SerializationService serializationService = node.getSerializationService();
+        InternalSerializationService serializationService = node.getSerializationService();
 
         EvictionConfiguration evictionConfig = new EvictionConfiguration() {
             @Override

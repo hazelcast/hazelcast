@@ -16,7 +16,7 @@
 
 package com.hazelcast.nio.serialization;
 
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationServiceBuilder;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
@@ -72,7 +72,7 @@ public class PacketTest {
     }
 
     private void testPacketWriteRead(Object originalObject) throws IOException {
-        SerializationService ss = createSerializationServiceBuilder().build();
+        InternalSerializationService ss = createSerializationServiceBuilder().build();
         byte[] originalPayload = ss.toBytes(originalObject);
 
         ByteBuffer buffer = ByteBuffer.allocate(originalPayload.length * 2);
@@ -80,7 +80,7 @@ public class PacketTest {
         assertTrue(originalPacket.writeTo(buffer));
         buffer.flip();
 
-        SerializationService ss2 = createSerializationServiceBuilder().build();
+        InternalSerializationService ss2 = createSerializationServiceBuilder().build();
         Packet clonedPacket = new Packet();
         assertTrue(clonedPacket.readFrom(buffer));
 

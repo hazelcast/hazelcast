@@ -14,13 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.serialization;
+package com.hazelcast.nio.serialization;
 
 import com.hazelcast.core.ManagedContext;
-import com.hazelcast.nio.serialization.ClassDefinition;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.FieldDefinition;
-import com.hazelcast.nio.serialization.Portable;
 
 import java.io.IOException;
 import java.nio.ByteOrder;

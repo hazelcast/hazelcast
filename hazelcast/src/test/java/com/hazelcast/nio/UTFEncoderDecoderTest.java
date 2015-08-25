@@ -19,7 +19,7 @@ package com.hazelcast.nio;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -184,7 +184,7 @@ public class UTFEncoderDecoderTest  {
 
     @Test
     public void testComplexObject() throws Exception {
-        SerializationService ss = new DefaultSerializationServiceBuilder().build();
+        InternalSerializationService ss = new DefaultSerializationServiceBuilder().build();
 
         ComplexUtf8Object complexUtf8Object = buildComplexUtf8Object();
         ByteArrayOutputStream baos = new ByteArrayOutputStream(2048);
@@ -370,7 +370,7 @@ public class UTFEncoderDecoderTest  {
 
     @Test
     public void testIssue2674_multibyte_char_at_position_that_even_multiple_of_buffer_size() throws Exception {
-        SerializationService serializationService = new DefaultSerializationServiceBuilder().build();
+        InternalSerializationService serializationService = new DefaultSerializationServiceBuilder().build();
 
         for (int i : new int[]{50240, 100240, 80240}) {
             String originalString = createString(i);
@@ -384,7 +384,7 @@ public class UTFEncoderDecoderTest  {
 
     @Test
     public void testIssue2705_integer_overflow_on_old_version_multicast_package() throws Exception {
-        SerializationService serializationService = new DefaultSerializationServiceBuilder().build();
+        InternalSerializationService serializationService = new DefaultSerializationServiceBuilder().build();
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream(64000);
         byte[] temp = new byte[1024];

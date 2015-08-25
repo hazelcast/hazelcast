@@ -40,7 +40,7 @@ import com.hazelcast.executor.impl.RunnableAdapter;
 import com.hazelcast.monitor.LocalExecutorStats;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.UuidUtil;
@@ -424,7 +424,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         ClientMessage request =
                 ExecutorServiceSubmitToPartitionCodec.encodeRequest(name, uuid, toData(task), partitionId);
         ClientInvocationFuture f = invokeOnPartitionOwner(request, partitionId);
-        SerializationService serializationService = getContext().getSerializationService();
+        InternalSerializationService serializationService = getContext().getSerializationService();
 
         ClientDelegatingFuture<T> delegatingFuture = new ClientDelegatingFuture<T>(f, serializationService,
                 SUBMIT_TO_PARTITION_DECODER);
@@ -450,7 +450,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         ClientMessage request =
                 ExecutorServiceSubmitToPartitionCodec.encodeRequest(name, uuid, toData(task), partitionId);
         ClientInvocationFuture f = invokeOnPartitionOwner(request, partitionId);
-        SerializationService serializationService = getContext().getSerializationService();
+        InternalSerializationService serializationService = getContext().getSerializationService();
         ClientDelegatingFuture<T> delegatingFuture =
                 new ClientDelegatingFuture<T>(f, serializationService,
                         SUBMIT_TO_PARTITION_DECODER);
@@ -473,7 +473,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         String uuid = getUUID();
         ClientMessage request = ExecutorServiceSubmitToAddressCodec.encodeRequest(name, uuid, toData(task), address);
         ClientInvocationFuture f = invokeOnTarget(request, address);
-        SerializationService serializationService = getContext().getSerializationService();
+        InternalSerializationService serializationService = getContext().getSerializationService();
         ClientDelegatingFuture<T> delegatingFuture =
                 new ClientDelegatingFuture<T>(f, serializationService, SUBMIT_TO_ADDRESS_DECODER);
         delegatingFuture.andThen(callback);
@@ -523,7 +523,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
     private Object retrieveResultFromMessage(ClientInvocationFuture f) {
         Object response;
         try {
-            SerializationService serializationService = getClient().getSerializationService();
+            InternalSerializationService serializationService = getClient().getSerializationService();
             Data data = ExecutorServiceSubmitToAddressCodec.decodeResponse(f.get()).response;
             response = serializationService.toObject(data);
         } catch (Exception e) {

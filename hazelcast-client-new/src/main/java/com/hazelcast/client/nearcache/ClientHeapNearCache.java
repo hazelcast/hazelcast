@@ -23,7 +23,7 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.map.impl.nearcache.NearCacheRecord;
 import com.hazelcast.monitor.impl.NearCacheStatsImpl;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
 
@@ -104,7 +104,7 @@ public class ClientHeapNearCache<K>
         if (object == null) {
             value = NULL_OBJECT;
         } else {
-            SerializationService serializationService = context.getSerializationService();
+            InternalSerializationService serializationService = context.getSerializationService();
             if (inMemoryFormat == InMemoryFormat.BINARY) {
                 value = serializationService.toData(object);
             } else if (inMemoryFormat == InMemoryFormat.OBJECT) {

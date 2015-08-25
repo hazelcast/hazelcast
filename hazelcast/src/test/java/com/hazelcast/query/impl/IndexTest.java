@@ -25,7 +25,7 @@ import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.query.impl.predicates.AndPredicate;
 import com.hazelcast.query.impl.predicates.EqualPredicate;
 import com.hazelcast.query.QueryException;
@@ -50,7 +50,7 @@ public class IndexTest {
 
     static final short FACTORY_ID = 1;
 
-    final SerializationService ss = new DefaultSerializationServiceBuilder()
+    final InternalSerializationService ss = new DefaultSerializationServiceBuilder()
             .addPortableFactory(FACTORY_ID, new TestPortableFactory()).build();
 
     @Test

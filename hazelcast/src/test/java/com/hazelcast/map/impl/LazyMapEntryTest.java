@@ -5,7 +5,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -25,7 +25,7 @@ import static org.junit.Assert.assertTrue;
 public class LazyMapEntryTest extends HazelcastTestSupport {
 
     private LazyMapEntry entry = new LazyMapEntry();
-    private SerializationService serializationService = new DefaultSerializationServiceBuilder().build();
+    private InternalSerializationService serializationService = new DefaultSerializationServiceBuilder().build();
 
     @Test
     public void test_init() throws Exception {

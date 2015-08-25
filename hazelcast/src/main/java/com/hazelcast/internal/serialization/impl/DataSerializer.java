@@ -16,7 +16,6 @@
 
 package com.hazelcast.internal.serialization.impl;
 
-
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.ObjectDataInput;
@@ -41,7 +40,7 @@ import static com.hazelcast.internal.serialization.impl.SerializationConstants.C
  * This class is the default serializer for all types that are serialized using Hazelcast
  * internal methods. Due to the operation responding on deserialization errors this class
  * has a dependency to {@link com.hazelcast.nio.IOUtil#extractOperationCallId(com.hazelcast.nio.serialization.Data,
- * com.hazelcast.internal.serialization.SerializationService)}.
+ * com.hazelcast.internal.serialization.InternalSerializationService)}.
  * If the way the DataSerializer serializes values is changed the extract method needs to be changed too!
  */
 final class DataSerializer implements StreamSerializer<DataSerializable> {

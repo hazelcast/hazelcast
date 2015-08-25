@@ -17,7 +17,7 @@
 package com.hazelcast.internal.serialization.impl;
 
 import com.hazelcast.nio.UnsafeHelper;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 
 import java.io.IOException;
 import java.nio.ByteOrder;
@@ -31,11 +31,11 @@ import static com.hazelcast.nio.Bits.SHORT_SIZE_IN_BYTES;
 
 class UnsafeObjectDataInput extends ByteArrayObjectDataInput {
 
-    UnsafeObjectDataInput(byte[] buffer, SerializationService service) {
+    UnsafeObjectDataInput(byte[] buffer, InternalSerializationService service) {
         super(buffer, service, ByteOrder.nativeOrder());
     }
 
-    UnsafeObjectDataInput(byte[] buffer, int offset, SerializationService service) {
+    UnsafeObjectDataInput(byte[] buffer, int offset, InternalSerializationService service) {
         super(buffer, offset, service, ByteOrder.nativeOrder());
     }
 

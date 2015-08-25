@@ -6,7 +6,7 @@ import com.hazelcast.map.impl.mapstore.writebehind.entry.DelayedEntries;
 import com.hazelcast.map.impl.mapstore.writebehind.entry.DelayedEntry;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -197,7 +197,7 @@ public class WriteBehindQueueTest extends HazelcastTestSupport {
 
     private List<DelayedEntry> createDelayedEntryList(int numberOfEntriesToCreate) {
         final List<DelayedEntry> list = new ArrayList<DelayedEntry>(numberOfEntriesToCreate);
-        SerializationService ss1 = new DefaultSerializationServiceBuilder().build();
+        InternalSerializationService ss1 = new DefaultSerializationServiceBuilder().build();
         final long storeTime = Clock.currentTimeMillis();
         for (int i = 0; i < numberOfEntriesToCreate; i++) {
             final DelayedEntry<Data, Object> e = DelayedEntries.createWithoutValue(ss1.toData(i), storeTime, i);

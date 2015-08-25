@@ -51,7 +51,7 @@ import com.hazelcast.core.ItemEventType;
 import com.hazelcast.core.ItemListener;
 import com.hazelcast.core.Member;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.spi.impl.UnmodifiableLazyList;
 
 import java.util.ArrayList;
@@ -145,7 +145,7 @@ public class ClientListProxy<E> extends ClientProxy implements IList<E> {
         ClientMessage response = invoke(request);
         ListIteratorCodec.ResponseParameters resultParameters = ListIteratorCodec.decodeResponse(response);
         List<Data> resultCollection = (List<Data>) resultParameters.list;
-        SerializationService serializationService = getContext().getSerializationService();
+        InternalSerializationService serializationService = getContext().getSerializationService();
         return new UnmodifiableLazyList<E>(resultCollection, serializationService).iterator();
     }
 
@@ -303,7 +303,7 @@ public class ClientListProxy<E> extends ClientProxy implements IList<E> {
         ClientMessage response = invoke(request);
         ListListIteratorCodec.ResponseParameters resultParameters = ListListIteratorCodec.decodeResponse(response);
         List<Data> resultCollection = (List<Data>) resultParameters.list;
-        SerializationService serializationService = getContext().getSerializationService();
+        InternalSerializationService serializationService = getContext().getSerializationService();
         return new UnmodifiableLazyList<E>(resultCollection, serializationService).listIterator();
     }
 
@@ -312,7 +312,7 @@ public class ClientListProxy<E> extends ClientProxy implements IList<E> {
         ClientMessage response = invoke(request);
         ListSubCodec.ResponseParameters resultParameters = ListSubCodec.decodeResponse(response);
         List<Data> resultCollection = (List<Data>) resultParameters.list;
-        SerializationService serializationService = getContext().getSerializationService();
+        InternalSerializationService serializationService = getContext().getSerializationService();
         return new UnmodifiableLazyList<E>(resultCollection, serializationService);
     }
 
@@ -334,7 +334,7 @@ public class ClientListProxy<E> extends ClientProxy implements IList<E> {
 
         @Override
         public void handle(Data dataItem, String uuid, int eventType) {
-            SerializationService serializationService = getContext().getSerializationService();
+            InternalSerializationService serializationService = getContext().getSerializationService();
             ClientClusterService clusterService = getContext().getClusterService();
 
             E item = includeValue ? (E) serializationService.toObject(dataItem) : null;

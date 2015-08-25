@@ -22,7 +22,7 @@ import com.hazelcast.map.merge.LatestUpdateMapMergePolicy;
 import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.map.merge.PassThroughMergePolicy;
 import com.hazelcast.map.merge.PutIfAbsentMapMergePolicy;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.nio.serialization.SerializationService;
 
 /**
  * LazyEntryView is an implementation of {@link com.hazelcast.core.EntryView} and also it is writable.

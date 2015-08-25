@@ -20,7 +20,7 @@ import com.hazelcast.client.connection.nio.ClientConnection;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.client.ClientRequest;
 import com.hazelcast.client.spi.impl.ClientInvocation;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.spi.impl.SerializableList;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionNotActiveException;
@@ -136,7 +136,7 @@ public class XATransactionProxy {
     }
 
     private <T> T invoke(ClientRequest request) {
-        SerializationService ss = client.getSerializationService();
+        InternalSerializationService ss = client.getSerializationService();
         try {
             ClientInvocation clientInvocation = new ClientInvocation(client, request, connection);
             Future<SerializableList> future = clientInvocation.invoke();

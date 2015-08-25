@@ -23,7 +23,7 @@ import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.HazelcastInstanceProxy;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.Address;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -85,9 +85,9 @@ public class EventServiceTest extends HazelcastTestSupport {
         EventService es2 = impl2.node.nodeEngine.getEventService();
         EventService es3 = impl3.node.nodeEngine.getEventService();
 
-        SerializationService ss1 = impl1.node.nodeEngine.getSerializationService();
-        SerializationService ss2 = impl2.node.nodeEngine.getSerializationService();
-        SerializationService ss3 = impl3.node.nodeEngine.getSerializationService();
+        InternalSerializationService ss1 = impl1.node.nodeEngine.getSerializationService();
+        InternalSerializationService ss2 = impl2.node.nodeEngine.getSerializationService();
+        InternalSerializationService ss3 = impl3.node.nodeEngine.getSerializationService();
 
         int counter = 0;
         for (int i = 0; i < 3000; i++) {
@@ -116,7 +116,7 @@ public class EventServiceTest extends HazelcastTestSupport {
         l3.await(30, TimeUnit.SECONDS);
     }
 
-    private TopicEvent builTopicEvent(String value, MemberImpl member, SerializationService ss) {
+    private TopicEvent builTopicEvent(String value, MemberImpl member, InternalSerializationService ss) {
         return new TopicEvent("foo", ss.toData(value), member.getAddress());
     }
 

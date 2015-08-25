@@ -6,7 +6,7 @@ import com.hazelcast.client.impl.protocol.util.ClientProtocolBuffer;
 import com.hazelcast.client.impl.protocol.util.SafeBuffer;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
@@ -24,7 +24,7 @@ import static org.junit.Assert.assertTrue;
 @Category(QuickTest.class)
 public class MapMessageEncodeDecodeTest {
 
-    private static final SerializationService serializationService = new DefaultSerializationServiceBuilder().build();
+    private static final InternalSerializationService serializationService = new DefaultSerializationServiceBuilder().build();
 
     private static final String NAME = "name";
     private static final Data DATA = serializationService.toData("The Test");
