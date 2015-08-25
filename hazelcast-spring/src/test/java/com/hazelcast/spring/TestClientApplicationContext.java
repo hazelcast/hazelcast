@@ -161,12 +161,12 @@ public class TestClientApplicationContext {
         client.getMap("default").put("Q", "q");
         client2.getMap("default").put("X", "x");
 
-        final IMap<Object, Object> map = instance.getMap("default");
+        IMap<Object, Object> map = instance.getMap("default");
         assertEquals("q", map.get("Q"));
         assertEquals("x", map.get("X"));
 
         ClientConfig config3 = client3.getClientConfig();
-        final SerializationConfig serConf = config3.getSerializationConfig();
+        SerializationConfig serConf = config3.getSerializationConfig();
 
         assertEquals(ByteOrder.BIG_ENDIAN, serConf.getByteOrder());
         assertEquals(false, serConf.isAllowUnsafe());
@@ -176,38 +176,38 @@ public class TestClientApplicationContext {
         assertEquals(false, serConf.isUseNativeByteOrder());
         assertEquals(10, serConf.getPortableVersion());
 
-        final Map<Integer, String> map1 = serConf.getDataSerializableFactoryClasses();
+        Map<Integer, String> map1 = serConf.getDataSerializableFactoryClasses();
         assertNotNull(map1);
         assertTrue(map1.containsKey(1));
         assertEquals("com.hazelcast.spring.serialization.DummyDataSerializableFactory", map1.get(1));
 
-        final Map<Integer, String> portableFactoryClasses = serConf.getPortableFactoryClasses();
+        Map<Integer, String> portableFactoryClasses = serConf.getPortableFactoryClasses();
         assertNotNull(portableFactoryClasses);
         assertTrue(portableFactoryClasses.containsKey(2));
         assertEquals("com.hazelcast.spring.serialization.DummyPortableFactory", portableFactoryClasses.get(2));
 
-        final Collection<SerializerConfig> serializerConfigs = serConf.getSerializerConfigs();
+        Collection<SerializerConfig> serializerConfigs = serConf.getSerializerConfigs();
 
         assertNotNull(serializerConfigs);
 
-        final SerializerConfig serializerConfig = serializerConfigs.iterator().next();
+        SerializerConfig serializerConfig = serializerConfigs.iterator().next();
         assertNotNull(serializerConfig);
-        assertEquals("com.hazelcast.nio.serialization.CustomSerializationTest$FooXmlSerializer", serializerConfig.getClassName());
-        assertEquals("com.hazelcast.nio.serialization.CustomSerializationTest$Foo", serializerConfig.getTypeClassName());
+        assertEquals("com.hazelcast.internal.serialization.CustomSerializationTest$FooXmlSerializer", serializerConfig.getClassName());
+        assertEquals("com.hazelcast.internal.serialization.CustomSerializationTest$Foo", serializerConfig.getTypeClassName());
 
-        final List<ProxyFactoryConfig> proxyFactoryConfigs = config3.getProxyFactoryConfigs();
+        List<ProxyFactoryConfig> proxyFactoryConfigs = config3.getProxyFactoryConfigs();
         assertNotNull(proxyFactoryConfigs);
-        final ProxyFactoryConfig proxyFactoryConfig = proxyFactoryConfigs.get(0);
+        ProxyFactoryConfig proxyFactoryConfig = proxyFactoryConfigs.get(0);
         assertNotNull(proxyFactoryConfig);
         assertEquals("com.hazelcast.spring.DummyProxyFactory", proxyFactoryConfig.getClassName());
         assertEquals("MyService", proxyFactoryConfig.getService());
 
-        final LoadBalancer loadBalancer = config3.getLoadBalancer();
+        LoadBalancer loadBalancer = config3.getLoadBalancer();
         assertNotNull(loadBalancer);
 
         assertTrue(loadBalancer instanceof RoundRobinLB);
 
-        final NearCacheConfig nearCacheConfig = config3.getNearCacheConfig("default");
+        NearCacheConfig nearCacheConfig = config3.getNearCacheConfig("default");
 
         assertNotNull(nearCacheConfig);
 

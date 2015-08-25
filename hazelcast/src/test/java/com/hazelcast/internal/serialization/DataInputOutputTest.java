@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-package com.hazelcast.nio.serialization;
+package com.hazelcast.internal.serialization;
 
-import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.internal.serialization.SerializationServiceBuilder;
+import com.hazelcast.internal.serialization.SerializationConcurrencyTest.Address;
+import com.hazelcast.internal.serialization.SerializationConcurrencyTest.Person;
+import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Assert;
@@ -34,8 +34,6 @@ import java.io.IOException;
 import java.nio.ByteOrder;
 import java.util.Arrays;
 
-import static com.hazelcast.nio.serialization.SerializationConcurrencyTest.Address;
-import static com.hazelcast.nio.serialization.SerializationConcurrencyTest.Person;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 

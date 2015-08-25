@@ -14,17 +14,18 @@
  * limitations under the License.
  */
 
-package com.hazelcast.nio.serialization;
+package com.hazelcast.internal.serialization;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
 
 import java.io.IOException;
 import java.util.Arrays;
 
 /**
-* @author mdogan 22/05/14
-*/
+ * @author mdogan 22/05/14
+ */
 class ByteArrayDataSerializable implements DataSerializable {
     private byte[] data;
 
@@ -34,6 +35,7 @@ class ByteArrayDataSerializable implements DataSerializable {
     ByteArrayDataSerializable(byte[] data) {
         this.data = data;
     }
+
 
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeInt(data.length);

@@ -20,7 +20,7 @@ import com.hazelcast.config.QueueStoreConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.QueueStore;
 import com.hazelcast.core.QueueStoreFactory;
-import com.hazelcast.nio.BufferObjectDataOutput;
+import com.hazelcast.internal.serialization.BufferObjectDataOutput;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;

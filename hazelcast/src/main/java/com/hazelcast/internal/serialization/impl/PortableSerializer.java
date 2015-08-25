@@ -17,8 +17,8 @@
 package com.hazelcast.internal.serialization.impl;
 
 import com.hazelcast.core.ManagedContext;
-import com.hazelcast.nio.BufferObjectDataInput;
-import com.hazelcast.nio.BufferObjectDataOutput;
+import com.hazelcast.internal.serialization.BufferObjectDataInput;
+import com.hazelcast.internal.serialization.BufferObjectDataOutput;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.ClassDefinition;

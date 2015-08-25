@@ -1,10 +1,14 @@
-package com.hazelcast.nio.serialization;
+package com.hazelcast.internal.serialization;
+
+import com.hazelcast.nio.serialization.PortableReader;
+import com.hazelcast.nio.serialization.PortableWriter;
+import com.hazelcast.nio.serialization.VersionedPortable;
 
 import java.io.IOException;
 
 /**
-* @author mdogan 22/05/14
-*/
+ * @author mdogan 22/05/14
+ */
 class NamedPortableV2 extends NamedPortable implements VersionedPortable {
 
     private int v;

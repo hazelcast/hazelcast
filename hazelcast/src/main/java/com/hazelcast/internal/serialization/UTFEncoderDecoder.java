@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.nio;
+package com.hazelcast.internal.serialization;
 
 import com.hazelcast.logging.Logger;
+import com.hazelcast.nio.UnsafeHelper;
 import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.QuickMath;
 

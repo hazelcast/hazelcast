@@ -135,8 +135,8 @@
                                      class-name="com.hazelcast.spring.serialization.DummyPortableFactory"/>
             </hz:portable-factories>
             <hz:serializers>
-                <hz:serializer type-class="com.hazelcast.nio.serialization.CustomSerializationTest$Foo"
-                               class-name="com.hazelcast.nio.serialization.CustomSerializationTest$FooXmlSerializer"/>
+                <hz:serializer type-class="com.hazelcast.internal.serialization.CustomSerializationTest$Foo"
+                               class-name="com.hazelcast.internal.serialization.CustomSerializationTest$FooXmlSerializer"/>
             </hz:serializers>
         </hz:serialization>
 
