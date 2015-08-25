@@ -249,8 +249,6 @@
     <suppress checks="VariableName" files="com/hazelcast/instance/GroupProperties"/>
     <suppress checks="MethodLength" files="com/hazelcast/instance/GroupProperties"/>
     <suppress checks="ExecutableStatementCount" files="com/hazelcast/instance/GroupProperties"/>
-    <!-- TODO: work in progress -->
-    <suppress checks="MethodLength|NestedIfDepth|NPathComplexity" files="com/hazelcast/instance/DefaultAddressPicker"/>
     <suppress checks="" files="com/hazelcast/instance/Node"/>
 
     <!-- SPI -->
