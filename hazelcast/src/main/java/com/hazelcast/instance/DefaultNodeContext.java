@@ -19,8 +19,10 @@ package com.hazelcast.instance;
 import com.hazelcast.cluster.Joiner;
 import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.nio.NodeIOService;
+import com.hazelcast.nio.tcp.IOThreadingModel;
 import com.hazelcast.nio.tcp.TcpIpConnectionManager;
 import com.hazelcast.nio.tcp.nonblocking.NonBlockingIOThreadingModel;
+import com.hazelcast.nio.tcp.spinning.SpinningIOThreadingModel;
 
 import java.nio.channels.ServerSocketChannel;
 
@@ -39,11 +41,7 @@ public class DefaultNodeContext implements NodeContext {
     @Override
     public ConnectionManager createConnectionManager(Node node, ServerSocketChannel serverSocketChannel) {
         NodeIOService ioService = new NodeIOService(node, node.nodeEngine);
-        NonBlockingIOThreadingModel ioThreadingModel = new NonBlockingIOThreadingModel(
-                ioService,
-                node.loggingService,
-                node.nodeEngine.getMetricsRegistry(),
-                node.getHazelcastThreadGroup());
+        IOThreadingModel ioThreadingModel = createTcpIpConnectionThreadingModel(node, ioService);
 
         return new TcpIpConnectionManager(
                 ioService,
@@ -51,5 +49,22 @@ public class DefaultNodeContext implements NodeContext {
                 node.loggingService,
                 node.nodeEngine.getMetricsRegistry(),
                 ioThreadingModel);
+    }
+
+    private IOThreadingModel createTcpIpConnectionThreadingModel(Node node, NodeIOService ioService) {
+        boolean spinning = Boolean.getBoolean("hazelcast.io.spinning");
+        if (spinning) {
+            return new SpinningIOThreadingModel(
+                    ioService,
+                    node.loggingService,
+                    node.nodeEngine.getMetricsRegistry(),
+                    node.getHazelcastThreadGroup());
+        } else {
+            return new NonBlockingIOThreadingModel(
+                    ioService,
+                    node.loggingService,
+                    node.nodeEngine.getMetricsRegistry(),
+                    node.getHazelcastThreadGroup());
+        }
     }
 }
