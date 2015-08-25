@@ -22,7 +22,6 @@ import com.hazelcast.client.impl.protocol.EventMessageConst;
 import com.hazelcast.client.impl.protocol.ResponseMessageConst;
 import com.hazelcast.nio.serialization.Data;
 
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -38,7 +37,7 @@ public interface MapCodecTemplate {
      * @return old value of the entry
      */
     @Request(id = 1, retryable = false, response = ResponseMessageConst.DATA)
-    void put(String name, Data key, Data value, long threadId, long ttl);
+    Object put(String name, Data key, Data value, long threadId, long ttl);
 
     /**
      *
@@ -48,7 +47,7 @@ public interface MapCodecTemplate {
      * @return The value for the key if exists
      */
     @Request(id = 2, retryable = true, response = ResponseMessageConst.DATA)
-    void get(String name, Data key, long threadId);
+    Object get(String name, Data key, long threadId);
 
     /**
      *
@@ -58,7 +57,7 @@ public interface MapCodecTemplate {
      * @return Clone of the previous value, not the original (identically equal) value previously put into the map.
      */
     @Request(id = 3, retryable = false, response = ResponseMessageConst.DATA)
-    void remove(String name, Data key, long threadId);
+    Object remove(String name, Data key, long threadId);
 
     /**
      *
@@ -69,7 +68,7 @@ public interface MapCodecTemplate {
      * @return Clone of the previous value, not the original (identically equal) value previously put into the map.
      */
     @Request(id = 4, retryable = false, response = ResponseMessageConst.DATA)
-    void replace(String name, Data key, Data value, long threadId);
+    Object replace(String name, Data key, Data value, long threadId);
 
     /**
      *
@@ -81,7 +80,7 @@ public interface MapCodecTemplate {
      * @return Clone of the previous value, not the original (identically equal) value previously put into the map.
      */
     @Request(id = 5, retryable = false, response = ResponseMessageConst.BOOLEAN)
-    void replaceIfSame(String name, Data key, Data testValue, Data value, long threadId);
+    Object replaceIfSame(String name, Data key, Data testValue, Data value, long threadId);
 
     /**
      *
@@ -93,7 +92,7 @@ public interface MapCodecTemplate {
      * @return Future from which the old value of the key can be retrieved.
      */
     @Request(id = 6, retryable = false, response = ResponseMessageConst.DATA)
-    void putAsync(String name, Data key, Data value, long threadId, long ttl);
+    Object putAsync(String name, Data key, Data value, long threadId, long ttl);
 
 
     /**
@@ -104,7 +103,7 @@ public interface MapCodecTemplate {
      * @return Future from which the value of the key can be retrieved.
      */
     @Request(id = 7, retryable = true, response = ResponseMessageConst.DATA)
-    void getAsync(String name, Data key, long threadId);
+    Object getAsync(String name, Data key, long threadId);
 
     /**
      *
@@ -114,7 +113,7 @@ public interface MapCodecTemplate {
      * @return A Future from which the value removed from the map can be retrieved.
      */
     @Request(id = 8, retryable = false, response = ResponseMessageConst.DATA)
-    void removeAsync(String name, Data key, long threadId);
+    Object removeAsync(String name, Data key, long threadId);
 
     /**
      *
@@ -124,7 +123,7 @@ public interface MapCodecTemplate {
      * @return Returns true if the key exists, otherwise returns false.
      */
     @Request(id = 9, retryable = true, response = ResponseMessageConst.BOOLEAN)
-    void containsKey(String name, Data key, long threadId);
+    Object containsKey(String name, Data key, long threadId);
 
     /**
      *
@@ -133,7 +132,7 @@ public interface MapCodecTemplate {
      * @return Returns true if the value exists, otherwise returns false.
      */
     @Request(id = 10, retryable = true, response = ResponseMessageConst.BOOLEAN)
-    void containsValue(String name, Data value);
+    Object containsValue(String name, Data value);
 
     /**
      *
@@ -144,7 +143,7 @@ public interface MapCodecTemplate {
      * @return Returns true if the key exists and removed, otherwise returns false.
      */
     @Request(id = 11, retryable = false, response = ResponseMessageConst.BOOLEAN)
-    void removeIfSame(String name, Data key, Data value, long threadId);
+    Object removeIfSame(String name, Data key, Data value, long threadId);
 
     /**
      *
@@ -171,26 +170,26 @@ public interface MapCodecTemplate {
      * @return Returns true if successful, otherwise returns false
      */
     @Request(id = 14, retryable = false, response = ResponseMessageConst.BOOLEAN)
-    void tryRemove(String name, Data key, long threadId, long timeout);
+    Object tryRemove(String name, Data key, long threadId, long timeout);
 
     /**
      *
      * @param name Name of the map.
      * @param key Key for the map entry.
      * @param value New value for the map entry.
-     * @param threadId The id of the user thread performing the operation. It is used to guarantee that only the lock holder thread (if a lock exists on the entry) can perform the requested operation. id of thread
+     * @param threadId The id of the user thread performing the operation. It is used to guarantee that only the lock holder thread (if a lock exists on the entry) can perform the requested operation.
      * @param timeout maximum time in milliseconds to wait for acquiring the lock for the key.
      * @return Returns true if successful, otherwise returns false
      */
     @Request(id = 15, retryable = false, response = ResponseMessageConst.BOOLEAN)
-    void tryPut(String name, Data key, Data value, long threadId, long timeout);
+    Object tryPut(String name, Data key, Data value, long threadId, long timeout);
 
     /**
      *
      * @param name Name of the map.
      * @param key Key for the map entry.
      * @param value New value for the map entry.
-     * @param threadId The id of the user thread performing the operation. It is used to guarantee that only the lock holder thread (if a lock exists on the entry) can perform the requested operation. id of thread
+     * @param threadId The id of the user thread performing the operation. It is used to guarantee that only the lock holder thread (if a lock exists on the entry) can perform the requested operation.
      * @param ttl The duration in milliseconds after which this entry shall be deleted. O means infinite.
      */
     @Request(id = 16, retryable = false, response = ResponseMessageConst.VOID)
@@ -201,19 +200,19 @@ public interface MapCodecTemplate {
      * @param name Name of the map.
      * @param key Key for the map entry.
      * @param value New value for the map entry.
-     * @param threadId The id of the user thread performing the operation. It is used to guarantee that only the lock holder thread (if a lock exists on the entry) can perform the requested operation. id of thread
+     * @param threadId The id of the user thread performing the operation. It is used to guarantee that only the lock holder thread (if a lock exists on the entry) can perform the requested operation.
      * @param ttl The duration in milliseconds after which this entry shall be deleted. O means infinite.
      * @return returns a clone of the previous value, not the original (identically equal) value previously put into the map.
      */
     @Request(id = 17, retryable = false, response = ResponseMessageConst.DATA)
-    void putIfAbsent(String name, Data key, Data value, long threadId, long ttl);
+    Object putIfAbsent(String name, Data key, Data value, long threadId, long ttl);
 
     /**
      *
      * @param name Name of the map.
      * @param key Key for the map entry.
      * @param value New value for the map entry.
-     * @param threadId The id of the user thread performing the operation. It is used to guarantee that only the lock holder thread (if a lock exists on the entry) can perform the requested operation. id of thread
+     * @param threadId The id of the user thread performing the operation. It is used to guarantee that only the lock holder thread (if a lock exists on the entry) can perform the requested operation.
      * @param ttl The duration in milliseconds after which this entry shall be deleted. O means infinite.
      */
     @Request(id = 18, retryable = false, response = ResponseMessageConst.VOID)
@@ -223,7 +222,7 @@ public interface MapCodecTemplate {
      *
      * @param name Name of the map.
      * @param key Key for the map entry.
-     * @param threadId The id of the user thread performing the operation. It is used to guarantee that only the lock holder thread (if a lock exists on the entry) can perform the requested operation. id of thread
+     * @param threadId The id of the user thread performing the operation. It is used to guarantee that only the lock holder thread (if a lock exists on the entry) can perform the requested operation.
      * @param ttl The duration in milliseconds after which this entry shall be deleted. O means infinite.
      */
     @Request(id = 19, retryable = false, response = ResponseMessageConst.VOID)
@@ -233,13 +232,13 @@ public interface MapCodecTemplate {
      *
      * @param name Name of the map.
      * @param key Key for the map entry.
-     * @param threadId The id of the user thread performing the operation. It is used to guarantee that only the lock holder thread (if a lock exists on the entry) can perform the requested operation. id of thread
+     * @param threadId The id of the user thread performing the operation. It is used to guarantee that only the lock holder thread (if a lock exists on the entry) can perform the requested operation.
      * @param lease time in milliseconds to wait before releasing the lock.
      * @param timeout maximum time to wait for getting the lock.
      * @return Returns true if successful, otherwise returns false
      */
     @Request(id = 20, retryable = false, response = ResponseMessageConst.BOOLEAN)
-    void tryLock(String name, Data key, long threadId, long lease, long timeout);
+    Object tryLock(String name, Data key, long threadId, long lease, long timeout);
 
     /**
      *
@@ -248,13 +247,13 @@ public interface MapCodecTemplate {
      * @return Returns true if the entry is locked, otherwise returns false
      */
     @Request(id = 21, retryable = true, response = ResponseMessageConst.BOOLEAN)
-    void isLocked(String name, Data key);
+    Object isLocked(String name, Data key);
 
     /**
      *
      * @param name name of map
      * @param key Key for the map entry to unlock
-     * @param threadId The id of the user thread performing the operation. It is used to guarantee that only the lock holder thread (if a lock exists on the entry) can perform the requested operation. id of thread
+     * @param threadId The id of the user thread performing the operation. It is used to guarantee that only the lock holder thread (if a lock exists on the entry) can perform the requested operation.
      */
     @Request(id = 22, retryable = false, response = ResponseMessageConst.VOID)
     void unlock(String name, Data key, long threadId);
@@ -266,7 +265,7 @@ public interface MapCodecTemplate {
      * @return id of registered interceptor.
      */
     @Request(id = 23, retryable = false, response = ResponseMessageConst.STRING)
-    void addInterceptor(String name, Data interceptor);
+    Object addInterceptor(String name, Data interceptor);
 
     /**
      *
@@ -276,7 +275,7 @@ public interface MapCodecTemplate {
      *
      */
     @Request(id = 24, retryable = false, response = ResponseMessageConst.BOOLEAN)
-    void removeInterceptor(String name, String id);
+    Object removeInterceptor(String name, String id);
 
     /**
      *
@@ -288,7 +287,7 @@ public interface MapCodecTemplate {
      * @return A UUID.randomUUID().toString() which is used as a key to remove the listener.
      */
     @Request(id = 25, retryable = true, response = ResponseMessageConst.STRING, event = EventMessageConst.EVENT_ENTRY)
-    void addEntryListenerToKeyWithPredicate(String name, Data key, Data predicate, boolean includeValue);
+    Object addEntryListenerToKeyWithPredicate(String name, Data key, Data predicate, boolean includeValue);
 
     /**
      *
@@ -300,36 +299,35 @@ public interface MapCodecTemplate {
 
      */
     @Request(id = 26, retryable = true, response = ResponseMessageConst.STRING, event = EventMessageConst.EVENT_ENTRY)
-    void addEntryListenerWithPredicate(String name, Data predicate, boolean includeValue);
+    Object addEntryListenerWithPredicate(String name, Data predicate, boolean includeValue);
 
     /**
      *
      * @param name name of map
      * @param key Key for the map entry.
-     * @param includeValue <tt>true</tt> if <tt>EntryEvent</tt> should
-     *                     contain the value.
+     * @param includeValue <tt>true</tt> if <tt>EntryEvent</tt> should contain the value.
      * @return A UUID.randomUUID().toString() which is used as a key to remove the listener.
      */
     @Request(id = 27, retryable = true, response = ResponseMessageConst.STRING, event = EventMessageConst.EVENT_ENTRY)
-    void addEntryListenerToKey(String name, Data key, boolean includeValue);
+    Object addEntryListenerToKey(String name, Data key, boolean includeValue);
 
     /**
      *
      * @param name name of map
-     * @param includeValue <tt>true</tt> if <tt>EntryEvent</tt> should
-     *                     contain the value.
+     * @param includeValue <tt>true</tt> if <tt>EntryEvent</tt> should contain the value.
      * @return A UUID.randomUUID().toString() which is used as a key to remove the listener.
      */
     @Request(id = 28, retryable = true, response = ResponseMessageConst.STRING, event = EventMessageConst.EVENT_ENTRY)
-    void addEntryListener(String name, boolean includeValue);
+    Object addEntryListener(String name, boolean includeValue);
 
     /**
      *
      * @param name name of map
      * @param includeValue <tt>true</tt> if <tt>EntryEvent</tt> should
+     * @return A UUID.randomUUID().toString() which is used as a key to remove the listener.
      */
     @Request(id = 29, retryable = true, response = ResponseMessageConst.STRING, event = EventMessageConst.EVENT_ENTRY)
-    void addNearCacheEntryListener(String name, boolean includeValue);
+    Object addNearCacheEntryListener(String name, boolean includeValue);
 
     /**
      *
@@ -338,7 +336,7 @@ public interface MapCodecTemplate {
      * @return true if registration is removed, false otherwise.
      */
     @Request(id = 30, retryable = false, response = ResponseMessageConst.BOOLEAN)
-    void removeEntryListener(String name, String registrationId);
+    Object removeEntryListener(String name, String registrationId);
 
     /**
      *
@@ -347,35 +345,36 @@ public interface MapCodecTemplate {
      */
     @Request(id = 31, retryable = true, response = ResponseMessageConst.STRING,
             event = EventMessageConst.EVENT_MAPPARTITIONLOST)
-    void addPartitionLostListener(String name);
+    Object addPartitionLostListener(String name);
 
     /**
      *
      * @param name name of map
      * @param registrationId id of register
+     * @return true if registration is removed, false otherwise.
      */
     @Request(id = 32, retryable = false, response = ResponseMessageConst.BOOLEAN)
-    void removePartitionLostListener(String name, String registrationId);
+    Object removePartitionLostListener(String name, String registrationId);
 
     /**
      *
      * @param name name of map
      * @param key the key of the entry.
-     * @param threadId The id of the user thread performing the operation. It is used to guarantee that only the lock holder thread (if a lock exists on the entry) can perform the requested operation. id of thread
+     * @param threadId The id of the user thread performing the operation. It is used to guarantee that only the lock holder thread (if a lock exists on the entry) can perform the requested operation.
      * @return <tt>EntryView</tt> of the specified key.
      */
     @Request(id = 33, retryable = true, response = ResponseMessageConst.ENTRY_VIEW)
-    void getEntryView(String name, Data key, long threadId);
+    Object getEntryView(String name, Data key, long threadId);
 
     /**
      *
      * @param name name of map
      * @param key the specified key to evict from this map.
-     * @param threadId The id of the user thread performing the operation. It is used to guarantee that only the lock holder thread (if a lock exists on the entry) can perform the requested operation. id of thread
+     * @param threadId The id of the user thread performing the operation. It is used to guarantee that only the lock holder thread (if a lock exists on the entry) can perform the requested operation.
      * @return <tt>true</tt> if the key is evicted, <tt>false</tt> otherwise.
      */
     @Request(id = 34, retryable = false, response = ResponseMessageConst.BOOLEAN)
-    void evict(String name, Data key, long threadId);
+    Object evict(String name, Data key, long threadId);
 
     /**
      *
@@ -397,8 +396,7 @@ public interface MapCodecTemplate {
      *
      * @param name name of map
      * @param keys keys to load
-     * @param replaceExistingValues when <code>true</code>, existing values in the Map will
-     *                              be replaced by those loaded from the MapLoader
+     * @param replaceExistingValues when <code>true</code>, existing values in the Map will be replaced by those loaded from the MapLoader
      */
     @Request(id = 37, retryable = false, response = ResponseMessageConst.VOID)
     void loadGivenKeys(String name, Set<Data> keys, boolean replaceExistingValues);
@@ -409,7 +407,7 @@ public interface MapCodecTemplate {
      * @return a set clone of the keys contained in this map.
      */
     @Request(id = 38, retryable = false, response = ResponseMessageConst.SET_DATA)
-    void keySet(String name);
+    Object keySet(String name);
 
     /**
      *
@@ -418,7 +416,7 @@ public interface MapCodecTemplate {
      * @return values for the provided keys.
      */
     @Request(id = 39, retryable = false, response = ResponseMessageConst.SET_ENTRY)
-    void getAll(String name, Set<Data> keys);
+    Object getAll(String name, Set<Data> keys);
 
     /**
      *
@@ -426,7 +424,7 @@ public interface MapCodecTemplate {
      * @return All values in the map
      */
     @Request(id = 40, retryable = false, response = ResponseMessageConst.LIST_DATA)
-    void values(String name);
+    Object values(String name);
 
     /**
      *
@@ -434,7 +432,7 @@ public interface MapCodecTemplate {
      * @return a set clone of the keys mappings in this map
      */
     @Request(id = 41, retryable = false, response = ResponseMessageConst.SET_ENTRY)
-    void entrySet(String name);
+    Object entrySet(String name);
 
     /**
      *
@@ -443,7 +441,7 @@ public interface MapCodecTemplate {
      * @return result key set for the query.
      */
     @Request(id = 42, retryable = false, response = ResponseMessageConst.SET_DATA)
-    void keySetWithPredicate(String name, Data predicate);
+    Object keySetWithPredicate(String name, Data predicate);
 
     /**
      *
@@ -452,7 +450,7 @@ public interface MapCodecTemplate {
      * @return result value collection of the query.
      */
     @Request(id = 43, retryable = false, response = ResponseMessageConst.LIST_DATA)
-    void valuesWithPredicate(String name, Data predicate);
+    Object valuesWithPredicate(String name, Data predicate);
 
     /**
      *
@@ -461,14 +459,13 @@ public interface MapCodecTemplate {
      * @return result key-value entry collection of the query.
      */
     @Request(id = 44, retryable = false, response = ResponseMessageConst.SET_ENTRY)
-    void entriesWithPredicate(String name, Data predicate);
+    Object entriesWithPredicate(String name, Data predicate);
 
     /**
      *
      * @param name name of map
      * @param attribute index attribute of value
-     * @param ordered   <tt>true</tt> if index should be ordered,
-     *                  <tt>false</tt> otherwise.
+     * @param ordered   <tt>true</tt> if index should be ordered, <tt>false</tt> otherwise.
      */
     @Request(id = 45, retryable = false, response = ResponseMessageConst.VOID)
     void addIndex(String name, String attribute, boolean ordered);
@@ -479,7 +476,7 @@ public interface MapCodecTemplate {
      * @return the number of key-value mappings in this map
      */
     @Request(id = 46, retryable = true, response = ResponseMessageConst.INTEGER)
-    void size(String name);
+    Object size(String name);
 
     /**
      *
@@ -487,7 +484,7 @@ public interface MapCodecTemplate {
      * @return <tt>true</tt> if this map contains no key-value mappings
      */
     @Request(id = 47, retryable = true, response = ResponseMessageConst.BOOLEAN)
-    void isEmpty(String name);
+    Object isEmpty(String name);
 
     /**
      *
@@ -513,7 +510,7 @@ public interface MapCodecTemplate {
      * @return result of entry process.
      */
     @Request(id = 50, retryable = false, response = ResponseMessageConst.DATA)
-    void executeOnKey(String name, Data entryProcessor, Data key, long threadId);
+    Object executeOnKey(String name, Data entryProcessor, Data key, long threadId);
 
     /**
      *
@@ -523,7 +520,7 @@ public interface MapCodecTemplate {
      * @return Future from which the result of the operation can be retrieved.
      */
     @Request(id = 51, retryable = false, response = ResponseMessageConst.DATA)
-    void submitToKey(String name, Data entryProcessor, Data key, long threadId);
+    Object submitToKey(String name, Data entryProcessor, Data key, long threadId);
 
     /**
      *
@@ -532,7 +529,7 @@ public interface MapCodecTemplate {
      * @return results of entry process on the entries
      */
     @Request(id = 52, retryable = false, response = ResponseMessageConst.SET_ENTRY)
-    void executeOnAllKeys(String name, Data entryProcessor);
+    Object executeOnAllKeys(String name, Data entryProcessor);
 
     /**
      *
@@ -542,7 +539,7 @@ public interface MapCodecTemplate {
      * @return results of entry process on the entries matching the query criteria
      */
     @Request(id = 53, retryable = false, response = ResponseMessageConst.SET_ENTRY)
-    void executeWithPredicate(String name, Data entryProcessor, Data predicate);
+    Object executeWithPredicate(String name, Data entryProcessor, Data predicate);
 
     /**
      *
@@ -553,7 +550,7 @@ public interface MapCodecTemplate {
      *
      */
     @Request(id = 54, retryable = false, response = ResponseMessageConst.SET_ENTRY)
-    void executeOnKeys(String name, Data entryProcessor, Set<Data> keys);
+    Object executeOnKeys(String name, Data entryProcessor, Set<Data> keys);
 
     /**
      *
@@ -572,7 +569,7 @@ public interface MapCodecTemplate {
      *
      */
     @Request(id = 56, retryable = false, response = ResponseMessageConst.SET_DATA)
-    void keySetWithPagingPredicate(String name, Data predicate);
+    Object keySetWithPagingPredicate(String name, Data predicate);
 
     /**
      *
@@ -581,7 +578,7 @@ public interface MapCodecTemplate {
      * @return values for the query.
      */
     @Request(id = 57, retryable = false, response = ResponseMessageConst.SET_ENTRY)
-    void valuesWithPagingPredicate(String name, Data predicate);
+    Object valuesWithPagingPredicate(String name, Data predicate);
 
     /**
      *
@@ -591,6 +588,6 @@ public interface MapCodecTemplate {
      *
      */
     @Request(id = 58, retryable = false, response = ResponseMessageConst.SET_ENTRY)
-    void entriesWithPagingPredicate(String name, Data predicate);
+    Object entriesWithPagingPredicate(String name, Data predicate);
 
 }

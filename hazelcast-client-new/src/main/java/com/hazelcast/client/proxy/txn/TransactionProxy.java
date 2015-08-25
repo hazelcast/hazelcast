@@ -97,7 +97,7 @@ final class TransactionProxy {
             }
             checkThread();
             checkTimeout();
-            ClientMessage request = TransactionCommitCodec.encodeRequest(txnId, threadId, true);
+            ClientMessage request = TransactionCommitCodec.encodeRequest(txnId, threadId);
             invoke(request);
             state = COMMITTED;
         } catch (Exception e) {

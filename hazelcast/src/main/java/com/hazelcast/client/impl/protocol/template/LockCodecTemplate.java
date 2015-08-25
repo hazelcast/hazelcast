@@ -23,27 +23,72 @@ import com.hazelcast.client.impl.protocol.ResponseMessageConst;
 @GenerateCodec(id = TemplateConstants.LOCK_TEMPLATE_ID, name = "Lock", ns = "Hazelcast.Client.Protocol.Lock")
 public interface LockCodecTemplate {
 
+    /**
+     *
+     * @param name Name of the Lock
+     * @return True if this lock is locked, false otherwise.
+     */
     @Request(id = 1, retryable = true, response = ResponseMessageConst.BOOLEAN)
-    void isLocked(String name);
+    Object isLocked(String name);
 
+    /**
+     *
+     * @param name Name of the Lock
+     * @param threadId The id of the user thread performing the operation. It is used to guarantee that only the lock holder thread (if a lock exists on the entry) can perform the requested operation.
+     * @return True if this lock is locked by current thread, false otherwise.
+     */
     @Request(id = 2, retryable = true, response = ResponseMessageConst.BOOLEAN)
-    void isLockedByCurrentThread(String name, long threadId);
+    Object isLockedByCurrentThread(String name, long threadId);
 
+    /**
+     *
+     * @param name Name of the Lock
+     * @return The lock hold count.
+     */
     @Request(id = 3, retryable = true, response = ResponseMessageConst.INTEGER)
-    void getLockCount(String name);
+    Object getLockCount(String name);
 
+    /**
+     *
+     * @param name Name of the Lock
+     * @return Remaining lease time in milliseconds.
+     */
     @Request(id = 4, retryable = true, response = ResponseMessageConst.LONG)
-    void getRemainingLeaseTime(String name);
+    Object getRemainingLeaseTime(String name);
 
+    /**
+     *
+     * @param name Name of the Lock
+     * @param leaseTime Time to wait before releasing to lock
+     * @param threadId The id of the user thread performing the operation. It is used to guarantee that only the lock holder thread (if a lock exists on the entry) can perform the requested operation.
+     */
     @Request(id = 5, retryable = false, response = ResponseMessageConst.VOID)
     void lock(String name, long leaseTime, long threadId);
 
+    /**
+     *
+     * @param name Name of the Lock
+     * @param threadId The id of the user thread performing the operation. It is used to guarantee that only the lock holder thread (if a lock exists on the entry) can perform the requested operation.
+     */
     @Request(id = 6, retryable = false, response = ResponseMessageConst.VOID)
     void unlock(String name, long threadId);
 
+    /**
+     *
+     * @param name Name of the Lock
+     */
     @Request(id = 7, retryable = false, response = ResponseMessageConst.VOID)
     void forceUnlock(String name);
 
+    /**
+     *
+     * @param name Name of the Lock
+     * @param threadId The id of the user thread performing the operation. It is used to guarantee that only the lock holder thread (if a lock exists on the entry) can perform the requested operation.
+     * @param lease time in milliseconds to wait before releasing the lock.
+     * @param timeout Maximum time to wait for the lock.
+     * @return true if the lock was acquired and false if the waiting time elapsed before the lock was acquired.
+     */
     @Request(id = 8, retryable = false, response = ResponseMessageConst.BOOLEAN)
-    void tryLock(String name, long threadId, long lease, long timeout);
+    Object tryLock(String name, long threadId, long lease, long timeout);
+
 }

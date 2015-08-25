@@ -23,16 +23,41 @@ import com.hazelcast.client.impl.protocol.ResponseMessageConst;
 @GenerateCodec(id = TemplateConstants.CONDITION_TEMPLATE_ID,
         name = "Condition", ns = "Hazelcast.Client.Protocol.Condition")
 public interface ConditionCodecTemplate {
-
+    /**
+     *
+     * @param name Name of the Condition
+     * @param threadId The id of the user thread performing the operation. It is used to guarantee that only the lock holder thread (if a lock exists on the entry) can perform the requested operation.
+     * @param timeout The maximum time to wait
+     * @param lockName Name of the lock to wait on.
+     * @return False if the waiting time detectably elapsed before return from the method, else true
+     */
     @Request(id = 1, retryable = false, response = ResponseMessageConst.BOOLEAN)
-    void await(String name, long threadId, long timeout, String lockName);
+    Object await(String name, long threadId, long timeout, String lockName);
 
+    /**
+     *
+     * @param name Name of the Condition
+     * @param threadId The id of the user thread performing the operation. It is used to guarantee that only the lock holder thread (if a lock exists on the entry) can perform the requested operation.
+     * @param lockName Name of the lock to wait on.
+     */
     @Request(id = 2, retryable = false, response = ResponseMessageConst.VOID)
     void beforeAwait(String name, long threadId, String lockName);
 
+    /**
+     *
+     * @param name Name of the Condition
+     * @param threadId The id of the user thread performing the operation. It is used to guarantee that only the lock holder thread (if a lock exists on the entry) can perform the requested operation.
+     * @param lockName Name of the lock to wait on.
+     */
     @Request(id = 3, retryable = false, response = ResponseMessageConst.VOID)
     void signal(String name, long threadId, String lockName);
 
+    /**
+     *
+     * @param name Name of the Condition
+     * @param threadId The id of the user thread performing the operation. It is used to guarantee that only the lock holder thread (if a lock exists on the entry) can perform the requested operation.
+     * @param lockName Name of the lock to wait on.
+     */
     @Request(id = 4, retryable = false, response = ResponseMessageConst.VOID)
     void signalAll(String name, long threadId, String lockName);
 

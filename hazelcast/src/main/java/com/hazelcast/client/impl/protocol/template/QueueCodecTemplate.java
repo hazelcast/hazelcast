@@ -27,66 +27,177 @@ import java.util.Set;
 
 @GenerateCodec(id = TemplateConstants.QUEUE_TEMPLATE_ID, name = "Queue", ns = "Hazelcast.Client.Protocol.Queue")
 public interface QueueCodecTemplate {
-
+    /**
+     *
+     * @param name Name of the Queue
+     * @param value The element to add
+     * @param timeoutMillis Maximum time in milliseconds to wait for acquiring the lock for the key.
+     * @return <tt>True</tt> if the element was added to this queue, else <tt>false</tt>
+     */
     @Request(id = 1, retryable = false, response = ResponseMessageConst.BOOLEAN)
-    void offer(String name, Data value, long timeoutMillis);
+    Object offer(String name, Data value, long timeoutMillis);
 
+    /**
+     *
+     * @param name Name of the Queue
+     * @param value The element to add
+     */
     @Request(id = 2, retryable = false, response = ResponseMessageConst.VOID)
     void put(String name, Data value);
 
+    /**
+     *
+     * @param name Name of the Queue
+     * @return The number of elements in this collection
+     */
     @Request(id = 3, retryable = false, response = ResponseMessageConst.INTEGER)
-    void size(String name);
+    Object size(String name);
 
+    /**
+     *
+     * @param name Name of the Queue
+     * @param value The element to add
+     * @return The head of this queue
+     */
     @Request(id = 4, retryable = false, response = ResponseMessageConst.BOOLEAN)
-    void remove(String name, Data value);
+    Object remove(String name, Data value);
 
+    /**
+     *
+     * @param name Name of the Queue
+     * @param timeoutMillis Maximum time in milliseconds to wait for acquiring the lock for the key.
+     * @return The head of this queue, or <tt>null</tt> if this queue is empty
+     */
     @Request(id = 5, retryable = false, response = ResponseMessageConst.DATA)
-    void poll(String name, long timeoutMillis);
+    Object poll(String name, long timeoutMillis);
 
+    /**
+     *
+     * @param name Name of the Queue
+     * @return The head of this queue
+     */
     @Request(id = 6, retryable = false, response = ResponseMessageConst.DATA)
-    void take(String name);
+    Object take(String name);
 
+    /**
+     *
+     * @param name Name of the Queue
+     * @return The head of this queue, or <tt>null</tt> if this queue is empty
+     */
     @Request(id = 7, retryable = false, response = ResponseMessageConst.DATA)
-    void peek(String name);
+    Object peek(String name);
+
+    /**
+     *
+     * @param name Name of the Queue
+     * @return An <tt>Iterator</tt> over the elements in this collection
+     */
 
     @Request(id = 8, retryable = false, response = ResponseMessageConst.LIST_DATA)
-    void iterator(String name);
+    Object iterator(String name);
 
+    /**
+     *
+     * @param name Name of the Queue
+     * @return the number of elements transferred
+     */
     @Request(id = 9, retryable = false, response = ResponseMessageConst.LIST_DATA)
-    void drainTo(String name);
+    Object drainTo(String name);
 
+    /**
+     *
+     * @param name Name of the Queue
+     * @param maxSize The maximum number of elements to transfer
+     * @return The number of elements transferred
+     */
     @Request(id = 10, retryable = false, response = ResponseMessageConst.LIST_DATA)
-    void drainToMaxSize(String name, int maxSize);
+    Object drainToMaxSize(String name, int maxSize);
 
+    /**
+     *
+     * @param name Name of the Queue
+     * @param value Element whose presence in this collection is to be tested
+     * @return <tt>true</tt> if this collection contains the specified element
+     */
     @Request(id = 11, retryable = false, response = ResponseMessageConst.BOOLEAN)
-    void contains(String name, Data value);
+    Object contains(String name, Data value);
 
+    /**
+     *
+     * @param name Name of the Queue
+     * @param dataList Collection to be checked for containment in this collection
+     * @return <tt>true</tt> if this collection contains all of the elements in the specified collection
+     */
     @Request(id = 12, retryable = false, response = ResponseMessageConst.BOOLEAN)
-    void containsAll(String name, Set<Data> dataList);
+    Object containsAll(String name, Set<Data> dataList);
 
+    /**
+     *
+     * @param name Name of the Queue
+     * @param dataList Collection containing elements to be removed from this collection
+     * @return <tt>true</tt> if this collection changed as a result of the call
+     */
     @Request(id = 13, retryable = false, response = ResponseMessageConst.BOOLEAN)
-    void compareAndRemoveAll(String name, Set<Data> dataList);
+    Object compareAndRemoveAll(String name, Set<Data> dataList);
 
+    /**
+     *
+     * @param name Name of the Queue
+     * @param dataList collection containing elements to be retained in this collection
+     * @return <tt>true</tt> if this collection changed as a result of the call
+     */
     @Request(id = 14, retryable = false, response = ResponseMessageConst.BOOLEAN)
-    void compareAndRetainAll(String name, Set<Data> dataList);
+    Object compareAndRetainAll(String name, Set<Data> dataList);
 
+    /**
+     *
+     * @param name Name of the Queue
+     */
     @Request(id = 15, retryable = false, response = ResponseMessageConst.VOID)
     void clear(String name);
 
+    /**
+     *
+     * @param name Name of the Queue
+     * @param dataList Collection containing elements to be added to this collection
+     * @return <tt>true</tt> if this collection changed as a result of the call
+     */
     @Request(id = 16, retryable = false, response = ResponseMessageConst.BOOLEAN)
-    void addAll(String name, List<Data> dataList);
+    Object addAll(String name, List<Data> dataList);
 
+    /**
+     *
+     * @param name Name of the Queue
+     * @param includeValue <tt>true</tt> if the updated item should be passed to the item listener, <tt>false</tt> otherwise.
+     * @return  The registration id
+     */
     @Request(id = 17, retryable = true, response = ResponseMessageConst.STRING,
              event = {EventMessageConst.EVENT_ITEM})
-    void addListener(String name, boolean includeValue);
+    Object addListener(String name, boolean includeValue);
 
+    /**
+     *
+     * @param name Name of the Queue
+     * @param registrationId Id of the listener registration.
+     * @return True if the item listener is removed, false otherwise
+     */
     @Request(id = 18, retryable = false, response = ResponseMessageConst.BOOLEAN)
-    void removeListener(String name, String registrationId);
+    Object removeListener(String name, String registrationId);
 
+    /**
+     *
+     * @param name Name of the Queue
+     * @return The remaining capacity
+     */
     @Request(id = 19, retryable = false, response = ResponseMessageConst.INTEGER)
-    void remainingCapacity(String name);
+    Object remainingCapacity(String name);
 
+    /**
+     *
+     * @param name Name of the Queue
+     * @return <tt>True</tt> if this collection contains no elements
+     */
     @Request(id = 20, retryable = false, response = ResponseMessageConst.BOOLEAN)
-    void isEmpty(String name);
+    Object isEmpty(String name);
 
 }

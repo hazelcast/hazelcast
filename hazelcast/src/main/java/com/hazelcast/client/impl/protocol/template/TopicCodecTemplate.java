@@ -24,15 +24,31 @@ import com.hazelcast.nio.serialization.Data;
 
 @GenerateCodec(id = TemplateConstants.TOPIC_TEMPLATE_ID, name = "Topic", ns = "Hazelcast.Client.Protocol.Topic")
 public interface TopicCodecTemplate {
-
+    /**
+     *
+     * @param name Name of the Topic
+     * @param message The message to publish to all subscribers of this topic
+     *
+     */
     @Request(id = 1, retryable = false, response = ResponseMessageConst.VOID)
     void publish(String name, Data message);
 
+    /**
+     *
+     * @param name Name of the Topic
+     * @return returns the registration id
+     */
     @Request(id = 2, retryable = true, response = ResponseMessageConst.STRING
             , event = {EventMessageConst.EVENT_TOPIC})
-    void addMessageListener(String name);
-
+    Object addMessageListener(String name);
+    /**
+     *
+     * @param name Name of the Topic
+     * @param registrationId Id of listener registration.
+     * @return True if registration is removed, false otherwise
+     */
     @Request(id = 3, retryable = false, response = ResponseMessageConst.BOOLEAN)
-    void removeMessageListener(String name, String registrationId);
+    Object removeMessageListener(String name, String registrationId);
+
 
 }

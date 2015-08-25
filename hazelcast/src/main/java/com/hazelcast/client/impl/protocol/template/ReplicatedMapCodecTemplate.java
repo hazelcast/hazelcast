@@ -27,64 +27,166 @@ import java.util.Map;
 @GenerateCodec(id = TemplateConstants.REPLICATED_MAP_TEMPLATE_ID,
         name = "ReplicatedMap", ns = "Hazelcast.Client.Protocol.ReplicatedMap")
 public interface ReplicatedMapCodecTemplate {
-
+    /**
+     *
+     * @param name Name of the ReplicatedMap
+     * @param key  Key with which the specified value is to be associated.
+     * @param value Value to be associated with the specified key
+     * @param ttl ttl in milliseconds to be associated with the specified key-value pair
+     * @return The old value if existed for the key.
+     */
     @Request(id = 1, retryable = false, response = ResponseMessageConst.DATA)
-    void put(String name, Data key, Data value, long ttl);
+    Object put(String name, Data key, Data value, long ttl);
 
+    /**
+     *
+     * @param name Name of the ReplicatedMap
+     * @return the number of key-value mappings in this map.
+     */
     @Request(id = 2, retryable = true, response = ResponseMessageConst.INTEGER)
-    void size(String name);
+    Object size(String name);
 
+    /**
+     *
+     * @param name Name of the ReplicatedMap
+     * @return <tt>True</tt> if this map contains no key-value mappings
+     */
     @Request(id = 3, retryable = true, response = ResponseMessageConst.BOOLEAN)
-    void isEmpty(String name);
+    Object isEmpty(String name);
 
+    /**
+     *
+     * @param name Name of the ReplicatedMap
+     * @param key The key whose associated value is to be returned.
+     * @return <tt>True</tt> if this map contains a mapping for the specified key
+     *
+     */
     @Request(id = 4, retryable = true, response = ResponseMessageConst.BOOLEAN)
-    void containsKey(String name, Data key);
+    Object containsKey(String name, Data key);
 
+    /**
+     *
+     * @param name Name of the ReplicatedMap
+     * @param value value whose presence in this map is to be tested
+     * @return <tt>true</tt> if this map maps one or more keys to the specified value
+     */
     @Request(id = 5, retryable = true, response = ResponseMessageConst.BOOLEAN)
-    void containsValue(String name, Data value);
+    Object containsValue(String name, Data value);
 
+    /**
+     *
+     * @param name Name of the ReplicatedMap
+     * @param key The key whose associated value is to be returned
+     * @return The value to which the specified key is mapped, or null if this map contains no mapping for the key
+     */
     @Request(id = 6, retryable = true, response = ResponseMessageConst.DATA)
-    void get(String name, Data key);
+    Object get(String name, Data key);
 
+    /**
+     *
+     * @param name Name of the ReplicatedMap
+     * @param key Key with which the specified value is to be associated.
+     * @return the previous value associated with <tt>key</tt>, or <tt>null</tt> if there was no mapping for <tt>key</tt>.
+     */
     @Request(id = 7, retryable = false, response = ResponseMessageConst.DATA)
-    void remove(String name, Data key);
+    Object remove(String name, Data key);
 
+    /**
+     *
+     * @param name Name of the ReplicatedMap
+     * @param map Mappings to be stored in this map
+     */
     @Request(id = 8, retryable = false, response = ResponseMessageConst.VOID)
     void putAll(String name, Map<Data, Data> map);
 
+    /**
+     *
+     * @param name Name of the Replicated Map
+     */
     @Request(id = 9, retryable = false, response = ResponseMessageConst.VOID)
     void clear(String name);
 
+    /**
+     *
+     * @param name Name of the Replicated Map
+     * @param key Key with which the specified value is to be associated.
+     * @param predicate The predicate for filtering entries
+     * @return will be notified for map add/remove/update/evict events filtered by the given predicate
+     */
     @Request(id = 10, retryable = true, response = ResponseMessageConst.STRING
             , event = {EventMessageConst.EVENT_ENTRY})
-    void addEntryListenerToKeyWithPredicate(String name, Data key, Data predicate);
+    Object addEntryListenerToKeyWithPredicate(String name, Data key, Data predicate);
 
+    /**
+     *
+     * @param name Name of the Replicated Map
+     * @param predicate The predicate for filtering entries
+     * @return will be notified for map add/remove/update/evict events filtered by the given predicate
+     */
     @Request(id = 11, retryable = true, response = ResponseMessageConst.STRING
             , event = {EventMessageConst.EVENT_ENTRY})
-    void addEntryListenerWithPredicate(String name, Data predicate);
+    Object addEntryListenerWithPredicate(String name, Data predicate);
 
+    /**
+     *
+     * @param name Name of the Replicated Map
+     * @param key Key with which the specified value is to be associated.
+     * @return The registration id.
+     */
     @Request(id = 12, retryable = true, response = ResponseMessageConst.STRING
             , event = {EventMessageConst.EVENT_ENTRY})
-    void addEntryListenerToKey(String name, Data key);
+    Object addEntryListenerToKey(String name, Data key);
 
+    /**
+     *
+     * @param name Name of the ReplicatedMap
+     * @return will be notified for map add/remove/update/evict events filtered by the given predicate
+     */
     @Request(id = 13, retryable = true, response = ResponseMessageConst.STRING
             , event = {EventMessageConst.EVENT_ENTRY})
-    void addEntryListener(String name);
+    Object addEntryListener(String name);
 
+    /**
+     *
+     * @param name Name of the ReplicatedMap
+     * @param registrationId ID of the registered entry listener.
+     * @return True if registration is removed, false otherwise.
+     */
     @Request(id = 14, retryable = false, response = ResponseMessageConst.BOOLEAN)
-    void removeEntryListener(String name, String registrationId);
+    Object removeEntryListener(String name, String registrationId);
 
+    /**
+     *
+     * @param name Name of the ReplicatedMap
+     * @return A lazy set view of the keys contained in this map.
+     */
     @Request(id = 15, retryable = true, response = ResponseMessageConst.SET_DATA)
-    void keySet(String name);
+    Object keySet(String name);
 
+    /**
+     *
+     * @param name Name of the ReplicatedMap
+     * @return A collection view of the values contained in this map.
+     */
     @Request(id = 16, retryable = true, response = ResponseMessageConst.LIST_DATA)
-    void values(String name);
+    Object values(String name);
 
+    /**
+     *
+     * @param name Name of the ReplicatedMap
+     * @return A lazy set view of the mappings contained in this map.
+     */
     @Request(id = 17, retryable = true, response = ResponseMessageConst.SET_ENTRY)
-    void entrySet(String name);
+    Object entrySet(String name);
 
+    /**
+     *
+     * @param name Name of the ReplicatedMap
+     * @param includeValue True if EntryEvent should contain the value,false otherwise
+     * @return The registration id.
+     */
     @Request(id = 18, retryable = true, response = ResponseMessageConst.STRING, event = EventMessageConst.EVENT_ENTRY)
-    void addNearCacheEntryListener(String name, boolean includeValue);
+    Object addNearCacheEntryListener(String name, boolean includeValue);
 
 }
 

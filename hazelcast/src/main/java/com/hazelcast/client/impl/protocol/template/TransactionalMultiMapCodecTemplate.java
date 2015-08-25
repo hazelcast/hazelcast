@@ -25,23 +25,71 @@ import com.hazelcast.nio.serialization.Data;
 @GenerateCodec(id = TemplateConstants.TX_MULTIMAP_TEMPLATE_ID,
         name = "TransactionalMultiMap", ns = "Hazelcast.Client.Protocol.TransactionalMultiMap")
 public interface TransactionalMultiMapCodecTemplate {
-
+    /**
+     *
+     * @param name Name of the Transactional Multi Map
+     * @param txnId ID of the transaction
+     * @param threadId The id of the user thread performing the operation. It is used to guarantee that only the lock holder thread (if a lock exists on the entry) can perform the requested operation.
+     * @param key The key to be stored
+     * @param value The value to be stored
+     * @return True if the size of the multimap is increased, false if the multimap already contains the key-value pair.
+     */
     @Request(id = 1, retryable = false, response = ResponseMessageConst.BOOLEAN)
-    void put(String name, String txnId, long threadId, Data key, Data value);
+    Object put(String name, String txnId, long threadId, Data key, Data value);
 
+    /**
+     *
+     * @param name Name of the Transactional Multi Map
+     * @param txnId ID of the transaction
+     * @param threadId The id of the user thread performing the operation. It is used to guarantee that only the lock holder thread (if a lock exists on the entry) can perform the requested operation.
+     * @param key The key whose associated values are returned
+     * @return The collection of the values associated with the key
+     */
     @Request(id = 2, retryable = false, response = ResponseMessageConst.LIST_DATA)
-    void get(String name, String txnId, long threadId, Data key);
+    Object get(String name, String txnId, long threadId, Data key);
 
+    /**
+     *
+     * @param name Name of the Transactional Multi Map
+     * @param txnId ID of the transaction
+     * @param threadId The id of the user thread performing the operation. It is used to guarantee that only the lock holder thread (if a lock exists on the entry) can perform the requested operation.
+     * @param key The key whose associated values are returned
+     * @return True if the size of the multimap changed after the remove operation, false otherwise.
+     */
     @Request(id = 3, retryable = false, response = ResponseMessageConst.LIST_DATA)
-    void remove(String name, String txnId, long threadId, Data key);
+    Object remove(String name, String txnId, long threadId, Data key);
 
+    /**
+     *
+     * @param name Name of the Transactioanal Multi Map
+     * @param txnId ID of the this transaction operation
+     * @param threadId The id of the user thread performing the operation. It is used to guarantee that only the lock holder thread (if a lock exists on the entry) can perform the requested operation.
+     * @param key The key whose associated values are returned
+     * @param value The value to be stored
+     * @return True if the size of the multimap changed after the remove operation, false otherwise.
+     */
     @Request(id = 4, retryable = false, response = ResponseMessageConst.BOOLEAN)
-    void removeEntry(String name, String txnId, long threadId, Data key, Data value);
+    Object removeEntry(String name, String txnId, long threadId, Data key, Data value);
 
+    /**
+     *
+     * @param name Name of the Transactioanal Multi Map
+     * @param txnId ID of the this transaction operation
+     * @param threadId The id of the user thread performing the operation. It is used to guarantee that only the lock holder thread (if a lock exists on the entry) can perform the requested operation.
+     * @param  key The key whose number of values are returned
+     * @return The number of values matching the given key in the multimap
+     */
     @Request(id = 5, retryable = false, response = ResponseMessageConst.INTEGER)
-    void valueCount(String name, String txnId, long threadId, Data key);
+    Object valueCount(String name, String txnId, long threadId, Data key);
 
+    /**
+     *
+     * @param name Name of the Transactional Multi Map
+     * @param txnId ID of the this transaction operation
+     * @param threadId The id of the user thread performing the operation. It is used to guarantee that only the lock holder thread (if a lock exists on the entry) can perform the requested operation.
+     * @return The number of key-value pairs in the multimap
+     */
     @Request(id = 6, retryable = false, response = ResponseMessageConst.INTEGER)
-    void size(String name, String txnId, long threadId);
+    Object size(String name, String txnId, long threadId);
 
 }

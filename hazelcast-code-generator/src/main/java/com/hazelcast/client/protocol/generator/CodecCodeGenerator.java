@@ -244,7 +244,7 @@ public class CodecCodeGenerator
                 }
             }
         }
-        return new CodecModel(parent, methodElement, responseElement, eventElementList, retryable, lang);
+        return new CodecModel(parent, methodElement, responseElement, eventElementList, retryable, lang, elementUtils);
     }
 
     public void generateCodec(CodecModel codecModel, Template codecTemplate) {
