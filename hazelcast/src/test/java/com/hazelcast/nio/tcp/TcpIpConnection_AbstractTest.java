@@ -6,7 +6,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingServiceImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.nio.tcp.nonblocking.Select_NonBlockingIOThreadingModelFactory;
 import com.hazelcast.test.AssertTask;
@@ -24,7 +24,7 @@ public abstract class TcpIpConnection_AbstractTest extends HazelcastTestSupport 
 
     protected ILogger logger;
     protected LoggingServiceImpl loggingService;
-    protected SerializationService serializationService;
+    protected InternalSerializationService serializationService;
 
     protected Address addressA;
     protected TcpIpConnectionManager connManagerA;

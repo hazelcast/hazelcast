@@ -20,12 +20,12 @@ import com.hazelcast.cache.impl.nearcache.NearCacheManager;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.nio.SocketInterceptor;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.tcp.SocketChannelWrapperFactory;
 
 /**
  * ClientExtension is a client extension mechanism to be able to plug different implementations of
- * some modules, like; {@link SerializationService}, {@link SocketChannelWrapperFactory} etc.
+ * some modules, like; {@link InternalSerializationService}, {@link SocketChannelWrapperFactory} etc.
  */
 public interface ClientExtension {
 
@@ -40,11 +40,11 @@ public interface ClientExtension {
     void afterStart(HazelcastClientInstanceImpl client);
 
     /**
-     * Creates a {@link SerializationService} instance to be used by this client.
+     * Creates a {@link InternalSerializationService} instance to be used by this client.
      *
-     * @return the created {@link SerializationService} instance
+     * @return the created {@link InternalSerializationService} instance
      */
-    SerializationService createSerializationService();
+    InternalSerializationService createSerializationService();
 
     /**
      * Creates a {@link SocketInterceptor} to be used by this client if available,

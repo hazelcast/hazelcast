@@ -35,7 +35,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.Member;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.FutureUtil;
 
@@ -127,7 +127,7 @@ public final class HazelcastClientCacheManager
             ClientInvocation clientInvocation = new ClientInvocation(client, request, partitionId);
             Future<ClientMessage> future = clientInvocation.invoke();
             ClientMessage responseMessage = future.get();
-            SerializationService serializationService = clientContext.getSerializationService();
+            InternalSerializationService serializationService = clientContext.getSerializationService();
             return serializationService.toObject(CacheGetConfigCodec.decodeResponse(responseMessage).response);
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);

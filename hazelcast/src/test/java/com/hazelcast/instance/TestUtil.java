@@ -21,7 +21,7 @@ import com.hazelcast.core.Partition;
 import com.hazelcast.core.PartitionService;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 
 import java.io.IOException;
 import java.net.DatagramSocket;
@@ -32,7 +32,7 @@ import java.util.List;
 
 public final class TestUtil {
 
-    static final private SerializationService serializationService = new DefaultSerializationServiceBuilder().build();
+    static final private InternalSerializationService serializationService = new DefaultSerializationServiceBuilder().build();
     private TestUtil() {
     }
 

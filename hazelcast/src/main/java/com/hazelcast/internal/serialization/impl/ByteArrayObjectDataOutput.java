@@ -20,7 +20,7 @@ import com.hazelcast.nio.Bits;
 import com.hazelcast.nio.BufferObjectDataOutput;
 import com.hazelcast.nio.UTFEncoderDecoder;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -39,13 +39,13 @@ class ByteArrayObjectDataOutput extends OutputStream implements BufferObjectData
 
     int pos;
 
-    final SerializationService service;
+    final InternalSerializationService service;
 
     private byte[] utfBuffer;
 
     private final boolean isBigEndian;
 
-    ByteArrayObjectDataOutput(int size, SerializationService service, ByteOrder byteOrder) {
+    ByteArrayObjectDataOutput(int size, InternalSerializationService service, ByteOrder byteOrder) {
         this.initialSize = size;
         this.buffer = new byte[size];
         this.service = service;

@@ -20,11 +20,11 @@ import com.hazelcast.cache.impl.nearcache.NearCacheManager;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 
 public final class ClientContext {
 
-    private final SerializationService serializationService;
+    private final InternalSerializationService serializationService;
     private final ClientClusterService clusterService;
     private final ClientPartitionService partitionService;
     private final ClientInvocationService invocationService;
@@ -52,7 +52,7 @@ public final class ClientContext {
         return proxyManager.getHazelcastInstance();
     }
 
-    public SerializationService getSerializationService() {
+    public InternalSerializationService getSerializationService() {
         return serializationService;
     }
 

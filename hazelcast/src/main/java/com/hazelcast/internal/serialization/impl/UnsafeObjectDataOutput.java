@@ -17,7 +17,7 @@
 package com.hazelcast.internal.serialization.impl;
 
 import com.hazelcast.nio.UnsafeHelper;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 
 import java.io.IOException;
 import java.nio.ByteOrder;
@@ -31,7 +31,7 @@ import static com.hazelcast.nio.Bits.SHORT_SIZE_IN_BYTES;
 
 class UnsafeObjectDataOutput extends ByteArrayObjectDataOutput {
 
-    UnsafeObjectDataOutput(int size, SerializationService service) {
+    UnsafeObjectDataOutput(int size, InternalSerializationService service) {
         super(size, service, ByteOrder.nativeOrder());
     }
 

@@ -15,7 +15,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.PacketHandler;
@@ -50,7 +50,7 @@ public abstract class AbstractClassicOperationExecutorTest extends HazelcastTest
     protected HazelcastThreadGroup threadGroup;
     protected DefaultNodeExtension nodeExtension;
     protected OperationRunnerFactory handlerFactory;
-    protected SerializationService serializationService;
+    protected InternalSerializationService serializationService;
     protected PacketHandler responsePacketHandler;
     protected ClassicOperationExecutor executor;
     protected Config config;

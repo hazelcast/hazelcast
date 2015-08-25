@@ -29,7 +29,7 @@ import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -49,7 +49,7 @@ public abstract class AbstractMessageTask<P>
     protected final Connection connection;
     protected final ClientEndpoint endpoint;
     protected final NodeEngineImpl nodeEngine;
-    protected final SerializationService serializationService;
+    protected final InternalSerializationService serializationService;
     protected final ILogger logger;
     protected final ClientEndpointManager endpointManager;
     protected final ClientEngineImpl clientEngine;

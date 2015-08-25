@@ -44,7 +44,7 @@ import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.instance.TerminatedLifecycleService;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.mapreduce.JobTracker;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.quorum.QuorumService;
 import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.spi.impl.SerializationServiceSupport;
@@ -260,7 +260,7 @@ public final class HazelcastClientProxy implements HazelcastInstance, Serializat
         getLifecycleService().shutdown();
     }
 
-    public SerializationService getSerializationService() {
+    public InternalSerializationService getSerializationService() {
         return getClient().getSerializationService();
     }
 

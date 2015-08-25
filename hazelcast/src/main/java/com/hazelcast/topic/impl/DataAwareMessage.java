@@ -19,7 +19,7 @@ package com.hazelcast.topic.impl;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.Message;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.nio.serialization.SerializationService;
 
 import java.io.IOException;
 import java.io.NotSerializableException;
@@ -33,7 +33,7 @@ public class DataAwareMessage extends Message {
     private final transient SerializationService serializationService;
 
     public DataAwareMessage(String topicName, Data messageData, long publishTime,
-            Member publishingMember, SerializationService serializationService) {
+                            Member publishingMember, SerializationService serializationService) {
         super(topicName, null, publishTime, publishingMember);
         this.serializationService = serializationService;
         this.messageData = messageData;

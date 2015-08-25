@@ -32,7 +32,7 @@ import com.hazelcast.logging.LoggingServiceImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.partition.MigrationInfo;
 import com.hazelcast.quorum.impl.QuorumServiceImpl;
@@ -85,7 +85,7 @@ public class NodeEngineImpl implements NodeEngine {
     private final PacketDispatcher packetDispatcher;
     private final QuorumServiceImpl quorumService;
     private final MetricsRegistryImpl metricsRegistry;
-    private final SerializationService serializationService;
+    private final InternalSerializationService serializationService;
     private final LoggingServiceImpl loggingService;
 
     public NodeEngineImpl(final Node node) {
@@ -165,7 +165,7 @@ public class NodeEngineImpl implements NodeEngine {
     }
 
     @Override
-    public SerializationService getSerializationService() {
+    public InternalSerializationService getSerializationService() {
         return serializationService;
     }
 

@@ -34,7 +34,7 @@ import com.hazelcast.monitor.NearCacheStats;
 import com.hazelcast.monitor.impl.NearCacheStatsImpl;
 import com.hazelcast.nio.UnsafeHelper;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
 
@@ -105,14 +105,19 @@ public abstract class AbstractNearCacheRecordStore<
                                                      NearCacheContext nearCacheContext);
 
     protected abstract long getKeyStorageMemoryCost(K key);
+
     protected abstract long getRecordStorageMemoryCost(R record);
 
     protected abstract R valueToRecord(V value);
+
     protected abstract V recordToValue(R record);
 
     protected abstract R getRecord(K key);
+
     protected abstract R putRecord(K key, R record);
+
     protected abstract void putToRecord(R record, V value);
+
     protected abstract R removeRecord(K key);
 
     protected void checkAvailable() {

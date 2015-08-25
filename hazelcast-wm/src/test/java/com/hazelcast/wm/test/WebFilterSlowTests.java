@@ -3,7 +3,7 @@ package com.hazelcast.wm.test;
 import com.hazelcast.config.FileSystemXmlConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.IMap;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.web.SessionState;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.CookieStore;
@@ -209,7 +209,7 @@ public abstract class WebFilterSlowTests extends AbstractWebFilterTest {
         assertEquals(1, map.size());
         assertNotNull(map.get(newSessionId));
         SessionState sessionState = (SessionState) map.get(newSessionId);
-        SerializationService ss = getNode(hz).getSerializationService();
+        InternalSerializationService ss = getNode(hz).getSerializationService();
         assertEquals("first-value", ss.toObject(sessionState.getAttributes().get("first-key")));
         assertEquals("second-value", ss.toObject(sessionState.getAttributes().get("second-key")));
     }

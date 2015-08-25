@@ -15,7 +15,7 @@ import com.hazelcast.nio.IOService;
 import com.hazelcast.nio.MemberSocketInterceptor;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.spi.EventFilter;
 import com.hazelcast.spi.EventRegistration;
@@ -34,7 +34,7 @@ public class MockIOService implements IOService {
 
     public final ServerSocketChannel serverSocketChannel;
     public final Address thisAddress;
-    public final SerializationService serializationService;
+    public final InternalSerializationService serializationService;
     public final LoggingServiceImpl loggingService;
     public final HazelcastThreadGroup hazelcastThreadGroup;
     public final ConcurrentHashMap<Long, DummyPayload> payloads = new ConcurrentHashMap<Long, DummyPayload>();
@@ -359,7 +359,7 @@ public class MockIOService implements IOService {
     }
 
     @Override
-    public SerializationService getSerializationService() {
+    public InternalSerializationService getSerializationService() {
         return serializationService;
     }
 

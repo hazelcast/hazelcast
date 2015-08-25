@@ -20,7 +20,7 @@ import com.hazelcast.nio.BufferObjectDataInput;
 import com.hazelcast.nio.BufferObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.internal.serialization.impl.HeapData;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 
 import java.io.Closeable;
 import java.util.ArrayDeque;
@@ -36,13 +36,13 @@ import static com.hazelcast.nio.IOUtil.closeResource;
 public class BufferPoolImpl implements BufferPool {
     static final int MAX_POOLED_ITEMS = 3;
 
-    protected final SerializationService serializationService;
+    protected final InternalSerializationService serializationService;
 
     // accessible for testing.
     final Queue<BufferObjectDataOutput> outputQueue = new ArrayDeque<BufferObjectDataOutput>(MAX_POOLED_ITEMS);
     final Queue<BufferObjectDataInput> inputQueue = new ArrayDeque<BufferObjectDataInput>(MAX_POOLED_ITEMS);
 
-    public BufferPoolImpl(SerializationService serializationService) {
+    public BufferPoolImpl(InternalSerializationService serializationService) {
         this.serializationService = serializationService;
     }
 

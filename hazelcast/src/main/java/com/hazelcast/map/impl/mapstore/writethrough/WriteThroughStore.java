@@ -19,7 +19,7 @@ package com.hazelcast.map.impl.mapstore.writethrough;
 import com.hazelcast.map.impl.MapStoreWrapper;
 import com.hazelcast.map.impl.mapstore.AbstractMapDataStore;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.nio.serialization.SerializationService;
 
 import java.util.Collection;
 import java.util.Collections;

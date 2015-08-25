@@ -60,5 +60,5 @@ public interface SerializationServiceBuilder {
 
     SerializationServiceBuilder setInitialOutputBufferSize(int initialOutputBufferSize);
 
-    SerializationService build();
+    InternalSerializationService build();
 }

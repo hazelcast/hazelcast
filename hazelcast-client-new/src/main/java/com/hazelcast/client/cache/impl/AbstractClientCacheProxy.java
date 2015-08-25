@@ -33,7 +33,7 @@ import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.util.ExceptionUtil;
 
 import javax.cache.CacheException;
@@ -100,7 +100,7 @@ abstract class AbstractClientCacheProxy<K, V>
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }
-        SerializationService serializationService = clientContext.getSerializationService();
+        InternalSerializationService serializationService = clientContext.getSerializationService();
         ClientDelegatingFuture<V> delegatingFuture =
                 new ClientDelegatingFuture<V>(future, serializationService, cacheGetResponseDecoder);
         if (async) {

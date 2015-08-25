@@ -16,7 +16,8 @@
 
 package com.hazelcast.cache.impl.nearcache;
 
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.nio.serialization.SerializationService;
 
 /**
  * Context to hold all required external services and utilities to be used by
@@ -32,14 +33,14 @@ public class NearCacheContext {
 
     }
 
-    public NearCacheContext(SerializationService serializationService,
+    public NearCacheContext(InternalSerializationService serializationService,
                             NearCacheExecutor nearCacheExecutor) {
         this.serializationService = serializationService;
         this.nearCacheExecutor = nearCacheExecutor;
     }
 
     public NearCacheContext(NearCacheManager nearCacheManager,
-                            SerializationService serializationService,
+                            InternalSerializationService serializationService,
                             NearCacheExecutor nearCacheExecutor) {
         this.nearCacheManager = nearCacheManager;
         this.serializationService = serializationService;
@@ -58,7 +59,7 @@ public class NearCacheContext {
         return serializationService;
     }
 
-    public void setSerializationService(SerializationService serializationService) {
+    public void setSerializationService(InternalSerializationService serializationService) {
         this.serializationService = serializationService;
     }
 

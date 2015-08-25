@@ -32,7 +32,7 @@ import com.hazelcast.memory.MemoryStats;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.IOService;
 import com.hazelcast.nio.MemberSocketInterceptor;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationServiceBuilder;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.nio.tcp.MemberPacketReader;
@@ -97,8 +97,8 @@ public class DefaultNodeExtension implements NodeExtension {
         throw new UnsupportedOperationException("Native memory feature is only available on Hazelcast Enterprise!");
     }
 
-    public SerializationService createSerializationService() {
-        SerializationService ss;
+    public InternalSerializationService createSerializationService() {
+        InternalSerializationService ss;
         try {
             Config config = node.getConfig();
             ClassLoader configClassLoader = node.getConfigClassLoader();

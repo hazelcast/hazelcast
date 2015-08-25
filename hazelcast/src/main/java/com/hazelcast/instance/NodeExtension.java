@@ -22,7 +22,7 @@ import com.hazelcast.internal.storage.Storage;
 import com.hazelcast.memory.MemoryStats;
 import com.hazelcast.nio.IOService;
 import com.hazelcast.nio.MemberSocketInterceptor;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.tcp.PacketReader;
 import com.hazelcast.nio.tcp.PacketWriter;
 import com.hazelcast.nio.tcp.SocketChannelWrapperFactory;
@@ -56,7 +56,7 @@ public interface NodeExtension {
      *
      * @return a <tt>SerializationService</tt> instance
      */
-    SerializationService createSerializationService();
+    InternalSerializationService createSerializationService();
 
     /**
      * Returns <tt>SecurityContext</tt> for this <tt>Node</tt> if available, otherwise returns null.

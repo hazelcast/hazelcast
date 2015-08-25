@@ -18,7 +18,7 @@ package com.hazelcast.map.impl.mapstore;
 
 import com.hazelcast.map.impl.MapStoreWrapper;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.nio.serialization.SerializationService;
 
 import java.util.ArrayList;
 import java.util.Collection;

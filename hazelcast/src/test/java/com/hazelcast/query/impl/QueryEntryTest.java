@@ -7,7 +7,7 @@ import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.nio.serialization.Portable;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.query.QueryConstants;
 import com.hazelcast.query.SampleObjects;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -29,7 +29,7 @@ import static org.junit.Assert.assertTrue;
 @Category({QuickTest.class, ParallelTest.class})
 public class QueryEntryTest extends HazelcastTestSupport {
 
-    private SerializationService serializationService;
+    private InternalSerializationService serializationService;
 
     @Before
     public void before() {

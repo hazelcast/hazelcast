@@ -38,7 +38,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionListener;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.UsernamePasswordCredentials;
 import com.hazelcast.util.Clock;
@@ -95,7 +95,7 @@ public abstract class ClusterListenerSupport implements ConnectionListener, Conn
 
         @Override
         public void authenticate(ClientConnection connection) throws AuthenticationException, IOException {
-            final SerializationService ss = client.getSerializationService();
+            final InternalSerializationService ss = client.getSerializationService();
             String uuid = null;
             String ownerUuid = null;
             if (principal != null) {

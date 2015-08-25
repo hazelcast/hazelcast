@@ -34,7 +34,7 @@ import com.hazelcast.client.util.ClientDelegatingFuture;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.IFunction;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.ringbuffer.OverflowPolicy;
 import com.hazelcast.ringbuffer.ReadResultSet;
 import com.hazelcast.ringbuffer.Ringbuffer;
@@ -80,7 +80,7 @@ public class ClientRingbufferProxy<E> extends ClientProxy implements Ringbuffer<
     @Override
     protected void onInitialize() {
         partitionId = getContext().getPartitionService().getPartitionId(getName());
-        final SerializationService serializationService = getContext().getSerializationService();
+        final InternalSerializationService serializationService = getContext().getSerializationService();
 
         readManyAsyncResponseDecoder = new ClientMessageDecoder() {
             @Override

@@ -24,6 +24,7 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.IMap;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.impl.MapService;
@@ -254,8 +255,12 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
         checkNotNull(k, NULL_KEY_IS_NOT_ALLOWED);
 
         Data key = toData(k, partitionStrategy);
+        return new DelegatingFuture<V>(getAsyncInternal(key), getInternalSerializationService());
+    }
+
+    private InternalSerializationService getInternalSerializationService() {
         NodeEngine nodeEngine = getNodeEngine();
-        return new DelegatingFuture<V>(getAsyncInternal(key), nodeEngine.getSerializationService());
+        return (InternalSerializationService) nodeEngine.getSerializationService();
     }
 
     @Override
@@ -279,8 +284,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
 
         Data k = toData(key, partitionStrategy);
         Data v = toData(value);
-        return new DelegatingFuture<V>(putAsyncInternal(k, v, ttl, timeunit),
-                getNodeEngine().getSerializationService());
+        return new DelegatingFuture<V>(putAsyncInternal(k, v, ttl, timeunit), getInternalSerializationService());
     }
 
     @Override
@@ -288,7 +292,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
         Data k = toData(key, partitionStrategy);
-        return new DelegatingFuture<V>(removeAsyncInternal(k), getNodeEngine().getSerializationService());
+        return new DelegatingFuture<V>(removeAsyncInternal(k), getInternalSerializationService());
     }
 
     @Override
@@ -641,7 +645,9 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
         MapService service = getService();
         Data keyData = toData(key, partitionStrategy);
         ICompletableFuture f = executeOnKeyInternal(keyData, entryProcessor, null);
-        return new DelegatingFuture(f, service.getMapServiceContext().getNodeEngine().getSerializationService());
+        InternalSerializationService serializationService = (InternalSerializationService)
+                service.getMapServiceContext().getNodeEngine().getSerializationService();
+        return new DelegatingFuture(f, serializationService);
     }
 
 

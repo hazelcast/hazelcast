@@ -26,7 +26,7 @@ import com.hazelcast.core.Message;
 import com.hazelcast.core.MessageListener;
 import com.hazelcast.monitor.LocalTopicStats;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.topic.impl.client.AddMessageListenerRequest;
 import com.hazelcast.topic.impl.client.PortableMessage;
 import com.hazelcast.topic.impl.client.PublishRequest;
@@ -44,7 +44,7 @@ public class ClientTopicProxy<E> extends ClientProxy implements ITopic<E> {
 
     @Override
     public void publish(E message) {
-        SerializationService serializationService = getContext().getSerializationService();
+        InternalSerializationService serializationService = getContext().getSerializationService();
         final Data data = serializationService.toData(message);
         PublishRequest request = new PublishRequest(name, data);
         invoke(request);
@@ -61,7 +61,7 @@ public class ClientTopicProxy<E> extends ClientProxy implements ITopic<E> {
         EventHandler<PortableMessage> handler = new EventHandler<PortableMessage>() {
             @Override
             public void handle(PortableMessage event) {
-                SerializationService serializationService = getContext().getSerializationService();
+                InternalSerializationService serializationService = getContext().getSerializationService();
                 ClientClusterService clusterService = getContext().getClusterService();
 
                 E messageObject = serializationService.toObject(event.getMessage());

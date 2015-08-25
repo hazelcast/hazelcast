@@ -27,7 +27,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.TestUtil;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -98,7 +98,7 @@ public abstract class CacheRecordStoreTestSupport
     }
 
     protected void putAndGetFromCacheRecordStore(ICacheRecordStore cacheRecordStore, InMemoryFormat inMemoryFormat) {
-        SerializationService serializationService = new DefaultSerializationServiceBuilder().build();
+        InternalSerializationService serializationService = new DefaultSerializationServiceBuilder().build();
 
         for (int i = 0; i < CACHE_RECORD_COUNT; i++) {
             cacheRecordStore.put(serializationService.toData(i), "value-" + i, null, null, -1);

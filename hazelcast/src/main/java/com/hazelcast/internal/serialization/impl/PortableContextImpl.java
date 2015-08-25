@@ -26,8 +26,8 @@ import com.hazelcast.nio.serialization.FieldDefinition;
 import com.hazelcast.nio.serialization.FieldType;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.Portable;
-import com.hazelcast.internal.serialization.PortableContext;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.nio.serialization.PortableContext;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 
@@ -47,7 +47,7 @@ final class PortableContextImpl implements PortableContext {
     private final ConcurrentHashMap<Integer, ClassDefinitionContext> classDefContextMap =
             new ConcurrentHashMap<Integer, ClassDefinitionContext>();
 
-    private final SerializationService serializationService;
+    private final InternalSerializationService serializationService;
 
     private final ConstructorFunction<Integer, ClassDefinitionContext> constructorFunction =
             new ConstructorFunction<Integer, ClassDefinitionContext>() {
@@ -56,7 +56,7 @@ final class PortableContextImpl implements PortableContext {
                 }
             };
 
-    PortableContextImpl(SerializationService serializationService, int version) {
+    PortableContextImpl(InternalSerializationService serializationService, int version) {
         this.serializationService = serializationService;
         this.version = version;
     }

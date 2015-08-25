@@ -22,7 +22,7 @@ import com.hazelcast.cache.impl.record.CacheRecordFactory;
 import com.hazelcast.cache.impl.record.CacheRecordHashMap;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.spi.NodeEngine;
 
 /**
@@ -92,7 +92,7 @@ public class CacheRecordStore
 
     protected CacheRecordFactory createCacheRecordFactory() {
         return new CacheRecordFactory(cacheConfig.getInMemoryFormat(),
-                                      nodeEngine.getSerializationService());
+                nodeEngine.getSerializationService());
     }
 
     @Override

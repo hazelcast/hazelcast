@@ -22,7 +22,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.MapStoreWrapper;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 
 import java.util.Collections;
 
@@ -75,7 +75,7 @@ public final class MapStoreContextFactory {
         }
 
         @Override
-        public SerializationService getSerializationService() {
+        public InternalSerializationService getSerializationService() {
             throw new UnsupportedOperationException("This method should not be called. No defined map store exists.");
         }
 

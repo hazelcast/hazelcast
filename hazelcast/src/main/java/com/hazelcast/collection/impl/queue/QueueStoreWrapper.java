@@ -25,7 +25,7 @@ import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.QuickMath;
 
@@ -65,7 +65,7 @@ public final class QueueStoreWrapper implements QueueStore<Data> {
 
     private QueueStore store;
 
-    private SerializationService serializationService;
+    private InternalSerializationService serializationService;
 
     private QueueStoreWrapper() {
     }
@@ -78,7 +78,8 @@ public final class QueueStoreWrapper implements QueueStore<Data> {
      * @param serializationService serialization service.
      * @return returns a new instance of {@link QueueStoreWrapper}
      */
-    public static QueueStoreWrapper create(String name, QueueStoreConfig storeConfig, SerializationService serializationService) {
+    public static QueueStoreWrapper create(String name, QueueStoreConfig storeConfig,
+                                           InternalSerializationService serializationService) {
         checkNotNull(name, "name should not be null");
         checkNotNull(serializationService, "serializationService should not be null");
 
@@ -300,7 +301,7 @@ public final class QueueStoreWrapper implements QueueStore<Data> {
         return bulkLoad;
     }
 
-    void setSerializationService(SerializationService serializationService) {
+    void setSerializationService(InternalSerializationService serializationService) {
         this.serializationService = serializationService;
     }
 

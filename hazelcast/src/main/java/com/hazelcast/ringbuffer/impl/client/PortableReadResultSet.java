@@ -16,13 +16,15 @@
 
 package com.hazelcast.ringbuffer.impl.client;
 
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
-import com.hazelcast.internal.serialization.SerializationService;
+
+import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.ringbuffer.ReadResultSet;
 
 import java.io.IOException;
@@ -52,7 +54,7 @@ public class PortableReadResultSet<E> implements Portable, ReadResultSet<E> {
         return items;
     }
 
-    public void setSerializationService(SerializationService serializationService) {
+    public void setSerializationService(InternalSerializationService serializationService) {
         this.serializationService = serializationService;
     }
 

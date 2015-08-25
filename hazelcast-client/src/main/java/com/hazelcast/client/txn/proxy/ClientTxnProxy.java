@@ -22,7 +22,7 @@ import com.hazelcast.client.impl.client.ClientRequest;
 import com.hazelcast.client.spi.ClientTransactionContext;
 import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.spi.impl.SerializableList;
 import com.hazelcast.transaction.TransactionalObject;
@@ -47,7 +47,7 @@ abstract class ClientTxnProxy implements TransactionalObject {
             ((BaseTransactionRequest) request).setClientThreadId(Thread.currentThread().getId());
         }
         HazelcastClientInstanceImpl client = transactionContext.getClient();
-        SerializationService ss = client.getSerializationService();
+        InternalSerializationService ss = client.getSerializationService();
         try {
             ClientInvocation invocation = new ClientInvocation(client, request, transactionContext.getConnection());
             Future<SerializableList> future = invocation.invoke();

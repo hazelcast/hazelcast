@@ -25,7 +25,7 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionType;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.SocketWritable;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.security.UsernamePasswordCredentials;
 
 import java.io.IOException;
@@ -44,11 +44,11 @@ public class MockSimpleClient implements SimpleClient {
     private static final AtomicInteger port = new AtomicInteger(9000);
 
     private final ClientEngineImpl clientEngine;
-    private final SerializationService serializationService;
+    private final InternalSerializationService serializationService;
     private final MockConnection connection;
 
     public MockSimpleClient(ClientEngineImpl clientEngine,
-                            SerializationService serializationService) throws UnknownHostException {
+                            InternalSerializationService serializationService) throws UnknownHostException {
         this.clientEngine = clientEngine;
         this.serializationService = serializationService;
         this.connection = new MockConnection(port.incrementAndGet());

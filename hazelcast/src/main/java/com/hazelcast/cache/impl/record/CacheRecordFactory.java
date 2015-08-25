@@ -18,7 +18,7 @@ package com.hazelcast.cache.impl.record;
 
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.util.Clock;
 
 /**
@@ -71,7 +71,7 @@ public class CacheRecordFactory<R extends CacheRecord> {
      * at the specified time.
      *
      * @param expirationTime the expiration time
-     * @param now the time in milliseconds (since the Epoc)
+     * @param now            the time in milliseconds (since the Epoc)
      * @return true if the value will expire at the specified time
      */
     public static boolean isExpiredAt(long expirationTime, long now) {

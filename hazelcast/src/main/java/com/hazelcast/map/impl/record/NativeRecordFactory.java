@@ -19,10 +19,10 @@ package com.hazelcast.map.impl.record;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.PartitioningStrategy;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.storage.DataRef;
 import com.hazelcast.internal.storage.Storage;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.SerializationService;
 
 public class NativeRecordFactory implements RecordFactory<Data> {
 
@@ -32,7 +32,7 @@ public class NativeRecordFactory implements RecordFactory<Data> {
     private final boolean statisticsEnabled;
 
     public NativeRecordFactory(MapConfig config, Storage<DataRef> storage, SerializationService serializationService,
-            PartitioningStrategy partitionStrategy) {
+                               PartitioningStrategy partitionStrategy) {
         this.storage = storage;
         this.serializationService = serializationService;
         this.partitionStrategy = partitionStrategy;

@@ -37,7 +37,7 @@ import com.hazelcast.core.ItemEventType;
 import com.hazelcast.core.ItemListener;
 import com.hazelcast.core.Member;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.spi.impl.PortableItemEvent;
 import com.hazelcast.spi.impl.SerializableList;
 import com.hazelcast.spi.impl.UnmodifiableLazyList;
@@ -201,7 +201,7 @@ public class AbstractClientCollectionProxy<E> extends ClientProxy implements ICo
         CollectionGetAllRequest request = new CollectionGetAllRequest(getName());
         SerializableList result = invoke(request);
         List<Data> collection = result.getCollection();
-        SerializationService serializationService = getContext().getSerializationService();
+        InternalSerializationService serializationService = getContext().getSerializationService();
         return new UnmodifiableLazyList<E>(collection, serializationService);
     }
 

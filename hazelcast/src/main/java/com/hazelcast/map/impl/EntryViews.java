@@ -17,10 +17,10 @@
 package com.hazelcast.map.impl;
 
 import com.hazelcast.core.EntryView;
-import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.RecordStatistics;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.map.merge.MapMergePolicy;
+import com.hazelcast.nio.serialization.SerializationService;
 
 /**
  * A class providing static factory methods that create various entry view objects.
@@ -85,7 +85,8 @@ public final class EntryViews {
     }
 
     public static <K, V> EntryView<K, V> convertToLazyEntryView(EntryView entryView,
-            SerializationService serializationService, MapMergePolicy mergePolicy) {
+                                                                SerializationService serializationService,
+                                                                MapMergePolicy mergePolicy) {
         final LazyEntryView lazyEntryView = new LazyEntryView(entryView.getKey(), entryView.getValue(),
                 serializationService, mergePolicy);
         lazyEntryView.setCost(entryView.getCost());

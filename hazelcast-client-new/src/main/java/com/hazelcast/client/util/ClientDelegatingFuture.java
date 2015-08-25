@@ -21,7 +21,7 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.spi.impl.ClientInvocationFuture;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.util.concurrent.CancellationException;
@@ -58,7 +58,8 @@ public class ClientDelegatingFuture<V> implements ICompletableFuture<V> {
     }
 
     public ClientDelegatingFuture(ClientInvocationFuture clientInvocationFuture,
-                                  SerializationService serializationService, ClientMessageDecoder clientMessageDecoder) {
+                                  SerializationService serializationService,
+                                  ClientMessageDecoder clientMessageDecoder) {
         this.future = clientInvocationFuture;
         this.serializationService = serializationService;
         this.clientMessageDecoder = clientMessageDecoder;

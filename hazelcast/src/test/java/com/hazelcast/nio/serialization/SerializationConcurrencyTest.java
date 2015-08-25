@@ -16,7 +16,7 @@
 
 package com.hazelcast.nio.serialization;
 
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
@@ -56,7 +56,7 @@ public class SerializationConcurrencyTest {
                 throw new IllegalArgumentException();
             }
         };
-        final SerializationService ss = new DefaultSerializationServiceBuilder().addPortableFactory(FACTORY_ID, portableFactory).build();
+        final InternalSerializationService ss = new DefaultSerializationServiceBuilder().addPortableFactory(FACTORY_ID, portableFactory).build();
 
         final int k = 10;
         final AtomicBoolean error = new AtomicBoolean(false);

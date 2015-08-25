@@ -27,7 +27,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.spi.EventFilter;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
@@ -89,7 +89,7 @@ public class EventServiceImpl implements InternalEventService {
     private final MwCounter totalFailures = newMwCounter();
     @Probe(name = "rejectedCount")
     private final MwCounter rejectedCount = newMwCounter();
-    private final SerializationService serializationService;
+    private final InternalSerializationService serializationService;
 
     public EventServiceImpl(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;

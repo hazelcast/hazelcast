@@ -27,7 +27,7 @@ import com.hazelcast.logging.Logger;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.MapEntrySimple;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.spi.impl.SerializationServiceSupport;
 import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.web.entryprocessor.DeleteSessionEntryProcessor;
@@ -294,7 +294,7 @@ public class ClusteredSessionService {
      * @throws Exception the exception
      */
     public void updateAttributes(String id, Map<String, Object> updates) throws Exception {
-        SerializationService ss = sss.getSerializationService();
+        InternalSerializationService ss = sss.getSerializationService();
         SessionUpdateEntryProcessor sessionUpdate = new SessionUpdateEntryProcessor(updates.size());
         sessionUpdate.setJvmId(jvmId);
         for (Map.Entry<String, Object> entry : updates.entrySet()) {

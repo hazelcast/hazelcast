@@ -1,6 +1,6 @@
 package com.hazelcast.internal.serialization.impl.bufferpool;
 
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -20,12 +20,12 @@ import static org.mockito.Mockito.mock;
 @Category({QuickTest.class, ParallelTest.class})
 public class BufferPoolThreadLocalTest extends HazelcastTestSupport {
 
-    private SerializationService serializationService;
+    private InternalSerializationService serializationService;
     private BufferPoolThreadLocal bufferPoolThreadLocal;
 
     @Before
     public void setup() {
-        serializationService = mock(SerializationService.class);
+        serializationService = mock(InternalSerializationService.class);
         bufferPoolThreadLocal = new BufferPoolThreadLocal(serializationService, new BufferPoolFactoryImpl());
     }
 

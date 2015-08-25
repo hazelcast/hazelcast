@@ -1,6 +1,6 @@
 package com.hazelcast.nio.serialization;
 
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.BufferObjectDataInput;
 import com.hazelcast.nio.BufferObjectDataOutput;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
@@ -31,7 +31,7 @@ public class PortableClassVersionTest {
 
     @Test
     public void testDifferentClassVersions() {
-        SerializationService serializationService = new DefaultSerializationServiceBuilder()
+        InternalSerializationService serializationService = new DefaultSerializationServiceBuilder()
                 .addPortableFactory(FACTORY_ID, new PortableFactory() {
                     public Portable create(int classId) {
                         return new NamedPortable();
@@ -39,7 +39,7 @@ public class PortableClassVersionTest {
 
                 }).build();
 
-        SerializationService serializationService2 = new DefaultSerializationServiceBuilder()
+        InternalSerializationService serializationService2 = new DefaultSerializationServiceBuilder()
                 .addPortableFactory(FACTORY_ID, new PortableFactory() {
                     public Portable create(int classId) {
                         return new NamedPortableV2();
@@ -51,7 +51,7 @@ public class PortableClassVersionTest {
 
     @Test
     public void testDifferentClassAndServiceVersions() {
-        SerializationService serializationService = new DefaultSerializationServiceBuilder().setVersion(1)
+        InternalSerializationService serializationService = new DefaultSerializationServiceBuilder().setVersion(1)
                 .addPortableFactory(FACTORY_ID, new PortableFactory() {
                     public Portable create(int classId) {
                         return new NamedPortable();
@@ -59,7 +59,7 @@ public class PortableClassVersionTest {
 
                 }).build();
 
-        SerializationService serializationService2 = new DefaultSerializationServiceBuilder().setVersion(2)
+        InternalSerializationService serializationService2 = new DefaultSerializationServiceBuilder().setVersion(2)
                 .addPortableFactory(FACTORY_ID, new PortableFactory() {
                     public Portable create(int classId) {
                         return new NamedPortableV2();
@@ -69,8 +69,8 @@ public class PortableClassVersionTest {
         testDifferentClassVersions(serializationService, serializationService2);
     }
 
-    static void testDifferentClassVersions(SerializationService serializationService,
-            SerializationService serializationService2) {
+    static void testDifferentClassVersions(InternalSerializationService serializationService,
+            InternalSerializationService serializationService2) {
 
         NamedPortable p1 = new NamedPortable("named-portable", 123);
         Data data = serializationService.toData(p1);
@@ -86,7 +86,7 @@ public class PortableClassVersionTest {
 
     @Test
     public void testDifferentClassVersionsUsingDataWriteAndRead() throws IOException {
-        SerializationService serializationService = new DefaultSerializationServiceBuilder()
+        InternalSerializationService serializationService = new DefaultSerializationServiceBuilder()
                 .addPortableFactory(FACTORY_ID, new PortableFactory() {
                     public Portable create(int classId) {
                         return new NamedPortable();
@@ -94,7 +94,7 @@ public class PortableClassVersionTest {
 
                 }).build();
 
-        SerializationService serializationService2 = new DefaultSerializationServiceBuilder()
+        InternalSerializationService serializationService2 = new DefaultSerializationServiceBuilder()
                 .addPortableFactory(FACTORY_ID, new PortableFactory() {
                     public Portable create(int classId) {
                         return new NamedPortableV2();
@@ -106,7 +106,7 @@ public class PortableClassVersionTest {
 
     @Test
     public void testDifferentClassAndServiceVersionsUsingDataWriteAndRead() throws IOException {
-        SerializationService serializationService = new DefaultSerializationServiceBuilder().setVersion(1)
+        InternalSerializationService serializationService = new DefaultSerializationServiceBuilder().setVersion(1)
                 .addPortableFactory(FACTORY_ID, new PortableFactory() {
                     public Portable create(int classId) {
                         return new NamedPortable();
@@ -114,7 +114,7 @@ public class PortableClassVersionTest {
 
                 }).build();
 
-        SerializationService serializationService2 = new DefaultSerializationServiceBuilder().setVersion(2)
+        InternalSerializationService serializationService2 = new DefaultSerializationServiceBuilder().setVersion(2)
                 .addPortableFactory(FACTORY_ID, new PortableFactory() {
                     public Portable create(int classId) {
                         return new NamedPortableV2();
@@ -124,8 +124,8 @@ public class PortableClassVersionTest {
         testDifferentClassVersionsUsingDataWriteAndRead(serializationService, serializationService2);
     }
 
-    static void testDifferentClassVersionsUsingDataWriteAndRead(SerializationService serializationService,
-            SerializationService serializationService2) throws IOException {
+    static void testDifferentClassVersionsUsingDataWriteAndRead(InternalSerializationService serializationService,
+            InternalSerializationService serializationService2) throws IOException {
 
         NamedPortable p1 = new NamedPortable("portable-v1", 111);
         Data data = serializationService.toData(p1);
@@ -157,10 +157,10 @@ public class PortableClassVersionTest {
 
     @Test
     public void testPreDefinedDifferentVersionsWithInnerPortable() {
-        final SerializationService serializationService = createSerializationService(1);
+        final InternalSerializationService serializationService = createSerializationService(1);
         serializationService.getPortableContext().registerClassDefinition(createInnerPortableClassDefinition());
 
-        final SerializationService serializationService2 = createSerializationService(2);
+        final InternalSerializationService serializationService2 = createSerializationService(2);
         serializationService2.getPortableContext().registerClassDefinition(createInnerPortableClassDefinition());
 
         NamedPortable[] nn = new NamedPortable[1];
@@ -179,10 +179,10 @@ public class PortableClassVersionTest {
     public void testPreDefinedDifferentVersionsWithNullInnerPortable() {
         ClassDefinition innerPortableClassDefinition = createInnerPortableClassDefinition();
 
-        final SerializationService serializationService = createSerializationService(1);
+        final InternalSerializationService serializationService = createSerializationService(1);
         serializationService.getPortableContext().registerClassDefinition(innerPortableClassDefinition);
 
-        final SerializationService serializationService2 = createSerializationService(2);
+        final InternalSerializationService serializationService2 = createSerializationService(2);
         serializationService2.getPortableContext().registerClassDefinition(innerPortableClassDefinition);
 
         final MainPortable mainWithNullInner = new MainPortable((byte) 113, true, 'x', (short) -500, 56789, -50992225L, 900.5678f,
@@ -191,8 +191,8 @@ public class PortableClassVersionTest {
         testPreDefinedDifferentVersions(serializationService, serializationService2, mainWithNullInner);
     }
 
-    static void testPreDefinedDifferentVersions(SerializationService serializationService,
-            SerializationService serializationService2, MainPortable mainPortable) {
+    static void testPreDefinedDifferentVersions(InternalSerializationService serializationService,
+            InternalSerializationService serializationService2, MainPortable mainPortable) {
         final Data data = serializationService.toData(mainPortable);
 
         assertEquals(mainPortable, serializationService2.toObject(data));

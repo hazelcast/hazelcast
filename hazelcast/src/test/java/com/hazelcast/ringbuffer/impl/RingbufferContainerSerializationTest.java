@@ -7,7 +7,7 @@ import com.hazelcast.nio.BufferObjectDataInput;
 import com.hazelcast.nio.BufferObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationServiceBuilder;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -45,7 +45,7 @@ public class RingbufferContainerSerializationTest extends HazelcastTestSupport {
 
     private static final int CLOCK_DIFFERENCE_MS = 2000;
 
-    private SerializationService serializationService;
+    private InternalSerializationService serializationService;
 
     @Before
     public void setup() {

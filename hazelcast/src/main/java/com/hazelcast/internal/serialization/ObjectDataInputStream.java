@@ -29,13 +29,13 @@ import java.nio.ByteOrder;
 public class ObjectDataInputStream extends InputStream implements ObjectDataInput, Closeable {
 
     private static final int UTF_BUFFER_SIZE = 1024;
-    private final SerializationService serializationService;
+    private final InternalSerializationService serializationService;
     private final DataInputStream dataInput;
     private final ByteOrder byteOrder;
 
     private byte[] utfBuffer;
 
-    public ObjectDataInputStream(InputStream in, SerializationService serializationService) {
+    public ObjectDataInputStream(InputStream in, InternalSerializationService serializationService) {
         this.serializationService = serializationService;
         this.dataInput = new DataInputStream(in);
         this.byteOrder = serializationService.getByteOrder();

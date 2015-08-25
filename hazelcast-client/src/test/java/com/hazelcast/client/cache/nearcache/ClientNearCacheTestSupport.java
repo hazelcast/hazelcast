@@ -30,7 +30,7 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
 
@@ -85,7 +85,7 @@ public abstract class ClientNearCacheTestSupport extends HazelcastTestSupport {
     protected class NearCacheTestContext {
 
         protected final HazelcastClientProxy client;
-        protected final SerializationService serializationService;
+        protected final InternalSerializationService serializationService;
         protected final HazelcastClientCacheManager cacheManager;
         protected final NearCacheManager nearCacheManager;
         protected final ICache<Integer, String> cache;

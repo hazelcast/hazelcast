@@ -18,7 +18,7 @@ package com.hazelcast.nio.serialization;
 
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.SerializerConfig;
-import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
@@ -77,7 +77,7 @@ public class CustomSerializationTest {
                 .setImplementation(serializer)
                 .setTypeClass(FooDataSerializable.class);
         config.addSerializerConfig(sc);
-        SerializationService ss = new DefaultSerializationServiceBuilder().setConfig(config).build();
+        InternalSerializationService ss = new DefaultSerializationServiceBuilder().setConfig(config).build();
         FooDataSerializable foo = new FooDataSerializable("foo");
         ss.toData(foo);
         assertEquals(0, foo.serializationCount.get());
@@ -92,7 +92,7 @@ public class CustomSerializationTest {
                 .setImplementation(serializer)
                 .setTypeClass(FooDataSerializable.class);
         config.addSerializerConfig(sc);
-        SerializationService ss = new DefaultSerializationServiceBuilder().setConfig(config).build();
+        InternalSerializationService ss = new DefaultSerializationServiceBuilder().setConfig(config).build();
         FooDataSerializable foo = new FooDataSerializable("foo");
         ss.toData(foo);
         assertEquals(1, foo.serializationCount.get());
@@ -106,7 +106,7 @@ public class CustomSerializationTest {
                 .setImplementation(new FooXmlSerializer())
                 .setTypeClass(Foo.class);
         config.addSerializerConfig(sc);
-        SerializationService ss = new DefaultSerializationServiceBuilder().setConfig(config).build();
+        InternalSerializationService ss = new DefaultSerializationServiceBuilder().setConfig(config).build();
         Foo foo = new Foo("f");
         Data d = ss.toData(foo);
         Foo newFoo = ss.toObject(d);
