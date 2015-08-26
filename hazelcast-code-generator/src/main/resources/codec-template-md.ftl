@@ -190,7 +190,7 @@ The following error codes are defined in the system:
 |UNSUPPORTED_CALLBACK|68|Signals that a CallbackHandler does not recognize a particular Callback.|
 
 <#list model?keys as key>
-<#assign map=model?values[key_index]?values/>
+<#assign map=model?values[key_index]/>
 <#if map?has_content>
 
 <#if key == "com.hazelcast.client.impl.protocol.template.ClientMessageTemplate">

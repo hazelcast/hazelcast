@@ -36,6 +36,7 @@ public class CodecModel implements Model{
     static final Map<String, TypeElement> CUSTOM_CODEC_MAP = new HashMap<String, TypeElement>();
 
     private final Lang lang;
+    private short requestId;
     private String id;
     private String name;
     private String className;
@@ -153,7 +154,7 @@ public class CodecModel implements Model{
         this.lang = lang;
 
         name = methodElement.getSimpleName().toString();
-        short requestId = methodElement.getAnnotation(Request.class).id();
+        requestId = methodElement.getAnnotation(Request.class).id();
         short masterId = parent.getAnnotation(GenerateCodec.class).id();
         id = CodeGenerationUtils.mergeIds(masterId, requestId);
         parentName = parent.getAnnotation(GenerateCodec.class).name();
@@ -228,6 +229,10 @@ public class CodecModel implements Model{
 
     public Lang getLang() {
         return lang;
+    }
+
+    public short getRequestId() {
+        return requestId;
     }
 
     public String getId() {
