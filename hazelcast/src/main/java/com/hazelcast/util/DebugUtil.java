@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.hazelcast.util;
 
 import com.hazelcast.nio.IOUtil;
@@ -12,7 +28,7 @@ import java.io.PrintWriter;
 /**
  * Contains some debugging functionality; useful if you are running large testsuites and can't rely on a debugger.
  */
-@SuppressFBWarnings({"DM_DEFAULT_ENCODING"})
+@SuppressFBWarnings({"DM_DEFAULT_ENCODING" })
 public final class DebugUtil {
 
     private DebugUtil() {
@@ -46,11 +62,9 @@ public final class DebugUtil {
 
         Thread thread = Thread.currentThread();
 
-        StringBuffer sb = new StringBuffer();
-        sb.append(thread.getClass());
-        sb.append(' ');
-        sb.append(thread.getName());
-        sb.append('\n');
+        StringBuilder sb = new StringBuilder();
+        sb.append(thread.getClass()).append(' ');
+        sb.append(thread.getName()).append('\n');
         StackTraceElement[] elements = thread.getStackTrace();
         for (StackTraceElement element : elements) {
             sb.append('\t').append(element.toString()).append('\n');
@@ -74,7 +88,7 @@ public final class DebugUtil {
      * If something fails while writing to the file, the exception is printed and then ignored.
      *
      * @param file the file to which text is appended.
-     * @param s the text to append to the file.
+     * @param s    the text to append to the file.
      * @throws java.lang.NullPointerException if file is null
      */
     public static void appendWithNewLine(File file, String s) {

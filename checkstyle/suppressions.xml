@@ -461,7 +461,6 @@
 
     <!-- Util -->
     <suppress checks="" files="com/hazelcast/util/Base64"/>
-    <suppress checks="" files="com/hazelcast/util/DebugUtil"/>
     <suppress checks="" files="com/hazelcast/util/HashUtil"/>
     <suppress checks="" files="com/hazelcast/util/scheduler/ScheduleType"/>
 
