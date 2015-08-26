@@ -22,6 +22,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
 
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
@@ -32,9 +33,17 @@ import static com.hazelcast.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.util.Preconditions.isNotNull;
 import static java.util.concurrent.atomic.AtomicReferenceFieldUpdater.newUpdater;
 
+/**
+ * A base {@link ICompletableFuture} implementation that may be explicitly completed by setting its
+ * value through setResult.
+ * Implements the logic of cancellation and callbacks execution.
+ *
+ * @param <V> The result type returned by this Future's {@code get} method
+ */
 public abstract class AbstractCompletableFuture<V> implements ICompletableFuture<V> {
 
-    static final Object INITIAL_STATE = new ExecutionCallbackNode(null, null, null);
+    private static final Object INITIAL_STATE = new ExecutionCallbackNode(null, null, null);
+    private static final Object CANCELLED_STATE = new Object();
 
     private static final AtomicReferenceFieldUpdater<AbstractCompletableFuture, Object> STATE
             = newUpdater(AbstractCompletableFuture.class, Object.class, "state");
@@ -45,7 +54,7 @@ public abstract class AbstractCompletableFuture<V> implements ICompletableFuture
     // The reason for this abuse of the type system is to deal with the head node and the result
     // in a single cas. Using a single cas prevent a thread that calls and then do this concurrently
     // with a thread that calls setResult.
-    volatile Object state = INITIAL_STATE;
+    private volatile Object state = INITIAL_STATE;
 
     private final ILogger logger;
     private final Executor defaultExecutor;
@@ -72,7 +81,11 @@ public abstract class AbstractCompletableFuture<V> implements ICompletableFuture
         for (; ; ) {
             Object currentState = this.state;
 
-            if (isDone(currentState)) {
+            if (isCancelledState(currentState)) {
+                return;
+            }
+
+            if (isDoneState(currentState)) {
                 runAsynchronous(callback, executor, currentState);
                 return;
             }
@@ -93,11 +106,58 @@ public abstract class AbstractCompletableFuture<V> implements ICompletableFuture
 
     @Override
     public boolean isDone() {
-        return isDone(state);
+        return isDoneState(state);
     }
 
-    private boolean isDone(Object state) {
+    /**
+     * Returns {@code true} if the task with the given state completed - analogously to the Future's contract.
+     * Completion may be due to normal termination, an exception, or
+     * cancellation -- in all of these cases, this method will return
+     * {@code true}.
+     *
+     * @return {@code true} if this task completed
+     */
+    private static boolean isDoneState(Object state) {
         return !(state instanceof ExecutionCallbackNode);
+    }
+
+    @Override
+    public boolean cancel(boolean mayInterruptIfRunning) {
+        for (; ; ) {
+            Object currentState = this.state;
+
+            if (isDoneState(currentState)) {
+                return false;
+            }
+
+            if (STATE.compareAndSet(this, currentState, CANCELLED_STATE)) {
+                cancelled(mayInterruptIfRunning);
+                notifyThreadsWaitingOnGet();
+                return true;
+            }
+        }
+    }
+
+    /**
+     * Protected method invoked when this task transitions to state
+     * {@code isCancelled}. The default implementation does nothing.
+     * Subclasses may override this method to invoke callbacks or perform
+     * bookkeeping. Implementation has to handle exceptions itself.
+     *
+     * @param mayInterruptIfRunning {@code true} if the thread executing this
+     *                              task was supposed to be interrupted; otherwise, in-progress tasks are allowed
+     *                              to complete
+     */
+    protected void cancelled(boolean mayInterruptIfRunning) {
+    }
+
+    private static boolean isCancelledState(Object state) {
+        return state == CANCELLED_STATE;
+    }
+
+    @Override
+    public boolean isCancelled() {
+        return isCancelledState(state);
     }
 
     @Override
@@ -110,25 +170,71 @@ public abstract class AbstractCompletableFuture<V> implements ICompletableFuture
         }
     }
 
+    @Override
+    public V get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
+        final long deadlineTimeMillis = System.currentTimeMillis() + unit.toMillis(timeout);
+        long millisToWait;
+        for (; ; ) {
+            Object currentState = this.state;
+
+            if (isCancelledState(currentState)) {
+                throw new CancellationException();
+            }
+            if (isDoneState(currentState)) {
+                return getResult();
+            }
+            if (Thread.interrupted()) {
+                throw new InterruptedException();
+            }
+
+            millisToWait = deadlineTimeMillis - System.currentTimeMillis();
+            if (millisToWait <= 0) {
+                throw new TimeoutException();
+            }
+
+            synchronized (this) {
+                if (!isDoneState(this.state)) {
+                    this.wait(millisToWait);
+                }
+            }
+        }
+    }
+
     public void setResult(Object result) {
         for (; ; ) {
             Object currentState = this.state;
 
-            if (isDone(currentState)) {
+            if (isDoneState(currentState)) {
                 return;
             }
 
             if (STATE.compareAndSet(this, currentState, result)) {
+                done();
+                notifyThreadsWaitingOnGet();
                 runAsynchronous((ExecutionCallbackNode) currentState, result);
                 break;
             }
         }
     }
 
+    /**
+     * Protected method invoked when this task transitions to state
+     * {@code isDone} (only normally - in case of cancellation cancelled() is invoked)
+     * The default implementation does nothing.
+     * Subclasses may override this method to invoke callbacks or perform
+     * bookkeeping. Implementation has to handle exceptions itself.
+     */
+    protected void done() {
+    }
+
     protected V getResult() {
         Object state = this.state;
 
-        if (!isDone(state)) {
+        if (isCancelledState(state)) {
+            return null;
+        }
+
+        if (!isDoneState(state)) {
             return null;
         }
 
@@ -137,6 +243,12 @@ public abstract class AbstractCompletableFuture<V> implements ICompletableFuture
         }
 
         return (V) state;
+    }
+
+    private void notifyThreadsWaitingOnGet() {
+        synchronized (this) {
+            this.notifyAll();
+        }
     }
 
     protected void runAsynchronous(ExecutionCallbackNode head, Object result) {
