@@ -10,6 +10,7 @@
     <suppress checks="StrictDuplicateCode" files="\.java" lines="1-15"/>
 
     <!-- Suppress checking of copyright notice -->
+    <suppress checks="Header" files="com/hazelcast/buildutils/ElementParser"/>
     <suppress checks="Header" files="com/hazelcast/logging/Log4j2Factory\.java"/>
     <suppress checks="Header" files="/hazelcast-code-generator/"/>
 
@@ -480,9 +481,6 @@
     as explained at http://creativecommons/org/licenses/publicdomain -->
     <suppress checks="MagicNumber|FileLength|DeclarationOrder|RedundantModifier|InnerAssignment|NPath|Cyclomatic"
               files="com/hazelcast/util/ConcurrentReferenceHashMap"/>
-
-    <!-- Build Utils (taken from JBOSS project) -->
-    <suppress checks="" files="com/hazelcast/buildutils/ElementParser"/>
 
     <!-- Exclude Clover instrumented sources -->
     <suppress checks="" files="/src-instrumented/"/>

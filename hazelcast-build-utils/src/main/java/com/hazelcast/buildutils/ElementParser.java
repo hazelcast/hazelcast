@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2008-2015, Hazelcast, Inc. All Rights Reserved.
- * Copyright (C) 2010 - 2012 JBoss by Red Hat
+ * Copyright (c) 2010-2012 JBoss by Red Hat
+ * Copyright (c) 2015, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,11 +28,16 @@ import java.util.List;
  */
 public final class ElementParser {
 
+    private static final int CHAR = 1;
+    private static final int DELIMITER = 2;
+    private static final int START_QUOTE = 4;
+    private static final int END_QUOTE = 8;
+
     private ElementParser() {
     }
 
-    public static List<String> parseDelimitedString(String value, char delim) {
-        return parseDelimitedString(value, delim, true);
+    public static List<String> parseDelimitedString(String value, char delimiter) {
+        return parseDelimitedString(value, delimiter, true);
     }
 
     /**
@@ -40,48 +45,41 @@ public final class ElementParser {
      * will be ignored if it is inside of a quote. This method assumes that the quote character is not included in the set of
      * delimiter characters.
      *
-     * @param value the delimited string to parse.
-     * @param delim the characters delimiting the tokens.
-     * @param trim  whether to trim the parts.
+     * @param value     the delimited string to parse.
+     * @param delimiter the characters delimiting the tokens.
+     * @param trim      whether to trim the parts.
      * @return an array of string tokens or null if there were no tokens.
      */
-    public static List<String> parseDelimitedString(String value, char delim, boolean trim) {
+    public static List<String> parseDelimitedString(String value, char delimiter, boolean trim) {
         if (value == null) {
             value = "";
         }
 
         List<String> list = new ArrayList<String>();
-
-        int CHAR = 1;
-        int DELIMITER = 2;
-        int STARTQUOTE = 4;
-        int ENDQUOTE = 8;
-
         StringBuilder sb = new StringBuilder();
 
-        int expecting = (CHAR | DELIMITER | STARTQUOTE);
-
+        int expecting = (CHAR | DELIMITER | START_QUOTE);
         for (int i = 0; i < value.length(); i++) {
-            char p = i > 0 ? value.charAt(i - 1) : 0;
-            char c = value.charAt(i);
+            char character = value.charAt(i);
 
-            boolean isDelimiter = (delim == c) && (p != '\\');
-            boolean isQuote = ((c == '"') || (c == '\'')) && (p != '\\');
+            boolean isEscaped = isEscaped(value, i);
+            boolean isDelimiter = isDelimiter(delimiter, character, isEscaped);
+            boolean isQuote = isQuote(character, isEscaped);
 
             if (isDelimiter && ((expecting & DELIMITER) > 0)) {
                 addPart(list, sb, trim);
                 sb.delete(0, sb.length());
-                expecting = (CHAR | DELIMITER | STARTQUOTE);
-            } else if (isQuote && ((expecting & STARTQUOTE) > 0)) {
-                sb.append(c);
-                expecting = CHAR | ENDQUOTE;
-            } else if (isQuote && ((expecting & ENDQUOTE) > 0)) {
-                sb.append(c);
-                expecting = (CHAR | STARTQUOTE | DELIMITER);
+                expecting = (CHAR | DELIMITER | START_QUOTE);
+            } else if (isQuote && ((expecting & START_QUOTE) > 0)) {
+                sb.append(character);
+                expecting = CHAR | END_QUOTE;
+            } else if (isQuote && ((expecting & END_QUOTE) > 0)) {
+                sb.append(character);
+                expecting = (CHAR | START_QUOTE | DELIMITER);
             } else if ((expecting & CHAR) > 0) {
-                sb.append(c);
+                sb.append(character);
             } else {
-                String message = String.format("Invalid delimited string [%s] for delimiter: %s", value, delim);
+                String message = String.format("Invalid delimited string [%s] for delimiter: %s", value, delimiter);
                 throw new IllegalArgumentException(message);
             }
         }
@@ -91,6 +89,18 @@ public final class ElementParser {
         }
 
         return list;
+    }
+
+    private static boolean isEscaped(String value, int index) {
+        return (index > 0 && value.charAt(index - 1) == '\\');
+    }
+
+    private static boolean isQuote(char character, boolean isEscaped) {
+        return (!isEscaped && (character == '"' || character == '\''));
+    }
+
+    private static boolean isDelimiter(char delimiter, char character, boolean isEscaped) {
+        return (!isEscaped && character == delimiter);
     }
 
     private static void addPart(List<String> list, StringBuilder sb, boolean trim) {
