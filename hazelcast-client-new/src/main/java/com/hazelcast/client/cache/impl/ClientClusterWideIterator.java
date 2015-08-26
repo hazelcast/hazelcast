@@ -61,7 +61,8 @@ public class ClientClusterWideIterator<K, V>
         try {
             ClientInvocation clientInvocation = new ClientInvocation(client, request, partitionIndex);
             ClientInvocationFuture f = clientInvocation.invoke();
-            return toObject(CacheIterateCodec.decodeResponse(f.get()).response);
+            CacheIterateCodec.ResponseParameters responseParameters = CacheIterateCodec.decodeResponse(f.get());
+            return new CacheKeyIteratorResult(responseParameters.keys, responseParameters.tableIndex);
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }

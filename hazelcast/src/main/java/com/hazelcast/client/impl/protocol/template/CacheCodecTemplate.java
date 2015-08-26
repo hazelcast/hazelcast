@@ -181,7 +181,7 @@ public interface CacheCodecTemplate {
      * @param batch The number of items to be batched
      * @return Serialised com.hazelcast.cache.impl.CacheKeyIteratorResult object.
      */
-    @Request(id = 15, retryable = false, response = ResponseMessageConst.DATA)
+    @Request(id = 15, retryable = false, response = ResponseMessageConst.CACHE_KEY_ITERATOR_RESULT)
     Object iterate(String name, int partitionId, int tableIndex, int batch);
 
     /**
@@ -212,7 +212,7 @@ public interface CacheCodecTemplate {
      * @param enabled true if enabled, false to disable.
      * @param address the address of the host to enable.
      */
-    @Request(id = 18, retryable = true, response = ResponseMessageConst.DATA)
+    @Request(id = 18, retryable = true, response = ResponseMessageConst.VOID)
     void managementConfig(String name, boolean isStat, boolean enabled, Address address);
 
     /**

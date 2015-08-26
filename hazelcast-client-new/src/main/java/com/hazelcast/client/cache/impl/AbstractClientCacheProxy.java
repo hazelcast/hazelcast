@@ -229,7 +229,7 @@ abstract class AbstractClientCacheProxy<K, V>
         if (keys.isEmpty()) {
             return Collections.EMPTY_MAP;
         }
-        final Set<Data> keySet = new HashSet(keys.size());
+        final Set<Data> keySet = new HashSet<Data>(keys.size());
         for (K key : keys) {
             final Data k = toData(key);
             keySet.add(k);
