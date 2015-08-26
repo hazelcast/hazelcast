@@ -18,14 +18,19 @@ package com.hazelcast.internal.ascii.memcache;
 
 import com.hazelcast.internal.ascii.AbstractTextCommand;
 import com.hazelcast.internal.ascii.TextCommandConstants;
-import com.hazelcast.nio.IOUtil;
 
 import java.nio.ByteBuffer;
 
+import static com.hazelcast.internal.ascii.TextCommandConstants.CLIENT_ERROR;
+import static com.hazelcast.internal.ascii.TextCommandConstants.ERROR;
+import static com.hazelcast.internal.ascii.TextCommandConstants.SERVER_ERROR;
+import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.ERROR_CLIENT;
+import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.ERROR_SERVER;
+import static com.hazelcast.nio.IOUtil.copyToHeapBuffer;
 import static com.hazelcast.util.StringUtil.stringToBytes;
 
 public class ErrorCommand extends AbstractTextCommand {
-    ByteBuffer response;
+    private ByteBuffer response;
     private final String message;
 
     public ErrorCommand(TextCommandConstants.TextCommandType type) {
@@ -34,11 +39,11 @@ public class ErrorCommand extends AbstractTextCommand {
 
     public ErrorCommand(TextCommandConstants.TextCommandType type, String message) {
         super(type);
-        byte[] error = TextCommandConstants.ERROR;
-        if (type == TextCommandConstants.TextCommandType.ERROR_CLIENT) {
-            error = TextCommandConstants.CLIENT_ERROR;
-        } else if (type == TextCommandConstants.TextCommandType.ERROR_SERVER) {
-            error = TextCommandConstants.SERVER_ERROR;
+        byte[] error = ERROR;
+        if (type == ERROR_CLIENT) {
+            error = CLIENT_ERROR;
+        } else if (type == ERROR_SERVER) {
+            error = SERVER_ERROR;
         }
         this.message = message;
         byte[] msg = (message == null) ? null : stringToBytes(message);
@@ -56,12 +61,14 @@ public class ErrorCommand extends AbstractTextCommand {
         response.flip();
     }
 
+    @Override
     public boolean readFrom(ByteBuffer src) {
         return true;
     }
 
+    @Override
     public boolean writeTo(ByteBuffer dst) {
-        IOUtil.copyToHeapBuffer(response, dst);
+        copyToHeapBuffer(response, dst);
         return !response.hasRemaining();
     }
 

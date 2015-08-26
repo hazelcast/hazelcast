@@ -62,6 +62,7 @@ public class MemcacheEntry implements DataSerializable {
     public MemcacheEntry() {
     }
 
+    @Override
     public void readData(ObjectDataInput in) throws IOException {
         int size = in.readInt();
         bytes = new byte[size];
@@ -72,6 +73,7 @@ public class MemcacheEntry implements DataSerializable {
         flag = in.readInt();
     }
 
+    @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeInt(bytes.length);
         out.write(bytes);
@@ -96,6 +98,7 @@ public class MemcacheEntry implements DataSerializable {
         return value;
     }
 
+    @Override
     public boolean equals(Object o) {
         if (this == o) {
             return true;
@@ -119,6 +122,7 @@ public class MemcacheEntry implements DataSerializable {
         return true;
     }
 
+    @Override
     public int hashCode() {
         int result = bytes != null ? Arrays.hashCode(bytes) : 0;
         result = 31 * result + (value != null ? Arrays.hashCode(value) : 0);

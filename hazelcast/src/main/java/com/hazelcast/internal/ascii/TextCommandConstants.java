@@ -46,7 +46,6 @@ public final class TextCommandConstants {
     private static int monthSeconds = SECOND * MINUTE * HOUR * MONTH;
 
     private TextCommandConstants() {
-
     }
 
     public static int getMonthSeconds() {

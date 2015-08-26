@@ -23,7 +23,7 @@ import com.hazelcast.nio.IOUtil;
 import java.nio.ByteBuffer;
 
 public class SetCommand extends AbstractTextCommand {
-    ByteBuffer response;
+    private ByteBuffer response;
     private final String key;
     private final int flag;
     private final int expiration;
@@ -42,6 +42,7 @@ public class SetCommand extends AbstractTextCommand {
         bbValue = ByteBuffer.allocate(valueLen);
     }
 
+    @Override
     public boolean readFrom(ByteBuffer src) {
         copy(src);
         if (!bbValue.hasRemaining()) {
@@ -72,6 +73,7 @@ public class SetCommand extends AbstractTextCommand {
         this.response = ByteBuffer.wrap(value);
     }
 
+    @Override
     public boolean writeTo(ByteBuffer dst) {
         if (response == null) {
             response = ByteBuffer.wrap(TextCommandConstants.STORED);
@@ -82,6 +84,7 @@ public class SetCommand extends AbstractTextCommand {
         return !response.hasRemaining();
     }
 
+    @Override
     public boolean shouldReply() {
         return !noreply;
     }

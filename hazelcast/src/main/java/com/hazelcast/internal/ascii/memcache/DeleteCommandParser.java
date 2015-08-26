@@ -23,6 +23,7 @@ import com.hazelcast.nio.ascii.TextReadHandler;
 import java.util.StringTokenizer;
 
 public class DeleteCommandParser implements CommandParser {
+    @Override
     public TextCommand parser(TextReadHandler readHandler, String cmd, int space) {
         StringTokenizer st = new StringTokenizer(cmd);
         st.nextToken();

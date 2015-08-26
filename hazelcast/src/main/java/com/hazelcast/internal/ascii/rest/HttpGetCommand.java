@@ -16,17 +16,18 @@
 
 package com.hazelcast.internal.ascii.rest;
 
-import com.hazelcast.internal.ascii.TextCommandConstants;
+import com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType;
 
 import java.nio.ByteBuffer;
 
 public class HttpGetCommand extends HttpCommand {
-    boolean nextLine;
+    private boolean nextLine;
 
     public HttpGetCommand(String uri) {
-        super(TextCommandConstants.TextCommandType.HTTP_GET, uri);
+        super(TextCommandType.HTTP_GET, uri);
     }
 
+    @Override
     public boolean readFrom(ByteBuffer src) {
         while (src.hasRemaining()) {
             char c = (char) src.get();

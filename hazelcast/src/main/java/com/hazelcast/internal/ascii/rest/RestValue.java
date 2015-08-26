@@ -38,11 +38,13 @@ public class RestValue implements DataSerializable {
         this.contentType = contentType;
     }
 
+    @Override
     public void readData(ObjectDataInput in) throws IOException {
         value = in.readByteArray();
         contentType = in.readByteArray();
     }
 
+    @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeByteArray(value);
         out.writeByteArray(contentType);

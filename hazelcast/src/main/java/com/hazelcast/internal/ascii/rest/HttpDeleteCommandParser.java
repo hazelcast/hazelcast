@@ -27,10 +27,11 @@ import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.
 
 public class HttpDeleteCommandParser implements CommandParser {
 
+    @Override
     public TextCommand parser(TextReadHandler readHandler, String cmd, int space) {
         StringTokenizer st = new StringTokenizer(cmd);
         st.nextToken();
-        String uri = null;
+        String uri;
         if (st.hasMoreTokens()) {
             uri = st.nextToken();
         } else {

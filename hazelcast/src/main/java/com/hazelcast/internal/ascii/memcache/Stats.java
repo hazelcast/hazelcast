@@ -176,17 +176,4 @@ public class Stats {
     public int getTotalConnections() {
         return totalConnections;
     }
-
-
-//    public Stats(int uptime, int threads, long getMisses, long getHits, long cmdSet, long cmdGet, long bytes) {
-//        this.uptime = uptime;
-//        this.threads = threads;
-//        this.getMisses = getMisses;
-//        this.getHits = getHits;
-//        this.cmdSet = cmdSet;
-//        this.cmdGet = cmdGet;
-//        this.bytes = bytes;
-//    }
-
-
 }

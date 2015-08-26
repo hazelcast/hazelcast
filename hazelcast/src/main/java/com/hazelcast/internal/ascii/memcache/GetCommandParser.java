@@ -24,6 +24,7 @@ import java.util.StringTokenizer;
 
 public class GetCommandParser implements CommandParser {
 
+    @Override
     public TextCommand parser(TextReadHandler readHandler, String cmd, int space) {
         String key = cmd.substring(space + 1);
         if (key.indexOf(' ') == -1) {

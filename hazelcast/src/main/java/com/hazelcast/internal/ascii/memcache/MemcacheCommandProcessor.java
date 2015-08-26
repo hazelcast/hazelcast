@@ -19,6 +19,8 @@ package com.hazelcast.internal.ascii.memcache;
 import com.hazelcast.internal.ascii.AbstractTextCommandProcessor;
 import com.hazelcast.internal.ascii.TextCommandService;
 
+import static java.lang.System.arraycopy;
+
 public abstract class MemcacheCommandProcessor<T> extends AbstractTextCommandProcessor<T> {
 
     public static final String MAP_NAME_PRECEDER = "hz_memcache_";
@@ -55,8 +57,8 @@ public abstract class MemcacheCommandProcessor<T> extends AbstractTextCommandPro
 
     public static byte[] concatenate(byte[] a, byte[] b) {
         byte[] c = new byte[a.length + b.length];
-        System.arraycopy(a, 0, c, 0, a.length);
-        System.arraycopy(b, 0, c, a.length, b.length);
+        arraycopy(a, 0, c, 0, a.length);
+        arraycopy(b, 0, c, a.length, b.length);
         return c;
     }
 
