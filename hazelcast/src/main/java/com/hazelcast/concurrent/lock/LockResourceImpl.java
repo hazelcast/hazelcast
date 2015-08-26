@@ -94,7 +94,6 @@ final class LockResourceImpl implements DataSerializable, LockResource {
             this.transactional = transactional;
             return true;
         }
-        this.transactional = false;
         return false;
     }
 

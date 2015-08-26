@@ -385,6 +385,43 @@ public class LockStoreImplTest extends HazelcastTestSupport {
         assertFalse(locked);
     }
 
+    @Test
+    public void testIsTransactionallyLocked_whenLockDoesNotExist_thenReturnFalse() {
+        boolean locked = lockStore.isTransactionallyLocked(key);
+        assertFalse(locked);
+    }
+
+    @Test
+    public void testIsTransactionallyLocked_whenNonTxnLocked_thenReturnFalse() {
+        lock();
+        boolean locked = lockStore.isTransactionallyLocked(key);
+        assertFalse(locked);
+    }
+
+    @Test
+    public void testIsTransactionallyLocked_whenTxnLocked_thenReturnTrue() {
+        txnLock();
+        boolean locked = lockStore.isTransactionallyLocked(key);
+        assertTrue(locked);
+    }
+
+    @Test
+    public void testIsTransactionallyLocked_whenTxnLockedAndUnlocked_thenReturnFalse() {
+        txnLockAndIncreaseReferenceId();
+        unlock();
+        boolean locked = lockStore.isTransactionallyLocked(key);
+        assertFalse(locked);
+    }
+
+    @Test
+    public void testIsTransactionallyLocked_whenTxnLockedAndAttemptedToLockFromAnotherThread_thenReturnTrue() {
+        txnLockAndIncreaseReferenceId();
+        threadId++;
+        lockAndIncreaseReferenceId();
+        boolean locked = lockStore.isTransactionallyLocked(key);
+        assertTrue(locked);
+    }
+
 
     private boolean lock() {
         return lockStore.lock(key, callerId, threadId, referenceId, leaseTime);
