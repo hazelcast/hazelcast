@@ -10,6 +10,7 @@ import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.util.CollectionUtil;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -126,21 +127,17 @@ public class WriteBehindWithEntryProcessorTest extends HazelcastTestSupport {
 
     @Test
     public void updates_on_same_key_when_in_memory_format_is_object() throws Exception {
-        final long customerId = 0L;
-        final int numberOfSubscriptions = 1000;
-        final MapStore mapStore = new DataStore();
-        final IMap<Long, Customer> map = createMap(mapStore);
+        long customerId = 0L;
+        int numberOfSubscriptions = 1000;
+        MapStore mapStore = new CustomerDataStore(customerId);
+        IMap<Long, Customer> map = createMap(mapStore);
 
-        addCustomer(map, customerId);
+        addCustomer(customerId, map);// 1 store op.
+        addSubscriptions(map, customerId, numberOfSubscriptions);// + 1000 store op.
+        removeSubscriptions(map, customerId, numberOfSubscriptions / 2);// + 500 store op.
 
-        // add subscriptions.
-        addSubscriptions(map, customerId, numberOfSubscriptions);
-
-        // remove half of subscriptions.
-        removeSubscriptions(map, customerId, numberOfSubscriptions / 2);
-
-        assertAllSubscriptionsInStore(mapStore, numberOfSubscriptions / 2);
-        assertStoreCallCount(mapStore, 1);
+        assertStoreOperationCount(mapStore, 1 + numberOfSubscriptions + numberOfSubscriptions / 2);
+        assertFinalSubscriptionCountInStore(mapStore, numberOfSubscriptions / 2);
     }
 
     private IMap<Long, Customer> createMap(MapStore mapStore) {
@@ -150,12 +147,13 @@ public class WriteBehindWithEntryProcessorTest extends HazelcastTestSupport {
                 .withNodeFactory(createHazelcastInstanceFactory(1))
                 .withBackupCount(0)
                 .withWriteDelaySeconds(3)
+                .withWriteCoalescing(false)
                 .withInMemoryFormat(InMemoryFormat.OBJECT);
         return builder.build();
     }
 
-    private void assertAllSubscriptionsInStore(MapStore mapStore, final int numberOfSubscriptions) {
-        final DataStore store = (DataStore) mapStore;
+    private void assertFinalSubscriptionCountInStore(MapStore mapStore, final int numberOfSubscriptions) {
+        final CustomerDataStore store = (CustomerDataStore) mapStore;
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
@@ -164,10 +162,15 @@ public class WriteBehindWithEntryProcessorTest extends HazelcastTestSupport {
         });
     }
 
-    private void assertStoreCallCount(MapStore mapStore, final int expectedStoreCallcount) {
-        final DataStore store = (DataStore) mapStore;
-        final int storeCallCount = store.getStoreCallCount();
-        assertEquals(expectedStoreCallcount, storeCallCount);
+    private void assertStoreOperationCount(MapStore mapStore, final int expectedStoreCallCount) {
+        final CustomerDataStore store = (CustomerDataStore) mapStore;
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                final int storeCallCount = store.getStoreCallCount();
+                assertEquals(expectedStoreCallCount, storeCallCount);
+            }
+        });
     }
 
     private void addSubscriptions(IMap map, long customerId, int numberOfSubscriptions) {
@@ -187,7 +190,7 @@ public class WriteBehindWithEntryProcessorTest extends HazelcastTestSupport {
             @Override
             public Object process(Map.Entry entry) {
                 final Customer customer = (Customer) entry.getValue();
-                customer.addSubscription(new Subscription(productId, false));
+                customer.addSubscription(new Subscription(productId));
                 entry.setValue(customer);
                 return customer.getSubscriptions().size();
             }
@@ -207,41 +210,37 @@ public class WriteBehindWithEntryProcessorTest extends HazelcastTestSupport {
     }
 
 
-    private void addCustomer(IMap map, long customerId) {
-        final Customer customer = new Customer(customerId);
+    private void addCustomer(long customerId, IMap map) {
+        final Customer customer = new Customer();
         map.put(Long.valueOf(customerId), customer);
     }
 
 
-    private static class DataStore extends MapStoreAdapter<Long, Customer> {
+    private static class CustomerDataStore extends MapStoreAdapter<Long, Customer> {
 
         private AtomicInteger storeCallCount;
         private final Map<Long, List<Subscription>> store;
+        private final long customerId;
 
-        private DataStore() {
-            store = new ConcurrentHashMap<Long, List<Subscription>>();
-            storeCallCount = new AtomicInteger(0);
+        private CustomerDataStore(long customerId) {
+            this.store = new ConcurrentHashMap<Long, List<Subscription>>();
+            this.storeCallCount = new AtomicInteger(0);
+            this.customerId = customerId;
         }
 
         @Override
         public void store(Long key, Customer customer) {
             storeCallCount.incrementAndGet();
-            final List<Subscription> subscriptions = customer.getSubscriptions();
-            for (Subscription subscription : subscriptions) {
-                if (!subscription.isVerified()) {
-                    List<Subscription> list = store.get(key);
-                    if (list == null) {
-                        list = new ArrayList<Subscription>();
-                        store.put(key, list);
-                    }
-                    subscription.setVerified(true);
-                    list.add(subscription);
-                }
+
+            List<Subscription> subscriptions = customer.getSubscriptions();
+            if (CollectionUtil.isEmpty(subscriptions)) {
+                return;
             }
+            store.put(key, subscriptions);
         }
 
         public int subscriptionCount() {
-            final List<Subscription> list = store.get(0L);
+            final List<Subscription> list = store.get(customerId);
             return list == null ? 0 : list.size();
         }
 
@@ -253,14 +252,9 @@ public class WriteBehindWithEntryProcessorTest extends HazelcastTestSupport {
 
     private static class Customer implements Serializable {
 
-        private long customerId;
         private List<Subscription> subscriptions;
 
         private Customer() {
-        }
-
-        private Customer(long customerId) {
-            this.customerId = customerId;
         }
 
         public void addSubscription(Subscription subscription) {
@@ -288,49 +282,23 @@ public class WriteBehindWithEntryProcessorTest extends HazelcastTestSupport {
             return subscriptions;
         }
 
-        public void setSubscriptions(List<Subscription> subscriptions) {
-            this.subscriptions = subscriptions;
-        }
-
-        public long getCustomerId() {
-            return customerId;
-        }
-
-        public void setCustomerId(long customerId) {
-            this.customerId = customerId;
-        }
     }
 
     private static class Subscription implements Serializable {
         private long productId;
-        private boolean verified;
 
-        private Subscription(long productId, boolean verified) {
+        private Subscription(long productId) {
             this.productId = productId;
-            this.verified = verified;
         }
 
         public long getProductId() {
             return productId;
         }
 
-        public void setProductId(long productId) {
-            this.productId = productId;
-        }
-
-        public boolean isVerified() {
-            return verified;
-        }
-
-        public void setVerified(boolean verified) {
-            this.verified = verified;
-        }
-
         @Override
         public String toString() {
             return "Subscription{"
                     + "productId=" + productId
-                    + ", verified=" + verified
                     + '}';
         }
     }
