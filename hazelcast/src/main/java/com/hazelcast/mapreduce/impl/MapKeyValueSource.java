@@ -17,6 +17,7 @@
 package com.hazelcast.mapreduce.impl;
 
 import com.hazelcast.map.impl.MapService;
+import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.mapreduce.KeyValueSource;
 import com.hazelcast.mapreduce.PartitionIdAware;
@@ -47,14 +48,14 @@ public class MapKeyValueSource<K, V>
         implements IdentifiedDataSerializable, PartitionIdAware {
 
     // This prevents excessive creation of map entries for a serialized operation
-    private final MapReduceSimpleEntry<K, V> simpleEntry = new MapReduceSimpleEntry<K, V>();
+    private final MapReduceSimpleEntry<K, V> cachedEntry = new MapReduceSimpleEntry<K, V>();
 
     private String mapName;
 
     private transient int partitionId;
     private transient SerializationService ss;
-    private transient Iterator<Map.Entry<Data, Data>> iterator;
-    private transient Map.Entry<Data, Data> nextElement;
+    private transient Iterator<Record> iterator;
+    private transient Record currentRecord;
 
     MapKeyValueSource() {
     }
@@ -78,7 +79,7 @@ public class MapKeyValueSource<K, V>
             return false;
         }
         RecordStore recordStore = mapService.getMapServiceContext().getRecordStore(partitionId, mapName);
-        iterator = recordStore.entrySetData().iterator();
+        iterator = recordStore.iterator();
         return true;
     }
 
@@ -90,38 +91,38 @@ public class MapKeyValueSource<K, V>
     @Override
     public boolean hasNext() {
         boolean hasNext = iterator.hasNext();
-        nextElement = hasNext ? iterator.next() : null;
+        currentRecord = hasNext ? iterator.next() : null;
         return hasNext;
     }
 
     @Override
     public K key() {
-        if (nextElement == null) {
+        if (currentRecord == null) {
             throw new IllegalStateException("no more elements");
         }
-        Data keyData = nextElement.getKey();
-        K key = (K) ss.toObject(keyData);
-        simpleEntry.setKeyData(keyData);
-        simpleEntry.setKey(key);
+        Data keyData = currentRecord.getKey();
+        K key = ss.toObject(keyData);
+        cachedEntry.setKeyData(keyData);
+        cachedEntry.setKey(key);
         return key;
     }
 
     @Override
     public Map.Entry<K, V> element() {
-        if (nextElement == null) {
+        if (currentRecord == null) {
             throw new IllegalStateException("no more elements");
         }
-        if (!nextElement.getKey().equals(simpleEntry.getKeyData())) {
-            simpleEntry.setKey((K) ss.toObject(nextElement.getKey()));
+        if (!currentRecord.getKey().equals(cachedEntry.getKeyData())) {
+            cachedEntry.setKey((K) ss.toObject(currentRecord.getKey()));
         }
-        simpleEntry.setValue((V) ss.toObject(nextElement.getValue()));
-        return simpleEntry;
+        cachedEntry.setValue((V) ss.toObject(currentRecord.getValue()));
+        return cachedEntry;
     }
 
     @Override
     public boolean reset() {
         iterator = null;
-        nextElement = null;
+        currentRecord = null;
         return true;
     }
 
