@@ -50,12 +50,16 @@ import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
 import javax.tools.StandardLocation;
 import java.io.IOException;
+import java.io.Serializable;
 import java.io.StringWriter;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 
 @SupportedAnnotationTypes({"com.hazelcast.annotation.GenerateCodec","com.hazelcast.annotation.Codec"})
 @SupportedSourceVersion(SourceVersion.RELEASE_6)
@@ -65,11 +69,11 @@ public class CodecCodeGenerator
     private Filer filer;
     private Elements elementUtils;
     private Messager messager;
-    private Map<Lang, Template> codecTemplateMap = new HashMap<Lang, Template>();
-    private Map<Lang, Template> messageTypeTemplateMap = new HashMap<Lang, Template>();
-    private Map<TypeElement, Map<String, ExecutableElement>> requestMap = new HashMap<TypeElement, Map<String, ExecutableElement>>();
-    private Map<Integer, ExecutableElement> responseMap = new HashMap<Integer, ExecutableElement>();
-    private Map<Integer, ExecutableElement> eventResponseMap = new HashMap<Integer, ExecutableElement>();
+    private final Map<Lang, Template> codecTemplateMap = new HashMap<Lang, Template>();
+    private final Map<Lang, Template> messageTypeTemplateMap = new HashMap<Lang, Template>();
+    private final Map<TypeElement, Map<String, ExecutableElement>> requestMap = new HashMap<TypeElement, Map<String, ExecutableElement>>();
+    private final Map<Integer, ExecutableElement> responseMap = new HashMap<Integer, ExecutableElement>();
+    private final Map<Integer, ExecutableElement> eventResponseMap = new HashMap<Integer, ExecutableElement>();
 
     @Override
     public void init(ProcessingEnvironment env) {
@@ -141,7 +145,7 @@ public class CodecCodeGenerator
         return true;
     }
 
-    public void generateContent(Lang lang) {
+    void generateContent(Lang lang) {
         //GENERATE CONTENT
         Map<TypeElement, Map<String, CodecModel>> allCodecModel = createAllCodecModel(lang);
 
@@ -165,7 +169,7 @@ public class CodecCodeGenerator
         }
     }
 
-    public void register(TypeElement classElement) {
+    void register(TypeElement classElement) {
         HashMap<String, ExecutableElement> map = new HashMap<String, ExecutableElement>();
         requestMap.put(classElement, map);
         for (Element enclosedElement : classElement.getEnclosedElements()) {
@@ -197,7 +201,7 @@ public class CodecCodeGenerator
     }
 
     private Map<TypeElement, Map<String, CodecModel>> createAllCodecModel(Lang lang) {
-        Map<TypeElement, Map<String, CodecModel>> model = new HashMap<TypeElement, Map<String, CodecModel>>();
+        TreeMap model = new TreeMap<TypeElement, Map<String, CodecModel>>(new DistributedObjectComparator());
 
         for (Map.Entry<TypeElement, Map<String, ExecutableElement>> entry : requestMap.entrySet()) {
             HashMap<String, CodecModel> map = new HashMap<String, CodecModel>();
@@ -258,8 +262,25 @@ public class CodecCodeGenerator
         }
     }
 
-    public void generateDoc(Object model, Template codecTemplate) {
-        final String content = generateFromTemplate(codecTemplate, model);
+    void generateDoc(Map<TypeElement, Map<String, CodecModel>> model, Template codecTemplate) {
+        TreeMap sortedTree = new TreeMap<TypeElement, Map<String, CodecModel>>(new DistributedObjectComparator());
+
+        // sort the operations of the distributed object
+        for (Map.Entry<TypeElement, Map<String, CodecModel>> e : model.entrySet()) {
+            Map<String, CodecModel> distributedObjectCodecModel = e.getValue();
+
+            ArrayList operations = new ArrayList(distributedObjectCodecModel.values());
+            Collections.sort(operations, new Comparator<CodecModel>() {
+                @Override
+                public int compare(CodecModel o1, CodecModel o2) {
+                    return o1.getRequestId() - o2.getRequestId();
+                }
+            });
+
+            sortedTree.put(e.getKey(), operations);
+        }
+
+        final String content = generateFromTemplate(codecTemplate, sortedTree);
         saveFile("protocol.md" , "document", content);
     }
 
@@ -328,5 +349,20 @@ public class CodecCodeGenerator
         TemplateHashModel staticModels = wrapper.getStaticModels();
         TemplateHashModel statics = (TemplateHashModel) staticModels.get(CodeGenerationUtils.class.getName());
         modelMap.put("util", statics);
+    }
+
+    private static class DistributedObjectComparator
+            implements Comparator<TypeElement>, Serializable {
+
+        @Override
+        public int compare(TypeElement o1, TypeElement o2) {
+            GenerateCodec annotationForKey1 = o1.getAnnotation(GenerateCodec.class);
+            GenerateCodec annotationForKey2 = o2.getAnnotation(GenerateCodec.class);
+            if (annotationForKey1.id() == annotationForKey2.id()) {
+                return annotationForKey1.name().compareTo(annotationForKey2.name());
+            } else {
+                return annotationForKey1.id() - annotationForKey2.id();
+            }
+        }
     }
 }
