@@ -197,15 +197,11 @@ public class MemberStateImpl implements MemberState {
             multimapStatsObject.add(entry.getKey(), entry.getValue().toJson());
         }
         root.add("multiMapStats", multimapStatsObject);
-
-
         JsonObject replicatedMapStatsObject = new JsonObject();
         for (Map.Entry<String, LocalReplicatedMapStats> entry : replicatedMapStats.entrySet()) {
             replicatedMapStatsObject.add(entry.getKey(), entry.getValue().toJson());
         }
         root.add("replicatedMapStats", replicatedMapStatsObject);
-
-
         JsonObject queueStatsObject = new JsonObject();
         for (Map.Entry<String, LocalQueueStats> entry : queueStats.entrySet()) {
             queueStatsObject.add(entry.getKey(), entry.getValue().toJson());
@@ -257,7 +253,7 @@ public class MemberStateImpl implements MemberState {
             stats.fromJson(next.getValue().asObject());
             multiMapStats.put(next.getName(), stats);
         }
-        for (JsonObject.Member next : getObject(json, "replicatedMapStats")) {
+        for (JsonObject.Member next : getObject(json, "replicatedMapStats", new JsonObject())) {
             LocalReplicatedMapStats stats = new LocalReplicatedMapStatsImpl();
             stats.fromJson(next.getValue().asObject());
             replicatedMapStats.put(next.getName(), stats);

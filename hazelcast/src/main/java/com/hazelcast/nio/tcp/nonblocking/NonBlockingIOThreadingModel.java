@@ -21,9 +21,9 @@ import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.nio.IOService;
+import com.hazelcast.nio.tcp.IOThreadingModel;
 import com.hazelcast.nio.tcp.ReadHandler;
 import com.hazelcast.nio.tcp.TcpIpConnection;
-import com.hazelcast.nio.tcp.IOThreadingModel;
 import com.hazelcast.nio.tcp.WriteHandler;
 import com.hazelcast.nio.tcp.nonblocking.iobalancer.IOBalancer;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -102,7 +102,7 @@ public class NonBlockingIOThreadingModel implements IOThreadingModel {
 
     @Override
     public void start() {
-        logger.info("TcpIpConnection managed configured NonBlocking threading model:  "
+        logger.info("TcpIpConnectionManager configured with Non Blocking IO-threading model: "
                 + inputThreads.length + " input threads and "
                 + outputThreads.length + " output threads");
 
