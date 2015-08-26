@@ -463,7 +463,7 @@
     <suppress checks="" files="com/hazelcast/util/Base64"/>
     <suppress checks="" files="com/hazelcast/util/DebugUtil"/>
     <suppress checks="" files="com/hazelcast/util/HashUtil"/>
-    <suppress checks="" files="com/hazelcast/util/scheduler/ScheduleType"/>
+    <suppress checks="JavadocType|JavadocVariable" files="com/hazelcast/util/scheduler/ScheduleType"/>
 
     <suppress checks="MagicNumber" files="com/hazelcast/util/QuickMath"/>
     <suppress checks="JavadocType" files="com/hazelcast/util/scheduler/SecondsBasedEntryTaskScheduler"/>
