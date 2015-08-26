@@ -55,7 +55,7 @@ public interface EnterpriseMapCodecTemplate {
      *                 batch, otherwise all changed values are included in the update.
      * @return Array of keys.
      */
-    @Request(id = 2, retryable = true, response = ResponseMessageConst.LIST_DATA)
+    @Request(id = 2, retryable = true, response = ResponseMessageConst.SET_DATA)
     Object publisherCreate(String mapName, String cacheName, Data predicate, int batchSize, int bufferSize, long delaySeconds,
                          boolean populate, boolean coalesce);
 

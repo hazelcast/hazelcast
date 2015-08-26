@@ -24,7 +24,6 @@ import com.hazelcast.client.impl.protocol.codec.ClientMembershipListenerCodec;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.cluster.MemberAttributeOperationType;
 import com.hazelcast.cluster.client.ClientInitialMembershipEvent;
-import com.hazelcast.cluster.client.MemberAttributeChange;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MemberAttributeEvent;
 import com.hazelcast.core.MembershipEvent;
@@ -103,22 +102,17 @@ class ClientMembershipListener extends ClientMembershipListenerCodec.AbstractEve
     }
 
     @Override
-    public void handle(MemberAttributeChange memberAttributeChange) {
+    public void handle(String uuid, String key, int opType, String value) {
         Map<Address, Member> memberMap = clusterService.getMembersRef();
         if (memberMap == null) {
             return;
         }
-        if (memberAttributeChange == null) {
-            return;
-        }
         for (Member target : memberMap.values()) {
-            if (target.getUuid().equals(memberAttributeChange.getUuid())) {
-                final MemberAttributeOperationType operationType = memberAttributeChange.getOperationType();
-                final String key = memberAttributeChange.getKey();
-                final Object value = memberAttributeChange.getValue();
+            if (target.getUuid().equals(uuid)) {
+                final MemberAttributeOperationType operationType = MemberAttributeOperationType.getValue(opType);
                 ((AbstractMember) target).updateAttribute(operationType, key, value);
-                MemberAttributeEvent memberAttributeEvent = new MemberAttributeEvent(client.getCluster(), target, operationType,
-                        key, value);
+                MemberAttributeEvent memberAttributeEvent =
+                        new MemberAttributeEvent(client.getCluster(), target, operationType, key, value);
                 clusterService.fireMemberAttributeEvent(memberAttributeEvent);
                 break;
             }

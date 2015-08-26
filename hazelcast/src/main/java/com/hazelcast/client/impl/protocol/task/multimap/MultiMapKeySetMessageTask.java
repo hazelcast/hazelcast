@@ -30,10 +30,10 @@ import com.hazelcast.security.permission.MultiMapPermission;
 import com.hazelcast.spi.OperationFactory;
 
 import java.security.Permission;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 
 /**
@@ -54,7 +54,7 @@ public class MultiMapKeySetMessageTask
 
     @Override
     protected Object reduce(Map<Integer, Object> map) {
-        List<Data> keys = new ArrayList<Data>();
+        Set<Data> keys = new HashSet<Data>();
 
         for (Object obj : map.values()) {
             if (obj == null) {
@@ -76,7 +76,7 @@ public class MultiMapKeySetMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return MultiMapKeySetCodec.encodeResponse((List<Data>) response);
+        return MultiMapKeySetCodec.encodeResponse((Set<Data>) response);
     }
 
     @Override

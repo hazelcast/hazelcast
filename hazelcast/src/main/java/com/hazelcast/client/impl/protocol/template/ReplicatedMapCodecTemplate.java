@@ -111,7 +111,7 @@ public interface ReplicatedMapCodecTemplate {
      * @param name Name of the Replicated Map
      * @param key Key with which the specified value is to be associated.
      * @param predicate The predicate for filtering entries
-     * @return will be notified for map add/remove/update/evict events filtered by the given predicate
+     * @return A unique string  which is used as a key to remove the listener.
      */
     @Request(id = 10, retryable = true, response = ResponseMessageConst.STRING
             , event = {EventMessageConst.EVENT_ENTRY})
@@ -121,7 +121,7 @@ public interface ReplicatedMapCodecTemplate {
      *
      * @param name Name of the Replicated Map
      * @param predicate The predicate for filtering entries
-     * @return will be notified for map add/remove/update/evict events filtered by the given predicate
+     * @return A unique string  which is used as a key to remove the listener.
      */
     @Request(id = 11, retryable = true, response = ResponseMessageConst.STRING
             , event = {EventMessageConst.EVENT_ENTRY})
@@ -131,7 +131,7 @@ public interface ReplicatedMapCodecTemplate {
      *
      * @param name Name of the Replicated Map
      * @param key Key with which the specified value is to be associated.
-     * @return The registration id.
+     * @return A unique string  which is used as a key to remove the listener.
      */
     @Request(id = 12, retryable = true, response = ResponseMessageConst.STRING
             , event = {EventMessageConst.EVENT_ENTRY})
@@ -140,7 +140,7 @@ public interface ReplicatedMapCodecTemplate {
     /**
      *
      * @param name Name of the ReplicatedMap
-     * @return will be notified for map add/remove/update/evict events filtered by the given predicate
+     * @return A unique string  which is used as a key to remove the listener.
      */
     @Request(id = 13, retryable = true, response = ResponseMessageConst.STRING
             , event = {EventMessageConst.EVENT_ENTRY})
@@ -183,7 +183,7 @@ public interface ReplicatedMapCodecTemplate {
      *
      * @param name Name of the ReplicatedMap
      * @param includeValue True if EntryEvent should contain the value,false otherwise
-     * @return The registration id.
+     * @return A unique string  which is used as a key to remove the listener.
      */
     @Request(id = 18, retryable = true, response = ResponseMessageConst.STRING, event = EventMessageConst.EVENT_ENTRY)
     Object addNearCacheEntryListener(String name, boolean includeValue);

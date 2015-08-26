@@ -23,13 +23,11 @@ import com.hazelcast.collection.impl.collection.operations.CollectionAddAllOpera
 import com.hazelcast.collection.impl.set.SetService;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.SetPermission;
 import com.hazelcast.spi.Operation;
 
 import java.security.Permission;
-import java.util.List;
 
 /**
  * SetAddAllMessageTask
@@ -43,7 +41,7 @@ public class SetAddAllMessageTask
 
     @Override
     protected Operation prepareOperation() {
-        return new CollectionAddAllOperation(parameters.name, (List<Data>) parameters.valueList);
+        return new CollectionAddAllOperation(parameters.name, parameters.valueList);
     }
 
     @Override
