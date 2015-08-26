@@ -139,6 +139,13 @@ public interface ResponseTemplate {
     @Response(ResponseMessageConst.JOB_PROCESS_INFO)
     Object JobProcessInfo(List<JobPartitionState> jobPartitionStates, int processRecords);
 
+    /***
+     * @param tableIndex the last tableIndex processed
+     * @param keys       list of keys
+     */
+    @Response(ResponseMessageConst.CACHE_KEY_ITERATOR_RESULT)
+    void CacheKeyIteratorResult(int tableIndex, List<Data> keys);
+
     /**
      * @param errorCode      error code of this exception
      * @param className      java class name of exception
@@ -156,7 +163,6 @@ public interface ResponseTemplate {
      * @param readCount Number of items in the response.
      * @param items The array of serialised items.
      */
-    //FIXME review this one
     @Response(ResponseMessageConst.READ_RESULT_SET)
     void ReadResultSet(int readCount, List<Data> items);
 

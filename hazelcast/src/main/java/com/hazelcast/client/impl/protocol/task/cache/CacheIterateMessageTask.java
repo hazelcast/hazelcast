@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.impl.protocol.task.cache;
 
+import com.hazelcast.cache.impl.CacheKeyIteratorResult;
 import com.hazelcast.cache.impl.CacheOperationProvider;
 import com.hazelcast.cache.impl.operation.CacheKeyIteratorOperation;
 import com.hazelcast.client.impl.protocol.ClientMessage;
@@ -49,7 +50,8 @@ public class CacheIterateMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return CacheIterateCodec.encodeResponse(serializationService.toData(response));
+        CacheKeyIteratorResult cacheKeyIteratorResult = (CacheKeyIteratorResult) response;
+        return CacheIterateCodec.encodeResponse(cacheKeyIteratorResult.getTableIndex(), cacheKeyIteratorResult.getKeys());
     }
 
     @Override

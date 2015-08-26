@@ -23,8 +23,7 @@ import com.hazelcast.nio.serialization.Data;
 
 @GenerateCodec(id = TemplateConstants.ATOMIC_LONG_TEMPLATE_ID,
         name = "AtomicLong", ns = "Hazelcast.Client.Protocol.AtomicLong")
-public interface
-        AtomicLongCodecTemplate {
+public interface AtomicLongCodecTemplate {
 
     /**
      *
@@ -39,10 +38,9 @@ public interface
      *
      * @param name The name of this IAtomicLong instance.
      * @param function The function applied to the currently stored value.
-     * @return The result of the function application.
      */
-    @Request(id = 2, retryable = false, response = ResponseMessageConst.LONG)
-    Object alter(String name, Data function);
+    @Request(id = 2, retryable = false, response = ResponseMessageConst.VOID)
+    void alter(String name, Data function);
 
     /**
      *

@@ -46,9 +46,9 @@ import com.hazelcast.client.spi.ClientContext;
 import com.hazelcast.client.spi.ClientExecutionService;
 import com.hazelcast.client.spi.ClientListenerService;
 import com.hazelcast.client.spi.EventHandler;
-import com.hazelcast.client.spi.impl.ClientListenerInvocation;
 import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.client.spi.impl.ClientInvocationFuture;
+import com.hazelcast.client.spi.impl.ClientListenerInvocation;
 import com.hazelcast.client.spi.impl.ListenerRemoveCodec;
 import com.hazelcast.client.util.ClientDelegatingFuture;
 import com.hazelcast.config.CacheConfig;
@@ -415,13 +415,9 @@ abstract class AbstractClientInternalCacheProxy<K, V>
 
     protected void removeAllKeysInternal(Set<? extends K> keys) {
         final Set<Data> keysData;
-        if (keys != null) {
-            keysData = new HashSet<Data>();
-            for (K key : keys) {
-                keysData.add(toData(key));
-            }
-        } else {
-            keysData = null;
+        keysData = new HashSet<Data>();
+        for (K key : keys) {
+            keysData.add(toData(key));
         }
         final int partitionCount = clientContext.getPartitionService().getPartitionCount();
         final int completionId = nextCompletionId();
