@@ -84,7 +84,7 @@ public class QueryOperation extends AbstractMapOperation implements ReadonlyOper
         MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         MapContextQuerySupport mapQuerySupport = mapServiceContext.getMapContextQuerySupport();
 
-        int partitionStateVersion = partitionService.getPartitionStateVersion();
+        int initialPartitionStateVersion = partitionService.getPartitionStateVersion();
         Collection<Integer> initialPartitions = mapServiceContext.getOwnedPartitions();
 
         Set<QueryableEntry> entries = null;
@@ -98,16 +98,18 @@ public class QueryOperation extends AbstractMapOperation implements ReadonlyOper
         } else {
             fullTableScan(initialPartitions, nodeEngine.getGroupProperties());
         }
-        Collection<Integer> finalPartitions = mapServiceContext.getOwnedPartitions();
-        if (initialPartitions.equals(finalPartitions)) {
-            result.setPartitionIds(finalPartitions);
+
+        if (checkPartitionState(partitionService, initialPartitionStateVersion)) {
+            result.setPartitionIds(initialPartitions);
         }
+        updateStatisticsIfEnabled(mapServiceContext);
+    }
+
+    private void updateStatisticsIfEnabled(MapServiceContext mapServiceContext) {
         if (mapContainer.getMapConfig().isStatisticsEnabled()) {
             LocalMapStatsImpl localStats = mapServiceContext.getLocalMapStatsProvider().getLocalMapStatsImpl(name);
             localStats.incrementOtherOperations();
         }
-
-        checkPartitionStateChanges(partitionService, partitionStateVersion);
     }
 
     private void fullTableScan(Collection<Integer> initialPartitions, GroupProperties groupProperties)
@@ -186,10 +188,12 @@ public class QueryOperation extends AbstractMapOperation implements ReadonlyOper
         result.addAll(sortedSubList);
     }
 
-    private void checkPartitionStateChanges(InternalPartitionService partitionService, int partitionStateVersion) {
-        if (partitionStateVersion != partitionService.getPartitionStateVersion()) {
+    private boolean checkPartitionState(InternalPartitionService partitionService, int expectedPartitionStateVersion) {
+        if (expectedPartitionStateVersion != partitionService.getPartitionStateVersion()) {
             getLogger().info("Partition assignments changed while executing query: " + predicate);
+            return false;
         }
+        return true;
     }
 
     @Override
