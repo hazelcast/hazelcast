@@ -60,14 +60,6 @@ In the protocol specification an array of a data type is frequently used. An arr
 |Owner Address|Address|No|The address of the partition owner|
 |State value|string|No|Value of the partition state. Possible values are:<br>"WAITING": Partition waits for being calculated. <br>"MAPPING": Partition is in mapping phase. <br>"REDUCING": Partition is in reducing phase (mapping may still not finished when this state is reached since there is a chunked based operation underlying). <br>"PROCESSED": Partition is fully processed <br>"CANCELLED": Partition calculation cancelled due to an internal exception
 
-### Member Attribute Change Data Type
-| Field| Type| Nullable| Description|
-|------|-----|---------|------------|
-|uuid|string|No|Unique user id of the member server|
-|key|string|No|Name of the attribute changed|
-|operation Type|int32|No|Type of the change. Possible values are: <br>1: An attribute is added <br>2: An attribute is removed|
-|Value|string|No|Value of the attribute. This field only exist for operation type of 1, otherwise this field is not transferred at all|
-
 ### Member Data Type
 | Field| Type| Nullable| Description|
 |------|-----|---------|------------|

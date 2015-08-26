@@ -19,7 +19,7 @@ package com.hazelcast.client.impl.protocol.task;
 import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.client.impl.client.DistributedObjectInfo;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.ClientGetDistributedObjectCodec;
+import com.hazelcast.client.impl.protocol.codec.ClientGetDistributedObjectsCodec;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
@@ -29,10 +29,10 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
-public class GetDistributedObjectMessageTask
-        extends AbstractCallableMessageTask<ClientGetDistributedObjectCodec.RequestParameters> {
+public class GetDistributedObjectsMessageTask
+        extends AbstractCallableMessageTask<ClientGetDistributedObjectsCodec.RequestParameters> {
 
-    public GetDistributedObjectMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
+    public GetDistributedObjectsMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
@@ -49,13 +49,13 @@ public class GetDistributedObjectMessageTask
     }
 
     @Override
-    protected ClientGetDistributedObjectCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
-        return ClientGetDistributedObjectCodec.decodeRequest(clientMessage);
+    protected ClientGetDistributedObjectsCodec.RequestParameters decodeClientMessage(ClientMessage clientMessage) {
+        return ClientGetDistributedObjectsCodec.decodeRequest(clientMessage);
     }
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return ClientGetDistributedObjectCodec.encodeResponse((Set<DistributedObjectInfo>) response);
+        return ClientGetDistributedObjectsCodec.encodeResponse((Set<DistributedObjectInfo>) response);
     }
 
     @Override

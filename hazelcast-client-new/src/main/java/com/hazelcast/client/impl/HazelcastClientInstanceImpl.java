@@ -13,7 +13,7 @@ import com.hazelcast.client.connection.AddressProvider;
 import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.impl.client.DistributedObjectInfo;
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.ClientGetDistributedObjectCodec;
+import com.hazelcast.client.impl.protocol.codec.ClientGetDistributedObjectsCodec;
 import com.hazelcast.client.proxy.ClientClusterProxy;
 import com.hazelcast.client.proxy.PartitionServiceProxy;
 import com.hazelcast.client.spi.ClientClusterService;
@@ -68,6 +68,7 @@ import com.hazelcast.core.MultiMap;
 import com.hazelcast.core.PartitionService;
 import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.executor.impl.DistributedExecutorService;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.logging.LoggingService;
@@ -76,7 +77,6 @@ import com.hazelcast.mapreduce.JobTracker;
 import com.hazelcast.mapreduce.impl.MapReduceService;
 import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.nio.ClassLoaderUtil;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.quorum.QuorumService;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.ringbuffer.Ringbuffer;
@@ -411,11 +411,11 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     @Override
     public Collection<DistributedObject> getDistributedObjects() {
         try {
-            ClientMessage request = ClientGetDistributedObjectCodec.encodeRequest();
+            ClientMessage request = ClientGetDistributedObjectsCodec.encodeRequest();
             final Future<ClientMessage> future = new ClientInvocation(this, request).invoke();
             ClientMessage response = future.get();
-            ClientGetDistributedObjectCodec.ResponseParameters resultParameters =
-                    ClientGetDistributedObjectCodec.decodeResponse(response);
+            ClientGetDistributedObjectsCodec.ResponseParameters resultParameters =
+                    ClientGetDistributedObjectsCodec.decodeResponse(response);
 
             Collection<DistributedObjectInfo> infoCollection = resultParameters.infoCollection;
             for (DistributedObjectInfo distributedObjectInfo : infoCollection) {

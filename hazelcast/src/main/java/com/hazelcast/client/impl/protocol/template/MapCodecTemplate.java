@@ -54,7 +54,7 @@ public interface MapCodecTemplate {
      * @param name Name of the map.
      * @param key Key for the map entry.
      * @param threadId The id of the user thread performing the operation. It is used to guarantee that only the lock holder thread (if a lock exists on the entry) can perform the requested operation.
-     * @return Clone of the previous value, not the original (identically equal) value previously put into the map.
+     * @return Clone of the removed value, not the original (identically equal) value previously put into the map.
      */
     @Request(id = 3, retryable = false, response = ResponseMessageConst.DATA)
     Object remove(String name, Data key, long threadId);
@@ -77,7 +77,7 @@ public interface MapCodecTemplate {
      * @param testValue Test the existing value against this value to find if equal to this value.
      * @param value New value for the map entry. Only replace with this value if existing value is equal to the testValue.
      * @param threadId The id of the user thread performing the operation. It is used to guarantee that only the lock holder thread (if a lock exists on the entry) can perform the requested operation.
-     * @return Clone of the previous value, not the original (identically equal) value previously put into the map.
+     * @return true if value is replaced with new one, false  otherwise
      */
     @Request(id = 5, retryable = false, response = ResponseMessageConst.BOOLEAN)
     Object replaceIfSame(String name, Data key, Data testValue, Data value, long threadId);
@@ -89,7 +89,7 @@ public interface MapCodecTemplate {
      * @param value New value for the map entry.
      * @param threadId The id of the user thread performing the operation. It is used to guarantee that only the lock holder thread (if a lock exists on the entry) can perform the requested operation.
      * @param ttl The duration in milliseconds after which this entry shall be deleted. O means infinite.
-     * @return Future from which the old value of the key can be retrieved.
+     * @return Clone of the previous value, not the original (identically equal) value previously put into the map.
      */
     @Request(id = 6, retryable = false, response = ResponseMessageConst.DATA)
     Object putAsync(String name, Data key, Data value, long threadId, long ttl);
@@ -100,7 +100,7 @@ public interface MapCodecTemplate {
      * @param name Name of the map.
      * @param key Key for the map entry.
      * @param threadId The id of the user thread performing the operation. It is used to guarantee that only the lock holder thread (if a lock exists on the entry) can perform the requested operation.
-     * @return Future from which the value of the key can be retrieved.
+     * @return Clone of the value if exists, not the original (identically equal) value previously put into the map.
      */
     @Request(id = 7, retryable = true, response = ResponseMessageConst.DATA)
     Object getAsync(String name, Data key, long threadId);
@@ -110,7 +110,7 @@ public interface MapCodecTemplate {
      * @param name Name of the map.
      * @param key Key for the map entry.
      * @param threadId The id of the user thread performing the operation. It is used to guarantee that only the lock holder thread (if a lock exists on the entry) can perform the requested operation.
-     * @return A Future from which the value removed from the map can be retrieved.
+     * @return Clone of the removed value, not the original (identically equal) value previously put into the map.
      */
     @Request(id = 8, retryable = false, response = ResponseMessageConst.DATA)
     Object removeAsync(String name, Data key, long threadId);
@@ -284,7 +284,7 @@ public interface MapCodecTemplate {
      * @param predicate    predicate for filtering entries.
      * @param includeValue <tt>true</tt> if <tt>EntryEvent</tt> should
      *                     contain the value.
-     * @return A UUID.randomUUID().toString() which is used as a key to remove the listener.
+     * @return A unique string  which is used as a key to remove the listener.
      */
     @Request(id = 25, retryable = true, response = ResponseMessageConst.STRING, event = EventMessageConst.EVENT_ENTRY)
     Object addEntryListenerToKeyWithPredicate(String name, Data key, Data predicate, boolean includeValue);
@@ -295,7 +295,7 @@ public interface MapCodecTemplate {
      * @param predicate    predicate for filtering entries.
      * @param includeValue <tt>true</tt> if <tt>EntryEvent</tt> should
      *                     contain the value.
-     * @return A UUID.randomUUID().toString() which is used as a key to remove the listener.
+     * @return A unique string  which is used as a key to remove the listener.
 
      */
     @Request(id = 26, retryable = true, response = ResponseMessageConst.STRING, event = EventMessageConst.EVENT_ENTRY)
@@ -306,7 +306,7 @@ public interface MapCodecTemplate {
      * @param name name of map
      * @param key Key for the map entry.
      * @param includeValue <tt>true</tt> if <tt>EntryEvent</tt> should contain the value.
-     * @return A UUID.randomUUID().toString() which is used as a key to remove the listener.
+     * @return A unique string  which is used as a key to remove the listener.
      */
     @Request(id = 27, retryable = true, response = ResponseMessageConst.STRING, event = EventMessageConst.EVENT_ENTRY)
     Object addEntryListenerToKey(String name, Data key, boolean includeValue);
@@ -315,7 +315,7 @@ public interface MapCodecTemplate {
      *
      * @param name name of map
      * @param includeValue <tt>true</tt> if <tt>EntryEvent</tt> should contain the value.
-     * @return A UUID.randomUUID().toString() which is used as a key to remove the listener.
+     * @return A unique string  which is used as a key to remove the listener.
      */
     @Request(id = 28, retryable = true, response = ResponseMessageConst.STRING, event = EventMessageConst.EVENT_ENTRY)
     Object addEntryListener(String name, boolean includeValue);
@@ -324,7 +324,7 @@ public interface MapCodecTemplate {
      *
      * @param name name of map
      * @param includeValue <tt>true</tt> if <tt>EntryEvent</tt> should
-     * @return A UUID.randomUUID().toString() which is used as a key to remove the listener.
+     * @return A unique string  which is used as a key to remove the listener.
      */
     @Request(id = 29, retryable = true, response = ResponseMessageConst.STRING, event = EventMessageConst.EVENT_ENTRY)
     Object addNearCacheEntryListener(String name, boolean includeValue);
@@ -517,7 +517,7 @@ public interface MapCodecTemplate {
      * @param name name of map
      * @param entryProcessor entry processor to be executed on the entry.
      * @param key the key of the map entry.
-     * @return Future from which the result of the operation can be retrieved.
+     * @return result of entry process.
      */
     @Request(id = 51, retryable = false, response = ResponseMessageConst.DATA)
     Object submitToKey(String name, Data entryProcessor, Data key, long threadId);

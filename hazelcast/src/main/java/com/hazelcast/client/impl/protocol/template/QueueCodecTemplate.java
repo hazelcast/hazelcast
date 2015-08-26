@@ -56,8 +56,8 @@ public interface QueueCodecTemplate {
     /**
      *
      * @param name Name of the Queue
-     * @param value The element to add
-     * @return The head of this queue
+     * @param value element to be removed from this queue, if present
+     * @return <tt>true</tt> if this queue changed as a result of the call
      */
     @Request(id = 4, retryable = false, response = ResponseMessageConst.BOOLEAN)
     Object remove(String name, Data value);
@@ -90,7 +90,7 @@ public interface QueueCodecTemplate {
     /**
      *
      * @param name Name of the Queue
-     * @return An <tt>Iterator</tt> over the elements in this collection
+     * @return list of all data in queue
      */
 
     @Request(id = 8, retryable = false, response = ResponseMessageConst.LIST_DATA)
@@ -99,7 +99,7 @@ public interface QueueCodecTemplate {
     /**
      *
      * @param name Name of the Queue
-     * @return the number of elements transferred
+     * @return list of all removed data in queue
      */
     @Request(id = 9, retryable = false, response = ResponseMessageConst.LIST_DATA)
     Object drainTo(String name);
@@ -108,7 +108,7 @@ public interface QueueCodecTemplate {
      *
      * @param name Name of the Queue
      * @param maxSize The maximum number of elements to transfer
-     * @return The number of elements transferred
+     * @return list of all removed data in result of this method
      */
     @Request(id = 10, retryable = false, response = ResponseMessageConst.LIST_DATA)
     Object drainToMaxSize(String name, int maxSize);

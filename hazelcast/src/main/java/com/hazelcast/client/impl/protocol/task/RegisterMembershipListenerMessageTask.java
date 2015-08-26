@@ -21,7 +21,6 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientMembershipListenerCodec;
 import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.cluster.MemberAttributeOperationType;
-import com.hazelcast.cluster.client.MemberAttributeChange;
 import com.hazelcast.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.core.InitialMembershipEvent;
 import com.hazelcast.core.InitialMembershipListener;
@@ -134,9 +133,9 @@ public class RegisterMembershipListenerMessageTask
             String uuid = member.getUuid();
             MemberAttributeOperationType op = memberAttributeEvent.getOperationType();
             String key = memberAttributeEvent.getKey();
-            Object value = memberAttributeEvent.getValue();
-            MemberAttributeChange memberAttributeChange = new MemberAttributeChange(uuid, op, key, value);
-            ClientMessage eventMessage = ClientMembershipListenerCodec.encodeMemberAttributeChangeEvent(memberAttributeChange);
+            String value = memberAttributeEvent.getValue() == null ? null : memberAttributeEvent.getValue().toString();
+            ClientMessage eventMessage =
+                    ClientMembershipListenerCodec.encodeMemberAttributeChangeEvent(uuid, key, op.getId(), value);
             sendClientMessage(endpoint.getUuid(), eventMessage);
         }
     }

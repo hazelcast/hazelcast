@@ -21,7 +21,6 @@ import com.hazelcast.annotation.GenerateCodec;
 import com.hazelcast.annotation.Nullable;
 import com.hazelcast.cache.impl.CacheEventData;
 import com.hazelcast.client.impl.protocol.EventMessageConst;
-import com.hazelcast.cluster.client.MemberAttributeChange;
 import com.hazelcast.core.Member;
 import com.hazelcast.map.impl.querycache.event.QueryCacheEventData;
 import com.hazelcast.nio.Address;
@@ -47,14 +46,16 @@ public interface EventResponseTemplate {
     void Member(Member member, int eventType);
 
     /**
-     *
-     * @param memberAttributeChange The change in the attribute of the member. The member attribute operation type can be one
-     *                              of the two values:
-     *                              1: Put a new attribute
-     *                              2: Remove a new attribute
+     * @param uuid          Unique user id of the member serve
+     * @param key           Name of the attribute changed
+     * @param operationType Type of the change. Possible values are:
+     *                      1: An attribute is added
+     *                      2: An attribute is removed
+     * @param value         Value of the attribute. This field only exist for operation type of 1,
+     *                      otherwise this field is not transferred at all
      */
     @EventResponse(EventMessageConst.EVENT_MEMBERATTRIBUTECHANGE)
-    void MemberAttributeChange(MemberAttributeChange memberAttributeChange);
+    void MemberAttributeChange(String uuid, String key, int operationType, @Nullable String value);
 
     /**
      *
@@ -161,7 +162,7 @@ public interface EventResponseTemplate {
                     EVICTED(5): An event type indicating that the cache entry has evicted.
                     INVALIDATED(6): An event type indicating that the cache entry has invalidated for near cache invalidation.
                     COMPLETED(7): An event type indicating that the cache operation has completed.
-                    EXPIRATION_TIME_UPDATED(8): An event type indicationg that the expiration time of cache record has been updated
+                    EXPIRATION_TIME_UPDATED(8): An event type indicating that the expiration time of cache record has been updated
      * @param keys The keys for the entries in the cache.
      * @param completionId User generated id which shall be received as a field of the cache event upon completion of
      *                     the request in the cluster.

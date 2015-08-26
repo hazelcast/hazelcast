@@ -52,6 +52,7 @@ public interface TransactionalMapCodecTemplate {
      * @param txnId ID of the this transaction operation
      * @param threadId The id of the user thread performing the operation. It is used to guarantee that only the lock holder thread (if a lock exists on the entry) can perform the requested operation.
      * @param key The value to which the specified key is mapped
+     * @return The value for the specified key
      */
     @Request(id = 3, retryable = false, response = ResponseMessageConst.DATA)
     Object getForUpdate(String name, String txnId, long threadId, Data key);

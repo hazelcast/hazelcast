@@ -179,7 +179,7 @@ public interface CacheCodecTemplate {
      * @param partitionId The partition id which owns this cache store.
      * @param tableIndex The slot number (or index) to start the iterator
      * @param batch The number of items to be batched
-     * @return Serialised com.hazelcast.cache.impl.CacheKeyIteratorResult object.
+     * @return last index processed and list of data
      */
     @Request(id = 15, retryable = false, response = ResponseMessageConst.CACHE_KEY_ITERATOR_RESULT)
     Object iterate(String name, int partitionId, int tableIndex, int batch);

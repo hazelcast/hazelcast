@@ -162,7 +162,7 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
         ClientMessage request = MultiMapKeySetCodec.encodeRequest(name);
         ClientMessage response = invoke(request);
         MultiMapKeySetCodec.ResponseParameters resultParameters = MultiMapKeySetCodec.decodeResponse(response);
-        Collection<Data> result = resultParameters.list;
+        Collection<Data> result = resultParameters.set;
         Set<K> keySet = new HashSet<K>(result.size());
         for (Data data : result) {
             final K key = toObject(data);
