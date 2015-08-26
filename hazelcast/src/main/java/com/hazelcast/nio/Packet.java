@@ -188,8 +188,11 @@ public final class Packet extends HeapData
             byte version = source.get();
             setPersistStatus(PERSIST_VERSION);
             if (VERSION != version) {
-                throw new IllegalArgumentException("Packet versions are not matching! Expected -> "
-                        + VERSION + ", Incoming -> " + version);
+                throw new IllegalArgumentException(
+                        "Packet version mismatch; the incoming packet version doesn't match expected packet version,"
+                                + " incoming packet version: " + version
+                                + " expected packet version: " + VERSION + '.'
+                                + " If the incoming version is negative or very large, it could indicate a corrupted stream.");
             }
         }
         return true;
