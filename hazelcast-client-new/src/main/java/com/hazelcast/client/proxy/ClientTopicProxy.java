@@ -22,25 +22,20 @@ import com.hazelcast.client.impl.protocol.codec.TopicAddMessageListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.TopicPublishCodec;
 import com.hazelcast.client.impl.protocol.codec.TopicRemoveMessageListenerCodec;
 import com.hazelcast.client.spi.ClientClusterService;
-import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.client.spi.impl.ListenerRemoveCodec;
 import com.hazelcast.core.ITopic;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.Message;
 import com.hazelcast.core.MessageListener;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.monitor.LocalTopicStats;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.internal.serialization.SerializationService;
 
-public class ClientTopicProxy<E> extends ClientProxy implements ITopic<E> {
-
-    private final String name;
-    private volatile Data key;
+public class ClientTopicProxy<E> extends PartitionSpecificClientProxy implements ITopic<E> {
 
     public ClientTopicProxy(String serviceName, String objectId) {
         super(serviceName, objectId);
-        this.name = objectId;
     }
 
     @Override
@@ -48,7 +43,7 @@ public class ClientTopicProxy<E> extends ClientProxy implements ITopic<E> {
         SerializationService serializationService = getContext().getSerializationService();
         Data data = serializationService.toData(message);
         ClientMessage request = TopicPublishCodec.encodeRequest(name, data);
-        invoke(request);
+        invokeOnPartition(request);
     }
 
     @Override
@@ -62,7 +57,7 @@ public class ClientTopicProxy<E> extends ClientProxy implements ITopic<E> {
                 return (T) TopicAddMessageListenerCodec.decodeResponse(clientMessage).response;
             }
         };
-        return listen(request, getKey(), handler, responseDecoder);
+        return listen(request, getPartitionKey(), handler, responseDecoder);
     }
 
     @Override
@@ -85,21 +80,9 @@ public class ClientTopicProxy<E> extends ClientProxy implements ITopic<E> {
         throw new UnsupportedOperationException("Locality is ambiguous for client!!!");
     }
 
-    private Data getKey() {
-        if (key == null) {
-            key = getContext().getSerializationService().toData(name);
-        }
-        return key;
-    }
-
-    @Override
-    protected <T> T invoke(ClientMessage clientMessage) {
-        return super.invoke(clientMessage, getKey());
-    }
-
     @Override
     public String toString() {
-        return "ITopic{" + "name='" + getName() + '\'' + '}';
+        return "ITopic{" + "name='" + name + '\'' + '}';
     }
 
     private final class TopicItemHandler extends TopicAddMessageListenerCodec.AbstractEventHandler

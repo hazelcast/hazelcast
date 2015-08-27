@@ -45,14 +45,14 @@ public class ClientTxnMultiMapProxy<K, V>
             throws TransactionException {
 
         ClientMessage request = TransactionalMultiMapPutCodec
-                .encodeRequest(getName(), getTransactionId(), ThreadUtil.getThreadId(), toData(key), toData(value));
+                .encodeRequest(name, getTransactionId(), ThreadUtil.getThreadId(), toData(key), toData(value));
         ClientMessage response = invoke(request);
         return TransactionalMultiMapPutCodec.decodeResponse(response).response;
     }
 
     public Collection<V> get(K key) {
         ClientMessage request = TransactionalMultiMapGetCodec
-                .encodeRequest(getName(), getTransactionId(), ThreadUtil.getThreadId(), toData(key));
+                .encodeRequest(name, getTransactionId(), ThreadUtil.getThreadId(), toData(key));
 
         ClientMessage response = invoke(request);
         Collection<Data> collection = TransactionalMultiMapGetCodec.decodeResponse(response).list;
@@ -65,14 +65,14 @@ public class ClientTxnMultiMapProxy<K, V>
 
     public boolean remove(Object key, Object value) {
         ClientMessage request = TransactionalMultiMapRemoveEntryCodec
-                .encodeRequest(getName(), getTransactionId(), ThreadUtil.getThreadId(), toData(key), toData(value));
+                .encodeRequest(name, getTransactionId(), ThreadUtil.getThreadId(), toData(key), toData(value));
         ClientMessage response = invoke(request);
         return TransactionalMultiMapRemoveEntryCodec.decodeResponse(response).response;
     }
 
     public Collection<V> remove(Object key) {
         ClientMessage request = TransactionalMultiMapRemoveCodec
-                .encodeRequest(getName(), getTransactionId(), ThreadUtil.getThreadId(), toData(key));
+                .encodeRequest(name, getTransactionId(), ThreadUtil.getThreadId(), toData(key));
         ClientMessage response = invoke(request);
         Collection<Data> collection = TransactionalMultiMapRemoveCodec.decodeResponse(response).list;
         Collection<V> coll = new ArrayList<V>(collection.size());
@@ -84,14 +84,14 @@ public class ClientTxnMultiMapProxy<K, V>
 
     public int valueCount(K key) {
         ClientMessage request = TransactionalMultiMapValueCountCodec
-                .encodeRequest(getName(), getTransactionId(), ThreadUtil.getThreadId(), toData(key));
+                .encodeRequest(name, getTransactionId(), ThreadUtil.getThreadId(), toData(key));
         ClientMessage response = invoke(request);
         return TransactionalMultiMapValueCountCodec.decodeResponse(response).response;
     }
 
     public int size() {
         ClientMessage request = TransactionalMultiMapSizeCodec
-                .encodeRequest(getName(), getTransactionId(), ThreadUtil.getThreadId());
+                .encodeRequest(name, getTransactionId(), ThreadUtil.getThreadId());
         ClientMessage response = invoke(request);
         return TransactionalMultiMapSizeCodec.decodeResponse(response).response;
     }

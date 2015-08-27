@@ -22,11 +22,8 @@ import com.hazelcast.client.impl.protocol.codec.ConditionBeforeAwaitCodec;
 import com.hazelcast.client.impl.protocol.codec.ConditionSignalAllCodec;
 import com.hazelcast.client.impl.protocol.codec.ConditionSignalCodec;
 import com.hazelcast.client.spi.ClientContext;
-import com.hazelcast.client.spi.ClientProxy;
-import com.hazelcast.concurrent.lock.InternalLockNamespace;
 import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.core.ICondition;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.ThreadUtil;
@@ -34,21 +31,14 @@ import com.hazelcast.util.ThreadUtil;
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
 
-public class ClientConditionProxy extends ClientProxy implements ICondition {
+public class ClientConditionProxy extends PartitionSpecificClientProxy implements ICondition {
 
     private final String conditionId;
-    private final ClientLockProxy lockProxy;
-
-    private volatile Data key;
-    private final InternalLockNamespace namespace;
 
     public ClientConditionProxy(ClientLockProxy clientLockProxy, String name, ClientContext ctx) {
         super(LockService.SERVICE_NAME, clientLockProxy.getName());
         this.setContext(ctx);
-        this.lockProxy = clientLockProxy;
-        this.namespace = new InternalLockNamespace(lockProxy.getName());
         this.conditionId = name;
-        this.key = toData(lockProxy.getName());
     }
 
     @Override
@@ -82,14 +72,14 @@ public class ClientConditionProxy extends ClientProxy implements ICondition {
     }
 
     private void beforeAwait(long threadId) {
-        ClientMessage request = ConditionBeforeAwaitCodec.encodeRequest(conditionId, threadId, lockProxy.getName());
-        invoke(request);
+        ClientMessage request = ConditionBeforeAwaitCodec.encodeRequest(conditionId, threadId, name);
+        invokeOnPartition(request);
     }
 
     private boolean doAwait(long time, TimeUnit unit, long threadId) throws InterruptedException {
         final long timeoutInMillis = unit.toMillis(time);
-        ClientMessage request = ConditionAwaitCodec.encodeRequest(conditionId, threadId, timeoutInMillis, lockProxy.getName());
-        ClientMessage response = invoke(request);
+        ClientMessage request = ConditionAwaitCodec.encodeRequest(conditionId, threadId, timeoutInMillis, name);
+        ClientMessage response = invokeOnPartition(request);
         return ConditionAwaitCodec.decodeResponse(response).response;
     }
 
@@ -103,18 +93,15 @@ public class ClientConditionProxy extends ClientProxy implements ICondition {
 
     @Override
     public void signal() {
-        ClientMessage request = ConditionSignalCodec.encodeRequest(conditionId, ThreadUtil.getThreadId(), lockProxy.getName());
-        invoke(request);
+        ClientMessage request = ConditionSignalCodec.encodeRequest(conditionId, ThreadUtil.getThreadId(), name);
+        invokeOnPartition(request);
     }
 
     @Override
     public void signalAll() {
-        ClientMessage request = ConditionSignalAllCodec.encodeRequest(conditionId, ThreadUtil.getThreadId(), lockProxy.getName());
-        invoke(request);
+        ClientMessage request = ConditionSignalAllCodec.encodeRequest(conditionId, ThreadUtil.getThreadId(), name);
+        invokeOnPartition(request);
     }
 
-    protected <T> T invoke(ClientMessage req) {
-        return super.invoke(req, key);
-    }
 
 }

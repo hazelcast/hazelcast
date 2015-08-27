@@ -30,28 +30,22 @@ import com.hazelcast.client.impl.protocol.codec.AtomicLongGetAndSetCodec;
 import com.hazelcast.client.impl.protocol.codec.AtomicLongGetCodec;
 import com.hazelcast.client.impl.protocol.codec.AtomicLongIncrementAndGetCodec;
 import com.hazelcast.client.impl.protocol.codec.AtomicLongSetCodec;
-import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.core.IAtomicLong;
 import com.hazelcast.core.IFunction;
-import com.hazelcast.nio.serialization.Data;
 
 import static com.hazelcast.util.Preconditions.isNotNull;
 
-public class ClientAtomicLongProxy extends ClientProxy implements IAtomicLong {
-
-    private final String name;
-    private volatile Data key;
+public class ClientAtomicLongProxy extends PartitionSpecificClientProxy implements IAtomicLong {
 
     public ClientAtomicLongProxy(String serviceName, String objectId) {
         super(serviceName, objectId);
-        this.name = objectId;
     }
 
     @Override
     public <R> R apply(IFunction<Long, R> function) {
         isNotNull(function, "function");
         ClientMessage request = AtomicLongApplyCodec.encodeRequest(name, toData(function));
-        ClientMessage response = invokeMessage(request);
+        ClientMessage response = invokeOnPartition(request);
         AtomicLongApplyCodec.ResponseParameters resultParameters = AtomicLongApplyCodec.decodeResponse(response);
         return toObject(resultParameters.response);
     }
@@ -60,7 +54,7 @@ public class ClientAtomicLongProxy extends ClientProxy implements IAtomicLong {
     public void alter(IFunction<Long, Long> function) {
         isNotNull(function, "function");
         ClientMessage request = AtomicLongAlterCodec.encodeRequest(name, toData(function));
-        invokeMessage(request);
+        invokeOnPartition(request);
     }
 
     @Override
@@ -68,7 +62,7 @@ public class ClientAtomicLongProxy extends ClientProxy implements IAtomicLong {
         isNotNull(function, "function");
         ClientMessage request = AtomicLongAlterAndGetCodec.encodeRequest(name, toData(function));
         AtomicLongAlterAndGetCodec.ResponseParameters resultParameters
-                = AtomicLongAlterAndGetCodec.decodeResponse(invokeMessage(request));
+                = AtomicLongAlterAndGetCodec.decodeResponse(invokeOnPartition(request));
         return resultParameters.response;
     }
 
@@ -77,7 +71,7 @@ public class ClientAtomicLongProxy extends ClientProxy implements IAtomicLong {
         isNotNull(function, "function");
         ClientMessage request = AtomicLongGetAndAlterCodec.encodeRequest(name, toData(function));
         AtomicLongGetAndAlterCodec.ResponseParameters resultParameters
-                = AtomicLongGetAndAlterCodec.decodeResponse(invokeMessage(request));
+                = AtomicLongGetAndAlterCodec.decodeResponse(invokeOnPartition(request));
         return resultParameters.response;
     }
 
@@ -85,7 +79,7 @@ public class ClientAtomicLongProxy extends ClientProxy implements IAtomicLong {
     public long addAndGet(long delta) {
         ClientMessage request = AtomicLongAddAndGetCodec.encodeRequest(name, delta);
         AtomicLongAddAndGetCodec.ResponseParameters resultParameters
-                = AtomicLongAddAndGetCodec.decodeResponse(invokeMessage(request));
+                = AtomicLongAddAndGetCodec.decodeResponse(invokeOnPartition(request));
         return resultParameters.response;
     }
 
@@ -93,7 +87,7 @@ public class ClientAtomicLongProxy extends ClientProxy implements IAtomicLong {
     public boolean compareAndSet(long expect, long update) {
         ClientMessage request = AtomicLongCompareAndSetCodec.encodeRequest(name, expect, update);
         AtomicLongCompareAndSetCodec.ResponseParameters resultParameters
-                = AtomicLongCompareAndSetCodec.decodeResponse(invokeMessage(request));
+                = AtomicLongCompareAndSetCodec.decodeResponse(invokeOnPartition(request));
         return resultParameters.response;
     }
 
@@ -101,7 +95,7 @@ public class ClientAtomicLongProxy extends ClientProxy implements IAtomicLong {
     public long decrementAndGet() {
         ClientMessage request = AtomicLongDecrementAndGetCodec.encodeRequest(name);
         AtomicLongDecrementAndGetCodec.ResponseParameters resultParameters
-                = AtomicLongDecrementAndGetCodec.decodeResponse(invokeMessage(request));
+                = AtomicLongDecrementAndGetCodec.decodeResponse(invokeOnPartition(request));
         return resultParameters.response;
     }
 
@@ -109,7 +103,7 @@ public class ClientAtomicLongProxy extends ClientProxy implements IAtomicLong {
     public long get() {
         ClientMessage request = AtomicLongGetCodec.encodeRequest(name);
         AtomicLongGetCodec.ResponseParameters resultParameters
-                = AtomicLongGetCodec.decodeResponse(invokeMessage(request));
+                = AtomicLongGetCodec.decodeResponse(invokeOnPartition(request));
         return resultParameters.response;
     }
 
@@ -117,7 +111,7 @@ public class ClientAtomicLongProxy extends ClientProxy implements IAtomicLong {
     public long getAndAdd(long delta) {
         ClientMessage request = AtomicLongGetAndAddCodec.encodeRequest(name, delta);
         AtomicLongGetAndAddCodec.ResponseParameters resultParameters
-                = AtomicLongGetAndAddCodec.decodeResponse(invokeMessage(request));
+                = AtomicLongGetAndAddCodec.decodeResponse(invokeOnPartition(request));
         return resultParameters.response;
     }
 
@@ -125,7 +119,7 @@ public class ClientAtomicLongProxy extends ClientProxy implements IAtomicLong {
     public long getAndSet(long newValue) {
         ClientMessage request = AtomicLongGetAndSetCodec.encodeRequest(name, newValue);
         AtomicLongGetAndSetCodec.ResponseParameters resultParameters
-                = AtomicLongGetAndSetCodec.decodeResponse(invokeMessage(request));
+                = AtomicLongGetAndSetCodec.decodeResponse(invokeOnPartition(request));
         return resultParameters.response;
     }
 
@@ -133,7 +127,7 @@ public class ClientAtomicLongProxy extends ClientProxy implements IAtomicLong {
     public long incrementAndGet() {
         ClientMessage request = AtomicLongIncrementAndGetCodec.encodeRequest(name);
         AtomicLongIncrementAndGetCodec.ResponseParameters resultParameters
-                = AtomicLongIncrementAndGetCodec.decodeResponse(invokeMessage(request));
+                = AtomicLongIncrementAndGetCodec.decodeResponse(invokeOnPartition(request));
         return resultParameters.response;
     }
 
@@ -141,25 +135,14 @@ public class ClientAtomicLongProxy extends ClientProxy implements IAtomicLong {
     public long getAndIncrement() {
         ClientMessage request = AtomicLongGetAndIncrementCodec.encodeRequest(name);
         AtomicLongGetAndIncrementCodec.ResponseParameters resultParameters
-                = AtomicLongGetAndIncrementCodec.decodeResponse(invokeMessage(request));
+                = AtomicLongGetAndIncrementCodec.decodeResponse(invokeOnPartition(request));
         return resultParameters.response;
     }
 
     @Override
     public void set(long newValue) {
         ClientMessage request = AtomicLongSetCodec.encodeRequest(name, newValue);
-        invokeMessage(request);
-    }
-
-    protected ClientMessage invokeMessage(ClientMessage req) {
-        return super.invoke(req, getKey());
-    }
-
-    private Data getKey() {
-        if (key == null) {
-            key = toData(name);
-        }
-        return key;
+        invokeOnPartition(request);
     }
 
     @Override

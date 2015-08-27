@@ -98,6 +98,7 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.core.IMapEvent;
 import com.hazelcast.core.MapEvent;
 import com.hazelcast.core.Member;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.MapInterceptor;
@@ -120,7 +121,6 @@ import com.hazelcast.mapreduce.aggregation.Supplier;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.util.ExceptionUtil;
@@ -152,7 +152,6 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
     protected static final String NULL_KEY_IS_NOT_ALLOWED = "Null key is not allowed!";
     protected static final String NULL_VALUE_IS_NOT_ALLOWED = "Null value is not allowed!";
 
-    private final String name;
     private final AtomicBoolean nearCacheInitialized = new AtomicBoolean();
     private volatile ClientHeapNearCache<Data> nearCache;
 
@@ -176,7 +175,7 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
             return (T) MapRemoveAsyncCodec.decodeResponse(clientMessage).response;
         }
     };
-    
+
     private static final ClientMessageDecoder submitToKeyResponseDecoder = new ClientMessageDecoder() {
         @Override
         public <T> T decodeClientMessage(ClientMessage clientMessage) {
@@ -186,7 +185,6 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
 
     public ClientMapProxy(String serviceName, String name) {
         super(serviceName, name);
-        this.name = name;
     }
 
     @Override
@@ -1157,7 +1155,7 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
                                                     Aggregation<K, SuppliedValue, Result> aggregation) {
 
         HazelcastInstance hazelcastInstance = getContext().getHazelcastInstance();
-        JobTracker jobTracker = hazelcastInstance.getJobTracker("hz::aggregation-map-" + getName());
+        JobTracker jobTracker = hazelcastInstance.getJobTracker("hz::aggregation-map-" + name);
         return aggregate(supplier, aggregation, jobTracker);
     }
 
@@ -1354,7 +1352,7 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
 
     @Override
     public String toString() {
-        return "IMap{" + "name='" + getName() + '\'' + '}';
+        return "IMap{" + "name='" + name + '\'' + '}';
     }
 
     private class ClientMapEventHandler extends MapAddEntryListenerCodec.AbstractEventHandler

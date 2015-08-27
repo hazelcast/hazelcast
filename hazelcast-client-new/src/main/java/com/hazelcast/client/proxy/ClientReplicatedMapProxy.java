@@ -101,7 +101,7 @@ public class ClientReplicatedMapProxy<K, V>
 
         Data valueData = toData(value);
         Data keyData = toData(key);
-        ClientMessage request = ReplicatedMapPutCodec.encodeRequest(getName(), keyData, valueData, timeUnit.toMillis(ttl));
+        ClientMessage request = ReplicatedMapPutCodec.encodeRequest(name, keyData, valueData, timeUnit.toMillis(ttl));
         ClientMessage response = invoke(request);
         ReplicatedMapPutCodec.ResponseParameters result = ReplicatedMapPutCodec.decodeResponse(response);
         return toObject(result.response);
@@ -110,7 +110,7 @@ public class ClientReplicatedMapProxy<K, V>
 
     @Override
     public int size() {
-        ClientMessage request = ReplicatedMapSizeCodec.encodeRequest(getName());
+        ClientMessage request = ReplicatedMapSizeCodec.encodeRequest(name);
         ClientMessage response = invoke(request);
         ReplicatedMapSizeCodec.ResponseParameters result = ReplicatedMapSizeCodec.decodeResponse(response);
         return result.response;
@@ -118,7 +118,7 @@ public class ClientReplicatedMapProxy<K, V>
 
     @Override
     public boolean isEmpty() {
-        ClientMessage request = ReplicatedMapIsEmptyCodec.encodeRequest(getName());
+        ClientMessage request = ReplicatedMapIsEmptyCodec.encodeRequest(name);
         ClientMessage response = invoke(request);
         ReplicatedMapIsEmptyCodec.ResponseParameters result = ReplicatedMapIsEmptyCodec.decodeResponse(response);
         return result.response;
@@ -128,7 +128,7 @@ public class ClientReplicatedMapProxy<K, V>
     public boolean containsKey(Object key) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         Data keyData = toData(key);
-        ClientMessage request = ReplicatedMapContainsKeyCodec.encodeRequest(getName(), keyData);
+        ClientMessage request = ReplicatedMapContainsKeyCodec.encodeRequest(name, keyData);
         ClientMessage response = invoke(request);
         ReplicatedMapContainsKeyCodec.ResponseParameters result = ReplicatedMapContainsKeyCodec.decodeResponse(response);
         return result.response;
@@ -138,7 +138,7 @@ public class ClientReplicatedMapProxy<K, V>
     public boolean containsValue(Object value) {
         checkNotNull(value, NULL_KEY_IS_NOT_ALLOWED);
         Data valueData = toData(value);
-        ClientMessage request = ReplicatedMapContainsValueCodec.encodeRequest(getName(), valueData);
+        ClientMessage request = ReplicatedMapContainsValueCodec.encodeRequest(name, valueData);
         ClientMessage response = invoke(request);
         ReplicatedMapContainsValueCodec.ResponseParameters result = ReplicatedMapContainsValueCodec.decodeResponse(response);
         return result.response;
@@ -159,7 +159,7 @@ public class ClientReplicatedMapProxy<K, V>
         }
 
         Data keyData = toData(key);
-        ClientMessage request = ReplicatedMapGetCodec.encodeRequest(getName(), keyData);
+        ClientMessage request = ReplicatedMapGetCodec.encodeRequest(name, keyData);
         ClientMessage response = invoke(request);
 
         ReplicatedMapGetCodec.ResponseParameters result = ReplicatedMapGetCodec.decodeResponse(response);
@@ -180,7 +180,7 @@ public class ClientReplicatedMapProxy<K, V>
     public V remove(Object key) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         Data keyData = toData(key);
-        ClientMessage request = ReplicatedMapRemoveCodec.encodeRequest(getName(), keyData);
+        ClientMessage request = ReplicatedMapRemoveCodec.encodeRequest(name, keyData);
         ClientMessage response = invoke(request);
         ReplicatedMapRemoveCodec.ResponseParameters result = ReplicatedMapRemoveCodec.decodeResponse(response);
         return toObject(result.response);
@@ -194,19 +194,18 @@ public class ClientReplicatedMapProxy<K, V>
             map.put(keyData, toData(entry.getValue()));
         }
 
-        ClientMessage request = ReplicatedMapPutAllCodec.encodeRequest(getName(), map);
+        ClientMessage request = ReplicatedMapPutAllCodec.encodeRequest(name, map);
         invoke(request);
     }
 
     @Override
     public void clear() {
-        ClientMessage request = ReplicatedMapClearCodec.encodeRequest(getName());
+        ClientMessage request = ReplicatedMapClearCodec.encodeRequest(name);
         invoke(request);
     }
 
     @Override
     public boolean removeEntryListener(String registrationId) {
-        final String name = getName();
         return stopListening(registrationId, new ListenerRemoveCodec() {
             @Override
             public ClientMessage encodeRequest(String realRegistrationId) {
@@ -222,7 +221,7 @@ public class ClientReplicatedMapProxy<K, V>
 
     @Override
     public String addEntryListener(EntryListener<K, V> listener) {
-        ClientMessage request = ReplicatedMapAddEntryListenerCodec.encodeRequest(getName());
+        ClientMessage request = ReplicatedMapAddEntryListenerCodec.encodeRequest(name);
         EventHandler<ClientMessage> handler = createHandler(listener);
         ClientMessageDecoder responseDecoder = new ClientMessageDecoder() {
             @Override
@@ -237,7 +236,7 @@ public class ClientReplicatedMapProxy<K, V>
     public String addEntryListener(EntryListener<K, V> listener, K key) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         Data keyData = toData(key);
-        ClientMessage request = ReplicatedMapAddEntryListenerToKeyCodec.encodeRequest(getName(), keyData);
+        ClientMessage request = ReplicatedMapAddEntryListenerToKeyCodec.encodeRequest(name, keyData);
         EventHandler<ClientMessage> handler = createHandler(listener);
         ClientMessageDecoder responseDecoder = new ClientMessageDecoder() {
             @Override
@@ -251,7 +250,7 @@ public class ClientReplicatedMapProxy<K, V>
     @Override
     public String addEntryListener(EntryListener<K, V> listener, Predicate<K, V> predicate) {
         Data predicateData = toData(predicate);
-        ClientMessage request = ReplicatedMapAddEntryListenerWithPredicateCodec.encodeRequest(getName(), predicateData);
+        ClientMessage request = ReplicatedMapAddEntryListenerWithPredicateCodec.encodeRequest(name, predicateData);
         EventHandler<ClientMessage> handler = createHandler(listener);
         ClientMessageDecoder responseDecoder = new ClientMessageDecoder() {
             @Override
@@ -268,7 +267,7 @@ public class ClientReplicatedMapProxy<K, V>
         Data keyData = toData(key);
         Data predicateData = toData(predicate);
         ClientMessage request =
-                ReplicatedMapAddEntryListenerToKeyWithPredicateCodec.encodeRequest(getName(), keyData, predicateData);
+                ReplicatedMapAddEntryListenerToKeyWithPredicateCodec.encodeRequest(name, keyData, predicateData);
         EventHandler<ClientMessage> handler = createHandler(listener);
         ClientMessageDecoder responseDecoder = new ClientMessageDecoder() {
             @Override
@@ -281,7 +280,7 @@ public class ClientReplicatedMapProxy<K, V>
 
     @Override
     public Set<K> keySet() {
-        ClientMessage request = ReplicatedMapKeySetCodec.encodeRequest(getName());
+        ClientMessage request = ReplicatedMapKeySetCodec.encodeRequest(name);
         ClientMessage response = invoke(request);
         ReplicatedMapKeySetCodec.ResponseParameters result = ReplicatedMapKeySetCodec.decodeResponse(response);
         Set<K> resultSet = new HashSet<K>(result.set.size());
@@ -293,7 +292,7 @@ public class ClientReplicatedMapProxy<K, V>
 
     @Override
     public Collection<V> values() {
-        ClientMessage request = ReplicatedMapValuesCodec.encodeRequest(getName());
+        ClientMessage request = ReplicatedMapValuesCodec.encodeRequest(name);
         ClientMessage response = invoke(request);
         ReplicatedMapValuesCodec.ResponseParameters result = ReplicatedMapValuesCodec.decodeResponse(response);
         Collection<V> resultCollection = new ArrayList<V>(result.list.size());
@@ -312,7 +311,7 @@ public class ClientReplicatedMapProxy<K, V>
 
     @Override
     public Set<Entry<K, V>> entrySet() {
-        ClientMessage request = ReplicatedMapEntrySetCodec.encodeRequest(getName());
+        ClientMessage request = ReplicatedMapEntrySetCodec.encodeRequest(name);
         ClientMessage response = invoke(request);
         ReplicatedMapEntrySetCodec.ResponseParameters result = ReplicatedMapEntrySetCodec.decodeResponse(response);
         Set<Entry<K, V>> resultCollection = new HashSet<Entry<K, V>>(result.entrySet.size());
@@ -330,11 +329,11 @@ public class ClientReplicatedMapProxy<K, V>
 
     private void initNearCache() {
         if (nearCacheInitialized.compareAndSet(false, true)) {
-            final NearCacheConfig nearCacheConfig = getContext().getClientConfig().getNearCacheConfig(getName());
+            final NearCacheConfig nearCacheConfig = getContext().getClientConfig().getNearCacheConfig(name);
             if (nearCacheConfig == null) {
                 return;
             }
-            ClientHeapNearCache<Object> nearCache = new ClientHeapNearCache<Object>(getName(),
+            ClientHeapNearCache<Object> nearCache = new ClientHeapNearCache<Object>(name,
                     getContext(), nearCacheConfig);
             this.nearCache = nearCache;
             if (nearCache.isInvalidateOnChange()) {
@@ -345,7 +344,7 @@ public class ClientReplicatedMapProxy<K, V>
 
     private void addNearCacheInvalidateListener() {
         try {
-            ClientMessage request = ReplicatedMapAddNearCacheEntryListenerCodec.encodeRequest(getName(), false);
+            ClientMessage request = ReplicatedMapAddNearCacheEntryListenerCodec.encodeRequest(name, false);
             EventHandler handler = new ReplicatedMapAddNearCacheEventHandler();
             String registrationId = getContext().getListenerService().startListening(request, null, handler,
                     new ClientMessageDecoder() {
@@ -364,7 +363,6 @@ public class ClientReplicatedMapProxy<K, V>
     private void removeNearCacheInvalidationListener() {
         if (nearCache != null && nearCache.getId() != null) {
             String registrationId = nearCache.getId();
-            final String name = getName();
             getContext().getListenerService().stopListening(registrationId, new ListenerRemoveCodec() {
                 @Override
                 public ClientMessage encodeRequest(String realRegistrationId) {
@@ -381,7 +379,7 @@ public class ClientReplicatedMapProxy<K, V>
 
     @Override
     public String toString() {
-        return "ReplicatedMap{" + "name='" + getName() + '\'' + '}';
+        return "ReplicatedMap{" + "name='" + name + '\'' + '}';
     }
 
     private class ReplicatedMapEventHandler extends ReplicatedMapAddEntryListenerCodec.AbstractEventHandler
@@ -400,7 +398,7 @@ public class ClientReplicatedMapProxy<K, V>
             K key = toObject(keyData);
             Member member = getContext().getClusterService().getMember(uuid);
             EntryEventType eventType = EntryEventType.getByType(eventTypeId);
-            EntryEvent<K, V> entryEvent = new EntryEvent<K, V>(getName(), member, eventTypeId, key,
+            EntryEvent<K, V> entryEvent = new EntryEvent<K, V>(name, member, eventTypeId, key,
                     oldValue, value);
             switch (eventType) {
                 case ADDED:

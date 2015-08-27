@@ -33,7 +33,6 @@ import com.hazelcast.client.impl.protocol.codec.SetRemoveCodec;
 import com.hazelcast.client.impl.protocol.codec.SetRemoveListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.SetSizeCodec;
 import com.hazelcast.client.spi.ClientClusterService;
-import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.client.spi.impl.ListenerRemoveCodec;
 import com.hazelcast.core.ISet;
@@ -41,8 +40,8 @@ import com.hazelcast.core.ItemEvent;
 import com.hazelcast.core.ItemEventType;
 import com.hazelcast.core.ItemListener;
 import com.hazelcast.core.Member;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.UnmodifiableLazyList;
 
 import java.util.ArrayList;
@@ -52,29 +51,23 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
-/**
- * @author ali 5/20/13
- */
-public class ClientSetProxy<E> extends ClientProxy implements ISet<E> {
-
-    private final String name;
+public class ClientSetProxy<E> extends PartitionSpecificClientProxy implements ISet<E> {
 
     public ClientSetProxy(String serviceName, String name) {
         super(serviceName, name);
-        this.name = name;
     }
 
     @Override
     public int size() {
         ClientMessage request = SetSizeCodec.encodeRequest(name);
-        ClientMessage response = invoke(request);
+        ClientMessage response = invokeOnPartition(request);
         SetSizeCodec.ResponseParameters resultParameters = SetSizeCodec.decodeResponse(response);
         return resultParameters.response;
     }
 
     public boolean isEmpty() {
         ClientMessage request = SetIsEmptyCodec.encodeRequest(name);
-        ClientMessage response = invoke(request);
+        ClientMessage response = invokeOnPartition(request);
         SetIsEmptyCodec.ResponseParameters resultParameters = SetIsEmptyCodec.decodeResponse(response);
         return resultParameters.response;
     }
@@ -83,7 +76,7 @@ public class ClientSetProxy<E> extends ClientProxy implements ISet<E> {
         throwExceptionIfNull(o);
         final Data value = toData(o);
         ClientMessage request = SetContainsCodec.encodeRequest(name, value);
-        ClientMessage response = invoke(request);
+        ClientMessage response = invokeOnPartition(request);
         SetContainsCodec.ResponseParameters resultParameters = SetContainsCodec.decodeResponse(response);
         return resultParameters.response;
     }
@@ -104,7 +97,7 @@ public class ClientSetProxy<E> extends ClientProxy implements ISet<E> {
         throwExceptionIfNull(e);
         final Data element = toData(e);
         ClientMessage request = SetAddCodec.encodeRequest(name, element);
-        ClientMessage response = invoke(request);
+        ClientMessage response = invokeOnPartition(request);
         SetAddCodec.ResponseParameters resultParameters = SetAddCodec.decodeResponse(response);
         return resultParameters.response;
     }
@@ -113,7 +106,7 @@ public class ClientSetProxy<E> extends ClientProxy implements ISet<E> {
         throwExceptionIfNull(o);
         final Data value = toData(o);
         ClientMessage request = SetRemoveCodec.encodeRequest(name, value);
-        ClientMessage response = invoke(request);
+        ClientMessage response = invokeOnPartition(request);
         SetRemoveCodec.ResponseParameters resultParameters = SetRemoveCodec.decodeResponse(response);
         return resultParameters.response;
     }
@@ -126,7 +119,7 @@ public class ClientSetProxy<E> extends ClientProxy implements ISet<E> {
             valueSet.add(toData(o));
         }
         ClientMessage request = SetContainsAllCodec.encodeRequest(name, valueSet);
-        ClientMessage response = invoke(request);
+        ClientMessage response = invokeOnPartition(request);
         SetContainsAllCodec.ResponseParameters resultParameters = SetContainsAllCodec.decodeResponse(response);
         return resultParameters.response;
     }
@@ -139,7 +132,7 @@ public class ClientSetProxy<E> extends ClientProxy implements ISet<E> {
             valueList.add(toData(e));
         }
         ClientMessage request = SetAddAllCodec.encodeRequest(name, valueList);
-        ClientMessage response = invoke(request);
+        ClientMessage response = invokeOnPartition(request);
         SetAddAllCodec.ResponseParameters resultParameters = SetAddAllCodec.decodeResponse(response);
         return resultParameters.response;
     }
@@ -152,7 +145,7 @@ public class ClientSetProxy<E> extends ClientProxy implements ISet<E> {
             valueSet.add(toData(o));
         }
         ClientMessage request = SetCompareAndRemoveAllCodec.encodeRequest(name, valueSet);
-        ClientMessage response = invoke(request);
+        ClientMessage response = invokeOnPartition(request);
         SetCompareAndRemoveAllCodec.ResponseParameters resultParameters = SetCompareAndRemoveAllCodec.decodeResponse(response);
         return resultParameters.response;
     }
@@ -165,14 +158,14 @@ public class ClientSetProxy<E> extends ClientProxy implements ISet<E> {
             valueSet.add(toData(o));
         }
         ClientMessage request = SetCompareAndRetainAllCodec.encodeRequest(name, valueSet);
-        ClientMessage response = invoke(request);
+        ClientMessage response = invokeOnPartition(request);
         SetCompareAndRetainAllCodec.ResponseParameters resultParameters = SetCompareAndRetainAllCodec.decodeResponse(response);
         return resultParameters.response;
     }
 
     public void clear() {
         ClientMessage request = SetClearCodec.encodeRequest(name);
-        invoke(request);
+        invokeOnPartition(request);
     }
 
     public String addItemListener(final ItemListener<E> listener, final boolean includeValue) {
@@ -204,20 +197,16 @@ public class ClientSetProxy<E> extends ClientProxy implements ISet<E> {
 
     private Collection<E> getAll() {
         ClientMessage request = SetGetAllCodec.encodeRequest(name);
-        ClientMessage response = invoke(request);
+        ClientMessage response = invokeOnPartition(request);
         SetGetAllCodec.ResponseParameters resultParameters = SetGetAllCodec.decodeResponse(response);
-        List<Data> resultCollection = (List<Data>) resultParameters.list;
+        List<Data> resultCollection = resultParameters.list;
         SerializationService serializationService = getContext().getSerializationService();
         return new UnmodifiableLazyList<E>(resultCollection, serializationService);
     }
 
-    protected <T> T invoke(ClientMessage req) {
-        return super.invoke(req, getPartitionKey());
-    }
-
     @Override
     public String toString() {
-        return "ISet{" + "name='" + getName() + '\'' + '}';
+        return "ISet{" + "name='" + name + '\'' + '}';
     }
 
     private class ItemEventHandler extends ListAddListenerCodec.AbstractEventHandler

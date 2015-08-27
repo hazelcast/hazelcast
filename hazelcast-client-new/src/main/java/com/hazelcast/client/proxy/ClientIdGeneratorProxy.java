@@ -25,21 +25,15 @@ import java.util.concurrent.atomic.AtomicLong;
 
 public class ClientIdGeneratorProxy extends ClientProxy implements IdGenerator {
 
-
     private static final int BLOCK_SIZE = 10000;
 
-    final String name;
-
-    final IAtomicLong atomicLong;
-
-    AtomicInteger residue;
-
-    AtomicLong local;
+    private final IAtomicLong atomicLong;
+    private final AtomicInteger residue;
+    private final AtomicLong local;
 
     public ClientIdGeneratorProxy(String serviceName, String objectId, IAtomicLong atomicLong) {
         super(serviceName, objectId);
         this.atomicLong = atomicLong;
-        this.name = objectId;
         residue = new AtomicInteger(BLOCK_SIZE);
         local = new AtomicLong(-1);
     }
@@ -78,12 +72,10 @@ public class ClientIdGeneratorProxy extends ClientProxy implements IdGenerator {
 
     protected void onDestroy() {
         atomicLong.destroy();
-        residue = null;
-        local = null;
     }
 
     @Override
     public String toString() {
-        return "IdGenerator{" + "name='" + getName() + '\'' + '}';
+        return "IdGenerator{" + "name='" + name + '\'' + '}';
     }
 }

@@ -85,14 +85,12 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         }
     };
 
-    private final String name;
     private final Random random = new Random(-System.currentTimeMillis());
     private final AtomicInteger consecutiveSubmits = new AtomicInteger();
     private volatile long lastSubmitTime;
 
     public ClientExecutorServiceProxy(String serviceName, String objectId) {
         super(serviceName, objectId);
-        name = objectId;
     }
 
     // execute on members
@@ -481,7 +479,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
 
     @Override
     public String toString() {
-        return "IExecutorService{" + "name='" + getName() + '\'' + '}';
+        return "IExecutorService{" + "name='" + name + '\'' + '}';
     }
 
     private <T> Future<T> checkSync(ClientInvocationFuture f, String uuid, Address address,
