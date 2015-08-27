@@ -53,38 +53,38 @@ public class PartitionedCluster {
     }
 
     public PartitionedCluster partitionFiveMembersThreeAndTwo(MapConfig mapConfig, QuorumConfig quorumConfig) throws InterruptedException {
-        return partitionFiveMembersThreeAndTwo(mapConfig, null, quorumConfig);
-    }
-
-    public PartitionedCluster partitionFiveMembersThreeAndTwo(CacheSimpleConfig cacheSimpleConfig, QuorumConfig quorumConfig) throws InterruptedException {
-        return partitionFiveMembersThreeAndTwo(null, cacheSimpleConfig, quorumConfig);
-    }
-
-    public PartitionedCluster partitionFiveMembersThreeAndTwo(MapConfig mapConfig, CacheSimpleConfig cacheSimpleConfig, final QuorumConfig quorumConfig) throws InterruptedException {
-        createFiveMemberCluster(mapConfig, cacheSimpleConfig, quorumConfig);
+        createFiveMemberCluster(mapConfig, quorumConfig);
         return splitFiveMembersThreeAndTwo();
     }
 
-
-    public PartitionedCluster createFiveMemberCluster(CacheSimpleConfig cacheSimpleConfig, QuorumConfig quorumConfig) {
-        return createFiveMemberCluster(null, cacheSimpleConfig, quorumConfig);
+    public PartitionedCluster partitionFiveMembersThreeAndTwo(CacheSimpleConfig cacheSimpleConfig, QuorumConfig quorumConfig) throws InterruptedException {
+        createFiveMemberCluster(cacheSimpleConfig, quorumConfig);
+        return splitFiveMembersThreeAndTwo();
     }
 
-    public PartitionedCluster createFiveMemberCluster(MapConfig mapConfig, CacheSimpleConfig cacheSimpleConfig, QuorumConfig quorumConfig) {
+    public PartitionedCluster createFiveMemberCluster(MapConfig mapConfig, QuorumConfig quorumConfig) {
+        Config config = createClusterConfig();
+        config.addMapConfig(mapConfig);
+        config.addQuorumConfig(quorumConfig);
+        createInstances(config);
+        return this;
+    }
+
+    public PartitionedCluster createFiveMemberCluster(CacheSimpleConfig cacheSimpleConfig, QuorumConfig quorumConfig) {
+        Config config = createClusterConfig();
+        config.addCacheConfig(cacheSimpleConfig);
+        config.addQuorumConfig(quorumConfig);
+        createInstances(config);
+        return this;
+    }
+
+    private Config createClusterConfig() {
         Config config = new Config();
         config.setProperty(GroupProperties.PROP_MERGE_FIRST_RUN_DELAY_SECONDS, "9999");
         config.setProperty(GroupProperties.PROP_MERGE_NEXT_RUN_DELAY_SECONDS, "9999");
         config.getGroupConfig().setName(generateRandomString(10));
-        if (cacheSimpleConfig != null) {
-            config.addCacheConfig(cacheSimpleConfig);
-        }
-        if (mapConfig != null) {
-            config.addMapConfig(mapConfig);
-        }
-        config.addQuorumConfig(quorumConfig);
-        config = addSuccessfulSplitTestQuorum(config);
-        createInstances(config);
-        return this;
+        config.addQuorumConfig(createSuccessfulSplitTestQuorum());
+        return config;
     }
 
     public PartitionedCluster splitFiveMembersThreeAndTwo() throws InterruptedException {
@@ -129,14 +129,12 @@ public class PartitionedCluster {
         h5 = factory.newHazelcastInstance(config);
     }
 
-    private Config addSuccessfulSplitTestQuorum(Config config) {
+    private QuorumConfig createSuccessfulSplitTestQuorum() {
         QuorumConfig splitConfig = new QuorumConfig();
         splitConfig.setEnabled(true);
         splitConfig.setSize(3);
         splitConfig.setName(SUCCESSFUL_SPLIT_TEST_QUORUM_NAME);
-
-        config.addQuorumConfig(splitConfig);
-        return config;
+        return splitConfig;
     }
 
     private void splitCluster() {
