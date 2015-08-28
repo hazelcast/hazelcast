@@ -23,6 +23,7 @@ import com.hazelcast.core.DistributedObjectListener;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.ProxyService;
+import com.hazelcast.spi.impl.proxyservice.impl.ProxyServiceImpl;
 
 import java.security.Permission;
 
@@ -54,7 +55,7 @@ public class AddDistributedObjectListenerMessageTask
 
     @Override
     public String getServiceName() {
-        return null;
+        return ProxyServiceImpl.SERVICE_NAME;
     }
 
     @Override
@@ -69,12 +70,12 @@ public class AddDistributedObjectListenerMessageTask
 
     @Override
     public String getMethodName() {
-        return null;
+        return "addDistributedObjectListener";
     }
 
     @Override
     public Object[] getParameters() {
-        return new Object[0];
+        return null;
     }
 
     @Override

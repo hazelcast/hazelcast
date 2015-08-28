@@ -67,7 +67,7 @@ public class ConditionSignalMessageTask
 
     @Override
     public String getDistributedObjectName() {
-        return parameters.name;
+        return parameters.lockName;
     }
 
     @Override

@@ -105,4 +105,9 @@ public class MapAddPartitionLostListenerRequest extends CallableClientRequest
     public String getDistributedObjectName() {
         return name;
     }
+
+    @Override
+    public Object[] getParameters() {
+        return new Object[]{null};
+    }
 }

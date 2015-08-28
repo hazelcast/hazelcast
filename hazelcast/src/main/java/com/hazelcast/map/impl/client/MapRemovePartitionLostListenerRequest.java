@@ -24,7 +24,7 @@ import com.hazelcast.security.permission.MapPermission;
 
 import java.security.Permission;
 
-public class MapRemovePartitionLostListenerRequest  extends BaseClientRemoveListenerRequest {
+public class MapRemovePartitionLostListenerRequest extends BaseClientRemoveListenerRequest {
 
 
     public MapRemovePartitionLostListenerRequest() {
@@ -59,5 +59,15 @@ public class MapRemovePartitionLostListenerRequest  extends BaseClientRemoveList
     @Override
     public String getMethodName() {
         return "removePartitionLostListener";
+    }
+
+    @Override
+    public Object[] getParameters() {
+        return new Object[]{registrationId};
+    }
+
+    @Override
+    public String getDistributedObjectName() {
+        return name;
     }
 }
