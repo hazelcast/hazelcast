@@ -37,7 +37,10 @@ public final class CodeGenerationUtils {
     }
 
     public static String mergeIds(short classId, short methodId) {
-        final String s = Integer.toHexString((classId << BYTE_BIT_COUNT) + methodId);
+        return Integer.toHexString((classId << BYTE_BIT_COUNT) + methodId);
+    }
+
+    public static String addHexPrefix(String s) {
         return s.length() == 3 ? "0x0" + s : "0x" + s;
     }
 
