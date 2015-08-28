@@ -20,13 +20,14 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientRemoveDistributedObjectListenerCodec;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.spi.impl.proxyservice.impl.ProxyServiceImpl;
 
 import java.security.Permission;
 
-public class RemoveDistrubtedObjectListenerMessageTask
+public class RemoveDistributedObjectListenerMessageTask
         extends AbstractCallableMessageTask<ClientRemoveDistributedObjectListenerCodec.RequestParameters> {
 
-    public RemoveDistrubtedObjectListenerMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
+    public RemoveDistributedObjectListenerMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
@@ -48,7 +49,7 @@ public class RemoveDistrubtedObjectListenerMessageTask
 
     @Override
     public String getServiceName() {
-        return null;
+        return ProxyServiceImpl.SERVICE_NAME;
     }
 
     @Override
@@ -63,11 +64,11 @@ public class RemoveDistrubtedObjectListenerMessageTask
 
     @Override
     public String getMethodName() {
-        return null;
+        return "removeDistributedObjectListener";
     }
 
     @Override
     public Object[] getParameters() {
-        return null;
+        return new Object[]{parameters.registrationId};
     }
 }

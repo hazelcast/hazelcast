@@ -70,6 +70,6 @@ public class RemovePartitionLostListenerMessageTask
 
     @Override
     public Object[] getParameters() {
-        return null;
+        return new Object[]{parameters.registrationId};
     }
 }

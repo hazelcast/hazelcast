@@ -20,6 +20,7 @@ import com.hazelcast.core.DistributedObjectEvent;
 import com.hazelcast.core.DistributedObjectListener;
 import com.hazelcast.spi.ProxyService;
 import com.hazelcast.spi.impl.PortableDistributedObjectEvent;
+import com.hazelcast.spi.impl.proxyservice.impl.ProxyServiceImpl;
 
 import java.security.Permission;
 
@@ -30,7 +31,7 @@ public class DistributedObjectListenerRequest extends CallableClientRequest impl
 
     @Override
     public Object call() throws Exception {
-        ProxyService proxyService = clientEngine.getProxyService();
+        ProxyService proxyService = getService();
         String registrationId = proxyService.addProxyListener(new MyDistributedObjectListener());
         endpoint.setDistributedObjectListener(registrationId);
         return registrationId;
@@ -38,7 +39,7 @@ public class DistributedObjectListenerRequest extends CallableClientRequest impl
 
     @Override
     public String getServiceName() {
-        return null;
+        return ProxyServiceImpl.SERVICE_NAME;
     }
 
     @Override
@@ -74,5 +75,10 @@ public class DistributedObjectListenerRequest extends CallableClientRequest impl
     @Override
     public Permission getRequiredPermission() {
         return null;
+    }
+
+    @Override
+    public String getMethodName() {
+        return "addDistributedObjectListener";
     }
 }
