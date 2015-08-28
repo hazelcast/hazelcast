@@ -40,6 +40,8 @@ import com.hazelcast.spi.impl.MutatingOperation;
 import com.hazelcast.util.Clock;
 
 import java.util.AbstractMap;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 import static com.hazelcast.map.impl.EntryViews.createSimpleEntryView;
@@ -52,6 +54,7 @@ abstract class AbstractMultipleEntryOperation extends AbstractMapOperation imple
     protected EntryProcessor entryProcessor;
     protected EntryBackupProcessor backupProcessor;
     protected transient RecordStore recordStore;
+    protected List<WanEventWrapper> wanEventList = new ArrayList<WanEventWrapper>();
 
     protected AbstractMultipleEntryOperation() {
     }
@@ -239,22 +242,22 @@ abstract class AbstractMultipleEntryOperation extends AbstractMapOperation imple
         final MapEventPublisher mapEventPublisher = getMapEventPublisher();
         if (EntryEventType.REMOVED.equals(eventType)) {
             mapEventPublisher.publishWanReplicationRemove(name, key, getNow());
+            wanEventList.add(new WanEventWrapper(key, null, EntryEventType.REMOVED));
         } else {
             final Record record = recordStore.getRecord(key);
             if (record != null) {
                 final Data dataValueAsData = toData(value);
                 final EntryView entryView = createSimpleEntryView(key, dataValueAsData, record);
                 mapEventPublisher.publishWanReplicationUpdate(name, entryView);
+                wanEventList.add(new WanEventWrapper(key, value, EntryEventType.UPDATED));
             }
         }
     }
-
 
     protected MapServiceContext getMapServiceContext() {
         final MapService mapService = getService();
         return mapService.getMapServiceContext();
     }
-
 
     protected long getLatencyFrom(long begin) {
         return Clock.currentTimeMillis() - begin;
@@ -294,4 +297,40 @@ abstract class AbstractMultipleEntryOperation extends AbstractMapOperation imple
         recordStore.evictEntries(now, backup);
     }
 
+    protected class WanEventWrapper {
+
+        Data key;
+        Object value;
+        EntryEventType eventType;
+
+        public WanEventWrapper(Data key, Object value, EntryEventType eventType) {
+            this.key = key;
+            this.value = value;
+            this.eventType = eventType;
+        }
+
+        public Data getKey() {
+            return key;
+        }
+
+        public void setKey(Data key) {
+            this.key = key;
+        }
+
+        public Object getValue() {
+            return value;
+        }
+
+        public void setValue(Object value) {
+            this.value = value;
+        }
+
+        public EntryEventType getEventType() {
+            return eventType;
+        }
+
+        public void setEventType(EntryEventType eventType) {
+            this.eventType = eventType;
+        }
+    }
 }

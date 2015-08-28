@@ -80,6 +80,16 @@ public class MapEventPublisherImpl implements MapEventPublisher {
     }
 
     @Override
+    public void publishWanReplicationUpdateBackup(String mapName, EntryView entryView) {
+        //NOP
+    }
+
+    @Override
+    public void publishWanReplicationRemoveBackup(String mapName, Data key, long removeTime) {
+        //NOP
+    }
+
+    @Override
     public void publishMapEvent(Address caller, String mapName, EntryEventType eventType,
                                 int numberOfEntriesAffected) {
         Collection<EventRegistration> mapsListenerRegistrations = getRegistrations(mapName);

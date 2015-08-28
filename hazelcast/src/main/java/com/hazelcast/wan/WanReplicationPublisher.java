@@ -24,4 +24,8 @@ public interface WanReplicationPublisher {
 
     void publishReplicationEvent(String serviceName, ReplicationEventObject eventObject);
 
+    void publishReplicationEventBackup(String serviceName, ReplicationEventObject eventObject);
+
+    void publishReplicationEvent(WanReplicationEvent wanReplicationEvent);
+
 }

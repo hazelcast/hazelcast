@@ -32,6 +32,10 @@ public interface MapEventPublisher {
 
     void publishWanReplicationRemove(String mapName, Data key, long removeTime);
 
+    void publishWanReplicationUpdateBackup(String mapName, EntryView entryView);
+
+    void publishWanReplicationRemoveBackup(String mapName, Data key, long removeTime);
+
     void publishMapEvent(Address caller, String mapName, EntryEventType eventType, int numberOfEntriesAffected);
 
     void publishEvent(Address caller, String mapName, EntryEventType eventType,

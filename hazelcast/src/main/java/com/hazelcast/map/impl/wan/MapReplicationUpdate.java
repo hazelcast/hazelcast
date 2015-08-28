@@ -76,4 +76,5 @@ public class MapReplicationUpdate implements ReplicationEventObject, DataSeriali
         mergePolicy = in.readObject();
         entryView = in.readObject();
     }
+
 }

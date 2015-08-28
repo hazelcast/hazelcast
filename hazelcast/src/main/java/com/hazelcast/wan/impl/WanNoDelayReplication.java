@@ -98,6 +98,16 @@ public class WanNoDelayReplication
     }
 
     @Override
+    public void publishReplicationEventBackup(String serviceName, ReplicationEventObject eventObject) {
+        //NOP
+    }
+
+    @Override
+    public void publishReplicationEvent(WanReplicationEvent wanReplicationEvent) {
+        //NOP
+    }
+
+    @Override
     public void shutdown() {
         running = false;
     }

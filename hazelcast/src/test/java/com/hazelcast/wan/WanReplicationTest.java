@@ -8,11 +8,16 @@ import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.instance.HazelcastInstanceFactory;
+import com.hazelcast.map.EntryBackupProcessor;
+import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.listener.EntryMergedListener;
 import com.hazelcast.map.merge.HigherHitsMapMergePolicy;
 import com.hazelcast.map.merge.LatestUpdateMapMergePolicy;
 import com.hazelcast.map.merge.PassThroughMergePolicy;
 import com.hazelcast.map.merge.PutIfAbsentMapMergePolicy;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -25,15 +30,17 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.io.IOException;
+import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Random;
 import java.util.Set;
-import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
@@ -45,7 +52,6 @@ import static org.junit.Assert.assertTrue;
 public class WanReplicationTest extends HazelcastTestSupport {
 
     private int ASSERT_TRUE_EVENTUALLY_TIMEOUT_VALUE = 3 * 60;
-
 
     private HazelcastInstance[] clusterA = new HazelcastInstance[2];
     private HazelcastInstance[] clusterB = new HazelcastInstance[2];
@@ -77,187 +83,9 @@ public class WanReplicationTest extends HazelcastTestSupport {
         HazelcastInstanceFactory.shutdownAll();
     }
 
-
-    private void initCluster(HazelcastInstance[] cluster, Config config) {
-        for (int i = 0; i < cluster.length; i++) {
-            cluster[i] = HazelcastInstanceFactory.newHazelcastInstance(config);
-        }
-    }
-
-
-    private void initClusterA() {
-        initCluster(clusterA, configA);
-    }
-
-    private void initClusterB() {
-        initCluster(clusterB, configB);
-    }
-
-    private void initClusterC() {
-        initCluster(clusterC, configC);
-    }
-
-    private void initAllClusters() {
-        initClusterA();
-        initClusterB();
-        initClusterC();
-    }
-
-
-    private HazelcastInstance getNode(HazelcastInstance[] cluster) {
-        return cluster[random.nextInt(cluster.length)];
-    }
-
-
-    private List getClusterEndPoints(Config config, int count) {
-        List ends = new ArrayList<String>();
-
-        int port = config.getNetworkConfig().getPort();
-
-        for (int i = 0; i < count; i++) {
-            ends.add(new String("127.0.0.1:" + port++));
-        }
-        return ends;
-    }
-
-    private WanTargetClusterConfig targetCluster(Config config, int count) {
-        WanTargetClusterConfig target = new WanTargetClusterConfig();
-        target.setGroupName(config.getGroupConfig().getName());
-        target.setReplicationImpl(WanNoDelayReplication.class.getName());
-        target.setEndpoints(getClusterEndPoints(config, count));
-        return target;
-    }
-
-
-    private void setupReplicateFrom(Config fromConfig, Config toConfig, int clusterSz, String setupName, String policy) {
-        WanReplicationConfig wanConfig = fromConfig.getWanReplicationConfig(setupName);
-        if (wanConfig == null) {
-            wanConfig = new WanReplicationConfig();
-            wanConfig.setName(setupName);
-        }
-        wanConfig.addTargetClusterConfig(targetCluster(toConfig, clusterSz));
-
-        WanReplicationRef wanRef = new WanReplicationRef();
-        wanRef.setName(setupName);
-        wanRef.setMergePolicy(policy);
-
-        fromConfig.addWanReplicationConfig(wanConfig);
-        fromConfig.getMapConfig("default").setWanReplicationRef(wanRef);
-    }
-
-    private void createDataIn(HazelcastInstance[] cluster, String mapName, int start, int end) {
-        HazelcastInstance node = getNode(cluster);
-        IMap m = node.getMap(mapName);
-        for (; start < end; start++) {
-            m.put(start, node.getConfig().getGroupConfig().getName() + start);
-        }
-    }
-
-    private void createDataIn(HazelcastInstance[] cluster, String mapName, int start, int end, long ttl, TimeUnit timeUnit) {
-        HazelcastInstance node = getNode(cluster);
-        IMap m = node.getMap(mapName);
-        for (; start < end; start++) {
-          m.put(start, node.getConfig().getGroupConfig().getName() + start, ttl, timeUnit);
-        }
-    }
-
-    private void increaseHitCount(HazelcastInstance[] cluster, String mapName, int start, int end, int repeat) {
-        HazelcastInstance node = getNode(cluster);
-        IMap m = node.getMap(mapName);
-        for (; start < end; start++) {
-            for (int i = 0; i < repeat; i++) {
-                m.get(start);
-            }
-        }
-    }
-
-    private void removeDataIn(HazelcastInstance[] cluster, String mapName, int start, int end) {
-        HazelcastInstance node = getNode(cluster);
-        IMap m = node.getMap(mapName);
-        for (; start < end; start++) {
-            m.remove(start);
-        }
-    }
-
-    private boolean checkKeysIn(HazelcastInstance[] cluster, String mapName, int start, int end) {
-        HazelcastInstance node = getNode(cluster);
-        IMap m = node.getMap(mapName);
-        for (; start < end; start++) {
-            if (!m.containsKey(start)) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    private boolean checkDataInFrom(HazelcastInstance[] targetCluster, String mapName, int start, int end, HazelcastInstance[] sourceCluster) {
-        HazelcastInstance node = getNode(targetCluster);
-
-        String sourceGroupName = getNode(sourceCluster).getConfig().getGroupConfig().getName();
-
-        IMap m = node.getMap(mapName);
-        for (; start < end; start++) {
-            Object v = m.get(start);
-            if (v == null || !v.equals(sourceGroupName + start)) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-
-    private boolean checkKeysNotIn(HazelcastInstance[] cluster, String mapName, int start, int end) {
-        HazelcastInstance node = getNode(cluster);
-        IMap m = node.getMap(mapName);
-        for (; start < end; start++) {
-            if (m.containsKey(start)) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    private void assertDataSizeEventually(final HazelcastInstance[] cluster, final String mapName, final int size) {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                HazelcastInstance node = getNode(cluster);
-                IMap m = node.getMap(mapName);
-                assertEquals(size, m.size());
-            }
-        });
-    }
-
-
-    private void assertKeysIn(final HazelcastInstance[] cluster, final String mapName, final int start, final int end) {
-        assertTrueEventually(new AssertTask() {
-            public void run() {
-                assertTrue(checkKeysIn(cluster, mapName, start, end));
-            }
-        }, ASSERT_TRUE_EVENTUALLY_TIMEOUT_VALUE);
-    }
-
-    private void assertDataInFrom(final HazelcastInstance[] cluster, final String mapName, final int start, final int end, final HazelcastInstance[] sourceCluster) {
-        assertTrueEventually(new AssertTask() {
-            public void run() {
-                assertTrue(checkDataInFrom(cluster, mapName, start, end, sourceCluster));
-            }
-        }, ASSERT_TRUE_EVENTUALLY_TIMEOUT_VALUE);
-    }
-
-    private void assertKeysNotIn(final HazelcastInstance[] cluster, final String mapName, final int start, final int end) {
-        assertTrueEventually(new AssertTask() {
-            public void run() {
-                assertTrue(checkKeysNotIn(cluster, mapName, start, end));
-            }
-        }, ASSERT_TRUE_EVENTUALLY_TIMEOUT_VALUE);
-    }
-
-
     // V topo config 1 passive replicar, 2 producers
     @Test
     public void VTopo_1passiveReplicar_2producers_Test_PassThroughMergePolicy() {
-
         setupReplicateFrom(configA, configC, clusterC.length, "atoc", PassThroughMergePolicy.class.getName());
         setupReplicateFrom(configB, configC, clusterC.length, "btoc", PassThroughMergePolicy.class.getName());
         initAllClusters();
@@ -289,7 +117,6 @@ public class WanReplicationTest extends HazelcastTestSupport {
 
     @Test
     public void Vtopo_TTL_Replication_Issue254() {
-
         setupReplicateFrom(configA, configC, clusterC.length, "atoc", PassThroughMergePolicy.class.getName());
         setupReplicateFrom(configB, configC, clusterC.length, "btoc", PassThroughMergePolicy.class.getName());
 
@@ -379,7 +206,6 @@ public class WanReplicationTest extends HazelcastTestSupport {
     @Test
     @Ignore //replica of replica is not supported
     public void VTopo_1activeActiveReplicar_2producers_Test_PassThroughMergePolicy() {
-
         setupReplicateFrom(configA, configC, clusterC.length, "atoc", PassThroughMergePolicy.class.getName());
         setupReplicateFrom(configB, configC, clusterC.length, "btoc", PassThroughMergePolicy.class.getName());
 
@@ -400,10 +226,8 @@ public class WanReplicationTest extends HazelcastTestSupport {
         assertDataInFrom(clusterB, "map", 0, 1000, clusterA);
     }
 
-
     @Test
     public void VTopo_1passiveReplicar_2producers_Test_PutIfAbsentMapMergePolicy() {
-
         setupReplicateFrom(configA, configC, clusterC.length, "atoc", PutIfAbsentMapMergePolicy.class.getName());
         setupReplicateFrom(configB, configC, clusterC.length, "btoc", PutIfAbsentMapMergePolicy.class.getName());
         initAllClusters();
@@ -426,11 +250,9 @@ public class WanReplicationTest extends HazelcastTestSupport {
         assertDataSizeEventually(clusterC, "map", 0);
     }
 
-
     @Test
     @Ignore
     public void VTopo_1passiveReplicar_2producers_Test_LatestUpdateMapMergePolicy() {
-
         setupReplicateFrom(configA, configC, clusterC.length, "atoc", LatestUpdateMapMergePolicy.class.getName());
         setupReplicateFrom(configB, configC, clusterC.length, "btoc", LatestUpdateMapMergePolicy.class.getName());
         initAllClusters();
@@ -452,11 +274,9 @@ public class WanReplicationTest extends HazelcastTestSupport {
         assertDataSizeEventually(clusterC, "map", 0);
     }
 
-
     //"Issue #1373  this test passes when run in isolation")//TODO
     @Test
     public void VTopo_1passiveReplicar_2producers_Test_HigherHitsMapMergePolicy() {
-
         setupReplicateFrom(configA, configC, clusterC.length, "atoc", HigherHitsMapMergePolicy.class.getName());
         setupReplicateFrom(configB, configC, clusterC.length, "btoc", HigherHitsMapMergePolicy.class.getName());
         initAllClusters();
@@ -471,20 +291,16 @@ public class WanReplicationTest extends HazelcastTestSupport {
         increaseHitCount(clusterB, "map", 0, 1000, 10);
         createDataIn(clusterB, "map", 0, 1000);
 
-
         assertDataInFrom(clusterC, "map", 0, 1000, clusterB);
     }
-
 
     //("Issue #1368 multi replicar topology cluster A replicates to B and C")
     @Test
     public void VTopo_2passiveReplicar_1producer_Test() {
-
         String replicaName = "multiReplica";
         setupReplicateFrom(configA, configB, clusterB.length, replicaName, PassThroughMergePolicy.class.getName());
         setupReplicateFrom(configA, configC, clusterC.length, replicaName, PassThroughMergePolicy.class.getName());
         initAllClusters();
-
 
         createDataIn(clusterA, "map", 0, 1000);
 
@@ -500,15 +316,12 @@ public class WanReplicationTest extends HazelcastTestSupport {
         assertDataSizeEventually(clusterC, "map", 0);
     }
 
-
     @Test
     public void linkTopo_ActiveActiveReplication_Test() {
-
         setupReplicateFrom(configA, configB, clusterB.length, "atob", PassThroughMergePolicy.class.getName());
         setupReplicateFrom(configB, configA, clusterA.length, "btoa", PassThroughMergePolicy.class.getName());
         initClusterA();
         initClusterB();
-
 
         createDataIn(clusterA, "map", 0, 1000);
         assertDataInFrom(clusterB, "map", 0, 1000, clusterA);
@@ -529,10 +342,8 @@ public class WanReplicationTest extends HazelcastTestSupport {
         assertDataSizeEventually(clusterB, "map", 1000);
     }
 
-
     @Test
     public void linkTopo_ActiveActiveReplication_2clusters_Test_HigherHitsMapMergePolicy() {
-
         setupReplicateFrom(configA, configB, clusterB.length, "atob", HigherHitsMapMergePolicy.class.getName());
         setupReplicateFrom(configB, configA, clusterA.length, "btoa", HigherHitsMapMergePolicy.class.getName());
         initClusterA();
@@ -550,7 +361,6 @@ public class WanReplicationTest extends HazelcastTestSupport {
     @Test
     @Ignore // replica of replica is not supported
     public void chainTopo_2passiveReplicars_1producer() {
-
         setupReplicateFrom(configA, configB, clusterB.length, "atob", PassThroughMergePolicy.class.getName());
         setupReplicateFrom(configB, configC, clusterC.length, "btoc", PassThroughMergePolicy.class.getName());
         initAllClusters();
@@ -577,20 +387,52 @@ public class WanReplicationTest extends HazelcastTestSupport {
         assertDataSizeEventually(clusterB, "map", 1000);
     }
 
-    private void removeAndCreateDataIn(HazelcastInstance[] cluster, String mapName, int start, int end) {
-        HazelcastInstance node = getNode(cluster);
-        IMap<Integer, String> m = node.getMap(mapName);
-        for (; start < end; start++) {
-            m.remove(start);
-            m.put(start, node.getConfig().getGroupConfig().getName() + start);
-        }
+    @Test
+    public void putAllWanReplication() {
+        setupReplicateFrom(configA, configB, clusterB.length, "atob", PassThroughMergePolicy.class.getName());
+        initClusterA();
+        initClusterB();
+
+        createPutAllDataIn(clusterA, "map", 0, 1000);
+        assertKeysIn(clusterB, "map", 0, 1000);
     }
 
+    @Test
+    public void multipleEntryOperationReplication() {
+        setupReplicateFrom(configA, configB, clusterB.length, "atob", PassThroughMergePolicy.class.getName());
+        initClusterA();
+        initClusterB();
+
+        createDataIn(clusterA, "map", 0, 1000);
+        assertKeysIn(clusterB, "map", 0, 1000);
+
+        Set<Integer> keySet = new HashSet<Integer>();
+        for (int i = 0; i < 1000; i++) {
+            keySet.add(i);
+        }
+
+        IMap map = getNode(clusterA).getMap("map");
+        map.executeOnKeys(keySet, new MyEntryProcessor());
+
+        assertGivenDataAppliedEventually(clusterB, "map", 0, 1000, "TEST");
+    }
+
+    static class MyEntryProcessor implements EntryProcessor {
+
+        @Override
+        public Object process(Entry entry) {
+            return entry.setValue("TEST");
+        }
+
+        @Override
+        public EntryBackupProcessor getBackupProcessor() {
+            return null;
+        }
+    }
 
     @Test
     @Ignore // currently Ring is not supported!
     public void replicationRing() {
-
         setupReplicateFrom(configA, configB, clusterB.length, "atob", PassThroughMergePolicy.class.getName());
         setupReplicateFrom(configB, configC, clusterC.length, "btoc", PassThroughMergePolicy.class.getName());
         setupReplicateFrom(configC, configA, clusterA.length, "ctoa", PassThroughMergePolicy.class.getName());
@@ -604,7 +446,6 @@ public class WanReplicationTest extends HazelcastTestSupport {
         assertKeysIn(clusterC, "map", 0, 1000);
         assertDataSizeEventually(clusterC, "map", 1000);
     }
-
 
     @Test
     public void willFireNewOnMergeEventAtReceivingCluster() {
@@ -629,8 +470,217 @@ public class WanReplicationTest extends HazelcastTestSupport {
         assertOpenEventually(mergeEventFiredCounter);
     }
 
-    private void printReplicaConfig(Config c) {
+    private void initCluster(HazelcastInstance[] cluster, Config config) {
+        for (int i = 0; i < cluster.length; i++) {
+            cluster[i] = HazelcastInstanceFactory.newHazelcastInstance(config);
+        }
+    }
 
+    private void initClusterA() {
+        initCluster(clusterA, configA);
+    }
+
+    private void initClusterB() {
+        initCluster(clusterB, configB);
+    }
+
+    private void initClusterC() {
+        initCluster(clusterC, configC);
+    }
+
+    private void initAllClusters() {
+        initClusterA();
+        initClusterB();
+        initClusterC();
+    }
+
+    private HazelcastInstance getNode(HazelcastInstance[] cluster) {
+        return cluster[random.nextInt(cluster.length)];
+    }
+
+    private List getClusterEndPoints(Config config, int count) {
+        List ends = new ArrayList<String>();
+
+        int port = config.getNetworkConfig().getPort();
+
+        for (int i = 0; i < count; i++) {
+            ends.add(new String("127.0.0.1:" + port++));
+        }
+        return ends;
+    }
+
+    private WanTargetClusterConfig targetCluster(Config config, int count) {
+        WanTargetClusterConfig target = new WanTargetClusterConfig();
+        target.setGroupName(config.getGroupConfig().getName());
+        target.setReplicationImpl(WanNoDelayReplication.class.getName());
+        target.setEndpoints(getClusterEndPoints(config, count));
+        return target;
+    }
+
+    private void setupReplicateFrom(Config fromConfig, Config toConfig, int clusterSz, String setupName, String policy) {
+        WanReplicationConfig wanConfig = fromConfig.getWanReplicationConfig(setupName);
+        if (wanConfig == null) {
+            wanConfig = new WanReplicationConfig();
+            wanConfig.setName(setupName);
+        }
+        wanConfig.addTargetClusterConfig(targetCluster(toConfig, clusterSz));
+
+        WanReplicationRef wanRef = new WanReplicationRef();
+        wanRef.setName(setupName);
+        wanRef.setMergePolicy(policy);
+
+        fromConfig.addWanReplicationConfig(wanConfig);
+        fromConfig.getMapConfig("default").setWanReplicationRef(wanRef);
+    }
+
+    private void createDataIn(HazelcastInstance[] cluster, String mapName, int start, int end) {
+        HazelcastInstance node = getNode(cluster);
+        IMap m = node.getMap(mapName);
+        for (; start < end; start++) {
+            m.put(start, node.getConfig().getGroupConfig().getName() + start);
+        }
+    }
+
+    private void createDataIn(HazelcastInstance[] cluster, String mapName, int start, int end, long ttl, TimeUnit timeUnit) {
+        HazelcastInstance node = getNode(cluster);
+        IMap m = node.getMap(mapName);
+        for (; start < end; start++) {
+            m.put(start, node.getConfig().getGroupConfig().getName() + start, ttl, timeUnit);
+        }
+    }
+
+    private void createPutAllDataIn(HazelcastInstance[] cluster, String mapName, int start, int end) {
+        HazelcastInstance node = getNode(cluster);
+        Map<Integer, String> dataMap = new HashMap<Integer, String>();
+        for (; start < end; start++) {
+            dataMap.put(start, node.getConfig().getGroupConfig().getName() + start);
+        }
+        IMap m = node.getMap(mapName);
+        m.putAll(dataMap);
+    }
+
+    private void increaseHitCount(HazelcastInstance[] cluster, String mapName, int start, int end, int repeat) {
+        HazelcastInstance node = getNode(cluster);
+        IMap m = node.getMap(mapName);
+        for (; start < end; start++) {
+            for (int i = 0; i < repeat; i++) {
+                m.get(start);
+            }
+        }
+    }
+
+    private void removeDataIn(HazelcastInstance[] cluster, String mapName, int start, int end) {
+        HazelcastInstance node = getNode(cluster);
+        IMap m = node.getMap(mapName);
+        for (; start < end; start++) {
+            m.remove(start);
+        }
+    }
+
+    private void removeAndCreateDataIn(HazelcastInstance[] cluster, String mapName, int start, int end) {
+        HazelcastInstance node = getNode(cluster);
+        IMap<Integer, String> m = node.getMap(mapName);
+        for (; start < end; start++) {
+            m.remove(start);
+            m.put(start, node.getConfig().getGroupConfig().getName() + start);
+        }
+    }
+
+    private boolean checkKeysIn(HazelcastInstance[] cluster, String mapName, int start, int end) {
+        HazelcastInstance node = getNode(cluster);
+        IMap m = node.getMap(mapName);
+        for (; start < end; start++) {
+            if (!m.containsKey(start)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private boolean checkDataInFrom(HazelcastInstance[] targetCluster, String mapName, int start, int end, HazelcastInstance[] sourceCluster) {
+        HazelcastInstance node = getNode(targetCluster);
+
+        String sourceGroupName = getNode(sourceCluster).getConfig().getGroupConfig().getName();
+
+        IMap m = node.getMap(mapName);
+        for (; start < end; start++) {
+            Object v = m.get(start);
+            if (v == null || !v.equals(sourceGroupName + start)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private boolean checkKeysNotIn(HazelcastInstance[] cluster, String mapName, int start, int end) {
+        HazelcastInstance node = getNode(cluster);
+        IMap m = node.getMap(mapName);
+        for (; start < end; start++) {
+            if (m.containsKey(start)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private boolean checkGivenDataApplied(HazelcastInstance[] targetCluster, String mapName, int start, int end, String value) {
+        HazelcastInstance node = getNode(targetCluster);
+
+        IMap m = node.getMap(mapName);
+        for (; start < end; start++) {
+            Object v = m.get(start);
+            if (v == null || !v.equals(value)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private void assertDataSizeEventually(final HazelcastInstance[] cluster, final String mapName, final int size) {
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                HazelcastInstance node = getNode(cluster);
+                IMap m = node.getMap(mapName);
+                assertEquals(size, m.size());
+            }
+        });
+    }
+
+
+    private void assertKeysIn(final HazelcastInstance[] cluster, final String mapName, final int start, final int end) {
+        assertTrueEventually(new AssertTask() {
+            public void run() {
+                assertTrue(checkKeysIn(cluster, mapName, start, end));
+            }
+        }, ASSERT_TRUE_EVENTUALLY_TIMEOUT_VALUE);
+    }
+
+    private void assertDataInFrom(final HazelcastInstance[] cluster, final String mapName, final int start, final int end, final HazelcastInstance[] sourceCluster) {
+        assertTrueEventually(new AssertTask() {
+            public void run() {
+                assertTrue(checkDataInFrom(cluster, mapName, start, end, sourceCluster));
+            }
+        }, ASSERT_TRUE_EVENTUALLY_TIMEOUT_VALUE);
+    }
+
+    private void assertKeysNotIn(final HazelcastInstance[] cluster, final String mapName, final int start, final int end) {
+        assertTrueEventually(new AssertTask() {
+            public void run() {
+                assertTrue(checkKeysNotIn(cluster, mapName, start, end));
+            }
+        }, ASSERT_TRUE_EVENTUALLY_TIMEOUT_VALUE);
+    }
+
+    private void assertGivenDataAppliedEventually(final HazelcastInstance[] cluster, final String mapName, final int start, final int end, final String value) {
+        assertTrueEventually(new AssertTask() {
+            public void run() {
+                assertTrue(checkGivenDataApplied(cluster, mapName, start, end, value));
+            }
+        }, ASSERT_TRUE_EVENTUALLY_TIMEOUT_VALUE);
+    }
+
+    private void printReplicaConfig(Config c) {
         Map m = c.getWanReplicationConfigs();
         Set<Entry> s = m.entrySet();
         for (Entry e : s) {
@@ -647,31 +697,5 @@ public class WanReplicationTest extends HazelcastTestSupport {
         System.out.println("==configC==");
         printReplicaConfig(configC);
         System.out.println();
-    }
-
-
-    abstract public class GatedThread extends Thread {
-        private final CyclicBarrier gate;
-
-        public GatedThread(CyclicBarrier gate) {
-            this.gate = gate;
-        }
-
-        public void run() {
-            try {
-                gate.await();
-                go();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            } catch (BrokenBarrierException e) {
-                e.printStackTrace();
-            }
-        }
-
-        abstract public void go();
-    }
-
-    void startGatedThread(GatedThread t) {
-        t.start();
     }
 }
