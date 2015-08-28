@@ -33,7 +33,6 @@ import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.annotation.TestProperties;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -343,7 +342,6 @@ public class MapReduceTest
         }
     }
 
-    @Ignore//https://github.com/hazelcast/hazelcast/issues/6059
     @Test(timeout = 60000)
     public void testKeyedMapperCollator()
             throws Exception {
@@ -376,7 +374,6 @@ public class MapReduceTest
         }
     }
 
-    @Ignore//https://github.com/hazelcast/hazelcast/issues/6059
     @Test(timeout = 60000)
     public void testKeyPredicateMapperCollator()
             throws Exception {
