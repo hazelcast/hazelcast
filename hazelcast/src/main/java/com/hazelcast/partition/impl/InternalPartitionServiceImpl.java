@@ -60,6 +60,8 @@ import com.hazelcast.spi.PartitionAwareService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.util.ExponentialBackoffSleeper;
+
 import com.hazelcast.util.FutureUtil.ExceptionHandler;
 import com.hazelcast.util.HashUtil;
 import com.hazelcast.util.scheduler.CoalescingDelayedTrigger;
@@ -1009,60 +1011,50 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
     @Override
     public boolean prepareToSafeShutdown(long timeout, TimeUnit unit) {
         long timeoutInMillis = unit.toMillis(timeout);
-        long sleep = DEFAULT_PAUSE_MILLIS;
-        while (timeoutInMillis > 0) {
-            while (timeoutInMillis > 0 && shouldWaitMigrationOrBackups(Level.INFO)) {
-                timeoutInMillis = sleepWithBusyWait(timeoutInMillis, sleep);
+        ExponentialBackoffSleeper sleeper = ExponentialBackoffSleeper.builder()
+                .factor(1.3)
+                .initialMs(25)
+                .maxMs(DEFAULT_PAUSE_MILLIS)
+                .timeoutMs(timeoutInMillis)
+                .build();
+        while (!sleeper.isTimedOut()) {
+            while (!sleeper.isTimedOut() && shouldWaitMigrationOrBackups(Level.INFO)) {
+                sleeper.sleepQuietly();
             }
-            if (timeoutInMillis <= 0) {
+            if (sleeper.isTimedOut()) {
                 break;
             }
 
             if (node.isMaster()) {
                 syncPartitionRuntimeState();
             } else {
-                timeoutInMillis = waitForOngoingMigrations(timeoutInMillis, sleep);
-                if (timeoutInMillis <= 0) {
+                if (!waitForOngoingMigrations(sleeper)) {
                     break;
                 }
             }
 
-            long start = Clock.currentTimeMillis();
-            boolean ok = checkReplicaSyncState();
-            timeoutInMillis -= (Clock.currentTimeMillis() - start);
-            if (ok) {
+            if (checkReplicaSyncState()) {
                 logger.finest("Replica sync state before shutdown is OK");
                 return true;
             } else {
-                if (timeoutInMillis <= 0) {
+                if (sleeper.isTimedOut()) {
                     break;
                 }
                 logger.info("Some backup replicas are inconsistent with primary, waiting for synchronization. Timeout: "
                         + timeoutInMillis + "ms");
-                timeoutInMillis = sleepWithBusyWait(timeoutInMillis, sleep);
+                sleeper.sleepQuietly();
             }
         }
         return false;
     }
 
-    private long waitForOngoingMigrations(long timeoutInMillis, long sleep) {
-        long timeout = timeoutInMillis;
-        while (timeout > 0 && hasOnGoingMigrationMaster(Level.WARNING)) {
+    private boolean waitForOngoingMigrations(ExponentialBackoffSleeper sleeper) {
+        while (!sleeper.isTimedOut() && hasOnGoingMigrationMaster(Level.WARNING)) {
             // ignore elapsed time during master inv.
             logger.info("Waiting for the master node to complete remaining migrations!");
-            timeout = sleepWithBusyWait(timeout, sleep);
+            sleeper.sleepQuietly();
         }
-        return timeout;
-    }
-
-    private long sleepWithBusyWait(long timeoutInMillis, long sleep) {
-        try {
-            //noinspection BusyWait
-            Thread.sleep(sleep);
-        } catch (InterruptedException ie) {
-            logger.finest("Busy wait interrupted", ie);
-        }
-        return timeoutInMillis - sleep;
+        return !sleeper.isTimedOut();
     }
 
     @Override
