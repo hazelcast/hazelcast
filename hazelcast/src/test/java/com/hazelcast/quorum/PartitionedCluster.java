@@ -26,16 +26,21 @@ import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.tcp.FirewallingMockConnectionManager;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
+
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
 import static com.hazelcast.test.HazelcastTestSupport.generateRandomString;
 import static com.hazelcast.test.HazelcastTestSupport.getNode;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 public class PartitionedCluster {
+    private static final String SUCCESSFUL_SPLIT_TEST_QUORUM_NAME = "SUCCESSFULL_SPLIT_TEST_QUORUM";
     protected TestHazelcastInstanceFactory factory;
     public HazelcastInstance h1;
     public HazelcastInstance h2;
@@ -43,89 +48,43 @@ public class PartitionedCluster {
     public HazelcastInstance h4;
     public HazelcastInstance h5;
 
-
     public PartitionedCluster(TestHazelcastInstanceFactory factory) {
         this.factory = factory;
     }
 
     public PartitionedCluster partitionFiveMembersThreeAndTwo(MapConfig mapConfig, QuorumConfig quorumConfig) throws InterruptedException {
-        Config config = new Config();
-        config.setProperty(GroupProperties.PROP_MERGE_FIRST_RUN_DELAY_SECONDS, "9999");
-        config.setProperty(GroupProperties.PROP_MERGE_NEXT_RUN_DELAY_SECONDS, "9999");
-        config.getGroupConfig().setName(generateRandomString(10));
-        config.addMapConfig(mapConfig);
-        config.addQuorumConfig(quorumConfig);
-        createInstances(config);
-
-        final CountDownLatch splitLatch = new CountDownLatch(6);
-        h4.getCluster().addMembershipListener(new MembershipAdapter() {
-            @Override
-            public void memberRemoved(MembershipEvent membershipEvent) {
-                splitLatch.countDown();
-            }
-        });
-        h5.getCluster().addMembershipListener(new MembershipAdapter() {
-            @Override
-            public void memberRemoved(MembershipEvent membershipEvent) {
-                splitLatch.countDown();
-            }
-        });
-
-        splitCluster();
-
-        assertTrue(splitLatch.await(30, TimeUnit.SECONDS));
-        assertEquals(3, h1.getCluster().getMembers().size());
-        assertEquals(3, h2.getCluster().getMembers().size());
-        assertEquals(3, h3.getCluster().getMembers().size());
-        assertEquals(2, h4.getCluster().getMembers().size());
-        assertEquals(2, h5.getCluster().getMembers().size());
-        return this;
+        createFiveMemberCluster(mapConfig, quorumConfig);
+        return splitFiveMembersThreeAndTwo();
     }
 
     public PartitionedCluster partitionFiveMembersThreeAndTwo(CacheSimpleConfig cacheSimpleConfig, QuorumConfig quorumConfig) throws InterruptedException {
-        Config config = new Config();
-        config.setProperty(GroupProperties.PROP_MERGE_FIRST_RUN_DELAY_SECONDS, "9999");
-        config.setProperty(GroupProperties.PROP_MERGE_NEXT_RUN_DELAY_SECONDS, "9999");
-        config.getGroupConfig().setName(generateRandomString(10));
-        config.addCacheConfig(cacheSimpleConfig);
+        createFiveMemberCluster(cacheSimpleConfig, quorumConfig);
+        return splitFiveMembersThreeAndTwo();
+    }
+
+    public PartitionedCluster createFiveMemberCluster(MapConfig mapConfig, QuorumConfig quorumConfig) {
+        Config config = createClusterConfig();
+        config.addMapConfig(mapConfig);
         config.addQuorumConfig(quorumConfig);
         createInstances(config);
-
-        final CountDownLatch splitLatch = new CountDownLatch(6);
-        h4.getCluster().addMembershipListener(new MembershipAdapter() {
-            @Override
-            public void memberRemoved(MembershipEvent membershipEvent) {
-                splitLatch.countDown();
-            }
-        });
-        h5.getCluster().addMembershipListener(new MembershipAdapter() {
-            @Override
-            public void memberRemoved(MembershipEvent membershipEvent) {
-                splitLatch.countDown();
-            }
-        });
-
-        splitCluster();
-
-        assertTrue(splitLatch.await(30, TimeUnit.SECONDS));
-        assertEquals(3, h1.getCluster().getMembers().size());
-        assertEquals(3, h2.getCluster().getMembers().size());
-        assertEquals(3, h3.getCluster().getMembers().size());
-        assertEquals(2, h4.getCluster().getMembers().size());
-        assertEquals(2, h5.getCluster().getMembers().size());
         return this;
     }
 
     public PartitionedCluster createFiveMemberCluster(CacheSimpleConfig cacheSimpleConfig, QuorumConfig quorumConfig) {
+        Config config = createClusterConfig();
+        config.addCacheConfig(cacheSimpleConfig);
+        config.addQuorumConfig(quorumConfig);
+        createInstances(config);
+        return this;
+    }
+
+    private Config createClusterConfig() {
         Config config = new Config();
         config.setProperty(GroupProperties.PROP_MERGE_FIRST_RUN_DELAY_SECONDS, "9999");
         config.setProperty(GroupProperties.PROP_MERGE_NEXT_RUN_DELAY_SECONDS, "9999");
         config.getGroupConfig().setName(generateRandomString(10));
-        config.addCacheConfig(cacheSimpleConfig);
-        config.addQuorumConfig(quorumConfig);
-        createInstances(config);
-
-        return this;
+        config.addQuorumConfig(createSuccessfulSplitTestQuorum());
+        return config;
     }
 
     public PartitionedCluster splitFiveMembersThreeAndTwo() throws InterruptedException {
@@ -151,6 +110,14 @@ public class PartitionedCluster {
         assertEquals(3, h3.getCluster().getMembers().size());
         assertEquals(2, h4.getCluster().getMembers().size());
         assertEquals(2, h5.getCluster().getMembers().size());
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run()
+                    throws Exception {
+                assertFalse(h4.getQuorumService().getQuorum(SUCCESSFUL_SPLIT_TEST_QUORUM_NAME).isPresent());
+                assertFalse(h5.getQuorumService().getQuorum(SUCCESSFUL_SPLIT_TEST_QUORUM_NAME).isPresent());
+            }
+        });
         return this;
     }
 
@@ -160,6 +127,14 @@ public class PartitionedCluster {
         h3 = factory.newHazelcastInstance(config);
         h4 = factory.newHazelcastInstance(config);
         h5 = factory.newHazelcastInstance(config);
+    }
+
+    private QuorumConfig createSuccessfulSplitTestQuorum() {
+        QuorumConfig splitConfig = new QuorumConfig();
+        splitConfig.setEnabled(true);
+        splitConfig.setSize(3);
+        splitConfig.setName(SUCCESSFUL_SPLIT_TEST_QUORUM_NAME);
+        return splitConfig;
     }
 
     private void splitCluster() {
