@@ -116,6 +116,7 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
      */
     public XmlConfigBuilder(String xmlFileName) throws FileNotFoundException {
         this(new FileInputStream(xmlFileName));
+        this.configurationFile = new File(xmlFileName);
     }
 
     /**

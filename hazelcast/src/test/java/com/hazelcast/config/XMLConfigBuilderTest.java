@@ -79,6 +79,25 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         assertEquals(url,config.getConfigurationUrl());
     }
 
+    @Test
+    public void testConfigurationWithFileName() throws Exception{
+        File file = File.createTempFile("foo", "bar");
+        file.deleteOnExit();
+        String xml =
+                "<hazelcast xmlns=\"http://www.hazelcast.com/schema/config\">\n" +
+                        "    <group>\n" +
+                        "        <name>foobar</name>\n" +
+                        "        <password>dev-pass</password>\n" +
+                        "    </group>" +
+                        "</hazelcast>";
+        PrintWriter writer = new PrintWriter(file, "UTF-8");
+        writer.println(xml);
+        writer.close();
+
+        Config config = new XmlConfigBuilder(file.getAbsolutePath()).build();
+        assertEquals(file,config.getConfigurationFile());
+    }
+
     @Test(expected = HazelcastException.class)
     public void loadingThroughSystemProperty_nonExistingFile() throws IOException {
         File file = File.createTempFile("foo", "bar");
