@@ -140,6 +140,7 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
     public XmlConfigBuilder(URL url) throws IOException {
         checkNotNull(url, "URL is null!");
         in = url.openStream();
+        this.configurationUrl = url;
     }
 
     /**

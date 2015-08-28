@@ -64,6 +64,21 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         System.clearProperty("hazelcast.config");
     }
 
+    @Test
+    public void testConfigurationURL() throws IOException{
+        URL configURL=getClass().getClassLoader().getResource("hazelcast-default.xml");
+        Config config = new XmlConfigBuilder(configURL).build();
+        assertEquals(configURL,config.getConfigurationUrl());
+    }
+
+    @Test
+    public void testConfigurationWithFile() throws Exception{
+        URL url = getClass().getClassLoader().getResource("hazelcast-default.xml");
+        System.setProperty("hazelcast.config", url.getFile());
+        Config config = new XmlConfigBuilder().build();
+        assertEquals(url,config.getConfigurationUrl());
+    }
+
     @Test(expected = HazelcastException.class)
     public void loadingThroughSystemProperty_nonExistingFile() throws IOException {
         File file = File.createTempFile("foo", "bar");
