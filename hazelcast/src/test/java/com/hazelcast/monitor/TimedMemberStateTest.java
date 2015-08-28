@@ -3,6 +3,7 @@ package com.hazelcast.monitor;
 import com.eclipsesource.json.JsonObject;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.management.TimedMemberStateFactory;
+import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -14,6 +15,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -35,6 +37,9 @@ public class TimedMemberStateTest extends HazelcastTestSupport {
         instanceNames.add("topicStats");
 
         hz = createHazelcastInstance();
+        HashMap map = new HashMap();
+        for (int i = 0; i < 10000; i++) map.put(i, i);
+        hz.getMap("name").putAll(map);
         TimedMemberStateFactory timedMemberStateFactory = new TimedMemberStateFactory(getHazelcastInstanceImpl(hz));
 
         timedMemberState = timedMemberStateFactory.createTimedMemberState();
@@ -79,5 +84,11 @@ public class TimedMemberStateTest extends HazelcastTestSupport {
         hz.getReplicatedMap("replicatedMap");
         ReplicatedMapService replicatedMapService = nodeEngine.getService(ReplicatedMapService.SERVICE_NAME);
         assertNotNull(replicatedMapService.getStats().get("replicatedMap"));
+    }
+
+    @Test
+    public void testMapPutAllStats() {
+        LocalMapStatsImpl localMapStats = (LocalMapStatsImpl) timedMemberState.getMemberState().getLocalMapStats("name");
+        assertEquals(10000, localMapStats.getPutAllCount());
     }
 }

@@ -23,19 +23,21 @@ import com.hazelcast.map.impl.MapEntrySet;
 import com.hazelcast.map.impl.MapEventPublisher;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.nearcache.NearCacheProvider;
-import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.RecordInfo;
 import com.hazelcast.map.impl.record.Records;
+import com.hazelcast.map.impl.recordstore.RecordStore;
+import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.spi.BackupAwareOperation;
-import com.hazelcast.spi.impl.MutatingOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionAwareOperation;
+import com.hazelcast.spi.impl.MutatingOperation;
 import com.hazelcast.util.Clock;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -72,6 +74,7 @@ public class PutAllOperation extends AbstractMapOperation implements PartitionAw
         backupEntrySet = new ArrayList<Map.Entry<Data, Data>>();
         int partitionId = getPartitionId();
         final MapServiceContext mapServiceContext = mapService.getMapServiceContext();
+        LocalMapStatsImpl localMapStats = mapServiceContext.getLocalMapStatsProvider().getLocalMapStatsImpl(name);
         this.recordStore = mapServiceContext.getRecordStore(partitionId, name);
         RecordStore recordStore = this.recordStore;
         Set<Map.Entry<Data, Data>> entries = entrySet.getEntrySet();
@@ -79,6 +82,7 @@ public class PutAllOperation extends AbstractMapOperation implements PartitionAw
         Set<Data> keysToInvalidate = new HashSet<Data>();
         for (Map.Entry<Data, Data> entry : entries) {
             put(partitionId, mapServiceContext, recordStore, partitionService, keysToInvalidate, entry);
+            localMapStats.incrementPutAll();
         }
         invalidateNearCaches(keysToInvalidate);
     }

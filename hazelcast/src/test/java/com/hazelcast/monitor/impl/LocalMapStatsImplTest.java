@@ -39,6 +39,8 @@ public class LocalMapStatsImplTest {
         localMapStats.incrementGets(1233);
         localMapStats.incrementGets(5);
         localMapStats.incrementGets(9);
+        localMapStats.incrementPutAll();
+        localMapStats.incrementPutAll();
         localMapStats.incrementRemoves(1238);
         localMapStats.incrementOtherOperations();
         localMapStats.incrementOtherOperations();
@@ -57,6 +59,7 @@ public class LocalMapStatsImplTest {
         assertTrue(localMapStats.getCreationTime() > 0);
         assertEquals(5, localMapStats.getOwnedEntryCount());
         assertEquals(3, localMapStats.getBackupEntryCount());
+        assertEquals(2, localMapStats.getPutAllCount());
         assertEquals(4, localMapStats.getBackupCount());
         assertEquals(1234, localMapStats.getOwnedEntryMemoryCost());
         assertEquals(4321, localMapStats.getBackupEntryMemoryCost());
