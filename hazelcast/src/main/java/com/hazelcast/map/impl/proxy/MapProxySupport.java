@@ -862,7 +862,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
                     checkNotNull(entry.getKey(), NULL_KEY_IS_NOT_ALLOWED);
                     checkNotNull(entry.getValue(), NULL_VALUE_IS_NOT_ALLOWED);
 
-                    putInternal(mapService.getMapServiceContext().toData(entry.getKey(), partitionStrategy),
+                    setInternal(mapService.getMapServiceContext().toData(entry.getKey(), partitionStrategy),
                             mapService.getMapServiceContext().toData(entry.getValue()),
                             -1,
                             TimeUnit.MILLISECONDS);
