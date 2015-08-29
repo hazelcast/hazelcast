@@ -65,8 +65,8 @@ public class DefaultSocketChannelWrapper implements SocketChannelWrapper {
     }
 
     @Override
-    public SelectableChannel configureBlocking(boolean b) throws IOException {
-        return socketChannel.configureBlocking(b);
+    public SelectableChannel configureBlocking(boolean block) throws IOException {
+        return socketChannel.configureBlocking(block);
     }
 
     @Override

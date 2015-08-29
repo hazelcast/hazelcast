@@ -34,7 +34,7 @@ public class DeleteCommand extends AbstractTextCommand {
         this.noreply = noreply;
     }
 
-    public boolean readFrom(ByteBuffer cb) {
+    public boolean readFrom(ByteBuffer src) {
         return true;
     }
 
@@ -42,12 +42,12 @@ public class DeleteCommand extends AbstractTextCommand {
         this.response = ByteBuffer.wrap(value);
     }
 
-    public boolean writeTo(ByteBuffer bb) {
+    public boolean writeTo(ByteBuffer dst) {
         if (response == null) {
             response = ByteBuffer.wrap(TextCommandConstants.STORED);
         }
-        while (bb.hasRemaining() && response.hasRemaining()) {
-            bb.put(response.get());
+        while (dst.hasRemaining() && response.hasRemaining()) {
+            dst.put(response.get());
         }
         return !response.hasRemaining();
     }

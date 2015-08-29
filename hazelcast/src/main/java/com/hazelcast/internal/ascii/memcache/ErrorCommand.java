@@ -56,12 +56,12 @@ public class ErrorCommand extends AbstractTextCommand {
         response.flip();
     }
 
-    public boolean readFrom(ByteBuffer cb) {
+    public boolean readFrom(ByteBuffer src) {
         return true;
     }
 
-    public boolean writeTo(ByteBuffer bb) {
-        IOUtil.copyToHeapBuffer(response, bb);
+    public boolean writeTo(ByteBuffer dst) {
+        IOUtil.copyToHeapBuffer(response, dst);
         return !response.hasRemaining();
     }
 
