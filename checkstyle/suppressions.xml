@@ -10,6 +10,7 @@
     <suppress checks="StrictDuplicateCode" files="\.java" lines="1-15"/>
 
     <!-- Suppress checking of copyright notice -->
+    <suppress checks="Header" files="com/hazelcast/buildutils/ElementParser"/>
     <suppress checks="Header" files="com/hazelcast/logging/Log4j2Factory\.java"/>
     <suppress checks="Header" files="/hazelcast-code-generator/"/>
 
@@ -249,9 +250,6 @@
     <suppress checks="VariableName" files="com/hazelcast/instance/GroupProperties"/>
     <suppress checks="MethodLength" files="com/hazelcast/instance/GroupProperties"/>
     <suppress checks="ExecutableStatementCount" files="com/hazelcast/instance/GroupProperties"/>
-    <!-- TODO: work in progress -->
-    <suppress checks="MethodLength|NestedIfDepth|NPathComplexity" files="com/hazelcast/instance/DefaultAddressPicker"/>
-    <suppress checks="" files="com/hazelcast/instance/HazelcastInstanceFactory"/>
     <suppress checks="" files="com/hazelcast/instance/Node"/>
 
     <!-- SPI -->
@@ -318,8 +316,6 @@
 
     <!-- Topic -->
     <suppress checks="VisibilityModifier" files="com/hazelcast/topic/impl/TopicEvent"/>
-    <suppress checks="" files="com/hazelcast/topic/DataAwareMessage"/>
-    <suppress checks="Todo" files="com/hazelcast/topic/impl/TopicEvent"/>
 
     <!-- Ascii -->
     <suppress checks="JavadocMethod" files="com/hazelcast/internal/ascii/"/>
@@ -480,9 +476,6 @@
     as explained at http://creativecommons/org/licenses/publicdomain -->
     <suppress checks="MagicNumber|FileLength|DeclarationOrder|RedundantModifier|InnerAssignment|NPath|Cyclomatic"
               files="com/hazelcast/util/ConcurrentReferenceHashMap"/>
-
-    <!-- Build Utils (taken from JBOSS project) -->
-    <suppress checks="" files="com/hazelcast/buildutils/ElementParser"/>
 
     <!-- Exclude Clover instrumented sources -->
     <suppress checks="" files="/src-instrumented/"/>

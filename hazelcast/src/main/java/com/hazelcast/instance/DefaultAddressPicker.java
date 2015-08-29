@@ -27,6 +27,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.util.AddressUtil;
 
+import java.io.IOException;
 import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -44,7 +45,8 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
+
+import static com.hazelcast.util.AddressUtil.fixScopeIdAndGetInetAddress;
 
 class DefaultAddressPicker implements AddressPicker {
 
@@ -69,122 +71,130 @@ class DefaultAddressPicker implements AddressPicker {
             return;
         }
         try {
-            NetworkConfig networkConfig = node.getConfig().getNetworkConfig();
-            AddressDefinition bindAddressDef = pickAddress(networkConfig);
-            boolean reuseAddress = networkConfig.isReuseAddress();
-            boolean bindAny = node.getGroupProperties().SOCKET_SERVER_BIND_ANY.getBoolean();
-            int portCount = networkConfig.getPortCount();
-
-            log(Level.FINEST, "inet reuseAddress:" + reuseAddress);
-            InetSocketAddress inetSocketAddress;
-            ServerSocket serverSocket = null;
-            int port = networkConfig.getPort();
-
-            Throwable error = null;
-            for (int i = 0; i < portCount; i++) {
-                /**
-                 * Instead of reusing the ServerSocket/ServerSocketChannel, we are going to close and replace them on
-                 * every attempt to find a free port. The reason to do this is because in some cases, when concurrent
-                 * threads/processes try to acquire the same port, the ServerSocket gets corrupted and isn't able to
-                 * find any free port at all (no matter if there are more than enough free ports available). We have
-                 * seen this happening on Linux and Windows environments.
-                 */
-                serverSocketChannel = ServerSocketChannel.open();
-                serverSocket = serverSocketChannel.socket();
-                serverSocket.setReuseAddress(reuseAddress);
-                serverSocket.setSoTimeout(SOCKET_TIMEOUT_MILLIS);
-                try {
-                    if (bindAny) {
-                        inetSocketAddress = new InetSocketAddress(port);
-                    } else {
-                        inetSocketAddress = new InetSocketAddress(bindAddressDef.inetAddress, port);
-                    }
-                    log(Level.FINEST, "Trying to bind inet socket address:" + inetSocketAddress);
-                    serverSocket.bind(inetSocketAddress, SOCKET_BACKLOG_LENGTH);
-                    log(Level.FINEST, "Bind successful to inet socket address:" + inetSocketAddress);
-                    break;
-                } catch (Exception e) {
-                    serverSocket.close();
-                    serverSocketChannel.close();
-
-                    if (networkConfig.isPortAutoIncrement()) {
-                        port++;
-                        error = e;
-                    } else {
-                        String msg = "Port [" + port + "] is already in use and auto-increment is disabled."
-                                + " Hazelcast cannot start.";
-                        logger.severe(msg, e);
-                        throw new HazelcastException(msg, error);
-                    }
-                }
-            }
-            if (serverSocket == null || !serverSocket.isBound()) {
-                throw new HazelcastException("ServerSocket bind has failed. Hazelcast cannot start!"
-                        + " config-port: " + networkConfig.getPort() + ", latest-port: " + port, error);
-            }
-            serverSocketChannel.configureBlocking(false);
-            bindAddress = createAddress(bindAddressDef, port);
-            log(Level.INFO, "Picked " + bindAddress + ", using socket " + serverSocket + ", bind any local is " + bindAny);
-            AddressDefinition publicAddressDef = getPublicAddress(node.getConfig(), port);
+            AddressDefinition publicAddressDef = getPublicAddressByPortSearch();
             if (publicAddressDef != null) {
                 publicAddress = createAddress(publicAddressDef, publicAddressDef.port);
-                log(Level.INFO, "Using public address: " + publicAddress);
+                logger.info("Using public address: " + publicAddress);
             } else {
                 publicAddress = bindAddress;
-                log(Level.FINEST, "Using public address the same as the bind address. " + publicAddress);
+                logger.finest("Using public address the same as the bind address: " + publicAddress);
             }
-        } catch (RuntimeException re) {
-            logger.severe(re);
-            throw re;
         } catch (Exception e) {
             logger.severe(e);
             throw e;
         }
     }
 
+    private AddressDefinition getPublicAddressByPortSearch() throws IOException {
+        NetworkConfig networkConfig = node.getConfig().getNetworkConfig();
+        boolean bindAny = node.getGroupProperties().SOCKET_SERVER_BIND_ANY.getBoolean();
+
+        Throwable error = null;
+        ServerSocket serverSocket = null;
+        InetSocketAddress inetSocketAddress;
+
+        boolean reuseAddress = networkConfig.isReuseAddress();
+        logger.finest("inet reuseAddress:" + reuseAddress);
+
+        int portCount = networkConfig.getPortCount();
+        int port = networkConfig.getPort();
+        AddressDefinition bindAddressDef = pickAddress(networkConfig);
+
+        for (int i = 0; i < portCount; i++) {
+            /**
+             * Instead of reusing the ServerSocket/ServerSocketChannel, we are going to close and replace them on
+             * every attempt to find a free port. The reason to do this is because in some cases, when concurrent
+             * threads/processes try to acquire the same port, the ServerSocket gets corrupted and isn't able to
+             * find any free port at all (no matter if there are more than enough free ports available). We have
+             * seen this happening on Linux and Windows environments.
+             */
+            serverSocketChannel = ServerSocketChannel.open();
+            serverSocket = serverSocketChannel.socket();
+            serverSocket.setReuseAddress(reuseAddress);
+            serverSocket.setSoTimeout(SOCKET_TIMEOUT_MILLIS);
+            try {
+                if (bindAny) {
+                    inetSocketAddress = new InetSocketAddress(port);
+                } else {
+                    inetSocketAddress = new InetSocketAddress(bindAddressDef.inetAddress, port);
+                }
+                logger.finest("Trying to bind inet socket address:" + inetSocketAddress);
+                serverSocket.bind(inetSocketAddress, SOCKET_BACKLOG_LENGTH);
+                logger.finest("Bind successful to inet socket address:" + inetSocketAddress);
+                break;
+            } catch (Exception e) {
+                serverSocket.close();
+                serverSocketChannel.close();
+
+                if (networkConfig.isPortAutoIncrement()) {
+                    port++;
+                    error = e;
+                } else {
+                    String msg = "Port [" + port + "] is already in use and auto-increment is disabled."
+                            + " Hazelcast cannot start.";
+                    logger.severe(msg, e);
+                    throw new HazelcastException(msg, error);
+                }
+            }
+        }
+        if (serverSocket == null || !serverSocket.isBound()) {
+            throw new HazelcastException("ServerSocket bind has failed. Hazelcast cannot start!"
+                    + " config-port: " + networkConfig.getPort() + ", latest-port: " + port, error);
+        }
+        serverSocketChannel.configureBlocking(false);
+        bindAddress = createAddress(bindAddressDef, port);
+
+        logger.info("Picked " + bindAddress + ", using socket " + serverSocket + ", bind any local is " + bindAny);
+        return getPublicAddress(node.getConfig(), port);
+    }
+
     private Address createAddress(AddressDefinition addressDef, int port) throws UnknownHostException {
-        return addressDef.host != null ? new Address(addressDef.host, port)
-                : new Address(addressDef.inetAddress, port);
+        if (addressDef.host == null) {
+            return new Address(addressDef.inetAddress, port);
+        }
+        return new Address(addressDef.host, port);
     }
 
     private AddressDefinition pickAddress(NetworkConfig networkConfig) throws UnknownHostException, SocketException {
         AddressDefinition addressDef = getSystemConfiguredAddress(node.getConfig());
         if (addressDef == null) {
-            Collection<InterfaceDefinition> interfaces = getInterfaces(networkConfig);
-            if (interfaces.contains(new InterfaceDefinition("127.0.0.1"))
-                    || interfaces.contains(new InterfaceDefinition("localhost"))) {
-                addressDef = pickLoopbackAddress();
-            } else {
-                if (preferIPv4Stack()) {
-                    log(Level.INFO, "Prefer IPv4 stack is true.");
-                }
-                if (interfaces.size() > 0) {
-                    addressDef = pickMatchingAddress(interfaces);
-                }
-                if (addressDef == null) {
-                    if (networkConfig.getInterfaces().isEnabled()) {
-                        String msg = "Hazelcast CANNOT start on this node. No matching network interface found.\n"
-                                + "Interface matching must be either disabled or updated in the hazelcast.xml config file.";
-                        logger.severe(msg);
-                        throw new RuntimeException(msg);
-                    } else {
-                        if (networkConfig.getJoin().getTcpIpConfig().isEnabled()) {
-                            logger.warning("Could not find a matching address to start with!"
-                                    + " Picking one of non-loopback addresses.");
-                        }
-                        addressDef = pickMatchingAddress(null);
-                    }
-                }
-            }
+            addressDef = pickInterfaceAddress(networkConfig);
         }
         if (addressDef != null) {
-            // check if scope id correctly set
-            addressDef.inetAddress = AddressUtil.fixScopeIdAndGetInetAddress(addressDef.inetAddress);
+            // check if scope id is set correctly
+            addressDef.inetAddress = fixScopeIdAndGetInetAddress(addressDef.inetAddress);
         }
         if (addressDef == null) {
             addressDef = pickLoopbackAddress();
         }
         return addressDef;
+    }
+
+    private AddressDefinition pickInterfaceAddress(NetworkConfig networkConfig) throws UnknownHostException, SocketException {
+        Collection<InterfaceDefinition> interfaces = getInterfaces(networkConfig);
+        if (interfaces.contains(new InterfaceDefinition("127.0.0.1"))
+                || interfaces.contains(new InterfaceDefinition("localhost"))) {
+            return pickLoopbackAddress();
+        }
+        if (preferIPv4Stack()) {
+            logger.info("Prefer IPv4 stack is true.");
+        }
+        if (interfaces.size() > 0) {
+            AddressDefinition addressDef = pickMatchingAddress(interfaces);
+            if (addressDef != null) {
+                return addressDef;
+            }
+        }
+        if (networkConfig.getInterfaces().isEnabled()) {
+            String msg = "Hazelcast CANNOT start on this node. No matching network interface found.\n"
+                    + "Interface matching must be either disabled or updated in the hazelcast.xml config file.";
+            logger.severe(msg);
+            throw new RuntimeException(msg);
+        }
+        if (networkConfig.getJoin().getTcpIpConfig().isEnabled()) {
+            logger.warning("Could not find a matching address to start with! Picking one of non-loopback addresses.");
+        }
+        return pickMatchingAddress(null);
     }
 
     private Collection<InterfaceDefinition> getInterfaces(NetworkConfig networkConfig) throws UnknownHostException {
@@ -227,12 +237,12 @@ class DefaultAddressPicker implements AddressPicker {
                     logger.info("'" + configInterface + "' is not an IP address! Removing from interface list.");
                 }
             }
-            log(Level.INFO, "Interfaces is enabled, trying to pick one address matching to one of: " + interfaces);
+            logger.info("Interfaces is enabled, trying to pick one address matching to one of: " + interfaces);
         } else if (tcpIpConfig.isEnabled()) {
             for (Entry<String, String> entry : addressDomainMap.entrySet()) {
                 interfaces.add(new InterfaceDefinition(entry.getValue(), entry.getKey()));
             }
-            log(Level.INFO, "Interfaces is disabled, trying to pick one address from TCP-IP config addresses: " + interfaces);
+            logger.info("Interfaces is disabled, trying to pick one address from TCP-IP config addresses: " + interfaces);
         }
         return interfaces;
     }
@@ -268,7 +278,7 @@ class DefaultAddressPicker implements AddressPicker {
             if ("127.0.0.1".equals(address) || "localhost".equals(address)) {
                 return pickLoopbackAddress();
             } else {
-                log(Level.INFO, "Picking address configured by property 'hazelcast.local.localAddress'");
+                logger.info("Picking address configured by property 'hazelcast.local.localAddress'");
                 return new AddressDefinition(address, InetAddress.getByName(address));
             }
         }
@@ -360,11 +370,7 @@ class DefaultAddressPicker implements AddressPicker {
         return serverSocketChannel;
     }
 
-    private void log(Level level, String message) {
-        logger.log(level, message);
-    }
-
-    private class InterfaceDefinition {
+    private static class InterfaceDefinition {
 
         String host;
         String address;
@@ -410,7 +416,7 @@ class DefaultAddressPicker implements AddressPicker {
         }
     }
 
-    private class AddressDefinition extends InterfaceDefinition {
+    private static class AddressDefinition extends InterfaceDefinition {
 
         InetAddress inetAddress;
         int port;
@@ -444,7 +450,6 @@ class DefaultAddressPicker implements AddressPicker {
             }
 
             AddressDefinition that = (AddressDefinition) o;
-
             if (port != that.port) {
                 return false;
             }

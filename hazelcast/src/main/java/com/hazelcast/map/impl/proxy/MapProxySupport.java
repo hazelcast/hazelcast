@@ -483,6 +483,8 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         return result;
     }
 
+    //warning: When UpdateEvent is fired it does *NOT* contain oldValue.
+    //see this: https://github.com/hazelcast/hazelcast/pull/6088#issuecomment-136025968
     protected void setInternal(final Data key, final Data value, final long ttl, final TimeUnit timeunit) {
         SetOperation operation = new SetOperation(name, key, value, timeunit.toMillis(ttl));
         invokeOperation(key, operation);

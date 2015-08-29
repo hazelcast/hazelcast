@@ -27,9 +27,9 @@ public class HttpDeleteCommand extends HttpCommand {
         super(TextCommandConstants.TextCommandType.HTTP_DELETE, uri);
     }
 
-    public boolean readFrom(ByteBuffer cb) {
-        while (cb.hasRemaining()) {
-            char c = (char) cb.get();
+    public boolean readFrom(ByteBuffer src) {
+        while (src.hasRemaining()) {
+            char c = (char) src.get();
             if (c == '\n') {
                 if (nextLine) {
                     return true;

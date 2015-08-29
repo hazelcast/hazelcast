@@ -31,12 +31,12 @@ public class VersionCommand extends AbstractTextCommand {
         super(type);
     }
 
-    public boolean writeTo(ByteBuffer destination) {
-        destination.put(VERSION);
+    public boolean writeTo(ByteBuffer dst) {
+        dst.put(VERSION);
         return true;
     }
 
-    public boolean readFrom(ByteBuffer source) {
+    public boolean readFrom(ByteBuffer src) {
         return true;
     }
 }

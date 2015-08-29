@@ -115,63 +115,63 @@ public final class IOUtil {
         };
     }
 
-    public static OutputStream newOutputStream(final ByteBuffer buf) {
+    public static OutputStream newOutputStream(final ByteBuffer dst) {
         return new OutputStream() {
             public void write(int b) throws IOException {
-                buf.put((byte) b);
+                dst.put((byte) b);
             }
 
             public void write(byte[] bytes, int off, int len) throws IOException {
-                buf.put(bytes, off, len);
+                dst.put(bytes, off, len);
             }
         };
     }
 
-    public static InputStream newInputStream(final ByteBuffer buf) {
+    public static InputStream newInputStream(final ByteBuffer src) {
         return new InputStream() {
             public int read() throws IOException {
-                if (!buf.hasRemaining()) {
+                if (!src.hasRemaining()) {
                     return -1;
                 }
-                return buf.get() & 0xff;
+                return src.get() & 0xff;
             }
 
             public int read(byte[] bytes, int off, int len) throws IOException {
-                if (!buf.hasRemaining()) {
+                if (!src.hasRemaining()) {
                     return -1;
                 }
-                len = Math.min(len, buf.remaining());
-                buf.get(bytes, off, len);
+                len = Math.min(len, src.remaining());
+                src.get(bytes, off, len);
                 return len;
             }
         };
     }
 
-    public static int copyToHeapBuffer(ByteBuffer src, ByteBuffer dest) {
+    public static int copyToHeapBuffer(ByteBuffer src, ByteBuffer dst) {
         if (src == null) {
             return 0;
         }
-        int n = Math.min(src.remaining(), dest.remaining());
+        int n = Math.min(src.remaining(), dst.remaining());
         if (n > 0) {
             if (n < 16) {
                 for (int i = 0; i < n; i++) {
-                    dest.put(src.get());
+                    dst.put(src.get());
                 }
             } else {
                 int srcPosition = src.position();
-                int destPosition = dest.position();
-                System.arraycopy(src.array(), srcPosition, dest.array(), destPosition, n);
+                int destPosition = dst.position();
+                System.arraycopy(src.array(), srcPosition, dst.array(), destPosition, n);
                 src.position(srcPosition + n);
-                dest.position(destPosition + n);
+                dst.position(destPosition + n);
             }
         }
         return n;
     }
 
-    public static int copyToDirectBuffer(ByteBuffer src, ByteBuffer dest) {
-        int n = Math.min(src.remaining(), dest.remaining());
+    public static int copyToDirectBuffer(ByteBuffer src, ByteBuffer dst) {
+        int n = Math.min(src.remaining(), dst.remaining());
         if (n > 0) {
-            dest.put(src.array(), src.position(), n);
+            dst.put(src.array(), src.position(), n);
             src.position(src.position() + n);
         }
         return n;

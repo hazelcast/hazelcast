@@ -19,9 +19,24 @@ package com.hazelcast.nio;
 import java.nio.ByteBuffer;
 
 /**
- * Represents something where data can be read from.
+ * Represents a data-structure that can reconstruct itself based on the content of a byte-buffer.
+ *
+ * @see SocketWritable
+ * @see Packet
  */
 public interface SocketReadable {
 
-    boolean readFrom(ByteBuffer source);
+    /**
+     * Reads from the src.
+     *
+     * As long as the readFrom returns false, this SocketReadable is not yet finished. E.g. it could be the SocketReadable
+     * requires 1 MB of data, but if 100KB ByteBuffer is passed, 10 calls readFrom calls are needed, where the first 9 return
+     * false and the 10th returns true.
+     *
+     * It is up to the SocketReadable to keep track of where it is in the reading process.
+     *
+     * @param src the ByteBuffer to read from.
+     * @return true if the object has been fully read and no more readFrom calls are needed.
+     */
+    boolean readFrom(ByteBuffer src);
 }
