@@ -16,12 +16,66 @@
 
 package com.hazelcast.nio.tcp;
 
-import java.nio.ByteBuffer;
+import com.hazelcast.util.counters.Counter;
 
 /**
- * Reads content from a {@link ByteBuffer}.
+ * The SocketReader is responsible for reading data from the socket, on behalf of a connection, into a byte-buffer. Once the
+ * data is read into the ByteBuffer, this ByteBuffer is passed to the {@link ReadHandler} that takes care of the actual
+ * processing of the incoming data.
+ *
+ * Each {@link TcpIpConnection} will have its own {@link SocketReader} instance.
+ *
+ * There are many different flavors of socket readers:
+ * <ol>
+ *     <li>reader for member to member communication</li>
+ *     <li>reader for (old and new) client to member communication</li>
+ *     <li>reader for encrypted member to member communication</li>
+ *     <li>reader for REST/Memcached</li>
+ * </ol>
+ *
+ * A SocketReader is tightly coupled to the threading model; so a SocketReader instance is created using
+ * {@link IOThreadingModel#newSocketReader(TcpIpConnection)}.
+ *
+ * Before Hazelcast 3.6 the name of this interface was ReadHandler.
+ *
+ * @see ReadHandler
+ * @see SocketWriter
+ * @see IOThreadingModel
  */
 public interface SocketReader {
 
-    void read(ByteBuffer src) throws Exception;
+    /**
+     * Returns the last {@link com.hazelcast.util.Clock#currentTimeMillis()} a read of the socket was done.
+     *
+     * @return the last time a read from the socket was done.
+     */
+    long getLastReadTimeMillis();
+
+    /**
+     * Gets the Counter that counts the number of normal packets that have been read.
+     *
+     * @return the normal packets counter.
+     */
+    Counter getNormalPacketsReadCounter();
+
+    /**
+     * Gets the Counter that counts the number of priority packets that have been read.
+     *
+     * @return the priority packets counter.
+     */
+    Counter getPriorityPacketsReadCounter();
+
+    /**
+     * Initializes this SocketReader.
+     *
+     * This method is called from an arbitrary thread and is only called once.
+     */
+    void init();
+
+    /**
+     * Destroys this SocketReader.
+     *
+     * This method is called from an arbitrary thread and is only called once.
+     */
+    void destroy();
 }

@@ -21,13 +21,13 @@ import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.SocketWritable;
-import com.hazelcast.nio.ascii.SocketTextWriter;
-import com.hazelcast.nio.tcp.ClientMessageSocketWriter;
-import com.hazelcast.nio.tcp.ClientPacketSocketWriter;
+import com.hazelcast.nio.ascii.TextWriteHandler;
+import com.hazelcast.nio.tcp.NewClientWriteHandler;
+import com.hazelcast.nio.tcp.OldClientWriteHandler;
 import com.hazelcast.nio.tcp.SocketChannelWrapper;
-import com.hazelcast.nio.tcp.SocketWriter;
-import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.nio.tcp.WriteHandler;
+import com.hazelcast.nio.tcp.TcpIpConnection;
+import com.hazelcast.nio.tcp.SocketWriter;
 import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.counters.SwCounter;
 
@@ -48,7 +48,7 @@ import static com.hazelcast.util.StringUtil.stringToBytes;
 import static com.hazelcast.util.counters.SwCounter.newSwCounter;
 import static java.lang.System.currentTimeMillis;
 
-public class SpinningWriteHandler extends AbstractHandler implements WriteHandler {
+public class SpinningSocketWriter extends AbstractHandler implements SocketWriter {
 
     private static final long TIMEOUT = 3;
 
@@ -67,10 +67,10 @@ public class SpinningWriteHandler extends AbstractHandler implements WriteHandle
     private final SwCounter priorityPacketsWritten = newSwCounter();
     private final MetricsRegistry metricsRegistry;
     private volatile long lastWriteTime;
-    private SocketWriter socketWriter;
+    private WriteHandler writeHandler;
     private volatile SocketWritable currentPacket;
 
-    public SpinningWriteHandler(TcpIpConnection connection, MetricsRegistry metricsRegistry, ILogger logger) {
+    public SpinningSocketWriter(TcpIpConnection connection, MetricsRegistry metricsRegistry, ILogger logger) {
         super(connection, logger);
         this.metricsRegistry = metricsRegistry;
         this.logger = logger;
@@ -126,8 +126,8 @@ public class SpinningWriteHandler extends AbstractHandler implements WriteHandle
     }
 
     @Override
-    public SocketWriter getSocketWriter() {
-        return socketWriter;
+    public WriteHandler getWriteHandler() {
+        return writeHandler;
     }
 
     // accessed from ReadHandler and SocketConnector
@@ -151,23 +151,23 @@ public class SpinningWriteHandler extends AbstractHandler implements WriteHandle
     }
 
     private void createWriter(String protocol) {
-        if (socketWriter != null) {
+        if (writeHandler != null) {
             return;
         }
 
         if (CLUSTER.equals(protocol)) {
             configureBuffers(ioService.getSocketSendBufferSize() * KILO_BYTE);
-            socketWriter = ioService.createSocketWriter(connection);
+            writeHandler = ioService.createWriteHandler(connection);
             outputBuffer.put(stringToBytes(CLUSTER));
         } else if (CLIENT_BINARY.equals(protocol)) {
             configureBuffers(ioService.getSocketClientSendBufferSize() * KILO_BYTE);
-            socketWriter = new ClientPacketSocketWriter();
+            writeHandler = new OldClientWriteHandler();
         } else if (CLIENT_BINARY_NEW.equals(protocol)) {
             configureBuffers(ioService.getSocketClientReceiveBufferSize() * KILO_BYTE);
-            socketWriter = new ClientMessageSocketWriter();
+            writeHandler = new NewClientWriteHandler();
         } else {
             configureBuffers(ioService.getSocketClientSendBufferSize() * KILO_BYTE);
-            socketWriter = new SocketTextWriter(connection);
+            writeHandler = new TextWriteHandler(connection);
         }
     }
 
@@ -230,7 +230,7 @@ public class SpinningWriteHandler extends AbstractHandler implements WriteHandle
             return;
         }
 
-        if (socketWriter == null) {
+        if (writeHandler == null) {
             logger.log(Level.WARNING, "SocketWriter is not set, creating SocketWriter with CLUSTER protocol!");
             createWriter(CLUSTER);
             return;
@@ -278,7 +278,7 @@ public class SpinningWriteHandler extends AbstractHandler implements WriteHandle
             }
 
             // Lets write the currentPacket to the outputBuffer.
-            if (!socketWriter.write(currentPacket, outputBuffer)) {
+            if (!writeHandler.onWrite(currentPacket, outputBuffer)) {
                 // We are done for this round because not all data of the current packet fits in the outputBuffer
                 return;
             }

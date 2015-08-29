@@ -20,14 +20,14 @@ import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Protocols;
-import com.hazelcast.nio.ascii.SocketTextReader;
-import com.hazelcast.nio.tcp.ClientMessageSocketReader;
-import com.hazelcast.nio.tcp.ClientPacketSocketReader;
-import com.hazelcast.nio.tcp.ReadHandler;
-import com.hazelcast.nio.tcp.SocketChannelWrapper;
+import com.hazelcast.nio.ascii.TextReadHandler;
+import com.hazelcast.nio.tcp.NewClientReadHandler;
+import com.hazelcast.nio.tcp.OldClientReadHandler;
 import com.hazelcast.nio.tcp.SocketReader;
+import com.hazelcast.nio.tcp.SocketChannelWrapper;
+import com.hazelcast.nio.tcp.ReadHandler;
 import com.hazelcast.nio.tcp.TcpIpConnection;
-import com.hazelcast.nio.tcp.WriteHandler;
+import com.hazelcast.nio.tcp.SocketWriter;
 import com.hazelcast.util.counters.Counter;
 import com.hazelcast.util.counters.SwCounter;
 
@@ -46,7 +46,7 @@ import static com.hazelcast.util.counters.SwCounter.newSwCounter;
 import static java.lang.Math.max;
 import static java.lang.System.currentTimeMillis;
 
-public class SpinningReadHandler extends AbstractHandler implements ReadHandler {
+public class SpinningSocketReader extends AbstractHandler implements SocketReader {
 
     @Probe(name = "in.bytesRead")
     private final SwCounter bytesRead = newSwCounter();
@@ -57,11 +57,11 @@ public class SpinningReadHandler extends AbstractHandler implements ReadHandler 
     private final MetricsRegistry metricRegistry;
     private final SocketChannelWrapper socketChannel;
     private volatile long lastReadTime;
-    private SocketReader socketReader;
+    private ReadHandler readHandler;
     private ByteBuffer inputBuffer;
     private ByteBuffer protocolBuffer = ByteBuffer.allocate(3);
 
-    public SpinningReadHandler(TcpIpConnection connection, MetricsRegistry metricsRegistry, ILogger logger) {
+    public SpinningSocketReader(TcpIpConnection connection, MetricsRegistry metricsRegistry, ILogger logger) {
         super(connection, logger);
         this.metricRegistry = metricsRegistry;
         this.socketChannel = connection.getSocketChannelWrapper();
@@ -89,12 +89,12 @@ public class SpinningReadHandler extends AbstractHandler implements ReadHandler 
     }
 
     @Override
-    public void start() {
+    public void init() {
         //no-op
     }
 
     @Override
-    public void shutdown() {
+    public void destroy() {
         metricRegistry.deregister(this);
     }
 
@@ -104,9 +104,9 @@ public class SpinningReadHandler extends AbstractHandler implements ReadHandler 
             return;
         }
 
-        if (socketReader == null) {
+        if (readHandler == null) {
             initializeSocketReader();
-            if (socketReader == null) {
+            if (readHandler == null) {
                 // when using SSL, we can read 0 bytes since data read from socket can be handshake packets.
                 return;
             }
@@ -123,7 +123,7 @@ public class SpinningReadHandler extends AbstractHandler implements ReadHandler 
         lastReadTime = currentTimeMillis();
         bytesRead.inc(readBytes);
         inputBuffer.flip();
-        socketReader.read(inputBuffer);
+        readHandler.onRead(inputBuffer);
         if (inputBuffer.hasRemaining()) {
             inputBuffer.compact();
         } else {
@@ -132,7 +132,7 @@ public class SpinningReadHandler extends AbstractHandler implements ReadHandler 
     }
 
     private void initializeSocketReader() throws IOException {
-        if (socketReader != null) {
+        if (readHandler != null) {
             return;
         }
 
@@ -152,25 +152,25 @@ public class SpinningReadHandler extends AbstractHandler implements ReadHandler 
         }
 
         String protocol = bytesToString(protocolBuffer.array());
-        WriteHandler writeHandler = connection.getWriteHandler();
+        SocketWriter socketWriter = connection.getSocketWriter();
         if (CLUSTER.equals(protocol)) {
             configureBuffers(ioService.getSocketReceiveBufferSize() * KILO_BYTE);
             connection.setType(MEMBER);
-            writeHandler.setProtocol(CLUSTER);
-            socketReader = ioService.createSocketReader(connection);
+            socketWriter.setProtocol(CLUSTER);
+            readHandler = ioService.createReadHandler(connection);
         } else if (CLIENT_BINARY.equals(protocol)) {
             configureBuffers(ioService.getSocketClientReceiveBufferSize() * KILO_BYTE);
-            writeHandler.setProtocol(CLIENT_BINARY);
-            socketReader = new ClientPacketSocketReader(connection, ioService);
+            socketWriter.setProtocol(CLIENT_BINARY);
+            readHandler = new OldClientReadHandler(connection, ioService);
         } else if (CLIENT_BINARY_NEW.equals(protocol)) {
             configureBuffers(ioService.getSocketClientReceiveBufferSize() * KILO_BYTE);
-            writeHandler.setProtocol(CLIENT_BINARY_NEW);
-            socketReader = new ClientMessageSocketReader(connection, ioService);
+            socketWriter.setProtocol(CLIENT_BINARY_NEW);
+            readHandler = new NewClientReadHandler(connection, ioService);
         } else {
             configureBuffers(ioService.getSocketReceiveBufferSize() * KILO_BYTE);
-            writeHandler.setProtocol(Protocols.TEXT);
+            socketWriter.setProtocol(Protocols.TEXT);
             inputBuffer.put(protocolBuffer.array());
-            socketReader = new SocketTextReader(connection);
+            readHandler = new TextReadHandler(connection);
             connection.getConnectionManager().incrementTextConnections();
         }
     }

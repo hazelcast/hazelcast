@@ -27,35 +27,35 @@ import static java.util.concurrent.atomic.AtomicReferenceFieldUpdater.newUpdater
 
 public class SpinningOutputThread extends Thread {
 
-    private static final ConnectionHandlers SHUTDOWN = new ConnectionHandlers();
-    private static final AtomicReferenceFieldUpdater<SpinningOutputThread, ConnectionHandlers> CONNECTION_HANDLERS
-            = newUpdater(SpinningOutputThread.class, ConnectionHandlers.class, "connectionHandlers");
+    private static final SocketWriters SHUTDOWN = new SocketWriters();
+    private static final AtomicReferenceFieldUpdater<SpinningOutputThread, SocketWriters> CONNECTION_HANDLERS
+            = newUpdater(SpinningOutputThread.class, SocketWriters.class, "socketWriters");
 
     private final ILogger logger;
-    private volatile ConnectionHandlers connectionHandlers;
+    private volatile SocketWriters socketWriters;
 
     public SpinningOutputThread(HazelcastThreadGroup threadGroup, ILogger logger) {
         super(threadGroup.getInternalThreadGroup(), "out-thread");
         this.logger = logger;
-        this.connectionHandlers = new ConnectionHandlers();
+        this.socketWriters = new SocketWriters();
     }
 
     public void addConnection(TcpIpConnection connection) {
-        SpinningWriteHandler writeHandler = (SpinningWriteHandler) connection.getWriteHandler();
+        SpinningSocketWriter writer = (SpinningSocketWriter) connection.getSocketWriter();
 
         for (; ; ) {
-            ConnectionHandlers current = connectionHandlers;
+            SocketWriters current = socketWriters;
             if (current == SHUTDOWN) {
                 return;
             }
 
-            int length = current.writeHandlers.length;
+            int length = current.writers.length;
 
-            SpinningWriteHandler[] newWriteHandlers = new SpinningWriteHandler[length + 1];
-            arraycopy(current.writeHandlers, 0, newWriteHandlers, 0, length);
-            newWriteHandlers[length] = writeHandler;
+            SpinningSocketWriter[] newWriters = new SpinningSocketWriter[length + 1];
+            arraycopy(current.writers, 0, newWriters, 0, length);
+            newWriters[length] = writer;
 
-            ConnectionHandlers update = new ConnectionHandlers(newWriteHandlers);
+            SocketWriters update = new SocketWriters(newWriters);
             if (CONNECTION_HANDLERS.compareAndSet(this, current, update)) {
                 return;
             }
@@ -63,10 +63,10 @@ public class SpinningOutputThread extends Thread {
     }
 
     public void removeConnection(TcpIpConnection connection) {
-        SpinningWriteHandler writeHandlers = (SpinningWriteHandler) connection.getWriteHandler();
+        SpinningSocketWriter writeHandlers = (SpinningSocketWriter) connection.getSocketWriter();
 
         for (; ; ) {
-            ConnectionHandlers current = connectionHandlers;
+            SocketWriters current = socketWriters;
             if (current == SHUTDOWN) {
                 return;
             }
@@ -76,18 +76,18 @@ public class SpinningOutputThread extends Thread {
                 return;
             }
 
-            int length = current.writeHandlers.length;
-            SpinningWriteHandler[] newWriteHandlers = new SpinningWriteHandler[length - 1];
+            int length = current.writers.length;
+            SpinningSocketWriter[] newWriters = new SpinningSocketWriter[length - 1];
 
             int destIndex = 0;
             for (int sourceIndex = 0; sourceIndex < length; sourceIndex++) {
                 if (sourceIndex != indexOf) {
-                    newWriteHandlers[destIndex] = current.writeHandlers[sourceIndex];
+                    newWriters[destIndex] = current.writers[sourceIndex];
                     destIndex++;
                 }
             }
 
-            ConnectionHandlers update = new ConnectionHandlers(newWriteHandlers);
+            SocketWriters update = new SocketWriters(newWriters);
             if (CONNECTION_HANDLERS.compareAndSet(this, current, update)) {
                 return;
             }
@@ -95,43 +95,43 @@ public class SpinningOutputThread extends Thread {
     }
 
     public void shutdown() {
-        connectionHandlers = SHUTDOWN;
+        socketWriters = SHUTDOWN;
         interrupt();
     }
 
     @Override
     public void run() {
         for (; ; ) {
-            ConnectionHandlers handlers = connectionHandlers;
+            SocketWriters handlers = socketWriters;
 
             if (handlers == SHUTDOWN) {
                 return;
             }
 
-            for (SpinningWriteHandler handler : handlers.writeHandlers) {
+            for (SpinningSocketWriter writer : handlers.writers) {
                 try {
-                    handler.write();
+                    writer.write();
                 } catch (Throwable t) {
-                    handler.onFailure(t);
+                    writer.onFailure(t);
                 }
             }
         }
     }
 
-    static class ConnectionHandlers {
-        final SpinningWriteHandler[] writeHandlers;
+    static class SocketWriters {
+        final SpinningSocketWriter[] writers;
 
-        public ConnectionHandlers() {
-            this(new SpinningWriteHandler[0]);
+        public SocketWriters() {
+            this(new SpinningSocketWriter[0]);
         }
 
-        public ConnectionHandlers(SpinningWriteHandler[] writeHandlers) {
-            this.writeHandlers = writeHandlers;
+        public SocketWriters(SpinningSocketWriter[] writers) {
+            this.writers = writers;
         }
 
-        public int indexOf(SpinningWriteHandler handler) {
-            for (int k = 0; k < writeHandlers.length; k++) {
-                if (writeHandlers[k] == handler) {
+        public int indexOf(SpinningSocketWriter handler) {
+            for (int k = 0; k < writers.length; k++) {
+                if (writers[k] == handler) {
                     return k;
                 }
             }

@@ -18,18 +18,18 @@ package com.hazelcast.internal.ascii;
 
 import com.hazelcast.nio.SocketReadable;
 import com.hazelcast.nio.SocketWritable;
-import com.hazelcast.nio.ascii.SocketTextReader;
-import com.hazelcast.nio.ascii.SocketTextWriter;
+import com.hazelcast.nio.ascii.TextReadHandler;
+import com.hazelcast.nio.ascii.TextWriteHandler;
 
 public interface TextCommand extends SocketWritable, SocketReadable {
 
     TextCommandConstants.TextCommandType getType();
 
-    void init(SocketTextReader socketTextReader, long requestId);
+    void init(TextReadHandler textReadHandler, long requestId);
 
-    SocketTextReader getSocketTextReader();
+    TextReadHandler getReadHandler();
 
-    SocketTextWriter getSocketTextWriter();
+    TextWriteHandler getWriteHandler();
 
     long getRequestId();
 

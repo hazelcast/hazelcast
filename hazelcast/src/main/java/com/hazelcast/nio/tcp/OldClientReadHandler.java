@@ -33,24 +33,26 @@ import static com.hazelcast.nio.ConnectionType.RUBY_CLIENT;
 import static com.hazelcast.util.StringUtil.bytesToString;
 
 /**
- * A {@link SocketReader} that reads Packets for the old-client.
+ * A {@link ReadHandler} for the old client. It reads Packets and sends them to {@link IOService#handleClientPacket(Packet)}.
  *
  * Once the old client is deleted, this code can be deleted.
+ *
+ * @see OldClientWriteHandler
  */
-public class ClientPacketSocketReader implements SocketReader {
+public class OldClientReadHandler implements ReadHandler {
 
     private final Connection connection;
     private final IOService ioService;
     private Packet packet;
     private boolean connectionTypeSet;
 
-    public ClientPacketSocketReader(Connection connection, IOService ioService) {
+    public OldClientReadHandler(Connection connection, IOService ioService) {
         this.connection = connection;
         this.ioService = ioService;
     }
 
     @Override
-    public void read(ByteBuffer src) throws Exception {
+    public void onRead(ByteBuffer src) throws Exception {
         while (src.hasRemaining()) {
             if (!connectionTypeSet) {
                 if (!setConnectionType(src)) {

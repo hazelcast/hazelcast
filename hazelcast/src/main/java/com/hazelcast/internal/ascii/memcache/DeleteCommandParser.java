@@ -18,12 +18,12 @@ package com.hazelcast.internal.ascii.memcache;
 
 import com.hazelcast.internal.ascii.CommandParser;
 import com.hazelcast.internal.ascii.TextCommand;
-import com.hazelcast.nio.ascii.SocketTextReader;
+import com.hazelcast.nio.ascii.TextReadHandler;
 
 import java.util.StringTokenizer;
 
 public class DeleteCommandParser implements CommandParser {
-    public TextCommand parser(SocketTextReader socketTextReader, String cmd, int space) {
+    public TextCommand parser(TextReadHandler readHandler, String cmd, int space) {
         StringTokenizer st = new StringTokenizer(cmd);
         st.nextToken();
         String key = null;

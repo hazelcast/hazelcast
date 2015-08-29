@@ -21,12 +21,14 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import java.nio.ByteBuffer;
 
 /**
- * A {@link SocketWriter} that write ClientMessage for the new-client.
+ * A {@link WriteHandler} for the new-client. It writes ClientMessages to the ByteBuffer.
+ *
+ * @see NewClientReadHandler
  */
-public class ClientMessageSocketWriter implements SocketWriter<ClientMessage> {
+public class NewClientWriteHandler implements WriteHandler<ClientMessage> {
 
     @Override
-    public boolean write(ClientMessage message, ByteBuffer dst) throws Exception {
+    public boolean onWrite(ClientMessage message, ByteBuffer dst) throws Exception {
         return message.writeTo(dst);
     }
 }

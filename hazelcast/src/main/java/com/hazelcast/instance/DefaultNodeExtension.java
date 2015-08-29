@@ -36,11 +36,11 @@ import com.hazelcast.nio.MemberSocketInterceptor;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.SerializationServiceBuilder;
 import com.hazelcast.nio.tcp.DefaultSocketChannelWrapperFactory;
-import com.hazelcast.nio.tcp.MemberSocketWriter;
-import com.hazelcast.nio.tcp.MemberSocketReader;
+import com.hazelcast.nio.tcp.MemberWriteHandler;
+import com.hazelcast.nio.tcp.MemberReadHandler;
 import com.hazelcast.nio.tcp.SocketChannelWrapperFactory;
-import com.hazelcast.nio.tcp.SocketReader;
-import com.hazelcast.nio.tcp.SocketWriter;
+import com.hazelcast.nio.tcp.ReadHandler;
+import com.hazelcast.nio.tcp.WriteHandler;
 import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.partition.strategy.DefaultPartitioningStrategy;
 import com.hazelcast.security.SecurityContext;
@@ -161,14 +161,14 @@ public class DefaultNodeExtension implements NodeExtension {
     }
 
     @Override
-    public SocketReader createSocketReader(TcpIpConnection connection, IOService ioService) {
+    public ReadHandler createReadHandler(TcpIpConnection connection, IOService ioService) {
         NodeEngineImpl nodeEngine = node.nodeEngine;
-        return new MemberSocketReader(connection, nodeEngine.getPacketDispatcher());
+        return new MemberReadHandler(connection, nodeEngine.getPacketDispatcher());
     }
 
     @Override
-    public SocketWriter createSocketWriter(TcpIpConnection connection, IOService ioService) {
-        return new MemberSocketWriter();
+    public WriteHandler createWriteHandler(TcpIpConnection connection, IOService ioService) {
+        return new MemberWriteHandler();
     }
 
     @Override

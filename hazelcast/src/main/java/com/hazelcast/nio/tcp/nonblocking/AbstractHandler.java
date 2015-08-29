@@ -29,7 +29,7 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.util.logging.Level;
 
-public abstract class AbstractSelectionHandler implements MigratableHandler {
+public abstract class AbstractHandler implements MigratableHandler {
 
     protected final ILogger logger;
     protected final SocketChannelWrapper socketChannel;
@@ -41,7 +41,7 @@ public abstract class AbstractSelectionHandler implements MigratableHandler {
     protected SelectionKey selectionKey;
     private final int initialOps;
 
-    public AbstractSelectionHandler(TcpIpConnection connection, NonBlockingIOThread ioThread, int initialOps) {
+    public AbstractHandler(TcpIpConnection connection, NonBlockingIOThread ioThread, int initialOps) {
         this.connection = connection;
         this.ioThread = ioThread;
         this.selector = ioThread.getSelector();

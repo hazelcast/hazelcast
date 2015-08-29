@@ -369,7 +369,7 @@
     <suppress checks="MethodCount" files="com/hazelcast/nio/Bits"/>
     <suppress checks="ExecutableStatementCount|ClassDataAbstractionCoupling|ClassFanOutComplexity"
               files="com/hazelcast/nio/tcp/TcpIpConnectionManager"/>
-    <suppress checks="NPathComplexity" files="com/hazelcast/nio/tcp/spinning/SpinningReadHandler"/>
+    <suppress checks="NPathComplexity" files="com/hazelcast/nio/tcp/spinning/SpinningSocketReader"/>
     <suppress checks="MethodCount|MagicNumber" files="com/hazelcast/internal/serialization/impl/ByteArrayObjectDataInput"/>
     <suppress checks="MethodCount|MagicNumber" files="com/hazelcast/internal/serialization/impl/ByteArrayObjectDataOutput"/>
     <suppress checks="MethodCount|MagicNumber" files="com/hazelcast/internal/serialization/impl/ByteBufferObjectDataInput"/>
@@ -385,7 +385,7 @@
     <suppress checks="ReturnCount" files="com/hazelcast/internal/serialization/impl/MorphingPortableReader"/>
     <suppress checks="MethodCount" files="com/hazelcast/nio/NodeIOService"/>
     <suppress checks="MagicNumber|ReturnCount|MethodCount|NPathComplexity" files="com/hazelcast/nio/Packet"/>
-    <suppress checks="NPathComplexity" files="com/hazelcast/nio/tcp/nonblocking/NonBlockingReadHandler"/>
+    <suppress checks="NPathComplexity" files="com/hazelcast/nio/tcp/nonblocking/NonBlockingSocketReader"/>
     <suppress checks="MagicNumber|EmptyBlock|MethodCount" files="com/hazelcast/nio/tcp/nonblocking/NonBlockingWriteHandler"/>
     <suppress checks="ClassFanOutComplexity|ClassDataAbstractionCoupling|MethodCount|ParameterNumber"
               files="com/hazelcast/internal/serialization/impl/SerializationServiceImpl"/>

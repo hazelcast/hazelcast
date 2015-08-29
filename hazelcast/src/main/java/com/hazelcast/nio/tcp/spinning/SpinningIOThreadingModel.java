@@ -22,9 +22,9 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.nio.IOService;
 import com.hazelcast.nio.tcp.IOThreadingModel;
-import com.hazelcast.nio.tcp.ReadHandler;
+import com.hazelcast.nio.tcp.SocketReader;
 import com.hazelcast.nio.tcp.TcpIpConnection;
-import com.hazelcast.nio.tcp.WriteHandler;
+import com.hazelcast.nio.tcp.SocketWriter;
 
 /**
  * A {@link IOThreadingModel} that uses (busy) spinning on the SocketChannels to see if there is something
@@ -67,15 +67,15 @@ public class SpinningIOThreadingModel implements IOThreadingModel {
     }
 
     @Override
-    public WriteHandler newWriteHandler(TcpIpConnection connection) {
-        ILogger logger = loggingService.getLogger(SpinningWriteHandler.class);
-        return new SpinningWriteHandler(connection, metricsRegistry, logger);
+    public SocketWriter newSocketWriter(TcpIpConnection connection) {
+        ILogger logger = loggingService.getLogger(SpinningSocketWriter.class);
+        return new SpinningSocketWriter(connection, metricsRegistry, logger);
     }
 
     @Override
-    public ReadHandler newReadHandler(TcpIpConnection connection) {
-        ILogger logger = loggingService.getLogger(SpinningReadHandler.class);
-        return new SpinningReadHandler(connection, metricsRegistry, logger);
+    public SocketReader newSocketReader(TcpIpConnection connection) {
+        ILogger logger = loggingService.getLogger(SpinningSocketReader.class);
+        return new SpinningSocketReader(connection, metricsRegistry, logger);
     }
 
     @Override

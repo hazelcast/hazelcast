@@ -91,12 +91,12 @@ public abstract class TcpIpConnection_TransferStressTest extends TcpIpConnection
         logger.info("expected normal packets: " + expectedNormalPackets);
         logger.info("expected priority packets: " + expectedUrgentPackets);
 
-        final ReadHandler readHandler = ((TcpIpConnection) connManagerB.getConnection(addressA)).getReadHandler();
+        final SocketReader XReadHandler = ((TcpIpConnection) connManagerB.getConnection(addressA)).getSocketReader();
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                assertEquals(expectedNormalPackets, readHandler.getNormalPacketsReadCounter().get());
-                assertEquals(expectedUrgentPackets, readHandler.getPriorityPacketsReadCounter().get());
+                assertEquals(expectedNormalPackets, XReadHandler.getNormalPacketsReadCounter().get());
+                assertEquals(expectedUrgentPackets, XReadHandler.getPriorityPacketsReadCounter().get());
             }
         });
 
@@ -142,13 +142,13 @@ public abstract class TcpIpConnection_TransferStressTest extends TcpIpConnection
 
     public class WriteThread extends TestThread {
         private final Random random = new Random();
-        private final WriteHandler writeHandler;
+        private final SocketWriter writeHandler;
         private long normalPackets;
         private long urgentPackets;
 
         public WriteThread(int id, TcpIpConnection c) {
             super("WriteThread-" + id);
-            this.writeHandler = c.getWriteHandler();
+            this.writeHandler = c.getSocketWriter();
         }
 
         @Override

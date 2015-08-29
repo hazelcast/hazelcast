@@ -19,13 +19,13 @@ package com.hazelcast.nio.tcp.nonblocking;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.nio.Protocols;
-import com.hazelcast.nio.ascii.SocketTextReader;
-import com.hazelcast.nio.tcp.ClientMessageSocketReader;
-import com.hazelcast.nio.tcp.ClientPacketSocketReader;
-import com.hazelcast.nio.tcp.ReadHandler;
+import com.hazelcast.nio.ascii.TextReadHandler;
+import com.hazelcast.nio.tcp.NewClientReadHandler;
+import com.hazelcast.nio.tcp.OldClientReadHandler;
 import com.hazelcast.nio.tcp.SocketReader;
+import com.hazelcast.nio.tcp.ReadHandler;
 import com.hazelcast.nio.tcp.TcpIpConnection;
-import com.hazelcast.nio.tcp.WriteHandler;
+import com.hazelcast.nio.tcp.SocketWriter;
 import com.hazelcast.util.counters.Counter;
 import com.hazelcast.util.counters.SwCounter;
 
@@ -45,9 +45,13 @@ import static com.hazelcast.util.StringUtil.bytesToString;
 import static com.hazelcast.util.counters.SwCounter.newSwCounter;
 
 /**
- * The reading side of the {@link com.hazelcast.nio.Connection}.
+ * A {@link SocketReader} tailored for non blocking IO.
+ *
+ * When the {@link NonBlockingIOThread} receives a read event from the {@link java.nio.channels.Selector}, then the
+ * {@link #handle()} is called to read out the data from the socket into a bytebuffer and hand it over to the
+ * {@link ReadHandler} to get processed.
  */
-public final class NonBlockingReadHandler extends AbstractSelectionHandler implements ReadHandler {
+public final class NonBlockingSocketReader extends AbstractHandler implements SocketReader {
 
     @Probe(name = "in.eventCount")
     private final SwCounter eventCount = newSwCounter();
@@ -59,11 +63,11 @@ public final class NonBlockingReadHandler extends AbstractSelectionHandler imple
     private final SwCounter priorityPacketsRead = newSwCounter();
     private final MetricsRegistry metricRegistry;
 
-    private SocketReader socketReader;
+    private ReadHandler readHandler;
     private ByteBuffer inputBuffer;
     private volatile long lastReadTime;
 
-    public NonBlockingReadHandler(
+    public NonBlockingSocketReader(
             TcpIpConnection connection,
             NonBlockingIOThread ioThread,
             MetricsRegistry metricsRegistry) {
@@ -111,7 +115,7 @@ public final class NonBlockingReadHandler extends AbstractSelectionHandler imple
     }
 
     @Override
-    public void start() {
+    public void init() {
         ioThread.addTaskAndWakeup(new Runnable() {
             @Override
             public void run() {
@@ -147,9 +151,9 @@ public final class NonBlockingReadHandler extends AbstractSelectionHandler imple
             return;
         }
 
-        if (socketReader == null) {
-            initializeSocketReader();
-            if (socketReader == null) {
+        if (readHandler == null) {
+            initReadHandler();
+            if (readHandler == null) {
                 // when using SSL, we can read 0 bytes since data read from socket can be handshake packets.
                 return;
             }
@@ -166,7 +170,7 @@ public final class NonBlockingReadHandler extends AbstractSelectionHandler imple
         bytesRead.inc(readBytes);
 
         inputBuffer.flip();
-        socketReader.read(inputBuffer);
+        readHandler.onRead(inputBuffer);
         if (inputBuffer.hasRemaining()) {
             inputBuffer.compact();
         } else {
@@ -174,8 +178,8 @@ public final class NonBlockingReadHandler extends AbstractSelectionHandler imple
         }
     }
 
-    private void initializeSocketReader() throws IOException {
-        if (socketReader != null) {
+    private void initReadHandler() throws IOException {
+        if (readHandler != null) {
             return;
         }
 
@@ -192,31 +196,31 @@ public final class NonBlockingReadHandler extends AbstractSelectionHandler imple
 
         if (!protocolBuffer.hasRemaining()) {
             String protocol = bytesToString(protocolBuffer.array());
-            WriteHandler writeHandler = connection.getWriteHandler();
+            SocketWriter socketWriter = connection.getSocketWriter();
             if (CLUSTER.equals(protocol)) {
                 configureBuffers(ioService.getSocketReceiveBufferSize() * KILO_BYTE);
                 connection.setType(MEMBER);
-                writeHandler.setProtocol(CLUSTER);
-                socketReader = ioService.createSocketReader(connection);
+                socketWriter.setProtocol(CLUSTER);
+                readHandler = ioService.createReadHandler(connection);
             } else if (CLIENT_BINARY.equals(protocol)) {
                 configureBuffers(ioService.getSocketClientReceiveBufferSize() * KILO_BYTE);
-                writeHandler.setProtocol(CLIENT_BINARY);
-                socketReader = new ClientPacketSocketReader(connection, ioService);
+                socketWriter.setProtocol(CLIENT_BINARY);
+                readHandler = new OldClientReadHandler(connection, ioService);
             } else if (CLIENT_BINARY_NEW.equals(protocol)) {
                 configureBuffers(ioService.getSocketClientReceiveBufferSize() * KILO_BYTE);
-                writeHandler.setProtocol(CLIENT_BINARY_NEW);
-                socketReader = new ClientMessageSocketReader(connection, ioService);
+                socketWriter.setProtocol(CLIENT_BINARY_NEW);
+                readHandler = new NewClientReadHandler(connection, ioService);
             } else {
                 configureBuffers(ioService.getSocketReceiveBufferSize() * KILO_BYTE);
-                writeHandler.setProtocol(Protocols.TEXT);
+                socketWriter.setProtocol(Protocols.TEXT);
                 inputBuffer.put(protocolBuffer.array());
-                socketReader = new SocketTextReader(connection);
+                readHandler = new TextReadHandler(connection);
                 connection.getConnectionManager().incrementTextConnections();
             }
         }
 
-        if (socketReader == null) {
-            throw new IOException("Could not initialize SocketReader!");
+        if (readHandler == null) {
+            throw new IOException("Could not initialize ReadHandler!");
         }
     }
 
@@ -231,7 +235,7 @@ public final class NonBlockingReadHandler extends AbstractSelectionHandler imple
     }
 
     @Override
-    public void shutdown() {
+    public void destroy() {
         //todo:
         // ioThread race, shutdown can end up on the old selector
         metricRegistry.deregister(this);
@@ -249,7 +253,7 @@ public final class NonBlockingReadHandler extends AbstractSelectionHandler imple
 
     @Override
     public String toString() {
-        return connection + ".readHandler";
+        return connection + ".socketReader";
     }
 
     private class StartMigrationTask implements Runnable {

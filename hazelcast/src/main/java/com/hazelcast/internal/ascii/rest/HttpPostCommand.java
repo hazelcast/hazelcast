@@ -19,7 +19,7 @@ package com.hazelcast.internal.ascii.rest;
 import com.hazelcast.internal.ascii.NoOpCommand;
 import com.hazelcast.internal.ascii.TextCommandConstants;
 import com.hazelcast.nio.IOUtil;
-import com.hazelcast.nio.ascii.SocketTextReader;
+import com.hazelcast.nio.ascii.TextReadHandler;
 import com.hazelcast.util.StringUtil;
 
 import java.nio.ByteBuffer;
@@ -36,12 +36,12 @@ public class HttpPostCommand extends HttpCommand {
     private ByteBuffer data;
     private ByteBuffer line = ByteBuffer.allocate(CAPACITY);
     private String contentType;
-    private final SocketTextReader socketTextRequestReader;
+    private final TextReadHandler readHandler;
     private boolean chunked;
 
-    public HttpPostCommand(SocketTextReader socketTextRequestReader, String uri) {
+    public HttpPostCommand(TextReadHandler readHandler, String uri) {
         super(TextCommandConstants.TextCommandType.HTTP_POST, uri);
-        this.socketTextRequestReader = socketTextRequestReader;
+        this.readHandler = readHandler;
     }
 
     /**
@@ -175,7 +175,7 @@ public class HttpPostCommand extends HttpCommand {
         } else if (!chunked && currentLine.startsWith(HEADER_CHUNKED)) {
             chunked = true;
         } else if (currentLine.startsWith(HEADER_EXPECT_100)) {
-            socketTextRequestReader.sendResponse(new NoOpCommand(RES_100));
+            readHandler.sendResponse(new NoOpCommand(RES_100));
         }
     }
 }

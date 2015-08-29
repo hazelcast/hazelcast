@@ -24,8 +24,8 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.nio.tcp.nonblocking.NonBlockingIOThread;
 import com.hazelcast.nio.tcp.nonblocking.MigratableHandler;
-import com.hazelcast.nio.tcp.nonblocking.NonBlockingReadHandler;
-import com.hazelcast.nio.tcp.nonblocking.NonBlockingWriteHandler;
+import com.hazelcast.nio.tcp.nonblocking.NonBlockingSocketReader;
+import com.hazelcast.nio.tcp.nonblocking.NonBlockingSocketWriter;
 import com.hazelcast.util.counters.MwCounter;
 import com.hazelcast.util.counters.SwCounter;
 
@@ -41,7 +41,7 @@ import static com.hazelcast.util.counters.SwCounter.newSwCounter;
  * We have measured significant fluctuations of performance when the threads are not utilized equally.
  *
  * <code>com.hazelcast.nio.tcp.iobalancer.HandlerBalancer</code> tries to detect such situations and fix
- * them by moving {@link NonBlockingReadHandler} and {@link NonBlockingWriteHandler} between
+ * them by moving {@link NonBlockingSocketReader} and {@link NonBlockingSocketWriter} between
  * threads.
  *
  * It measures number of events serviced by each handler in a given interval and if imbalance is detected then it
@@ -99,16 +99,16 @@ public class IOBalancer {
         }
 
         TcpIpConnection tcpIpConnection = (TcpIpConnection) connection;
-        NonBlockingReadHandler readHandler = (NonBlockingReadHandler) tcpIpConnection.getReadHandler();
-        NonBlockingWriteHandler writeHandler = (NonBlockingWriteHandler) tcpIpConnection.getWriteHandler();
+        NonBlockingSocketReader socketReader = (NonBlockingSocketReader) tcpIpConnection.getSocketReader();
+        NonBlockingSocketWriter socketWriter = (NonBlockingSocketWriter) tcpIpConnection.getSocketWriter();
 
         if (logger.isFinestEnabled()) {
             logger.finest("Connection " + connection + " uses read handler "
-                    + readHandler + " and write handler " + writeHandler);
+                    + socketReader + " and write handler " + socketWriter);
         }
 
-        inLoadTracker.addHandler(readHandler);
-        outLoadTracker.addHandler(writeHandler);
+        inLoadTracker.addHandler(socketReader);
+        outLoadTracker.addHandler(socketWriter);
     }
 
     public void connectionRemoved(Connection connection) {
@@ -117,17 +117,17 @@ public class IOBalancer {
         }
 
         TcpIpConnection tcpIpConnection = (TcpIpConnection) connection;
-        NonBlockingReadHandler readHandler = (NonBlockingReadHandler) tcpIpConnection.getReadHandler();
+        NonBlockingSocketReader socketReader = (NonBlockingSocketReader) tcpIpConnection.getSocketReader();
         if (logger.isFinestEnabled()) {
-            logger.finest("Removing read handler " + readHandler);
+            logger.finest("Removing SocketReader " + socketReader);
         }
-        inLoadTracker.removeHandler(readHandler);
+        inLoadTracker.removeHandler(socketReader);
 
-        NonBlockingWriteHandler writeHandler = (NonBlockingWriteHandler) tcpIpConnection.getWriteHandler();
+        NonBlockingSocketWriter socketWriter = (NonBlockingSocketWriter) tcpIpConnection.getSocketWriter();
         if (logger.isFinestEnabled()) {
-            logger.finest("Removing write handler " + readHandler);
+            logger.finest("Removing SocketWriter " + socketWriter);
         }
-        outLoadTracker.removeHandler(writeHandler);
+        outLoadTracker.removeHandler(socketWriter);
     }
 
     public void start() {

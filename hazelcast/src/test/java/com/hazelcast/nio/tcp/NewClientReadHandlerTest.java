@@ -21,9 +21,9 @@ import static org.mockito.Mockito.verify;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class ClientMessageSocketReaderTest {
+public class NewClientReadHandlerTest {
 
-    private ClientMessageSocketReader reader;
+    private NewClientReadHandler readHandler;
     private IOService ioService;
     private Connection connection;
 
@@ -31,7 +31,7 @@ public class ClientMessageSocketReaderTest {
     public void setup() throws IOException {
         ioService = mock(IOService.class);
         connection = mock(Connection.class);
-        reader = new ClientMessageSocketReader(connection, ioService);
+        readHandler = new NewClientReadHandler(connection, ioService);
     }
 
     @Test
@@ -46,7 +46,7 @@ public class ClientMessageSocketReaderTest {
         message.writeTo(bb);
         bb.flip();
 
-        reader.read(bb);
+        readHandler.onRead(bb);
 
         verify(ioService).handleClientMessage(any(ClientMessage.class), eq(connection));
     }

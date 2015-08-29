@@ -20,10 +20,17 @@ import com.hazelcast.nio.Packet;
 
 import java.nio.ByteBuffer;
 
-public class MemberSocketWriter implements SocketWriter<Packet> {
+/**
+ * A {@link WriteHandler} that for member to member communication.
+ *
+ * It writes {@link Packet} instances to the {@link ByteBuffer}.
+ *
+ * @see MemberReadHandler
+ */
+public class MemberWriteHandler implements WriteHandler<Packet> {
 
     @Override
-    public boolean write(Packet packet, ByteBuffer dst) {
+    public boolean onWrite(Packet packet, ByteBuffer dst) {
         return packet.writeTo(dst);
     }
 }

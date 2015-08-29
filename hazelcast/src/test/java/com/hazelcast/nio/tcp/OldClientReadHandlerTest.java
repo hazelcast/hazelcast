@@ -31,9 +31,9 @@ import static org.mockito.Mockito.when;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class ClientPacketSocketReaderTest extends HazelcastTestSupport {
+public class OldClientReadHandlerTest extends HazelcastTestSupport {
 
-    private ClientPacketSocketReader reader;
+    private OldClientReadHandler readHandler;
     private Connection connection;
     private IOService ioService;
     private SerializationService serializationService;
@@ -45,7 +45,7 @@ public class ClientPacketSocketReaderTest extends HazelcastTestSupport {
         when(ioService.getLogger(anyString())).thenReturn(logger);
         serializationService = new DefaultSerializationServiceBuilder().build();
         connection = mock(Connection.class);
-        reader = new ClientPacketSocketReader(connection, ioService);
+        readHandler = new OldClientReadHandler(connection, ioService);
     }
 
     @Test
@@ -86,7 +86,7 @@ public class ClientPacketSocketReaderTest extends HazelcastTestSupport {
         packet.writeTo(buffer);
 
         buffer.flip();
-        reader.read(buffer);
+        readHandler.onRead(buffer);
 
         Mockito.verify(connection).setType(expected);
         verify(ioService).handleClientPacket(eq(packet));
@@ -98,7 +98,7 @@ public class ClientPacketSocketReaderTest extends HazelcastTestSupport {
         buffer.put("J".getBytes());
 
         buffer.flip();
-        reader.read(buffer);
+        readHandler.onRead(buffer);
 
         verifyZeroInteractions(connection);
     }
@@ -116,7 +116,7 @@ public class ClientPacketSocketReaderTest extends HazelcastTestSupport {
         packet3.writeTo(buffer);
 
         buffer.flip();
-        reader.read(buffer);
+        readHandler.onRead(buffer);
 
         verify(ioService).handleClientPacket(eq(packet1));
         verify(ioService).handleClientPacket(eq(packet2));
