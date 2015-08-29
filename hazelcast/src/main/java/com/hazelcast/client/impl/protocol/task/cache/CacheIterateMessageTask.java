@@ -23,7 +23,10 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CacheIterateCodec;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
+
+import java.util.Collections;
 
 /**
  * This client request  specifically calls {@link CacheKeyIteratorOperation} on the server side.
@@ -50,8 +53,11 @@ public class CacheIterateMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        CacheKeyIteratorResult cacheKeyIteratorResult = (CacheKeyIteratorResult) response;
-        return CacheIterateCodec.encodeResponse(cacheKeyIteratorResult.getTableIndex(), cacheKeyIteratorResult.getKeys());
+        if (response == null) {
+            return CacheIterateCodec.encodeResponse(0, Collections.<Data>emptyList());
+        }
+        CacheKeyIteratorResult keyIteratorResult = (CacheKeyIteratorResult) response;
+        return CacheIterateCodec.encodeResponse(keyIteratorResult.getTableIndex(), keyIteratorResult.getKeys());
     }
 
     @Override
