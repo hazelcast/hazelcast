@@ -327,12 +327,12 @@ public class ClientMessage
     }
 
     @Override
-    public boolean writeTo(ByteBuffer destination) {
+    public boolean writeTo(ByteBuffer dst) {
         byte[] byteArray = buffer.byteArray();
         int size = getFrameLength();
 
         // the number of bytes that can be written to the bb.
-        int bytesWritable = destination.remaining();
+        int bytesWritable = dst.remaining();
 
         // the number of bytes that need to be written.
         int bytesNeeded = size - writeOffset;
@@ -349,7 +349,7 @@ public class ClientMessage
             done = false;
         }
 
-        destination.put(byteArray, writeOffset, bytesWrite);
+        dst.put(byteArray, writeOffset, bytesWrite);
         writeOffset += bytesWrite;
 
         if (done) {
@@ -359,12 +359,12 @@ public class ClientMessage
         return done;
     }
 
-    public boolean readFrom(ByteBuffer source) {
+    public boolean readFrom(ByteBuffer src) {
         if (index() == 0) {
-            initFrameSize(source);
+            initFrameSize(src);
         }
-        while (index() >= Bits.INT_SIZE_IN_BYTES && source.hasRemaining() && !isComplete()) {
-            accumulate(source, getFrameLength() - index());
+        while (index() >= Bits.INT_SIZE_IN_BYTES && src.hasRemaining() && !isComplete()) {
+            accumulate(src, getFrameLength() - index());
         }
         return isComplete();
     }

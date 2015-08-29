@@ -40,17 +40,17 @@ public class TouchCommand extends AbstractTextCommand {
         this.noreply = noReply;
     }
 
-    public boolean writeTo(ByteBuffer destination) {
+    public boolean writeTo(ByteBuffer dst) {
         if (response == null) {
             response = ByteBuffer.wrap(TextCommandConstants.STORED);
         }
-        while (destination.hasRemaining() && response.hasRemaining()) {
-            destination.put(response.get());
+        while (dst.hasRemaining() && response.hasRemaining()) {
+            dst.put(response.get());
         }
         return !response.hasRemaining();
     }
 
-    public boolean readFrom(ByteBuffer source) {
+    public boolean readFrom(ByteBuffer src) {
         return true;
     }
 

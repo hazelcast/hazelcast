@@ -54,13 +54,13 @@ public class HttpPostCommand extends HttpCommand {
      * byte[45]
      * <next_line>
      *
-     * @param cb
+     * @param src
      * @return
      */
-    public boolean readFrom(ByteBuffer cb) {
-        boolean complete = doActualRead(cb);
-        while (!complete && readyToReadData && chunked && cb.hasRemaining()) {
-            complete = doActualRead(cb);
+    public boolean readFrom(ByteBuffer src) {
+        boolean complete = doActualRead(src);
+        while (!complete && readyToReadData && chunked && src.hasRemaining()) {
+            complete = doActualRead(src);
         }
         if (complete) {
             if (data != null) {

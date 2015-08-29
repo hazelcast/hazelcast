@@ -462,7 +462,7 @@ public final class NonBlockingWriteHandler extends AbstractSelectionHandler impl
         abstract void run();
 
         @Override
-        public boolean writeTo(ByteBuffer destination) {
+        public boolean writeTo(ByteBuffer dst) {
             throw new UnsupportedOperationException();
         }
 

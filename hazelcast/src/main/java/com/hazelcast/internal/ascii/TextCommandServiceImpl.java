@@ -394,12 +394,12 @@ public class TextCommandServiceImpl implements TextCommandService {
                 try {
                     blockingQueue.offer(new AbstractTextCommand(TextCommandConstants.TextCommandType.STOP) {
                         @Override
-                        public boolean readFrom(ByteBuffer cb) {
+                        public boolean readFrom(ByteBuffer src) {
                             return true;
                         }
 
                         @Override
-                        public boolean writeTo(ByteBuffer bb) {
+                        public boolean writeTo(ByteBuffer dst) {
                             return true;
                         }
                     });

@@ -53,7 +53,7 @@ public class StatsCommand extends AbstractTextCommand {
         super(TextCommandConstants.TextCommandType.STATS);
     }
 
-    public boolean readFrom(ByteBuffer cb) {
+    public boolean readFrom(ByteBuffer src) {
         return true;
     }
 
@@ -94,11 +94,11 @@ public class StatsCommand extends AbstractTextCommand {
         response.put(TextCommandConstants.RETURN);
     }
 
-    public boolean writeTo(ByteBuffer bb) {
+    public boolean writeTo(ByteBuffer dst) {
         if (response == null) {
             response = ByteBuffer.allocate(0);
         }
-        IOUtil.copyToHeapBuffer(response, bb);
+        IOUtil.copyToHeapBuffer(response, dst);
         return !response.hasRemaining();
     }
 

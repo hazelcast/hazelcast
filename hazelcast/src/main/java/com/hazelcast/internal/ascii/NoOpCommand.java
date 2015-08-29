@@ -28,13 +28,13 @@ public class NoOpCommand extends AbstractTextCommand {
         this.response = ByteBuffer.wrap(response);
     }
 
-    public boolean readFrom(ByteBuffer cb) {
+    public boolean readFrom(ByteBuffer src) {
         return true;
     }
 
-    public boolean writeTo(ByteBuffer bb) {
-        while (bb.hasRemaining() && response.hasRemaining()) {
-            bb.put(response.get());
+    public boolean writeTo(ByteBuffer dst) {
+        while (dst.hasRemaining() && response.hasRemaining()) {
+            dst.put(response.get());
         }
         return !response.hasRemaining();
     }

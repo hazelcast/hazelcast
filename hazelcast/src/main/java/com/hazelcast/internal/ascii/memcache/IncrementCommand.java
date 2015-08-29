@@ -40,14 +40,14 @@ public class IncrementCommand extends AbstractTextCommand {
         this.noreply = noReply;
     }
 
-    public boolean writeTo(ByteBuffer destination) {
-        while (destination.hasRemaining() && response.hasRemaining()) {
-            destination.put(response.get());
+    public boolean writeTo(ByteBuffer dst) {
+        while (dst.hasRemaining() && response.hasRemaining()) {
+            dst.put(response.get());
         }
         return !response.hasRemaining();
     }
 
-    public boolean readFrom(ByteBuffer source) {
+    public boolean readFrom(ByteBuffer src) {
         return true;
     }
 

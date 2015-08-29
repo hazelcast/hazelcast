@@ -42,11 +42,11 @@ public class SetCommand extends AbstractTextCommand {
         bbValue = ByteBuffer.allocate(valueLen);
     }
 
-    public boolean readFrom(ByteBuffer cb) {
-        copy(cb);
+    public boolean readFrom(ByteBuffer src) {
+        copy(src);
         if (!bbValue.hasRemaining()) {
-            while (cb.hasRemaining()) {
-                char c = (char) cb.get();
+            while (src.hasRemaining()) {
+                char c = (char) src.get();
                 if (c == '\n') {
                     bbValue.flip();
                     return true;
@@ -72,12 +72,12 @@ public class SetCommand extends AbstractTextCommand {
         this.response = ByteBuffer.wrap(value);
     }
 
-    public boolean writeTo(ByteBuffer bb) {
+    public boolean writeTo(ByteBuffer dst) {
         if (response == null) {
             response = ByteBuffer.wrap(TextCommandConstants.STORED);
         }
-        while (bb.hasRemaining() && response.hasRemaining()) {
-            bb.put(response.get());
+        while (dst.hasRemaining() && response.hasRemaining()) {
+            dst.put(response.get());
         }
         return !response.hasRemaining();
     }

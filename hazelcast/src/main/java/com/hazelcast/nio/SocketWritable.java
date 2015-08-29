@@ -21,19 +21,26 @@ import java.nio.ByteBuffer;
 /**
  * Represents something that can be written to a {@link com.hazelcast.nio.Connection}.
  *
- * todo:
- * Perhaps this class should be renamed to ConnectionWritable since it is written to a
- * {@link com.hazelcast.nio.Connection#write(SocketWritable)}. This aligns the names.
+ * @see SocketReadable
+ * @see com.hazelcast.nio.serialization.Data
+ * @see Connection#write(SocketWritable)
  */
 public interface SocketWritable {
 
     /**
      * Asks the SocketWritable to write its content to the destination ByteBuffer.
      *
-     * @param destination the ByteBuffer to write to.
-     * @return todo: unclear what return value means.
+     * As long as the writeTo returns false, this SocketWritable is not yet finished. E.g. it could be the SocketWritable
+     * contains 1 MB of data, but if 100KB ByteBuffer is passed, 10 calls writeTo calls are needed, where the first 9 return
+     * false and the 10th returns true.
+     *
+     * It is up to the SocketWritable to keep track of where it is in the writing process. For this reason a SocketWritable
+     * can't be shared by multiple threads.
+     *
+     * @param dst the ByteBuffer to write to.
+     * @return true if the object is fully written.
      */
-    boolean writeTo(ByteBuffer destination);
+    boolean writeTo(ByteBuffer dst);
 
     /**
      * Checks if this SocketWritable is urgent.

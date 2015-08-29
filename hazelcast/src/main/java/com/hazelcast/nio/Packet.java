@@ -127,24 +127,24 @@ public final class Packet extends HeapData
     }
 
     @Override
-    public boolean writeTo(ByteBuffer destination) {
-        if (!writeVersion(destination)) {
+    public boolean writeTo(ByteBuffer dst) {
+        if (!writeVersion(dst)) {
             return false;
         }
 
-        if (!writeHeader(destination)) {
+        if (!writeHeader(dst)) {
             return false;
         }
 
-        if (!writePartition(destination)) {
+        if (!writePartition(dst)) {
             return false;
         }
 
-        if (!writeSize(destination)) {
+        if (!writeSize(dst)) {
             return false;
         }
 
-        if (!writeValue(destination)) {
+        if (!writeValue(dst)) {
             return false;
         }
 
@@ -153,24 +153,24 @@ public final class Packet extends HeapData
     }
 
     @Override
-    public boolean readFrom(ByteBuffer source) {
-        if (!readVersion(source)) {
+    public boolean readFrom(ByteBuffer src) {
+        if (!readVersion(src)) {
             return false;
         }
 
-        if (!readHeader(source)) {
+        if (!readHeader(src)) {
             return false;
         }
 
-        if (!readPartition(source)) {
+        if (!readPartition(src)) {
             return false;
         }
 
-        if (!readSize(source)) {
+        if (!readSize(src)) {
             return false;
         }
 
-        if (!readValue(source)) {
+        if (!readValue(src)) {
             return false;
         }
 
@@ -180,12 +180,12 @@ public final class Packet extends HeapData
 
     // ========================= version =================================================
 
-    private boolean readVersion(ByteBuffer source) {
+    private boolean readVersion(ByteBuffer src) {
         if (!isPersistStatusSet(PERSIST_VERSION)) {
-            if (!source.hasRemaining()) {
+            if (!src.hasRemaining()) {
                 return false;
             }
-            byte version = source.get();
+            byte version = src.get();
             setPersistStatus(PERSIST_VERSION);
             if (VERSION != version) {
                 throw new IllegalArgumentException("Packet versions are not matching! Expected -> "
@@ -195,12 +195,12 @@ public final class Packet extends HeapData
         return true;
     }
 
-    private boolean writeVersion(ByteBuffer destination) {
+    private boolean writeVersion(ByteBuffer dst) {
         if (!isPersistStatusSet(PERSIST_VERSION)) {
-            if (!destination.hasRemaining()) {
+            if (!dst.hasRemaining()) {
                 return false;
             }
-            destination.put(VERSION);
+            dst.put(VERSION);
             setPersistStatus(PERSIST_VERSION);
         }
         return true;
@@ -208,23 +208,23 @@ public final class Packet extends HeapData
 
     // ========================= header =================================================
 
-    private boolean readHeader(ByteBuffer source) {
+    private boolean readHeader(ByteBuffer src) {
         if (!isPersistStatusSet(PERSIST_HEADER)) {
-            if (source.remaining() < 2) {
+            if (src.remaining() < 2) {
                 return false;
             }
-            header = source.getShort();
+            header = src.getShort();
             setPersistStatus(PERSIST_HEADER);
         }
         return true;
     }
 
-    private boolean writeHeader(ByteBuffer destination) {
+    private boolean writeHeader(ByteBuffer dst) {
         if (!isPersistStatusSet(PERSIST_HEADER)) {
-            if (destination.remaining() < Bits.SHORT_SIZE_IN_BYTES) {
+            if (dst.remaining() < Bits.SHORT_SIZE_IN_BYTES) {
                 return false;
             }
-            destination.putShort(header);
+            dst.putShort(header);
             setPersistStatus(PERSIST_HEADER);
         }
         return true;
@@ -232,50 +232,49 @@ public final class Packet extends HeapData
 
     // ========================= partition =================================================
 
-    private boolean readPartition(ByteBuffer source) {
+    private boolean readPartition(ByteBuffer src) {
         if (!isPersistStatusSet(PERSIST_PARTITION)) {
-            if (source.remaining() < 4) {
+            if (src.remaining() < 4) {
                 return false;
             }
-            partitionId = source.getInt();
+            partitionId = src.getInt();
             setPersistStatus(PERSIST_PARTITION);
         }
         return true;
     }
 
 
-    private boolean writePartition(ByteBuffer destination) {
+    private boolean writePartition(ByteBuffer dst) {
         if (!isPersistStatusSet(PERSIST_PARTITION)) {
-            if (destination.remaining() < Bits.INT_SIZE_IN_BYTES) {
+            if (dst.remaining() < Bits.INT_SIZE_IN_BYTES) {
                 return false;
             }
-            destination.putInt(partitionId);
+            dst.putInt(partitionId);
             setPersistStatus(PERSIST_PARTITION);
         }
         return true;
     }
-
 
     // ========================= size =================================================
 
-    private boolean readSize(ByteBuffer source) {
+    private boolean readSize(ByteBuffer src) {
         if (!isPersistStatusSet(PERSIST_SIZE)) {
-            if (source.remaining() < INT_SIZE_IN_BYTES) {
+            if (src.remaining() < INT_SIZE_IN_BYTES) {
                 return false;
             }
-            size = source.getInt();
+            size = src.getInt();
             setPersistStatus(PERSIST_SIZE);
         }
         return true;
     }
 
-    private boolean writeSize(ByteBuffer destination) {
+    private boolean writeSize(ByteBuffer dst) {
         if (!isPersistStatusSet(PERSIST_SIZE)) {
-            if (destination.remaining() < INT_SIZE_IN_BYTES) {
+            if (dst.remaining() < INT_SIZE_IN_BYTES) {
                 return false;
             }
             size = totalSize();
-            destination.putInt(size);
+            dst.putInt(size);
             setPersistStatus(PERSIST_SIZE);
         }
         return true;
@@ -283,11 +282,46 @@ public final class Packet extends HeapData
 
     // ========================= value =================================================
 
-    private boolean writeValue(ByteBuffer destination) {
+    private boolean readValue(ByteBuffer src) {
+        if (!isPersistStatusSet(PERSIST_VALUE)) {
+            if (payload == null) {
+                payload = new byte[size];
+            }
+
+            if (size > 0) {
+                int bytesReadable = src.remaining();
+
+                int bytesNeeded = size - valueOffset;
+
+                boolean done;
+                int bytesRead;
+                if (bytesReadable >= bytesNeeded) {
+                    bytesRead = bytesNeeded;
+                    done = true;
+                } else {
+                    bytesRead = bytesReadable;
+                    done = false;
+                }
+
+                // read the data from the byte-buffer into the bytes-array.
+                src.get(payload, valueOffset, bytesRead);
+                valueOffset += bytesRead;
+
+                if (!done) {
+                    return false;
+                }
+            }
+
+            setPersistStatus(PERSIST_VALUE);
+        }
+        return true;
+    }
+
+    private boolean writeValue(ByteBuffer dst) {
         if (!isPersistStatusSet(PERSIST_VALUE)) {
             if (size > 0) {
                 // the number of bytes that can be written to the bb.
-                int bytesWritable = destination.remaining();
+                int bytesWritable = dst.remaining();
 
                 // the number of bytes that need to be written.
                 int bytesNeeded = size - valueOffset;
@@ -305,48 +339,13 @@ public final class Packet extends HeapData
                 }
 
                 byte[] byteArray = toByteArray();
-                destination.put(byteArray, valueOffset, bytesWrite);
+                dst.put(byteArray, valueOffset, bytesWrite);
                 valueOffset += bytesWrite;
 
                 if (!done) {
                     return false;
                 }
             }
-            setPersistStatus(PERSIST_VALUE);
-        }
-        return true;
-    }
-
-    private boolean readValue(ByteBuffer source) {
-        if (!isPersistStatusSet(PERSIST_VALUE)) {
-            if (payload == null) {
-                payload = new byte[size];
-            }
-
-            if (size > 0) {
-                int bytesReadable = source.remaining();
-
-                int bytesNeeded = size - valueOffset;
-
-                boolean done;
-                int bytesRead;
-                if (bytesReadable >= bytesNeeded) {
-                    bytesRead = bytesNeeded;
-                    done = true;
-                } else {
-                    bytesRead = bytesReadable;
-                    done = false;
-                }
-
-                // read the data from the byte-buffer into the bytes-array.
-                source.get(payload, valueOffset, bytesRead);
-                valueOffset += bytesRead;
-
-                if (!done) {
-                    return false;
-                }
-            }
-
             setPersistStatus(PERSIST_VALUE);
         }
         return true;

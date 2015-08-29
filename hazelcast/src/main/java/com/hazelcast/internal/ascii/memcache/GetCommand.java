@@ -40,7 +40,7 @@ public class GetCommand extends AbstractTextCommand {
         return key;
     }
 
-    public boolean readFrom(ByteBuffer cb) {
+    public boolean readFrom(ByteBuffer src) {
         return true;
     }
 
@@ -51,12 +51,12 @@ public class GetCommand extends AbstractTextCommand {
         lastOne = (singleGet) ? ByteBuffer.wrap(TextCommandConstants.END) : null;
     }
 
-    public boolean writeTo(ByteBuffer bb) {
+    public boolean writeTo(ByteBuffer dst) {
         if (value != null) {
-            IOUtil.copyToHeapBuffer(value, bb);
+            IOUtil.copyToHeapBuffer(value, dst);
         }
         if (lastOne != null) {
-            IOUtil.copyToHeapBuffer(lastOne, bb);
+            IOUtil.copyToHeapBuffer(lastOne, dst);
         }
         return !((value != null && value.hasRemaining())
                 || (lastOne != null && lastOne.hasRemaining()));
