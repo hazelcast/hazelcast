@@ -23,6 +23,7 @@ import com.hazelcast.client.impl.protocol.MessageTaskFactoryImpl;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.core.PartitioningStrategy;
+import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.internal.storage.DataRef;
 import com.hazelcast.internal.storage.Storage;
 import com.hazelcast.logging.ILogger;
@@ -34,13 +35,12 @@ import com.hazelcast.nio.IOService;
 import com.hazelcast.nio.MemberSocketInterceptor;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.SerializationServiceBuilder;
-import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
-import com.hazelcast.nio.tcp.MemberPacketReader;
-import com.hazelcast.nio.tcp.MemberPacketWriter;
 import com.hazelcast.nio.tcp.DefaultSocketChannelWrapperFactory;
-import com.hazelcast.nio.tcp.PacketReader;
-import com.hazelcast.nio.tcp.PacketWriter;
+import com.hazelcast.nio.tcp.MemberSocketWriter;
+import com.hazelcast.nio.tcp.MemberSocketReader;
 import com.hazelcast.nio.tcp.SocketChannelWrapperFactory;
+import com.hazelcast.nio.tcp.SocketReader;
+import com.hazelcast.nio.tcp.SocketWriter;
 import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.partition.strategy.DefaultPartitioningStrategy;
 import com.hazelcast.security.SecurityContext;
@@ -161,14 +161,14 @@ public class DefaultNodeExtension implements NodeExtension {
     }
 
     @Override
-    public PacketReader createPacketReader(TcpIpConnection connection, IOService ioService) {
+    public SocketReader createSocketReader(TcpIpConnection connection, IOService ioService) {
         NodeEngineImpl nodeEngine = node.nodeEngine;
-        return new MemberPacketReader(connection, nodeEngine.getPacketDispatcher());
+        return new MemberSocketReader(connection, nodeEngine.getPacketDispatcher());
     }
 
     @Override
-    public PacketWriter createPacketWriter(final TcpIpConnection connection, final IOService ioService) {
-        return new MemberPacketWriter();
+    public SocketWriter createSocketWriter(TcpIpConnection connection, IOService ioService) {
+        return new MemberSocketWriter();
     }
 
     @Override

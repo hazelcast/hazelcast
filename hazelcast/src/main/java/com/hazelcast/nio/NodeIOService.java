@@ -28,9 +28,9 @@ import com.hazelcast.internal.ascii.TextCommandService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.nio.tcp.PacketReader;
-import com.hazelcast.nio.tcp.PacketWriter;
 import com.hazelcast.nio.tcp.SocketChannelWrapperFactory;
+import com.hazelcast.nio.tcp.SocketReader;
+import com.hazelcast.nio.tcp.SocketWriter;
 import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.ExecutionService;
@@ -289,13 +289,13 @@ public class NodeIOService implements IOService {
     }
 
     @Override
-    public PacketReader createPacketReader(TcpIpConnection connection) {
-        return node.getNodeExtension().createPacketReader(connection, this);
+    public SocketReader createSocketReader(TcpIpConnection connection) {
+        return node.getNodeExtension().createSocketReader(connection, this);
     }
 
     @Override
-    public PacketWriter createPacketWriter(TcpIpConnection connection) {
-        return node.getNodeExtension().createPacketWriter(connection, this);
+    public SocketWriter createSocketWriter(TcpIpConnection connection) {
+        return node.getNodeExtension().createSocketWriter(connection, this);
     }
 
     @Override
