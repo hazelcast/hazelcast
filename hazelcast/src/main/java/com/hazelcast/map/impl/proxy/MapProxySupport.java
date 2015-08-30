@@ -483,6 +483,8 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         return result;
     }
 
+    //warning: When UpdateEvent is fired it does *NOT* contain oldValue.
+    //see this: https://github.com/hazelcast/hazelcast/pull/6088#issuecomment-136025968
     protected void setInternal(final Data key, final Data value, final long ttl, final TimeUnit timeunit) {
         SetOperation operation = new SetOperation(name, key, value, timeunit.toMillis(ttl));
         invokeOperation(key, operation);
@@ -862,7 +864,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
                     checkNotNull(entry.getKey(), NULL_KEY_IS_NOT_ALLOWED);
                     checkNotNull(entry.getValue(), NULL_VALUE_IS_NOT_ALLOWED);
 
-                    setInternal(mapService.getMapServiceContext().toData(entry.getKey(), partitionStrategy),
+                    putInternal(mapService.getMapServiceContext().toData(entry.getKey(), partitionStrategy),
                             mapService.getMapServiceContext().toData(entry.getValue()),
                             -1,
                             TimeUnit.MILLISECONDS);

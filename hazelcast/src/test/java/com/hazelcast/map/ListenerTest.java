@@ -28,6 +28,7 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapEvent;
 import com.hazelcast.map.impl.MapPartitionEventData;
 import com.hazelcast.map.impl.MapService;
+import com.hazelcast.map.listener.EntryUpdatedListener;
 import com.hazelcast.map.listener.MapPartitionLostListener;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.EventRegistration;
@@ -44,6 +45,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -545,6 +547,32 @@ public class ListenerTest extends HazelcastTestSupport {
         });
     }
 
+    @Test
+    public void testPutAll_whenExistsEntryListenerWithIncludeValueSetToTrue_thenFireEventWithValue() throws InterruptedException {
+        int key = 1;
+        String initialValue = "foo";
+        String newValue = "bar";
+        HazelcastInstance instance = createHazelcastInstance();
+        IMap<Integer, String> map = instance.getMap(randomMapName());
+
+        map.put(key, initialValue);
+
+        UpdateListenerRecordingOldValue<Integer, String> listener = new UpdateListenerRecordingOldValue<Integer, String>();
+        map.addEntryListener(listener, true);
+
+        Map<Integer, String> newMap = createMapWithEntry(key, newValue);
+        map.putAll(newMap);
+
+        String oldValue = listener.waitForOldValue();
+        assertEquals(initialValue, oldValue);
+    }
+
+    private <K, V> Map<K, V> createMapWithEntry(K key, V newValue) {
+        Map<K, V> map = new HashMap<K, V>();
+        map.put(key, newValue);
+        return map;
+    }
+
     private Predicate<String, String> matchingPredicate() {
         return new Predicate<String, String>() {
             @Override
@@ -561,6 +589,22 @@ public class ListenerTest extends HazelcastTestSupport {
                 return false;
             }
         };
+    }
+
+    private class UpdateListenerRecordingOldValue<K, V> implements EntryUpdatedListener<K, V> {
+        private volatile V oldValue;
+        private final CountDownLatch latch = new CountDownLatch(1);
+
+        public V waitForOldValue() throws InterruptedException {
+            latch.await();
+            return oldValue;
+        }
+
+        @Override
+        public void entryUpdated(EntryEvent<K, V> event) {
+            oldValue = event.getOldValue();
+            latch.countDown();
+        }
     }
 
     private EntryListener<String, String> createEntryListener(final boolean isLocal) {
