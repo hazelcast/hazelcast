@@ -318,8 +318,6 @@
 
     <!-- Topic -->
     <suppress checks="VisibilityModifier" files="com/hazelcast/topic/impl/TopicEvent"/>
-    <suppress checks="" files="com/hazelcast/topic/DataAwareMessage"/>
-    <suppress checks="Todo" files="com/hazelcast/topic/impl/TopicEvent"/>
 
     <!-- Ascii -->
     <suppress checks="JavadocMethod" files="com/hazelcast/internal/ascii/"/>
