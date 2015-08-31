@@ -121,7 +121,6 @@ import java.util.EventListener;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -157,7 +156,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         this.partitionService = getNodeEngine().getPartitionService();
 
         lockSupport = new LockProxySupport(new DefaultObjectNamespace(MapService.SERVICE_NAME, name),
-                    LockServiceImpl.getMaxLeaseTimeInMillis(nodeEngine.getGroupProperties()));
+                LockServiceImpl.getMaxLeaseTimeInMillis(nodeEngine.getGroupProperties()));
     }
 
     @Override
@@ -818,57 +817,57 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         return idToKeys;
     }
 
-    protected void putAllInternal(final Map<? extends Object, ? extends Object> entries) {
-        final NodeEngine nodeEngine = getNodeEngine();
-        final MapService mapService = getService();
-        int factor = 3;
+    /**
+     * This Operation will first group all puts per partition and then send a PutAllOperation per partition. So if there are e.g.
+     * 5 keys for a single partition, then instead of having 5 remote invocations, there will be only 1 remote invocation.
+     *
+     * If there are multiple puts for different partitions on the same member, they are executed as different remote operations.
+     * Probably this can be optimized in the future by making use of an PartitionIterating operation.
+     *
+     * @param entries
+     */
+    protected void putAllInternal(Map<? extends Object, ? extends Object> entries) {
+        NodeEngine nodeEngine = getNodeEngine();
         InternalPartitionService partitionService = nodeEngine.getPartitionService();
         OperationService operationService = nodeEngine.getOperationService();
         int partitionCount = partitionService.getPartitionCount();
-        boolean tooManyEntries = entries.size() > (partitionCount * factor);
+        MapServiceContext mapServiceContext = getService().getMapServiceContext();
+
         try {
-            if (tooManyEntries) {
-                List<Future> futures = new LinkedList<Future>();
-                Map<Integer, MapEntrySet> entryMap
-                        = new HashMap<Integer, MapEntrySet>(nodeEngine.getPartitionService().getPartitionCount());
-                for (Entry entry : entries.entrySet()) {
-                    checkNotNull(entry.getKey(), NULL_KEY_IS_NOT_ALLOWED);
-                    checkNotNull(entry.getValue(), NULL_VALUE_IS_NOT_ALLOWED);
+            List<Future> futures = new ArrayList<Future>(partitionCount);
+            MapEntrySet[] entrySetPerPartition = new MapEntrySet[partitionCount];
 
-                    int partitionId = partitionService.getPartitionId(entry.getKey());
-                    if (!entryMap.containsKey(partitionId)) {
-                        entryMap.put(partitionId, new MapEntrySet());
-                    }
-                    entryMap.get(partitionId).add(
-                            new AbstractMap.SimpleImmutableEntry<Data, Data>(mapService.getMapServiceContext().toData(
-                                    entry.getKey(),
-                                    partitionStrategy),
-                                    mapService.getMapServiceContext()
-                                            .toData(entry.getValue())
-                            ));
+            // first we fill entrySetPerPartition
+            for (Entry entry : entries.entrySet()) {
+                checkNotNull(entry.getKey(), NULL_KEY_IS_NOT_ALLOWED);
+                checkNotNull(entry.getValue(), NULL_VALUE_IS_NOT_ALLOWED);
+
+                int partitionId = partitionService.getPartitionId(entry.getKey());
+                MapEntrySet entrySet = entrySetPerPartition[partitionId];
+                if (entrySet == null) {
+                    entrySet = new MapEntrySet();
+                    entrySetPerPartition[partitionId] = entrySet;
                 }
 
-                for (final Map.Entry<Integer, MapEntrySet> entry : entryMap.entrySet()) {
-                    final Integer partitionId = entry.getKey();
-                    final PutAllOperation op = new PutAllOperation(name, entry.getValue());
-                    op.setPartitionId(partitionId);
-                    futures.add(operationService.invokeOnPartition(SERVICE_NAME, op, partitionId));
-                }
+                Data keyData = mapServiceContext.toData(entry.getKey(), partitionStrategy);
+                Data valueData = mapServiceContext.toData(entry.getValue());
+                entrySet.add(new AbstractMap.SimpleImmutableEntry<Data, Data>(keyData, valueData));
+            }
 
-                for (Future future : futures) {
-                    future.get();
+            // then we invoke the operations
+            for (int partitionId = 0; partitionId < entrySetPerPartition.length; partitionId++) {
+                MapEntrySet entrySet = entrySetPerPartition[partitionId];
+                if (entrySet != null) {
+                    // If there is a single entry, we could make use of a PutOperation since that is a bit cheaper
+                    Operation op = new PutAllOperation(name, entrySet).setPartitionId(partitionId);
+                    InternalCompletableFuture<Object> f = operationService.invokeOnPartition(SERVICE_NAME, op, partitionId);
+                    futures.add(f);
                 }
+            }
 
-            } else {
-                for (Entry entry : entries.entrySet()) {
-                    checkNotNull(entry.getKey(), NULL_KEY_IS_NOT_ALLOWED);
-                    checkNotNull(entry.getValue(), NULL_VALUE_IS_NOT_ALLOWED);
-
-                    putInternal(mapService.getMapServiceContext().toData(entry.getKey(), partitionStrategy),
-                            mapService.getMapServiceContext().toData(entry.getValue()),
-                            -1,
-                            TimeUnit.MILLISECONDS);
-                }
+            // then we sync on completion of these operations
+            for (Future future : futures) {
+                future.get();
             }
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
