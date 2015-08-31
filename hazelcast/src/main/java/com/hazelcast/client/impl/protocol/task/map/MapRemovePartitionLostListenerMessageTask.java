@@ -22,7 +22,6 @@ import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.partition.InternalPartitionService;
 
 import java.security.Permission;
 
@@ -52,7 +51,7 @@ public class MapRemovePartitionLostListenerMessageTask
 
     @Override
     public String getServiceName() {
-        return InternalPartitionService.SERVICE_NAME;
+        return MapService.SERVICE_NAME;
     }
 
     @Override

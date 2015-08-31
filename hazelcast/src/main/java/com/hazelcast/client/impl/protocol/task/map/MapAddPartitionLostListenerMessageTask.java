@@ -83,7 +83,7 @@ public class MapAddPartitionLostListenerMessageTask
 
     @Override
     public Object[] getParameters() {
-        return null;
+        return new Object[]{null};
     }
 
     @Override

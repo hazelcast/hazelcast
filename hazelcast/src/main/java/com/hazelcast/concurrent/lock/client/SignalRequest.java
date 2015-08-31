@@ -106,4 +106,17 @@ public class SignalRequest extends KeyBasedClientRequest implements Portable, Se
     public Permission getRequiredPermission() {
         return new LockPermission(namespace.getObjectName(), ActionConstants.ACTION_LOCK);
     }
+
+    @Override
+    public String getMethodName() {
+        if (all) {
+            return "signalAll";
+        }
+        return "signal";
+    }
+
+    @Override
+    public String getDistributedObjectName() {
+        return name;
+    }
 }

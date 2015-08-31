@@ -17,10 +17,11 @@
 package com.hazelcast.client.impl.client;
 
 import com.hazelcast.client.ClientEndpoint;
-import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.ProxyService;
 import com.hazelcast.spi.impl.SerializableCollection;
+import com.hazelcast.spi.impl.proxyservice.impl.ProxyServiceImpl;
 
 import java.security.Permission;
 import java.util.ArrayList;
@@ -32,7 +33,8 @@ public class GetDistributedObjectsRequest extends ClientRequest {
     @Override
     public void process() throws Exception {
         ClientEndpoint endpoint = getEndpoint();
-        Collection<DistributedObject> distributedObjects = clientEngine.getProxyService().getAllDistributedObjects();
+        ProxyService proxyService = getService();
+        Collection<DistributedObject> distributedObjects = proxyService.getAllDistributedObjects();
 
         List<Data> dataArrayList = new ArrayList<Data>(distributedObjects.size());
         for (DistributedObject distributedObject : distributedObjects) {
@@ -47,7 +49,7 @@ public class GetDistributedObjectsRequest extends ClientRequest {
 
     @Override
     public String getServiceName() {
-        return ClientEngineImpl.SERVICE_NAME;
+        return ProxyServiceImpl.SERVICE_NAME;
     }
 
     @Override
@@ -63,5 +65,10 @@ public class GetDistributedObjectsRequest extends ClientRequest {
     @Override
     public Permission getRequiredPermission() {
         return null;
+    }
+
+    @Override
+    public String getMethodName() {
+        return "getDistributedObjects";
     }
 }
