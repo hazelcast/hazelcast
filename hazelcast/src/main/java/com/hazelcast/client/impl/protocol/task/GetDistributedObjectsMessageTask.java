@@ -16,13 +16,13 @@
 
 package com.hazelcast.client.impl.protocol.task;
 
-import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.client.impl.client.DistributedObjectInfo;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientGetDistributedObjectsCodec;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.spi.impl.proxyservice.impl.ProxyServiceImpl;
 
 import java.security.Permission;
 import java.util.Collection;
@@ -60,7 +60,7 @@ public class GetDistributedObjectsMessageTask
 
     @Override
     public String getServiceName() {
-        return ClientEngineImpl.SERVICE_NAME;
+        return ProxyServiceImpl.SERVICE_NAME;
     }
 
     @Override
@@ -75,7 +75,7 @@ public class GetDistributedObjectsMessageTask
 
     @Override
     public String getMethodName() {
-        return null;
+        return "getDistributedObjects";
     }
 
     @Override

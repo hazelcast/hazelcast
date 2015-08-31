@@ -16,6 +16,9 @@
 
 package com.hazelcast.client.impl.client;
 
+import com.hazelcast.spi.ProxyService;
+import com.hazelcast.spi.impl.proxyservice.impl.ProxyServiceImpl;
+
 import java.security.Permission;
 
 /**
@@ -32,12 +35,13 @@ public class RemoveDistributedObjectListenerRequest extends BaseClientRemoveList
 
     @Override
     public Object call() throws Exception {
-        return clientEngine.getProxyService().removeProxyListener(registrationId);
+        ProxyService proxyService = getService();
+        return proxyService.removeProxyListener(registrationId);
     }
 
     @Override
     public String getServiceName() {
-        return null;
+        return ProxyServiceImpl.SERVICE_NAME;
     }
 
     @Override
@@ -53,5 +57,10 @@ public class RemoveDistributedObjectListenerRequest extends BaseClientRemoveList
     @Override
     public Permission getRequiredPermission() {
         return null;
+    }
+
+    @Override
+    public String getMethodName() {
+        return "removeDistributedObjectListener";
     }
 }
