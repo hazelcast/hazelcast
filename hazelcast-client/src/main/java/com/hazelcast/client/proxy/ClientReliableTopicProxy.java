@@ -27,11 +27,11 @@ import com.hazelcast.core.ITopic;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.Message;
 import com.hazelcast.core.MessageListener;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.monitor.LocalTopicStats;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.ringbuffer.OverflowPolicy;
 import com.hazelcast.ringbuffer.ReadResultSet;
 import com.hazelcast.ringbuffer.Ringbuffer;
@@ -42,8 +42,8 @@ import com.hazelcast.topic.TopicOverloadException;
 import com.hazelcast.topic.TopicOverloadPolicy;
 import com.hazelcast.topic.impl.reliable.ReliableMessageListenerAdapter;
 import com.hazelcast.topic.impl.reliable.ReliableTopicMessage;
+import com.hazelcast.util.UuidUtil;
 
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
@@ -147,7 +147,7 @@ public class ClientReliableTopicProxy<E> extends ClientProxy implements ITopic<E
     public String addMessageListener(MessageListener<E> listener) {
         checkNotNull(listener, "listener can't be null");
 
-        String id = UUID.randomUUID().toString();
+        String id = UuidUtil.newUnsecureUuidString();
         ReliableMessageListener<E> reliableMessageListener = toReliableMessageListener(listener);
 
         MessageRunner runner = new MessageRunner(id, reliableMessageListener);

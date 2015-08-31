@@ -21,15 +21,15 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.MapEntrySimple;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.spi.impl.SerializationServiceSupport;
 import com.hazelcast.util.EmptyStatement;
+import com.hazelcast.util.UuidUtil;
 import com.hazelcast.web.entryprocessor.DeleteSessionEntryProcessor;
 import com.hazelcast.web.entryprocessor.GetAttributeEntryProcessor;
 import com.hazelcast.web.entryprocessor.GetAttributeNamesEntryProcessor;
@@ -44,7 +44,6 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Queue;
 import java.util.Set;
-import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
@@ -69,7 +68,7 @@ public class ClusteredSessionService {
     private static final long CLUSTER_CHECK_INTERVAL = 5L;
     private static final long RETRY_MILLIS = 7000;
 
-    private final String jvmId = UUID.randomUUID().toString();
+    private final String jvmId = UuidUtil.newSecureUuidString();
     private volatile IMap clusterMap;
     private volatile SerializationServiceSupport sss;
     private volatile HazelcastInstance hazelcastInstance;
@@ -90,10 +89,10 @@ public class ClusteredSessionService {
     /**
      * Instantiates a new Clustered session service.
      *
-     * @param filterConfig the filter config
-     * @param properties the properties
+     * @param filterConfig   the filter config
+     * @param properties     the properties
      * @param clusterMapName the cluster map name
-     * @param sessionTTL the session tTL
+     * @param sessionTTL     the session tTL
      */
     public ClusteredSessionService(FilterConfig filterConfig, Properties properties, String clusterMapName, String sessionTTL) {
         this.filterConfig = filterConfig;
@@ -214,7 +213,7 @@ public class ClusteredSessionService {
     /**
      * Gets attribute.
      *
-     * @param sessionId the session id
+     * @param sessionId     the session id
      * @param attributeName the attribute name
      * @return the attribute
      * @throws Exception the exception
@@ -228,7 +227,7 @@ public class ClusteredSessionService {
     /**
      * Delete attribute.
      *
-     * @param sessionId the session id
+     * @param sessionId     the session id
      * @param attributeName the attribute name
      * @throws Exception the exception
      */
@@ -239,9 +238,9 @@ public class ClusteredSessionService {
     /**
      * Sets attribute.
      *
-     * @param sessionId the session id
+     * @param sessionId     the session id
      * @param attributeName the attribute name
-     * @param value the value
+     * @param value         the value
      * @throws Exception the exception
      */
     void setAttribute(String sessionId, String attributeName, Object value) throws Exception {
@@ -254,7 +253,7 @@ public class ClusteredSessionService {
     /**
      * Delete session.
      *
-     * @param sessionId sessionId
+     * @param sessionId  sessionId
      * @param invalidate if true remove the distributed session, otherwise just
      *                   remove the jvm reference
      * @return the boolean
@@ -289,7 +288,7 @@ public class ClusteredSessionService {
     /**
      * Update attributes.
      *
-     * @param id the id
+     * @param id      the id
      * @param updates the updates
      * @throws Exception the exception
      */

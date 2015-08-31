@@ -22,12 +22,12 @@ import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.spi.EventFilter;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
@@ -39,6 +39,7 @@ import com.hazelcast.spi.impl.eventservice.impl.operations.PostJoinRegistrationO
 import com.hazelcast.spi.impl.eventservice.impl.operations.RegistrationOperation;
 import com.hazelcast.spi.impl.eventservice.impl.operations.SendEventOperation;
 import com.hazelcast.util.EmptyStatement;
+import com.hazelcast.util.UuidUtil;
 import com.hazelcast.util.counters.MwCounter;
 import com.hazelcast.util.executor.StripedExecutor;
 
@@ -48,7 +49,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedList;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;
@@ -168,8 +168,8 @@ public class EventServiceImpl implements InternalEventService {
         return registerListenerInternal(serviceName, topic, filter, listener, false);
     }
 
-    private EventRegistration registerListenerInternal(String serviceName, String topic, EventFilter filter,
-                                                       Object listener, boolean localOnly) {
+    private EventRegistration registerListenerInternal(String serviceName, String topic, EventFilter filter, Object listener,
+                                                       boolean localOnly) {
         if (listener == null) {
             throw new IllegalArgumentException("Listener required!");
         }
@@ -177,8 +177,8 @@ public class EventServiceImpl implements InternalEventService {
             throw new IllegalArgumentException("EventFilter required!");
         }
         EventServiceSegment segment = getSegment(serviceName, true);
-        Registration reg = new Registration(UUID.randomUUID().toString(), serviceName, topic, filter,
-                nodeEngine.getThisAddress(), listener, localOnly);
+        String id = UuidUtil.newUnsecureUuidString();
+        Registration reg = new Registration(id, serviceName, topic, filter, nodeEngine.getThisAddress(), listener, localOnly);
         if (!segment.addRegistration(topic, reg)) {
             return null;
         }

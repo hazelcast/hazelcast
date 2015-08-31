@@ -86,7 +86,7 @@ public class TransactionImpl implements Transaction {
         this.transactionLog = new TransactionLog();
         this.transactionManagerService = transactionManagerService;
         this.nodeEngine = nodeEngine;
-        this.txnId = UuidUtil.buildRandomUuidString();
+        this.txnId = UuidUtil.newUnsecureUuidString();
         this.timeoutMillis = options.getTimeoutMillis();
         this.durability = options.getDurability();
         this.transactionType = options.getTransactionType();

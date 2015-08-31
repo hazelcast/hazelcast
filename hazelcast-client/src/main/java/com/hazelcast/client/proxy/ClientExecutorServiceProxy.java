@@ -575,7 +575,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
     }
 
     private String getUUID() {
-        return UuidUtil.buildRandomUuidString();
+        return UuidUtil.newUnsecureUuidString();
     }
 
     private Address getMemberAddress(Member member) {

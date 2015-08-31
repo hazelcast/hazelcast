@@ -205,7 +205,7 @@ public class ProxyServiceImpl
 
     @Override
     public String addProxyListener(DistributedObjectListener distributedObjectListener) {
-        String id = UuidUtil.buildRandomUuidString();
+        String id = UuidUtil.newUnsecureUuidString();
         listeners.put(id, distributedObjectListener);
         return id;
     }

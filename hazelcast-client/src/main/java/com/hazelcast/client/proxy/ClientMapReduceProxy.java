@@ -110,7 +110,7 @@ public class ClientMapReduceProxy
         @Override
         protected <T> JobCompletableFuture<T> invoke(final Collator collator) {
             try {
-                final String jobId = UuidUtil.buildRandomUuidString();
+                final String jobId = UuidUtil.newUnsecureUuidString();
 
                 ClientMapReduceRequest request = new ClientMapReduceRequest(name, jobId, keys,
                         predicate, mapper, combinerFactory, reducerFactory, keyValueSource,

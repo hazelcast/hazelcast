@@ -62,7 +62,7 @@ import static com.hazelcast.util.FutureUtil.ExceptionHandler;
 import static com.hazelcast.util.FutureUtil.logAllExceptions;
 import static com.hazelcast.util.FutureUtil.waitWithDeadline;
 import static com.hazelcast.util.Preconditions.checkNotNull;
-import static com.hazelcast.util.UuidUtil.buildRandomUuidString;
+import static com.hazelcast.util.UuidUtil.newUnsecureUuidString;
 
 public class ExecutorServiceProxy
         extends AbstractDistributedObject<DistributedExecutorService>
@@ -197,7 +197,7 @@ public class ExecutorServiceProxy
         NodeEngine nodeEngine = getNodeEngine();
         Callable<T> callable = createRunnableAdapter(task);
         Data callableData = nodeEngine.toData(callable);
-        String uuid = buildRandomUuidString();
+        String uuid = newUnsecureUuidString();
         int partitionId = getTaskPartitionId(callable);
 
         CallableTaskOperation op = new CallableTaskOperation(name, uuid, callableData);
@@ -238,7 +238,7 @@ public class ExecutorServiceProxy
 
         NodeEngine nodeEngine = getNodeEngine();
         Data taskData = nodeEngine.toData(task);
-        String uuid = buildRandomUuidString();
+        String uuid = newUnsecureUuidString();
 
         boolean sync = !preventSync && checkSync();
         CallableTaskOperation op = new CallableTaskOperation(name, uuid, taskData);
@@ -295,7 +295,7 @@ public class ExecutorServiceProxy
 
         NodeEngine nodeEngine = getNodeEngine();
         Data taskData = nodeEngine.toData(task);
-        String uuid = buildRandomUuidString();
+        String uuid = newUnsecureUuidString();
         Address target = ((MemberImpl) member).getAddress();
 
         boolean sync = checkSync();

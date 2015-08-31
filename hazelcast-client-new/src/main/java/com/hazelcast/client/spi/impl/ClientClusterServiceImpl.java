@@ -33,11 +33,11 @@ import com.hazelcast.core.Member;
 import com.hazelcast.core.MemberAttributeEvent;
 import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MembershipListener;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ClassLoaderUtil;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.UuidUtil;
 
@@ -47,7 +47,6 @@ import java.util.Collections;
 import java.util.EventListener;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicReference;
@@ -140,7 +139,7 @@ public class ClientClusterServiceImpl extends ClusterListenerSupport {
             throw new NullPointerException("listener can't be null");
         }
 
-        final String id = UuidUtil.buildRandomUuidString();
+        String id = UuidUtil.newUnsecureUuidString();
         listeners.put(id, listener);
         if (listener instanceof InitialMembershipListener) {
             // TODO: needs sync with membership events...
@@ -151,7 +150,7 @@ public class ClientClusterServiceImpl extends ClusterListenerSupport {
     }
 
     private String addMembershipListenerWithoutInit(MembershipListener listener) {
-        final String id = UUID.randomUUID().toString();
+        String id = UuidUtil.newUnsecureUuidString();
         listeners.put(id, listener);
         return id;
     }
