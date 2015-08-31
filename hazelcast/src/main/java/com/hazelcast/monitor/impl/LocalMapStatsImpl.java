@@ -57,6 +57,8 @@ public class LocalMapStatsImpl implements LocalMapStats {
             .newUpdater(LocalMapStatsImpl.class, "maxPutLatency");
     private static final AtomicLongFieldUpdater<LocalMapStatsImpl> MAX_REMOVE_LATENCY_UPDATER = AtomicLongFieldUpdater
             .newUpdater(LocalMapStatsImpl.class, "maxRemoveLatency");
+    private static final AtomicLongFieldUpdater<LocalMapStatsImpl> PUTALL_COUNT_UPDATER = AtomicLongFieldUpdater
+            .newUpdater(LocalMapStatsImpl.class, "putAllCount");
 
     // These fields are only accessed through the updaters
     private volatile long lastAccessTime;
@@ -66,6 +68,7 @@ public class LocalMapStatsImpl implements LocalMapStats {
     private volatile long numberOfEvents;
     private volatile long getCount;
     private volatile long putCount;
+    private volatile long putAllCount;
     private volatile long removeCount;
     private volatile long totalGetLatencies;
     private volatile long totalPutLatencies;
@@ -226,6 +229,14 @@ public class LocalMapStatsImpl implements LocalMapStats {
         MAX_REMOVE_LATENCY_UPDATER.set(this, Math.max(maxRemoveLatency, latency));
     }
 
+    public void incrementPutAll() {
+        PUTALL_COUNT_UPDATER.incrementAndGet(this);
+    }
+
+    public long getPutAllCount() {
+        return putAllCount;
+    }
+
     @Override
     public long getTotalPutLatency() {
         return totalPutLatencies;
@@ -301,6 +312,7 @@ public class LocalMapStatsImpl implements LocalMapStats {
         root.add("numberOfOtherOperations", numberOfOtherOperations);
         root.add("numberOfEvents", numberOfEvents);
         root.add("lastAccessTime", lastAccessTime);
+        root.add("putAllCount", putAllCount);
         root.add("lastUpdateTime", lastUpdateTime);
         root.add("hits", hits);
         root.add("ownedEntryCount", ownedEntryCount);
@@ -331,7 +343,8 @@ public class LocalMapStatsImpl implements LocalMapStats {
         removeCount = getLong(json, "removeCount", -1L);
         numberOfOtherOperations = getLong(json, "numberOfOtherOperations", -1L);
         numberOfEvents = getLong(json, "numberOfEvents", -1L);
-        lastAccessTime =  getLong(json, "lastAccessTime", -1L);
+        lastAccessTime = getLong(json, "lastAccessTime", -1L);
+        putAllCount = getLong(json, "putAllCount", -1L);
         lastUpdateTime = getLong(json, "lastUpdateTime", -1L);
         totalGetLatencies = getLong(json, "totalGetLatencies", -1L);
         totalPutLatencies = getLong(json, "totalPutLatencies", -1L);
@@ -366,6 +379,7 @@ public class LocalMapStatsImpl implements LocalMapStats {
                 + ", numberOfEvents=" + numberOfEvents
                 + ", getCount=" + getCount
                 + ", putCount=" + putCount
+                + ", putAllCount=" + putAllCount
                 + ", removeCount=" + removeCount
                 + ", totalGetLatencies=" + totalGetLatencies
                 + ", totalPutLatencies=" + totalPutLatencies
