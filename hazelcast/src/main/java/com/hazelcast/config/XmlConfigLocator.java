@@ -24,6 +24,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
+import java.net.MalformedURLException;
 import java.net.URL;
 
 /**
@@ -163,6 +164,12 @@ public class XmlConfigLocator {
             in = new FileInputStream(configurationFile);
         } catch (FileNotFoundException e) {
             throw new HazelcastException("Failed to open file: " + configurationFile.getAbsolutePath(), e);
+        }
+
+        try {
+            configurationUrl = configurationFile.toURI().toURL();
+        } catch (MalformedURLException e) {
+            throw new HazelcastException("Failed to create URL from the file: " + configurationFile.getAbsolutePath(), e);
         }
     }
 
