@@ -24,6 +24,11 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+/**
+ * There's a couple of problems and design inconsistencies related to this class that may lead to unexpected behavior
+ * including infinite waiting or inconsistent callbacks behavior.
+ * Please have a look at the BasicCompletableFutureTest - some of the issues are documented there.
+ */
 class BasicCompletableFuture<V> extends AbstractCompletableFuture<V> {
 
     final Future<V> future;
