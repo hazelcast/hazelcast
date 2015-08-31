@@ -20,6 +20,7 @@ import com.hazelcast.client.impl.client.BaseClientRemoveListenerRequest;
 import com.hazelcast.client.impl.client.ClientRequest;
 import com.hazelcast.client.nearcache.ClientHeapNearCache;
 import com.hazelcast.client.nearcache.ClientNearCache;
+import com.hazelcast.client.spi.ClientPartitionService;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.client.spi.impl.ClientInvocation;
@@ -1036,14 +1037,50 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
 
     @Override
     public void putAll(Map<? extends K, ? extends V> m) {
-        MapEntrySet entrySet = new MapEntrySet();
+        ClientPartitionService partitionService = getContext().getPartitionService();
+        int partitionCount = partitionService.getPartitionCount();
+        List<Future<?>> futures = new ArrayList<Future<?>>(partitionCount);
+        MapEntrySet[] entrySetPerPartition = new MapEntrySet[partitionCount];
+        
         for (Entry<? extends K, ? extends V> entry : m.entrySet()) {
+            checkNotNull(entry.getKey(), NULL_KEY_IS_NOT_ALLOWED);
+            checkNotNull(entry.getValue(), NULL_VALUE_IS_NOT_ALLOWED);
+            
             final Data keyData = toData(entry.getKey());
             invalidateNearCache(keyData);
+            
+            int partitionId = partitionService.getPartitionId(entry.getKey());
+            MapEntrySet entrySet = entrySetPerPartition[partitionId];
+            if (entrySet == null) {
+                entrySet = new MapEntrySet();
+                entrySetPerPartition[partitionId] = entrySet;
+            }
+            
             entrySet.add(new AbstractMap.SimpleImmutableEntry<Data, Data>(keyData, toData(entry.getValue())));
         }
-        MapPutAllRequest request = new MapPutAllRequest(name, entrySet);
-        invoke(request);
+        
+        for (int partitionId = 0; partitionId < entrySetPerPartition.length; partitionId++) {
+            MapEntrySet entrySet = entrySetPerPartition[partitionId];
+            if (entrySet != null) {
+                //If there is only one entry, consider how we can use MapPutRequest without
+                //having to get back the return value.
+                MapPutAllRequest request = new MapPutAllRequest(name, entrySet);
+                
+                //invoke by partition owner address rather than id, as
+                //the latter will embed the partitionId into the Packet payload,
+                //routing the invocation to the operation service, which does 
+                //not handle MapPutAllRequest and other similar requests
+                futures.add(new ClientInvocation(getClient(), request, partitionService.getPartitionOwner(partitionId)).invoke());
+            }
+        }
+
+        try {
+            for (Future<?> future : futures) {
+                future.get();
+            }
+        } catch (Exception e) {
+            ExceptionUtil.rethrow(e);
+        }
     }
 
     @Override

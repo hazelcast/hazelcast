@@ -226,6 +226,20 @@ public class ClientMapTest {
     }
 
     @Test
+    public void testPutAllWithTooManyEntries() {
+        final IMap map = createMap();
+        Map mm = new HashMap();
+        for (int i = 0; i < 1000; i++) {
+            mm.put(i, i);
+        }
+        map.putAll(mm);
+        assertEquals(map.size(), 1000);
+        for (int i = 0; i < 1000; i++) {
+            assertEquals(map.get(i), i);
+        }
+    }
+    
+    @Test
     public void testAsyncGet() throws Exception {
         final IMap map = createMap();
         fillMap(map);
