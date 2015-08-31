@@ -198,6 +198,12 @@ public class LocalMapStatsImpl implements LocalMapStats {
         return putCount;
     }
 
+    public void incrementPuts(long delta, long latency) {
+        PUT_COUNT_UPDATER.addAndGet(this, delta);
+        TOTAL_PUT_LATENCIES_UPDATER.addAndGet(this, latency);
+        MAX_PUT_LATENCY_UPDATER.set(this, Math.max(maxPutLatency, latency / delta));
+    }
+
     public void incrementPuts(long latency) {
         PUT_COUNT_UPDATER.incrementAndGet(this);
         TOTAL_PUT_LATENCIES_UPDATER.addAndGet(this, latency);
@@ -331,7 +337,7 @@ public class LocalMapStatsImpl implements LocalMapStats {
         removeCount = getLong(json, "removeCount", -1L);
         numberOfOtherOperations = getLong(json, "numberOfOtherOperations", -1L);
         numberOfEvents = getLong(json, "numberOfEvents", -1L);
-        lastAccessTime =  getLong(json, "lastAccessTime", -1L);
+        lastAccessTime = getLong(json, "lastAccessTime", -1L);
         lastUpdateTime = getLong(json, "lastUpdateTime", -1L);
         totalGetLatencies = getLong(json, "totalGetLatencies", -1L);
         totalPutLatencies = getLong(json, "totalPutLatencies", -1L);

@@ -21,6 +21,8 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -187,6 +189,24 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
         assertEquals(inFirstInstance ? 0 : 3, multiMap1.getLocalMultiMapStats().getHits());
     }
 
+    @Test
+    public void testPutStats_afterPutAll() {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        final HazelcastInstance[] instances = factory.newInstances();
+        Map map = new HashMap();
+        for (int i = 1; i <= 5000; i++) map.put(i, i);
+
+        IMap iMap = instances[0].getMap("example");
+        iMap.putAll(map);
+        final LocalMapStats localMapStats = iMap.getLocalMapStats();
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertEquals(5000, localMapStats.getPutOperationCount());
+            }
+        });
+
+    }
 
     @Test
     public void testLocalMapStats_withMemberGroups() throws Exception {

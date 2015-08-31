@@ -37,6 +37,7 @@ import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.impl.EntryEventFilter;
+import com.hazelcast.map.impl.LocalMapStatsProvider;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapContextQuerySupport;
 import com.hazelcast.map.impl.MapEntrySet;
@@ -820,7 +821,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
     /**
      * This Operation will first group all puts per partition and then send a PutAllOperation per partition. So if there are e.g.
      * 5 keys for a single partition, then instead of having 5 remote invocations, there will be only 1 remote invocation.
-     *
+     * <p/>
      * If there are multiple puts for different partitions on the same member, they are executed as different remote operations.
      * Probably this can be optimized in the future by making use of an PartitionIterating operation.
      *
@@ -831,7 +832,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         InternalPartitionService partitionService = nodeEngine.getPartitionService();
         OperationService operationService = nodeEngine.getOperationService();
         int partitionCount = partitionService.getPartitionCount();
-        MapServiceContext mapServiceContext = getService().getMapServiceContext();
+        final MapServiceContext mapServiceContext = getService().getMapServiceContext();
 
         try {
             List<Future> futures = new ArrayList<Future>(partitionCount);
@@ -860,7 +861,23 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
                 if (entrySet != null) {
                     // If there is a single entry, we could make use of a PutOperation since that is a bit cheaper
                     Operation op = new PutAllOperation(name, entrySet).setPartitionId(partitionId);
+                    final long size = entrySet.getEntrySet().size();
+                    final long time = System.currentTimeMillis();
                     InternalCompletableFuture<Object> f = operationService.invokeOnPartition(SERVICE_NAME, op, partitionId);
+                    f.andThen(new ExecutionCallback() {
+                        @Override
+                        public void onResponse(Object response) {
+                            LocalMapStatsProvider localMapStatsProvider = mapServiceContext.getLocalMapStatsProvider();
+                            LocalMapStatsImpl localMapStats = localMapStatsProvider.getLocalMapStatsImpl(name);
+                            long currentTime = System.currentTimeMillis();
+                            localMapStats.incrementPuts(size, currentTime - time);
+                        }
+
+                        @Override
+                        public void onFailure(Throwable t) {
+
+                        }
+                    });
                     futures.add(f);
                 }
             }
