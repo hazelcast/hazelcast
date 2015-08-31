@@ -16,27 +16,22 @@
 
 package com.hazelcast.quorum.cache;
 
-import com.hazelcast.cache.HazelcastCachingProvider;
-import com.hazelcast.cache.ICache;
 import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
-import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.Config;
-import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.QuorumConfig;
 import com.hazelcast.config.QuorumListenerConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
 import com.hazelcast.core.Member;
-import com.hazelcast.quorum.Quorum;
 import com.hazelcast.quorum.QuorumEvent;
+import com.hazelcast.quorum.QuorumException;
 import com.hazelcast.quorum.QuorumFunction;
 import com.hazelcast.quorum.QuorumListener;
-import com.hazelcast.quorum.QuorumService;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.util.EmptyStatement;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -50,8 +45,7 @@ import static org.junit.Assert.fail;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class CacheQuorumListenerTest
-        extends HazelcastTestSupport {
+public class CacheQuorumListenerTest extends HazelcastTestSupport {
 
     @Test
     public void testQuorumFailureEventFiredWhenNodeCountBelowThreshold() throws Exception {
@@ -72,13 +66,16 @@ public class CacheQuorumListenerTest
         config.getCacheConfig(cacheName).setQuorumName(quorumName);
         config.addQuorumConfig(quorumConfig);
         HazelcastInstance instance = createHazelcastInstance(config);
+
         HazelcastServerCachingProvider cachingProvider = HazelcastServerCachingProvider.createCachingProvider(instance);
         Cache<Object, Object> cache = cachingProvider.getCacheManager().getCache(cacheName);
         try {
             cache.put(generateKeyOwnedBy(instance), 1);
-        } catch (Exception e) {
-            e.printStackTrace();
+            fail("Expected a QuorumException");
+        } catch (QuorumException expected) {
+            EmptyStatement.ignore(expected);
         }
+
         assertOpenEventually(countDownLatch, 15);
     }
 
@@ -103,18 +100,21 @@ public class CacheQuorumListenerTest
         quorumConfig.addListenerConfig(listenerConfig);
         config.getCacheConfig(cacheName).setQuorumName(quorumName);
         config.addQuorumConfig(quorumConfig);
+
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
         HazelcastInstance instance1 = factory.newHazelcastInstance(config);
         HazelcastServerCachingProvider cachingProvider1 = HazelcastServerCachingProvider.createCachingProvider(instance1);
         Cache<Object, Object> cache = cachingProvider1.getCacheManager().getCache(cacheName);
         try {
             cache.put(generateKeyOwnedBy(instance1), 1);
-        } catch (Exception e) {
-            e.printStackTrace();
+            fail("Expected a QuorumException");
+        } catch (QuorumException expected) {
+            EmptyStatement.ignore(expected);
         }
         assertOpenEventually(belowLatch, 15);
-        HazelcastInstance instance2 = factory.newHazelcastInstance(config);
-        HazelcastInstance instance3 = factory.newHazelcastInstance(config);
+
+        factory.newHazelcastInstance(config);
+        factory.newHazelcastInstance(config);
         cache.put(generateKeyOwnedBy(instance1), 1);
         assertOpenEventually(aboveLatch, 15);
     }
@@ -156,24 +156,24 @@ public class CacheQuorumListenerTest
         config.addQuorumConfig(threeNodeQuorumConfig);
 
         HazelcastInstance h1 = factory.newHazelcastInstance(config);
-        HazelcastInstance h2 = factory.newHazelcastInstance(config);
+        factory.newHazelcastInstance(config);
 
         HazelcastServerCachingProvider cachingProvider = HazelcastServerCachingProvider.createCachingProvider(h1);
-
         Cache<Object, Object> fourNode = cachingProvider.getCacheManager().getCache("fourNode");
         Cache<Object, Object> threeNode = cachingProvider.getCacheManager().getCache("threeNode");
         try {
             threeNode.put(generateKeyOwnedBy(h1), "bar");
-            fail();
-        } catch (Exception e) {
+            fail("Expected a QuorumException");
+        } catch (QuorumException expected) {
+            EmptyStatement.ignore(expected);
         }
         try {
             fourNode.put(generateKeyOwnedBy(h1), "bar");
-            fail();
-        } catch (Exception e) {
+            fail("Expected a QuorumException");
+        } catch (QuorumException expected) {
+            EmptyStatement.ignore(expected);
         }
         assertOpenEventually(quorumFailureLatch, 15);
-
     }
 
     @Test
@@ -203,18 +203,18 @@ public class CacheQuorumListenerTest
         });
         config.getCacheConfig(cacheName).setQuorumName(quorumName);
         config.addQuorumConfig(quorumConfig);
+
         HazelcastInstance instance = createHazelcastInstance(config);
-        QuorumService quorumService = instance.getQuorumService();
-        Quorum quorum = quorumService.getQuorum(quorumName);
         HazelcastServerCachingProvider cachingProvider = HazelcastServerCachingProvider.createCachingProvider(instance);
         Cache<Object, Object> cache = cachingProvider.getCacheManager().getCache(cacheName);
         try {
             cache.put(generateKeyOwnedBy(instance), 1);
-        } catch (Exception e) {
-            e.printStackTrace();
+            fail("Expected a QuorumException");
+        } catch (QuorumException expected) {
+            EmptyStatement.ignore(expected);
         }
-        assertOpenEventually(countDownLatch, 15);
 
+        assertOpenEventually(countDownLatch, 15);
     }
 
     @Test
@@ -238,15 +238,20 @@ public class CacheQuorumListenerTest
         quorumConfig.addListenerConfig(listenerConfig);
         config.getCacheConfig(cacheName).setQuorumName(quorumName);
         config.addQuorumConfig(quorumConfig);
+
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
         HazelcastInstance instance1 = factory.newHazelcastInstance(config);
-        HazelcastInstance instance2 = factory.newHazelcastInstance(config);
+        factory.newHazelcastInstance(config);
+
         HazelcastServerCachingProvider cachingProvider = HazelcastServerCachingProvider.createCachingProvider(instance1);
         Cache<Object, Object> cache = cachingProvider.getCacheManager().getCache(cacheName);
         try {
             cache.put(generateKeyOwnedBy(instance1), 1);
-        } catch (Exception e) {
+            fail("Expected a QuorumException");
+        } catch (QuorumException expected) {
+            EmptyStatement.ignore(expected);
         }
+
         assertOpenEventually(belowLatch, 15);
     }
 }
