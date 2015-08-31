@@ -23,7 +23,6 @@ import com.hazelcast.nio.SocketWritable;
 import com.hazelcast.nio.ascii.SocketTextWriter;
 import com.hazelcast.nio.tcp.ClientMessageSocketWriter;
 import com.hazelcast.nio.tcp.ClientPacketSocketWriter;
-import com.hazelcast.nio.tcp.MemberPacketSocketWriter;
 import com.hazelcast.nio.tcp.SocketWriter;
 import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.nio.tcp.WriteHandler;
@@ -174,7 +173,7 @@ public final class NonBlockingWriteHandler extends AbstractSelectionHandler impl
         if (socketWriter == null) {
             if (CLUSTER.equals(protocol)) {
                 configureBuffers(ioService.getSocketSendBufferSize() * KILO_BYTE);
-                socketWriter = new MemberPacketSocketWriter(ioService.createPacketWriter(connection));
+                socketWriter = ioService.createSocketWriter(connection);
                 outputBuffer.put(stringToBytes(CLUSTER));
                 registerOp(SelectionKey.OP_WRITE);
             } else if (CLIENT_BINARY.equals(protocol)) {

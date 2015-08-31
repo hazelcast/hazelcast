@@ -20,7 +20,7 @@ import com.hazelcast.nio.Packet;
 
 import java.nio.ByteBuffer;
 
-public class MemberPacketWriter implements PacketWriter {
+public class MemberSocketWriter implements SocketWriter<Packet> {
 
     @Override
     public boolean write(Packet packet, ByteBuffer dst) {

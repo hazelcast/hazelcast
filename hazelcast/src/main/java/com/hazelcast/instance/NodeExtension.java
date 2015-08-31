@@ -17,22 +17,21 @@
 package com.hazelcast.instance;
 
 import com.hazelcast.client.impl.protocol.MessageTaskFactory;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.storage.DataRef;
 import com.hazelcast.internal.storage.Storage;
 import com.hazelcast.memory.MemoryStats;
 import com.hazelcast.nio.IOService;
 import com.hazelcast.nio.MemberSocketInterceptor;
-import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.nio.tcp.PacketReader;
-import com.hazelcast.nio.tcp.PacketWriter;
 import com.hazelcast.nio.tcp.SocketChannelWrapperFactory;
+import com.hazelcast.nio.tcp.SocketReader;
+import com.hazelcast.nio.tcp.SocketWriter;
 import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.security.SecurityContext;
 
 /**
  * NodeExtension is a <tt>Node</tt> extension mechanism to be able to plug different implementations of
  * some modules, like; <tt>SerializationService</tt>, <tt>SocketChannelWrapperFactory</tt> etc.
- *
  */
 public interface NodeExtension {
 
@@ -73,6 +72,7 @@ public interface NodeExtension {
 
     /**
      * Creates a service which is an implementation of given type parameter.
+     *
      * @param type type of service
      * @return service implementation
      * @throws java.lang.IllegalArgumentException if type is not known
@@ -98,23 +98,21 @@ public interface NodeExtension {
      * Creates a <tt>PacketReader</tt> for given <tt>Connection</tt> instance.
      *
      * @param connection tcp-ip connection
-     * @param ioService IOService
-     *
+     * @param ioService  IOService
      * @return packet reader
      */
-    PacketReader createPacketReader(TcpIpConnection connection, IOService ioService);
+    SocketReader createSocketReader(TcpIpConnection connection, IOService ioService);
 
     /**
      * Creates a <tt>PacketWriter</tt> for given <tt>Connection</tt> instance.
      *
      * @param connection tcp-ip connection
-     * @param ioService IOService
-     *
+     * @param ioService  IOService
      * @return packet writer
      */
-    PacketWriter createPacketWriter(TcpIpConnection connection, IOService ioService);
+    SocketWriter createSocketWriter(TcpIpConnection connection, IOService ioService);
 
-    /***
+    /**
      * Creates factory method that creates server side client message handlers
      *
      * @param node node

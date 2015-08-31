@@ -22,7 +22,7 @@ import com.hazelcast.util.counters.Counter;
 
 import java.nio.ByteBuffer;
 
-public class MemberPacketReader implements PacketReader {
+public class MemberSocketReader implements SocketReader {
 
     protected final TcpIpConnection connection;
     protected Packet packet;
@@ -31,7 +31,7 @@ public class MemberPacketReader implements PacketReader {
     private final Counter normalPacketsRead;
     private final Counter priorityPacketsRead;
 
-    public MemberPacketReader(TcpIpConnection connection, PacketDispatcher packetDispatcher) {
+    public MemberSocketReader(TcpIpConnection connection, PacketDispatcher packetDispatcher) {
         this.connection = connection;
         this.packetDispatcher = packetDispatcher;
         final ReadHandler readHandler = connection.getReadHandler();

@@ -22,7 +22,6 @@ import com.hazelcast.nio.Protocols;
 import com.hazelcast.nio.ascii.SocketTextReader;
 import com.hazelcast.nio.tcp.ClientMessageSocketReader;
 import com.hazelcast.nio.tcp.ClientPacketSocketReader;
-import com.hazelcast.nio.tcp.PacketSocketReader;
 import com.hazelcast.nio.tcp.ReadHandler;
 import com.hazelcast.nio.tcp.SocketReader;
 import com.hazelcast.nio.tcp.TcpIpConnection;
@@ -198,7 +197,7 @@ public final class NonBlockingReadHandler extends AbstractSelectionHandler imple
                 configureBuffers(ioService.getSocketReceiveBufferSize() * KILO_BYTE);
                 connection.setType(MEMBER);
                 writeHandler.setProtocol(CLUSTER);
-                socketReader = new PacketSocketReader(ioService.createPacketReader(connection));
+                socketReader = ioService.createSocketReader(connection);
             } else if (CLIENT_BINARY.equals(protocol)) {
                 configureBuffers(ioService.getSocketClientReceiveBufferSize() * KILO_BYTE);
                 writeHandler.setProtocol(CLIENT_BINARY);

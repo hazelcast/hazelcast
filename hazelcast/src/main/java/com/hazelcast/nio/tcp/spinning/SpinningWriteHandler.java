@@ -24,7 +24,6 @@ import com.hazelcast.nio.SocketWritable;
 import com.hazelcast.nio.ascii.SocketTextWriter;
 import com.hazelcast.nio.tcp.ClientMessageSocketWriter;
 import com.hazelcast.nio.tcp.ClientPacketSocketWriter;
-import com.hazelcast.nio.tcp.MemberPacketSocketWriter;
 import com.hazelcast.nio.tcp.SocketChannelWrapper;
 import com.hazelcast.nio.tcp.SocketWriter;
 import com.hazelcast.nio.tcp.TcpIpConnection;
@@ -158,7 +157,7 @@ public class SpinningWriteHandler extends AbstractHandler implements WriteHandle
 
         if (CLUSTER.equals(protocol)) {
             configureBuffers(ioService.getSocketSendBufferSize() * KILO_BYTE);
-            socketWriter = new MemberPacketSocketWriter(ioService.createPacketWriter(connection));
+            socketWriter = ioService.createSocketWriter(connection);
             outputBuffer.put(stringToBytes(CLUSTER));
         } else if (CLIENT_BINARY.equals(protocol)) {
             configureBuffers(ioService.getSocketClientSendBufferSize() * KILO_BYTE);
