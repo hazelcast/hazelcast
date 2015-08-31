@@ -827,8 +827,9 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         int partitionCount = partitionService.getPartitionCount();
         boolean tooManyEntries = entries.size() > (partitionCount * factor);
         try {
+            List<Future<?>> futures = new LinkedList<Future<?>>();
+
             if (tooManyEntries) {
-                List<Future> futures = new LinkedList<Future>();
                 Map<Integer, MapEntrySet> entryMap
                         = new HashMap<Integer, MapEntrySet>(nodeEngine.getPartitionService().getPartitionCount());
                 for (Entry entry : entries.entrySet()) {
@@ -855,20 +856,27 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
                     futures.add(operationService.invokeOnPartition(SERVICE_NAME, op, partitionId));
                 }
 
-                for (Future future : futures) {
-                    future.get();
-                }
-
             } else {
                 for (Entry entry : entries.entrySet()) {
                     checkNotNull(entry.getKey(), NULL_KEY_IS_NOT_ALLOWED);
                     checkNotNull(entry.getValue(), NULL_VALUE_IS_NOT_ALLOWED);
 
-                    putInternal(mapService.getMapServiceContext().toData(entry.getKey(), partitionStrategy),
-                            mapService.getMapServiceContext().toData(entry.getValue()),
-                            -1,
-                            TimeUnit.MILLISECONDS);
+                    int partitionId = partitionService.getPartitionId(entry.getKey());
+                    Map.Entry<Data, Data> dataEntry =
+                        new AbstractMap.SimpleImmutableEntry<Data, Data>(
+                            mapService.getMapServiceContext().toData(entry.getKey(), partitionStrategy),
+                            mapService.getMapServiceContext().toData(entry.getValue())
+                        );
+
+                    MapEntrySet mapEntrySet = new MapEntrySet(Collections.singleton(dataEntry));
+                    final PutAllOperation op = new PutAllOperation(name, mapEntrySet);
+                    op.setPartitionId(partitionId);
+                    futures.add(operationService.invokeOnPartition(SERVICE_NAME, op, partitionId));
                 }
+            }
+
+            for (Future<?> future : futures) {
+                future.get();
             }
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
