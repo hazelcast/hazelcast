@@ -17,19 +17,19 @@
 package com.hazelcast.nio.ascii;
 
 import com.hazelcast.internal.ascii.TextCommand;
-import com.hazelcast.nio.tcp.SocketWriter;
+import com.hazelcast.nio.tcp.WriteHandler;
 import com.hazelcast.nio.tcp.TcpIpConnection;
 
 import java.nio.ByteBuffer;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class SocketTextWriter implements SocketWriter<TextCommand> {
+public class TextWriteHandler implements WriteHandler<TextCommand> {
     private final TcpIpConnection connection;
     private final Map<Long, TextCommand> responses = new ConcurrentHashMap<Long, TextCommand>(100);
     private long currentRequestId;
 
-    public SocketTextWriter(TcpIpConnection connection) {
+    public TextWriteHandler(TcpIpConnection connection) {
         this.connection = connection;
     }
 
@@ -58,7 +58,7 @@ public class SocketTextWriter implements SocketWriter<TextCommand> {
     }
 
     @Override
-    public boolean write(TextCommand socketWritable, ByteBuffer dst) throws Exception {
-        return socketWritable.writeTo(dst);
+    public boolean onWrite(TextCommand textCommand, ByteBuffer dst) throws Exception {
+        return textCommand.writeTo(dst);
     }
 }

@@ -25,8 +25,8 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.nio.tcp.SocketChannelWrapperFactory;
-import com.hazelcast.nio.tcp.SocketReader;
-import com.hazelcast.nio.tcp.SocketWriter;
+import com.hazelcast.nio.tcp.ReadHandler;
+import com.hazelcast.nio.tcp.WriteHandler;
 import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.spi.EventService;
 
@@ -137,7 +137,7 @@ public interface IOService {
 
     MemberSocketInterceptor getMemberSocketInterceptor();
 
-    SocketReader createSocketReader(TcpIpConnection connection);
+    ReadHandler createReadHandler(TcpIpConnection connection);
 
-    SocketWriter createSocketWriter(TcpIpConnection connection);
+    WriteHandler createWriteHandler(TcpIpConnection connection);
 }

@@ -18,13 +18,13 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class ClientMessageSocketWriterTest extends HazelcastTestSupport {
+public class NewClientWriteHandlerTest extends HazelcastTestSupport {
 
-    private ClientMessageSocketWriter writer;
+    private NewClientWriteHandler writeHandler;
 
     @Before
     public void setup() {
-        writer = new ClientMessageSocketWriter();
+        writeHandler = new NewClientWriteHandler();
     }
 
     @Test
@@ -34,7 +34,7 @@ public class ClientMessageSocketWriterTest extends HazelcastTestSupport {
                 .setMessageType(1);
 
         ByteBuffer bb = ByteBuffer.allocate(1000);
-        boolean result = writer.write(message, bb);
+        boolean result = writeHandler.onWrite(message, bb);
 
         assertTrue(result);
         bb.flip();

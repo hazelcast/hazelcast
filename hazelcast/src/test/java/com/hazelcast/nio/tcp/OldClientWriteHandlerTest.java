@@ -18,22 +18,22 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class ClientPacketSocketWriterTest {
+public class OldClientWriteHandlerTest {
 
     private SerializationService serializationService;
-    private ClientPacketSocketWriter writer;
+    private OldClientWriteHandler writeHandler;
 
     @Before
     public void setup() {
         serializationService = new DefaultSerializationServiceBuilder().build();
-        writer = new ClientPacketSocketWriter();
+        writeHandler = new OldClientWriteHandler();
     }
 
     @Test
     public void test() throws Exception {
         Packet packet = new Packet(serializationService.toBytes("foobar"));
         ByteBuffer bb = ByteBuffer.allocate(1000);
-        boolean result = writer.write(packet, bb);
+        boolean result = writeHandler.onWrite(packet, bb);
 
         assertTrue(result);
 

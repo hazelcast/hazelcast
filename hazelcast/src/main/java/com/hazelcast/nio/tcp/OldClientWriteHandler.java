@@ -21,14 +21,16 @@ import com.hazelcast.nio.Packet;
 import java.nio.ByteBuffer;
 
 /**
- * A {@link SocketWriter} that write Packets for the old-client.
+ * A {@link WriteHandler} for the old client. It writes Packet into the ByteBuffer.
  *
  * Once the old client is deleted, this code can be deleted.
+ *
+ * @see OldClientReadHandler
  */
-public class ClientPacketSocketWriter implements SocketWriter<Packet> {
+public class OldClientWriteHandler implements WriteHandler<Packet> {
 
     @Override
-    public boolean write(Packet packet, ByteBuffer dst) throws Exception {
+    public boolean onWrite(Packet packet, ByteBuffer dst) throws Exception {
         return packet.writeTo(dst);
     }
 }

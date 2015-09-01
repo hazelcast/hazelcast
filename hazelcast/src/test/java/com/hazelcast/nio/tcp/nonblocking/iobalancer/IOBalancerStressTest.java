@@ -25,10 +25,10 @@ import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.nio.tcp.nonblocking.NonBlockingIOThread;
 import com.hazelcast.nio.tcp.nonblocking.MigratableHandler;
 import com.hazelcast.nio.tcp.nonblocking.NonBlockingIOThreadingModel;
-import com.hazelcast.nio.tcp.nonblocking.NonBlockingReadHandler;
+import com.hazelcast.nio.tcp.nonblocking.NonBlockingSocketReader;
 import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.nio.tcp.TcpIpConnectionManager;
-import com.hazelcast.nio.tcp.nonblocking.NonBlockingWriteHandler;
+import com.hazelcast.nio.tcp.nonblocking.NonBlockingSocketWriter;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.NightlyTest;
@@ -112,9 +112,9 @@ public class IOBalancerStressTest extends HazelcastTestSupport {
             sb.append(in + " :" + in.getEventCount() + "\n");
 
             for (TcpIpConnection connection : connectionManager.getActiveConnections()) {
-                NonBlockingReadHandler readHandler = (NonBlockingReadHandler) connection.getReadHandler();
-                if (readHandler.getOwner() == in) {
-                    sb.append("\t" + readHandler + " eventCount:" + readHandler.getEventCount() + "\n");
+                NonBlockingSocketReader socketReader = (NonBlockingSocketReader) connection.getSocketReader();
+                if (socketReader.getOwner() == in) {
+                    sb.append("\t" + socketReader + " eventCount:" + socketReader.getEventCount() + "\n");
                 }
             }
         }
@@ -123,9 +123,9 @@ public class IOBalancerStressTest extends HazelcastTestSupport {
             sb.append(in + " :" + in.getEventCount() + "\n");
 
             for (TcpIpConnection connection : connectionManager.getActiveConnections()) {
-                NonBlockingWriteHandler writeHandler = (NonBlockingWriteHandler) connection.getWriteHandler();
-                if (writeHandler.getOwner() == in) {
-                    sb.append("\t" + writeHandler + " eventCount:" + writeHandler.getEventCount() + "\n");
+                NonBlockingSocketWriter socketWriter = (NonBlockingSocketWriter) connection.getSocketWriter();
+                if (socketWriter.getOwner() == in) {
+                    sb.append("\t" + socketWriter + " eventCount:" + socketWriter.getEventCount() + "\n");
                 }
             }
         }
@@ -137,8 +137,8 @@ public class IOBalancerStressTest extends HazelcastTestSupport {
     private Map<NonBlockingIOThread, Set<MigratableHandler>> getHandlersPerSelector(TcpIpConnectionManager connectionManager) {
         Map<NonBlockingIOThread, Set<MigratableHandler>> handlersPerSelector = new HashMap<NonBlockingIOThread, Set<MigratableHandler>>();
         for (TcpIpConnection connection : connectionManager.getActiveConnections()) {
-            add(handlersPerSelector, (MigratableHandler) connection.getReadHandler());
-            add(handlersPerSelector, (MigratableHandler) connection.getWriteHandler());
+            add(handlersPerSelector, (MigratableHandler) connection.getSocketReader());
+            add(handlersPerSelector, (MigratableHandler) connection.getSocketWriter());
         }
         return handlersPerSelector;
     }

@@ -22,7 +22,15 @@ import com.hazelcast.util.counters.Counter;
 
 import java.nio.ByteBuffer;
 
-public class MemberSocketReader implements SocketReader {
+/**
+ * The {@link ReadHandler} for member to member communication.
+ *
+ * It reads as many packets from the src ByteBuffer as possible, and each of the Packets is send to the {@link PacketDispatcher}.
+ *
+ * @see PacketDispatcher
+ * @see MemberWriteHandler
+ */
+public class MemberReadHandler implements ReadHandler {
 
     protected final TcpIpConnection connection;
     protected Packet packet;
@@ -31,16 +39,16 @@ public class MemberSocketReader implements SocketReader {
     private final Counter normalPacketsRead;
     private final Counter priorityPacketsRead;
 
-    public MemberSocketReader(TcpIpConnection connection, PacketDispatcher packetDispatcher) {
+    public MemberReadHandler(TcpIpConnection connection, PacketDispatcher packetDispatcher) {
         this.connection = connection;
         this.packetDispatcher = packetDispatcher;
-        final ReadHandler readHandler = connection.getReadHandler();
-        this.normalPacketsRead = readHandler.getNormalPacketsReadCounter();
-        this.priorityPacketsRead = readHandler.getPriorityPacketsReadCounter();
+        SocketReader socketReader = connection.getSocketReader();
+        this.normalPacketsRead = socketReader.getNormalPacketsReadCounter();
+        this.priorityPacketsRead = socketReader.getPriorityPacketsReadCounter();
     }
 
     @Override
-    public void read(ByteBuffer src) throws Exception {
+    public void onRead(ByteBuffer src) throws Exception {
         while (src.hasRemaining()) {
             if (packet == null) {
                 packet = new Packet();

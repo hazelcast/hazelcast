@@ -18,64 +18,33 @@ package com.hazelcast.nio.tcp;
 
 import com.hazelcast.nio.SocketWritable;
 
+import java.nio.ByteBuffer;
 
 /**
- * Each {@link TcpIpConnection} has a WriteHandler. It reads data from the network on behalf of a Connection.
+ * Responsible for writing {@link SocketWritable} to a {@link ByteBuffer}.
+ *
+ * Each {@link SocketWriter} will have its own {@link WriteHandler} instance. Therefor it doesn't need
+ * to be thread-safe.
+ *
+ * For more information about the WriteHandler (and handlers in generally), have a look at the {@link ReadHandler}.
+ *
+ * @param <T>
+ * @see IOThreadingModel
  */
-public interface WriteHandler {
+public interface WriteHandler<T extends SocketWritable> {
 
     /**
-     * Returns the total number of packets (urgent and non normal priority) pending.
+     * A callback to indicate that the socketWritable should be written to the destination ByteBuffer.
      *
-     * @return total number of packets.
+     * It could be that a SocketWritable is too big to fit into the ByteBuffer in 1 go; in that case this call will be made
+     * for the same SocketWritable multiple times until write returns true. It is up to the SocketWritable to track where
+     * it needs to continue.
+     *
+     * @param socketWritable the SocketWritable to write
+     * @param dst            the destination ByteBuffer
+     * @return true if the SocketWritable is completely written
+     * @throws Exception if something fails while writing to ByteBuffer. When an exception is thrown, the TcpIpConnection is
+     *                   closed. There is no point continuing with a potentially corrupted stream.
      */
-    int totalPacketsPending();
-
-    /**
-     * Returns the last {@link com.hazelcast.util.Clock#currentTimeMillis()} that a write to the local network buffers completed.
-     *
-     * It is important to realize that this doesn't say anything about the remote side actually receiving any data.
-     *
-     * @return the last time a write completed.
-     */
-    long getLastWriteTimeMillis();
-
-    /**
-     * Offers a SocketWritable to be written.
-     *
-     * No guarantees are made that the packet is going to be written or received by the other side.
-     *
-     * @param packet the SocketWritable
-     */
-    void offer(SocketWritable packet);
-
-    /**
-     * Gets the {@link SocketWriter} that belongs to this WriteHandler.
-     *
-     * This method exists for the SocketTextReader, but probably should be deleted.
-     *
-     * @return the socket writer.
-     */
-    SocketWriter getSocketWriter();
-
-    /**
-     * Sets the protocol this WriteHandler should use.
-     *
-     * This should be called only once at the beginning of the connection.
-     *
-     * See {@link com.hazelcast.nio.Protocols}
-     *
-     * @param protocol the protocol
-     */
-    void setProtocol(String protocol);
-
-    /**
-     * Starts this WriteHandler.
-     */
-    void start();
-
-    /**
-     * Shuts down this WriteHandler.
-     */
-    void shutdown();
+    boolean onWrite(T socketWritable, ByteBuffer dst) throws Exception;
 }

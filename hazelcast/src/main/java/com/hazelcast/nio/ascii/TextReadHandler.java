@@ -33,7 +33,7 @@ import com.hazelcast.internal.ascii.rest.HttpPostCommandParser;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ConnectionType;
 import com.hazelcast.nio.IOService;
-import com.hazelcast.nio.tcp.SocketReader;
+import com.hazelcast.nio.tcp.ReadHandler;
 import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.util.StringUtil;
 
@@ -55,7 +55,7 @@ import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.
 import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.UNKNOWN;
 import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.ERROR_CLIENT;
 
-public class SocketTextReader implements SocketReader {
+public class TextReadHandler implements ReadHandler {
 
     private static final Map<String, CommandParser> MAP_COMMAND_PARSERS = new HashMap<String, CommandParser>();
 
@@ -86,7 +86,7 @@ public class SocketTextReader implements SocketReader {
     private boolean commandLineRead;
     private TextCommand command;
     private final TextCommandService textCommandService;
-    private final SocketTextWriter socketTextWriter;
+    private final TextWriteHandler textWriteHandler;
     private final TcpIpConnection connection;
     private final boolean restEnabled;
     private final boolean memcacheEnabled;
@@ -94,10 +94,10 @@ public class SocketTextReader implements SocketReader {
     private long requestIdGen;
     private final ILogger logger;
 
-    public SocketTextReader(TcpIpConnection connection) {
+    public TextReadHandler(TcpIpConnection connection) {
         IOService ioService = connection.getConnectionManager().getIoService();
         this.textCommandService = ioService.getTextCommandService();
-        this.socketTextWriter = (SocketTextWriter) connection.getWriteHandler().getSocketWriter();
+        this.textWriteHandler = (TextWriteHandler) connection.getSocketWriter().getWriteHandler();
         this.connection = connection;
         this.memcacheEnabled = ioService.isMemcacheEnabled();
         this.restEnabled = ioService.isRestEnabled();
@@ -105,11 +105,11 @@ public class SocketTextReader implements SocketReader {
     }
 
     public void sendResponse(TextCommand command) {
-        socketTextWriter.enqueue(command);
+        textWriteHandler.enqueue(command);
     }
 
     @Override
-    public void read(ByteBuffer src) {
+    public void onRead(ByteBuffer src) {
         while (src.hasRemaining()) {
             doRead(src);
         }
@@ -197,8 +197,8 @@ public class SocketTextReader implements SocketReader {
         }
     }
 
-    public SocketTextWriter getSocketTextWriter() {
-        return socketTextWriter;
+    public TextWriteHandler getTextWriteHandler() {
+        return textWriteHandler;
     }
 
     public void closeConnection() {

@@ -25,22 +25,30 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 
 /**
- * A {@link SocketReader} that reads ClientMessage for the new-client.
+ * A {@link ReadHandler} for the new-client. It passes the ByteBuffer to the ClientMessageBuilder. For each
+ * constructed ClientMessage, the {@link #handleMessage(ClientMessage)} is called; which passes the message
+ * to the {@link IOService#handleClientMessage(ClientMessage, Connection)}.
+ *
+ * Probably the design can be simplified if the IOService would expose a method getMessageHandler; so we
+ * don't need to let the NewClientReadHandler act like the MessageHandler, but directly send to the right
+ * data-structure.
+ *
+ * @see NewClientWriteHandler
  */
-public class ClientMessageSocketReader implements SocketReader, ClientMessageBuilder.MessageHandler {
+public class NewClientReadHandler implements ReadHandler, ClientMessageBuilder.MessageHandler {
 
     private final ClientMessageBuilder builder;
     private final Connection connection;
     private final IOService ioService;
 
-    public ClientMessageSocketReader(Connection connection, IOService ioService) throws IOException {
+    public NewClientReadHandler(Connection connection, IOService ioService) throws IOException {
         this.connection = connection;
         this.ioService = ioService;
         this.builder = new ClientMessageBuilder(this);
     }
 
     @Override
-    public void read(ByteBuffer src) throws Exception {
+    public void onRead(ByteBuffer src) throws Exception {
         builder.onData(src);
     }
 

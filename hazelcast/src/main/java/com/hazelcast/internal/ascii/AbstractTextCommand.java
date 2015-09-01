@@ -16,15 +16,14 @@
 
 package com.hazelcast.internal.ascii;
 
-import com.hazelcast.nio.ascii.SocketTextReader;
-import com.hazelcast.nio.ascii.SocketTextWriter;
+import com.hazelcast.nio.ascii.TextReadHandler;
+import com.hazelcast.nio.ascii.TextWriteHandler;
 
 public abstract class AbstractTextCommand implements TextCommand {
     protected final TextCommandConstants.TextCommandType type;
-    private SocketTextReader socketTextReader;
-    private SocketTextWriter socketTextWriter;
+    private TextReadHandler readHandler;
+    private TextWriteHandler writeHandler;
     private long requestId = -1;
-
 
     protected AbstractTextCommand(TextCommandConstants.TextCommandType type) {
         this.type = type;
@@ -36,13 +35,13 @@ public abstract class AbstractTextCommand implements TextCommand {
     }
 
     @Override
-    public SocketTextReader getSocketTextReader() {
-        return socketTextReader;
+    public TextReadHandler getReadHandler() {
+        return readHandler;
     }
 
     @Override
-    public SocketTextWriter getSocketTextWriter() {
-        return socketTextWriter;
+    public TextWriteHandler getWriteHandler() {
+        return writeHandler;
     }
 
     @Override
@@ -51,10 +50,10 @@ public abstract class AbstractTextCommand implements TextCommand {
     }
 
     @Override
-    public void init(SocketTextReader socketTextReader, long requestId) {
-        this.socketTextReader = socketTextReader;
+    public void init(TextReadHandler textReadHandler, long requestId) {
+        this.readHandler = textReadHandler;
         this.requestId = requestId;
-        this.socketTextWriter = socketTextReader.getSocketTextWriter();
+        this.writeHandler = textReadHandler.getTextWriteHandler();
     }
 
     @Override

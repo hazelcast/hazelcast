@@ -24,8 +24,8 @@ import com.hazelcast.memory.MemoryStats;
 import com.hazelcast.nio.IOService;
 import com.hazelcast.nio.MemberSocketInterceptor;
 import com.hazelcast.nio.tcp.SocketChannelWrapperFactory;
-import com.hazelcast.nio.tcp.SocketReader;
-import com.hazelcast.nio.tcp.SocketWriter;
+import com.hazelcast.nio.tcp.ReadHandler;
+import com.hazelcast.nio.tcp.WriteHandler;
 import com.hazelcast.nio.tcp.TcpIpConnection;
 import com.hazelcast.security.SecurityContext;
 
@@ -95,22 +95,22 @@ public interface NodeExtension {
     SocketChannelWrapperFactory getSocketChannelWrapperFactory();
 
     /**
-     * Creates a <tt>PacketReader</tt> for given <tt>Connection</tt> instance.
+     * Creates a <tt>ReadHandler</tt> for given <tt>Connection</tt> instance.
      *
      * @param connection tcp-ip connection
      * @param ioService  IOService
-     * @return packet reader
+     * @return the created ReadHandler.
      */
-    SocketReader createSocketReader(TcpIpConnection connection, IOService ioService);
+    ReadHandler createReadHandler(TcpIpConnection connection, IOService ioService);
 
     /**
-     * Creates a <tt>PacketWriter</tt> for given <tt>Connection</tt> instance.
+     * Creates a <tt>WriteHandler</tt> for given <tt>Connection</tt> instance.
      *
      * @param connection tcp-ip connection
      * @param ioService  IOService
-     * @return packet writer
+     * @return the created WriteHandler
      */
-    SocketWriter createSocketWriter(TcpIpConnection connection, IOService ioService);
+    WriteHandler createWriteHandler(TcpIpConnection connection, IOService ioService);
 
     /**
      * Creates factory method that creates server side client message handlers
