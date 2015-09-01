@@ -29,9 +29,9 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.nio.serialization.StreamSerializer;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.ServiceLoader;
+import com.hazelcast.util.collection.Int2ObjectHashMap;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
@@ -48,7 +48,7 @@ final class DataSerializer implements StreamSerializer<DataSerializable> {
 
     private static final String FACTORY_ID = "com.hazelcast.DataSerializerHook";
 
-    private final Map<Integer, DataSerializableFactory> factories = new HashMap<Integer, DataSerializableFactory>();
+    private final Int2ObjectHashMap<DataSerializableFactory> factories = new Int2ObjectHashMap<DataSerializableFactory>();
 
     DataSerializer(Map<Integer, ? extends DataSerializableFactory> dataSerializableFactories, ClassLoader classLoader) {
         try {
