@@ -105,8 +105,8 @@ public class SerializationTest
     @Test
     public void test_callid_on_correct_stream_position() throws Exception {
         SerializationService serializationService = new DefaultSerializationServiceBuilder().build();
-        CancellationOperation operation = new CancellationOperation(UuidUtil.buildRandomUuidString(), true);
-        operation.setCallerUuid(UuidUtil.buildRandomUuidString());
+        CancellationOperation operation = new CancellationOperation(UuidUtil.newUnsecureUuidString(), true);
+        operation.setCallerUuid(UuidUtil.newUnsecureUuidString());
         OperationAccessor.setCallId(operation, 12345);
 
         Data data = serializationService.toData(operation);
@@ -337,7 +337,7 @@ public class SerializationTest
     
     @Test
     public void testMemberLeftException_usingMemberImpl() throws IOException, ClassNotFoundException {
-        String uuid = UuidUtil.buildRandomUuidString();
+        String uuid = UuidUtil.newUnsecureUuidString();
         String host = "127.0.0.1";
         int port = 5000;
 
@@ -348,7 +348,7 @@ public class SerializationTest
 
     @Test
     public void testMemberLeftException_usingSimpleMember() throws IOException, ClassNotFoundException {
-        String uuid = UuidUtil.buildRandomUuidString();
+        String uuid = UuidUtil.newUnsecureUuidString();
         String host = "127.0.0.1";
         int port = 5000;
 

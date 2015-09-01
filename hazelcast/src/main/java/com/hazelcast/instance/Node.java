@@ -150,8 +150,7 @@ public class Node {
             localMember = new MemberImpl(address, true, createMemberUuid(address), hazelcastInstance, memberAttributes);
             loggingService.setThisMember(localMember);
             logger = loggingService.getLogger(Node.class.getName());
-            hazelcastThreadGroup = new HazelcastThreadGroup(
-                    hazelcastInstance.getName(), logger, configClassLoader);
+            hazelcastThreadGroup = new HazelcastThreadGroup(hazelcastInstance.getName(), logger, configClassLoader);
             nodeExtension = NodeExtensionFactory.create(configClassLoader);
             nodeExtension.beforeStart(this);
 
@@ -529,16 +528,12 @@ public class Node {
         return null;
     }
 
-
     public void setAsMaster() {
         logger.finest("This node is being set as the master");
         masterAddress = address;
         setJoined();
-        this.getClusterService().getClusterClock().
-                setClusterStartTime(Clock.currentTimeMillis());
-        this.getClusterService().setClusterId(
-                UuidUtil.createClusterUuid()
-        );
+        this.getClusterService().getClusterClock().setClusterStartTime(Clock.currentTimeMillis());
+        this.getClusterService().setClusterId(UuidUtil.createClusterUuid());
     }
 
     public Config getConfig() {

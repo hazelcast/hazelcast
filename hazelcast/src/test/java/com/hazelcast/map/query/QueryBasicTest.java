@@ -465,10 +465,10 @@ public class QueryBasicTest extends HazelcastTestSupport {
         IMap map = instance.getMap("testPredicateCustomAttribute");
 
         CustomAttribute attribute = new CustomAttribute(78, 145);
-        CustomObject object = new CustomObject("name1", UuidUtil.buildRandomUUID(), attribute);
+        CustomObject object = new CustomObject("name1", UuidUtil.newUnsecureUUID(), attribute);
         map.put(1, object);
 
-        CustomObject object2 = new CustomObject("name2", UuidUtil.buildRandomUUID(), attribute);
+        CustomObject object2 = new CustomObject("name2", UuidUtil.newUnsecureUUID(), attribute);
         map.put(2, object2);
 
         assertEquals(object, map.values(new PredicateBuilder().getEntryObject().get("uuid").equal(object.getUuid())).iterator().next());

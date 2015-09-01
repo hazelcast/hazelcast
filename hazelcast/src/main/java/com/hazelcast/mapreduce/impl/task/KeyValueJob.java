@@ -57,7 +57,7 @@ public class KeyValueJob<KeyIn, ValueIn>
 
     @Override
     protected <T> JobCompletableFuture<T> invoke(Collator collator) {
-        String jobId = UuidUtil.buildRandomUuidString();
+        String jobId = UuidUtil.newUnsecureUuidString();
 
         AbstractJobTracker jobTracker = (AbstractJobTracker) this.jobTracker;
         TrackableJobFuture<T> jobFuture = new TrackableJobFuture<T>(name, jobId, jobTracker, nodeEngine, collator);

@@ -35,8 +35,8 @@ import com.hazelcast.topic.ReliableMessageListener;
 import com.hazelcast.topic.TopicOverloadException;
 import com.hazelcast.topic.TopicOverloadPolicy;
 import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.util.UuidUtil;
 
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
@@ -204,7 +204,7 @@ public class ReliableTopicProxy<E> extends AbstractDistributedObject<ReliableTop
     public String addMessageListener(MessageListener<E> listener) {
         checkNotNull(listener, "listener can't be null");
 
-        String id = UUID.randomUUID().toString();
+        String id = UuidUtil.newUnsecureUuidString();
         ReliableMessageListener<E> reliableMessageListener;
         if (listener instanceof ReliableMessageListener) {
             reliableMessageListener = (ReliableMessageListener) listener;
