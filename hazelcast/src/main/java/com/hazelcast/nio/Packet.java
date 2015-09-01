@@ -23,7 +23,8 @@ import java.nio.ByteBuffer;
 import static com.hazelcast.nio.Bits.INT_SIZE_IN_BYTES;
 
 /**
- * A Packet is a piece of data send over the line.
+ * A Packet is a piece of data send over the line. The Packet is used for member to member communication and old-client to
+ * member communication.
  *
  * The Packet extends HeapData instead of wrapping it. From a design point of view this is often not the preferred solution (
  * prefer composition over inheritance), but in this case that would mean more object litter.
