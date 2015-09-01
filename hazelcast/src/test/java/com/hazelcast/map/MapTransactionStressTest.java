@@ -323,16 +323,15 @@ public class MapTransactionStressTest extends HazelcastTestSupport {
 
         @Override
         public Operation newPrepareOperation() {
-            return new AbstractOperation() {
-                @Override
-                public void run() throws Exception {
-                }
-            };
+            return newEmptyOperation();
         }
 
         @Override
         public Operation newCommitOperation() {
             return new AbstractOperation() {
+                {
+                    setPartitionId(0);
+                }
                 @Override
                 public void run() throws Exception {
                     LockSupport.parkNanos(10000);
@@ -342,7 +341,14 @@ public class MapTransactionStressTest extends HazelcastTestSupport {
 
         @Override
         public Operation newRollbackOperation() {
+            return newEmptyOperation();
+        }
+
+        private AbstractOperation newEmptyOperation() {
             return new AbstractOperation() {
+                {
+                    setPartitionId(0);
+                }
                 @Override
                 public void run() throws Exception {
                 }

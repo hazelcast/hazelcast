@@ -17,6 +17,7 @@
 package com.hazelcast.transaction.impl;
 
 import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.nio.Address;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
@@ -98,7 +99,7 @@ public class TransactionLog {
     public List<Future> commit(NodeEngine nodeEngine) {
         List<Future> futures = new ArrayList<Future>(size());
         for (TransactionLogRecord record : recordList) {
-            Future future = invoke(nodeEngine, record.newCommitOperation());
+            Future future = invoke(nodeEngine, record, record.newCommitOperation());
             futures.add(future);
         }
         return futures;
@@ -107,7 +108,7 @@ public class TransactionLog {
     public List<Future> prepare(NodeEngine nodeEngine) {
         List<Future> futures = new ArrayList<Future>(size());
         for (TransactionLogRecord record : recordList) {
-            Future future = invoke(nodeEngine, record.newPrepareOperation());
+            Future future = invoke(nodeEngine, record, record.newPrepareOperation());
             futures.add(future);
         }
         return futures;
@@ -118,40 +119,43 @@ public class TransactionLog {
         ListIterator<TransactionLogRecord> iterator = recordList.listIterator(size());
         while (iterator.hasPrevious()) {
             TransactionLogRecord record = iterator.previous();
-            Future future = invoke(nodeEngine, record.newRollbackOperation());
+            Future future = invoke(nodeEngine, record, record.newRollbackOperation());
             futures.add(future);
         }
         return futures;
     }
 
-    private Future invoke(NodeEngine nodeEngine, Operation op) {
+    private Future invoke(NodeEngine nodeEngine, TransactionLogRecord record, Operation op) {
         OperationService operationService = nodeEngine.getOperationService();
-
-        return operationService.invokeOnPartition(
-                op.getServiceName(),
-                op,
-                op.getPartitionId());
+        if (record instanceof TargetAwareTransactionLogRecord) {
+            Address target = ((TargetAwareTransactionLogRecord) record).getTarget();
+            return operationService.invokeOnTarget(op.getServiceName(), op, target);
+        }
+        return operationService.invokeOnPartition(op.getServiceName(), op, op.getPartitionId());
     }
 
     public void commitAsync(NodeEngine nodeEngine, ExecutionCallback callback) {
         for (TransactionLogRecord record : recordList) {
-            invokeAsync(nodeEngine, callback, record.newCommitOperation());
+            invokeAsync(nodeEngine, callback, record, record.newCommitOperation());
         }
     }
 
     public void rollbackAsync(NodeEngine nodeEngine, ExecutionCallback callback) {
         for (TransactionLogRecord record : recordList) {
-            invokeAsync(nodeEngine, callback, record.newRollbackOperation());
+            invokeAsync(nodeEngine, callback, record, record.newRollbackOperation());
         }
     }
 
-    private void invokeAsync(NodeEngine nodeEngine, ExecutionCallback callback, Operation op) {
+    private void invokeAsync(NodeEngine nodeEngine, ExecutionCallback callback,
+            TransactionLogRecord record, Operation op) {
+
         InternalOperationService operationService = (InternalOperationService) nodeEngine.getOperationService();
 
-        operationService.asyncInvokeOnPartition(
-                op.getServiceName(),
-                op,
-                op.getPartitionId(),
-                callback);
+        if (record instanceof TargetAwareTransactionLogRecord) {
+            Address target = ((TargetAwareTransactionLogRecord) record).getTarget();
+            operationService.invokeOnTarget(op.getServiceName(), op, target);
+        } else {
+            operationService.asyncInvokeOnPartition(op.getServiceName(), op, op.getPartitionId(), callback);
+        }
     }
 }
