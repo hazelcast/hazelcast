@@ -21,14 +21,14 @@ import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CacheRemovePartitionLostListenerCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
+import com.hazelcast.client.impl.protocol.task.AbstractRemoveListenerMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
 
 import java.security.Permission;
 
 public class CacheRemovePartitionLostListenerMessageTask
-        extends AbstractCallableMessageTask<CacheRemovePartitionLostListenerCodec.RequestParameters> {
+        extends AbstractRemoveListenerMessageTask<CacheRemovePartitionLostListenerCodec.RequestParameters> {
 
 
     public CacheRemovePartitionLostListenerMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
@@ -36,10 +36,15 @@ public class CacheRemovePartitionLostListenerMessageTask
     }
 
     @Override
-    protected Object call() {
+    protected boolean deRegisterListener() {
         ICacheService service = getService(CacheService.SERVICE_NAME);
         return service.getNodeEngine().getEventService().deregisterListener(AbstractCacheService.SERVICE_NAME,
                 parameters.name, parameters.registrationId);
+    }
+
+    @Override
+    protected String getRegistrationId() {
+        return parameters.registrationId;
     }
 
     @Override
@@ -72,8 +77,4 @@ public class CacheRemovePartitionLostListenerMessageTask
         return "removeCachePartitionLostListener";
     }
 
-    @Override
-    public Object[] getParameters() {
-        return new Object[]{parameters.registrationId};
-    }
 }

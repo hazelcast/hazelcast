@@ -34,7 +34,7 @@ public class RemoveEntryListenerRequest extends BaseClientRemoveListenerRequest 
     }
 
     @Override
-    public Object call() throws Exception {
+    protected boolean deRegisterListener() {
         final MultiMapService service = getService();
         return service.removeListener(name, registrationId);
     }

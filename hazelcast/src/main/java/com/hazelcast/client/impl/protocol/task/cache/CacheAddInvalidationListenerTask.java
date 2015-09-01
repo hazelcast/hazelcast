@@ -51,7 +51,7 @@ public class CacheAddInvalidationListenerTask
         String registrationId =
                 cacheService.addInvalidationListener(parameters.name,
                                                      new CacheInvalidationEventListener(endpoint, cacheContext));
-        endpoint.setListenerRegistration(CacheService.SERVICE_NAME, parameters.name, registrationId);
+        endpoint.addListenerDestroyAction(CacheService.SERVICE_NAME, parameters.name, registrationId);
         return registrationId;
     }
 

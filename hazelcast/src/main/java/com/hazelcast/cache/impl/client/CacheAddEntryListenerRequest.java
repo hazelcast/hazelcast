@@ -23,10 +23,11 @@ import com.hazelcast.cache.impl.CacheEventSet;
 import com.hazelcast.cache.impl.CachePortableHook;
 import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.client.ClientEndpoint;
+import com.hazelcast.client.impl.ClientEndpointImpl;
 import com.hazelcast.client.impl.client.CallableClientRequest;
 import com.hazelcast.client.impl.client.RetryableRequest;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.internal.serialization.impl.HeapData;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.spi.EventRegistration;
@@ -38,6 +39,7 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.security.Permission;
 import java.util.Set;
+import java.util.concurrent.Callable;
 
 /**
  * Client request which registers an event listener on behalf of the client and delegates the received events
@@ -60,10 +62,17 @@ public class CacheAddEntryListenerRequest
 
     @Override
     public Object call() {
-        final ClientEndpoint endpoint = getEndpoint();
+        final ClientEndpointImpl endpoint = (ClientEndpointImpl) getEndpoint();
         final CacheService service = getService();
         CacheEntryListener cacheEntryListener = new CacheEntryListener(getCallId(), endpoint);
-        return service.registerListener(name, cacheEntryListener, cacheEntryListener);
+        final String registrationId = service.registerListener(name, cacheEntryListener, cacheEntryListener);
+        endpoint.addDestroyAction(registrationId, new Callable<Boolean>() {
+            @Override
+            public Boolean call() throws Exception {
+                return service.deregisterListener(name, registrationId);
+            }
+        });
+        return registrationId;
     }
 
     @SuppressFBWarnings(value = "SE_NO_SERIALVERSIONID",

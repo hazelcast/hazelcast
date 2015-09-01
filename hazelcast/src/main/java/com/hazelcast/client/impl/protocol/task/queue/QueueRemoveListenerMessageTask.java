@@ -18,7 +18,7 @@ package com.hazelcast.client.impl.protocol.task.queue;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.QueueRemoveListenerCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
+import com.hazelcast.client.impl.protocol.task.AbstractRemoveListenerMessageTask;
 import com.hazelcast.collection.impl.queue.QueueService;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
@@ -32,16 +32,21 @@ import java.security.Permission;
  * {@link com.hazelcast.client.impl.protocol.codec.QueueMessageType#QUEUE_REMOVELISTENER}
  */
 public class QueueRemoveListenerMessageTask
-        extends AbstractCallableMessageTask<QueueRemoveListenerCodec.RequestParameters> {
+        extends AbstractRemoveListenerMessageTask<QueueRemoveListenerCodec.RequestParameters> {
 
     public QueueRemoveListenerMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected Object call() {
+    protected boolean deRegisterListener() {
         final QueueService service = getService(getServiceName());
         return service.removeItemListener(parameters.name, parameters.registrationId);
+    }
+
+    @Override
+    protected String getRegistrationId() {
+        return parameters.registrationId;
     }
 
     @Override
@@ -52,11 +57,6 @@ public class QueueRemoveListenerMessageTask
     @Override
     protected ClientMessage encodeResponse(Object response) {
         return QueueRemoveListenerCodec.encodeResponse((Boolean) response);
-    }
-
-    @Override
-    public Object[] getParameters() {
-        return new Object[]{parameters.registrationId};
     }
 
     @Override

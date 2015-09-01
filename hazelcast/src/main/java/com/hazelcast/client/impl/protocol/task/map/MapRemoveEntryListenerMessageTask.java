@@ -18,7 +18,7 @@ package com.hazelcast.client.impl.protocol.task.map;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapRemoveEntryListenerCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
+import com.hazelcast.client.impl.protocol.task.AbstractRemoveListenerMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.nio.Connection;
@@ -28,16 +28,21 @@ import com.hazelcast.security.permission.MapPermission;
 import java.security.Permission;
 
 public class MapRemoveEntryListenerMessageTask
-        extends AbstractCallableMessageTask<MapRemoveEntryListenerCodec.RequestParameters> {
+        extends AbstractRemoveListenerMessageTask<MapRemoveEntryListenerCodec.RequestParameters> {
 
     public MapRemoveEntryListenerMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected Object call() {
+    protected boolean deRegisterListener() {
         MapService service = getService(MapService.SERVICE_NAME);
         return service.getMapServiceContext().removeEventListener(parameters.name, parameters.registrationId);
+    }
+
+    @Override
+    protected String getRegistrationId() {
+        return parameters.registrationId;
     }
 
     @Override
@@ -70,8 +75,4 @@ public class MapRemoveEntryListenerMessageTask
         return "removeEntryListener";
     }
 
-    @Override
-    public Object[] getParameters() {
-        return new Object[]{parameters.registrationId};
-    }
 }

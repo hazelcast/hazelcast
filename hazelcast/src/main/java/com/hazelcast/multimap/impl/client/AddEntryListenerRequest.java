@@ -86,7 +86,7 @@ public class AddEntryListenerRequest extends CallableClientRequest implements Re
             }
         };
         String registrationId = service.addListener(name, listener, key, includeValue, false);
-        endpoint.setListenerRegistration(MultiMapService.SERVICE_NAME, name, registrationId);
+        endpoint.addListenerDestroyAction(MultiMapService.SERVICE_NAME, name, registrationId);
         return registrationId;
     }
 
