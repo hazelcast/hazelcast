@@ -105,6 +105,11 @@
                                     org.apache.logging.log4j;resolution:=optional,
                                     org.apache.logging.log4j.*;resolution:=optional,
                                     org.slf4j;resolution:=optional,
+                                    org.springframework.context;resolution:=optional,
+                                    org.springframework.security.core.session;version="[3.2,4)";resolution:=optional,
+                                    org.springframework.security.web.session;version="[3.2,4)";resolution:=optional,
+                                    org.springframework.web.context;resolution:=optional,
+                                    org.springframework.web.context.support;resolution:=optional,
                                     *
                                 </Import-Package>
                                 <Fragment-Host>com.hazelcast</Fragment-Host>
