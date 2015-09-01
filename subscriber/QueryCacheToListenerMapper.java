@@ -3,11 +3,11 @@ package com.hazelcast.client.impl.querycache.subscriber;
 import com.hazelcast.map.impl.ListenerAdapter;
 import com.hazelcast.spi.EventFilter;
 import com.hazelcast.util.ConstructorFunction;
+import com.hazelcast.util.UuidUtil;
 
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -35,7 +35,7 @@ public class QueryCacheToListenerMapper {
 
     public String addListener(String cacheName, ListenerAdapter listenerAdapter, EventFilter filter) {
         Collection<ListenerInfo> adapters = getOrPutIfAbsent(registrations, cacheName, LISTENER_SET_CONSTRUCTOR);
-        String id = UUID.randomUUID().toString();
+        String id = UuidUtil.newUnsecureUuidString();
         ListenerInfo info = new ListenerInfo(filter, listenerAdapter, id);
         adapters.add(info);
         return id;
