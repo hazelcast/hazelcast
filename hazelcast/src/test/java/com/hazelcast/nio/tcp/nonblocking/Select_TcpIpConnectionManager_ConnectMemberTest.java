@@ -1,6 +1,6 @@
-package com.hazelcast.nio.tcp.spinning;
+package com.hazelcast.nio.tcp.nonblocking;
 
-import com.hazelcast.nio.tcp.TcpIpConnectionManager_ConnectTest;
+import com.hazelcast.nio.tcp.TcpIpConnectionManager_ConnectMemberTest;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
@@ -9,12 +9,11 @@ import org.junit.runner.RunWith;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class Spinning_TcpIpConnectionManager_ConnectTest extends TcpIpConnectionManager_ConnectTest {
+public class Select_TcpIpConnectionManager_ConnectMemberTest extends TcpIpConnectionManager_ConnectMemberTest {
 
     @Before
     public void setup() throws Exception {
-        threadingModelFactory = new Spinning_IOThreadingModelFactory();
+        threadingModelFactory = new Select_NonBlockingIOThreadingModelFactory();
         super.setup();
     }
-
 }
