@@ -29,16 +29,6 @@ final class CompletableFutureEntry<V> {
     }
 
     boolean processState() {
-        if (completableFuture.isDone()) {
-            Object result;
-            try {
-                result = completableFuture.future.get();
-            } catch (Throwable t) {
-                result = t;
-            }
-            completableFuture.setResult(result);
-            return true;
-        }
-        return false;
+        return completableFuture.isDone();
     }
 }

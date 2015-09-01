@@ -369,13 +369,13 @@ public class MapKeyLoader {
         }
 
         @Override
-        public boolean isCancelled() {
+        protected boolean shouldCancel(boolean mayInterruptIfRunning) {
             return false;
         }
 
         @Override
-        public boolean cancel(boolean mayInterruptIfRunning) {
-            return false;
+        protected void setResult(Object result) {
+            super.setResult(result);
         }
 
         @Override

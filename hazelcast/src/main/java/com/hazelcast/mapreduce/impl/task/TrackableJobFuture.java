@@ -52,8 +52,6 @@ public class TrackableJobFuture<V>
     private final Collator collator;
     private final MapReduceService mapReduceService;
 
-    private volatile boolean cancelled;
-
     public TrackableJobFuture(String name, String jobId, JobTracker jobTracker, NodeEngine nodeEngine, Collator collator) {
         super(nodeEngine, nodeEngine.getLogger(TrackableJobFuture.class));
         this.name = name;
@@ -86,7 +84,7 @@ public class TrackableJobFuture<V>
     }
 
     @Override
-    public boolean cancel(boolean mayInterruptIfRunning) {
+    protected boolean shouldCancel(boolean mayInterruptIfRunning) {
         Address jobOwner = mapReduceService.getLocalAddress();
         if (!mapReduceService.registerJobSupervisorCancellation(name, jobId, jobOwner)) {
             return false;
@@ -96,8 +94,7 @@ public class TrackableJobFuture<V>
             return false;
         }
         Exception exception = new CancellationException("Operation was cancelled by the user");
-        cancelled = supervisor.cancelAndNotify(exception) && super.cancel(mayInterruptIfRunning);
-        return cancelled;
+        return supervisor.cancelAndNotify(exception);
     }
 
     @Override

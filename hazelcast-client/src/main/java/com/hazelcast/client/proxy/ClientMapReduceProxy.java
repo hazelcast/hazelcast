@@ -43,12 +43,7 @@ import java.util.Map;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-
-import static com.hazelcast.util.Preconditions.isNotNull;
 
 public class ClientMapReduceProxy
         extends ClientProxy
@@ -81,14 +76,6 @@ public class ClientMapReduceProxy
     public String toString() {
         return "JobTracker{" + "name='" + getName() + '\'' + '}';
     }
-
-    /*
-     * Removed for now since it is moved to Hazelcast 3.3
-    @Override
-    public <K, V> ProcessJob<K, V> newProcessJob(KeyValueSource<K, V> source) {
-        // TODO
-        return null;
-    }*/
 
     private <T> T invoke(InvocationClientRequest request, String jobId) throws Exception {
         ClientTrackableJob trackableJob = trackableJobs.get(jobId);
@@ -165,14 +152,10 @@ public class ClientMapReduceProxy
             implements JobCompletableFuture<V> {
 
         private final String jobId;
-        private final CountDownLatch latch;
-
-        private volatile boolean cancelled;
 
         protected ClientCompletableFuture(String jobId) {
             super(getContext().getExecutionService().getAsyncExecutor(), Logger.getLogger(ClientCompletableFuture.class));
             this.jobId = jobId;
-            this.latch = new CountDownLatch(1);
         }
 
         @Override
@@ -181,7 +164,8 @@ public class ClientMapReduceProxy
         }
 
         @Override
-        public boolean cancel(boolean mayInterruptIfRunning) {
+        protected boolean shouldCancel(boolean mayInterruptIfRunning) {
+            boolean cancelled = false;
             try {
                 cancelled = (Boolean) invoke(new ClientCancellationRequest(getName(), jobId), jobId);
             } catch (Exception ignore) {
@@ -191,23 +175,8 @@ public class ClientMapReduceProxy
         }
 
         @Override
-        public boolean isCancelled() {
-            return cancelled;
-        }
-
-        @Override
-        public void setResult(Object result) {
+        protected void setResult(Object result) {
             super.setResult(result);
-            latch.countDown();
-        }
-
-        @Override
-        public V get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
-            isNotNull(unit, "unit");
-            if (!latch.await(timeout, unit) || !isDone()) {
-                throw new TimeoutException("timeout reached");
-            }
-            return getResult();
         }
     }
 

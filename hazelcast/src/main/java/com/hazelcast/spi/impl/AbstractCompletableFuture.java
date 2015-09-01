@@ -21,6 +21,7 @@ import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.util.EmptyStatement;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.concurrent.CancellationException;
@@ -124,11 +125,20 @@ public abstract class AbstractCompletableFuture<V> implements ICompletableFuture
     }
 
     @Override
-    public boolean cancel(boolean mayInterruptIfRunning) {
+    public final boolean cancel(boolean mayInterruptIfRunning) {
+        Boolean shouldCancel = null;
+
         for (; ; ) {
             Object currentState = this.state;
 
             if (isDoneState(currentState)) {
+                return false;
+            }
+
+            if (shouldCancel == null) {
+                shouldCancel = shouldCancel(mayInterruptIfRunning);
+            }
+            if (!shouldCancel) {
                 return false;
             }
 
@@ -138,6 +148,18 @@ public abstract class AbstractCompletableFuture<V> implements ICompletableFuture
                 return true;
             }
         }
+    }
+
+    /**
+     * Protected method invoked on cancel(). Enables aborting the cancellation.
+     * Useful for futures' encompassing logic that can forbid the cancellation.
+     * By default always returns true.
+     *
+     * @param mayInterruptIfRunning passed through from cancel call
+     * @return true should the cancellation proceed; false otherwise
+     */
+    protected boolean shouldCancel(boolean mayInterruptIfRunning) {
+        return true;
     }
 
     /**
@@ -163,17 +185,26 @@ public abstract class AbstractCompletableFuture<V> implements ICompletableFuture
     }
 
     @Override
-    public V get() throws InterruptedException, ExecutionException {
-        try {
-            return get(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
-        } catch (TimeoutException e) {
-            logger.severe("Unexpected timeout while processing " + this, e);
-            return null;
+    public final V get() throws InterruptedException, ExecutionException {
+        for (; ; ) {
+            try {
+                return get(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
+            } catch (TimeoutException ignored) {
+                // A timeout here can only be a spurious artifact.
+                // It should never happen and even if it does, we must retry.
+                EmptyStatement.ignore(ignored);
+            }
         }
     }
 
+
+    /**
+     * PLEASE NOTE: It's legal to override this method, but please bear in mind that you should call super.get() or
+     * implement the done() and cancelled() callbacks to be notified if this future gets done or cancelled.
+     * Otherwise the overridden implementation of get() may get stuck on waiting forever.
+     */
     @Override
-    public V get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
+    public V get(long timeout, TimeUnit unit) throws ExecutionException, InterruptedException, TimeoutException {
         final long deadlineTimeMillis = System.currentTimeMillis() + unit.toMillis(timeout);
         long millisToWait;
         for (; ; ) {
@@ -183,7 +214,7 @@ public abstract class AbstractCompletableFuture<V> implements ICompletableFuture
                 throw new CancellationException();
             }
             if (isDoneState(currentState)) {
-                return getResult();
+                return getResult(currentState);
             }
             if (Thread.interrupted()) {
                 throw new InterruptedException();
@@ -202,7 +233,7 @@ public abstract class AbstractCompletableFuture<V> implements ICompletableFuture
         }
     }
 
-    public void setResult(Object result) {
+    protected void setResult(Object result) {
         for (; ; ) {
             Object currentState = this.state;
 
@@ -229,9 +260,19 @@ public abstract class AbstractCompletableFuture<V> implements ICompletableFuture
     protected void done() {
     }
 
+    /**
+     * Returns:
+     * <ul>
+     * <li>null - if cancelled or not done</li>
+     * <li>result - if done and result is NOT Throwable</li>
+     * <li>sneaky throws an exception - if done and result is Throwable</li>
+     * </ul>
+     */
     protected V getResult() {
-        Object state = this.state;
+        return getResult(this.state);
+    }
 
+    private static <V> V getResult(Object state) {
         if (isCancelledState(state)) {
             return null;
         }
@@ -253,7 +294,7 @@ public abstract class AbstractCompletableFuture<V> implements ICompletableFuture
         }
     }
 
-    protected void runAsynchronous(ExecutionCallbackNode head, Object result) {
+    private void runAsynchronous(ExecutionCallbackNode head, Object result) {
         while (head != INITIAL_STATE) {
             runAsynchronous(head.callback, head.executor, result);
             head = head.next;
@@ -261,10 +302,10 @@ public abstract class AbstractCompletableFuture<V> implements ICompletableFuture
     }
 
     private void runAsynchronous(ExecutionCallback<V> callback, Executor executor, Object result) {
-        executor.execute(new ExecutionCallbackRunnable<V>(result, callback));
+        executor.execute(new ExecutionCallbackRunnable<V>(getClass(), result, callback, logger));
     }
 
-    static final class ExecutionCallbackNode<E> {
+    private static final class ExecutionCallbackNode<E> {
         final ExecutionCallback<E> callback;
         final Executor executor;
         final ExecutionCallbackNode<E> next;
@@ -276,13 +317,17 @@ public abstract class AbstractCompletableFuture<V> implements ICompletableFuture
         }
     }
 
-    private class ExecutionCallbackRunnable<V> implements Runnable {
+    private static final class ExecutionCallbackRunnable<V> implements Runnable {
+        private final Class<?> caller;
         private final Object result;
         private final ExecutionCallback<V> callback;
+        private final ILogger logger;
 
-        public ExecutionCallbackRunnable(Object result, ExecutionCallback<V> callback) {
+        public ExecutionCallbackRunnable(Class<?> caller, Object result, ExecutionCallback<V> callback, ILogger logger) {
+            this.caller = caller;
             this.result = result;
             this.callback = callback;
+            this.logger = logger;
         }
 
         @Override
@@ -295,7 +340,7 @@ public abstract class AbstractCompletableFuture<V> implements ICompletableFuture
                 }
             } catch (Throwable cause) {
                 logger.severe("Failed asynchronous execution of execution callback: " + callback
-                        + "for call " + AbstractCompletableFuture.this, cause);
+                        + "for call " + caller, cause);
             }
         }
     }

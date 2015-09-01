@@ -315,7 +315,7 @@ public class FutureUtilTest extends HazelcastTestSupport {
         }
 
         @Override
-        public boolean cancel(boolean mayInterruptIfRunning) {
+        protected boolean shouldCancel(boolean mayInterruptIfRunning) {
             return false;
         }
 
@@ -323,11 +323,6 @@ public class FutureUtilTest extends HazelcastTestSupport {
         public V get(long timeout, TimeUnit unit) throws InterruptedException,
                 ExecutionException, TimeoutException {
             return null;
-        }
-
-        @Override
-        public boolean isCancelled() {
-            return false;
         }
 
     }
