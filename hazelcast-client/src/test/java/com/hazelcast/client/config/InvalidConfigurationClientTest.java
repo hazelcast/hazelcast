@@ -83,6 +83,12 @@ public class InvalidConfigurationClientTest {
         buildConfig("inside-aws-enabled", "true");
     }
 
+    @Test (expected = InvalidConfigurationException.class)
+    public void testWhenIamRoleEnabled_InsideAwsDisabled() {
+        buildConfig("inside-aws-enabled", "false");
+    }
+
+
     @Test(expected = InvalidConfigurationException.class)
     public void testWhenInvalid_InsideAwsEnabled() {
         buildConfig("inside-aws-enabled", "tRue");
@@ -220,6 +226,7 @@ public class InvalidConfigurationClientTest {
                             "</socket-interceptor>\n" +
                             "<aws enabled=\"${aws-enabled}\" connection-timeout-seconds=\"${aws-timeout}\">\n" +
                                 "<inside-aws>${inside-aws-enabled}</inside-aws>\n" +
+                                "<iam-role>TEST_IAM_ROLE</iam-role>\n" +
                                 "<access-key>TEST_ACCESS_KEY</access-key>\n" +
                                 "<secret-key>TEST_SECRET_KEY</secret-key>\n" +
                             "</aws>\n" +

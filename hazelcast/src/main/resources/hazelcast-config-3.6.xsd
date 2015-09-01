@@ -1337,6 +1337,13 @@
 	                </xs:documentation>
 	            </xs:annotation>
 	        </xs:element>
+            <xs:element name="iam-role" type="xs:string" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        IAM role that binds with your instance.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
             <xs:element name="region" type="xs:string" minOccurs="0" maxOccurs="1">
 	            <xs:annotation>
 	                <xs:documentation>
