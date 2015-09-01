@@ -34,7 +34,7 @@ public class MapRemovePartitionLostListenerRequest extends BaseClientRemoveListe
         super(name, registrationId);
     }
 
-    public Object call() throws Exception {
+    protected boolean deRegisterListener() {
         final MapService service = getService();
         return service.getMapServiceContext().removePartitionLostListener(name, registrationId);
     }
@@ -59,11 +59,6 @@ public class MapRemovePartitionLostListenerRequest extends BaseClientRemoveListe
     @Override
     public String getMethodName() {
         return "removePartitionLostListener";
-    }
-
-    @Override
-    public Object[] getParameters() {
-        return new Object[]{registrationId};
     }
 
     @Override

@@ -69,7 +69,7 @@ public class CollectionAddListenerRequest extends CallableClientRequest implemen
         final CollectionEventFilter filter = new CollectionEventFilter(includeValue);
         final EventRegistration registration = eventService.registerListener(getServiceName(), name, filter, listener);
         final String registrationId = registration.getId();
-        endpoint.setListenerRegistration(getServiceName(), name, registrationId);
+        endpoint.addListenerDestroyAction(getServiceName(), name, registrationId);
         return registrationId;
     }
 

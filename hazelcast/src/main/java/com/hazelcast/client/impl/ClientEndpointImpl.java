@@ -39,9 +39,7 @@ import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -54,7 +52,7 @@ public final class ClientEndpointImpl implements Client, ClientEndpoint {
     private final Connection conn;
     private final ConcurrentMap<String, TransactionContext> transactionContextMap
             = new ConcurrentHashMap<String, TransactionContext>();
-    private final List<Runnable> removeListenerActions = Collections.synchronizedList(new LinkedList<Runnable>());
+    private final ConcurrentHashMap<String, Callable> removeListenerActions = new ConcurrentHashMap<String, Callable>();
     private final SocketAddress socketAddress;
 
     private LoginContext loginContext;
@@ -184,34 +182,31 @@ public final class ClientEndpointImpl implements Client, ClientEndpoint {
     }
 
     @Override
-    public void setListenerRegistration(final String service, final String topic, final String id) {
-        removeListenerActions.add(new Runnable() {
+    public void addListenerDestroyAction(final String service, final String topic, final String id) {
+        final EventService eventService = clientEngine.getEventService();
+        addDestroyAction(id, new Callable<Boolean>() {
             @Override
-            public void run() {
-                EventService eventService = clientEngine.getEventService();
-                eventService.deregisterListener(service, topic, id);
+            public Boolean call() {
+                return eventService.deregisterListener(service, topic, id);
             }
         });
     }
 
     @Override
-    public void setDistributedObjectListener(final String id) {
-        removeListenerActions.add(new Runnable() {
-            @Override
-            public void run() {
-                clientEngine.getProxyService().removeProxyListener(id);
-            }
-        });
+    public void addDestroyAction(String registrationId, Callable<Boolean> removeAction) {
+        removeListenerActions.put(registrationId, removeAction);
+    }
+
+    @Override
+    public boolean removeDestroyAction(String id) {
+        return removeListenerActions.remove(id) != null;
     }
 
     @Override
     public void clearAllListeners() {
-        //Changed from normal iteration to copying with toArray because of ConcurrentModificationException.
-        // toArray is called under internal mutex of synchronized list.
-        Object[] actions = removeListenerActions.toArray();
-        for (Object removeAction : actions) {
+        for (Callable removeAction : removeListenerActions.values()) {
             try {
-                ((Runnable) removeAction).run();
+                removeAction.call();
             } catch (Exception e) {
                 getLogger().warning("Exception during remove listener action", e);
             }

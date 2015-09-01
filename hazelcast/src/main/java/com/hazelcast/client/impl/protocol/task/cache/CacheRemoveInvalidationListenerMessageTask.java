@@ -19,7 +19,7 @@ package com.hazelcast.client.impl.protocol.task.cache;
 import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CacheRemoveInvalidationListenerCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
+import com.hazelcast.client.impl.protocol.task.AbstractRemoveListenerMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
 
@@ -31,16 +31,21 @@ import java.security.Permission;
  * @see com.hazelcast.cache.impl.CacheService#deregisterListener(String, String)
  */
 public class CacheRemoveInvalidationListenerMessageTask
-        extends AbstractCallableMessageTask<CacheRemoveInvalidationListenerCodec.RequestParameters> {
+        extends AbstractRemoveListenerMessageTask<CacheRemoveInvalidationListenerCodec.RequestParameters> {
 
     public CacheRemoveInvalidationListenerMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected Object call() {
+    protected boolean deRegisterListener() {
         CacheService service = getService(CacheService.SERVICE_NAME);
         return service.deregisterListener(parameters.name, parameters.registrationId);
+    }
+
+    @Override
+    protected String getRegistrationId() {
+        return parameters.registrationId;
     }
 
     @Override
@@ -73,8 +78,4 @@ public class CacheRemoveInvalidationListenerMessageTask
         return null;
     }
 
-    @Override
-    public Object[] getParameters() {
-        return null;
-    }
 }

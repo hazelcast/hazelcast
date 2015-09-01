@@ -37,7 +37,7 @@ public class RemoveListenerRequest extends BaseClientRemoveListenerRequest {
     }
 
     @Override
-    public Object call() throws Exception {
+    protected boolean deRegisterListener() {
         final QueueService service = getService();
         return service.removeItemListener(name, registrationId);
     }

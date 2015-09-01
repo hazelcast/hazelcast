@@ -34,6 +34,13 @@ public abstract class BaseClientRemoveListenerRequest extends CallableClientRequ
         this.registrationId = registrationId;
     }
 
+    public final Object call() {
+        endpoint.removeDestroyAction(registrationId);
+        return deRegisterListener();
+    }
+
+    protected abstract boolean deRegisterListener();
+
     public String getRegistrationId() {
         return registrationId;
     }
@@ -68,7 +75,7 @@ public abstract class BaseClientRemoveListenerRequest extends CallableClientRequ
     }
 
     @Override
-    public Object[] getParameters() {
+    public final Object[] getParameters() {
         return new Object[]{registrationId};
     }
 }

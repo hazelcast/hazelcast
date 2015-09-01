@@ -18,7 +18,7 @@ package com.hazelcast.client.impl.protocol.task.topic;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.TopicRemoveMessageListenerCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
+import com.hazelcast.client.impl.protocol.task.AbstractRemoveListenerMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.security.permission.ActionConstants;
@@ -28,17 +28,21 @@ import com.hazelcast.topic.impl.TopicService;
 import java.security.Permission;
 
 public class TopicRemoveMessageListenerMessageTask
-        extends AbstractCallableMessageTask<TopicRemoveMessageListenerCodec.RequestParameters> {
+        extends AbstractRemoveListenerMessageTask<TopicRemoveMessageListenerCodec.RequestParameters> {
 
     public TopicRemoveMessageListenerMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected Object call() throws Exception {
+    protected boolean deRegisterListener() {
         TopicService service = getService(TopicService.SERVICE_NAME);
-        final boolean success = service.removeMessageListener(parameters.name, parameters.registrationId);
-        return success;
+        return service.removeMessageListener(parameters.name, parameters.registrationId);
+    }
+
+    @Override
+    protected String getRegistrationId() {
+        return parameters.registrationId;
     }
 
     @Override
@@ -71,11 +75,5 @@ public class TopicRemoveMessageListenerMessageTask
     public String getMethodName() {
         return "removeMessageListener";
     }
-
-    @Override
-    public Object[] getParameters() {
-        return new Object[]{parameters.registrationId};
-    }
-
 
 }

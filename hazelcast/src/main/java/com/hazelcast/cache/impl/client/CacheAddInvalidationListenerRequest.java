@@ -49,7 +49,7 @@ public class CacheAddInvalidationListenerRequest
         CacheContext cacheContext = cacheService.getOrCreateCacheContext(name);
         CacheInvalidationListener listener = new CacheInvalidationListener(endpoint, getCallId(), cacheContext);
         String registrationId = cacheService.addInvalidationListener(name, listener);
-        endpoint.setListenerRegistration(CacheService.SERVICE_NAME, name, registrationId);
+        endpoint.addListenerDestroyAction(CacheService.SERVICE_NAME, name, registrationId);
         return registrationId;
     }
 

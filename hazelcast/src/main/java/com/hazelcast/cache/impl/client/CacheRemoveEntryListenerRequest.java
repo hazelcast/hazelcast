@@ -38,8 +38,7 @@ public class CacheRemoveEntryListenerRequest
     }
 
     @Override
-    public Object call()
-            throws Exception {
+    protected boolean deRegisterListener() {
         final CacheService service = getService();
         return service.deregisterListener(name, registrationId);
     }

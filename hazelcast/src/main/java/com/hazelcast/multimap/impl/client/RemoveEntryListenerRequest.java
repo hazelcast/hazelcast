@@ -21,6 +21,7 @@ import com.hazelcast.multimap.impl.MultiMapPortableHook;
 import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MultiMapPermission;
+
 import java.security.Permission;
 
 public class RemoveEntryListenerRequest extends BaseClientRemoveListenerRequest {
@@ -33,7 +34,8 @@ public class RemoveEntryListenerRequest extends BaseClientRemoveListenerRequest 
         super(name, registrationId);
     }
 
-    public Object call() throws Exception {
+    @Override
+    protected boolean deRegisterListener() {
         final MultiMapService service = getService();
         return service.removeListener(name, registrationId);
     }

@@ -19,7 +19,7 @@ package com.hazelcast.client.impl.protocol.task.cache;
 import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CacheRemoveEntryListenerCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
+import com.hazelcast.client.impl.protocol.task.AbstractRemoveListenerMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
 
@@ -31,14 +31,19 @@ import java.security.Permission;
  * @see com.hazelcast.cache.impl.CacheService#deregisterListener(String, String)
  */
 public class CacheRemoveEntryListenerMessageTask
-        extends AbstractCallableMessageTask<CacheRemoveEntryListenerCodec.RequestParameters> {
+        extends AbstractRemoveListenerMessageTask<CacheRemoveEntryListenerCodec.RequestParameters> {
 
     public CacheRemoveEntryListenerMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected Object call() {
+    protected String getRegistrationId() {
+        return parameters.registrationId;
+    }
+
+    @Override
+    protected boolean deRegisterListener() {
         CacheService service = getService(CacheService.SERVICE_NAME);
         return service.deregisterListener(parameters.name, parameters.registrationId);
     }
@@ -73,8 +78,4 @@ public class CacheRemoveEntryListenerMessageTask
         return null;
     }
 
-    @Override
-    public Object[] getParameters() {
-        return null;
-    }
 }

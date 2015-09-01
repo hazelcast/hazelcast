@@ -25,16 +25,21 @@ import com.hazelcast.spi.impl.proxyservice.impl.ProxyServiceImpl;
 import java.security.Permission;
 
 public class RemoveDistributedObjectListenerMessageTask
-        extends AbstractCallableMessageTask<ClientRemoveDistributedObjectListenerCodec.RequestParameters> {
+        extends AbstractRemoveListenerMessageTask<ClientRemoveDistributedObjectListenerCodec.RequestParameters> {
 
     public RemoveDistributedObjectListenerMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected Object call() throws Exception {
+    protected boolean deRegisterListener() {
         boolean success = clientEngine.getProxyService().removeProxyListener(parameters.registrationId);
         return success;
+    }
+
+    @Override
+    protected String getRegistrationId() {
+        return parameters.registrationId;
     }
 
     @Override
@@ -67,8 +72,4 @@ public class RemoveDistributedObjectListenerMessageTask
         return "removeDistributedObjectListener";
     }
 
-    @Override
-    public Object[] getParameters() {
-        return new Object[]{parameters.registrationId};
-    }
 }

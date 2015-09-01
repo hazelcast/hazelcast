@@ -37,6 +37,7 @@ import edu.umd.cs.findbugs.annotations.SuppressWarnings;
 import java.io.Serializable;
 import java.security.Permission;
 import java.util.Set;
+import java.util.concurrent.Callable;
 
 /**
  * Client request which registers an event listener on behalf of the client and delegates the received events
@@ -56,16 +57,24 @@ public class CacheAddEntryListenerMessageTask
         final ClientEndpoint endpoint = getEndpoint();
         final CacheService service = getService(CacheService.SERVICE_NAME);
         CacheEntryListener cacheEntryListener = new CacheEntryListener(endpoint, this);
-        return service.registerListener(parameters.name, cacheEntryListener, cacheEntryListener);
+
+        final String registrationId = service.registerListener(parameters.name, cacheEntryListener, cacheEntryListener);
+        endpoint.addDestroyAction(registrationId, new Callable<Boolean>() {
+            @Override
+            public Boolean call() throws Exception {
+                return service.deregisterListener(parameters.name, registrationId);
+            }
+        });
+        return registrationId;
     }
 
     @SuppressWarnings(value = "SE_NO_SERIALVERSIONID",
             justification = "Class is Serializable, but doesn't define serialVersionUID")
     private static final class CacheEntryListener
             implements CacheEventListener,
-                       NotifiableEventListener<CacheService>,
-                       ListenerWrapperEventFilter,
-                       Serializable {
+            NotifiableEventListener<CacheService>,
+            ListenerWrapperEventFilter,
+            Serializable {
 
         private final transient ClientEndpoint endpoint;
         private final transient CacheAddEntryListenerMessageTask cacheAddEntryListenerMessageTask;

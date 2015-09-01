@@ -22,7 +22,7 @@ import com.hazelcast.spi.impl.proxyservice.impl.ProxyServiceImpl;
 import java.security.Permission;
 
 /**
- * Client request to add a distributed object listener to a remote node.
+ * Client request to remove a distributed object listener from a remote node.
  */
 public class RemoveDistributedObjectListenerRequest extends BaseClientRemoveListenerRequest {
 
@@ -34,7 +34,7 @@ public class RemoveDistributedObjectListenerRequest extends BaseClientRemoveList
     }
 
     @Override
-    public Object call() throws Exception {
+    protected boolean deRegisterListener() {
         ProxyService proxyService = getService();
         return proxyService.removeProxyListener(registrationId);
     }
