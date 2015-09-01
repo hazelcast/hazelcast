@@ -1244,26 +1244,23 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
             final Data keyData = toData(entry.getKey());
             invalidateNearCache(keyData);
             
-            int partitionId = partitionService.getPartitionId(entry.getKey());
-            if (!entryMap.containsKey(partitionId)) {
-                entryMap.put(partitionId, new HashMap<Data, Data>());
+            int partitionId = partitionService.getPartitionId(keyData);
+            Map<Data, Data> partition = entryMap.get(partitionId); 
+            if (partition == null) {
+                partition = new HashMap<Data, Data>();
+                entryMap.put(partitionId, partition);
             }
-            
-            entryMap.get(partitionId).put(keyData, toData(entry.getValue()));
+
+            partition.put(keyData, toData(entry.getValue()));
         }
         
         List<Future<?>> futures = new ArrayList<Future<?>>(entryMap.size());
         for (final Map.Entry<Integer, Map<Data, Data>> entry : entryMap.entrySet()) {
             final Integer partitionId = entry.getKey();
-            //If there is only one entry, consider how we can use MapPutRequest without
-            //having to get back the return value.
+            //If there is only one entry, consider how we can use MapPutRequest
+            //without having to get back the return value.
             ClientMessage request = MapPutAllCodec.encodeRequest(name, entry.getValue());
-            
-            //invoke by partition owner address rather than id, as
-            //the latter will embed the partitionId into the Packet payload,
-            //routing the invocation to the operation service, which does 
-            //not handle MapPutAllRequest and other similar requests
-            futures.add(new ClientInvocation(getClient(), request, partitionService.getPartitionOwner(partitionId)).invoke());
+            futures.add(new ClientInvocation(getClient(), request, partitionId).invoke());
         }
 
         try {

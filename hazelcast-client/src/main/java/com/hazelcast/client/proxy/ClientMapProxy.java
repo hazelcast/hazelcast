@@ -1049,7 +1049,7 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
             final Data keyData = toData(entry.getKey());
             invalidateNearCache(keyData);
             
-            int partitionId = partitionService.getPartitionId(entry.getKey());
+            int partitionId = partitionService.getPartitionId(keyData);
             MapEntrySet entrySet = entrySetPerPartition[partitionId];
             if (entrySet == null) {
                 entrySet = new MapEntrySet();
@@ -1062,15 +1062,10 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
         for (int partitionId = 0; partitionId < entrySetPerPartition.length; partitionId++) {
             MapEntrySet entrySet = entrySetPerPartition[partitionId];
             if (entrySet != null) {
-                //If there is only one entry, consider how we can use MapPutRequest without
-                //having to get back the return value.
-                MapPutAllRequest request = new MapPutAllRequest(name, entrySet);
-                
-                //invoke by partition owner address rather than id, as
-                //the latter will embed the partitionId into the Packet payload,
-                //routing the invocation to the operation service, which does 
-                //not handle MapPutAllRequest and other similar requests
-                futures.add(new ClientInvocation(getClient(), request, partitionService.getPartitionOwner(partitionId)).invoke());
+                //If there is only one entry, consider how we can use MapPutRequest
+                //without having to get back the return value.
+                MapPutAllRequest request = new MapPutAllRequest(name, entrySet, partitionId);
+                futures.add(new ClientInvocation(getClient(), request, partitionId).invoke());
             }
         }
 
