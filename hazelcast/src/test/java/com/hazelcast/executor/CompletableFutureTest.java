@@ -23,158 +23,350 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.Repeat;
 import org.hamcrest.Matchers;
-import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import java.util.concurrent.Callable;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.hamcrest.Matchers.instanceOf;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class CompletableFutureTest extends HazelcastTestSupport {
 
-    private static final RuntimeException TEST_EXCEPTION = new RuntimeException("Test exception");
+    private static final RuntimeException THROW_TEST_EXCEPTION = new RuntimeException("Test exception");
+    private static final RuntimeException NO_EXCEPTION = null;
 
     private ExecutionService executionService;
-    private CountDownLatch startLatch, doneLatch;
-    private AtomicReference<Object> ref1, ref2;
+    private CountDownLatch inExecutionLatch, startLogicLatch, executedLogic, finishedLatch, callbacksDoneLatch;
+    private AtomicReference<Object> reference1, reference2;
+
+    @Rule
+    public ExpectedException expected = ExpectedException.none();
 
     @Before
     public void setUp() throws Exception {
         NodeEngine nodeEngine = getNode(createHazelcastInstance()).getNodeEngine();
         executionService = nodeEngine.getExecutionService();
-        startLatch = new CountDownLatch(1);
-        ref1 = new AtomicReference<Object>();
-        ref2 = new AtomicReference<Object>();
-    }
-
-    @After
-    public void tearDown() {
+        startLogicLatch = new CountDownLatch(1);
+        executedLogic = new CountDownLatch(1);
+        finishedLatch = new CountDownLatch(1);
+        inExecutionLatch = new CountDownLatch(1);
+        reference1 = new AtomicReference<Object>();
+        reference2 = new AtomicReference<Object>();
     }
 
     @Test
     public void preregisterCallback() throws Exception {
-        doneLatch = new CountDownLatch(1);
-        final ICompletableFuture<String> f = submit(awaitStartLatch());
-        f.andThen(setRefAndBumpDoneLatch(ref1));
-        startLatch.countDown();
-        assertOpenEventually(doneLatch);
-        assertEquals("success", ref1.get());
+        ICompletableFuture<String> f = submitAwaitingTask(expectedNumberOfCallbacks(1), NO_EXCEPTION);
+        f.andThen(storeTaskResponseToReference(reference1));
+
+        releaseAwaitingTask();
+
+        assertCallbacksExecutedEventually();
+        assertEquals("success", reference1.get());
     }
 
     @Test
     public void preregisterTwoCallbacks() throws Exception {
-        doneLatch = new CountDownLatch(2);
-        final ICompletableFuture<String> f = submit(awaitStartLatch());
-        f.andThen(setRefAndBumpDoneLatch(ref1));
-        f.andThen(setRefAndBumpDoneLatch(ref2));
-        startLatch.countDown();
-        assertOpenEventually(doneLatch);
-        assertEquals("success", ref1.get());
-        assertEquals("success", ref2.get());
+        ICompletableFuture<String> f = submitAwaitingTask(expectedNumberOfCallbacks(2), NO_EXCEPTION);
+        f.andThen(storeTaskResponseToReference(reference1));
+        f.andThen(storeTaskResponseToReference(reference2));
+
+        releaseAwaitingTask();
+
+        assertCallbacksExecutedEventually();
+        assertEquals("success", reference1.get());
+        assertEquals("success", reference2.get());
     }
 
     @Test
-    public void preregisterTwoCallbacks_withFailure() throws Exception {
-        doneLatch = new CountDownLatch(2);
-        final ICompletableFuture<String> f = submit(awaitStartLatch(), throwException());
-        f.andThen(setRefAndBumpDoneLatch(ref1));
-        f.andThen(setRefAndBumpDoneLatch(ref2));
-        startLatch.countDown();
-        assertOpenEventually(doneLatch);
-        assertTestException(ref1, ref2);
+    public void preregisterTwoCallbacks_taskThrowsException() throws Exception {
+        ICompletableFuture<String> f = submitAwaitingTask(expectedNumberOfCallbacks(2), THROW_TEST_EXCEPTION);
+        f.andThen(storeTaskResponseToReference(reference1));
+        f.andThen(storeTaskResponseToReference(reference2));
+
+        releaseAwaitingTask();
+
+        assertCallbacksExecutedEventually();
+        assertTestExceptionThrown(reference1, reference2);
     }
 
     @Test
+    @Repeat(10)
+    // https://github.com/hazelcast/hazelcast/issues/6020
     public void postregisterCallback() throws Exception {
-        doneLatch = new CountDownLatch(1);
-        final ICompletableFuture<String> f = submit(openStartLatch());
-        assertOpenEventually(startLatch);
-        f.andThen(setRefAndBumpDoneLatch(ref1));
-        assertOpenEventually(doneLatch);
-        assertEquals("success", ref1.get());
+        ICompletableFuture<String> f = submitAwaitingTask(expectedNumberOfCallbacks(1), NO_EXCEPTION);
+        releaseAwaitingTask();
+        assertTaskFinishedEventually();
+
+        f.andThen(storeTaskResponseToReference(reference1));
+
+        assertCallbacksExecutedEventually();
+        assertEquals("success", reference1.get());
     }
 
     @Test
     public void postregisterTwoCallbacks() throws Exception {
-        doneLatch = new CountDownLatch(2);
-        final ICompletableFuture<String> f = submit(openStartLatch());
-        assertOpenEventually(startLatch);
-        f.andThen(setRefAndBumpDoneLatch(ref1));
-        f.andThen(setRefAndBumpDoneLatch(ref2));
-        assertOpenEventually(doneLatch);
-        assertEquals("success", ref1.get());
-        assertEquals("success", ref2.get());
+        ICompletableFuture<String> f = submitAwaitingTask(expectedNumberOfCallbacks(2), NO_EXCEPTION);
+        releaseAwaitingTask();
+        assertTaskFinishedEventually();
+
+        f.andThen(storeTaskResponseToReference(reference1));
+        f.andThen(storeTaskResponseToReference(reference2));
+
+        assertCallbacksExecutedEventually();
+        assertEquals("success", reference1.get());
+        assertEquals("success", reference2.get());
     }
 
     @Test
-    public void postregisterTwoCallbacks_withFailure() throws Exception {
-        doneLatch = new CountDownLatch(2);
-        final ICompletableFuture<String> f = submit(openStartLatch(), throwException());
-        assertOpenEventually(startLatch);
-        f.andThen(setRefAndBumpDoneLatch(ref1));
-        f.andThen(setRefAndBumpDoneLatch(ref2));
-        assertOpenEventually(doneLatch);
-        assertTestException(ref1, ref2);
+    public void postregisterTwoCallbacks_taskThrowsException() throws Exception {
+        ICompletableFuture<String> f = submitAwaitingTask(expectedNumberOfCallbacks(2), THROW_TEST_EXCEPTION);
+        releaseAwaitingTask();
+        assertTaskFinishedEventually();
+
+        f.andThen(storeTaskResponseToReference(reference1));
+        f.andThen(storeTaskResponseToReference(reference2));
+
+        assertCallbacksExecutedEventually();
+        assertTestExceptionThrown(reference1, reference2);
     }
 
-    private static void assertTestException(AtomicReference<?>... refs) {
+    @Test(timeout = 60000)
+    public void get_taskThrowsException() throws Exception {
+        ICompletableFuture<String> f = submitAwaitingTaskNoCallbacks(THROW_TEST_EXCEPTION);
+        submitReleasingTask(100);
+
+        expected.expect(ExecutionException.class);
+        f.get();
+    }
+
+    @Test(timeout = 60000)
+    public void getWithTimeout_taskThrowsException() throws Exception {
+        ICompletableFuture<String> f = submitAwaitingTaskNoCallbacks(THROW_TEST_EXCEPTION);
+        submitReleasingTask(200);
+
+        expected.expect(ExecutionException.class);
+        f.get(30000, TimeUnit.MILLISECONDS);
+    }
+
+    @Test(timeout = 60000)
+    @Repeat
+    public void getWithTimeout_finishesWithinTime() throws Exception {
+        ICompletableFuture<String> f = submitAwaitingTaskNoCallbacks(NO_EXCEPTION);
+        submitReleasingTask(200);
+        String result = f.get(30000, TimeUnit.MILLISECONDS);
+
+        assertEquals("success", result);
+    }
+
+    @Test(timeout = 120000)
+    @Repeat(10)
+    public void getWithTimeout_timesOut() throws Exception {
+        ICompletableFuture<String> f = submitAwaitingTaskNoCallbacks(NO_EXCEPTION);
+
+        expected.expect(TimeoutException.class);
+        f.get(1, TimeUnit.MILLISECONDS);
+    }
+
+    @Test
+    public void singleCancellation_beforeDone_succeeds() throws Exception {
+        ICompletableFuture<String> f = submitAwaitingTaskNoCallbacks(NO_EXCEPTION);
+        assertTaskInExecution();
+
+        boolean cancelResult = f.cancel(false);
+
+        assertTrue("Task cancellation succeeded should succeed", cancelResult);
+    }
+
+    @Test
+    public void doubleCancellation_beforeDone_firstSucceeds_secondFails() throws Exception {
+        ICompletableFuture<String> f = submitAwaitingTaskNoCallbacks(NO_EXCEPTION);
+        assertTaskInExecution(); // but never released to execute logic
+
+        boolean firstCancelResult = f.cancel(false);
+        boolean secondCancelResult = f.cancel(false);
+
+        assertTrue("First task cancellation should succeed", firstCancelResult);
+        assertFalse("Second task cancellation should failed", secondCancelResult);
+    }
+
+    @Test
+    public void cancellation_afterDone_taskNotCancelled_flagsSetCorrectly() throws Exception {
+        ICompletableFuture<String> f = submitAwaitingTaskNoCallbacks(NO_EXCEPTION);
+        assertTaskInExecution();
+        releaseAwaitingTask();
+        assertTaskExecutedItsLogic();
+        assertTaskFinishedEventually();
+
+        boolean firstCancelResult = f.cancel(false);
+        boolean secondCancelResult = f.cancel(false);
+
+        assertFalse("Cancellation should not succeed after task is done", firstCancelResult);
+        assertFalse("Cancellation should not succeed after task is done", secondCancelResult);
+        assertTrue("Task should be done", f.isDone());
+        assertFalse("Task should NOT be cancelled", f.isCancelled());
+        assertEquals("success", f.get());
+    }
+
+    @Test
+    public void noCancellation_afterDone_flagsSetCorrectly() throws Exception {
+        ICompletableFuture<String> f = submitAwaitingTaskNoCallbacks(NO_EXCEPTION);
+        assertTaskInExecution();
+        releaseAwaitingTask();
+        assertTaskExecutedItsLogic();
+        assertTaskFinishedEventually();
+
+        assertTrue("Task should be done", f.isDone());
+        assertFalse("Task should NOT be cancelled", f.isCancelled());
+        assertEquals("success", f.get());
+    }
+
+
+    @Test(timeout = 60000)
+    @Repeat(10)
+    public void cancelAndGet_taskCancelled_withoutInterruption_logicExecuted() throws Exception {
+        ICompletableFuture<String> f = submitAwaitingTaskNoCallbacks(NO_EXCEPTION);
+        assertTaskInExecution();
+
+        boolean cancelResult = f.cancel(false);
+        releaseAwaitingTask();
+        assertTaskExecutedItsLogic(); // cancellation came, when task already awaiting, so logic executed
+        assertTaskFinishedEventually();
+
+        assertTrue("Task cancellation should succeed", cancelResult);
+        assertTrue("Task should be done", f.isDone());
+        assertTrue("Task should be cancelled", f.isCancelled());
+        expected.expect(CancellationException.class);
+        f.get();
+    }
+
+    @Test(timeout = 120000)
+    @Repeat(10)
+    public void cancelAndGet_taskCancelled_withInterruption_noLogicExecuted() throws Exception {
+        ICompletableFuture<String> f = submitAwaitingTaskNoCallbacks(NO_EXCEPTION);
+        assertTaskInExecution();
+
+        boolean cancelResult = f.cancel(true);
+
+        assertTaskInterruptedAndDidNotExecuteItsLogic();
+        assertTaskFinishedEventually(); // task did not have to be releases - interruption was enough
+        assertTrue("Task cancellation should succeed", cancelResult);
+        assertTrue("Task should be done", f.isDone());
+        assertTrue("Task should be cancelled", f.isCancelled());
+        expected.expect(CancellationException.class);
+        f.get();
+    }
+
+
+    private static void assertTestExceptionThrown(AtomicReference<?>... refs) {
         for (AtomicReference<?> ref : refs)
             assertThat("ExecutionException expected", ref.get(), instanceOf(ExecutionException.class));
         for (AtomicReference<?> ref : refs)
             assertThat("TEST_EXCEPTION expected as cause", ((Throwable) ref.get()).getCause(),
-                Matchers.<Throwable>sameInstance(TEST_EXCEPTION));
+                    Matchers.<Throwable>sameInstance(THROW_TEST_EXCEPTION));
     }
 
-    private ICompletableFuture<String> submit(final Runnable... rs) {
-        return executionService.asCompletableFuture(executionService.submit("default", new Callable<String>() {
+    private ICompletableFuture<String> submitAwaitingTaskNoCallbacks(final Exception exception) {
+        return submitAwaitingTask(0, exception);
+    }
+
+    private ICompletableFuture<String> submitAwaitingTask(Integer numberOfCallbacks, final Exception exception) {
+        callbacksDoneLatch = new CountDownLatch(numberOfCallbacks);
+        return submit(new Callable<String>() {
             @Override
-            public String call() {
-                for (Runnable r : rs) r.run();
-                return "success";
+            public String call() throws Exception {
+                inExecutionLatch.countDown();
+                try {
+                    assertOpenEventually(startLogicLatch);
+                    executedLogic.countDown();
+                    if (exception != null) throw exception;
+                    return "success";
+                } finally {
+                    finishedLatch.countDown();
+                }
             }
-        }));
+        });
     }
 
-    private Runnable awaitStartLatch() {
-        return new Runnable() { @Override public void run() {
-            assertOpenEventually(startLatch);
-        }};
+    private void submitReleasingTask(final long millisToAwaitBeforeRelease) {
+        submit(new Runnable() {
+            @Override
+            public void run() {
+                sleepAtLeastMillis(millisToAwaitBeforeRelease);
+                releaseAwaitingTask();
+            }
+        });
     }
 
-    private Runnable openStartLatch() {
-        return new Runnable() { @Override public void run() {
-            startLatch.countDown();
-        }};
+    private ICompletableFuture<String> submit(final Callable<String> callable) {
+        return executionService.asCompletableFuture(executionService.submit("default", callable));
     }
 
-    private static Runnable throwException() {
-        return new Runnable() { @Override public void run() {
-            throw TEST_EXCEPTION;
-        }};
+    private void submit(final Runnable runnable) {
+        executionService.submit("default", runnable);
     }
 
-    private ExecutionCallback<String> setRefAndBumpDoneLatch(final AtomicReference<Object> ref) {
+    private Integer expectedNumberOfCallbacks(int number) {
+        return number;
+    }
+
+    private void releaseAwaitingTask() {
+        startLogicLatch.countDown();
+    }
+
+    private void assertCallbacksExecutedEventually() {
+        assertOpenEventually(callbacksDoneLatch);
+    }
+
+    private void assertTaskExecutedItsLogic() {
+        assertOpenEventually(executedLogic);
+    }
+
+    private void assertTaskInterruptedAndDidNotExecuteItsLogic() {
+        assertEquals(1, executedLogic.getCount());
+    }
+
+    private void assertTaskFinishedEventually() {
+        assertOpenEventually(finishedLatch);
+    }
+
+    private void assertTaskInExecution() {
+        assertOpenEventually(inExecutionLatch);
+    }
+
+    private ExecutionCallback<String> storeTaskResponseToReference(final AtomicReference<Object> ref) {
         return new ExecutionCallback<String>() {
-            @Override public void onResponse(String response) {
+            @Override
+            public void onResponse(String response) {
                 doit(response);
             }
-            @Override public void onFailure(Throwable t) {
+
+            @Override
+            public void onFailure(Throwable t) {
                 doit(t);
             }
+
             private void doit(Object response) {
                 ref.set(response);
-                doneLatch.countDown();
+                callbacksDoneLatch.countDown();
             }
         };
     }

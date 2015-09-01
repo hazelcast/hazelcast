@@ -32,12 +32,7 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.concurrent.CancellationException;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-
-import static com.hazelcast.util.Preconditions.isNotNull;
 
 /**
  * This is the node based implementation of the job's reactive {@link com.hazelcast.core.ICompletableFuture}
@@ -55,7 +50,6 @@ public class TrackableJobFuture<V>
     private final String jobId;
     private final JobTracker jobTracker;
     private final Collator collator;
-    private final CountDownLatch latch;
     private final MapReduceService mapReduceService;
 
     private volatile boolean cancelled;
@@ -66,34 +60,29 @@ public class TrackableJobFuture<V>
         this.jobId = jobId;
         this.jobTracker = jobTracker;
         this.collator = collator;
-        this.latch = new CountDownLatch(1);
         this.mapReduceService = ((NodeEngineImpl) nodeEngine).getService(MapReduceService.SERVICE_NAME);
     }
 
     @Override
     public void setResult(Object result) {
-        try {
-            Object finalResult = result;
-            if (finalResult instanceof Throwable && !(finalResult instanceof CancellationException)) {
-                super.setResult(new ExecutionException((Throwable) finalResult));
-                return;
-            }
-            // If collator is available we need to execute it now
-            if (collator != null) {
-                try {
-                    finalResult = collator.collate(((Map) finalResult).entrySet());
-                } catch (Exception e) {
-                    // Possible exception while collating
-                    finalResult = e;
-                }
-            }
-            if (finalResult instanceof Throwable && !(finalResult instanceof CancellationException)) {
-                finalResult = new ExecutionException((Throwable) finalResult);
-            }
-            super.setResult(finalResult);
-        } finally {
-            latch.countDown();
+        Object finalResult = result;
+        if (finalResult instanceof Throwable && !(finalResult instanceof CancellationException)) {
+            super.setResult(new ExecutionException((Throwable) finalResult));
+            return;
         }
+        // If collator is available we need to execute it now
+        if (collator != null) {
+            try {
+                finalResult = collator.collate(((Map) finalResult).entrySet());
+            } catch (Exception e) {
+                // Possible exception while collating
+                finalResult = e;
+            }
+        }
+        if (finalResult instanceof Throwable && !(finalResult instanceof CancellationException)) {
+            finalResult = new ExecutionException((Throwable) finalResult);
+        }
+        super.setResult(finalResult);
     }
 
     @Override
@@ -107,23 +96,8 @@ public class TrackableJobFuture<V>
             return false;
         }
         Exception exception = new CancellationException("Operation was cancelled by the user");
-        cancelled = supervisor.cancelAndNotify(exception);
+        cancelled = supervisor.cancelAndNotify(exception) && super.cancel(mayInterruptIfRunning);
         return cancelled;
-    }
-
-    @Override
-    public boolean isCancelled() {
-        return cancelled;
-    }
-
-    @Override
-    public V get(long timeout, TimeUnit unit)
-            throws InterruptedException, ExecutionException, TimeoutException {
-        isNotNull(unit, "unit");
-        if (!latch.await(timeout, unit) || !isDone()) {
-            throw new TimeoutException("timeout reached");
-        }
-        return getResult();
     }
 
     @Override
