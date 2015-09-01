@@ -10,7 +10,6 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.test.annotation.Repeat;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -212,7 +211,6 @@ public class AbstractCompletableFutureTest extends HazelcastTestSupport {
     }
 
     @Test(expected = TimeoutException.class, timeout = 120000)
-    @Repeat(10)
     public void getWithTimeout_resultNotSet_timesOut() throws Exception {
         FutureImpl future = new FutureImpl(nodeEngine, logger);
 

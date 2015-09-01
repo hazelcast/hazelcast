@@ -23,7 +23,6 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.test.annotation.Repeat;
 import org.hamcrest.Matchers;
 import org.junit.Before;
 import org.junit.Rule;
@@ -109,7 +108,6 @@ public class CompletableFutureTest extends HazelcastTestSupport {
     }
 
     @Test
-    @Repeat(10)
     // https://github.com/hazelcast/hazelcast/issues/6020
     public void postregisterCallback() throws Exception {
         ICompletableFuture<String> f = submitAwaitingTask(expectedNumberOfCallbacks(1), NO_EXCEPTION);
@@ -168,7 +166,6 @@ public class CompletableFutureTest extends HazelcastTestSupport {
     }
 
     @Test(timeout = 60000)
-    @Repeat
     public void getWithTimeout_finishesWithinTime() throws Exception {
         ICompletableFuture<String> f = submitAwaitingTaskNoCallbacks(NO_EXCEPTION);
         submitReleasingTask(200);
@@ -178,7 +175,6 @@ public class CompletableFutureTest extends HazelcastTestSupport {
     }
 
     @Test(timeout = 120000)
-    @Repeat(10)
     public void getWithTimeout_timesOut() throws Exception {
         ICompletableFuture<String> f = submitAwaitingTaskNoCallbacks(NO_EXCEPTION);
 
@@ -241,7 +237,6 @@ public class CompletableFutureTest extends HazelcastTestSupport {
 
 
     @Test(timeout = 60000)
-    @Repeat(10)
     public void cancelAndGet_taskCancelled_withoutInterruption_logicExecuted() throws Exception {
         ICompletableFuture<String> f = submitAwaitingTaskNoCallbacks(NO_EXCEPTION);
         assertTaskInExecution();
@@ -259,7 +254,6 @@ public class CompletableFutureTest extends HazelcastTestSupport {
     }
 
     @Test(timeout = 120000)
-    @Repeat(10)
     public void cancelAndGet_taskCancelled_withInterruption_noLogicExecuted() throws Exception {
         ICompletableFuture<String> f = submitAwaitingTaskNoCallbacks(NO_EXCEPTION);
         assertTaskInExecution();
