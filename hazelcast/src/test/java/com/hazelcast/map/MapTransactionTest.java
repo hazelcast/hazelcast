@@ -16,6 +16,10 @@
 
 package com.hazelcast.map;
 
+import com.hazelcast.concurrent.lock.LockResource;
+import com.hazelcast.concurrent.lock.LockService;
+import com.hazelcast.concurrent.lock.LockServiceImpl;
+import com.hazelcast.concurrent.lock.LockStoreImpl;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.EntryAdapter;
@@ -27,6 +31,10 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapStoreAdapter;
 import com.hazelcast.core.TransactionalMap;
 import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.instance.Node;
+import com.hazelcast.instance.TestUtil;
+import com.hazelcast.map.impl.MapService;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.query.EntryObject;
@@ -36,6 +44,7 @@ import com.hazelcast.query.PredicateBuilder;
 import com.hazelcast.query.SampleObjects;
 import com.hazelcast.query.SampleObjects.Employee;
 import com.hazelcast.query.SqlPredicate;
+import com.hazelcast.spi.DefaultObjectNamespace;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -101,6 +110,45 @@ public class MapTransactionTest extends HazelcastTestSupport {
         latch.await();
         ctx.commitTransaction();
         t.join();
+    }
+
+    @Test
+    public void testGetForUpdate_releasesBackupLock(){
+        Config config = new Config();
+//        config.setProperty(GroupProperties.PROP_PARTITION_COUNT, "4");
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        HazelcastInstance instance1 = factory.newHazelcastInstance(config);
+        HazelcastInstance instance2 = factory.newHazelcastInstance(config);
+        final String name = randomString();
+        final String keyOwnedByInstance2 = generateKeyOwnedBy(instance2);
+
+        instance1.executeTransaction(new TransactionalTask<Object>() {
+            @Override
+            public Object execute(TransactionalTaskContext context) throws TransactionException {
+                TransactionalMap<Object, Object> map = context.getMap(name);
+                map.getForUpdate(keyOwnedByInstance2);
+                return null;
+            }
+        });
+
+
+        Node node = TestUtil.getNode(instance1);
+        Data keyData = node.nodeEngine.toData(keyOwnedByInstance2);
+        LockService lockService = node.nodeEngine.getService(LockService.SERVICE_NAME);
+        Collection<LockResource> allLocks = lockService.getAllLocks();
+        for (LockResource lockResource : allLocks) {
+            if (keyData.equals(lockResource.getKey())){
+                assertEquals(0, lockResource.getLockCount());
+            }
+        }
+
+
+
+//        int partitionId = node.getPartitionService().getPartitionId(keyData);
+//        DefaultObjectNamespace namespace = new DefaultObjectNamespace(MapService.SERVICE_NAME, name);
+//        LockStoreImpl lockStore = lockService.getLockStore(partitionId, namespace);
+//        int lockCount = lockStore.getLockCount(keyData);
+//        assertEquals(0, lockCount);
     }
 
     @Test

@@ -82,7 +82,7 @@ public class TxnUnlockOperation extends LockAwareOperation implements MapTxnOper
 
     @Override
     public Operation getBackupOperation() {
-        TxnUnlockBackupOperation txnUnlockOperation = new TxnUnlockBackupOperation(name, dataKey);
+        TxnUnlockBackupOperation txnUnlockOperation = new TxnUnlockBackupOperation(name, dataKey, ownerUuid);
         txnUnlockOperation.setThreadId(getThreadId());
         return txnUnlockOperation;
     }
