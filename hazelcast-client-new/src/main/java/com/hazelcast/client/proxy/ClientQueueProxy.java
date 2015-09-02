@@ -41,7 +41,6 @@ import com.hazelcast.client.impl.protocol.codec.QueueRemoveListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.QueueSizeCodec;
 import com.hazelcast.client.impl.protocol.codec.QueueTakeCodec;
 import com.hazelcast.client.spi.ClientClusterService;
-import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.client.spi.impl.ListenerRemoveCodec;
 import com.hazelcast.collection.impl.queue.QueueIterator;
@@ -51,9 +50,9 @@ import com.hazelcast.core.ItemEvent;
 import com.hazelcast.core.ItemEventType;
 import com.hazelcast.core.ItemListener;
 import com.hazelcast.core.Member;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.monitor.LocalQueueStats;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.internal.serialization.SerializationService;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -64,16 +63,10 @@ import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-/**
- * @author ali 5/19/13
- */
-public final class ClientQueueProxy<E> extends ClientProxy implements IQueue<E> {
-
-    private final String name;
+public final class ClientQueueProxy<E> extends PartitionSpecificClientProxy implements IQueue<E> {
 
     public ClientQueueProxy(String serviceName, String name) {
         super(serviceName, name);
-        this.name = name;
     }
 
     @Override
@@ -127,7 +120,6 @@ public final class ClientQueueProxy<E> extends ClientProxy implements IQueue<E> 
         }
     }
 
-
     public boolean removeItemListener(String registrationId) {
         return stopListening(registrationId, new ListenerRemoveCodec() {
             @Override
@@ -174,34 +166,34 @@ public final class ClientQueueProxy<E> extends ClientProxy implements IQueue<E> 
     public void put(E e) throws InterruptedException {
         Data data = toData(e);
         ClientMessage request = QueuePutCodec.encodeRequest(name, data);
-        invokeInterruptibly(request);
+        invokeOnPartitionInterruptibly(request);
     }
 
     public boolean offer(E e, long timeout, TimeUnit unit) throws InterruptedException {
         Data data = toData(e);
         ClientMessage request = QueueOfferCodec.encodeRequest(name, data, unit.toMillis(timeout));
-        ClientMessage response = invokeInterruptibly(request);
+        ClientMessage response = invokeOnPartitionInterruptibly(request);
         QueueOfferCodec.ResponseParameters resultParameters = QueueOfferCodec.decodeResponse(response);
         return resultParameters.response;
     }
 
     public E take() throws InterruptedException {
         ClientMessage request = QueueTakeCodec.encodeRequest(name);
-        ClientMessage response = invokeInterruptibly(request);
+        ClientMessage response = invokeOnPartitionInterruptibly(request);
         QueueTakeCodec.ResponseParameters resultParameters = QueueTakeCodec.decodeResponse(response);
         return toObject(resultParameters.response);
     }
 
     public E poll(long timeout, TimeUnit unit) throws InterruptedException {
         ClientMessage request = QueuePollCodec.encodeRequest(name, unit.toMillis(timeout));
-        ClientMessage response = invokeInterruptibly(request);
+        ClientMessage response = invokeOnPartitionInterruptibly(request);
         QueuePollCodec.ResponseParameters resultParameters = QueuePollCodec.decodeResponse(response);
         return toObject(resultParameters.response);
     }
 
     public int remainingCapacity() {
         ClientMessage request = QueueRemainingCapacityCodec.encodeRequest(name);
-        ClientMessage response = invoke(request);
+        ClientMessage response = invokeOnPartition(request);
         QueueRemainingCapacityCodec.ResponseParameters resultParameters = QueueRemainingCapacityCodec.decodeResponse(response);
         return resultParameters.response;
     }
@@ -209,7 +201,7 @@ public final class ClientQueueProxy<E> extends ClientProxy implements IQueue<E> 
     public boolean remove(Object o) {
         Data data = toData(o);
         ClientMessage request = QueueRemoveCodec.encodeRequest(name, data);
-        ClientMessage response = invoke(request);
+        ClientMessage response = invokeOnPartition(request);
         QueueRemoveCodec.ResponseParameters resultParameters = QueueRemoveCodec.decodeResponse(response);
         return resultParameters.response;
     }
@@ -217,14 +209,14 @@ public final class ClientQueueProxy<E> extends ClientProxy implements IQueue<E> 
     public boolean contains(Object o) {
         Data data = toData(o);
         ClientMessage request = QueueContainsCodec.encodeRequest(name, data);
-        ClientMessage response = invoke(request);
+        ClientMessage response = invokeOnPartition(request);
         QueueContainsCodec.ResponseParameters resultParameters = QueueContainsCodec.decodeResponse(response);
         return resultParameters.response;
     }
 
     public int drainTo(Collection<? super E> objects) {
         ClientMessage request = QueueDrainToCodec.encodeRequest(name);
-        ClientMessage response = invoke(request);
+        ClientMessage response = invokeOnPartition(request);
         QueueDrainToCodec.ResponseParameters resultParameters = QueueDrainToCodec.decodeResponse(response);
         Collection<Data> resultCollection = resultParameters.list;
         for (Data data : resultCollection) {
@@ -236,7 +228,7 @@ public final class ClientQueueProxy<E> extends ClientProxy implements IQueue<E> 
 
     public int drainTo(Collection<? super E> c, int maxElements) {
         ClientMessage request = QueueDrainToMaxSizeCodec.encodeRequest(name, maxElements);
-        ClientMessage response = invoke(request);
+        ClientMessage response = invokeOnPartition(request);
         QueueDrainToMaxSizeCodec.ResponseParameters resultParameters = QueueDrainToMaxSizeCodec.decodeResponse(response);
         Collection<Data> resultCollection = resultParameters.list;
         for (Data data : resultCollection) {
@@ -272,28 +264,28 @@ public final class ClientQueueProxy<E> extends ClientProxy implements IQueue<E> 
 
     public E peek() {
         ClientMessage request = QueuePeekCodec.encodeRequest(name);
-        ClientMessage response = invoke(request);
+        ClientMessage response = invokeOnPartition(request);
         QueuePeekCodec.ResponseParameters resultParameters = QueuePeekCodec.decodeResponse(response);
         return toObject(resultParameters.response);
     }
 
     public int size() {
         ClientMessage request = QueueSizeCodec.encodeRequest(name);
-        ClientMessage response = invoke(request);
+        ClientMessage response = invokeOnPartition(request);
         QueueSizeCodec.ResponseParameters resultParameters = QueueSizeCodec.decodeResponse(response);
         return resultParameters.response;
     }
 
     public boolean isEmpty() {
         ClientMessage request = QueueIsEmptyCodec.encodeRequest(name);
-        ClientMessage response = invoke(request);
+        ClientMessage response = invokeOnPartition(request);
         QueueIsEmptyCodec.ResponseParameters resultParameters = QueueIsEmptyCodec.decodeResponse(response);
         return resultParameters.response;
     }
 
     public Iterator<E> iterator() {
         ClientMessage request = QueueIteratorCodec.encodeRequest(name);
-        ClientMessage response = invoke(request);
+        ClientMessage response = invokeOnPartition(request);
         QueueIteratorCodec.ResponseParameters resultParameters = QueueIteratorCodec.decodeResponse(response);
         Collection<Data> resultCollection = resultParameters.list;
         return new QueueIterator<E>(resultCollection.iterator(), getContext().getSerializationService(), false);
@@ -301,7 +293,7 @@ public final class ClientQueueProxy<E> extends ClientProxy implements IQueue<E> 
 
     public Object[] toArray() {
         ClientMessage request = QueueIteratorCodec.encodeRequest(name);
-        ClientMessage response = invoke(request);
+        ClientMessage response = invokeOnPartition(request);
         QueueIteratorCodec.ResponseParameters resultParameters = QueueIteratorCodec.decodeResponse(response);
         Collection<Data> resultCollection = resultParameters.list;
         int i = 0;
@@ -314,7 +306,7 @@ public final class ClientQueueProxy<E> extends ClientProxy implements IQueue<E> 
 
     public <T> T[] toArray(T[] ts) {
         ClientMessage request = QueueIteratorCodec.encodeRequest(name);
-        ClientMessage response = invoke(request);
+        ClientMessage response = invokeOnPartition(request);
         QueueIteratorCodec.ResponseParameters resultParameters = QueueIteratorCodec.decodeResponse(response);
         Collection<Data> resultCollection = resultParameters.list;
         int size = resultCollection.size();
@@ -330,43 +322,35 @@ public final class ClientQueueProxy<E> extends ClientProxy implements IQueue<E> 
 
     public boolean containsAll(Collection<?> c) {
         ClientMessage request = QueueContainsAllCodec.encodeRequest(name, getDataSet(c));
-        ClientMessage response = invoke(request);
+        ClientMessage response = invokeOnPartition(request);
         QueueContainsAllCodec.ResponseParameters resultParameters = QueueContainsAllCodec.decodeResponse(response);
         return resultParameters.response;
     }
 
     public boolean addAll(Collection<? extends E> c) {
         ClientMessage request = QueueAddAllCodec.encodeRequest(name, getDataList(c));
-        ClientMessage response = invoke(request);
+        ClientMessage response = invokeOnPartition(request);
         QueueAddAllCodec.ResponseParameters resultParameters = QueueAddAllCodec.decodeResponse(response);
         return resultParameters.response;
     }
 
     public boolean removeAll(Collection<?> c) {
         ClientMessage request = QueueCompareAndRemoveAllCodec.encodeRequest(name, getDataSet(c));
-        ClientMessage response = invoke(request);
+        ClientMessage response = invokeOnPartition(request);
         QueueCompareAndRemoveAllCodec.ResponseParameters resultParameters = QueueCompareAndRemoveAllCodec.decodeResponse(response);
         return resultParameters.response;
     }
 
     public boolean retainAll(Collection<?> c) {
         ClientMessage request = QueueCompareAndRetainAllCodec.encodeRequest(name, getDataSet(c));
-        ClientMessage response = invoke(request);
+        ClientMessage response = invokeOnPartition(request);
         QueueCompareAndRetainAllCodec.ResponseParameters resultParameters = QueueCompareAndRetainAllCodec.decodeResponse(response);
         return resultParameters.response;
     }
 
     public void clear() {
         ClientMessage request = QueueClearCodec.encodeRequest(name);
-        invoke(request);
-    }
-
-    protected <T> T invoke(ClientMessage req) {
-        return super.invoke(req, getPartitionKey());
-    }
-
-    protected <T> T invokeInterruptibly(ClientMessage req) throws InterruptedException {
-        return super.invokeInterruptibly(req, getPartitionKey());
+        invokeOnPartition(request);
     }
 
     private Set<Data> getDataSet(Collection<?> objects) {
@@ -387,6 +371,6 @@ public final class ClientQueueProxy<E> extends ClientProxy implements IQueue<E> 
 
     @Override
     public String toString() {
-        return "IQueue{" + "name='" + getName() + '\'' + '}';
+        return "IQueue{" + "name='" + name + '\'' + '}';
     }
 }

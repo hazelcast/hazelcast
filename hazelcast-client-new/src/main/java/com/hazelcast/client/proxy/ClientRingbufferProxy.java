@@ -79,7 +79,7 @@ public class ClientRingbufferProxy<E> extends ClientProxy implements Ringbuffer<
 
     @Override
     protected void onInitialize() {
-        partitionId = getContext().getPartitionService().getPartitionId(getName());
+        partitionId = getContext().getPartitionService().getPartitionId(name);
         final SerializationService serializationService = getContext().getSerializationService();
 
         readManyAsyncResponseDecoder = new ClientMessageDecoder() {
@@ -98,7 +98,7 @@ public class ClientRingbufferProxy<E> extends ClientProxy implements Ringbuffer<
     @Override
     public long capacity() {
         if (capacity == -1) {
-            ClientMessage request = RingbufferCapacityCodec.encodeRequest(getName());
+            ClientMessage request = RingbufferCapacityCodec.encodeRequest(name);
             ClientMessage response = invoke(request, partitionId);
             RingbufferCapacityCodec.ResponseParameters resultParameters = RingbufferCapacityCodec.decodeResponse(response);
             capacity = resultParameters.response;
@@ -109,7 +109,7 @@ public class ClientRingbufferProxy<E> extends ClientProxy implements Ringbuffer<
 
     @Override
     public long size() {
-        ClientMessage request = RingbufferSizeCodec.encodeRequest(getName());
+        ClientMessage request = RingbufferSizeCodec.encodeRequest(name);
         ClientMessage response = invoke(request, partitionId);
         RingbufferSizeCodec.ResponseParameters resultParameters = RingbufferSizeCodec.decodeResponse(response);
         return resultParameters.response;
@@ -117,7 +117,7 @@ public class ClientRingbufferProxy<E> extends ClientProxy implements Ringbuffer<
 
     @Override
     public long tailSequence() {
-        ClientMessage request = RingbufferTailSequenceCodec.encodeRequest(getName());
+        ClientMessage request = RingbufferTailSequenceCodec.encodeRequest(name);
         ClientMessage response = invoke(request, partitionId);
         RingbufferTailSequenceCodec.ResponseParameters resultParameters = RingbufferTailSequenceCodec.decodeResponse(response);
         return resultParameters.response;
@@ -125,7 +125,7 @@ public class ClientRingbufferProxy<E> extends ClientProxy implements Ringbuffer<
 
     @Override
     public long headSequence() {
-        ClientMessage request = RingbufferHeadSequenceCodec.encodeRequest(getName());
+        ClientMessage request = RingbufferHeadSequenceCodec.encodeRequest(name);
         ClientMessage response = invoke(request, partitionId);
         RingbufferHeadSequenceCodec.ResponseParameters resultParameters = RingbufferHeadSequenceCodec.decodeResponse(response);
         return resultParameters.response;
@@ -133,7 +133,7 @@ public class ClientRingbufferProxy<E> extends ClientProxy implements Ringbuffer<
 
     @Override
     public long remainingCapacity() {
-        ClientMessage request = RingbufferRemainingCapacityCodec.encodeRequest(getName());
+        ClientMessage request = RingbufferRemainingCapacityCodec.encodeRequest(name);
         ClientMessage response = invoke(request, partitionId);
         RingbufferRemainingCapacityCodec.ResponseParameters resultParameters
                 = RingbufferRemainingCapacityCodec.decodeResponse(response);
@@ -145,7 +145,7 @@ public class ClientRingbufferProxy<E> extends ClientProxy implements Ringbuffer<
         checkNotNull(item, "item can't be null");
 
         Data element = toData(item);
-        ClientMessage request = RingbufferAddCodec.encodeRequest(getName(), OverflowPolicy.OVERWRITE.getId(), element);
+        ClientMessage request = RingbufferAddCodec.encodeRequest(name, OverflowPolicy.OVERWRITE.getId(), element);
         ClientMessage response = invoke(request, partitionId);
         RingbufferAddCodec.ResponseParameters resultParameters = RingbufferAddCodec.decodeResponse(response);
         return resultParameters.response;
@@ -157,7 +157,7 @@ public class ClientRingbufferProxy<E> extends ClientProxy implements Ringbuffer<
         checkNotNull(overflowPolicy, "overflowPolicy can't be null");
 
         Data element = toData(item);
-        ClientMessage request = RingbufferAddCodec.encodeRequest(getName(), overflowPolicy.getId(), element);
+        ClientMessage request = RingbufferAddCodec.encodeRequest(name, overflowPolicy.getId(), element);
         request.setPartitionId(partitionId);
 
         try {
@@ -175,7 +175,7 @@ public class ClientRingbufferProxy<E> extends ClientProxy implements Ringbuffer<
     public E readOne(long sequence) throws InterruptedException {
         checkSequence(sequence);
 
-        ClientMessage request = RingbufferReadOneCodec.encodeRequest(getName(), sequence);
+        ClientMessage request = RingbufferReadOneCodec.encodeRequest(name, sequence);
         ClientMessage response = invoke(request, partitionId);
         RingbufferReadOneCodec.ResponseParameters resultParameters = RingbufferReadOneCodec.decodeResponse(response);
         return toObject(resultParameters.response);
@@ -194,7 +194,7 @@ public class ClientRingbufferProxy<E> extends ClientProxy implements Ringbuffer<
             valueList.add(toData(e));
         }
 
-        ClientMessage request = RingbufferAddAllAsyncCodec.encodeRequest(getName(), valueList, overflowPolicy.getId());
+        ClientMessage request = RingbufferAddAllAsyncCodec.encodeRequest(name, valueList, overflowPolicy.getId());
         request.setPartitionId(partitionId);
 
         try {
@@ -219,7 +219,7 @@ public class ClientRingbufferProxy<E> extends ClientProxy implements Ringbuffer<
         checkTrue(maxCount <= MAX_BATCH_SIZE, "maxCount can't be larger than " + MAX_BATCH_SIZE);
 
         ClientMessage request = RingbufferReadManyAsyncCodec.encodeRequest(
-                getName(),
+                name,
                 startSequence,
                 minCount,
                 maxCount,

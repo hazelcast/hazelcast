@@ -46,7 +46,7 @@ public class ClientTxnQueueProxy<E> extends ClientTxnProxy implements Transactio
 
     public boolean offer(E e, long timeout, TimeUnit unit) throws InterruptedException {
         final Data data = toData(e);
-        ClientMessage request = TransactionalQueueOfferCodec.encodeRequest(getName(), getTransactionId(),
+        ClientMessage request = TransactionalQueueOfferCodec.encodeRequest(name, getTransactionId(),
                 ThreadUtil.getThreadId(), data, unit.toMillis(timeout));
         ClientMessage response = invoke(request);
         return TransactionalQueueOfferCodec.decodeResponse(response).response;
@@ -54,7 +54,7 @@ public class ClientTxnQueueProxy<E> extends ClientTxnProxy implements Transactio
 
     @Override
     public E take() throws InterruptedException {
-        ClientMessage request = TransactionalQueueTakeCodec.encodeRequest(getName(), getTransactionId(),
+        ClientMessage request = TransactionalQueueTakeCodec.encodeRequest(name, getTransactionId(),
                 ThreadUtil.getThreadId());
         ClientMessage response = invoke(request);
         return (E) toObject(TransactionalQueueTakeCodec.decodeResponse(response).response);
@@ -69,7 +69,7 @@ public class ClientTxnQueueProxy<E> extends ClientTxnProxy implements Transactio
     }
 
     public E poll(long timeout, TimeUnit unit) throws InterruptedException {
-        ClientMessage request = TransactionalQueuePollCodec.encodeRequest(getName(), getTransactionId(),
+        ClientMessage request = TransactionalQueuePollCodec.encodeRequest(name, getTransactionId(),
                 ThreadUtil.getThreadId(), unit.toMillis(timeout));
         ClientMessage response = invoke(request);
         return (E) toObject(TransactionalQueuePollCodec.decodeResponse(response).response);
@@ -86,14 +86,14 @@ public class ClientTxnQueueProxy<E> extends ClientTxnProxy implements Transactio
 
     @Override
     public E peek(long timeout, TimeUnit unit) throws InterruptedException {
-        ClientMessage request = TransactionalQueuePeekCodec.encodeRequest(getName(), getTransactionId(),
+        ClientMessage request = TransactionalQueuePeekCodec.encodeRequest(name, getTransactionId(),
                 ThreadUtil.getThreadId(), unit.toMillis(timeout));
         ClientMessage response = invoke(request);
         return (E) toObject(TransactionalQueuePeekCodec.decodeResponse(response).response);
     }
 
     public int size() {
-        ClientMessage request = TransactionalQueueSizeCodec.encodeRequest(getName(), getTransactionId(),
+        ClientMessage request = TransactionalQueueSizeCodec.encodeRequest(name, getTransactionId(),
                 ThreadUtil.getThreadId());
         ClientMessage response = invoke(request);
         return TransactionalQueueSizeCodec.decodeResponse(response).response;

@@ -21,36 +21,32 @@ import com.hazelcast.client.impl.protocol.codec.CountDownLatchAwaitCodec;
 import com.hazelcast.client.impl.protocol.codec.CountDownLatchCountDownCodec;
 import com.hazelcast.client.impl.protocol.codec.CountDownLatchGetCountCodec;
 import com.hazelcast.client.impl.protocol.codec.CountDownLatchTrySetCountCodec;
-import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.core.ICountDownLatch;
-import com.hazelcast.nio.serialization.Data;
 
 import java.util.concurrent.TimeUnit;
 
-public class ClientCountDownLatchProxy extends ClientProxy implements ICountDownLatch {
-
-    private volatile Data key;
+public class ClientCountDownLatchProxy extends PartitionSpecificClientProxy implements ICountDownLatch {
 
     public ClientCountDownLatchProxy(String serviceName, String objectId) {
         super(serviceName, objectId);
     }
 
     public boolean await(long timeout, TimeUnit unit) throws InterruptedException {
-        ClientMessage request = CountDownLatchAwaitCodec.encodeRequest(getName(), getTimeInMillis(timeout, unit));
+        ClientMessage request = CountDownLatchAwaitCodec.encodeRequest(name, getTimeInMillis(timeout, unit));
         CountDownLatchAwaitCodec.ResponseParameters resultParameters =
-                CountDownLatchAwaitCodec.decodeResponse((ClientMessage) invoke(request));
+                CountDownLatchAwaitCodec.decodeResponse(invokeOnPartition(request));
         return resultParameters.response;
     }
 
     public void countDown() {
-        ClientMessage request = CountDownLatchCountDownCodec.encodeRequest(getName());
-        invoke(request);
+        ClientMessage request = CountDownLatchCountDownCodec.encodeRequest(name);
+        invokeOnPartition(request);
     }
 
     public int getCount() {
-        ClientMessage request = CountDownLatchGetCountCodec.encodeRequest(getName());
+        ClientMessage request = CountDownLatchGetCountCodec.encodeRequest(name);
         CountDownLatchGetCountCodec.ResponseParameters resultParameters =
-                CountDownLatchGetCountCodec.decodeResponse((ClientMessage) invoke(request));
+                CountDownLatchGetCountCodec.decodeResponse(invokeOnPartition(request));
         return resultParameters.response;
     }
 
@@ -58,29 +54,19 @@ public class ClientCountDownLatchProxy extends ClientProxy implements ICountDown
         if (count < 0) {
             throw new IllegalArgumentException("count can't be negative");
         }
-        ClientMessage request = CountDownLatchTrySetCountCodec.encodeRequest(getName(), count);
+        ClientMessage request = CountDownLatchTrySetCountCodec.encodeRequest(name, count);
         CountDownLatchTrySetCountCodec.ResponseParameters resultParameters =
-                CountDownLatchTrySetCountCodec.decodeResponse((ClientMessage) invoke(request));
+                CountDownLatchTrySetCountCodec.decodeResponse(invokeOnPartition(request));
         return resultParameters.response;
-    }
-
-    private Data getKey() {
-        if (key == null) {
-            key = toData(getName());
-        }
-        return key;
     }
 
     private long getTimeInMillis(final long time, final TimeUnit timeunit) {
         return timeunit != null ? timeunit.toMillis(time) : time;
     }
 
-    protected <T> T invoke(ClientMessage req) {
-        return super.invoke(req, getKey());
-    }
 
     @Override
     public String toString() {
-        return "ICountDownLatch{" + "name='" + getName() + '\'' + '}';
+        return "ICountDownLatch{" + "name='" + name + '\'' + '}';
     }
 }

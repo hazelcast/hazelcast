@@ -31,11 +31,11 @@ import java.util.concurrent.Future;
 
 abstract class ClientTxnProxy implements TransactionalObject {
 
-    final String objectName;
+    final String name;
     final ClientTransactionContext transactionContext;
 
-    ClientTxnProxy(String objectName, ClientTransactionContext transactionContext) {
-        this.objectName = objectName;
+    ClientTxnProxy(String name, ClientTransactionContext transactionContext) {
+        this.name = name;
         this.transactionContext = transactionContext;
     }
 
@@ -60,18 +60,18 @@ abstract class ClientTxnProxy implements TransactionalObject {
     @Override
     public final void destroy() {
         onDestroy();
-        ClientMessage request = ClientDestroyProxyCodec.encodeRequest(objectName, getServiceName());
+        ClientMessage request = ClientDestroyProxyCodec.encodeRequest(name, getServiceName());
         invoke(request);
     }
 
     @Override
     public String getName() {
-        return objectName;
+        return name;
     }
 
     @Override
     public String getPartitionKey() {
-        return StringPartitioningStrategy.getPartitionKey(getName());
+        return StringPartitioningStrategy.getPartitionKey(name);
     }
 
     Data toData(Object obj) {

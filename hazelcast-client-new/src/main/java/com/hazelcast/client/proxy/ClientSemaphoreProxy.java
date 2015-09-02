@@ -24,26 +24,20 @@ import com.hazelcast.client.impl.protocol.codec.SemaphoreInitCodec;
 import com.hazelcast.client.impl.protocol.codec.SemaphoreReducePermitsCodec;
 import com.hazelcast.client.impl.protocol.codec.SemaphoreReleaseCodec;
 import com.hazelcast.client.impl.protocol.codec.SemaphoreTryAcquireCodec;
-import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.core.ISemaphore;
-import com.hazelcast.nio.serialization.Data;
 
 import java.util.concurrent.TimeUnit;
 
-public class ClientSemaphoreProxy extends ClientProxy implements ISemaphore {
-
-    private final String name;
-    private volatile Data key;
+public class ClientSemaphoreProxy extends PartitionSpecificClientProxy implements ISemaphore {
 
     public ClientSemaphoreProxy(String serviceName, String objectId) {
         super(serviceName, objectId);
-        this.name = objectId;
     }
 
     public boolean init(int permits) {
         checkNegative(permits);
         ClientMessage request = SemaphoreInitCodec.encodeRequest(name, permits);
-        ClientMessage response = invoke(request);
+        ClientMessage response = invokeOnPartition(request);
         SemaphoreInitCodec.ResponseParameters resultParameters = SemaphoreInitCodec.decodeResponse(response);
 
         return resultParameters.response;
@@ -51,18 +45,18 @@ public class ClientSemaphoreProxy extends ClientProxy implements ISemaphore {
 
     public void acquire() throws InterruptedException {
         ClientMessage request = SemaphoreAcquireCodec.encodeRequest(name, 1);
-        invoke(request);
+        invokeOnPartition(request);
     }
 
     public void acquire(int permits) throws InterruptedException {
         checkNegative(permits);
         ClientMessage request = SemaphoreAcquireCodec.encodeRequest(name, permits);
-        invoke(request);
+        invokeOnPartition(request);
     }
 
     public int availablePermits() {
         ClientMessage request = SemaphoreAvailablePermitsCodec.encodeRequest(name);
-        ClientMessage response = invoke(request);
+        ClientMessage response = invokeOnPartition(request);
         SemaphoreAvailablePermitsCodec.ResponseParameters resultParameters
                 = SemaphoreAvailablePermitsCodec.decodeResponse(response);
         return resultParameters.response;
@@ -70,7 +64,7 @@ public class ClientSemaphoreProxy extends ClientProxy implements ISemaphore {
 
     public int drainPermits() {
         ClientMessage request = SemaphoreDrainPermitsCodec.encodeRequest(name);
-        ClientMessage response = invoke(request);
+        ClientMessage response = invokeOnPartition(request);
         SemaphoreDrainPermitsCodec.ResponseParameters resultParameters
                 = SemaphoreDrainPermitsCodec.decodeResponse(response);
         return resultParameters.response;
@@ -79,23 +73,23 @@ public class ClientSemaphoreProxy extends ClientProxy implements ISemaphore {
     public void reducePermits(int reduction) {
         checkNegative(reduction);
         ClientMessage request = SemaphoreReducePermitsCodec.encodeRequest(name, reduction);
-        invoke(request);
+        invokeOnPartition(request);
     }
 
     public void release() {
         ClientMessage request = SemaphoreReleaseCodec.encodeRequest(name, 1);
-        invoke(request);
+        invokeOnPartition(request);
     }
 
     public void release(int permits) {
         checkNegative(permits);
         ClientMessage request = SemaphoreReleaseCodec.encodeRequest(name, permits);
-        invoke(request);
+        invokeOnPartition(request);
     }
 
     public boolean tryAcquire() {
         ClientMessage request = SemaphoreTryAcquireCodec.encodeRequest(name, 1, 0);
-        ClientMessage response = invoke(request);
+        ClientMessage response = invokeOnPartition(request);
         SemaphoreTryAcquireCodec.ResponseParameters resultParameters = SemaphoreTryAcquireCodec.decodeResponse(response);
         return resultParameters.response;
     }
@@ -114,7 +108,7 @@ public class ClientSemaphoreProxy extends ClientProxy implements ISemaphore {
             return tryAcquire();
         }
         ClientMessage request = SemaphoreTryAcquireCodec.encodeRequest(name, 1, unit.toMillis(timeout));
-        ClientMessage response = invoke(request);
+        ClientMessage response = invokeOnPartition(request);
         SemaphoreTryAcquireCodec.ResponseParameters resultParameters = SemaphoreTryAcquireCodec.decodeResponse(response);
         return resultParameters.response;
     }
@@ -122,20 +116,9 @@ public class ClientSemaphoreProxy extends ClientProxy implements ISemaphore {
     public boolean tryAcquire(int permits, long timeout, TimeUnit unit) throws InterruptedException {
         checkNegative(permits);
         ClientMessage request = SemaphoreTryAcquireCodec.encodeRequest(name, permits, unit.toMillis(timeout));
-        ClientMessage response = invoke(request);
+        ClientMessage response = invokeOnPartition(request);
         SemaphoreTryAcquireCodec.ResponseParameters resultParameters = SemaphoreTryAcquireCodec.decodeResponse(response);
         return resultParameters.response;
-    }
-
-    protected <T> T invoke(ClientMessage req) {
-        return super.invoke(req, getKey());
-    }
-
-    public Data getKey() {
-        if (key == null) {
-            key = getContext().getSerializationService().toData(name);
-        }
-        return key;
     }
 
     private void checkNegative(int permits) {
@@ -146,6 +129,6 @@ public class ClientSemaphoreProxy extends ClientProxy implements ISemaphore {
 
     @Override
     public String toString() {
-        return "ISemaphore{" + "name='" + getName() + '\'' + '}';
+        return "ISemaphore{" + "name='" + name + '\'' + '}';
     }
 }

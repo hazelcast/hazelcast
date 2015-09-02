@@ -39,7 +39,7 @@ public class ClientTxnListProxy<E> extends AbstractClientTxnCollectionProxy<E> i
     public boolean add(E e) {
         throwExceptionIfNull(e);
         final Data value = toData(e);
-        ClientMessage request = TransactionalListAddCodec.encodeRequest(getName(), getTransactionId()
+        ClientMessage request = TransactionalListAddCodec.encodeRequest(name, getTransactionId()
                 , ThreadUtil.getThreadId(), value);
         ClientMessage response = invoke(request);
         return TransactionalListAddCodec.decodeResponse(response).response;
@@ -48,14 +48,14 @@ public class ClientTxnListProxy<E> extends AbstractClientTxnCollectionProxy<E> i
     public boolean remove(E e) {
         throwExceptionIfNull(e);
         final Data value = toData(e);
-        ClientMessage request = TransactionalListRemoveCodec.encodeRequest(getName(), getTransactionId()
+        ClientMessage request = TransactionalListRemoveCodec.encodeRequest(name, getTransactionId()
                 , ThreadUtil.getThreadId(), value);
         ClientMessage response = invoke(request);
         return TransactionalListRemoveCodec.decodeResponse(response).response;
     }
 
     public int size() {
-        ClientMessage request = TransactionalListSizeCodec.encodeRequest(getName(), getTransactionId()
+        ClientMessage request = TransactionalListSizeCodec.encodeRequest(name, getTransactionId()
                 , ThreadUtil.getThreadId());
         ClientMessage response = invoke(request);
         return TransactionalListSizeCodec.decodeResponse(response).response;

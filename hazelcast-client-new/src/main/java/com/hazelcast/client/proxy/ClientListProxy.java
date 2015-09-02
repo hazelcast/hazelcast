@@ -42,7 +42,6 @@ import com.hazelcast.client.impl.protocol.codec.ListSetCodec;
 import com.hazelcast.client.impl.protocol.codec.ListSizeCodec;
 import com.hazelcast.client.impl.protocol.codec.ListSubCodec;
 import com.hazelcast.client.spi.ClientClusterService;
-import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.client.spi.impl.ListenerRemoveCodec;
 import com.hazelcast.core.IList;
@@ -50,8 +49,8 @@ import com.hazelcast.core.ItemEvent;
 import com.hazelcast.core.ItemEventType;
 import com.hazelcast.core.ItemListener;
 import com.hazelcast.core.Member;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.UnmodifiableLazyList;
 
 import java.util.ArrayList;
@@ -62,16 +61,10 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Set;
 
-/**
- * @author ali 5/20/13
- */
-public class ClientListProxy<E> extends ClientProxy implements IList<E> {
-
-    private final String name;
+public class ClientListProxy<E> extends PartitionSpecificClientProxy implements IList<E> {
 
     public ClientListProxy(String serviceName, String name) {
         super(serviceName, name);
-        this.name = name;
     }
 
     public boolean addAll(int index, Collection<? extends E> c) {
@@ -82,14 +75,14 @@ public class ClientListProxy<E> extends ClientProxy implements IList<E> {
             valueList.add(toData(e));
         }
         ClientMessage request = ListAddAllWithIndexCodec.encodeRequest(name, index, valueList);
-        ClientMessage response = invoke(request);
+        ClientMessage response = invokeOnPartition(request);
         ListAddAllWithIndexCodec.ResponseParameters resultParameters = ListAddAllWithIndexCodec.decodeResponse(response);
         return resultParameters.response;
     }
 
     public E get(int index) {
         ClientMessage request = ListGetCodec.encodeRequest(name, index);
-        ClientMessage response = invoke(request);
+        ClientMessage response = invokeOnPartition(request);
         ListGetCodec.ResponseParameters resultParameters = ListGetCodec.decodeResponse(response);
         return toObject(resultParameters.response);
     }
@@ -98,7 +91,7 @@ public class ClientListProxy<E> extends ClientProxy implements IList<E> {
         throwExceptionIfNull(element);
         final Data value = toData(element);
         ClientMessage request = ListSetCodec.encodeRequest(name, index, value);
-        ClientMessage response = invoke(request);
+        ClientMessage response = invokeOnPartition(request);
         ListSetCodec.ResponseParameters resultParameters = ListSetCodec.decodeResponse(response);
         return toObject(resultParameters.response);
     }
@@ -107,26 +100,26 @@ public class ClientListProxy<E> extends ClientProxy implements IList<E> {
         throwExceptionIfNull(element);
         final Data value = toData(element);
         ClientMessage request = ListAddWithIndexCodec.encodeRequest(name, index, value);
-        invoke(request);
+        invokeOnPartition(request);
     }
 
     public E remove(int index) {
         ClientMessage request = ListRemoveWithIndexCodec.encodeRequest(name, index);
-        ClientMessage response = invoke(request);
+        ClientMessage response = invokeOnPartition(request);
         ListRemoveWithIndexCodec.ResponseParameters resultParameters = ListRemoveWithIndexCodec.decodeResponse(response);
         return toObject(resultParameters.response);
     }
 
     public int size() {
         ClientMessage request = ListSizeCodec.encodeRequest(name);
-        ClientMessage response = invoke(request);
+        ClientMessage response = invokeOnPartition(request);
         ListSizeCodec.ResponseParameters resultParameters = ListSizeCodec.decodeResponse(response);
         return resultParameters.response;
     }
 
     public boolean isEmpty() {
         ClientMessage request = ListIsEmptyCodec.encodeRequest(name);
-        ClientMessage response = invoke(request);
+        ClientMessage response = invokeOnPartition(request);
         ListIsEmptyCodec.ResponseParameters resultParameters = ListIsEmptyCodec.decodeResponse(response);
         return resultParameters.response;
     }
@@ -135,14 +128,14 @@ public class ClientListProxy<E> extends ClientProxy implements IList<E> {
         throwExceptionIfNull(o);
         final Data value = toData(o);
         ClientMessage request = ListContainsCodec.encodeRequest(name, value);
-        ClientMessage response = invoke(request);
+        ClientMessage response = invokeOnPartition(request);
         ListContainsCodec.ResponseParameters resultParameters = ListContainsCodec.decodeResponse(response);
         return resultParameters.response;
     }
 
     public Iterator<E> iterator() {
         ClientMessage request = ListIteratorCodec.encodeRequest(name);
-        ClientMessage response = invoke(request);
+        ClientMessage response = invokeOnPartition(request);
         ListIteratorCodec.ResponseParameters resultParameters = ListIteratorCodec.decodeResponse(response);
         List<Data> resultCollection = (List<Data>) resultParameters.list;
         SerializationService serializationService = getContext().getSerializationService();
@@ -161,7 +154,7 @@ public class ClientListProxy<E> extends ClientProxy implements IList<E> {
         throwExceptionIfNull(e);
         final Data element = toData(e);
         ClientMessage request = ListAddCodec.encodeRequest(name, element);
-        ClientMessage response = invoke(request);
+        ClientMessage response = invokeOnPartition(request);
         ListAddCodec.ResponseParameters resultParameters = ListAddCodec.decodeResponse(response);
         return resultParameters.response;
     }
@@ -170,7 +163,7 @@ public class ClientListProxy<E> extends ClientProxy implements IList<E> {
         throwExceptionIfNull(o);
         final Data value = toData(o);
         ClientMessage request = ListRemoveCodec.encodeRequest(name, value);
-        ClientMessage response = invoke(request);
+        ClientMessage response = invokeOnPartition(request);
         ListRemoveCodec.ResponseParameters resultParameters = ListRemoveCodec.decodeResponse(response);
         return resultParameters.response;
     }
@@ -183,7 +176,7 @@ public class ClientListProxy<E> extends ClientProxy implements IList<E> {
             valueSet.add(toData(o));
         }
         ClientMessage request = ListContainsAllCodec.encodeRequest(name, valueSet);
-        ClientMessage response = invoke(request);
+        ClientMessage response = invokeOnPartition(request);
         ListContainsAllCodec.ResponseParameters resultParameters = ListContainsAllCodec.decodeResponse(response);
         return resultParameters.response;
     }
@@ -196,7 +189,7 @@ public class ClientListProxy<E> extends ClientProxy implements IList<E> {
             valueList.add(toData(e));
         }
         ClientMessage request = ListAddAllCodec.encodeRequest(name, valueList);
-        ClientMessage response = invoke(request);
+        ClientMessage response = invokeOnPartition(request);
         ListAddAllCodec.ResponseParameters resultParameters = ListAddAllCodec.decodeResponse(response);
         return resultParameters.response;
     }
@@ -209,7 +202,7 @@ public class ClientListProxy<E> extends ClientProxy implements IList<E> {
             valueSet.add(toData(o));
         }
         ClientMessage request = ListCompareAndRemoveAllCodec.encodeRequest(name, valueSet);
-        ClientMessage response = invoke(request);
+        ClientMessage response = invokeOnPartition(request);
         ListCompareAndRemoveAllCodec.ResponseParameters resultParameters = ListCompareAndRemoveAllCodec.decodeResponse(response);
         return resultParameters.response;
     }
@@ -222,14 +215,14 @@ public class ClientListProxy<E> extends ClientProxy implements IList<E> {
             valueSet.add(toData(o));
         }
         ClientMessage request = ListCompareAndRetainAllCodec.encodeRequest(name, valueSet);
-        ClientMessage response = invoke(request);
+        ClientMessage response = invokeOnPartition(request);
         ListCompareAndRetainAllCodec.ResponseParameters resultParameters = ListCompareAndRetainAllCodec.decodeResponse(response);
         return resultParameters.response;
     }
 
     public void clear() {
         ClientMessage request = ListClearCodec.encodeRequest(name);
-        invoke(request);
+        invokeOnPartition(request);
     }
 
     @Override
@@ -260,13 +253,9 @@ public class ClientListProxy<E> extends ClientProxy implements IList<E> {
         });
     }
 
-    protected <T> T invoke(ClientMessage req) {
-        return super.invoke(req, getPartitionKey());
-    }
-
     private Collection<E> getAll() {
         ClientMessage request = ListGetAllCodec.encodeRequest(name);
-        ClientMessage response = invoke(request);
+        ClientMessage response = invokeOnPartition(request);
         ListGetAllCodec.ResponseParameters resultParameters = ListGetAllCodec.decodeResponse(response);
         Collection<Data> resultCollection = resultParameters.list;
         final ArrayList<E> list = new ArrayList<E>(resultCollection.size());
@@ -280,7 +269,7 @@ public class ClientListProxy<E> extends ClientProxy implements IList<E> {
         throwExceptionIfNull(o);
         final Data value = toData(o);
         ClientMessage request = ListLastIndexOfCodec.encodeRequest(name, value);
-        ClientMessage response = invoke(request);
+        ClientMessage response = invokeOnPartition(request);
         ListLastIndexOfCodec.ResponseParameters resultParameters = ListLastIndexOfCodec.decodeResponse(response);
         return resultParameters.response;
     }
@@ -289,7 +278,7 @@ public class ClientListProxy<E> extends ClientProxy implements IList<E> {
         throwExceptionIfNull(o);
         final Data value = toData(o);
         ClientMessage request = ListIndexOfCodec.encodeRequest(name, value);
-        ClientMessage response = invoke(request);
+        ClientMessage response = invokeOnPartition(request);
         ListIndexOfCodec.ResponseParameters resultParameters = ListIndexOfCodec.decodeResponse(response);
         return resultParameters.response;
     }
@@ -300,25 +289,25 @@ public class ClientListProxy<E> extends ClientProxy implements IList<E> {
 
     public ListIterator<E> listIterator(int index) {
         ClientMessage request = ListListIteratorCodec.encodeRequest(name, index);
-        ClientMessage response = invoke(request);
+        ClientMessage response = invokeOnPartition(request);
         ListListIteratorCodec.ResponseParameters resultParameters = ListListIteratorCodec.decodeResponse(response);
-        List<Data> resultCollection = (List<Data>) resultParameters.list;
+        List<Data> resultCollection = resultParameters.list;
         SerializationService serializationService = getContext().getSerializationService();
         return new UnmodifiableLazyList<E>(resultCollection, serializationService).listIterator();
     }
 
     public List<E> subList(int fromIndex, int toIndex) {
         ClientMessage request = ListSubCodec.encodeRequest(name, fromIndex, toIndex);
-        ClientMessage response = invoke(request);
+        ClientMessage response = invokeOnPartition(request);
         ListSubCodec.ResponseParameters resultParameters = ListSubCodec.decodeResponse(response);
-        List<Data> resultCollection = (List<Data>) resultParameters.list;
+        List<Data> resultCollection = resultParameters.list;
         SerializationService serializationService = getContext().getSerializationService();
         return new UnmodifiableLazyList<E>(resultCollection, serializationService);
     }
 
     @Override
     public String toString() {
-        return "IList{" + "name='" + getName() + '\'' + '}';
+        return "IList{" + "name='" + name + '\'' + '}';
     }
 
     private class ItemEventHandler extends ListAddListenerCodec.AbstractEventHandler

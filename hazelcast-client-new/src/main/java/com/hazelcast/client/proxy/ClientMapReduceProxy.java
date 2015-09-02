@@ -91,7 +91,7 @@ public class ClientMapReduceProxy
 
     @Override
     public <K, V> Job<K, V> newJob(KeyValueSource<K, V> source) {
-        return new ClientJob<K, V>(getName(), source);
+        return new ClientJob<K, V>(name, source);
     }
 
     @Override
@@ -101,7 +101,7 @@ public class ClientMapReduceProxy
 
     @Override
     public String toString() {
-        return "JobTracker{" + "name='" + getName() + '\'' + '}';
+        return "JobTracker{" + "name='" + name + '\'' + '}';
     }
 
     private ClientMessage invoke(ClientMessage request, String jobId)
@@ -259,7 +259,7 @@ public class ClientMapReduceProxy
         @Override
         public boolean cancel(boolean mayInterruptIfRunning) {
             try {
-                ClientMessage request = MapReduceCancelCodec.encodeRequest(getName(), jobId);
+                ClientMessage request = MapReduceCancelCodec.encodeRequest(name, jobId);
                 ClientMessage response = invoke(request, jobId);
                 cancelled = MapReduceCancelCodec.decodeResponse(response).response;
             } catch (Exception ignore) {
@@ -310,7 +310,7 @@ public class ClientMapReduceProxy
 
         @Override
         public String getName() {
-            return ClientMapReduceProxy.this.getName();
+            return ClientMapReduceProxy.this.name;
         }
 
         @Override
@@ -326,7 +326,7 @@ public class ClientMapReduceProxy
         @Override
         public JobProcessInformation getJobProcessInformation() {
             try {
-                ClientMessage request = MapReduceJobProcessInformationCodec.encodeRequest(getName(), jobId);
+                ClientMessage request = MapReduceJobProcessInformationCodec.encodeRequest(name, jobId);
 
                 MapReduceJobProcessInformationCodec.ResponseParameters responseParameters = MapReduceJobProcessInformationCodec
                         .decodeResponse(invoke(request, jobId));
