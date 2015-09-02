@@ -4,11 +4,12 @@
 Some common compound data structures used in the protocol message specification are defined in this section.
 
 ### Array
-In the protocol specification an array of a data type is frequently used. An array of a data type with n entries are encode in this way:
+In the protocol specification, an array of a data type is frequently used. An array of a data type with n entries 
+is encoded as shown below:
 
 |Field|Type|Nullable|Description|
 |-----|----|---------|----------|
-|Length|int32|No|The length of the array. In this example, it shall be a value of n.|
+|Length|int32|No|The length of the array. In this example, it is a value of n.|
 |Entry 1|provided data type|No|First entry of the array|
 |Entry 2|provided data type|No|Second entry of the array|
 |...|...|...|...|
@@ -18,7 +19,7 @@ In the protocol specification an array of a data type is frequently used. An arr
 ### Address Data Type
 | Field| Type| Nullable| Description|
 |------|-----|---------|------------|
-|Host|string|No|The name or the ip address of the server member|
+|Host|string|No|The name or the IP address of the server member|
 |Port|int32|No|The port number used for this address|
 
 ### Cache Event Data Type
@@ -108,8 +109,8 @@ Response Message Type Id: 109
 |Error Code|int32|No|The unique code identifying the error|
 |Class Name|string|No|The class name which caused the error at the server side|
 |Message|string|Yes|The brief description of the error|
-|Stack Trace|array of stack-trace|The stack trace at the server side when the error occured.|
-|Cause Error Code|int32|No|The error code for the actual cause of the error. If no cause exists, it is set to -1.|
+|Stack Trace|array of stack-trace|No|The stack trace at the server side when the error occured|
+|Cause Error Code|int32|No|The error code for the actual cause of the error. If no cause exists, it is set to -1|
 |Cause Class Name|string|Yes|The name of the class that actually cause the error|
 
 The following error codes are defined in the system:
