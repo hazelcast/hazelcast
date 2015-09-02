@@ -259,7 +259,7 @@ Header only event message, no message body exist.
 </#list>
 
 <#if key == "com.hazelcast.client.impl.protocol.template.EnterpriseMapCodecTemplate">
-<b>Note:</b> All operation defined for the Map Object can also be executed against the EnterpriseMap Object as well.
+<b>Note:</b> All operation defined for the Map Object can also be executed against the EnterpriseMap Object.
 </#if>
 
 </#if>
