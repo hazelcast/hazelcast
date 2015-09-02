@@ -19,13 +19,13 @@ package com.hazelcast.nio.tcp;
 import com.hazelcast.util.counters.Counter;
 
 /**
- * The SocketReader is responsible for reading data from the socket, on behalf of a connection, into a byte-buffer. Once the
- * data is read into the ByteBuffer, this ByteBuffer is passed to the {@link ReadHandler} that takes care of the actual
- * processing of the incoming data.
+ * The SocketReader is responsible for reading data from the socket, on behalf of a connection, into a
+ * {@link java.nio.ByteBuffer}. Once the data is read into the ByteBuffer, this ByteBuffer is passed to the {@link ReadHandler}
+ * that takes care of the actual processing of the incoming data.
  *
- * Each {@link TcpIpConnection} will have its own {@link SocketReader} instance.
+ * Each {@link TcpIpConnection} has its own {@link SocketReader} instance.
  *
- * There are many different flavors of socket readers:
+ * There are many different flavors of SocketReader:
  * <ol>
  *     <li>reader for member to member communication</li>
  *     <li>reader for (old and new) client to member communication</li>

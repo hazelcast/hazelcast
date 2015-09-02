@@ -22,6 +22,8 @@ import com.hazelcast.nio.SocketWritable;
  * Each {@link TcpIpConnection} has a {@link SocketWriter} and it writes {@link SocketWritable} instances to the socket. Copying
  * the SocketWritable instances to the byte-buffer is done using the {@link WriteHandler}.
  *
+ * Each {@link TcpIpConnection} has its own {@link SocketWriter} instance.
+ *
  * Before Hazelcast 3.6 the name of this interface was WriteHandler.
  *
  * @see SocketReader
