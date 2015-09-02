@@ -21,6 +21,7 @@ import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
@@ -40,6 +41,7 @@ import static java.util.concurrent.atomic.AtomicReferenceFieldUpdater.newUpdater
  *
  * @param <V> The result type returned by this Future's {@code get} method
  */
+@SuppressFBWarnings(value = "NN_NAKED_NOTIFY", justification = "State handled with CAS, naked notify correct")
 public abstract class AbstractCompletableFuture<V> implements ICompletableFuture<V> {
 
     private static final Object INITIAL_STATE = new ExecutionCallbackNode(null, null, null);
