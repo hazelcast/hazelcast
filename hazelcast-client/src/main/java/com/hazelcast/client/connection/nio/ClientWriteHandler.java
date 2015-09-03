@@ -16,7 +16,8 @@
 
 package com.hazelcast.client.connection.nio;
 
-import com.hazelcast.nio.SocketWritable;
+import com.hazelcast.nio.Packet;
+import com.hazelcast.nio.Frame;
 import com.hazelcast.nio.tcp.nonblocking.NonBlockingIOThread;
 import com.hazelcast.util.Clock;
 
@@ -29,7 +30,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 public class ClientWriteHandler extends AbstractClientSelectionHandler implements Runnable {
 
-    private final Queue<SocketWritable> writeQueue = new ConcurrentLinkedQueue<SocketWritable>();
+    private final Queue<Packet> writeQueue = new ConcurrentLinkedQueue<Packet>();
 
     private final AtomicBoolean informSelector = new AtomicBoolean(true);
 
@@ -37,7 +38,7 @@ public class ClientWriteHandler extends AbstractClientSelectionHandler implement
 
     private boolean ready;
 
-    private SocketWritable lastWritable;
+    private Packet lastPacket;
 
     private volatile long lastHandle;
 
@@ -53,11 +54,11 @@ public class ClientWriteHandler extends AbstractClientSelectionHandler implement
             return;
         }
 
-        if (lastWritable == null) {
-            lastWritable = poll();
+        if (lastPacket == null) {
+            lastPacket = poll();
         }
 
-        if (lastWritable == null && buffer.position() == 0) {
+        if (lastPacket == null && buffer.position() == 0) {
             ready = true;
             return;
         }
@@ -68,10 +69,10 @@ public class ClientWriteHandler extends AbstractClientSelectionHandler implement
     }
 
     private void writeBuffer() throws IOException {
-        while (buffer.hasRemaining() && lastWritable != null) {
-            boolean complete = lastWritable.writeTo(buffer);
+        while (buffer.hasRemaining() && lastPacket != null) {
+            boolean complete = lastPacket.writeTo(buffer);
             if (complete) {
-                lastWritable = poll();
+                lastPacket = poll();
             } else {
                 break;
             }
@@ -88,8 +89,8 @@ public class ClientWriteHandler extends AbstractClientSelectionHandler implement
         }
     }
 
-    public void enqueueSocketWritable(SocketWritable socketWritable) {
-        writeQueue.offer(socketWritable);
+    public void enqueue(Frame frame) {
+        writeQueue.offer((Packet) frame);
         if (informSelector.compareAndSet(true, false)) {
             // we don't have to call wake up if this WriteHandler is
             // already in the task queue.
@@ -99,7 +100,7 @@ public class ClientWriteHandler extends AbstractClientSelectionHandler implement
         }
     }
 
-    private SocketWritable poll() {
+    private Packet poll() {
         return writeQueue.poll();
     }
 

@@ -19,7 +19,7 @@ package com.hazelcast.nio.tcp;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionType;
-import com.hazelcast.nio.SocketWritable;
+import com.hazelcast.nio.Frame;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
 
@@ -37,7 +37,7 @@ class DroppingConnection implements Connection {
     }
 
     @Override
-    public boolean write(SocketWritable packet) {
+    public boolean write(Frame frame) {
         return true;
     }
 

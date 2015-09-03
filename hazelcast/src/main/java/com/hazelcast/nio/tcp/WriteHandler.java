@@ -16,35 +16,35 @@
 
 package com.hazelcast.nio.tcp;
 
-import com.hazelcast.nio.SocketWritable;
+import com.hazelcast.nio.Frame;
 
 import java.nio.ByteBuffer;
 
 /**
- * Responsible for writing {@link SocketWritable} to a {@link ByteBuffer}.
+ * Responsible for writing {@link Frame} to a {@link ByteBuffer}.
  *
  * Each {@link SocketWriter} will have its own {@link WriteHandler} instance. Therefor it doesn't need
  * to be thread-safe.
  *
  * For more information about the WriteHandler (and handlers in generally), have a look at the {@link ReadHandler}.
  *
- * @param <T>
+ * @param <F>
  * @see IOThreadingModel
  */
-public interface WriteHandler<T extends SocketWritable> {
+public interface WriteHandler<F extends Frame> {
 
     /**
-     * A callback to indicate that the socketWritable should be written to the destination ByteBuffer.
+     * A callback to indicate that the Frame should be written to the destination ByteBuffer.
      *
-     * It could be that a SocketWritable is too big to fit into the ByteBuffer in 1 go; in that case this call will be made
-     * for the same SocketWritable multiple times until write returns true. It is up to the SocketWritable to track where
+     * It could be that a Frame is too big to fit into the ByteBuffer in 1 go; in that case this call will be made
+     * for the same Frame multiple times until write returns true. It is up to the Frame to track where
      * it needs to continue.
      *
-     * @param socketWritable the SocketWritable to write
+     * @param frame the Frame to write
      * @param dst            the destination ByteBuffer
-     * @return true if the SocketWritable is completely written
+     * @return true if the Frame is completely written
      * @throws Exception if something fails while writing to ByteBuffer. When an exception is thrown, the TcpIpConnection is
      *                   closed. There is no point continuing with a potentially corrupted stream.
      */
-    boolean onWrite(T socketWritable, ByteBuffer dst) throws Exception;
+    boolean onWrite(F frame, ByteBuffer dst) throws Exception;
 }

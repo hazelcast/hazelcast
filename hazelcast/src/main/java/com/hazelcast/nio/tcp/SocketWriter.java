@@ -16,11 +16,11 @@
 
 package com.hazelcast.nio.tcp;
 
-import com.hazelcast.nio.SocketWritable;
+import com.hazelcast.nio.Frame;
 
 /**
- * Each {@link TcpIpConnection} has a {@link SocketWriter} and it writes {@link SocketWritable} instances to the socket. Copying
- * the SocketWritable instances to the byte-buffer is done using the {@link WriteHandler}.
+ * Each {@link TcpIpConnection} has a {@link SocketWriter} and it writes {@link Frame} instances to the socket. Copying
+ * the Frame instances to the byte-buffer is done using the {@link WriteHandler}.
  *
  * Each {@link TcpIpConnection} has its own {@link SocketWriter} instance.
  *
@@ -37,7 +37,7 @@ public interface SocketWriter {
      *
      * @return total number of pending packets.
      */
-    int totalPacketsPending();
+    int totalFramesPending();
 
     /**
      * Returns the last {@link com.hazelcast.util.Clock#currentTimeMillis()} that a write to the socket completed.
@@ -50,13 +50,15 @@ public interface SocketWriter {
     long getLastWriteTimeMillis();
 
     /**
-     * Offers a SocketWritable to be written to the socket.
+     * Offers a Frame to be written to the socket.
      *
-     * No guarantees are made that the packet is going to be written or received by the other side.
+     * No guarantees are made that the frame is going to be written or received by the other side.
      *
-     * @param packet the SocketWritable
+     * todo: the name offer is misleading since it doesn't return a boolean.
+     *
+     * @param frame the Frame to write.
      */
-    void offer(SocketWritable packet);
+    void offer(Frame frame);
 
     /**
      * Gets the {@link WriteHandler} that belongs to this SocketWriter.

@@ -21,8 +21,7 @@ import com.hazelcast.client.impl.protocol.util.MessageFlyweight;
 import com.hazelcast.client.impl.protocol.util.SafeBuffer;
 import com.hazelcast.client.impl.protocol.util.UnsafeBuffer;
 import com.hazelcast.nio.Bits;
-import com.hazelcast.nio.SocketReadable;
-import com.hazelcast.nio.SocketWritable;
+import com.hazelcast.nio.Frame;
 import com.hazelcast.util.QuickMath;
 
 import java.nio.ByteBuffer;
@@ -58,7 +57,7 @@ import java.util.Arrays;
  */
 public class ClientMessage
         extends MessageFlyweight
-        implements SocketWritable, SocketReadable {
+        implements Frame {
 
 
     /**
@@ -326,7 +325,6 @@ public class ClientMessage
         return this;
     }
 
-    @Override
     public boolean writeTo(ByteBuffer dst) {
         byte[] byteArray = buffer.byteArray();
         int size = getFrameLength();

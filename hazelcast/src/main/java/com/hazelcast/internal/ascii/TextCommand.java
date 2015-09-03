@@ -16,12 +16,13 @@
 
 package com.hazelcast.internal.ascii;
 
-import com.hazelcast.nio.SocketReadable;
-import com.hazelcast.nio.SocketWritable;
+import com.hazelcast.nio.Frame;
 import com.hazelcast.nio.ascii.TextReadHandler;
 import com.hazelcast.nio.ascii.TextWriteHandler;
 
-public interface TextCommand extends SocketWritable, SocketReadable {
+import java.nio.ByteBuffer;
+
+public interface TextCommand extends Frame {
 
     TextCommandConstants.TextCommandType getType();
 
@@ -35,4 +36,7 @@ public interface TextCommand extends SocketWritable, SocketReadable {
 
     boolean shouldReply();
 
+    boolean readFrom(ByteBuffer src);
+
+    boolean writeTo(ByteBuffer dst);
 }
