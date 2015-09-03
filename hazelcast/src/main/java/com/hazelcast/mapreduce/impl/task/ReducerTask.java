@@ -53,14 +53,14 @@ public class ReducerTask<Key, Chunk>
     private final Queue<ReducerChunk<Key, Chunk>> reducerQueue;
     private final String name;
     private final String jobId;
-
-    private AtomicBoolean active = new AtomicBoolean();
+    private final ReducerTaskScheduler scheduler;
 
     public ReducerTask(String name, String jobId, JobSupervisor supervisor) {
         this.name = name;
         this.jobId = jobId;
         this.supervisor = supervisor;
         this.reducerQueue = new ConcurrentLinkedQueue<ReducerChunk<Key, Chunk>>();
+        this.scheduler = new ReducerTaskScheduler(getExecutorService(), this);
     }
 
     public String getName() {
@@ -84,11 +84,12 @@ public class ReducerTask<Key, Chunk>
             return;
         }
         reducerQueue.offer(new ReducerChunk<Key, Chunk>(chunk, partitionId, sender));
-        if (active.compareAndSet(false, true)) {
-            MapReduceService mapReduceService = supervisor.getMapReduceService();
-            ExecutorService es = mapReduceService.getExecutorService(name);
-            es.submit(this);
-        }
+        scheduler.requestExecution();
+    }
+
+    private ExecutorService getExecutorService() {
+        MapReduceService mapReduceService = supervisor.getMapReduceService();
+        return mapReduceService.getExecutorService(name);
     }
 
     @Override
@@ -111,7 +112,7 @@ public class ReducerTask<Key, Chunk>
             }
         } finally {
             this.visibility = !visibility;
-            active.compareAndSet(true, false);
+            scheduler.afterExecution();
         }
     }
 
