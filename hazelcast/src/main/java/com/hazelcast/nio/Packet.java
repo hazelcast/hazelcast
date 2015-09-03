@@ -31,8 +31,7 @@ import static com.hazelcast.nio.Bits.INT_SIZE_IN_BYTES;
  *
  * Since the Packet isn't used throughout the system, this design choice is visible locally.
  */
-public final class Packet extends HeapData
-        implements SocketWritable, SocketReadable {
+public final class Packet extends HeapData implements OutboundFrame {
 
     public static final byte VERSION = 4;
 
@@ -127,7 +126,6 @@ public final class Packet extends HeapData
         return isHeaderSet(HEADER_URGENT);
     }
 
-    @Override
     public boolean writeTo(ByteBuffer dst) {
         if (!writeVersion(dst)) {
             return false;
@@ -153,7 +151,6 @@ public final class Packet extends HeapData
         return true;
     }
 
-    @Override
     public boolean readFrom(ByteBuffer src) {
         if (!readVersion(src)) {
             return false;

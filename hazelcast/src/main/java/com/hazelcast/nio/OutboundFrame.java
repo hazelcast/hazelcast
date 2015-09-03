@@ -16,36 +16,30 @@
 
 package com.hazelcast.nio;
 
-import java.nio.ByteBuffer;
-
 /**
  * Represents something that can be written to a {@link com.hazelcast.nio.Connection}.
  *
- * @see SocketReadable
+ * There are different types of OutboundFrame:
+ * <ol>
+ *     <li>Packet: for member to member and old-client to member communication</li>
+ *     <li>TextMessage: for memcached and rest communication</li>
+ *     <li>ClientMessage: for the new client to member communication</li>
+ * </ol>
+ *
+ * Till so far, all communication over a single connection, will be of a single Frame-class. E.g. member
+ * to member only uses Packets.
+ *
+ * There is no need for an InboundFrame interface.
+ *
  * @see com.hazelcast.nio.serialization.Data
- * @see Connection#write(SocketWritable)
+ * @see Connection#write(OutboundFrame)
  */
-public interface SocketWritable {
+public interface OutboundFrame {
 
     /**
-     * Asks the SocketWritable to write its content to the destination ByteBuffer.
+     * Checks if this Frame is urgent.
      *
-     * As long as the writeTo returns false, this SocketWritable is not yet finished. E.g. it could be the SocketWritable
-     * contains 1 MB of data, but if 100KB ByteBuffer is passed, 10 calls writeTo calls are needed, where the first 9 return
-     * false and the 10th returns true.
-     *
-     * It is up to the SocketWritable to keep track of where it is in the writing process. For this reason a SocketWritable
-     * can't be shared by multiple threads.
-     *
-     * @param dst the ByteBuffer to write to.
-     * @return true if the object is fully written.
-     */
-    boolean writeTo(ByteBuffer dst);
-
-    /**
-     * Checks if this SocketWritable is urgent.
-     *
-     * SocketWritable that are urgent, have priority above regular SocketWritable. This is useful to implement
+     * Frames that are urgent, have priority above regular frames. This is useful to implement
      * System Operations so that they can be send faster than regular operations; especially when the system is
      * under load you want these operations have precedence.
      *

@@ -20,7 +20,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionType;
-import com.hazelcast.nio.SocketWritable;
+import com.hazelcast.nio.OutboundFrame;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -189,14 +189,14 @@ public final class TcpIpConnection implements Connection {
     }
 
     @Override
-    public boolean write(SocketWritable packet) {
+    public boolean write(OutboundFrame frame) {
         if (!alive.get()) {
             if (logger.isFinestEnabled()) {
-                logger.finest("Connection is closed, won't write packet -> " + packet);
+                logger.finest("Connection is closed, won't write packet -> " + frame);
             }
             return false;
         }
-        socketWriter.offer(packet);
+        socketWriter.offer(frame);
         return true;
     }
 

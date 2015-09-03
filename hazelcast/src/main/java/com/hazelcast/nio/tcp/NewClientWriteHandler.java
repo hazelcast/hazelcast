@@ -28,7 +28,7 @@ import java.nio.ByteBuffer;
 public class NewClientWriteHandler implements WriteHandler<ClientMessage> {
 
     @Override
-    public boolean onWrite(ClientMessage message, ByteBuffer dst) throws Exception {
-        return message.writeTo(dst);
+    public boolean onWrite(ClientMessage frame, ByteBuffer dst) throws Exception {
+        return frame.writeTo(dst);
     }
 }
