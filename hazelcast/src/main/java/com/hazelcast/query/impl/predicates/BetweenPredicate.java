@@ -30,8 +30,8 @@ import java.util.Set;
  * Between Predicate
  */
 public class BetweenPredicate extends AbstractPredicate {
-    private Comparable to;
-    private Comparable from;
+    Comparable to;
+    Comparable from;
 
     public BetweenPredicate() {
     }

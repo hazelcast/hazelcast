@@ -58,6 +58,7 @@ import java.util.LinkedHashSet;
 
 import static com.hazelcast.map.impl.ListenerAdapters.createListenerAdapter;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
+import static com.hazelcast.query.impl.predicates.QueryOptimizerFactory.newOptimizer;
 
 /**
  * Default implementation of map service context.
@@ -106,7 +107,7 @@ class MapServiceContextImpl implements MapServiceContext {
         this.localMapStatsProvider = new LocalMapStatsProvider(this, nodeEngine);
         this.mergePolicyProvider = new MergePolicyProvider(nodeEngine);
         this.mapEventPublisher = createMapEventPublisherSupport();
-        this.mapQueryEngine = new MapQueryEngineImpl(this);
+        this.mapQueryEngine = new MapQueryEngineImpl(this, newOptimizer(nodeEngine.getGroupProperties()));
     }
 
     MapEventPublisherImpl createMapEventPublisherSupport() {

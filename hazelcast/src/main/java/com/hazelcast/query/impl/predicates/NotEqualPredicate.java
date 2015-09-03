@@ -16,6 +16,7 @@
 
 package com.hazelcast.query.impl.predicates;
 
+import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.QueryContext;
 import com.hazelcast.query.impl.QueryableEntry;
 
@@ -25,7 +26,7 @@ import java.util.Set;
 /**
  * Not Equal Predicate
  */
-public class NotEqualPredicate extends EqualPredicate {
+public final class NotEqualPredicate extends EqualPredicate {
     public NotEqualPredicate() {
     }
 
@@ -51,5 +52,10 @@ public class NotEqualPredicate extends EqualPredicate {
     @Override
     public String toString() {
         return attribute + " != " + value;
+    }
+
+    @Override
+    public Predicate negate() {
+        return new EqualPredicate(attribute, value);
     }
 }

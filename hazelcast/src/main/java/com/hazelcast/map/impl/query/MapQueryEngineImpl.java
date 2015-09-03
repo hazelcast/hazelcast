@@ -30,9 +30,11 @@ import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.PagingPredicateAccessor;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.TruePredicate;
+import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.QueryEntry;
 import com.hazelcast.query.impl.QueryResultEntry;
 import com.hazelcast.query.impl.QueryableEntry;
+import com.hazelcast.query.impl.predicates.QueryOptimizer;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.util.Clock;
@@ -68,14 +70,16 @@ public class MapQueryEngineImpl implements MapQueryEngine {
     private final QueryResultSizeLimiter queryResultSizeLimiter;
     private final SerializationService serializationService;
     private final InternalPartitionService partitionService;
+    private final QueryOptimizer queryOptimizer;
 
-    public MapQueryEngineImpl(MapServiceContext mapServiceContext) {
+    public MapQueryEngineImpl(MapServiceContext mapServiceContext, QueryOptimizer optimizer) {
         this.mapServiceContext = mapServiceContext;
         this.nodeEngine = mapServiceContext.getNodeEngine();
         this.serializationService = nodeEngine.getSerializationService();
         this.partitionService = nodeEngine.getPartitionService();
         this.logger = nodeEngine.getLogger(getClass());
         this.queryResultSizeLimiter = new QueryResultSizeLimiter(mapServiceContext, logger);
+        this.queryOptimizer = optimizer;
     }
 
     @Override
@@ -273,6 +277,11 @@ public class MapQueryEngineImpl implements MapQueryEngine {
     @Override
     public QueryResult newQueryResult(int numberOfPartitions) {
         return new QueryResult(queryResultSizeLimiter.getNodeResultLimit(numberOfPartitions));
+    }
+
+    @Override
+    public Predicate optimize(Predicate predicate, Indexes indexes) {
+        return queryOptimizer.optimize(predicate, indexes);
     }
 
     private void checkIfNotPagingPredicate(Predicate predicate) {

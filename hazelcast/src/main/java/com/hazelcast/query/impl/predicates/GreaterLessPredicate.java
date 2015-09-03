@@ -18,6 +18,7 @@ package com.hazelcast.query.impl.predicates;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.ComparisonType;
 import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.QueryContext;
@@ -30,7 +31,8 @@ import java.util.Set;
 /**
  * Greater Less Predicate
  */
-public class GreaterLessPredicate extends EqualPredicate {
+public final class GreaterLessPredicate extends AbstractPredicate implements NegatablePredicate {
+    protected Comparable value;
     boolean equal;
     boolean less;
 
@@ -75,6 +77,7 @@ public class GreaterLessPredicate extends EqualPredicate {
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         super.readData(in);
+        value = in.readObject();
         equal = in.readBoolean();
         less = in.readBoolean();
     }
@@ -82,6 +85,7 @@ public class GreaterLessPredicate extends EqualPredicate {
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         super.writeData(out);
+        out.writeObject(value);
         out.writeBoolean(equal);
         out.writeBoolean(less);
     }
@@ -96,5 +100,10 @@ public class GreaterLessPredicate extends EqualPredicate {
         }
         sb.append(value);
         return sb.toString();
+    }
+
+    @Override
+    public Predicate negate() {
+        return new GreaterLessPredicate(attribute, value, !equal, !less);
     }
 }

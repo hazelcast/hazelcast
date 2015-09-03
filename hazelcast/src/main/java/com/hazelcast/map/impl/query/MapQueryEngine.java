@@ -18,6 +18,7 @@ package com.hazelcast.map.impl.query;
 
 import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.util.IterationType;
 
@@ -93,4 +94,15 @@ public interface MapQueryEngine {
      * @return {@link QueryResult}
      */
     QueryResult newQueryResult(int numberOfPartitions);
+
+
+    /**
+     * Return optimized version of the query. The input predicate itself must not be modified in anyway.
+     * If no optimization is done then it may return the original instanceg.
+     *
+     * @param predicate
+     * @param indexes
+     * @return optimized version of input predicate or the predicate itself if no optimization was performed
+     */
+    Predicate optimize(Predicate predicate, Indexes indexes);
 }

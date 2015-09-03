@@ -22,6 +22,7 @@ import com.hazelcast.internal.monitors.HealthMonitorLevel;
 import com.hazelcast.map.QueryResultSizeExceededException;
 import com.hazelcast.map.impl.query.QueryResultSizeLimiter;
 import com.hazelcast.query.TruePredicate;
+import com.hazelcast.query.impl.predicates.QueryOptimizerFactory;
 
 import java.util.concurrent.TimeUnit;
 
@@ -533,6 +534,19 @@ public enum GroupProperty implements HazelcastProperty {
      * @see #QUERY_RESULT_SIZE_LIMIT
      */
     QUERY_MAX_LOCAL_PARTITION_LIMIT_FOR_PRE_CHECK("hazelcast.query.max.local.partition.limit.for.precheck", 3),
+
+    /**
+     * Type of Query Optimizer.
+     * Valid Values:
+     * <ul>
+     *     <li>RULES - for optimizations based on static rules</li>
+     *     <li>NONE - optimization are disabled</li>
+     * </ul>
+     *
+     * Values are case sensitive
+     *
+     */
+    QUERY_OPTIMIZER_TYPE("hazelcast.query.optimizer.type", QueryOptimizerFactory.Type.RULES.toString()),
 
     /**
      * Forces the JCache provider, which can have values client or server, to force the provider type.

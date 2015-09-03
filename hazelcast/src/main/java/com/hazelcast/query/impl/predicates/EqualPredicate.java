@@ -18,6 +18,7 @@ package com.hazelcast.query.impl.predicates;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.IndexImpl;
 import com.hazelcast.query.impl.QueryContext;
@@ -30,7 +31,7 @@ import java.util.Set;
 /**
  * Equal Predicate
  */
-public class EqualPredicate extends AbstractPredicate {
+public class EqualPredicate extends AbstractPredicate implements NegatablePredicate {
     protected Comparable value;
 
     public EqualPredicate() {
@@ -76,5 +77,10 @@ public class EqualPredicate extends AbstractPredicate {
     @Override
     public String toString() {
         return attribute + "=" + value;
+    }
+
+    @Override
+    public Predicate negate() {
+        return new NotEqualPredicate(attribute, value);
     }
 }

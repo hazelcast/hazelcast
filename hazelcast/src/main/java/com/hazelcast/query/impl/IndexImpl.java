@@ -16,10 +16,14 @@
 
 package com.hazelcast.query.impl;
 
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.query.QueryException;
 import com.hazelcast.query.impl.TypeConverters.TypeConverter;
 
+import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -47,6 +51,11 @@ public class IndexImpl implements Index {
         this.attribute = attribute;
         this.ordered = ordered;
         indexStore = (ordered) ? new SortedIndexStore() : new UnsortedIndexStore();
+    }
+
+    @Override
+    public TypeConverter getConverter() {
+        return converter;
     }
 
     @Override
@@ -171,7 +180,7 @@ public class IndexImpl implements Index {
     /**
      * Provides comparable null object.
      */
-    public static final class NullObject implements Comparable {
+    public static final class NullObject implements Comparable, DataSerializable {
         @Override
         public int compareTo(Object o) {
             if (o == this || o instanceof NullObject) {
@@ -194,6 +203,16 @@ public class IndexImpl implements Index {
                 return false;
             }
             return true;
+        }
+
+        @Override
+        public void writeData(ObjectDataOutput out) throws IOException {
+
+        }
+
+        @Override
+        public void readData(ObjectDataInput in) throws IOException {
+
         }
     }
 }

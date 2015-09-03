@@ -26,6 +26,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.NodeEngine;
@@ -84,12 +85,15 @@ public class QueryOperation extends AbstractMapOperation implements ReadonlyOper
         MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         MapQueryEngine queryEngine = mapServiceContext.getMapQueryEngine();
 
+        Indexes indexes = mapContainer.getIndexes();
+        predicate = queryEngine.optimize(predicate, indexes);
+
         int initialPartitionStateVersion = partitionService.getPartitionStateVersion();
         Collection<Integer> initialPartitions = mapServiceContext.getOwnedPartitions();
 
         Set<QueryableEntry> entries = null;
         if (!partitionService.hasOnGoingMigrationLocal()) {
-            entries = mapContainer.getIndexes().query(predicate);
+            entries = indexes.query(predicate);
         }
 
         result = queryEngine.newQueryResult(initialPartitions.size());
