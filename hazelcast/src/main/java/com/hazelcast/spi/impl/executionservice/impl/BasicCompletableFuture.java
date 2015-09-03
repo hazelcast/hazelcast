@@ -18,63 +18,93 @@ package com.hazelcast.spi.impl.executionservice.impl;
 
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.AbstractCompletableFuture;
+import com.hazelcast.util.EmptyStatement;
 
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import static com.hazelcast.util.ExceptionUtil.sneakyThrow;
+
 /**
- * There's a couple of problems and design inconsistencies related to this class that may lead to unexpected behavior
- * including infinite waiting or inconsistent callbacks behavior.
- * Please have a look at the BasicCompletableFutureTest - some of the issues are documented there.
+ * Wraps a java.util.concurrent.Future to make it a com.hazelcast.core.ICompletableFuture.
+ * <p>
+ * Ensures two-directional binding when it comes to cancellation:
+ * - if delegate future cancelled - this future may be done or cancelled
+ * - if this future cancelled - delegate future may be done or cancelled
+ * <p>
+ * Ensures the transfer of the result from the delegate future to this future
+ * on execution of get() and isDone() methods.
  */
 class BasicCompletableFuture<V> extends AbstractCompletableFuture<V> {
 
-    final Future<V> future;
+    final Future<V> delegate;
 
-    BasicCompletableFuture(Future<V> future, NodeEngine nodeEngine) {
+    BasicCompletableFuture(Future<V> delegate, NodeEngine nodeEngine) {
         super(nodeEngine, nodeEngine.getLogger(BasicCompletableFuture.class));
-        this.future = future;
-    }
-
-    @Override
-    public boolean cancel(boolean mayInterruptIfRunning) {
-        return future.cancel(mayInterruptIfRunning);
-    }
-
-    @Override
-    public boolean isCancelled() {
-        return future.isCancelled();
-    }
-
-    @Override
-    public boolean isDone() {
-        boolean done = future.isDone();
-        if (done && !super.isDone()) {
-            forceSetResult();
-            return true;
-        }
-        return done || super.isDone();
+        this.delegate = delegate;
     }
 
     @Override
     public V get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
-        V result = future.get(timeout, unit);
-        // If not yet set by CompletableFuture task runner, we can go for it!
-        if (!super.isDone()) {
-            setResult(result);
-        }
-        return result;
+        return (V) ensureResultSet(timeout, unit);
     }
 
-    private void forceSetResult() {
-        Object result;
+    private Object ensureResultSet(long timeout, TimeUnit unit) throws ExecutionException, CancellationException {
+        Object result = null;
         try {
-            result = future.get();
+            result = delegate.get(timeout, unit);
+        } catch (TimeoutException ex) {
+            sneakyThrow(ex);
+        } catch (InterruptedException ex) {
+            sneakyThrow(ex);
+        } catch (ExecutionException ex) {
+            setResult(ex);
+            throw ex;
+        } catch (CancellationException ex) {
+            setResult(ex);
+            throw ex;
         } catch (Throwable t) {
             result = t;
         }
         setResult(result);
+        return result;
     }
+
+    @Override
+    public boolean isDone() {
+        if (delegate.isDone()) {
+            try {
+                ensureResultSet(Long.MAX_VALUE, TimeUnit.DAYS);
+            } catch (ExecutionException ignored) {
+                EmptyStatement.ignore(ignored);
+            } catch (CancellationException ignored) {
+                EmptyStatement.ignore(ignored);
+            }
+            return true;
+        } else {
+            return super.isDone();
+        }
+    }
+
+    @Override
+    public boolean isCancelled() {
+        if (delegate.isCancelled()) {
+            cancel(true);
+            return true;
+        } else {
+            return super.isCancelled();
+        }
+    }
+
+    @Override
+    public boolean shouldCancel(boolean mayInterruptIfRunning) {
+        if (!delegate.isCancelled()) {
+            delegate.cancel(mayInterruptIfRunning);
+        }
+        return true;
+    }
+
 }

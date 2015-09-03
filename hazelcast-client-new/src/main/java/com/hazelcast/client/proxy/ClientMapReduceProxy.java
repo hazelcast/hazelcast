@@ -29,6 +29,7 @@ import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.client.spi.impl.ClientInvocationFuture;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.mapreduce.Collator;
 import com.hazelcast.mapreduce.CombinerFactory;
@@ -51,7 +52,6 @@ import com.hazelcast.mapreduce.impl.SetKeyValueSource;
 import com.hazelcast.mapreduce.impl.task.TransferableJobProcessInformation;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.spi.impl.AbstractCompletableFuture;
 import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.UuidUtil;
@@ -65,12 +65,7 @@ import java.util.Set;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-
-import static com.hazelcast.util.Preconditions.isNotNull;
 
 public class ClientMapReduceProxy
         extends ClientProxy
@@ -241,14 +236,10 @@ public class ClientMapReduceProxy
             implements JobCompletableFuture<V> {
 
         private final String jobId;
-        private final CountDownLatch latch;
-
-        private volatile boolean cancelled;
 
         protected ClientCompletableFuture(String jobId) {
             super(getContext().getExecutionService().getAsyncExecutor(), Logger.getLogger(ClientCompletableFuture.class));
             this.jobId = jobId;
-            this.latch = new CountDownLatch(1);
         }
 
         @Override
@@ -257,7 +248,8 @@ public class ClientMapReduceProxy
         }
 
         @Override
-        public boolean cancel(boolean mayInterruptIfRunning) {
+        protected boolean shouldCancel(boolean mayInterruptIfRunning) {
+            boolean cancelled = false;
             try {
                 ClientMessage request = MapReduceCancelCodec.encodeRequest(name, jobId);
                 ClientMessage response = invoke(request, jobId);
@@ -269,25 +261,10 @@ public class ClientMapReduceProxy
         }
 
         @Override
-        public boolean isCancelled() {
-            return cancelled;
-        }
-
-        @Override
-        public void setResult(Object result) {
+        protected void setResult(Object result) {
             super.setResult(result);
-            latch.countDown();
         }
 
-        @Override
-        public V get(long timeout, TimeUnit unit)
-                throws InterruptedException, ExecutionException, TimeoutException {
-            isNotNull(unit, "unit");
-            if (!latch.await(timeout, unit) || !isDone()) {
-                throw new TimeoutException("timeout reached");
-            }
-            return getResult();
-        }
     }
 
     private final class ClientTrackableJob<V>
