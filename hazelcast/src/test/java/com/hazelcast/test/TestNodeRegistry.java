@@ -32,7 +32,7 @@ import com.hazelcast.nio.ConnectionType;
 import com.hazelcast.nio.IOService;
 import com.hazelcast.nio.NodeIOService;
 import com.hazelcast.nio.Packet;
-import com.hazelcast.nio.SocketWritable;
+import com.hazelcast.nio.Frame;
 import com.hazelcast.nio.tcp.FirewallingMockConnectionManager;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -451,8 +451,8 @@ public final class TestNodeRegistry {
             return live;
         }
 
-        public boolean write(SocketWritable socketWritable) {
-            final Packet packet = (Packet) socketWritable;
+        public boolean write(Frame frame) {
+            final Packet packet = (Packet) frame;
             if (nodeEngine.getNode().isActive()) {
                 Packet newPacket = readFromPacket(packet);
                 nodeEngine.getPacketDispatcher().dispatch(newPacket);

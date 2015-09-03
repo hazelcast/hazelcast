@@ -10,7 +10,6 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.nio.ByteBuffer;
-import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -42,8 +41,8 @@ public class MemberReadHandlerTest extends TcpIpConnection_AbstractTest {
         readHandler = new MemberReadHandler(connection, dispatcher);
 
         socketReader = connection.getSocketReader();
-        oldNormalPacketsRead = socketReader.getNormalPacketsReadCounter().get();
-        oldPriorityPacketsRead = socketReader.getPriorityPacketsReadCounter().get();
+        oldNormalPacketsRead = socketReader.getNormalFramesReadCounter().get();
+        oldPriorityPacketsRead = socketReader.getPriorityFramesReadCounter().get();
     }
 
     @Test
@@ -59,8 +58,8 @@ public class MemberReadHandlerTest extends TcpIpConnection_AbstractTest {
         assertEquals(1, dispatcher.packets.size());
         Packet found = dispatcher.packets.get(0);
         assertEquals(packet, found);
-        assertEquals(oldNormalPacketsRead, socketReader.getNormalPacketsReadCounter().get());
-        assertEquals(oldPriorityPacketsRead + 1, socketReader.getPriorityPacketsReadCounter().get());
+        assertEquals(oldNormalPacketsRead, socketReader.getNormalFramesReadCounter().get());
+        assertEquals(oldPriorityPacketsRead + 1, socketReader.getPriorityFramesReadCounter().get());
     }
 
     @Test
@@ -75,8 +74,8 @@ public class MemberReadHandlerTest extends TcpIpConnection_AbstractTest {
         assertEquals(1, dispatcher.packets.size());
         Packet found = dispatcher.packets.get(0);
         assertEquals(packet, found);
-        assertEquals(oldNormalPacketsRead + 1, socketReader.getNormalPacketsReadCounter().get());
-        assertEquals(oldPriorityPacketsRead, socketReader.getPriorityPacketsReadCounter().get());
+        assertEquals(oldNormalPacketsRead + 1, socketReader.getNormalFramesReadCounter().get());
+        assertEquals(oldPriorityPacketsRead, socketReader.getPriorityFramesReadCounter().get());
     }
 
     @Test
@@ -100,8 +99,8 @@ public class MemberReadHandlerTest extends TcpIpConnection_AbstractTest {
         readHandler.onRead(buffer);
 
         assertEquals(asList(packet1, packet2, packet3, packet4), dispatcher.packets);
-        assertEquals(oldNormalPacketsRead + 3, socketReader.getNormalPacketsReadCounter().get());
-        assertEquals(oldPriorityPacketsRead + 1, socketReader.getPriorityPacketsReadCounter().get());
+        assertEquals(oldNormalPacketsRead + 3, socketReader.getNormalFramesReadCounter().get());
+        assertEquals(oldPriorityPacketsRead + 1, socketReader.getPriorityFramesReadCounter().get());
     }
 
     class MockPacketDispatcher implements PacketDispatcher {

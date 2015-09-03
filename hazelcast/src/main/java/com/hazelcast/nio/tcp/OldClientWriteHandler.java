@@ -30,7 +30,7 @@ import java.nio.ByteBuffer;
 public class OldClientWriteHandler implements WriteHandler<Packet> {
 
     @Override
-    public boolean onWrite(Packet packet, ByteBuffer dst) throws Exception {
-        return packet.writeTo(dst);
+    public boolean onWrite(Packet frame, ByteBuffer dst) throws Exception {
+        return frame.writeTo(dst);
     }
 }

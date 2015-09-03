@@ -43,8 +43,8 @@ public class MemberReadHandler implements ReadHandler {
         this.connection = connection;
         this.packetDispatcher = packetDispatcher;
         SocketReader socketReader = connection.getSocketReader();
-        this.normalPacketsRead = socketReader.getNormalPacketsReadCounter();
-        this.priorityPacketsRead = socketReader.getPriorityPacketsReadCounter();
+        this.normalPacketsRead = socketReader.getNormalFramesReadCounter();
+        this.priorityPacketsRead = socketReader.getPriorityFramesReadCounter();
     }
 
     @Override

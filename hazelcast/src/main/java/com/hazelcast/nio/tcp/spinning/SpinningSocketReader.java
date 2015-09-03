@@ -50,10 +50,10 @@ public class SpinningSocketReader extends AbstractHandler implements SocketReade
 
     @Probe(name = "in.bytesRead")
     private final SwCounter bytesRead = newSwCounter();
-    @Probe(name = "in.normalPacketsRead")
-    private final SwCounter normalPacketsRead = newSwCounter();
-    @Probe(name = "in.priorityPacketsRead")
-    private final SwCounter priorityPacketsRead = newSwCounter();
+    @Probe(name = "in.normalFramesRead")
+    private final SwCounter normalFramesRead = newSwCounter();
+    @Probe(name = "in.priorityFramesRead")
+    private final SwCounter priorityFramesRead = newSwCounter();
     private final MetricsRegistry metricRegistry;
     private final SocketChannelWrapper socketChannel;
     private volatile long lastReadTime;
@@ -79,13 +79,13 @@ public class SpinningSocketReader extends AbstractHandler implements SocketReade
     }
 
     @Override
-    public Counter getNormalPacketsReadCounter() {
-        return normalPacketsRead;
+    public Counter getNormalFramesReadCounter() {
+        return normalFramesRead;
     }
 
     @Override
-    public Counter getPriorityPacketsReadCounter() {
-        return priorityPacketsRead;
+    public Counter getPriorityFramesReadCounter() {
+        return priorityFramesRead;
     }
 
     @Override
@@ -107,7 +107,7 @@ public class SpinningSocketReader extends AbstractHandler implements SocketReade
         if (readHandler == null) {
             initializeSocketReader();
             if (readHandler == null) {
-                // when using SSL, we can read 0 bytes since data read from socket can be handshake packets.
+                // when using SSL, we can read 0 bytes since data read from socket can be handshake frames.
                 return;
             }
         }
@@ -142,7 +142,7 @@ public class SpinningSocketReader extends AbstractHandler implements SocketReade
         }
 
         if (readBytes == 0 && connectionManager.isSSLEnabled()) {
-            // when using SSL, we can read 0 bytes since data read from socket can be handshake packets.
+            // when using SSL, we can read 0 bytes since data read from socket can be handshake frames.
             return;
         }
 

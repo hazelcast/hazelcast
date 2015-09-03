@@ -30,7 +30,7 @@ import java.nio.ByteBuffer;
 public class MemberWriteHandler implements WriteHandler<Packet> {
 
     @Override
-    public boolean onWrite(Packet packet, ByteBuffer dst) {
-        return packet.writeTo(dst);
+    public boolean onWrite(Packet frame, ByteBuffer dst) {
+        return frame.writeTo(dst);
     }
 }

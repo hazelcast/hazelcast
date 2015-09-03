@@ -20,7 +20,7 @@ import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Packet;
-import com.hazelcast.nio.SocketWritable;
+import com.hazelcast.nio.Frame;
 import com.hazelcast.nio.ascii.TextWriteHandler;
 import com.hazelcast.nio.tcp.NewClientWriteHandler;
 import com.hazelcast.nio.tcp.OldClientWriteHandler;
@@ -53,40 +53,40 @@ public class SpinningSocketWriter extends AbstractHandler implements SocketWrite
     private static final long TIMEOUT = 3;
 
     @Probe(name = "out.writeQueueSize")
-    private final Queue<SocketWritable> writeQueue;
+    private final Queue<Frame> writeQueue;
     @Probe(name = "out.priorityWriteQueueSize")
-    private final Queue<SocketWritable> urgentWriteQueue;
+    private final Queue<Frame> urgentWriteQueue;
     private final ILogger logger;
     private final SocketChannelWrapper socketChannel;
     private ByteBuffer outputBuffer;
     @Probe(name = "out.bytesWritten")
     private final SwCounter bytesWritten = newSwCounter();
-    @Probe(name = "out.normalPacketsWritten")
-    private final SwCounter normalPacketsWritten = newSwCounter();
-    @Probe(name = "out.priorityPacketsWritten")
-    private final SwCounter priorityPacketsWritten = newSwCounter();
+    @Probe(name = "out.normalFramesWritten")
+    private final SwCounter normalFramesWritten = newSwCounter();
+    @Probe(name = "out.priorityFramesWritten")
+    private final SwCounter priorityFramesWritten = newSwCounter();
     private final MetricsRegistry metricsRegistry;
     private volatile long lastWriteTime;
     private WriteHandler writeHandler;
-    private volatile SocketWritable currentPacket;
+    private volatile Frame currentFrame;
 
     public SpinningSocketWriter(TcpIpConnection connection, MetricsRegistry metricsRegistry, ILogger logger) {
         super(connection, logger);
         this.metricsRegistry = metricsRegistry;
         this.logger = logger;
         this.socketChannel = connection.getSocketChannelWrapper();
-        this.writeQueue = new ConcurrentLinkedQueue<SocketWritable>();
-        this.urgentWriteQueue = new ConcurrentLinkedQueue<SocketWritable>();
+        this.writeQueue = new ConcurrentLinkedQueue<Frame>();
+        this.urgentWriteQueue = new ConcurrentLinkedQueue<Frame>();
         // sensors
         metricsRegistry.scanAndRegister(this, "tcp.connection[" + connection.getMetricsId() + "]");
     }
 
     @Override
-    public void offer(SocketWritable packet) {
-        if (packet.isUrgent()) {
-            urgentWriteQueue.add(packet);
+    public void offer(Frame frame) {
+        if (frame.isUrgent()) {
+            urgentWriteQueue.add(frame);
         } else {
-            writeQueue.add(packet);
+            writeQueue.add(frame);
         }
     }
 
@@ -106,15 +106,15 @@ public class SpinningSocketWriter extends AbstractHandler implements SocketWrite
     }
 
     @Override
-    public int totalPacketsPending() {
+    public int totalFramesPending() {
         return urgentWriteQueue.size() + writeQueue.size();
     }
 
-    private long bytesPending(Queue<SocketWritable> writeQueue) {
+    private long bytesPending(Queue<Frame> writeQueue) {
         long bytesPending = 0;
-        for (SocketWritable writable : writeQueue) {
-            if (writable instanceof Packet) {
-                bytesPending += ((Packet) writable).packetSize();
+        for (Frame frame : writeQueue) {
+            if (frame instanceof Packet) {
+                bytesPending += ((Packet) frame).packetSize();
             }
         }
         return bytesPending;
@@ -134,7 +134,7 @@ public class SpinningSocketWriter extends AbstractHandler implements SocketWrite
     @Override
     public void setProtocol(final String protocol) {
         final CountDownLatch latch = new CountDownLatch(1);
-        urgentWriteQueue.add(new TaskPacket() {
+        urgentWriteQueue.add(new TaskFrame() {
             @Override
             public void run() {
                 logger.info("Setting protocol: " + protocol);
@@ -180,10 +180,10 @@ public class SpinningSocketWriter extends AbstractHandler implements SocketWrite
         }
     }
 
-    private SocketWritable poll() {
+    private Frame poll() {
         for (; ; ) {
             boolean urgent = true;
-            SocketWritable packet = urgentWriteQueue.poll();
+            Frame packet = urgentWriteQueue.poll();
 
             if (packet == null) {
                 urgent = false;
@@ -194,15 +194,15 @@ public class SpinningSocketWriter extends AbstractHandler implements SocketWrite
                 return null;
             }
 
-            if (packet instanceof TaskPacket) {
-                ((TaskPacket) packet).run();
+            if (packet instanceof TaskFrame) {
+                ((TaskFrame) packet).run();
                 continue;
             }
 
             if (urgent) {
-                priorityPacketsWritten.inc();
+                priorityFramesWritten.inc();
             } else {
-                normalPacketsWritten.inc();
+                normalFramesWritten.inc();
             }
 
             return packet;
@@ -256,7 +256,7 @@ public class SpinningSocketWriter extends AbstractHandler implements SocketWrite
     }
 
     /**
-     * Fills the outBuffer with packets. This is done till there are no more packets or till there is no more space in the
+     * Fills the outBuffer with frames. This is done till there are no more frames or till there is no more space in the
      * outputBuffer.
      *
      * @throws Exception
@@ -268,23 +268,23 @@ public class SpinningSocketWriter extends AbstractHandler implements SocketWrite
                 return;
             }
 
-            // If there currently is not packet sending, lets try to get one.
-            if (currentPacket == null) {
-                currentPacket = poll();
-                if (currentPacket == null) {
-                    // There is no packet to write, we are done.
+            // If there currently is not frame sending, lets try to get one.
+            if (currentFrame == null) {
+                currentFrame = poll();
+                if (currentFrame == null) {
+                    // There is no frame to write, we are done.
                     return;
                 }
             }
 
-            // Lets write the currentPacket to the outputBuffer.
-            if (!writeHandler.onWrite(currentPacket, outputBuffer)) {
-                // We are done for this round because not all data of the current packet fits in the outputBuffer
+            // Lets write the currentFrame to the outputBuffer.
+            if (!writeHandler.onWrite(currentFrame, outputBuffer)) {
+                // We are done for this round because not all data of the current frame fits in the outputBuffer
                 return;
             }
 
-            // The current packet has been written completely. So lets null it and lets try to write another packet.
-            currentPacket = null;
+            // The current frame has been written completely. So lets null it and lets try to write another frame.
+            currentFrame = null;
         }
     }
 
@@ -309,14 +309,9 @@ public class SpinningSocketWriter extends AbstractHandler implements SocketWrite
         }
     }
 
-    private abstract class TaskPacket implements SocketWritable {
+    private abstract class TaskFrame implements Frame {
 
         abstract void run();
-
-        @Override
-        public boolean writeTo(ByteBuffer dst) {
-            throw new UnsupportedOperationException();
-        }
 
         @Override
         public boolean isUrgent() {
@@ -324,7 +319,7 @@ public class SpinningSocketWriter extends AbstractHandler implements SocketWrite
         }
     }
 
-    private class ShutdownTask extends TaskPacket {
+    private class ShutdownTask extends TaskFrame {
         private final CountDownLatch latch = new CountDownLatch(1);
 
         @Override

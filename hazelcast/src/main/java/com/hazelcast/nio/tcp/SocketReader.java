@@ -56,14 +56,14 @@ public interface SocketReader {
      *
      * @return the normal packets counter.
      */
-    Counter getNormalPacketsReadCounter();
+    Counter getNormalFramesReadCounter();
 
     /**
      * Gets the Counter that counts the number of priority packets that have been read.
      *
      * @return the priority packets counter.
      */
-    Counter getPriorityPacketsReadCounter();
+    Counter getPriorityFramesReadCounter();
 
     /**
      * Initializes this SocketReader.

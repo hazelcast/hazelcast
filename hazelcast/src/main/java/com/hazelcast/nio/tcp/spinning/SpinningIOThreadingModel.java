@@ -36,8 +36,8 @@ import com.hazelcast.nio.tcp.SocketWriter;
  * <li>1 thread spinning on all SocketChannels for writing</li>
  * </ol>
  * In the future we need to play with this a lot more. 1 thread should be able to saturate a 40GbE connection, but that
- * currently doesn't work for us. So I guess our IO threads are doing too much stuff not relevant like writing the Packets
- * to bytebuffers or converting the bytebuffers to Packets.
+ * currently doesn't work for us. So I guess our IO threads are doing too much stuff not relevant like writing the Frames
+ * to bytebuffers or converting the bytebuffers to Frames.
  *
  * This is an experimental feature and disabled by default.
  */

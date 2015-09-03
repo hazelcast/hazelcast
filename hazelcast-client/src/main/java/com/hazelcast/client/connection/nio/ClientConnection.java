@@ -26,7 +26,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionType;
 import com.hazelcast.nio.Protocols;
-import com.hazelcast.nio.SocketWritable;
+import com.hazelcast.nio.Frame;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.nio.tcp.SocketChannelWrapper;
 import com.hazelcast.nio.tcp.nonblocking.NonBlockingIOThread;
@@ -100,14 +100,14 @@ public class ClientConnection implements Connection, Closeable {
     }
 
     @Override
-    public boolean write(SocketWritable packet) {
+    public boolean write(Frame frame) {
         if (!live.get()) {
             if (logger.isFinestEnabled()) {
-                logger.finest("Connection is closed, won't write packet -> " + packet);
+                logger.finest("Connection is closed, won't write packet -> " + frame);
             }
             return false;
         }
-        writeHandler.enqueueSocketWritable(packet);
+        writeHandler.enqueue(frame);
         return true;
     }
 
