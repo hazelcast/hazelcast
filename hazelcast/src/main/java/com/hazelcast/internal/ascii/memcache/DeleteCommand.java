@@ -22,7 +22,7 @@ import com.hazelcast.internal.ascii.TextCommandConstants;
 import java.nio.ByteBuffer;
 
 public class DeleteCommand extends AbstractTextCommand {
-    ByteBuffer response;
+    private ByteBuffer response;
     private final String key;
     private final int expiration;
     private final boolean noreply;
@@ -34,6 +34,7 @@ public class DeleteCommand extends AbstractTextCommand {
         this.noreply = noreply;
     }
 
+    @Override
     public boolean readFrom(ByteBuffer src) {
         return true;
     }
@@ -42,6 +43,7 @@ public class DeleteCommand extends AbstractTextCommand {
         this.response = ByteBuffer.wrap(value);
     }
 
+    @Override
     public boolean writeTo(ByteBuffer dst) {
         if (response == null) {
             response = ByteBuffer.wrap(TextCommandConstants.STORED);
@@ -52,6 +54,7 @@ public class DeleteCommand extends AbstractTextCommand {
         return !response.hasRemaining();
     }
 
+    @Override
     public boolean shouldReply() {
         return !noreply;
     }

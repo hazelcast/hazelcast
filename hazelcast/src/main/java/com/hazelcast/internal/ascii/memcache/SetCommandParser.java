@@ -17,7 +17,7 @@
 package com.hazelcast.internal.ascii.memcache;
 
 import com.hazelcast.internal.ascii.TextCommand;
-import com.hazelcast.internal.ascii.TextCommandConstants;
+import com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType;
 import com.hazelcast.internal.ascii.TypeAwareCommandParser;
 import com.hazelcast.nio.ascii.TextReadHandler;
 
@@ -26,17 +26,19 @@ import java.util.StringTokenizer;
 import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.ERROR_CLIENT;
 
 public class SetCommandParser extends TypeAwareCommandParser {
-    public SetCommandParser(TextCommandConstants.TextCommandType type) {
+
+    public SetCommandParser(TextCommandType type) {
         super(type);
     }
 
+    @Override
     public TextCommand parser(TextReadHandler readHandler, String cmd, int space) {
         StringTokenizer st = new StringTokenizer(cmd);
         st.nextToken();
-        String key = null;
-        int valueLen = 0;
-        int flag = 0;
-        int expiration = 0;
+        String key;
+        int valueLen;
+        int flag;
+        int expiration;
         boolean noReply = false;
         if (st.hasMoreTokens()) {
             key = st.nextToken();

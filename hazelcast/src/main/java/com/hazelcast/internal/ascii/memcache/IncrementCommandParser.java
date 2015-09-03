@@ -26,21 +26,18 @@ import java.util.StringTokenizer;
 
 import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.ERROR_CLIENT;
 
-/**
- * User: sancar
- * Date: 3/8/13
- * Time: 3:32 PM
- */
 public class IncrementCommandParser extends TypeAwareCommandParser {
+
     public IncrementCommandParser(TextCommandConstants.TextCommandType type) {
         super(type);
     }
 
+    @Override
     public TextCommand parser(TextReadHandler readHandler, String cmd, int space) {
         StringTokenizer st = new StringTokenizer(cmd);
         st.nextToken();
-        String key = null;
-        int value = 0;
+        String key;
+        int value;
         boolean noReply = false;
         if (st.hasMoreTokens()) {
             key = st.nextToken();

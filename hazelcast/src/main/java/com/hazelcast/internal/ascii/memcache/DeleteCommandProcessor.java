@@ -30,6 +30,7 @@ public class DeleteCommandProcessor extends MemcacheCommandProcessor<DeleteComma
         super(textCommandService);
     }
 
+    @Override
     public void handle(DeleteCommand command) {
         String key;
         try {
@@ -61,6 +62,7 @@ public class DeleteCommandProcessor extends MemcacheCommandProcessor<DeleteComma
         }
     }
 
+    @Override
     public void handleRejection(DeleteCommand command) {
         handle(command);
     }

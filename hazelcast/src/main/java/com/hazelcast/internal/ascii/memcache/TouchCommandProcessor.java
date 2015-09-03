@@ -16,30 +16,28 @@
 
 package com.hazelcast.internal.ascii.memcache;
 
-import com.hazelcast.internal.ascii.TextCommandConstants;
-import com.hazelcast.internal.ascii.TextCommandServiceImpl;
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.internal.ascii.TextCommandServiceImpl;
 import com.hazelcast.logging.ILogger;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 
-/**
- * User: sancar
- * Date: 3/8/13
- * Time: 2:03 PM
- */
+import static com.hazelcast.internal.ascii.TextCommandConstants.NOT_STORED;
+import static com.hazelcast.internal.ascii.TextCommandConstants.TOUCHED;
+
 public class TouchCommandProcessor extends MemcacheCommandProcessor<TouchCommand> {
 
     private final ILogger logger;
 
     public TouchCommandProcessor(TextCommandServiceImpl textCommandService) {
         super(textCommandService);
-        logger = textCommandService.getNode().getLogger(this.getClass().getName());
+        logger = textCommandService.getNode().getLogger(getClass());
     }
 
+    @Override
     public void handle(TouchCommand touchCommand) {
-        String key = null;
+        String key;
         try {
             key = URLDecoder.decode(touchCommand.getKey(), "UTF-8");
         } catch (UnsupportedEncodingException e) {
@@ -55,7 +53,7 @@ public class TouchCommandProcessor extends MemcacheCommandProcessor<TouchCommand
         try {
             textCommandService.lock(mapName, key);
         } catch (Exception e) {
-            touchCommand.setResponse(TextCommandConstants.NOT_STORED);
+            touchCommand.setResponse(NOT_STORED);
             if (touchCommand.shouldReply()) {
                 textCommandService.sendResponse(touchCommand);
             }
@@ -65,9 +63,9 @@ public class TouchCommandProcessor extends MemcacheCommandProcessor<TouchCommand
         textCommandService.incrementTouchCount();
         if (value != null) {
             textCommandService.put(mapName, key, value, ttl);
-            touchCommand.setResponse(TextCommandConstants.TOUCHED);
+            touchCommand.setResponse(TOUCHED);
         } else {
-            touchCommand.setResponse(TextCommandConstants.NOT_STORED);
+            touchCommand.setResponse(NOT_STORED);
         }
         textCommandService.unlock(mapName, key);
 
@@ -76,8 +74,9 @@ public class TouchCommandProcessor extends MemcacheCommandProcessor<TouchCommand
         }
     }
 
+    @Override
     public void handleRejection(TouchCommand request) {
-        request.setResponse(TextCommandConstants.NOT_STORED);
+        request.setResponse(NOT_STORED);
         if (request.shouldReply()) {
             textCommandService.sendResponse(request);
         }

@@ -16,10 +16,12 @@
 
 package com.hazelcast.internal.ascii.rest;
 
-import com.hazelcast.internal.ascii.TextCommandService;
 import com.hazelcast.instance.Node;
+import com.hazelcast.internal.ascii.TextCommandService;
 import com.hazelcast.nio.ConnectionManager;
 
+import static com.hazelcast.internal.ascii.rest.HttpCommand.CONTENT_TYPE_BINARY;
+import static com.hazelcast.internal.ascii.rest.HttpCommand.CONTENT_TYPE_PLAIN_TEXT;
 import static com.hazelcast.util.StringUtil.stringToBytes;
 
 public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand> {
@@ -30,44 +32,57 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
         super(textCommandService);
     }
 
+    @Override
     public void handle(HttpGetCommand command) {
         String uri = command.getURI();
         if (uri.startsWith(URI_MAPS)) {
-            int indexEnd = uri.indexOf('/', URI_MAPS.length());
-            String mapName = uri.substring(URI_MAPS.length(), indexEnd);
-            String key = uri.substring(indexEnd + 1);
-            Object value = textCommandService.get(mapName, key);
-            prepareResponse(command, value);
+            handleMap(command, uri);
         } else if (uri.startsWith(URI_QUEUES)) {
-            int indexEnd = uri.indexOf('/', URI_QUEUES.length());
-            String queueName = uri.substring(URI_QUEUES.length(), indexEnd);
-            String secondStr = (uri.length() > (indexEnd + 1)) ? uri.substring(indexEnd + 1) : null;
-
-            if (QUEUE_SIZE_COMMAND.equalsIgnoreCase(secondStr)) {
-                int size = textCommandService.size(queueName);
-                prepareResponse(command, Integer.toString(size));
-            } else {
-                int seconds = (secondStr == null) ? 0 : Integer.parseInt(secondStr);
-                Object value = textCommandService.poll(queueName, seconds);
-                prepareResponse(command, value);
-            }
-
+            handleQueue(command, uri);
         } else if (uri.startsWith(URI_CLUSTER)) {
-            Node node = textCommandService.getNode();
-            StringBuilder res = new StringBuilder(node.getClusterService().membersString());
-            res.append("\n");
-            ConnectionManager connectionManager = node.getConnectionManager();
-            res.append("ConnectionCount: ").append(connectionManager.getCurrentClientConnections());
-            res.append("\n");
-            res.append("AllConnectionCount: ").append(connectionManager.getAllTextConnections());
-            res.append("\n");
-            command.setResponse(null, stringToBytes(res.toString()));
+            handleCluster(command);
         } else {
             command.send400();
         }
         textCommandService.sendResponse(command);
     }
 
+    private void handleCluster(HttpGetCommand command) {
+        Node node = textCommandService.getNode();
+        StringBuilder res = new StringBuilder(node.getClusterService().membersString());
+        res.append("\n");
+        ConnectionManager connectionManager = node.getConnectionManager();
+        res.append("ConnectionCount: ").append(connectionManager.getCurrentClientConnections());
+        res.append("\n");
+        res.append("AllConnectionCount: ").append(connectionManager.getAllTextConnections());
+        res.append("\n");
+        command.setResponse(null, stringToBytes(res.toString()));
+    }
+
+    private void handleQueue(HttpGetCommand command, String uri) {
+        int indexEnd = uri.indexOf('/', URI_QUEUES.length());
+        String queueName = uri.substring(URI_QUEUES.length(), indexEnd);
+        String secondStr = (uri.length() > (indexEnd + 1)) ? uri.substring(indexEnd + 1) : null;
+
+        if (QUEUE_SIZE_COMMAND.equalsIgnoreCase(secondStr)) {
+            int size = textCommandService.size(queueName);
+            prepareResponse(command, Integer.toString(size));
+        } else {
+            int seconds = (secondStr == null) ? 0 : Integer.parseInt(secondStr);
+            Object value = textCommandService.poll(queueName, seconds);
+            prepareResponse(command, value);
+        }
+    }
+
+    private void handleMap(HttpGetCommand command, String uri) {
+        int indexEnd = uri.indexOf('/', URI_MAPS.length());
+        String mapName = uri.substring(URI_MAPS.length(), indexEnd);
+        String key = uri.substring(indexEnd + 1);
+        Object value = textCommandService.get(mapName, key);
+        prepareResponse(command, value);
+    }
+
+    @Override
     public void handleRejection(HttpGetCommand command) {
         handle(command);
     }
@@ -75,17 +90,15 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
     private void prepareResponse(HttpGetCommand command, Object value) {
         if (value == null) {
             command.send204();
+        } else if (value instanceof byte[]) {
+            command.setResponse(CONTENT_TYPE_BINARY, (byte[]) value);
+        } else if (value instanceof RestValue) {
+            RestValue restValue = (RestValue) value;
+            command.setResponse(restValue.getContentType(), restValue.getValue());
+        } else if (value instanceof String) {
+            command.setResponse(CONTENT_TYPE_PLAIN_TEXT, stringToBytes((String) value));
         } else {
-            if (value instanceof byte[]) {
-                command.setResponse(HttpCommand.CONTENT_TYPE_BINARY, (byte[]) value);
-            } else if (value instanceof RestValue) {
-                RestValue restValue = (RestValue) value;
-                command.setResponse(restValue.getContentType(), restValue.getValue());
-            } else if (value instanceof String) {
-                command.setResponse(HttpCommand.CONTENT_TYPE_PLAIN_TEXT, stringToBytes((String) value));
-            } else {
-                command.setResponse(HttpCommand.CONTENT_TYPE_BINARY, textCommandService.toByteArray(value));
-            }
+            command.setResponse(CONTENT_TYPE_BINARY, textCommandService.toByteArray(value));
         }
     }
 }

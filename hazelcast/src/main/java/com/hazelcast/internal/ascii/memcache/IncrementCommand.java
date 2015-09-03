@@ -21,17 +21,12 @@ import com.hazelcast.internal.ascii.TextCommandConstants;
 
 import java.nio.ByteBuffer;
 
-/**
- * User: sancar
- * Date: 3/8/13
- * Time: 3:33 PM
- */
 public class IncrementCommand extends AbstractTextCommand {
 
-    String key;
-    int value;
-    boolean noreply;
-    ByteBuffer response;
+    private String key;
+    private int value;
+    private boolean noreply;
+    private ByteBuffer response;
 
     public IncrementCommand(TextCommandConstants.TextCommandType type, String key, int value, boolean noReply) {
         super(type);
@@ -40,6 +35,7 @@ public class IncrementCommand extends AbstractTextCommand {
         this.noreply = noReply;
     }
 
+    @Override
     public boolean writeTo(ByteBuffer dst) {
         while (dst.hasRemaining() && response.hasRemaining()) {
             dst.put(response.get());
@@ -47,10 +43,12 @@ public class IncrementCommand extends AbstractTextCommand {
         return !response.hasRemaining();
     }
 
+    @Override
     public boolean readFrom(ByteBuffer src) {
         return true;
     }
 
+    @Override
     public boolean shouldReply() {
         return !noreply;
     }

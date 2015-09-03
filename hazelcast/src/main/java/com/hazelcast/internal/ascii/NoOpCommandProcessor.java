@@ -22,10 +22,12 @@ public class NoOpCommandProcessor extends AbstractTextCommandProcessor<NoOpComma
         super(textCommandService);
     }
 
+    @Override
     public void handle(NoOpCommand command) {
         textCommandService.sendResponse(command);
     }
 
+    @Override
     public void handleRejection(NoOpCommand command) {
         handle(command);
     }

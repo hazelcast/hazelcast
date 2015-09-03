@@ -17,11 +17,10 @@
 package com.hazelcast.internal.ascii.memcache;
 
 
-import com.hazelcast.internal.ascii.TextCommandConstants;
 import com.hazelcast.internal.ascii.TextCommandService;
 import com.hazelcast.logging.ILogger;
 
-
+import static com.hazelcast.internal.ascii.TextCommandConstants.ERROR;
 import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.QUIT;
 import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.UNKNOWN;
 
@@ -31,9 +30,10 @@ public class SimpleCommandProcessor extends MemcacheCommandProcessor<SimpleComma
 
     public SimpleCommandProcessor(TextCommandService textCommandService) {
         super(textCommandService);
-        logger = textCommandService.getNode().getLogger(this.getClass().getName());
+        logger = textCommandService.getNode().getLogger(getClass());
     }
 
+    @Override
     public void handle(SimpleCommand command) {
         if (command.getType() == QUIT) {
             try {
@@ -42,11 +42,12 @@ public class SimpleCommandProcessor extends MemcacheCommandProcessor<SimpleComma
                 logger.warning(e);
             }
         } else if (command.getType() == UNKNOWN) {
-            command.setResponse(TextCommandConstants.ERROR);
+            command.setResponse(ERROR);
             textCommandService.sendResponse(command);
         }
     }
 
+    @Override
     public void handleRejection(SimpleCommand command) {
         handle(command);
     }

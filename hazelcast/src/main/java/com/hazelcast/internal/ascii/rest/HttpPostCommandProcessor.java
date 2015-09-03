@@ -33,6 +33,7 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
         super(textCommandService);
     }
 
+    @Override
     public void handle(HttpPostCommand command) {
         try {
             String uri = command.getURI();
@@ -113,6 +114,7 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
         command.send200();
     }
 
+    @Override
     public void handleRejection(HttpPostCommand command) {
         handle(command);
     }
