@@ -24,7 +24,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionType;
 import com.hazelcast.nio.Packet;
-import com.hazelcast.nio.SocketWritable;
+import com.hazelcast.nio.OutboundFrame;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.security.UsernamePasswordCredentials;
 
@@ -98,10 +98,10 @@ public class MockSimpleClient implements SimpleClient {
             this.port = port;
         }
 
-        BlockingQueue<SocketWritable> q = new LinkedBlockingQueue<SocketWritable>();
+        BlockingQueue<OutboundFrame> q = new LinkedBlockingQueue<OutboundFrame>();
 
-        public boolean write(SocketWritable packet) {
-            return q.offer(packet);
+        public boolean write(OutboundFrame frame) {
+            return q.offer(frame);
         }
 
         @Override

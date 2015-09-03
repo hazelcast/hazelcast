@@ -95,8 +95,8 @@ public abstract class TcpIpConnection_TransferStressTest extends TcpIpConnection
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
-                assertEquals(expectedNormalPackets, XReadHandler.getNormalPacketsReadCounter().get());
-                assertEquals(expectedUrgentPackets, XReadHandler.getPriorityPacketsReadCounter().get());
+                assertEquals(expectedNormalPackets, XReadHandler.getNormalFramesReadCounter().get());
+                assertEquals(expectedUrgentPackets, XReadHandler.getPriorityFramesReadCounter().get());
             }
         });
 
@@ -188,7 +188,7 @@ public abstract class TcpIpConnection_TransferStressTest extends TcpIpConnection
         }
 
         private double getUsage() {
-            return 100d * writeHandler.totalPacketsPending() / maxPendingPacketCount;
+            return 100d * writeHandler.totalFramesPending() / maxPendingPacketCount;
         }
 
         public Packet nextPacket() {

@@ -37,7 +37,7 @@ import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionType;
-import com.hazelcast.nio.SocketWritable;
+import com.hazelcast.nio.OutboundFrame;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.TestNodeRegistry;
 import com.hazelcast.util.ExceptionUtil;
@@ -162,8 +162,8 @@ public class TestClientRegistry {
         }
 
         @Override
-        public boolean write(SocketWritable socketWritable) {
-            ClientMessage newPacket = readFromPacket((ClientMessage) socketWritable);
+        public boolean write(OutboundFrame frame) {
+            ClientMessage newPacket = readFromPacket((ClientMessage) frame);
             lastWriteTime = System.currentTimeMillis();
             serverNodeEngine.getNode().clientEngine.handleClientMessage(newPacket, serverSideConnection);
             return true;
@@ -242,8 +242,8 @@ public class TestClientRegistry {
         }
 
         @Override
-        public boolean write(SocketWritable socketWritable) {
-            final ClientMessage packet = (ClientMessage) socketWritable;
+        public boolean write(OutboundFrame frame) {
+            final ClientMessage packet = (ClientMessage) frame;
             if (nodeEngine.getNode().isActive()) {
                 ClientMessage newPacket = readFromPacket(packet);
                 responseConnection.handleClientMessage(newPacket);
