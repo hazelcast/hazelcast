@@ -27,10 +27,10 @@ import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.TestUtil;
 import com.hazelcast.internal.metrics.MetricsRegistry;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.nio.Packet;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.partition.impl.InternalPartitionServiceState;
@@ -38,6 +38,8 @@ import com.hazelcast.replicatedmap.impl.record.VectorClockTimestamp;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+import com.hazelcast.test.TestNodeRegistry.MockConnectionManager;
+import com.hazelcast.util.EmptyStatement;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.ComparisonFailure;
@@ -69,6 +71,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+@SuppressWarnings("unused")
 public abstract class HazelcastTestSupport {
 
     public static final int ASSERT_TRUE_EVENTUALLY_TIMEOUT;
@@ -82,7 +85,6 @@ public abstract class HazelcastTestSupport {
 
     private TestHazelcastInstanceFactory factory;
 
-
     public static void assertUtilityConstructor(Class clazz) {
         Constructor[] constructors = clazz.getDeclaredConstructors();
         assertEquals("there are more than 1 constructors", 1, constructors.length);
@@ -95,6 +97,7 @@ public abstract class HazelcastTestSupport {
         try {
             constructor.newInstance();
         } catch (Exception e) {
+            EmptyStatement.ignore(e);
         }
     }
 
@@ -114,7 +117,7 @@ public abstract class HazelcastTestSupport {
         return createHazelcastInstanceFactory(1).newHazelcastInstance(config);
     }
 
-    public static int getPartitionId(HazelcastInstance hz, String name){
+    public static int getPartitionId(HazelcastInstance hz, String name) {
         PartitionService partitionService = hz.getPartitionService();
         Partition partition = partitionService.getPartition(name);
         return partition.getPartitionId();
@@ -198,7 +201,7 @@ public abstract class HazelcastTestSupport {
         return node.nodeEngine;
     }
 
-    public static MetricsRegistry getMetricsRegistry(HazelcastInstance hz){
+    public static MetricsRegistry getMetricsRegistry(HazelcastInstance hz) {
         NodeEngineImpl nodeEngine = getNodeEngineImpl(hz);
         return nodeEngine.getMetricsRegistry();
     }
@@ -210,10 +213,6 @@ public abstract class HazelcastTestSupport {
             factory = null;
             testHazelcastInstanceFactory.terminateAll();
         }
-    }
-
-    public static void setLoggingNone() {
-        System.setProperty("hazelcast.logging.type", "none");
     }
 
     public static void setLoggingLog4j() {
@@ -261,11 +260,11 @@ public abstract class HazelcastTestSupport {
      * This method is very useful for stress tests that run for a certain amount of time. But if one of the stress tests
      * runs into a failure, the test should be aborted immediately. This is done by letting the thread set stop to true.
      *
-     * @param stop
-     * @param durationSeconds
+     * @param stop            an {@link AtomicBoolean} to stop the sleep method
+     * @param durationSeconds sleep duration in seconds
      */
     public static void sleepAndStop(AtomicBoolean stop, long durationSeconds) {
-        for (int k = 0; k < durationSeconds; k++) {
+        for (int i = 0; i < durationSeconds; i++) {
             if (stop.get()) {
                 return;
             }
@@ -275,24 +274,24 @@ public abstract class HazelcastTestSupport {
     }
 
     public static void sleepAtLeastMillis(long sleepFor) {
-       boolean interrupted = false;
-       try {
-           long remainingNanos = MILLISECONDS.toNanos(sleepFor);
-           final long sleepUntil = System.nanoTime() + remainingNanos;
-           while (remainingNanos > 0) {
-               try {
-                   NANOSECONDS.sleep(remainingNanos);
-               } catch (InterruptedException e) {
-                   interrupted = true;
-               } finally {
-                   remainingNanos = sleepUntil - System.nanoTime();
-               }
-           }
-       } finally {
-           if (interrupted) {
-               Thread.currentThread().interrupt();
-           }
-       }
+        boolean interrupted = false;
+        try {
+            long remainingNanos = MILLISECONDS.toNanos(sleepFor);
+            final long sleepUntil = System.nanoTime() + remainingNanos;
+            while (remainingNanos > 0) {
+                try {
+                    NANOSECONDS.sleep(remainingNanos);
+                } catch (InterruptedException e) {
+                    interrupted = true;
+                } finally {
+                    remainingNanos = sleepUntil - System.nanoTime();
+                }
+            }
+        } finally {
+            if (interrupted) {
+                Thread.currentThread().interrupt();
+            }
+        }
     }
 
     public static void sleepAtLeastSeconds(long seconds) {
@@ -355,15 +354,17 @@ public abstract class HazelcastTestSupport {
     }
 
     public static void printAllStackTraces() {
+        StringBuilder sb = new StringBuilder();
         Map liveThreads = Thread.getAllStackTraces();
         for (Object object : liveThreads.keySet()) {
             Thread key = (Thread) object;
-            System.err.println("Thread " + key.getName());
+            sb.append("Thread ").append(key.getName());
             StackTraceElement[] trace = (StackTraceElement[]) liveThreads.get(key);
             for (StackTraceElement aTrace : trace) {
-                System.err.println("\tat " + aTrace);
+                sb.append("\tat ").append(aTrace);
             }
         }
+        System.err.println(sb.toString());
     }
 
     public static void interruptCurrentThread(final int delayMillis) {
@@ -522,7 +523,7 @@ public abstract class HazelcastTestSupport {
     }
 
     public static void waitAllForSafeState() {
-       waitAllForSafeState(HazelcastInstanceFactory.getAllHazelcastInstances());
+        waitAllForSafeState(HazelcastInstanceFactory.getAllHazelcastInstances());
     }
 
     public static void waitAllForSafeState(final Collection<HazelcastInstance> instances) {
@@ -581,10 +582,11 @@ public abstract class HazelcastTestSupport {
         message.append((value == null) ? "null" : value.getClass().getName()).append("<").append(valueString).append(">");
     }
 
+    @SuppressWarnings("unchecked")
     public static <E> E assertInstanceOf(Class<E> clazz, Object o) {
         Assert.assertNotNull(o);
         assertTrue(o + " is not an instanceof " + clazz.getName(), clazz.isAssignableFrom(o.getClass()));
-        return (E)o;
+        return (E) o;
     }
 
     public static void assertJoinable(Thread... threads) {
@@ -659,7 +661,15 @@ public abstract class HazelcastTestSupport {
     }
 
     public static void assertClusterSize(int expectedSize, HazelcastInstance instance) {
-        assertEquals("Cluster size is not correct", expectedSize, instance.getCluster().getMembers().size());
+        int clusterSize = instance.getCluster().getMembers().size();
+        if (expectedSize != clusterSize) {
+            ConnectionManager connectionManager = getNode(instance).getConnectionManager();
+            boolean isMockNetwork = (connectionManager instanceof MockConnectionManager);
+            int activeConnectionCount = connectionManager.getActiveConnectionCount();
+
+            fail(format("Cluster size is not correct. Expected: %d Actual: %d %s", expectedSize, clusterSize,
+                    isMockNetwork ? "(mocked network)" : "ActiveConnectionCount: " + activeConnectionCount));
+        }
     }
 
     public static void assertClusterSizeEventually(int expectedSize, HazelcastInstance instance) {
@@ -787,16 +797,21 @@ public abstract class HazelcastTestSupport {
      * @param actual   actual value which is used for assert
      */
     public static void assertEqualsStringFormat(String message, Object expected, Object actual) {
-        assertEquals(String.format(message, expected, actual), expected, actual);
+        assertEquals(format(message, expected, actual), expected, actual);
     }
 
     public static void closeConnectionBetween(HazelcastInstance h1, HazelcastInstance h2) {
-        if (h1 == null || h2 == null) return;
+        if (h1 == null || h2 == null) {
+            return;
+        }
         final Node n1 = TestUtil.getNode(h1);
         final Node n2 = TestUtil.getNode(h2);
-        n1.clusterService.removeAddress(n2.address);
-        n2.clusterService.removeAddress(n1.address);
+        if (n1 != null && n2 != null) {
+            n1.clusterService.removeAddress(n2.address);
+            n2.clusterService.removeAddress(n1.address);
+        }
     }
+
     public final class DummyUncheckedHazelcastTestException extends RuntimeException {
     }
 
