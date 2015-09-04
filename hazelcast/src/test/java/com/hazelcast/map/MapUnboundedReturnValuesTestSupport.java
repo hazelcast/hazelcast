@@ -5,7 +5,7 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.TransactionalMap;
-import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.QueryResultSizeLimiter;
 import com.hazelcast.query.Predicate;
@@ -156,9 +156,9 @@ abstract class MapUnboundedReturnValuesTestSupport extends HazelcastTestSupport 
 
     private Config createConfig(int partitionCount, int limit, int preCheckTrigger) {
         Config config = new Config();
-        config.setProperty(GroupProperties.PROP_PARTITION_COUNT, String.valueOf(partitionCount));
-        config.setProperty(GroupProperties.PROP_QUERY_RESULT_SIZE_LIMIT, String.valueOf(limit));
-        config.setProperty(GroupProperties.PROP_QUERY_MAX_LOCAL_PARTITION_LIMIT_FOR_PRE_CHECK, String.valueOf(preCheckTrigger));
+        config.setProperty(GroupProperty.PARTITION_COUNT, String.valueOf(partitionCount));
+        config.setProperty(GroupProperty.QUERY_RESULT_SIZE_LIMIT, String.valueOf(limit));
+        config.setProperty(GroupProperty.QUERY_MAX_LOCAL_PARTITION_LIMIT_FOR_PRE_CHECK, String.valueOf(preCheckTrigger));
         return config;
     }
 

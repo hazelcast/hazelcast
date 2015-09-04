@@ -19,7 +19,7 @@ import com.hazelcast.util.Clock;
 import java.util.Map;
 import java.util.Set;
 
-import static com.hazelcast.instance.GroupProperties.PROP_PARTITION_MAX_PARALLEL_REPLICATIONS;
+import static com.hazelcast.instance.GroupProperty.PARTITION_MAX_PARALLEL_REPLICATIONS;
 import static com.hazelcast.test.TimeConstants.MINUTE;
 
 import static org.junit.Assert.assertEquals;
@@ -60,7 +60,7 @@ public class QuerySlowTest extends HazelcastTestSupport {
         Config conf = new Config();
         conf.getMapConfig("default").setBackupCount(0);
         // disable replication so that indexes are used for queries
-        conf.setProperty(PROP_PARTITION_MAX_PARALLEL_REPLICATIONS, "0");
+        conf.setProperty(PARTITION_MAX_PARALLEL_REPLICATIONS, "0");
         return conf;
     }
 

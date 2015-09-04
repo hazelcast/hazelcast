@@ -16,7 +16,7 @@
 
 package com.hazelcast.spring;
 
-import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.instance.GroupProperty;
 import org.junit.runners.model.InitializationError;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
@@ -27,8 +27,8 @@ public class CustomSpringJUnit4ClassRunner extends SpringJUnit4ClassRunner {
 
     static {
         System.setProperty("java.net.preferIPv4Stack", "true");
-        System.setProperty(GroupProperties.PROP_WAIT_SECONDS_BEFORE_JOIN, "1");
-        System.setProperty(GroupProperties.PROP_VERSION_CHECK_ENABLED, "false");
+        GroupProperty.WAIT_SECONDS_BEFORE_JOIN.setSystemProperty("1");
+        GroupProperty.VERSION_CHECK_ENABLED.setSystemProperty("false");
         System.setProperty("hazelcast.local.localAddress", "127.0.0.1");
     }
 

@@ -23,6 +23,7 @@ import com.hazelcast.core.Member;
 import com.hazelcast.core.MigrationEvent;
 import com.hazelcast.core.MigrationEvent.MigrationStatus;
 import com.hazelcast.core.MigrationListener;
+import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
@@ -167,7 +168,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
     private final AtomicLong completedMigrationCounter = new AtomicLong();
 
     public InternalPartitionServiceImpl(Node node) {
-        this.partitionCount = node.groupProperties.PARTITION_COUNT.getInteger();
+        this.partitionCount = node.groupProperties.getInteger(GroupProperty.PARTITION_COUNT);
         this.node = node;
         this.nodeEngine = node.nodeEngine;
         this.logger = node.getLogger(InternalPartitionService.class);
@@ -186,11 +187,10 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         memberGroupFactory = MemberGroupFactoryFactory.newMemberGroupFactory(node.getConfig().getPartitionGroupConfig());
         partitionStateGenerator = new PartitionStateGeneratorImpl();
 
-        long interval = node.groupProperties.PARTITION_MIGRATION_INTERVAL.getLong();
-        partitionMigrationInterval = interval > 0 ? TimeUnit.SECONDS.toMillis(interval) : 0;
+        long intervalMillis = node.groupProperties.getMillis(GroupProperty.PARTITION_MIGRATION_INTERVAL);
+        partitionMigrationInterval = (intervalMillis > 0 ? intervalMillis : 0);
 
-        partitionMigrationTimeout = TimeUnit.SECONDS.toMillis(
-                node.groupProperties.PARTITION_MIGRATION_TIMEOUT.getLong());
+        partitionMigrationTimeout = node.groupProperties.getMillis(GroupProperty.PARTITION_MIGRATION_TIMEOUT);
 
         migrationThread = new MigrationThread(node);
         proxy = new PartitionServiceProxy(this);
@@ -220,26 +220,26 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
             }
         });
 
-        long definedBackupSyncCheckInterval = node.groupProperties.PARTITION_BACKUP_SYNC_INTERVAL.getInteger();
+        long definedBackupSyncCheckInterval = node.groupProperties.getSeconds(GroupProperty.PARTITION_BACKUP_SYNC_INTERVAL);
         backupSyncCheckInterval = definedBackupSyncCheckInterval > 0 ? definedBackupSyncCheckInterval : 1;
-        maxParallelReplications = node.groupProperties.PARTITION_MAX_PARALLEL_REPLICATIONS.getInteger();
+        maxParallelReplications = node.groupProperties.getInteger(GroupProperty.PARTITION_MAX_PARALLEL_REPLICATIONS);
         replicaSyncProcessLock = new Semaphore(maxParallelReplications);
         nodeEngine.getMetricsRegistry().scanAndRegister(this, "partitions");
     }
 
     private long calculateMaxMigrationDelayOnMemberRemoved() {
-        //hard limit for migration pause is half of the call timeout. otherwise we might experience timeouts
-        return node.groupProperties.OPERATION_CALL_TIMEOUT_MILLIS.getLong() / 2;
+        // hard limit for migration pause is half of the call timeout. otherwise we might experience timeouts
+        return node.groupProperties.getMillis(GroupProperty.OPERATION_CALL_TIMEOUT_MILLIS) / 2;
     }
 
     private long calculateMigrationDelayOnMemberRemoved(long maxDelayMs) {
-        long migrationDelayMs = node.groupProperties.MIGRATION_MIN_DELAY_ON_MEMBER_REMOVED_SECONDS.getLong() * 1000;
+        long migrationDelayMs = node.groupProperties.getMillis(GroupProperty.MIGRATION_MIN_DELAY_ON_MEMBER_REMOVED_SECONDS);
 
-        long connectionErrorDetectionIntervalMs = node.groupProperties.CONNECTION_MONITOR_INTERVAL.getLong()
-                * node.groupProperties.CONNECTION_MONITOR_MAX_FAULTS.getInteger() * 5;
+        long connectionErrorDetectionIntervalMs = node.groupProperties.getMillis(GroupProperty.CONNECTION_MONITOR_INTERVAL)
+                * node.groupProperties.getInteger(GroupProperty.CONNECTION_MONITOR_MAX_FAULTS) * 5;
         migrationDelayMs = Math.max(migrationDelayMs, connectionErrorDetectionIntervalMs);
 
-        long heartbeatIntervalMs = node.groupProperties.HEARTBEAT_INTERVAL_SECONDS.getLong() * 1000;
+        long heartbeatIntervalMs = node.groupProperties.getMillis(GroupProperty.HEARTBEAT_INTERVAL_SECONDS);
         migrationDelayMs = Math.max(migrationDelayMs, heartbeatIntervalMs * 3);
 
         migrationDelayMs = Math.min(migrationDelayMs, maxDelayMs);
@@ -266,7 +266,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
     public void init(NodeEngine nodeEngine, Properties properties) {
         migrationThread.start();
 
-        int partitionTableSendInterval = node.groupProperties.PARTITION_TABLE_SEND_INTERVAL.getInteger();
+        int partitionTableSendInterval = node.groupProperties.getSeconds(GroupProperty.PARTITION_TABLE_SEND_INTERVAL);
         if (partitionTableSendInterval <= 0) {
             partitionTableSendInterval = 1;
         }

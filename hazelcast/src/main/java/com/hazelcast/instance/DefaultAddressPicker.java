@@ -87,7 +87,7 @@ class DefaultAddressPicker implements AddressPicker {
 
     private AddressDefinition getPublicAddressByPortSearch() throws IOException {
         NetworkConfig networkConfig = node.getConfig().getNetworkConfig();
-        boolean bindAny = node.getGroupProperties().SOCKET_SERVER_BIND_ANY.getBoolean();
+        boolean bindAny = node.getGroupProperties().getBoolean(GroupProperty.SOCKET_SERVER_BIND_ANY);
 
         Throwable error = null;
         ServerSocket serverSocket = null;
@@ -342,7 +342,7 @@ class DefaultAddressPicker implements AddressPicker {
 
     private boolean preferIPv4Stack() {
         boolean preferIPv4Stack = Boolean.getBoolean("java.net.preferIPv4Stack")
-                || node.groupProperties.PREFER_IPv4_STACK.getBoolean();
+                || node.groupProperties.getBoolean(GroupProperty.PREFER_IPv4_STACK);
         // AWS does not support IPv6
         JoinConfig join = node.getConfig().getNetworkConfig().getJoin();
         AwsConfig awsConfig = join.getAwsConfig();

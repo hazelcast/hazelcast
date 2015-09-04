@@ -3,7 +3,7 @@ package com.hazelcast.cluster;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.test.HazelcastTestSupport;
 
 import static org.junit.Assert.assertEquals;
@@ -13,7 +13,7 @@ import static org.junit.Assert.fail;
 public class AbstractJoinTest extends HazelcastTestSupport {
 
     protected void testJoin(Config config) throws Exception {
-        config.setProperty(GroupProperties.PROP_WAIT_SECONDS_BEFORE_JOIN, "0");
+        config.setProperty(GroupProperty.WAIT_SECONDS_BEFORE_JOIN, "0");
 
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
         assertEquals(1, h1.getCluster().getMembers().size());
@@ -29,7 +29,7 @@ public class AbstractJoinTest extends HazelcastTestSupport {
     }
 
     protected void testJoin_With_DifferentBuildNumber(Config config) {
-        config.setProperty(GroupProperties.PROP_WAIT_SECONDS_BEFORE_JOIN, "0");
+        config.setProperty(GroupProperty.WAIT_SECONDS_BEFORE_JOIN, "0");
 
         String buildNumberProp = "hazelcast.build";
         System.setProperty(buildNumberProp, "1");

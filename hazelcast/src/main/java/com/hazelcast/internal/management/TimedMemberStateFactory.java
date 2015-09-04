@@ -27,11 +27,11 @@ import com.hazelcast.config.GroupConfig;
 import com.hazelcast.core.Client;
 import com.hazelcast.core.Member;
 import com.hazelcast.executor.impl.DistributedExecutorService;
+import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.internal.management.dto.ClientEndPointDTO;
-import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.monitor.LocalExecutorStats;
 import com.hazelcast.monitor.LocalMapStats;
@@ -74,16 +74,14 @@ public class TimedMemberStateFactory {
     private final HazelcastInstanceImpl instance;
     private final int maxVisibleInstanceCount;
     private final boolean cacheServiceEnabled;
-    private final ILogger logger;
 
     private volatile boolean memberStateSafe = true;
 
     public TimedMemberStateFactory(HazelcastInstanceImpl instance) {
         this.instance = instance;
         Node node = instance.node;
-        maxVisibleInstanceCount = node.groupProperties.MC_MAX_INSTANCE_COUNT.getInteger();
+        maxVisibleInstanceCount = node.groupProperties.getInteger(GroupProperty.MC_MAX_VISIBLE_INSTANCE_COUNT);
         cacheServiceEnabled = node.nodeEngine.getService(CacheService.SERVICE_NAME) != null;
-        logger = node.getLogger(TimedMemberStateFactory.class);
     }
 
     public void init() {

@@ -23,7 +23,7 @@ import com.hazelcast.config.QuorumConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.MembershipAdapter;
 import com.hazelcast.core.MembershipEvent;
-import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.tcp.FirewallingMockConnectionManager;
 import com.hazelcast.test.AssertTask;
@@ -80,8 +80,8 @@ public class PartitionedCluster {
 
     private Config createClusterConfig() {
         Config config = new Config();
-        config.setProperty(GroupProperties.PROP_MERGE_FIRST_RUN_DELAY_SECONDS, "9999");
-        config.setProperty(GroupProperties.PROP_MERGE_NEXT_RUN_DELAY_SECONDS, "9999");
+        config.setProperty(GroupProperty.MERGE_FIRST_RUN_DELAY_SECONDS, "9999");
+        config.setProperty(GroupProperty.MERGE_NEXT_RUN_DELAY_SECONDS, "9999");
         config.getGroupConfig().setName(generateRandomString(10));
         config.addQuorumConfig(createSuccessfulSplitTestQuorum());
         return config;

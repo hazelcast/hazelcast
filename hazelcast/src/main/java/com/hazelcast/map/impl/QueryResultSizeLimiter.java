@@ -23,6 +23,8 @@ import com.hazelcast.spi.NodeEngine;
 
 import java.util.Collection;
 
+import static com.hazelcast.instance.GroupProperty.QUERY_MAX_LOCAL_PARTITION_LIMIT_FOR_PRE_CHECK;
+import static com.hazelcast.instance.GroupProperty.QUERY_RESULT_SIZE_LIMIT;
 import static java.lang.Math.ceil;
 import static java.lang.Math.min;
 
@@ -142,13 +144,12 @@ public class QueryResultSizeLimiter {
     }
 
     private int getMaxResultLimit(GroupProperties groupProperties) {
-        int maxResultLimit = groupProperties.QUERY_RESULT_SIZE_LIMIT.getInteger();
+        int maxResultLimit = groupProperties.getInteger(QUERY_RESULT_SIZE_LIMIT);
         if (maxResultLimit == -1) {
             return DISABLED;
         }
         if (maxResultLimit <= 0) {
-            throw new IllegalArgumentException(groupProperties.QUERY_RESULT_SIZE_LIMIT.getName()
-                    + " has to be -1 (disabled) or a positive number!");
+            throw new IllegalArgumentException(QUERY_RESULT_SIZE_LIMIT + " has to be -1 (disabled) or a positive number!");
         }
         if (maxResultLimit < MINIMUM_MAX_RESULT_LIMIT) {
             log.finest("Max result limit was set to minimal value of " + MINIMUM_MAX_RESULT_LIMIT);
@@ -158,12 +159,12 @@ public class QueryResultSizeLimiter {
     }
 
     private int getMaxLocalPartitionsLimitForPreCheck(GroupProperties groupProperties) {
-        int maxLocalPartitionLimitForPreCheck = groupProperties.QUERY_MAX_LOCAL_PARTITION_LIMIT_FOR_PRE_CHECK.getInteger();
+        int maxLocalPartitionLimitForPreCheck = groupProperties.getInteger(QUERY_MAX_LOCAL_PARTITION_LIMIT_FOR_PRE_CHECK);
         if (maxLocalPartitionLimitForPreCheck == -1) {
             return DISABLED;
         }
         if (maxLocalPartitionLimitForPreCheck <= 0) {
-            throw new IllegalArgumentException(groupProperties.QUERY_MAX_LOCAL_PARTITION_LIMIT_FOR_PRE_CHECK.getName()
+            throw new IllegalArgumentException(QUERY_MAX_LOCAL_PARTITION_LIMIT_FOR_PRE_CHECK
                     + " has to be -1 (disabled) or a positive number!");
         }
         return maxLocalPartitionLimitForPreCheck;

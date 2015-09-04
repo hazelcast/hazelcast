@@ -15,7 +15,7 @@ import com.hazelcast.core.MemberAttributeEvent;
 import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MembershipListener;
 import com.hazelcast.core.PartitionAwareKey;
-import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.map.merge.LatestUpdateMapMergePolicy;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -33,7 +33,6 @@ import org.junit.runner.RunWith;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Properties;
 import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 
@@ -111,9 +110,9 @@ public class IndexSplitBrainTest extends HazelcastTestSupport {
 
     private Config newConfig(String mergePolicy, String mapName) {
         Config config = new Config();
-        config.setProperties(this.getCommonProperties());
-        config.setProperty(GroupProperties.PROP_MERGE_FIRST_RUN_DELAY_SECONDS, "5");
-        config.setProperty(GroupProperties.PROP_MERGE_NEXT_RUN_DELAY_SECONDS, "3");
+        setCommonProperties(config);
+        config.setProperty(GroupProperty.MERGE_FIRST_RUN_DELAY_SECONDS, "5");
+        config.setProperty(GroupProperty.MERGE_NEXT_RUN_DELAY_SECONDS, "3");
         MapConfig mapConfig = config.getMapConfig(mapName);
         mapConfig.setMergePolicy(mergePolicy);
         mapConfig.setBackupCount(1);
@@ -182,33 +181,29 @@ public class IndexSplitBrainTest extends HazelcastTestSupport {
         return networkConfig;
     }
 
-    protected Properties getCommonProperties() {
-        Properties properties = new Properties();
-        properties.setProperty(GroupProperties.PROP_LOGGING_TYPE, "log4j");
-        properties.setProperty(GroupProperties.PROP_VERSION_CHECK_ENABLED, "false");
-        properties.setProperty("hazelcast.mancenter.enabled", "false");
-        properties.setProperty(GroupProperties.PROP_WAIT_SECONDS_BEFORE_JOIN, "1");
-        properties.setProperty(GroupProperties.PROP_CONNECT_ALL_WAIT_SECONDS, "5");
-        properties.setProperty(GroupProperties.PROP_MAX_NO_HEARTBEAT_SECONDS, "2");
-        properties.setProperty(GroupProperties.PROP_HEARTBEAT_INTERVAL_SECONDS, "1");
-        properties.setProperty(GroupProperties.PROP_MASTER_CONFIRMATION_INTERVAL_SECONDS, "5");
-        properties.setProperty(GroupProperties.PROP_MAX_NO_MASTER_CONFIRMATION_SECONDS, "10");
-        properties.setProperty(GroupProperties.PROP_MEMBER_LIST_PUBLISH_INTERVAL_SECONDS, "5");
-        properties.setProperty(GroupProperties.PROP_MAX_JOIN_MERGE_TARGET_SECONDS, "10");
-        properties.setProperty("hazelcast.local.localAddress", "127.0.0.1");
-        properties.setProperty("java.net.preferIPv4Stack", "true");
-        properties.setProperty(TestEnvironment.HAZELCAST_TEST_USE_NETWORK, "false");
+    protected void setCommonProperties(Config config) {
+        config.setProperty(GroupProperty.LOGGING_TYPE, "log4j");
+        config.setProperty(GroupProperty.VERSION_CHECK_ENABLED, "false");
+        config.setProperty("hazelcast.mancenter.enabled", "false");
+        config.setProperty(GroupProperty.WAIT_SECONDS_BEFORE_JOIN, "1");
+        config.setProperty(GroupProperty.CONNECT_ALL_WAIT_SECONDS, "5");
+        config.setProperty(GroupProperty.MAX_NO_HEARTBEAT_SECONDS, "2");
+        config.setProperty(GroupProperty.HEARTBEAT_INTERVAL_SECONDS, "1");
+        config.setProperty(GroupProperty.MASTER_CONFIRMATION_INTERVAL_SECONDS, "5");
+        config.setProperty(GroupProperty.MAX_NO_MASTER_CONFIRMATION_SECONDS, "10");
+        config.setProperty(GroupProperty.MEMBER_LIST_PUBLISH_INTERVAL_SECONDS, "5");
+        config.setProperty(GroupProperty.MAX_JOIN_MERGE_TARGET_SECONDS, "10");
+        config.setProperty("hazelcast.local.localAddress", "127.0.0.1");
+        config.setProperty("java.net.preferIPv4Stack", "true");
+        config.setProperty(TestEnvironment.HAZELCAST_TEST_USE_NETWORK, "false");
 
         // randomize multicast group...
         Random rand = new Random();
         int g1 = rand.nextInt(255);
         int g2 = rand.nextInt(255);
         int g3 = rand.nextInt(255);
-        properties.setProperty("hazelcast.multicast.group", "224." + g1 + "." + g2 + "." + g3);
-
-        return properties;
+        config.setProperty("hazelcast.multicast.group", "224." + g1 + "." + g2 + "." + g3);
     }
-
 
     public static class RealtimeCall implements DataSerializable {
         private String id;

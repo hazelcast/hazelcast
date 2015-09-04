@@ -20,7 +20,7 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
-import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.instance.GroupProperty;
 import org.junit.Ignore;
 
 import java.util.Random;
@@ -32,7 +32,7 @@ import java.util.concurrent.atomic.AtomicLong;
 public class SimpleMapTestFromClient {
 
     static {
-        System.setProperty(GroupProperties.PROP_WAIT_SECONDS_BEFORE_JOIN, "0");
+        GroupProperty.WAIT_SECONDS_BEFORE_JOIN.setSystemProperty("0");
         System.setProperty("java.net.preferIPv4Stack", "true");
         System.setProperty("hazelcast.local.localAddress", "127.0.0.1");
         System.setProperty("hazelcast.version.check.enabled", "false");

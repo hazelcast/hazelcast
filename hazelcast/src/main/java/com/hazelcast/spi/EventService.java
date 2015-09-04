@@ -26,7 +26,7 @@ public interface EventService {
     /**
      * Returns the event thread count.
      *
-     * @see com.hazelcast.instance.GroupProperties#PROP_EVENT_THREAD_COUNT
+     * @see com.hazelcast.instance.GroupProperty#EVENT_THREAD_COUNT
      * @return the event thread count
      */
     int getEventThreadCount();
@@ -34,7 +34,7 @@ public interface EventService {
     /**
      * Returns the queue capacity per event thread.
      *
-     * @see com.hazelcast.instance.GroupProperties#PROP_EVENT_QUEUE_CAPACITY
+     * @see com.hazelcast.instance.GroupProperty#EVENT_QUEUE_CAPACITY
      * @return the queue capacity per event thread
      */
     int getEventQueueCapacity();

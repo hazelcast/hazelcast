@@ -19,7 +19,7 @@ package com.hazelcast.map;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
-import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.TestUtil;
 import com.hazelcast.map.impl.operation.BaseRemoveOperation;
@@ -60,7 +60,7 @@ public class MapRemoveFailingBackupTest extends HazelcastTestSupport {
         final String key = "2";
         final String value = "value2";
         Config config = new Config();
-        config.setProperty(GroupProperties.PROP_PARTITION_BACKUP_SYNC_INTERVAL, "5");
+        config.setProperty(GroupProperty.PARTITION_BACKUP_SYNC_INTERVAL, "5");
         config.getMapConfig(mapName).setReadBackupData(true);
         HazelcastInstance hz1 = factory.newHazelcastInstance(config);
         HazelcastInstance hz2 = factory.newHazelcastInstance(config);

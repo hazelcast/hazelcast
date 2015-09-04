@@ -23,6 +23,7 @@ import com.hazelcast.cluster.impl.operations.MergeClustersOperation;
 import com.hazelcast.cluster.impl.operations.PrepareMergeOperation;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Member;
+import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
@@ -133,7 +134,7 @@ public abstract class AbstractJoiner implements Joiner {
         boolean allConnected = false;
         if (node.joined()) {
             logger.finest("Waiting for all connections");
-            int connectAllWaitSeconds = node.groupProperties.CONNECT_ALL_WAIT_SECONDS.getInteger();
+            int connectAllWaitSeconds = node.groupProperties.getSeconds(GroupProperty.CONNECT_ALL_WAIT_SECONDS);
             int checkCount = 0;
             while (checkCount++ < connectAllWaitSeconds && !allConnected) {
                 try {
@@ -156,13 +157,15 @@ public abstract class AbstractJoiner implements Joiner {
         }
     }
 
-    protected final long getMaxJoinMillis() {return node.getGroupProperties().MAX_JOIN_SECONDS.getInteger() * 1000L;}
+    protected final long getMaxJoinMillis() {
+        return node.getGroupProperties().getMillis(GroupProperty.MAX_JOIN_SECONDS);
+    }
 
     protected final long getMaxJoinTimeToMasterNode() {
         // max join time to found master node,
         // this should be significantly greater than MAX_WAIT_SECONDS_BEFORE_JOIN property
         // hence we add 10 seconds more
-        return (node.getGroupProperties().MAX_WAIT_SECONDS_BEFORE_JOIN.getInteger() + 10) * 1000L;
+        return TimeUnit.SECONDS.toMillis(10) + node.getGroupProperties().getMillis(GroupProperty.MAX_WAIT_SECONDS_BEFORE_JOIN);
     }
 
     boolean shouldMerge(JoinMessage joinMessage) {

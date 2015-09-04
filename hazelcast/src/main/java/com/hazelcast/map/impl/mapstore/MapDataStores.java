@@ -20,6 +20,8 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapStoreConfig;
+import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.MapStoreWrapper;
 import com.hazelcast.map.impl.mapstore.writebehind.WriteBehindProcessor;
@@ -85,10 +87,10 @@ public final class MapDataStores {
     }
 
     private static WriteBehindQueue newWriteBehindQueue(MapServiceContext mapServiceContext, boolean writeCoalescing) {
-        final int capacity = mapServiceContext.getNodeEngine().getGroupProperties().MAP_WRITE_BEHIND_QUEUE_CAPACITY.getInteger();
+        GroupProperties groupProperties = mapServiceContext.getNodeEngine().getGroupProperties();
+        final int capacity = groupProperties.getInteger(GroupProperty.MAP_WRITE_BEHIND_QUEUE_CAPACITY);
         final AtomicInteger counter = mapServiceContext.getWriteBehindQueueItemCounter();
-        return writeCoalescing ? createDefaultWriteBehindQueue()
-                : createBoundedWriteBehindQueue(capacity, counter);
+        return (writeCoalescing ? createDefaultWriteBehindQueue() : createBoundedWriteBehindQueue(capacity, counter));
     }
 
     /**

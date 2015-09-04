@@ -1,12 +1,12 @@
 package com.hazelcast.map.query;
 
-
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.nio.serialization.PortableTest.ChildPortableObject;
 import com.hazelcast.nio.serialization.PortableTest.GrandParentPortableObject;
 import com.hazelcast.nio.serialization.PortableTest.ParentPortableObject;
@@ -57,7 +57,7 @@ public class QueryBasicTest extends HazelcastTestSupport {
     public void testPredicatedEvaluatedSingleThreadedByDefault() {
         Config config = new Config();
         GroupProperties properties = new GroupProperties(config);
-        boolean parallelEvaluation = properties.QUERY_PREDICATE_PARALLEL_EVALUATION.getBoolean();
+        boolean parallelEvaluation = properties.getBoolean(GroupProperty.QUERY_PREDICATE_PARALLEL_EVALUATION);
         assertEquals(false, parallelEvaluation);
     }
 
@@ -774,7 +774,7 @@ public class QueryBasicTest extends HazelcastTestSupport {
     @Test
     public void testQueryPortableObject_parallel() {
         Config config = new Config();
-        config.setProperty(GroupProperties.PROP_QUERY_PREDICATE_PARALLEL_EVALUATION, "true");
+        config.setProperty(GroupProperty.QUERY_PREDICATE_PARALLEL_EVALUATION, "true");
         testQueryUsingPortableObject(config, randomMapName());
     }
 

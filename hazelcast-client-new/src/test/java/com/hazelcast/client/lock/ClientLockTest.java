@@ -20,7 +20,7 @@ import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ILock;
-import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -284,7 +284,7 @@ public class ClientLockTest extends HazelcastTestSupport {
     @Test
     public void testMaxLockLeaseTime() {
         Config config = new Config();
-        config.setProperty(GroupProperties.PROP_LOCK_MAX_LEASE_TIME_SECONDS, "1");
+        config.setProperty(GroupProperty.LOCK_MAX_LEASE_TIME_SECONDS, "1");
 
         factory.newHazelcastInstance(config);
 
@@ -304,7 +304,7 @@ public class ClientLockTest extends HazelcastTestSupport {
     @Test(expected = IllegalArgumentException.class)
     public void testLockFail_whenGreaterThanMaxLeaseTimeUsed() {
         Config config = new Config();
-        config.setProperty(GroupProperties.PROP_LOCK_MAX_LEASE_TIME_SECONDS, "1");
+        config.setProperty(GroupProperty.LOCK_MAX_LEASE_TIME_SECONDS, "1");
 
         factory.newHazelcastInstance(config);
 

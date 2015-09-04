@@ -16,14 +16,13 @@
 
 package com.hazelcast.map.mapstore;
 
-
 import com.hazelcast.config.Config;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapLoader;
-import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -181,8 +180,8 @@ public class MapLoaderFailoverTest extends HazelcastTestSupport {
     private Config newConfig(String mapName, MapStoreConfig.InitialLoadMode loadMode, int backups, MapLoader loader) {
         Config cfg = new Config();
         cfg.setGroupConfig(new GroupConfig(getClass().getSimpleName()));
-        cfg.setProperty(GroupProperties.PROP_MAP_LOAD_CHUNK_SIZE, Integer.toString(BATCH_SIZE));
-        cfg.setProperty(GroupProperties.PROP_PARTITION_COUNT, "31");
+        cfg.setProperty(GroupProperty.MAP_LOAD_CHUNK_SIZE, Integer.toString(BATCH_SIZE));
+        cfg.setProperty(GroupProperty.PARTITION_COUNT, "31");
 
         MapStoreConfig mapStoreConfig = new MapStoreConfig()
                 .setImplementation(loader).setInitialLoadMode(loadMode);
@@ -191,5 +190,4 @@ public class MapLoaderFailoverTest extends HazelcastTestSupport {
 
         return cfg;
     }
-
 }

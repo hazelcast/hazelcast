@@ -2,12 +2,9 @@ package com.hazelcast.jmx;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-
-import java.lang.management.ManagementFactory;
-import java.util.Hashtable;
 
 import javax.management.AttributeNotFoundException;
 import javax.management.InstanceNotFoundException;
@@ -16,24 +13,26 @@ import javax.management.MBeanServer;
 import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
 import javax.management.ReflectionException;
+import java.lang.management.ManagementFactory;
+import java.util.Hashtable;
 
 import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
-
 import static org.junit.Assert.fail;
 
 /**
- * Holds the mbean server and hazelcast and provides some utility functions for accessing the mbeans.
+ * Holds the Hazelcast instance and MBean server and provides some utility functions for accessing the MBeans.
  */
-public final class JmxTestDataHolder {
+public final class MBeanDataHolder {
+
     private HazelcastInstance hz;
     private MBeanServer mbs;
 
     /**
-     * Initialize with new hazelcast instance and mbean server
+     * Initialize with new hazelcast instance and MBean server
      */
-    public JmxTestDataHolder(TestHazelcastInstanceFactory factory) {
+    public MBeanDataHolder(TestHazelcastInstanceFactory factory) {
         Config config = new Config();
-        config.setProperty(GroupProperties.PROP_ENABLE_JMX, "true");
+        config.setProperty(GroupProperty.ENABLE_JMX, "true");
         hz = factory.newHazelcastInstance(config);
         mbs = ManagementFactory.getPlatformMBeanServer();
     }
@@ -80,7 +79,7 @@ public final class JmxTestDataHolder {
     }
 
     /**
-     * Calls the mbean operation with given attributes
+     * Calls the MBean operation with given attributes
      *
      * @param type          Type of the Hazelcast object (first level of hierarchy), e.g. "IMap"
      * @param objectName    Name of the Hazelcast object (second level of hierarchy), e.g. "myMap"

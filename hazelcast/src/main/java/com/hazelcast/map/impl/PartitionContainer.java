@@ -19,6 +19,7 @@ package com.hazelcast.map.impl;
 import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.recordstore.DefaultRecordStore;
 import com.hazelcast.map.impl.recordstore.RecordStore;
@@ -58,7 +59,7 @@ public class PartitionContainer {
             GroupProperties groupProperties = nodeEngine.getGroupProperties();
 
             MapKeyLoader keyLoader = new MapKeyLoader(name, opService, ps, execService, mapContainer.toData());
-            keyLoader.setMaxBatch(groupProperties.MAP_LOAD_CHUNK_SIZE.getInteger());
+            keyLoader.setMaxBatch(groupProperties.getInteger(GroupProperty.MAP_LOAD_CHUNK_SIZE));
             keyLoader.setMaxSize(getMaxSizePerNode(mapConfig.getMaxSizeConfig()));
             keyLoader.setHasBackup(mapConfig.getBackupCount() > 0 || mapConfig.getAsyncBackupCount() > 0);
 

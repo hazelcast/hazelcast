@@ -18,6 +18,7 @@ package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.map.impl.MapContextQuerySupport;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.QueryResult;
@@ -117,7 +118,7 @@ public class QueryOperation extends AbstractMapOperation implements ReadonlyOper
         if (pagingPredicate != null) {
             runParallelForPaging(initialPartitions);
         } else {
-            boolean parallelEvaluation = groupProperties.QUERY_PREDICATE_PARALLEL_EVALUATION.getBoolean();
+            boolean parallelEvaluation = groupProperties.getBoolean(GroupProperty.QUERY_PREDICATE_PARALLEL_EVALUATION);
             if (parallelEvaluation) {
                 runParallel(initialPartitions);
             } else {

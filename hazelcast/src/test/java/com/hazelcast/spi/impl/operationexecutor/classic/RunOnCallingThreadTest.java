@@ -1,6 +1,6 @@
 package com.hazelcast.spi.impl.operationexecutor.classic;
 
-import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -39,7 +39,7 @@ public class RunOnCallingThreadTest extends AbstractClassicOperationExecutorTest
 
     @Test
     public void test_whenGenericOperation_andCallingFromGenericThread() {
-        config.setProperty(GroupProperties.PROP_GENERIC_OPERATION_THREAD_COUNT, "1");
+        config.setProperty(GroupProperty.GENERIC_OPERATION_THREAD_COUNT, "1");
         initExecutor();
 
         final DummyOperationRunner genericOperationHandler = ((DummyOperationRunnerFactory) handlerFactory).genericOperationHandlers.get(0);

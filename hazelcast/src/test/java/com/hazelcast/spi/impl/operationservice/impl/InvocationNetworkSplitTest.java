@@ -20,7 +20,7 @@ import com.hazelcast.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.MemberLeftException;
-import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.TestUtil;
 import com.hazelcast.spi.AbstractOperation;
@@ -186,7 +186,7 @@ public class InvocationNetworkSplitTest extends HazelcastTestSupport {
     private Config createConfig() {
         Config config = new Config();
         config.getGroupConfig().setName(generateRandomString(10));
-        config.setProperty(GroupProperties.PROP_MASTER_CONFIRMATION_INTERVAL_SECONDS, "1");
+        config.setProperty(GroupProperty.MASTER_CONFIRMATION_INTERVAL_SECONDS, "1");
         return config;
     }
 

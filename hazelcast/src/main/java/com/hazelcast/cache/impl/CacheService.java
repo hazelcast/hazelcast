@@ -20,8 +20,8 @@ import com.hazelcast.cache.impl.client.CacheBatchInvalidationMessage;
 import com.hazelcast.cache.impl.client.CacheInvalidationListener;
 import com.hazelcast.cache.impl.client.CacheSingleInvalidationMessage;
 import com.hazelcast.cache.impl.operation.CacheReplicationOperation;
+import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.nio.serialization.Data;
-
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.NodeEngine;
@@ -38,6 +38,10 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import static com.hazelcast.instance.GroupProperty.CACHE_INVALIDATION_MESSAGE_BATCH_ENABLED;
+import static com.hazelcast.instance.GroupProperty.CACHE_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS;
+import static com.hazelcast.instance.GroupProperty.CACHE_INVALIDATION_MESSAGE_BATCH_SIZE;
 
 /**
  * Cache Service is the main access point of JCache implementation.
@@ -79,20 +83,16 @@ public class CacheService extends AbstractCacheService {
     @Override
     protected void postInit(NodeEngine nodeEngine, Properties properties) {
         super.postInit(nodeEngine, properties);
-        invalidationMessageBatchEnabled =
-                nodeEngine.getGroupProperties().CACHE_INVALIDATION_MESSAGE_BATCH_ENABLED.getBoolean();
-        if (invalidationMessageBatchEnabled) {
-            invalidationMessageBatchSize =
-                    nodeEngine.getGroupProperties().CACHE_INVALIDATION_MESSAGE_BATCH_SIZE.getInteger();
-            int invalidationMessageBatchFreq =
-                    nodeEngine.getGroupProperties().CACHE_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS.getInteger();
-            cacheBatchInvalidationMessageSenderScheduler =
-                    nodeEngine.getExecutionService()
-                            .scheduleAtFixedRate(SERVICE_NAME + ":cacheBatchInvalidationMessageSender",
-                                    new CacheBatchInvalidationMessageSender(),
-                                    invalidationMessageBatchFreq,
-                                    invalidationMessageBatchFreq,
-                                    TimeUnit.SECONDS);
+        GroupProperties groupProperties = nodeEngine.getGroupProperties();
+        if (groupProperties.getBoolean(CACHE_INVALIDATION_MESSAGE_BATCH_ENABLED)) {
+            invalidationMessageBatchSize = groupProperties.getInteger(CACHE_INVALIDATION_MESSAGE_BATCH_SIZE);
+            int invalidationMessageBatchFreq = groupProperties.getInteger(CACHE_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS);
+            cacheBatchInvalidationMessageSenderScheduler = nodeEngine.getExecutionService()
+                    .scheduleAtFixedRate(SERVICE_NAME + ":cacheBatchInvalidationMessageSender",
+                            new CacheBatchInvalidationMessageSender(),
+                            invalidationMessageBatchFreq,
+                            invalidationMessageBatchFreq,
+                            TimeUnit.SECONDS);
         }
     }
 

@@ -19,6 +19,7 @@ package com.hazelcast.spi.impl.operationservice.impl;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.logging.ILogger;
@@ -99,7 +100,7 @@ public class InvocationRegistry {
         this.callIdSequence = backpressureRegulator.newCallIdSequence();
         GroupProperties props = nodeEngine.getGroupProperties();
         this.slowInvocationThresholdMs = initSlowInvocationThresholdMs(props);
-        this.backupTimeoutMillis = props.OPERATION_BACKUP_TIMEOUT_MILLIS.getLong();
+        this.backupTimeoutMillis = props.getMillis(GroupProperty.OPERATION_BACKUP_TIMEOUT_MILLIS);
         this.invocations = new ConcurrentHashMap<Long, Invocation>(INITIAL_CAPACITY, LOAD_FACTOR, concurrencyLevel);
 
         nodeEngine.getMetricsRegistry().scanAndRegister(this, "operation");
@@ -119,7 +120,7 @@ public class InvocationRegistry {
     }
 
     private long initSlowInvocationThresholdMs(GroupProperties props) {
-        long thresholdMs = props.SLOW_INVOCATION_DETECTOR_THRESHOLD_MILLIS.getLong();
+        long thresholdMs = props.getMillis(GroupProperty.SLOW_INVOCATION_DETECTOR_THRESHOLD_MILLIS);
         if (thresholdMs > -1) {
             logger.info("Slow invocation detector enabled, using threshold: " + thresholdMs + " ms");
         }

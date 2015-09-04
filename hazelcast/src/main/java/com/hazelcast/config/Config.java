@@ -19,6 +19,7 @@ package com.hazelcast.config;
 import com.hazelcast.config.matcher.MatchingPointConfigPatternMatcher;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.ManagedContext;
+import com.hazelcast.instance.HazelcastProperty;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 
@@ -164,14 +165,49 @@ public class Config {
         this.configPatternMatcher = configPatternMatcher;
     }
 
+    /**
+     * Gets a named property already set or from system properties if not exists.
+     *
+     * @param name property name
+     * @return value of the property
+     */
     public String getProperty(String name) {
         String value = properties.getProperty(name);
         return value != null ? value : System.getProperty(name);
     }
 
+    /**
+     * Sets the value of a named property.
+     *
+     * @param name  property name
+     * @param value value of the property
+     * @return configured {@link Config} for chaining
+     */
     public Config setProperty(String name, String value) {
         properties.put(name, value);
         return this;
+    }
+
+    /**
+     * Gets a {@link HazelcastProperty} already set or from system properties if not exists.
+     *
+     * @param property {@link HazelcastProperty} to get
+     * @return value of the property
+     */
+    public String getProperty(HazelcastProperty property) {
+        return getProperty(property.getName());
+    }
+
+    /**
+     * Sets the value of a {@link HazelcastProperty}.
+     *
+     * @param property {@link HazelcastProperty} to set
+     * @param value    value of the property
+     * @return configured {@link Config} for chaining
+     * @see {@link HazelcastProperty} for properties that is used to configure client
+     */
+    public Config setProperty(HazelcastProperty property, String value) {
+        return setProperty(property.getName(), value);
     }
 
     public MemberAttributeConfig getMemberAttributeConfig() {

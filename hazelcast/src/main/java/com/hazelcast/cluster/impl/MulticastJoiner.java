@@ -17,6 +17,7 @@
 package com.hazelcast.cluster.impl;
 
 import com.hazelcast.config.NetworkConfig;
+import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Address;
 import com.hazelcast.util.Clock;
@@ -122,10 +123,9 @@ public class MulticastJoiner extends AbstractJoiner {
                 }
 
                 if (joinInfo.getMemberCount() == 1) {
-                    // if the other cluster has just single member, that may be a newly starting node
-                    // instead of a split node.
-                    // Wait 2 times 'WAIT_SECONDS_BEFORE_JOIN' seconds before processing merge JoinRequest.
-                    Thread.sleep(node.groupProperties.WAIT_SECONDS_BEFORE_JOIN.getInteger() * 1000L * 2);
+                    // if the other cluster has just single member, that may be a newly starting node instead of a split node
+                    // wait 2 times 'WAIT_SECONDS_BEFORE_JOIN' seconds before processing merge JoinRequest
+                    Thread.sleep(2 * node.groupProperties.getMillis(GroupProperty.WAIT_SECONDS_BEFORE_JOIN));
                 }
 
                 JoinMessage response = sendSplitBrainJoinMessage(joinInfo.getAddress());

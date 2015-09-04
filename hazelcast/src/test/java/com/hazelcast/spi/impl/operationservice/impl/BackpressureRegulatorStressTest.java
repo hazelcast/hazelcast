@@ -22,12 +22,13 @@ import org.junit.runner.RunWith;
 
 import java.io.IOException;
 import java.util.Random;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
-import static com.hazelcast.instance.GroupProperties.*;
-import static com.hazelcast.test.HazelcastTestSupport.sleepAndStop;
+import static com.hazelcast.instance.GroupProperty.BACKPRESSURE_ENABLED;
+import static com.hazelcast.instance.GroupProperty.BACKPRESSURE_MAX_CONCURRENT_INVOCATIONS_PER_PARTITION;
+import static com.hazelcast.instance.GroupProperty.BACKPRESSURE_SYNCWINDOW;
+import static com.hazelcast.instance.GroupProperty.OPERATION_BACKUP_TIMEOUT_MILLIS;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static org.junit.Assert.assertEquals;
 
@@ -58,10 +59,10 @@ public class BackpressureRegulatorStressTest extends HazelcastTestSupport {
     @Before
     public void setup() {
         Config config = new Config()
-                .setProperty(PROP_OPERATION_BACKUP_TIMEOUT_MILLIS,"60000")
-                .setProperty(PROP_BACKPRESSURE_ENABLED, "true")
-                .setProperty(PROP_BACKPRESSURE_SYNCWINDOW, "10")
-                .setProperty(PROP_BACKPRESSURE_MAX_CONCURRENT_INVOCATIONS_PER_PARTITION, "2");
+                .setProperty(OPERATION_BACKUP_TIMEOUT_MILLIS, "60000")
+                .setProperty(BACKPRESSURE_ENABLED, "true")
+                .setProperty(BACKPRESSURE_SYNCWINDOW, "10")
+                .setProperty(BACKPRESSURE_MAX_CONCURRENT_INVOCATIONS_PER_PARTITION, "2");
         HazelcastInstance[] cluster = createHazelcastInstanceFactory(2).newInstances(config);
         local = cluster[0];
         remote = cluster[1];

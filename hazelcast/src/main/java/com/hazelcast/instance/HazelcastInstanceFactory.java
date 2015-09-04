@@ -42,6 +42,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.STARTED;
 import static com.hazelcast.util.Preconditions.checkHasText;
 import static com.hazelcast.util.Preconditions.checkNotNull;
+import static java.lang.String.format;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 @SuppressWarnings("SynchronizationOnStaticField")
@@ -162,10 +163,10 @@ public final class HazelcastInstanceFactory {
             proxy = new HazelcastInstanceProxy(hazelcastInstance);
             Node node = hazelcastInstance.node;
             boolean firstMember = isFirstMember(node);
-            int initialWaitSeconds = node.groupProperties.INITIAL_WAIT_SECONDS.getInteger();
+            long initialWaitSeconds = node.groupProperties.getSeconds(GroupProperty.INITIAL_WAIT_SECONDS);
             if (initialWaitSeconds > 0) {
-                hazelcastInstance.logger.info("Waiting "
-                        + initialWaitSeconds + " seconds before completing HazelcastInstance startup...");
+                hazelcastInstance.logger.info(format("Waiting %d ms before completing HazelcastInstance startup...",
+                        initialWaitSeconds));
                 try {
                     SECONDS.sleep(initialWaitSeconds);
                     if (firstMember) {
@@ -196,7 +197,7 @@ public final class HazelcastInstanceFactory {
     private static void awaitMinimalClusterSize(HazelcastInstanceImpl hazelcastInstance, Node node, boolean firstMember)
             throws InterruptedException {
 
-        int initialMinClusterSize = node.groupProperties.INITIAL_MIN_CLUSTER_SIZE.getInteger();
+        int initialMinClusterSize = node.groupProperties.getInteger(GroupProperty.INITIAL_MIN_CLUSTER_SIZE);
         while (node.getClusterService().getSize() < initialMinClusterSize) {
             try {
                 hazelcastInstance.logger.info("HazelcastInstance waiting for cluster size of " + initialMinClusterSize);

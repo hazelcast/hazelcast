@@ -21,7 +21,7 @@ import com.eclipsesource.json.JsonObject;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
-import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.internal.management.TimedMemberStateFactory;
 import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
@@ -54,8 +54,7 @@ abstract class SlowOperationDetectorAbstractTest extends HazelcastTestSupport {
 
     HazelcastInstance getSingleNodeCluster(int slowOperationThresholdMillis) {
         Config config = new Config();
-        config.setProperty(GroupProperties.PROP_SLOW_OPERATION_DETECTOR_THRESHOLD_MILLIS,
-                String.valueOf(slowOperationThresholdMillis));
+        config.setProperty(GroupProperty.SLOW_OPERATION_DETECTOR_THRESHOLD_MILLIS, String.valueOf(slowOperationThresholdMillis));
 
         return createHazelcastInstance(config);
     }
