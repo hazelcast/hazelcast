@@ -22,40 +22,29 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.transaction.impl.TransactionManagerServiceImpl;
-import com.hazelcast.transaction.impl.TransactionLogRecord;
 
 import java.io.IOException;
-import java.util.LinkedList;
-import java.util.List;
 
 import static com.hazelcast.spi.ExceptionAction.THROW_EXCEPTION;
-import static com.hazelcast.transaction.impl.TransactionDataSerializerHook.REPLICATE_TX;
+import static com.hazelcast.transaction.impl.TransactionDataSerializerHook.CREATE_TX_BACKUP_LOG;
 
-public final class ReplicateTxOperation extends TxBaseOperation {
+public final class CreateTxBackupLogOperation extends TxBaseOperation {
 
-    // todo: probably we don't want to use linked list.
-    private final List<TransactionLogRecord> records = new LinkedList<TransactionLogRecord>();
     private String callerUuid;
     private String txnId;
-    private long timeoutMillis;
-    private long startTime;
 
-    public ReplicateTxOperation() {
+    public CreateTxBackupLogOperation() {
     }
 
-    public ReplicateTxOperation(List<TransactionLogRecord> logs, String callerUuid, String txnId,
-                                long timeoutMillis, long startTime) {
-        records.addAll(logs);
+    public CreateTxBackupLogOperation(String callerUuid, String txnId) {
         this.callerUuid = callerUuid;
         this.txnId = txnId;
-        this.timeoutMillis = timeoutMillis;
-        this.startTime = startTime;
     }
 
     @Override
     public void run() throws Exception {
         TransactionManagerServiceImpl txManagerService = getService();
-        txManagerService.prepareTxBackupLog(records, callerUuid, txnId, timeoutMillis, startTime);
+        txManagerService.createBackupLog(callerUuid, txnId);
     }
 
     @Override
@@ -73,36 +62,18 @@ public final class ReplicateTxOperation extends TxBaseOperation {
 
     @Override
     public int getId() {
-        return REPLICATE_TX;
+        return CREATE_TX_BACKUP_LOG;
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         out.writeUTF(callerUuid);
         out.writeUTF(txnId);
-        out.writeLong(timeoutMillis);
-        out.writeLong(startTime);
-        int len = records.size();
-        out.writeInt(len);
-        if (len > 0) {
-            for (TransactionLogRecord record : records) {
-                out.writeObject(record);
-            }
-        }
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         callerUuid = in.readUTF();
         txnId = in.readUTF();
-        timeoutMillis = in.readLong();
-        startTime = in.readLong();
-        int len = in.readInt();
-        if (len > 0) {
-            for (int i = 0; i < len; i++) {
-                TransactionLogRecord record = in.readObject();
-                records.add(record);
-            }
-        }
     }
 }

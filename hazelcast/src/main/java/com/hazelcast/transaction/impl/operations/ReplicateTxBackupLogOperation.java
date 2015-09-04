@@ -22,29 +22,45 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.transaction.impl.TransactionManagerServiceImpl;
+import com.hazelcast.transaction.impl.TransactionLogRecord;
 
 import java.io.IOException;
+import java.util.LinkedList;
+import java.util.List;
 
 import static com.hazelcast.spi.ExceptionAction.THROW_EXCEPTION;
-import static com.hazelcast.transaction.impl.TransactionDataSerializerHook.BEGIN_TX_BACKUP;
+import static com.hazelcast.transaction.impl.TransactionDataSerializerHook.REPLICATE_TX_BACKUP_LOG;
 
-public final class BeginTxBackupOperation extends TxBaseOperation {
+/**
+ * Replicates the transactionlog to a remote system.
+ *
+ * This operation is only executed when durability > 0
+ */
+public final class ReplicateTxBackupLogOperation extends TxBaseOperation {
 
+    // todo: probably we don't want to use linked list.
+    private final List<TransactionLogRecord> records = new LinkedList<TransactionLogRecord>();
     private String callerUuid;
     private String txnId;
+    private long timeoutMillis;
+    private long startTime;
 
-    public BeginTxBackupOperation() {
+    public ReplicateTxBackupLogOperation() {
     }
 
-    public BeginTxBackupOperation(String callerUuid, String txnId) {
+    public ReplicateTxBackupLogOperation(List<TransactionLogRecord> logs, String callerUuid, String txnId,
+                                         long timeoutMillis, long startTime) {
+        records.addAll(logs);
         this.callerUuid = callerUuid;
         this.txnId = txnId;
+        this.timeoutMillis = timeoutMillis;
+        this.startTime = startTime;
     }
 
     @Override
     public void run() throws Exception {
         TransactionManagerServiceImpl txManagerService = getService();
-        txManagerService.beginTxBackupLog(callerUuid, txnId);
+        txManagerService.replicaBackupLog(records, callerUuid, txnId, timeoutMillis, startTime);
     }
 
     @Override
@@ -62,18 +78,36 @@ public final class BeginTxBackupOperation extends TxBaseOperation {
 
     @Override
     public int getId() {
-        return BEGIN_TX_BACKUP;
+        return REPLICATE_TX_BACKUP_LOG;
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         out.writeUTF(callerUuid);
         out.writeUTF(txnId);
+        out.writeLong(timeoutMillis);
+        out.writeLong(startTime);
+        int len = records.size();
+        out.writeInt(len);
+        if (len > 0) {
+            for (TransactionLogRecord record : records) {
+                out.writeObject(record);
+            }
+        }
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         callerUuid = in.readUTF();
         txnId = in.readUTF();
+        timeoutMillis = in.readLong();
+        startTime = in.readLong();
+        int len = in.readInt();
+        if (len > 0) {
+            for (int i = 0; i < len; i++) {
+                TransactionLogRecord record = in.readObject();
+                records.add(record);
+            }
+        }
     }
 }

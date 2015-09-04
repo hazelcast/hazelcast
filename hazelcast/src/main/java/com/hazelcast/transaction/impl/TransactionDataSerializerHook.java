@@ -20,11 +20,11 @@ import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
-import com.hazelcast.transaction.impl.operations.BeginTxBackupOperation;
+import com.hazelcast.transaction.impl.operations.CreateTxBackupLogOperation;
 import com.hazelcast.transaction.impl.operations.BroadcastTxRollbackOperation;
-import com.hazelcast.transaction.impl.operations.PurgeTxBackupOperation;
-import com.hazelcast.transaction.impl.operations.ReplicateTxOperation;
-import com.hazelcast.transaction.impl.operations.RollbackTxBackupOperation;
+import com.hazelcast.transaction.impl.operations.PurgeTxBackupLogOperation;
+import com.hazelcast.transaction.impl.operations.ReplicateTxBackupLogOperation;
+import com.hazelcast.transaction.impl.operations.RollbackTxBackupLogOperation;
 
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.TRANSACTION_DS_FACTORY;
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.TRANSACTION_DS_FACTORY_ID;
@@ -33,11 +33,11 @@ public final class TransactionDataSerializerHook implements DataSerializerHook {
 
     public static final int F_ID = FactoryIdHelper.getFactoryId(TRANSACTION_DS_FACTORY, TRANSACTION_DS_FACTORY_ID);
 
-    public static final int BEGIN_TX_BACKUP = 0;
+    public static final int CREATE_TX_BACKUP_LOG = 0;
     public static final int BROADCAST_TX_ROLLBACK = 1;
-    public static final int PURGE_TX_BACKUP = 2;
-    public static final int REPLICATE_TX = 3;
-    public static final int ROLLBACK_TX_BACKUP = 4;
+    public static final int PURGE_TX_BACKUP_LOG = 2;
+    public static final int REPLICATE_TX_BACKUP_LOG = 3;
+    public static final int ROLLBACK_TX_BACKUP_LOG = 4;
 
     @Override
     public int getFactoryId() {
@@ -50,16 +50,16 @@ public final class TransactionDataSerializerHook implements DataSerializerHook {
             @Override
             public IdentifiedDataSerializable create(int typeId) {
                 switch (typeId) {
-                    case BEGIN_TX_BACKUP:
-                        return new BeginTxBackupOperation();
+                    case CREATE_TX_BACKUP_LOG:
+                        return new CreateTxBackupLogOperation();
                     case BROADCAST_TX_ROLLBACK:
                         return new BroadcastTxRollbackOperation();
-                    case PURGE_TX_BACKUP:
-                        return new PurgeTxBackupOperation();
-                    case REPLICATE_TX:
-                        return new ReplicateTxOperation();
-                    case ROLLBACK_TX_BACKUP:
-                        return new RollbackTxBackupOperation();
+                    case PURGE_TX_BACKUP_LOG:
+                        return new PurgeTxBackupLogOperation();
+                    case REPLICATE_TX_BACKUP_LOG:
+                        return new ReplicateTxBackupLogOperation();
+                    case ROLLBACK_TX_BACKUP_LOG:
+                        return new RollbackTxBackupLogOperation();
                     default:
                         return null;
                 }

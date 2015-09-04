@@ -42,7 +42,6 @@ import javax.transaction.xa.XAResource;
 import java.util.HashMap;
 import java.util.Map;
 
-import static com.hazelcast.transaction.TransactionOptions.TransactionType.TWO_PHASE;
 import static com.hazelcast.transaction.impl.Transaction.State.ACTIVE;
 
 final class TransactionContextImpl implements TransactionContext {
@@ -70,7 +69,7 @@ final class TransactionContextImpl implements TransactionContext {
 
     @Override
     public void commitTransaction() throws TransactionException {
-        if (transaction.getTransactionType().equals(TWO_PHASE)) {
+        if (transaction.requiresPrepare()) {
             transaction.prepare();
         }
         transaction.commit();
@@ -89,14 +88,14 @@ final class TransactionContextImpl implements TransactionContext {
 
     @SuppressWarnings("unchecked")
     @Override
-    public <E> TransactionalQueue<E> getQueue(String name) {
-        return (TransactionalQueue<E>) getTransactionalObject(QueueService.SERVICE_NAME, name);
+    public <K, V> TransactionalMultiMap<K, V> getMultiMap(String name) {
+        return (TransactionalMultiMap<K, V>) getTransactionalObject(MultiMapService.SERVICE_NAME, name);
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    public <K, V> TransactionalMultiMap<K, V> getMultiMap(String name) {
-        return (TransactionalMultiMap<K, V>) getTransactionalObject(MultiMapService.SERVICE_NAME, name);
+    public <E> TransactionalQueue<E> getQueue(String name) {
+        return (TransactionalQueue<E>) getTransactionalObject(QueueService.SERVICE_NAME, name);
     }
 
     @SuppressWarnings("unchecked")
@@ -116,6 +115,10 @@ final class TransactionContextImpl implements TransactionContext {
     public TransactionalObject getTransactionalObject(String serviceName, String name) {
         checkActive(serviceName, name);
 
+        if (requiresBackupLogs(serviceName)) {
+            transaction.ensureBackupLogsExist();
+        }
+
         TransactionalObjectKey key = new TransactionalObjectKey(serviceName, name);
         TransactionalObject obj = txnObjectMap.get(key);
         if (obj != null) {
@@ -127,6 +130,18 @@ final class TransactionContextImpl implements TransactionContext {
         obj = transactionalService.createTransactionalObject(name, transaction);
         txnObjectMap.put(key, obj);
         return obj;
+    }
+
+    private boolean requiresBackupLogs(String serviceName) {
+        if (serviceName.equals(MapService.SERVICE_NAME)) {
+            return false;
+        }
+
+        if (serviceName.equals(MultiMapService.SERVICE_NAME)) {
+            return false;
+        }
+
+        return true;
     }
 
     private TransactionalService getTransactionalService(String serviceName) {

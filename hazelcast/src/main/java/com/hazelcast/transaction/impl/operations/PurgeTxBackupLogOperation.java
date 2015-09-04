@@ -26,23 +26,23 @@ import com.hazelcast.transaction.impl.TransactionManagerServiceImpl;
 import java.io.IOException;
 
 import static com.hazelcast.spi.ExceptionAction.THROW_EXCEPTION;
-import static com.hazelcast.transaction.impl.TransactionDataSerializerHook.PURGE_TX_BACKUP;
+import static com.hazelcast.transaction.impl.TransactionDataSerializerHook.PURGE_TX_BACKUP_LOG;
 
-public final class PurgeTxBackupOperation extends TxBaseOperation {
+public final class PurgeTxBackupLogOperation extends TxBaseOperation {
 
     private String txnId;
 
-    public PurgeTxBackupOperation() {
+    public PurgeTxBackupLogOperation() {
     }
 
-    public PurgeTxBackupOperation(String txnId) {
+    public PurgeTxBackupLogOperation(String txnId) {
         this.txnId = txnId;
     }
 
     @Override
     public void run() throws Exception {
         TransactionManagerServiceImpl txManagerService = getService();
-        txManagerService.purgeTxBackupLog(txnId);
+        txManagerService.purgeBackupLog(txnId);
     }
 
     @Override
@@ -55,7 +55,7 @@ public final class PurgeTxBackupOperation extends TxBaseOperation {
 
     @Override
     public int getId() {
-        return PURGE_TX_BACKUP;
+        return PURGE_TX_BACKUP_LOG;
     }
 
     @Override
