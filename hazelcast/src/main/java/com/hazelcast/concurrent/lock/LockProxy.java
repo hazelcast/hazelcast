@@ -19,12 +19,10 @@ package com.hazelcast.concurrent.lock;
 import com.hazelcast.core.ICondition;
 import com.hazelcast.core.ILock;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.ObjectNamespace;
 
-import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 
@@ -149,17 +147,6 @@ public class LockProxy extends AbstractDistributedObject<LockServiceImpl> implem
 
     ObjectNamespace getNamespace() {
         return lockSupport.getNamespace();
-    }
-
-    // will be removed when HazelcastInstance.getLock(Object key) is removed from API
-    public static String convertToStringKey(Object key, SerializationService serializationService) {
-        if (key instanceof String) {
-            return String.valueOf(key);
-        } else {
-            Data data = serializationService.toData(key, PARTITIONING_STRATEGY);
-            byte[] buffer = data.toByteArray();
-            return Arrays.toString(buffer);
-        }
     }
 
     @Override
