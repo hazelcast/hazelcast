@@ -231,16 +231,17 @@ public class TransactionImpl implements Transaction {
             waitWithDeadline(futures, timeoutMillis, MILLISECONDS, RETHROW_TRANSACTION_EXCEPTION);
             futures.clear();
             state = PREPARED;
-            if (durability > 0) {
-                replicateTxnLog();
-            }
+            replicateTxnLog();
         } catch (Throwable e) {
             throw ExceptionUtil.rethrow(e, TransactionException.class);
         }
     }
 
-    // todo: should be moved to TransactionLog?
     private void replicateTxnLog() throws InterruptedException, ExecutionException, java.util.concurrent.TimeoutException {
+        if (skipTxLogReplication()) {
+            return;
+        }
+
         List<Future> futures = new ArrayList<Future>(transactionLog.size());
         OperationService operationService = nodeEngine.getOperationService();
         for (Address backupAddress : backupAddresses) {
@@ -323,36 +324,42 @@ public class TransactionImpl implements Transaction {
         }
     }
 
-    //todo: move to transactionlog?
     private void rollbackTxBackup() {
+        if (skipTxLogReplication()) {
+            return;
+        }
+
         OperationService operationService = nodeEngine.getOperationService();
         List<Future> futures = new ArrayList<Future>(transactionLog.size());
-        // rollback tx backup
-        if (durability > 0 && transactionType.equals(TWO_PHASE)) {
-            for (Address backupAddress : backupAddresses) {
-                if (nodeEngine.getClusterService().getMember(backupAddress) != null) {
-                    final Future f = operationService.invokeOnTarget(TransactionManagerServiceImpl.SERVICE_NAME,
-                            new RollbackTxBackupOperation(txnId), backupAddress);
-                    futures.add(f);
-                }
+        for (Address backupAddress : backupAddresses) {
+            if (nodeEngine.getClusterService().getMember(backupAddress) != null) {
+                final Future f = operationService.invokeOnTarget(TransactionManagerServiceImpl.SERVICE_NAME,
+                        new RollbackTxBackupOperation(txnId), backupAddress);
+                futures.add(f);
             }
-
-            waitWithDeadline(futures, timeoutMillis, MILLISECONDS, rollbackTxExceptionHandler);
-            futures.clear();
         }
+
+        waitWithDeadline(futures, timeoutMillis, MILLISECONDS, rollbackTxExceptionHandler);
+        futures.clear();
+    }
+
+    private boolean skipTxLogReplication() {
+        return durability <= 0 || !transactionType.equals(TWO_PHASE) || transactionLog.size() <= 1;
     }
 
     private void purgeTxBackups() {
-        if (durability > 0 && transactionType.equals(TWO_PHASE)) {
-            OperationService operationService = nodeEngine.getOperationService();
-            for (Address backupAddress : backupAddresses) {
-                if (nodeEngine.getClusterService().getMember(backupAddress) != null) {
-                    try {
-                        operationService.invokeOnTarget(TransactionManagerServiceImpl.SERVICE_NAME,
-                                new PurgeTxBackupOperation(txnId), backupAddress);
-                    } catch (Throwable e) {
-                        nodeEngine.getLogger(getClass()).warning("Error during purging backups!", e);
-                    }
+        if (skipTxLogReplication()) {
+            return;
+        }
+
+        OperationService operationService = nodeEngine.getOperationService();
+        for (Address backupAddress : backupAddresses) {
+            if (nodeEngine.getClusterService().getMember(backupAddress) != null) {
+                try {
+                    operationService.invokeOnTarget(TransactionManagerServiceImpl.SERVICE_NAME,
+                            new PurgeTxBackupOperation(txnId), backupAddress);
+                } catch (Throwable e) {
+                    nodeEngine.getLogger(getClass()).warning("Error during purging backups!", e);
                 }
             }
         }
