@@ -241,6 +241,13 @@ public class TransactionImpl implements Transaction {
 
     // todo: should be moved to TransactionLog?
     private void replicateTxnLog() throws InterruptedException, ExecutionException, java.util.concurrent.TimeoutException {
+        // If there is a single item in the transaction-log, the transactionLog doesn't need to be replicated since the system
+        // can't end up in a partially committed state (where some records have been written and some have not).
+        // This should speed up the performance of transactions toughing a single item.
+        if (transactionLog.size() <= 1) {
+            return;
+        }
+
         List<Future> futures = new ArrayList<Future>(transactionLog.size());
         OperationService operationService = nodeEngine.getOperationService();
         for (Address backupAddress : backupAddresses) {
