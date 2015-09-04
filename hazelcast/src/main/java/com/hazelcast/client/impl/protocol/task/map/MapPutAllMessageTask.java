@@ -18,47 +18,35 @@ package com.hazelcast.client.impl.protocol.task.map;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapPutAllCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractAllPartitionsMessageTask;
+import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.map.impl.MapEntrySet;
 import com.hazelcast.map.impl.MapService;
-import com.hazelcast.map.impl.operation.MapPutAllOperationFactory;
+import com.hazelcast.map.impl.operation.PutAllOperation;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
-import com.hazelcast.spi.OperationFactory;
-import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.spi.Operation;
 
 import java.security.Permission;
 import java.util.Map;
 
 public class MapPutAllMessageTask
-        extends AbstractAllPartitionsMessageTask<MapPutAllCodec.RequestParameters> {
+        extends AbstractPartitionMessageTask<MapPutAllCodec.RequestParameters> {
 
     public MapPutAllMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected OperationFactory createOperationFactory() {
+    protected Operation prepareOperation() {
         final MapEntrySet mapEntrySet = new MapEntrySet();
         for (Map.Entry<Data, Data> entry : parameters.entries.entrySet()) {
             mapEntrySet.add(entry.getKey(), entry.getValue());
         }
-        return new MapPutAllOperationFactory(parameters.name, mapEntrySet);
-    }
-
-    @Override
-    protected Object reduce(Map<Integer, Object> map) {
-        MapService mapService = getService(MapService.SERVICE_NAME);
-        for (Map.Entry<Integer, Object> entry : map.entrySet()) {
-            Object result = mapService.getMapServiceContext().toObject(entry.getValue());
-            if (result instanceof Throwable) {
-                throw ExceptionUtil.rethrow((Throwable) result);
-            }
-        }
-        return null;
+        PutAllOperation operation = new PutAllOperation(parameters.name, mapEntrySet);
+        return operation;
     }
 
     @Override

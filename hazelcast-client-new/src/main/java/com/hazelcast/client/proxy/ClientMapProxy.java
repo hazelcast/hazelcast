@@ -79,6 +79,7 @@ import com.hazelcast.client.impl.protocol.codec.MapValuesWithPredicateCodec;
 import com.hazelcast.client.nearcache.ClientHeapNearCache;
 import com.hazelcast.client.nearcache.ClientNearCache;
 import com.hazelcast.client.spi.ClientListenerService;
+import com.hazelcast.client.spi.ClientPartitionService;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.client.spi.impl.ClientInvocation;
@@ -1231,15 +1232,43 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
 
     @Override
     public void putAll(Map<? extends K, ? extends V> m) {
-        Map<Data, Data> map = new HashMap<Data, Data>();
+        ClientPartitionService partitionService = getContext().getPartitionService();
+        Map<Integer, Map<Data, Data>> entryMap = new HashMap<Integer, Map<Data, Data>>(partitionService.getPartitionCount());
+        
         for (Entry<? extends K, ? extends V> entry : m.entrySet()) {
+            checkNotNull(entry.getKey(), NULL_KEY_IS_NOT_ALLOWED);
+            checkNotNull(entry.getValue(), NULL_VALUE_IS_NOT_ALLOWED);
+            
             final Data keyData = toData(entry.getKey());
             invalidateNearCache(keyData);
-            map.put(keyData, toData(entry.getValue()));
+            
+            int partitionId = partitionService.getPartitionId(keyData);
+            Map<Data, Data> partition = entryMap.get(partitionId); 
+            if (partition == null) {
+                partition = new HashMap<Data, Data>();
+                entryMap.put(partitionId, partition);
+            }
+
+            partition.put(keyData, toData(entry.getValue()));
+        }
+        
+        List<Future<?>> futures = new ArrayList<Future<?>>(entryMap.size());
+        for (final Map.Entry<Integer, Map<Data, Data>> entry : entryMap.entrySet()) {
+            final Integer partitionId = entry.getKey();
+            //If there is only one entry, consider how we can use MapPutRequest
+            //without having to get back the return value.
+            ClientMessage request = MapPutAllCodec.encodeRequest(name, entry.getValue());
+            futures.add(new ClientInvocation(getClient(), request, partitionId).invoke());
         }
 
-        ClientMessage request = MapPutAllCodec.encodeRequest(name, map);
-        invoke(request);
+        try {
+            for (Future<?> future : futures) {
+                future.get();
+            }
+        } catch (Exception e) {
+            ExceptionUtil.rethrow(e);
+        }
+        
     }
 
     @Override
