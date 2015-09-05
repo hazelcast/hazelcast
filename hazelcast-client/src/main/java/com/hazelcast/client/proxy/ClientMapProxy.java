@@ -730,17 +730,45 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
         if (keySet.isEmpty()) {
             return result;
         }
-        MapGetAllRequest request = new MapGetAllRequest(name, keySet);
-        MapEntrySet mapEntrySet = invoke(request);
-        Set<Entry<Data, Data>> entrySet = mapEntrySet.getEntrySet();
-        for (Entry<Data, Data> dataEntry : entrySet) {
-            final V value = toObject(dataEntry.getValue());
-            final K key = toObject(dataEntry.getKey());
-            result.put(key, value);
-            if (nearCache != null) {
-                nearCache.put(dataEntry.getKey(), value);
+        
+        ClientPartitionService partitionService = getContext().getPartitionService();
+        int partitionCount = partitionService.getPartitionCount();
+        List<Future<Data>> futures = new ArrayList<Future<Data>>(partitionCount);
+        
+        Map<Integer, Set<Data>> partitionToKeyData = new HashMap<Integer, Set<Data>>();
+        
+        for (Data keyData : keySet) {
+            int partitionId = partitionService.getPartitionId(keyData);
+            Set<Data> keyDataSet = partitionToKeyData.get(partitionId);
+            if (keyDataSet == null) {
+                keyDataSet = new HashSet<Data>();
+                partitionToKeyData.put(partitionId, keyDataSet);
+            }
+            keyDataSet.add(keyData);
+        }
+        
+        for (final Map.Entry<Integer, Set<Data>> entry : partitionToKeyData.entrySet()) {
+            int partitionId = entry.getKey();
+            MapGetAllRequest request = new MapGetAllRequest(name, entry.getValue(), partitionId);
+            futures.add(new ClientInvocation(getClient(), request, partitionId).invoke());
+        }
+               
+        for (Future<Data> response : futures) {
+            try {
+                MapEntrySet mapEntrySet = toObject(response.get());
+                for (Entry<Data, Data> dataEntry : mapEntrySet.getEntrySet()) {
+                    final V value = toObject(dataEntry.getValue());
+                    final K key = toObject(dataEntry.getKey());
+                    result.put(key, value);
+                    if (nearCache != null) {
+                        nearCache.put(dataEntry.getKey(), value);
+                    }
+                }
+            } catch (Exception e) {
+                ExceptionUtil.rethrow(e);
             }
         }
+
         return result;
     }
 

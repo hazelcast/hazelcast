@@ -18,24 +18,20 @@ package com.hazelcast.client.impl.protocol.task.map;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapGetAllCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractAllPartitionsMessageTask;
+import com.hazelcast.client.impl.protocol.task.AbstractPartitionMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.map.impl.MapEntrySet;
 import com.hazelcast.map.impl.MapService;
-import com.hazelcast.map.impl.operation.MapGetAllOperationFactory;
+import com.hazelcast.map.impl.operation.GetAllOperation;
 import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
-import com.hazelcast.spi.OperationFactory;
+import com.hazelcast.spi.Operation;
 
 import java.security.Permission;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
 
 public class MapGetAllMessageTask
-        extends AbstractAllPartitionsMessageTask<MapGetAllCodec.RequestParameters> {
+        extends AbstractPartitionMessageTask<MapGetAllCodec.RequestParameters> {
 
 
     public MapGetAllMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
@@ -43,22 +39,8 @@ public class MapGetAllMessageTask
     }
 
     @Override
-    protected OperationFactory createOperationFactory() {
-        return new MapGetAllOperationFactory(parameters.name, parameters.keys);
-    }
-
-    @Override
-    protected Object reduce(Map<Integer, Object> map) {
-        HashMap<Data, Data> dataMap = new HashMap<Data, Data>();
-        MapService mapService = getService(MapService.SERVICE_NAME);
-        for (Map.Entry<Integer, Object> entry : map.entrySet()) {
-            MapEntrySet mapEntrySet = (MapEntrySet) mapService.getMapServiceContext().toObject(entry.getValue());
-            Set<Map.Entry<Data, Data>> entrySet = mapEntrySet.getEntrySet();
-            for (Map.Entry<Data, Data> dataEntry : entrySet) {
-                dataMap.put(dataEntry.getKey(), dataEntry.getValue());
-            }
-        }
-        return dataMap.entrySet();
+    protected Operation prepareOperation() {
+        return new GetAllOperation(parameters.name, parameters.keys);
     }
 
     @Override
@@ -73,7 +55,7 @@ public class MapGetAllMessageTask
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return MapGetAllCodec.encodeResponse((Set<Map.Entry<Data, Data>>) response);
+        return MapGetAllCodec.encodeResponse(((MapEntrySet) response).getEntrySet());
     }
 
     @Override
