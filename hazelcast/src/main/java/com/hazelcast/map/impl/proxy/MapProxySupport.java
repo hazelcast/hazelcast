@@ -830,7 +830,6 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
     protected void putAllInternal(Map<? extends Object, ? extends Object> entries) {
         NodeEngine nodeEngine = getNodeEngine();
         InternalPartitionService partitionService = nodeEngine.getPartitionService();
-        OperationService operationService = nodeEngine.getOperationService();
         int partitionCount = partitionService.getPartitionCount();
         final MapServiceContext mapServiceContext = getService().getMapServiceContext();
 
@@ -860,24 +859,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
                 MapEntrySet entrySet = entrySetPerPartition[partitionId];
                 if (entrySet != null) {
                     // If there is a single entry, we could make use of a PutOperation since that is a bit cheaper
-                    Operation op = new PutAllOperation(name, entrySet).setPartitionId(partitionId);
-                    final long size = entrySet.getEntrySet().size();
-                    final long time = System.currentTimeMillis();
-                    InternalCompletableFuture<Object> f = operationService.invokeOnPartition(SERVICE_NAME, op, partitionId);
-                    f.andThen(new ExecutionCallback() {
-                        @Override
-                        public void onResponse(Object response) {
-                            LocalMapStatsProvider localMapStatsProvider = mapServiceContext.getLocalMapStatsProvider();
-                            LocalMapStatsImpl localMapStats = localMapStatsProvider.getLocalMapStatsImpl(name);
-                            long currentTime = System.currentTimeMillis();
-                            localMapStats.incrementPuts(size, currentTime - time);
-                        }
-
-                        @Override
-                        public void onFailure(Throwable t) {
-
-                        }
-                    });
+                    Future f = createPutAllOperationFuture(name, entrySet, partitionId);
                     futures.add(f);
                 }
             }
@@ -889,6 +871,29 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }
+    }
+
+    private Future createPutAllOperationFuture(final String name, MapEntrySet entrySet, int partitionId) {
+        OperationService operationService = getNodeEngine().getOperationService();
+        Operation op = new PutAllOperation(name, entrySet).setPartitionId(partitionId);
+        final long size = entrySet.getEntrySet().size();
+        final long time = System.currentTimeMillis();
+        InternalCompletableFuture<Object> f = operationService.invokeOnPartition(SERVICE_NAME, op, partitionId);
+        f.andThen(new ExecutionCallback() {
+            @Override
+            public void onResponse(Object response) {
+                LocalMapStatsProvider localMapStatsProvider = mapServiceContext.getLocalMapStatsProvider();
+                LocalMapStatsImpl localMapStats = localMapStatsProvider.getLocalMapStatsImpl(name);
+                long currentTime = System.currentTimeMillis();
+                localMapStats.incrementPuts(size, currentTime - time);
+            }
+
+            @Override
+            public void onFailure(Throwable t) {
+
+            }
+        });
+        return f;
     }
 
     public void flush() {
