@@ -240,6 +240,18 @@ public class ClientExceptionFactory {
                 return new IllegalArgumentException(message, cause);
             }
         });
+        register(ClientProtocolErrorCodes.ILLEGAL_ACCESS_EXCEPTION, IllegalAccessException.class, new ExceptionFactory() {
+            @Override
+            public Throwable createException(String message, Throwable cause) {
+                return new IllegalAccessException(message);
+            }
+        });
+        register(ClientProtocolErrorCodes.ILLEGAL_ACCESS_ERROR, IllegalAccessError.class, new ExceptionFactory() {
+            @Override
+            public Throwable createException(String message, Throwable cause) {
+                return new IllegalAccessError(message);
+            }
+        });
         register(ClientProtocolErrorCodes.ILLEGAL_MONITOR_STATE, IllegalMonitorStateException.class, new ExceptionFactory() {
             @Override
             public Throwable createException(String message, Throwable cause) {
