@@ -400,7 +400,7 @@ public enum GroupProperty implements HazelcastProperty {
      * <p/>
      * Only valid for Hazelcast Enterprise.
      */
-    ENTERPRISE_WAN_REP_OP_TIMEOUT_MILLIS("hazelcast.enterprise.wanrep.optimeout.millis", 60000),
+    ENTERPRISE_WAN_REP_OP_TIMEOUT_MILLIS("hazelcast.enterprise.wanrep.optimeout.millis", 60000, MILLISECONDS),
 
     /**
      * Defines cache invalidation event batch sending is enabled or not.
