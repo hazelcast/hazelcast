@@ -14,26 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.cache.impl.eviction;
-
 /**
- * Interface for checking about if eviction is required or not.
+ * <p>
+ *     Sampling based {@link com.hazelcast.internal.eviction.EvictionStrategy} implementations for cache.
+ * </p>
  */
-public interface EvictionChecker {
-
-    EvictionChecker EVICT_ALWAYS = new EvictionChecker() {
-        @Override
-        public boolean isEvictionRequired() {
-            // Evict always at any case
-            return true;
-        }
-    };
-
-    /**
-     * Checks for if eviction is required or not.
-     *
-     * @return <code>true</code> if eviction is required, otherwise <code>false</code>
-     */
-    boolean isEvictionRequired();
-
-}
+package com.hazelcast.internal.eviction.impl.strategy.sampling;

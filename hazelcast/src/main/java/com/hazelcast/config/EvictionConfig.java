@@ -16,9 +16,9 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.cache.impl.eviction.EvictionConfiguration;
-import com.hazelcast.cache.impl.eviction.EvictionPolicyType;
-import com.hazelcast.cache.impl.eviction.EvictionStrategyType;
+import com.hazelcast.internal.eviction.EvictionConfiguration;
+import com.hazelcast.internal.eviction.EvictionPolicyType;
+import com.hazelcast.internal.eviction.EvictionStrategyType;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;

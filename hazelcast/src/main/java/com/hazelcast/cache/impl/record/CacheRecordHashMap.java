@@ -17,9 +17,9 @@
 package com.hazelcast.cache.impl.record;
 
 import com.hazelcast.cache.impl.CacheKeyIteratorResult;
-import com.hazelcast.cache.impl.eviction.Evictable;
-import com.hazelcast.cache.impl.eviction.EvictionCandidate;
-import com.hazelcast.cache.impl.eviction.EvictionListener;
+import com.hazelcast.internal.eviction.Evictable;
+import com.hazelcast.internal.eviction.EvictionCandidate;
+import com.hazelcast.internal.eviction.EvictionListener;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.util.ConcurrentReferenceHashMap;
 import com.hazelcast.util.SampleableConcurrentHashMap;

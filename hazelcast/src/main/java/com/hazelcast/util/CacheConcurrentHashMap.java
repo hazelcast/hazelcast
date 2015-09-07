@@ -17,7 +17,7 @@
 package com.hazelcast.util;
 
 import com.hazelcast.cache.impl.CacheKeyIteratorResult;
-import com.hazelcast.cache.impl.eviction.Expirable;
+import com.hazelcast.internal.eviction.Expirable;
 import com.hazelcast.nio.serialization.Data;
 
 import java.util.ArrayList;

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.cache.impl.eviction;
+package com.hazelcast.internal.eviction;
 
 /**
  * Enum for eviction policy types.

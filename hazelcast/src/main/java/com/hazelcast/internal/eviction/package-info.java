@@ -19,4 +19,4 @@
  *     Eviction policy implementations for cache.
  * </p>
  */
-package com.hazelcast.cache.impl.eviction;
+package com.hazelcast.internal.eviction;

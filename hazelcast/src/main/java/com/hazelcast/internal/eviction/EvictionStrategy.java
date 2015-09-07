@@ -14,11 +14,16 @@
  * limitations under the License.
  */
 
-package com.hazelcast.cache.impl.eviction;
+package com.hazelcast.internal.eviction;
 
 /**
  * Interface for eviction implementations to evict {@link EvictableStore} implementations as specified
  * {@link EvictionPolicyEvaluator}.
+ *
+ * @param <A> Type of the accessor (id) of the {@link com.hazelcast.internal.eviction.EvictionCandidate}
+ * @param <E> Type of the {@link com.hazelcast.internal.eviction.Evictable} value of
+ *            {@link com.hazelcast.internal.eviction.EvictionCandidate}
+ * @param <S> Type of the {@link com.hazelcast.internal.eviction.EvictableStore}
  */
 public interface EvictionStrategy<A, E extends Evictable, S extends EvictableStore<A, E>> {
 
@@ -35,7 +40,9 @@ public interface EvictionStrategy<A, E extends Evictable, S extends EvictableSto
      *
      * @return evicted entry count
      */
-    int evict(S evictableStore, EvictionPolicyEvaluator<A, E> evictionPolicyEvaluator,
-            EvictionChecker evictionChecker, EvictionListener<A, E> evictionListener);
+    int evict(S evictableStore,
+              EvictionPolicyEvaluator<A, E> evictionPolicyEvaluator,
+              EvictionChecker evictionChecker,
+              EvictionListener<A, E> evictionListener);
 
 }
