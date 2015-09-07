@@ -104,9 +104,9 @@ public class InvalidConfigurationTest {
         buildConfig("map-max-idle-seconds", "-1");
     }
 
-    @Test(expected = InvalidConfigurationException.class)
-    public void testWhenInvalid_MapEvictionPolicy() {
-        buildConfig("map-eviction-policy", "none");
+    @Test
+    public void testWhenValid_MapEvictionPolicy() {
+        buildConfig("map-eviction-policy", "NONE");
     }
 
     @Test(expected = InvalidConfigurationException.class)
@@ -295,6 +295,11 @@ public class InvalidConfigurationTest {
     @Test
     public void testWhenValid_CacheEvictionSize() {
         buildConfig("cache-eviction-size", "100");
+    }
+
+    @Test(expected = InvalidConfigurationException.class)
+    public void testWhenInvalid_CacheEvictionPolicy() {
+        buildConfig("cache-eviction-policy", "NONE");
     }
 
     String getDraftXml() {
