@@ -43,6 +43,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.instance.OutOfMemoryErrorDispatcher.inspectOutputMemoryError;
+import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.spi.Operation.CALL_ID_LOCAL_SKIPPED;
 import static com.hazelcast.spi.OperationAccessor.setCallId;
 import static com.hazelcast.util.counters.MwCounter.newMwCounter;
@@ -72,7 +73,7 @@ public class InvocationRegistry {
 
     private final long backupTimeoutMillis;
 
-    @Probe(name = "invocations.pending")
+    @Probe(name = "invocations.pending", level = MANDATORY)
     private final ConcurrentMap<Long, Invocation> invocations;
     private final NodeEngineImpl nodeEngine;
     private final ILogger logger;
@@ -80,17 +81,17 @@ public class InvocationRegistry {
     private final CallIdSequence callIdSequence;
     private final long slowInvocationThresholdMs;
 
-    @Probe(name = "response.normal.count")
+    @Probe(name = "response.normal.count", level = MANDATORY)
     private final SwCounter responseNormalCounter = newSwCounter();
-    @Probe(name = "response.timeout.count")
+    @Probe(name = "response.timeout.count", level = MANDATORY)
     private final SwCounter responseTimeoutCounter = newSwCounter();
-    @Probe(name = "response.backup.count")
+    @Probe(name = "response.backup.count", level = MANDATORY)
     private final MwCounter responseBackupCounter = newMwCounter();
-    @Probe(name = "response.error.count")
+    @Probe(name = "response.error.count", level = MANDATORY)
     private final SwCounter responseErrorCounter = newSwCounter();
-    @Probe(name = "invocations.backupTimeouts")
+    @Probe(name = "invocations.backupTimeouts", level = MANDATORY)
     private final SwCounter backupTimeoutsCount = newSwCounter();
-    @Probe(name = "invocations.normalTimeouts")
+    @Probe(name = "invocations.normalTimeouts", level = MANDATORY)
     private final SwCounter normalTimeoutsCount = newSwCounter();
 
     public InvocationRegistry(NodeEngineImpl nodeEngine, ILogger logger, BackpressureRegulator backpressureRegulator,
@@ -197,7 +198,7 @@ public class InvocationRegistry {
      * Notifies the invocation that a Response is available.
      *
      * @param response The response that is available.
-     * @param sender Endpoint who sent the response
+     * @param sender   Endpoint who sent the response
      */
     public void notify(Response response, Address sender) {
         if (response instanceof NormalResponse) {

@@ -25,12 +25,12 @@ import com.hazelcast.instance.Node;
 import com.hazelcast.internal.management.dto.SlowOperationDTO;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.nio.Packet;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.InternalCompletableFuture;
@@ -60,14 +60,15 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.spi.InvocationBuilder.DEFAULT_CALL_TIMEOUT;
 import static com.hazelcast.spi.InvocationBuilder.DEFAULT_DESERIALIZE_RESULT;
 import static com.hazelcast.spi.InvocationBuilder.DEFAULT_REPLICA_INDEX;
 import static com.hazelcast.spi.InvocationBuilder.DEFAULT_TRY_COUNT;
 import static com.hazelcast.spi.InvocationBuilder.DEFAULT_TRY_PAUSE_MILLIS;
+import static com.hazelcast.spi.impl.operationutil.Operations.isJoinOperation;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.Preconditions.checkTrue;
-import static com.hazelcast.spi.impl.operationutil.Operations.isJoinOperation;
 
 /**
  * This is the implementation of the {@link com.hazelcast.spi.impl.operationservice.InternalOperationService}.
@@ -101,16 +102,16 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
     final ILogger invocationLogger;
     final ManagedExecutorService asyncExecutor;
 
-    @Probe(name = "completed.count")
+    @Probe(name = "completed.count", level = MANDATORY)
     final AtomicLong completedOperationsCount = new AtomicLong();
 
-    @Probe(name = "operationTimeoutCount")
+    @Probe(name = "operationTimeoutCount", level = MANDATORY)
     final MwCounter operationTimeoutCount = MwCounter.newMwCounter();
 
-    @Probe(name = "callTimeoutCount")
+    @Probe(name = "callTimeoutCount", level = MANDATORY)
     final MwCounter callTimeoutCount = MwCounter.newMwCounter();
 
-    @Probe(name = "retryCount")
+    @Probe(name = "retryCount", level = MANDATORY)
     final MwCounter retryCount = MwCounter.newMwCounter();
 
     final NodeEngineImpl nodeEngine;
@@ -223,13 +224,13 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
         return invocationsRegistry.size();
     }
 
-    @Probe(name = "queue.size")
+    @Probe(name = "queue.size", level = MANDATORY)
     @Override
     public int getOperationExecutorQueueSize() {
         return operationExecutor.getOperationExecutorQueueSize();
     }
 
-    @Probe(name = "priority-queue.size")
+    @Probe(name = "priority-queue.size", level = MANDATORY)
     @Override
     public int getPriorityOperationExecutorQueueSize() {
         return operationExecutor.getPriorityOperationExecutorQueueSize();
@@ -239,7 +240,7 @@ public final class OperationServiceImpl implements InternalOperationService, Pac
         return operationExecutor;
     }
 
-    @Probe(name = "response-queue.size")
+    @Probe(name = "response-queue.size", level = MANDATORY)
     @Override
     public int getResponseQueueSize() {
         return responsePacketExecutor.getQueueSize();

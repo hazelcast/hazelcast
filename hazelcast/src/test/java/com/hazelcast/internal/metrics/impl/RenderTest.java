@@ -2,6 +2,7 @@ package com.hazelcast.internal.metrics.impl;
 
 import com.hazelcast.internal.metrics.DoubleProbeFunction;
 import com.hazelcast.internal.metrics.LongProbeFunction;
+import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.metrics.renderers.ProbeRenderer;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.test.ExpectedRuntimeException;
@@ -26,7 +27,7 @@ public class RenderTest {
 
     @Before
     public void setup() {
-        metricsRegistry = new MetricsRegistryImpl(Logger.getLogger(MetricsRegistryImpl.class));
+        metricsRegistry = new MetricsRegistryImpl(Logger.getLogger(MetricsRegistryImpl.class), ProbeLevel.INFO);
 
         for (String name : metricsRegistry.getNames()) {
             ProbeInstance probeInstance = metricsRegistry.getProbeInstance(name);
@@ -37,22 +38,24 @@ public class RenderTest {
     }
 
     private void registerLongMetric(String name, final int value) {
-        metricsRegistry.register(this, name, new LongProbeFunction<RenderTest>() {
-            @Override
-            public long get(RenderTest source) throws Exception {
-                return value;
-            }
-        });
+        metricsRegistry.register(this, name, ProbeLevel.INFO,
+                new LongProbeFunction<RenderTest>() {
+                    @Override
+                    public long get(RenderTest source) throws Exception {
+                        return value;
+                    }
+                });
     }
 
 
     private void registerDoubleMetric(String name, final int value) {
-        metricsRegistry.register(this, name, new DoubleProbeFunction<RenderTest>() {
-            @Override
-            public double get(RenderTest source) throws Exception {
-                return value;
-            }
-        });
+        metricsRegistry.register(this, name, ProbeLevel.INFO,
+                new DoubleProbeFunction<RenderTest>() {
+                    @Override
+                    public double get(RenderTest source) throws Exception {
+                        return value;
+                    }
+                });
     }
 
     @Test(expected = NullPointerException.class)
@@ -98,12 +101,13 @@ public class RenderTest {
 
         final ExpectedRuntimeException ex = new ExpectedRuntimeException();
 
-        metricsRegistry.register(this, "foo", new LongProbeFunction<RenderTest>() {
-            @Override
-            public long get(RenderTest source) throws Exception {
-                throw ex;
-            }
-        });
+        metricsRegistry.register(this, "foo", ProbeLevel.MANDATORY,
+                new LongProbeFunction<RenderTest>() {
+                    @Override
+                    public long get(RenderTest source) throws Exception {
+                        throw ex;
+                    }
+                });
 
         metricsRegistry.render(renderer);
 
@@ -128,7 +132,7 @@ public class RenderTest {
     public void getSortedProbes_whenNoChange() {
         SortedProbesInstances instances1 = metricsRegistry.getSortedProbeInstances();
 
-         SortedProbesInstances instances2 = metricsRegistry.getSortedProbeInstances();
+        SortedProbesInstances instances2 = metricsRegistry.getSortedProbeInstances();
 
         assertSame(instances1, instances2);
     }

@@ -50,6 +50,7 @@ import com.hazelcast.util.counters.Counter;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 
+import static com.hazelcast.internal.metrics.ProbeLevel.DEBUG;
 import static com.hazelcast.nio.IOUtil.extractOperationCallId;
 import static com.hazelcast.spi.Operation.CALL_ID_LOCAL_SKIPPED;
 import static com.hazelcast.spi.OperationAccessor.setCallerAddress;
@@ -76,7 +77,7 @@ class OperationRunnerImpl extends OperationRunner {
     private final NodeEngineImpl nodeEngine;
     private final AtomicLong executedOperationsCount;
 
-    @Probe
+    @Probe(level = DEBUG)
     private final Counter count;
 
     // This field doesn't need additional synchronization, since a partition-specific OperationRunner

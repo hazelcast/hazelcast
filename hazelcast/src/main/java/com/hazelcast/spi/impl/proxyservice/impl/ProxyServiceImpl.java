@@ -50,6 +50,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
 import static com.hazelcast.core.DistributedObjectEvent.EventType.CREATED;
+import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.util.ConcurrencyUtil.getOrPutIfAbsent;
 import static com.hazelcast.util.FutureUtil.logAllExceptions;
 import static com.hazelcast.util.FutureUtil.waitWithDeadline;
@@ -81,9 +82,9 @@ public class ProxyServiceImpl
     private final ConcurrentMap<String, ProxyRegistry> registries =
             new ConcurrentHashMap<String, ProxyRegistry>();
 
-    @Probe(name = "createdCount")
+    @Probe(name = "createdCount", level = MANDATORY)
     private final MwCounter createdCounter = newMwCounter();
-    @Probe(name = "destroyedCount")
+    @Probe(name = "destroyedCount", level = MANDATORY)
     private final MwCounter destroyedCounter = newMwCounter();
 
     public ProxyServiceImpl(NodeEngineImpl nodeEngine) {

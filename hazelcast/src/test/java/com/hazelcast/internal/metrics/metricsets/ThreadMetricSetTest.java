@@ -15,6 +15,7 @@ import org.junit.runner.RunWith;
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadMXBean;
 
+import static com.hazelcast.internal.metrics.ProbeLevel.INFO;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -23,11 +24,11 @@ public class ThreadMetricSetTest extends HazelcastTestSupport {
 
     private static final ThreadMXBean MX_BEAN = ManagementFactory.getThreadMXBean();
 
-    private MetricsRegistryImpl blackbox;
+    private MetricsRegistryImpl metricsRegistry;
 
     @Before
     public void setup() {
-        blackbox = new MetricsRegistryImpl(Logger.getLogger(MetricsRegistryImpl.class));
+        metricsRegistry = new MetricsRegistryImpl(Logger.getLogger(MetricsRegistryImpl.class), INFO);
     }
 
     @Test
@@ -37,7 +38,7 @@ public class ThreadMetricSetTest extends HazelcastTestSupport {
 
     @Test
     public void threadCount() {
-        final LongGauge gauge = blackbox.newLongGauge("thread.threadCount");
+        final LongGauge gauge = metricsRegistry.newLongGauge("thread.threadCount");
 
         assertTrueEventually(new AssertTask() {
             @Override
@@ -49,7 +50,7 @@ public class ThreadMetricSetTest extends HazelcastTestSupport {
 
     @Test
     public void peakThreadCount() {
-        final LongGauge gauge = blackbox.newLongGauge("thread.peakThreadCount");
+        final LongGauge gauge = metricsRegistry.newLongGauge("thread.peakThreadCount");
 
         assertTrueEventually(new AssertTask() {
             @Override
@@ -61,7 +62,7 @@ public class ThreadMetricSetTest extends HazelcastTestSupport {
 
     @Test
     public void daemonThreadCount() {
-        final LongGauge gauge = blackbox.newLongGauge("thread.daemonThreadCount");
+        final LongGauge gauge = metricsRegistry.newLongGauge("thread.daemonThreadCount");
 
         assertTrueEventually(new AssertTask() {
             @Override
@@ -73,7 +74,7 @@ public class ThreadMetricSetTest extends HazelcastTestSupport {
 
     @Test
     public void totalStartedThreadCount() {
-        final LongGauge gauge = blackbox.newLongGauge("thread.totalStartedThreadCount");
+        final LongGauge gauge = metricsRegistry.newLongGauge("thread.totalStartedThreadCount");
 
         assertTrueEventually(new AssertTask() {
             @Override

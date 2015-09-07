@@ -20,6 +20,8 @@ import com.hazelcast.config.Config;
 
 import java.util.concurrent.TimeUnit;
 
+import static java.lang.String.format;
+
 /**
  * Container for configured Hazelcast properties ({@see GroupProperty}).
  * <p/>
@@ -390,4 +392,28 @@ public class GroupProperties {
         TimeUnit timeUnit = groupProperty.getTimeUnit();
         return (int) timeUnit.toSeconds(getLong(groupProperty));
     }
+
+    /**
+     * Returns the configured enum value of a {@link GroupProperty}.
+     *
+     * The case of the enum is ignored.
+     *
+     * @param groupProperty the {@link GroupProperty} to get the value from
+     * @return the enum
+     * @throws IllegalArgumentException if the enum value can't be found
+     */
+    public <E extends Enum> E getEnum(GroupProperty groupProperty, Class<? extends Enum> enumClazz) {
+        String value = getString(groupProperty);
+
+        for (Enum e : enumClazz.getEnumConstants()) {
+            if (e.name().equalsIgnoreCase(value)) {
+                return (E) e;
+            }
+        }
+
+        throw new IllegalArgumentException(
+                format("value '%s' for property '%s' is not a valid %s value",
+                        value, groupProperty.getName(), enumClazz.getName()));
+    }
+
 }

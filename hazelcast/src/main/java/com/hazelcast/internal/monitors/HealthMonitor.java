@@ -450,14 +450,6 @@ public class HealthMonitor {
                     .append(executorClusterQueueSize.read()).append(", ");
         }
 
-
-        /*
-
-            sb.append("operations.remote.size=").append(remoteOperationsCount).append(", ");
- sb.append("operations.running.size=").append(runningOperationsCount).append(", ");
-
-         */
-
         private void renderOperationService() {
             sb.append("executor.q.response.size=")
                     .append(operationServiceResponseQueueSize.read()).append(", ");

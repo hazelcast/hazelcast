@@ -53,6 +53,7 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.nio.IOService.KILO_BYTE;
 import static com.hazelcast.nio.IOUtil.closeResource;
 import static com.hazelcast.util.Preconditions.checkNotNull;
@@ -79,7 +80,7 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
 
     private final ILogger logger;
 
-    @Probe(name = "count")
+    @Probe(name = "count", level = MANDATORY)
     private final ConcurrentHashMap<Address, Connection> connectionsMap = new ConcurrentHashMap<Address, Connection>(100);
 
     @Probe(name = "monitorCount")
@@ -90,15 +91,15 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
     private final Set<Address> connectionsInProgress =
             Collections.newSetFromMap(new ConcurrentHashMap<Address, Boolean>());
 
-    @Probe(name = "acceptedSocketCount")
+    @Probe(name = "acceptedSocketCount", level = MANDATORY)
     private final Set<SocketChannelWrapper> acceptedSockets =
             Collections.newSetFromMap(new ConcurrentHashMap<SocketChannelWrapper, Boolean>());
 
-    @Probe(name = "activeCount")
+    @Probe(name = "activeCount", level = MANDATORY)
     private final Set<TcpIpConnection> activeConnections =
             Collections.newSetFromMap(new ConcurrentHashMap<TcpIpConnection, Boolean>());
 
-    @Probe(name = "textCount")
+    @Probe(name = "textCount", level = MANDATORY)
     private final AtomicInteger allTextConnections = new AtomicInteger();
 
     private final AtomicInteger connectionIdGen = new AtomicInteger();
@@ -522,7 +523,7 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
         }
     }
 
-    @Probe(name = "clientCount")
+    @Probe(name = "clientCount", level = MANDATORY)
     @Override
     public int getCurrentClientConnections() {
         int count = 0;

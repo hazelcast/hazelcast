@@ -17,6 +17,7 @@
 package com.hazelcast.instance;
 
 import com.hazelcast.core.IMap;
+import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.monitors.HealthMonitorLevel;
 import com.hazelcast.map.QueryResultSizeExceededException;
 import com.hazelcast.map.impl.QueryResultSizeLimiter;
@@ -96,9 +97,19 @@ public enum GroupProperty implements HazelcastProperty {
      * <p/>
      * The performance monitor logs all metrics into the log file.
      * <p/>
+     * For more detailed information, please check the PERFORMANCE_METRICS_LEVEL.
+     * <p/>
      * The default is false.
      */
     PERFORMANCE_MONITOR_ENABLED("hazelcast.performance.monitoring.enabled", false),
+
+    /**
+     * The minimum level for probes is MANDATORY, but it can be changed to INFO or DEBUG. A lower level will increase
+     * memory usage (probably just a few 100KB) and provides much greater detail on what is going on inside a HazelcastInstance.
+     *
+     * By default only mandatory probes are being tracked
+     */
+    PERFORMANCE_METRICS_LEVEL("hazelcast.performance.metric.level", ProbeLevel.MANDATORY.name()),
 
     /**
      * The delay in seconds between monitor of the performance.

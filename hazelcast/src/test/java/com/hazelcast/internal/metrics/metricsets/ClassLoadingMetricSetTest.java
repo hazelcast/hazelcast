@@ -15,6 +15,7 @@ import org.junit.runner.RunWith;
 import java.lang.management.ClassLoadingMXBean;
 import java.lang.management.ManagementFactory;
 
+import static com.hazelcast.internal.metrics.ProbeLevel.INFO;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -23,11 +24,11 @@ public class ClassLoadingMetricSetTest extends HazelcastTestSupport {
 
     private static final ClassLoadingMXBean BEAN = ManagementFactory.getClassLoadingMXBean();
 
-    private MetricsRegistryImpl blackbox;
+    private MetricsRegistryImpl metricsRegistry;
 
     @Before
     public void setup() {
-        blackbox = new MetricsRegistryImpl(Logger.getLogger(MetricsRegistryImpl.class));
+        metricsRegistry = new MetricsRegistryImpl(Logger.getLogger(MetricsRegistryImpl.class), INFO);
     }
 
     @Test
@@ -37,7 +38,7 @@ public class ClassLoadingMetricSetTest extends HazelcastTestSupport {
 
     @Test
     public void loadedClassesCount() {
-        final LongGauge gauge = blackbox.newLongGauge("classloading.loadedClassesCount");
+        final LongGauge gauge = metricsRegistry.newLongGauge("classloading.loadedClassesCount");
 
         assertTrueEventually(new AssertTask() {
             @Override
@@ -49,7 +50,7 @@ public class ClassLoadingMetricSetTest extends HazelcastTestSupport {
 
     @Test
     public void totalLoadedClassesCount() {
-        final LongGauge gauge = blackbox.newLongGauge("classloading.totalLoadedClassesCount");
+        final LongGauge gauge = metricsRegistry.newLongGauge("classloading.totalLoadedClassesCount");
 
         assertTrueEventually(new AssertTask() {
             @Override
@@ -61,7 +62,7 @@ public class ClassLoadingMetricSetTest extends HazelcastTestSupport {
 
     @Test
     public void unloadedClassCount() {
-        final LongGauge gauge = blackbox.newLongGauge("classloading.unloadedClassCount");
+        final LongGauge gauge = metricsRegistry.newLongGauge("classloading.unloadedClassCount");
 
         assertTrueEventually(new AssertTask() {
             @Override

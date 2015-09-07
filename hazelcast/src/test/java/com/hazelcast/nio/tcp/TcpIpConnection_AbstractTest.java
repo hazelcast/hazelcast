@@ -1,6 +1,7 @@
 package com.hazelcast.nio.tcp;
 
 import com.hazelcast.instance.BuildInfoProvider;
+import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.metrics.impl.MetricsRegistryImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingServiceImpl;
@@ -17,6 +18,7 @@ import org.junit.Before;
 import java.net.SocketAddress;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static com.hazelcast.internal.metrics.ProbeLevel.INFO;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 
@@ -77,7 +79,7 @@ public abstract class TcpIpConnection_AbstractTest extends HazelcastTestSupport 
     }
 
     protected TcpIpConnectionManager newConnectionManager(int port) throws Exception {
-        MetricsRegistryImpl metricsRegistry = new MetricsRegistryImpl(loggingService.getLogger(MetricsRegistryImpl.class));
+        MetricsRegistryImpl metricsRegistry = new MetricsRegistryImpl(loggingService.getLogger(MetricsRegistryImpl.class), INFO);
         MockIOService ioService = new MockIOService(port);
 
         return new TcpIpConnectionManager(

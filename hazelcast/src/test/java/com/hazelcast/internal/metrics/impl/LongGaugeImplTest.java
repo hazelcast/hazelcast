@@ -12,6 +12,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.internal.metrics.ProbeLevel.INFO;
+import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static java.lang.Math.round;
 import static org.junit.Assert.assertEquals;
 
@@ -23,7 +25,7 @@ public class LongGaugeImplTest {
 
     @Before
     public void setup() {
-        metricsRegistry = new MetricsRegistryImpl(Logger.getLogger(MetricsRegistryImpl.class));
+        metricsRegistry = new MetricsRegistryImpl(Logger.getLogger(MetricsRegistryImpl.class), INFO);
     }
 
     class SomeObject {
@@ -55,12 +57,13 @@ public class LongGaugeImplTest {
 
     @Test
     public void whenDoubleProbe() {
-        metricsRegistry.register(this, "foo", new DoubleProbeFunction<LongGaugeImplTest>() {
-            @Override
-            public double get(LongGaugeImplTest source) throws Exception {
-                return 10;
-            }
-        });
+        metricsRegistry.register(this, "foo", MANDATORY,
+                new DoubleProbeFunction<LongGaugeImplTest>() {
+                    @Override
+                    public double get(LongGaugeImplTest source) throws Exception {
+                        return 10;
+                    }
+                });
 
         LongGauge gauge = metricsRegistry.newLongGauge("foo");
 
@@ -71,12 +74,13 @@ public class LongGaugeImplTest {
 
     @Test
     public void whenLongProbe() {
-        metricsRegistry.register(this, "foo", new LongProbeFunction() {
-            @Override
-            public long get(Object o) throws Exception {
-                return 10;
-            }
-        });
+        metricsRegistry.register(this, "foo", MANDATORY,
+                new LongProbeFunction() {
+                    @Override
+                    public long get(Object o) throws Exception {
+                        return 10;
+                    }
+                });
 
         LongGauge gauge = metricsRegistry.newLongGauge("foo");
         assertEquals(10, gauge.read());
@@ -84,12 +88,13 @@ public class LongGaugeImplTest {
 
     @Test
     public void whenProbeThrowsException() {
-        metricsRegistry.register(this, "foo", new LongProbeFunction() {
-            @Override
-            public long get(Object o) {
-                throw new RuntimeException();
-            }
-        });
+        metricsRegistry.register(this, "foo", MANDATORY,
+                new LongProbeFunction() {
+                    @Override
+                    public long get(Object o) {
+                        throw new RuntimeException();
+                    }
+                });
 
         LongGauge gauge = metricsRegistry.newLongGauge("foo");
 
@@ -117,24 +122,26 @@ public class LongGaugeImplTest {
     }
 
     @Test
-    public void whenReregister(){
-        metricsRegistry.register(this, "foo", new LongProbeFunction() {
-            @Override
-            public long get(Object o) throws Exception {
-                return 10;
-            }
-        });
+    public void whenReregister() {
+        metricsRegistry.register(this, "foo", MANDATORY,
+                new LongProbeFunction() {
+                    @Override
+                    public long get(Object o) throws Exception {
+                        return 10;
+                    }
+                });
 
         LongGauge gauge = metricsRegistry.newLongGauge("foo");
 
         gauge.read();
 
-        metricsRegistry.register(this, "foo", new LongProbeFunction() {
-            @Override
-            public long get(Object o) throws Exception {
-                return 11;
-            }
-        });
+        metricsRegistry.register(this, "foo", MANDATORY,
+                new LongProbeFunction() {
+                    @Override
+                    public long get(Object o) throws Exception {
+                        return 11;
+                    }
+                });
 
         assertEquals(11, gauge.read());
     }

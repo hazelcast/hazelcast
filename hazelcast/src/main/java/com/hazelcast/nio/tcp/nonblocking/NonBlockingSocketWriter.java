@@ -39,6 +39,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 
+import static com.hazelcast.internal.metrics.ProbeLevel.DEBUG;
 import static com.hazelcast.nio.IOService.KILO_BYTE;
 import static com.hazelcast.nio.Protocols.CLIENT_BINARY;
 import static com.hazelcast.nio.Protocols.CLIENT_BINARY_NEW;
@@ -47,6 +48,7 @@ import static com.hazelcast.util.Clock.currentTimeMillis;
 import static com.hazelcast.util.EmptyStatement.ignore;
 import static com.hazelcast.util.StringUtil.stringToBytes;
 import static com.hazelcast.util.counters.SwCounter.newSwCounter;
+import static java.lang.Math.max;
 
 /**
  * The writing side of the {@link TcpIpConnection}.
@@ -89,13 +91,13 @@ public final class NonBlockingSocketWriter extends AbstractHandler implements Ru
         metricsRegistry.scanAndRegister(this, "tcp.connection[" + connection.getMetricsId() + "]");
     }
 
-    @Probe(name = "out.interestedOps")
+    @Probe(name = "out.interestedOps", level = DEBUG)
     private long interestOps() {
         SelectionKey selectionKey = this.selectionKey;
         return selectionKey == null ? -1 : selectionKey.interestOps();
     }
 
-    @Probe(name = "out.readyOps")
+    @Probe(name = "out.readyOps", level = DEBUG)
     private long readyOps() {
         SelectionKey selectionKey = this.selectionKey;
         return selectionKey == null ? -1 : selectionKey.readyOps();
@@ -116,12 +118,12 @@ public final class NonBlockingSocketWriter extends AbstractHandler implements Ru
         return writeHandler;
     }
 
-    @Probe(name = "out.writeQueuePendingBytes")
+    @Probe(name = "out.writeQueuePendingBytes", level = DEBUG)
     public long bytesPending() {
         return bytesPending(writeQueue);
     }
 
-    @Probe(name = "out.priorityWriteQueuePendingBytes")
+    @Probe(name = "out.priorityWriteQueuePendingBytes", level = DEBUG)
     public long priorityBytesPending() {
         return bytesPending(urgentWriteQueue);
     }
@@ -136,12 +138,12 @@ public final class NonBlockingSocketWriter extends AbstractHandler implements Ru
         return bytesPending;
     }
 
-    @Probe(name = "out.idleTimeMs")
+    @Probe(name = "out.idleTimeMs", level = DEBUG)
     private long idleTimeMs() {
-        return Math.max(System.currentTimeMillis() - lastWriteTime, 0);
+        return max(System.currentTimeMillis() - lastWriteTime, 0);
     }
 
-    @Probe(name = "out.isScheduled")
+    @Probe(name = "out.isScheduled", level = DEBUG)
     private long isScheduled() {
         return scheduled.get() ? 1 : 0;
     }

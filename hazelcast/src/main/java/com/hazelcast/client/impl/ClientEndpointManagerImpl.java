@@ -35,6 +35,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.counters.MwCounter.newMwCounter;
 
@@ -49,11 +50,11 @@ public class ClientEndpointManagerImpl implements ClientEndpointManager {
     private final ClientEngineImpl clientEngine;
     private final NodeEngine nodeEngine;
 
-    @Probe(name = "count")
+    @Probe(name = "count", level = MANDATORY)
     private final ConcurrentMap<Connection, ClientEndpoint> endpoints =
             new ConcurrentHashMap<Connection, ClientEndpoint>();
 
-    @Probe(name = "totalRegistrations")
+    @Probe(name = "totalRegistrations", level = MANDATORY)
     private MwCounter totalRegistrations = newMwCounter();
 
     public ClientEndpointManagerImpl(ClientEngineImpl clientEngine, NodeEngine nodeEngine) {
