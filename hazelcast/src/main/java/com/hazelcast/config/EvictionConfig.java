@@ -26,7 +26,6 @@ import com.hazelcast.nio.serialization.DataSerializable;
 import java.io.IOException;
 import java.io.Serializable;
 
-import static com.hazelcast.util.Preconditions.checkFalse;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.Preconditions.checkPositive;
 
@@ -72,8 +71,8 @@ public class EvictionConfig
         if (maxSizePolicy != null) {
             this.maxSizePolicy = maxSizePolicy;
         }
-        // Eviction policy cannot be null or NONE
-        if (evictionPolicy != null && evictionPolicy != EvictionPolicy.NONE) {
+        // Eviction policy cannot be null
+        if (evictionPolicy != null) {
             this.evictionPolicy = evictionPolicy;
         }
     }
@@ -94,8 +93,8 @@ public class EvictionConfig
         if (config.maxSizePolicy != null) {
             this.maxSizePolicy = config.maxSizePolicy;
         }
-        // Eviction policy cannot be null or NONE
-        if (config.evictionPolicy != null && config.evictionPolicy != EvictionPolicy.NONE) {
+        // Eviction policy cannot be null
+        if (config.evictionPolicy != null) {
             this.evictionPolicy = config.evictionPolicy;
         }
     }
@@ -157,7 +156,6 @@ public class EvictionConfig
 
     public EvictionConfig setEvictionPolicy(EvictionPolicy evictionPolicy) {
         checkNotNull(evictionPolicy, "Eviction policy cannot be null !");
-        checkFalse(EvictionPolicy.NONE == evictionPolicy, "Eviction policy cannot be \"NONE\" !");
 
         this.evictionPolicy = evictionPolicy;
         return this;

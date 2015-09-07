@@ -1032,7 +1032,12 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
             } else if ("wan-replication-ref".equals(nodeName)) {
                 cacheWanReplicationRefHandle(n, cacheConfig);
             } else if ("eviction".equals(nodeName)) {
-                cacheConfig.setEvictionConfig(getEvictionConfig(n));
+                EvictionConfig evictionConfig = getEvictionConfig(n);
+                EvictionPolicy evictionPolicy = evictionConfig.getEvictionPolicy();
+                if (evictionPolicy == null || evictionPolicy == EvictionPolicy.NONE) {
+                    throw new InvalidConfigurationException("Eviction policy of cache cannot be null or \"NONE\"");
+                }
+                cacheConfig.setEvictionConfig(evictionConfig);
             } else if ("quorum-ref".equals(nodeName)) {
                 cacheConfig.setQuorumName(value);
             } else if ("partition-lost-listeners".equals(nodeName)) {
@@ -1101,38 +1106,6 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
             durationConfig = new DurationConfig(durationAmount, timeUnit);
         }
         return new TimedExpiryPolicyFactoryConfig(expiryPolicyType, durationConfig);
-    }
-
-    private NearCacheConfig getNearCacheConfig(final org.w3c.dom.Node node) {
-        final String name = getAttribute(node, "name");
-        final NearCacheConfig nearCacheConfig = new NearCacheConfig();
-        nearCacheConfig.setName(name);
-        for (org.w3c.dom.Node n : new IterableNodeList(node.getChildNodes())) {
-            final String nodeName = cleanNodeName(n.getNodeName());
-            final String value = getTextContent(n).trim();
-            if ("max-size".equals(nodeName)) {
-                nearCacheConfig.setMaxSize(
-                        getIntegerValue("max-size", value, NearCacheConfig.DEFAULT_MAX_SIZE));
-            } else if ("time-to-live-seconds".equals(nodeName)) {
-                nearCacheConfig.setTimeToLiveSeconds(
-                        getIntegerValue("time-to-live-seconds", value, NearCacheConfig.DEFAULT_TTL_SECONDS));
-            } else if ("max-idle-seconds".equals(nodeName)) {
-                nearCacheConfig.setMaxIdleSeconds(
-                        getIntegerValue("max-idle-seconds", value, NearCacheConfig.DEFAULT_MAX_IDLE_SECONDS));
-            } else if ("eviction-policy".equals(nodeName)) {
-                nearCacheConfig.setEvictionPolicy(value);
-            } else if ("invalidate-on-change".equals(nodeName)) {
-                nearCacheConfig.setInvalidateOnChange(Boolean.parseBoolean(value));
-            } else if ("in-memory-format".equals(nodeName)) {
-                nearCacheConfig.setInMemoryFormat(
-                        InMemoryFormat.valueOf(upperCaseInternal(value)));
-            } else if ("cache-local-entries".equals(nodeName)) {
-                nearCacheConfig.setCacheLocalEntries(Boolean.parseBoolean(value));
-            } else if ("eviction".equals(nodeName)) {
-                nearCacheConfig.setEvictionConfig(getEvictionConfig(n));
-            }
-        }
-        return nearCacheConfig;
     }
 
     private EvictionConfig getEvictionConfig(final org.w3c.dom.Node node) {

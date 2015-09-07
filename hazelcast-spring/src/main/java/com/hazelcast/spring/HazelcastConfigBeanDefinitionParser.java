@@ -27,6 +27,8 @@ import com.hazelcast.config.CacheSimpleEntryListenerConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.CredentialsFactoryConfig;
 import com.hazelcast.config.EntryListenerConfig;
+import com.hazelcast.config.EvictionConfig;
+import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.InMemoryFormat;
@@ -690,7 +692,12 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             fillAttributeValues(node, cacheConfigBuilder);
             for (Node childNode : new IterableNodeList(node.getChildNodes(), Node.ELEMENT_NODE)) {
                 if ("eviction".equals(cleanNodeName(childNode))) {
-                    cacheConfigBuilder.addPropertyValue("evictionConfig", getEvictionConfig(childNode));
+                    EvictionConfig evictionConfig = getEvictionConfig(childNode);
+                    EvictionPolicy evictionPolicy = evictionConfig.getEvictionPolicy();
+                    if (evictionPolicy == null || evictionPolicy == EvictionPolicy.NONE) {
+                        throw new InvalidConfigurationException("Eviction policy of cache cannot be null or \"NONE\"");
+                    }
+                    cacheConfigBuilder.addPropertyValue("evictionConfig", evictionConfig);
                 } else if ("expiry-policy-factory".equals(cleanNodeName(childNode))) {
                     cacheConfigBuilder.addPropertyValue("expiryPolicyFactoryConfig", getExpiryPolicyFactoryConfig(childNode));
                 } else if ("cache-entry-listeners".equals(cleanNodeName(childNode))) {
