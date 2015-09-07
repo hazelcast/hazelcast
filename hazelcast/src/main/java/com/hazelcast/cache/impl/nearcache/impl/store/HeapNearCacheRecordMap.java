@@ -16,9 +16,9 @@
 
 package com.hazelcast.cache.impl.nearcache.impl.store;
 
-import com.hazelcast.cache.impl.eviction.Evictable;
-import com.hazelcast.cache.impl.eviction.EvictionCandidate;
-import com.hazelcast.cache.impl.eviction.EvictionListener;
+import com.hazelcast.eviction.Evictable;
+import com.hazelcast.eviction.EvictionCandidate;
+import com.hazelcast.eviction.EvictionListener;
 import com.hazelcast.cache.impl.nearcache.NearCacheRecord;
 import com.hazelcast.cache.impl.nearcache.impl.SampleableNearCacheRecordMap;
 import com.hazelcast.util.SampleableConcurrentHashMap;

@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-package com.hazelcast.cache.impl.eviction.impl.strategy.sampling;
+package com.hazelcast.eviction.impl.strategy.sampling;
 
-import com.hazelcast.cache.impl.eviction.Evictable;
-import com.hazelcast.cache.impl.eviction.EvictionCandidate;
-import com.hazelcast.cache.impl.eviction.EvictionListener;
-import com.hazelcast.cache.impl.eviction.EvictionPolicyEvaluator;
-import com.hazelcast.cache.impl.eviction.EvictionStrategy;
-import com.hazelcast.cache.impl.eviction.impl.strategy.AbstractEvictionStrategy;
+import com.hazelcast.eviction.Evictable;
+import com.hazelcast.eviction.EvictionCandidate;
+import com.hazelcast.eviction.EvictionListener;
+import com.hazelcast.eviction.EvictionPolicyEvaluator;
+import com.hazelcast.eviction.EvictionStrategy;
+import com.hazelcast.eviction.impl.strategy.AbstractEvictionStrategy;
 
 /**
  * Sampling based {@link EvictionStrategy} implementation.

@@ -14,23 +14,23 @@
  * limitations under the License.
  */
 
-package com.hazelcast.cache.impl.eviction;
+package com.hazelcast.eviction.impl.evaluator;
+
+import com.hazelcast.eviction.Evictable;
 
 /**
- * Enum for eviction policy types.
+ * Interface for evaluation implementations of {@link com.hazelcast.config.EvictionPolicy#LFU} policy.
  */
-public enum EvictionPolicyType {
+public class LFUEvictionPolicyEvaluator<A, E extends Evictable>
+        extends AbstractEvictionPolicyEvaluator<A, E> {
 
-    /**
-     * Least Recently Used
-     */
-    LRU,
-
-    /**
-     * Least Frequently Used
-     */
-    LFU
-
-    // TODO Maybe another "CUSTOM" type for user defined eviction policies
+    @Override
+    protected Evictable selectEvictableAsPolicy(Evictable current, Evictable candidate) {
+        if (candidate.getAccessHit() < current.getAccessHit()) {
+            return candidate;
+        } else {
+            return current;
+        }
+    }
 
 }

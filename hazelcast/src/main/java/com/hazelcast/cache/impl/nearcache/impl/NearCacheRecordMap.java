@@ -16,7 +16,7 @@
 
 package com.hazelcast.cache.impl.nearcache.impl;
 
-import com.hazelcast.cache.impl.eviction.EvictableStore;
+import com.hazelcast.eviction.EvictableStore;
 import com.hazelcast.cache.impl.nearcache.NearCacheRecord;
 
 import java.util.concurrent.ConcurrentMap;
@@ -28,7 +28,7 @@ import java.util.concurrent.ConcurrentMap;
  * @param <V> type of the {@link com.hazelcast.cache.impl.nearcache.NearCacheRecord} to be stored
  *
  * @see com.hazelcast.cache.impl.nearcache.NearCacheRecord
- * @see com.hazelcast.cache.impl.eviction.EvictableStore
+ * @see com.hazelcast.eviction.EvictableStore
  */
 public interface NearCacheRecordMap<K, V extends NearCacheRecord>
         extends ConcurrentMap<K, V>, EvictableStore<K, V> {

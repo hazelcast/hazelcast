@@ -14,9 +14,21 @@
  * limitations under the License.
  */
 
+package com.hazelcast.eviction;
+
 /**
- * <p>
- *     {@link com.hazelcast.cache.impl.eviction.EvictionStrategy} implementations for cache.
- * </p>
+ * Enum for types of {@link EvictionStrategy}
  */
-package com.hazelcast.cache.impl.eviction.impl.strategy;
+public enum EvictionStrategyType {
+
+    /**
+     * Sampling based eviction strategy type
+     */
+    SAMPLING_BASED_EVICTION;
+
+    /**
+     * Default value of {@link com.hazelcast.eviction.EvictionStrategyType}
+     */
+    public static final EvictionStrategyType DEFAULT_EVICTION_STRATEGY = SAMPLING_BASED_EVICTION;
+
+}

@@ -16,7 +16,7 @@
 
 package com.hazelcast.cache.impl.nearcache.impl;
 
-import com.hazelcast.cache.impl.eviction.impl.strategy.sampling.SampleableEvictableStore;
+import com.hazelcast.eviction.impl.strategy.sampling.SampleableEvictableStore;
 import com.hazelcast.cache.impl.nearcache.NearCacheRecord;
 
 /**
@@ -27,7 +27,7 @@ import com.hazelcast.cache.impl.nearcache.NearCacheRecord;
  *
  * @see com.hazelcast.cache.impl.nearcache.NearCacheRecord
  * @see com.hazelcast.cache.impl.nearcache.impl.NearCacheRecordMap
- * @see com.hazelcast.cache.impl.eviction.impl.strategy.sampling.SampleableEvictableStore
+ * @see com.hazelcast.eviction.impl.strategy.sampling.SampleableEvictableStore
  */
 public interface SampleableNearCacheRecordMap<K, V extends NearCacheRecord>
         extends NearCacheRecordMap<K, V>, SampleableEvictableStore<K, V> {

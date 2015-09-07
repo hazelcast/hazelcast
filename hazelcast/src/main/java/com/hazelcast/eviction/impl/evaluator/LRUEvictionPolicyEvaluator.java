@@ -14,15 +14,23 @@
  * limitations under the License.
  */
 
-package com.hazelcast.cache.impl.eviction;
+package com.hazelcast.eviction.impl.evaluator;
+
+import com.hazelcast.eviction.Evictable;
 
 /**
- * Enum for types of {@link com.hazelcast.cache.impl.eviction.EvictionStrategy}
+ * Interface for evaluation implementations of {@link com.hazelcast.config.EvictionPolicy#LRU} policy.
  */
-public enum EvictionStrategyType {
+public class LRUEvictionPolicyEvaluator<A, E extends Evictable>
+        extends AbstractEvictionPolicyEvaluator<A, E> {
 
-    SAMPLING_BASED_EVICTION;
-
-    public static final EvictionStrategyType DEFAULT_EVICTION_STRATEGY = SAMPLING_BASED_EVICTION;
+    @Override
+    protected Evictable selectEvictableAsPolicy(Evictable current, Evictable candidate) {
+        if (candidate.getAccessTime() < current.getAccessTime()) {
+            return candidate;
+        } else {
+            return current;
+        }
+    }
 
 }

@@ -1,12 +1,12 @@
 package com.hazelcast.cache.eviction;
 
-import com.hazelcast.cache.impl.eviction.Evictable;
-import com.hazelcast.cache.impl.eviction.EvictionCandidate;
-import com.hazelcast.cache.impl.eviction.EvictionConfiguration;
-import com.hazelcast.cache.impl.eviction.EvictionPolicyEvaluator;
-import com.hazelcast.cache.impl.eviction.EvictionPolicyEvaluatorProvider;
-import com.hazelcast.cache.impl.eviction.EvictionPolicyType;
-import com.hazelcast.cache.impl.eviction.EvictionStrategyType;
+import com.hazelcast.eviction.Evictable;
+import com.hazelcast.eviction.EvictionCandidate;
+import com.hazelcast.eviction.EvictionConfiguration;
+import com.hazelcast.eviction.EvictionPolicyEvaluator;
+import com.hazelcast.eviction.EvictionPolicyEvaluatorProvider;
+import com.hazelcast.eviction.EvictionPolicyType;
+import com.hazelcast.eviction.EvictionStrategyType;
 import com.hazelcast.cache.impl.record.CacheObjectRecord;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
