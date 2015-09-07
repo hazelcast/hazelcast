@@ -70,7 +70,7 @@ import static com.hazelcast.util.Preconditions.isNotNull;
  */
 public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, InitializingObject {
 
-    public MapProxyImpl(final String name, final MapService mapService, final NodeEngine nodeEngine) {
+    public MapProxyImpl(String name, MapService mapService, NodeEngine nodeEngine) {
         super(name, mapService, nodeEngine);
     }
 
@@ -83,76 +83,76 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
     }
 
     @Override
-    public V put(final K k, final V v) {
+    public V put(K k, V v) {
         return put(k, v, -1, TimeUnit.MILLISECONDS);
     }
 
     @Override
-    public V put(final K k, final V v, final long ttl, final TimeUnit timeunit) {
+    public V put(K k, V v, long ttl, TimeUnit timeunit) {
         checkNotNull(k, NULL_KEY_IS_NOT_ALLOWED);
         checkNotNull(v, NULL_VALUE_IS_NOT_ALLOWED);
 
-        final Data key = toData(k, partitionStrategy);
-        final Data value = toData(v);
-        final Data result = putInternal(key, value, ttl, timeunit);
+        Data key = toData(k, partitionStrategy);
+        Data value = toData(v);
+        Data result = putInternal(key, value, ttl, timeunit);
         return (V) toObject(result);
     }
 
     @Override
-    public boolean tryPut(final K k, final V v, final long timeout, final TimeUnit timeunit) {
+    public boolean tryPut(K k, V v, long timeout, TimeUnit timeunit) {
         checkNotNull(k, NULL_KEY_IS_NOT_ALLOWED);
         checkNotNull(v, NULL_VALUE_IS_NOT_ALLOWED);
 
-        final Data key = toData(k, partitionStrategy);
-        final Data value = toData(v);
+        Data key = toData(k, partitionStrategy);
+        Data value = toData(v);
         return tryPutInternal(key, value, timeout, timeunit);
     }
 
     @Override
-    public V putIfAbsent(final K k, final V v) {
+    public V putIfAbsent(K k, V v) {
         return putIfAbsent(k, v, -1, TimeUnit.MILLISECONDS);
     }
 
     @Override
-    public V putIfAbsent(final K k, final V v, final long ttl, final TimeUnit timeunit) {
+    public V putIfAbsent(K k, V v, long ttl, TimeUnit timeunit) {
         checkNotNull(k, NULL_KEY_IS_NOT_ALLOWED);
         checkNotNull(v, NULL_VALUE_IS_NOT_ALLOWED);
 
-        final Data key = toData(k, partitionStrategy);
-        final Data value = toData(v);
-        final Data result = putIfAbsentInternal(key, value, ttl, timeunit);
+        Data key = toData(k, partitionStrategy);
+        Data value = toData(v);
+        Data result = putIfAbsentInternal(key, value, ttl, timeunit);
         return (V) toObject(result);
     }
 
     @Override
-    public void putTransient(final K k, final V v, final long ttl, final TimeUnit timeunit) {
+    public void putTransient(K k, V v, long ttl, TimeUnit timeunit) {
         checkNotNull(k, NULL_KEY_IS_NOT_ALLOWED);
         checkNotNull(v, NULL_VALUE_IS_NOT_ALLOWED);
 
-        final Data key = toData(k, partitionStrategy);
-        final Data value = toData(v);
+        Data key = toData(k, partitionStrategy);
+        Data value = toData(v);
         putTransientInternal(key, value, ttl, timeunit);
     }
 
     @Override
-    public boolean replace(final K k, final V o, final V v) {
+    public boolean replace(K k, V o, V v) {
         checkNotNull(k, NULL_KEY_IS_NOT_ALLOWED);
         checkNotNull(o, NULL_VALUE_IS_NOT_ALLOWED);
         checkNotNull(v, NULL_VALUE_IS_NOT_ALLOWED);
 
-        final Data key = toData(k, partitionStrategy);
-        final Data oldValue = toData(o);
-        final Data value = toData(v);
+        Data key = toData(k, partitionStrategy);
+        Data oldValue = toData(o);
+        Data value = toData(v);
         return replaceInternal(key, oldValue, value);
     }
 
     @Override
-    public V replace(final K k, final V v) {
+    public V replace(K k, V v) {
         checkNotNull(k, NULL_KEY_IS_NOT_ALLOWED);
         checkNotNull(v, NULL_VALUE_IS_NOT_ALLOWED);
 
-        final Data key = toData(k, partitionStrategy);
-        final Data value = toData(v);
+        Data key = toData(k, partitionStrategy);
+        Data value = toData(v);
         return (V) toObject(replaceInternal(key, value));
     }
 
@@ -162,12 +162,12 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
     }
 
     @Override
-    public void set(final K k, final V v, final long ttl, final TimeUnit timeunit) {
+    public void set(K k, V v, long ttl, TimeUnit timeunit) {
         checkNotNull(k, NULL_KEY_IS_NOT_ALLOWED);
         checkNotNull(v, NULL_VALUE_IS_NOT_ALLOWED);
 
-        final Data key = toData(k, partitionStrategy);
-        final Data value = toData(v);
+        Data key = toData(k, partitionStrategy);
+        Data value = toData(v);
         setInternal(key, value, ttl, timeunit);
     }
 
@@ -175,18 +175,18 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
     public V remove(Object k) {
         checkNotNull(k, NULL_KEY_IS_NOT_ALLOWED);
 
-        final Data key = toData(k, partitionStrategy);
-        final Data result = removeInternal(key);
+        Data key = toData(k, partitionStrategy);
+        Data result = removeInternal(key);
         return (V) toObject(result);
     }
 
     @Override
-    public boolean remove(final Object k, final Object v) {
+    public boolean remove(Object k, Object v) {
         checkNotNull(k, NULL_KEY_IS_NOT_ALLOWED);
         checkNotNull(v, NULL_VALUE_IS_NOT_ALLOWED);
 
-        final Data key = toData(k, partitionStrategy);
-        final Data value = toData(v);
+        Data key = toData(k, partitionStrategy);
+        Data value = toData(v);
         return removeInternal(key, value);
     }
 
@@ -194,7 +194,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
     public void delete(Object k) {
         checkNotNull(k, NULL_KEY_IS_NOT_ALLOWED);
 
-        final Data key = toData(k, partitionStrategy);
+        Data key = toData(k, partitionStrategy);
         deleteInternal(key);
     }
 
@@ -207,7 +207,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
     }
 
     @Override
-    public boolean containsValue(final Object v) {
+    public boolean containsValue(Object v) {
         checkNotNull(v, NULL_VALUE_IS_NOT_ALLOWED);
 
         Data value = toData(v);
@@ -215,7 +215,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
     }
 
     @Override
-    public void lock(final K key) {
+    public void lock(K key) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
         NodeEngine nodeEngine = getNodeEngine();
@@ -224,7 +224,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
     }
 
     @Override
-    public void lock(final Object key, final long leaseTime, final TimeUnit timeUnit) {
+    public void lock(Object key, long leaseTime, TimeUnit timeUnit) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         checkPositive(leaseTime, "leaseTime should be positive");
 
@@ -233,7 +233,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
     }
 
     @Override
-    public void unlock(final K key) {
+    public void unlock(K key) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
         NodeEngine nodeEngine = getNodeEngine();
@@ -242,7 +242,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
     }
 
     @Override
-    public boolean tryRemove(final K key, final long timeout, final TimeUnit timeunit) {
+    public boolean tryRemove(K key, long timeout, TimeUnit timeunit) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
         Data k = toData(key, partitionStrategy);
@@ -250,7 +250,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
     }
 
     @Override
-    public Future<V> getAsync(final K k) {
+    public Future<V> getAsync(K k) {
         checkNotNull(k, NULL_KEY_IS_NOT_ALLOWED);
 
         Data key = toData(k, partitionStrategy);
@@ -259,7 +259,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
     }
 
     @Override
-    public boolean isLocked(final K k) {
+    public boolean isLocked(K k) {
         checkNotNull(k, NULL_KEY_IS_NOT_ALLOWED);
 
         Data key = toData(k, partitionStrategy);
@@ -268,12 +268,12 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
     }
 
     @Override
-    public Future putAsync(final K key, final V value) {
+    public Future putAsync(K key, V value) {
         return putAsync(key, value, -1, TimeUnit.MILLISECONDS);
     }
 
     @Override
-    public ICompletableFuture putAsync(final K key, final V value, final long ttl, final TimeUnit timeunit) {
+    public ICompletableFuture putAsync(K key, V value, long ttl, TimeUnit timeunit) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         checkNotNull(value, NULL_VALUE_IS_NOT_ALLOWED);
 
@@ -284,7 +284,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
     }
 
     @Override
-    public ICompletableFuture removeAsync(final K key) {
+    public ICompletableFuture removeAsync(K key) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
         Data k = toData(key, partitionStrategy);
@@ -292,7 +292,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
     }
 
     @Override
-    public Map<K, V> getAll(final Set<K> keys) {
+    public Map<K, V> getAll(Set<K> keys) {
         Set<Data> ks = new HashSet(keys.size());
         for (K key : keys) {
             checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
@@ -304,7 +304,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
     }
 
     @Override
-    public void putAll(final Map<? extends K, ? extends V> m) {
+    public void putAll(Map<? extends K, ? extends V> m) {
         // Note, putAllInternal() will take care of the null key/value checks.
         putAllInternal(m);
     }
@@ -313,18 +313,16 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
     public boolean tryLock(K key) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
-        final NodeEngine nodeEngine = getNodeEngine();
         Data k = toData(key, partitionStrategy);
-        return lockSupport.tryLock(nodeEngine, k);
+        return lockSupport.tryLock(getNodeEngine(), k);
     }
 
     @Override
     public boolean tryLock(K key, long time, TimeUnit timeunit) throws InterruptedException {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
-        final NodeEngine nodeEngine = getNodeEngine();
         Data k = toData(key, partitionStrategy);
-        return lockSupport.tryLock(nodeEngine, k, time, timeunit);
+        return lockSupport.tryLock(getNodeEngine(), k, time, timeunit);
     }
 
     @Override
@@ -332,18 +330,16 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
                            long leaseTime, TimeUnit leaseTimeunit) throws InterruptedException {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
-        final NodeEngine nodeEngine = getNodeEngine();
         Data k = toData(key, partitionStrategy);
-        return lockSupport.tryLock(nodeEngine, k, time, timeunit, leaseTime, leaseTimeunit);
+        return lockSupport.tryLock(getNodeEngine(), k, time, timeunit, leaseTime, leaseTimeunit);
     }
 
     @Override
-    public void forceUnlock(final K key) {
+    public void forceUnlock(K key) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
-        final NodeEngine nodeEngine = getNodeEngine();
         Data k = toData(key, partitionStrategy);
-        lockSupport.forceUnlock(nodeEngine, k);
+        lockSupport.forceUnlock(getNodeEngine(), k);
     }
 
     @Override
@@ -361,12 +357,12 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
     }
 
     @Override
-    public String addLocalEntryListener(final MapListener listener) {
+    public String addLocalEntryListener(MapListener listener) {
         return addLocalEntryListenerInternal(listener);
     }
 
     @Override
-    public String addLocalEntryListener(final EntryListener listener) {
+    public String addLocalEntryListener(EntryListener listener) {
         return addLocalEntryListenerInternal(listener);
     }
 
@@ -407,28 +403,28 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
     }
 
     @Override
-    public String addEntryListener(final MapListener listener, final boolean includeValue) {
+    public String addEntryListener(MapListener listener, boolean includeValue) {
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
 
         return addEntryListenerInternal(listener, null, includeValue);
     }
 
     @Override
-    public String addEntryListener(final EntryListener listener, final boolean includeValue) {
+    public String addEntryListener(EntryListener listener, boolean includeValue) {
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
 
         return addEntryListenerInternal(listener, null, includeValue);
     }
 
     @Override
-    public String addEntryListener(final MapListener listener, final K key, final boolean includeValue) {
+    public String addEntryListener(MapListener listener, K key, boolean includeValue) {
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
 
         return addEntryListenerInternal(listener, toData(key, partitionStrategy), includeValue);
     }
 
     @Override
-    public String addEntryListener(final EntryListener listener, final K key, final boolean includeValue) {
+    public String addEntryListener(EntryListener listener, K key, boolean includeValue) {
         checkNotNull(listener, NULL_LISTENER_IS_NOT_ALLOWED);
 
         return addEntryListenerInternal(listener, toData(key, partitionStrategy), includeValue);
@@ -491,8 +487,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
     public EntryView<K, V> getEntryView(K key) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
-        SimpleEntryView<K, V> entryViewInternal =
-                (SimpleEntryView) getEntryViewInternal(toData(key, partitionStrategy));
+        SimpleEntryView<K, V> entryViewInternal = (SimpleEntryView) getEntryViewInternal(toData(key, partitionStrategy));
         if (entryViewInternal == null) {
             return null;
         }
@@ -503,7 +498,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
     }
 
     @Override
-    public boolean evict(final Object key) {
+    public boolean evict(Object key) {
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
 
         return evictInternal(toData(key, partitionStrategy));
@@ -572,14 +567,14 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
 
     @Override
     @SuppressWarnings("unchecked")
-    public Set<K> keySet(final Predicate predicate) {
+    public Set<K> keySet(Predicate predicate) {
         checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
 
         return query(predicate, IterationType.KEY, false);
     }
 
     @Override
-    public Set entrySet(final Predicate predicate) {
+    public Set entrySet(Predicate predicate) {
         checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
 
         return query(predicate, IterationType.ENTRY, false);
@@ -587,7 +582,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
 
     @Override
     @SuppressWarnings("unchecked")
-    public Collection<V> values(final Predicate predicate) {
+    public Collection<V> values(Predicate predicate) {
         checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
 
         return query(predicate, IterationType.VALUE, false);
@@ -600,7 +595,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
 
     @Override
     @SuppressWarnings("unchecked")
-    public Set<K> localKeySet(final Predicate predicate) {
+    public Set<K> localKeySet(Predicate predicate) {
         checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
 
         return queryLocal(predicate, IterationType.KEY, false);
@@ -697,7 +692,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder();
+        StringBuilder sb = new StringBuilder();
         sb.append("IMap");
         sb.append("{name='").append(name).append('\'');
         sb.append('}');
