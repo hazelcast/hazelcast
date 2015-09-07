@@ -50,9 +50,9 @@ import java.util.HashSet;
 import java.util.Properties;
 import java.util.Set;
 
-import static com.hazelcast.client.config.ClientXmlElements.INSTANCE_NAME;
 import static com.hazelcast.client.config.ClientXmlElements.EXECUTOR_POOL_SIZE;
 import static com.hazelcast.client.config.ClientXmlElements.GROUP;
+import static com.hazelcast.client.config.ClientXmlElements.INSTANCE_NAME;
 import static com.hazelcast.client.config.ClientXmlElements.LICENSE_KEY;
 import static com.hazelcast.client.config.ClientXmlElements.LISTENERS;
 import static com.hazelcast.client.config.ClientXmlElements.LOAD_BALANCER;
@@ -349,7 +349,12 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
                 clientAwsConfig.setTagValue(value);
             } else if ("inside-aws".equals(cleanNodeName(n.getNodeName()))) {
                 clientAwsConfig.setInsideAws(checkTrue(value));
+            } else if ("iam-role".equals(cleanNodeName(n.getNodeName()))) {
+                clientAwsConfig.setIamRole(value);
             }
+        }
+        if (!clientAwsConfig.isInsideAws() && clientAwsConfig.getIamRole() != null) {
+            throw new InvalidConfigurationException("You cannot set IAM Role from outside EC2");
         }
         clientNetworkConfig.setAwsConfig(clientAwsConfig);
     }

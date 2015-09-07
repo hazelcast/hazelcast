@@ -59,6 +59,7 @@
             <xs:element name="inside-aws" type="xs:boolean" minOccurs="0" maxOccurs="1" default="false"/>
             <xs:element name="access-key" type="xs:string" minOccurs="0" maxOccurs="1"/>
             <xs:element name="secret-key" type="xs:string" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="iam-role" type="xs:string" minOccurs="0" maxOccurs="1"/>
             <xs:element name="region" type="xs:string" minOccurs="0" maxOccurs="1"/>
             <xs:element name="host-header" type="xs:string" minOccurs="0" maxOccurs="1"/>
             <xs:element name="security-group-name" type="xs:string" minOccurs="0" maxOccurs="1"/>
