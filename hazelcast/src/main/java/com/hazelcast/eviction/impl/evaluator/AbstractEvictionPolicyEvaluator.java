@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-package com.hazelcast.cache.impl.eviction.impl.evaluator;
+package com.hazelcast.eviction.impl.evaluator;
 
-import com.hazelcast.cache.impl.eviction.Evictable;
-import com.hazelcast.cache.impl.eviction.EvictionCandidate;
-import com.hazelcast.cache.impl.eviction.EvictionPolicyEvaluator;
-import com.hazelcast.cache.impl.eviction.Expirable;
+import com.hazelcast.eviction.Evictable;
+import com.hazelcast.eviction.EvictionCandidate;
+import com.hazelcast.eviction.EvictionPolicyEvaluator;
+import com.hazelcast.eviction.Expirable;
 import com.hazelcast.util.Clock;
 
 import java.util.Collections;
@@ -62,15 +62,10 @@ public abstract class AbstractEvictionPolicyEvaluator<A, E extends Evictable>
                     continue;
                 }
 
-                // If evictable is also an expirable
-                if (evictable instanceof Expirable) {
-                    Expirable expirable = (Expirable) evictable;
-                    // If there is an expired candidate, let's evict that one immediately
-                    if (expirable.isExpiredAt(now)) {
-                        return candidate instanceof Iterable
-                                    ? (Iterable<C>) candidate
-                                    : Collections.singleton(candidate);
-                    }
+                if (isExpired(now, evictable)) {
+                    return candidate instanceof Iterable
+                            ? (Iterable<C>) candidate
+                            : Collections.singleton(candidate);
                 }
 
                 Evictable selected = selectEvictableAsPolicy(evictionCandidate.getEvictable(), evictable);
@@ -86,6 +81,16 @@ public abstract class AbstractEvictionPolicyEvaluator<A, E extends Evictable>
                     ? (Iterable<C>) evictionCandidate
                     : Collections.singleton(evictionCandidate);
         }
+    }
+
+    private boolean isExpired(long now, Evictable evictable) {
+        // If evictable is also an expirable
+        if (evictable instanceof Expirable) {
+            Expirable expirable = (Expirable) evictable;
+            // If there is an expired candidate, let's evict that one immediately
+            return expirable.isExpiredAt(now);
+        }
+        return false;
     }
 
 }

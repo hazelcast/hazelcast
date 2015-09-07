@@ -17,7 +17,7 @@
 package com.hazelcast.cache.impl.record;
 
 import com.hazelcast.cache.impl.CacheKeyIteratorResult;
-import com.hazelcast.cache.impl.eviction.EvictableStore;
+import com.hazelcast.eviction.EvictableStore;
 import com.hazelcast.nio.serialization.Data;
 
 import java.util.Map;

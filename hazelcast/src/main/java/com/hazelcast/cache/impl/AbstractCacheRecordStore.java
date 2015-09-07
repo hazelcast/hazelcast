@@ -17,12 +17,12 @@
 package com.hazelcast.cache.impl;
 
 import com.hazelcast.cache.CacheNotExistsException;
-import com.hazelcast.cache.impl.eviction.EvictionChecker;
-import com.hazelcast.cache.impl.eviction.EvictionListener;
-import com.hazelcast.cache.impl.eviction.EvictionPolicyEvaluator;
-import com.hazelcast.cache.impl.eviction.EvictionPolicyEvaluatorProvider;
-import com.hazelcast.cache.impl.eviction.EvictionStrategy;
-import com.hazelcast.cache.impl.eviction.EvictionStrategyProvider;
+import com.hazelcast.eviction.EvictionChecker;
+import com.hazelcast.eviction.EvictionListener;
+import com.hazelcast.eviction.EvictionPolicyEvaluator;
+import com.hazelcast.eviction.EvictionPolicyEvaluatorProvider;
+import com.hazelcast.eviction.EvictionStrategy;
+import com.hazelcast.eviction.EvictionStrategyProvider;
 import com.hazelcast.cache.impl.maxsize.MaxSizeChecker;
 import com.hazelcast.cache.impl.maxsize.impl.EntryCountCacheMaxSizeChecker;
 import com.hazelcast.cache.impl.record.CacheRecord;

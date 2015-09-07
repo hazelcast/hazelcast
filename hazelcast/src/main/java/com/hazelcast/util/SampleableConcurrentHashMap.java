@@ -16,7 +16,7 @@
 
 package com.hazelcast.util;
 
-import com.hazelcast.cache.impl.eviction.Expirable;
+import com.hazelcast.eviction.Expirable;
 import com.hazelcast.nio.serialization.Data;
 
 import java.util.Collections;

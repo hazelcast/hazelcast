@@ -14,32 +14,28 @@
  * limitations under the License.
  */
 
-package com.hazelcast.cache.impl.eviction;
+package com.hazelcast.eviction;
 
 /**
- * Interface for entries, records or whatever that can be evicted.
+ * Interface for entries, records or whatever that can be evictable via its accessor (key or id).
+ *
+ * @param <A> Type of the accessor
+ * @param <E> Type of the {@link Evictable} value
  */
-public interface Evictable {
+public interface EvictionCandidate<A, E extends Evictable> {
 
     /**
-     * Gets the creation time of this {@link Evictable} in milliseconds.
+     * The accessor (key or id) of {@link Evictable} entry or record or whatever.
      *
-     * @return the creation time of this {@link Evictable} in milliseconds
+     * @return the accessor (key or id) of {@link Evictable} entry or record or whatever
      */
-    long getCreationTime();
+    A getAccessor();
 
     /**
-     * Gets the latest access time difference of this {@link Evictable} in milliseconds.
+     * The value of {@link Evictable} entry or record or whatever.
      *
-     * @return the latest access time of this {@link Evictable} in milliseconds
+     * @return the value of {@link Evictable} entry or record or whatever
      */
-    long getAccessTime();
-
-    /**
-     * Gets the access hit count of this {@link Evictable}.
-     *
-     * @return the access hit count of this {@link Evictable}
-     */
-    int getAccessHit();
+    E getEvictable();
 
 }

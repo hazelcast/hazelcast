@@ -14,9 +14,29 @@
  * limitations under the License.
  */
 
+package com.hazelcast.eviction;
+
 /**
- * <p>
- *     Eviction implementations for cache.
- * </p>
+ * Interface for checking about if eviction is required or not.
  */
-package com.hazelcast.cache.impl.eviction.impl;
+public interface EvictionChecker {
+
+    /**
+     * Empty {@link} EvictionChecker to allow eviction always.
+     */
+    EvictionChecker EVICT_ALWAYS = new EvictionChecker() {
+        @Override
+        public boolean isEvictionRequired() {
+            // Evict always at any case
+            return true;
+        }
+    };
+
+    /**
+     * Checks for if eviction is required or not.
+     *
+     * @return <code>true</code> if eviction is required, otherwise <code>false</code>
+     */
+    boolean isEvictionRequired();
+
+}

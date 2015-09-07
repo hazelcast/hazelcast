@@ -14,28 +14,23 @@
  * limitations under the License.
  */
 
-package com.hazelcast.cache.impl.eviction;
+package com.hazelcast.eviction;
 
 /**
- * Interface for entries, records or whatever that can be evictable via its accessor (key or id).
- *
- * @param <A> Type of the accessor
- * @param <E> Type of the {@link Evictable} value
+ * Enum for eviction policy types.
  */
-public interface EvictionCandidate<A, E extends Evictable> {
+public enum EvictionPolicyType {
 
     /**
-     * The accessor (key or id) of {@link Evictable} entry or record or whatever.
-     *
-     * @return the accessor (key or id) of {@link Evictable} entry or record or whatever
+     * Least Recently Used
      */
-    A getAccessor();
+    LRU,
 
     /**
-     * The value of {@link Evictable} entry or record or whatever.
-     *
-     * @return the value of {@link Evictable} entry or record or whatever
+     * Least Frequently Used
      */
-    E getEvictable();
+    LFU
+
+    // TODO Maybe another "CUSTOM" type for user defined eviction policies
 
 }

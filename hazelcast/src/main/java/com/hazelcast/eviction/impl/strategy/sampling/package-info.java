@@ -16,7 +16,7 @@
 
 /**
  * <p>
- *     Eviction policy implementations for cache.
+ *     Sampling based {@link com.hazelcast.eviction.EvictionStrategy} implementations for cache.
  * </p>
  */
-package com.hazelcast.cache.impl.eviction;
+package com.hazelcast.eviction.impl.strategy.sampling;

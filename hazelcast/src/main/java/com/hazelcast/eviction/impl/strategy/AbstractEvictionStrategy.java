@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-package com.hazelcast.cache.impl.eviction.impl.strategy;
+package com.hazelcast.eviction.impl.strategy;
 
-import com.hazelcast.cache.impl.eviction.Evictable;
-import com.hazelcast.cache.impl.eviction.EvictableStore;
-import com.hazelcast.cache.impl.eviction.EvictionChecker;
-import com.hazelcast.cache.impl.eviction.EvictionListener;
-import com.hazelcast.cache.impl.eviction.EvictionPolicyEvaluator;
-import com.hazelcast.cache.impl.eviction.EvictionStrategy;
+import com.hazelcast.eviction.Evictable;
+import com.hazelcast.eviction.EvictableStore;
+import com.hazelcast.eviction.EvictionChecker;
+import com.hazelcast.eviction.EvictionListener;
+import com.hazelcast.eviction.EvictionPolicyEvaluator;
+import com.hazelcast.eviction.EvictionStrategy;
 
 /**
  * Base class for eviction implementations to evict {@link EvictableStore} implementations as specified

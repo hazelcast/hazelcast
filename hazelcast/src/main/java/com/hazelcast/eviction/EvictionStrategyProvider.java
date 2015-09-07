@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.cache.impl.eviction;
+package com.hazelcast.eviction;
 
-import com.hazelcast.cache.impl.eviction.impl.strategy.sampling.SamplingBasedEvictionStrategy;
+import com.hazelcast.eviction.impl.strategy.sampling.SamplingBasedEvictionStrategy;
 
 import java.util.HashMap;
 import java.util.Map;
