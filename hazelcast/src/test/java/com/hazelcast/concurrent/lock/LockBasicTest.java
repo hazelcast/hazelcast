@@ -301,6 +301,18 @@ public abstract class LockBasicTest extends HazelcastTestSupport {
 
     // ========================= lease time ==============================================
 
+    @Test
+    public void testLockLeaseTime_whenLockAcquiredTwice() {
+        lock.lock(1000, TimeUnit.MILLISECONDS);
+        lock.lock(1000, TimeUnit.MILLISECONDS);
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertFalse(lock.isLocked());
+            }
+        }, 5);
+    }
+
     @Test(expected = NullPointerException.class, timeout = 60000)
     public void testLockLeaseTime_whenNullTimeout() {
         lock.lock(1000, null);
@@ -349,6 +361,18 @@ public abstract class LockBasicTest extends HazelcastTestSupport {
     }
 
     // ========================= tryLock with lease time ==============================================
+
+    @Test
+    public void testTryLockLeaseTime_whenLockAcquiredTwice() throws InterruptedException {
+        lock.tryLock(1000, TimeUnit.MILLISECONDS, 1000, TimeUnit.MILLISECONDS);
+        lock.tryLock(1000, TimeUnit.MILLISECONDS, 1000, TimeUnit.MILLISECONDS);
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertFalse(lock.isLocked());
+            }
+        }, 5);
+    }
 
     @Test(expected = NullPointerException.class, timeout = 60000)
     public void testTryLockLeaseTime_whenNullTimeout() throws InterruptedException {
