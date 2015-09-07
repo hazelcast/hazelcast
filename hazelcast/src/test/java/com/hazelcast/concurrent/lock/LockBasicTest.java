@@ -300,6 +300,18 @@ public abstract class LockBasicTest extends HazelcastTestSupport {
 
     // ========================= lease time ==============================================
 
+    @Test
+    public void testLockLeaseTime_whenLockAcquiredTwice() {
+        lock.lock(1000, TimeUnit.MILLISECONDS);
+        lock.lock(1000, TimeUnit.MILLISECONDS);
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertFalse(lock.isLocked());
+            }
+        }, 5);
+    }
+
     @Test(expected = NullPointerException.class, timeout = 60000)
     public void testLockLeaseTime_whenNullTimeout() {
         lock.lock(1000, null);

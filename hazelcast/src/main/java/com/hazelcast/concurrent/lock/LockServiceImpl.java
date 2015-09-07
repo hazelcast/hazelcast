@@ -68,7 +68,7 @@ public final class LockServiceImpl implements LockService, ManagedService, Remot
                     ScheduledExecutorService scheduledExecutor =
                             nodeEngine.getExecutionService().getDefaultScheduledExecutor();
                     return EntryTaskSchedulerFactory
-                            .newScheduler(scheduledExecutor, entryProcessor, ScheduleType.POSTPONE);
+                            .newScheduler(scheduledExecutor, entryProcessor, ScheduleType.FOR_EACH);
                 }
             };
 
