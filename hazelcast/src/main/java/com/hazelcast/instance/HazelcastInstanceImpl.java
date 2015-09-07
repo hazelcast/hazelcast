@@ -24,7 +24,6 @@ import com.hazelcast.concurrent.atomiclong.AtomicLongService;
 import com.hazelcast.concurrent.atomicreference.AtomicReferenceService;
 import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
 import com.hazelcast.concurrent.idgen.IdGeneratorService;
-import com.hazelcast.concurrent.lock.LockProxy;
 import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.concurrent.semaphore.SemaphoreService;
 import com.hazelcast.config.Config;
@@ -54,6 +53,7 @@ import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.executor.impl.DistributedExecutorService;
 import com.hazelcast.internal.monitors.HealthMonitor;
 import com.hazelcast.internal.monitors.PerformanceMonitor;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.jmx.ManagementService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
@@ -62,7 +62,6 @@ import com.hazelcast.mapreduce.JobTracker;
 import com.hazelcast.mapreduce.impl.MapReduceService;
 import com.hazelcast.memory.MemoryStats;
 import com.hazelcast.multimap.impl.MultiMapService;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.quorum.QuorumService;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.ringbuffer.Ringbuffer;
@@ -220,13 +219,6 @@ public class HazelcastInstanceImpl implements HazelcastInstance {
     public <E> Ringbuffer<E> getRingbuffer(String name) {
         checkNotNull(name, "Retrieving a ringbuffer instance with a null name is not allowed!");
         return getDistributedObject(RingbufferService.SERVICE_NAME, name);
-    }
-
-    @Deprecated
-    public ILock getLock(Object key) {
-        checkNotNull(key, "Retrieving a lock instance with a null key is not allowed!");
-        String name = LockProxy.convertToStringKey(key, node.getSerializationService());
-        return getLock(name);
     }
 
     @Override
