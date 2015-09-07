@@ -21,6 +21,8 @@ import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.util.Clock;
 
+import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
+
 
 public class ClusterClockImpl implements ClusterClock {
 
@@ -51,7 +53,7 @@ public class ClusterClockImpl implements ClusterClock {
         this.clusterTimeDiff = Long.MAX_VALUE;
     }
 
-    @Probe(name = "clusterTimeDiff")
+    @Probe(name = "clusterTimeDiff", level = MANDATORY)
     @Override
     public long getClusterTimeDiff() {
         return (clusterTimeDiff == Long.MAX_VALUE) ? 0 : clusterTimeDiff;

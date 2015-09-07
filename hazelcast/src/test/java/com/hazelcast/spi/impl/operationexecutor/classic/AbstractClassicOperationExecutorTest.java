@@ -32,6 +32,7 @@ import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
 
+import static com.hazelcast.internal.metrics.ProbeLevel.INFO;
 import static java.util.Collections.synchronizedList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -74,7 +75,7 @@ public abstract class AbstractClassicOperationExecutorTest extends HazelcastTest
         nodeExtension = new DefaultNodeExtension();
         handlerFactory = new DummyOperationRunnerFactory();
 
-        metricsRegistry = new MetricsRegistryImpl(Logger.getLogger(MetricsRegistry.class));
+        metricsRegistry = new MetricsRegistryImpl(Logger.getLogger(MetricsRegistry.class), INFO);
         responsePacketHandler = new DummyResponsePacketHandler();
     }
 

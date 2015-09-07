@@ -21,6 +21,7 @@ import com.hazelcast.internal.metrics.DoubleProbeFunction;
 import com.hazelcast.internal.metrics.LongProbeFunction;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.ProbeFunction;
+import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.metrics.metricsets.ClassLoadingMetricSet;
 import com.hazelcast.internal.metrics.metricsets.GarbageCollectionMetricSet;
 import com.hazelcast.internal.metrics.metricsets.OperatingSystemMetricsSet;
@@ -50,6 +51,7 @@ import static java.lang.String.format;
 public class MetricsRegistryImpl implements MetricsRegistry {
 
     final ILogger logger;
+    final ProbeLevel minimumLevel;
 
     private final ScheduledExecutorService scheduledExecutorService = new ScheduledThreadPoolExecutor(2);
     private final AtomicInteger modCount = new AtomicInteger();
@@ -70,8 +72,14 @@ public class MetricsRegistryImpl implements MetricsRegistry {
      * @param logger the ILogger used
      * @throws NullPointerException if logger is null
      */
-    public MetricsRegistryImpl(ILogger logger) {
+    public MetricsRegistryImpl(ILogger logger, ProbeLevel minimumLevel) {
         this.logger = checkNotNull(logger, "logger can't be null");
+        this.minimumLevel = checkNotNull(minimumLevel, "minimumLevel can't be null");
+
+        System.out.println(minimumLevel);
+        if (logger.isFinestEnabled()) {
+            logger.finest("MetricsRegistry minimumLevel:" + minimumLevel);
+        }
 
         RuntimeMetricSet.register(this);
         GarbageCollectionMetricSet.register(this);
@@ -117,21 +125,23 @@ public class MetricsRegistryImpl implements MetricsRegistry {
     }
 
     @Override
-    public <S> void register(S source, String name, LongProbeFunction<S> function) {
+    public <S> void register(S source, String name, ProbeLevel level, LongProbeFunction<S> function) {
         checkNotNull(source, "source can't be null");
         checkNotNull(name, "name can't be null");
         checkNotNull(function, "function can't be null");
+        checkNotNull(level, "level can't be null");
 
-        registerInternal(source, name, function);
+        registerInternal(source, name, level, function);
     }
 
     @Override
-    public <S> void register(S source, String name, DoubleProbeFunction<S> function) {
+    public <S> void register(S source, String name, ProbeLevel level, DoubleProbeFunction<S> function) {
         checkNotNull(source, "source can't be null");
         checkNotNull(name, "name can't be null");
         checkNotNull(function, "function can't be null");
+        checkNotNull(level, "level can't be null");
 
-        registerInternal(source, name, function);
+        registerInternal(source, name, level, function);
     }
 
     public ProbeInstance getProbeInstance(String name) {
@@ -140,7 +150,11 @@ public class MetricsRegistryImpl implements MetricsRegistry {
         return probeInstances.get(name);
     }
 
-    <S> void registerInternal(S source, String name, ProbeFunction function) {
+    <S> void registerInternal(S source, String name, ProbeLevel probeLevel, ProbeFunction function) {
+        if (!probeLevel.isEnabled(minimumLevel)) {
+            return;
+        }
+
         synchronized (lockStripe.getLock(source)) {
             ProbeInstance probeInstance = probeInstances.get(name);
             if (probeInstance == null) {

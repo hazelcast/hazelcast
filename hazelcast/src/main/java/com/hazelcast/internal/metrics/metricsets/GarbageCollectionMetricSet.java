@@ -26,6 +26,7 @@ import java.lang.management.ManagementFactory;
 import java.util.HashSet;
 import java.util.Set;
 
+import static com.hazelcast.internal.metrics.ProbeLevel.MANDATORY;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
@@ -67,17 +68,17 @@ public final class GarbageCollectionMetricSet {
 
     @SuppressFBWarnings(value = "URF_UNREAD_FIELD", justification = "used by instrumentation tools")
     static class GcStats implements Runnable {
-        @Probe
+        @Probe(level = MANDATORY)
         volatile long minorCount;
-        @Probe
+        @Probe(level = MANDATORY)
         volatile long minorTime;
-        @Probe
+        @Probe(level = MANDATORY)
         volatile long majorCount;
-        @Probe
+        @Probe(level = MANDATORY)
         volatile long majorTime;
-        @Probe
+        @Probe(level = MANDATORY)
         volatile long unknownCount;
-        @Probe
+        @Probe(level = MANDATORY)
         volatile long unknownTime;
 
         @Override
