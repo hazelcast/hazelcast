@@ -444,7 +444,6 @@
     <suppress checks="MethodCountCheck" files="com/hazelcast/map/impl/recordstore/DefaultRecordStore"/>
     <suppress checks="MethodCountCheck" files="com/hazelcast/map/impl/proxy/MapProxyImpl"/>
     <suppress checks="MethodCountCheck" files="com/hazelcast/map/impl/proxy/MapProxySupport"/>
-    <suppress checks="MethodLength" files="com/hazelcast/map/impl/proxy/MapProxySupport" />
     <suppress checks="ClassFanOutComplexityCheck" files="com/hazelcast/map/impl/proxy/MapProxySupport"/>
     <suppress checks="ClassDataAbstractionCoupling" files="com/hazelcast/map/impl/proxy/MapProxySupport"/>
     <suppress checks="CyclomaticComplexity" files="com/hazelcast/map/impl/client/AbstractTxnMapRequest"/>
