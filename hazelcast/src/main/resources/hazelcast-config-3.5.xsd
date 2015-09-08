@@ -261,8 +261,8 @@
         <xs:attribute name="old-value-required" type="xs:boolean" use="optional" default="false">
             <xs:annotation>
                 <xs:documentation>
-                    If true, previously assigned values for the affected keys will be sent to this 
-                    cache-entry-listener implementation. Setting this attribute to true 
+                    If true, previously assigned values for the affected keys will be sent to this
+                    cache-entry-listener implementation. Setting this attribute to true
                     creates additional traffic. Default value is false.
                 </xs:documentation>
             </xs:annotation>
@@ -270,7 +270,7 @@
         <xs:attribute name="synchronous" type="xs:boolean" use="optional" default="false">
             <xs:annotation>
                 <xs:documentation>
-                    If true, this cache-entry-listener implementation will be called 
+                    If true, this cache-entry-listener implementation will be called
                     in a synchronous manner. Default value is false.
                 </xs:documentation>
             </xs:annotation>
@@ -798,7 +798,7 @@
                 <xs:annotation>
                     <xs:documentation>
                         The number of emitted values before a chunk is send to the reducers.
-                        If your emitted values are big, you might want to change this to a lower value. If you want 
+                        If your emitted values are big, you might want to change this to a lower value. If you want
                         to better balance your work, you might want to change this to a higher value.
                         A value of 0 means immediate transmission, but remember that low values mean higher traffic
                         costs.
@@ -876,8 +876,8 @@
             <xs:element name="capacity" type="xs:unsignedInt" minOccurs="0" maxOccurs="1">
                 <xs:annotation>
                     <xs:documentation>
-                        Number of items in the ringbuffer. If no time-to-live-seconds is set, the size will always 
-                        be equal to capacity after the head completed the first loop around the ring. This is 
+                        Number of items in the ringbuffer. If no time-to-live-seconds is set, the size will always
+                        be equal to capacity after the head completed the first loop around the ring. This is
                         because no items are getting retired.
                     </xs:documentation>
                 </xs:annotation>
@@ -933,11 +933,11 @@
             <xs:element name="public-address" type="xs:string" minOccurs="0" maxOccurs="1">
                 <xs:annotation>
                     <xs:documentation>
-                        Overrides the public address of a node. By default, a node selects its socket address 
+                        Overrides the public address of a node. By default, a node selects its socket address
                         as its public address. But behind a network address translation (NAT), two endpoints (nodes)
-                        may not be able to see/access each other. If both nodes set their public addresses to their 
-                        defined addresses on NAT, then they can communicate with each other. In this case, their 
-                        public addresses are not an address of a local network interface but a virtual address defined by NAT. 
+                        may not be able to see/access each other. If both nodes set their public addresses to their
+                        defined addresses on NAT, then they can communicate with each other. In this case, their
+                        public addresses are not an address of a local network interface but a virtual address defined by NAT.
                         This is optional to set and useful when you have a private cloud.
                     </xs:documentation>
                 </xs:annotation>
@@ -947,13 +947,13 @@
                     <xs:documentation>
                         The ports which Hazelcast will use to communicate between cluster members. Its default value is 5701.
 						It has the following attributes.
-                            port-count: The default value is 100, meaning that Hazelcast will try to bind 100 ports. 
-                                If you set the value of port as 5701, as members join the cluster, Hazelcast tries to find 
-                                ports between 5701 and 5801. You can change the port count in cases like having large 
+                            port-count: The default value is 100, meaning that Hazelcast will try to bind 100 ports.
+                                If you set the value of port as 5701, as members join the cluster, Hazelcast tries to find
+                                ports between 5701 and 5801. You can change the port count in cases like having large
                                 instances on a single machine or you are willing to have only a few ports assigned.
-                            auto-increment: Default value is true. If port is set to 5701, Hazelcast will try to find free 
-                                ports between 5701 and 5801. Normally, you will not need to change this value, but it comes 
-                                in handy when needed. You may also want to choose to use only one port. In that case, you can 
+                            auto-increment: Default value is true. If port is set to 5701, Hazelcast will try to find free
+                                ports between 5701 and 5801. Normally, you will not need to change this value, but it comes
+                                in handy when needed. You may also want to choose to use only one port. In that case, you can
                                 disable the auto-increment feature of port by setting its value as false.
                     </xs:documentation>
                 </xs:annotation>
@@ -961,10 +961,10 @@
             <xs:element name="reuse-address" type="xs:boolean" minOccurs="0" maxOccurs="1" default="false">
                <xs:annotation>
                     <xs:documentation>
-                        When you shutdown a cluster member, the server socket port will be in the TIME_WAIT 
-                        state for the next couple of minutes. If you start the member right after shutting it down, 
-                        you may not be able to bind it to the same port because it is in the TIME_WAIT state. If you 
-                        set reuse-address to true, the TIME_WAIT state is ignored and you can bind the member to the 
+                        When you shutdown a cluster member, the server socket port will be in the TIME_WAIT
+                        state for the next couple of minutes. If you start the member right after shutting it down,
+                        you may not be able to bind it to the same port because it is in the TIME_WAIT state. If you
+                        set reuse-address to true, the TIME_WAIT state is ignored and you can bind the member to the
                         same port again. Default value is false.
                     </xs:documentation>
                 </xs:annotation>
@@ -973,8 +973,8 @@
                <xs:annotation>
                     <xs:documentation>
                         By default, Hazelcast lets the system pick up an ephemeral port during socket bind operation.
-                        But security policies/firewalls may require to restrict outbound ports to be used by 
-                        Hazelcast-enabled applications. To fulfill this requirement, you can configure Hazelcast to use 
+                        But security policies/firewalls may require to restrict outbound ports to be used by
+                        Hazelcast-enabled applications. To fulfill this requirement, you can configure Hazelcast to use
                         only defined outbound ports.
                         outbound-ports has the ports attribute to allow you to define outbound ports.
                     </xs:documentation>
@@ -1003,7 +1003,7 @@
             <xs:element name="required-member" type="xs:string" minOccurs="0" maxOccurs="1">
                 <xs:annotation>
                     <xs:documentation>
-                        IP address of the required member. Cluster will form only if the member with this IP 
+                        IP address of the required member. Cluster will form only if the member with this IP
                         address is found.
                     </xs:documentation>
                 </xs:annotation>
@@ -1047,10 +1047,10 @@
             <xs:annotation>
                 <xs:documentation>
                     The maximum amount of time Hazelcast is going to try to connect to a well known member
-                    before giving up. Setting it to a too low value could mean that a member is not able 
-                    to connect to a cluster. Setting it to a too high value means that member startup could 
-                    slow down because of longer timeouts (e.g. when a well known member is not up). Increasing 
-                    this value is recommended if you have many IPs listed and the members cannot properly 
+                    before giving up. Setting it to a too low value could mean that a member is not able
+                    to connect to a cluster. Setting it to a too high value means that member startup could
+                    slow down because of longer timeouts (e.g. when a well known member is not up). Increasing
+                    this value is recommended if you have many IPs listed and the members cannot properly
                     build up the cluster. Its default value is 5.
                 </xs:documentation>
             </xs:annotation>
@@ -1074,7 +1074,7 @@
             <xs:element name="multicast-group" type="xs:string" minOccurs="0" maxOccurs="1" default="224.2.2.3">
 	            <xs:annotation>
 	                <xs:documentation>
-	                    The multicast group IP address. Specify it when you want to create clusters within the 
+	                    The multicast group IP address. Specify it when you want to create clusters within the
 	                    same network. Values can be between 224.0.0.0 and 239.255.255.255. Default value is 224.2.2.3.
 	                </xs:documentation>
 	            </xs:annotation>
@@ -1082,7 +1082,7 @@
             <xs:element name="multicast-port" type="xs:unsignedShort" minOccurs="0" maxOccurs="1" default="54327">
 	            <xs:annotation>
 	                <xs:documentation>
-	                    The multicast socket port through which the Hazelcast member listens and sends discovery messages. 
+	                    The multicast socket port through which the Hazelcast member listens and sends discovery messages.
 	                    Default value is 54327.
 	                </xs:documentation>
 	            </xs:annotation>
@@ -1090,9 +1090,9 @@
             <xs:element name="multicast-timeout-seconds" type="xs:int" minOccurs="0" maxOccurs="1" default="2">
 	            <xs:annotation>
 	                <xs:documentation>
-	                    Only when the nodes are starting up, this timeout (in seconds) specifies the period during 
-	                    which a node waits for a multicast response from another node. For example, if you set it 
-	                    to 60 seconds, each node will wait for 60 seconds until a leader node is selected. 
+	                    Only when the nodes are starting up, this timeout (in seconds) specifies the period during
+	                    which a node waits for a multicast response from another node. For example, if you set it
+	                    to 60 seconds, each node will wait for 60 seconds until a leader node is selected.
 	                    Its default value is 2 seconds.
 	                </xs:documentation>
 	            </xs:annotation>
@@ -1107,8 +1107,8 @@
             <xs:element name="trusted-interfaces" minOccurs="0" maxOccurs="1">
                 <xs:annotation>
                     <xs:documentation>
-                        Includes IP addresses of trusted members. When a node wants to join to the cluster, 
-                        its join request will be rejected if it is not a trusted member. You can give an IP 
+                        Includes IP addresses of trusted members. When a node wants to join to the cluster,
+                        its join request will be rejected if it is not a trusted member. You can give an IP
                         addresses range using the wildcard (*) on the last digit of the IP address
                         (e.g. 192.168.1.* or 192.168.1.100-110).
                     </xs:documentation>
@@ -1145,10 +1145,17 @@
 	                </xs:documentation>
 	            </xs:annotation>
 	        </xs:element>
+            <xs:element name="iam-role" type="xs:string" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        IAM role that binds with your instance.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
             <xs:element name="region" type="xs:string" minOccurs="0" maxOccurs="1">
 	            <xs:annotation>
 	                <xs:documentation>
-	                    The region where your nodes are running. Default value is us-east-1. 
+	                    The region where your nodes are running. Default value is us-east-1.
 	                    Needs to be specified if the region is other than the default one.
 	                </xs:documentation>
 	            </xs:annotation>
@@ -1163,8 +1170,8 @@
             <xs:element name="security-group-name" type="xs:string" minOccurs="0" maxOccurs="1">
 	            <xs:annotation>
 	                <xs:documentation>
-	                    Name of the security group you specified at the EC2 management console. 
-	                    It is used to narrow the Hazelcast nodes to be within this group. 
+	                    Name of the security group you specified at the EC2 management console.
+	                    It is used to narrow the Hazelcast nodes to be within this group.
 	                    It is optional.
 	                </xs:documentation>
 	            </xs:annotation>
@@ -1196,11 +1203,11 @@
         <xs:attribute name="connection-timeout-seconds" type="xs:int" use="optional" default="5">
             <xs:annotation>
                 <xs:documentation>
-                    The maximum amount of time Hazelcast is going to try to connect to a well known member 
-                    before giving up. Setting its value too low value could mean that a member is not able 
-                    to connect to a cluster. Setting it too high value means that member startup could slow 
-                    down because of longer timeouts (e.g. when a well known member is not up). Increasing 
-                    this value is recommended if you have many IPs listed and the members cannot properly 
+                    The maximum amount of time Hazelcast is going to try to connect to a well known member
+                    before giving up. Setting its value too low value could mean that a member is not able
+                    to connect to a cluster. Setting it too high value means that member startup could slow
+                    down because of longer timeouts (e.g. when a well known member is not up). Increasing
+                    this value is recommended if you have many IPs listed and the members cannot properly
                     build up the cluster. Its default value is 5.
                 </xs:documentation>
             </xs:annotation>
@@ -1292,8 +1299,8 @@
             <xs:element name="write-coalescing" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true">
                 <xs:annotation>
                     <xs:documentation>
-                        Setting this is meaningful if you are using write behind in MapStore. When write-coalescing is true, 
-                        only the latest store operation on a key in the write-delay-seconds time-window will be 
+                        Setting this is meaningful if you are using write behind in MapStore. When write-coalescing is true,
+                        only the latest store operation on a key in the write-delay-seconds time-window will be
                         reflected to MapStore. Default value is true.
                     </xs:documentation>
                 </xs:annotation>
@@ -1303,7 +1310,7 @@
         <xs:attribute name="enabled" default="true" type="xs:boolean">
             <xs:annotation>
                 <xs:documentation>
-                    True to enable this map-store, false to disable. 
+                    True to enable this map-store, false to disable.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
@@ -1334,14 +1341,14 @@
             <xs:element name="include-value" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true">
 	            <xs:annotation>
 	                <xs:documentation>
-	                    True to enable value caching, false to disable. 
+	                    True to enable value caching, false to disable.
 	                </xs:documentation>
 	            </xs:annotation>
 	        </xs:element>
             <xs:element name="predicate" type="predicate" minOccurs="1" maxOccurs="1">
 	            <xs:annotation>
 	                <xs:documentation>
-	                    The predicate to filter events which will be applied to the QueryCache. 
+	                    The predicate to filter events which will be applied to the QueryCache.
 	                </xs:documentation>
 	            </xs:annotation>
 	        </xs:element>
