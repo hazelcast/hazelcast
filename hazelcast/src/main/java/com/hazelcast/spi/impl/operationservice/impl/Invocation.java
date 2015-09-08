@@ -20,6 +20,7 @@ import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.instance.NodeState;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
@@ -269,7 +270,8 @@ abstract class Invocation implements OperationResponseHandler, Runnable {
     }
 
     private boolean engineActive() {
-        if (nodeEngine.isActive()) {
+        final NodeState state = nodeEngine.getNode().getState();
+        if (state == NodeState.ACTIVE) {
             return true;
         }
 

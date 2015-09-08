@@ -18,6 +18,7 @@ package com.hazelcast.cluster.impl;
 
 import com.hazelcast.cluster.Joiner;
 import com.hazelcast.instance.Node;
+import com.hazelcast.instance.NodeState;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -32,14 +33,37 @@ final class SplitBrainHandler implements Runnable {
 
     @Override
     public void run() {
-        if (node.isMaster() && node.joined() && node.isActive() && !node.clusterService.isJoinInProgress()
-                && inProgress.compareAndSet(false, true)) {
+        if (!shouldRun()) {
+            return;
+        }
+
+        if (inProgress.compareAndSet(false, true)) {
             try {
                 searchForOtherClusters();
             } finally {
                 inProgress.set(false);
             }
         }
+    }
+
+    private boolean shouldRun() {
+        if (!node.joined()) {
+            return false;
+        }
+
+        if (!node.isMaster()) {
+            return false;
+        }
+
+        if (node.getState() != NodeState.ACTIVE) {
+            return false;
+        }
+
+        if (node.clusterService.isJoinInProgress()) {
+            return false;
+        }
+
+        return true;
     }
 
     private void searchForOtherClusters() {

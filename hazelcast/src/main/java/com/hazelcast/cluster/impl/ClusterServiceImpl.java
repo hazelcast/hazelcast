@@ -48,6 +48,7 @@ import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.LifecycleServiceImpl;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
+import com.hazelcast.instance.NodeState;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.logging.ILogger;
@@ -335,7 +336,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
     }
 
     private void heartBeater() {
-        if (!node.joined() || !node.isActive()) {
+        if (!node.joined()) {
             return;
         }
 
@@ -495,7 +496,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
     }
 
     public void sendMasterConfirmation() {
-        if (!node.joined() || !node.isActive() || isMaster()) {
+        if (!node.joined() || node.getState() == NodeState.SHUT_DOWN || isMaster()) {
             return;
         }
         Address masterAddress = getMasterAddress();
@@ -682,7 +683,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
     }
 
     private boolean ensureNodeIsReady() {
-        if (node.joined() && node.isActive()) {
+        if (node.joined() && node.getState() == NodeState.ACTIVE) {
             return true;
         }
         if (logger.isFinestEnabled()) {
@@ -1500,7 +1501,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
 
             executeMergeTasks(tasks);
 
-            if (node.isActive() && node.joined()) {
+            if (node.getState() == NodeState.ACTIVE && node.joined()) {
                 lifecycleService.fireLifecycleEvent(MERGED);
             }
         }
@@ -1544,7 +1545,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
             // start connection-manager to setup and accept new connections
             node.connectionManager.start();
             // re-join to the target cluster
-            node.rejoin();
+            node.join();
         }
 
         private void executeMergeTasks(Collection<Runnable> tasks) {
@@ -1580,7 +1581,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
                     if (deadline <= 0) {
                         throw t;
                     }
-                    if (!node.isActive()) {
+                    if (node.getState() != NodeState.ACTIVE) {
                         future.cancel(true);
                         throw new HazelcastInstanceNotActiveException();
                     }

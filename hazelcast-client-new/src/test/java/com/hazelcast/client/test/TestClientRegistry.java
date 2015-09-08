@@ -244,7 +244,7 @@ public class TestClientRegistry {
         @Override
         public boolean write(OutboundFrame frame) {
             final ClientMessage packet = (ClientMessage) frame;
-            if (nodeEngine.getNode().isActive()) {
+            if (nodeEngine.isActive()) {
                 ClientMessage newPacket = readFromPacket(packet);
                 responseConnection.handleClientMessage(newPacket);
                 return true;

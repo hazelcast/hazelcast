@@ -19,6 +19,7 @@ package com.hazelcast.cluster.impl.operations;
 import com.hazelcast.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.cluster.impl.JoinMessage;
 import com.hazelcast.instance.Node;
+import com.hazelcast.instance.NodeState;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
@@ -111,7 +112,7 @@ public class JoinCheckOperation extends AbstractOperation implements JoinOperati
             return false;
         }
 
-        if (!node.isActive()) {
+        if (node.getState() != NodeState.ACTIVE) {
             logger.info("Ignoring join check from " + getCallerAddress() + ", because this node is not active...");
             return false;
         }

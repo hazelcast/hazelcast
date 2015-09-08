@@ -23,6 +23,7 @@ import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.TcpIpConfig;
 import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.instance.Node;
+import com.hazelcast.instance.NodeState;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.util.AddressUtil;
@@ -99,7 +100,9 @@ public class TcpIpJoiner extends AbstractJoiner {
             }
             long joinStartTime = Clock.currentTimeMillis();
             Connection connection;
-            while (node.isActive() && !node.joined() && (Clock.currentTimeMillis() - joinStartTime < maxJoinMillis)) {
+            while (node.getState() == NodeState.ACTIVE && !node.joined()
+                    && (Clock.currentTimeMillis() - joinStartTime < maxJoinMillis)) {
+
                 connection = node.connectionManager.getOrConnect(targetAddress);
                 if (connection == null) {
                     //noinspection BusyWait
@@ -133,7 +136,8 @@ public class TcpIpJoiner extends AbstractJoiner {
             long maxJoinMillis = getMaxJoinMillis();
             long startTime = Clock.currentTimeMillis();
 
-            while (node.isActive() && !node.joined() && (Clock.currentTimeMillis() - startTime < maxJoinMillis)) {
+            while (node.getState() == NodeState.ACTIVE && !node.joined()
+                    && (Clock.currentTimeMillis() - startTime < maxJoinMillis)) {
 
                 tryToJoinPossibleAddresses(possibleAddresses);
                 if (node.joined()) {
@@ -309,7 +313,9 @@ public class TcpIpJoiner extends AbstractJoiner {
         long maxMasterJoinTime = getMaxJoinTimeToMasterNode();
         long start = Clock.currentTimeMillis();
 
-        while (node.isActive() && !node.joined() && Clock.currentTimeMillis() - start < maxMasterJoinTime) {
+        while (node.getState() == NodeState.ACTIVE && !node.joined()
+                && Clock.currentTimeMillis() - start < maxMasterJoinTime) {
+
             Address master = node.getMasterAddress();
             if (master != null) {
                 if (logger.isFinestEnabled()) {

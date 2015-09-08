@@ -22,6 +22,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
+import com.hazelcast.instance.NodeState;
 import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.ProbeLevel;
@@ -234,7 +235,7 @@ public class NodeEngineImpl implements NodeEngine {
 
     @Override
     public boolean isActive() {
-        return node.isActive();
+        return node.getState() == NodeState.ACTIVE;
     }
 
     @Override

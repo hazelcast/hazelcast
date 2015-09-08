@@ -23,6 +23,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.AddressPicker;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.NodeContext;
+import com.hazelcast.instance.NodeState;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
@@ -173,7 +174,7 @@ public final class TestNodeRegistry {
             synchronized (joinerLock) {
                 for (Address address : joinAddresses) {
                     NodeEngineImpl ne = nodes.get(address);
-                    if (ne != null && ne.getNode().isActive() && ne.getNode().joined()) {
+                    if (ne != null && ne.isActive() && ne.getNode().joined()) {
                         nodeEngine = ne;
                         break;
                     }
@@ -194,17 +195,19 @@ public final class TestNodeRegistry {
                     node.setJoined();
                     node.setAsMaster();
                 } else {
-                    for (int i = 0; !node.joined() && i < 2000; i++) {
+                    for (int i = 0; !node.joined() && node.getState() == NodeState.ACTIVE && i < 2000; i++) {
                         try {
                             node.clusterService.sendJoinRequest(node.getMasterAddress(), true);
                             Thread.sleep(50);
                         } catch (InterruptedException e) {
                             e.printStackTrace();
+                            break;
                         }
                     }
                     if (!node.joined()) {
-                        throw new AssertionError("Node[" + node.getThisAddress()
+                        logger.severe("Node[" + node.getThisAddress()
                                 + "] should have been joined to " + node.getMasterAddress());
+                        node.shutdown(true);
                     }
                 }
             }
@@ -453,7 +456,7 @@ public final class TestNodeRegistry {
 
         public boolean write(OutboundFrame frame) {
             final Packet packet = (Packet) frame;
-            if (nodeEngine.getNode().isActive()) {
+            if (nodeEngine.getNode().getState() != NodeState.SHUT_DOWN) {
                 Packet newPacket = readFromPacket(packet);
                 nodeEngine.getPacketDispatcher().dispatch(newPacket);
                 return true;

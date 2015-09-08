@@ -265,7 +265,7 @@ public class TestClientRegistry {
         @Override
         public boolean write(OutboundFrame frame) {
             final Packet packet = (Packet) frame;
-            if (nodeEngine.getNode().isActive()) {
+            if (nodeEngine.isActive()) {
                 Packet newPacket = readFromPacket(packet);
                 responseConnection.handlePacket(newPacket);
                 return true;

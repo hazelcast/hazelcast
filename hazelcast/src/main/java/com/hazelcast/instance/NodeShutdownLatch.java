@@ -50,7 +50,7 @@ final class NodeShutdownLatch {
                 final MemberImpl member = entry.getKey();
                 if (members.contains(member)) {
                     HazelcastInstanceImpl instance = entry.getValue();
-                    if (instance.node.isActive()) {
+                    if (instance.node.getState() == NodeState.ACTIVE) {
                         try {
                             ClusterServiceImpl clusterService = instance.node.clusterService;
                             final String id = clusterService.addMembershipListener(new ShutdownMembershipListener());
@@ -71,7 +71,7 @@ final class NodeShutdownLatch {
 
         int permits = registrations.size();
         for (HazelcastInstanceImpl instance : registrations.values()) {
-            if (!instance.node.isActive()) {
+            if (instance.node.getState() == NodeState.ACTIVE) {
                 permits--;
             }
         }

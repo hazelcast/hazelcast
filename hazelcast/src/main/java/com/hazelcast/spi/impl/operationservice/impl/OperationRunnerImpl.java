@@ -20,6 +20,7 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
+import com.hazelcast.instance.NodeState;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.logging.ILogger;
@@ -303,7 +304,7 @@ class OperationRunnerImpl extends OperationRunner {
         OperationResponseHandler responseHandler = operation.getOperationResponseHandler();
         if (operation.returnsResponse() && responseHandler != null) {
             try {
-                if (node.isActive()) {
+                if (node.getState() == NodeState.ACTIVE) {
                     responseHandler.sendResponse(operation, e);
                 } else if (responseHandler.isLocal()) {
                     responseHandler.sendResponse(operation, new HazelcastInstanceNotActiveException());

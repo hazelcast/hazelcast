@@ -25,6 +25,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.instance.Node;
+import com.hazelcast.instance.NodeState;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
@@ -109,7 +110,7 @@ public abstract class AbstractJoiner implements Joiner {
         if (logger.isFinestEnabled()) {
             logger.finest("PostJoin master: " + node.getMasterAddress() + ", isMaster: " + node.isMaster());
         }
-        if (!node.isActive()) {
+        if (node.getState() != NodeState.ACTIVE) {
             return;
         }
         if (tryCount.incrementAndGet() == 5) {

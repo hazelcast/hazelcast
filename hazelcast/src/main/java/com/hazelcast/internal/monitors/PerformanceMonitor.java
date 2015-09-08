@@ -20,6 +20,7 @@ import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.instance.Node;
+import com.hazelcast.instance.NodeState;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
@@ -94,7 +95,7 @@ public class PerformanceMonitor {
         @Override
         public void run() {
             try {
-                while (node.isActive()) {
+                while (node.getState() == NodeState.ACTIVE) {
                     performanceLogFile.render();
                     sleep();
                 }

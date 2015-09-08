@@ -58,7 +58,6 @@ public abstract class OutOfMemoryHandler {
      * and Hazelcast may not be informed about <tt>OutOfMemoryError</tt>.
      * </p>
      *
-     * @see OutOfMemoryHandler#inactivate(HazelcastInstance)
      * @see OutOfMemoryHandler#tryCloseConnections(HazelcastInstance)
      * @see OutOfMemoryHandler#tryStopThreads(HazelcastInstance)
      * @see OutOfMemoryHandler#tryShutdown(HazelcastInstance)
@@ -79,15 +78,6 @@ public abstract class OutOfMemoryHandler {
      */
     public boolean shouldHandle(OutOfMemoryError oome) {
         return true;
-    }
-
-    /**
-     * Inactivates <tt>HazelcastInstance</tt>; leaves threads, the connections are untouched.
-     *
-     * @param hazelcastInstance the Hazelcast instance to inactivate
-     */
-    protected final void inactivate(final HazelcastInstance hazelcastInstance) {
-        OutOfMemoryHandlerHelper.inactivate(hazelcastInstance);
     }
 
     /**
