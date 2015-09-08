@@ -43,10 +43,11 @@ public class NearCacheProvider {
     private final ConcurrentMap<String, NearCache> nearCacheMap = new ConcurrentHashMap<String, NearCache>();
 
     private final ConstructorFunction<String, NearCache> nearCacheConstructor = new ConstructorFunction<String, NearCache>() {
+        @Override
         public NearCache createNew(String mapName) {
-            final MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);
-            final SizeEstimator nearCacheSizeEstimator = mapContainer.getNearCacheSizeEstimator();
-            final NearCache nearCache = new NearCache(mapName, nodeEngine);
+            MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);
+            SizeEstimator nearCacheSizeEstimator = mapContainer.getNearCacheSizeEstimator();
+            NearCache nearCache = new NearCache(mapName, nodeEngine);
             nearCache.setNearCacheSizeEstimator(nearCacheSizeEstimator);
             return nearCache;
         }
@@ -72,21 +73,10 @@ public class NearCacheProvider {
     }
 
     public void remove(String mapName) {
-        final NearCache nearCache = nearCacheMap.remove(mapName);
+        NearCache nearCache = nearCacheMap.remove(mapName);
         if (nearCache != null) {
             nearCache.clear();
         }
-    }
-
-    // this operation returns the given value in near-cache memory format (data or object)
-    // if near-cache is not enabled, it returns null
-    public Object putNearCache(String mapName, Data key, Data value) {
-        // todo assert near-cache is enabled might be better
-        if (!isNearCacheEnabled(mapName)) {
-            return null;
-        }
-        NearCache nearCache = getNearCache(mapName);
-        return nearCache.put(key, value);
     }
 
     public void invalidateNearCache(String mapName, Data key) {
@@ -135,15 +125,13 @@ public class NearCacheProvider {
         invalidateNearCache(mapName, key);
     }
 
-
     public boolean isNearCacheAndInvalidationEnabled(String mapName) {
-        final MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);
-        return mapContainer.isNearCacheEnabled()
-                && mapContainer.getMapConfig().getNearCacheConfig().isInvalidateOnChange();
+        MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);
+        return mapContainer.isNearCacheEnabled() && mapContainer.getMapConfig().getNearCacheConfig().isInvalidateOnChange();
     }
 
     public boolean isNearCacheEnabled(String mapName) {
-        final MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);
+        MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);
         return mapContainer.isNearCacheEnabled();
     }
 
