@@ -67,16 +67,17 @@ public class MetricsRegistryImpl implements MetricsRegistry {
     /**
      * Creates a MetricsRegistryImpl instance.
      *
-     * Automatically registers the com.hazelcast.internal.metrics.metricpacks.
+     * Automatically registers the com.hazelcast.internal.metrics.metricsets
      *
-     * @param logger the ILogger used
-     * @throws NullPointerException if logger is null
+     * @param logger       the ILogger used
+     * @param minimumLevel the minimum ProbeLevel. If a probe is registered with a ProbeLevel lower than the minimum ProbeLevel,
+     *                     then the registration is skipped.
+     * @throws NullPointerException if logger or minimumLevel is null
      */
     public MetricsRegistryImpl(ILogger logger, ProbeLevel minimumLevel) {
         this.logger = checkNotNull(logger, "logger can't be null");
         this.minimumLevel = checkNotNull(minimumLevel, "minimumLevel can't be null");
 
-        System.out.println(minimumLevel);
         if (logger.isFinestEnabled()) {
             logger.finest("MetricsRegistry minimumLevel:" + minimumLevel);
         }
