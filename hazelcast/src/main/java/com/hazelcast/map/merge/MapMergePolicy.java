@@ -27,6 +27,7 @@ import com.hazelcast.nio.serialization.DataSerializable;
  * @see com.hazelcast.map.merge.PutIfAbsentMapMergePolicy
  * @see com.hazelcast.map.merge.LatestUpdateMapMergePolicy
  * @see com.hazelcast.map.merge.PassThroughMergePolicy
+ * @see com.hazelcast.map.merge.HigherHitsMapMergePolicy
  */
 public interface MapMergePolicy extends DataSerializable {
 

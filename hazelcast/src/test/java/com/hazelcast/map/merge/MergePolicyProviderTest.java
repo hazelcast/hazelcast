@@ -1,0 +1,73 @@
+package com.hazelcast.map.merge;
+
+import com.hazelcast.core.HazelcastException;
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.QuickTest;
+import org.hamcrest.core.IsInstanceOf;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.rules.ExpectedException;
+import org.junit.runner.RunWith;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+
+@RunWith(HazelcastParallelClassRunner.class)
+@Category({QuickTest.class, ParallelTest.class})
+public class MergePolicyProviderTest extends HazelcastTestSupport {
+
+    private MergePolicyProvider mergePolicyProvider;
+
+    @Rule
+    public ExpectedException expected = ExpectedException.none();
+
+    @Before
+    public void given() {
+        mergePolicyProvider = new MergePolicyProvider(getNode(createHazelcastInstance()).getNodeEngine());
+    }
+
+    @Test
+    public void getMergePolicy_NotExistingMergePolicy() {
+        expected.expect(HazelcastException.class);
+        expected.expectCause(IsInstanceOf.any(ClassNotFoundException.class));
+        mergePolicyProvider.getMergePolicy("no such policy bro!");
+    }
+
+    @Test
+    public void getMergePolicy_NullPolicy() {
+        expected.expect(NullPointerException.class);
+        mergePolicyProvider.getMergePolicy(null);
+    }
+
+    @Test
+    public void getMergePolicy_PutIfAbsentMapMergePolicy() {
+        assertMergePolicyCorrectlyInitialised("com.hazelcast.map.merge.PutIfAbsentMapMergePolicy");
+    }
+
+    @Test
+    public void getMergePolicy_LatestUpdateMapMergePolicy() {
+        assertMergePolicyCorrectlyInitialised("com.hazelcast.map.merge.LatestUpdateMapMergePolicy");
+    }
+
+    @Test
+    public void getMergePolicy_PassThroughMergePolicy() {
+        assertMergePolicyCorrectlyInitialised("com.hazelcast.map.merge.PassThroughMergePolicy");
+    }
+
+    @Test
+    public void getMergePolicy_HigherHitsMapMergePolicy() {
+        assertMergePolicyCorrectlyInitialised("com.hazelcast.map.merge.HigherHitsMapMergePolicy");
+    }
+
+    private void assertMergePolicyCorrectlyInitialised(String mergePolicyName) {
+        MapMergePolicy mergePolicy = mergePolicyProvider.getMergePolicy(mergePolicyName);
+
+        assertNotNull(mergePolicy);
+        assertEquals(mergePolicyName, mergePolicy.getClass().getName());
+    }
+
+}
