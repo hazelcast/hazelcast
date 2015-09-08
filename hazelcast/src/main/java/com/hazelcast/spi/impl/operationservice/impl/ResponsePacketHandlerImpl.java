@@ -40,6 +40,8 @@ public class ResponsePacketHandlerImpl implements PacketHandler {
         try {
             long callId = packet.getResponseCallId();
             Address sender = packet.getConn().getEndPoint();
+            // since the packet is used as data, lets null the connection so we don't get any memory leaks
+            packet.setConn(null);
             switch (packet.getResponseType()) {
                 case Packet.RESPONSE_NORMAL:
                     Data response = packet.totalSize() == 0 ? null : packet;
