@@ -330,7 +330,7 @@ public class ClientCacheProxy<K, V>
         if (cacheEntryListenerConfiguration == null) {
             throw new NullPointerException("CacheEntryListenerConfiguration can't be null");
         }
-        final String regId = removeListenerLocally(cacheEntryListenerConfiguration);
+        final String regId = getListenerIdLocal(cacheEntryListenerConfiguration);
         if (regId == null) {
             return;
         }
@@ -349,11 +349,10 @@ public class ClientCacheProxy<K, V>
         });
 
         if (isDeregistered) {
+            removeListenerLocally(cacheEntryListenerConfiguration);
             cacheConfig.removeCacheEntryListenerConfiguration(cacheEntryListenerConfiguration);
             //REMOVE ON OTHERS TOO
             updateCacheListenerConfigOnOtherNodes(cacheEntryListenerConfiguration, false);
-        } else {
-            addListenerLocally(regId, cacheEntryListenerConfiguration);
         }
     }
 
@@ -394,7 +393,7 @@ public class ClientCacheProxy<K, V>
     public String addPartitionLostListener(CachePartitionLostListener listener) {
         ClientMessage request = CacheAddPartitionLostListenerCodec.encodeRequest(name);
         final EventHandler<ClientMessage> handler = new ClientCachePartitionLostEventHandler(listener);
-        return  clientContext.getListenerService().startListening(request, null, handler,
+        return clientContext.getListenerService().startListening(request, null, handler,
                 new ClientMessageDecoder() {
                     @Override
                     public <T> T decodeClientMessage(ClientMessage clientMessage) {
@@ -405,7 +404,7 @@ public class ClientCacheProxy<K, V>
 
     @Override
     public boolean removePartitionLostListener(String id) {
-        return clientContext.getListenerService().stopListening(id,  new ListenerRemoveCodec() {
+        return clientContext.getListenerService().stopListening(id, new ListenerRemoveCodec() {
             @Override
             public ClientMessage encodeRequest(String realRegistrationId) {
                 return CacheRemovePartitionLostListenerCodec.encodeRequest(name, realRegistrationId);

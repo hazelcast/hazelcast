@@ -314,11 +314,10 @@ public class CacheProxy<K, V>
         checkNotNull(cacheEntryListenerConfiguration, "CacheEntryListenerConfiguration can't be null");
 
         final ICacheService service = getService();
-        final String regId = removeListenerLocally(cacheEntryListenerConfiguration);
+        final String regId = getListenerIdLocal(cacheEntryListenerConfiguration);
         if (regId != null) {
-            if (!service.deregisterListener(getDistributedObjectName(), regId)) {
-                addListenerLocally(regId, cacheEntryListenerConfiguration);
-            } else {
+            if (service.deregisterListener(getDistributedObjectName(), regId)) {
+                removeListenerLocally(cacheEntryListenerConfiguration);
                 cacheConfig.removeCacheEntryListenerConfiguration(cacheEntryListenerConfiguration);
                 //REMOVE ON OTHERS TOO
                 updateCacheListenerConfigOnOtherNodes(cacheEntryListenerConfiguration, false);
