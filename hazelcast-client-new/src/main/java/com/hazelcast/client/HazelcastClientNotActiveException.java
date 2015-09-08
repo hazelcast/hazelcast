@@ -5,10 +5,6 @@ package com.hazelcast.client;
  */
 public class HazelcastClientNotActiveException extends IllegalStateException {
 
-    public HazelcastClientNotActiveException() {
-        super("Hazelcast client is not active!");
-    }
-
     public HazelcastClientNotActiveException(String message) {
         super(message);
     }

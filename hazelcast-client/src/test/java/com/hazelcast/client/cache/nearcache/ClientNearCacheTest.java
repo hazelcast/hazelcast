@@ -79,4 +79,9 @@ public class ClientNearCacheTest extends ClientNearCacheTestSupport {
         putToCacheAndClearOrDestroyThenCantGetAnyRecordFromClientNearCache(InMemoryFormat.OBJECT);
     }
 
+    @Test
+    public void testGetAllReturnsFromNearCache() {
+        doTestGetAllReturnsFromNearCache();
+    }
+
 }

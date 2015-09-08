@@ -326,7 +326,7 @@ public class ClientCacheProxy<K, V>
         if (cacheEntryListenerConfiguration == null) {
             throw new NullPointerException("CacheEntryListenerConfiguration can't be null");
         }
-        final String regId = removeListenerLocally(cacheEntryListenerConfiguration);
+        final String regId = getListenerIdLocal(cacheEntryListenerConfiguration);
         if (regId == null) {
             return;
         }
@@ -345,11 +345,10 @@ public class ClientCacheProxy<K, V>
         });
 
         if (isDeregistered) {
+            removeListenerLocally(cacheEntryListenerConfiguration);
             cacheConfig.removeCacheEntryListenerConfiguration(cacheEntryListenerConfiguration);
             //REMOVE ON OTHERS TOO
             updateCacheListenerConfigOnOtherNodes(cacheEntryListenerConfiguration, false);
-        } else {
-            addListenerLocally(regId, cacheEntryListenerConfiguration);
         }
     }
 
