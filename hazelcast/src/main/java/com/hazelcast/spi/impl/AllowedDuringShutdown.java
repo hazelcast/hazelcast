@@ -14,10 +14,16 @@
  * limitations under the License.
  */
 
-package com.hazelcast.partition;
+package com.hazelcast.spi.impl;
 
-import com.hazelcast.spi.UrgentSystemOperation;
-import com.hazelcast.spi.impl.AllowedDuringShutdown;
-
-public interface MigrationCycleOperation extends UrgentSystemOperation, AllowedDuringShutdown {
+/**
+ * Marker interface for operations those are allowed to be executed or invoked during
+ * {@link com.hazelcast.instance.Node}'s {@link com.hazelcast.instance.NodeState#SHUTTING_DOWN} state.
+ * <p/>
+ * By default, only replication/migration and cluster heartbeat operations are allowed during shutdown.
+ *
+ * @see com.hazelcast.instance.NodeState
+ * @since 3.6
+ */
+public interface AllowedDuringShutdown {
 }

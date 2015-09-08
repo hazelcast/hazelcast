@@ -23,10 +23,11 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.OperationService;
+import com.hazelcast.spi.impl.AllowedDuringShutdown;
 
 import java.io.IOException;
 
-public class MasterConfirmationOperation extends AbstractClusterOperation {
+public class MasterConfirmationOperation extends AbstractClusterOperation implements AllowedDuringShutdown {
 
     private long timestamp;
 

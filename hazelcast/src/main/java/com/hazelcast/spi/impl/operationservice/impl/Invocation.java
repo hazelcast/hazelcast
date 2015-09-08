@@ -36,6 +36,7 @@ import com.hazelcast.spi.exception.RetryableException;
 import com.hazelcast.spi.exception.RetryableIOException;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.exception.WrongTargetException;
+import com.hazelcast.spi.impl.AllowedDuringShutdown;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationexecutor.OperationExecutor;
 import com.hazelcast.spi.impl.operationservice.impl.responses.CallTimeoutResponse;
@@ -275,9 +276,12 @@ abstract class Invocation implements OperationResponseHandler, Runnable {
             return true;
         }
 
-        remote = false;
-        notify(new HazelcastInstanceNotActiveException());
-        return false;
+        boolean allowed = state == NodeState.SHUTTING_DOWN && (op instanceof AllowedDuringShutdown);
+        if (!allowed) {
+            notify(new HazelcastInstanceNotActiveException("State: " + state));
+            remote = false;
+        }
+        return allowed;
     }
 
     /**

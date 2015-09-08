@@ -39,7 +39,9 @@ import com.hazelcast.spi.exception.CallerNotMemberException;
 import com.hazelcast.spi.exception.PartitionMigratingException;
 import com.hazelcast.spi.exception.ResponseAlreadySentException;
 import com.hazelcast.spi.exception.RetryableException;
+import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.exception.WrongTargetException;
+import com.hazelcast.spi.impl.AllowedDuringShutdown;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunner;
 import com.hazelcast.spi.impl.operationservice.impl.responses.CallTimeoutResponse;
@@ -145,6 +147,8 @@ class OperationRunnerImpl extends OperationRunner {
         }
 
         try {
+            checkNodeState(op);
+
             if (timeout(op)) {
                 return;
             }
@@ -169,6 +173,27 @@ class OperationRunnerImpl extends OperationRunner {
                 currentTask = null;
             }
         }
+    }
+
+    private void checkNodeState(Operation op) {
+        final NodeState state = node.getState();
+        if (state == NodeState.ACTIVE) {
+            return;
+        }
+
+        if (state == NodeState.SHUT_DOWN) {
+            throw new HazelcastInstanceNotActiveException("This node is shut down! Operation: " + op);
+        }
+
+        if (op instanceof AllowedDuringShutdown) {
+            return;
+        }
+
+        if (op.getPartitionId() < 0) {
+            throw new HazelcastInstanceNotActiveException("This node is currently shutting down! Operation: " + op);
+        }
+
+        throw new RetryableHazelcastException("This node is currently shutting down! Operation: " + op);
     }
 
     private void ensureQuorumPresent(Operation op) {
