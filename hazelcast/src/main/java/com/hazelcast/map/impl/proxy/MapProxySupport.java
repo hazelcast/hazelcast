@@ -243,23 +243,25 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
                 return fromNearCache;
             }
         }
+
+        Data result = null;
         // todo action for read-backup true is not well tested.
         if (mapConfig.isReadBackupData()) {
-            final Object fromBackup = readBackupDataOrNull(key);
-            if (fromBackup != null) {
-                return fromBackup;
-            }
+            result = readBackupDataOrNull(key);
         }
-        final GetOperation operation = new GetOperation(name, key);
-        operation.setThreadId(ThreadUtil.getThreadId());
-        final Data value = (Data) invokeOperation(key, operation);
+
+        if (result == null) {
+            final GetOperation operation = new GetOperation(name, key);
+            operation.setThreadId(ThreadUtil.getThreadId());
+            result = (Data) invokeOperation(key, operation);
+        }
 
         if (nearCacheEnabled) {
             if (notOwnerPartitionForKey(key) || cacheKeyAnyway()) {
-                return putNearCache(key, value);
+                return putNearCache(key, result);
             }
         }
-        return value;
+        return result;
     }
 
     private boolean notOwnerPartitionForKey(Data key) {

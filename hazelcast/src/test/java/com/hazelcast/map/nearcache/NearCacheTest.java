@@ -17,6 +17,7 @@
 package com.hazelcast.map.nearcache;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.EntryAdapter;
@@ -625,6 +626,28 @@ public class NearCacheTest extends HazelcastTestSupport {
 
         waitUntilEvictionEventsReceived(latch);
         assertNearCacheSize(mapSize, mapName, map);
+    }
+
+    @Test
+    public void testNearCacheBackups() throws Exception {
+        final String mapName = randomMapName();
+        final Config config = createNearCachedMapConfig(mapName);
+
+        //Set up backup
+        final MapConfig mapConfig = config.getMapConfig(mapName).setReadBackupData(true);
+        mapConfig.setBackupCount(1);
+        mapConfig.getNearCacheConfig().setInMemoryFormat(InMemoryFormat.BINARY.OBJECT);
+
+        final HazelcastInstance instance = createHazelcastInstance(config);
+        final IMap<Integer, Object> map = instance.getMap(mapName);
+        HashMap<String, String> value = new HashMap<String, String>();
+        value.put("a","b");
+        map.put(1, value);
+
+        Object o1 = map.get(1);
+        Object o2 = map.get(1);
+
+        Assert.assertTrue(o1 == o2);
     }
 
     private void waitUntilEvictionEventsReceived(CountDownLatch latch) {
