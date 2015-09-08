@@ -16,6 +16,7 @@
 
 package com.hazelcast.aws.utility;
 
+import com.hazelcast.aws.impl.DescribeInstances;
 import com.hazelcast.config.AwsConfig;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
@@ -23,9 +24,11 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.StringReader;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
@@ -212,5 +215,32 @@ public class CloudyUtilityTest {
         awsConfig.setTagValue("");
         final Map<String, String> result = CloudyUtility.unmarshalTheResponse(is, awsConfig);
         assertEquals(1, result.size());
+    }
+
+    @Test
+    public void testIamRole() throws IOException {
+        String s = "{\n" +
+                "  \"Code\" : \"Success\",\n" +
+                "  \"LastUpdated\" : \"2015-09-06T21:17:26Z\",\n" +
+                "  \"Type\" : \"AWS-HMAC\",\n" +
+                "  \"AccessKeyId\" : \"ASIAIEXAMPLEOXYDA\",\n" +
+                "  \"SecretAccessKey\" : \"hOCVge3EXAMPLExSJ+B\",\n" +
+                "  \"Token\" : \"AQoDYXdzEE4EXAMPLE2UGAFshkTsyw7gojLdiEXAMPLE+1SfSRTfLR\",\n" +
+                "  \"Expiration\" : \"2015-09-07T03:19:56Z\"\n" +
+                "}";
+        StringReader sr = new StringReader(s);
+        BufferedReader br = new BufferedReader(sr);
+        AwsConfig awsConfig = new AwsConfig();
+        awsConfig.setSecretKey("EXAMPLE").setAccessKey("EXAMPLE");
+        DescribeInstances describeInstances = new DescribeInstances(awsConfig, "");
+
+        Map map = describeInstances.parseIamRole(br);
+        assertEquals("Success", map.get("Code"));
+        assertEquals("2015-09-06T21:17:26Z", map.get("LastUpdated"));
+        assertEquals("AWS-HMAC", map.get("Type"));
+        assertEquals("ASIAIEXAMPLEOXYDA", map.get("AccessKeyId"));
+        assertEquals("hOCVge3EXAMPLExSJ+B", map.get("SecretAccessKey"));
+        assertEquals("AQoDYXdzEE4EXAMPLE2UGAFshkTsyw7gojLdiEXAMPLE+1SfSRTfLR", map.get("Token"));
+
     }
 }
