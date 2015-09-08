@@ -108,7 +108,7 @@ public class MapLoaderFailoverTest extends HazelcastTestSupport {
         assertSizeAndLoadCount(map);
 
         hz3.getLifecycleService().terminate();
-        assertClusterSize(2, nodes[0]);
+        assertClusterSizeEventually(2, nodes[0]);
         map.loadAll(true);
 
         assertSizeEventually(MAP_STORE_ENTRY_COUNT, map);
@@ -132,7 +132,7 @@ public class MapLoaderFailoverTest extends HazelcastTestSupport {
         pausingLoader.awaitPause();
 
         hz3.getLifecycleService().terminate();
-        assertClusterSize(2, nodes[0]);
+        assertClusterSizeEventually(2, nodes[0]);
 
         pausingLoader.resume();
 
