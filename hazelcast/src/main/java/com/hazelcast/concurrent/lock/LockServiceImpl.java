@@ -73,7 +73,7 @@ public final class LockServiceImpl implements InternalLockService, ManagedServic
                     ScheduledExecutorService scheduledExecutor =
                             nodeEngine.getExecutionService().getDefaultScheduledExecutor();
                     return EntryTaskSchedulerFactory
-                            .newScheduler(scheduledExecutor, entryProcessor, ScheduleType.POSTPONE);
+                            .newScheduler(scheduledExecutor, entryProcessor, ScheduleType.FOR_EACH);
                 }
             };
 
