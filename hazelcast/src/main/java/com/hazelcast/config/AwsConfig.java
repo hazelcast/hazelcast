@@ -49,6 +49,7 @@ public class AwsConfig {
     private String tagKey;
     private String tagValue;
     private String hostHeader = "ec2.amazonaws.com";
+    private String iamRole;
     private int connectionTimeoutSeconds = CONNECTION_TIMEOUT;
 
     /**
@@ -252,6 +253,28 @@ public class AwsConfig {
         return this;
     }
 
+    /**
+     * Gets the iamRole name
+     *
+     * @return the iamRole. null if nothing is returned.
+     * @see #setIamRole(String) (int)
+     */
+    public String getIamRole() {
+        return iamRole;
+    }
+
+    /**
+     * Sets the tag value. See the filtering section above for more information.
+     *
+     * @param iamRole the IAM Role name.
+     * @return the updated AwsConfig.
+     * @see #getIamRole()
+     */
+    public AwsConfig setIamRole(String iamRole) {
+        this.iamRole = iamRole;
+        return this;
+    }
+
     @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder("AwsConfig{");
@@ -261,6 +284,7 @@ public class AwsConfig {
         sb.append(", tagKey='").append(tagKey).append('\'');
         sb.append(", tagValue='").append(tagValue).append('\'');
         sb.append(", hostHeader='").append(hostHeader).append('\'');
+        sb.append(", iamRole='").append(iamRole).append('\'');
         sb.append(", connectionTimeoutSeconds=").append(connectionTimeoutSeconds);
         sb.append('}');
         return sb.toString();

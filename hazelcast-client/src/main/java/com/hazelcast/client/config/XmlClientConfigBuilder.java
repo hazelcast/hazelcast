@@ -344,6 +344,11 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
                 clientAwsConfig.setTagValue(value);
             } else if ("inside-aws".equals(cleanNodeName(n.getNodeName()))) {
                 clientAwsConfig.setInsideAws(checkTrue(value));
+            } else if ("iam-role".equals(cleanNodeName(n.getNodeName()))) {
+                clientAwsConfig.setIamRole(value);
+            }
+            if (!clientAwsConfig.isInsideAws() && clientAwsConfig.getIamRole() != null) {
+                throw new InvalidConfigurationException("You cannot set IAM Role from outside EC2");
             }
         }
         clientNetworkConfig.setAwsConfig(clientAwsConfig);
