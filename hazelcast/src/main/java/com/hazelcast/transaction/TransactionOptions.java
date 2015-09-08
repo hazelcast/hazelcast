@@ -28,7 +28,9 @@ import java.util.concurrent.TimeUnit;
  */
 public final class TransactionOptions implements DataSerializable {
 
-    /** 2 minutes as default timeout value */
+    /**
+     * 2 minutes as default timeout value
+     */
     public static final long DEFAULT_TIMEOUT_MILLIS = TimeUnit.MINUTES.toMillis(2);
 
     private long timeoutMillis;
@@ -155,7 +157,6 @@ public final class TransactionOptions implements DataSerializable {
         timeoutMillis = DEFAULT_TIMEOUT_MILLIS;
     }
 
-
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeLong(timeoutMillis);
@@ -189,18 +190,28 @@ public final class TransactionOptions implements DataSerializable {
     public enum TransactionType {
 
         /**
-         * The two phase commit is more than the classic two phase commit (if you want a regular two phase commit,
-         * use local). Before it commits, it copies the commit-log to other members, so in case of member failure,
-         * another member can complete the commit.
+         * The two phase commit is separated in 2 parts. First it tries to execute the prepare; if there are any conflicts,
+         * the prepare will fail. Once the prepare has succeeded, the commit (writing the changes) can be executed.
+         *
+         * Hazelcast also provides three phase transaction by automatically copying the backlog to another member so that in case
+         * of failure during a commit, another member can continue the commit from backup. For more information see the
+         * {@link TransactionOptions#setDurability(int)}
          */
         TWO_PHASE(1),
 
         /**
-         * Unlike the name suggests, local is a two phase commit. So first all cohorts are asked
-         * to prepare if everyone agrees then all cohorts are asked to commit. The problem happens when
-         * during the commit phase one or more members crash, that the system could be left in an inconsistent state.
+         * @deprecated since 3.6 use ONE_PHASE
          */
-        LOCAL(2);
+        @Deprecated
+        LOCAL(2),
+
+        /**
+         * The one phase transaction executes a transaction using a single step at the end; committing the changes. There
+         * is no prepare of the transactions, so conflicts are not detected. If there is a conflict, then when the transaction
+         * commits the changes, some of the changes are written and others are not; leaving the system in a potentially permanent
+         * inconsistent state.
+         */
+        ONE_PHASE(2);
 
         private final int value;
 
@@ -213,12 +224,14 @@ public final class TransactionOptions implements DataSerializable {
         }
 
         public static TransactionType getByValue(int value) {
-            for (TransactionType type : values()) {
-                if (type.value == value) {
-                    return type;
-                }
+            switch (value) {
+                case 1:
+                    return TWO_PHASE;
+                case 2:
+                    return ONE_PHASE;
+                default:
+                    throw new IllegalArgumentException("Unrecognized value:" + value);
             }
-            return TWO_PHASE;
         }
     }
 }

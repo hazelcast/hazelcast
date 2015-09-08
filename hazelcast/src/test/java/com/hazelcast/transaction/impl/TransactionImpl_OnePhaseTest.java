@@ -17,6 +17,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static com.hazelcast.transaction.TransactionOptions.TransactionType.LOCAL;
+import static com.hazelcast.transaction.TransactionOptions.TransactionType.ONE_PHASE;
 import static com.hazelcast.transaction.TransactionOptions.TransactionType.TWO_PHASE;
 import static com.hazelcast.transaction.impl.Transaction.State.ROLLED_BACK;
 import static java.lang.String.format;
@@ -28,7 +29,7 @@ import static org.mockito.Mockito.when;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class TransactionImpl_LocalTest extends HazelcastTestSupport {
+public class TransactionImpl_OnePhaseTest extends HazelcastTestSupport {
 
     private InternalOperationService operationService;
     private ILogger logger;
@@ -48,7 +49,7 @@ public class TransactionImpl_LocalTest extends HazelcastTestSupport {
         when(nodeEngine.getOperationService()).thenReturn(operationService);
         when(nodeEngine.getLocalMember()).thenReturn(new MemberImpl());
         when(nodeEngine.getLogger(TransactionImpl.class)).thenReturn(logger);
-        options = new TransactionOptions().setTransactionType(LOCAL);
+        options = new TransactionOptions().setTransactionType(ONE_PHASE);
     }
 
     // ====================== requiresPrepare ===============================

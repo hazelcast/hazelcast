@@ -15,6 +15,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static com.hazelcast.transaction.TransactionOptions.TransactionType.LOCAL;
+import static com.hazelcast.transaction.TransactionOptions.TransactionType.ONE_PHASE;
 import static java.lang.String.format;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
@@ -45,7 +46,7 @@ public class TransactionImplTest extends HazelcastTestSupport {
         when(nodeEngine.getOperationService()).thenReturn(operationService);
         when(nodeEngine.getLocalMember()).thenReturn(new MemberImpl());
         when(nodeEngine.getLogger(TransactionImpl.class)).thenReturn(logger);
-        options = new TransactionOptions().setTransactionType(LOCAL);
+        options = new TransactionOptions().setTransactionType(ONE_PHASE);
     }
 
     @Test

@@ -39,6 +39,7 @@ import java.util.concurrent.Future;
 
 import static com.hazelcast.transaction.TransactionOptions.TransactionType;
 import static com.hazelcast.transaction.TransactionOptions.TransactionType.LOCAL;
+import static com.hazelcast.transaction.TransactionOptions.TransactionType.ONE_PHASE;
 import static com.hazelcast.transaction.TransactionOptions.TransactionType.TWO_PHASE;
 import static com.hazelcast.transaction.impl.Transaction.State.ACTIVE;
 import static com.hazelcast.transaction.impl.Transaction.State.COMMITTED;
@@ -95,8 +96,8 @@ public class TransactionImpl implements Transaction {
         this.nodeEngine = nodeEngine;
         this.txnId = newUnsecureUuidString();
         this.timeoutMillis = options.getTimeoutMillis();
-        this.durability = options.getTransactionType() == LOCAL ? 0 : options.getDurability();
-        this.transactionType = options.getTransactionType();
+        this.transactionType = options.getTransactionType() == LOCAL ? ONE_PHASE : options.getTransactionType();
+        this.durability = transactionType == ONE_PHASE ? 0 : options.getDurability();
         this.txOwnerUuid = txOwnerUuid == null ? nodeEngine.getLocalMember().getUuid() : txOwnerUuid;
         this.checkThreadAccess = txOwnerUuid == null;
 
@@ -234,7 +235,7 @@ public class TransactionImpl implements Transaction {
      * @return true if {@link #prepare()} is required.
      */
     public boolean requiresPrepare() {
-        if (transactionType == LOCAL) {
+        if (transactionType == ONE_PHASE) {
             return false;
         }
 
@@ -259,7 +260,7 @@ public class TransactionImpl implements Transaction {
                         throw new IllegalStateException("Transaction is not prepared or active");
                     }
                 }
-            } else if (transactionType == LOCAL && state != ACTIVE) {
+            } else if (transactionType == ONE_PHASE && state != ACTIVE) {
                 throw new IllegalStateException("Transaction is not active");
             }
 
