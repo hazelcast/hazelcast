@@ -110,14 +110,4 @@ public class CachePartitionSegment implements ConstructorFunction<String, ICache
         }
         recordStores.clear();
     }
-
-    protected static void transferRecordData(ICacheRecordStore src, ICacheRecordStore dest) {
-        if (!(src instanceof AbstractCacheRecordStore)) {
-            throw new IllegalArgumentException("Expecting AbstractCacheRecordStore!");
-        }
-        if (!(dest instanceof AbstractCacheRecordStore)) {
-            throw new IllegalArgumentException("Expecting AbstractCacheRecordStore!");
-        }
-        ((AbstractCacheRecordStore) dest).records = ((AbstractCacheRecordStore) src).records;
-    }
 }
