@@ -14,10 +14,16 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map.impl;
+package com.hazelcast.map.impl.event;
 
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryView;
+import com.hazelcast.map.impl.EntryEventFilter;
+import com.hazelcast.map.impl.MapContainer;
+import com.hazelcast.map.impl.MapPartitionLostEventFilter;
+import com.hazelcast.map.impl.MapServiceContext;
+import com.hazelcast.map.impl.QueryEventFilter;
+import com.hazelcast.map.impl.SyntheticEventFilter;
 import com.hazelcast.map.impl.wan.MapReplicationRemove;
 import com.hazelcast.map.impl.wan.MapReplicationUpdate;
 import com.hazelcast.nio.Address;
@@ -39,11 +45,11 @@ import java.util.List;
 
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 
-class MapEventPublisherImpl implements MapEventPublisher {
+public class MapEventPublisherImpl implements MapEventPublisher {
 
     protected final MapServiceContext mapServiceContext;
 
-    protected MapEventPublisherImpl(MapServiceContext mapServiceContext) {
+    public MapEventPublisherImpl(MapServiceContext mapServiceContext) {
         this.mapServiceContext = mapServiceContext;
     }
 
@@ -93,7 +99,6 @@ class MapEventPublisherImpl implements MapEventPublisher {
     public void publishEvent(Address caller, String mapName, EntryEventType eventType, boolean syntheticEvent,
                              final Data dataKey, Data dataOldValue, Data dataValue) {
         publishEvent(caller, mapName, eventType, syntheticEvent, dataKey, dataOldValue, dataValue, null);
-
     }
 
     @Override

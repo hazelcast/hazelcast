@@ -20,6 +20,8 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.map.MapInterceptor;
+import com.hazelcast.map.impl.event.MapEventPublisher;
+import com.hazelcast.map.impl.event.MapEventPublisherImpl;
 import com.hazelcast.map.impl.eviction.EvictionOperator;
 import com.hazelcast.map.impl.eviction.ExpirationManager;
 import com.hazelcast.map.impl.nearcache.NearCacheProvider;

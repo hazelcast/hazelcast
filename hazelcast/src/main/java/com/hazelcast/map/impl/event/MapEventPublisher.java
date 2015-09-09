@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map.impl;
+package com.hazelcast.map.impl.event;
 
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryView;

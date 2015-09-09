@@ -14,49 +14,50 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map.impl;
+package com.hazelcast.map.impl.event;
 
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+
 import java.io.IOException;
 
 /**
- * Map wide event's data.
+ * Contains the data related to a map partition event
  */
-public class MapEventData extends AbstractEventData {
+public class MapPartitionEventData extends AbstractEventData {
 
-    protected int numberOfEntries;
+    private int partitionId;
 
-    public MapEventData() {
+    public MapPartitionEventData() {
     }
 
-    public MapEventData(String source, String mapName, Address caller, int eventType, int numberOfEntries) {
-        super(source, mapName, caller, eventType);
-        this.numberOfEntries = numberOfEntries;
+    public MapPartitionEventData(String source, String mapName, Address caller, int partitionId) {
+        super(source, mapName, caller, -1);
+        this.partitionId = partitionId;
     }
 
-    public int getNumberOfEntries() {
-        return numberOfEntries;
+    public int getPartitionId() {
+        return partitionId;
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         super.writeData(out);
-        out.writeInt(numberOfEntries);
+        out.writeInt(partitionId);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         super.readData(in);
-        numberOfEntries = in.readInt();
+        partitionId = in.readInt();
     }
 
     @Override
     public String toString() {
-        return "MapEventData{"
+        return "MapPartitionEventData{"
                 + super.toString()
-                + ", numberOfEntries=" + numberOfEntries
+                + ", partitionId=" + partitionId
                 + '}';
     }
 }

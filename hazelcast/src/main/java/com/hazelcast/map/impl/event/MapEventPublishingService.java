@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map.impl;
+package com.hazelcast.map.impl.event;
 
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.IMapEvent;
@@ -22,6 +22,10 @@ import com.hazelcast.core.MapEvent;
 import com.hazelcast.map.MapPartitionLostEvent;
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.map.impl.DataAwareEntryEvent;
+import com.hazelcast.map.impl.ListenerAdapter;
+import com.hazelcast.map.impl.MapContainer;
+import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.spi.EventPublishingService;
 import com.hazelcast.spi.NodeEngine;
 
@@ -30,12 +34,12 @@ import com.hazelcast.spi.NodeEngine;
  *
  * @see com.hazelcast.spi.EventPublishingService
  */
-class MapEventPublishingService implements EventPublishingService<EventData, ListenerAdapter> {
+public class MapEventPublishingService implements EventPublishingService<EventData, ListenerAdapter> {
 
     private final MapServiceContext mapServiceContext;
     private final NodeEngine nodeEngine;
 
-    protected MapEventPublishingService(MapServiceContext mapServiceContext) {
+    public MapEventPublishingService(MapServiceContext mapServiceContext) {
         this.mapServiceContext = mapServiceContext;
         this.nodeEngine = mapServiceContext.getNodeEngine();
     }
@@ -75,15 +79,14 @@ class MapEventPublishingService implements EventPublishingService<EventData, Lis
     }
 
 
-    private void dispatchMapPartitionLostEventData(MapPartitionEventData mapPartitionEventData, ListenerAdapter listener) {
-        Member member = getMember(mapPartitionEventData);
-        MapPartitionLostEvent event = createMapPartitionLostEventData(mapPartitionEventData, member);
+    private void dispatchMapPartitionLostEventData(MapPartitionEventData eventData, ListenerAdapter listener) {
+        Member member = getMember(eventData);
+        MapPartitionLostEvent event = createMapPartitionLostEventData(eventData, member);
         callListener(listener, event);
     }
 
-    private MapPartitionLostEvent createMapPartitionLostEventData(MapPartitionEventData mapPartitionEventData, Member member) {
-        return new MapPartitionLostEvent(mapPartitionEventData.getMapName(), member,
-                    mapPartitionEventData.getEventType(), mapPartitionEventData.getPartitionId());
+    private MapPartitionLostEvent createMapPartitionLostEventData(MapPartitionEventData eventData, Member member) {
+        return new MapPartitionLostEvent(eventData.getMapName(), member, eventData.getEventType(), eventData.getPartitionId());
     }
 
     private void callListener(ListenerAdapter listener, IMapEvent event) {
@@ -115,6 +118,4 @@ class MapEventPublishingService implements EventPublishingService<EventData, Lis
                 entryEventData.getDataKey(), entryEventData.getDataNewValue(), entryEventData.getDataOldValue(),
                 entryEventData.getDataMergingValue(), nodeEngine.getSerializationService());
     }
-
-
 }

@@ -17,6 +17,7 @@
 package com.hazelcast.map.impl;
 
 import com.hazelcast.core.PartitioningStrategy;
+import com.hazelcast.map.impl.event.MapEventPublisher;
 import com.hazelcast.map.impl.eviction.EvictionOperator;
 import com.hazelcast.map.impl.eviction.ExpirationManager;
 import com.hazelcast.map.impl.nearcache.NearCacheProvider;
