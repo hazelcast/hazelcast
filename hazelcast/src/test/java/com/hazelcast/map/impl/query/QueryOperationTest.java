@@ -1,7 +1,7 @@
-package com.hazelcast.map.impl.operation;
+package com.hazelcast.map.impl.query;
 
 import com.hazelcast.map.QueryResultSizeExceededException;
-import com.hazelcast.map.impl.QueryResult;
+import com.hazelcast.map.impl.operation.AbstractMapOperation;
 import com.hazelcast.query.TruePredicate;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
@@ -13,16 +13,16 @@ import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class QueryPartitionOperationTest extends QueryOperationTestSupport {
+public class QueryOperationTest extends QueryOperationTestSupport {
 
     @Override
     protected AbstractMapOperation createQueryOperation() {
-        return new QueryPartitionOperation(MAP_NAME, TruePredicate.INSTANCE);
+        return new QueryOperation(MAP_NAME, TruePredicate.INSTANCE);
     }
 
     @Test
     public void testConstructor() {
-        new QueryPartitionOperation();
+        new QueryOperation();
     }
 
     @Test

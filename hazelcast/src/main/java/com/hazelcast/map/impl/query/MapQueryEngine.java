@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map.impl;
+package com.hazelcast.map.impl.query;
 
 import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
@@ -25,9 +25,9 @@ import java.util.Collection;
 import java.util.Set;
 
 /**
- * Support interface which is used in map specific query operations.
+ * Components responsible for executing queries.
  */
-public interface MapContextQuerySupport {
+public interface MapQueryEngine {
 
     /**
      * Query a specific partition.

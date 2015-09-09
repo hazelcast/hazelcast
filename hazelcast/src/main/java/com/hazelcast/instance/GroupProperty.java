@@ -20,7 +20,7 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.monitors.HealthMonitorLevel;
 import com.hazelcast.map.QueryResultSizeExceededException;
-import com.hazelcast.map.impl.QueryResultSizeLimiter;
+import com.hazelcast.map.impl.query.QueryResultSizeLimiter;
 import com.hazelcast.query.TruePredicate;
 
 import java.util.concurrent.TimeUnit;

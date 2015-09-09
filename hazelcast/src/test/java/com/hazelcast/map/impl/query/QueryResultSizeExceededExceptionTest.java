@@ -1,5 +1,6 @@
-package com.hazelcast.map;
+package com.hazelcast.map.impl.query;
 
+import com.hazelcast.map.QueryResultSizeExceededException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;

@@ -14,13 +14,15 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map.impl;
+package com.hazelcast.map.impl.query;
 
+import com.hazelcast.map.impl.EntryEventFilter;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.QueryEntry;
+
 import java.io.IOException;
 import java.util.Map;
 
@@ -42,8 +44,8 @@ public class QueryEventFilter extends EntryEventFilter {
 
     @Override
     public boolean eval(Object arg) {
-        final QueryEntry entry = (QueryEntry) arg;
-        final Data keyData = entry.getKeyData();
+        QueryEntry entry = (QueryEntry) arg;
+        Data keyData = entry.getKeyData();
         return (key == null || key.equals(keyData)) && predicate.apply((Map.Entry) arg);
     }
 

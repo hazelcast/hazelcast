@@ -40,13 +40,13 @@ import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.impl.EntryEventFilter;
 import com.hazelcast.map.impl.LocalMapStatsProvider;
 import com.hazelcast.map.impl.MapContainer;
-import com.hazelcast.map.impl.MapContextQuerySupport;
+import com.hazelcast.map.impl.query.MapQueryEngine;
 import com.hazelcast.map.impl.MapEntrySet;
 import com.hazelcast.map.impl.event.MapEventPublisher;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.PartitionContainer;
-import com.hazelcast.map.impl.QueryEventFilter;
+import com.hazelcast.map.impl.query.QueryEventFilter;
 import com.hazelcast.map.impl.nearcache.NearCache;
 import com.hazelcast.map.impl.nearcache.NearCacheProvider;
 import com.hazelcast.map.impl.operation.AddIndexOperation;
@@ -1067,16 +1067,16 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
 
     protected Set queryLocal(final Predicate predicate, final IterationType iterationType, final boolean dataResult) {
         if (predicate instanceof PagingPredicate) {
-            return getMapQuerySupport().queryLocalMemberWithPagingPredicate(name, (PagingPredicate) predicate, iterationType);
+            return getMapQueryEngine().queryLocalMemberWithPagingPredicate(name, (PagingPredicate) predicate, iterationType);
         }
-        return getMapQuerySupport().queryLocalMember(name, predicate, iterationType, dataResult);
+        return getMapQueryEngine().queryLocalMember(name, predicate, iterationType, dataResult);
     }
 
     protected Set query(Predicate predicate, IterationType iterationType, boolean dataResult) {
         if (predicate instanceof PagingPredicate) {
-            return getMapQuerySupport().queryWithPagingPredicate(name, (PagingPredicate) predicate, iterationType);
+            return getMapQueryEngine().queryWithPagingPredicate(name, (PagingPredicate) predicate, iterationType);
         }
-        return getMapQuerySupport().query(name, predicate, iterationType, dataResult);
+        return getMapQueryEngine().query(name, predicate, iterationType, dataResult);
     }
 
     public void addIndex(String attribute, boolean ordered) {
@@ -1136,8 +1136,8 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         return timeInMillis;
     }
 
-    private MapContextQuerySupport getMapQuerySupport() {
-        return mapServiceContext.getMapContextQuerySupport();
+    private MapQueryEngine getMapQueryEngine() {
+        return mapServiceContext.getMapQueryEngine();
     }
 
     protected MapStore getMapStore() {

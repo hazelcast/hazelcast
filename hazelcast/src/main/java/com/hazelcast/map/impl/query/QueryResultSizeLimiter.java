@@ -14,11 +14,12 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map.impl;
+package com.hazelcast.map.impl.query;
 
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.QueryResultSizeExceededException;
+import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.spi.NodeEngine;
 
 import java.util.Collection;
@@ -90,14 +91,14 @@ public class QueryResultSizeLimiter {
     /**
      * Just for testing.
      */
-    boolean isQueryResultLimitEnabled() {
+    public boolean isQueryResultLimitEnabled() {
         return isQueryResultLimitEnabled;
     }
 
     /**
      * Just for testing.
      */
-    boolean isPreCheckEnabled() {
+    public boolean isPreCheckEnabled() {
         return isPreCheckEnabled;
     }
 

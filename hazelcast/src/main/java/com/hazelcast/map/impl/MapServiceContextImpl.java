@@ -26,6 +26,8 @@ import com.hazelcast.map.impl.eviction.EvictionOperator;
 import com.hazelcast.map.impl.eviction.ExpirationManager;
 import com.hazelcast.map.impl.nearcache.NearCacheProvider;
 import com.hazelcast.map.impl.operation.MapPartitionDestroyOperation;
+import com.hazelcast.map.impl.query.MapQueryEngineImpl;
+import com.hazelcast.map.impl.query.MapQueryEngine;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.map.listener.MapPartitionLostListener;
 import com.hazelcast.map.merge.MergePolicyProvider;
@@ -87,7 +89,7 @@ class MapServiceContextImpl implements MapServiceContext {
     private final NearCacheProvider nearCacheProvider;
     private final LocalMapStatsProvider localMapStatsProvider;
     private final MergePolicyProvider mergePolicyProvider;
-    private final MapContextQuerySupport mapContextQuerySupport;
+    private final MapQueryEngine mapQueryEngine;
     private MapEventPublisher mapEventPublisher;
     private EvictionOperator evictionOperator;
     private MapService mapService;
@@ -104,7 +106,7 @@ class MapServiceContextImpl implements MapServiceContext {
         this.localMapStatsProvider = new LocalMapStatsProvider(this, nodeEngine);
         this.mergePolicyProvider = new MergePolicyProvider(nodeEngine);
         this.mapEventPublisher = createMapEventPublisherSupport();
-        this.mapContextQuerySupport = new BasicMapContextQuerySupport(this);
+        this.mapQueryEngine = new MapQueryEngineImpl(this);
     }
 
     MapEventPublisherImpl createMapEventPublisherSupport() {
@@ -287,8 +289,8 @@ class MapServiceContextImpl implements MapServiceContext {
     }
 
     @Override
-    public MapContextQuerySupport getMapContextQuerySupport() {
-        return mapContextQuerySupport;
+    public MapQueryEngine getMapQueryEngine() {
+        return mapQueryEngine;
     }
 
     @Override

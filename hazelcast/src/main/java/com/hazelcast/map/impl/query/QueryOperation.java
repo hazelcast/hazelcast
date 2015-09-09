@@ -14,29 +14,24 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map.impl.operation;
+package com.hazelcast.map.impl.query;
 
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.instance.GroupProperties;
-import com.hazelcast.instance.GroupProperty;
-import com.hazelcast.map.impl.MapContextQuerySupport;
+import com.hazelcast.map.impl.operation.AbstractMapOperation;
 import com.hazelcast.map.impl.MapServiceContext;
-import com.hazelcast.map.impl.QueryResult;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.query.PagingPredicate;
-import com.hazelcast.query.PagingPredicateAccessor;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.spi.ExceptionAction;
-import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.ReadonlyOperation;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.exception.TargetNotMemberException;
-import com.hazelcast.util.FutureUtil;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -49,10 +44,14 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.instance.GroupProperty.QUERY_PREDICATE_PARALLEL_EVALUATION;
+import static com.hazelcast.query.PagingPredicateAccessor.getNearestAnchorEntry;
+import static com.hazelcast.spi.ExecutionService.QUERY_EXECUTOR;
+import static com.hazelcast.util.FutureUtil.RETHROW_EVERYTHING;
 import static com.hazelcast.util.FutureUtil.returnWithDeadline;
 import static com.hazelcast.util.SortingUtil.getSortedSubList;
+import static java.util.concurrent.TimeUnit.MINUTES;
 
 public class QueryOperation extends AbstractMapOperation implements ReadonlyOperation {
 
@@ -75,7 +74,7 @@ public class QueryOperation extends AbstractMapOperation implements ReadonlyOper
     }
 
     private static Collection<Collection<QueryableEntry>> getResult(List<Future<Collection<QueryableEntry>>> lsFutures) {
-        return returnWithDeadline(lsFutures, QUERY_EXECUTION_TIMEOUT_MINUTES, TimeUnit.MINUTES, FutureUtil.RETHROW_EVERYTHING);
+        return returnWithDeadline(lsFutures, QUERY_EXECUTION_TIMEOUT_MINUTES, MINUTES, RETHROW_EVERYTHING);
     }
 
     @Override
@@ -83,7 +82,7 @@ public class QueryOperation extends AbstractMapOperation implements ReadonlyOper
         InternalPartitionService partitionService = getNodeEngine().getPartitionService();
         NodeEngine nodeEngine = getNodeEngine();
         MapServiceContext mapServiceContext = mapService.getMapServiceContext();
-        MapContextQuerySupport mapQuerySupport = mapServiceContext.getMapContextQuerySupport();
+        MapQueryEngine queryEngine = mapServiceContext.getMapQueryEngine();
 
         int initialPartitionStateVersion = partitionService.getPartitionStateVersion();
         Collection<Integer> initialPartitions = mapServiceContext.getOwnedPartitions();
@@ -93,7 +92,7 @@ public class QueryOperation extends AbstractMapOperation implements ReadonlyOper
             entries = mapContainer.getIndexService().query(predicate);
         }
 
-        result = mapQuerySupport.newQueryResult(initialPartitions.size());
+        result = queryEngine.newQueryResult(initialPartitions.size());
         if (entries != null) {
             result.addAll(entries);
         } else {
@@ -118,7 +117,7 @@ public class QueryOperation extends AbstractMapOperation implements ReadonlyOper
         if (pagingPredicate != null) {
             runParallelForPaging(initialPartitions);
         } else {
-            boolean parallelEvaluation = groupProperties.getBoolean(GroupProperty.QUERY_PREDICATE_PARALLEL_EVALUATION);
+            boolean parallelEvaluation = groupProperties.getBoolean(QUERY_PREDICATE_PARALLEL_EVALUATION);
             if (parallelEvaluation) {
                 runParallel(initialPartitions);
             } else {
@@ -130,7 +129,7 @@ public class QueryOperation extends AbstractMapOperation implements ReadonlyOper
     protected void runSingleThreaded(final Collection<Integer> initialPartitions) {
         RetryableHazelcastException storedException = null;
         MapServiceContext mapServiceContext = mapService.getMapServiceContext();
-        MapContextQuerySupport querySupport = mapServiceContext.getMapContextQuerySupport();
+        MapQueryEngine querySupport = mapServiceContext.getMapQueryEngine();
         for (Integer partitionId : initialPartitions) {
             try {
                 Collection<QueryableEntry> entries = querySupport.queryOnPartition(name, predicate, partitionId);
@@ -151,7 +150,7 @@ public class QueryOperation extends AbstractMapOperation implements ReadonlyOper
 
     private void runParallel(Collection<Integer> initialPartitions) throws InterruptedException, ExecutionException {
         NodeEngine nodeEngine = getNodeEngine();
-        ExecutorService executor = nodeEngine.getExecutionService().getExecutor(ExecutionService.QUERY_EXECUTOR);
+        ExecutorService executor = nodeEngine.getExecutionService().getExecutor(QUERY_EXECUTOR);
         List<Future<Collection<QueryableEntry>>> lsFutures = new ArrayList<Future<Collection<QueryableEntry>>>(
                 initialPartitions.size());
 
@@ -171,7 +170,7 @@ public class QueryOperation extends AbstractMapOperation implements ReadonlyOper
 
     private void runParallelForPaging(Collection<Integer> initialPartitions) throws InterruptedException, ExecutionException {
         NodeEngine nodeEngine = getNodeEngine();
-        ExecutorService executor = nodeEngine.getExecutionService().getExecutor(ExecutionService.QUERY_EXECUTOR);
+        ExecutorService executor = nodeEngine.getExecutionService().getExecutor(QUERY_EXECUTOR);
         List<Future<Collection<QueryableEntry>>> lsFutures = new ArrayList<Future<Collection<QueryableEntry>>>(
                 initialPartitions.size());
 
@@ -184,7 +183,7 @@ public class QueryOperation extends AbstractMapOperation implements ReadonlyOper
         for (Collection<QueryableEntry> returnedResult : returnedResults) {
             toMerge.addAll(returnedResult);
         }
-        Map.Entry<Integer, Map.Entry> nearestAnchorEntry = PagingPredicateAccessor.getNearestAnchorEntry(pagingPredicate);
+        Map.Entry<Integer, Map.Entry> nearestAnchorEntry = getNearestAnchorEntry(pagingPredicate);
         List<QueryableEntry> sortedSubList = getSortedSubList(toMerge, pagingPredicate, nearestAnchorEntry);
         result.addAll(sortedSubList);
     }
@@ -240,8 +239,8 @@ public class QueryOperation extends AbstractMapOperation implements ReadonlyOper
 
         @Override
         public Collection<QueryableEntry> call() throws Exception {
-            MapContextQuerySupport mapContextQuerySupport = mapService.getMapServiceContext().getMapContextQuerySupport();
-            return mapContextQuerySupport.queryOnPartition(name, predicate, partition);
+            MapQueryEngine mapQueryEngine = mapService.getMapServiceContext().getMapQueryEngine();
+            return mapQueryEngine.queryOnPartition(name, predicate, partition);
         }
     }
 }

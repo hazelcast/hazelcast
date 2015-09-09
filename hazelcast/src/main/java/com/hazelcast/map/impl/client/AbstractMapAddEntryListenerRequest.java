@@ -27,7 +27,7 @@ import com.hazelcast.map.impl.DataAwareEntryEvent;
 import com.hazelcast.map.impl.EntryEventFilter;
 import com.hazelcast.map.impl.MapPortableHook;
 import com.hazelcast.map.impl.MapService;
-import com.hazelcast.map.impl.QueryEventFilter;
+import com.hazelcast.map.impl.query.QueryEventFilter;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.security.permission.ActionConstants;

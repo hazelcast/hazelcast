@@ -1,11 +1,12 @@
-package com.hazelcast.map.impl.operation;
+package com.hazelcast.map.impl.query;
 
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.map.impl.MapContainer;
-import com.hazelcast.map.impl.MapContextQuerySupport;
+import com.hazelcast.map.impl.operation.AbstractMapOperation;
+import com.hazelcast.map.impl.query.MapQueryEngine;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
-import com.hazelcast.map.impl.QueryResult;
+import com.hazelcast.map.impl.query.QueryResult;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.partition.InternalPartitionService;
@@ -34,7 +35,7 @@ public abstract class QueryOperationTestSupport {
     private final Answer<Data> randomDataAnswer = new DataAnswer();
     private final Collection<QueryableEntry> queryEntries = new ArrayList<QueryableEntry>();
     private final Set<QueryableEntry> queryEntrySet = new HashSet<QueryableEntry>();
-    private final MapContextQuerySupport mapContextQuerySupport = mock(MapContextQuerySupport.class);
+    private final MapQueryEngine mapQueryEngine = mock(MapQueryEngine.class);
     private AbstractMapOperation queryOperation = createQueryOperation();
 
     protected abstract AbstractMapOperation createQueryOperation();
@@ -58,8 +59,8 @@ public abstract class QueryOperationTestSupport {
 
         QueryResult queryResult = new QueryResult(nodeResultLimit);
 
-        when(mapContextQuerySupport.newQueryResult(anyInt())).thenReturn(queryResult);
-        when(mapContextQuerySupport.queryOnPartition(MAP_NAME, TruePredicate.INSTANCE, Operation.GENERIC_PARTITION_ID))
+        when(mapQueryEngine.newQueryResult(anyInt())).thenReturn(queryResult);
+        when(mapQueryEngine.queryOnPartition(MAP_NAME, TruePredicate.INSTANCE, Operation.GENERIC_PARTITION_ID))
                 .thenReturn(queryEntries);
 
         IndexService indexService = mock(IndexService.class);
@@ -69,18 +70,18 @@ public abstract class QueryOperationTestSupport {
         when(mapConfig.isStatisticsEnabled()).thenReturn(false);
 
         MapServiceContext mapServiceContext = mock(MapServiceContext.class);
-        when(mapServiceContext.getMapContextQuerySupport()).thenReturn(mapContextQuerySupport);
+        when(mapServiceContext.getMapQueryEngine()).thenReturn(mapQueryEngine);
 
         MapService mapService = mock(MapService.class);
         when(mapService.getMapServiceContext()).thenReturn(mapServiceContext);
 
-        queryOperation.mapService = mapService;
+        queryOperation.setMapService(mapService);
 
         MapContainer mapContainer = mock(MapContainer.class);
         when(mapContainer.getIndexService()).thenReturn(indexService);
         when(mapContainer.getMapConfig()).thenReturn(mapConfig);
 
-        queryOperation.mapContainer = mapContainer;
+        queryOperation.setMapContainer(mapContainer);
 
         InternalPartitionService partitionService = mock(InternalPartitionService.class);
         when(partitionService.getPartitionStateVersion()).thenReturn(0);

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hazelcast.map.query;
+package com.hazelcast.map.impl.query;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;

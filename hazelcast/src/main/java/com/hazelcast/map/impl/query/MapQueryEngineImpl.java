@@ -14,16 +14,18 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map.impl;
+package com.hazelcast.map.impl.query;
 
 import com.hazelcast.core.Member;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.QueryResultSizeExceededException;
-import com.hazelcast.map.impl.operation.QueryOperation;
-import com.hazelcast.map.impl.operation.QueryPartitionOperation;
+import com.hazelcast.map.impl.MapService;
+import com.hazelcast.map.impl.MapServiceContext;
+import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.PagingPredicateAccessor;
 import com.hazelcast.query.Predicate;
@@ -56,18 +58,22 @@ import static com.hazelcast.util.SortingUtil.getSortedQueryResultSet;
 import static com.hazelcast.util.SortingUtil.getSortedSubList;
 
 /**
- * Support methods which are used in map specific query operations.
+ * The {@link MapQueryEngine} implementation.
  */
-class BasicMapContextQuerySupport implements MapContextQuerySupport {
+public class MapQueryEngineImpl implements MapQueryEngine {
 
     private final MapServiceContext mapServiceContext;
     private final NodeEngine nodeEngine;
     private final ILogger logger;
     private final QueryResultSizeLimiter queryResultSizeLimiter;
+    private final SerializationService serializationService;
+    private final InternalPartitionService partitionService;
 
-    public BasicMapContextQuerySupport(MapServiceContext mapServiceContext) {
+    public MapQueryEngineImpl(MapServiceContext mapServiceContext) {
         this.mapServiceContext = mapServiceContext;
         this.nodeEngine = mapServiceContext.getNodeEngine();
+        this.serializationService = nodeEngine.getSerializationService();
+        this.partitionService = nodeEngine.getPartitionService();
         this.logger = nodeEngine.getLogger(getClass());
         this.queryResultSizeLimiter = new QueryResultSizeLimiter(mapServiceContext, logger);
     }
@@ -75,7 +81,6 @@ class BasicMapContextQuerySupport implements MapContextQuerySupport {
     @Override
     @SuppressWarnings("unchecked")
     public Collection<QueryableEntry> queryOnPartition(String mapName, Predicate predicate, int partitionId) {
-        SerializationService serializationService = nodeEngine.getSerializationService();
         PagingPredicate pagingPredicate = predicate instanceof PagingPredicate ? (PagingPredicate) predicate : null;
         List<QueryableEntry> resultList = new LinkedList<QueryableEntry>();
 
@@ -104,7 +109,7 @@ class BasicMapContextQuerySupport implements MapContextQuerySupport {
         } else if (value == null) {
             value = record.getValue();
             if (value instanceof Data && !((Data) value).isPortable()) {
-                value = nodeEngine.getSerializationService().toObject(value);
+                value = serializationService.toObject(value);
                 record.setCachedValue(value);
             }
         }
@@ -124,7 +129,6 @@ class BasicMapContextQuerySupport implements MapContextQuerySupport {
     public Set queryLocalMember(String mapName, Predicate predicate, IterationType iterationType, boolean dataResult) {
         checkIfNotPagingPredicate(predicate);
 
-        SerializationService serializationService = nodeEngine.getSerializationService();
         Set result = new QueryResultSet(serializationService, iterationType, dataResult);
         List<Integer> partitionIds = getLocalPartitionIds();
 
@@ -240,7 +244,6 @@ class BasicMapContextQuerySupport implements MapContextQuerySupport {
             queryResultSizeLimiter.checkMaxResultLimitOnLocalPartitions(mapName);
         }
 
-        SerializationService serializationService = nodeEngine.getSerializationService();
         Set result = new QueryResultSet(serializationService, iterationType, dataResult);
         Set<Integer> partitionIds = getAllPartitionIds();
 
@@ -360,15 +363,15 @@ class BasicMapContextQuerySupport implements MapContextQuerySupport {
     }
 
     private Object toObject(Object obj) {
-        return nodeEngine.getSerializationService().toObject(obj);
+        return serializationService.toObject(obj);
     }
 
     private List<Integer> getLocalPartitionIds() {
-        return nodeEngine.getPartitionService().getMemberPartitions(nodeEngine.getThisAddress());
+        return partitionService.getMemberPartitions(nodeEngine.getThisAddress());
     }
 
     private Set<Integer> getAllPartitionIds() {
-        int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
+        int partitionCount = partitionService.getPartitionCount();
         return createSetWithPopulatedPartitionIds(partitionCount);
     }
 
