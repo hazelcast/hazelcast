@@ -1389,6 +1389,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
 
     @Override
     public void shutdown(boolean terminate) {
+        executorService.shutdown();
         reset();
     }
 
