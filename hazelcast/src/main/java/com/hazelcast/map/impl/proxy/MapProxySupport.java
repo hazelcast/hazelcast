@@ -42,7 +42,7 @@ import com.hazelcast.map.impl.LocalMapStatsProvider;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapContextQuerySupport;
 import com.hazelcast.map.impl.MapEntrySet;
-import com.hazelcast.map.impl.MapEventPublisher;
+import com.hazelcast.map.impl.event.MapEventPublisher;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.PartitionContainer;
