@@ -41,6 +41,7 @@ import com.hazelcast.query.PredicateBuilder;
 import com.hazelcast.query.SampleObjects;
 import com.hazelcast.query.SampleObjects.Employee;
 import com.hazelcast.query.SqlPredicate;
+import com.hazelcast.test.ExpectedRuntimeException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -899,7 +900,7 @@ public class MapTransactionTest extends HazelcastTestSupport {
         config.getMapConfig(map).setMapStoreConfig(new MapStoreConfig()
                 .setEnabled(true).setImplementation(new MapStoreAdapter() {
                     public void store(Object key, Object value) {
-                        throw new IllegalStateException("Map store intentionally failed :) ");
+                        throw new ExpectedRuntimeException("Map store intentionally failed :) ");
                     }
                 }));
 
@@ -907,15 +908,18 @@ public class MapTransactionTest extends HazelcastTestSupport {
         final HazelcastInstance h1 = factory.newHazelcastInstance(config);
         final HazelcastInstance h2 = factory.newHazelcastInstance(config);
 
-        boolean b = h1.executeTransaction(options, new TransactionalTask<Boolean>() {
-            public Boolean execute(TransactionalTaskContext context) throws TransactionException {
-                assertNull(context.getMap(map).put("1", "value1"));
-                assertNull(context.getMap(anotherMap).put("1", "value1"));
-                return true;
-            }
-        });
+        try {
+            h1.executeTransaction(options, new TransactionalTask<Boolean>() {
+                public Boolean execute(TransactionalTaskContext context) throws TransactionException {
+                    assertNull(context.getMap(map).put("1", "value1"));
+                    assertNull(context.getMap(anotherMap).put("1", "value1"));
+                    return true;
+                }
+            });
+            fail();
+        } catch (ExpectedRuntimeException expected) {
+        }
 
-        assertTrue(b);
         assertNull(h2.getMap(map).get("1"));
         assertEquals("value1", h2.getMap(anotherMap).get("1"));
     }

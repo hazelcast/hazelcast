@@ -26,23 +26,23 @@ import com.hazelcast.transaction.impl.TransactionManagerServiceImpl;
 import java.io.IOException;
 
 import static com.hazelcast.spi.ExceptionAction.THROW_EXCEPTION;
-import static com.hazelcast.transaction.impl.TransactionDataSerializerHook.ROLLBACK_TX_BACKUP;
+import static com.hazelcast.transaction.impl.TransactionDataSerializerHook.ROLLBACK_TX_BACKUP_LOG;
 
-public final class RollbackTxBackupOperation extends TxBaseOperation {
+public final class RollbackTxBackupLogOperation extends TxBaseOperation {
 
     private String txnId;
 
-    public RollbackTxBackupOperation() {
+    public RollbackTxBackupLogOperation() {
     }
 
-    public RollbackTxBackupOperation(String txnId) {
+    public RollbackTxBackupLogOperation(String txnId) {
         this.txnId = txnId;
     }
 
     @Override
     public void run() throws Exception {
         TransactionManagerServiceImpl txManagerService = getService();
-        txManagerService.rollbackTxBackupLog(txnId);
+        txManagerService.rollbackBackupLog(txnId);
     }
 
     @Override
@@ -60,7 +60,7 @@ public final class RollbackTxBackupOperation extends TxBaseOperation {
 
     @Override
     public int getId() {
-        return ROLLBACK_TX_BACKUP;
+        return ROLLBACK_TX_BACKUP_LOG;
     }
 
     @Override

@@ -50,23 +50,29 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
 import static com.hazelcast.transaction.impl.Transaction.State;
+import static com.hazelcast.transaction.impl.Transaction.State.ACTIVE;
+import static com.hazelcast.transaction.impl.Transaction.State.COMMITTING;
+import static com.hazelcast.transaction.impl.Transaction.State.ROLLING_BACK;
 import static com.hazelcast.util.FutureUtil.ExceptionHandler;
 import static com.hazelcast.util.FutureUtil.logAllExceptions;
 import static com.hazelcast.util.FutureUtil.waitWithDeadline;
 import static com.hazelcast.util.Preconditions.checkNotNull;
+import static java.util.Collections.shuffle;
 
 public class TransactionManagerServiceImpl implements TransactionManagerService, ManagedService,
         MembershipAwareService, ClientAwareService {
 
     public static final String SERVICE_NAME = "hz:core:txManagerService";
 
+    private static final Address[] EMPTY_ADDRESSES = new Address[0];
+
+    final ConcurrentMap<String, TxBackupLog> txBackupLogs = new ConcurrentHashMap<String, TxBackupLog>();
+
     private final ExceptionHandler finalizeExceptionHandler;
 
     private final NodeEngineImpl nodeEngine;
 
     private final ILogger logger;
-
-    private final ConcurrentMap<String, TxBackupLog> txBackupLogs = new ConcurrentHashMap<String, TxBackupLog>();
 
     public TransactionManagerServiceImpl(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
@@ -85,7 +91,7 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
         final TransactionContextImpl context = new TransactionContextImpl(this, nodeEngine, options, null);
         context.beginTransaction();
         try {
-            final T value = task.execute(context);
+            T value = task.execute(context);
             context.commitTransaction();
             return value;
         } catch (Throwable e) {
@@ -133,8 +139,7 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
 
     @Override
     public void memberRemoved(MembershipServiceEvent event) {
-        final MemberImpl member = event.getMember();
-        String uuid = member.getUuid();
+        String uuid = event.getMember().getUuid();
         finalizeTransactionsOf(uuid);
     }
 
@@ -155,7 +160,7 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
         }
 
         //TODO shouldn't we remove TxBackupLog from map ?
-        if (log.state == State.ACTIVE) {
+        if (log.state == ACTIVE) {
             Collection<Member> memberList = nodeEngine.getClusterService().getMembers();
             Collection<Future> futures = new ArrayList<Future>(memberList.size());
             for (Member member : memberList) {
@@ -169,7 +174,7 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
         } else {
             TransactionImpl tx = new TransactionImpl(this, nodeEngine, txnId, log.records,
                     log.timeoutMillis, log.startTime, log.callerUuid);
-            if (log.state == State.COMMITTING) {
+            if (log.state == COMMITTING) {
                 try {
                     tx.commit();
                 } catch (Throwable e) {
@@ -190,12 +195,19 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
         finalizeTransactionsOf(clientUuid);
     }
 
-    Address[] pickBackupAddresses(int durability) {
-        final ClusterService clusterService = nodeEngine.getClusterService();
-        final List<MemberImpl> members = new ArrayList<MemberImpl>(clusterService.getMemberImpls());
+    Address[] pickBackupLogAddresses(int durability) {
+        if (durability == 0) {
+            return EMPTY_ADDRESSES;
+        }
+
+        // This should be cleaned up because this is quite a complex approach since it depends on
+        // the number of members in the cluster and creates litter.
+
+        ClusterService clusterService = nodeEngine.getClusterService();
+        List<MemberImpl> members = new ArrayList<MemberImpl>(clusterService.getMemberImpls());
         members.remove(nodeEngine.getLocalMember());
-        final int c = Math.min(members.size(), durability);
-        Collections.shuffle(members);
+        int c = Math.min(members.size(), durability);
+        shuffle(members);
         Address[] addresses = new Address[c];
         for (int i = 0; i < c; i++) {
             addresses[i] = members.get(i).getAddress();
@@ -203,47 +215,48 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
         return addresses;
     }
 
-    public void beginTxBackupLog(String callerUuid, String txnId) {
-        TxBackupLog log = new TxBackupLog(Collections.<TransactionLogRecord>emptyList(), callerUuid, State.ACTIVE, -1, -1);
+    public void createBackupLog(String callerUuid, String txnId) {
+        TxBackupLog log = new TxBackupLog(Collections.<TransactionLogRecord>emptyList(), callerUuid, ACTIVE, -1, -1);
         if (txBackupLogs.putIfAbsent(txnId, log) != null) {
             throw new TransactionException("TxLog already exists!");
         }
     }
 
-    public void prepareTxBackupLog(List<TransactionLogRecord> records, String callerUuid, String txnId,
-                                   long timeoutMillis, long startTime) {
+    public void replicaBackupLog(List<TransactionLogRecord> records, String callerUuid, String txnId,
+                                 long timeoutMillis, long startTime) {
         TxBackupLog beginLog = txBackupLogs.get(txnId);
         if (beginLog == null) {
             throw new TransactionException("Could not find begin tx log!");
         }
-        if (beginLog.state != State.ACTIVE) {
+        if (beginLog.state != ACTIVE) {
+            // the exception message is very strange
             throw new TransactionException("TxLog already exists!");
         }
-        TxBackupLog newTxBackupLog = new TxBackupLog(records, callerUuid, State.COMMITTING, timeoutMillis, startTime);
+        TxBackupLog newTxBackupLog = new TxBackupLog(records, callerUuid, COMMITTING, timeoutMillis, startTime);
         if (!txBackupLogs.replace(txnId, beginLog, newTxBackupLog)) {
             throw new TransactionException("TxLog already exists!");
         }
     }
 
-    public void rollbackTxBackupLog(String txnId) {
-        final TxBackupLog log = txBackupLogs.get(txnId);
-        if (log != null) {
-            log.state = State.ROLLING_BACK;
-        } else {
+    public void rollbackBackupLog(String txnId) {
+        TxBackupLog log = txBackupLogs.get(txnId);
+        if (log == null) {
             logger.warning("No tx backup log is found, tx -> " + txnId);
+        } else {
+            log.state = ROLLING_BACK;
         }
     }
 
-    public void purgeTxBackupLog(String txnId) {
+    public void purgeBackupLog(String txnId) {
         txBackupLogs.remove(txnId);
     }
 
-    private static final class TxBackupLog {
-        private final List<TransactionLogRecord> records;
-        private final String callerUuid;
-        private final long timeoutMillis;
-        private final long startTime;
-        private volatile State state;
+    static final class TxBackupLog {
+        final List<TransactionLogRecord> records;
+        final String callerUuid;
+        final long timeoutMillis;
+        final long startTime;
+        volatile State state;
 
         private TxBackupLog(List<TransactionLogRecord> records, String callerUuid, State state,
                             long timeoutMillis, long startTime) {
