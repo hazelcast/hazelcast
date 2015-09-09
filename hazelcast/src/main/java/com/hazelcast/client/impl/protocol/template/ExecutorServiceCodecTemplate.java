@@ -27,8 +27,7 @@ import com.hazelcast.nio.serialization.Data;
 public interface ExecutorServiceCodecTemplate {
 
     /**
-     * Initiates an orderly shutdown in which previously submitted
-     * tasks are executed, but no new tasks will be accepted.
+     * Initiates an orderly shutdown in which previously submitted tasks are executed, but no new tasks will be accepted.
      * Invocation has no additional effect if already shut down.
      *
      * @param name Name of the executor.
@@ -37,10 +36,10 @@ public interface ExecutorServiceCodecTemplate {
     void shutdown(String name);
 
     /**
-     * Returns <tt>true</tt> if this executor has been shut down.
+     * Returns true if this executor has been shut down.
      *
      * @param name Name of the executor.
-     * @return <tt>true</tt> if this executor has been shut down
+     * @return true if this executor has been shut down
      */
     @Request(id = 2, retryable = false, response = ResponseMessageConst.BOOLEAN)
     Object isShutdown(String name);

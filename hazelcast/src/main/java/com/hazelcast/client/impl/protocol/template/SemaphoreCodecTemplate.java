@@ -24,6 +24,7 @@ import com.hazelcast.client.impl.protocol.ResponseMessageConst;
         name = "Semaphore", ns = "Hazelcast.Client.Protocol.Codec")
 public interface SemaphoreCodecTemplate {
     /**
+     * Try to initialize this ISemaphore instance with the given permit count
      *
      * @param name Name of the Semaphore
      * @param permits The given permit count
@@ -33,6 +34,13 @@ public interface SemaphoreCodecTemplate {
     Object init(String name, int permits);
 
     /**
+     * Acquires the given number of permits if they are available, and returns immediately, reducing the number of
+     * available permits by the given amount. If insufficient permits are available then the current thread becomes
+     * disabled for thread scheduling purposes and lies dormant until one of three things happens: some other thread
+     * invokes one of the methods for this semaphore, the current thread is next to be assigned permits and the number
+     * of available permits satisfies this request, this ISemaphore instance is destroyed, or some other thread
+     * the current thread. If the current thread has its interrupted status set on entry to this method, or is  while
+     * waiting for a permit, then  is thrown and the current thread's interrupted status is cleared.
      *
      * @param name Name of the Semaphore
      * @param permits The given permit count
@@ -42,6 +50,8 @@ public interface SemaphoreCodecTemplate {
     void acquire(String name, int permits);
 
     /**
+     * Returns the current number of permits currently available in this semaphore. This method is typically used for
+     * debugging and testing purposes.
      *
      * @param name Name of the Semaphore
      * @return The number of permits available in this semaphore.
@@ -50,6 +60,7 @@ public interface SemaphoreCodecTemplate {
     Object availablePermits(String name);
 
     /**
+     * Acquires and returns all permits that are immediately available.
      *
      * @param name Name of the Semaphore
      * @return The number of permits drained
@@ -58,6 +69,8 @@ public interface SemaphoreCodecTemplate {
     Object drainPermits(String name);
 
     /**
+     * Shrinks the number of available permits by the indicated reduction. This method differs from  acquire in that it
+     * does not block waiting for permits to become available.
      *
      * @param name Name of the Semaphore
      * @param reduction The number of permits to remove
@@ -67,6 +80,9 @@ public interface SemaphoreCodecTemplate {
     void reducePermits(String name, int reduction);
 
     /**
+     * Releases the given number of permits, increasing the number of available permits by that amount. There is no
+     * requirement that a thread that releases a permit must have acquired that permit by calling one of the
+     * acquire()acquire methods. Correct usage of a semaphore is established by programming convention in the application.
      *
      * @param name Name of the Semaphore
      * @param permits The number of permits to remove
@@ -75,6 +91,9 @@ public interface SemaphoreCodecTemplate {
     void release(String name, int permits);
 
     /**
+     * Acquires the given number of permits, if they are available, and returns immediately, with the value true,
+     * reducing the number of available permits by the given amount. If insufficient permits are available then this
+     * method will return immediately with the value false and the number of available permits is unchanged.
      *
      * @param name Name of the Semaphore
      * @param permits The number of permits to remove

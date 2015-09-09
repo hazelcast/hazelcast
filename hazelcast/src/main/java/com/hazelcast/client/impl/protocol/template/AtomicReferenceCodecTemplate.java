@@ -27,6 +27,7 @@ import com.hazelcast.nio.serialization.Data;
 public interface AtomicReferenceCodecTemplate {
 
     /**
+     * Applies a function on the value, the actual stored value will not change.
      *
      * @param name Name of the AtomicReference distributed object instance.
      * @param function the function applied on the value, the stored value does not change
@@ -36,6 +37,7 @@ public interface AtomicReferenceCodecTemplate {
     Object apply(String name, Data function);
 
     /**
+     * Alters the currently stored reference by applying a function on it.
      *
      * @param name Name of the AtomicReference distributed object instance.
      * @param function the function that alters the currently stored reference
@@ -44,6 +46,7 @@ public interface AtomicReferenceCodecTemplate {
     void alter(String name, Data function);
 
     /**
+     * Alters the currently stored reference by applying a function on it and gets the result.
      *
      * @param name Name of the AtomicReference distributed object instance.
      * @param function the function that alters the currently stored reference
@@ -53,6 +56,7 @@ public interface AtomicReferenceCodecTemplate {
     Object alterAndGet(String name, Data function);
 
     /**
+     * Alters the currently stored reference by applying a function on it on and gets the old value.
      *
      * @param name Name of the AtomicReference distributed object instance.
      * @param function the function that alters the currently stored reference
@@ -62,6 +66,7 @@ public interface AtomicReferenceCodecTemplate {
     Object getAndAlter(String name, Data function);
 
     /**
+     * Checks if the reference contains the value.
      *
      * @param name Name of the AtomicReference distributed object instance.
      * @param expected the value to check (is allowed to be null).
@@ -71,6 +76,7 @@ public interface AtomicReferenceCodecTemplate {
     Object contains(String name, @Nullable Data expected);
 
     /**
+     * Atomically sets the value to the given updated value only if the current value the expected value.
      *
      * @param name Name of the AtomicReference distributed object instance.
      * @param expected the expected value
@@ -82,6 +88,7 @@ public interface AtomicReferenceCodecTemplate {
     Object compareAndSet(String name, @Nullable Data expected, @Nullable Data updated);
 
     /**
+     * Gets the current value.
      *
      * @param name Name of the AtomicReference distributed object instance.
      * @return the current value
@@ -90,6 +97,7 @@ public interface AtomicReferenceCodecTemplate {
     Object get(String name);
 
     /**
+     * Atomically sets the given value.
      *
      * @param name Name of the AtomicReference distributed object instance.
      * @param newValue the new value
@@ -98,6 +106,7 @@ public interface AtomicReferenceCodecTemplate {
     void set(String name, @Nullable Data newValue);
 
     /**
+     * Clears the current stored reference.
      *
      * @param name Name of the AtomicReference distributed object instance.
      */
@@ -105,6 +114,7 @@ public interface AtomicReferenceCodecTemplate {
     void clear(String name);
 
     /**
+     * Gets the old value and sets the new value.
      *
      * @param name Name of the AtomicReference distributed object instance.
      * @param newValue the new value.
@@ -114,6 +124,7 @@ public interface AtomicReferenceCodecTemplate {
     Object getAndSet(String name, @Nullable Data newValue);
 
     /**
+     * Sets and gets the value.
      *
      * @param name Name of the AtomicReference distributed object instance.
      * @param newValue the new value
@@ -123,6 +134,7 @@ public interface AtomicReferenceCodecTemplate {
     Object setAndGet(String name, @Nullable Data newValue);
 
     /**
+     * Checks if the stored reference is null.
      *
      * @param name Name of the AtomicReference distributed object instance.
      * @return true if null, false otherwise.

@@ -25,6 +25,8 @@ import com.hazelcast.nio.serialization.Data;
         name = "TransactionalQueue", ns = "Hazelcast.Client.Protocol.Codec")
 public interface TransactionalQueueCodecTemplate {
     /**
+     * Inserts the specified element into this queue, waiting up to the specified wait time if necessary for space to
+     * become available.
      *
      * @param name Name of the Transcational Queue
      * @param txnId ID of the transaction
@@ -37,6 +39,7 @@ public interface TransactionalQueueCodecTemplate {
     Object offer(String name, String txnId, long threadId, Data item, long timeout);
 
     /**
+     * Retrieves and removes the head of this queue, waiting if necessary until an element becomes available.
      *
      * @param name Name of the Transactional Queue
      * @param txnId ID of the transaction
@@ -47,6 +50,8 @@ public interface TransactionalQueueCodecTemplate {
     Object take(String name, String txnId, long threadId);
 
     /**
+     * Retrieves and removes the head of this queue, waiting up to the specified wait time if necessary for an element
+     * to become available.
      *
      * @param name Name of the Transactional Queue
      * @param txnId ID of the transaction
@@ -58,6 +63,7 @@ public interface TransactionalQueueCodecTemplate {
     Object poll(String name, String txnId, long threadId, long timeout);
 
     /**
+     * Retrieves, but does not remove, the head of this queue, or returns null if this queue is empty.
      *
      * @param name Name of the Transactional Queue
      * @param txnId ID of the transaction
@@ -69,6 +75,8 @@ public interface TransactionalQueueCodecTemplate {
     Object peek(String name, String txnId, long threadId, long timeout);
 
     /**
+     * Returns the number of elements in this collection.If this collection contains more than Integer.MAX_VALUE
+     * elements, returns Integer.MAX_VALUE.
      *
      * @param name Name of the Transactional Queue
      * @param txnId ID of the transaction

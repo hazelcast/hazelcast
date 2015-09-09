@@ -24,6 +24,7 @@ import com.hazelcast.client.impl.protocol.ResponseMessageConst;
 public interface LockCodecTemplate {
 
     /**
+     *Returns whether this lock is locked or not.
      *
      * @param name Name of the Lock
      * @return True if this lock is locked, false otherwise.
@@ -32,6 +33,7 @@ public interface LockCodecTemplate {
     Object isLocked(String name);
 
     /**
+     * Returns whether this lock is locked by current thread or not.
      *
      * @param name Name of the Lock
      * @param threadId The id of the user thread performing the operation. It is used to guarantee that only the lock holder thread (if a lock exists on the entry) can perform the requested operation.
@@ -41,6 +43,7 @@ public interface LockCodecTemplate {
     Object isLockedByCurrentThread(String name, long threadId);
 
     /**
+     * Returns re-entrant lock hold count, regardless of lock ownership.
      *
      * @param name Name of the Lock
      * @return The lock hold count.
@@ -49,6 +52,7 @@ public interface LockCodecTemplate {
     Object getLockCount(String name);
 
     /**
+     * Returns remaining lease time in milliseconds. If the lock is not locked then -1 will be returned
      *
      * @param name Name of the Lock
      * @return Remaining lease time in milliseconds.
@@ -57,6 +61,9 @@ public interface LockCodecTemplate {
     Object getRemainingLeaseTime(String name);
 
     /**
+     * Acquires the lock for the specified lease time.After lease time, lock will be released.If the lock is not
+     * available then the current thread becomes disabled for thread scheduling purposes and lies dormant until the lock
+     * has been acquired.
      *
      * @param name Name of the Lock
      * @param leaseTime Time to wait before releasing to lock
@@ -66,6 +73,7 @@ public interface LockCodecTemplate {
     void lock(String name, long leaseTime, long threadId);
 
     /**
+     * Releases the lock.
      *
      * @param name Name of the Lock
      * @param threadId The id of the user thread performing the operation. It is used to guarantee that only the lock holder thread (if a lock exists on the entry) can perform the requested operation.
@@ -74,6 +82,8 @@ public interface LockCodecTemplate {
     void unlock(String name, long threadId);
 
     /**
+     * Releases the lock regardless of the lock owner. It always successfully unlocks, never blocks,
+     * and returns immediately.
      *
      * @param name Name of the Lock
      */
@@ -81,6 +91,10 @@ public interface LockCodecTemplate {
     void forceUnlock(String name);
 
     /**
+     * Tries to acquire the lock for the specified lease time.After lease time, the lock will be released.
+     * If the lock is not available, then the current thread becomes disabled for thread scheduling purposes and lies
+     * dormant until one of two things happens: the lock is acquired by the current thread, or the specified waiting
+     * time elapses.
      *
      * @param name Name of the Lock
      * @param threadId The id of the user thread performing the operation. It is used to guarantee that only the lock holder thread (if a lock exists on the entry) can perform the requested operation.

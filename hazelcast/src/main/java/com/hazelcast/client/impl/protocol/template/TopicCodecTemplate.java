@@ -25,6 +25,7 @@ import com.hazelcast.nio.serialization.Data;
 @GenerateCodec(id = TemplateConstants.TOPIC_TEMPLATE_ID, name = "Topic", ns = "Hazelcast.Client.Protocol.Codec")
 public interface TopicCodecTemplate {
     /**
+     * Publishes the message to all subscribers of this topic
      *
      * @param name Name of the Topic
      * @param message The message to publish to all subscribers of this topic
@@ -34,6 +35,8 @@ public interface TopicCodecTemplate {
     void publish(String name, Data message);
 
     /**
+     * Subscribes to this topic. When someone publishes a message on this topic. onMessage() function of the given
+     * MessageListener is called. More than one message listener can be added on one instance.
      *
      * @param name Name of the Topic
      * @return returns the registration id
@@ -42,6 +45,7 @@ public interface TopicCodecTemplate {
             , event = {EventMessageConst.EVENT_TOPIC})
     Object addMessageListener(String name);
     /**
+     * Stops receiving messages for the given message listener.If the given listener already removed, this method does nothing.
      *
      * @param name Name of the Topic
      * @param registrationId Id of listener registration.

@@ -25,6 +25,7 @@ import com.hazelcast.nio.serialization.Data;
 @GenerateCodec(id = TemplateConstants.MULTIMAP_TEMPLATE_ID, name = "MultiMap", ns = "Hazelcast.Client.Protocol.Codec")
 public interface MultiMapCodecTemplate {
     /**
+     * Stores a key-value pair in the multimap.
      *
      * @param name Name of the MultiMap
      * @param key The key to be stored
@@ -36,6 +37,8 @@ public interface MultiMapCodecTemplate {
     Object put(String name, Data key, Data value, long threadId);
 
     /**
+     * Returns the collection of values associated with the key. The collection is NOT backed by the map, so changes to
+     * the map are NOT reflected in the collection, and vice-versa.
      *
      * @param name Name of the MultiMap
      * @param key The key whose associated values are to be returned
@@ -46,6 +49,7 @@ public interface MultiMapCodecTemplate {
     Object get(String name, Data key, long threadId);
 
     /**
+     * Removes the given key value pair from the multimap.
      *
      * @param name Name of the MultiMap
      * @param key  The key of the entry to remove
@@ -56,6 +60,8 @@ public interface MultiMapCodecTemplate {
     Object remove(String name, Data key, long threadId);
 
     /**
+     * Returns the set of keys in the multimap.The collection is NOT backed by the map, so changes to the map are NOT
+     * reflected in the collection, and vice-versa.
      *
      * @param name Name of the MultiMap
      * @return The set of keys in the multimap. The returned set might be modifiable but it has no effect on the multimap.
@@ -64,6 +70,8 @@ public interface MultiMapCodecTemplate {
     Object keySet(String name);
 
     /**
+     * Returns the collection of values in the multimap.The collection is NOT backed by the map, so changes to the map
+     * are NOT reflected in the collection, and vice-versa.
      *
      * @param name Name of the MultiMap
      * @return The collection of values in the multimap. the returned collection might be modifiable but it has no effect on the multimap.
@@ -72,6 +80,8 @@ public interface MultiMapCodecTemplate {
     Object values(String name);
 
     /**
+     * Returns the set of key-value pairs in the multimap.The collection is NOT backed by the map, so changes to the map
+     * are NOT reflected in the collection, and vice-versa
      *
      * @param name Name of the MultiMap
      * @return The set of key-value pairs in the multimap. The returned set might be modifiable but it has no effect on the multimap.
@@ -80,6 +90,7 @@ public interface MultiMapCodecTemplate {
     Object entrySet(String name);
 
     /**
+     * Returns whether the multimap contains an entry with the key.
      *
      * @param name Name of the MultiMap
      * @param key The key whose existence is checked.
@@ -90,6 +101,7 @@ public interface MultiMapCodecTemplate {
     Object containsKey(String name, Data key, long threadId);
 
     /**
+     * Returns whether the multimap contains an entry with the value.
      *
      * @param name Name of the MultiMap
      * @param value The value whose existence is checked.
@@ -99,6 +111,7 @@ public interface MultiMapCodecTemplate {
     Object containsValue(String name, Data value);
 
     /**
+     * Returns whether the multimap contains the given key-value pair.
      *
      * @param name Name of the MultiMap
      * @param key The key whose existence is checked.
@@ -110,6 +123,7 @@ public interface MultiMapCodecTemplate {
     Object containsEntry(String name, Data key, Data value, long threadId);
 
     /**
+     * Returns the number of key-value pairs in the multimap.
      *
      * @param name Name of the MultiMap
      * @return The number of key-value pairs in the multimap.
@@ -118,6 +132,7 @@ public interface MultiMapCodecTemplate {
     Object size(String name);
 
     /**
+     * Clears the multimap. Removes all key-value pairs.
      *
      * @param name Name of the MultiMap
      */
@@ -125,16 +140,19 @@ public interface MultiMapCodecTemplate {
     void clear(String name);
 
     /**
+     * Returns the number of values that match the given key in the multimap.
      *
      * @param name Name of the MultiMap
-     * @param key The key whose existence is checked.
+     * @param key The key whose values count is to be returned
      * @param threadId The id of the user thread performing the operation. It is used to guarantee that only the lock holder thread (if a lock exists on the entry) can perform the requested operation
      * @return The number of values that match the given key in the multimap
      */
-    @Request(id = 12, retryable = true, response = ResponseMessageConst.BOOLEAN)
-    Object count(String name, Data key, long threadId);
+    @Request(id = 12, retryable = true, response = ResponseMessageConst.INTEGER)
+    Object valueCount(String name, Data key, long threadId);
 
     /**
+     * Adds the specified entry listener for the specified key.The listener will be notified for all
+     * add/remove/update/evict events for the specified key only.
      *
      * @param name Name of the MultiMap
      * @param key The key to listen to
@@ -142,10 +160,11 @@ public interface MultiMapCodecTemplate {
      * @return Returns registration id for the entry listener
      */
     @Request(id = 13, retryable = true, response = ResponseMessageConst.STRING,
-             event = {EventMessageConst.EVENT_ENTRY})
+            event = {EventMessageConst.EVENT_ENTRY})
     Object addEntryListenerToKey(String name, Data key, boolean includeValue);
 
     /**
+     * Adds an entry listener for this multimap. The listener will be notified for all multimap add/remove/update/evict events.
      *
      * @param name Name of the MultiMap
      * @param includeValue True if EntryEvent should contain the value,false otherwise
@@ -156,6 +175,7 @@ public interface MultiMapCodecTemplate {
     Object addEntryListener(String name, boolean includeValue);
 
     /**
+     * Removes the specified entry listener. Returns silently if no such listener was added before.
      *
      * @param name Name of the MultiMap
      * @param registrationId Registration id of listener
@@ -165,6 +185,11 @@ public interface MultiMapCodecTemplate {
     Object removeEntryListener(String name, String registrationId);
 
     /**
+     * Acquires the lock for the specified key for the specified lease time. After the lease time, the lock will be
+     * released. If the lock is not available, then the current thread becomes disabled for thread scheduling
+     * purposes and lies dormant until the lock has been acquired. Scope of the lock is for this map only. The acquired
+     * lock is only for the key in this map.Locks are re-entrant, so if the key is locked N times, then it should be
+     * unlocked N times before another thread can acquire it.
      *
      * @param name Name of the MultiMap
      * @param key The key the Lock
@@ -175,6 +200,10 @@ public interface MultiMapCodecTemplate {
     void lock(String name, Data key, long threadId, long ttl);
 
     /**
+     * Tries to acquire the lock for the specified key for the specified lease time. After lease time, the lock will be
+     * released. If the lock is not available, then the current thread becomes disabled for thread scheduling purposes
+     * and lies dormant until one of two things happens:the lock is acquired by the current thread, or the specified
+     * waiting time elapses.
      *
      * @param name Name of the MultiMap
      * @param key Key to lock in this map.
@@ -187,6 +216,7 @@ public interface MultiMapCodecTemplate {
     Object tryLock(String name, Data key, long threadId, long lease, long timeout);
 
     /**
+     * Checks the lock for the specified key. If the lock is acquired, this method returns true, else it returns false.
      *
      * @param name Name of the MultiMap
      * @param key Key to lock to be checked.
@@ -196,6 +226,8 @@ public interface MultiMapCodecTemplate {
     Object isLocked(String name, Data key);
 
     /**
+     * Releases the lock for the specified key regardless of the lock owner. It always successfully unlocks the key,
+     * never blocks and returns immediately.
      *
      * @param name Name of the MultiMap
      * @param key The key to Lock
@@ -205,6 +237,8 @@ public interface MultiMapCodecTemplate {
     void unlock(String name, Data key, long threadId);
 
     /**
+     * Releases the lock for the specified key regardless of the lock owner. It always successfully unlocks the key,
+     * never blocks and returns immediately.
      *
      * @param name Name of the MultiMap
      * @param key The key to Lock
@@ -213,6 +247,8 @@ public interface MultiMapCodecTemplate {
     void forceUnlock(String name, Data key);
 
     /**
+     * Removes all the entries with the given key. The collection is NOT backed by the map, so changes to the map are
+     * NOT reflected in the collection, and vice-versa.
      *
      * @param name Name of the MultiMap
      * @param key The key of the entry to remove
@@ -222,15 +258,5 @@ public interface MultiMapCodecTemplate {
      */
     @Request(id = 21, retryable = false, response = ResponseMessageConst.BOOLEAN)
     Object removeEntry(String name, Data key, Data value, long threadId);
-
-    /**
-     *
-     * @param name Name of the MultiMap
-     * @param key The key whose values count is to be returned
-     * @param threadId The id of the user thread performing the operation. It is used to guarantee that only the lock holder thread (if a lock exists on the entry) can perform the requested operation
-     * @return The number of values that match the given key in the multimap
-     */
-    @Request(id = 22, retryable = true, response = ResponseMessageConst.INTEGER)
-    Object valueCount(String name, Data key, long threadId);
 }
 

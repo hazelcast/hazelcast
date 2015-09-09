@@ -25,6 +25,7 @@ import com.hazelcast.nio.serialization.Data;
         name = "TransactionalList", ns = "Hazelcast.Client.Protocol.Codec")
 public interface TransactionalListCodecTemplate {
     /**
+     * Adds a new item to the transactional list.
      *
      * @param name Name of the Transactional List
      * @param txnId ID of the this transaction operation
@@ -36,6 +37,7 @@ public interface TransactionalListCodecTemplate {
     Object add(String name, String txnId, long threadId, Data item);
 
     /**
+     * Remove item from the transactional list
      *
      * @param name Name of the Transactional List
      * @param txnId ID of the this transaction operation
@@ -47,6 +49,7 @@ public interface TransactionalListCodecTemplate {
     Object remove(String name, String txnId, long threadId, Data item);
 
     /**
+     * Returns the size of the list
      *
      * @param name Name of the Transactional List
      * @param txnId ID of the this transaction operation

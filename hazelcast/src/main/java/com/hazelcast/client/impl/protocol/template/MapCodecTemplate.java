@@ -28,6 +28,10 @@ import java.util.Set;
 @GenerateCodec(id = TemplateConstants.MAP_TEMPLATE_ID, name = "Map", ns = "Hazelcast.Client.Protocol.Codec")
 public interface MapCodecTemplate {
     /**
+     * Puts an entry into this map with a given ttl (time to live) value.Entry will expire and get evicted after the ttl
+     * If ttl is 0, then the entry lives forever.This method returns a clone of the previous value, not the original
+     * (identically equal) value previously put into the map.Time resolution for TTL is seconds. The given TTL value is
+     * rounded to the next closest second value.
      *
      * @param name Name of the map.
      * @param key Key for the map entry.
@@ -40,6 +44,8 @@ public interface MapCodecTemplate {
     Object put(String name, Data key, Data value, long threadId, long ttl);
 
     /**
+     * This method returns a clone of the original value, so modifying the returned value does not change the actual
+     * value in the map. You should put the modified value back to make changes visible to all nodes.
      *
      * @param name Name of the map.
      * @param key Key for the map entry.
@@ -50,6 +56,11 @@ public interface MapCodecTemplate {
     Object get(String name, Data key, long threadId);
 
     /**
+     * Removes the mapping for a key from this map if it is present (optional operation).
+     * Returns the value to which this map previously associated the key, or null if the map contained no mapping for the key.
+     * If this map permits null values, then a return value of null does not necessarily indicate that the map contained no mapping for the key; it's also
+     * possible that the map explicitly mapped the key to null. The map will not contain a mapping for the specified key once the
+     * call returns.
      *
      * @param name Name of the map.
      * @param key Key for the map entry.
@@ -60,6 +71,7 @@ public interface MapCodecTemplate {
     Object remove(String name, Data key, long threadId);
 
     /**
+     * Replaces the entry for a key only if currently mapped to a given value.
      *
      * @param name Name of the map.
      * @param key Key for the map entry.
@@ -71,18 +83,22 @@ public interface MapCodecTemplate {
     Object replace(String name, Data key, Data value, long threadId);
 
     /**
+     * Replaces the the entry for a key only if existing values equal to the testValue
      *
      * @param name Name of the map.
      * @param key Key for the map entry.
      * @param testValue Test the existing value against this value to find if equal to this value.
      * @param value New value for the map entry. Only replace with this value if existing value is equal to the testValue.
      * @param threadId The id of the user thread performing the operation. It is used to guarantee that only the lock holder thread (if a lock exists on the entry) can perform the requested operation.
-     * @return true if value is replaced with new one, false  otherwise
+     * @return true if value is replaced with new one, false otherwise
      */
     @Request(id = 5, retryable = false, response = ResponseMessageConst.BOOLEAN)
     Object replaceIfSame(String name, Data key, Data testValue, Data value, long threadId);
 
     /**
+     * Asynchronously puts the given key and value into this map with a given ttl (time to live) value.Entry will expire
+     * and get evicted after the ttl. If ttl is 0, then the entry lives forever. Time resolution for TTL is seconds.
+     * The given TTL value is rounded to the next closest second value.
      *
      * @param name Name of the map.
      * @param key Key for the map entry.
@@ -96,6 +112,7 @@ public interface MapCodecTemplate {
 
 
     /**
+     * Asynchronously gets the given key.
      *
      * @param name Name of the map.
      * @param key Key for the map entry.
@@ -106,6 +123,7 @@ public interface MapCodecTemplate {
     Object getAsync(String name, Data key, long threadId);
 
     /**
+     * Asynchronously removes the given key.
      *
      * @param name Name of the map.
      * @param key Key for the map entry.
@@ -116,6 +134,7 @@ public interface MapCodecTemplate {
     Object removeAsync(String name, Data key, long threadId);
 
     /**
+     * Returns true if this map contains a mapping for the specified key.
      *
      * @param name Name of the map.
      * @param key Key for the map entry.
@@ -126,6 +145,8 @@ public interface MapCodecTemplate {
     Object containsKey(String name, Data key, long threadId);
 
     /**
+     * Returns true if this map maps one or more keys to the specified value.This operation will probably require time
+     * linear in the map size for most implementations of the Map interface.
      *
      * @param name Name of the map.
      * @param value Value to check if exists in the map.
@@ -135,6 +156,7 @@ public interface MapCodecTemplate {
     Object containsValue(String name, Data value);
 
     /**
+     * Removes the mapping for a key from this map if existing value equal to the this value
      *
      * @param name Name of the map.
      * @param key Key for the map entry.
@@ -146,6 +168,12 @@ public interface MapCodecTemplate {
     Object removeIfSame(String name, Data key, Data value, long threadId);
 
     /**
+     * Removes the mapping for a key from this map if it is present.Unlike remove(Object), this operation does not return
+     * the removed value, which avoids the serialization cost of the returned value.If the removed value will not be used,
+     * a delete operation is preferred over a remove operation for better performance. The map will not contain a mapping
+     * for the specified key once the call returns.
+     * This method breaks the contract of EntryListener. When an entry is removed by delete(), it fires an EntryEvent
+     * with a null oldValue. Also, a listener with predicates will have null values, so only keys can be queried via predicates
      *
      * @param name Name of the map.
      * @param key Key for the map entry.
@@ -155,6 +183,8 @@ public interface MapCodecTemplate {
     void delete(String name, Data key, long threadId);
 
     /**
+     * If this map has a MapStore, this method flushes all the local dirty entries by calling MapStore.storeAll()
+     * and/or MapStore.deleteAll().
      *
      * @param name Name of the map.
      */
@@ -162,6 +192,9 @@ public interface MapCodecTemplate {
     void flush(String name);
 
     /**
+     * Tries to remove the entry with the given key from this map within the specified timeout value.
+     * If the key is already locked by another thread and/or member, then this operation will wait the timeout
+     * amount for acquiring the lock.
      *
      * @param name Name of the map.
      * @param key Key for the map entry.
@@ -173,6 +206,9 @@ public interface MapCodecTemplate {
     Object tryRemove(String name, Data key, long threadId, long timeout);
 
     /**
+     * Tries to put the given key and value into this map within a specified timeout value. If this method returns false,
+     * it means that the caller thread could not acquire the lock for the key within the timeout duration,
+     * thus the put operation is not successful.
      *
      * @param name Name of the map.
      * @param key Key for the map entry.
@@ -185,6 +221,8 @@ public interface MapCodecTemplate {
     Object tryPut(String name, Data key, Data value, long threadId, long timeout);
 
     /**
+     * Same as put except that MapStore, if defined, will not be called to store/persist the entry.
+     * If ttl is 0, then the entry lives forever.
      *
      * @param name Name of the map.
      * @param key Key for the map entry.
@@ -196,6 +234,8 @@ public interface MapCodecTemplate {
     void putTransient(String name, Data key, Data value, long threadId, long ttl);
 
     /**
+     * Puts an entry into this map with a given ttl (time to live) value if the specified key is not already associated
+     * with a value. Entry will expire and get evicted after the ttl.
      *
      * @param name Name of the map.
      * @param key Key for the map entry.
@@ -208,6 +248,9 @@ public interface MapCodecTemplate {
     Object putIfAbsent(String name, Data key, Data value, long threadId, long ttl);
 
     /**
+     * Puts an entry into this map with a given ttl (time to live) value.Entry will expire and get evicted after the ttl
+     * If ttl is 0, then the entry lives forever. Similar to the put operation except that set doesn't
+     * return the old value, which is more efficient.
      *
      * @param name Name of the map.
      * @param key Key for the map entry.
@@ -219,6 +262,11 @@ public interface MapCodecTemplate {
     void set(String name, Data key, Data value, long threadId, long ttl);
 
     /**
+     * Acquires the lock for the specified lease time.After lease time, lock will be released.If the lock is not
+     * available then the current thread becomes disabled for thread scheduling purposes and lies dormant until the lock
+     * has been acquired.
+     * Scope of the lock is this map only. Acquired lock is only for the key in this map. Locks are re-entrant,
+     * so if the key is locked N times then it should be unlocked N times before another thread can acquire it.
      *
      * @param name Name of the map.
      * @param key Key for the map entry.
@@ -229,6 +277,10 @@ public interface MapCodecTemplate {
     void lock(String name, Data key, long threadId, long ttl);
 
     /**
+     * Tries to acquire the lock for the specified key for the specified lease time.After lease time, the lock will be
+     * released.If the lock is not available, then the current thread becomes disabled for thread scheduling
+     * purposes and lies dormant until one of two things happens the lock is acquired by the current thread, or
+     * the specified waiting time elapses.
      *
      * @param name Name of the map.
      * @param key Key for the map entry.
@@ -241,6 +293,7 @@ public interface MapCodecTemplate {
     Object tryLock(String name, Data key, long threadId, long lease, long timeout);
 
     /**
+     * Checks the lock for the specified key.If the lock is acquired then returns true, else returns false.
      *
      * @param name name of map
      * @param key Key for the map entry to check if it is locked.
@@ -250,6 +303,10 @@ public interface MapCodecTemplate {
     Object isLocked(String name, Data key);
 
     /**
+     * Releases the lock for the specified key. It never blocks and returns immediately.
+     * If the current thread is the holder of this lock, then the hold count is decremented.If the hold count is zero,
+     * then the lock is released.  If the current thread is not the holder of this lock,
+     * then ILLEGAL_MONITOR_STATE is thrown.
      *
      * @param name name of map
      * @param key Key for the map entry to unlock
@@ -259,6 +316,8 @@ public interface MapCodecTemplate {
     void unlock(String name, Data key, long threadId);
 
     /**
+     * Adds an interceptor for this map. Added interceptor will intercept operations
+     * and execute user defined methods and will cancel operations if user defined method throw exception.
      *
      * @param name name of map
      * @param interceptor interceptor to add
@@ -268,6 +327,7 @@ public interface MapCodecTemplate {
     Object addInterceptor(String name, Data interceptor);
 
     /**
+     * Removes the given interceptor for this map so it will not intercept operations anymore.
      *
      * @param name name of map
      * @param id of interceptor
@@ -278,58 +338,67 @@ public interface MapCodecTemplate {
     Object removeInterceptor(String name, String id);
 
     /**
+     * Adds a MapListener for this map. To receive an event, you should implement a corresponding MapListener
+     * sub-interface for that event.
      *
      * @param name name of map
      * @param key Key for the map entry.
-     * @param predicate    predicate for filtering entries.
+     * @param predicate predicate for filtering entries.
      * @param includeValue <tt>true</tt> if <tt>EntryEvent</tt> should
      *                     contain the value.
-     * @return A unique string  which is used as a key to remove the listener.
+     * @return A unique string which is used as a key to remove the listener.
      */
     @Request(id = 25, retryable = true, response = ResponseMessageConst.STRING, event = EventMessageConst.EVENT_ENTRY)
     Object addEntryListenerToKeyWithPredicate(String name, Data key, Data predicate, boolean includeValue);
 
     /**
+     * Adds an continuous entry listener for this map. Listener will get notified for map add/remove/update/evict events
+     * filtered by the given predicate.
      *
      * @param name name of map
-     * @param predicate    predicate for filtering entries.
+     * @param predicate predicate for filtering entries.
      * @param includeValue <tt>true</tt> if <tt>EntryEvent</tt> should
      *                     contain the value.
-     * @return A unique string  which is used as a key to remove the listener.
-
+     * @return A unique string which is used as a key to remove the listener.
      */
     @Request(id = 26, retryable = true, response = ResponseMessageConst.STRING, event = EventMessageConst.EVENT_ENTRY)
     Object addEntryListenerWithPredicate(String name, Data predicate, boolean includeValue);
 
     /**
+     * Adds a MapListener for this map. To receive an event, you should implement a corresponding MapListener
+     * sub-interface for that event.
      *
      * @param name name of map
      * @param key Key for the map entry.
      * @param includeValue <tt>true</tt> if <tt>EntryEvent</tt> should contain the value.
-     * @return A unique string  which is used as a key to remove the listener.
+     * @return A unique string which is used as a key to remove the listener.
      */
     @Request(id = 27, retryable = true, response = ResponseMessageConst.STRING, event = EventMessageConst.EVENT_ENTRY)
     Object addEntryListenerToKey(String name, Data key, boolean includeValue);
 
     /**
+     * Adds a MapListener for this map. To receive an event, you should implement a corresponding MapListener
+     * sub-interface for that event.
      *
      * @param name name of map
      * @param includeValue <tt>true</tt> if <tt>EntryEvent</tt> should contain the value.
-     * @return A unique string  which is used as a key to remove the listener.
+     * @return A unique string which is used as a key to remove the listener.
      */
     @Request(id = 28, retryable = true, response = ResponseMessageConst.STRING, event = EventMessageConst.EVENT_ENTRY)
     Object addEntryListener(String name, boolean includeValue);
 
     /**
+     * Adds an entry listener for this map. Listener will get notified for all map add/remove/update/evict events.
      *
      * @param name name of map
-     * @param includeValue <tt>true</tt> if <tt>EntryEvent</tt> should
-     * @return A unique string  which is used as a key to remove the listener.
+     * @param includeValue <tt>true</tt> if <tt>EntryEvent</tt> should contain the value.
+     * @return A unique string which is used as a key to remove the listener.
      */
     @Request(id = 29, retryable = true, response = ResponseMessageConst.STRING, event = EventMessageConst.EVENT_ENTRY)
     Object addNearCacheEntryListener(String name, boolean includeValue);
 
     /**
+     * Removes the specified entry listener. Returns silently if there is no such listener added before.
      *
      * @param name name of map
      * @param registrationId id of registered listener.
@@ -339,6 +408,12 @@ public interface MapCodecTemplate {
     Object removeEntryListener(String name, String registrationId);
 
     /**
+     * Adds a MapPartitionLostListener. The addPartitionLostListener returns a register-id. This id is needed to remove
+     * the MapPartitionLostListener using the removePartitionLostListener(String) method.
+     * There is no check for duplicate registrations, so if you register the listener twice, it will get events twice.
+     * IMPORTANT: Please see com.hazelcast.partition.PartitionLostListener for weaknesses.
+     * IMPORTANT: Listeners registered from HazelcastClient may miss some of the map partition lost events due
+     * to design limitations.
      *
      * @param name name of map
      * @return returns the registration id for the MapPartitionLostListener.
@@ -348,6 +423,7 @@ public interface MapCodecTemplate {
     Object addPartitionLostListener(String name);
 
     /**
+     * Removes the specified map partition lost listener. Returns silently if there is no such listener added before.
      *
      * @param name name of map
      * @param registrationId id of register
@@ -357,6 +433,9 @@ public interface MapCodecTemplate {
     Object removePartitionLostListener(String name, String registrationId);
 
     /**
+     * Returns the EntryView for the specified key.
+     * This method returns a clone of original mapping, modifying the returned value does not change the actual value
+     * in the map. One should put modified value back to make changes visible to all nodes.
      *
      * @param name name of map
      * @param key the key of the entry.
@@ -367,6 +446,8 @@ public interface MapCodecTemplate {
     Object getEntryView(String name, Data key, long threadId);
 
     /**
+     * Evicts the specified key from this map. If a MapStore is defined for this map, then the entry is not deleted
+     * from the underlying MapStore, evict only removes the entry from the memory.
      *
      * @param name name of map
      * @param key the specified key to evict from this map.
@@ -377,6 +458,9 @@ public interface MapCodecTemplate {
     Object evict(String name, Data key, long threadId);
 
     /**
+     * Evicts all keys from this map except the locked ones. If a MapStore is defined for this map, deleteAll is not
+     * called by this method. If you do want to deleteAll to be called use the clear method. The EVICT_ALL event is
+     * fired for any registered listeners.
      *
      * @param name name of map
      */
@@ -384,6 +468,7 @@ public interface MapCodecTemplate {
     void evictAll(String name);
 
     /**
+     * Loads all keys into the store. This is a batch load operation so that an implementation can optimize the multiple loads.
      *
      * @param name name of map
      * @param replaceExistingValues when <code>true</code>, existing values in the Map will
@@ -393,6 +478,7 @@ public interface MapCodecTemplate {
     void loadAll(String name, boolean replaceExistingValues);
 
     /**
+     * Loads the given keys. This is a batch load operation so that an implementation can optimize the multiple loads.
      *
      * @param name name of map
      * @param keys keys to load
@@ -402,6 +488,9 @@ public interface MapCodecTemplate {
     void loadGivenKeys(String name, Set<Data> keys, boolean replaceExistingValues);
 
     /**
+     * Returns a set clone of the keys contained in this map. The set is NOT backed by the map, so changes to the map
+     * are NOT reflected in the set, and vice-versa. On the server side this method is executed by a distributed query
+     * so it may throw a QUERY_RESULT_SIZE_EXCEEDED if GroupProperties#PROP_QUERY_RESULT_SIZE_LIMIT is configured.
      *
      * @param name name of the map
      * @return a set clone of the keys contained in this map.
@@ -410,6 +499,8 @@ public interface MapCodecTemplate {
     Object keySet(String name);
 
     /**
+     * Returns the entries for the given keys. If any keys are not present in the Map, it will call loadAll The returned
+     * map is NOT backed by the original map, so changes to the original map are NOT reflected in the returned map, and vice-versa.
      *
      * @param name name of map
      * @param keys keys to get
@@ -419,6 +510,10 @@ public interface MapCodecTemplate {
     Object getAll(String name, Set<Data> keys);
 
     /**
+     * Returns a collection clone of the values contained in this map.
+     * The collection is NOT backed by the map, so changes to the map are NOT reflected in the collection, and vice-versa.
+     * On the server side this method is executed by a distributed query so it may throw a QUERY_RESULT_SIZE_EXCEEDED
+     * if  GroupProperties#PROP_QUERY_RESULT_SIZE_LIMIT is configured.
      *
      * @param name name of map
      * @return All values in the map
@@ -427,6 +522,10 @@ public interface MapCodecTemplate {
     Object values(String name);
 
     /**
+     * Returns a Set clone of the mappings contained in this map.
+     * The collection is NOT backed by the map, so changes to the map are NOT reflected in the collection, and vice-versa.
+     * On the server side this method is executed by a distributed query so it may throw a QueryResultSizeExceededException
+     * if  GroupProperties#PROP_QUERY_RESULT_SIZE_LIMIT is configured.
      *
      * @param name name of map
      * @return a set clone of the keys mappings in this map
@@ -435,6 +534,10 @@ public interface MapCodecTemplate {
     Object entrySet(String name);
 
     /**
+     * Queries the map based on the specified predicate and returns the keys of matching entries. Specified predicate
+     * runs on all members in parallel.The set is NOT backed by the map, so changes to the map are NOT reflected in the
+     * set, and vice-versa This method is always executed by a distributed query so it may throw a
+     * QUERY_RESULT_SIZE_EXCEEDED if GroupProperties#PROP_QUERY_RESULT_SIZE_LIMIT is configured.
      *
      * @param name name of map.
      * @param predicate specified query criteria.
@@ -444,6 +547,10 @@ public interface MapCodecTemplate {
     Object keySetWithPredicate(String name, Data predicate);
 
     /**
+     * Queries the map based on the specified predicate and returns the values of matching entries.Specified predicate
+     * runs on all members in parallel.The collection is NOT backed by the map, so changes to the map are NOT reflected
+     * in the collection, and vice-versa.This method is always executed by a distributed query so it may throw a
+     * QUERY_RESULT_SIZE_EXCEEDED if GroupProperties#PROP_QUERY_RESULT_SIZE_LIMIT is configured.
      *
      * @param name name of map
      * @param predicate specified query criteria.
@@ -453,6 +560,10 @@ public interface MapCodecTemplate {
     Object valuesWithPredicate(String name, Data predicate);
 
     /**
+     * Queries the map based on the specified predicate and returns the matching entries.Specified predicate
+     * runs on all members in parallel.The collection is NOT backed by the map, so changes to the map are NOT reflected
+     * in the collection, and vice-versa.This method is always executed by a distributed query so it may throw a
+     * QUERY_RESULT_SIZE_EXCEEDED if GroupProperties#PROP_QUERY_RESULT_SIZE_LIMIT is configured.
      *
      * @param name name of map
      * @param predicate specified query criteria.
@@ -462,6 +573,14 @@ public interface MapCodecTemplate {
     Object entriesWithPredicate(String name, Data predicate);
 
     /**
+     * Adds an index to this map for the specified entries so that queries can run faster.If you are querying your values
+     * mostly based on age and active then you should consider indexing these fields.
+     * Index attribute should either have a getter method or be public.You should also make sure to add the indexes before
+     * adding entries to this map.
+     * Indexing time is executed in parallel on each partition by operation threads. The Map is not blocked during this
+     * operation.The time taken in proportional to the size of the Map and the number Members.
+     * Until the index finishes being created, any searches for the attribute will use a full Map scan, thus avoiding
+     * using a partially built index and returning incorrect results.
      *
      * @param name name of map
      * @param attribute index attribute of value
@@ -471,6 +590,8 @@ public interface MapCodecTemplate {
     void addIndex(String name, String attribute, boolean ordered);
 
     /**
+     * Returns the number of key-value mappings in this map.  If the map contains more than Integer.MAX_VALUE elements,
+     * returns Integer.MAX_VALUE
      *
      * @param name of map
      * @return the number of key-value mappings in this map
@@ -479,6 +600,7 @@ public interface MapCodecTemplate {
     Object size(String name);
 
     /**
+     * Returns true if this map contains no key-value mappings.
      *
      * @param name name of map
      * @return <tt>true</tt> if this map contains no key-value mappings
@@ -487,6 +609,10 @@ public interface MapCodecTemplate {
     Object isEmpty(String name);
 
     /**
+     * Copies all of the mappings from the specified map to this map (optional operation).The effect of this call is
+     * equivalent to that of calling put(Object,Object) put(k, v) on this map once for each mapping from key k to value
+     * v in the specified map.The behavior of this operation is undefined if the specified map is modified while the
+     * operation is in progress.
      *
      * @param name name of map
      * @param entries mappings to be stored in this map
@@ -496,6 +622,9 @@ public interface MapCodecTemplate {
     void putAll(String name, Map<Data, Data> entries);
 
     /**
+     * This method clears the map and invokes MapStore#deleteAll deleteAll on MapStore which, if connected to a database,
+     * will delete the records from that database. The MAP_CLEARED event is fired for any registered listeners.
+     * To clear a map without calling MapStore#deleteAll, use #evictAll.
      *
      * @param name of map
      */
@@ -503,6 +632,8 @@ public interface MapCodecTemplate {
     void clear(String name);
 
     /**
+     * Applies the user defined EntryProcessor to the entry mapped by the key. Returns the the object which is result of
+     * the process() method of EntryProcessor.
      *
      * @param name name of map
      * @param entryProcessor processor to execute on the map entry
@@ -513,6 +644,9 @@ public interface MapCodecTemplate {
     Object executeOnKey(String name, Data entryProcessor, Data key, long threadId);
 
     /**
+     * Applies the user defined EntryProcessor to the entry mapped by the key. Returns immediately with a Future
+     * representing that task.EntryProcessor is not cancellable, so calling Future.cancel() method won't cancel the
+     * operation of EntryProcessor.
      *
      * @param name name of map
      * @param entryProcessor entry processor to be executed on the entry.
@@ -523,6 +657,7 @@ public interface MapCodecTemplate {
     Object submitToKey(String name, Data entryProcessor, Data key, long threadId);
 
     /**
+     * Applies the user defined EntryProcessor to the all entries in the map.Returns the results mapped by each key in the map.
      *
      * @param name name of map
      * @param entryProcessor entry processor to be executed.
@@ -532,6 +667,8 @@ public interface MapCodecTemplate {
     Object executeOnAllKeys(String name, Data entryProcessor);
 
     /**
+     * Applies the user defined EntryProcessor to the entries in the map which satisfies provided predicate.
+     * Returns the results mapped by each key in the map.
      *
      * @param name name of map
      * @param entryProcessor entry processor to be executed.
@@ -542,6 +679,8 @@ public interface MapCodecTemplate {
     Object executeWithPredicate(String name, Data entryProcessor, Data predicate);
 
     /**
+     * Applies the user defined EntryProcessor to the entries mapped by the collection of keys.The results mapped by
+     * each key in the collection.
      *
      * @param name name of map
      * @param entryProcessor entry processor to be executed.
@@ -553,6 +692,8 @@ public interface MapCodecTemplate {
     Object executeOnKeys(String name, Data entryProcessor, Set<Data> keys);
 
     /**
+     * Releases the lock for the specified key regardless of the lock owner.It always successfully unlocks the key,
+     * never blocks,and returns immediately.
      *
      * @param name name of map
      * @param key the key of the map entry.
@@ -572,6 +713,10 @@ public interface MapCodecTemplate {
     Object keySetWithPagingPredicate(String name, Data predicate);
 
     /**
+     * Queries the map based on the specified predicate and returns the values of matching entries. Specified predicate
+     * runs on all members in parallel. The collection is NOT backed by the map, so changes to the map are NOT reflected
+     * in the collection, and vice-versa. This method is always executed by a distributed query so it may throw a
+     * QUERY_RESULT_SIZE_EXCEEDED if GroupProperties#PROP_QUERY_RESULT_SIZE_LIMIT is configured.
      *
      * @param name name of map
      * @param predicate specified query criteria.

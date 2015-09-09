@@ -186,6 +186,21 @@ public final class CodeGenerationUtils {
         return result;
     }
 
+    public static String getOperationDescription(String commentString){
+        String result="";
+        int nextTagIndex = commentString.indexOf("@");
+        if (nextTagIndex >= 0) {
+            result = commentString.substring(0,nextTagIndex);
+
+            result = result.trim();
+        }
+
+            result = result.replace("\n", "<br>");
+
+        return result;
+
+    }
+
     public static String getDistributedObjectName(String templateClassName) {
         String result = templateClassName;
 

@@ -26,6 +26,7 @@ import com.hazelcast.nio.serialization.Data;
         name = "TransactionalMultiMap", ns = "Hazelcast.Client.Protocol.Codec")
 public interface TransactionalMultiMapCodecTemplate {
     /**
+     * Stores a key-value pair in the multimap.
      *
      * @param name Name of the Transactional Multi Map
      * @param txnId ID of the transaction
@@ -38,6 +39,7 @@ public interface TransactionalMultiMapCodecTemplate {
     Object put(String name, String txnId, long threadId, Data key, Data value);
 
     /**
+     * Returns the collection of values associated with the key.
      *
      * @param name Name of the Transactional Multi Map
      * @param txnId ID of the transaction
@@ -49,6 +51,7 @@ public interface TransactionalMultiMapCodecTemplate {
     Object get(String name, String txnId, long threadId, Data key);
 
     /**
+     * Removes the given key value pair from the multimap.
      *
      * @param name Name of the Transactional Multi Map
      * @param txnId ID of the transaction
@@ -60,6 +63,7 @@ public interface TransactionalMultiMapCodecTemplate {
     Object remove(String name, String txnId, long threadId, Data key);
 
     /**
+     * Removes all the entries associated with the given key.
      *
      * @param name Name of the Transactioanal Multi Map
      * @param txnId ID of the this transaction operation
@@ -72,6 +76,7 @@ public interface TransactionalMultiMapCodecTemplate {
     Object removeEntry(String name, String txnId, long threadId, Data key, Data value);
 
     /**
+     * Returns the number of values matching the given key in the multimap.
      *
      * @param name Name of the Transactioanal Multi Map
      * @param txnId ID of the this transaction operation
@@ -83,6 +88,7 @@ public interface TransactionalMultiMapCodecTemplate {
     Object valueCount(String name, String txnId, long threadId, Data key);
 
     /**
+     * Returns the number of key-value pairs in the multimap.
      *
      * @param name Name of the Transactional Multi Map
      * @param txnId ID of the this transaction operation
