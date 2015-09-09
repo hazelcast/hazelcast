@@ -301,6 +301,12 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
     }
 
     @Override
+    public boolean unlockWithoutCheckingOwnership(Data key, long threadId) {
+        checkIfLoaded();
+        return lockStore != null && lockStore.unlockWithoutCheckingOwnership(key, threadId);
+    }
+
+    @Override
     public boolean forceUnlock(Data dataKey) {
         return lockStore != null && lockStore.forceUnlock(dataKey);
     }
