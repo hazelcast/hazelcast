@@ -95,6 +95,8 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -184,6 +186,8 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
     private long firstJoinRequest;
 
     private volatile boolean joinInProgress;
+
+    private final ExecutorService membershipEventExecutor = Executors.newSingleThreadExecutor();
 
     @Probe(name = "lastHeartBeat")
     private volatile long lastHeartBeat;
@@ -1285,7 +1289,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
             final MembershipServiceEvent event = new MembershipServiceEvent(membershipEvent);
             for (final MembershipAwareService service : membershipAwareServices) {
                 // service events should not block each other
-                nodeEngine.getExecutionService().execute(ExecutionService.SYSTEM_EXECUTOR, new Runnable() {
+                membershipEventExecutor.execute(new Runnable() {
                     public void run() {
                         if (added) {
                             service.memberAdded(event);
@@ -1384,6 +1388,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
 
     @Override
     public void shutdown(boolean terminate) {
+        membershipEventExecutor.shutdown();
         reset();
     }
 
