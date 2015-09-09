@@ -157,7 +157,8 @@ public class QuorumServiceImpl implements EventPublishingService<QuorumEvent, Qu
 
     @Override
     public void memberRemoved(MembershipServiceEvent event) {
-        logger.info("Remove member event fired: " + event.getMember() + " event.getMembers().size(): " + event.getMembers().size());
+        logger.info("Remove member event fired: " + event.getMember()
+                + " event.getMembers().size(): " + event.getMembers().size());
         updateQuorums(event);
     }
 

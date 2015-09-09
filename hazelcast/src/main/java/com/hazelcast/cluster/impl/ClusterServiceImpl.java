@@ -189,13 +189,11 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
 
     @Probe(name = "lastHeartBeat")
     private volatile long lastHeartBeat;
-    private ExecutorService executorService;
+    private ExecutorService executorService = Executors.newFixedThreadPool(1);
 
     public ClusterServiceImpl(Node node) {
         this.node = node;
         nodeEngine = node.nodeEngine;
-        executorService = Executors.newFixedThreadPool(1);
-
 
         logger = node.getLogger(ClusterService.class.getName());
         clusterClock = new ClusterClockImpl(logger);
@@ -222,6 +220,10 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         node.connectionManager.addConnectionListener(this);
 
         registerMetrics();
+    }
+
+    private void initConfigurations() {
+
     }
 
     private static long getHeartBeatInterval(GroupProperties groupProperties) {
