@@ -20,6 +20,7 @@ import com.hazelcast.config.QuorumConfig;
 import com.hazelcast.config.QuorumListenerConfig;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MembershipEvent;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.quorum.Quorum;
 import com.hazelcast.quorum.QuorumEvent;
@@ -59,6 +60,8 @@ public class QuorumServiceImpl implements EventPublishingService<QuorumEvent, Qu
     private boolean inactive;
     private final Map<String, QuorumImpl> quorums = new HashMap<String, QuorumImpl>();
 
+    private final ILogger logger;
+
 
     public QuorumServiceImpl(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
@@ -66,6 +69,7 @@ public class QuorumServiceImpl implements EventPublishingService<QuorumEvent, Qu
         initializeQuorums();
         initializeListeners();
         this.inactive = quorums.isEmpty();
+        this.logger = nodeEngine.getLogger(getClass());
     }
 
     private void initializeQuorums() {
@@ -147,11 +151,13 @@ public class QuorumServiceImpl implements EventPublishingService<QuorumEvent, Qu
 
     @Override
     public void memberAdded(MembershipServiceEvent event) {
+        logger.info("Add member event fired: " + event.getMember() + " event.getMembers().size(): " + event.getMembers().size());
         updateQuorums(event);
     }
 
     @Override
     public void memberRemoved(MembershipServiceEvent event) {
+        logger.info("Remove member event fired: " + event.getMember() + " event.getMembers().size(): " + event.getMembers().size());
         updateQuorums(event);
     }
 
