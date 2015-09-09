@@ -21,7 +21,7 @@ import com.hazelcast.annotation.Request;
 import com.hazelcast.client.impl.protocol.ResponseMessageConst;
 
 @GenerateCodec(id = TemplateConstants.SEMAPHORE_TEMPLATE_ID,
-        name = "Semaphore", ns = "Hazelcast.Client.Protocol.Semaphore")
+        name = "Semaphore", ns = "Hazelcast.Client.Protocol.Codec")
 public interface SemaphoreCodecTemplate {
     /**
      *

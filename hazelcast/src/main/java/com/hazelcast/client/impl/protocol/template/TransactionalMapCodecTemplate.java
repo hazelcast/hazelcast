@@ -22,7 +22,7 @@ import com.hazelcast.client.impl.protocol.ResponseMessageConst;
 import com.hazelcast.nio.serialization.Data;
 
 @GenerateCodec(id = TemplateConstants.TX_MAP_TEMPLATE_ID,
-        name = "TransactionalMap", ns = "Hazelcast.Client.Protocol.TransactionalMap")
+        name = "TransactionalMap", ns = "Hazelcast.Client.Protocol.Codec")
 public interface TransactionalMapCodecTemplate {
     /**
      *

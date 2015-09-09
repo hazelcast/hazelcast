@@ -23,7 +23,7 @@ import com.hazelcast.client.impl.protocol.ResponseMessageConst;
 import com.hazelcast.nio.serialization.Data;
 
 @GenerateCodec(id = TemplateConstants.ATOMIC_REFERENCE_TEMPLATE_ID,
-        name = "AtomicReference", ns = "Hazelcast.Client.Protocol.AtomicReference")
+        name = "AtomicReference", ns = "Hazelcast.Client.Protocol.Codec")
 public interface AtomicReferenceCodecTemplate {
 
     /**

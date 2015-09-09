@@ -22,7 +22,8 @@ import com.hazelcast.client.impl.protocol.ResponseMessageConst;
 import com.hazelcast.nio.serialization.Data;
 
 @GenerateCodec(id = TemplateConstants.ATOMIC_LONG_TEMPLATE_ID,
-        name = "AtomicLong", ns = "Hazelcast.Client.Protocol.AtomicLong")
+        name = "AtomicLong", ns = "Hazelcast.Client.Protocol.Codec")
+
 public interface AtomicLongCodecTemplate {
 
     /**

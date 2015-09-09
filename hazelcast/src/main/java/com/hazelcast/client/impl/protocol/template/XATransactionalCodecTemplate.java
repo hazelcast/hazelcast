@@ -22,7 +22,8 @@ import com.hazelcast.client.impl.protocol.ResponseMessageConst;
 
 import javax.transaction.xa.Xid;
 
-@GenerateCodec(id = TemplateConstants.XA_TRANSACTION_TEMPLATE_ID, name = "XATransaction", ns = "XATransaction")
+@GenerateCodec(id = TemplateConstants.XA_TRANSACTION_TEMPLATE_ID, name = "XATransaction",
+        ns = "Hazelcast.Client.Protocol.Codec")
 public interface XATransactionalCodecTemplate {
 
     /**

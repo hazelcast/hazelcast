@@ -23,7 +23,7 @@ import com.hazelcast.client.impl.protocol.ResponseMessageConst;
 import com.hazelcast.nio.serialization.Data;
 
 @GenerateCodec(id = TemplateConstants.TX_MULTIMAP_TEMPLATE_ID,
-        name = "TransactionalMultiMap", ns = "Hazelcast.Client.Protocol.TransactionalMultiMap")
+        name = "TransactionalMultiMap", ns = "Hazelcast.Client.Protocol.Codec")
 public interface TransactionalMultiMapCodecTemplate {
     /**
      *

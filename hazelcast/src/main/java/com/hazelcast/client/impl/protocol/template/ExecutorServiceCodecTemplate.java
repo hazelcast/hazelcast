@@ -23,7 +23,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 
 @GenerateCodec(id = TemplateConstants.EXECUTOR_TEMPLATE_ID,
-        name = "ExecutorService", ns = "Hazelcast.Client.Protocol.ExecutorService")
+        name = "ExecutorService", ns = "Hazelcast.Client.Protocol.Codec")
 public interface ExecutorServiceCodecTemplate {
 
     /**
