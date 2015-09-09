@@ -18,6 +18,7 @@ package com.hazelcast.quorum.impl;
 
 import com.hazelcast.config.QuorumConfig;
 import com.hazelcast.core.Member;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.quorum.Quorum;
 import com.hazelcast.quorum.QuorumEvent;
@@ -48,10 +49,13 @@ public class QuorumImpl implements Quorum {
     private final InternalEventService eventService;
     private QuorumFunction quorumFunction;
 
+    private final ILogger logger;
+
     private volatile boolean initialized;
 
     public QuorumImpl(QuorumConfig config, NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
+        this.logger = nodeEngine.getLogger(getClass());
         this.eventService = nodeEngine.getEventService();
         this.config = config;
         this.quorumName = config.getName();
@@ -60,6 +64,7 @@ public class QuorumImpl implements Quorum {
     }
 
     public void update(Collection<Member> members) {
+        logger.info("Update in quorum " + quorumName + " Member size: " + members.size());
         setLocalResult(quorumFunction.apply(members));
     }
 
@@ -85,6 +90,7 @@ public class QuorumImpl implements Quorum {
     }
 
     public void setLocalResult(boolean presence) {
+        logger.info("Quorum " + quorumName + " updated to: " + presence);
         setLocalResultInternal(presence);
     }
 

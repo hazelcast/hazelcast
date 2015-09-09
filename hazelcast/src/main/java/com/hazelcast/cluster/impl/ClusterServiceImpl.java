@@ -95,6 +95,8 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -187,6 +189,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
 
     @Probe(name = "lastHeartBeat")
     private volatile long lastHeartBeat;
+    private ExecutorService executorService = Executors.newFixedThreadPool(1);
 
     public ClusterServiceImpl(Node node) {
         this.node = node;
@@ -217,6 +220,10 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         node.connectionManager.addConnectionListener(this);
 
         registerMetrics();
+    }
+
+    private void initConfigurations() {
+
     }
 
     private static long getHeartBeatInterval(GroupProperties groupProperties) {
@@ -1285,7 +1292,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
             final MembershipServiceEvent event = new MembershipServiceEvent(membershipEvent);
             for (final MembershipAwareService service : membershipAwareServices) {
                 // service events should not block each other
-                nodeEngine.getExecutionService().execute(ExecutionService.SYSTEM_EXECUTOR, new Runnable() {
+                executorService.execute(new Runnable() {
                     public void run() {
                         if (added) {
                             service.memberAdded(event);
@@ -1384,6 +1391,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
 
     @Override
     public void shutdown(boolean terminate) {
+        executorService.shutdown();
         reset();
     }
 
