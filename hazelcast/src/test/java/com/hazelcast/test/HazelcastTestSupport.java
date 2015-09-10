@@ -60,6 +60,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.test.TestPartitionUtils.getInternalPartitionServiceState;
 import static java.lang.String.format;
@@ -254,9 +255,9 @@ public abstract class HazelcastTestSupport {
 
     /**
      * Sleeps for the given amount of time and after that, sets stop to true.
-     *
+     * <p/>
      * If stop is changed to true while sleeping, the calls returns before waiting the full sleeping period.
-     *
+     * <p/>
      * This method is very useful for stress tests that run for a certain amount of time. But if one of the stress tests
      * runs into a failure, the test should be aborted immediately. This is done by letting the thread set stop to true.
      *
@@ -735,6 +736,48 @@ public abstract class HazelcastTestSupport {
         }
     }
 
+    public static void assertCountEventually(final String message, final int expectedCount, final CountDownLatch latch, long timeoutInSeconds) {
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                for (int i = 0; i < 2; i++) { // recheck to see if hasn't changed
+                    if (latch.getCount() != expectedCount) {
+                        throw new AssertionError("Latch count has not been met. " + message);
+                    }
+                    sleepMillis(50);
+                }
+            }
+        }, timeoutInSeconds);
+    }
+
+    public static void assertAtomicEventually(final String message, final int expectedValue, final AtomicInteger atomic, int timeoutInSeconds) {
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                for (int i = 0; i < 2; i++) { // recheck to see if hasn't changed
+                    if (atomic.get() != expectedValue) {
+                        throw new AssertionError("Atomic value has not been met. " + message);
+                    }
+                    sleepMillis(50);
+                }
+            }
+        }, timeoutInSeconds);
+    }
+
+    public static void assertAtomicEventually(final String message, final boolean expectedValue, final AtomicBoolean atomic, int timeoutInSeconds) {
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                for (int i = 0; i < 2; i++) { // recheck to see if hasn't changed
+                    if (atomic.get() != expectedValue) {
+                        throw new AssertionError("Atomic value has not been met. " + message);
+                    }
+                    sleepMillis(50);
+                }
+            }
+        }, timeoutInSeconds);
+    }
+
     public static void assertTrueFiveSeconds(AssertTask task) {
         assertTrueAllTheTime(task, 5);
     }
@@ -836,5 +879,9 @@ public abstract class HazelcastTestSupport {
             }
         }
         throw lastException;
+    }
+
+    public static void ignore(Throwable t) {
+        t.printStackTrace();
     }
 }

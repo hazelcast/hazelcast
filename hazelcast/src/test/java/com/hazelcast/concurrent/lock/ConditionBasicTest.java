@@ -28,6 +28,8 @@ import static org.junit.Assert.assertTrue;
 
 public abstract class ConditionBasicTest extends HazelcastTestSupport {
 
+    private static final int THIRTY_SECONDS = 30;
+
     protected HazelcastInstance[] instances;
     private HazelcastInstance callerInstance;
 
@@ -65,8 +67,8 @@ public abstract class ConditionBasicTest extends HazelcastTestSupport {
         ICondition condition = lock.newCondition(name);
 
         lock.lock();
-        long timeout = 1000L;
-        long remainingTimeout = condition.awaitNanos(timeout);
+
+        long remainingTimeout = condition.awaitNanos(1000L);
         assertTrue("Remaining timeout should be <= 0, but it's = " + remainingTimeout,
                 remainingTimeout <= 0);
     }
@@ -77,23 +79,15 @@ public abstract class ConditionBasicTest extends HazelcastTestSupport {
         ICondition condition0 = lock.newCondition(newName());
         ICondition condition1 = lock.newCondition(newName());
 
-        CountDownLatch latch = new CountDownLatch(2);
-        CountDownLatch syncLatch = new CountDownLatch(2);
+        CountDownLatch allAwaited = new CountDownLatch(2);
+        CountDownLatch allSignalled = new CountDownLatch(2);
+        startThreadWaitingOnCondition(lock, condition0, allAwaited, allSignalled);
+        startThreadWaitingOnCondition(lock, condition1, allAwaited, allSignalled);
 
-        createThreadWaitsForCondition(latch, lock, condition0, syncLatch).start();
-        createThreadWaitsForCondition(latch, lock, condition1, syncLatch).start();
-
-        syncLatch.await();
-
-        lock.lock();
-        condition0.signal();
-        lock.unlock();
-
-        lock.lock();
-        condition1.signal();
-        lock.unlock();
-
-        assertOpenEventually(latch);
+        assertOpenEventually("All threads should have been reached await", allAwaited);
+        signal(lock, condition0);
+        signal(lock, condition1);
+        assertOpenEventually("All threads should have been signalled", allSignalled);
     }
 
     @Test(timeout = 60000)
@@ -101,19 +95,14 @@ public abstract class ConditionBasicTest extends HazelcastTestSupport {
         ILock lock = callerInstance.getLock(newName());
         ICondition condition = lock.newCondition(newName());
 
-        CountDownLatch latch = new CountDownLatch(2);
-        CountDownLatch syncLatch = new CountDownLatch(2);
+        CountDownLatch allAwaited = new CountDownLatch(2);
+        CountDownLatch allSignalled = new CountDownLatch(2);
+        startThreadWaitingOnCondition(lock, condition, allAwaited, allSignalled);
+        startThreadWaitingOnCondition(lock, condition, allAwaited, allSignalled);
 
-        createThreadWaitsForCondition(latch, lock, condition, syncLatch).start();
-        createThreadWaitsForCondition(latch, lock, condition, syncLatch).start();
-
-        syncLatch.await();
-
-        lock.lock();
-        condition.signalAll();
-        lock.unlock();
-
-        assertOpenEventually(latch);
+        assertOpenEventually("All threads should have been reached await", allAwaited);
+        signalAll(lock, condition);
+        assertOpenEventually("All threads should have been signalled", allSignalled);
     }
 
     @Test(timeout = 60000)
@@ -122,54 +111,39 @@ public abstract class ConditionBasicTest extends HazelcastTestSupport {
         ICondition condition0 = lock.newCondition(newName());
         ICondition condition1 = lock.newCondition(newName());
 
-        final CountDownLatch latch = new CountDownLatch(10);
-        CountDownLatch syncLatch = new CountDownLatch(2);
+        CountDownLatch allAwaited = new CountDownLatch(2);
+        CountDownLatch allSignalled = new CountDownLatch(10);
+        startThreadWaitingOnCondition(lock, condition0, allAwaited, allSignalled);
+        startThreadWaitingOnCondition(lock, condition1, allAwaited, allSignalled);
 
-        createThreadWaitsForCondition(latch, lock, condition0, syncLatch).start();
-        createThreadWaitsForCondition(latch, lock, condition1, syncLatch).start();
-
-        syncLatch.await();
-
-        lock.lock();
-        condition0.signalAll();
-        lock.unlock();
-
-        assertTrueDelayed5sec(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals(latch.getCount(), 9);
-            }
-        });
+        assertOpenEventually("All threads should have been reached await", allAwaited);
+        signalAll(lock, condition0);
+        assertCountEventually("Condition has not been signalled", 9, allSignalled, THIRTY_SECONDS);
     }
 
     @Test(timeout = 60000)
     public void testSameConditionRetrievedMultipleTimesForSameLock() throws InterruptedException {
-        final ILock lock = callerInstance.getLock(newName());
+        ILock lock = callerInstance.getLock(newName());
         String name = newName();
-        final ICondition condition0 = lock.newCondition(name);
-        final ICondition condition1 = lock.newCondition(name);
+        ICondition condition0 = lock.newCondition(name);
+        ICondition condition1 = lock.newCondition(name);
 
-        final CountDownLatch latch = new CountDownLatch(2);
-        final CountDownLatch syncLatch = new CountDownLatch(2);
+        CountDownLatch allAwaited = new CountDownLatch(2);
+        CountDownLatch allSignalled = new CountDownLatch(2);
+        startThreadWaitingOnCondition(lock, condition0, allAwaited, allSignalled);
+        startThreadWaitingOnCondition(lock, condition1, allAwaited, allSignalled);
 
-        createThreadWaitsForCondition(latch, lock, condition0, syncLatch).start();
-        createThreadWaitsForCondition(latch, lock, condition1, syncLatch).start();
-
-        syncLatch.await();
-
-        lock.lock();
-        condition0.signalAll();
-        lock.unlock();
-
-        assertOpenEventually(latch);
+        assertOpenEventually("All threads should have been reached await", allAwaited);
+        signalAll(lock, condition0);
+        assertOpenEventually("All threads should have been signalled", allSignalled);
     }
 
     @Test
     public void testAwaitTime_whenTimeout() throws InterruptedException {
-        final ILock lock = callerInstance.getLock(newName());
-        final ICondition condition = lock.newCondition(newName());
-        lock.lock();
+        ILock lock = callerInstance.getLock(newName());
+        ICondition condition = lock.newCondition(newName());
 
+        lock.lock();
         boolean success = condition.await(1, TimeUnit.MILLISECONDS);
 
         assertFalse(success);
@@ -180,28 +154,19 @@ public abstract class ConditionBasicTest extends HazelcastTestSupport {
     public void testConditionsWithSameNameButDifferentLocksAreIndependent() throws InterruptedException {
         String name = newName();
         ILock lock0 = callerInstance.getLock(newName());
-        final ICondition condition0 = lock0.newCondition(name);
+        ICondition condition0 = lock0.newCondition(name);
         ILock lock1 = callerInstance.getLock(newName());
-        final ICondition condition1 = lock1.newCondition(name);
+        ICondition condition1 = lock1.newCondition(name);
 
-        final CountDownLatch latch = new CountDownLatch(2);
-        final CountDownLatch syncLatch = new CountDownLatch(2);
+        CountDownLatch allAwaited = new CountDownLatch(2);
+        CountDownLatch allSignalled = new CountDownLatch(2);
+        startThreadWaitingOnCondition(lock0, condition0, allAwaited, allSignalled);
+        startThreadWaitingOnCondition(lock1, condition1, allAwaited, allSignalled);
 
-        createThreadWaitsForCondition(latch, lock0, condition0, syncLatch).start();
-
-        createThreadWaitsForCondition(latch, lock1, condition1, syncLatch).start();
-
-        syncLatch.await();
-
-        lock0.lock();
-        condition0.signalAll();
-        lock0.unlock();
-
-        lock1.lock();
-        condition1.signalAll();
-        lock1.unlock();
-
-        assertOpenEventually(latch);
+        assertOpenEventually("All threads should have been reached await", allAwaited);
+        signalAll(lock0, condition0);
+        signalAll(lock1, condition1);
+        assertOpenEventually(allSignalled);
     }
 
     @Test(timeout = 60000)
@@ -211,6 +176,7 @@ public abstract class ConditionBasicTest extends HazelcastTestSupport {
         final ILock lock = callerInstance.getLock(lockName);
         final ICondition condition = lock.newCondition(conditionName);
         final AtomicInteger count = new AtomicInteger(0);
+        final CountDownLatch threadLockedTheLock = new CountDownLatch(1);
 
         Thread t = new Thread(new Runnable() {
             public void run() {
@@ -219,6 +185,7 @@ public abstract class ConditionBasicTest extends HazelcastTestSupport {
                     if (lock.isLockedByCurrentThread()) {
                         count.incrementAndGet();
                     }
+                    threadLockedTheLock.countDown();
                     condition.await();
                     if (lock.isLockedByCurrentThread()) {
                         count.incrementAndGet();
@@ -230,15 +197,11 @@ public abstract class ConditionBasicTest extends HazelcastTestSupport {
             }
         });
         t.start();
-        Thread.sleep(1000);
+        threadLockedTheLock.await();
 
-        assertEquals(false, lock.isLocked());
-        lock.lock();
-        assertEquals(true, lock.isLocked());
-        condition.signal();
-        lock.unlock();
-        t.join();
-        assertEquals(2, count.get());
+        assertUnlockedEventually(lock, THIRTY_SECONDS);
+        signal(lock, condition);
+        assertAtomicEventually("Locks was not always locked by the expected thread", 2, count, THIRTY_SECONDS);
     }
 
     @Test(timeout = 60000)
@@ -250,8 +213,8 @@ public abstract class ConditionBasicTest extends HazelcastTestSupport {
         final AtomicInteger count = new AtomicInteger(0);
         final int k = 50;
 
-        final CountDownLatch awaitLatch = new CountDownLatch(k);
-        final CountDownLatch finalLatch = new CountDownLatch(k);
+        final CountDownLatch allAwaited = new CountDownLatch(k);
+        final CountDownLatch allFinished = new CountDownLatch(k);
         for (int i = 0; i < k; i++) {
             new Thread(new Runnable() {
                 public void run() {
@@ -260,7 +223,7 @@ public abstract class ConditionBasicTest extends HazelcastTestSupport {
                         if (lock.isLockedByCurrentThread()) {
                             count.incrementAndGet();
                         }
-                        awaitLatch.countDown();
+                        allAwaited.countDown();
                         condition.await();
                         if (lock.isLockedByCurrentThread()) {
                             count.incrementAndGet();
@@ -268,18 +231,17 @@ public abstract class ConditionBasicTest extends HazelcastTestSupport {
                     } catch (InterruptedException ignored) {
                     } finally {
                         lock.unlock();
-                        finalLatch.countDown();
+                        allFinished.countDown();
                     }
 
                 }
             }).start();
         }
+        allAwaited.await(1, TimeUnit.MINUTES);
 
-        awaitLatch.await(1, TimeUnit.MINUTES);
-        lock.lock();
-        condition.signalAll();
-        lock.unlock();
-        finalLatch.await(1, TimeUnit.MINUTES);
+        assertUnlockedEventually(lock, THIRTY_SECONDS);
+        signalAll(lock, condition);
+        allFinished.await(1, TimeUnit.MINUTES);
         assertEquals(k * 2, count.get());
     }
 
@@ -297,7 +259,7 @@ public abstract class ConditionBasicTest extends HazelcastTestSupport {
         final AtomicBoolean running = new AtomicBoolean(true);
         final AtomicReference<Exception> errorRef = new AtomicReference<Exception>();
         final int numberOfThreads = 8;
-        final CountDownLatch finalLatch = new CountDownLatch(numberOfThreads);
+        final CountDownLatch allFinished = new CountDownLatch(numberOfThreads);
         ExecutorService ex = Executors.newCachedThreadPool();
 
         for (int i = 0; i < numberOfThreads; i++) {
@@ -318,7 +280,7 @@ public abstract class ConditionBasicTest extends HazelcastTestSupport {
                             }
                         }
                     } finally {
-                        finalLatch.countDown();
+                        allFinished.countDown();
                     }
                 }
             });
@@ -333,7 +295,7 @@ public abstract class ConditionBasicTest extends HazelcastTestSupport {
         });
 
         try {
-            finalLatch.await(30, TimeUnit.SECONDS);
+            allFinished.await(30, TimeUnit.SECONDS);
             assertNull("await() on condition threw IllegalStateException!", errorRef.get());
         } finally {
             ex.shutdownNow();
@@ -344,47 +306,32 @@ public abstract class ConditionBasicTest extends HazelcastTestSupport {
     @Test(timeout = 60000)
     public void testSignalWithMultipleWaiters() throws InterruptedException {
         ILock lock = callerInstance.getLock(newName());
-        final ICondition condition = lock.newCondition(newName());
+        ICondition condition = lock.newCondition(newName());
+        CountDownLatch allAwaited = new CountDownLatch(3);
+        CountDownLatch allSignalled = new CountDownLatch(10);
 
-        final CountDownLatch latch = new CountDownLatch(10);
-        final CountDownLatch syncLatch = new CountDownLatch(3);
+        startThreadWaitingOnCondition(lock, condition, allAwaited, allSignalled);
+        startThreadWaitingOnCondition(lock, condition, allAwaited, allSignalled);
+        startThreadWaitingOnCondition(lock, condition, allAwaited, allSignalled);
 
-        createThreadWaitsForCondition(latch, lock, condition, syncLatch).start();
-        createThreadWaitsForCondition(latch, lock, condition, syncLatch).start();
-        createThreadWaitsForCondition(latch, lock, condition, syncLatch).start();
-
-        syncLatch.await();
-
-        lock.lock();
-        condition.signal();
-        lock.unlock();
-
-        assertTrueDelayed5sec(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertEquals(9, latch.getCount());
-            }
-        });
-
-        assertEquals(false, lock.isLocked());
+        assertOpenEventually("All threads should have been reached await", allAwaited);
+        signal(lock, condition);
+        assertCountEventually("Condition has not been signalled", 9, allSignalled, THIRTY_SECONDS);
+        assertFalse(lock.isLocked());
     }
 
-    //a signal is send to wake up threads, but it isn't a flag set on the condition so that future waiters will
-    //receive this signal
+    // A signal send to wake up threads is not a flag set on the condition
+    // Threads calling await() after signal() has been called will hand on waiting.
     @Test(timeout = 60000)
     public void testSignalIsNotStored() throws InterruptedException {
         ILock lock = callerInstance.getLock(newName());
         ICondition condition = lock.newCondition(newName());
+        CountDownLatch signalled = new CountDownLatch(1);
 
-        CountDownLatch latch = new CountDownLatch(1);
+        signal(lock, condition);
 
-        lock.lock();
-        condition.signal();
-        lock.unlock();
-
-        createThreadWaitsForCondition(latch, lock, condition, new CountDownLatch(0)).start();
-        // if the thread is still waiting, then the signal is not stored.
-        assertFalse(latch.await(3000, TimeUnit.MILLISECONDS));
+        startThreadWaitingOnCondition(lock, condition, new CountDownLatch(0), signalled);
+        assertFalse("The time should elapse but the latch reached zero unexpectedly", signalled.await(3000, TimeUnit.MILLISECONDS));
     }
 
     @Test(timeout = 60000, expected = IllegalMonitorStateException.class)
@@ -406,18 +353,7 @@ public abstract class ConditionBasicTest extends HazelcastTestSupport {
         final ILock lock = callerInstance.getLock(newName());
         final ICondition condition = lock.newCondition(newName());
 
-        final CountDownLatch latch = new CountDownLatch(1);
-
-        new TestThread() {
-            @Override
-            public void doRun() {
-                lock.lock();
-                latch.countDown();
-            }
-        }.start();
-
-        latch.await();
-
+        releaseLockInSeparateThread(lock);
         condition.await();
     }
 
@@ -426,25 +362,14 @@ public abstract class ConditionBasicTest extends HazelcastTestSupport {
         final ILock lock = callerInstance.getLock(newName());
         final ICondition condition = lock.newCondition(newName());
 
-        final CountDownLatch latch = new CountDownLatch(1);
-
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                lock.lock();
-                latch.countDown();
-            }
-        }).start();
-
-        latch.await();
-
+        releaseLockInSeparateThread(lock);
         condition.signal();
     }
 
     @Test(timeout = 60000)
     public void testAwaitTimeout_whenFail() throws InterruptedException {
-        final ILock lock = callerInstance.getLock(newName());
-        final ICondition condition = lock.newCondition(newName());
+        ILock lock = callerInstance.getLock(newName());
+        ICondition condition = lock.newCondition(newName());
 
         lock.lock();
 
@@ -455,93 +380,140 @@ public abstract class ConditionBasicTest extends HazelcastTestSupport {
     public void testAwaitTimeout_whenSuccess() throws InterruptedException {
         final ILock lock = callerInstance.getLock(newName());
         final ICondition condition = lock.newCondition(newName());
-        final CountDownLatch latch = new CountDownLatch(1);
+        final CountDownLatch locked = new CountDownLatch(1);
+        final AtomicBoolean signalledCorrectly = new AtomicBoolean(false);
 
         new Thread(new Runnable() {
             @Override
             public void run() {
                 lock.lock();
+                locked.countDown();
                 try {
                     if (condition.await(10, TimeUnit.SECONDS)) {
-                        latch.countDown();
+                        signalledCorrectly.set(true);
                     }
                 } catch (InterruptedException e) {
-                    e.printStackTrace();
+                    ignore(e);
                 }
             }
         }).start();
+        locked.await();
 
-        sleepSeconds(1);
-        lock.lock();
-        condition.signal();
-        lock.unlock();
-    }
-
-    @Test(timeout = 60000)
-    public void testAwaitUntil_whenFail() throws InterruptedException {
-        final ILock lock = callerInstance.getLock(newName());
-        final ICondition condition = lock.newCondition(newName());
-
-        lock.lock();
-
-        Date date = new Date();
-        date.setTime(System.currentTimeMillis() + 1000);
-        assertFalse(condition.awaitUntil(date));
+        signal(lock, condition);
+        assertAtomicEventually("awaiting thread should have been signalled", true, signalledCorrectly, THIRTY_SECONDS);
     }
 
     @Test(timeout = 60000)
     public void testAwaitUntil_whenSuccess() throws InterruptedException {
         final ILock lock = callerInstance.getLock(newName());
         final ICondition condition = lock.newCondition(newName());
-        final CountDownLatch latch = new CountDownLatch(1);
+        final CountDownLatch locked = new CountDownLatch(1);
+        final AtomicBoolean signalledCorrectly = new AtomicBoolean(false);
 
         new Thread(new Runnable() {
             @Override
             public void run() {
                 lock.lock();
+                locked.countDown();
                 try {
-                    Date date = new Date();
-                    date.setTime(System.currentTimeMillis() + 10000);
-                    if (condition.awaitUntil(date)) {
-                        latch.countDown();
+                    if (condition.awaitUntil(currentTimeAfterGivenMillis(10000))) {
+                        signalledCorrectly.set(true);
                     }
                 } catch (InterruptedException e) {
-                    e.printStackTrace();
+                    ignore(e);
                 }
             }
         }).start();
+        locked.await();
 
-        sleepSeconds(1);
+        signal(lock, condition);
+        assertAtomicEventually("awaiting thread should have been signalled", true, signalledCorrectly, THIRTY_SECONDS);
+    }
+
+    @Test(timeout = 60000)
+    public void testAwaitUntil_whenFail() throws InterruptedException {
+        ILock lock = callerInstance.getLock(newName());
+        ICondition condition = lock.newCondition(newName());
+
         lock.lock();
-        condition.signal();
-        lock.unlock();
+
+        assertFalse(condition.awaitUntil(currentTimeAfterGivenMillis(1000)));
     }
 
     // See #3262
     @Test(timeout = 60000)
     @Ignore
     public void testAwait_whenNegativeTimeout() throws InterruptedException {
-        final ILock lock = callerInstance.getLock(newName());
-        final ICondition condition = lock.newCondition(newName());
+        ILock lock = callerInstance.getLock(newName());
+        ICondition condition = lock.newCondition(newName());
 
         lock.lock();
 
         assertFalse(condition.await(-1, TimeUnit.MILLISECONDS));
     }
 
-    private TestThread createThreadWaitsForCondition(final CountDownLatch latch, final ILock lock, final ICondition condition, final CountDownLatch syncLatch) {
+    private TestThread startThreadWaitingOnCondition(final ILock lock, final ICondition condition, final CountDownLatch awaited, final CountDownLatch signalled) {
         TestThread t = new TestThread() {
             public void doRun() throws Exception {
                 try {
                     lock.lock();
-                    syncLatch.countDown();
+                    awaited.countDown();
                     condition.await();
-                    latch.countDown();
+                    signalled.countDown();
                 } finally {
                     lock.unlock();
                 }
             }
         };
+        t.start();
         return t;
     }
+
+    private void releaseLockInSeparateThread(final ILock lock) throws InterruptedException {
+        final CountDownLatch latch = new CountDownLatch(1);
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                lock.lock();
+                latch.countDown();
+            }
+        }).start();
+        latch.await();
+    }
+
+    public static void assertUnlockedEventually(ILock lock, int timeoutInSeconds) {
+        assertLockStateEventually("Lock should have been unlocked eventually", false, lock, timeoutInSeconds);
+    }
+
+    private static void assertLockStateEventually(final String message, final boolean locked, final ILock lock, int timeoutInSeconds) {
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                if (lock.isLocked() != locked) {
+                    throw new AssertionError("Lock state has not been met. " + message);
+                }
+            }
+        }, timeoutInSeconds);
+    }
+
+    private static Date currentTimeAfterGivenMillis(int millis) {
+        Date date = new Date();
+        date.setTime(System.currentTimeMillis() + millis);
+        return date;
+    }
+
+    private static void signal(ILock lock, ICondition condition) {
+        lock.lock();
+        assertTrue("Lock has not been locked", lock.isLocked());
+        condition.signal();
+        lock.unlock();
+    }
+
+    private static void signalAll(ILock lock, ICondition condition) {
+        lock.lock();
+        assertTrue("Lock has not been locked", lock.isLocked());
+        condition.signalAll();
+        lock.unlock();
+    }
+
 }
