@@ -69,28 +69,28 @@ public interface ResponseTemplate {
 
     /**
      *
-     * @param response The operation result as a serialised byte-array.
+     * @param response The operation result as a serialized byte-array.
      */
     @Response(ResponseMessageConst.DATA)
     void Data(@Nullable Data response);
 
     /**
      *
-     * @param list The operation result as an array of serialised byte-array.
+     * @param list The operation result as an array of serialized byte-array.
      */
     @Response(ResponseMessageConst.LIST_DATA)
     void ListData(List<Data> list);
 
     /**
      *
-     * @param set The operation result as an array of serialised byte-array.
+     * @param set The operation result as an array of serialized byte-array.
      */
     @Response(ResponseMessageConst.SET_DATA)
     void SetData(Set<Data> set);
 
     /**
      *
-     * @param entrySet The operation result as an array of serialised key-value byte-arrays.
+     * @param entrySet The operation result as an array of serialized key-value byte-arrays.
      */
     @Response(ResponseMessageConst.SET_ENTRY)
     void SetEntry(Set<Map.Entry<Data, Data>> entrySet);
@@ -159,7 +159,7 @@ public interface ResponseTemplate {
     /**
      *
      * @param readCount Number of items in the response.
-     * @param items The array of serialised items.
+     * @param items The array of serialized items.
      */
     @Response(ResponseMessageConst.READ_RESULT_SET)
     void ReadResultSet(int readCount, List<Data> items);

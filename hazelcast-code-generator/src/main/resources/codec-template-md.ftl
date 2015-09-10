@@ -25,7 +25,7 @@ is encoded as shown below:
 ### Cache Event Data Type
 | Field| Type| Nullable| Description|
 |------|-----|---------|------------|
-|Cache Event type|int32|No|The type of the event. Possible values and their meanings are:<br> CREATED(1):An event type indicating that the cache entry was created. <br>UPDATED(2): An event type indicating that the cache entry was updated, i.e. a previous mapping existed. <br>REMOVED(3): An event type indicating that the cache entry was removed. <br>EXPIRED(4): An event type indicating that the cache entry has expired.<br>EVICTED(5): An event type indicating that the cache entry has evicted. <br>INVALIDATED(6): An event type indicating that the cache entry has invalidated for near cache invalidation. <br>COMPLETED(7): An event type indicating that the cache operation has completed. <br>EXPIRATION_TIME_UPDATED(8): An event type indicationg that the expiration time of cache record has been updated
+|Cache Event type|int32|No|The type of the event. Possible values and their meanings are:<br> CREATED(1):An event type indicating that the cache entry was created. <br>UPDATED(2): An event type indicating that the cache entry was updated, i.e. a previous mapping existed. <br>REMOVED(3): An event type indicating that the cache entry was removed. <br>EXPIRED(4): An event type indicating that the cache entry has expired.<br>EVICTED(5): An event type indicating that the cache entry has evicted. <br>INVALIDATED(6): An event type indicating that the cache entry has invalidated for near cache invalidation. <br>COMPLETED(7): An event type indicating that the cache operation has completed. <br>EXPIRATION_TIME_UPDATED(8): An event type indicating that the expiration time of cache record has been updated
 |Name|string|No|Name of the cache|
 |Key|byte-array|Yes|Key of the cache data|
 |Value|byte-array|Yes|Value of the cache data|
@@ -109,7 +109,7 @@ Response Message Type Id: 109
 |Error Code|int32|No|The unique code identifying the error|
 |Class Name|string|No|The class name which caused the error at the server side|
 |Message|string|Yes|The brief description of the error|
-|Stack Trace|array of stack-trace|No|The stack trace at the server side when the error occured|
+|Stack Trace|array of stack-trace|No|The stack trace at the server side when the error occurred|
 |Cause Error Code|int32|No|The error code for the actual cause of the error. If no cause exists, it is set to -1|
 |Cause Class Name|string|Yes|The name of the class that actually cause the error|
 
@@ -142,8 +142,8 @@ The following error codes are defined in the system:
 |HAZELCAST|20|General internal error of Hazelcast.|
 |HAZELCAST_INSTANCE_NOT_ACTIVE|21|The Hazelcast server instance is not active, the server is possibly initialising.|
 |HAZELCAST_OVERLOAD|22|Thrown when the system won't handle more load due to an overload. This exception is thrown when backpressure is enabled.|
-|HAZELCAST_SERIALIZATION|23|Error during serialisation/de-serialisation of data.|
-|IO|24|An IO error occured.|
+|HAZELCAST_SERIALIZATION|23|Error during serialization/de-serialization of data.|
+|IO|24|An IO error occurred.|
 |ILLEGAL_ARGUMENT|25||
 |ILLEGAL_ACCESS_EXCEPTION|26||
 |ILLEGAL_ACCESS_ERROR|27||
@@ -157,7 +157,7 @@ The following error codes are defined in the system:
 |MEMBER_LEFT|35|Thrown when a member left during an invocation or execution.|
 |NEGATIVE_ARRAY_SIZE|36|The provided size of the array can not be negative but a negative number is provided.|
 |NO_SUCH_ELEMENT|37|The requested element does not exist in the distributed object.|
-|NOT_SERIALIZABLE|38|The object could not be serialised|
+|NOT_SERIALIZABLE|38|The object could not be serialized|
 |NULL_POINTER|39|The server faced a null pointer exception during the operation.|
 |OPERATION_TIMEOUT|40| An unchecked version of java.util.concurrent.TimeoutException. <p>Some of the Hazelcast operations may throw an <tt>OperationTimeoutException</tt>. Hazelcast uses OperationTimeoutException to pass TimeoutException up through interfaces that don't have TimeoutException in their signatures.</p>
 |
@@ -187,7 +187,7 @@ The following error codes are defined in the system:
 |UTF_DATA_FORMAT|64||
 |UNSUPPORTED_OPERATION|65|The message type id for the operation request is not a recognised id.|
 |WRONG_TARGET|66|An operation is executed on the wrong machine.|
-|XA|67|An error occured during an XA operation.|
+|XA|67|An error occurred during an XA operation.|
 |ACCESS_CONTROL|68|Indicates that a requested access to a system resource is denied.|
 |LOGIN|69||
 |UNSUPPORTED_CALLBACK|70|Signals that a CallbackHandler does not recognize a particular Callback.|
@@ -206,7 +206,7 @@ The following error codes are defined in the system:
 ###"${cm.name?cap_first}" Operation
 
 Request Message Type Id:${cm.id}, Retryable:<#if cm.retryable == 1 >Yes<#else>No</#if>
-${util.getOperationDescription(cm.comment)}
+<p>${util.getOperationDescription(cm.comment)}
 
     <#if cm.requestParams?has_content>
 

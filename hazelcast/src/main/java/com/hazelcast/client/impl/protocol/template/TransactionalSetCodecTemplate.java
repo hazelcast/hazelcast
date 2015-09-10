@@ -42,7 +42,7 @@ public interface TransactionalSetCodecTemplate {
      * @param txnId ID of the this transaction operation
      * @param threadId The id of the user thread performing the operation. It is used to guarantee that only the lock holder thread (if a lock exists on the entry) can perform the requested operation.
      * @param item Item removed from Transactional Set
-     * @return True if item is remove succesfully
+     * @return True if item is remove successfully
      */
     @Request(id = 2, retryable = false, response = ResponseMessageConst.BOOLEAN)
     Object remove(String name, String txnId, long threadId, Data item);

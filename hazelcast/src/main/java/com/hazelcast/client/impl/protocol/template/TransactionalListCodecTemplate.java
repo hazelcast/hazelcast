@@ -43,7 +43,7 @@ public interface TransactionalListCodecTemplate {
      * @param txnId ID of the this transaction operation
      * @param threadId The id of the user thread performing the operation. It is used to guarantee that only the lock holder thread (if a lock exists on the entry) can perform the requested operation.
      * @param item Item to remove to transactional List
-     * @return True if the removed succesfully,false otherwise
+     * @return True if the removed successfully,false otherwise
      */
     @Request(id = 2, retryable = false, response = ResponseMessageConst.BOOLEAN)
     Object remove(String name, String txnId, long threadId, Data item);

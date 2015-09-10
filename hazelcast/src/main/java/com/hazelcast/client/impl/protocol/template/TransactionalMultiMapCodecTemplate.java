@@ -65,7 +65,7 @@ public interface TransactionalMultiMapCodecTemplate {
     /**
      * Removes all the entries associated with the given key.
      *
-     * @param name Name of the Transactioanal Multi Map
+     * @param name Name of the Transactional Multi Map
      * @param txnId ID of the this transaction operation
      * @param threadId The id of the user thread performing the operation. It is used to guarantee that only the lock holder thread (if a lock exists on the entry) can perform the requested operation.
      * @param key The key whose associated values are returned
@@ -78,7 +78,7 @@ public interface TransactionalMultiMapCodecTemplate {
     /**
      * Returns the number of values matching the given key in the multimap.
      *
-     * @param name Name of the Transactioanal Multi Map
+     * @param name Name of the Transactional Multi Map
      * @param txnId ID of the this transaction operation
      * @param threadId The id of the user thread performing the operation. It is used to guarantee that only the lock holder thread (if a lock exists on the entry) can perform the requested operation.
      * @param  key The key whose number of values are returned
