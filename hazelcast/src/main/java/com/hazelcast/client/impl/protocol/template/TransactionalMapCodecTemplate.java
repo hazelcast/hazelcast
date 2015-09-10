@@ -189,7 +189,7 @@ public interface TransactionalMapCodecTemplate {
      * from only the current transaction context until the transaction is committed.
      *
      * @param name Name of the Transactional Map
-     * @param txnId ID of the this transaction opearation
+     * @param txnId ID of the this transaction operation
      * @param threadId  The id of the user thread performing the operation. It is used to guarantee that only the lock holder thread (if a lock exists on the entry) can perform the requested operation.
      * @param key The specified key
      * @param value Remove the key if it has this value.
@@ -204,7 +204,7 @@ public interface TransactionalMapCodecTemplate {
      * so it may throw a QUERY_RESULT_SIZE_EXCEEDED#PROP_QUERY_RESULT_SIZE_LIMIT if GroupProperties is configured.
      *
      * @param name Name of the Transactional Map
-     * @param txnId ID of the this transaction opearation
+     * @param txnId ID of the this transaction operation
      * @param threadId  The id of the user thread performing the operation. It is used to guarantee that only the lock holder thread (if a lock exists on the entry) can perform the requested operation.
      * @return A set clone of the keys contained in this map.
      */
@@ -218,7 +218,7 @@ public interface TransactionalMapCodecTemplate {
      * QUERY_RESULT_SIZE_EXCEEDED#PROP_QUERY_RESULT_SIZE_LIMIT if GroupProperties is configured.
      *
      * @param name Name of the Transactional Map
-     * @param txnId ID of the this transaction opearation
+     * @param txnId ID of the this transaction operation
      * @param threadId  The id of the user thread performing the operation. It is used to guarantee that only the lock holder thread (if a lock exists on the entry) can perform the requested operation.
      * @param predicate Specified query criteria.
      * @return Result key set for the query.
@@ -233,7 +233,7 @@ public interface TransactionalMapCodecTemplate {
      * if  GroupProperties is configured.
      *
      * @param name Name of the Transactional Map
-     * @param txnId ID of the this transaction opearation
+     * @param txnId ID of the this transaction operation
      * @param threadId  The id of the user thread performing the operation. It is used to guarantee that only the lock holder thread (if a lock exists on the entry) can perform the requested operation.
      * @return All values in the map
      */
@@ -247,7 +247,7 @@ public interface TransactionalMapCodecTemplate {
      * QUERY_RESULT_SIZE_EXCEEDED#PROP_QUERY_RESULT_SIZE_LIMIT if GroupProperties is configured.
      *
      * @param name Name of the Transactional Map
-     * @param txnId ID of the this transaction opearation
+     * @param txnId ID of the this transaction operation
      * @param threadId  The id of the user thread performing the operation. It is used to guarantee that only the lock holder thread (if a lock exists on the entry) can perform the requested operation.
      * @param predicate Specified query criteria.
      * @return Result value collection of the query.

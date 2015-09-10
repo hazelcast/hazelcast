@@ -31,7 +31,7 @@ public interface TransactionalQueueCodecTemplate {
      * @param name Name of the Transcational Queue
      * @param txnId ID of the transaction
      * @param threadId The id of the user thread performing the operation. It is used to guarantee that only the lock holder thread (if a lock exists on the entry) can perform the requested operation.
-     * @param item The elemet to add
+     * @param item The element to add
      * @param timeout How long to wait before giving up, in milliseconds
      * @return <tt>true</tt> if successful, or <tt>false</tt> if the specified waiting time elapses before space is available
      */
@@ -57,7 +57,7 @@ public interface TransactionalQueueCodecTemplate {
      * @param txnId ID of the transaction
      * @param threadId The id of the user thread performing the operation. It is used to guarantee that only the lock holder thread (if a lock exists on the entry) can perform the requested operation.
      * @param timeout How long to wait before giving up, in milliseconds
-     * @return The head of this queue, or <tt>null</tt> if the pecified waiting time elapses before an element is available
+     * @return The head of this queue, or <tt>null</tt> if the specified waiting time elapses before an element is available
      */
     @Request(id = 3, retryable = false, response = ResponseMessageConst.DATA)
     Object poll(String name, String txnId, long threadId, long timeout);
