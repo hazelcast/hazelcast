@@ -95,8 +95,6 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -137,6 +135,8 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
     private static final int MAX_PING_RETRY_COUNT = 5;
 
     private static final long MIN_WAIT_ON_FUTURE_TIMEOUT_MILLIS = TimeUnit.SECONDS.toMillis(10);
+
+    private static final String MEMBERSHIP_EVENT_EXECUTOR_NAME = "hz:cluster:event";
 
     private final Address thisAddress;
     private final MemberImpl thisMember;
@@ -187,8 +187,6 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
 
     private volatile boolean joinInProgress;
 
-    private final ExecutorService membershipEventExecutor = Executors.newSingleThreadExecutor();
-
     @Probe(name = "lastHeartBeat")
     private volatile long lastHeartBeat;
 
@@ -203,8 +201,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         thisAddress = node.getThisAddress();
         thisMember = node.getLocalMember();
 
-        setMembers(thisMember);
-        sendMembershipEvents(Collections.<MemberImpl>emptySet(), Collections.singleton(thisMember));
+        registerMember(thisMember);
 
         maxWaitMillisBeforeJoin = node.groupProperties.getMillis(GroupProperty.MAX_WAIT_SECONDS_BEFORE_JOIN);
         waitMillisBeforeJoin = node.groupProperties.getMillis(GroupProperty.WAIT_SECONDS_BEFORE_JOIN);
@@ -220,12 +217,19 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
 
         node.connectionManager.addConnectionListener(this);
 
+        nodeEngine.getExecutionService().register(MEMBERSHIP_EVENT_EXECUTOR_NAME, 1, Integer.MAX_VALUE, ExecutorType.CACHED);
+
         registerMetrics();
     }
 
     private static long getHeartBeatInterval(GroupProperties groupProperties) {
         long heartbeatInterval = groupProperties.getMillis(GroupProperty.HEARTBEAT_INTERVAL_SECONDS);
         return heartbeatInterval > 0 ? heartbeatInterval : TimeUnit.SECONDS.toMillis(1);
+    }
+
+    private void registerMember(MemberImpl thisMember) {
+        setMembers(thisMember);
+        sendMembershipEvents(Collections.<MemberImpl>emptySet(), Collections.singleton(thisMember));
     }
 
     private void registerMetrics() {
@@ -1289,7 +1293,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
             final MembershipServiceEvent event = new MembershipServiceEvent(membershipEvent);
             for (final MembershipAwareService service : membershipAwareServices) {
                 // service events should not block each other
-                membershipEventExecutor.execute(new Runnable() {
+                nodeEngine.getExecutionService().execute(MEMBERSHIP_EVENT_EXECUTOR_NAME, new Runnable() {
                     public void run() {
                         if (added) {
                             service.memberAdded(event);
@@ -1388,7 +1392,6 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
 
     @Override
     public void shutdown(boolean terminate) {
-        membershipEventExecutor.shutdown();
         reset();
     }
 
