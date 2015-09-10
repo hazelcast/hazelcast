@@ -44,6 +44,7 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <jdk.version>1.6</jdk.version>
+        <test.jdk.version>1.8</test.jdk.version>
         <target.dir>target</target.dir>
         <maven.build.timestamp.format>yyyyMMdd</maven.build.timestamp.format>
         <timestamp>${maven.build.timestamp}</timestamp>
@@ -176,6 +177,19 @@
                     <target>${jdk.version}</target>
                     <encoding>${project.build.sourceEncoding}</encoding>
                 </configuration>
+                <executions>
+                    <execution>
+                        <id>test-compile</id>
+                        <phase>process-test-sources</phase>
+                        <goals>
+                            <goal>testCompile</goal>
+                        </goals>
+                        <configuration>
+                            <source>${test.jdk.version}</source>
+                            <target>${test.jdk.version}</target>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
 
             <plugin>

@@ -495,19 +495,16 @@ public abstract class ConditionBasicTest extends HazelcastTestSupport {
         final ICondition condition = lock.newCondition(newName());
         final CountDownLatch latch = new CountDownLatch(1);
 
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                lock.lock();
-                try {
-                    Date date = new Date();
-                    date.setTime(System.currentTimeMillis() + 10000);
-                    if (condition.awaitUntil(date)) {
-                        latch.countDown();
-                    }
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
+        new Thread(() -> {
+            lock.lock();
+            try {
+                Date date = new Date();
+                date.setTime(System.currentTimeMillis() + 10000);
+                if (condition.awaitUntil(date)) {
+                    latch.countDown();
                 }
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             }
         }).start();
 
