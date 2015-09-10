@@ -1,6 +1,6 @@
 package com.hazelcast.spi.impl.operationservice.impl;
 
-import com.hazelcast.cluster.ClusterService;
+import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;

@@ -16,9 +16,9 @@
 
 package com.hazelcast.client.impl.client;
 
-import com.hazelcast.cluster.client.AddMembershipListenerRequest;
-import com.hazelcast.cluster.client.ClientPingRequest;
-import com.hazelcast.cluster.client.RegisterMembershipListenerRequest;
+import com.hazelcast.internal.cluster.impl.client.AddMembershipListenerRequest;
+import com.hazelcast.internal.cluster.impl.client.ClientPingRequest;
+import com.hazelcast.internal.cluster.impl.client.RegisterMembershipListenerRequest;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.partition.client.AddPartitionLostListenerRequest;

@@ -16,7 +16,7 @@
 
 package com.hazelcast.util;
 
-import com.hazelcast.cluster.impl.ClusterServiceImpl;
+import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.core.ClientType;
 import com.hazelcast.instance.GroupProperty;

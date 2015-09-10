@@ -19,7 +19,7 @@ package com.hazelcast.partition.client;
 import com.hazelcast.client.impl.client.CallableClientRequest;
 import com.hazelcast.client.impl.client.ClientPortableHook;
 import com.hazelcast.client.impl.client.RetryableRequest;
-import com.hazelcast.cluster.ClusterService;
+import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.core.Member;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Portable;

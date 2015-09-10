@@ -27,7 +27,7 @@ import com.hazelcast.client.spi.ClientExecutionService;
 import com.hazelcast.client.spi.ClientInvocationService;
 import com.hazelcast.client.spi.ClientPartitionService;
 import com.hazelcast.client.spi.EventHandler;
-import com.hazelcast.cluster.client.ClientPingRequest;
+import com.hazelcast.internal.cluster.impl.client.ClientPingRequest;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;

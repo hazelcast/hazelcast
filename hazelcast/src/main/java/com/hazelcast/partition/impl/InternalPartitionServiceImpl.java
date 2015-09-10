@@ -16,7 +16,7 @@
 
 package com.hazelcast.partition.impl;
 
-import com.hazelcast.cluster.MemberInfo;
+import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.Member;
