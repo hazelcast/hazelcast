@@ -43,6 +43,7 @@ import org.junit.runners.Parameterized;
 
 import static com.hazelcast.test.HazelcastTestSupport.randomMapName;
 import static com.hazelcast.transaction.TransactionOptions.TransactionType.LOCAL;
+import static com.hazelcast.transaction.TransactionOptions.TransactionType.ONE_PHASE;
 import static com.hazelcast.transaction.TransactionOptions.TransactionType.TWO_PHASE;
 
 @RunParallel
@@ -61,15 +62,15 @@ public class TransactionalMapWriteQuorumTest {
     @Parameterized.Parameters(name = "Executing: {0}")
     public static Collection<Object[]> parameters() {
 
-        TransactionOptions localOption = TransactionOptions.getDefault();
-        localOption.setTransactionType(LOCAL);
+        TransactionOptions onePhase = TransactionOptions.getDefault();
+        onePhase.setTransactionType(ONE_PHASE);
 
         TransactionOptions twoPhaseOption = TransactionOptions.getDefault();
         twoPhaseOption.setTransactionType(TWO_PHASE);
 
         return Arrays.asList(
                 new Object[]{twoPhaseOption}, //
-                new Object[]{localOption} //
+                new Object[]{onePhase} //
         );
     }
 
