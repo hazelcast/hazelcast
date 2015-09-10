@@ -16,7 +16,7 @@
 
 package com.hazelcast.spi.impl.operationservice.impl;
 
-import com.hazelcast.cluster.ClusterClock;
+import com.hazelcast.internal.cluster.ClusterClock;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.GroupProperty;

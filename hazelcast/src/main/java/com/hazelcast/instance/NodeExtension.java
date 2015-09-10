@@ -150,7 +150,7 @@ public interface NodeExtension {
     /**
      * Called before a new node is joining to cluster,
      * executed if node is the master node before join event.
-     * {@link com.hazelcast.cluster.impl.ClusterServiceImpl} calls this method,
+     * {@link com.hazelcast.internal.cluster.impl.ClusterServiceImpl} calls this method,
      * when handleJoinRequest method is called. By this way, we can check the logic we want
      * by implementing this method. Implementation should throw required exception, with a valid
      * message which explains rejection reason.

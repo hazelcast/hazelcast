@@ -18,7 +18,7 @@ package com.hazelcast.mapreduce.impl.client;
 
 import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.impl.client.InvocationClientRequest;
-import com.hazelcast.cluster.ClusterService;
+import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.config.JobTrackerConfig;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;

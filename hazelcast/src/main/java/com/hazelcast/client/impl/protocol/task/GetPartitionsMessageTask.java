@@ -18,8 +18,8 @@ package com.hazelcast.client.impl.protocol.task;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientGetPartitionsCodec;
-import com.hazelcast.cluster.ClusterService;
-import com.hazelcast.cluster.impl.ClusterServiceImpl;
+import com.hazelcast.internal.cluster.ClusterService;
+import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Address;

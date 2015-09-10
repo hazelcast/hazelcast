@@ -16,7 +16,7 @@
 
 package com.hazelcast.replicatedmap.impl.record;
 
-import com.hazelcast.cluster.ClusterService;
+import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.OperationTimeoutException;

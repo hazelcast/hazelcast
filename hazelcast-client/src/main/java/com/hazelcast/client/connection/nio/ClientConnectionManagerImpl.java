@@ -30,7 +30,7 @@ import com.hazelcast.client.spi.impl.ClientExecutionServiceImpl;
 import com.hazelcast.client.spi.impl.ClientInvocation;
 import com.hazelcast.client.spi.impl.ClientListenerServiceImpl;
 import com.hazelcast.client.spi.impl.ConnectionHeartbeatListener;
-import com.hazelcast.cluster.client.ClientPingRequest;
+import com.hazelcast.internal.cluster.impl.client.ClientPingRequest;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.logging.ILogger;

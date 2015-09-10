@@ -23,7 +23,15 @@ package com.hazelcast.cluster;
  */
 public enum MemberAttributeOperationType {
 
-    PUT(1), REMOVE(2);
+    /**
+     * The type when an attributed is put.
+     */
+    PUT(1),
+
+    /**
+     * The type when an attribute is removed.
+     */
+    REMOVE(2);
 
     private final int id;
 
@@ -31,16 +39,28 @@ public enum MemberAttributeOperationType {
         this.id = i;
     }
 
+    /**
+     * Gets the id that uniquely identifies this MemberAttributeOperationType.
+     *
+     * @return the id
+     */
     public int getId() {
         return id;
     }
 
+    /**
+     * Gets MemberAttributeOperationType for the given id.
+     *
+     * @param id the id.
+     * @return the found MemberAttributeOperationType
+     * @throws IllegalArgumentException if the MemberAttributeOperationType for the given id can't be found.
+     */
     public static MemberAttributeOperationType getValue(int id) {
         for (MemberAttributeOperationType operationType : values()) {
             if (operationType.id == id) {
                 return operationType;
             }
         }
-        throw new IllegalArgumentException("No OperationType for id: " + id);
+        throw new IllegalArgumentException("No MemberAttributeOperationType for id: " + id);
     }
 }

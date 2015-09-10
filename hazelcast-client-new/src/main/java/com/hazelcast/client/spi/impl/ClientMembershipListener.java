@@ -23,7 +23,7 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientMembershipListenerCodec;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.cluster.MemberAttributeOperationType;
-import com.hazelcast.cluster.client.ClientInitialMembershipEvent;
+import com.hazelcast.internal.cluster.impl.client.ClientInitialMembershipEvent;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MemberAttributeEvent;
 import com.hazelcast.core.MembershipEvent;

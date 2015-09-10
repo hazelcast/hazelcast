@@ -16,7 +16,8 @@
 
 package com.hazelcast.cluster;
 
-import com.hazelcast.cluster.impl.TcpIpJoinerOverAWS;
+import com.hazelcast.internal.cluster.Joiner;
+import com.hazelcast.internal.cluster.impl.TcpIpJoinerOverAWS;
 import com.hazelcast.config.AwsConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.JoinConfig;

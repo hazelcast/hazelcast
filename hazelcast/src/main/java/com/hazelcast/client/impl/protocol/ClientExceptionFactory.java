@@ -19,7 +19,7 @@ package com.hazelcast.client.impl.protocol;
 import com.hazelcast.cache.CacheNotExistsException;
 import com.hazelcast.client.AuthenticationException;
 import com.hazelcast.client.UndefinedErrorCodeException;
-import com.hazelcast.cluster.impl.ConfigMismatchException;
+import com.hazelcast.internal.cluster.impl.ConfigMismatchException;
 import com.hazelcast.config.ConfigurationException;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.core.DuplicateInstanceNameException;

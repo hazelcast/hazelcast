@@ -16,7 +16,7 @@
 
 package com.hazelcast.mapreduce.impl.task;
 
-import com.hazelcast.cluster.ClusterService;
+import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.config.JobTrackerConfig;
 import com.hazelcast.core.Member;
 import com.hazelcast.mapreduce.Collator;

@@ -1,4 +1,4 @@
-com.hazelcast.cluster.impl.ClusterDataSerializerHook
+com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook
 com.hazelcast.spi.impl.SpiDataSerializerHook
 com.hazelcast.partition.PartitionDataSerializerHook
 com.hazelcast.client.impl.ClientDataSerializerHook
