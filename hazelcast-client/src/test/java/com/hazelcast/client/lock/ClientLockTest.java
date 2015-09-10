@@ -313,4 +313,15 @@ public class ClientLockTest extends HazelcastTestSupport {
 
         lock.lock(10, TimeUnit.SECONDS);
     }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testLockWithZeroTTL() {
+        factory.newHazelcastInstance();
+        HazelcastInstance hz = factory.newHazelcastClient();
+        final ILock lock = hz.getLock(randomName());
+
+        final long ttl = 0;
+        lock.lock(ttl, TimeUnit.MILLISECONDS);
+    }
+
 }
