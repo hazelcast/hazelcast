@@ -18,30 +18,41 @@ package com.hazelcast.map.impl.query;
 
 import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.impl.Indexes;
-import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.util.IterationType;
 
-import java.util.Collection;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 
 /**
- * Components responsible for executing queries.
+ * Responsible for executing queries on the IMap.
  */
 public interface MapQueryEngine {
 
     /**
-     * Query a specific partition.
+     * Executes a query on all the local partitions.
+     *
+     * @param name      the name of the map
+     * @param predicate the predicate
+     * @return the QueryResult
+     * @throws ExecutionException
+     * @throws InterruptedException
+     */
+    QueryResult queryLocalPartitions(String name, Predicate predicate) throws ExecutionException, InterruptedException;
+
+    /**
+     * Executes a query a specific local partition.
+     *
+     * todo: what happens when the partition is not local?
      *
      * @param mapName     map name.
      * @param predicate   any predicate.
      * @param partitionId partition id.
      * @return result of query
      */
-    Collection<QueryableEntry> queryOnPartition(String mapName, Predicate predicate, int partitionId);
+    QueryResult queryLocalPartition(String mapName, Predicate predicate, int partitionId);
 
     /**
-     * Used for predicates which queries on node local entries, except paging predicate.
+     * Query all local partitions.
      *
      * @param mapName       map name.
      * @param predicate     except paging predicate.
@@ -50,32 +61,37 @@ public interface MapQueryEngine {
      *                      <code>false</code> for object types.
      * @return {@link com.hazelcast.util.QueryResultSet}
      */
-    Set queryLocalMember(String mapName, Predicate predicate,
-                         IterationType iterationType, boolean dataResult);
+    Set queryLocalPartitions(String mapName, Predicate predicate, IterationType iterationType, boolean dataResult);
 
     /**
-     * Used for paging predicate queries on node local entries.
+     * Query all local partitions with a paging predicate.
+     *
+     * todo: it would be better to have a single queryLocal... method and let the implementation figure out how to deal
+     * with a regular predicate and a paging predicate. No need to have that in the interface. The problem is that currently
+     * the signatures don't match up. This implementation detail should not be exposed through the interface.
      *
      * @param mapName         map name.
      * @param pagingPredicate to queryOnMembers.
      * @param iterationType   type of {@link IterationType}
      * @return {@link com.hazelcast.util.SortedQueryResultSet}
      */
-    Set queryLocalMemberWithPagingPredicate(String mapName, PagingPredicate pagingPredicate,
-                                            IterationType iterationType);
+    Set queryLocalPartitionsWithPagingPredicate(String mapName, PagingPredicate pagingPredicate, IterationType iterationType);
 
     /**
-     * Used for paging predicate queries on all members.
+     * Queries all partitions with a paging predicate.
+     *
+     * todo: it would be better to have single queryAll method and let the implementation figure out how to deal
+     * with a paging predicate. See comment in {@link #queryLocalPartitionsWithPagingPredicate}
      *
      * @param mapName         map name.
      * @param pagingPredicate to queryOnMembers.
      * @param iterationType   type of {@link IterationType}
      * @return {@link com.hazelcast.util.SortedQueryResultSet}
      */
-    Set queryWithPagingPredicate(String mapName, PagingPredicate pagingPredicate, IterationType iterationType);
+    Set queryAllPartitionsWithPagingPredicate(String mapName, PagingPredicate pagingPredicate, IterationType iterationType);
 
     /**
-     * Used for predicates which queries on all members, except paging predicate.
+     * Queries all partitions. Paging predicates are not allowed.
      *
      * @param mapName       map name.
      * @param predicate     except paging predicate.
@@ -84,25 +100,5 @@ public interface MapQueryEngine {
      *                      <code>false</code> for object types.
      * @return {@link com.hazelcast.util.QueryResultSet}
      */
-    Set query(String mapName, Predicate predicate,
-              IterationType iterationType, boolean dataResult);
-
-    /**
-     * Creates a {@link QueryResult} with configured result limit (according to the number of partitions) if feature is enabled.
-     *
-     * @param numberOfPartitions number of partitions to calculate result limit
-     * @return {@link QueryResult}
-     */
-    QueryResult newQueryResult(int numberOfPartitions);
-
-
-    /**
-     * Return optimized version of the query. The input predicate itself must not be modified in anyway.
-     * If no optimization is done then it may return the original instanceg.
-     *
-     * @param predicate
-     * @param indexes
-     * @return optimized version of input predicate or the predicate itself if no optimization was performed
-     */
-    Predicate optimize(Predicate predicate, Indexes indexes);
+    Set queryAllPartitions(String mapName, Predicate predicate, IterationType iterationType, boolean dataResult);
 }
