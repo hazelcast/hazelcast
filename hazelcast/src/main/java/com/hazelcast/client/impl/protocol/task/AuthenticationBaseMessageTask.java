@@ -152,7 +152,7 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractCallableM
                 serializationService.getVersion());
     }
 
-    private Object handleAuthenticated() {
+    private ClientMessage handleAuthenticated() {
         if (isOwnerConnection()) {
             final String uuid = getUuid();
             final String localMemberUUID = clientEngine.getLocalMember().getUuid();
