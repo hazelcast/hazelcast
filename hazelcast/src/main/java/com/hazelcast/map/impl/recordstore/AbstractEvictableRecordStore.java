@@ -19,6 +19,7 @@ package com.hazelcast.map.impl.recordstore;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.EntryView;
+import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapServiceContext;
@@ -70,9 +71,13 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
     private long lastEvictionTime;
 
     private volatile boolean hasEntryWithCustomTTL;
+    private final long expiryDelayMillis;
 
     protected AbstractEvictableRecordStore(MapContainer mapContainer, int partitionId) {
         super(mapContainer, partitionId);
+        NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
+        GroupProperties groupProperties = nodeEngine.getGroupProperties();
+        expiryDelayMillis = groupProperties.getMillis(GroupProperty.MAP_EXPIRY_DELAY_SECONDS);
     }
 
     public boolean isEvictionEnabled() {
@@ -93,14 +98,6 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         final MapConfig mapConfig = mapContainer.getMapConfig();
         return hasEntryWithCustomTTL || mapConfig.getMaxIdleSeconds() > 0
                 || mapConfig.getTimeToLiveSeconds() > 0;
-    }
-
-    /**
-     * @see com.hazelcast.instance.GroupProperty#MAP_EXPIRY_DELAY_SECONDS
-     */
-    private long getBackupExpiryDelayMillis() {
-        NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
-        return nodeEngine.getGroupProperties().getMillis(GroupProperty.MAP_EXPIRY_DELAY_SECONDS);
     }
 
     @Override
@@ -325,8 +322,7 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         // lastAccessTime : updates on every touch (put/get).
         final long lastAccessTime = record.getLastAccessTime();
         final long maxIdleMillis = calculateMaxIdleMillis(mapContainer.getMapConfig());
-        final long idleMillis = calculateExpirationWithDelay(maxIdleMillis,
-                getBackupExpiryDelayMillis(), backup);
+        final long idleMillis = calculateExpirationWithDelay(maxIdleMillis, expiryDelayMillis, backup);
         final long elapsedMillis = now - lastAccessTime;
         return elapsedMillis >= idleMillis ? null : record;
     }
@@ -341,8 +337,7 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
             return record;
         }
         final long lastUpdateTime = record.getLastUpdateTime();
-        final long ttlMillis = calculateExpirationWithDelay(ttl,
-                getBackupExpiryDelayMillis(), backup);
+        final long ttlMillis = calculateExpirationWithDelay(ttl, expiryDelayMillis, backup);
         final long elapsedMillis = now - lastUpdateTime;
         return elapsedMillis >= ttlMillis ? null : record;
     }
