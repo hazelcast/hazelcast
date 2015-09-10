@@ -882,6 +882,6 @@ public abstract class HazelcastTestSupport {
     }
 
     public static void ignore(Throwable t) {
-        t.printStackTrace();
+        // NO-OP
     }
 }
