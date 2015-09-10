@@ -118,6 +118,7 @@ public abstract class AbstractMessageTask<P>
         interceptBefore(credentials);
         checkPermissions(endpoint);
         processMessage();
+        interceptAfter(credentials);
     }
 
     private void handleAuthenticationFailure() {
