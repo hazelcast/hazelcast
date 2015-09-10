@@ -16,14 +16,13 @@
 
 package com.hazelcast.client.cache;
 
-import com.hazelcast.cache.CacheIteratorAbstractTest;
+import com.hazelcast.cache.CacheBasicAbstractTest;
 import com.hazelcast.client.cache.impl.HazelcastClientCachingProvider;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.After;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
@@ -32,21 +31,28 @@ import javax.cache.spi.CachingProvider;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class ClientCacheIteratorTest extends CacheIteratorAbstractTest {
+public class CacheBasicClientTest extends CacheBasicAbstractTest {
 
     private TestHazelcastFactory factory = new TestHazelcastFactory();
 
     @Override
-    protected CachingProvider createCachingProvider() {
+    protected void onSetup() {
         factory.newHazelcastInstance();
-        HazelcastInstance hazelcastInstance = factory.newHazelcastClient();
-        return HazelcastClientCachingProvider.createCachingProvider(hazelcastInstance);
     }
 
+    @Override
+    protected void onTearDown() {
+        factory.terminateAll();
+    }
 
-    @After
-    public void tear() {
-        factory.shutdownAll();
+    @Override
+    protected CachingProvider getCachingProvider() {
+        return HazelcastClientCachingProvider.createCachingProvider(getHazelcastInstance());
+    }
+
+    @Override
+    protected HazelcastInstance getHazelcastInstance() {
+        return factory.newHazelcastClient();
     }
 
 }

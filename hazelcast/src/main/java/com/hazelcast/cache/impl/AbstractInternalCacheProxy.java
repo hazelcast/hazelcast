@@ -279,6 +279,16 @@ abstract class AbstractInternalCacheProxy<K, V>
         return regs.remove(cacheEntryListenerConfiguration);
     }
 
+    protected String getListenerIdLocal(CacheEntryListenerConfiguration<K, V> cacheEntryListenerConfiguration) {
+        final ConcurrentMap<CacheEntryListenerConfiguration, String> regs;
+        if (cacheEntryListenerConfiguration.isSynchronous()) {
+            regs = syncListenerRegistrations;
+        } else {
+            regs = asyncListenerRegistrations;
+        }
+        return regs.get(cacheEntryListenerConfiguration);
+    }
+
     private void deregisterAllCacheEntryListener(Collection<String> listenerRegistrations) {
         final ICacheService service = getService();
         for (String regId : listenerRegistrations) {

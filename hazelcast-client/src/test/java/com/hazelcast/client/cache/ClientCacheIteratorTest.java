@@ -16,7 +16,7 @@
 
 package com.hazelcast.client.cache;
 
-import com.hazelcast.cache.AbstractCacheIteratorTest;
+import com.hazelcast.cache.CacheIteratorAbstractTest;
 import com.hazelcast.client.cache.impl.HazelcastClientCachingProvider;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
@@ -32,7 +32,7 @@ import javax.cache.spi.CachingProvider;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class ClientCacheIteratorTest extends AbstractCacheIteratorTest {
+public class  ClientCacheIteratorTest extends CacheIteratorAbstractTest {
 
     private TestHazelcastFactory factory = new TestHazelcastFactory();
 

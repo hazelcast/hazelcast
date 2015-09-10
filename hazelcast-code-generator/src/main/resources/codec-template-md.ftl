@@ -27,7 +27,7 @@ is encoded as shown below:
 |------|-----|---------|------------|
 |Cache Event type|int32|No|The type of the event. Possible values and their meanings are:<br> CREATED(1):An event type indicating that the cache entry was created. <br>UPDATED(2): An event type indicating that the cache entry was updated, i.e. a previous mapping existed. <br>REMOVED(3): An event type indicating that the cache entry was removed. <br>EXPIRED(4): An event type indicating that the cache entry has expired.<br>EVICTED(5): An event type indicating that the cache entry has evicted. <br>INVALIDATED(6): An event type indicating that the cache entry has invalidated for near cache invalidation. <br>COMPLETED(7): An event type indicating that the cache operation has completed. <br>EXPIRATION_TIME_UPDATED(8): An event type indicationg that the expiration time of cache record has been updated
 |Name|string|No|Name of the cache|
-|Key|byte-array|No|Key of the cache data|
+|Key|byte-array|Yes|Key of the cache data|
 |Value|byte-array|Yes|Value of the cache data|
 |Old Value|byte-array|Yes|Old value of the cache data if exists|
 |Value|byte-array|Yes|Value of the cache data|

@@ -30,7 +30,7 @@ import java.util.Iterator;
 
 import static org.junit.Assert.assertEquals;
 
-public abstract class AbstractCacheIteratorTest extends HazelcastTestSupport {
+public abstract class CacheIteratorAbstractTest extends HazelcastTestSupport {
 
     private CachingProvider cachingProvider;
 

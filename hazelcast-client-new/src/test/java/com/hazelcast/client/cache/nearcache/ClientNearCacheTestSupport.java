@@ -29,11 +29,10 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastTestSupport;
-
 import org.junit.After;
 import org.junit.Before;
 
@@ -41,6 +40,7 @@ import javax.cache.spi.CachingProvider;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 public abstract class ClientNearCacheTestSupport extends HazelcastTestSupport {
 
@@ -72,14 +72,14 @@ public abstract class ClientNearCacheTestSupport extends HazelcastTestSupport {
 
     protected CacheConfig createCacheConfig(InMemoryFormat inMemoryFormat) {
         return new CacheConfig()
-                        .setName(DEFAULT_CACHE_NAME)
-                        .setInMemoryFormat(inMemoryFormat);
+                .setName(DEFAULT_CACHE_NAME)
+                .setInMemoryFormat(inMemoryFormat);
     }
 
     protected NearCacheConfig createNearCacheConfig(InMemoryFormat inMemoryFormat) {
         return new NearCacheConfig()
-                        .setName(DEFAULT_CACHE_NAME)
-                        .setInMemoryFormat(inMemoryFormat);
+                .setName(DEFAULT_CACHE_NAME)
+                .setInMemoryFormat(inMemoryFormat);
     }
 
     protected class NearCacheTestContext {
@@ -146,7 +146,7 @@ public abstract class ClientNearCacheTestSupport extends HazelcastTestSupport {
 
         for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
             assertNull(nearCacheTestContext.nearCache.get(
-                            nearCacheTestContext.serializationService.toData(i)));
+                    nearCacheTestContext.serializationService.toData(i)));
         }
 
         for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
@@ -178,8 +178,8 @@ public abstract class ClientNearCacheTestSupport extends HazelcastTestSupport {
 
         for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
             assertEquals(generateValueFromKey(i),
-                         nearCacheTestContext.nearCache.get(
-                                nearCacheTestContext.serializationService.toData(i)));
+                    nearCacheTestContext.nearCache.get(
+                            nearCacheTestContext.serializationService.toData(i)));
         }
 
         nearCacheTestContext.close();
@@ -346,6 +346,30 @@ public abstract class ClientNearCacheTestSupport extends HazelcastTestSupport {
 
         nearCacheTestContext1.close();
         nearCacheTestContext2.close();
+    }
+
+    protected void doTestGetAllReturnsFromNearCache() {
+        NearCacheConfig nearCacheConfig = createNearCacheConfig(InMemoryFormat.OBJECT);
+        final NearCacheTestContext nearCacheTestContext =
+                createNearCacheTestAndFillWithData(DEFAULT_CACHE_NAME, nearCacheConfig);
+
+        for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
+            assertNull(nearCacheTestContext.nearCache.get(
+                    nearCacheTestContext.serializationService.toData(i)));
+        }
+
+        for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
+            // Get records so they will be stored in near-cache
+            nearCacheTestContext.cache.get(i);
+        }
+
+        for (int i = 0; i < DEFAULT_RECORD_COUNT; i++) {
+            final Data keyData = nearCacheTestContext.serializationService.toData(i);
+            //check if same reference to verify data coming from near cache
+            assertTrue(nearCacheTestContext.cache.get(i) == nearCacheTestContext.nearCache.get(keyData));
+        }
+
+        nearCacheTestContext.close();
     }
 
 }
