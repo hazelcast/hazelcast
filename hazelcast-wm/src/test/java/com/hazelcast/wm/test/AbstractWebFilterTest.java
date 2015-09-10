@@ -79,8 +79,7 @@ public abstract class AbstractWebFilterTest extends HazelcastTestSupport {
             final String baseDir = new File(root.getFile().replaceAll("%20", " ")).toString();
             sourceDir = baseDir + "/../../src/test/webapp";
         } catch (MalformedURLException e) {
-            e.printStackTrace();
-            throw new IllegalStateException("Couldn't initialize AbstractWebFilterTest");
+            throw new IllegalStateException("Couldn't initialize AbstractWebFilterTest", e);
         }
     }
 
@@ -196,7 +195,7 @@ public abstract class AbstractWebFilterTest extends HazelcastTestSupport {
                     cc.server2.stop();
                 }
             } catch (Throwable t) {
-                t.printStackTrace();
+                ignore(t);
             }
         }
         // Shutdown all instances

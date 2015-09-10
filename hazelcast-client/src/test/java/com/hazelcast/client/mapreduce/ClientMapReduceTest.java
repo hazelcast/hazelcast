@@ -119,9 +119,7 @@ public class ClientMapReduceTest
         try {
             Map<String, List<Integer>> result = future.get();
             fail();
-
         } catch (Exception e) {
-            e.printStackTrace();
             throw e;
         }
     }

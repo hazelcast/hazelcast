@@ -69,7 +69,7 @@ public class TcpIpJoinerOverAWSTest extends HazelcastTestSupport {
         try {
             channelRef.get().close();
         } catch (IOException e) {
-            e.printStackTrace();
+            ignore(e);
         }
 
         Joiner joiner = node.getJoiner();

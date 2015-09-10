@@ -482,7 +482,7 @@ public abstract class LockBasicTest extends HazelcastTestSupport {
                 try {
                     Thread.sleep(1000);
                 } catch (InterruptedException e) {
-                    e.printStackTrace();
+                    ignore(e);
                 }
                 lock.destroy();
             }

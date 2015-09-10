@@ -109,7 +109,7 @@ public class QueueAdvancedTest extends HazelcastTestSupport {
                     Thread.sleep(5000);
                     h2.getLifecycleService().terminate();
                 } catch (InterruptedException e) {
-                    e.printStackTrace();
+                    ignore(e);
                 }
             }
         }).start();
@@ -122,7 +122,7 @@ public class QueueAdvancedTest extends HazelcastTestSupport {
                     fail("Should not be able to take: " + o);
                 } catch (HazelcastInstanceNotActiveException ignored) {
                 } catch (InterruptedException e) {
-                    e.printStackTrace();
+                    ignore(e);
                 }
             }
         }).start();
@@ -194,7 +194,7 @@ public class QueueAdvancedTest extends HazelcastTestSupport {
                         }
                     }
                 } catch (InterruptedException e) {
-                    e.printStackTrace();
+                    ignore(e);
                 }
             }
         }).start();
@@ -211,7 +211,7 @@ public class QueueAdvancedTest extends HazelcastTestSupport {
                             latch.countDown();
                         }
                     } catch (InterruptedException e) {
-                        e.printStackTrace();
+                        ignore(e);
                     }
                 }
             });
@@ -222,7 +222,7 @@ public class QueueAdvancedTest extends HazelcastTestSupport {
                             latch.countDown();
                         }
                     } catch (InterruptedException e) {
-                        e.printStackTrace();
+                        ignore(e);
                     }
                 }
             });
@@ -266,7 +266,7 @@ public class QueueAdvancedTest extends HazelcastTestSupport {
                             latch.countDown();
                         }
                     } catch (InterruptedException e) {
-                        e.printStackTrace();
+                        ignore(e);
                     }
                 }
             });
@@ -277,7 +277,7 @@ public class QueueAdvancedTest extends HazelcastTestSupport {
                             latch.countDown();
                         }
                     } catch (InterruptedException e) {
-                        e.printStackTrace();
+                        ignore(e);
                     }
                 }
             });
@@ -318,7 +318,7 @@ public class QueueAdvancedTest extends HazelcastTestSupport {
                         }
                     }
                 } catch (InterruptedException e) {
-                    e.printStackTrace();
+                    ignore(e);
                 }
             }
         }).start();
@@ -333,7 +333,7 @@ public class QueueAdvancedTest extends HazelcastTestSupport {
                             latch.countDown();
                         }
                     } catch (InterruptedException e) {
-                        e.printStackTrace();
+                        ignore(e);
                     }
                 }
             });
@@ -344,7 +344,7 @@ public class QueueAdvancedTest extends HazelcastTestSupport {
                             latch.countDown();
                         }
                     } catch (InterruptedException e) {
-                        e.printStackTrace();
+                        ignore(e);
                     }
                 }
             });

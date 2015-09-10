@@ -237,7 +237,7 @@ public class QueueClientRequestTest extends ClientTestSupport {
                 try {
                     latch.await(30, TimeUnit.SECONDS);
                 } catch (InterruptedException e) {
-                    e.printStackTrace();
+                    ignore(e);
                 }
                 q.poll();
             }
@@ -289,7 +289,7 @@ public class QueueClientRequestTest extends ClientTestSupport {
                 try {
                     Thread.sleep(3000);
                 } catch (InterruptedException e) {
-                    e.printStackTrace();
+                    ignore(e);
                 }
                 q.offer("item2");
             }

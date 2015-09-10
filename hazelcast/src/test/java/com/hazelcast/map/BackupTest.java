@@ -404,7 +404,7 @@ public class BackupTest extends HazelcastTestSupport {
                             }
                         }
                     } catch (InterruptedException e) {
-                        e.printStackTrace();
+                        ignore(e);
                     } finally {
                         latch.countDown();
                     }

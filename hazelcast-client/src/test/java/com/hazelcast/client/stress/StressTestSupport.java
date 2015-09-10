@@ -55,14 +55,14 @@ public abstract class StressTestSupport extends HazelcastTestSupport {
             try {
                 killMemberThread.join(TimeUnit.SECONDS.toMillis(KILL_DELAY_SECONDS * 4));
             } catch (InterruptedException e) {
-                e.printStackTrace();
+                ignore(e);
             }
         }
         for (HazelcastInstance hz : instances) {
             try {
                 hz.getLifecycleService().terminate();
             } catch (Exception e) {
-                e.printStackTrace();
+                ignore(e);
             }
         }
     }

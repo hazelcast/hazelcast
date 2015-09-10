@@ -80,7 +80,7 @@ public class RegionFactoryDefaultTest extends HibernateStatisticsTestSupport {
             tx.commit();
         } catch (Exception e) {
             tx.rollback();
-            e.printStackTrace();
+            ignore(e);
         } finally {
             session.close();
         }
@@ -128,7 +128,7 @@ public class RegionFactoryDefaultTest extends HibernateStatisticsTestSupport {
             tx.commit();
         } catch (Exception e) {
             tx.rollback();
-            e.printStackTrace();
+            ignore(e);
         } finally {
             session.close();
         }

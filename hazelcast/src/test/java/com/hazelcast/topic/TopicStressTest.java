@@ -157,7 +157,7 @@ public class TopicStressTest extends HazelcastTestSupport {
                     randomSleep();
                 }
             } catch (Throwable t) {
-                t.printStackTrace();
+                ignore(t);
             }
         }
 

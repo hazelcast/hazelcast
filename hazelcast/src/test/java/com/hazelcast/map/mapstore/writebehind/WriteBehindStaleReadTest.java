@@ -106,7 +106,7 @@ public class WriteBehindStaleReadTest extends HazelcastTestSupport {
             try {
                 waitAllWriteOperations.await();
             } catch (InterruptedException e) {
-                e.printStackTrace();
+                ignore(e);
             }
         }
 

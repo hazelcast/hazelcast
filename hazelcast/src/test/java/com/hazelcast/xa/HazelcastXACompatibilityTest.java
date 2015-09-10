@@ -213,7 +213,7 @@ public class HazelcastXACompatibilityTest extends HazelcastTestSupport {
                     xaResource.end(xid, XAResource.TMFAIL);
                     latch.countDown();
                 } catch (XAException e) {
-                    e.printStackTrace();
+                    ignore(e);
                 }
             }
         }.start();

@@ -103,12 +103,12 @@ public class HazelcastXAStressTest extends HazelcastTestSupport {
                         try {
                             xaResource.commit(xid, true);
                         } catch (XAException e) {
-                            e.printStackTrace();
+                            ignore(e);
                         }
                     }
                 });
             } catch (Exception e) {
-                e.printStackTrace();
+                ignore(e);
             }
         }
     }

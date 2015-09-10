@@ -67,7 +67,7 @@ public class ClientCountDownLatchTest extends HazelcastTestSupport {
                     try {
                         Thread.sleep(60);
                     } catch (InterruptedException e) {
-                        e.printStackTrace();
+                        ignore(e);
                     }
                 }
             }

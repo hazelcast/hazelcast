@@ -92,7 +92,7 @@ public abstract class HibernateStatisticsTestSupport extends HibernateTestSuppor
             tx.commit();
         } catch (Exception e) {
             tx.rollback();
-            e.printStackTrace();
+            ignore(e);
         } finally {
             session.close();
         }
@@ -145,7 +145,6 @@ public abstract class HibernateStatisticsTestSupport extends HibernateTestSuppor
             txn.commit();
         } catch (RuntimeException e) {
             txn.rollback();
-            e.printStackTrace();
             throw e;
         } finally {
             session.close();
@@ -164,7 +163,6 @@ public abstract class HibernateStatisticsTestSupport extends HibernateTestSuppor
             txn.commit();
         } catch (Exception e) {
             txn.rollback();
-            e.printStackTrace();
             throw e;
         } finally {
             session.close();
@@ -184,7 +182,6 @@ public abstract class HibernateStatisticsTestSupport extends HibernateTestSuppor
             txn.commit();
         } catch (RuntimeException e) {
             txn.rollback();
-            e.printStackTrace();
             throw e;
         } finally {
             session.close();

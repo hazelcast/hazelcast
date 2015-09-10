@@ -171,7 +171,7 @@ public class ClientRegressionWithMockNetworkTest
                 try {
                     Thread.sleep(100);
                 } catch (InterruptedException e) {
-                    e.printStackTrace();
+                    ignore(e);
                 }
                 hz1.getLifecycleService().shutdown();
             }
@@ -202,7 +202,7 @@ public class ClientRegressionWithMockNetworkTest
                 try {
                     Thread.sleep(10);
                 } catch (InterruptedException e) {
-                    e.printStackTrace();
+                    ignore(e);
                 }
                 hz1.getLifecycleService().shutdown();
             }

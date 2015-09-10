@@ -223,7 +223,6 @@ public class MapReduceTest
                 fail();
 
             } catch (Exception e) {
-                e.printStackTrace();
                 assertTrue(e.getCause() instanceof NullPointerException);
                 throw e;
             }
@@ -260,7 +259,6 @@ public class MapReduceTest
                 fail();
 
             } catch (Exception e) {
-                e.printStackTrace();
                 assertTrue(e.getCause() instanceof NullPointerException);
                 throw e;
             }
@@ -299,7 +297,6 @@ public class MapReduceTest
                 fail();
 
             } catch (Exception e) {
-                e.printStackTrace();
                 throw e;
             }
         } finally {

@@ -206,7 +206,7 @@ public class ClientMultiMapLockTest extends HazelcastTestSupport {
                         tryLockReturnsTrue.countDown();
                     }
                 } catch (InterruptedException e) {
-                    e.printStackTrace();
+                    ignore(e);
                 }
             }
         }.start();

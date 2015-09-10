@@ -52,7 +52,7 @@ public class RegionFactoryQueryTest extends HibernateSlowTestSupport{
             tx.commit();
         } catch (Exception e) {
             tx.rollback();
-            e.printStackTrace();
+            ignore(e);
         } finally {
             session.close();
         }

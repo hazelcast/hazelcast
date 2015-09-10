@@ -86,7 +86,7 @@ public class MapMemoryUsageStressTest extends HazelcastTestSupport {
                 }
             } catch (Throwable t) {
                 errors.incrementAndGet();
-                t.printStackTrace();
+                ignore(t);
             }
         }
     }

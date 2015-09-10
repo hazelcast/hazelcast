@@ -116,7 +116,7 @@ public class WriteBehindWithEntryProcessorTest extends HazelcastTestSupport {
             try {
                 pauseStoreOp.await();
             } catch (InterruptedException e) {
-                e.printStackTrace();
+                ignore(e);
             }
         }
 

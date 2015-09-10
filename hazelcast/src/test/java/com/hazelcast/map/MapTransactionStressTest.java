@@ -68,7 +68,7 @@ public class MapTransactionStressTest extends HazelcastTestSupport {
                         tx.commitTransaction();
                     } catch (TransactionException e) {
                         tx.rollbackTransaction();
-                        e.printStackTrace();
+                        ignore(e);
                     }
                 } else {
                     LockSupport.parkNanos(100);
@@ -121,7 +121,7 @@ public class MapTransactionStressTest extends HazelcastTestSupport {
                         tx.commitTransaction();
                     } catch (TransactionException e) {
                         tx.rollbackTransaction();
-                        e.printStackTrace();
+                        ignore(e);
                     }
                 } else {
                     LockSupport.parkNanos(100);
@@ -244,7 +244,7 @@ public class MapTransactionStressTest extends HazelcastTestSupport {
                     tx.commitTransaction();
                 } catch (TransactionException e) {
                     tx.rollbackTransaction();
-                    e.printStackTrace();
+                    ignore(e);
                 }
             }
         }

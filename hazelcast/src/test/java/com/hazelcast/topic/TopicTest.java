@@ -178,7 +178,7 @@ public class TopicTest extends HazelcastTestSupport {
                     try {
                         startLatch.await(1, TimeUnit.MINUTES);
                     } catch (InterruptedException e) {
-                        e.printStackTrace();
+                        ignore(e);
                         return;
                     }
 
@@ -257,7 +257,7 @@ public class TopicTest extends HazelcastTestSupport {
                     try {
                         startLatch.await(1, TimeUnit.MINUTES);
                     } catch (InterruptedException e) {
-                        e.printStackTrace();
+                        ignore(e);
                         return;
                     }
 

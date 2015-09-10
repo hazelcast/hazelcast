@@ -69,13 +69,13 @@ public class MapPutDestroyTest extends HazelcastTestSupport {
         try {
             t1.join();
         } catch (Throwable e) {
-            e.printStackTrace();
+            ignore(e);
         }
 
         try {
             t2.join();
         } catch (Throwable e) {
-            e.printStackTrace();
+            ignore(e);
         }
 
         Throwable object = error.get();
