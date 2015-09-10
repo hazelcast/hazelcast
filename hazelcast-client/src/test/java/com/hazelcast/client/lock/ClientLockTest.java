@@ -221,4 +221,13 @@ public class ClientLockTest extends HazelcastTestSupport {
         assertFalse("Lock obtained by 2 client ", lockObtained);
     }
 
+    @Test(expected = IllegalArgumentException.class)
+    public void testLockWithZeroTTL() {
+        hazelcastFactory.newHazelcastInstance();
+        HazelcastInstance hz = hazelcastFactory.newHazelcastClient();
+        final ILock lock = hz.getLock(randomName());
+
+        final long ttl = 0;
+        lock.lock(ttl, TimeUnit.MILLISECONDS);
+    }
 }
