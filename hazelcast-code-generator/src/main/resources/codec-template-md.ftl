@@ -145,50 +145,52 @@ The following error codes are defined in the system:
 |HAZELCAST_SERIALIZATION|23|Error during serialisation/de-serialisation of data.|
 |IO|24|An IO error occured.|
 |ILLEGAL_ARGUMENT|25||
-|ILLEGAL_MONITOR_STATE|26|When an operation on a distributed object is being attempted by a thread which did not initially own the lock on the object.|
-|ILLEGAL_STATE|27||
-|ILLEGAL_THREAD_STATE|28|Thrown to indicate that a thread is not in an appropriate state for the requested operation.|
-|INDEX_OUT_OF_BOUNDS|29|Thrown to indicate that an index of some sort (such as to a list) is out of range.|
-|INTERRUPTED|30||
-|INVALID_ADDRESS|31|Thrown when given address is not valid.|
-|INVALID_CONFIGURATION|32|An InvalidConfigurationException is thrown when there is an Invalid Configuration. Invalid Configuration can be a wrong Xml Config or logical config errors that are found at real time.|
-|MEMBER_LEFT|33|Thrown when a member left during an invocation or execution.|
-|NEGATIVE_ARRAY_SIZE|34|The provided size of the array can not be negative but a negative number is provided.|
-|NO_SUCH_ELEMENT|35|The requested element does not exist in the distributed object.|
-|NOT_SERIALIZABLE|36|The object could not be serialised|
-|NULL_POINTER|37|The server faced a null pointer exception during the operation.|
-|OPERATION_TIMEOUT|38| An unchecked version of java.util.concurrent.TimeoutException. <p>Some of the Hazelcast operations may throw an <tt>OperationTimeoutException</tt>. Hazelcast uses OperationTimeoutException to pass TimeoutException up through interfaces that don't have TimeoutException in their signatures.</p>
+|ILLEGAL_ACCESS_EXCEPTION|26||
+|ILLEGAL_ACCESS_ERROR|27||
+|ILLEGAL_MONITOR_STATE|28|When an operation on a distributed object is being attempted by a thread which did not initially own the lock on the object.|
+|ILLEGAL_STATE|29||
+|ILLEGAL_THREAD_STATE|30|Thrown to indicate that a thread is not in an appropriate state for the requested operation.|
+|INDEX_OUT_OF_BOUNDS|31|Thrown to indicate that an index of some sort (such as to a list) is out of range.|
+|INTERRUPTED|32||
+|INVALID_ADDRESS|33|Thrown when given address is not valid.|
+|INVALID_CONFIGURATION|34|An InvalidConfigurationException is thrown when there is an Invalid Configuration. Invalid Configuration can be a wrong Xml Config or logical config errors that are found at real time.|
+|MEMBER_LEFT|35|Thrown when a member left during an invocation or execution.|
+|NEGATIVE_ARRAY_SIZE|36|The provided size of the array can not be negative but a negative number is provided.|
+|NO_SUCH_ELEMENT|37|The requested element does not exist in the distributed object.|
+|NOT_SERIALIZABLE|38|The object could not be serialised|
+|NULL_POINTER|39|The server faced a null pointer exception during the operation.|
+|OPERATION_TIMEOUT|40| An unchecked version of java.util.concurrent.TimeoutException. <p>Some of the Hazelcast operations may throw an <tt>OperationTimeoutException</tt>. Hazelcast uses OperationTimeoutException to pass TimeoutException up through interfaces that don't have TimeoutException in their signatures.</p>
 |
-|PARTITION_MIGRATING|39|Thrown when an operation is executed on a partition, but that partition is currently being moved around.|
-|QUERY|40|Error during query.|
-|QUERY_RESULT_SIZE_EXCEEDED|41|Thrown when a query exceeds a configurable result size limit.|
-|QUORUM|42|An exception thrown when the cluster size is below the defined threshold.|
-|REACHED_MAX_SIZE|43|Exception thrown when a write-behind MapStore rejects to accept a new element.|
-|REJECTED_EXECUTION|44|Exception thrown by an Executor when a task cannot be accepted for execution.|
-|REMOTE_MAP_REDUCE|45|This is used for failed remote operations. This can happen if the get result operation fails to retrieve values for some reason.|
-|RESPONSE_ALREADY_SENT|46|There is some kind of system error causing a response to be send multiple times for some operation.|
-|RETRYABLE_HAZELCAST|47|The operation request can be retried.|
-|RETRYABLE_IO|48|Indicates that an operation can be retried. E.g. if map.get is send to a partition that is currently migrating, a subclass of this exception is thrown, so the caller can deal with it (e.g. sending the request to the new partition owner).|
-|RUNTIME|49||
-|SECURITY|50|There is a security violation.|
-|SOCKET|51|There is an error in the underlying TCP protocol|
-|STALE_SEQUENCE|52|Thrown when accessing an item in the Ringbuffer using a sequence that is smaller than the current head sequence. This means that the and old item is read, but it isn't available anymore in the ringbuffer.|
-|TARGET_DISCONNECTED|53|Indicates that an operation is about to be sent to a non existing machine.|
-|TARGET_NOT_MEMBER|54|Indicates operation is sent to a machine that isn't member of the cluster.|
-|TIMEOUT|55||
-|TOPIC_OVERLOAD|56|Thrown when a publisher wants to write to a topic, but there is not sufficient storage to deal with the event. This exception is only thrown in combination with the reliable topic.|
-|TOPOLOGY_CHANGED|57|Thrown when a topology change happens during the execution of a map reduce job and the com.hazelcast.mapreduce.TopologyChangedStrategy is set to com.hazelcast.mapreduce.TopologyChangedStrategy#CANCEL_RUNNING_OPERATION}.|
-|TRANSACTION|58|Thrown when something goes wrong while dealing with transactions and transactional data-structures.|
-|TRANSACTION_NOT_ACTIVE|59|Thrown when an a transactional operation is executed without an active transaction.|
-|TRANSACTION_TIMED_OUT|60|Thrown when a transaction has timed out.|
-|URI_SYNTAX|61||
-|UTF_DATA_FORMAT|62||
-|UNSUPPORTED_OPERATION|63|The message type id for the operation request is not a recognised id.|
-|WRONG_TARGET|64|An operation is executed on the wrong machine.|
-|XA|65|An error occured during an XA operation.|
-|ACCESS_CONTROL|66|Indicates that a requested access to a system resource is denied.|
-|LOGIN|67||
-|UNSUPPORTED_CALLBACK|68|Signals that a CallbackHandler does not recognize a particular Callback.|
+|PARTITION_MIGRATING|41|Thrown when an operation is executed on a partition, but that partition is currently being moved around.|
+|QUERY|42|Error during query.|
+|QUERY_RESULT_SIZE_EXCEEDED|43|Thrown when a query exceeds a configurable result size limit.|
+|QUORUM|44|An exception thrown when the cluster size is below the defined threshold.|
+|REACHED_MAX_SIZE|45|Exception thrown when a write-behind MapStore rejects to accept a new element.|
+|REJECTED_EXECUTION|46|Exception thrown by an Executor when a task cannot be accepted for execution.|
+|REMOTE_MAP_REDUCE|47|This is used for failed remote operations. This can happen if the get result operation fails to retrieve values for some reason.|
+|RESPONSE_ALREADY_SENT|48|There is some kind of system error causing a response to be send multiple times for some operation.|
+|RETRYABLE_HAZELCAST|49|The operation request can be retried.|
+|RETRYABLE_IO|50|Indicates that an operation can be retried. E.g. if map.get is send to a partition that is currently migrating, a subclass of this exception is thrown, so the caller can deal with it (e.g. sending the request to the new partition owner).|
+|RUNTIME|51||
+|SECURITY|52|There is a security violation.|
+|SOCKET|53|There is an error in the underlying TCP protocol|
+|STALE_SEQUENCE|54|Thrown when accessing an item in the Ringbuffer using a sequence that is smaller than the current head sequence. This means that the and old item is read, but it isn't available anymore in the ringbuffer.|
+|TARGET_DISCONNECTED|55|Indicates that an operation is about to be sent to a non existing machine.|
+|TARGET_NOT_MEMBER|56|Indicates operation is sent to a machine that isn't member of the cluster.|
+|TIMEOUT|57||
+|TOPIC_OVERLOAD|58|Thrown when a publisher wants to write to a topic, but there is not sufficient storage to deal with the event. This exception is only thrown in combination with the reliable topic.|
+|TOPOLOGY_CHANGED|59|Thrown when a topology change happens during the execution of a map reduce job and the com.hazelcast.mapreduce.TopologyChangedStrategy is set to com.hazelcast.mapreduce.TopologyChangedStrategy#CANCEL_RUNNING_OPERATION}.|
+|TRANSACTION|60|Thrown when something goes wrong while dealing with transactions and transactional data-structures.|
+|TRANSACTION_NOT_ACTIVE|61|Thrown when an a transactional operation is executed without an active transaction.|
+|TRANSACTION_TIMED_OUT|62|Thrown when a transaction has timed out.|
+|URI_SYNTAX|63||
+|UTF_DATA_FORMAT|64||
+|UNSUPPORTED_OPERATION|65|The message type id for the operation request is not a recognised id.|
+|WRONG_TARGET|66|An operation is executed on the wrong machine.|
+|XA|67|An error occured during an XA operation.|
+|ACCESS_CONTROL|68|Indicates that a requested access to a system resource is denied.|
+|LOGIN|69||
+|UNSUPPORTED_CALLBACK|70|Signals that a CallbackHandler does not recognize a particular Callback.|
 
 <#list model?keys as key>
 <#assign map=model?values[key_index]?values/>
@@ -204,6 +206,7 @@ The following error codes are defined in the system:
 ###"${cm.name?cap_first}" Operation
 
 Request Message Type Id:${cm.id}, Retryable:<#if cm.retryable == 1 >Yes<#else>No</#if>
+${util.getOperationDescription(cm.comment)}
 
     <#if cm.requestParams?has_content>
 

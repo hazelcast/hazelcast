@@ -48,6 +48,7 @@ public interface CacheCodecTemplate {
     Object addInvalidationListener(String name);
 
     /**
+     * Clears the contents of the cache, without notifying listeners or CacheWriters.
      *
      * @param name Name of the cache.
      */
@@ -55,6 +56,9 @@ public interface CacheCodecTemplate {
     void clear(String name);
 
     /**
+     * Removes entries for the specified keys. The order in which the individual entries are removed is undefined.
+     * For every entry in the key set, the following are called: any registered CacheEntryRemovedListeners if the cache
+     * is a write-through cache, the CacheWriter. If the key set is empty, the CacheWriter is not called.
      *
      * @param name Name of the cache.
      * @param keys The keys to remove.
@@ -65,6 +69,10 @@ public interface CacheCodecTemplate {
     void removeAllKeys(String name, Set<Data> keys, int completionId);
 
     /**
+     * Removes all of the mappings from this cache. The order that the individual entries are removed is undefined.
+     * For every mapping that exists the following are called: any registered CacheEntryRemovedListener if the cache is
+     * a write-through cache, the CacheWriter.If the cache is empty, the CacheWriter is not called.
+     * This is potentially an expensive operation as listeners are invoked. Use  #clear() to avoid this.
      *
      * @param name Name of the cache.
      * @param completionId User generated id which shall be received as a field of the cache event upon completion of
@@ -74,6 +82,8 @@ public interface CacheCodecTemplate {
     void removeAll(String name, int completionId);
 
     /**
+     * Determines if the Cache contains an entry for the specified key. More formally, returns true if and only if this
+     * cache contains a mapping for a key k such that key.equals(k). (There can be at most one such mapping.)
      *
      * @param name Name of the cache.
      * @param key The key whose presence in this cache is to be tested.
@@ -94,6 +104,7 @@ public interface CacheCodecTemplate {
     Object createConfig(Data cacheConfig, boolean createAlsoOnOthers);
 
     /**
+     * Closes the cache. Clears the internal content and releases any resource.
      *
      * @param name Name of the cache.
      */
@@ -115,6 +126,10 @@ public interface CacheCodecTemplate {
     Object entryProcessor(String name, Data key, Data entryProcessor, List<Data> arguments, int completionId);
 
     /**
+     * Gets a collection of entries from the cache with custom expiry policy, returning them as Map of the values
+     * associated with the set of keys requested. If the cache is configured for read-through operation mode, the underlying
+     * configured javax.cache.integration.CacheLoader might be called to retrieve the values of the keys from any kind
+     * of external resource.
      *
      * @param name Name of the cache.
      * @param keys The keys whose associated values are to be returned.
@@ -127,6 +142,7 @@ public interface CacheCodecTemplate {
     Object getAll(String name, Set<Data> keys, @Nullable Data expiryPolicy);
 
     /**
+     * Atomically removes the entry for a key only if currently mapped to some value.
      *
      * @param name Name of the cache.
      * @param key key with which the specified value is associated
@@ -138,6 +154,10 @@ public interface CacheCodecTemplate {
     Object getAndRemove(String name, Data key, int completionId);
 
     /**
+     * Atomically replaces the assigned value of the given key by the specified value using a custom
+     * javax.cache.expiry.ExpiryPolicy and returns the previously assigned value. If the cache is configured for
+     * write-through operation mode, the underlying configured javax.cache.integration.CacheWriter might be called to
+     * store the value of the key to any kind of external resource.
      *
      * @param name Name of the cache.
      * @param key   The key whose value is replaced.
@@ -162,6 +182,9 @@ public interface CacheCodecTemplate {
     Object getConfig(String name, String simpleName);
 
     /**
+     * Retrieves the mapped value of the given key using a custom javax.cache.expiry.ExpiryPolicy. If no mapping exists
+     * null is returned. If the cache is configured for read-through operation mode, the underlying configured
+     * javax.cache.integration.CacheLoader might be called to retrieve the value of the key from any kind of external resource.
      *
      * @param name Name of the cache.
      * @param key The key whose mapped value is to be returned.
@@ -174,6 +197,10 @@ public interface CacheCodecTemplate {
     Object get(String name, Data key, @Nullable Data expiryPolicy);
 
     /**
+     * The ordering of iteration over entries is undefined. During iteration, any entries that are a). read will have
+     * their appropriate CacheEntryReadListeners notified and b). removed will have their appropriate
+     * CacheEntryRemoveListeners notified. java.util.Iterator#next() may return null if the entry is no longer present,
+     * has expired or has been evicted.
      *
      * @param name Name of the cache.
      * @param partitionId The partition id which owns this cache store.
@@ -216,6 +243,9 @@ public interface CacheCodecTemplate {
     void managementConfig(String name, boolean isStat, boolean enabled, Address address);
 
     /**
+     * Associates the specified key with the given value if and only if there is not yet a mapping defined for the
+     * specified key. If the cache is configured for write-through operation mode, the underlying configured
+     * javax.cache.integration.CacheWriter might be called to store the value of the key to any kind of external resource.
      *
      * @param name Name of the cache.
      * @param key   The key that is associated with the specified value.
@@ -265,6 +295,7 @@ public interface CacheCodecTemplate {
     Object removeInvalidationListener(String name, String registrationId);
 
     /**
+     * Atomically removes the mapping for a key only if currently mapped to the given value.
      *
      * @param name Name of the cache.
      * @param key key whose mapping is to be removed from the cache
@@ -277,6 +308,10 @@ public interface CacheCodecTemplate {
     Object remove(String name, Data key, @Nullable Data currentValue, int completionId);
 
     /**
+     * Atomically replaces the currently assigned value for the given key with the specified newValue if and only if the
+     * currently assigned value equals the value of oldValue using a custom javax.cache.expiry.ExpiryPolicy
+     * If the cache is configured for write-through operation mode, the underlying configured
+     * javax.cache.integration.CacheWriter might be called to store the value of the key to any kind of external resource.
      *
      * @param name Name of the cache.
      * @param key  The key whose value is replaced.
@@ -293,6 +328,7 @@ public interface CacheCodecTemplate {
     Object replace(String name, Data key, @Nullable Data oldValue, Data newValue, @Nullable Data expiryPolicy, int completionId);
 
     /**
+     * Total entry count
      *
      * @param name Name of the cache.
      * @return total entry count
@@ -300,11 +336,28 @@ public interface CacheCodecTemplate {
     @Request(id = 25, retryable = true, response = ResponseMessageConst.INTEGER)
     Object size(String name);
 
+    /**
+     * Adds a CachePartitionLostListener. The addPartitionLostListener returns a registration ID. This ID is needed to remove the
+     * CachePartitionLostListener using the #removePartitionLostListener(String) method. There is no check for duplicate
+     * registrations, so if you register the listener twice, it will get events twice.Listeners registered from
+     * HazelcastClient may miss some of the cache partition lost events due to design limitations.
+     *
+     * @param name Name of the cache
+     * @return returns the registration id for the CachePartitionLostListener.
+     */
     @Request(id = 26, retryable = true, response = ResponseMessageConst.STRING,
             event = EventMessageConst.EVENT_CACHEPARTITIONLOST)
-    void addPartitionLostListener(String name);
+    Object addPartitionLostListener(String name);
+
+    /**
+     * Removes the specified cache partition lost listener. Returns silently if there is no such listener added before
+     *
+     * @param name Name of the Cache
+     * @param registrationId ID of registered listener.
+     * @return true if registration is removed, false otherwise.
+     */
 
     @Request(id = 27, retryable = false, response = ResponseMessageConst.BOOLEAN)
-    void removePartitionLostListener(String name, String registrationId);
+    Object removePartitionLostListener(String name, String registrationId);
 
 }

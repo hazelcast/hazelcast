@@ -28,6 +28,8 @@ import java.util.Set;
 @GenerateCodec(id = TemplateConstants.SET_TEMPLATE_ID, name = "Set", ns = "Hazelcast.Client.Protocol.Codec")
 public interface SetCodecTemplate {
     /**
+     * Returns the number of elements in this set (its cardinality). If this set contains more than Integer.MAX_VALUE
+     * elements, returns Integer.MAX_VALUE.
      *
      * @param name Name of the Set
      * @return The number of elements in this set (its cardinality)
@@ -36,6 +38,7 @@ public interface SetCodecTemplate {
     Object size(String name);
 
     /**
+     * Returns true if this set contains the specified element.
      *
      * @param name Name of the Set
      * @param value Element whose presence in this set is to be tested
@@ -45,6 +48,8 @@ public interface SetCodecTemplate {
     Object contains(String name, Data value);
 
     /**
+     * Returns true if this set contains all of the elements of the specified collection. If the specified collection is
+     * also a set, this method returns true if it is a subset of this set.
      *
      * @param name Name of the Set
      * @param valueSet Collection to be checked for containment in this set
@@ -55,6 +60,13 @@ public interface SetCodecTemplate {
     Object containsAll(String name, Set<Data> valueSet);
 
     /**
+     * Adds the specified element to this set if it is not already present (optional operation).
+     * If this set already contains the element, the call leaves the set unchanged and returns false.In combination with
+     * the restriction on constructors, this ensures that sets never contain duplicate elements.
+     * The stipulation above does not imply that sets must accept all elements; sets may refuse to add any particular
+     * element, including null, and throw an exception, as described in the specification for Collection
+     * Individual set implementations should clearly document any restrictions on the elements that they may contain.
+     *
      *
      * @param name Name of the Set
      * @param value Element to be added to this set
@@ -65,6 +77,9 @@ public interface SetCodecTemplate {
     Object add(String name, Data value);
 
     /**
+     * Removes the specified element from this set if it is present (optional operation).
+     * Returns true if this set contained the element (or equivalently, if this set changed as a result of the call).
+     * (This set will not contain the element once the call returns.)
      *
      * @param name Name of the Set
      * @param value Object to be removed from this set, if present
@@ -74,6 +89,10 @@ public interface SetCodecTemplate {
     Object remove(String name, Data value);
 
     /**
+     * Adds all of the elements in the specified collection to this set if they're not already present
+     * (optional operation). If the specified collection is also a set, the addAll operation effectively modifies this
+     * set so that its value is the union of the two sets. The behavior of this operation is undefined if the specified
+     * collection is modified while the operation is in progress.
      *
      * @param name Name of the Set
      * @param valueList Collection containing elements to be added to this set
@@ -83,6 +102,9 @@ public interface SetCodecTemplate {
     Object addAll(String name, List<Data> valueList);
 
     /**
+     * Removes from this set all of its elements that are contained in the specified collection (optional operation).
+     * If the specified collection is also a set, this operation effectively modifies this set so that its value is the
+     * asymmetric set difference of the two sets.
      *
      * @param name Name of the Set
      * @param valueSet The set of values to test for matching the item to remove.
@@ -92,6 +114,10 @@ public interface SetCodecTemplate {
     Object compareAndRemoveAll(String name, Set<Data> valueSet);
 
     /**
+     * Retains only the elements in this set that are contained in the specified collection (optional operation).
+     * In other words, removes from this set all of its elements that are not contained in the specified collection.
+     * If the specified collection is also a set, this operation effectively modifies this set so that its value is the
+     * intersection of the two sets.
      *
      * @param name Name of the Set
      * @param valueSet The set of values to test for matching the item to retain.
@@ -102,6 +128,7 @@ public interface SetCodecTemplate {
     Object compareAndRetainAll(String name, Set<Data> valueSet);
 
     /**
+     * Removes all of the elements from this set (optional operation). The set will be empty after this call returns.
      *
      * @param name Name of the Set
      */
@@ -109,6 +136,7 @@ public interface SetCodecTemplate {
     Object clear(String name);
 
     /**
+     * Return the all elements of this collection
      *
      * @param name Name of the Set
      * @return Array of all values in the Set
@@ -117,6 +145,7 @@ public interface SetCodecTemplate {
     Object getAll(String name);
 
     /**
+     * Adds an item listener for this collection. Listener will be notified for all collection add/remove events.
      *
      * @param name Name of the Set
      * @param includeValue if set to true, the event shall also include the value.
@@ -127,6 +156,7 @@ public interface SetCodecTemplate {
     Object addListener(String name, boolean includeValue);
 
     /**
+     * Removes the specified item listener. Returns silently if the specified listener was not added before.
      *
      * @param name Name of the Set
      * @param registrationId The id retrieved during registration.
@@ -136,6 +166,7 @@ public interface SetCodecTemplate {
     Object removeListener(String name, String registrationId);
     
     /**
+     * Returns true if this set contains no elements.
      *
      * @param name Name of the Set
      * @return True if this set contains no elements

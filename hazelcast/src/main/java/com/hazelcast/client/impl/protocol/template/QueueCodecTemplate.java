@@ -28,6 +28,8 @@ import java.util.Set;
 @GenerateCodec(id = TemplateConstants.QUEUE_TEMPLATE_ID, name = "Queue", ns = "Hazelcast.Client.Protocol.Codec")
 public interface QueueCodecTemplate {
     /**
+     * Inserts the specified element into this queue, waiting up to the specified wait time if necessary for space to
+     * become available.
      *
      * @param name Name of the Queue
      * @param value The element to add
@@ -38,6 +40,7 @@ public interface QueueCodecTemplate {
     Object offer(String name, Data value, long timeoutMillis);
 
     /**
+     * Inserts the specified element into this queue, waiting if necessary for space to become available.
      *
      * @param name Name of the Queue
      * @param value The element to add
@@ -46,6 +49,8 @@ public interface QueueCodecTemplate {
     void put(String name, Data value);
 
     /**
+     * Returns the number of elements in this collection.  If this collection contains more than Integer.MAX_VALUE
+     * elements, returns Integer.MAX_VALUE
      *
      * @param name Name of the Queue
      * @return The number of elements in this collection
@@ -54,15 +59,19 @@ public interface QueueCodecTemplate {
     Object size(String name);
 
     /**
+     * Retrieves and removes the head of this queue.  This method differs from poll only in that it throws an exception
+     * if this queue is empty.
      *
      * @param name Name of the Queue
-     * @param value element to be removed from this queue, if present
+     * @param value Element to be removed from this queue, if present
      * @return <tt>true</tt> if this queue changed as a result of the call
      */
     @Request(id = 4, retryable = false, response = ResponseMessageConst.BOOLEAN)
     Object remove(String name, Data value);
 
     /**
+     * Retrieves and removes the head of this queue, waiting up to the specified wait time if necessary for an element
+     * to become available.
      *
      * @param name Name of the Queue
      * @param timeoutMillis Maximum time in milliseconds to wait for acquiring the lock for the key.
@@ -72,6 +81,7 @@ public interface QueueCodecTemplate {
     Object poll(String name, long timeoutMillis);
 
     /**
+     * Retrieves and removes the head of this queue, waiting if necessary until an element becomes available.
      *
      * @param name Name of the Queue
      * @return The head of this queue
@@ -80,6 +90,7 @@ public interface QueueCodecTemplate {
     Object take(String name);
 
     /**
+     * Retrieves, but does not remove, the head of this queue, or returns null if this queue is empty.
      *
      * @param name Name of the Queue
      * @return The head of this queue, or <tt>null</tt> if this queue is empty
@@ -88,6 +99,8 @@ public interface QueueCodecTemplate {
     Object peek(String name);
 
     /**
+     * Returns an iterator over the elements in this collection.  There are no guarantees concerning the order in which
+     * the elements are returned (unless this collection is an instance of some class that provides a guarantee).
      *
      * @param name Name of the Queue
      * @return list of all data in queue
@@ -97,6 +110,11 @@ public interface QueueCodecTemplate {
     Object iterator(String name);
 
     /**
+     * Removes all available elements from this queue and adds them to the given collection.  This operation may be more
+     * efficient than repeatedly polling this queue.  A failure encountered while attempting to add elements to
+     * collection c may result in elements being in neither, either or both collections when the associated exception is
+     * thrown. Attempts to drain a queue to itself result in ILLEGAL_ARGUMENT. Further, the behavior of
+     * this operation is undefined if the specified collection is modified while the operation is in progress.
      *
      * @param name Name of the Queue
      * @return list of all removed data in queue
@@ -105,6 +123,11 @@ public interface QueueCodecTemplate {
     Object drainTo(String name);
 
     /**
+     * Removes at most the given number of available elements from this queue and adds them to the given collection.
+     * A failure encountered while attempting to add elements to collection may result in elements being in neither,
+     * either or both collections when the associated exception is thrown. Attempts to drain a queue to itself result in
+     * ILLEGAL_ARGUMENT. Further, the behavior of this operation is undefined if the specified collection is
+     * modified while the operation is in progress.
      *
      * @param name Name of the Queue
      * @param maxSize The maximum number of elements to transfer
@@ -114,6 +137,8 @@ public interface QueueCodecTemplate {
     Object drainToMaxSize(String name, int maxSize);
 
     /**
+     * Returns true if this queue contains the specified element. More formally, returns true if and only if this queue
+     * contains at least one element e such that value.equals(e)
      *
      * @param name Name of the Queue
      * @param value Element whose presence in this collection is to be tested
@@ -123,6 +148,7 @@ public interface QueueCodecTemplate {
     Object contains(String name, Data value);
 
     /**
+     * Return true if this collection contains all of the elements in the specified collection.
      *
      * @param name Name of the Queue
      * @param dataList Collection to be checked for containment in this collection
@@ -132,6 +158,8 @@ public interface QueueCodecTemplate {
     Object containsAll(String name, Set<Data> dataList);
 
     /**
+     * Removes all of this collection's elements that are also contained in the specified collection (optional operation).
+     * After this call returns, this collection will contain no elements in common with the specified collection.
      *
      * @param name Name of the Queue
      * @param dataList Collection containing elements to be removed from this collection
@@ -141,6 +169,8 @@ public interface QueueCodecTemplate {
     Object compareAndRemoveAll(String name, Set<Data> dataList);
 
     /**
+     * Retains only the elements in this collection that are contained in the specified collection (optional operation).
+     * In other words, removes from this collection all of its elements that are not contained in the specified collection.
      *
      * @param name Name of the Queue
      * @param dataList collection containing elements to be retained in this collection
@@ -150,6 +180,8 @@ public interface QueueCodecTemplate {
     Object compareAndRetainAll(String name, Set<Data> dataList);
 
     /**
+     * Removes all of the elements from this collection (optional operation). The collection will be empty after this
+     * method returns.
      *
      * @param name Name of the Queue
      */
@@ -157,6 +189,10 @@ public interface QueueCodecTemplate {
     void clear(String name);
 
     /**
+     * Adds all of the elements in the specified collection to this collection (optional operation).The behavior of this
+     * operation is undefined if the specified collection is modified while the operation is in progress.
+     * (This implies that the behavior of this call is undefined if the specified collection is this collection,
+     * and this collection is nonempty.)
      *
      * @param name Name of the Queue
      * @param dataList Collection containing elements to be added to this collection
@@ -166,6 +202,7 @@ public interface QueueCodecTemplate {
     Object addAll(String name, List<Data> dataList);
 
     /**
+     * Adds an listener for this collection. Listener will be notified or all collection add/remove events.
      *
      * @param name Name of the Queue
      * @param includeValue <tt>true</tt> if the updated item should be passed to the item listener, <tt>false</tt> otherwise.
@@ -176,6 +213,7 @@ public interface QueueCodecTemplate {
     Object addListener(String name, boolean includeValue);
 
     /**
+     * Removes the specified item listener.Returns silently if the specified listener was not added before.
      *
      * @param name Name of the Queue
      * @param registrationId Id of the listener registration.
@@ -185,6 +223,10 @@ public interface QueueCodecTemplate {
     Object removeListener(String name, String registrationId);
 
     /**
+     * Returns the number of additional elements that this queue can ideally (in the absence of memory or resource
+     * constraints) accept without blocking, or Integer.MAX_VALUE if there is no intrinsic limit. Note that you cannot
+     * always tell if an attempt to insert an element will succeed by inspecting remainingCapacity because it may be
+     * the case that another thread is about to insert or remove an element.
      *
      * @param name Name of the Queue
      * @return The remaining capacity
@@ -193,6 +235,7 @@ public interface QueueCodecTemplate {
     Object remainingCapacity(String name);
 
     /**
+     * Returns true if this collection contains no elements.
      *
      * @param name Name of the Queue
      * @return <tt>True</tt> if this collection contains no elements

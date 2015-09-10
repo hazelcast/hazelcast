@@ -25,6 +25,7 @@ import com.hazelcast.nio.serialization.Data;
         name = "TransactionalSet", ns = "Hazelcast.Client.Protocol.Codec")
 public interface TransactionalSetCodecTemplate {
     /**
+     * Add new item to transactional set.
      *
      * @param name Name of the Transactional Set
      * @param txnId ID of the this transaction operation
@@ -35,6 +36,7 @@ public interface TransactionalSetCodecTemplate {
     @Request(id = 1, retryable = false, response = ResponseMessageConst.BOOLEAN)
     Object add(String name, String txnId, long threadId, Data item);
     /**
+     * Remove item from transactional set.
      *
      * @param name Name of the Transactional Set
      * @param txnId ID of the this transaction operation
@@ -45,6 +47,7 @@ public interface TransactionalSetCodecTemplate {
     @Request(id = 2, retryable = false, response = ResponseMessageConst.BOOLEAN)
     Object remove(String name, String txnId, long threadId, Data item);
     /**
+     * Returns the size of the set.
      *
      * @param name Name of the Transactional Set
      * @param txnId ID of the this transaction operation

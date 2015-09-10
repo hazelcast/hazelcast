@@ -24,6 +24,16 @@ import com.hazelcast.client.impl.protocol.ResponseMessageConst;
         name = "CountDownLatch", ns = "Hazelcast.Client.Protocol.Codec")
 public interface CountdownLatchCodecTemplate {
     /**
+     * Causes the current thread to wait until the latch has counted down to zero, or an exception is thrown, or the
+     * specified waiting time elapses. If the current count is zero then this method returns immediately with the value
+     * true. If the current count is greater than zero, then the current thread becomes disabled for thread scheduling
+     * purposes and lies dormant until one of five things happen: the count reaches zero due to invocations of the
+     * #countDown method, this ICountDownLatch instance is destroyed, the countdown owner becomes disconnected, some
+     * other thread Thread#interrupt interrupts the current thread, or the specified waiting time elapses. If the count
+     * reaches zero, then the method returns with the value true. If the current thread: has its interrupted status set
+     * on entry to this method, or is Thread#interrupt interrupted while waiting, then INTERRUPTED is thrown
+     * and the current thread's interrupted status is cleared. If the specified waiting time elapses then the value false
+     * is returned.  If the time is less than or equal to zero, the method will not wait at all.
      *
      * @param name Name of the CountDownLatch
      * @param timeout The maximum time in milliseconds to wait
@@ -33,6 +43,9 @@ public interface CountdownLatchCodecTemplate {
     Object await(String name, long timeout);
 
     /**
+     * Decrements the count of the latch, releasing all waiting threads if the count reaches zero. If the current count
+     * is greater than zero, then it is decremented. If the new count is zero: All waiting threads are re-enabled for
+     * thread scheduling purposes, and Countdown owner is set to null. If the current count equals zero, then nothing happens.
      *
      * @param name Name of the CountDownLatch
      */
@@ -40,6 +53,7 @@ public interface CountdownLatchCodecTemplate {
     void countDown(String name);
 
     /**
+     * Returns the current count.
      *
      * @param name Name of the CountDownLatch
      * @return The current count for the latch.
@@ -48,6 +62,8 @@ public interface CountdownLatchCodecTemplate {
     Object getCount(String name);
 
     /**
+     * Sets the count to the given value if the current count is zero. If the count is not zero, then this method does
+     * nothing and returns false
      *
      * @param name Name of the CountDownLatch
      * @param count The number of times countDown must be invoked before threads can pass through await
