@@ -353,7 +353,7 @@ public class MapTransactionTest extends HazelcastTestSupport {
         try {
             Thread.sleep(10000);
         } catch (InterruptedException e) {
-            e.printStackTrace();
+            ignore(e);
         }
         assertNull(map1.get("1"));
     }

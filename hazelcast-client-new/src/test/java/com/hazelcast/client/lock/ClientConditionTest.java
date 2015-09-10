@@ -134,7 +134,7 @@ public class ClientConditionTest extends HazelcastTestSupport {
                     latch.await(30, TimeUnit.SECONDS);
                     Thread.sleep(5000);
                 } catch (InterruptedException e) {
-                    e.printStackTrace();
+                    ignore(e);
                 }
                 lock.destroy();
             }

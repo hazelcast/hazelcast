@@ -74,7 +74,6 @@ public class ProducerConsumerConditionStressTest extends HazelcastTestSupport {
                 }
             } catch (Throwable e) {
                 this.throwable = e;
-                e.printStackTrace();
             }
         }
 

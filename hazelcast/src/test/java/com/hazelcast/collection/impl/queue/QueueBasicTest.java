@@ -521,7 +521,7 @@ public abstract class QueueBasicTest extends HazelcastTestSupport {
             try {
                 queue.offer("waiting", 1, TimeUnit.SECONDS);
             } catch (InterruptedException e) {
-                e.printStackTrace();
+                ignore(e);
             }
         }
     }
@@ -537,9 +537,8 @@ public abstract class QueueBasicTest extends HazelcastTestSupport {
         public void run() {
             try {
                 queue.poll(2, TimeUnit.SECONDS);
-
             } catch (InterruptedException e) {
-                e.printStackTrace();
+                ignore(e);
             }
         }
     }

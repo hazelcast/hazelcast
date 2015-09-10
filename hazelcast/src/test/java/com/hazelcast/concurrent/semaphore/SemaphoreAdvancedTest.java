@@ -79,7 +79,7 @@ public class SemaphoreAdvancedTest extends HazelcastTestSupport {
                     try {
                         semaphore.acquire();
                     } catch (InterruptedException e) {
-                        e.printStackTrace();
+                        ignore(e);
                     }
                 }
                 countDownLatch.countDown();
@@ -97,7 +97,7 @@ public class SemaphoreAdvancedTest extends HazelcastTestSupport {
         try {
             assertTrue(countDownLatch.await(15, TimeUnit.SECONDS));
         } catch (InterruptedException e) {
-            e.printStackTrace();
+            ignore(e);
         } finally {
             thread.interrupt();
         }

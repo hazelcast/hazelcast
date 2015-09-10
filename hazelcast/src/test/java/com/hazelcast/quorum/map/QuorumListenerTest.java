@@ -69,7 +69,7 @@ public class QuorumListenerTest extends HazelcastTestSupport {
         try {
             map.put(generateKeyOwnedBy(instance), 1);
         } catch (Exception e) {
-            e.printStackTrace();
+            ignore(e);
         }
         assertOpenEventually(countDownLatch, 15);
     }
@@ -101,7 +101,7 @@ public class QuorumListenerTest extends HazelcastTestSupport {
         try {
             map.put(generateKeyOwnedBy(instance1), 1);
         } catch (Exception e) {
-            e.printStackTrace();
+            ignore(e);
         }
         assertOpenEventually(belowLatch, 15);
         HazelcastInstance instance2 = factory.newHazelcastInstance(config);
@@ -197,7 +197,7 @@ public class QuorumListenerTest extends HazelcastTestSupport {
         try {
             map.put(generateKeyOwnedBy(instance), 1);
         } catch (Exception e) {
-            e.printStackTrace();
+            ignore(e);
         }
         assertOpenEventually(countDownLatch, 15);
 

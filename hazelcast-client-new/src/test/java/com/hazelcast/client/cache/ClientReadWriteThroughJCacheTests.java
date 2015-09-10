@@ -172,7 +172,7 @@ public class ClientReadWriteThroughJCacheTests extends HazelcastTestSupport {
 
             @Override
             public void onException(Exception e) {
-                e.printStackTrace();
+                ignore(e);
                 latch.countDown();
             }
         });

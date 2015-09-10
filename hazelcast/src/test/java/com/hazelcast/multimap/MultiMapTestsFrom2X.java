@@ -43,6 +43,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * @author ali 6/4/13
@@ -119,8 +120,7 @@ public class MultiMapTestsFrom2X extends HazelcastTestSupport {
             assertTrue(latchRemoved.await(5, TimeUnit.SECONDS));
             assertTrue(latchCleared.await(5, TimeUnit.SECONDS));
         } catch (InterruptedException e) {
-            e.printStackTrace();
-            assertFalse(e.getMessage(), true);
+            fail();
         }
     }
 

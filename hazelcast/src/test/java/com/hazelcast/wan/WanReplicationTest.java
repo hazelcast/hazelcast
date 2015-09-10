@@ -662,9 +662,9 @@ public class WanReplicationTest extends HazelcastTestSupport {
                 gate.await();
                 go();
             } catch (InterruptedException e) {
-                e.printStackTrace();
+                ignore(e);
             } catch (BrokenBarrierException e) {
-                e.printStackTrace();
+                ignore(e);
             }
         }
 

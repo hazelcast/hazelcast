@@ -125,7 +125,7 @@ public abstract class SemaphoreBasicTest extends HazelcastTestSupport {
                 try {
                     semaphore.acquire();
                 } catch (InterruptedException e) {
-                    e.printStackTrace();
+                    ignore(e);
                 }
             }
         }.start();
@@ -179,7 +179,7 @@ public abstract class SemaphoreBasicTest extends HazelcastTestSupport {
                     semaphore.acquire(6);
                     assertEquals(5, semaphore.availablePermits());
                 } catch (InterruptedException e) {
-                    e.printStackTrace();
+                    ignore(e);
                 }
             }
         };
@@ -307,7 +307,7 @@ public abstract class SemaphoreBasicTest extends HazelcastTestSupport {
             semaphore.tryAcquire(negativePermits);
             fail();
         } catch (IllegalArgumentException e) {
-            e.printStackTrace();
+            ignore(e);
         }
         assertEquals(0, semaphore.availablePermits());
     }
@@ -353,7 +353,7 @@ public abstract class SemaphoreBasicTest extends HazelcastTestSupport {
             try {
                 semaphore.acquire();
             } catch (InterruptedException e) {
-                e.printStackTrace();
+                ignore(e);
             }
         }
     }
@@ -373,7 +373,7 @@ public abstract class SemaphoreBasicTest extends HazelcastTestSupport {
                 semaphore.acquire();
                 latch.countDown();
             } catch (InterruptedException e) {
-                e.printStackTrace();
+                ignore(e);
             }
         }
     }

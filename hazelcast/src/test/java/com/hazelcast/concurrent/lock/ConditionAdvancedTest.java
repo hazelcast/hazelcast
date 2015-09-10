@@ -82,7 +82,7 @@ public class ConditionAdvancedTest extends HazelcastTestSupport{
                 try {
                     condition.await();
                 } catch (InterruptedException e) {
-                    e.printStackTrace();
+                    ignore(e);
                 } finally {
                     lock.unlock();
                 }
@@ -116,7 +116,7 @@ public class ConditionAdvancedTest extends HazelcastTestSupport{
                     latch.await(30, TimeUnit.SECONDS);
                     Thread.sleep(5000);
                 } catch (InterruptedException e) {
-                    e.printStackTrace();
+                    ignore(e);
                 }
                 lock.destroy();
             }
@@ -144,7 +144,7 @@ public class ConditionAdvancedTest extends HazelcastTestSupport{
                     latch.await(1, TimeUnit.MINUTES);
                     Thread.sleep(5000);
                 } catch (InterruptedException e) {
-                    e.printStackTrace();
+                    ignore(e);
                 }
                 instance.shutdown();
             }

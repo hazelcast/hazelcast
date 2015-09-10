@@ -100,8 +100,8 @@ public class InvocationTimeoutTest extends HazelcastTestSupport {
                     // because max timeout=3000 we get timeout exception which we should not
                     instances[1].getLock(name).lock();
                     latch.countDown();
-                } catch (Exception ignored) {
-                    ignored.printStackTrace();
+                } catch (Exception e) {
+                    ignore(e);
                 }
             }
         }.start();
@@ -129,8 +129,8 @@ public class InvocationTimeoutTest extends HazelcastTestSupport {
                 try {
                     boolean result = lock.tryLock(10, TimeUnit.SECONDS);
                     latch.countDown();
-                } catch (Exception ignored) {
-                    ignored.printStackTrace();
+                } catch (Exception e) {
+                    ignore(e);
                 }
             }
         });

@@ -443,7 +443,7 @@ public class QueueTestsFrom2X extends HazelcastTestSupport {
                     fail.set(false);
                 } catch (Exception e) {
                     context.rollbackTransaction();
-                    e.printStackTrace();
+                    ignore(e);
                     fail.set(true);
                 }
             }

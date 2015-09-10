@@ -87,7 +87,7 @@ public class LocalRegionFactoryDefaultTest extends RegionFactoryDefaultTest {
             tx.commit();
         } catch (Exception e) {
             tx.rollback();
-            e.printStackTrace();
+            ignore(e);
         } finally {
             session.close();
         }
@@ -124,7 +124,7 @@ public class LocalRegionFactoryDefaultTest extends RegionFactoryDefaultTest {
             tx.commit();
         } catch (Exception e) {
             tx.rollback();
-            e.printStackTrace();
+            ignore(e);
         } finally {
             session.close();
         }
@@ -137,7 +137,7 @@ public class LocalRegionFactoryDefaultTest extends RegionFactoryDefaultTest {
             tx2.commit();
         } catch (Exception e) {
             tx2.rollback();
-            e.printStackTrace();
+            ignore(e);
         } finally {
             session.close();
         }

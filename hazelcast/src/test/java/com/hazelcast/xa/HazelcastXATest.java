@@ -76,7 +76,7 @@ public class HazelcastXATest extends HazelcastTestSupport {
                 tmLog.delete();
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            ignore(e);
         }
     }
 
@@ -190,7 +190,7 @@ public class HazelcastXATest extends HazelcastTestSupport {
                     nodeShutdownLatch.countDown();
 
                 } catch (XAException e) {
-                    e.printStackTrace();
+                    ignore(e);
                 }
             }
         }).start();

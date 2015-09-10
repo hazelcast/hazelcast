@@ -227,7 +227,7 @@ public abstract class AbstractClassicOperationExecutorTest extends HazelcastTest
             try {
                 task.run();
             } catch (Exception e) {
-                e.printStackTrace();
+                ignore(e);
             } finally {
                 currentTask = null;
             }

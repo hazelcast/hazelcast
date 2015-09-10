@@ -273,8 +273,7 @@ public class BasicMapTest extends HazelcastTestSupport {
             assertTrue(latchEvicted.await(5, TimeUnit.SECONDS));
             assertTrue(latchCleared.await(5, TimeUnit.SECONDS));
         } catch (InterruptedException e) {
-            e.printStackTrace();
-            assertFalse(e.getMessage(), true);
+            fail(e.getMessage());
         }
     }
 
@@ -419,7 +418,6 @@ public class BasicMapTest extends HazelcastTestSupport {
                     secondBool.set(map.tryRemove("key1", 1, TimeUnit.SECONDS));
                     latch3.countDown();
                 } catch (Exception e) {
-                    e.printStackTrace();
                     fail(e.getMessage());
                 }
             }
@@ -710,7 +708,6 @@ public class BasicMapTest extends HazelcastTestSupport {
 
                     latch.countDown();
                 } catch (Exception e) {
-                    e.printStackTrace();
                     fail(e.getMessage());
                 }
             }
@@ -738,9 +735,9 @@ public class BasicMapTest extends HazelcastTestSupport {
             assertEquals(2, map.removeAsync(1).get());
             assertEquals(0, map.size());
         } catch (InterruptedException e) {
-            e.printStackTrace();
+            ignore(e);
         } catch (ExecutionException e) {
-            e.printStackTrace();
+            ignore(e);
         }
     }
 

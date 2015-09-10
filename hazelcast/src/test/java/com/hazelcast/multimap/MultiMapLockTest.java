@@ -115,7 +115,7 @@ public class MultiMapLockTest extends HazelcastTestSupport {
                     latch2.await(10, TimeUnit.SECONDS);
                     instances[0].getMultiMap(name).unlock("alo");
                 } catch (InterruptedException e) {
-                    e.printStackTrace();
+                    ignore(e);
                 }
             }
         }.start();
@@ -129,7 +129,7 @@ public class MultiMapLockTest extends HazelcastTestSupport {
                 try {
                     Thread.sleep(3000);
                 } catch (InterruptedException e) {
-                    e.printStackTrace();
+                    ignore(e);
                 }
                 instances[0].shutdown();
             }

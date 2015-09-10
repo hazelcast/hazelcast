@@ -153,7 +153,7 @@ public class QuorumTest extends HazelcastTestSupport {
             map.put("1", "1");
             fail();
         } catch (Exception e) {
-            e.printStackTrace();
+            ignore(e);
         }
         HazelcastInstance hazelcastInstance2 = f.newHazelcastInstance(config);
         map.put("1", "1");

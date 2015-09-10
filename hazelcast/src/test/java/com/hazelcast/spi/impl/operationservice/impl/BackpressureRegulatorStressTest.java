@@ -263,7 +263,7 @@ public class BackpressureRegulatorStressTest extends HazelcastTestSupport {
                 public void onFailure(Throwable t) {
                     completedCall.incrementAndGet();
                     failedOperationCount.incrementAndGet();
-                    t.printStackTrace();
+                    ignore(t);
                 }
             });
         }
@@ -282,7 +282,7 @@ public class BackpressureRegulatorStressTest extends HazelcastTestSupport {
                 }
             } catch (Exception e) {
                 failedOperationCount.incrementAndGet();
-                e.printStackTrace();
+                ignore(e);
             }
         }
     }

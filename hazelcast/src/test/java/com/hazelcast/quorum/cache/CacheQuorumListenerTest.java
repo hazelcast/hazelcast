@@ -77,7 +77,7 @@ public class CacheQuorumListenerTest
         try {
             cache.put(generateKeyOwnedBy(instance), 1);
         } catch (Exception e) {
-            e.printStackTrace();
+            ignore(e);
         }
         assertOpenEventually(countDownLatch, 15);
     }
@@ -110,7 +110,7 @@ public class CacheQuorumListenerTest
         try {
             cache.put(generateKeyOwnedBy(instance1), 1);
         } catch (Exception e) {
-            e.printStackTrace();
+            ignore(e);
         }
         assertOpenEventually(belowLatch, 15);
         HazelcastInstance instance2 = factory.newHazelcastInstance(config);
@@ -211,7 +211,7 @@ public class CacheQuorumListenerTest
         try {
             cache.put(generateKeyOwnedBy(instance), 1);
         } catch (Exception e) {
-            e.printStackTrace();
+            ignore(e);
         }
         assertOpenEventually(countDownLatch, 15);
 

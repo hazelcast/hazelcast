@@ -50,13 +50,13 @@ public class LockStressTest extends HazelcastTestSupport {
                             totalCount.incrementAndGet();
                             Thread.sleep(1);
                         } catch (InterruptedException e) {
-                            e.printStackTrace();
+                            ignore(e);
                             break;
                         } finally {
                             try {
                                 lock.unlock();
                             } catch (Exception e) {
-                                e.printStackTrace();
+                                ignore(e);
                                 live = false;
                             }
                         }
@@ -76,7 +76,7 @@ public class LockStressTest extends HazelcastTestSupport {
             assertTrue("Lock tasks stuck!", latch.await(TIMEOUT_MILLS, TimeUnit.MILLISECONDS));
             assertEquals((threadCount * lockCountPerThread), totalCount.get());
         } catch (InterruptedException e) {
-            e.printStackTrace();
+            ignore(e);
         } finally {
             try {
                 hz.getLifecycleService().terminate();

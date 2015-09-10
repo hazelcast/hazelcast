@@ -86,7 +86,7 @@ public class ClientLockTest extends HazelcastTestSupport {
                         latch.countDown();
                     }
                 } catch (InterruptedException e) {
-                    e.printStackTrace();
+                    ignore(e);
                 }
             }
         }.start();
@@ -109,7 +109,7 @@ public class ClientLockTest extends HazelcastTestSupport {
                         latch.countDown();
                     }
                 } catch (InterruptedException e) {
-                    e.printStackTrace();
+                    ignore(e);
                 }
             }
         }.start();
@@ -125,7 +125,7 @@ public class ClientLockTest extends HazelcastTestSupport {
                         latch2.countDown();
                     }
                 } catch (InterruptedException e) {
-                    e.printStackTrace();
+                    ignore(e);
                 }
             }
         }.start();

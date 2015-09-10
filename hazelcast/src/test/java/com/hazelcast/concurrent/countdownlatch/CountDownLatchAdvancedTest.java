@@ -83,7 +83,7 @@ public class CountDownLatchAdvancedTest extends HazelcastTestSupport {
                     try {
                         sleep(100);
                     } catch (InterruptedException e) {
-                        e.printStackTrace();
+                        ignore(e);
                     }
                     final ICountDownLatch l = instances[i].getCountDownLatch("test");
                     l.countDown();

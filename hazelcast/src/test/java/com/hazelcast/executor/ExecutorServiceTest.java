@@ -953,7 +953,7 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
             try {
                 Thread.sleep(executionTime);
             } catch (InterruptedException e) {
-                e.printStackTrace();
+                ignore(e);
             }
             latch.countDown();
         }

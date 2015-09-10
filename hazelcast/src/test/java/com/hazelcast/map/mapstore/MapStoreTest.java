@@ -970,7 +970,7 @@ public class MapStoreTest extends HazelcastTestSupport {
                 try {
                     Thread.sleep(10000);
                 } catch (InterruptedException e) {
-                    e.printStackTrace();
+                    ignore(e);
                 }
             }
             super.storeAll(map);

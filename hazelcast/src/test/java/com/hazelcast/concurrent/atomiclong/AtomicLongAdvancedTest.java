@@ -88,7 +88,7 @@ public class AtomicLongAdvancedTest extends HazelcastTestSupport {
                                 instances[id].getAtomicLong(name).incrementAndGet();
                             } catch (Exception e) {
                                 exceptionCount.incrementAndGet();
-                                e.printStackTrace();
+                                ignore(e);
                             } finally {
                                 countDownLatch.countDown();
                             }
