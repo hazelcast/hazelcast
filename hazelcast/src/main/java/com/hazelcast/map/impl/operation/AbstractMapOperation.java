@@ -32,6 +32,16 @@ public abstract class AbstractMapOperation extends AbstractNamedOperation {
         this.name = name;
     }
 
+    // for testing only
+    public void setMapService(MapService mapService) {
+        this.mapService = mapService;
+    }
+
+    // for testing only
+    public void setMapContainer(MapContainer mapContainer) {
+        this.mapContainer = mapContainer;
+    }
+
     @Override
     public final void beforeRun() throws Exception {
         mapService = getService();

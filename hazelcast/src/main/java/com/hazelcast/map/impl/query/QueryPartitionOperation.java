@@ -14,11 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map.impl.operation;
+package com.hazelcast.map.impl.query;
 
-import com.hazelcast.map.impl.MapContextQuerySupport;
+import com.hazelcast.map.impl.operation.AbstractMapOperation;
 import com.hazelcast.map.impl.MapServiceContext;
-import com.hazelcast.map.impl.QueryResult;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.query.Predicate;
@@ -46,10 +45,10 @@ public class QueryPartitionOperation extends AbstractMapOperation implements Par
     @Override
     public void run() {
         MapServiceContext mapServiceContext = mapService.getMapServiceContext();
-        MapContextQuerySupport mapQuerySupport = mapServiceContext.getMapContextQuerySupport();
+        MapQueryEngine queryEngine = mapServiceContext.getMapQueryEngine();
 
-        Collection<QueryableEntry> queryableEntries = mapQuerySupport.queryOnPartition(name, predicate, getPartitionId());
-        result = mapQuerySupport.newQueryResult(1);
+        Collection<QueryableEntry> queryableEntries = queryEngine.queryOnPartition(name, predicate, getPartitionId());
+        result = queryEngine.newQueryResult(1);
         result.addAll(queryableEntries);
         result.setPartitionIds(singletonList(getPartitionId()));
     }

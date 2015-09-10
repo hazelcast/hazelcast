@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map.query;
+package com.hazelcast.map.impl.query;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
@@ -45,8 +45,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 
-import static com.hazelcast.map.query.QueryBasicTest.doFunctionalQueryTest;
-import static com.hazelcast.map.query.QueryBasicTest.doFunctionalSQLQueryTest;
 import static com.hazelcast.test.TimeConstants.MINUTE;
 
 import static org.junit.Assert.assertEquals;
@@ -197,7 +195,7 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
     public void testOneMemberWithoutIndex() {
         HazelcastInstance h1 = createHazelcastInstance();
         IMap imap = h1.getMap("employees");
-        doFunctionalQueryTest(imap);
+        QueryBasicTest.doFunctionalQueryTest(imap);
     }
 
     @Test(timeout = MINUTE)
@@ -207,14 +205,14 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
         imap.addIndex("name", false);
         imap.addIndex("age", true);
         imap.addIndex("active", false);
-        doFunctionalQueryTest(imap);
+        QueryBasicTest.doFunctionalQueryTest(imap);
     }
 
     @Test(timeout = MINUTE)
     public void testOneMemberSQLWithoutIndex() {
         HazelcastInstance h1 = createHazelcastInstance();
         IMap imap = h1.getMap("employees");
-        doFunctionalSQLQueryTest(imap);
+        QueryBasicTest.doFunctionalSQLQueryTest(imap);
         Set<Map.Entry> entries = imap.entrySet(new SqlPredicate("active and age>23"));
         assertEquals(27, entries.size());
     }
@@ -226,7 +224,7 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
         imap.addIndex("name", false);
         imap.addIndex("age", true);
         imap.addIndex("active", false);
-        doFunctionalSQLQueryTest(imap);
+        QueryBasicTest.doFunctionalSQLQueryTest(imap);
     }
 
     @Test(timeout = MINUTE)
@@ -235,7 +233,7 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
         HazelcastInstance h2 = nodeFactory.newHazelcastInstance();
         IMap imap = h1.getMap("employees");
-        doFunctionalQueryTest(imap);
+        QueryBasicTest.doFunctionalQueryTest(imap);
     }
 
     @Test(timeout = MINUTE)
@@ -247,7 +245,7 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
         imap.addIndex("name", false);
         imap.addIndex("age", true);
         imap.addIndex("active", false);
-        doFunctionalQueryTest(imap);
+        QueryBasicTest.doFunctionalQueryTest(imap);
     }
 
     @Test(timeout = MINUTE)
@@ -259,7 +257,7 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
         imap.addIndex("name", false);
         imap.addIndex("age", true);
         imap.addIndex("active", false);
-        doFunctionalQueryTest(imap);
+        QueryBasicTest.doFunctionalQueryTest(imap);
         assertEquals(101, imap.size());
         h2.getLifecycleService().shutdown();
         assertEquals(101, imap.size());
@@ -281,7 +279,7 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
         imap.addIndex("name", false);
         imap.addIndex("age", true);
         imap.addIndex("active", false);
-        doFunctionalQueryTest(imap);
+        QueryBasicTest.doFunctionalQueryTest(imap);
         assertEquals(101, imap.size());
         h1.getLifecycleService().shutdown();
         imap = h2.getMap("employees");
@@ -303,7 +301,7 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
         imap.addIndex("name", false);
         imap.addIndex("age", true);
         imap.addIndex("active", false);
-        doFunctionalQueryTest(imap);
+        QueryBasicTest.doFunctionalQueryTest(imap);
         assertEquals(101, imap.size());
         HazelcastInstance h2 = nodeFactory.newHazelcastInstance();
         assertEquals(101, imap.size());
@@ -328,7 +326,7 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
         imap.addIndex("age", true);
         imap.addIndex("active", false);
         HazelcastInstance h2 = nodeFactory.newHazelcastInstance();
-        doFunctionalQueryTest(imap);
+        QueryBasicTest.doFunctionalQueryTest(imap);
     }
 
     @Test
