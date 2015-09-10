@@ -20,10 +20,9 @@ import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
-import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.tcp.TcpIpConnection;
-import com.hazelcast.nio.tcp.nonblocking.NonBlockingIOThread;
 import com.hazelcast.nio.tcp.nonblocking.MigratableHandler;
+import com.hazelcast.nio.tcp.nonblocking.NonBlockingIOThread;
 import com.hazelcast.nio.tcp.nonblocking.NonBlockingSocketReader;
 import com.hazelcast.nio.tcp.nonblocking.NonBlockingSocketWriter;
 import com.hazelcast.util.counters.MwCounter;
@@ -93,40 +92,27 @@ public class IOBalancer {
         this.enabled = isEnabled(inputThreads, outputThreads);
     }
 
-    public void connectionAdded(Connection connection) {
-        if (!(connection instanceof TcpIpConnection)) {
-            return;
-        }
-
-        TcpIpConnection tcpIpConnection = (TcpIpConnection) connection;
-        NonBlockingSocketReader socketReader = (NonBlockingSocketReader) tcpIpConnection.getSocketReader();
-        NonBlockingSocketWriter socketWriter = (NonBlockingSocketWriter) tcpIpConnection.getSocketWriter();
+    public void connectionAdded(TcpIpConnection connection) {
+        NonBlockingSocketReader socketReader = (NonBlockingSocketReader) connection.getSocketReader();
+        NonBlockingSocketWriter socketWriter = (NonBlockingSocketWriter) connection.getSocketWriter();
 
         if (logger.isFinestEnabled()) {
-            logger.finest("Connection " + connection + " uses read handler "
-                    + socketReader + " and write handler " + socketWriter);
+            logger.finest("Added handlers for: " + connection);
         }
 
         inLoadTracker.addHandler(socketReader);
         outLoadTracker.addHandler(socketWriter);
     }
 
-    public void connectionRemoved(Connection connection) {
-        if (!(connection instanceof TcpIpConnection)) {
-            return;
+    public void connectionRemoved(TcpIpConnection connection) {
+        NonBlockingSocketReader socketReader = (NonBlockingSocketReader) connection.getSocketReader();
+        NonBlockingSocketWriter socketWriter = (NonBlockingSocketWriter) connection.getSocketWriter();
+
+        if (logger.isFinestEnabled()) {
+            logger.finest("Removing handlers from: " + connection);
         }
 
-        TcpIpConnection tcpIpConnection = (TcpIpConnection) connection;
-        NonBlockingSocketReader socketReader = (NonBlockingSocketReader) tcpIpConnection.getSocketReader();
-        if (logger.isFinestEnabled()) {
-            logger.finest("Removing SocketReader " + socketReader);
-        }
         inLoadTracker.removeHandler(socketReader);
-
-        NonBlockingSocketWriter socketWriter = (NonBlockingSocketWriter) tcpIpConnection.getSocketWriter();
-        if (logger.isFinestEnabled()) {
-            logger.finest("Removing SocketWriter " + socketWriter);
-        }
         outLoadTracker.removeHandler(socketWriter);
     }
 
