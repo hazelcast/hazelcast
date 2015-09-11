@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.cache.impl.eviction;
+package com.hazelcast.internal.eviction;
 
-import com.hazelcast.cache.impl.eviction.impl.evaluator.LFUEvictionPolicyEvaluator;
-import com.hazelcast.cache.impl.eviction.impl.evaluator.LRUEvictionPolicyEvaluator;
+import com.hazelcast.internal.eviction.impl.evaluator.LFUEvictionPolicyEvaluator;
+import com.hazelcast.internal.eviction.impl.evaluator.LRUEvictionPolicyEvaluator;
 
 import java.util.HashMap;
 import java.util.Map;

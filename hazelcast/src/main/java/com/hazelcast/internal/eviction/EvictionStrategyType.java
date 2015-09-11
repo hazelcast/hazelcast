@@ -14,28 +14,21 @@
  * limitations under the License.
  */
 
-package com.hazelcast.cache.impl.eviction;
+package com.hazelcast.internal.eviction;
 
 /**
- * Interface for entries, records or whatever that can be evictable via its accessor (key or id).
- *
- * @param <A> Type of the accessor
- * @param <E> Type of the {@link Evictable} value
+ * Enum for types of {@link EvictionStrategy}
  */
-public interface EvictionCandidate<A, E extends Evictable> {
+public enum EvictionStrategyType {
 
     /**
-     * The accessor (key or id) of {@link Evictable} entry or record or whatever.
-     *
-     * @return the accessor (key or id) of {@link Evictable} entry or record or whatever
+     * Sampling based eviction strategy type
      */
-    A getAccessor();
+    SAMPLING_BASED_EVICTION;
 
     /**
-     * The value of {@link Evictable} entry or record or whatever.
-     *
-     * @return the value of {@link Evictable} entry or record or whatever
+     * Default value of {@link com.hazelcast.internal.eviction.EvictionStrategyType}
      */
-    E getEvictable();
+    public static final EvictionStrategyType DEFAULT_EVICTION_STRATEGY = SAMPLING_BASED_EVICTION;
 
 }

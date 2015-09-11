@@ -16,7 +16,7 @@
 
 package com.hazelcast.cache.impl.record;
 
-import com.hazelcast.cache.impl.eviction.impl.strategy.sampling.SampleableEvictableStore;
+import com.hazelcast.internal.eviction.impl.strategy.sampling.SampleableEvictableStore;
 import com.hazelcast.nio.serialization.Data;
 
 public interface SampleableCacheRecordMap<K extends Data, V extends CacheRecord>

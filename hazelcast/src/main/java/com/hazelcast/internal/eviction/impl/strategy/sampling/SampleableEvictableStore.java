@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-package com.hazelcast.cache.impl.eviction.impl.strategy.sampling;
+package com.hazelcast.internal.eviction.impl.strategy.sampling;
 
-import com.hazelcast.cache.impl.eviction.Evictable;
-import com.hazelcast.cache.impl.eviction.EvictableStore;
-import com.hazelcast.cache.impl.eviction.EvictionCandidate;
+import com.hazelcast.internal.eviction.Evictable;
+import com.hazelcast.internal.eviction.EvictableStore;
+import com.hazelcast.internal.eviction.EvictionCandidate;
 
 /**
  * Interface for sampleable store implementations that holds {@link Evictable} entries to evict.

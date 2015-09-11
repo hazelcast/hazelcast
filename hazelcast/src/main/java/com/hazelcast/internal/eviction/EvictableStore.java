@@ -14,10 +14,14 @@
  * limitations under the License.
  */
 
-package com.hazelcast.cache.impl.eviction;
+package com.hazelcast.internal.eviction;
 
 /**
  * Interface for store implementations that holds {@link Evictable} entries to evict.
+ *
+ * @param <A> Type of the accessor (id) of the {@link com.hazelcast.internal.eviction.EvictionCandidate}
+ * @param <E> Type of the {@link com.hazelcast.internal.eviction.Evictable} value of
+ *            {@link com.hazelcast.internal.eviction.EvictionCandidate}
  */
 public interface EvictableStore<A, E extends Evictable> {
 

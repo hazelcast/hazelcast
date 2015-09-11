@@ -14,9 +14,21 @@
  * limitations under the License.
  */
 
+package com.hazelcast.internal.eviction;
+
 /**
- * <p>
- *     Sampling based {@link com.hazelcast.cache.impl.eviction.EvictionStrategy} implementations for cache.
- * </p>
+ * Interface for entries, records or whatever that can be checked for expiration.
+ *
+ * @param <E> Type of the {@link Expirable} value
  */
-package com.hazelcast.cache.impl.eviction.impl.strategy.sampling;
+public interface ExpirationChecker<E extends Expirable> {
+
+    /**
+     * Checks if the given {@link Expirable} entry is expired or not.
+     *
+     * @param expirableEntry {@link Expirable} entry which is checked to see if it is expired or not.
+     * @return <code>true</code> if the {@link Expirable} entry is expired, otherwise <code>false</code>.
+     */
+    boolean isExpired(E expirableEntry);
+
+}

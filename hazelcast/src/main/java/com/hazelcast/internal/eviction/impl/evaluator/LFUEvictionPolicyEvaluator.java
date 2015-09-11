@@ -14,9 +14,23 @@
  * limitations under the License.
  */
 
+package com.hazelcast.internal.eviction.impl.evaluator;
+
+import com.hazelcast.internal.eviction.Evictable;
+
 /**
- * <p>
- *     {@link com.hazelcast.cache.impl.eviction.EvictionStrategy} implementations for cache.
- * </p>
+ * Interface for evaluation implementations of {@link com.hazelcast.config.EvictionPolicy#LFU} policy.
  */
-package com.hazelcast.cache.impl.eviction.impl.strategy;
+public class LFUEvictionPolicyEvaluator<A, E extends Evictable>
+        extends AbstractEvictionPolicyEvaluator<A, E> {
+
+    @Override
+    protected Evictable selectEvictableAsPolicy(Evictable current, Evictable candidate) {
+        if (candidate.getAccessHit() < current.getAccessHit()) {
+            return candidate;
+        } else {
+            return current;
+        }
+    }
+
+}
