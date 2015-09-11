@@ -35,9 +35,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import javax.cache.configuration.CacheEntryListenerConfiguration;
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -45,13 +43,10 @@ import java.util.concurrent.Future;
 import static com.hazelcast.test.HazelcastTestSupport.randomString;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
-import static org.mockito.Mockito.mock;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class CacheReadQuorumTest {
-
-    static PartitionedCluster cluster;
 
     private static final String CACHE_NAME_PREFIX = "cacheQuorum";
     private static final String QUORUM_ID = "threeNodeQuorumRule";
@@ -69,16 +64,18 @@ public class CacheReadQuorumTest {
 
     @BeforeClass
     public static void initialize() throws InterruptedException {
+        CacheSimpleConfig cacheConfig = new CacheSimpleConfig();
+        cacheConfig.setName(CACHE_NAME_PREFIX + "*");
+        cacheConfig.setQuorumName(QUORUM_ID);
+
         QuorumConfig quorumConfig = new QuorumConfig();
         quorumConfig.setName(QUORUM_ID);
         quorumConfig.setType(QuorumType.READ);
         quorumConfig.setEnabled(true);
         quorumConfig.setSize(3);
 
-        CacheSimpleConfig cacheConfig = new CacheSimpleConfig();
-        cacheConfig.setName(CACHE_NAME_PREFIX + "*");
-        cacheConfig.setQuorumName(QUORUM_ID);
-        cluster = new PartitionedCluster(new TestHazelcastInstanceFactory()).partitionFiveMembersThreeAndTwo(cacheConfig, quorumConfig);
+        PartitionedCluster cluster = new PartitionedCluster(new TestHazelcastInstanceFactory())
+                .partitionFiveMembersThreeAndTwo(cacheConfig, quorumConfig);
         cachingProvider1 = HazelcastServerCachingProvider.createCachingProvider(cluster.h1);
         cachingProvider2 = HazelcastServerCachingProvider.createCachingProvider(cluster.h2);
         cachingProvider3 = HazelcastServerCachingProvider.createCachingProvider(cluster.h3);
@@ -89,11 +86,11 @@ public class CacheReadQuorumTest {
     @Before
     public void setUp() throws Exception {
         final String cacheName = CACHE_NAME_PREFIX + randomString();
-        cache1 = (ICache)cachingProvider1.getCacheManager().getCache(cacheName);
-        cache2 = (ICache)cachingProvider2.getCacheManager().getCache(cacheName);
-        cache3 = (ICache)cachingProvider3.getCacheManager().getCache(cacheName);
-        cache4 = (ICache)cachingProvider4.getCacheManager().getCache(cacheName);
-        cache5 = (ICache)cachingProvider5.getCacheManager().getCache(cacheName);
+        cache1 = (ICache<Integer, String>) cachingProvider1.getCacheManager().<Integer, String>getCache(cacheName);
+        cache2 = (ICache<Integer, String>) cachingProvider2.getCacheManager().<Integer, String>getCache(cacheName);
+        cache3 = (ICache<Integer, String>) cachingProvider3.getCacheManager().<Integer, String>getCache(cacheName);
+        cache4 = (ICache<Integer, String>) cachingProvider4.getCacheManager().<Integer, String>getCache(cacheName);
+        cache5 = (ICache<Integer, String>) cachingProvider5.getCacheManager().<Integer, String>getCache(cacheName);
     }
 
     @AfterClass
