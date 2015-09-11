@@ -19,7 +19,7 @@ package com.hazelcast.multimap.impl.txn;
 import com.hazelcast.multimap.impl.MultiMapContainer;
 import com.hazelcast.multimap.impl.MultiMapDataSerializerHook;
 import com.hazelcast.multimap.impl.MultiMapRecord;
-import com.hazelcast.multimap.impl.MultiMapWrapper;
+import com.hazelcast.multimap.impl.MultiMapValue;
 import com.hazelcast.multimap.impl.operations.MultiMapKeyBasedOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -45,13 +45,13 @@ public class TxnRemoveBackupOperation extends MultiMapKeyBasedOperation {
     @Override
     public void run() throws Exception {
         MultiMapContainer container = getOrCreateContainer();
-        MultiMapWrapper wrapper = container.getMultiMapWrapperOrNull(dataKey);
+        MultiMapValue multiMapValue = container.getMultiMapValueOrNull(dataKey);
         response = true;
-        if (wrapper == null || !wrapper.containsRecordId(recordId)) {
+        if (multiMapValue == null || !multiMapValue.containsRecordId(recordId)) {
             response = false;
             return;
         }
-        Collection<MultiMapRecord> coll = wrapper.getCollection(false);
+        Collection<MultiMapRecord> coll = multiMapValue.getCollection(false);
         Iterator<MultiMapRecord> iter = coll.iterator();
         while (iter.hasNext()) {
             if (iter.next().getRecordId() == recordId) {

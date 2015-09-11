@@ -47,7 +47,7 @@ public class PutBackupOperation extends MultiMapKeyBasedOperation implements Bac
     @Override
     public void run() throws Exception {
         MultiMapRecord record = new MultiMapRecord(recordId, isBinary() ? value : toObject(value));
-        Collection<MultiMapRecord> coll = getOrCreateCollectionWrapper().getCollection(false);
+        Collection<MultiMapRecord> coll = getOrCreateMultiMapValue().getCollection(false);
         if (index == -1) {
             response = coll.add(record);
         } else {

@@ -235,7 +235,7 @@ public class MultiMapService implements ManagedService, RemoteService, Migration
             if (container.getConfig().getTotalBackupCount() < replicaIndex) {
                 continue;
             }
-            map.put(name, container.getMultiMapWrappers());
+            map.put(name, container.getMultiMapValues());
         }
         if (map.isEmpty()) {
             return null;
@@ -247,21 +247,22 @@ public class MultiMapService implements ManagedService, RemoteService, Migration
         for (Map.Entry<String, Map> entry : map.entrySet()) {
             String name = entry.getKey();
             MultiMapContainer container = getOrCreateCollectionContainer(partitionId, name);
-            Map<Data, MultiMapWrapper> collections = entry.getValue();
+            Map<Data, MultiMapValue> collections = entry.getValue();
             long maxRecordId = -1;
-            for (Map.Entry<Data, MultiMapWrapper> wrapperEntry : collections.entrySet()) {
-                MultiMapWrapper wrapper = wrapperEntry.getValue();
-                container.getMultiMapWrappers().put(wrapperEntry.getKey(), wrapper);
-                long wrapperMaxRecordId = getMaxRecordId(wrapper);
-                maxRecordId = Math.max(maxRecordId, wrapperMaxRecordId);
+
+            for (Map.Entry<Data, MultiMapValue> multiMapValueEntry : collections.entrySet()) {
+                MultiMapValue multiMapValue = multiMapValueEntry.getValue();
+                container.getMultiMapValues().put(multiMapValueEntry.getKey(), multiMapValue);
+                long recordId = getMaxRecordId(multiMapValue);
+                maxRecordId = Math.max(maxRecordId, recordId);
             }
             container.setId(maxRecordId);
         }
     }
 
-    private long getMaxRecordId(MultiMapWrapper wrapper) {
+    private long getMaxRecordId(MultiMapValue multiMapValue) {
         long maxRecordId = -1;
-        for (MultiMapRecord record : wrapper.getCollection(false)) {
+        for (MultiMapRecord record : multiMapValue.getCollection(false)) {
             maxRecordId = Math.max(maxRecordId, record.getRecordId());
         }
         return maxRecordId;
@@ -313,9 +314,9 @@ public class MultiMapService implements ManagedService, RemoteService, Migration
             if (owner != null) {
                 if (owner.equals(thisAddress)) {
                     lockedEntryCount += multiMapContainer.getLockedCount();
-                    for (MultiMapWrapper wrapper : multiMapContainer.getMultiMapWrappers().values()) {
-                        hits += wrapper.getHits();
-                        ownedEntryCount += wrapper.getCollection(false).size();
+                    for (MultiMapValue multiMapValue : multiMapContainer.getMultiMapValues().values()) {
+                        hits += multiMapValue.getHits();
+                        ownedEntryCount += multiMapValue.getCollection(false).size();
                     }
                 } else {
                     int backupCount = multiMapContainer.getConfig().getTotalBackupCount();
@@ -335,8 +336,8 @@ public class MultiMapService implements ManagedService, RemoteService, Migration
                         }
 
                         if (replicaAddress != null && replicaAddress.equals(thisAddress)) {
-                            for (MultiMapWrapper wrapper : multiMapContainer.getMultiMapWrappers().values()) {
-                                backupEntryCount += wrapper.getCollection(false).size();
+                            for (MultiMapValue multiMapValue : multiMapContainer.getMultiMapValues().values()) {
+                                backupEntryCount += multiMapValue.getCollection(false).size();
                             }
                         }
                     }

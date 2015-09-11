@@ -21,7 +21,7 @@ import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.multimap.impl.MultiMapContainer;
 import com.hazelcast.multimap.impl.MultiMapDataSerializerHook;
 import com.hazelcast.multimap.impl.MultiMapService;
-import com.hazelcast.multimap.impl.MultiMapWrapper;
+import com.hazelcast.multimap.impl.MultiMapValue;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.DefaultObjectNamespace;
 import com.hazelcast.spi.OperationResponseHandler;
@@ -41,12 +41,12 @@ public class GetAllOperation extends MultiMapKeyBasedOperation implements WaitSu
     @Override
     public void run() throws Exception {
         MultiMapContainer container = getOrCreateContainer();
-        MultiMapWrapper wrapper = container.getMultiMapWrapperOrNull(dataKey);
+        MultiMapValue multiMapValue = container.getMultiMapValueOrNull(dataKey);
         Collection coll = null;
-        if (wrapper != null) {
-            wrapper.incrementHit();
+        if (multiMapValue != null) {
+            multiMapValue.incrementHit();
             OperationResponseHandler responseHandler = getOperationResponseHandler();
-            coll = wrapper.getCollection(responseHandler.isLocal());
+            coll = multiMapValue.getCollection(responseHandler.isLocal());
         }
         response = new MultiMapResponse(coll, getValueCollectionType(container));
     }
