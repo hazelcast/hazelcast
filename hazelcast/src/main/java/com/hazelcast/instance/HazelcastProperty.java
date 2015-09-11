@@ -44,4 +44,11 @@ public interface HazelcastProperty {
      * @throws IllegalArgumentException if no {@link TimeUnit} is defined
      */
     TimeUnit getTimeUnit();
+
+    /**
+     * Returns the parent {@link GroupProperty} of the property.
+     *
+     * @return the parent {@link GroupProperty} or <tt>null</tt> if none is defined
+     */
+    GroupProperty getParent();
 }

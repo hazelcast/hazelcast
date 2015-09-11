@@ -300,6 +300,11 @@ public class GroupProperties {
                 properties[groupProperty.ordinal()] = propertyValue;
                 continue;
             }
+            GroupProperty parent = groupProperty.getParent();
+            if (parent != null) {
+                properties[groupProperty.ordinal()] = properties[parent.ordinal()];
+                continue;
+            }
             properties[groupProperty.ordinal()] = groupProperty.getDefaultValue();
         }
     }
@@ -395,25 +400,23 @@ public class GroupProperties {
 
     /**
      * Returns the configured enum value of a {@link GroupProperty}.
-     *
+     * <p/>
      * The case of the enum is ignored.
      *
      * @param groupProperty the {@link GroupProperty} to get the value from
      * @return the enum
      * @throws IllegalArgumentException if the enum value can't be found
      */
-    public <E extends Enum> E getEnum(GroupProperty groupProperty, Class<? extends Enum> enumClazz) {
+    public <E extends Enum> E getEnum(GroupProperty groupProperty, Class<E> enumClazz) {
         String value = getString(groupProperty);
 
-        for (Enum e : enumClazz.getEnumConstants()) {
-            if (e.name().equalsIgnoreCase(value)) {
-                return (E) e;
+        for (E enumConstant : enumClazz.getEnumConstants()) {
+            if (enumConstant.name().equalsIgnoreCase(value)) {
+                return enumConstant;
             }
         }
 
-        throw new IllegalArgumentException(
-                format("value '%s' for property '%s' is not a valid %s value",
-                        value, groupProperty.getName(), enumClazz.getName()));
+        throw new IllegalArgumentException(format("value '%s' for property '%s' is not a valid %s value",
+                value, groupProperty.getName(), enumClazz.getName()));
     }
-
 }

@@ -543,6 +543,7 @@ public enum GroupProperty implements HazelcastProperty {
     private final String name;
     private final String defaultValue;
     private final TimeUnit timeUnit;
+    private final GroupProperty parent;
 
     GroupProperty(String name) {
         this(name, (String) null);
@@ -560,10 +561,6 @@ public enum GroupProperty implements HazelcastProperty {
         this(name, defaultValue, null);
     }
 
-    GroupProperty(String name, GroupProperty groupProperty) {
-        this(name, groupProperty.defaultValue, groupProperty.timeUnit);
-    }
-
     GroupProperty(String name, Integer defaultValue, TimeUnit timeUnit) {
         this(name, String.valueOf(defaultValue), timeUnit);
     }
@@ -573,11 +570,20 @@ public enum GroupProperty implements HazelcastProperty {
     }
 
     GroupProperty(String name, String defaultValue, TimeUnit timeUnit) {
+        this(name, defaultValue, timeUnit, null);
+    }
+
+    GroupProperty(String name, GroupProperty groupProperty) {
+        this(name, groupProperty.getDefaultValue(), groupProperty.timeUnit, groupProperty);
+    }
+
+    GroupProperty(String name, String defaultValue, TimeUnit timeUnit, GroupProperty parent) {
         checkHasText(name, "The property name cannot be null or empty!");
 
         this.name = name;
         this.defaultValue = defaultValue;
         this.timeUnit = timeUnit;
+        this.parent = parent;
     }
 
     /**
@@ -608,6 +614,14 @@ public enum GroupProperty implements HazelcastProperty {
     }
 
     /**
+     * {@inheritDoc}
+     */
+    @Override
+    public GroupProperty getParent() {
+        return parent;
+    }
+
+    /**
      * Sets the environmental value of the property.
      *
      * @param value the value to set
@@ -628,7 +642,6 @@ public enum GroupProperty implements HazelcastProperty {
     /**
      * Clears the environmental value of the property.
      */
-    @SuppressWarnings("unused")
     public String clearSystemProperty() {
         return System.clearProperty(name);
     }
