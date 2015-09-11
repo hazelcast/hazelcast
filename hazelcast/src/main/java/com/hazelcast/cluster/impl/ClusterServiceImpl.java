@@ -1292,7 +1292,6 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         if (membershipAwareServices != null && !membershipAwareServices.isEmpty()) {
             final MembershipServiceEvent event = new MembershipServiceEvent(membershipEvent);
             for (final MembershipAwareService service : membershipAwareServices) {
-                // service events should not block each other
                 nodeEngine.getExecutionService().execute(MEMBERSHIP_EVENT_EXECUTOR_NAME, new Runnable() {
                     public void run() {
                         if (added) {
