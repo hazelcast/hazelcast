@@ -475,6 +475,27 @@
                                         </xs:annotation>
                                     </xs:element>
                                     <xs:element name="quorum-ref" minOccurs="0" maxOccurs="1" />
+                                    <xs:element name="merge-policy" minOccurs="0" maxOccurs="1">
+                                        <xs:annotation>
+                                            <xs:documentation>
+                                                While recovering from split-brain (network partitioning), cache entries in the small cluster
+                                                merge into the bigger cluster based on the policy set here.
+                                                When an entry merges into the cluster, an entry with the same key might already exist in the cluster.
+                                                The values of these entries might be different for that same key. Which value should be set for the
+                                                key? The conflict is resolved by the policy set here.
+                                                <p>
+                                                    <br/>There are built-in merge policies, such as:
+                                                    <br/>`com.hazelcast.cache.impl.merge.policy.PassThroughCacheMergePolicy`: the entry will be added directly
+                                                    even though there is an existing entry for the key.
+                                                    <br/>`com.hazelcast.cache.impl.merge.policy.PutIfAbsentCacheMergePolicy`: the entry will be added if there is no
+                                                    existing entry for the key.
+                                                    <br/>`com.hazelcast.cache.impl.merge.policy.HigherHitsCacheMergePolicy`: the entry with the higher number of hits wins.
+                                                    <br/>`com.hazelcast.cache.impl.merge.policy.LatestAccessCacheMergePolicy`: the entry which has been accessed more recently wins.
+                                                    <br/>Default policy is 'com.hazelcast.cache.impl.merge.policy.PassThroughCacheMergePolicy'
+                                                </p>
+                                            </xs:documentation>
+                                        </xs:annotation>
+                                    </xs:element>
                                 </xs:sequence>
                                 <xs:attribute name="name" type="xs:string" use="required">
                                     <xs:annotation>

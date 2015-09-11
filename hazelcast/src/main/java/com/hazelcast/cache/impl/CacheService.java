@@ -16,32 +16,30 @@
 
 package com.hazelcast.cache.impl;
 
-import com.hazelcast.cache.impl.client.CacheBatchInvalidationMessage;
-import com.hazelcast.cache.impl.client.CacheInvalidationListener;
-import com.hazelcast.cache.impl.client.CacheSingleInvalidationMessage;
-import com.hazelcast.cache.impl.operation.CacheReplicationOperation;
-import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.cache.impl.merge.entry.CacheEntryView;
+import com.hazelcast.cache.impl.merge.entry.HeapDataCacheEntryView;
+import com.hazelcast.cache.impl.merge.policy.CacheMergePolicy;
+import com.hazelcast.cache.impl.merge.policy.CacheMergePolicyProvider;
+import com.hazelcast.cache.impl.operation.CacheMergeOperation;
+import com.hazelcast.cache.impl.record.CacheRecord;
+import com.hazelcast.config.CacheConfig;
+import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.core.ICompletableFuture;
+import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.EventRegistration;
-import com.hazelcast.spi.EventService;
+import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.PartitionReplicationEvent;
+import com.hazelcast.spi.SplitBrainHandlerService;
+import com.hazelcast.util.ExceptionUtil;
 
-import java.util.Collection;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Properties;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import static com.hazelcast.instance.GroupProperty.CACHE_INVALIDATION_MESSAGE_BATCH_ENABLED;
-import static com.hazelcast.instance.GroupProperty.CACHE_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS;
-import static com.hazelcast.instance.GroupProperty.CACHE_INVALIDATION_MESSAGE_BATCH_SIZE;
 
 /**
  * Cache Service is the main access point of JCache implementation.
@@ -68,259 +66,132 @@ import static com.hazelcast.instance.GroupProperty.CACHE_INVALIDATION_MESSAGE_BA
  * using {@link AbstractHazelcastCacheManager#cacheNamePrefix()}.
  * </p>
  */
-public class CacheService extends AbstractCacheService {
+public class CacheService
+        extends BaseCacheService
+        implements SplitBrainHandlerService {
 
-    protected boolean invalidationMessageBatchEnabled;
-    protected int invalidationMessageBatchSize;
-    protected final ConcurrentMap<String, InvalidationEventQueue> invalidationMessageMap =
-            new ConcurrentHashMap<String, InvalidationEventQueue>();
-    protected ScheduledFuture cacheBatchInvalidationMessageSenderScheduler;
-
-    protected ICacheRecordStore createNewRecordStore(String name, int partitionId) {
-        return new CacheRecordStore(name, partitionId, nodeEngine, CacheService.this);
-    }
+    private CacheMergePolicyProvider mergePolicyProvider;
 
     @Override
     protected void postInit(NodeEngine nodeEngine, Properties properties) {
         super.postInit(nodeEngine, properties);
-        GroupProperties groupProperties = nodeEngine.getGroupProperties();
-        invalidationMessageBatchEnabled = groupProperties.getBoolean(CACHE_INVALIDATION_MESSAGE_BATCH_ENABLED);
-        if (invalidationMessageBatchEnabled) {
-            invalidationMessageBatchSize = groupProperties.getInteger(CACHE_INVALIDATION_MESSAGE_BATCH_SIZE);
-            int invalidationMessageBatchFreq = groupProperties.getInteger(CACHE_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS);
-            cacheBatchInvalidationMessageSenderScheduler = nodeEngine.getExecutionService()
-                    .scheduleAtFixedRate(SERVICE_NAME + ":cacheBatchInvalidationMessageSender",
-                            new CacheBatchInvalidationMessageSender(),
-                            invalidationMessageBatchFreq,
-                            invalidationMessageBatchFreq,
-                            TimeUnit.SECONDS);
-        }
+        mergePolicyProvider = new CacheMergePolicyProvider(nodeEngine);
     }
 
     @Override
-    public void reset() {
-        for (String objectName : configs.keySet()) {
-            destroyCache(objectName, true, null);
-        }
-        final CachePartitionSegment[] partitionSegments = segments;
-        for (CachePartitionSegment partitionSegment : partitionSegments) {
-            if (partitionSegment != null) {
-                partitionSegment.clear();
+    public Runnable prepareMergeRunnable() {
+        final Map<String, Map<Data, CacheRecord>> recordMap = new HashMap<String, Map<Data, CacheRecord>>(configs.size());
+        final InternalPartitionService partitionService = nodeEngine.getPartitionService();
+        final int partitionCount = partitionService.getPartitionCount();
+        final Address thisAddress = nodeEngine.getClusterService().getThisAddress();
+
+        for (int i = 0; i < partitionCount; i++) {
+            // Add your owned entries so they will be merged
+            if (thisAddress.equals(partitionService.getPartitionOwner(i))) {
+                CachePartitionSegment segment = segments[i];
+                Iterator<ICacheRecordStore> iter = segment.recordStoreIterator();
+                while (iter.hasNext()) {
+                    ICacheRecordStore cacheRecordStore = iter.next();
+                    String cacheName = cacheRecordStore.getName();
+                    Map<Data, CacheRecord> records = recordMap.get(cacheName);
+                    if (records == null) {
+                        records = new HashMap<Data, CacheRecord>(cacheRecordStore.size());
+                        recordMap.put(cacheName, records);
+                    }
+                    for (Map.Entry<Data, CacheRecord> cacheRecordEntry : cacheRecordStore.getReadOnlyRecords().entrySet()) {
+                        Data key = cacheRecordEntry.getKey();
+                        CacheRecord cacheRecord = cacheRecordEntry.getValue();
+                        records.put(key, cacheRecord);
+                    }
+                    // Clear all records either owned or backup
+                    cacheRecordStore.clear();
+                }
             }
         }
+        return new CacheMerger(nodeEngine, configs, recordMap, mergePolicyProvider);
     }
 
-    @Override
-    public void shutdown(boolean terminate) {
-        if (!terminate) {
-            if (cacheBatchInvalidationMessageSenderScheduler != null) {
-                cacheBatchInvalidationMessageSenderScheduler.cancel(true);
-            }
-            reset();
+    private static class CacheMerger implements Runnable {
+
+        private static final int TIMEOUT_FACTOR = 500;
+
+        private final NodeEngine nodeEngine;
+        private final Map<String, CacheConfig> configs;
+        private final Map<String, Map<Data, CacheRecord>> recordMap;
+        private final CacheMergePolicyProvider mergePolicyProvider;
+        private final ILogger logger;
+
+        public CacheMerger(NodeEngine nodeEngine,
+                           Map<String, CacheConfig> configs,
+                           Map<String, Map<Data, CacheRecord>> recordMap,
+                           CacheMergePolicyProvider mergePolicyProvider) {
+            this.nodeEngine = nodeEngine;
+            this.configs = configs;
+            this.recordMap = recordMap;
+            this.mergePolicyProvider = mergePolicyProvider;
+            this.logger = nodeEngine.getLogger(CacheService.class);
         }
-    }
-
-    //region MigrationAwareService
-    @Override
-    public Operation prepareReplicationOperation(PartitionReplicationEvent event) {
-        CachePartitionSegment segment = segments[event.getPartitionId()];
-        CacheReplicationOperation op = new CacheReplicationOperation(segment, event.getReplicaIndex());
-        return op.isEmpty() ? null : op;
-    }
-    //endregion
-
-    /**
-     * Registers and {@link CacheInvalidationListener} for specified <code>cacheName</code>.
-     *
-     * @param name      the name of the cache that {@link CacheEventListener} will be registered for
-     * @param listener  the {@link CacheEventListener} to be registered for specified <code>cache</code>
-     * @return the id which is unique for current registration
-     */
-    public String addInvalidationListener(String name, CacheEventListener listener) {
-        EventService eventService = nodeEngine.getEventService();
-        EventRegistration registration = eventService.registerLocalListener(SERVICE_NAME, name, listener);
-        return registration.getId();
-    }
-
-    /**
-     * Sends an invalidation event for given <code>cacheName</code> with specified <code>key</code>
-     * from mentioned source with <code>sourceUuid</code>.
-     *
-     * @param name       the name of the cache that invalidation event is sent for
-     * @param key        the {@link Data} represents the invalidation event
-     * @param sourceUuid an id that represents the source for invalidation event
-     */
-    @Override
-    public void sendInvalidationEvent(String name, Data key, String sourceUuid) {
-        if (key == null) {
-            sendSingleInvalidationEvent(name, null, sourceUuid);
-        } else {
-            if (invalidationMessageBatchEnabled) {
-                sendBatchInvalidationEvent(name, key, sourceUuid);
-            } else {
-                sendSingleInvalidationEvent(name, key, sourceUuid);
-            }
-        }
-    }
-
-    protected void sendSingleInvalidationEvent(String name, Data key, String sourceUuid) {
-        EventService eventService = nodeEngine.getEventService();
-        Collection<EventRegistration> registrations = eventService.getRegistrations(SERVICE_NAME, name);
-        if (!registrations.isEmpty()) {
-            eventService.publishEvent(SERVICE_NAME, registrations,
-                                      new CacheSingleInvalidationMessage(name, key, sourceUuid), name.hashCode());
-
-        }
-    }
-
-    protected void sendBatchInvalidationEvent(String name, Data key, String sourceUuid) {
-        EventService eventService = nodeEngine.getEventService();
-        Collection<EventRegistration> registrations = eventService.getRegistrations(SERVICE_NAME, name);
-        if (registrations.isEmpty()) {
-            return;
-        }
-        InvalidationEventQueue invalidationMessageQueue =  invalidationMessageMap.get(name);
-        if (invalidationMessageQueue == null) {
-            InvalidationEventQueue newInvalidationMessageQueue = new InvalidationEventQueue();
-            invalidationMessageQueue = invalidationMessageMap.putIfAbsent(name, newInvalidationMessageQueue);
-            if (invalidationMessageQueue == null) {
-                invalidationMessageQueue = newInvalidationMessageQueue;
-            }
-        }
-        CacheSingleInvalidationMessage invalidationMessage = new CacheSingleInvalidationMessage(name, key, sourceUuid);
-        invalidationMessageQueue.offer(invalidationMessage);
-        if (invalidationMessageQueue.size() >= invalidationMessageBatchSize) {
-            flushInvalidationMessages(name, invalidationMessageQueue);
-        }
-    }
-
-    protected void flushInvalidationMessages(String cacheName, InvalidationEventQueue invalidationMessageQueue) {
-         // If still in progress, no need to another attempt. So just ignore.
-         if (invalidationMessageQueue.flushingInProgress.compareAndSet(false, true)) {
-             try {
-                 CacheBatchInvalidationMessage batchInvalidationMessage =
-                         new CacheBatchInvalidationMessage(cacheName, invalidationMessageQueue.size());
-                 CacheSingleInvalidationMessage invalidationMessage;
-                 final int size = invalidationMessageQueue.size();
-                 // At most, poll from the invalidation queue as the current size of the queue before start to polling.
-                 // So skip new invalidation queue items offered while the polling in progress in this round.
-                 for (int i = 0; i < size; i++) {
-                     invalidationMessage = invalidationMessageQueue.poll();
-                     if (invalidationMessage == null) {
-                         break;
-                     }
-                     batchInvalidationMessage.addInvalidationMessage(invalidationMessage);
-                 }
-                 EventService eventService = nodeEngine.getEventService();
-                 Collection<EventRegistration> registrations = eventService.getRegistrations(SERVICE_NAME, cacheName);
-                 if (!registrations.isEmpty()) {
-                     eventService.publishEvent(SERVICE_NAME, registrations,
-                                               batchInvalidationMessage, cacheName.hashCode());
-                 }
-             } finally {
-                 invalidationMessageQueue.flushingInProgress.set(false);
-             }
-         }
-    }
-
-    protected class CacheBatchInvalidationMessageSender implements Runnable {
 
         @Override
         public void run() {
-            for (Map.Entry<String, InvalidationEventQueue> entry : invalidationMessageMap.entrySet()) {
-                if (Thread.currentThread().isInterrupted()) {
-                    break;
+            final Semaphore semaphore = new Semaphore(0);
+            int recordCount = 0;
+
+            ExecutionCallback mergeCallback = new ExecutionCallback() {
+                @Override
+                public void onResponse(Object response) {
+                    semaphore.release(1);
                 }
-                String cacheName = entry.getKey();
-                InvalidationEventQueue invalidationMessageQueue = entry.getValue();
-                if (invalidationMessageQueue.size() > 0) {
-                    flushInvalidationMessages(cacheName, invalidationMessageQueue);
+
+                @Override
+                public void onFailure(Throwable t) {
+                    logger.warning("Error while running merge operation: " + t.getMessage());
+                    semaphore.release(1);
+                }
+            };
+
+            SerializationService serializationService = nodeEngine.getSerializationService();
+
+            for (Map.Entry<String, Map<Data, CacheRecord>> recordMapEntry : recordMap.entrySet()) {
+                String cacheName = recordMapEntry.getKey();
+                CacheConfig cacheConfig = configs.get(cacheName);
+                Map<Data, CacheRecord> records = recordMapEntry.getValue();
+                String mergePolicyName = cacheConfig.getMergePolicy();
+                final CacheMergePolicy cacheMergePolicy = mergePolicyProvider.getMergePolicy(mergePolicyName);
+                for (Map.Entry<Data, CacheRecord> recordEntry : records.entrySet()) {
+                    Data key = recordEntry.getKey();
+                    CacheRecord record = recordEntry.getValue();
+                    recordCount++;
+                    CacheEntryView entryView =
+                            new HeapDataCacheEntryView(
+                                    key,
+                                    serializationService.toData(record.getValue()),
+                                    record.getExpirationTime(),
+                                    record.getAccessHit());
+                    CacheMergeOperation operation =
+                            new CacheMergeOperation(
+                                    cacheName,
+                                    key,
+                                    entryView,
+                                    cacheMergePolicy);
+                    try {
+                        int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
+                        ICompletableFuture f =
+                                nodeEngine.getOperationService()
+                                    .invokeOnPartition(SERVICE_NAME, operation, partitionId);
+
+                        f.andThen(mergeCallback);
+                    } catch (Throwable t) {
+                        throw ExceptionUtil.rethrow(t);
+                    }
                 }
             }
-        }
 
-    }
-
-    protected static class InvalidationEventQueue extends ConcurrentLinkedQueue<CacheSingleInvalidationMessage> {
-
-        private final AtomicInteger elementCount = new AtomicInteger(0);
-        private final AtomicBoolean flushingInProgress = new AtomicBoolean(false);
-
-        @Override
-        public int size() {
-            return elementCount.get();
-        }
-
-        @Override
-        public boolean offer(CacheSingleInvalidationMessage invalidationMessage) {
-            boolean offered = super.offer(invalidationMessage);
-            if (offered) {
-                elementCount.incrementAndGet();
+            try {
+                semaphore.tryAcquire(recordCount, recordCount * TIMEOUT_FACTOR, TimeUnit.MILLISECONDS);
+            } catch (InterruptedException e) {
+                logger.finest("Interrupted while waiting merge operation...");
             }
-            return offered;
-        }
-
-        @Override
-        public boolean add(CacheSingleInvalidationMessage invalidationMessage) {
-            // We don't support this at the moment, because
-            //   - It is not used at the moment
-            //   - It may or may not use "offer" method internally and this depends on the implementation
-            //     so it may change between different version of Java
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public CacheSingleInvalidationMessage poll() {
-            CacheSingleInvalidationMessage polledItem = super.poll();
-            if (polledItem != null) {
-                elementCount.decrementAndGet();
-            }
-            return polledItem;
-        }
-
-        @Override
-        public CacheSingleInvalidationMessage remove() {
-            // We don't support this at the moment, because
-            //   - It is not used at the moment
-            //   - It may or may not use "poll" method internally and this depends on the implementation
-            //     so it may change between different version of Java
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public boolean remove(Object o) {
-            boolean removed = super.remove(o);
-            if (removed) {
-                elementCount.decrementAndGet();
-            }
-            return removed;
-        }
-
-        @Override
-        public boolean addAll(Collection<? extends CacheSingleInvalidationMessage> c) {
-            // We don't support this at the moment, because it is not used at the moment
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public boolean removeAll(Collection<?> c) {
-            // We don't support this at the moment, because it is not used at the moment
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public boolean retainAll(Collection<?> c) {
-            // We don't support this at the moment, because it is not used at the moment
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void clear() {
-            // We don't support this at the moment, because
-            //   - It is not used at the moment
-            //   - It may or may not use "poll" method internally and this depends on the implementation
-            //     so it may change between different version of Java
-            throw new UnsupportedOperationException();
         }
 
     }

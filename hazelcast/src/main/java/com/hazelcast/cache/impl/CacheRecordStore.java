@@ -17,6 +17,10 @@
 package com.hazelcast.cache.impl;
 
 import com.hazelcast.cache.impl.maxsize.MaxSizeChecker;
+import com.hazelcast.cache.impl.merge.entry.CacheEntryView;
+import com.hazelcast.cache.impl.merge.entry.LazyCacheEntryView;
+import com.hazelcast.cache.impl.merge.policy.CacheMergePolicy;
+import com.hazelcast.cache.impl.merge.policy.OriginalTypeAwareCacheMergePolicy;
 import com.hazelcast.cache.impl.record.CacheRecord;
 import com.hazelcast.cache.impl.record.CacheRecordFactory;
 import com.hazelcast.cache.impl.record.CacheRecordHashMap;
@@ -24,6 +28,9 @@ import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.util.Clock;
+
+import static com.hazelcast.cache.impl.operation.MutableOperation.IGNORE_COMPLETION;
 
 /**
  * <h1>On-Heap implementation of the {@link ICacheRecordStore} </h1>
@@ -156,6 +163,81 @@ public class CacheRecordStore
         } else {
             return serializationService.toData(obj);
         }
+    }
+
+    private CacheEntryView createCacheEntryView(Object key, Object value, long expirationTime, long lastAccessTime,
+                                                long accessHit, CacheMergePolicy mergePolicy) {
+        SerializationService ss =
+                mergePolicy instanceof OriginalTypeAwareCacheMergePolicy
+                        //  Non-null serialization service means that convertion is required
+                        ? serializationService
+                        // Null serialization service means that use as storage type without convertion
+                        : null;
+        return new LazyCacheEntryView(key, value, expirationTime, lastAccessTime, accessHit, ss);
+    }
+
+    /**
+     * Merges given record (inside given {@link CacheEntryView}) with the existing record as given {@link CacheMergePolicy}.
+     *
+     * @param cacheEntryView    the {@link CacheEntryView} instance that wraps key/value for merging and existing entry
+     * @param mergePolicy       the {@link CacheMergePolicy} instance for handling merge policy
+     * @return the used {@link CacheRecord} if merge is applied, otherwise <code>null</code>
+     */
+    public CacheRecord merge(CacheEntryView<Data, Data> cacheEntryView, CacheMergePolicy mergePolicy) {
+        final long now = Clock.currentTimeMillis();
+        final long start = isStatisticsEnabled() ? System.nanoTime() : 0;
+
+        boolean merged = false;
+        Data key = cacheEntryView.getKey();
+        Data value = cacheEntryView.getValue();
+        long expiryTime = cacheEntryView.getExpirationTime();
+        CacheRecord record = records.get(key);
+        boolean isExpired = processExpiredEntry(key, record, now);
+
+        if (record == null || isExpired) {
+            Object newValue =
+                    mergePolicy.merge(name,
+                                      createCacheEntryView(
+                                            key,
+                                            value,
+                                            cacheEntryView.getExpirationTime(),
+                                            cacheEntryView.getLastAccessTime(),
+                                            cacheEntryView.getAccessHit(),
+                                            mergePolicy),
+                                      null);
+            if (newValue != null) {
+                record = createRecordWithExpiry(key, newValue, expiryTime, now, true, IGNORE_COMPLETION);
+                merged = record != null;
+            }
+        } else {
+            Object existingValue = record.getValue();
+            Object newValue =
+                    mergePolicy.merge(name,
+                                      createCacheEntryView(
+                                            key,
+                                            value,
+                                            cacheEntryView.getExpirationTime(),
+                                            cacheEntryView.getLastAccessTime(),
+                                            cacheEntryView.getAccessHit(),
+                                            mergePolicy),
+                                      createCacheEntryView(
+                                            key,
+                                            existingValue,
+                                            record.getExpirationTime(),
+                                            record.getAccessTime(),
+                                            record.getAccessHit(),
+                                            mergePolicy));
+            if (existingValue != newValue) {
+                merged = updateRecordWithExpiry(key, newValue, record, expiryTime, now, true, IGNORE_COMPLETION);
+            }
+        }
+
+        if (merged && isStatisticsEnabled()) {
+            statistics.increaseCachePuts(1);
+            statistics.addPutTimeNanos(System.nanoTime() - start);
+        }
+
+        return merged ? record : null;
     }
 
 }

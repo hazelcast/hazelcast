@@ -54,7 +54,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-public abstract class AbstractCacheService
+abstract class AbstractCacheService
         implements ICacheService, PostJoinAwareService, PartitionAwareService, QuorumAwareService {
 
     protected final ConcurrentMap<String, CacheConfig> configs = new ConcurrentHashMap<String, CacheConfig>();
