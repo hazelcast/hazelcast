@@ -217,6 +217,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
 
         node.connectionManager.addConnectionListener(this);
 
+        //MEMBERSHIP_EVENT_EXECUTOR is a single threaded executor to ensure that events are executed in correct order.
         nodeEngine.getExecutionService().register(MEMBERSHIP_EVENT_EXECUTOR_NAME, 1, Integer.MAX_VALUE, ExecutorType.CACHED);
 
         registerMetrics();
