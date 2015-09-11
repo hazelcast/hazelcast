@@ -57,6 +57,12 @@ public final class LockStoreProxy implements LockStore {
     }
 
     @Override
+    public boolean unlockWithoutCheckingOwnership(Data key, long threadId) {
+        LockStore lockStore = getLockStoreOrNull();
+        return lockStore != null && lockStore.unlockWithoutCheckingOwnership(key, threadId);
+    }
+
+    @Override
     public boolean isLocked(Data key) {
         LockStore lockStore = getLockStoreOrNull();
         return lockStore != null && lockStore.isLocked(key);

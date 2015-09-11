@@ -16,6 +16,8 @@
 
 package com.hazelcast.map;
 
+import com.hazelcast.concurrent.lock.LockResource;
+import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.EntryAdapter;
@@ -27,6 +29,9 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapStoreAdapter;
 import com.hazelcast.core.TransactionalMap;
 import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.instance.Node;
+import com.hazelcast.instance.TestUtil;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.query.EntryObject;
@@ -47,6 +52,10 @@ import com.hazelcast.transaction.TransactionNotActiveException;
 import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.TransactionalTask;
 import com.hazelcast.transaction.TransactionalTaskContext;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
+
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Random;
@@ -54,9 +63,6 @@ import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -126,6 +132,34 @@ public class MapTransactionTest extends HazelcastTestSupport {
         });
         assertEquals("value6", h4.getMap("default").get("1"));
     }
+
+    @Test
+    public void testGetForUpdate_releasesBackupLock() {
+        Config config = new Config();
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        HazelcastInstance instance1 = factory.newHazelcastInstance(config);
+        HazelcastInstance instance2 = factory.newHazelcastInstance(config);
+        final String keyOwnedByInstance2 = generateKeyOwnedBy(instance2);
+
+        instance1.executeTransaction(new TransactionalTask<Object>() {
+            @Override
+            public Object execute(TransactionalTaskContext context) throws TransactionException {
+                TransactionalMap<Object, Object> map = context.getMap(randomString());
+                map.getForUpdate(keyOwnedByInstance2);
+                return null;
+            }
+        });
+
+        Node node = TestUtil.getNode(instance1);
+        Data keyData = node.nodeEngine.toData(keyOwnedByInstance2);
+        LockService lockService = node.nodeEngine.getService(LockService.SERVICE_NAME);
+        for (LockResource lockResource : lockService.getAllLocks()) {
+            if (keyData.equals(lockResource.getKey())) {
+                assertEquals(0, lockResource.getLockCount());
+            }
+        }
+    }
+
 
     @Test
     public void testTxnCommit() throws TransactionException {
@@ -1256,6 +1290,7 @@ public class MapTransactionTest extends HazelcastTestSupport {
         });
         node.shutdown();
     }
+
     @Test
     public void testValues_shouldNotDeduplicateEntriesWhenGettingByPredicate() throws TransactionException {
         final int nodeCount = 1;

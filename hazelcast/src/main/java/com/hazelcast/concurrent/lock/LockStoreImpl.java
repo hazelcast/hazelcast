@@ -160,6 +160,25 @@ public final class LockStoreImpl implements DataSerializable, LockStore {
     }
 
     @Override
+    public boolean unlockWithoutCheckingOwnership(Data key, long threadId) {
+        LockResourceImpl lock = locks.get(key);
+        if (lock == null) {
+            return false;
+        }
+
+        boolean result = false;
+        if (lock.canAcquireLockWithoutCheckingOwnership(threadId)) {
+            if (lock.unlockWithoutCheckingOwnership(threadId)) {
+                result = true;
+            }
+        }
+        if (lock.isRemovable()) {
+            locks.remove(key);
+        }
+        return result;
+    }
+
+    @Override
     public boolean forceUnlock(Data key) {
         LockResourceImpl lock = locks.get(key);
         if (lock == null) {

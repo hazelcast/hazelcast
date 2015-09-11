@@ -30,6 +30,16 @@ public interface LockStore {
 
     boolean unlock(Data key, String caller, long threadId);
 
+    /**
+     * unlocks ignoring owner information
+     * introduced as a workaround, will be dropped at 3.6
+     * @param key
+     * @param threadId
+     * @return
+     * @since 3.5.3
+     */
+    boolean unlockWithoutCheckingOwnership(Data key, long threadId);
+
     boolean isLocked(Data key);
 
     boolean isLockedBy(Data key, String caller, long threadId);

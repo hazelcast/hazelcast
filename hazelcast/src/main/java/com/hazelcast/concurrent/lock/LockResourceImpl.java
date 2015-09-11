@@ -139,8 +139,40 @@ final class LockResourceImpl implements DataSerializable, LockResource {
         return true;
     }
 
+    /**
+     * introduced as a workaround, will be dropped at 3.6
+     * @param threadId
+     * @return
+     * @since 3.5.3
+     */
+    boolean unlockWithoutCheckingOwnership(long threadId) {
+        if (lockCount == 0) {
+            return false;
+        }
+
+        if (this.threadId != threadId) {
+            return false;
+        }
+
+        lockCount--;
+        if (lockCount == 0) {
+            clear();
+        }
+        return true;
+    }
+
     boolean canAcquireLock(String caller, long threadId) {
         return lockCount == 0 || getThreadId() == threadId && getOwner().equals(caller);
+    }
+
+    /**
+     * introduced as a workaround, will be dropped at 3.6
+     * @param threadId
+     * @return
+     * @since 3.5.3
+     */
+    boolean canAcquireLockWithoutCheckingOwnership(long threadId) {
+        return lockCount == 0 || getThreadId() == threadId;
     }
 
     boolean addAwait(String conditionId, String caller, long threadId) {

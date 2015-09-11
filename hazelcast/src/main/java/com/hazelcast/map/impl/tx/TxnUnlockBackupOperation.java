@@ -35,7 +35,9 @@ public class TxnUnlockBackupOperation extends KeyBasedMapOperation implements Ba
 
     @Override
     public void run() {
-        recordStore.unlock(dataKey, getCallerUuid(), getThreadId());
+        // we unlock without caller uuid because it is not the correct owner uuid of the lock
+        // please see https://github.com/hazelcast/hazelcast/issues/6039
+        recordStore.unlockWithoutCheckingOwnership(dataKey, getThreadId());
     }
 
     @Override
