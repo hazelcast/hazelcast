@@ -421,6 +421,12 @@ final class BasicInvocationFuture<E> implements InternalCompletableFuture<E> {
     }
 
     boolean isOperationExecuting(Address target) {
+
+        if (isStillRunningOperation()) {
+            // we don't want to is-still-running-operations; it can lead to a explosion of such invocations
+            return false;
+        }
+
         // ask if op is still being executed?
         Boolean executing = Boolean.FALSE;
         try {
@@ -439,10 +445,20 @@ final class BasicInvocationFuture<E> implements InternalCompletableFuture<E> {
         return executing;
     }
 
+    private boolean isStillRunningOperation() {
+        Operation op = invocation.op;
+        return op instanceof IsStillExecutingOperation || op instanceof TraceableIsStillExecutingOperation;
+    }
+
     /**
      * Sets operation timeout to invocation result if the operation is not running.
      */
     void timeoutInvocationIfNotExecuting() {
+        if (isStillRunningOperation()) {
+            // we don't want to is-still-running-operations; it can lead to a explosion of such invocations
+            return;
+        }
+
         try {
             final Operation isStillExecuting = createCheckOperation();
             final Callback<Object> callback = new IsOperationStillRunningCallback(this);

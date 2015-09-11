@@ -27,6 +27,59 @@ import static org.junit.Assert.assertTrue;
 public class BasicInvocationFutureTimeoutTest extends HazelcastTestSupport {
 
     @Test
+    public void testIsStillRunningShouldNotCauseIsStillRunningInvocation() {
+        final int callTimeoutMillis = 500;
+        Config config = new Config();
+        config.setProperty(GroupProperties.PROP_OPERATION_CALL_TIMEOUT_MILLIS, String.valueOf(callTimeoutMillis));
+
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        HazelcastInstance hz1 = factory.newHazelcastInstance(config);
+        HazelcastInstance hz2 = factory.newHazelcastInstance(config);
+
+        // invoke on the "remote" member
+        final Address remoteAddress = getNode(hz2).getThisAddress();
+
+        final DummyOperation sleepingOp = new DummyOperation(callTimeoutMillis * 10);
+        final BasicTargetInvocation invocation = new BasicTargetInvocation(getNode(hz1).getNodeEngine(), null,
+                sleepingOp, remoteAddress, 0, 0,
+                callTimeoutMillis, null, null, true);
+        final BasicInvocationFuture future = invocation.invoke();
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run()
+                    throws Exception {
+                assertTrue(future.isOperationExecuting(remoteAddress));
+            }
+        });
+
+        final IsStillExecutingOperation isStillExecutingOp = new SleepingIsStillExecutingOperation(sleepingOp.getCallId());
+        final BasicTargetInvocation isStillExecutingInvocation = new BasicTargetInvocation(getNode(hz1).getNodeEngine(), null,
+                isStillExecutingOp, remoteAddress, 0, 0,
+                callTimeoutMillis, null, null, true);
+        final BasicInvocationFuture isStillExecutingFuture = isStillExecutingInvocation.invoke();
+        isStillExecutingFuture.timeoutInvocationIfNotExecuting();
+
+        assertFalse(isStillExecutingFuture.isOperationExecuting(remoteAddress));
+    }
+
+    private static class SleepingIsStillExecutingOperation extends IsStillExecutingOperation {
+
+        SleepingIsStillExecutingOperation() {
+        }
+
+        SleepingIsStillExecutingOperation(long operationCallId) {
+            super(operationCallId);
+        }
+
+        @Override
+        public void run() throws Exception {
+            sleepAtLeastMillis(Integer.MAX_VALUE);
+        }
+
+    }
+
+    @Test
     public void testTimeoutInvocationIfRemoteInvocationIsRunning() throws Exception {
         int callTimeoutMillis = 500;
         Config config = new Config();
