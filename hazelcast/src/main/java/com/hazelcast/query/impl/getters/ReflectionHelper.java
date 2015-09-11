@@ -175,7 +175,7 @@ public final class ReflectionHelper {
                     }
                     if (localGetter == null) {
                         Class c = clazz;
-                        while (!Object.class.equals(c)) {
+                        while (!c.isInterface() && !Object.class.equals(c)) {
                             try {
                                 final Field field = c.getDeclaredField(name);
                                 field.setAccessible(true);
