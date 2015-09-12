@@ -21,7 +21,7 @@ import java.util.UUID;
 /**
  * TypeConverter to handle UUID
  */
-public final class UUIDConverter implements TypeConverters.TypeConverter {
+final class UUIDConverter extends TypeConverters.TypeConverter {
 
     /**
      * Singleton
@@ -32,7 +32,7 @@ public final class UUIDConverter implements TypeConverters.TypeConverter {
     }
 
     @Override
-    public Comparable convert(Comparable value) {
+    Comparable convertInternal(Comparable value) {
         if (value instanceof UUID) {
             return value;
         }
