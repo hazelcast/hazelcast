@@ -77,7 +77,7 @@ public final class SampleObjects {
         }
     }
 
-    public static class ValueType implements Serializable {
+    public static class ValueType implements Serializable, Comparable<ValueType> {
         String typeName;
 
         public ValueType(String typeName) {
@@ -89,6 +89,40 @@ public final class SampleObjects {
 
         public String getTypeName() {
             return typeName;
+        }
+
+        @Override
+        public int compareTo(ValueType o) {
+            if (o == null) {
+                return 1;
+            }
+            if (typeName == null) {
+                if (o.typeName == null) {
+                    return 0;
+                } else {
+                    return -1;
+                }
+            }
+            if (o.typeName == null) {
+                return 1;
+            }
+            return typeName.compareTo(o.typeName);
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            ValueType valueType = (ValueType) o;
+
+            return !(typeName != null ? !typeName.equals(valueType.typeName) : valueType.typeName != null);
+
+        }
+
+        @Override
+        public int hashCode() {
+            return typeName != null ? typeName.hashCode() : 0;
         }
     }
 
