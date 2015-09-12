@@ -46,7 +46,7 @@ final class TypeConverters {
     public abstract static class TypeConverter {
         abstract Comparable convertInternal(Comparable value);
 
-        public Comparable convert(Comparable value) {
+        public final Comparable convert(Comparable value) {
             if (value == null) {
                 return IndexImpl.NULL;
             }
