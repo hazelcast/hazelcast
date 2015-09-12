@@ -23,14 +23,6 @@ import java.util.UUID;
  */
 final class UUIDConverter extends TypeConverters.TypeConverter {
 
-    /**
-     * Singleton
-     */
-    public static final TypeConverters.TypeConverter INSTANCE = new UUIDConverter();
-
-    private UUIDConverter() {
-    }
-
     @Override
     Comparable convertInternal(Comparable value) {
         if (value instanceof UUID) {
