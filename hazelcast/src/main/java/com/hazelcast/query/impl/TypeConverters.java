@@ -37,6 +37,7 @@ final class TypeConverters {
     public static final TypeConverter SQL_DATE_CONVERTER = new SqlDateConverter();
     public static final TypeConverter SQL_TIMESTAMP_CONVERTER = new SqlTimestampConverter();
     public static final TypeConverter DATE_CONVERTER = new DateConverter();
+    public static final TypeConverter IDENTITY_CONVERTER = new IdentityConverter();
 
     private TypeConverters() {
     }
