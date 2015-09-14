@@ -78,8 +78,10 @@ import java.util.logging.Level;
  * <li>{@code cookie-name}: Sets the name for the Hazelcast session cookie (Default:
  * {@link #HAZELCAST_SESSION_COOKIE_NAME "hazelcast.sessionId"}</li>
  * <li>{@code cookie-domain}: Sets the domain for the Hazelcast session cookie (Default: {@code null})</li>
- * <li>{@code cookie-secure}: When enabled, indicates the Hazelcast session cookie should only be sent over
- * secure protocols (Default: {@code false})</li>
+ * <li>{@code cookie-secure}: When set to {@code true}, indicates the Hazelcast session cookie should always be marked
+ * "Secure", even if the request that initiated the corresponding session is using plain HTTP instead of HTTPS. If
+ * {@code false}, it will be marked as secure only if the request that initiated the corresponding session was also
+ * secure. (Default: {@code false})</li>
  * <li>{@code cookie-http-only}: When enabled, marks the Hazelcast session cookie as "HttpOnly", indicating
  * it should not be available to scripts (Default: {@code false})
  * <ul>
@@ -319,7 +321,7 @@ public class WebFilter implements Filter {
                         + "</init-param>");
             }
         }
-        sessionCookie.setSecure(sessionCookieSecure);
+        sessionCookie.setSecure(sessionCookieSecure || req.isSecure());
         req.res.addCookie(sessionCookie);
     }
 
