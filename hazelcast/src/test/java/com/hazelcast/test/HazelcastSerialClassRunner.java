@@ -20,6 +20,10 @@ import org.junit.runner.notification.RunNotifier;
 import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.InitializationError;
 
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
+
 /**
  * Run the tests in series and log the running test.
  */
@@ -36,8 +40,12 @@ public class HazelcastSerialClassRunner extends AbstractHazelcastClassRunner {
 
     @Override
     protected void runChild(FrameworkMethod method, RunNotifier notifier) {
+        // Save the current system properties
+        final Properties currentSystemProperties = System.getProperties();
         FRAMEWORK_METHOD_THREAD_LOCAL.set(method);
         try {
+            // Use local system properties so se tests don't effect each other
+            System.setProperties(new LocalProperties(currentSystemProperties));
             long start = System.currentTimeMillis();
             String testName = method.getMethod().getDeclaringClass().getSimpleName() + "." + method.getName();
             System.out.println("Started Running Test: " + testName);
@@ -46,6 +54,23 @@ public class HazelcastSerialClassRunner extends AbstractHazelcastClassRunner {
             System.out.println(String.format("Finished Running Test: %s in %.3f seconds.", testName, took));
         }finally {
             FRAMEWORK_METHOD_THREAD_LOCAL.remove();
+            // Restore the system properties
+            System.setProperties(currentSystemProperties);
         }
     }
+
+    private static class LocalProperties extends Properties {
+
+        private LocalProperties(Properties properties) {
+            init(properties);
+        }
+
+        private void init(Properties properties) {
+            for (Map.Entry entry : properties.entrySet()) {
+                put(entry.getKey(), entry.getValue());
+            }
+        }
+
+    }
+
 }
