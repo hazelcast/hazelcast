@@ -581,9 +581,11 @@ public class QueueAdvancedTest extends HazelcastTestSupport {
 
         final AtomicBoolean interrupted = new AtomicBoolean();
 
+        final CountDownLatch latch = new CountDownLatch(1);
         Thread t = new Thread() {
             public void run() {
                 try {
+                    latch.countDown();
                     queue.take();
                 } catch (InterruptedException e) {
                     interrupted.set(true);
@@ -592,7 +594,7 @@ public class QueueAdvancedTest extends HazelcastTestSupport {
         };
         t.start();
 
-        sleepSeconds(1);
+        latch.await(10, TimeUnit.SECONDS);
         t.interrupt();
         t.join(5000);
 
@@ -611,9 +613,11 @@ public class QueueAdvancedTest extends HazelcastTestSupport {
 
         assertTrue(queue.offer("item"));
 
+        final CountDownLatch latch = new CountDownLatch(1);
         Thread t = new Thread() {
             public void run() {
                 try {
+                    latch.countDown();
                     queue.put("item");
                 } catch (InterruptedException e) {
                     interrupted.set(true);
@@ -622,7 +626,7 @@ public class QueueAdvancedTest extends HazelcastTestSupport {
         };
         t.start();
 
-        sleepSeconds(1);
+        latch.await(10, TimeUnit.SECONDS);
         t.interrupt();
         t.join(5000);
 
