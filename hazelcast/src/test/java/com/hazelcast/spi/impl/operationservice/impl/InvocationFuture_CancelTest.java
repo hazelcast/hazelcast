@@ -10,6 +10,7 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -30,6 +31,13 @@ public class InvocationFuture_CancelTest extends HazelcastTestSupport {
     public void setup() {
         hz = createHazelcastInstance();
         opService = getOperationService(hz);
+    }
+
+    @Before
+    @After
+    public void cleanup(){
+        // clear the flag
+        Thread.interrupted();
     }
 
     @Test
@@ -58,17 +66,7 @@ public class InvocationFuture_CancelTest extends HazelcastTestSupport {
     }
 
     private InternalCompletableFuture invoke() {
-        Operation op = new AbstractOperation() {
-            @Override
-            public void run() throws Exception {
-                sleepMillis(1000);
-            }
-
-            @Override
-            public Object getResponse() {
-                return RESULT;
-            }
-        };
-        return opService.invokeOnPartition(null, op, 0);
+        Operation op = new DummyPartitionOperation(RESULT).setDelayMs(1000);
+        return opService.invokeOnPartition(null, op, op.getPartitionId());
     }
 }

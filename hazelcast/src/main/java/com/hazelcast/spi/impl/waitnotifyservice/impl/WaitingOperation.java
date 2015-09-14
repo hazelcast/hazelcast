@@ -19,21 +19,22 @@ package com.hazelcast.spi.impl.waitnotifyservice.impl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationResponseHandler;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.WaitSupport;
 import com.hazelcast.spi.exception.RetryableException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.spi.impl.operationservice.impl.responses.CallTimeoutResponse;
-import com.hazelcast.util.Clock;
 
 import java.util.Queue;
 import java.util.concurrent.Delayed;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
+import static com.hazelcast.util.Clock.currentTimeMillis;
 import static com.hazelcast.util.EmptyStatement.ignore;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.NANOSECONDS;
 
 class WaitingOperation extends AbstractOperation implements Delayed, PartitionAwareOperation {
     final Queue<WaitingOperation> queue;
@@ -42,6 +43,7 @@ class WaitingOperation extends AbstractOperation implements Delayed, PartitionAw
     final long expirationTime;
     volatile boolean valid = true;
     volatile Object cancelResponse;
+    volatile boolean interrupted;
 
     WaitingOperation(Queue<WaitingOperation> queue, WaitSupport waitSupport) {
         this.op = (Operation) waitSupport;
@@ -56,7 +58,7 @@ class WaitingOperation extends AbstractOperation implements Delayed, PartitionAw
         if (waitTimeout < 0) {
             return -1;
         }
-        long expirationTime = Clock.currentTimeMillis() + waitTimeout;
+        long expirationTime = currentTimeMillis() + waitTimeout;
         if (expirationTime < 0) {
             return -1;
         }
@@ -71,6 +73,10 @@ class WaitingOperation extends AbstractOperation implements Delayed, PartitionAw
         this.valid = valid;
     }
 
+    public void setInterrupted() {
+        interrupted = true;
+    }
+
     public boolean isValid() {
         return valid;
     }
@@ -80,7 +86,7 @@ class WaitingOperation extends AbstractOperation implements Delayed, PartitionAw
     }
 
     public boolean isExpired() {
-        return expirationTime > 0 && Clock.currentTimeMillis() >= expirationTime;
+        return expirationTime > 0 && currentTimeMillis() >= expirationTime;
     }
 
     public boolean isCancelled() {
@@ -88,7 +94,7 @@ class WaitingOperation extends AbstractOperation implements Delayed, PartitionAw
     }
 
     public boolean isCallTimedOut() {
-        final NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
+        NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
         InternalOperationService operationService = nodeEngine.getOperationService();
         if (operationService.isCallTimedOut(op)) {
             cancel(new CallTimeoutResponse(op.getCallId(), op.isUrgent()));
@@ -103,7 +109,7 @@ class WaitingOperation extends AbstractOperation implements Delayed, PartitionAw
 
     @Override
     public long getDelay(TimeUnit unit) {
-        return unit.convert(expirationTime - Clock.currentTimeMillis(), TimeUnit.MILLISECONDS);
+        return unit.convert(expirationTime - currentTimeMillis(), MILLISECONDS);
     }
 
     @Override
@@ -112,13 +118,19 @@ class WaitingOperation extends AbstractOperation implements Delayed, PartitionAw
         if (other == this) {
             return 0;
         }
-        long d = (getDelay(TimeUnit.NANOSECONDS)
-                - other.getDelay(TimeUnit.NANOSECONDS));
-        return (d == 0) ? 0 : ((d < 0) ? -1 : 1);
+
+        long delay = getDelay(NANOSECONDS) - other.getDelay(NANOSECONDS);
+        if (delay == 0) {
+            return 0;
+        } else {
+            return (delay < 0) ? -1 : 1;
+        }
     }
 
     @Override
     public void run() throws Exception {
+        System.out.println(Thread.currentThread().getName());
+
         if (!valid) {
             return;
         }
@@ -126,6 +138,12 @@ class WaitingOperation extends AbstractOperation implements Delayed, PartitionAw
         boolean expired = isExpired();
         boolean cancelled = isCancelled();
         if (!expired && !cancelled) {
+
+            //todo: we forget the remove the operation from the pending queue
+            if (interrupted) {
+                valid = false;
+                op.onInterrupt();
+            }
             return;
         }
 
@@ -137,8 +155,7 @@ class WaitingOperation extends AbstractOperation implements Delayed, PartitionAw
         if (expired) {
             waitSupport.onWaitExpire();
         } else {
-            OperationResponseHandler responseHandler = op.getOperationResponseHandler();
-            responseHandler.sendResponse(op, cancelResponse);
+            op.sendResponse(cancelResponse);
         }
     }
 
@@ -147,8 +164,8 @@ class WaitingOperation extends AbstractOperation implements Delayed, PartitionAw
     @Override
     public int hashCode() {
         assert false : "hashCode not designed";
-        return 42;
         // any arbitrary constant will do
+        return 42;
     }
 
     @Override

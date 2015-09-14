@@ -16,14 +16,21 @@
 
 package com.hazelcast.concurrent.lock;
 
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.WaitNotifyKey;
 
+import java.io.IOException;
+
 public final class ConditionKey implements WaitNotifyKey {
 
-    private final String name;
-    private final Data key;
-    private final String conditionId;
+    private String name;
+    private Data key;
+    private String conditionId;
+
+    private ConditionKey() {
+    }
 
     public ConditionKey(String name, Data key, String conditionId) {
         this.name = name;
@@ -75,5 +82,19 @@ public final class ConditionKey implements WaitNotifyKey {
         int result = key != null ? key.hashCode() : 0;
         result = 31 * result + (conditionId != null ? conditionId.hashCode() : 0);
         return result;
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeUTF(name);
+        out.writeData(key);
+        out.writeObject(conditionId);
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        name = in.readUTF();
+        key = in.readData();
+        conditionId = in.readUTF();
     }
 }

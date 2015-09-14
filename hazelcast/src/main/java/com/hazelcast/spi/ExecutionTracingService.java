@@ -21,8 +21,8 @@ import com.hazelcast.nio.Address;
 /**
  * Service that keeps registry of operations' execution/lifecycle.
  */
+@Deprecated
 public interface ExecutionTracingService {
 
     boolean isOperationExecuting(Address callerAddress, String callerUuid, Object identifier);
-
 }

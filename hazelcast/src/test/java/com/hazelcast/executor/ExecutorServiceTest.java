@@ -786,19 +786,22 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
     @Test
     public void testInvokeAllTimeoutCancelled() throws Exception {
         ExecutorService executor = createSingleNodeExecutorService("testInvokeAll");
-        assertFalse(executor.isShutdown());
+
         // Only one task
         ArrayList<Callable<Boolean>> tasks = new ArrayList<Callable<Boolean>>();
         tasks.add(new SleepingTask(0));
+
         List<Future<Boolean>> futures = executor.invokeAll(tasks, 5, TimeUnit.SECONDS);
         assertEquals(futures.size(), 1);
         assertEquals(futures.get(0).get(), Boolean.TRUE);
+
         // More tasks
         tasks.clear();
         for (int i = 0; i < TASK_COUNT; i++) {
             tasks.add(new SleepingTask(i < 2 ? 0 : 20));
         }
         futures = executor.invokeAll(tasks, 5, TimeUnit.SECONDS);
+
         assertEquals(futures.size(), TASK_COUNT);
         for (int i = 0; i < TASK_COUNT; i++) {
             if (i < 2) {
@@ -818,7 +821,7 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
     @Test
     public void testInvokeAllTimeoutSuccess() throws Exception {
         ExecutorService executor = createSingleNodeExecutorService("testInvokeAll");
-        assertFalse(executor.isShutdown());
+
         // Only one task
         ArrayList<Callable<String>> tasks = new ArrayList<Callable<String>>();
         tasks.add(new BasicTestCallable());
@@ -843,6 +846,7 @@ public class ExecutorServiceTest extends ExecutorServiceTestSupport {
     @Test
     public void testShutdownBehaviour() throws Exception {
         ExecutorService executor = createSingleNodeExecutorService("testShutdownBehaviour");
+
         // Fresh instance, is not shutting down
         assertFalse(executor.isShutdown());
         assertFalse(executor.isTerminated());

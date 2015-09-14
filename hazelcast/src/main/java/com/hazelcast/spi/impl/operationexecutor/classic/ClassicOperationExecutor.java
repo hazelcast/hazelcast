@@ -33,6 +33,9 @@ import com.hazelcast.spi.impl.operationexecutor.OperationRunner;
 import com.hazelcast.spi.impl.operationexecutor.OperationRunnerFactory;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
@@ -191,7 +194,30 @@ public final class ClassicOperationExecutor implements OperationExecutor {
         return threads;
     }
 
-    @SuppressFBWarnings({ "EI_EXPOSE_REP" })
+    @Override
+    public void scan(Map<Address, List<Long>> result) {
+        scan(getPartitionOperationRunners(), result);
+        scan(getGenericOperationRunners(), result);
+    }
+
+    private void scan(OperationRunner[] runners, Map<Address, List<Long>> results) {
+        for (OperationRunner runner : runners) {
+            Object task = runner.currentTask();
+            if (!(task instanceof Operation)) {
+                continue;
+            }
+
+            Operation operation = (Operation) task;
+            List<Long> callIds = results.get(operation.getCallerAddress());
+            if (callIds == null) {
+                callIds = new ArrayList<Long>();
+                results.put(operation.getCallerAddress(), callIds);
+            }
+            callIds.add(operation.getCallId());
+        }
+    }
+
+    @SuppressFBWarnings({"EI_EXPOSE_REP" })
     @Override
     public OperationRunner[] getPartitionOperationRunners() {
         return partitionOperationRunners;

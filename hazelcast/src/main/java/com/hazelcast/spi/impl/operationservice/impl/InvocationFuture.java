@@ -16,55 +16,54 @@
 
 package com.hazelcast.spi.impl.operationservice.impl;
 
+import com.hazelcast.core.DeadOperationException;
 import com.hazelcast.core.ExecutionCallback;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Address;
+import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.impl.operationservice.impl.responses.Response;
-import com.hazelcast.util.Clock;
-import com.hazelcast.util.ExceptionUtil;
 
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
-import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
+import static com.hazelcast.spi.impl.operationservice.impl.InternalResponse.CALL_TIMEOUT_RESPONSE;
+import static com.hazelcast.spi.impl.operationservice.impl.InternalResponse.DEAD_OPERATION_RESPONSE;
 import static com.hazelcast.spi.impl.operationservice.impl.InternalResponse.INTERRUPTED_RESPONSE;
-import static com.hazelcast.spi.impl.operationservice.impl.InternalResponse.NULL_RESPONSE;
-import static com.hazelcast.spi.impl.operationservice.impl.InternalResponse.TIMEOUT_RESPONSE;
-import static com.hazelcast.spi.impl.operationservice.impl.InternalResponse.WAIT_RESPONSE;
+import static com.hazelcast.spi.impl.operationservice.impl.Invocation.NOTHING;
+import static com.hazelcast.util.Clock.currentTimeMillis;
 import static com.hazelcast.util.ExceptionUtil.fixRemoteStackTrace;
+import static com.hazelcast.util.ExceptionUtil.rethrow;
 import static com.hazelcast.util.Preconditions.isNotNull;
-import static java.lang.Math.min;
+import static java.lang.Thread.currentThread;
 
 /**
  * The InvocationFuture is the {@link com.hazelcast.spi.InternalCompletableFuture} that waits on the completion
  * of a {@link Invocation}. The Invocation executes an operation.
  *
+ * In the new approach, no matter how long it takes for the call the get called, the invocation waits till the calltimeout
+ * from the remote or till a lacking operation heartbeat.
+ *
+ *
+ * Problem: wait long blocking operations.
+ * By default the default call timeout is set on every operation, means that is should be executed in this timewindow,
+ * or else fail. In the old approach an invocation would just be retried.
+ * Currently we immediately run into a timeout exception which is not retried.
+ * I think the meaning of call timeout is being abused here; the call should never timeout; at least not based on its
+ * call timeout.
+ *
  * @param <E>
  */
 final class InvocationFuture<E> implements InternalCompletableFuture<E> {
 
-    private static final int MAX_CALL_TIMEOUT_EXTENSION = 60 * 1000;
-
-    private static final AtomicReferenceFieldUpdater<InvocationFuture, Object> RESPONSE
-            = AtomicReferenceFieldUpdater.newUpdater(InvocationFuture.class, Object.class, "response");
-    private static final AtomicIntegerFieldUpdater<InvocationFuture> WAITER_COUNT
-            = AtomicIntegerFieldUpdater.newUpdater(InvocationFuture.class, "waiterCount");
-
-    volatile boolean interrupted;
-    volatile Object response;
+    // Contains the value of the response. Once set to a not null value, it will never change.
+    volatile Object response = NOTHING;
     final Invocation invocation;
+    volatile ExecutionCallbackNode<E> callbackHead;
 
-    // Contains the number of threads waiting for a result from this future.
-    // is updated through the WAITER_COUNT.
-    private volatile int waiterCount;
     private final OperationServiceImpl operationService;
-    private volatile ExecutionCallbackNode<E> callbackHead;
 
     InvocationFuture(OperationServiceImpl operationService, Invocation invocation, ExecutionCallback callback) {
         this.invocation = invocation;
@@ -75,12 +74,24 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
         }
     }
 
-    static long decrementTimeout(long timeout, long diff) {
-        if (timeout == Long.MAX_VALUE) {
-            return timeout;
-        }
+    @Override
+    public boolean cancel(boolean mayInterruptIfRunning) {
+        return false;
+    }
 
-        return timeout - diff;
+    @Override
+    public boolean isCancelled() {
+        return false;
+    }
+
+    @Override
+    public boolean isDone() {
+        return response != NOTHING;
+    }
+
+    @Override
+    public void andThen(ExecutionCallback<E> callback) {
+        andThen(callback, operationService.asyncExecutor);
     }
 
     @Override
@@ -89,7 +100,7 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
         isNotNull(executor, "executor");
 
         synchronized (this) {
-            if (responseAvailable(response)) {
+            if (response != NOTHING) {
                 runAsynchronous(callback, executor);
                 return;
             }
@@ -98,35 +109,20 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
         }
     }
 
-    private boolean responseAvailable(Object response) {
-        if (response == null) {
-            return false;
-        }
-
-        if (response == InternalResponse.WAIT_RESPONSE) {
-            return false;
-        }
-
-        return true;
-    }
-
-    @Override
-    public void andThen(ExecutionCallback<E> callback) {
-        andThen(callback, operationService.asyncExecutor);
-    }
-
     private void runAsynchronous(final ExecutionCallback<E> callback, Executor executor) {
         try {
             executor.execute(new Runnable() {
                 @Override
                 public void run() {
                     try {
-                        Object resp = resolveApplicationResponse(response);
-
-                        if (resp == null || !(resp instanceof Throwable)) {
-                            callback.onResponse((E) resp);
-                        } else {
-                            callback.onFailure((Throwable) resp);
+                        try {
+                            E resp = resolve(response);
+                            callback.onResponse(resp);
+                        } catch (Throwable t) {
+                            if (t instanceof ExecutionException) {
+                                t = t.getCause();
+                            }
+                            callback.onFailure(t);
                         }
                     } catch (Throwable cause) {
                         invocation.logger.severe("Failed asynchronous execution of execution callback: " + callback
@@ -148,35 +144,27 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
      * is set/applied, <tt>false</tt> otherwise. If <tt>false</tt> is returned, that means offered response is ignored
      * because a final response is already set to this future.
      */
-    public boolean set(Object offeredResponse) {
+    public void set(Object offeredResponse) {
         assert !(offeredResponse instanceof Response) : "unexpected response found: " + offeredResponse;
-
-        if (offeredResponse == null) {
-            offeredResponse = NULL_RESPONSE;
-        }
 
         ExecutionCallbackNode<E> callbackChain;
         synchronized (this) {
-            if (response != null && !(response instanceof InternalResponse)) {
+            if (response != NOTHING && !(response instanceof InternalResponse)) {
                 //it can be that this invocation future already received an answer, e.g. when an invocation
                 //already received a response, but before it cleans up itself, it receives a
                 //HazelcastInstanceNotActiveException.
 
                 // this is no good; no logging while holding a lock
-                ILogger logger = invocation.logger;
-                if (logger.isFinestEnabled()) {
-                    logger.finest("Future response is already set! Current response: "
+                if (invocation.logger.isFinestEnabled()) {
+                    invocation.logger.finest("Future response is already set! Current response: "
                             + response + ", Offered response: " + offeredResponse + ", Invocation: " + invocation);
                 }
 
                 operationService.invocationsRegistry.deregister(invocation);
-                return false;
+                return;
             }
 
             response = offeredResponse;
-            if (offeredResponse == WAIT_RESPONSE) {
-                return true;
-            }
             callbackChain = callbackHead;
             callbackHead = null;
             notifyAll();
@@ -184,9 +172,7 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
             operationService.invocationsRegistry.deregister(invocation);
         }
 
-
         notifyCallbacks(callbackChain);
-        return true;
     }
 
     private void notifyCallbacks(ExecutionCallbackNode<E> callbackChain) {
@@ -197,212 +183,154 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
     }
 
     @Override
-    public E get() throws InterruptedException, ExecutionException {
+    public E getSafely() {
         try {
-            return get(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
-        } catch (TimeoutException e) {
-            invocation.logger.severe("Unexpected timeout while processing " + this, e);
-            return null;
+            return get();
+        } catch (Throwable throwable) {
+            throw rethrow(throwable);
         }
     }
 
     @Override
-    public E getSafely() {
+    public E get() throws InterruptedException, ExecutionException {
+        if (response != NOTHING) {
+            return resolve(response);
+        }
+
+        boolean threadInterrupted = false;
         try {
-            //this method is quite inefficient when there is unchecked exception, because it will be wrapped
-            //in a ExecutionException, and then it is unwrapped again.
-            return get();
-        } catch (Throwable throwable) {
-            throw ExceptionUtil.rethrow(throwable);
+            synchronized (this) {
+                while (response == NOTHING) {
+                    try {
+                        wait();
+                    } catch (InterruptedException e) {
+                        threadInterrupted = true;
+                        invocation.signalInterrupt();
+                    }
+                }
+            }
+
+            return resolve(response);
+        } finally {
+            restoreInterruptIfNeeded(threadInterrupted);
         }
     }
 
     @Override
     public E get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
-        Object unresolvedResponse = waitForResponse(timeout, unit);
-        return (E) resolveApplicationResponseOrThrowException(unresolvedResponse);
-    }
-
-    private Object waitForResponse(long time, TimeUnit unit) {
-        if (responseAvailable(response)) {
-            return response;
+        if (response != NOTHING) {
+            return resolve(response);
         }
 
-        WAITER_COUNT.incrementAndGet(this);
+        boolean threadInterrupted = false;
+        long deadLineMs = currentTimeMillis() + unit.toMillis(timeout);
         try {
-            long timeoutMs = toTimeoutMs(time, unit);
-            long maxCallTimeoutMs = getMaxCallTimeout();
-            boolean longPolling = timeoutMs > maxCallTimeoutMs;
-
-            int pollCount = 0;
-            while (timeoutMs >= 0) {
-                long pollTimeoutMs = min(maxCallTimeoutMs, timeoutMs);
-                long startMs = Clock.currentTimeMillis();
-                long lastPollTime = 0;
-                pollCount++;
-
-                try {
-                    pollResponse(pollTimeoutMs);
-                    lastPollTime = Clock.currentTimeMillis() - startMs;
-                    timeoutMs = decrementTimeout(timeoutMs, lastPollTime);
-
-                    if (response == WAIT_RESPONSE) {
-                        RESPONSE.compareAndSet(this, WAIT_RESPONSE, null);
-                        continue;
-                    } else if (response != null) {
-                        //if the thread is interrupted, but the response was not an interrupted-response,
-                        //we need to restore the interrupt flag.
-                        if (response != INTERRUPTED_RESPONSE && interrupted) {
-                            Thread.currentThread().interrupt();
-                        }
-                        return response;
-                    }
-                } catch (InterruptedException e) {
-                    interrupted = true;
-                }
-
-                if (!interrupted && longPolling) {
-                    // no response!
-                    Address target = invocation.getTarget();
-                    if (invocation.remote && invocation.nodeEngine.getThisAddress().equals(target)) {
-                        // target may change during invocation because of migration!
-                        continue;
+            synchronized (this) {
+                while (response == NOTHING) {
+                    long remainingMs = deadLineMs - currentTimeMillis();
+                    if (remainingMs <= 0) {
+                        throw newTimeoutException(timeout, unit);
                     }
 
-                    invocation.logger.warning("No response for " + lastPollTime + " ms. " + toString());
-                    boolean executing = operationService.getIsStillRunningService().isOperationExecuting(invocation);
-                    if (!executing) {
-                        Object operationTimeoutException = invocation.newOperationTimeoutException(pollCount * pollTimeoutMs);
-                        if (response != null) {
-                            continue;
-                        }
-                        // tries to set an OperationTimeoutException response if response is not set yet
-                        set(operationTimeoutException);
+                    try {
+                        wait(remainingMs);
+                    } catch (InterruptedException e) {
+                        threadInterrupted = true;
+                        invocation.signalInterrupt();
                     }
                 }
             }
-            return TIMEOUT_RESPONSE;
+
+            return resolve(response);
         } finally {
-            WAITER_COUNT.decrementAndGet(this);
+            restoreInterruptIfNeeded(threadInterrupted);
         }
     }
 
-    private void pollResponse(long pollTimeoutMs) throws InterruptedException {
-        //we should only wait if there is any timeout. We can't call wait with 0, because it is interpreted as infinite.
-        if (pollTimeoutMs <= 0 || response != null) {
-            return;
+    private void restoreInterruptIfNeeded(boolean threadInterrupted) {
+        if (threadInterrupted && response != INTERRUPTED_RESPONSE) {
+            // if the thread got interrupted, but we did not manage to interrupt the invocation, we need to restore
+            // the interrupt flag
+            currentThread().interrupt();
         }
+    }
 
-        long currentTimeoutMs = pollTimeoutMs;
-        long waitStart = Clock.currentTimeMillis();
-        synchronized (this) {
-            while (currentTimeoutMs > 0 && response == null) {
-                wait(currentTimeoutMs);
-                currentTimeoutMs = pollTimeoutMs - (Clock.currentTimeMillis() - waitStart);
+    E resolve(Object response) throws ExecutionException, InterruptedException {
+        if (response instanceof InternalResponse) {
+            if (response == DEAD_OPERATION_RESPONSE) {
+                throw newExecutionExceptionForDeadOperationResponse();
+            } else if (response == CALL_TIMEOUT_RESPONSE) {
+                throw newExecutionExceptionForCallTimeoutResponse();
+            } else if (response == INTERRUPTED_RESPONSE) {
+                throw newInterruptedException();
+            } else {
+                throw new IllegalArgumentException();
+            }
+        } else {
+            if (response instanceof Data) {
+                if (invocation.deserialize) {
+                    response = invocation.nodeEngine.toObject(response);
+                } else {
+                    return (E) response;
+                }
+            }
+
+            if (response instanceof Throwable) {
+                Throwable throwable = ((Throwable) response);
+                fixRemoteStackTrace(throwable, currentThread().getStackTrace());
+                // To obey Future contract, we should wrap unchecked exceptions with ExecutionExceptions.
+                throw new ExecutionException((Throwable) response);
+            } else {
+                return (E) response;
             }
         }
     }
 
-    long getMaxCallTimeout() {
-        long callTimeout = invocation.callTimeout;
-        long maxCallTimeout = callTimeout + getCallTimeoutExtension(callTimeout);
-        return maxCallTimeout > 0 ? maxCallTimeout : Long.MAX_VALUE;
+    private TimeoutException newTimeoutException(long timeout, TimeUnit unit) {
+        //todo: improve exception
+        return new TimeoutException();
     }
 
-    private static long getCallTimeoutExtension(long callTimeout) {
-        if (callTimeout <= 0) {
-            return 0L;
-        }
-
-        return Math.min(callTimeout, MAX_CALL_TIMEOUT_EXTENSION);
+    private InterruptedException newInterruptedException() {
+        return new InterruptedException("Call " + invocation + " was interrupted");
     }
 
-    int getWaitingThreadsCount() {
-        return waiterCount;
+    private ExecutionException newExecutionExceptionForCallTimeoutResponse() {
+        //todo:
+        long totalTimeoutMs = 0;
+
+        StringBuilder sb = new StringBuilder("No response for ").append(totalTimeoutMs).append(" ms")
+                .append(" Aborting invocation! ").append(toString());
+
+        if (invocation.pendingResponse != null) {
+            sb.append(" Not all backups have completed! ");
+        } else {
+            sb.append(" No response has been received! ");
+        }
+
+        sb.append(" backups-expected:").append(invocation.backupsExpected)
+                .append(" backups-completed: ").append(invocation.backupsCompleted);
+
+        return new ExecutionException(new OperationTimeoutException(sb.toString()));
     }
 
-    private static long toTimeoutMs(long time, TimeUnit unit) {
-        long timeoutMs = unit.toMillis(time);
-        if (timeoutMs < 0) {
-            timeoutMs = 0;
-        }
-        return timeoutMs;
-    }
+    private ExecutionException newExecutionExceptionForDeadOperationResponse() {
+        //todo:
+        long totalTimeoutMs = 0;
 
-    private Object resolveApplicationResponseOrThrowException(Object unresolvedResponse)
-            throws ExecutionException, InterruptedException, TimeoutException {
+        StringBuilder sb = new StringBuilder("No response for ").append(totalTimeoutMs).append(" ms")
+                .append(" Aborting invocation! ").append(toString());
 
-        Object response = resolveApplicationResponse(unresolvedResponse);
-
-        if (response == null || !(response instanceof Throwable)) {
-            return response;
+        if (invocation.pendingResponse != null) {
+            sb.append(" Not all backups have completed! ");
+        } else {
+            sb.append(" No response has been received! ");
         }
 
-        if (response instanceof ExecutionException) {
-            throw (ExecutionException) response;
-        }
+        sb.append(" backups-expected:").append(invocation.backupsExpected)
+                .append(" backups-completed: ").append(invocation.backupsCompleted);
 
-        if (response instanceof TimeoutException) {
-            throw (TimeoutException) response;
-        }
-
-        if (response instanceof InterruptedException) {
-            throw (InterruptedException) response;
-        }
-
-        if (response instanceof Error) {
-            throw (Error) response;
-        }
-
-        // To obey Future contract, we should wrap unchecked exceptions with ExecutionExceptions.
-        throw new ExecutionException((Throwable) response);
-    }
-
-    private Object resolveApplicationResponse(Object unresolvedResponse) {
-        if (unresolvedResponse == NULL_RESPONSE) {
-            return null;
-        }
-
-        if (unresolvedResponse == TIMEOUT_RESPONSE) {
-            return new TimeoutException("Call " + invocation + " encountered a timeout");
-        }
-
-        if (unresolvedResponse == INTERRUPTED_RESPONSE) {
-            return new InterruptedException("Call " + invocation + " was interrupted");
-        }
-
-        Object response = unresolvedResponse;
-        if (invocation.resultDeserialized && response instanceof Data) {
-            response = invocation.nodeEngine.toObject(response);
-            if (response == null) {
-                return null;
-            }
-        }
-
-        if (response instanceof Throwable) {
-            Throwable throwable = ((Throwable) response);
-            if (invocation.remote) {
-                fixRemoteStackTrace((Throwable) response, Thread.currentThread().getStackTrace());
-            }
-            return throwable;
-        }
-
-        return response;
-    }
-
-    @Override
-    public boolean cancel(boolean mayInterruptIfRunning) {
-        return false;
-    }
-
-    @Override
-    public boolean isCancelled() {
-        return false;
-    }
-
-    @Override
-    public boolean isDone() {
-         return responseAvailable(response);
+        return new ExecutionException(new DeadOperationException(sb.toString()));
     }
 
     @Override

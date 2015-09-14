@@ -102,8 +102,7 @@ public class OperationServiceImpl_timeoutTest extends HazelcastTestSupport {
 
         final HazelcastInstance hz = instances[memberCount - 1];
         Node node = TestUtil.getNode(hz);
-        NodeEngine nodeEngine = node.nodeEngine;
-        OperationService operationService = nodeEngine.getOperationService();
+        OperationService operationService = getOperationService(hz);
         int partitionId = (int) (Math.random() * node.getPartitionService().getPartitionCount());
 
         InternalCompletableFuture<Object> future = operationService
@@ -118,6 +117,7 @@ public class OperationServiceImpl_timeoutTest extends HazelcastTestSupport {
 
                 @Override
                 public void onFailure(Throwable t) {
+                    System.out.println(t);
                     if (t instanceof OperationTimeoutException) {
                         latch.countDown();
                     }

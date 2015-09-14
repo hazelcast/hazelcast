@@ -2,11 +2,13 @@ package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.impl.responses.BackupResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.CallTimeoutResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.ErrorResponse;
+import com.hazelcast.spi.impl.operationservice.impl.responses.InterruptedResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
 import com.hazelcast.test.ExpectedRuntimeException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -197,7 +199,56 @@ public class InvocationRegistry_NotifyTest extends HazelcastTestSupport {
         long callId = invocation.op.getCallId();
         invocationRegistry.notify(new CallTimeoutResponse(callId, false), null);
 
-        assertNull(invocation.invocationFuture.getSafely());
+        // when an timeout-response is received, the invocation immediately terminates.
+        try {
+            invocation.invocationFuture.getSafely();
+            fail();
+        }catch (OperationTimeoutException expected){
+        }
+
+        assertNull(invocationRegistry.get(callId));
+    }
+
+    @Test
+    public void timeoutResponse_whenInvocationMissing_thenNothingBadHappens() {
+        Invocation invocation = newInvocation();
+        invocationRegistry.register(invocation);
+        long callId = invocation.op.getCallId();
+        invocationRegistry.deregister(invocation);
+
+        invocationRegistry.notify(new CallTimeoutResponse(callId, false), null);
+
+        assertNull(invocationRegistry.get(callId));
+    }
+
+    // ==================== timeoutResponse =====================
+
+    @Test
+    public void interruptResponse() throws Exception {
+        Invocation invocation = newInvocation();
+        invocationRegistry.register(invocation);
+
+        long callId = invocation.op.getCallId();
+        invocationRegistry.notify(new InterruptedResponse(callId, false), null);
+
+        try {
+            assertNull(invocation.invocationFuture.get());
+            fail();
+        }catch (InterruptedException e){
+        }
+
+        assertNull(invocationRegistry.get(callId));
+    }
+
+    @Test
+    public void interruptResponse_whenInvocationMissing_thenNothingBadHappens() {
+        Invocation invocation = newInvocation();
+        invocationRegistry.register(invocation);
+        long callId = invocation.op.getCallId();
+        invocationRegistry.deregister(invocation);
+
+        invocationRegistry.notify(new InterruptedResponse(callId, false), null);
+
         assertNull(invocationRegistry.get(callId));
     }
 }

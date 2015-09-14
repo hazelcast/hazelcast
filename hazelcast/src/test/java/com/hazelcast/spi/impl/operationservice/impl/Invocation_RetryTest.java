@@ -17,12 +17,14 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
-import java.lang.reflect.Field;
-import java.util.Collection;
-import java.util.concurrent.Future;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+
+import java.lang.reflect.Field;
+import java.util.Collection;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
@@ -70,8 +72,8 @@ public class Invocation_RetryTest extends HazelcastTestSupport {
         try {
             f.get();
             fail();
-        } catch (MemberLeftException expected) {
-
+        } catch (ExecutionException expected) {
+            assertInstanceOf(MemberLeftException.class, expected.getCause());
         }
     }
 

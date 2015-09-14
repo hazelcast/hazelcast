@@ -27,6 +27,7 @@ import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.quorum.QuorumException;
 import com.hazelcast.spi.exception.RetryableException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.operationservice.impl.responses.InterruptedResponse;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.IOException;
 import java.util.Date;
@@ -62,8 +63,36 @@ public abstract class Operation implements DataSerializable {
     private int replicaIndex;
     private long callId;
     private short flags;
+
+    /**
+     * The (clock) time in ms this operation was invoked.
+     */
     private long invocationTime = -1;
+
+    /**
+     * The maximum validity of an operation. So maximum time between invoking and starting the execution. By default in
+     * hz this is 60 seconds; so if the operation is not started with execution within this time-window, it will not be
+     * executed but rejected instead.
+     *
+     * Once an operation starts executing, this value has no meaning. E.g. when the operation runs for 10 minutes, it
+     * is a valid execution.
+     *
+     * problem 1:
+     * One of the problems is with blocking operations since the same operation can be blocked a few times and eventually
+     * get executed. That is why in case of a blocking operation, the call timeout is extended so that on subsequent
+     * executions it isn't rejected.
+     *
+     * problem 2:
+     * One of the other problems is that callTimeout works in combination with invocation time. This is a problematic issue
+     * since invocationTime relies on the shared notation of a global clock. Something which isn't available in a cluster.
+     */
     private long callTimeout = Long.MAX_VALUE;
+
+    /**
+     * Maximum time (ms) a blocking is allowed to wait.
+     *
+     * -1 indicates infinite.
+     */
     private long waitTimeout = -1;
     private String callerUuid;
 
@@ -275,6 +304,11 @@ public abstract class Operation implements DataSerializable {
     public final void sendResponse(Object value) {
         OperationResponseHandler operationResponseHandler = getOperationResponseHandler();
         operationResponseHandler.sendResponse(this, value);
+    }
+
+    public final void sendInterruptedResponse() {
+        OperationResponseHandler operationResponseHandler = getOperationResponseHandler();
+        operationResponseHandler.sendResponse(this, new InterruptedResponse(callId, isUrgent()));
     }
 
     /**
@@ -572,6 +606,11 @@ public abstract class Operation implements DataSerializable {
      * @param sb the StringBuilder to add the debug info to.
      */
     protected void toString(StringBuilder sb) {
+
+    }
+
+    public void onInterrupt() {
+        sendInterruptedResponse();
     }
 
     @Override

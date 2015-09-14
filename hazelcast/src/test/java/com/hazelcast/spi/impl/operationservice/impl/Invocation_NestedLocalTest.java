@@ -121,5 +121,4 @@ public class Invocation_NestedLocalTest extends Invocation_NestedAbstractTest {
 
         assertEquals(RESPONSE, f.getSafely());
     }
-
 }

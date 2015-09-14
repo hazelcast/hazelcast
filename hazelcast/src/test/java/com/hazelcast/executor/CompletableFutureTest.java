@@ -24,6 +24,7 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.Repeat;
 import org.hamcrest.Matchers;
 import org.junit.Before;
 import org.junit.Rule;
@@ -224,13 +225,19 @@ public class CompletableFutureTest extends HazelcastTestSupport {
 
     @Test
     public void noCancellation_afterDone_flagsSetCorrectly() throws Exception {
-        ICompletableFuture<String> f = submitAwaitingTaskNoCallbacks(NO_EXCEPTION);
+        final ICompletableFuture<String> f = submitAwaitingTaskNoCallbacks(NO_EXCEPTION);
         assertTaskInExecution();
         releaseAwaitingTask();
         assertTaskExecutedItsLogic();
         assertTaskFinishedEventually(f);
 
-        assertTrue("Task should be done", f.isDone());
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertTrue("Task should be done", f.isDone());
+            }
+        });
+
         assertFalse("Task should NOT be cancelled", f.isCancelled());
         assertEquals("success", f.get());
     }

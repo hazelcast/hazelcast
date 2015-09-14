@@ -26,10 +26,12 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.impl.responses.BackupResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.CallTimeoutResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.ErrorResponse;
+import com.hazelcast.spi.impl.operationservice.impl.responses.InterruptedResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
 import com.hazelcast.spi.impl.operationservice.impl.responses.Response;
 import com.hazelcast.util.counters.MwCounter;
 import com.hazelcast.util.counters.SwCounter;
+
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
@@ -41,6 +43,7 @@ import static com.hazelcast.spi.Operation.CALL_ID_LOCAL_SKIPPED;
 import static com.hazelcast.spi.OperationAccessor.setCallId;
 import static com.hazelcast.util.counters.MwCounter.newMwCounter;
 import static com.hazelcast.util.counters.SwCounter.newSwCounter;
+import static java.lang.System.currentTimeMillis;
 
 /**
  * The InvocationsRegistry is responsible for the registration of all pending invocations. Using the InvocationRegistry the
@@ -77,6 +80,8 @@ public class InvocationRegistry {
     private final MwCounter responseBackupCounter = newMwCounter();
     @Probe(name = "response.error.count", level = MANDATORY)
     private final SwCounter responseErrorCounter = newSwCounter();
+    @Probe(name = "response.interrupt.count", level = MANDATORY)
+    private final SwCounter interruptedCounter = newSwCounter();
 
     public InvocationRegistry(NodeEngineImpl nodeEngine, ILogger logger, BackpressureRegulator backpressureRegulator,
                               int concurrencyLevel) {
@@ -119,6 +124,16 @@ public class InvocationRegistry {
         }
 
         invocations.put(callId, invocation);
+    }
+
+    public void notifyStillRunning(long callId) {
+        Invocation invocation = invocations.get(callId);
+        if (invocation == null) {
+            // the invocation doesn't exist anymore, so we are done.
+            return;
+        }
+
+        invocation.lastHeartbeatMs = currentTimeMillis();
     }
 
     /**
@@ -192,6 +207,8 @@ public class InvocationRegistry {
             notifyCallTimeout((CallTimeoutResponse) response, sender);
         } else if (response instanceof ErrorResponse) {
             notifyErrorResponse((ErrorResponse) response, sender);
+        } else if (response instanceof InterruptedResponse) {
+            notifyInterruptResponse((InterruptedResponse) response, sender);
         } else {
             logger.severe("Unrecognized response: " + response);
         }
@@ -231,6 +248,20 @@ public class InvocationRegistry {
         }
 
         invocation.notifyError(response.getCause());
+    }
+
+    private void notifyInterruptResponse(InterruptedResponse response, Address sender) {
+        interruptedCounter.inc();
+        Invocation invocation = invocations.get(response.getCallId());
+
+        if (invocation == null) {
+            if (nodeEngine.isActive()) {
+                logger.warning("No Invocation found for response: " + response + " sent from " + sender);
+            }
+            return;
+        }
+
+        invocation.notifyInterruptResponse();
     }
 
     private void notifyNormalResponse(NormalResponse response, Address sender) {
@@ -278,5 +309,4 @@ public class InvocationRegistry {
             }
         }
     }
-
 }

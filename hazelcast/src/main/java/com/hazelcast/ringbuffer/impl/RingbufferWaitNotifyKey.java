@@ -16,7 +16,11 @@
 
 package com.hazelcast.ringbuffer.impl;
 
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.AbstractWaitNotifyKey;
+
+import java.io.IOException;
 
 import static com.hazelcast.ringbuffer.impl.RingbufferService.SERVICE_NAME;
 
@@ -25,7 +29,10 @@ import static com.hazelcast.ringbuffer.impl.RingbufferService.SERVICE_NAME;
  */
 public class RingbufferWaitNotifyKey extends AbstractWaitNotifyKey {
 
-    private final String type;
+    private String type;
+
+    private RingbufferWaitNotifyKey() {
+    }
 
     public RingbufferWaitNotifyKey(String name, String type) {
         super(SERVICE_NAME, name);
@@ -53,6 +60,19 @@ public class RingbufferWaitNotifyKey extends AbstractWaitNotifyKey {
         int result = super.hashCode();
         result = 31 * result + type.hashCode();
         return result;
+    }
+
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        super.writeData(out);
+        out.writeUTF(type);
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        super.readData(in);
+        type = in.readUTF();
     }
 }
 

@@ -16,13 +16,21 @@
 
 package com.hazelcast.spi;
 
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+
+import java.io.IOException;
+
 /**
  * Abstract implementation of the WaitNotifyKey.
  */
 public abstract class AbstractWaitNotifyKey implements WaitNotifyKey {
 
-    private final String service;
-    private final String objectName;
+    private String service;
+    private String objectName;
+
+    protected AbstractWaitNotifyKey() {
+    }
 
     protected AbstractWaitNotifyKey(String service, String objectName) {
         this.service = service;
@@ -65,5 +73,17 @@ public abstract class AbstractWaitNotifyKey implements WaitNotifyKey {
         int result = service != null ? service.hashCode() : 0;
         result = 31 * result + (objectName != null ? objectName.hashCode() : 0);
         return result;
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeUTF(service);
+        out.writeObject(objectName);
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        service = in.readUTF();
+        objectName = in.readUTF();
     }
 }

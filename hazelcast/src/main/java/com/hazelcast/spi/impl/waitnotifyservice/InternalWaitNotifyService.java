@@ -16,9 +16,22 @@
 
 package com.hazelcast.spi.impl.waitnotifyservice;
 
+import com.hazelcast.spi.WaitNotifyKey;
 import com.hazelcast.spi.WaitNotifyService;
+import com.hazelcast.spi.impl.OperationTracingService;
 
-public interface InternalWaitNotifyService extends WaitNotifyService {
+public interface InternalWaitNotifyService extends WaitNotifyService, OperationTracingService {
 
     void cancelWaitingOps(String serviceName, Object objectId, Throwable cause);
+
+    /**
+     * Interrupts an operation.
+     *
+     * If the operation doesn't exist, has completed, or already is interrupted, the call is ignored.
+     *
+     * @param key the WaitNotifyKey if this Operation
+     * @param callerUUID the id of the calling member
+     * @param callId the callId.
+     */
+    void interrupt(WaitNotifyKey key, String callerUUID, long callId);
 }

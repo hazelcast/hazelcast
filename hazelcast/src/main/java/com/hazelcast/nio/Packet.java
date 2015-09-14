@@ -41,6 +41,11 @@ public final class Packet extends HeapData implements OutboundFrame {
     public static final int HEADER_WAN_REPLICATION = 3;
     public static final int HEADER_URGENT = 4;
     public static final int HEADER_BIND = 5;
+    /**
+     * When this flag is set, the payload of the Packet contains callid's of all operations running on some member
+     * on behalf of another member. See {@link com.hazelcast.spi.impl.operationservice.impl.OperationHeartbeatReporter}.
+     */
+    public static final int HEADER_OP_HEARTBEAT = 6;
 
     // The value of these constants is important. The order needs to match the order in the read/write process
     private static final short PERSIST_VERSION = 1;
@@ -94,8 +99,9 @@ public final class Packet extends HeapData implements OutboundFrame {
         this.conn = conn;
     }
 
-    public void setHeader(int bit) {
+    public Packet setHeader(int bit) {
         header |= 1 << bit;
+        return this;
     }
 
     public boolean isHeaderSet(int bit) {

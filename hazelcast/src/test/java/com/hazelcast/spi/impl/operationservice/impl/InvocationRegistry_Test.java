@@ -24,7 +24,7 @@ import static org.junit.Assert.fail;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class InvocationRegistryTest extends HazelcastTestSupport {
+public class InvocationRegistry_Test extends HazelcastTestSupport {
 
     private InvocationRegistry invocationRegistry;
     private NodeEngineImpl nodeEngine;
@@ -166,7 +166,8 @@ public class InvocationRegistryTest extends HazelcastTestSupport {
         try {
             f.get();
             fail();
-        } catch (MemberLeftException expected) {
+        } catch (ExecutionException expected) {
+            assertInstanceOf(MemberLeftException.class, expected.getCause());
         }
 
         assertNull(invocationRegistry.get(callId));
