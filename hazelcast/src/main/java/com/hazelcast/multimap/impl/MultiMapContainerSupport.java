@@ -46,13 +46,12 @@ abstract class MultiMapContainerSupport {
         this.config = nodeEngine.getConfig().findMultiMapConfig(name);
     }
 
-
     public MultiMapValue getOrCreateMultiMapValue(Data dataKey) {
         MultiMapValue multiMapValue = multiMapValues.get(dataKey);
         if (multiMapValue != null) {
             return multiMapValue;
         }
-        // create multiMapValue.
+        // create multiMapValue
         final MultiMapConfig.ValueCollectionType valueCollectionType = config.getValueCollectionType();
         final Collection<MultiMapRecord> collection = createCollection(valueCollectionType);
         multiMapValue = new MultiMapValue(collection);
@@ -73,6 +72,4 @@ abstract class MultiMapContainerSupport {
     public MultiMapConfig getConfig() {
         return config;
     }
-
-
 }

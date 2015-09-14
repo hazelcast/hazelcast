@@ -32,7 +32,7 @@ import java.util.Set;
 import static com.hazelcast.util.Clock.currentTimeMillis;
 
 /**
- * Multi-map container.
+ * MultiMap container which holds a map of {@link MultiMapValue}.
  */
 public class MultiMapContainer extends MultiMapContainerSupport {
 
@@ -48,7 +48,7 @@ public class MultiMapContainer extends MultiMapContainerSupport {
 
     private long idGen;
 
-    // these fields are volatile since they can ready by other threads than the partition-thread.
+    // these fields are volatile since they can be read by other threads than the partition-thread
     private volatile long lastAccessTime;
     private volatile long lastUpdateTime;
 
@@ -211,5 +211,4 @@ public class MultiMapContainer extends MultiMapContainerSupport {
     public long getLockedCount() {
         return lockStore.getLockedKeys().size();
     }
-
 }
