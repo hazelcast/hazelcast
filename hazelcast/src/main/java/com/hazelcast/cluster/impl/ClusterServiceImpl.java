@@ -136,6 +136,8 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
 
     private static final long MIN_WAIT_ON_FUTURE_TIMEOUT_MILLIS = TimeUnit.SECONDS.toMillis(10);
 
+    private static final String MEMBERSHIP_EVENT_EXECUTOR_NAME = "hz:cluster:event";
+
     private final Address thisAddress;
     private final MemberImpl thisMember;
 
@@ -199,8 +201,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         thisAddress = node.getThisAddress();
         thisMember = node.getLocalMember();
 
-        setMembers(thisMember);
-        sendMembershipEvents(Collections.<MemberImpl>emptySet(), Collections.singleton(thisMember));
+        registerMember(thisMember);
 
         maxWaitMillisBeforeJoin = node.groupProperties.getMillis(GroupProperty.MAX_WAIT_SECONDS_BEFORE_JOIN);
         waitMillisBeforeJoin = node.groupProperties.getMillis(GroupProperty.WAIT_SECONDS_BEFORE_JOIN);
@@ -216,12 +217,20 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
 
         node.connectionManager.addConnectionListener(this);
 
+        //MEMBERSHIP_EVENT_EXECUTOR is a single threaded executor to ensure that events are executed in correct order.
+        nodeEngine.getExecutionService().register(MEMBERSHIP_EVENT_EXECUTOR_NAME, 1, Integer.MAX_VALUE, ExecutorType.CACHED);
+
         registerMetrics();
     }
 
     private static long getHeartBeatInterval(GroupProperties groupProperties) {
         long heartbeatInterval = groupProperties.getMillis(GroupProperty.HEARTBEAT_INTERVAL_SECONDS);
         return heartbeatInterval > 0 ? heartbeatInterval : TimeUnit.SECONDS.toMillis(1);
+    }
+
+    private void registerMember(MemberImpl thisMember) {
+        setMembers(thisMember);
+        sendMembershipEvents(Collections.<MemberImpl>emptySet(), Collections.singleton(thisMember));
     }
 
     private void registerMetrics() {
@@ -1284,8 +1293,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         if (membershipAwareServices != null && !membershipAwareServices.isEmpty()) {
             final MembershipServiceEvent event = new MembershipServiceEvent(membershipEvent);
             for (final MembershipAwareService service : membershipAwareServices) {
-                // service events should not block each other
-                nodeEngine.getExecutionService().execute(ExecutionService.SYSTEM_EXECUTOR, new Runnable() {
+                nodeEngine.getExecutionService().execute(MEMBERSHIP_EVENT_EXECUTOR_NAME, new Runnable() {
                     public void run() {
                         if (added) {
                             service.memberAdded(event);

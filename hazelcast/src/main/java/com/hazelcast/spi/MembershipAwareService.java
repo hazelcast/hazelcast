@@ -26,6 +26,7 @@ public interface MembershipAwareService {
 
     /**
      * Invoked when a new member is added to the cluster.
+     * Should be non-blocking.
      *
      * @param event the event for a new member added to the cluster
      */
@@ -33,6 +34,7 @@ public interface MembershipAwareService {
 
     /**
      * Invoked when an existing member leaves the cluster.
+     * Should be non-blocking.
      *
      * @param event the event for an existing member leaving the cluster
      */
