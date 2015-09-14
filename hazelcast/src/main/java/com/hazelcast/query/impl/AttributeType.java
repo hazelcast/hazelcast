@@ -83,11 +83,11 @@ public enum AttributeType {
     /**
      * UUID
      */
-    UUID(UUIDConverter.INSTANCE);
+    UUID(TypeConverters.UUID_CONVERTER);
 
     private final TypeConverters.TypeConverter converter;
 
-    private AttributeType(TypeConverters.TypeConverter converter) {
+    AttributeType(TypeConverters.TypeConverter converter) {
         this.converter = converter;
     }
 

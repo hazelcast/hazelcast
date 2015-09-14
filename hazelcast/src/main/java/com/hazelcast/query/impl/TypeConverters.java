@@ -37,20 +37,26 @@ final class TypeConverters {
     public static final TypeConverter SQL_DATE_CONVERTER = new SqlDateConverter();
     public static final TypeConverter SQL_TIMESTAMP_CONVERTER = new SqlTimestampConverter();
     public static final TypeConverter DATE_CONVERTER = new DateConverter();
+    public static final TypeConverter IDENTITY_CONVERTER = new IdentityConverter();
+    public static final TypeConverter UUID_CONVERTER = new UUIDConverter();
 
     private TypeConverters() {
     }
 
-    public interface TypeConverter {
-        Comparable convert(Comparable value);
-    }
+    public abstract static class TypeConverter {
+        abstract Comparable convertInternal(Comparable value);
 
-    static class EnumConverter implements TypeConverter {
-        @Override
-        public Comparable convert(Comparable value) {
+        public final Comparable convert(Comparable value) {
             if (value == null) {
                 return IndexImpl.NULL;
             }
+            return convertInternal(value);
+        }
+    }
+
+    static class EnumConverter extends TypeConverter {
+        @Override
+        Comparable convertInternal(Comparable value) {
             String enumString = value.toString();
             if (enumString.contains(".")) {
                 // there is a dot  in the value specifier, keep part after last dot
@@ -60,12 +66,9 @@ final class TypeConverters {
         }
     }
 
-    static class SqlDateConverter implements TypeConverter {
+    static class SqlDateConverter extends TypeConverter {
         @Override
-        public Comparable convert(Comparable value) {
-            if (value == null) {
-                return IndexImpl.NULL;
-            }
+        Comparable convertInternal(Comparable value) {
             if (value instanceof java.sql.Date) {
                 return value;
             }
@@ -80,12 +83,9 @@ final class TypeConverters {
         }
     }
 
-    static class SqlTimestampConverter implements TypeConverter {
+    static class SqlTimestampConverter extends TypeConverter {
         @Override
-        public Comparable convert(Comparable value) {
-            if (value == null) {
-                return IndexImpl.NULL;
-            }
+        Comparable convertInternal(Comparable value) {
             if (value instanceof Timestamp) {
                 return value;
             }
@@ -100,12 +100,9 @@ final class TypeConverters {
         }
     }
 
-    static class DateConverter implements TypeConverter {
+    static class DateConverter extends TypeConverter {
         @Override
-        public Comparable convert(Comparable value) {
-            if (value == null) {
-                return IndexImpl.NULL;
-            }
+        Comparable convertInternal(Comparable value) {
             if (value instanceof Date) {
                 return value;
             }
@@ -120,12 +117,9 @@ final class TypeConverters {
         }
     }
 
-    static class DoubleConverter implements TypeConverter {
+    static class DoubleConverter extends TypeConverter {
         @Override
-        public Comparable convert(Comparable value) {
-            if (value == null) {
-                return IndexImpl.NULL;
-            }
+        Comparable convertInternal(Comparable value) {
             if (value instanceof Double) {
                 return value;
             }
@@ -140,12 +134,9 @@ final class TypeConverters {
         }
     }
 
-    static class LongConverter implements TypeConverter {
+    static class LongConverter extends TypeConverter {
         @Override
-        public Comparable convert(Comparable value) {
-            if (value == null) {
-                return IndexImpl.NULL;
-            }
+        Comparable convertInternal(Comparable value) {
             if (value instanceof Long) {
                 return value;
             }
@@ -160,12 +151,9 @@ final class TypeConverters {
         }
     }
 
-    static class BigIntegerConverter implements TypeConverter {
+    static class BigIntegerConverter extends TypeConverter {
         @Override
-        public Comparable convert(Comparable value) {
-            if (value == null) {
-                return IndexImpl.NULL;
-            }
+        Comparable convertInternal(Comparable value) {
             if (value instanceof BigInteger) {
                 return value;
             }
@@ -173,12 +161,9 @@ final class TypeConverters {
         }
     }
 
-    static class BigDecimalConverter implements TypeConverter {
+    static class BigDecimalConverter extends TypeConverter {
         @Override
-        public Comparable convert(Comparable value) {
-            if (value == null) {
-                return IndexImpl.NULL;
-            }
+        Comparable convertInternal(Comparable value) {
             if (value instanceof BigDecimal) {
                 return value;
             }
@@ -189,12 +174,9 @@ final class TypeConverters {
         }
     }
 
-    static class IntegerConverter implements TypeConverter {
+    static class IntegerConverter extends TypeConverter {
         @Override
-        public Comparable convert(Comparable value) {
-            if (value == null) {
-                return IndexImpl.NULL;
-            }
+        Comparable convertInternal(Comparable value) {
             if (value instanceof Integer) {
                 return value;
             }
@@ -209,25 +191,19 @@ final class TypeConverters {
         }
     }
 
-    static class StringConverter implements TypeConverter {
+    static class StringConverter extends TypeConverter {
         @Override
-        public Comparable convert(Comparable value) {
+        Comparable convertInternal(Comparable value) {
             if (value instanceof String) {
                 return value;
-            }
-            if (value == null) {
-                return IndexImpl.NULL;
             }
             return value.toString();
         }
     }
 
-    static class FloatConverter implements TypeConverter {
+    static class FloatConverter extends TypeConverter {
         @Override
-        public Comparable convert(Comparable value) {
-            if (value == null) {
-                return IndexImpl.NULL;
-            }
+        Comparable convertInternal(Comparable value) {
             if (value instanceof Float) {
                 return value;
             }
@@ -242,12 +218,9 @@ final class TypeConverters {
         }
     }
 
-    static class ShortConverter implements TypeConverter {
+    static class ShortConverter extends TypeConverter {
         @Override
-        public Comparable convert(Comparable value) {
-            if (value == null) {
-                return IndexImpl.NULL;
-            }
+        Comparable convertInternal(Comparable value) {
             if (value instanceof Short) {
                 return value;
             }
@@ -262,12 +235,9 @@ final class TypeConverters {
         }
     }
 
-    static class BooleanConverter implements TypeConverter {
+    static class BooleanConverter extends TypeConverter {
         @Override
-        public Comparable convert(Comparable value) {
-            if (value == null) {
-                return IndexImpl.NULL;
-            }
+        Comparable convertInternal(Comparable value) {
             if (value instanceof Boolean) {
                 return value;
             }
@@ -282,12 +252,9 @@ final class TypeConverters {
         }
     }
 
-    static class ByteConverter implements TypeConverter {
+    static class ByteConverter extends TypeConverter {
         @Override
-        public Comparable convert(Comparable value) {
-            if (value == null) {
-                return IndexImpl.NULL;
-            }
+        Comparable convertInternal(Comparable value) {
             if (value instanceof Byte) {
                 return value;
             }
@@ -302,12 +269,9 @@ final class TypeConverters {
         }
     }
 
-    static class CharConverter implements TypeConverter {
+    static class CharConverter extends TypeConverter {
         @Override
-        public Comparable convert(Comparable value) {
-            if (value == null) {
-                return IndexImpl.NULL;
-            }
+        Comparable convertInternal(Comparable value) {
             if (value.getClass() == char.class) {
                 return value;
             }

@@ -21,18 +21,10 @@ import java.util.UUID;
 /**
  * TypeConverter to handle UUID
  */
-public final class UUIDConverter implements TypeConverters.TypeConverter {
-
-    /**
-     * Singleton
-     */
-    public static final TypeConverters.TypeConverter INSTANCE = new UUIDConverter();
-
-    private UUIDConverter() {
-    }
+final class UUIDConverter extends TypeConverters.TypeConverter {
 
     @Override
-    public Comparable convert(Comparable value) {
+    Comparable convertInternal(Comparable value) {
         if (value instanceof UUID) {
             return value;
         }

@@ -81,7 +81,7 @@ public class IndexImpl implements Index {
         if (converter == null) {
             // Initialize attribute type by using entry index
             AttributeType attributeType = e.getAttributeType(attribute);
-            converter = attributeType == null ? new IdentityConverter() : attributeType.getConverter();
+            converter = attributeType == null ? TypeConverters.IDENTITY_CONVERTER : attributeType.getConverter();
         }
 
         Data key = e.getIndexKey();
