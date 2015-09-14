@@ -123,6 +123,8 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
     private static final long HEARTBEAT_LOG_THRESHOLD = 10000L;
     private static final int PING_INTERVAL = 5000;
 
+    private static final String MEMBERSHIP_EVENT_EXECUTOR_NAME = "hz:cluster:event";
+
     private final Node node;
 
     private final NodeEngineImpl nodeEngine;
@@ -197,6 +199,9 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         icmpTtl = node.groupProperties.ICMP_TTL.getInteger();
         icmpTimeout = node.groupProperties.ICMP_TIMEOUT.getInteger();
         node.connectionManager.addConnectionListener(this);
+
+        //MEMBERSHIP_EVENT_EXECUTOR is a single threaded executor to ensure that events are executed in correct order.
+        nodeEngine.getExecutionService().register(MEMBERSHIP_EVENT_EXECUTOR_NAME, 1, Integer.MAX_VALUE, ExecutorType.CACHED);
     }
 
     @Override
@@ -1265,7 +1270,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
             final MembershipServiceEvent event = new MembershipServiceEvent(membershipEvent);
             for (final MembershipAwareService service : membershipAwareServices) {
                 // service events should not block each other
-                nodeEngine.getExecutionService().execute(ExecutionService.SYSTEM_EXECUTOR, new Runnable() {
+                nodeEngine.getExecutionService().execute(MEMBERSHIP_EVENT_EXECUTOR_NAME, new Runnable() {
                     public void run() {
                         if (added) {
                             service.memberAdded(event);

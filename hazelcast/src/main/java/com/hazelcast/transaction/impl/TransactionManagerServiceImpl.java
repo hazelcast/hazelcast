@@ -21,6 +21,7 @@ import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.ClientAwareService;
+import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.MemberAttributeServiceEvent;
 import com.hazelcast.spi.MembershipAwareService;
@@ -132,8 +133,13 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
     @Override
     public void memberRemoved(MembershipServiceEvent event) {
         final MemberImpl member = event.getMember();
-        String uuid = member.getUuid();
-        finalizeTransactionsOf(uuid);
+        final String uuid = member.getUuid();
+        nodeEngine.getExecutionService().execute(ExecutionService.SYSTEM_EXECUTOR, new Runnable() {
+                    @Override
+                    public void run() {
+                        finalizeTransactionsOf(uuid);
+                    }
+                });
     }
 
     @Override
