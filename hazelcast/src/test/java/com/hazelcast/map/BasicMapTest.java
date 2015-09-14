@@ -24,7 +24,9 @@ import com.hazelcast.core.EntryView;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapEvent;
+import com.hazelcast.map.listener.EntryEvictedListener;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -1094,20 +1096,16 @@ public class BasicMapTest extends HazelcastTestSupport {
 
     @Test
     public void testPutWithTtl() throws InterruptedException {
-        IMap<String, String> map = getInstance().getMap("testPutWithTtl");
-        final CountDownLatch latch = new CountDownLatch(1);
-        map.addEntryListener(new EntryAdapter<String, String>() {
-            public void entryEvicted(EntryEvent<String, String> event) {
-                latch.countDown();
+        final IMap<String, String> map = getInstance().getMap("testPutWithTtl");
+
+        map.put("key", "value", 2, TimeUnit.SECONDS);
+
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() throws Exception {
+                assertNull(map.get("key"));
             }
-        }, true);
-
-        // ttl should be bigger than 5sec (= sync backup wait timeout)
-        map.put("key", "value", 6, TimeUnit.SECONDS);
-        assertEquals("value", map.get("key"));
-
-        assertOpenEventually(latch);
-        assertNull(map.get("key"));
+        }, 30);
     }
 
     @Test
