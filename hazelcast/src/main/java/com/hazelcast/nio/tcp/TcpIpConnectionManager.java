@@ -185,6 +185,11 @@ public class TcpIpConnectionManager implements ConnectionManager {
     }
 
     // just for testing
+    public IOBalancer getIoBalancer() {
+        return ioBalancer;
+    }
+
+    // just for testing
     public Set<TcpIpConnection> getActiveConnections() {
         return activeConnections;
     }
