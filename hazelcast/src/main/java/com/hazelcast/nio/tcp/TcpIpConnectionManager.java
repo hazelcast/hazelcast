@@ -393,34 +393,39 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
             logger.finest("Destroying " + connection);
         }
 
-        activeConnections.remove(connection);
-        final Address endPoint = connection.getEndPoint();
-        if (endPoint != null) {
-            connectionsInProgress.remove(endPoint);
-            connectionsMap.remove(endPoint, connection);
+        if (activeConnections.remove(connection)) {
             // this should not be needed; but some tests are using DroppingConnection which is not a TcpIpConnection.
             if (connection instanceof TcpIpConnection) {
                 ioThreadingModel.onConnectionRemoved((TcpIpConnection) connection);
             }
-            if (live) {
-                ioService.getEventService().executeEventCallback(new StripedRunnable() {
-                    @Override
-                    public void run() {
-                        for (ConnectionListener listener : connectionListeners) {
-                            listener.connectionRemoved(connection);
-                        }
-                    }
-
-                    @Override
-                    public int getKey() {
-                        return endPoint.hashCode();
-                    }
-                });
-            }
+        }
+        final Address endPoint = connection.getEndPoint();
+        if (endPoint != null) {
+            connectionsInProgress.remove(endPoint);
+            connectionsMap.remove(endPoint, connection);
+            fireConnectionRemovedEvent(connection, endPoint);
         }
         if (connection.isAlive()) {
             connection.close();
             closedCount.inc();
+        }
+    }
+
+    private void fireConnectionRemovedEvent(final Connection connection, final Address endPoint) {
+        if (live) {
+            ioService.getEventService().executeEventCallback(new StripedRunnable() {
+                @Override
+                public void run() {
+                    for (ConnectionListener listener : connectionListeners) {
+                        listener.connectionRemoved(connection);
+                    }
+                }
+
+                @Override
+                public int getKey() {
+                    return endPoint.hashCode();
+                }
+            });
         }
     }
 
