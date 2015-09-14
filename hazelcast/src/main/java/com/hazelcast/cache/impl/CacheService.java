@@ -84,7 +84,8 @@ public class CacheService extends AbstractCacheService {
     protected void postInit(NodeEngine nodeEngine, Properties properties) {
         super.postInit(nodeEngine, properties);
         GroupProperties groupProperties = nodeEngine.getGroupProperties();
-        if (groupProperties.getBoolean(CACHE_INVALIDATION_MESSAGE_BATCH_ENABLED)) {
+        invalidationMessageBatchEnabled = groupProperties.getBoolean(CACHE_INVALIDATION_MESSAGE_BATCH_ENABLED);
+        if (invalidationMessageBatchEnabled) {
             invalidationMessageBatchSize = groupProperties.getInteger(CACHE_INVALIDATION_MESSAGE_BATCH_SIZE);
             int invalidationMessageBatchFreq = groupProperties.getInteger(CACHE_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS);
             cacheBatchInvalidationMessageSenderScheduler = nodeEngine.getExecutionService()
