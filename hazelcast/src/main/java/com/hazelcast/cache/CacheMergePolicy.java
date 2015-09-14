@@ -14,9 +14,8 @@
  * limitations under the License.
  */
 
-package com.hazelcast.cache.impl.merge.policy;
+package com.hazelcast.cache;
 
-import com.hazelcast.cache.impl.merge.entry.CacheEntryView;
 import com.hazelcast.nio.serialization.DataSerializable;
 
 /**
@@ -28,7 +27,7 @@ import com.hazelcast.nio.serialization.DataSerializable;
  * Passed {@link CacheEntryView} instances wraps the key and value as their storage types without any convertion.
  * Motivation of this behaviour is that generally actual key and value is not checked while merging cache entries.
  * If user wants to use original types of key and value, (s)he should use
- * {@link com.hazelcast.cache.impl.merge.policy.OriginalTypeAwareCacheMergePolicy} which is sub-type of this interface.
+ * {@link OriginalTypeAwareCacheMergePolicy} which is sub-type of this interface.
  * </p>
  */
 public interface CacheMergePolicy extends DataSerializable {

@@ -18,18 +18,14 @@ package com.hazelcast.cache.impl;
 
 import com.hazelcast.cache.impl.client.CacheBatchInvalidationMessage;
 import com.hazelcast.cache.impl.client.CacheSingleInvalidationMessage;
-import com.hazelcast.cache.impl.operation.CacheReplicationOperation;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.PartitionReplicationEvent;
 
 import java.util.Collection;
 import java.util.Map;
-import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
@@ -42,28 +38,28 @@ import static com.hazelcast.instance.GroupProperty.CACHE_INVALIDATION_MESSAGE_BA
 import static com.hazelcast.instance.GroupProperty.CACHE_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS;
 import static com.hazelcast.instance.GroupProperty.CACHE_INVALIDATION_MESSAGE_BATCH_SIZE;
 
-public abstract class BaseCacheService
-        extends AbstractCacheService {
+/**
+ * Sends cache invalidation events in batch or single as configured.
+ */
+class CacheInvalidationEventSender {
 
-    protected boolean invalidationMessageBatchEnabled;
-    protected int invalidationMessageBatchSize;
-    protected final ConcurrentMap<String, InvalidationEventQueue> invalidationMessageMap =
+    private final NodeEngine nodeEngine;
+
+    private boolean invalidationMessageBatchEnabled;
+    private int invalidationMessageBatchSize;
+    private final ConcurrentMap<String, InvalidationEventQueue> invalidationMessageMap =
             new ConcurrentHashMap<String, InvalidationEventQueue>();
-    protected ScheduledFuture cacheBatchInvalidationMessageSenderScheduler;
+    private ScheduledFuture cacheBatchInvalidationMessageSenderScheduler;
 
-    protected ICacheRecordStore createNewRecordStore(String name, int partitionId) {
-        return new CacheRecordStore(name, partitionId, nodeEngine, BaseCacheService.this);
-    }
-
-    @Override
-    protected void postInit(NodeEngine nodeEngine, Properties properties) {
-        super.postInit(nodeEngine, properties);
+    CacheInvalidationEventSender(NodeEngine nodeEngine) {
+        this.nodeEngine = nodeEngine;
         GroupProperties groupProperties = nodeEngine.getGroupProperties();
-        if (groupProperties.getBoolean(CACHE_INVALIDATION_MESSAGE_BATCH_ENABLED)) {
+        invalidationMessageBatchEnabled = groupProperties.getBoolean(CACHE_INVALIDATION_MESSAGE_BATCH_ENABLED);
+        if (invalidationMessageBatchEnabled) {
             invalidationMessageBatchSize = groupProperties.getInteger(CACHE_INVALIDATION_MESSAGE_BATCH_SIZE);
             int invalidationMessageBatchFreq = groupProperties.getInteger(CACHE_INVALIDATION_MESSAGE_BATCH_FREQUENCY_SECONDS);
             cacheBatchInvalidationMessageSenderScheduler = nodeEngine.getExecutionService()
-                    .scheduleAtFixedRate(SERVICE_NAME + ":cacheBatchInvalidationMessageSender",
+                    .scheduleAtFixedRate(ICacheService.SERVICE_NAME + ":cacheBatchInvalidationMessageSender",
                             new CacheBatchInvalidationMessageSender(),
                             invalidationMessageBatchFreq,
                             invalidationMessageBatchFreq,
@@ -71,61 +67,7 @@ public abstract class BaseCacheService
         }
     }
 
-    @Override
-    public void reset() {
-        for (String objectName : configs.keySet()) {
-            destroyCache(objectName, true, null);
-        }
-        final CachePartitionSegment[] partitionSegments = segments;
-        for (CachePartitionSegment partitionSegment : partitionSegments) {
-            if (partitionSegment != null) {
-                partitionSegment.clear();
-            }
-        }
-    }
-
-    @Override
-    public void shutdown(boolean terminate) {
-        if (!terminate) {
-            if (cacheBatchInvalidationMessageSenderScheduler != null) {
-                cacheBatchInvalidationMessageSenderScheduler.cancel(true);
-            }
-            reset();
-        }
-    }
-
-    //region MigrationAwareService
-    @Override
-    public Operation prepareReplicationOperation(PartitionReplicationEvent event) {
-        CachePartitionSegment segment = segments[event.getPartitionId()];
-        CacheReplicationOperation op = new CacheReplicationOperation(segment, event.getReplicaIndex());
-        return op.isEmpty() ? null : op;
-    }
-    //endregion
-
-    /**
-     * Registers and {@link com.hazelcast.cache.impl.client.CacheInvalidationListener} for specified <code>cacheName</code>.
-     *
-     * @param name      the name of the cache that {@link com.hazelcast.cache.impl.CacheEventListener} will be registered for
-     * @param listener  the {@link com.hazelcast.cache.impl.CacheEventListener} to be registered for specified <code>cache</code>
-     * @return the id which is unique for current registration
-     */
-    public String addInvalidationListener(String name, CacheEventListener listener) {
-        EventService eventService = nodeEngine.getEventService();
-        EventRegistration registration = eventService.registerLocalListener(SERVICE_NAME, name, listener);
-        return registration.getId();
-    }
-
-    /**
-     * Sends an invalidation event for given <code>cacheName</code> with specified <code>key</code>
-     * from mentioned source with <code>sourceUuid</code>.
-     *
-     * @param name       the name of the cache that invalidation event is sent for
-     * @param key        the {@link com.hazelcast.nio.serialization.Data} represents the invalidation event
-     * @param sourceUuid an id that represents the source for invalidation event
-     */
-    @Override
-    public void sendInvalidationEvent(String name, Data key, String sourceUuid) {
+    void sendInvalidationEvent(String name, Data key, String sourceUuid) {
         if (key == null) {
             sendSingleInvalidationEvent(name, null, sourceUuid);
         } else {
@@ -137,19 +79,25 @@ public abstract class BaseCacheService
         }
     }
 
-    protected void sendSingleInvalidationEvent(String name, Data key, String sourceUuid) {
+    void shutdown() {
+        if (cacheBatchInvalidationMessageSenderScheduler != null) {
+            cacheBatchInvalidationMessageSenderScheduler.cancel(true);
+        }
+    }
+
+    private void sendSingleInvalidationEvent(String name, Data key, String sourceUuid) {
         EventService eventService = nodeEngine.getEventService();
-        Collection<EventRegistration> registrations = eventService.getRegistrations(SERVICE_NAME, name);
+        Collection<EventRegistration> registrations = eventService.getRegistrations(ICacheService.SERVICE_NAME, name);
         if (!registrations.isEmpty()) {
-            eventService.publishEvent(SERVICE_NAME, registrations,
-                                      new CacheSingleInvalidationMessage(name, key, sourceUuid), name.hashCode());
+            eventService.publishEvent(ICacheService.SERVICE_NAME, registrations,
+                    new CacheSingleInvalidationMessage(name, key, sourceUuid), name.hashCode());
 
         }
     }
 
-    protected void sendBatchInvalidationEvent(String name, Data key, String sourceUuid) {
+    private void sendBatchInvalidationEvent(String name, Data key, String sourceUuid) {
         EventService eventService = nodeEngine.getEventService();
-        Collection<EventRegistration> registrations = eventService.getRegistrations(SERVICE_NAME, name);
+        Collection<EventRegistration> registrations = eventService.getRegistrations(ICacheService.SERVICE_NAME, name);
         if (registrations.isEmpty()) {
             return;
         }
@@ -168,36 +116,37 @@ public abstract class BaseCacheService
         }
     }
 
-    protected void flushInvalidationMessages(String cacheName, InvalidationEventQueue invalidationMessageQueue) {
-         // If still in progress, no need to another attempt. So just ignore.
-         if (invalidationMessageQueue.flushingInProgress.compareAndSet(false, true)) {
-             try {
-                 CacheBatchInvalidationMessage batchInvalidationMessage =
-                         new CacheBatchInvalidationMessage(cacheName, invalidationMessageQueue.size());
-                 CacheSingleInvalidationMessage invalidationMessage;
-                 final int size = invalidationMessageQueue.size();
-                 // At most, poll from the invalidation queue as the current size of the queue before start to polling.
-                 // So skip new invalidation queue items offered while the polling in progress in this round.
-                 for (int i = 0; i < size; i++) {
-                     invalidationMessage = invalidationMessageQueue.poll();
-                     if (invalidationMessage == null) {
-                         break;
-                     }
-                     batchInvalidationMessage.addInvalidationMessage(invalidationMessage);
-                 }
-                 EventService eventService = nodeEngine.getEventService();
-                 Collection<EventRegistration> registrations = eventService.getRegistrations(SERVICE_NAME, cacheName);
-                 if (!registrations.isEmpty()) {
-                     eventService.publishEvent(SERVICE_NAME, registrations,
-                                               batchInvalidationMessage, cacheName.hashCode());
-                 }
-             } finally {
-                 invalidationMessageQueue.flushingInProgress.set(false);
-             }
-         }
+    private void flushInvalidationMessages(String cacheName, InvalidationEventQueue invalidationMessageQueue) {
+        // If still in progress, no need to another attempt. So just ignore.
+        if (invalidationMessageQueue.flushingInProgress.compareAndSet(false, true)) {
+            try {
+                CacheBatchInvalidationMessage batchInvalidationMessage =
+                        new CacheBatchInvalidationMessage(cacheName, invalidationMessageQueue.size());
+                CacheSingleInvalidationMessage invalidationMessage;
+                final int size = invalidationMessageQueue.size();
+                // At most, poll from the invalidation queue as the current size of the queue before start to polling.
+                // So skip new invalidation queue items offered while the polling in progress in this round.
+                for (int i = 0; i < size; i++) {
+                    invalidationMessage = invalidationMessageQueue.poll();
+                    if (invalidationMessage == null) {
+                        break;
+                    }
+                    batchInvalidationMessage.addInvalidationMessage(invalidationMessage);
+                }
+                EventService eventService = nodeEngine.getEventService();
+                Collection<EventRegistration> registrations
+                        = eventService.getRegistrations(ICacheService.SERVICE_NAME, cacheName);
+                if (!registrations.isEmpty()) {
+                    eventService.publishEvent(ICacheService.SERVICE_NAME, registrations,
+                            batchInvalidationMessage, cacheName.hashCode());
+                }
+            } finally {
+                invalidationMessageQueue.flushingInProgress.set(false);
+            }
+        }
     }
 
-    protected class CacheBatchInvalidationMessageSender implements Runnable {
+    private class CacheBatchInvalidationMessageSender implements Runnable {
 
         @Override
         public void run() {
@@ -215,7 +164,7 @@ public abstract class BaseCacheService
 
     }
 
-    protected static class InvalidationEventQueue extends ConcurrentLinkedQueue<CacheSingleInvalidationMessage> {
+    private static class InvalidationEventQueue extends ConcurrentLinkedQueue<CacheSingleInvalidationMessage> {
 
         private final AtomicInteger elementCount = new AtomicInteger(0);
         private final AtomicBoolean flushingInProgress = new AtomicBoolean(false);

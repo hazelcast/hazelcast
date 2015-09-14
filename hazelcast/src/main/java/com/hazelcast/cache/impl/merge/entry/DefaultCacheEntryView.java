@@ -16,6 +16,7 @@
 
 package com.hazelcast.cache.impl.merge.entry;
 
+import com.hazelcast.cache.CacheEntryView;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -24,9 +25,9 @@ import com.hazelcast.nio.serialization.DataSerializable;
 import java.io.IOException;
 
 /**
- * Heap based implementation of {@link CacheEntryView}.
+ * Default heap based implementation of {@link com.hazelcast.cache.CacheEntryView}.
  */
-public class HeapDataCacheEntryView
+public class DefaultCacheEntryView
         implements CacheEntryView<Data, Data>, DataSerializable {
 
     private Data key;
@@ -35,10 +36,10 @@ public class HeapDataCacheEntryView
     private long lastAccessTime;
     private long accessHit;
 
-    public HeapDataCacheEntryView() {
+    public DefaultCacheEntryView() {
     }
 
-    public HeapDataCacheEntryView(Data key, Data value, long expirationTime, long lastAccessTime, long accessHit) {
+    public DefaultCacheEntryView(Data key, Data value, long expirationTime, long lastAccessTime, long accessHit) {
         this.key = key;
         this.value = value;
         this.expirationTime = expirationTime;

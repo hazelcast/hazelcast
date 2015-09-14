@@ -16,7 +16,7 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.cache.impl.merge.policy.BuiltInCacheMergePolicies;
+import com.hazelcast.cache.BuiltInCacheMergePolicies;
 import com.hazelcast.cache.impl.merge.policy.PassThroughCacheMergePolicy;
 import com.hazelcast.partition.InternalPartition;
 
@@ -551,10 +551,10 @@ public class CacheSimpleConfig {
     }
 
     /**
-     * Gets the class name of {@link com.hazelcast.cache.impl.merge.policy.CacheMergePolicy}
+     * Gets the class name of {@link com.hazelcast.cache.CacheMergePolicy}
      * implementation of this cache config.
      *
-     * @return the class name of {@link com.hazelcast.cache.impl.merge.policy.CacheMergePolicy}
+     * @return the class name of {@link com.hazelcast.cache.CacheMergePolicy}
      *         implementation of this cache config
      */
     public String getMergePolicy() {
@@ -562,10 +562,10 @@ public class CacheSimpleConfig {
     }
 
     /**
-     * Sets the class name of {@link com.hazelcast.cache.impl.merge.policy.CacheMergePolicy}
+     * Sets the class name of {@link com.hazelcast.cache.CacheMergePolicy}
      * implementation to this cache config.
      *
-     * @param mergePolicy the class name of {@link com.hazelcast.cache.impl.merge.policy.CacheMergePolicy}
+     * @param mergePolicy the class name of {@link com.hazelcast.cache.CacheMergePolicy}
      *                    implementation to be set to this cache config
      */
     public void setMergePolicy(String mergePolicy) {

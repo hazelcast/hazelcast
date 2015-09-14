@@ -14,15 +14,22 @@
  * limitations under the License.
  */
 
-package com.hazelcast.cache.impl.merge.policy;
+package com.hazelcast.cache;
+
+import com.hazelcast.cache.impl.merge.policy.HigherHitsCacheMergePolicy;
+import com.hazelcast.cache.impl.merge.policy.LatestAccessCacheMergePolicy;
+import com.hazelcast.cache.impl.merge.policy.PassThroughCacheMergePolicy;
+import com.hazelcast.cache.impl.merge.policy.PutIfAbsentCacheMergePolicy;
 
 /**
  * <p>
- * Enum that represents all built-in {@link CacheMergePolicy} implementations.
+ * Enum that represents all built-in {@link com.hazelcast.cache.CacheMergePolicy} implementations.
  * </p>
  *
  * <p>
- * Note: When a new built-in {@link CacheMergePolicy} is implemented, its definition should be added here also.
+ * <b>Note:</b>
+ *      When a new built-in {@link com.hazelcast.cache.CacheMergePolicy} is implemented,
+ *      its definition should be added here also.
  * </p>
  */
 public enum BuiltInCacheMergePolicies {

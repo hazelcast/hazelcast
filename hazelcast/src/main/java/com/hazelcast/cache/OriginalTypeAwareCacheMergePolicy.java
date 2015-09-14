@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-package com.hazelcast.cache.impl.merge.policy;
+package com.hazelcast.cache;
 
 /**
  * <p>
  * Marker interface for indicating that key and value wrapped by
- * {@link com.hazelcast.cache.impl.merge.entry.CacheEntryView} will be converted to their original types.
+ * {@link com.hazelcast.cache.CacheEntryView} will be converted to their original types.
  * </p>
  *
  * <p>
@@ -30,10 +30,10 @@ package com.hazelcast.cache.impl.merge.policy;
  * <p>
  * At worst case value is returned from the merge method as selected and this means that at all cases
  * value is accessed. So even the the convertion is done as lazy, it will be processed at this point.
- * But by default, their (key and value) storage types are used unless this {@link CacheMergePolicy} is used.
+ * But by default, their (key and value) storage types are used unless this {@link com.hazelcast.cache.CacheMergePolicy} is used.
  * </p>
  *
- * @see com.hazelcast.cache.impl.merge.policy.CacheMergePolicy
+ * @see com.hazelcast.cache.CacheMergePolicy
  */
 public interface OriginalTypeAwareCacheMergePolicy extends CacheMergePolicy {
 

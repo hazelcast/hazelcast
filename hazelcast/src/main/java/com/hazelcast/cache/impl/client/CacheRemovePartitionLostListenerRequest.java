@@ -16,7 +16,6 @@
 
 package com.hazelcast.cache.impl.client;
 
-import com.hazelcast.cache.impl.AbstractCacheService;
 import com.hazelcast.cache.impl.CachePortableHook;
 import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.ICacheService;
@@ -37,8 +36,7 @@ public class CacheRemovePartitionLostListenerRequest  extends BaseClientRemoveLi
     public Object call() throws Exception {
         final ICacheService service = getService();
         return service.getNodeEngine().getEventService().
-                deregisterListener(AbstractCacheService.SERVICE_NAME,
-                        name, registrationId);
+                deregisterListener(ICacheService.SERVICE_NAME, name, registrationId);
     }
 
     public String getServiceName() {

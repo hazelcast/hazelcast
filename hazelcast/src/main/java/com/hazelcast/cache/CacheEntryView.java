@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.cache.impl.merge.entry;
+package com.hazelcast.cache;
 
 /**
  * Entry info for cache record.

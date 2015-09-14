@@ -16,9 +16,9 @@
 
 package com.hazelcast.cache.impl.operation;
 
-import com.hazelcast.cache.impl.AbstractCacheService;
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
 import com.hazelcast.cache.impl.CacheService;
+import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.Member;
@@ -82,7 +82,7 @@ public class CacheCreateConfigOperation
 
     @Override
     public void run() throws Exception {
-        AbstractCacheService service = getService();
+        ICacheService service = getService();
         if (!ignoreLocal) {
             response = service.putCacheConfigIfAbsent(config);
         }
@@ -100,7 +100,7 @@ public class CacheCreateConfigOperation
                     if (!member.localMember()) {
                         CacheCreateConfigOperation op = new CacheCreateConfigOperation(config, false);
                         operationService
-                                .createInvocationBuilder(AbstractCacheService.SERVICE_NAME, op, member.getAddress())
+                                .createInvocationBuilder(ICacheService.SERVICE_NAME, op, member.getAddress())
                                 .setExecutionCallback(callback)
                                 .invoke();
                     }

@@ -16,7 +16,8 @@
 
 package com.hazelcast.cache.impl.merge.policy;
 
-import com.hazelcast.cache.impl.merge.entry.CacheEntryView;
+import com.hazelcast.cache.CacheEntryView;
+import com.hazelcast.cache.CacheMergePolicy;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 

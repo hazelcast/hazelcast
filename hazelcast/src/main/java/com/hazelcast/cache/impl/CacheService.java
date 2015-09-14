@@ -16,11 +16,12 @@
 
 package com.hazelcast.cache.impl;
 
-import com.hazelcast.cache.impl.merge.entry.CacheEntryView;
-import com.hazelcast.cache.impl.merge.entry.HeapDataCacheEntryView;
-import com.hazelcast.cache.impl.merge.policy.CacheMergePolicy;
+import com.hazelcast.cache.CacheEntryView;
+import com.hazelcast.cache.impl.merge.entry.DefaultCacheEntryView;
+import com.hazelcast.cache.CacheMergePolicy;
 import com.hazelcast.cache.impl.merge.policy.CacheMergePolicyProvider;
 import com.hazelcast.cache.impl.operation.CacheMergeOperation;
+import com.hazelcast.cache.impl.operation.CacheReplicationOperation;
 import com.hazelcast.cache.impl.record.CacheRecord;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.ExecutionCallback;
@@ -31,6 +32,8 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.PartitionReplicationEvent;
 import com.hazelcast.spi.SplitBrainHandlerService;
 import com.hazelcast.util.ExceptionUtil;
 
@@ -67,7 +70,7 @@ import java.util.concurrent.TimeUnit;
  * </p>
  */
 public class CacheService
-        extends BaseCacheService
+        extends AbstractCacheService
         implements SplitBrainHandlerService {
 
     private CacheMergePolicyProvider mergePolicyProvider;
@@ -76,6 +79,17 @@ public class CacheService
     protected void postInit(NodeEngine nodeEngine, Properties properties) {
         super.postInit(nodeEngine, properties);
         mergePolicyProvider = new CacheMergePolicyProvider(nodeEngine);
+    }
+
+    protected ICacheRecordStore createNewRecordStore(String name, int partitionId) {
+        return new CacheRecordStore(name, partitionId, nodeEngine, this);
+    }
+
+    @Override
+    public Operation prepareReplicationOperation(PartitionReplicationEvent event) {
+        CachePartitionSegment segment = segments[event.getPartitionId()];
+        CacheReplicationOperation op = new CacheReplicationOperation(segment, event.getReplicaIndex());
+        return op.isEmpty() ? null : op;
     }
 
     @Override
@@ -163,10 +177,11 @@ public class CacheService
                     CacheRecord record = recordEntry.getValue();
                     recordCount++;
                     CacheEntryView entryView =
-                            new HeapDataCacheEntryView(
+                            new DefaultCacheEntryView(
                                     key,
                                     serializationService.toData(record.getValue()),
                                     record.getExpirationTime(),
+                                    record.getAccessTime(),
                                     record.getAccessHit());
                     CacheMergeOperation operation =
                             new CacheMergeOperation(

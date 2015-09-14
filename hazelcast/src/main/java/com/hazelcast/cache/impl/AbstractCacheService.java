@@ -54,7 +54,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-abstract class AbstractCacheService
+public abstract class AbstractCacheService
         implements ICacheService, PostJoinAwareService, PartitionAwareService, QuorumAwareService {
 
     protected final ConcurrentMap<String, CacheConfig> configs = new ConcurrentHashMap<String, CacheConfig>();
@@ -81,6 +81,7 @@ abstract class AbstractCacheService
 
     protected NodeEngine nodeEngine;
     protected CachePartitionSegment[] segments;
+    protected CacheInvalidationEventSender cacheInvalidationEventSender;
 
     @Override
     public final void init(NodeEngine nodeEngine, Properties properties) {
@@ -90,12 +91,34 @@ abstract class AbstractCacheService
         for (int i = 0; i < partitionCount; i++) {
             segments[i] = new CachePartitionSegment(this, i);
         }
+        this.cacheInvalidationEventSender = new CacheInvalidationEventSender(nodeEngine);
         postInit(nodeEngine, properties);
     }
 
     protected void postInit(NodeEngine nodeEngine, Properties properties) { };
 
     protected abstract ICacheRecordStore createNewRecordStore(String name, int partitionId);
+
+    @Override
+    public void reset() {
+        for (String objectName : configs.keySet()) {
+            destroyCache(objectName, true, null);
+        }
+        final CachePartitionSegment[] partitionSegments = segments;
+        for (CachePartitionSegment partitionSegment : partitionSegments) {
+            if (partitionSegment != null) {
+                partitionSegment.clear();
+            }
+        }
+    }
+
+    @Override
+    public void shutdown(boolean terminate) {
+        if (!terminate) {
+            cacheInvalidationEventSender.shutdown();
+            reset();
+        }
+    }
 
     @Override
     public DistributedObject createDistributedObject(String objectName) {
@@ -543,6 +566,32 @@ abstract class AbstractCacheService
             return null;
         }
         return configs.get(cacheName).getQuorumName();
+    }
+
+    /**
+     * Registers and {@link com.hazelcast.cache.impl.client.CacheInvalidationListener} for specified <code>cacheName</code>.
+     *
+     * @param name      the name of the cache that {@link com.hazelcast.cache.impl.CacheEventListener} will be registered for
+     * @param listener  the {@link com.hazelcast.cache.impl.CacheEventListener} to be registered for specified <code>cache</code>
+     * @return the id which is unique for current registration
+     */
+    public String addInvalidationListener(String name, CacheEventListener listener) {
+        EventService eventService = nodeEngine.getEventService();
+        EventRegistration registration = eventService.registerLocalListener(SERVICE_NAME, name, listener);
+        return registration.getId();
+    }
+
+    /**
+     * Sends an invalidation event for given <code>cacheName</code> with specified <code>key</code>
+     * from mentioned source with <code>sourceUuid</code>.
+     *
+     * @param name       the name of the cache that invalidation event is sent for
+     * @param key        the {@link com.hazelcast.nio.serialization.Data} represents the invalidation event
+     * @param sourceUuid an id that represents the source for invalidation event
+     */
+    @Override
+    public void sendInvalidationEvent(String name, Data key, String sourceUuid) {
+        cacheInvalidationEventSender.sendInvalidationEvent(name, key, sourceUuid);
     }
 
 }

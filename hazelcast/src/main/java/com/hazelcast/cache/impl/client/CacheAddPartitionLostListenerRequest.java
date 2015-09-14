@@ -16,7 +16,6 @@
 
 package com.hazelcast.cache.impl.client;
 
-import com.hazelcast.cache.impl.AbstractCacheService;
 import com.hazelcast.cache.impl.CachePortableHook;
 import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.ICacheService;
@@ -68,9 +67,8 @@ public class CacheAddPartitionLostListenerRequest extends CallableClientRequest
                 new InternalCachePartitionLostListenerAdapter(listener);
         final EventFilter filter = new CachePartitionLostEventFilter();
         final ICacheService service = getService();
-        final EventRegistration registration = service.getNodeEngine().
-                getEventService().registerListener(AbstractCacheService.SERVICE_NAME,
-                name, filter, listenerAdapter);
+        final EventRegistration registration = service.getNodeEngine().getEventService()
+                .registerListener(ICacheService.SERVICE_NAME, name, filter, listenerAdapter);
         final String registrationId = registration.getId();
         endpoint.setListenerRegistration(CacheService.SERVICE_NAME, name, registrationId);
 

@@ -16,6 +16,8 @@
 
 package com.hazelcast.cache.impl.merge.policy;
 
+import com.hazelcast.cache.BuiltInCacheMergePolicies;
+import com.hazelcast.cache.CacheMergePolicy;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
@@ -27,7 +29,7 @@ import java.util.concurrent.ConcurrentMap;
 import static com.hazelcast.nio.ClassLoaderUtil.newInstance;
 
 /**
- * A provider for {@link com.hazelcast.cache.impl.merge.policy.CacheMergePolicy} instances.
+ * A provider for {@link com.hazelcast.cache.CacheMergePolicy} instances.
  */
 public final class CacheMergePolicyProvider {
 
@@ -55,7 +57,11 @@ public final class CacheMergePolicyProvider {
 
     private void addOutOfBoxPolicies() {
         for (BuiltInCacheMergePolicies mergePolicy : BuiltInCacheMergePolicies.values()) {
-            mergePolicyMap.put(mergePolicy.getName(), mergePolicy.newInstance());
+            final CacheMergePolicy cacheMergePolicy = mergePolicy.newInstance();
+            // Register `CacheMergePolicy` by its constant
+            mergePolicyMap.put(mergePolicy.name(), cacheMergePolicy);
+            // Register `CacheMergePolicy` by its name
+            mergePolicyMap.put(mergePolicy.getName(), cacheMergePolicy);
         }
     }
 

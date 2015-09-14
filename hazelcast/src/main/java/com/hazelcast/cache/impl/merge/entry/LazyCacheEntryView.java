@@ -16,10 +16,11 @@
 
 package com.hazelcast.cache.impl.merge.entry;
 
+import com.hazelcast.cache.CacheEntryView;
 import com.hazelcast.internal.serialization.SerializationService;
 
 /**
- * An implementation of {@link com.hazelcast.cache.impl.merge.entry.CacheEntryView}
+ * An implementation of {@link com.hazelcast.cache.CacheEntryView}
  * for converting key and value to object when they are touched as lazy.
  */
 public class LazyCacheEntryView<K, V>

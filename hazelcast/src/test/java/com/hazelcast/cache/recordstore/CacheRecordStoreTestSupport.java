@@ -86,7 +86,8 @@ public abstract class CacheRecordStoreTestSupport
         ICacheService cacheService = getCacheService(instance);
         CacheConfig cacheConfig = createCacheConfig(cacheName, inMemoryFormat);
         cacheService.putCacheConfigIfAbsent(cacheConfig);
-        return new CacheRecordStore(CACHE_NAME_PREFIX + cacheName, partitionId, nodeEngine, (AbstractCacheService) cacheService);
+        return new CacheRecordStore(CACHE_NAME_PREFIX + cacheName, partitionId, nodeEngine,
+                                    (AbstractCacheService) cacheService);
     }
 
     protected ICacheRecordStore createCacheRecordStore(HazelcastInstance instance, InMemoryFormat inMemoryFormat) {
