@@ -20,7 +20,6 @@ import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.concurrent.lock.LockStore;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.DefaultObjectNamespace;
-import com.hazelcast.util.Clock;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -29,7 +28,8 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicLongFieldUpdater;
+
+import static com.hazelcast.util.Clock.currentTimeMillis;
 
 /**
  * Multi-map container.
@@ -37,13 +37,6 @@ import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 public class MultiMapContainer extends MultiMapContainerSupport {
 
     private static final int ID_PROMOTION_OFFSET = 100000;
-
-    private static final AtomicLongFieldUpdater<MultiMapContainer> ID_GEN_UPDATER = AtomicLongFieldUpdater
-            .newUpdater(MultiMapContainer.class, "idGen");
-    private static final AtomicLongFieldUpdater<MultiMapContainer> LAST_ACCCESS_TIME_UPDATER = AtomicLongFieldUpdater
-            .newUpdater(MultiMapContainer.class, "lastAccessTime");
-    private static final AtomicLongFieldUpdater<MultiMapContainer> LAST_UPDATE_TIME_UPDATER = AtomicLongFieldUpdater
-            .newUpdater(MultiMapContainer.class, "lastUpdateTime");
 
     private final DefaultObjectNamespace lockNamespace;
 
@@ -53,8 +46,9 @@ public class MultiMapContainer extends MultiMapContainerSupport {
 
     private final long creationTime;
 
-    // These fields are never accessed directly but through the UPDATER above
-    private volatile long idGen;
+    private long idGen;
+
+    // these fields are volatile since they can ready by other threads than the partition-thread.
     private volatile long lastAccessTime;
     private volatile long lastUpdateTime;
 
@@ -64,7 +58,7 @@ public class MultiMapContainer extends MultiMapContainerSupport {
         this.lockNamespace = new DefaultObjectNamespace(MultiMapService.SERVICE_NAME, name);
         final LockService lockService = nodeEngine.getSharedService(LockService.SERVICE_NAME);
         this.lockStore = lockService == null ? null : lockService.createLockStore(partitionId, lockNamespace);
-        this.creationTime = Clock.currentTimeMillis();
+        this.creationTime = currentTimeMillis();
     }
 
     public boolean canAcquireLock(Data dataKey, String caller, long threadId) {
@@ -100,11 +94,11 @@ public class MultiMapContainer extends MultiMapContainerSupport {
     }
 
     public long nextId() {
-        return ID_GEN_UPDATER.getAndIncrement(this);
+        return idGen++;
     }
 
     public void setId(long newValue) {
-        ID_GEN_UPDATER.set(this, newValue + ID_PROMOTION_OFFSET);
+        idGen = newValue + ID_PROMOTION_OFFSET;
     }
 
     public void delete(Data dataKey) {
@@ -195,11 +189,11 @@ public class MultiMapContainer extends MultiMapContainerSupport {
     }
 
     public void access() {
-        LAST_ACCCESS_TIME_UPDATER.set(this, Clock.currentTimeMillis());
+        lastAccessTime = currentTimeMillis();
     }
 
     public void update() {
-        LAST_UPDATE_TIME_UPDATER.set(this, Clock.currentTimeMillis());
+        lastUpdateTime = currentTimeMillis();
     }
 
     public long getLastAccessTime() {
