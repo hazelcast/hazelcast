@@ -702,13 +702,12 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
         MapKeySetRequest request = new MapKeySetRequest(name);
         MapKeySet mapKeySet = invoke(request);
         Set<Data> keySetData = mapKeySet.getKeySet();
-        InflatableSet<K> keySet = new InflatableSet<K>(keySetData.size());
+        InflatableSet.Builder<K> setBuilder = InflatableSet.newBuilder(keySetData.size());
         for (Data data : keySetData) {
             final K key = toObject(data);
-            keySet.add(key);
+            setBuilder.add(key);
         }
-        keySet.close();
-        return keySet;
+        return setBuilder.build();
     }
 
     @Override
@@ -768,16 +767,15 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
         MapEntrySet result = invoke(request);
 
         Set<Entry<Data, Data>> entries = result.getEntrySet();
-        InflatableSet<Entry<K, V>> entrySet = new InflatableSet<Entry<K, V>>(entries.size());
+        InflatableSet.Builder<Entry<K, V>> setBuilder = InflatableSet.newBuilder(entries.size());
         for (Entry<Data, Data> dataEntry : entries) {
             Data keyData = dataEntry.getKey();
             Data valueData = dataEntry.getValue();
             K key = toObject(keyData);
             V value = toObject(valueData);
-            entrySet.add(new AbstractMap.SimpleEntry<K, V>(key, value));
+            setBuilder.add(new AbstractMap.SimpleEntry<K, V>(key, value));
         }
-        entrySet.close();
-        return entrySet;
+        return setBuilder.build();
     }
 
     @Override
@@ -791,13 +789,12 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
         MapQueryRequest request = new MapQueryRequest(name, predicate, IterationType.KEY);
         QueryResultSet result = invoke(request);
         if (pagingPredicate == null) {
-            final InflatableSet<K> keySet = new InflatableSet<K>(result.size());
+            InflatableSet.Builder<K> setBuilder = InflatableSet.newBuilder(result.size());
             for (Object o : result) {
                 final K key = toObject(o);
-                keySet.add(key);
+                setBuilder.add(key);
             }
-            keySet.close();
-            return keySet;
+            return setBuilder.build();
         }
 
         Iterator<Entry> iterator = result.rawIterator();
@@ -823,14 +820,13 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
         QueryResultSet result = invoke(request);
         if (pagingPredicate == null) {
             SerializationService serializationService = getContext().getSerializationService();
-            InflatableSet<Entry<K, V>> entrySet = new InflatableSet<Entry<K, V>>(result.size());
+            InflatableSet.Builder<Entry<K, V>> setBuilder = InflatableSet.newBuilder(result.size());
             for (Object data : result) {
                 AbstractMap.SimpleImmutableEntry<Data, Data> dataEntry = (AbstractMap.SimpleImmutableEntry<Data, Data>) data;
                 LazyMapEntry lazyEntry = new LazyMapEntry(dataEntry.getKey(), dataEntry.getValue(), serializationService);
-                entrySet.add(lazyEntry);
+                setBuilder.add(lazyEntry);
             }
-            entrySet.close();
-            return entrySet;
+            return setBuilder.build();
         }
         ArrayList<Map.Entry> resultList = new ArrayList<Map.Entry>();
         for (Object data : result) {

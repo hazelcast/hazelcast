@@ -19,6 +19,7 @@ package com.hazelcast.util.collection;
 import java.io.Serializable;
 import java.util.AbstractSet;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -28,22 +29,18 @@ import java.util.Set;
  * Provides fast {@link Set} implementation for cases where items are known to not
  * contain duplicates.
  *
- * It doesn't not call equals/hash methods on initial data insertion hence it avoids
+ * It requires creation via {@link com.hazelcast.util.collection.InflatableSet.Builder}
+ *
+ * The builder doesn't not call equals/hash methods on initial data insertion hence it avoids
  * performance penalty in the case these methods are expensive. It also means it does
  * not detect duplicates - it's a responsibility of a caller to make sure no duplicated
  * entries are inserted.
  *
- * Once the initial load is done then caller should indicate it
- * by calling {@link #close()}. It switches operational mode and if any item is
- * inserted afterward then the Set will inflate - it copies its content into
- * internal HashSet. This means duplicate detection is enabled, but obviously
- * it ruins the initial performance gain. We are making a bet the Set will not be
- * modified once it's closed. The Set will also inflate on {@link #contains(Object)}
- * and {@link #containsAll(Collection)} calls to enable fast look-ups.
- *
- * Failing to call {@link #close()} means the InflatableSet is in state where
- * a general contract of Set is broken - duplicates aren't detected. You should
- * never pass unclosed InfltableSet to user code.
+ * Once InflatableSet is constructed via {@link Builder#build()} then it act as regular set. It has
+ * been designed to mimic {@link HashSet}. On new entry insertion or look-up via
+ * {@link #contains(Object)} it inflates itself: The backing list is copied into
+ * internal {@link HashSet}. This obviously costs time and space. We are make a bet the
+ * Set won't be modified in most cases.
  *
  * It's intended to be use in cases where a contract mandates us to return Set,
  * but we know our data contains not duplicates. It performs the best in cases
@@ -56,10 +53,6 @@ public final class InflatableSet<T> extends AbstractSet<T> implements Set<T>, Se
     private static final long serialVersionUID = 0L;
 
     private enum State {
-        //Set is still open for initial load. It's caller's responsibility to make
-        //sure no duplicates are added to this Set in this state
-        INITIAL_LOAD,
-
         //Only array-backed representation exists
         COMPACT,
 
@@ -76,22 +69,32 @@ public final class InflatableSet<T> extends AbstractSet<T> implements Set<T>, Se
     private Set<T> inflatedSet;
     private State state;
 
-    public InflatableSet(int initialCapacity) {
-        this.state = State.INITIAL_LOAD;
-        if (initialCapacity < 0) {
-            throw new IllegalArgumentException("Initial Capacity must be a positive number. Current capacity: "
-                    + initialCapacity);
-        }
-        compactList = new ArrayList<T>(initialCapacity);
+    /**
+     * This constructor is intended to be used by {@link com.hazelcast.util.collection.InflatableSet.Builder} only.
+     *
+     * @param compactList
+     */
+    private InflatableSet(List<T> compactList) {
+        this.state = State.COMPACT;
+        this.compactList = compactList;
     }
 
-    protected InflatableSet(InflatableSet other) {
+    /**
+     * This copy-constructor is intended to be used by {@link #clone()} method only.
+     *
+     * @param other
+     */
+    private InflatableSet(InflatableSet other) {
         compactList = new ArrayList<T>(other.compactList.size());
         compactList.addAll(other.compactList);
         if (other.inflatedSet != null) {
             inflatedSet = new HashSet<T>(other.inflatedSet);
         }
         state = other.state;
+    }
+
+    public static <T> Builder<T> newBuilder(int initialCapacity) {
+        return new Builder<T>(initialCapacity);
     }
 
 
@@ -115,9 +118,6 @@ public final class InflatableSet<T> extends AbstractSet<T> implements Set<T>, Se
 
     @Override
     public boolean contains(Object o) {
-        if (state == State.INITIAL_LOAD) {
-            return compactList.contains(o);
-        }
         if (state == State.COMPACT) {
             toHybridState();
         }
@@ -134,9 +134,6 @@ public final class InflatableSet<T> extends AbstractSet<T> implements Set<T>, Se
 
     @Override
     public boolean add(T t) {
-        if (state == State.INITIAL_LOAD) {
-            return compactList.add(t);
-        }
         toInflatedState();
         return inflatedSet.add(t);
     }
@@ -167,14 +164,6 @@ public final class InflatableSet<T> extends AbstractSet<T> implements Set<T>, Se
             default:
                 compactList.clear();
         }
-    }
-
-    public void close() {
-        if (state != State.INITIAL_LOAD) {
-            throw new IllegalStateException("InflatableSet can be only closed during InitialLoad. Current state: "
-                    + state);
-        }
-        state = State.COMPACT;
     }
 
     /**
@@ -246,6 +235,33 @@ public final class InflatableSet<T> extends AbstractSet<T> implements Set<T>, Se
             if (inflatedSet != null) {
                 inflatedSet.remove(currentValue);
             }
+        }
+    }
+
+    /**
+     * Builder for {@link InflatableSet}
+     * This is the only way to create a new instance of InflatableSet
+     *
+     * @param <T>
+     */
+    public static final class Builder<T> {
+        private List<T> list;
+
+        private Builder(int initialCapacity) {
+            this.list = new ArrayList<T>(initialCapacity);
+        }
+
+        public Builder add(T item) {
+            list.add(item);
+            return this;
+        }
+
+        public InflatableSet<T> build() {
+            InflatableSet<T> set = new InflatableSet<T>(list);
+
+            //make sure no further insertions are possible
+            list = Collections.emptyList();
+            return set;
         }
     }
 }
