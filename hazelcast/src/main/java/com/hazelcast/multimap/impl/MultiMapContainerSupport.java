@@ -37,8 +37,8 @@ abstract class MultiMapContainerSupport {
 
     protected final MultiMapConfig config;
 
-    protected final ConcurrentMap<Data, MultiMapWrapper> multiMapWrappers
-            = new ConcurrentHashMap<Data, MultiMapWrapper>(1000);
+    protected final ConcurrentMap<Data, MultiMapValue> multiMapValues
+            = new ConcurrentHashMap<Data, MultiMapValue>(1000);
 
     protected MultiMapContainerSupport(String name, NodeEngine nodeEngine) {
         this.name = name;
@@ -47,27 +47,27 @@ abstract class MultiMapContainerSupport {
     }
 
 
-    public MultiMapWrapper getOrCreateMultiMapWrapper(Data dataKey) {
-        MultiMapWrapper wrapper = multiMapWrappers.get(dataKey);
-        if (wrapper != null) {
-            return wrapper;
+    public MultiMapValue getOrCreateMultiMapValue(Data dataKey) {
+        MultiMapValue multiMapValue = multiMapValues.get(dataKey);
+        if (multiMapValue != null) {
+            return multiMapValue;
         }
-        // create wrapper.
+        // create multiMapValue.
         final MultiMapConfig.ValueCollectionType valueCollectionType = config.getValueCollectionType();
         final Collection<MultiMapRecord> collection = createCollection(valueCollectionType);
-        wrapper = new MultiMapWrapper(collection);
+        multiMapValue = new MultiMapValue(collection);
 
-        multiMapWrappers.put(dataKey, wrapper);
+        multiMapValues.put(dataKey, multiMapValue);
 
-        return wrapper;
+        return multiMapValue;
     }
 
-    public MultiMapWrapper getMultiMapWrapperOrNull(Data dataKey) {
-        return multiMapWrappers.get(dataKey);
+    public MultiMapValue getMultiMapValueOrNull(Data dataKey) {
+        return multiMapValues.get(dataKey);
     }
 
-    public ConcurrentMap<Data, MultiMapWrapper> getMultiMapWrappers() {
-        return multiMapWrappers;
+    public ConcurrentMap<Data, MultiMapValue> getMultiMapValues() {
+        return multiMapValues;
     }
 
     public MultiMapConfig getConfig() {

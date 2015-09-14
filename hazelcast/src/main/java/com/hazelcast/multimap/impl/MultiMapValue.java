@@ -22,13 +22,16 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
-public class MultiMapWrapper {
+/**
+ * The MultiMapValue is the value in a multimap and it contains either a set or a list as collection.
+ */
+public class MultiMapValue {
 
     private final Collection<MultiMapRecord> collection;
 
     private int hits;
 
-    public MultiMapWrapper(Collection<MultiMapRecord> collection) {
+    public MultiMapValue(Collection<MultiMapRecord> collection) {
         this.collection = collection;
     }
 

@@ -21,7 +21,7 @@ import com.hazelcast.multimap.impl.MultiMapContainer;
 import com.hazelcast.multimap.impl.MultiMapDataSerializerHook;
 import com.hazelcast.multimap.impl.MultiMapRecord;
 import com.hazelcast.multimap.impl.MultiMapService;
-import com.hazelcast.multimap.impl.MultiMapWrapper;
+import com.hazelcast.multimap.impl.MultiMapValue;
 import com.hazelcast.multimap.impl.operations.MultiMapKeyBasedOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -56,15 +56,15 @@ public class TxnRemoveAllOperation extends MultiMapKeyBasedOperation implements 
     public void run() throws Exception {
         begin = Clock.currentTimeMillis();
         MultiMapContainer container = getOrCreateContainer();
-        MultiMapWrapper wrapper = container.getOrCreateMultiMapWrapper(dataKey);
+        MultiMapValue multiMapValue = container.getOrCreateMultiMapValue(dataKey);
         response = true;
         for (Long recordId : recordIds) {
-            if (!wrapper.containsRecordId(recordId)) {
+            if (!multiMapValue.containsRecordId(recordId)) {
                 response = false;
                 return;
             }
         }
-        Collection<MultiMapRecord> coll = wrapper.getCollection(false);
+        Collection<MultiMapRecord> coll = multiMapValue.getCollection(false);
         removed = new LinkedList<MultiMapRecord>();
         for (Long recordId : recordIds) {
             Iterator<MultiMapRecord> iter = coll.iterator();

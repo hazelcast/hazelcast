@@ -18,7 +18,7 @@ package com.hazelcast.multimap.impl.operations;
 
 import com.hazelcast.multimap.impl.MultiMapDataSerializerHook;
 import com.hazelcast.multimap.impl.MultiMapRecord;
-import com.hazelcast.multimap.impl.MultiMapWrapper;
+import com.hazelcast.multimap.impl.MultiMapValue;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -41,12 +41,12 @@ public class RemoveBackupOperation extends MultiMapKeyBasedOperation implements 
 
     @Override
     public void run() throws Exception {
-        MultiMapWrapper wrapper = getCollectionWrapper();
+        MultiMapValue multiMapValue = getMultiMapValueOrNull();
         response = false;
-        if (wrapper == null) {
+        if (multiMapValue == null) {
             return;
         }
-        Collection<MultiMapRecord> coll = wrapper.getCollection(false);
+        Collection<MultiMapRecord> coll = multiMapValue.getCollection(false);
         Iterator<MultiMapRecord> iter = coll.iterator();
         while (iter.hasNext()) {
             if (iter.next().getRecordId() == recordId) {
