@@ -22,6 +22,17 @@ import static org.junit.Assert.assertTrue;
  */
 public abstract class TcpIpConnectionManager_ConnectMemberTest extends TcpIpConnection_AbstractTest {
 
+    @Test
+    public void testConnectionCount(){
+        connManagerA.start();
+        connManagerB.start();
+
+        connect(connManagerA, addressB);
+
+        assertEquals(1, connManagerA.getConnectionCount());
+        assertEquals(1, connManagerB.getConnectionCount());
+    }
+
     // ================== getOrConnect ======================================================
 
     @Test
