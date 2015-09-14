@@ -233,7 +233,7 @@ public interface Ringbuffer<E> extends DistributedObject {
      * Reads a batch of items from the Ringbuffer. If the number of available items after the first read item is smaller than
      * the maxCount, these items are returned. So it could be the number of items read is smaller than the maxCount.
      *
-     * If there are less items available than minCount, then this call blacks.
+     * If there are less items available than minCount, then this call blocks.
      *
      * Reading a batch of items is likely to perform better because less overhead is involved.
      *
