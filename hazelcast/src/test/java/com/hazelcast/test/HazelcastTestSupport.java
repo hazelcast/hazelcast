@@ -682,7 +682,7 @@ public abstract class HazelcastTestSupport {
             @Override
             public void run()
                     throws Exception {
-                assertEquals("the size of the cluster is not correct", expectedSize, instance.getCluster().getMembers().size());
+                assertClusterSize(expectedSize, instance);
             }
         }, timeoutSeconds);
     }
