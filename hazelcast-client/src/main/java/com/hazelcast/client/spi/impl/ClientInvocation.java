@@ -229,7 +229,7 @@ public class ClientInvocation implements Runnable {
 
         try {
             sleep();
-            executionService.execute(this);
+            ((ClientExecutionServiceImpl) executionService).executeInternal(this);
         } catch (RejectedExecutionException e) {
             if (LOGGER.isFinestEnabled()) {
                 LOGGER.finest("Retry could not be scheduled ", e);
