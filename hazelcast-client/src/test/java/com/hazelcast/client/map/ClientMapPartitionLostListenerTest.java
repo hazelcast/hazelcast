@@ -1,5 +1,7 @@
 package com.hazelcast.client.map;
 
+import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
@@ -7,6 +9,7 @@ import com.hazelcast.map.MapPartitionLostEvent;
 import com.hazelcast.map.MapPartitionLostListenerStressTest.EventCollectingMapPartitionLostListener;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.listener.MapPartitionLostListener;
+import com.hazelcast.nio.Address;
 import com.hazelcast.partition.InternalPartitionLostEvent;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.impl.eventservice.InternalEventService;
@@ -21,8 +24,10 @@ import org.junit.runner.RunWith;
 import java.util.Collection;
 import java.util.List;
 
+import static com.hazelcast.client.impl.ClientTestUtil.getHazelcastClientInstanceImpl;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
+import static com.hazelcast.test.HazelcastTestSupport.getAddress;
 import static com.hazelcast.test.HazelcastTestSupport.getNode;
 import static com.hazelcast.test.HazelcastTestSupport.randomMapName;
 import static org.junit.Assert.assertEquals;
@@ -109,7 +114,14 @@ public class ClientMapPartitionLostListenerTest {
 
         final HazelcastInstance instance1 = hazelcastFactory.newHazelcastInstance(config);
         final HazelcastInstance instance2 = hazelcastFactory.newHazelcastInstance(config);
-        final HazelcastInstance client = hazelcastFactory.newHazelcastClient();
+        final ClientConfig clientConfig = new ClientConfig();
+        clientConfig.getNetworkConfig().setSmartRouting(false);
+        final HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig);
+
+        final HazelcastClientInstanceImpl clientInstanceImpl = getHazelcastClientInstanceImpl(client);
+        final Address clientOwnerAddress = clientInstanceImpl.getClientClusterService().getOwnerConnectionAddress();
+
+        final HazelcastInstance other = getAddress(instance1).equals(clientOwnerAddress) ? instance2 : instance1;
 
         final EventCollectingMapPartitionLostListener listener = new EventCollectingMapPartitionLostListener(0);
         client.getMap(mapName).addPartitionLostListener(listener);
@@ -117,7 +129,7 @@ public class ClientMapPartitionLostListenerTest {
         assertRegistrationsSizeEventually(instance1, mapName, 1);
         assertRegistrationsSizeEventually(instance2, mapName, 1);
 
-        final MapService mapService = getNode(instance2).getNodeEngine().getService(SERVICE_NAME);
+        final MapService mapService = getNode(other).getNodeEngine().getService(SERVICE_NAME);
         final int partitionId = 5;
         mapService.onPartitionLost(new InternalPartitionLostEvent(partitionId, 0, null));
 
