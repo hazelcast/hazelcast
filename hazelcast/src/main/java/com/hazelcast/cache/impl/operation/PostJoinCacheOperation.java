@@ -16,7 +16,7 @@
 
 package com.hazelcast.cache.impl.operation;
 
-import com.hazelcast.cache.impl.CacheService;
+import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -36,12 +36,12 @@ public class PostJoinCacheOperation extends AbstractOperation {
 
     @Override
     public String getServiceName() {
-        return CacheService.SERVICE_NAME;
+        return ICacheService.SERVICE_NAME;
     }
 
     @Override
     public void run() throws Exception {
-        CacheService cacheService = getService();
+        ICacheService cacheService = getService();
         for (CacheConfig cacheConfig : configs) {
             cacheService.putCacheConfigIfAbsent(cacheConfig);
         }

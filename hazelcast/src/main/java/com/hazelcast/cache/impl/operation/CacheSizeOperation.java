@@ -17,8 +17,8 @@
 package com.hazelcast.cache.impl.operation;
 
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
-import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.ICacheRecordStore;
+import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.spi.ReadonlyOperation;
 
 /**
@@ -39,7 +39,7 @@ public class CacheSizeOperation
     @Override
     public void run()
             throws Exception {
-        CacheService service = getService();
+        ICacheService service = getService();
         ICacheRecordStore cache = service.getRecordStore(name, getPartitionId());
         response = cache != null ? cache.size() : 0;
     }

@@ -17,7 +17,7 @@
 package com.hazelcast.cache.impl.operation;
 
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
-import com.hazelcast.cache.impl.CacheService;
+import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -28,9 +28,9 @@ import java.io.IOException;
 
 /**
  * <p>Destroys the cache on the cluster or on a single node by calling
- * {@link CacheService#destroyCache(String, boolean, String)}.
+ * {@link ICacheService#destroyCache(String, boolean, String)}.
  * </p>
- * @see CacheService#destroyCache(String, boolean, String)
+ * @see ICacheService#destroyCache(String, boolean, String)
  */
 public class CacheDestroyOperation
         extends AbstractNamedOperation
@@ -53,7 +53,7 @@ public class CacheDestroyOperation
     @Override
     public void run()
             throws Exception {
-        final CacheService service = getService();
+        final ICacheService service = getService();
         service.destroyCache(name, isLocal, getCallerUuid());
     }
 

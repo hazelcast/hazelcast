@@ -17,7 +17,6 @@
 package com.hazelcast.cache.impl.operation;
 
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
-import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.ExecutionCallback;
@@ -41,10 +40,10 @@ import java.util.concurrent.atomic.AtomicInteger;
  * <li>Find partition id using the distributed object name of cache as a key.</li>
  * <li>Send the <code>CacheCreateConfigOperation</code> operation to the calculated partition which will force all
  * clusters to be single threaded.</li>
- * <li>{@link CacheService#putCacheConfigIfAbsent(com.hazelcast.config.CacheConfig)} is called.</li>
+ * <li>{@link ICacheService#putCacheConfigIfAbsent(com.hazelcast.config.CacheConfig)} is called.</li>
  * </ul></p>
  * <p>This operation's purpose is to pass the required parameters into
- * {@link CacheService#putCacheConfigIfAbsent(com.hazelcast.config.CacheConfig)}.</p>
+ * {@link ICacheService#putCacheConfigIfAbsent(com.hazelcast.config.CacheConfig)}.</p>
  */
 public class CacheCreateConfigOperation
         extends AbstractNamedOperation
@@ -77,7 +76,7 @@ public class CacheCreateConfigOperation
 
     @Override
     public String getServiceName() {
-        return CacheService.SERVICE_NAME;
+        return ICacheService.SERVICE_NAME;
     }
 
     @Override

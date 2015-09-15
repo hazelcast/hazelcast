@@ -16,8 +16,8 @@
 
 package com.hazelcast.cache.impl.operation;
 
+import com.hazelcast.cache.impl.AbstractCacheService;
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
-import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -51,7 +51,7 @@ public class CacheListenerRegistrationOperation
     @Override
     public void run()
             throws Exception {
-        final CacheService service = getService();
+        final AbstractCacheService service = getService();
         CacheConfig cacheConfig = service.getCacheConfig(name);
         if (register) {
             service.cacheEntryListenerRegistered(name, cacheEntryListenerConfiguration);

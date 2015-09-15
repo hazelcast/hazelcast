@@ -17,7 +17,7 @@
 package com.hazelcast.cache.impl.operation;
 
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
-import com.hazelcast.cache.impl.CacheService;
+import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.nio.ObjectDataInput;
@@ -49,7 +49,7 @@ public class CacheGetConfigOperation
     @Override
     public void run()
             throws Exception {
-        final CacheService service = getService();
+        final ICacheService service = getService();
         final CacheConfig cacheConfig = service.getCacheConfig(name);
         if (cacheConfig == null) {
             CacheSimpleConfig simpleConfig = service.findCacheConfig(simpleName);
