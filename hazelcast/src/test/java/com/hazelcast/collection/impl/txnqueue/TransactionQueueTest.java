@@ -20,7 +20,6 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.IQueue;
-import com.hazelcast.core.LifecycleService;
 import com.hazelcast.core.TransactionalQueue;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -50,6 +49,45 @@ import static org.junit.Assert.fail;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
 public class TransactionQueueTest extends HazelcastTestSupport {
+
+    @Test
+    public void testOrder_WhenMultipleConcurrentTransactionRollback() throws InterruptedException {
+        final HazelcastInstance instance = createHazelcastInstance();
+        final String name = randomString();
+        IQueue<Integer> queue = instance.getQueue(name);
+        queue.offer(1);
+        queue.offer(2);
+        queue.offer(3);
+
+        TransactionContext firstContext = instance.newTransactionContext();
+        firstContext.beginTransaction();
+        firstContext.getQueue(name).poll();
+
+        final CountDownLatch latch = new CountDownLatch(1);
+        Thread thread = new Thread() {
+            @Override
+            public void run() {
+                TransactionContext secondContext = instance.newTransactionContext();
+                secondContext.beginTransaction();
+                secondContext.getQueue(name).poll();
+                try {
+                    latch.await();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                secondContext.rollbackTransaction();
+            }
+        };
+        thread.start();
+        firstContext.rollbackTransaction();
+        latch.countDown();
+        thread.join();
+
+        assertEquals(1, queue.poll().intValue());
+        assertEquals(2, queue.poll().intValue());
+        assertEquals(3, queue.poll().intValue());
+
+    }
 
     @Test(expected = IllegalStateException.class)
     public void nestedTransactionTest() {
@@ -102,15 +140,17 @@ public class TransactionQueueTest extends HazelcastTestSupport {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(insCount);
         final HazelcastInstance[] instances = factory.newInstances(config);
         final CountDownLatch latch = new CountDownLatch(1);
-        new Thread(new Runnable() { public void run() {
-            try {
-                latch.await(5, TimeUnit.SECONDS);
-                sleepMillis(3000);
-                getQueue(instances, name0).offer("item0");
+        new Thread(new Runnable() {
+            public void run() {
+                try {
+                    latch.await(5, TimeUnit.SECONDS);
+                    sleepMillis(3000);
+                    getQueue(instances, name0).offer("item0");
+                } catch (InterruptedException ignored) {
+                } catch (HazelcastInstanceNotActiveException ignored) {
+                }
             }
-            catch (InterruptedException ignored) { }
-            catch (HazelcastInstanceNotActiveException ignored) { }
-        }}).start();
+        }).start();
 
         final TransactionContext context = instances[0].newTransactionContext();
         context.beginTransaction();
@@ -243,7 +283,7 @@ public class TransactionQueueTest extends HazelcastTestSupport {
             }
         }
         final Thread moveMessage1 = new Thread(new MoveMessage(instance1)),
-                     moveMessage2 = new Thread(new MoveMessage(instance2));
+                moveMessage2 = new Thread(new MoveMessage(instance2));
         try {
             moveMessage1.start();
             moveMessage2.start();
@@ -259,7 +299,8 @@ public class TransactionQueueTest extends HazelcastTestSupport {
             // When a node goes down, backup of the transaction commits all prepared stated transactions
             // Since it relies on 'memberRemoved' event, it is async. That's why we should assert eventually
             assertTrueEventually(new AssertTask() {
-                @Override public void run() {
+                @Override
+                public void run() {
                     assertEquals(numberOfMessages, instance1.getQueue(outQueueName).size());
                     assertTrue(instance1.getQueue(inQueueName).isEmpty());
                 }
