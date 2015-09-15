@@ -79,6 +79,9 @@ public class CacheSplitBrainTest extends HazelcastTestSupport {
         Cache cache1 = cacheManager1.createCache(cacheName, cacheConfig);
         Cache cache2 = cacheManager2.createCache(cacheName, cacheConfig);
 
+        // TODO We assume that until here and also while doing get/put, cluster is still splitted.
+        // This assumptions seems fragile due to time sensitivity.
+
         cache1.put("key1", "value");
         cache1.get("key1"); // Access to record
 
@@ -135,6 +138,9 @@ public class CacheSplitBrainTest extends HazelcastTestSupport {
         Cache cache1 = cacheManager1.createCache(cacheName, cacheConfig);
         Cache cache2 = cacheManager2.createCache(cacheName, cacheConfig);
 
+        // TODO We assume that until here and also while doing get/put, cluster is still splitted.
+        // This assumptions seems fragile due to time sensitivity.
+
         cache1.put("key1", "higherHitsValue");
         cache1.put("key2", "value2");
 
@@ -186,6 +192,9 @@ public class CacheSplitBrainTest extends HazelcastTestSupport {
 
         Cache cache1 = cacheManager1.createCache(cacheName, cacheConfig);
         Cache cache2 = cacheManager2.createCache(cacheName, cacheConfig);
+
+        // TODO We assume that until here and also while doing get/put, cluster is still splitted.
+        // This assumptions seems fragile due to time sensitivity.
 
         cache1.put("key1", "PutIfAbsentValue1");
 
@@ -271,6 +280,9 @@ public class CacheSplitBrainTest extends HazelcastTestSupport {
 
         Cache cache1 = cacheManager1.createCache(cacheName, cacheConfig);
         Cache cache2 = cacheManager2.createCache(cacheName, cacheConfig);
+
+        // TODO We assume that until here and also while doing get/put, cluster is still splitted.
+        // This assumptions seems fragile due to time sensitivity.
 
         String key = generateKeyOwnedBy(h1);
         cache1.put(key, "value");
