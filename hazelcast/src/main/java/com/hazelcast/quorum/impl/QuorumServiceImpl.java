@@ -157,7 +157,9 @@ public class QuorumServiceImpl implements EventPublishingService<QuorumEvent, Qu
 
     @Override
     public void memberAttributeChanged(MemberAttributeServiceEvent event) {
-        updateQuorums(event);
+        // nop
+        // MemberAttributeServiceEvent does NOT contain set of members
+        // They cannot change quorum state
     }
 
     private void updateQuorums(MembershipEvent event) {
