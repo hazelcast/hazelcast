@@ -32,6 +32,7 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.ReadonlyOperation;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.exception.TargetNotMemberException;
+import com.hazelcast.util.IterationType;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -57,6 +58,7 @@ public class QueryOperation extends AbstractMapOperation implements ReadonlyOper
 
     private static final long QUERY_EXECUTION_TIMEOUT_MINUTES = 5;
 
+    private IterationType iterationType;
     private Predicate predicate;
     private PagingPredicate pagingPredicate;
 
@@ -65,9 +67,10 @@ public class QueryOperation extends AbstractMapOperation implements ReadonlyOper
     public QueryOperation() {
     }
 
-    public QueryOperation(String mapName, Predicate predicate) {
+    public QueryOperation(String mapName, Predicate predicate, IterationType iterationType) {
         super(mapName);
         this.predicate = predicate;
+        this.iterationType = iterationType;
         if (predicate instanceof PagingPredicate) {
             this.pagingPredicate = (PagingPredicate) predicate;
         }
@@ -92,7 +95,7 @@ public class QueryOperation extends AbstractMapOperation implements ReadonlyOper
             entries = mapContainer.getIndexes().query(predicate);
         }
 
-        result = queryEngine.newQueryResult(initialPartitions.size());
+        result = queryEngine.newQueryResult(iterationType, initialPartitions.size());
         if (entries != null) {
             result.addAll(entries);
         } else {
@@ -217,6 +220,7 @@ public class QueryOperation extends AbstractMapOperation implements ReadonlyOper
         super.writeInternal(out);
         out.writeUTF(name);
         out.writeObject(predicate);
+        out.writeByte(iterationType.getId());
     }
 
     @Override
@@ -227,6 +231,7 @@ public class QueryOperation extends AbstractMapOperation implements ReadonlyOper
         if (predicate instanceof PagingPredicate) {
             pagingPredicate = (PagingPredicate) predicate;
         }
+        iterationType = IterationType.getById(in.readByte());
     }
 
     private final class PartitionCallable implements Callable<Collection<QueryableEntry>> {

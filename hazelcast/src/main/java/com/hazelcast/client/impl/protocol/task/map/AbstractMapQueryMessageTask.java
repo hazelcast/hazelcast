@@ -31,6 +31,7 @@ import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.util.IterationType;
 
 import java.security.Permission;
 import java.util.ArrayList;
@@ -88,8 +89,9 @@ public abstract class AbstractMapQueryMessageTask<P> extends AbstractCallableMes
     private void createInvocations(Collection<Member> members, List<Future> futures, Predicate predicate) {
         final InternalOperationService operationService = nodeEngine.getOperationService();
         for (Member member : members) {
+            // todo: we are selecting key + value here and this could be undesirable if only one of them is needed
             Future future = operationService.createInvocationBuilder(SERVICE_NAME,
-                    new QueryOperation(getDistributedObjectName(), predicate),
+                    new QueryOperation(getDistributedObjectName(), predicate, IterationType.ENTRY),
                     member.getAddress()).invoke();
             futures.add(future);
         }
@@ -128,7 +130,8 @@ public abstract class AbstractMapQueryMessageTask<P> extends AbstractCallableMes
                                                        Predicate predicate) {
         final InternalOperationService operationService = nodeEngine.getOperationService();
         for (Integer partitionId : missingPartitionsList) {
-            QueryPartitionOperation queryPartitionOperation = new QueryPartitionOperation(getDistributedObjectName(), predicate);
+            QueryPartitionOperation queryPartitionOperation = new QueryPartitionOperation(
+                    getDistributedObjectName(), predicate, IterationType.ENTRY);
             queryPartitionOperation.setPartitionId(partitionId);
             try {
                 Future future = operationService.invokeOnPartition(SERVICE_NAME,

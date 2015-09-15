@@ -25,9 +25,8 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import java.io.IOException;
 
 /**
- *  Multiple result set for Predicates
+ * Multiple result set for Predicates
  */
-
 public class QueryResultEntryImpl implements IdentifiedDataSerializable, QueryResultEntry {
     private Data indexKey;
     private Data keyData;
@@ -86,13 +85,21 @@ public class QueryResultEntryImpl implements IdentifiedDataSerializable, QueryRe
         if (this == o) {
             return true;
         }
+
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
 
         QueryResultEntryImpl that = (QueryResultEntryImpl) o;
+        if (!equals(this.keyData, that.keyData)) {
+            return false;
+        }
 
-        if (indexKey != null ? !indexKey.equals(that.indexKey) : that.indexKey != null) {
+        if (!equals(this.valueData, that.valueData)) {
+            return false;
+        }
+
+        if (!equals(this.indexKey, that.indexKey)) {
             return false;
         }
 
@@ -101,6 +108,18 @@ public class QueryResultEntryImpl implements IdentifiedDataSerializable, QueryRe
 
     @Override
     public int hashCode() {
-        return indexKey != null ? indexKey.hashCode() : 0;
+        return hash(keyData) + hash(valueData) + hash(indexKey);
+    }
+
+    private int hash(Data data) {
+        return data == null ? 0 : data.hashCode();
+    }
+
+    private boolean equals(Data thisData, Data thatData) {
+        if (thisData == null) {
+            return thatData == null;
+        } else {
+            return thisData.equals(thatData);
+        }
     }
 }

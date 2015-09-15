@@ -14,50 +14,46 @@
  * limitations under the License.
  */
 
-package com.hazelcast.util;
+package com.hazelcast.query.impl;
 
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.query.impl.QueryResultEntry;
+import com.hazelcast.util.IterationType;
 
 import java.io.IOException;
-import java.util.AbstractMap;
-import java.util.AbstractSet;
+import java.util.AbstractList;
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-
-import static java.util.Collections.newSetFromMap;
 
 /**
- * Collection(Set) class for result of query operations.
+ * Collection(List) class for result of query operations.
  */
-public class QueryResultSet extends AbstractSet implements IdentifiedDataSerializable {
+public class QueryResultList extends AbstractList implements IdentifiedDataSerializable {
 
-    private final Set<QueryResultEntry> entries = newSetFromMap(new ConcurrentHashMap<QueryResultEntry, Boolean>());
+    private final List<QueryResultEntry> entries = new ArrayList<QueryResultEntry>();
     private final SerializationService serializationService;
 
     private IterationType iterationType;
-    private boolean data;
+    private boolean binary;
 
-    public QueryResultSet() {
+    public QueryResultList() {
         serializationService = null;
     }
 
-    public QueryResultSet(SerializationService serializationService, IterationType iterationType, boolean data) {
+    public QueryResultList(SerializationService serializationService, IterationType iterationType, boolean binary) {
         this.serializationService = serializationService;
         this.iterationType = iterationType;
-        this.data = data;
+        this.binary = binary;
     }
 
     @SuppressWarnings("unchecked")
     public Iterator<Map.Entry> rawIterator() {
-        return new QueryResultIterator(IterationType.ENTRY);
+        return new QueryResultIterator(entries.iterator(), IterationType.ENTRY, binary, serializationService);
     }
 
     public boolean add(QueryResultEntry entry) {
@@ -79,7 +75,12 @@ public class QueryResultSet extends AbstractSet implements IdentifiedDataSeriali
 
     @Override
     public Iterator iterator() {
-        return new QueryResultIterator(iterationType);
+        return new QueryResultIterator(entries.iterator(), iterationType, binary, serializationService);
+    }
+
+    @Override
+    public Object get(int index) {
+        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -87,11 +88,13 @@ public class QueryResultSet extends AbstractSet implements IdentifiedDataSeriali
         return entries.size();
     }
 
+    //todo:
     @Override
     public int getFactoryId() {
         return MapDataSerializerHook.F_ID;
     }
 
+    //todo:
     @Override
     public int getId() {
         return MapDataSerializerHook.QUERY_RESULT_SET;
@@ -99,7 +102,7 @@ public class QueryResultSet extends AbstractSet implements IdentifiedDataSeriali
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeBoolean(data);
+        out.writeBoolean(binary);
         out.writeUTF(iterationType.toString());
         out.writeInt(entries.size());
         for (QueryResultEntry queryResultEntry : entries) {
@@ -109,7 +112,7 @@ public class QueryResultSet extends AbstractSet implements IdentifiedDataSeriali
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        data = in.readBoolean();
+        binary = in.readBoolean();
         iterationType = IterationType.valueOf(in.readUTF());
         int size = in.readInt();
         for (int i = 0; i < size; i++) {
@@ -119,15 +122,15 @@ public class QueryResultSet extends AbstractSet implements IdentifiedDataSeriali
 
     @Override
     public String toString() {
-        return "QueryResultSet{"
-                + "entries=" + entries()
+        return "QueryResultList{"
+                + "entries=" + entriesToString()
                 + ", iterationType=" + iterationType
-                + ", data=" + data
+                + ", binary=" + binary
                 + '}';
 
     }
 
-    private String entries() {
+    private String entriesToString() {
         final Iterator i = iterator();
         if (!i.hasNext()) {
             return "[]";
@@ -135,57 +138,13 @@ public class QueryResultSet extends AbstractSet implements IdentifiedDataSeriali
 
         StringBuilder sb = new StringBuilder();
         sb.append('[');
-        for (;;) {
+        for (; ; ) {
             Object e = i.next();
             sb.append(e == this ? "(this Collection)" : e);
             if (!i.hasNext()) {
                 return sb.append(']').toString();
             }
             sb.append(", ");
-        }
-    }
-
-    /**
-     * Iterator for this set.
-     */
-    private final class QueryResultIterator implements Iterator {
-
-        private final Iterator<QueryResultEntry> iterator = entries.iterator();
-
-        private final IterationType iteratorType;
-
-        private QueryResultIterator(IterationType iteratorType) {
-            this.iteratorType = iteratorType;
-        }
-
-        public boolean hasNext() {
-            return iterator.hasNext();
-        }
-
-        @SuppressWarnings("unchecked")
-        public Object next() {
-            QueryResultEntry entry = iterator.next();
-            if (iteratorType == IterationType.VALUE) {
-                Data valueData = entry.getValueData();
-                return (data) ? valueData : serializationService.toObject(valueData);
-            } else if (iteratorType == IterationType.KEY) {
-                Data keyData = entry.getKeyData();
-                return (data) ? keyData : serializationService.toObject(keyData);
-            } else {
-                Data keyData = entry.getKeyData();
-                Data valueData = entry.getValueData();
-                if (data) {
-                    return new AbstractMap.SimpleImmutableEntry(keyData, valueData);
-                } else {
-                    Object key = serializationService.toObject(keyData);
-                    Object value = serializationService.toObject(valueData);
-                    return new AbstractMap.SimpleImmutableEntry(key, value);
-                }
-            }
-        }
-
-        public void remove() {
-            throw new UnsupportedOperationException();
         }
     }
 }

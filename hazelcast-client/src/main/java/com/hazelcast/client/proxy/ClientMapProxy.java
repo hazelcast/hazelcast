@@ -114,7 +114,7 @@ import com.hazelcast.spi.impl.PortableMapPartitionLostEvent;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.IterationType;
 import com.hazelcast.util.Preconditions;
-import com.hazelcast.util.QueryResultSet;
+import com.hazelcast.query.impl.QueryResultSet;
 import com.hazelcast.util.ThreadUtil;
 import com.hazelcast.util.collection.InflatableSet;
 import com.hazelcast.util.executor.CompletedFuture;

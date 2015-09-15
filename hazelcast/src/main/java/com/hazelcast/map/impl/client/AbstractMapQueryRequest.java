@@ -33,9 +33,8 @@ import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.IterationType;
-import com.hazelcast.util.QueryResultSet;
 import com.hazelcast.util.BitSetUtils;
-
+import com.hazelcast.query.impl.QueryResultSet;
 import java.io.IOException;
 import java.security.Permission;
 import java.util.ArrayList;
@@ -100,7 +99,8 @@ abstract class AbstractMapQueryRequest extends InvocationClientRequest implement
     private List<Future> createInvocations(Collection<Member> members, Predicate predicate) {
         List<Future> futures = new ArrayList<Future>(members.size());
         for (Member member : members) {
-            Future future = createInvocationBuilder(SERVICE_NAME, new QueryOperation(name, predicate),
+            // todo: we are selecting key + value here and this could be undesirable.
+            Future future = createInvocationBuilder(SERVICE_NAME, new QueryOperation(name, predicate, IterationType.ENTRY),
                     member.getAddress()).invoke();
             futures.add(future);
         }
@@ -145,10 +145,11 @@ abstract class AbstractMapQueryRequest extends InvocationClientRequest implement
     private void createInvocationsForMissingPartitions(List<Integer> missingPartitionsList, List<Future> futures,
                                                        Predicate predicate) {
         for (Integer partitionId : missingPartitionsList) {
-            QueryPartitionOperation queryPartitionOperation = new QueryPartitionOperation(name, predicate);
-            queryPartitionOperation.setPartitionId(partitionId);
+            // todo: we are selecting key + value here and this could be undesirable.
+            QueryPartitionOperation op = new QueryPartitionOperation(name, predicate, IterationType.ENTRY);
+            op.setPartitionId(partitionId);
             try {
-                Future future = createInvocationBuilder(SERVICE_NAME, queryPartitionOperation, partitionId).invoke();
+                Future future = createInvocationBuilder(SERVICE_NAME, op, partitionId).invoke();
                 futures.add(future);
             } catch (Throwable t) {
                 throw ExceptionUtil.rethrow(t);

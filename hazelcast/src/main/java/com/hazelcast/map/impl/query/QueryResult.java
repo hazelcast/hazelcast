@@ -19,10 +19,12 @@ package com.hazelcast.map.impl.query;
 import com.hazelcast.map.QueryResultSizeExceededException;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.query.impl.QueryResultEntry;
 import com.hazelcast.query.impl.QueryResultEntryImpl;
 import com.hazelcast.query.impl.QueryableEntry;
+import com.hazelcast.util.IterationType;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -33,18 +35,19 @@ import java.util.LinkedList;
 public class QueryResult implements DataSerializable {
 
     private final Collection<QueryResultEntry> result = new LinkedList<QueryResultEntry>();
-
+    private IterationType iterationType;
     private Collection<Integer> partitionIds;
 
     private transient long resultLimit;
     private transient long resultSize;
 
     public QueryResult() {
-        this(Long.MAX_VALUE);
+        this.resultLimit = Long.MAX_VALUE;
     }
 
-    public QueryResult(long resultLimit) {
+    public QueryResult(IterationType iterationType, long resultLimit) {
         this.resultLimit = resultLimit;
+        this.iterationType = iterationType;
     }
 
     public void addAll(Collection<QueryableEntry> queryableEntries) {
@@ -72,6 +75,9 @@ public class QueryResult implements DataSerializable {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeByte(iterationType.getId());
+
+        // writing partition id's
         int partitionSize = (partitionIds == null) ? 0 : partitionIds.size();
         out.writeInt(partitionSize);
         if (partitionSize > 0) {
@@ -79,19 +85,36 @@ public class QueryResult implements DataSerializable {
                 out.writeInt(partitionId);
             }
         }
+
+        // writing results
         int resultSize = result.size();
         out.writeInt(resultSize);
-        if (resultSize > 0) {
-            Iterator<QueryResultEntry> iterator = result.iterator();
-            for (int i = 0; i < resultSize; i++) {
-                QueryResultEntryImpl queryableEntry = (QueryResultEntryImpl) iterator.next();
-                queryableEntry.writeData(out);
+        Iterator<QueryResultEntry> iterator = result.iterator();
+        for (int i = 0; i < resultSize; i++) {
+            QueryResultEntryImpl queryableEntry = (QueryResultEntryImpl) iterator.next();
+            switch (iterationType) {
+                case ENTRY:
+                    out.writeData(queryableEntry.getKeyData());
+                    out.writeData(queryableEntry.getValueData());
+                    break;
+                case KEY:
+                    out.writeData(queryableEntry.getKeyData());
+                    break;
+                case VALUE:
+                    out.writeData(queryableEntry.getKeyData());
+                    out.writeData(queryableEntry.getValueData());
+                    break;
+                default:
+                    throw new IllegalStateException("Unhandled " + iterationType);
             }
         }
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
+        iterationType = IterationType.getById(in.readByte());
+
+        // writing partition id's
         int partitionSize = in.readInt();
         if (partitionSize > 0) {
             partitionIds = new ArrayList<Integer>(partitionSize);
@@ -99,13 +122,30 @@ public class QueryResult implements DataSerializable {
                 partitionIds.add(in.readInt());
             }
         }
+
+        // writing the content
         int resultSize = in.readInt();
-        if (resultSize > 0) {
-            for (int i = 0; i < resultSize; i++) {
-                QueryResultEntryImpl resultEntry = new QueryResultEntryImpl();
-                resultEntry.readData(in);
-                result.add(resultEntry);
+        for (int i = 0; i < resultSize; i++) {
+            Data key = null;
+            Data value = null;
+
+            switch (iterationType) {
+                case ENTRY:
+                    key = in.readData();
+                    value = in.readData();
+                    break;
+                case KEY:
+                    key = in.readData();
+                    break;
+                case VALUE:
+                    key = in.readData();
+                    value = in.readData();
+                    break;
+                default:
+                    throw new IllegalStateException("Unhandled " + iterationType);
             }
+
+            result.add(new QueryResultEntryImpl(key, null, value));
         }
     }
 }

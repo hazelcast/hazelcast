@@ -18,6 +18,7 @@ package com.hazelcast.map.impl.query;
 
 import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.query.impl.QueryResultSet;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.util.IterationType;
 
@@ -45,12 +46,12 @@ public interface MapQueryEngine {
      * @param mapName       map name.
      * @param predicate     except paging predicate.
      * @param iterationType type of {@link com.hazelcast.util.IterationType}
-     * @param dataResult    <code>true</code> if results should contain {@link com.hazelcast.nio.serialization.Data} types,
+     * @param binary    <code>true</code> if results should contain {@link com.hazelcast.nio.serialization.Data} types,
      *                      <code>false</code> for object types.
-     * @return {@link com.hazelcast.util.QueryResultSet}
+     * @return {@link QueryResultSet}
      */
     Set queryLocalMember(String mapName, Predicate predicate,
-                         IterationType iterationType, boolean dataResult);
+                         IterationType iterationType, boolean binary);
 
     /**
      * Used for paging predicate queries on node local entries.
@@ -79,12 +80,12 @@ public interface MapQueryEngine {
      * @param mapName       map name.
      * @param predicate     except paging predicate.
      * @param iterationType type of {@link IterationType}
-     * @param dataResult    <code>true</code> if results should contain {@link com.hazelcast.nio.serialization.Data} types,
+     * @param binary    <code>true</code> if results should contain {@link com.hazelcast.nio.serialization.Data} types,
      *                      <code>false</code> for object types.
-     * @return {@link com.hazelcast.util.QueryResultSet}
+     * @return {@link QueryResultSet}
      */
-    Set query(String mapName, Predicate predicate,
-              IterationType iterationType, boolean dataResult);
+    Collection query(String mapName, Predicate predicate,
+              IterationType iterationType, boolean binary, boolean unique);
 
     /**
      * Creates a {@link QueryResult} with configured result limit (according to the number of partitions) if feature is enabled.
@@ -92,5 +93,5 @@ public interface MapQueryEngine {
      * @param numberOfPartitions number of partitions to calculate result limit
      * @return {@link QueryResult}
      */
-    QueryResult newQueryResult(int numberOfPartitions);
+    QueryResult newQueryResult(IterationType iterationType, int numberOfPartitions);
 }
