@@ -33,6 +33,9 @@ public final class UUIDConverter implements TypeConverters.TypeConverter {
 
     @Override
     public Comparable convert(Comparable value) {
+        if (value == null) {
+            return IndexImpl.NULL;
+        }
         if (value instanceof UUID) {
             return value;
         }

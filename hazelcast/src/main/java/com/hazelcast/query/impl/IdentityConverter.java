@@ -25,6 +25,9 @@ public class IdentityConverter implements TypeConverter {
 
     @Override
     public Comparable convert(final Comparable value) {
+        if (value == null) {
+            return IndexImpl.NULL;
+        }
         return value;
     }
 
