@@ -32,7 +32,7 @@ import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.query.impl.IndexService;
+import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.wan.WanReplicationPublisher;
@@ -63,7 +63,7 @@ public class MapContainer {
 
     private final Map<String, MapInterceptor> interceptorMap;
 
-    private final IndexService indexService = new IndexService();
+    private final Indexes indexes = new Indexes();
 
     private final SizeEstimator nearCacheSizeEstimator;
 
@@ -157,8 +157,8 @@ public class MapContainer {
         return strategy;
     }
 
-    public IndexService getIndexService() {
-        return indexService;
+    public Indexes getIndexes() {
+        return indexes;
     }
 
     public WanReplicationPublisher getWanReplicationPublisher() {

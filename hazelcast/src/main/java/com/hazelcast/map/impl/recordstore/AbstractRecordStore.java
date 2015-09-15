@@ -28,7 +28,7 @@ import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.RecordFactory;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.query.impl.IndexService;
+import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.QueryEntry;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.spi.DefaultObjectNamespace;
@@ -156,27 +156,27 @@ abstract class AbstractRecordStore implements RecordStore {
 
     protected void saveIndex(Record record) {
         Data dataKey = record.getKey();
-        final IndexService indexService = mapContainer.getIndexService();
-        if (indexService.hasIndex()) {
+        final Indexes indexes = mapContainer.getIndexes();
+        if (indexes.hasIndex()) {
             SerializationService ss = mapServiceContext.getNodeEngine().getSerializationService();
             QueryableEntry queryableEntry = new QueryEntry(ss, dataKey, dataKey, record.getValue());
-            indexService.saveEntryIndex(queryableEntry);
+            indexes.saveEntryIndex(queryableEntry);
         }
     }
 
 
     protected void removeIndex(Data key) {
-        final IndexService indexService = mapContainer.getIndexService();
-        if (indexService.hasIndex()) {
-            indexService.removeEntryIndex(key);
+        final Indexes indexes = mapContainer.getIndexes();
+        if (indexes.hasIndex()) {
+            indexes.removeEntryIndex(key);
         }
     }
 
     protected void removeIndex(Set<Data> keys) {
-        final IndexService indexService = mapContainer.getIndexService();
-        if (indexService.hasIndex()) {
+        final Indexes indexes = mapContainer.getIndexes();
+        if (indexes.hasIndex()) {
             for (Data key : keys) {
-                indexService.removeEntryIndex(key);
+                indexes.removeEntryIndex(key);
             }
         }
     }
@@ -188,11 +188,11 @@ abstract class AbstractRecordStore implements RecordStore {
      * @param keysToPreserve do not remove these keys.
      */
     protected void removeIndexByPreservingKeys(Set<Data> keysToRemove, Set<Data> keysToPreserve) {
-        final IndexService indexService = mapContainer.getIndexService();
-        if (indexService.hasIndex()) {
+        final Indexes indexes = mapContainer.getIndexes();
+        if (indexes.hasIndex()) {
             for (Data key : keysToRemove) {
                 if (!keysToPreserve.contains(key)) {
-                    indexService.removeEntryIndex(key);
+                    indexes.removeEntryIndex(key);
                 }
             }
         }

@@ -27,7 +27,7 @@ import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.query.SampleObjects;
-import com.hazelcast.query.impl.IndexService;
+import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -50,8 +50,8 @@ public class RecordStoreTest extends HazelcastTestSupport {
     @Test
     public void testRecordStoreResetWithClearingIndexes() throws Exception {
         IMap<Object, Object> map = testRecordStoreReset();
-        IndexService indexService = getIndexService(map);
-        indexService.clearIndexes();
+        Indexes indexes = getIndexService(map);
+        indexes.clearIndexes();
         Collection<Object> values = map.values(Predicates.equal("name", "tom"));
         assertTrue(values.isEmpty());
     }
@@ -91,10 +91,10 @@ public class RecordStoreTest extends HazelcastTestSupport {
         return (DefaultRecordStore) recordStore;
     }
 
-    private IndexService getIndexService(IMap<Object, Object> map) {
+    private Indexes getIndexService(IMap<Object, Object> map) {
         MapServiceContext mapServiceContext = getMapServiceContext((MapProxyImpl) map);
         MapContainer mapContainer = mapServiceContext.getMapContainer(map.getName());
-        return mapContainer.getIndexService();
+        return mapContainer.getIndexes();
     }
 
     private MapServiceContext getMapServiceContext(MapProxyImpl map) {
