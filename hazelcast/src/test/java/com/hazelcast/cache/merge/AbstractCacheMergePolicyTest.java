@@ -11,7 +11,7 @@ import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-abstract class AbstractCacheMergePolicyTest {
+public abstract class AbstractCacheMergePolicyTest {
 
     private static final String EXISTING = "EXISTING";
     private static final String MERGING = "MERGING";
