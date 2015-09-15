@@ -17,14 +17,13 @@
 package com.hazelcast.query.impl;
 
 import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.query.impl.QueryResultEntry;
 import com.hazelcast.util.IterationType;
 
 import java.util.AbstractMap;
 import java.util.Iterator;
 
 /**
- * Iterator for this set.
+ * Iterator for QueryResultSet/QueryResultList
  */
 final class QueryResultIterator implements Iterator {
 

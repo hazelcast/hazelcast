@@ -97,6 +97,8 @@ import static java.lang.Boolean.parseBoolean;
 
 public class SerializationServiceImpl implements SerializationService {
 
+    public static final int FAT_PACKET_SIZE = 1000 * 1000;
+
     protected static final PartitioningStrategy EMPTY_PARTITIONING_STRATEGY = new PartitioningStrategy() {
         public Object getPartitionKey(Object key) {
             return null;
@@ -251,7 +253,7 @@ public class SerializationServiceImpl implements SerializationService {
             }
 
             byte[] result = out.toByteArray();
-            if (result != null && result.length > 1000 * 1000) {
+            if (result != null && result.length > FAT_PACKET_SIZE) {
                 StringBuffer sb = new StringBuffer("fat packet:" + obj + " with size:" + result.length + "\n");
                 if (obj instanceof NormalResponse) {
                     NormalResponse normalResponse = (NormalResponse) obj;

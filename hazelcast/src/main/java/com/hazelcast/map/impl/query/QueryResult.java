@@ -101,7 +101,6 @@ public class QueryResult implements DataSerializable {
                     out.writeData(queryableEntry.getKeyData());
                     break;
                 case VALUE:
-                    out.writeData(queryableEntry.getKeyData());
                     out.writeData(queryableEntry.getValueData());
                     break;
                 default:
@@ -138,7 +137,6 @@ public class QueryResult implements DataSerializable {
                     key = in.readData();
                     break;
                 case VALUE:
-                    key = in.readData();
                     value = in.readData();
                     break;
                 default:
