@@ -37,17 +37,17 @@ import static org.junit.Assert.assertNull;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class IndexServiceTest {
+public class IndexesTest {
 
     @Test
     public void testAndWithSingleEntry() throws Exception {
-        IndexService indexService = new IndexService();
-        indexService.addOrGetIndex("name", false);
-        indexService.addOrGetIndex("age", true);
-        indexService.addOrGetIndex("salary", true);
+        Indexes indexes = new Indexes();
+        indexes.addOrGetIndex("name", false);
+        indexes.addOrGetIndex("age", true);
+        indexes.addOrGetIndex("salary", true);
         for (int i = 0; i < 20000; i++) {
             Employee employee = new Employee(i + "Name", i % 80, (i % 2 == 0), 100 + (i % 1000));
-            indexService.saveEntryIndex(new QueryEntry(null, toData(i), i, employee));
+            indexes.saveEntryIndex(new QueryEntry(null, toData(i), i, employee));
         }
         int count = 1000;
         Set<String> ages = new HashSet<String>(count);
@@ -60,42 +60,42 @@ public class IndexServiceTest {
         long free = Runtime.getRuntime().freeMemory();
         long start = Clock.currentTimeMillis();
         for (int i = 0; i < 10000; i++) {
-            Set<QueryableEntry> results = indexService.query(predicate);
+            Set<QueryableEntry> results = indexes.query(predicate);
             assertEquals(1, results.size());
         }
     }
 
     @Test
     public void testIndex() throws Exception {
-        IndexService indexService = new IndexService();
-        indexService.addOrGetIndex("name", false);
-        indexService.addOrGetIndex("age", true);
-        indexService.addOrGetIndex("salary", true);
+        Indexes indexes = new Indexes();
+        indexes.addOrGetIndex("name", false);
+        indexes.addOrGetIndex("age", true);
+        indexes.addOrGetIndex("salary", true);
         for (int i = 0; i < 2000; i++) {
             Employee employee = new Employee(i + "Name", i % 80, (i % 2 == 0), 100 + (i % 100));
-            indexService.saveEntryIndex(new QueryEntry(null, toData(i), i, employee));
+            indexes.saveEntryIndex(new QueryEntry(null, toData(i), i, employee));
         }
         for (int i = 0; i < 10; i++) {
             SqlPredicate predicate = new SqlPredicate("salary=161 and age >20 and age <23");
-            Set<QueryableEntry> results = new HashSet<QueryableEntry>(indexService.query(predicate));
+            Set<QueryableEntry> results = new HashSet<QueryableEntry>(indexes.query(predicate));
             assertEquals(5, results.size());
         }
     }
 
     @Test
     public void testIndex2() throws Exception {
-        IndexService indexService = new IndexService();
-        indexService.addOrGetIndex("name", false);
-        indexService.saveEntryIndex(new QueryEntry(null, toData(1), 1, new Value("abc")));
-        indexService.saveEntryIndex(new QueryEntry(null, toData(2), 2, new Value("xyz")));
-        indexService.saveEntryIndex(new QueryEntry(null, toData(3), 3, new Value("aaa")));
-        indexService.saveEntryIndex(new QueryEntry(null, toData(4), 4, new Value("zzz")));
-        indexService.saveEntryIndex(new QueryEntry(null, toData(5), 5, new Value("klm")));
-        indexService.saveEntryIndex(new QueryEntry(null, toData(6), 6, new Value("prs")));
-        indexService.saveEntryIndex(new QueryEntry(null, toData(7), 7, new Value("prs")));
-        indexService.saveEntryIndex(new QueryEntry(null, toData(8), 8, new Value("def")));
-        indexService.saveEntryIndex(new QueryEntry(null, toData(9), 9, new Value("qwx")));
-        assertEquals(8, new HashSet(indexService.query(new SqlPredicate("name > 'aac'"))).size());
+        Indexes indexes = new Indexes();
+        indexes.addOrGetIndex("name", false);
+        indexes.saveEntryIndex(new QueryEntry(null, toData(1), 1, new Value("abc")));
+        indexes.saveEntryIndex(new QueryEntry(null, toData(2), 2, new Value("xyz")));
+        indexes.saveEntryIndex(new QueryEntry(null, toData(3), 3, new Value("aaa")));
+        indexes.saveEntryIndex(new QueryEntry(null, toData(4), 4, new Value("zzz")));
+        indexes.saveEntryIndex(new QueryEntry(null, toData(5), 5, new Value("klm")));
+        indexes.saveEntryIndex(new QueryEntry(null, toData(6), 6, new Value("prs")));
+        indexes.saveEntryIndex(new QueryEntry(null, toData(7), 7, new Value("prs")));
+        indexes.saveEntryIndex(new QueryEntry(null, toData(8), 8, new Value("def")));
+        indexes.saveEntryIndex(new QueryEntry(null, toData(9), 9, new Value("qwx")));
+        assertEquals(8, new HashSet(indexes.query(new SqlPredicate("name > 'aac'"))).size());
     }
 
 
@@ -106,42 +106,42 @@ public class IndexServiceTest {
      */
     @Test
     public void shouldNotThrowException_withNullValues_whenIndexAddedForValueField() throws Exception {
-        IndexService indexService = new IndexService();
-        indexService.addOrGetIndex("name", false);
+        Indexes indexes = new Indexes();
+        indexes.addOrGetIndex("name", false);
 
-        shouldReturnNull_whenQueryingOnKeys(indexService);
+        shouldReturnNull_whenQueryingOnKeys(indexes);
     }
 
 
     @Test
     public void shouldNotThrowException_withNullValues_whenNoIndexAdded() throws Exception {
-        IndexService indexService = new IndexService();
+        Indexes indexes = new Indexes();
 
-        shouldReturnNull_whenQueryingOnKeys(indexService);
+        shouldReturnNull_whenQueryingOnKeys(indexes);
     }
 
-    private void shouldReturnNull_whenQueryingOnKeys(IndexService indexService) {
+    private void shouldReturnNull_whenQueryingOnKeys(Indexes indexes) {
         for (int i = 0; i < 50; i++) {
             // passing null value to QueryEntry.
-            indexService.saveEntryIndex(new QueryEntry(null, toData(i), i, null));
+            indexes.saveEntryIndex(new QueryEntry(null, toData(i), i, null));
         }
 
-        Set<QueryableEntry> query = indexService.query(new SqlPredicate("__key > 10 "));
+        Set<QueryableEntry> query = indexes.query(new SqlPredicate("__key > 10 "));
 
         assertNull("There should be no result", query);
     }
 
     @Test
     public void shouldNotThrowException_withNullValue_whenIndexAddedForKeyField() throws Exception {
-        IndexService indexService = new IndexService();
-        indexService.addOrGetIndex("__key", false);
+        Indexes indexes = new Indexes();
+        indexes.addOrGetIndex("__key", false);
 
         for (int i = 0; i < 100; i++) {
             // passing null value to QueryEntry.
-            indexService.saveEntryIndex(new QueryEntry(null, toData(i), i, null));
+            indexes.saveEntryIndex(new QueryEntry(null, toData(i), i, null));
         }
 
-        Set<QueryableEntry> query = indexService.query(new SqlPredicate("__key > 10 "));
+        Set<QueryableEntry> query = indexes.query(new SqlPredicate("__key > 10 "));
 
         assertEquals(89, query.size());
     }

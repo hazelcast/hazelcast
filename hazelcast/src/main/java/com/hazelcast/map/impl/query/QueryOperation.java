@@ -89,7 +89,7 @@ public class QueryOperation extends AbstractMapOperation implements ReadonlyOper
 
         Set<QueryableEntry> entries = null;
         if (!partitionService.hasOnGoingMigrationLocal()) {
-            entries = mapContainer.getIndexService().query(predicate);
+            entries = mapContainer.getIndexes().query(predicate);
         }
 
         result = queryEngine.newQueryResult(initialPartitions.size());

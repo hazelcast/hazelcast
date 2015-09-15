@@ -20,17 +20,17 @@ package com.hazelcast.query.impl;
  * Provides the context of Query.
  */
 public class QueryContext {
-    private final IndexService indexService;
+    private final Indexes indexes;
 
-    public QueryContext(IndexService indexService) {
-        this.indexService = indexService;
+    public QueryContext(Indexes indexes) {
+        this.indexes = indexes;
     }
 
     public Index getIndex(String attributeName) {
-        if (indexService == null) {
+        if (indexes == null) {
             return null;
         } else {
-            return indexService.getIndex(attributeName);
+            return indexes.getIndex(attributeName);
         }
     }
 }

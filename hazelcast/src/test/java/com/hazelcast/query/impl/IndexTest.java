@@ -65,7 +65,7 @@ public class IndexTest {
 
     @Test
     public void testRemoveEnumIndex() {
-        IndexService is = new IndexService();
+        Indexes is = new Indexes();
         is.addOrGetIndex("favoriteCity", false);
         Data key = ss.toData(1);
         Data value = ss.toData(new SerializableWithEnum(SerializableWithEnum.City.Istanbul));
@@ -77,7 +77,7 @@ public class IndexTest {
 
     @Test
     public void testIndex() throws QueryException {
-        IndexService is = new IndexService();
+        Indexes is = new Indexes();
         Index dIndex = is.addOrGetIndex("d", false);
         Index boolIndex = is.addOrGetIndex("bool", false);
         Index strIndex = is.addOrGetIndex("str", false);
@@ -124,7 +124,7 @@ public class IndexTest {
 
     @Test
     public void testIndexWithNull() throws QueryException {
-        IndexService is = new IndexService();
+        Indexes is = new Indexes();
         Index strIndex = is.addOrGetIndex("str", true);
 
         Data value = ss.toData(new MainPortable(false, 1, null));

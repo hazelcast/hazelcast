@@ -33,7 +33,7 @@ import com.hazelcast.map.impl.mapstore.MapStoreManager;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.query.impl.IndexService;
+import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.spi.DefaultObjectNamespace;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
@@ -228,10 +228,10 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
             final DefaultObjectNamespace namespace = new DefaultObjectNamespace(MapService.SERVICE_NAME, name);
             lockService.clearLockStore(partitionId, namespace);
         }
-        final IndexService indexService = mapContainer.getIndexService();
-        if (indexService.hasIndex()) {
+        final Indexes indexes = mapContainer.getIndexes();
+        if (indexes.hasIndex()) {
             for (Data key : records.keySet()) {
-                indexService.removeEntryIndex(key);
+                indexes.removeEntryIndex(key);
             }
         }
         clearRecordsMap(Collections.<Data, Record>emptyMap());

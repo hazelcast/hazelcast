@@ -3,15 +3,13 @@ package com.hazelcast.map.impl.query;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.operation.AbstractMapOperation;
-import com.hazelcast.map.impl.query.MapQueryEngine;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
-import com.hazelcast.map.impl.query.QueryResult;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.query.TruePredicate;
-import com.hazelcast.query.impl.IndexService;
+import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
@@ -63,8 +61,8 @@ public abstract class QueryOperationTestSupport {
         when(mapQueryEngine.queryOnPartition(MAP_NAME, TruePredicate.INSTANCE, Operation.GENERIC_PARTITION_ID))
                 .thenReturn(queryEntries);
 
-        IndexService indexService = mock(IndexService.class);
-        when(indexService.query(TruePredicate.INSTANCE)).thenReturn(queryEntrySet);
+        Indexes indexes = mock(Indexes.class);
+        when(indexes.query(TruePredicate.INSTANCE)).thenReturn(queryEntrySet);
 
         MapConfig mapConfig = mock(MapConfig.class);
         when(mapConfig.isStatisticsEnabled()).thenReturn(false);
@@ -78,7 +76,7 @@ public abstract class QueryOperationTestSupport {
         queryOperation.setMapService(mapService);
 
         MapContainer mapContainer = mock(MapContainer.class);
-        when(mapContainer.getIndexService()).thenReturn(indexService);
+        when(mapContainer.getIndexes()).thenReturn(indexes);
         when(mapContainer.getMapConfig()).thenReturn(mapConfig);
 
         queryOperation.setMapContainer(mapContainer);
