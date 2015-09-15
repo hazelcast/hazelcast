@@ -83,9 +83,9 @@ public class QueryNullIndexingTest extends HazelcastTestSupport {
         final List<Long> dates =
                 queryIndexedDateFieldAsNullValue(false,
                                                  Predicates.notEqual("date", 2000000L));
-        assertEquals(4, dates.size());
+        assertEquals(9, dates.size());
         assertTrue(dates.containsAll(
-                Arrays.asList(4000000L, 6000000L, 8000000L, 10000000L)));
+                Arrays.asList(4000000L, 6000000L, 8000000L, 10000000L, null)));
     }
 
     @Test
@@ -129,9 +129,9 @@ public class QueryNullIndexingTest extends HazelcastTestSupport {
         final List<Long> dates =
                 queryIndexedDateFieldAsNullValue(true,
                                                  Predicates.notEqual("date", 2000000L));
-        assertEquals(4, dates.size());
+        assertEquals(9, dates.size());
         assertTrue(dates.containsAll(
-                Arrays.asList(4000000L, 6000000L, 8000000L, 10000000L)));
+                Arrays.asList(4000000L, 6000000L, 8000000L, 10000000L, null)));
     }
 
     private List<Long> queryIndexedDateFieldAsNullValue(boolean ordered, Predicate pred) {
@@ -151,7 +151,8 @@ public class QueryNullIndexingTest extends HazelcastTestSupport {
 
         final List<Long> dates = new ArrayList<Long>();
         for (SampleObjects.Employee employee : map.values(pred)) {
-            dates.add(employee.getDate().getTime());
+            Timestamp date = employee.getDate();
+            dates.add(date == null ? null : date.getTime());
         }
 
         return dates;

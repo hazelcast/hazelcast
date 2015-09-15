@@ -45,11 +45,6 @@ import java.util.Set;
 
 import static com.hazelcast.instance.TestUtil.toData;
 
-import com.hazelcast.query.impl.predicates.AndPredicate;
-
-import com.hazelcast.query.impl.predicates.EqualPredicate;
-import org.mockito.Mockito;
-
 import static com.hazelcast.query.Predicates.and;
 import static com.hazelcast.query.Predicates.between;
 import static com.hazelcast.query.Predicates.equal;
@@ -190,11 +185,11 @@ public class PredicatesTest extends HazelcastTestSupport {
         assertFalse_withNullEntry(greaterThan("nullField", 1));
         assertFalse_withNullEntry(equal("nullField", 1));
         assertFalse_withNullEntry(notEqual("nullField", null));
-        assertFalse_withNullEntry(notEqual("nullField", 1));
         assertFalse_withNullEntry(between("nullField", 1, 1));
         assertTrue_withNullEntry(like("nullField", null));
         assertTrue_withNullEntry(ilike("nullField", null));
         assertTrue_withNullEntry(regex("nullField", null));
+        assertTrue_withNullEntry(notEqual("nullField", 1));
     }
 
     @Test
