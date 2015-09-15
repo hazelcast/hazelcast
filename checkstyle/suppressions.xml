@@ -336,6 +336,7 @@
     <suppress checks="MethodCount" files="com/hazelcast/util/collection/\w*HashSet"/>
     <suppress checks="MethodCount" files="com/hazelcast/collection/impl/collection/CollectionContainer"/>
     <suppress checks="MagicNumber|Header" files="com/hazelcast/util/collection/"/>
+    <suppress checks="SuperClone" files="com/hazelcast/util/collection/InflatableSet"/>
 
     <!-- Queue -->
     <suppress checks="MethodCount" files="com/hazelcast/collection/impl/queue/QueueContainer"/>

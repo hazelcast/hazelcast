@@ -34,18 +34,19 @@ import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.IterationType;
 import com.hazelcast.util.QueryResultSet;
+import com.hazelcast.util.BitSetUtils;
 
 import java.io.IOException;
 import java.security.Permission;
 import java.util.ArrayList;
+import java.util.BitSet;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
+import static com.hazelcast.util.BitSetUtils.hasAtLeastOneBitSet;
 
 abstract class AbstractMapQueryRequest extends InvocationClientRequest implements Portable, SecureRequest,
         RetryableRequest {
@@ -67,58 +68,74 @@ abstract class AbstractMapQueryRequest extends InvocationClientRequest implement
         QueryResultSet result = new QueryResultSet(null, iterationType, true);
         try {
             Predicate predicate = getPredicate();
-
-            Collection<Member> members = getClientEngine().getClusterService().getMembers();
-            List<Future> futures = new ArrayList<Future>();
-            createInvocations(members, futures, predicate);
-
             int partitionCount = getClientEngine().getPartitionService().getPartitionCount();
-            Set<Integer> finishedPartitions = new HashSet<Integer>(partitionCount);
-            collectResults(result, futures, finishedPartitions);
 
-            if (hasMissingPartitions(finishedPartitions, partitionCount)) {
-                List<Integer> missingList = findMissingPartitions(finishedPartitions, partitionCount);
-                List<Future> missingFutures = new ArrayList<Future>(missingList.size());
-                createInvocationsForMissingPartitions(missingList, missingFutures, predicate);
-                collectResultsFromMissingPartitions(result, missingFutures);
-            }
+            BitSet finishedPartitions = invokeOnMembers(result, predicate, partitionCount);
+            invokeOnMissingPartitions(result, predicate, finishedPartitions, partitionCount);
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
         }
         getEndpoint().sendResponse(result, getCallId());
     }
 
-    private void createInvocations(Collection<Member> members, List<Future> futures, Predicate predicate) {
+    private BitSet invokeOnMembers(QueryResultSet result, Predicate predicate, int partitionCount)
+            throws InterruptedException, ExecutionException {
+        Collection<Member> members = getClientEngine().getClusterService().getMembers();
+        List<Future> futures = createInvocations(members, predicate);
+        BitSet finishedPartitions = collectResults(result, futures, partitionCount);
+        return finishedPartitions;
+    }
+
+    private void invokeOnMissingPartitions(QueryResultSet result, Predicate predicate,
+                                           BitSet finishedPartitions, int partitionCount)
+            throws InterruptedException, ExecutionException {
+        if (hasMissingPartitions(finishedPartitions, partitionCount)) {
+            List<Integer> missingList = findMissingPartitions(finishedPartitions, partitionCount);
+            List<Future> missingFutures = new ArrayList<Future>(missingList.size());
+            createInvocationsForMissingPartitions(missingList, missingFutures, predicate);
+            collectResultsFromMissingPartitions(result, missingFutures);
+        }
+    }
+
+    private List<Future> createInvocations(Collection<Member> members, Predicate predicate) {
+        List<Future> futures = new ArrayList<Future>(members.size());
         for (Member member : members) {
             Future future = createInvocationBuilder(SERVICE_NAME, new QueryOperation(name, predicate),
                     member.getAddress()).invoke();
             futures.add(future);
         }
+        return futures;
     }
 
     @SuppressWarnings("unchecked")
-    private void collectResults(QueryResultSet result, List<Future> futures, Set<Integer> finishedPartitions)
+    private BitSet collectResults(QueryResultSet result, List<Future> futures, int partitionCount)
             throws InterruptedException, ExecutionException {
+        BitSet finishedPartitions = new BitSet(partitionCount);
         for (Future future : futures) {
             QueryResult queryResult = (QueryResult) future.get();
             if (queryResult != null) {
                 Collection<Integer> partitionIds = queryResult.getPartitionIds();
-                if (partitionIds != null) {
-                    finishedPartitions.addAll(partitionIds);
+                if (partitionIds != null && !hasAtLeastOneBitSet(finishedPartitions, partitionIds)) {
+                    //Collect results only if there is no overlap with already collected partitions.
+                    //If there is an overlap it means there was a partition migration while QueryOperation(s) were
+                    //running. In this case we discard all results from this member and will target the missing
+                    //partition separately later.
+                    BitSetUtils.setBits(finishedPartitions, partitionIds);
                     result.addAll(queryResult.getResult());
                 }
             }
         }
+        return finishedPartitions;
     }
 
-    private boolean hasMissingPartitions(Set<Integer> finishedPartitions, int partitionCount) {
-        return finishedPartitions.size() != partitionCount;
+    private boolean hasMissingPartitions(BitSet finishedPartitions, int partitionCount) {
+        return finishedPartitions.nextClearBit(0) == partitionCount;
     }
 
-    private List<Integer> findMissingPartitions(Set<Integer> finishedPartitions, int partitionCount) {
+    private List<Integer> findMissingPartitions(BitSet finishedPartitions, int partitionCount) {
         List<Integer> missingList = new ArrayList<Integer>();
         for (int i = 0; i < partitionCount; i++) {
-            if (!finishedPartitions.contains(i)) {
+            if (!finishedPartitions.get(i)) {
                 missingList.add(i);
             }
         }
