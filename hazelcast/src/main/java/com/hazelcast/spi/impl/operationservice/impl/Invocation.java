@@ -190,10 +190,6 @@ abstract class Invocation implements OperationResponseHandler, Runnable {
         }
 
         try {
-            if (op instanceof LockOperation) {
-                System.out.println("lock.calltimeout:" + callTimeout);
-            }
-
             setCallTimeout(op, callTimeout);
             setCallerAddress(op, nodeEngine.getThisAddress());
             op.setNodeEngine(nodeEngine)
