@@ -16,6 +16,8 @@
 
 package com.hazelcast.util.collection;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 import java.io.Serializable;
 import java.util.AbstractSet;
 import java.util.ArrayList;
@@ -46,8 +48,7 @@ import java.util.Set;
  * but we know our data contains not duplicates. It performs the best in cases
  * biased towards sequential iterations.
  *
- *
- * @param <T>
+ * @param <T> the type of elements maintained by this set
  */
 public final class InflatableSet<T> extends AbstractSet<T> implements Set<T>, Serializable, Cloneable {
     private static final long serialVersionUID = 0L;
@@ -72,7 +73,7 @@ public final class InflatableSet<T> extends AbstractSet<T> implements Set<T>, Se
     /**
      * This constructor is intended to be used by {@link com.hazelcast.util.collection.InflatableSet.Builder} only.
      *
-     * @param compactList
+     * @param compactList list of elements for the InflatableSet
      */
     private InflatableSet(List<T> compactList) {
         this.state = State.COMPACT;
@@ -82,9 +83,9 @@ public final class InflatableSet<T> extends AbstractSet<T> implements Set<T>, Se
     /**
      * This copy-constructor is intended to be used by {@link #clone()} method only.
      *
-     * @param other
+     * @param other other InflatableSet which should be cloned
      */
-    private InflatableSet(InflatableSet other) {
+    private InflatableSet(InflatableSet<T> other) {
         compactList = new ArrayList<T>(other.compactList.size());
         compactList.addAll(other.compactList);
         if (other.inflatedSet != null) {
@@ -96,7 +97,6 @@ public final class InflatableSet<T> extends AbstractSet<T> implements Set<T>, Se
     public static <T> Builder<T> newBuilder(int initialCapacity) {
         return new Builder<T>(initialCapacity);
     }
-
 
     @Override
     public int size() {
@@ -173,7 +173,8 @@ public final class InflatableSet<T> extends AbstractSet<T> implements Set<T>, Se
      * @return a shallow copy of this set
      */
     @Override
-    protected Object clone()  {
+    @SuppressFBWarnings("CN_IDIOM")
+    protected Object clone() {
         return new InflatableSet<T>(this);
     }
 
@@ -242,7 +243,7 @@ public final class InflatableSet<T> extends AbstractSet<T> implements Set<T>, Se
      * Builder for {@link InflatableSet}
      * This is the only way to create a new instance of InflatableSet
      *
-     * @param <T>
+     * @param <T> the type of elements maintained by this set
      */
     public static final class Builder<T> {
         private List<T> list;
