@@ -23,13 +23,6 @@ final class InternalResponse {
      */
     static final Object NULL_RESPONSE = new InternalResponse("Invocation::NULL_RESPONSE");
 
-     /**
-     * Indicating that there currently is no 'result' available. An example is some kind of blocking
-     * operation like ILock.lock. If this lock isn't available at the moment, the wait response
-     * is returned.
-     */
-    static final Object WAIT_RESPONSE = new InternalResponse("Invocation::WAIT_RESPONSE");
-
     /**
      * A response indicating that a timeout has happened.
      */
