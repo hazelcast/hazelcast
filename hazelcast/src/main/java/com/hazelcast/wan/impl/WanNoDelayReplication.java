@@ -58,6 +58,16 @@ public class WanNoDelayReplication
     private final BlockingQueue<WanReplicationEvent> eventQueue = new ArrayBlockingQueue<WanReplicationEvent>(100000);
     private volatile boolean running = true;
 
+    /* For testing purpose only */
+    LinkedList<WanReplicationEvent> getFailureQ() {
+        return failureQ;
+    }
+
+    /* For testing purpose only */
+    BlockingQueue<WanReplicationEvent> getEventQueue() {
+        return eventQueue;
+    }
+
     public void init(Node node, String groupName, String password, String... targets) {
         this.node = node;
         this.logger = node.getLogger(WanNoDelayReplication.class.getName());
@@ -95,8 +105,9 @@ public class WanNoDelayReplication
     public void run() {
         Connection conn = null;
         while (running) {
+            WanReplicationEvent event = null;
             try {
-                WanReplicationEvent event = (failureQ.size() > 0) ? failureQ.removeFirst() : eventQueue.take();
+                event = (failureQ.size() > 0) ? failureQ.removeFirst() : eventQueue.take();
                 if (conn == null) {
                     conn = getConnection();
                     if (conn != null) {
@@ -108,8 +119,8 @@ public class WanNoDelayReplication
                     Packet packet = new Packet(bytes);
                     packet.setHeader(Packet.HEADER_WAN_REPLICATION);
                     conn.write(packet);
+                    event = null; // the event has been correctly processed, we can clear it
                 } else {
-                    failureQ.addFirst(event);
                     conn = null;
                 }
             } catch (InterruptedException e) {
@@ -119,7 +130,13 @@ public class WanNoDelayReplication
                     logger.warning(e);
                 }
                 conn = null;
+            } finally {
+                // put back the event that hasn't been processed due a an exception or a null connection
+                if (event != null) {
+                    failureQ.addFirst(event);
+                }
             }
+
         }
     }
 
