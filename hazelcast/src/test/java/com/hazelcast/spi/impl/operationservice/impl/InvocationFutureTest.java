@@ -50,25 +50,6 @@ public class InvocationFutureTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void isDone_whenWaitResponse() {
-        DummyOperation op = new DummyOperation() {
-            {
-                // we need to set the call-id to prevent running the operation on the calling-thread.
-                setPartitionId(1);
-            }
-
-            @Override
-            public void run() throws Exception {
-                Thread.sleep(5000);
-            }
-        };
-
-        InvocationFuture future = (InvocationFuture) operationService.invokeOnTarget(null, op, getAddress(local));
-        future.set(InternalResponse.WAIT_RESPONSE);
-        assertFalse(future.isDone());
-    }
-
-    @Test
     public void isDone_whenInterruptedResponse() {
         DummyOperation op = new DummyOperation() {
             {

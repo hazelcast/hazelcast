@@ -16,6 +16,7 @@
 
 package com.hazelcast.spi.impl.operationservice.impl;
 
+import com.hazelcast.concurrent.lock.operations.LockOperation;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.OperationTimeoutException;
@@ -55,7 +56,6 @@ import static com.hazelcast.spi.OperationAccessor.setCallerAddress;
 import static com.hazelcast.spi.OperationAccessor.setInvocationTime;
 import static com.hazelcast.spi.impl.operationservice.impl.InternalResponse.INTERRUPTED_RESPONSE;
 import static com.hazelcast.spi.impl.operationservice.impl.InternalResponse.NULL_RESPONSE;
-import static com.hazelcast.spi.impl.operationservice.impl.InternalResponse.WAIT_RESPONSE;
 import static com.hazelcast.spi.impl.operationutil.Operations.isJoinOperation;
 import static com.hazelcast.spi.impl.operationutil.Operations.isMigrationOperation;
 import static com.hazelcast.spi.impl.operationutil.Operations.isWanReplicationOperation;
@@ -190,6 +190,10 @@ abstract class Invocation implements OperationResponseHandler, Runnable {
         }
 
         try {
+            if (op instanceof LockOperation) {
+                System.out.println("lock.calltimeout:" + callTimeout);
+            }
+
             setCallTimeout(op, callTimeout);
             setCallerAddress(op, nodeEngine.getThisAddress());
             op.setNodeEngine(nodeEngine)
@@ -368,9 +372,9 @@ abstract class Invocation implements OperationResponseHandler, Runnable {
         }
 
         switch (onException(cause)) {
-            case CONTINUE_WAIT:
-                handleContinueWait();
-                break;
+//            case CONTINUE_WAIT:
+//                handleContinueWait();
+//                break;
             case THROW_EXCEPTION:
                 notifyNormalResponse(cause, 0);
                 break;
@@ -508,7 +512,7 @@ abstract class Invocation implements OperationResponseHandler, Runnable {
     }
 
     private void handleContinueWait() {
-        invocationFuture.set(WAIT_RESPONSE);
+        //  invocationFuture.set(WAIT_RESPONSE);
     }
 
     private void handleRetry(Object cause) {
@@ -527,7 +531,7 @@ abstract class Invocation implements OperationResponseHandler, Runnable {
             return;
         }
 
-        if (!invocationFuture.set(WAIT_RESPONSE)) {
+        if (invocationFuture.response != null) {
             logger.finest("Cannot retry " + toString() + ", because a different response is already set: "
                     + invocationFuture.response);
             return;
@@ -573,7 +577,7 @@ abstract class Invocation implements OperationResponseHandler, Runnable {
             return false;
         }
 
-         // The backups have not yet completed, but we are going to release the future anyway if a pendingResponse has been set.
+        // The backups have not yet completed, but we are going to release the future anyway if a pendingResponse has been set.
         invocationFuture.set(pendingResponse);
         return true;
     }

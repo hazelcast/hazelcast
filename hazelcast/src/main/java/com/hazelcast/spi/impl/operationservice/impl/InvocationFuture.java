@@ -36,7 +36,6 @@ import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import static com.hazelcast.spi.impl.operationservice.impl.InternalResponse.INTERRUPTED_RESPONSE;
 import static com.hazelcast.spi.impl.operationservice.impl.InternalResponse.NULL_RESPONSE;
 import static com.hazelcast.spi.impl.operationservice.impl.InternalResponse.TIMEOUT_RESPONSE;
-import static com.hazelcast.spi.impl.operationservice.impl.InternalResponse.WAIT_RESPONSE;
 import static com.hazelcast.util.ExceptionUtil.fixRemoteStackTrace;
 import static com.hazelcast.util.Preconditions.isNotNull;
 import static java.lang.Math.min;
@@ -99,15 +98,7 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
     }
 
     private boolean responseAvailable(Object response) {
-        if (response == null) {
-            return false;
-        }
-
-        if (response == InternalResponse.WAIT_RESPONSE) {
-            return false;
-        }
-
-        return true;
+        return response != null;
     }
 
     @Override
@@ -174,9 +165,6 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
             }
 
             response = offeredResponse;
-            if (offeredResponse == WAIT_RESPONSE) {
-                return true;
-            }
             callbackChain = callbackHead;
             callbackHead = null;
             notifyAll();
@@ -246,10 +234,7 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
                     lastPollTime = Clock.currentTimeMillis() - startMs;
                     timeoutMs = decrementTimeout(timeoutMs, lastPollTime);
 
-                    if (response == WAIT_RESPONSE) {
-                        RESPONSE.compareAndSet(this, WAIT_RESPONSE, null);
-                        continue;
-                    } else if (response != null) {
+                    if (response != null) {
                         //if the thread is interrupted, but the response was not an interrupted-response,
                         //we need to restore the interrupt flag.
                         if (response != INTERRUPTED_RESPONSE && interrupted) {
@@ -402,7 +387,7 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
 
     @Override
     public boolean isDone() {
-         return responseAvailable(response);
+        return responseAvailable(response);
     }
 
     @Override
