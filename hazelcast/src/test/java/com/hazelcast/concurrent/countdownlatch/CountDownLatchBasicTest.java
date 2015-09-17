@@ -113,6 +113,12 @@ public abstract class CountDownLatchBasicTest extends HazelcastTestSupport {
 
 
     // ================= await =================================================
+
+    @Test(expected = NullPointerException.class)
+    public void testAwait_whenNullUnit() throws InterruptedException {
+        latch.await(1, null);
+    }
+
     @Test(timeout = 15000)
     public void testAwait() throws InterruptedException {
         latch.trySetCount(1);

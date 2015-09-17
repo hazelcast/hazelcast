@@ -34,6 +34,7 @@ import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.util.ExceptionUtil.rethrowAllowInterrupted;
 import static com.hazelcast.util.Preconditions.checkNotNegative;
+import static com.hazelcast.util.Preconditions.checkNotNull;
 
 public class CountDownLatchProxy extends AbstractDistributedObject<CountDownLatchService> implements ICountDownLatch {
 
@@ -54,18 +55,15 @@ public class CountDownLatchProxy extends AbstractDistributedObject<CountDownLatc
 
     @Override
     public boolean await(long timeout, TimeUnit unit) throws InterruptedException {
-        AwaitOperation op = new AwaitOperation(name, getTimeInMillis(timeout, unit));
+        checkNotNull(unit, "unit can't be null");
+
+        AwaitOperation op = new AwaitOperation(name, unit.toMillis(timeout));
         Future<Boolean> f = invoke(op);
         try {
             return f.get();
         } catch (ExecutionException e) {
             throw rethrowAllowInterrupted(e);
         }
-    }
-
-    private static long getTimeInMillis(long time, TimeUnit timeunit) {
-        // todo: not fail fast
-        return timeunit != null ? timeunit.toMillis(time) : time;
     }
 
     @Override
