@@ -28,17 +28,11 @@ import org.junit.runner.RunWith;
 
 import javax.cache.spi.CachingProvider;
 
-
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class CacheBasicClientTest extends CacheBasicAbstractTest {
 
     private TestHazelcastFactory factory = new TestHazelcastFactory();
-
-    @Override
-    protected HazelcastInstance getHazelcastInstance() {
-        return factory.newHazelcastClient();
-    }
 
     @Override
     protected void onSetup() {
@@ -51,9 +45,12 @@ public class CacheBasicClientTest extends CacheBasicAbstractTest {
     }
 
     @Override
+    protected HazelcastInstance getHazelcastInstance() {
+        return factory.newHazelcastClient();
+    }
+
+    @Override
     protected CachingProvider getCachingProvider() {
         return HazelcastClientCachingProvider.createCachingProvider(getHazelcastInstance());
     }
-
 }
-

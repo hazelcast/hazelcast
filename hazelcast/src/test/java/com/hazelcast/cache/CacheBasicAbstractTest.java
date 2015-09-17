@@ -7,13 +7,8 @@ import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.test.AssertTask;
-import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
-import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.CacheConcurrentHashMap;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
 import javax.cache.Cache;
 import javax.cache.configuration.FactoryBuilder;
@@ -50,13 +45,11 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-@RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
 public abstract class CacheBasicAbstractTest extends CacheTestSupport {
 
     @Test
     public void testPutGetRemoveReplace() throws InterruptedException, ExecutionException {
-        ICache cache = createCache();
+        ICache<String, String> cache = createCache();
 
         cache.put("key1", "value1");
         assertEquals("value1", cache.get("key1"));
@@ -93,11 +86,11 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
 
     @Test
     public void testAsyncGetPutRemove() throws InterruptedException, ExecutionException {
-        final ICache cache = createCache();
+        final ICache<String, String> cache = createCache();
         final String key = "key";
         cache.put(key, "value1");
-        Future f = cache.getAsync(key);
-        assertEquals("value1", f.get());
+        Future future = cache.getAsync(key);
+        assertEquals("value1", future.get());
 
         cache.putAsync(key, "value2");
         assertTrueEventually(new AssertTask() {
@@ -107,25 +100,25 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
             }
         });
 
-        f = cache.getAndPutAsync(key, "value3");
-        assertEquals("value2", f.get());
+        future = cache.getAndPutAsync(key, "value3");
+        assertEquals("value2", future.get());
         assertEquals("value3", cache.get(key));
 
-        f = cache.removeAsync("key2");
-        assertFalse((Boolean) f.get());
-        f = cache.removeAsync(key);
-        assertTrue((Boolean) f.get());
+        future = cache.removeAsync("key2");
+        assertFalse((Boolean) future.get());
+        future = cache.removeAsync(key);
+        assertTrue((Boolean) future.get());
 
         cache.put(key, "value4");
-        f = cache.getAndRemoveAsync("key2");
-        assertNull(f.get());
-        f = cache.getAndRemoveAsync(key);
-        assertEquals("value4", f.get());
+        future = cache.getAndRemoveAsync("key2");
+        assertNull(future.get());
+        future = cache.getAndRemoveAsync(key);
+        assertEquals("value4", future.get());
     }
 
     @Test
     public void testPutIfAbsentAsync_success() throws InterruptedException, ExecutionException {
-        ICache cache = createCache();
+        ICache<String, String> cache = createCache();
         String key = randomString();
         ICompletableFuture<Boolean> iCompletableFuture = cache.putIfAbsentAsync(key, randomString());
         assertTrue(iCompletableFuture.get());
@@ -133,7 +126,7 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
 
     @Test
     public void testPutIfAbsentAsync_fail() throws InterruptedException, ExecutionException {
-        ICache cache = createCache();
+        ICache<String, String> cache = createCache();
         String key = randomString();
         cache.put(key, randomString());
         ICompletableFuture<Boolean> iCompletableFuture = cache.putIfAbsentAsync(key, randomString());
@@ -142,7 +135,7 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
 
     @Test
     public void testPutIfAbsentAsync_withExpiryPolicy() throws InterruptedException, ExecutionException {
-        final ICache cache = createCache();
+        final ICache<String, String> cache = createCache();
         final String key = randomString();
         HazelcastExpiryPolicy expiryPolicy = new HazelcastExpiryPolicy(1, 1, 1);
         cache.putIfAbsentAsync(key, randomString(), expiryPolicy);
@@ -156,7 +149,7 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
 
     @Test
     public void testGetAndReplaceAsync() throws InterruptedException, ExecutionException {
-        ICache cache = createCache();
+        ICache<String, String> cache = createCache();
         String key = randomString();
         String oldValue = randomString();
         String newValue = randomString();
@@ -170,14 +163,14 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
 
     @Test
     public void testGetAll_withEmptySet() throws InterruptedException, ExecutionException {
-        ICache cache = createCache();
-        Map map = cache.getAll(Collections.emptySet());
+        ICache<String, String> cache = createCache();
+        Map<String, String> map = cache.getAll(Collections.<String>emptySet());
         assertEquals(0, map.size());
     }
 
     @Test
     public void testClear() {
-        ICache cache = createCache();
+        ICache<String, String> cache = createCache();
         for (int i = 0; i < 10; i++) {
             cache.put("key" + i, "value" + i);
         }
@@ -187,7 +180,7 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
 
     @Test
     public void testRemoveAll() {
-        ICache cache = createCache();
+        ICache<String, String> cache = createCache();
         for (int i = 0; i < 10; i++) {
             cache.put("key" + i, "value" + i);
         }
@@ -201,7 +194,7 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
 
     @Test
     public void testPutWithTtl() throws ExecutionException, InterruptedException {
-        final ICache cache = createCache();
+        final ICache<String, String> cache = createCache();
         final String key = "key";
         cache.put(key, "value1", ttlToExpiryPolicy(1, TimeUnit.SECONDS));
 
@@ -222,8 +215,8 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
         assertEquals(0, cache.size());
 
         cache.put(key, "value2");
-        Object o = cache.getAndPut(key, "value3", ttlToExpiryPolicy(1, TimeUnit.SECONDS));
-        assertEquals("value2", o);
+        String value = cache.getAndPut(key, "value3", ttlToExpiryPolicy(1, TimeUnit.SECONDS));
+        assertEquals("value2", value);
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() throws Exception {
@@ -233,8 +226,8 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
         assertEquals(0, cache.size());
 
         cache.put(key, "value4");
-        Future f = cache.getAndPutAsync(key, "value5", ttlToExpiryPolicy(1, TimeUnit.SECONDS));
-        assertEquals("value4", f.get());
+        Future future = cache.getAndPutAsync(key, "value5", ttlToExpiryPolicy(1, TimeUnit.SECONDS));
+        assertEquals("value4", future.get());
 
         assertTrueEventually(new AssertTask() {
             @Override
@@ -247,7 +240,7 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
 
     @Test
     public void testIterator() {
-        ICache cache = createCache();
+        ICache<Integer, Integer> cache = createCache();
         int size = 1111;
         int multiplier = 11;
         for (int i = 0; i < size; i++) {
@@ -255,16 +248,16 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
         }
 
         int[] keys = new int[size];
-        int k = 0;
-        Iterator<Cache.Entry<Integer, Integer>> iter = cache.iterator();
-        while (iter.hasNext()) {
-            Cache.Entry<Integer, Integer> e = iter.next();
+        int keyIndex = 0;
+        Iterator<Cache.Entry<Integer, Integer>> iterator = cache.iterator();
+        while (iterator.hasNext()) {
+            Cache.Entry<Integer, Integer> e = iterator.next();
             int key = e.getKey();
             int value = e.getValue();
             assertEquals(key * multiplier, value);
-            keys[k++] = key;
+            keys[keyIndex++] = key;
         }
-        assertEquals(size, k);
+        assertEquals(size, keyIndex);
 
         Arrays.sort(keys);
         for (int i = 0; i < size; i++) {
@@ -274,44 +267,44 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
 
     @Test
     public void testIteratorRemove() {
-        ICache cache = createCache();
+        ICache<Integer, Integer> cache = createCache();
         int size = 1111;
         for (int i = 0; i < size; i++) {
             cache.put(i, i);
         }
 
-        Iterator<Cache.Entry<Integer, Integer>> iter = cache.iterator();
-        while (iter.hasNext()) {
-            iter.next();
-            iter.remove();
+        Iterator<Cache.Entry<Integer, Integer>> iterator = cache.iterator();
+        while (iterator.hasNext()) {
+            iterator.next();
+            iterator.remove();
         }
         assertEquals(0, cache.size());
     }
 
     @Test(expected = IllegalStateException.class)
     public void testIteratorIllegalRemove() {
-        ICache cache = createCache();
+        ICache<Integer, Integer> cache = createCache();
         int size = 10;
         for (int i = 0; i < size; i++) {
             cache.put(i, i);
         }
 
-        Iterator<Cache.Entry<Integer, Integer>> iter = cache.iterator();
-        if (iter.hasNext()) {
-            iter.remove();
+        Iterator<Cache.Entry<Integer, Integer>> iterator = cache.iterator();
+        if (iterator.hasNext()) {
+            iterator.remove();
         }
     }
 
     @Test
     public void testIteratorDuringInsertion() throws InterruptedException {
         final AtomicBoolean stop = new AtomicBoolean(false);
-        final ICache cache = createCache();
+        final ICache<Integer, Integer> cache = createCache();
         int size = 1111;
         for (int i = 0; i < size; i++) {
             cache.put(i, i);
         }
 
-        final Thread thread = new Thread() {
+        Thread thread = new Thread() {
             public void run() {
                 Random rand = new Random();
                 while (!stop.get()) {
@@ -330,16 +323,16 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
         sleepSeconds(1);
 
         try {
-            int k = 0;
-            Iterator<Cache.Entry<Integer, Integer>> iter = cache.iterator();
-            while (iter.hasNext()) {
-                Cache.Entry<Integer, Integer> e = iter.next();
+            int i = 0;
+            Iterator<Cache.Entry<Integer, Integer>> iterator = cache.iterator();
+            while (iterator.hasNext()) {
+                Cache.Entry<Integer, Integer> e = iterator.next();
                 int key = e.getKey();
                 int value = e.getValue();
                 assertEquals(key, value);
-                k++;
+                i++;
             }
-            assertTrue(k >= size);
+            assertTrue(i >= size);
         } finally {
             stop.set(true);
             thread.join();
@@ -349,13 +342,13 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
     @Test
     public void testIteratorDuringUpdate() throws InterruptedException {
         final AtomicBoolean stop = new AtomicBoolean(false);
-        final ICache cache = createCache();
+        final ICache<Integer, Integer> cache = createCache();
         final int size = 1111;
         for (int i = 0; i < size; i++) {
             cache.put(i, i);
         }
 
-        final Thread thread = new Thread() {
+        Thread thread = new Thread() {
             public void run() {
                 Random rand = new Random();
                 while (!stop.get()) {
@@ -374,16 +367,16 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
         sleepSeconds(1);
 
         try {
-            int k = 0;
-            Iterator<Cache.Entry<Integer, Integer>> iter = cache.iterator();
-            while (iter.hasNext()) {
-                Cache.Entry<Integer, Integer> e = iter.next();
+            int i = 0;
+            Iterator<Cache.Entry<Integer, Integer>> iterator = cache.iterator();
+            while (iterator.hasNext()) {
+                Cache.Entry<Integer, Integer> e = iterator.next();
                 int key = e.getKey();
                 int value = e.getValue();
                 assertTrue("Key: " + key + ", Value: " + value, key == Math.abs(value));
-                k++;
+                i++;
             }
-            assertEquals(size, k);
+            assertEquals(size, i);
         } finally {
             stop.set(true);
             thread.join();
@@ -393,13 +386,13 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
     @Test
     public void testIteratorDuringRemoval() throws InterruptedException {
         final AtomicBoolean stop = new AtomicBoolean(false);
-        final ICache cache = createCache();
+        final ICache<Integer, Integer> cache = createCache();
         final int size = 2222;
         for (int i = 0; i < size; i++) {
             cache.put(i, i);
         }
 
-        final Thread thread = new Thread() {
+        Thread thread = new Thread() {
             public void run() {
                 Random rand = new Random();
                 while (!stop.get()) {
@@ -418,31 +411,30 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
         sleepSeconds(1);
 
         try {
-            int k = 0;
-            Iterator<Cache.Entry<Integer, Integer>> iter = cache.iterator();
-            while (iter.hasNext()) {
-                Cache.Entry<Integer, Integer> e = iter.next();
+            int i = 0;
+            Iterator<Cache.Entry<Integer, Integer>> iterator = cache.iterator();
+            while (iterator.hasNext()) {
+                Cache.Entry<Integer, Integer> e = iterator.next();
                 int key = e.getKey();
                 Integer value = e.getValue();
                 if (value != null) {
                     assertEquals(key, value.intValue());
                 }
-                k++;
+                i++;
             }
-            assertTrue(k <= size);
+            assertTrue(i <= size);
         } finally {
             stop.set(true);
             thread.join();
         }
     }
 
-
     @Test
     public void testRemoveAsync() throws ExecutionException, InterruptedException {
-        ICache cache = createCache();
-
+        ICache<String, String> cache = createCache();
         String key = randomString();
         String value = randomString();
+
         cache.put(key, value);
         ICompletableFuture<Boolean> future = cache.removeAsync(key);
         assertTrue(future.get());
@@ -450,17 +442,18 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
 
     @Test
     public void testRemoveAsyncWhenEntryNotFound() throws ExecutionException, InterruptedException {
-        ICache cache = createCache();
+        ICache<String, String> cache = createCache();
+
         ICompletableFuture<Boolean> future = cache.removeAsync(randomString());
         assertFalse(future.get());
     }
 
     @Test
     public void testRemoveAsync_withOldValue() throws ExecutionException, InterruptedException {
-        ICache cache = createCache();
-
+        ICache<String, String> cache = createCache();
         String key = randomString();
         String value = randomString();
+
         cache.put(key, value);
         ICompletableFuture<Boolean> future = cache.removeAsync(key, value);
         assertTrue(future.get());
@@ -468,17 +461,17 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
 
     @Test
     public void testRemoveAsyncWhenEntryNotFound_withOldValue() throws ExecutionException, InterruptedException {
-        ICache cache = createCache();
+        ICache<String, String> cache = createCache();
+
         ICompletableFuture<Boolean> future = cache.removeAsync(randomString(), randomString());
         assertFalse(future.get());
-
     }
 
     @Test
     public void testCompletionEvent() {
         String cacheName = randomString();
 
-        CacheConfig config = createCacheConfig();
+        CacheConfig<Integer, String> config = createCacheConfig();
         final CacheFromDifferentNodesTest.SimpleEntryListener<Integer, String> listener =
                 new CacheFromDifferentNodesTest.SimpleEntryListener<Integer, String>();
         MutableCacheEntryListenerConfiguration<Integer, String> listenerConfiguration =
@@ -488,7 +481,6 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
         config.addCacheEntryListenerConfiguration(listenerConfiguration);
 
         Cache<Integer, String> cache = cacheManager.createCache(cacheName, config);
-
         assertNotNull(cache);
 
         Integer key1 = 1;
@@ -524,8 +516,7 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
     }
 
     @Test
-    public void testJSRCreateDestroyCreate()
-            throws InterruptedException {
+    public void testJSRCreateDestroyCreate() throws InterruptedException {
         String cacheName = randomString();
 
         assertNull(cacheManager.getCache(cacheName));
@@ -554,7 +545,6 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
 
     @Test
     public void testCaches_NotEmpty() {
-
         ArrayList<String> expected = new ArrayList<String>();
         ArrayList<String> real = new ArrayList<String>();
         cacheManager.createCache("c1", new MutableConfiguration());
@@ -570,7 +560,6 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
         }
         expected.removeAll(real);
         assertTrue(expected.isEmpty());
-
     }
 
     @Test
@@ -578,20 +567,20 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
         int testSize = 3007;
         SerializationService ss = new DefaultSerializationServiceBuilder().build();
         for (int fetchSize = 1; fetchSize < 102; fetchSize++) {
-            CacheConcurrentHashMap<Data, String> cmap = new CacheConcurrentHashMap<Data, String>(1000);
+            CacheConcurrentHashMap<Data, String> map = new CacheConcurrentHashMap<Data, String>(1000);
             for (int i = 0; i < testSize; i++) {
                 Integer key = i;
                 Data data = ss.toData(key);
                 String value1 = "value" + i;
-                cmap.put(data, value1);
+                map.put(data, value1);
             }
 
             int nti = Integer.MAX_VALUE;
             int total = 0;
             int remaining = testSize;
             while (remaining > 0 && nti > 0) {
-                int fsize = remaining > fetchSize ? fetchSize : remaining;
-                CacheKeyIteratorResult iteratorResult = cmap.fetchNext(nti, fsize);
+                int size = (remaining > fetchSize ? fetchSize : remaining);
+                CacheKeyIteratorResult iteratorResult = map.fetchNext(nti, size);
                 List<Data> keys = iteratorResult.getKeys();
                 nti = iteratorResult.getTableIndex();
                 remaining -= keys.size();
@@ -603,15 +592,13 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
 
     @Test
     public void testCachesTypedConfig() {
-
-        CacheConfig config = createCacheConfig();
+        CacheConfig<Integer, Long> config = createCacheConfig();
         String cacheName = randomString();
         config.setName(cacheName);
         config.setTypes(Integer.class, Long.class);
 
         Cache<Integer, Long> cache = cacheManager.createCache(cacheName, config);
-        Cache<Integer, Long> cache2 =
-                cacheManager.getCache(cacheName, config.getKeyType(), config.getValueType());
+        Cache<Integer, Long> cache2 = cacheManager.getCache(cacheName, config.getKeyType(), config.getValueType());
 
         assertNotNull(cache);
         assertNotNull(cache2);
@@ -620,7 +607,7 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
     @Test
     public void getAndOperateOnCacheAfterClose() {
         String cacheName = randomString();
-        ICache cache = createCache(cacheName);
+        ICache<Integer, Integer> cache = createCache(cacheName);
         cache.close();
         assertTrue(cache.isClosed());
         assertFalse(cache.isDestroyed());
@@ -635,7 +622,7 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
     @Test
     public void getButCantOperateOnCacheAfterDestroy() {
         String cacheName = randomString();
-        ICache cache = createCache(cacheName);
+        ICache<Integer, Integer> cache = createCache(cacheName);
         cache.destroy();
         assertTrue(cache.isClosed());
         assertTrue(cache.isDestroyed());
@@ -652,19 +639,19 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
             // Expect this exception since cache is closed and destroyed
         } catch (Throwable t) {
             t.printStackTrace();
-            fail("Since cache is destroyed, operation on cache must with failed with 'IllegalStateException', " +
-                    "not with " + t.getMessage());
+            fail("Since cache is destroyed, operation on cache must with failed with 'IllegalStateException', "
+                    + "not with " + t.getMessage());
         }
     }
 
     @Test
     public void testEntryProcessor_invoke() throws ExecutionException, InterruptedException {
-        ICache cache = createCache();
+        ICache<String, String> cache = createCache();
         String value = randomString();
         String key = randomString();
         String postFix = randomString();
         cache.put(key, value);
-        String result = (String) cache.invoke(key, new AppendEntryProcessor(), postFix);
+        String result = cache.invoke(key, new AppendEntryProcessor(), postFix);
         String expectedResult = value + postFix;
         assertEquals(expectedResult, result);
         assertEquals(expectedResult, cache.get(key));
@@ -672,7 +659,7 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
 
     @Test
     public void testEntryProcessor_invokeAll() throws ExecutionException, InterruptedException {
-        ICache cache = createCache();
+        ICache<String, String> cache = createCache();
         int entryCount = 10;
         Map<String, String> localMap = new HashMap<String, String>();
         for (int i = 0; i < entryCount; i++) {
@@ -680,7 +667,8 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
         }
         cache.putAll(localMap);
         String postFix = randomString();
-        Map<String, EntryProcessorResult<String>> resultMap = cache.invokeAll(localMap.keySet(), new AppendEntryProcessor(), postFix);
+        Map<String, EntryProcessorResult<String>> resultMap
+                = cache.invokeAll(localMap.keySet(), new AppendEntryProcessor(), postFix);
         for (Map.Entry<String, String> localEntry : localMap.entrySet()) {
             EntryProcessorResult<String> entryProcessorResult = resultMap.get(localEntry.getKey());
             assertEquals(localEntry.getValue() + postFix, entryProcessorResult.get());
@@ -688,15 +676,12 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
         }
     }
 
-    public static class AppendEntryProcessor
-            implements EntryProcessor<String, String, String>, Serializable {
+    public static class AppendEntryProcessor implements EntryProcessor<String, String, String>, Serializable {
 
         private static final long serialVersionUID = -396575576353368113L;
 
         @Override
-        public String process(MutableEntry<String, String> entry, Object... arguments)
-                throws EntryProcessorException {
-
+        public String process(MutableEntry<String, String> entry, Object... arguments) throws EntryProcessorException {
             String postFix = (String) arguments[0];
             String value = entry.getValue();
             String result = value + postFix;

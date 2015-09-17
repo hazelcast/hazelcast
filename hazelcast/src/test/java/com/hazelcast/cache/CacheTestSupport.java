@@ -11,11 +11,9 @@ import org.junit.Before;
 
 import javax.cache.Cache;
 import javax.cache.CacheManager;
+import javax.cache.configuration.Configuration;
 import javax.cache.spi.CachingProvider;
 
-/**
- * @author mdogan 02/06/14
- */
 public abstract class CacheTestSupport extends HazelcastTestSupport {
 
     protected CachingProvider cachingProvider;
@@ -24,14 +22,14 @@ public abstract class CacheTestSupport extends HazelcastTestSupport {
     protected abstract HazelcastInstance getHazelcastInstance();
 
     @Before
-    public void setup() {
+    public final void setup() {
         onSetup();
         cachingProvider = getCachingProvider();
         cacheManager = cachingProvider.getCacheManager();
     }
 
     @After
-    public void tearDown() {
+    public final void tearDown() {
         if (cacheManager != null) {
             Iterable<String> cacheNames = cacheManager.getCacheNames();
             for (String name : cacheNames) {
@@ -45,37 +43,33 @@ public abstract class CacheTestSupport extends HazelcastTestSupport {
         onTearDown();
     }
 
-
     protected abstract void onSetup();
 
     protected abstract void onTearDown();
 
-    protected ICache createCache() {
+    protected <K, V> ICache<K, V> createCache() {
         String cacheName = randomString();
-        Cache<Object, Object> cache = cacheManager.createCache(cacheName, createCacheConfig());
-        return cache.unwrap(ICache.class);
+        Cache<K, V> cache = cacheManager.<K, V, Configuration>createCache(cacheName, createCacheConfig());
+        return (ICache<K, V>) cache;
     }
 
-    protected ICache createCache(String cacheName) {
-        Cache<Object, Object> cache = cacheManager.createCache(cacheName, createCacheConfig());
-        return cache.unwrap(ICache.class);
+    protected <K, V> ICache<K, V> createCache(String cacheName) {
+        Cache<K, V> cache = cacheManager.<K, V, Configuration>createCache(cacheName, createCacheConfig());
+        return (ICache<K, V>) cache;
     }
 
-    public Config createConfig() {
+    protected Config createConfig() {
         return new Config();
     }
 
-    public CacheConfig createCacheConfig() {
-        CacheConfig cacheConfig = new CacheConfig();
+    protected <K, V> CacheConfig<K, V> createCacheConfig() {
+        CacheConfig<K, V> cacheConfig = new CacheConfig<K, V>();
         cacheConfig.setInMemoryFormat(InMemoryFormat.BINARY);
         cacheConfig.setStatisticsEnabled(true);
         return cacheConfig;
     }
 
-
     protected CachingProvider getCachingProvider() {
-        return HazelcastServerCachingProvider
-                .createCachingProvider(getHazelcastInstance());
+        return HazelcastServerCachingProvider.createCachingProvider(getHazelcastInstance());
     }
-
 }
