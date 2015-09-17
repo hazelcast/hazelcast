@@ -86,6 +86,11 @@ class LoadTracker {
         return imbalance;
     }
 
+    // just for testing
+    Set<MigratableHandler> getHandlers() {
+        return handlers;
+    }
+
     private void updateNewFinalImbalance() {
         imbalance.minimumEvents = Long.MAX_VALUE;
         imbalance.maximumEvents = Long.MIN_VALUE;

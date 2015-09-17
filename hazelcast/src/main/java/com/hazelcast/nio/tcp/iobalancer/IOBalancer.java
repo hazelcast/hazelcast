@@ -80,6 +80,17 @@ public class IOBalancer {
         this.enabled = isEnabled(inSelectors, outSelectors);
     }
 
+
+    // just for testing
+    LoadTracker getInLoadTracker() {
+        return inLoadTracker;
+    }
+
+    // just for testing
+    LoadTracker getOutLoadTracker() {
+        return outLoadTracker;
+    }
+
     public void connectionAdded(Connection connection) {
         if (!(connection instanceof TcpIpConnection)) {
             return;
