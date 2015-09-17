@@ -14,7 +14,33 @@
  * limitations under the License.
  */
 
+package com.hazelcast.osgi.impl;
+
+import com.hazelcast.osgi.HazelcastOSGiService;
+
 /**
- * <p>This package contains the OSGI functionality for Hazelcast.<br/>
+ * Contract point for internal Hazelcast services on top of OSGI.
+ *
+ * @see com.hazelcast.osgi.HazelcastOSGiService
  */
-package com.hazelcast.internal.osgi;
+public interface HazelcastInternalOSGiService
+        extends HazelcastOSGiService {
+
+    /**
+     * Returns the state of the service about if it is active or not.
+     *
+     * @return <code>true</code> if the service is active, otherwise <code>false</code>
+     */
+    boolean isActive();
+
+    /**
+     * Activates the service.
+     */
+    void activate();
+
+    /**
+     * Deactivates the service.
+     */
+    void deactivate();
+
+}

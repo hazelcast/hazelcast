@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.osgi;
+package com.hazelcast.osgi.impl;
 
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
@@ -76,6 +76,7 @@ http://svn.apache.org/repos/asf/felix/trunk/mishell/src/main/java/org/apache/fel
  * </li></ul>
  */
 public class OSGiScriptEngineManager extends ScriptEngineManager {
+
     private static final String RHINO_SCRIPT_ENGINE_FACTORY = "com.sun.script.javascript.RhinoScriptEngineFactory";
     private static final String NASHORN_SCRIPT_ENGINE_FACTORY = "jdk.nashorn.api.scripting.NashornScriptEngineFactory";
 
@@ -330,4 +331,5 @@ public class OSGiScriptEngineManager extends ScriptEngineManager {
             logger.warning("No built-in JavaScript ScriptEngineFactory found.");
         }
     }
+
 }
