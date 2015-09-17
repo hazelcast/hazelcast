@@ -42,7 +42,7 @@ public final class RegisterMembershipListenerRequest extends CallableClientReque
         ClientEndpoint endpoint = getEndpoint();
         String registrationId = service.addMembershipListener(new MembershipListenerImpl(endpoint));
         String name = ClusterServiceImpl.SERVICE_NAME;
-        endpoint.setListenerRegistration(name, name, registrationId);
+        endpoint.addListenerDestroyAction(name, name, registrationId);
         return registrationId;
     }
 

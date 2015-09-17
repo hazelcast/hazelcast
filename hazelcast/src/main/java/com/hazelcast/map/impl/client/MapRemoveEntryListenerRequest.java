@@ -33,7 +33,7 @@ public class MapRemoveEntryListenerRequest extends BaseClientRemoveListenerReque
         super(name, registrationId);
     }
 
-    public Object call() throws Exception {
+    protected boolean deRegisterListener() {
         final MapService service = getService();
         return service.getMapServiceContext().removeEventListener(name, registrationId);
     }

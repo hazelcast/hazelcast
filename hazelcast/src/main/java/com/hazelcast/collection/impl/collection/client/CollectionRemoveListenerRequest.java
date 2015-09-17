@@ -39,7 +39,8 @@ public class CollectionRemoveListenerRequest extends BaseClientRemoveListenerReq
         this.serviceName = serviceName;
     }
 
-    public Object call() throws Exception {
+    @Override
+    protected boolean deRegisterListener() {
         final ClientEngine clientEngine = getClientEngine();
         final EventService eventService = clientEngine.getEventService();
         return eventService.deregisterListener(serviceName, name, registrationId);

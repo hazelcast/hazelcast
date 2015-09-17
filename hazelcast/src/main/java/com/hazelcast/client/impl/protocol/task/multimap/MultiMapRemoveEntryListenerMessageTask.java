@@ -18,7 +18,7 @@ package com.hazelcast.client.impl.protocol.task.multimap;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MultiMapRemoveEntryListenerCodec;
-import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
+import com.hazelcast.client.impl.protocol.task.AbstractRemoveListenerMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.multimap.impl.MultiMapService;
 import com.hazelcast.nio.Connection;
@@ -32,16 +32,21 @@ import java.security.Permission;
  * {@link com.hazelcast.client.impl.protocol.codec.MultiMapMessageType#MULTIMAP_REMOVEENTRYLISTENER}
  */
 public class MultiMapRemoveEntryListenerMessageTask
-        extends AbstractCallableMessageTask<MultiMapRemoveEntryListenerCodec.RequestParameters> {
+        extends AbstractRemoveListenerMessageTask<MultiMapRemoveEntryListenerCodec.RequestParameters> {
 
     public MultiMapRemoveEntryListenerMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected Object call() throws Exception {
+    protected boolean deRegisterListener() {
         final MultiMapService service = getService(MultiMapService.SERVICE_NAME);
         return service.removeListener(parameters.name, parameters.registrationId);
+    }
+
+    @Override
+    protected String getRegistrationId() {
+        return parameters.registrationId;
     }
 
     @Override
@@ -74,8 +79,4 @@ public class MultiMapRemoveEntryListenerMessageTask
         return "removeEntryListener";
     }
 
-    @Override
-    public Object[] getParameters() {
-        return new Object[]{parameters.registrationId};
-    }
 }

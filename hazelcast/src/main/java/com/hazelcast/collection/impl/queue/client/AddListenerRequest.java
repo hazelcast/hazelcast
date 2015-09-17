@@ -111,7 +111,7 @@ public class AddListenerRequest extends CallableClientRequest implements SecureR
             }
         };
         String registrationId = service.addItemListener(name, listener, includeValue);
-        endpoint.setListenerRegistration(QueueService.SERVICE_NAME, name, registrationId);
+        endpoint.addListenerDestroyAction(QueueService.SERVICE_NAME, name, registrationId);
         return registrationId;
     }
 

@@ -37,8 +37,7 @@ public class ClientReplicatedMapRemoveEntryListenerRequest
         super(mapName, registrationId);
     }
 
-    public Object call()
-            throws Exception {
+    protected boolean deRegisterListener() {
         final ReplicatedRecordStore replicatedRecordStore = getReplicatedRecordStore();
         return replicatedRecordStore.removeEntryListenerInternal(registrationId);
     }
@@ -72,8 +71,4 @@ public class ClientReplicatedMapRemoveEntryListenerRequest
         return "removeEntryListener";
     }
 
-    @Override
-    public Object[] getParameters() {
-        return new Object[]{registrationId};
-    }
 }

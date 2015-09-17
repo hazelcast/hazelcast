@@ -53,7 +53,7 @@ public abstract class AbstractReplicatedMapAddEntryListenerMessageTask<Parameter
         } else {
             registrationId = recordStore.addEntryListener(this, predicate, getKey());
         }
-        endpoint.setListenerRegistration(ReplicatedMapService.SERVICE_NAME, getDistributedObjectName(), registrationId);
+        endpoint.addListenerDestroyAction(ReplicatedMapService.SERVICE_NAME, getDistributedObjectName(), registrationId);
         return registrationId;
     }
 
