@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.osgi;
+package com.hazelcast.osgi.impl;
 
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
@@ -52,4 +52,5 @@ final class ScriptEngineActivator {
             LOGGER.finest(msg.toString());
         }
     }
+
 }

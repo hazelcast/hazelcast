@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.osgi;
+package com.hazelcast.osgi.impl;
 
 import javax.script.Bindings;
 import javax.script.ScriptContext;
@@ -31,7 +31,8 @@ http://svn.apache.org/repos/asf/felix/trunk/mishell/src/main/java/org/apache/fel
 /**
  * This adapter class is used to create / bind ScriptEngine implementations in OSGi contexts.
  */
-public class OSGiScriptEngine implements ScriptEngine {
+class OSGiScriptEngine implements ScriptEngine {
+
     private ScriptEngine engine;
     private OSGiScriptEngineFactory factory;
 
@@ -109,4 +110,5 @@ public class OSGiScriptEngine implements ScriptEngine {
     public void setContext(ScriptContext context) {
         engine.setContext(context);
     }
+
 }

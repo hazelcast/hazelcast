@@ -14,10 +14,8 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.osgi;
+package com.hazelcast.osgi.impl;
 
-import com.hazelcast.core.Hazelcast;
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import org.osgi.framework.BundleActivator;
@@ -26,18 +24,20 @@ import org.osgi.framework.BundleContext;
 import java.lang.reflect.Method;
 
 /**
- * Hazelcast OSGi bundle activator
- * <p/>
- * initializes script Engines
+ * Hazelcast OSGi bundle activator.
+ *
+ * @see org.osgi.framework.BundleActivator
  */
 public class Activator
         implements BundleActivator {
 
-    private static final String HAZELCAST_OSGI_START = "hazelcast.osgi.start";
-
     private static final ILogger LOGGER = Logger.getLogger(Activator.class);
 
-    private HazelcastInstance hazelcastInstance;
+    // Defined as `volatile` since Javadoc of `BundleActivator` says that
+    // `The Framework must not concurrently call a BundleActivator object`
+    // and also it is marked as `@NotThreadSafe`.
+    // So it can be called from different threads but cannot be called concurrently.
+    private volatile HazelcastInternalOSGiService hazelcastOSGiService;
 
     @Override
     public void start(BundleContext context)
@@ -45,17 +45,22 @@ public class Activator
         // Try to start javax.scripting - JSR 223
         activateJavaxScripting(context);
 
-        if (Boolean.getBoolean(HAZELCAST_OSGI_START)) {
-            hazelcastInstance = Hazelcast.newHazelcastInstance();
-        }
+        assert hazelcastOSGiService == null : "Hazelcast OSGI service should be null while starting!";
+
+        // Create a new Hazelcast OSGI service with given bundle and its context
+        hazelcastOSGiService = new HazelcastOSGiServiceImpl(context.getBundle());
+
+        // Activate new created Hazelcast OSGI service
+        hazelcastOSGiService.activate();
     }
 
     @Override
     public void stop(BundleContext context)
             throws Exception {
-        if (hazelcastInstance != null) {
-            hazelcastInstance.shutdown();
-        }
+        assert hazelcastOSGiService != null : "Hazelcast OSGI service should not be null while stopping!";
+
+        hazelcastOSGiService.deactivate();
+        hazelcastOSGiService = null;
     }
 
     private void activateJavaxScripting(BundleContext context)
@@ -65,8 +70,9 @@ public class Activator
             return;
         }
 
-        Class<?> clazz = context.getBundle().loadClass("com.hazelcast.internal.osgi.ScriptEngineActivator");
+        Class<?> clazz = context.getBundle().loadClass("com.hazelcast.osgi.impl.ScriptEngineActivator");
         Method register = clazz.getDeclaredMethod("registerOsgiScriptEngineManager", BundleContext.class);
+        register.setAccessible(true);
         register.invoke(clazz, context);
     }
 

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.osgi;
+package com.hazelcast.osgi.impl;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineFactory;
@@ -31,6 +31,7 @@ http://svn.apache.org/repos/asf/felix/trunk/mishell/src/main/java/org/apache/fel
  * (i.e., their "native" classes)
  */
 public class OSGiScriptEngineFactory implements ScriptEngineFactory {
+
     private ScriptEngineFactory factory;
     private ClassLoader contextClassLoader;
 
@@ -108,4 +109,5 @@ public class OSGiScriptEngineFactory implements ScriptEngineFactory {
         }
         return engine;
     }
+
 }
