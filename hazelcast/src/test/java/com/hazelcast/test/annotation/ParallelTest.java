@@ -17,7 +17,9 @@
 package com.hazelcast.test.annotation;
 
 /**
- * A Parallel test is a test that can run in multiple JVMs in parallel
+ * Annotates tests which can run in multiple JVMs in parallel.
+ * <p/>
+ * Has no effect in which build a test will be executed, but if it will be executed in a single or with multiple JVMs.
  */
-public class ParallelTest {
+public final class ParallelTest {
 }
