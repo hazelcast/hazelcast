@@ -28,6 +28,11 @@ import java.util.concurrent.TimeUnit;
  */
 public interface ClientExecutionService {
 
+    /**
+     * Execute alien(user code) on execution service
+     *
+     * @param command to run
+     */
     void execute(Runnable command);
 
     ICompletableFuture<?> submit(Runnable task);
@@ -40,6 +45,9 @@ public interface ClientExecutionService {
 
     ScheduledFuture<?> scheduleWithFixedDelay(Runnable command, long initialDelay, long period, TimeUnit unit);
 
+    /**
+     * @return executorService that alien(user code) runs on
+     */
     ExecutorService getAsyncExecutor();
 
 }

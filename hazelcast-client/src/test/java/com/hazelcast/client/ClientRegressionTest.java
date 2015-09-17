@@ -654,9 +654,60 @@ public class ClientRegressionTest
             map1.put(i, i);
         }
 
-        assertOpenEventually("dadas", latch);
+        assertOpenEventually(latch);
     }
 
+    @Test
+    public void testDeadlock_WhenDoingOperationFromLifecycleListener() {
+        HazelcastInstance instance = hazelcastFactory.newHazelcastInstance();
+        final ClientConfig clientConfig = new ClientConfig();
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig.setExecutorPoolSize(1));
+
+        hazelcastFactory.newHazelcastInstance();
+        final CountDownLatch latch = new CountDownLatch(1);
+        final IMap<Object, Object> map = client.getMap(randomMapName());
+
+        client.getLifecycleService().addLifecycleListener(new LifecycleListener() {
+            @Override
+            public void stateChanged(LifecycleEvent event) {
+                if (event.getState() == LifecycleState.CLIENT_DISCONNECTED) {
+                    map.get(1);
+                    latch.countDown();
+                }
+            }
+        });
+
+        instance.shutdown();
+        assertOpenEventually(latch);
+    }
+
+    @Test
+    public void testDeadlock_WhenDoingOperationFromLifecycleListener_and_NearCache() {
+        HazelcastInstance instance = hazelcastFactory.newHazelcastInstance();
+        final ClientConfig clientConfig = new ClientConfig();
+        final NearCacheConfig nearCacheConfig = new NearCacheConfig();
+        nearCacheConfig.setMaxSize(1);
+        clientConfig.addNearCacheConfig(nearCacheConfig);
+        HazelcastInstance client = hazelcastFactory.newHazelcastClient(clientConfig.setExecutorPoolSize(1));
+
+        hazelcastFactory.newHazelcastInstance();
+        final CountDownLatch latch = new CountDownLatch(1);
+        final IMap<Object, Object> map = client.getMap(randomMapName());
+
+        client.getLifecycleService().addLifecycleListener(new LifecycleListener() {
+            @Override
+            public void stateChanged(LifecycleEvent event) {
+                if (event.getState() == LifecycleState.CLIENT_DISCONNECTED) {
+                    map.get(1);
+                    map.get(2);
+                    latch.countDown();
+                }
+            }
+        });
+
+        instance.shutdown();
+        assertOpenEventually(latch);
+    }
 
     @Test(expected = ExecutionException.class, timeout = 120000)
     public void testGithubIssue3557()
