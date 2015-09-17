@@ -10,6 +10,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 public abstract class TestThread extends Thread {
+
     private volatile Throwable error;
 
     public TestThread() {
@@ -64,7 +65,7 @@ public abstract class TestThread extends Thread {
     /**
      * Asserts that the thread eventually completes with the expected error.
      *
-     * @param cause
+     * @param cause the expected cause
      */
     public void assertFailsEventually(Class<? extends Throwable> cause) {
         assertTerminates();

@@ -24,6 +24,7 @@ import java.io.ObjectOutputStream;
 import java.io.Serializable;
 
 public final class TestJavaSerializationUtils {
+
     private TestJavaSerializationUtils() {
     }
 
@@ -32,9 +33,10 @@ public final class TestJavaSerializationUtils {
         return deserialize(array);
     }
 
+    @SuppressWarnings("unchecked")
     public static <T> T deserialize(byte[] array) throws IOException, ClassNotFoundException {
-        ByteArrayInputStream bais = new ByteArrayInputStream(array);
-        ObjectInputStream ois = new ObjectInputStream(bais);
+        ByteArrayInputStream bis = new ByteArrayInputStream(array);
+        ObjectInputStream ois = new ObjectInputStream(bis);
         return (T) ois.readObject();
     }
 
@@ -49,9 +51,8 @@ public final class TestJavaSerializationUtils {
         return new SerializableObject(id);
     }
 
-
-
     private static final class SerializableObject implements Serializable {
+
         private final int id;
 
         public SerializableObject(int id) {
@@ -60,13 +61,15 @@ public final class TestJavaSerializationUtils {
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
 
             SerializableObject that = (SerializableObject) o;
-
-            return id == that.id;
-
+            return (id == that.id);
         }
 
         @Override

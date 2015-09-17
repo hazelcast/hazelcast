@@ -32,7 +32,6 @@ import java.io.Writer;
 import java.lang.reflect.Constructor;
 import java.util.Collection;
 import java.util.Enumeration;
-import java.util.InvalidPropertiesFormatException;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
@@ -42,42 +41,38 @@ import static java.lang.Math.max;
 import static java.lang.Runtime.getRuntime;
 
 /**
- * Runs the tests in parallel with multiple threads.
+ * Runs the test methods in parallel with multiple threads.
  */
 public class HazelcastParallelClassRunner extends AbstractHazelcastClassRunner {
 
-    private static final boolean SPAWN_MULTIPLE_THREADS
-            = TestEnvironment.isMockNetwork() && !Boolean.getBoolean("multipleJVM");
-    private static final int MAX_THREADS
-            = max(getRuntime().availableProcessors(), 8);
+    private static final boolean SPAWN_MULTIPLE_THREADS = TestEnvironment.isMockNetwork() && !Boolean.getBoolean("multipleJVM");
+    private static final int MAX_THREADS = max(getRuntime().availableProcessors(), 8);
 
     private final AtomicInteger numThreads = new AtomicInteger(0);
     private final int maxThreads;
 
-    public HazelcastParallelClassRunner(Class<?> klass) throws InitializationError {
-        super(klass);
-        maxThreads = getMaxThreads(klass);
+    public HazelcastParallelClassRunner(Class<?> clazz) throws InitializationError {
+        super(clazz);
+        maxThreads = getMaxThreads(clazz);
     }
 
-    public HazelcastParallelClassRunner(Class<?> klass, Object[] parameters,
-                                        String name) throws InitializationError {
-        super(klass, parameters, name);
-        maxThreads =  getMaxThreads(klass);
+    public HazelcastParallelClassRunner(Class<?> clazz, Object[] parameters, String name) throws InitializationError {
+        super(clazz, parameters, name);
+        maxThreads = getMaxThreads(clazz);
     }
 
-    private int getMaxThreads(Class<?> klass) {
+    private int getMaxThreads(Class<?> clazz) {
         if (!SPAWN_MULTIPLE_THREADS) {
             return 1;
         }
-        
-        TestProperties properties = klass.getAnnotation(TestProperties.class);
 
+        TestProperties properties = clazz.getAnnotation(TestProperties.class);
         if (properties != null) {
-            Class<? extends MaxThreadsAware> clazz = properties.maxThreadsCalculatorClass();
+            Class<? extends MaxThreadsAware> maxThreadsAwareClazz = properties.maxThreadsCalculatorClass();
 
             try {
-                Constructor c = clazz.getConstructor();
-                MaxThreadsAware maxThreadsAware = (MaxThreadsAware) c.newInstance();
+                Constructor constructor = maxThreadsAwareClazz.getConstructor();
+                MaxThreadsAware maxThreadsAware = (MaxThreadsAware) constructor.newInstance();
                 return maxThreadsAware.maxThreads();
             } catch (Throwable e) {
                 return MAX_THREADS;
@@ -106,18 +101,18 @@ public class HazelcastParallelClassRunner extends AbstractHazelcastClassRunner {
         return new Statement() {
             @Override
             public void evaluate() throws Throwable {
-                // Save the current system properties
-                final Properties currentSystemProperties = System.getProperties();
+                // save the current system properties
+                Properties currentSystemProperties = System.getProperties();
                 try {
-                    // Use thread-local based system properties so parallel tests don't effect each other
+                    // use thread-local based system properties so parallel tests don't effect each other
                     System.setProperties(new ThreadLocalProperties(currentSystemProperties));
                     HazelcastParallelClassRunner.super.childrenInvoker(notifier).evaluate();
-                    // Wait for all child threads (tests) to complete
+                    // wait for all child threads (tests) to complete
                     while (numThreads.get() > 0) {
                         Thread.sleep(25);
                     }
                 } finally {
-                    // Restore the system properties
+                    // restore the system properties
                     System.setProperties(currentSystemProperties);
                 }
             }
@@ -149,7 +144,6 @@ public class HazelcastParallelClassRunner extends AbstractHazelcastClassRunner {
                 FRAMEWORK_METHOD_THREAD_LOCAL.remove();
             }
         }
-
     }
 
     private static class ThreadLocalProperties extends Properties {
@@ -299,7 +293,7 @@ public class HazelcastParallelClassRunner extends AbstractHazelcastClassRunner {
         }
 
         @Override
-        public void loadFromXML(InputStream in) throws IOException, InvalidPropertiesFormatException {
+        public void loadFromXML(InputStream in) throws IOException {
             getThreadLocal().loadFromXML(in);
         }
 
@@ -327,7 +321,5 @@ public class HazelcastParallelClassRunner extends AbstractHazelcastClassRunner {
         public void list(PrintWriter out) {
             getThreadLocal().list(out);
         }
-
     }
-
 }

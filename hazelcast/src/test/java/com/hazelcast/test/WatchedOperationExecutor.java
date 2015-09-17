@@ -13,22 +13,23 @@ import java.util.concurrent.TimeoutException;
 
 public class WatchedOperationExecutor {
 
-    public void execute(Runnable runnable, int seconds, EntryEventType eventType, ReplicatedMap... replicatedMaps) throws TimeoutException {
+    public void execute(Runnable runnable, int seconds, EntryEventType eventType, ReplicatedMap... replicatedMaps)
+            throws TimeoutException {
         int[] latches = new int[replicatedMaps.length];
         Arrays.fill(latches, 1);
         execute(runnable, seconds, latches, eventType, replicatedMaps);
     }
 
-    public void execute(Runnable runnable, int seconds, EntryEventType eventType, int operations, ReplicatedMap... replicatedMaps) throws TimeoutException {
+    public void execute(Runnable runnable, int seconds, EntryEventType eventType, int operations, ReplicatedMap... replicatedMaps)
+            throws TimeoutException {
         int[] latches = new int[replicatedMaps.length];
         Arrays.fill(latches, operations);
         execute(runnable, seconds, latches, eventType, replicatedMaps);
     }
 
-    public void execute(Runnable runnable, int timeoutSeconds, EntryEventType eventType, int operations, double minimalExpectation, ReplicatedMap... replicatedMaps)
-            throws TimeoutException {
-
-        if (minimalExpectation < 0. || minimalExpectation > 1.) {
+    public void execute(Runnable runnable, int timeoutSeconds, EntryEventType eventType, int operations,
+                        double minimalExpectation, ReplicatedMap... replicatedMaps) throws TimeoutException {
+        if (minimalExpectation < 0.0 || minimalExpectation > 1.0) {
             throw new IllegalArgumentException("minimalExpectation range > 0.0, < 1.0");
         }
         int atLeast = (int) (operations * minimalExpectation);
@@ -37,14 +38,15 @@ public class WatchedOperationExecutor {
         execute(runnable, timeoutSeconds, latches, eventType, replicatedMaps);
     }
 
-    public void execute(Runnable runnable, int timeoutSeconds, int[] latches, EntryEventType eventType, ReplicatedMap... replicatedMaps) throws TimeoutException {
-        final String[] registrationIds = new String[latches.length];
-        final WatcherDefinition[] watcherDefinitions = new WatcherDefinition[latches.length];
+    public <K, V> void execute(Runnable runnable, int timeoutSeconds, int[] latches, EntryEventType eventType,
+                               ReplicatedMap<K, V>... replicatedMaps) throws TimeoutException {
+        String[] registrationIds = new String[latches.length];
+        WatcherDefinition[] watcherDefinitions = new WatcherDefinition[latches.length];
         for (int i = 0; i < replicatedMaps.length; i++) {
-            ReplicatedMap replicatedMap = replicatedMaps[i];
+            ReplicatedMap<K, V> replicatedMap = replicatedMaps[i];
             CountDownLatch latch = new CountDownLatch(latches[i]);
-            WatcherListener listener = new WatcherListener(latch, eventType);
-            watcherDefinitions[i] = new WatcherDefinition(latch, replicatedMap, listener);
+            WatcherListener<K, V> listener = new WatcherListener<K, V>(latch, eventType);
+            watcherDefinitions[i] = new WatcherDefinition(latch);
             registrationIds[i] = replicatedMap.addEntryListener(listener);
         }
         try {
@@ -55,7 +57,7 @@ public class WatchedOperationExecutor {
                 definition.await(deadline, TimeUnit.NANOSECONDS);
                 deadline -= System.nanoTime() - start;
                 if (deadline <= 0) {
-                    throw new TimeoutException("Deadline reached. Remaining: "+definition.latch.getCount());
+                    throw new TimeoutException("Deadline reached. Remaining: " + definition.latch.getCount());
                 }
             }
         } catch (InterruptedException e) {
@@ -68,8 +70,7 @@ public class WatchedOperationExecutor {
         }
     }
 
-    private final class WatcherListener
-            implements EntryListener {
+    private final class WatcherListener<K, V> implements EntryListener<K, V> {
 
         private final CountDownLatch latch;
         private final EntryEventType eventType;
@@ -101,12 +102,10 @@ public class WatchedOperationExecutor {
 
         @Override
         public void mapEvicted(MapEvent event) {
-
         }
 
         @Override
         public void mapCleared(MapEvent event) {
-
         }
 
         private void handleEvent(EntryEventType eventType) {
@@ -117,19 +116,14 @@ public class WatchedOperationExecutor {
     }
 
     private final class WatcherDefinition {
-        private final CountDownLatch latch;
-        private final ReplicatedMap replicatedMap;
-        private final WatcherListener listener;
 
-        private WatcherDefinition(CountDownLatch latch, ReplicatedMap replicatedMap, WatcherListener listener) {
+        private final CountDownLatch latch;
+
+        private WatcherDefinition(CountDownLatch latch) {
             this.latch = latch;
-            this.replicatedMap = replicatedMap;
-            this.listener = listener;
         }
 
-        private void await(long timeout, TimeUnit unit)
-                throws InterruptedException {
-
+        private void await(long timeout, TimeUnit unit) throws InterruptedException {
             latch.await(timeout, unit);
         }
     }

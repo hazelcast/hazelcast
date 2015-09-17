@@ -19,6 +19,13 @@ package com.hazelcast.test;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.annotation.Repeat;
+import org.junit.After;
+import org.junit.internal.runners.statements.RunAfters;
+import org.junit.runners.model.FrameworkMethod;
+import org.junit.runners.model.InitializationError;
+import org.junit.runners.model.MultipleFailureException;
+import org.junit.runners.model.Statement;
+
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadInfo;
 import java.lang.management.ThreadMXBean;
@@ -28,23 +35,18 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
-import org.junit.After;
-import org.junit.internal.runners.statements.RunAfters;
-import org.junit.runners.model.FrameworkMethod;
-import org.junit.runners.model.InitializationError;
-import org.junit.runners.model.MultipleFailureException;
-import org.junit.runners.model.Statement;
+
+import static java.lang.Boolean.getBoolean;
 
 /**
  * Base test runner which has base system properties and test repetition logic. The tests are run in random order.
  */
 public abstract class AbstractHazelcastClassRunner extends AbstractParameterizedHazelcastClassRunner {
 
-    protected static final boolean DISABLE_THREAD_DUMP_ON_FAILURE =
-            Boolean.getBoolean("hazelcast.test.disableThreadDumpOnFailure");
+    protected static final boolean DISABLE_THREAD_DUMP_ON_FAILURE = getBoolean("hazelcast.test.disableThreadDumpOnFailure");
 
     static {
-        final String logging = "hazelcast.logging.type";
+        String logging = "hazelcast.logging.type";
         if (System.getProperty(logging) == null) {
             System.setProperty(logging, "log4j");
         }
@@ -57,7 +59,7 @@ public abstract class AbstractHazelcastClassRunner extends AbstractParameterized
         System.setProperty("hazelcast.local.localAddress", "127.0.0.1");
         System.setProperty("java.net.preferIPv4Stack", "true");
 
-        // randomize multicast group...
+        // randomize multicast group
         Random rand = new Random();
         int g1 = rand.nextInt(255);
         int g2 = rand.nextInt(255);
@@ -76,17 +78,16 @@ public abstract class AbstractHazelcastClassRunner extends AbstractParameterized
     }
 
     /**
-     * Creates a BlockJUnit4ClassRunner to run {@code klass}
+     * Creates a BlockJUnit4ClassRunner to run {@code clazz}
      *
      * @throws org.junit.runners.model.InitializationError if the test class is malformed.
      */
-    public AbstractHazelcastClassRunner(Class<?> klass) throws InitializationError {
-        super(klass);
+    public AbstractHazelcastClassRunner(Class<?> clazz) throws InitializationError {
+        super(clazz);
     }
 
-    public AbstractHazelcastClassRunner(Class<?> klass, Object[] parameters,
-                                        String name) throws InitializationError {
-        super(klass, parameters, name);
+    public AbstractHazelcastClassRunner(Class<?> clazz, Object[] parameters, String name) throws InitializationError {
+        super(clazz, parameters, name);
     }
 
     @Override
@@ -97,10 +98,8 @@ public abstract class AbstractHazelcastClassRunner extends AbstractParameterized
         return modifiableList;
     }
 
-
     @Override
-    protected Statement withAfters(FrameworkMethod method, Object target,
-                                   Statement statement) {
+    protected Statement withAfters(FrameworkMethod method, Object target, Statement statement) {
         List<FrameworkMethod> afters = getTestClass().getAnnotatedMethods(After.class);
         if (!DISABLE_THREAD_DUMP_ON_FAILURE) {
             return new ThreadDumpAwareRunAfters(method, statement, afters, target);
@@ -119,8 +118,7 @@ public abstract class AbstractHazelcastClassRunner extends AbstractParameterized
         private final Object target;
         private final List<FrameworkMethod> afters;
 
-        protected ThreadDumpAwareRunAfters(FrameworkMethod method, Statement next,
-                                           List<FrameworkMethod> afters, Object target) {
+        protected ThreadDumpAwareRunAfters(FrameworkMethod method, Statement next, List<FrameworkMethod> afters, Object target) {
             this.method = method;
             this.next = next;
             this.afters = afters;
@@ -133,9 +131,7 @@ public abstract class AbstractHazelcastClassRunner extends AbstractParameterized
             try {
                 next.evaluate();
             } catch (Throwable e) {
-                System.err.println("THREAD DUMP FOR TEST FAILURE: " +
-                        "\"" + e.getMessage() + "\" at " +
-                        "\"" + method.getName() + "\"" + "\n");
+                System.err.println("THREAD DUMP FOR TEST FAILURE: \"" + e.getMessage() + "\" at \"" + method.getName() + "\"\n");
                 System.err.println(generateThreadDump());
                 errors.add(e);
             } finally {
@@ -153,8 +149,8 @@ public abstract class AbstractHazelcastClassRunner extends AbstractParameterized
 
     @Override
     protected Statement methodBlock(FrameworkMethod method) {
-        final Statement statement = super.methodBlock(method);
-        final Repeat repeatable = getRepeatable(method);
+        Statement statement = super.methodBlock(method);
+        Repeat repeatable = getRepeatable(method);
         if (repeatable == null || repeatable.value() < 2) {
             return statement;
         }
@@ -162,7 +158,8 @@ public abstract class AbstractHazelcastClassRunner extends AbstractParameterized
     }
 
     /**
-     * Gets repeat annotation, if any.
+     * Gets the {@link Repeat} annotation if set.
+     * <p/>
      * Method level definition overrides class level definition.
      */
     private Repeat getRepeatable(FrameworkMethod method) {
@@ -176,7 +173,6 @@ public abstract class AbstractHazelcastClassRunner extends AbstractParameterized
     @Override
     protected Statement withAfterClasses(Statement statement) {
         final Statement originalStatement = super.withAfterClasses(statement);
-
         return new Statement() {
             @Override
             public void evaluate() throws Throwable {
@@ -192,6 +188,40 @@ public abstract class AbstractHazelcastClassRunner extends AbstractParameterized
         };
     }
 
+    protected String generateThreadDump() {
+        StringBuilder dump = new StringBuilder();
+        ThreadMXBean threadMXBean = ManagementFactory.getThreadMXBean();
+        ThreadInfo[] threadInfos = threadMXBean.dumpAllThreads(true, true);
+        long currentThreadId = Thread.currentThread().getId();
+        for (ThreadInfo threadInfo : threadInfos) {
+            if (threadInfo.getThreadId() == currentThreadId) {
+                continue;
+            }
+            dump.append('"');
+            dump.append(threadInfo.getThreadName());
+            dump.append("\" ");
+
+            Thread.State state = threadInfo.getThreadState();
+            dump.append("\n\tjava.lang.Thread.State: ");
+            dump.append(state);
+            if (threadInfo.getLockName() != null) {
+                dump.append(" on lock=").append(threadInfo.getLockName());
+            }
+            if (threadInfo.getLockOwnerName() != null) {
+                dump.append(" owned by ").append(threadInfo.getLockOwnerName());
+                dump.append(" id=").append(threadInfo.getLockOwnerId());
+            }
+
+            StackTraceElement[] stackTraceElements = threadInfo.getStackTrace();
+            for (StackTraceElement stackTraceElement : stackTraceElements) {
+                dump.append("\n\t\tat ");
+                dump.append(stackTraceElement);
+            }
+            dump.append("\n\n");
+        }
+        return dump.toString();
+    }
+
     private class TestRepeater extends Statement {
 
         private final Statement statement;
@@ -205,8 +235,7 @@ public abstract class AbstractHazelcastClassRunner extends AbstractParameterized
         }
 
         /**
-         * Invokes the next {@link Statement statement} in the execution chain for
-         * the specified repeat count.
+         * Invokes the next {@link Statement statement} in the execution chain for the specified repeat count.
          */
         @Override
         public void evaluate() throws Throwable {
@@ -219,38 +248,5 @@ public abstract class AbstractHazelcastClassRunner extends AbstractParameterized
                 statement.evaluate();
             }
         }
-
     }
-
-    protected String generateThreadDump() {
-        final StringBuilder dump = new StringBuilder();
-        final ThreadMXBean threadMXBean = ManagementFactory.getThreadMXBean();
-        final ThreadInfo[] threadInfos = threadMXBean.dumpAllThreads(true, true);
-        final long currentThreadId = Thread.currentThread().getId();
-        for (ThreadInfo threadInfo : threadInfos) {
-            if (threadInfo.getThreadId() == currentThreadId) {
-                continue;
-            }
-            dump.append('"');
-            dump.append(threadInfo.getThreadName());
-            dump.append("\" ");
-            final Thread.State state = threadInfo.getThreadState();
-            dump.append("\n\tjava.lang.Thread.State: ");
-            dump.append(state);
-            if (threadInfo.getLockName() != null) {
-                dump.append(" on lock=" + threadInfo.getLockName());
-            }
-            if (threadInfo.getLockOwnerName() != null) {
-                dump.append(" owned by " + threadInfo.getLockOwnerName() + " id=" + threadInfo.getLockOwnerId());
-            }
-            final StackTraceElement[] stackTraceElements = threadInfo.getStackTrace();
-            for (StackTraceElement stackTraceElement : stackTraceElements) {
-                dump.append("\n\t\tat ");
-                dump.append(stackTraceElement);
-            }
-            dump.append("\n\n");
-        }
-        return dump.toString();
-    }
-
 }
