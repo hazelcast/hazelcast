@@ -12,9 +12,6 @@ import static org.junit.Assert.assertSame;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.spy;
 
-/**
- * @author Henri Tremblay
- */
 public class WanNoDelayReplicationTest extends HazelcastTestSupport {
 
     @Test
@@ -29,7 +26,7 @@ public class WanNoDelayReplicationTest extends HazelcastTestSupport {
 
         assertEquals(0, replication.getEventQueue().size());
         assertEquals(1, replication.getFailureQ().size());
-        assertSame(eventObject, replication.getFailureQ().peek().getEventObject());
+        assertSame(eventObject, replication.getFailureQ().get(0).getEventObject());
     }
 
     @Test

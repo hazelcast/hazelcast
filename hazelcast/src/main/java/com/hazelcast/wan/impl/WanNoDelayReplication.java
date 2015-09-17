@@ -35,6 +35,7 @@ import com.hazelcast.wan.WanReplicationService;
 
 import java.util.Arrays;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Future;
@@ -59,7 +60,7 @@ public class WanNoDelayReplication
     private volatile boolean running = true;
 
     /* For testing purpose only */
-    LinkedList<WanReplicationEvent> getFailureQ() {
+    List<WanReplicationEvent> getFailureQ() {
         return failureQ;
     }
 
@@ -119,7 +120,8 @@ public class WanNoDelayReplication
                     Packet packet = new Packet(bytes);
                     packet.setHeader(Packet.HEADER_WAN_REPLICATION);
                     conn.write(packet);
-                    event = null; // the event has been correctly processed, we can clear it
+                    // the event has been correctly processed, we can clear it
+                    event = null;
                 } else {
                     conn = null;
                 }
