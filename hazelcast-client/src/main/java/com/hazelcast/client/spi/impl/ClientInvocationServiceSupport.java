@@ -229,7 +229,7 @@ abstract class ClientInvocationServiceSupport implements ClientInvocationService
     public void cleanConnectionResources(ClientConnection connection) {
         if (connectionManager.isAlive()) {
             try {
-                executionService.execute(new CleanResourcesTask(connection));
+                ((ClientExecutionServiceImpl) executionService).executeInternal(new CleanResourcesTask(connection));
             } catch (RejectedExecutionException e) {
                 logger.warning("Execution rejected ", e);
             }

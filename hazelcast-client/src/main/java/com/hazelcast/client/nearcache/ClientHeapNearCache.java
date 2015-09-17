@@ -17,7 +17,7 @@
 package com.hazelcast.client.nearcache;
 
 import com.hazelcast.client.spi.ClientContext;
-import com.hazelcast.client.spi.ClientExecutionService;
+import com.hazelcast.client.spi.impl.ClientExecutionServiceImpl;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
@@ -119,8 +119,8 @@ public class ClientHeapNearCache<K>
     private void fireEvictCache() {
         if (canEvict.compareAndSet(true, false)) {
             try {
-                final ClientExecutionService executionService = context.getExecutionService();
-                executionService.execute(new Runnable() {
+                final ClientExecutionServiceImpl executionService = (ClientExecutionServiceImpl) context.getExecutionService();
+                executionService.executeInternal(new Runnable() {
                     public void run() {
                         try {
                             TreeSet<NearCacheRecord> records = new TreeSet<NearCacheRecord>(selectedComparator);
@@ -138,7 +138,7 @@ public class ClientHeapNearCache<K>
                         }
                         if (cache.size() >= maxSize && canEvict.compareAndSet(true, false)) {
                             try {
-                                executionService.execute(this);
+                                executionService.executeInternal(this);
                             } catch (RejectedExecutionException e) {
                                 canEvict.set(true);
                             }
@@ -160,7 +160,8 @@ public class ClientHeapNearCache<K>
 
         if (canCleanUp.compareAndSet(true, false)) {
             try {
-                context.getExecutionService().execute(new Runnable() {
+                ClientExecutionServiceImpl executionService = (ClientExecutionServiceImpl) context.getExecutionService();
+                executionService.executeInternal(new Runnable() {
                     public void run() {
                         try {
                             lastCleanup = Clock.currentTimeMillis();
