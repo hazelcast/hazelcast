@@ -3,9 +3,14 @@ package com.hazelcast.cache;
 import com.hazelcast.cache.impl.HazelcastServerCachingProvider;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.EvictionConfig;
+import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.instance.GroupProperty;
+import com.hazelcast.instance.Node;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.util.EmptyStatement;
 import org.junit.After;
 import org.junit.Before;
 
@@ -13,6 +18,9 @@ import javax.cache.Cache;
 import javax.cache.CacheManager;
 import javax.cache.configuration.Configuration;
 import javax.cache.spi.CachingProvider;
+
+import static com.hazelcast.cache.impl.maxsize.impl.EntryCountCacheMaxSizeChecker.calculateMaxPartitionSize;
+import static org.junit.Assert.assertEquals;
 
 public abstract class CacheTestSupport extends HazelcastTestSupport {
 
@@ -58,6 +66,12 @@ public abstract class CacheTestSupport extends HazelcastTestSupport {
         return (ICache<K, V>) cache;
     }
 
+    protected <K, V> ICache<K, V> createCache(CacheConfig<K, V> config) {
+        String cacheName = randomString();
+        Cache<K, V> cache = cacheManager.<K, V, Configuration>createCache(cacheName, config);
+        return (ICache<K, V>) cache;
+    }
+
     protected Config createConfig() {
         return new Config();
     }
@@ -69,7 +83,37 @@ public abstract class CacheTestSupport extends HazelcastTestSupport {
         return cacheConfig;
     }
 
+    protected <K, V> CacheConfig<K, V> getCacheConfigWithMaxSize(int maxCacheSize) {
+        CacheConfig<K, V> config = createCacheConfig();
+        config.getEvictionConfig().setEvictionPolicy(EvictionPolicy.RANDOM);
+        config.getEvictionConfig().setMaximumSizePolicy(EvictionConfig.MaxSizePolicy.ENTRY_COUNT);
+        config.getEvictionConfig().setSize(maxCacheSize);
+        return config;
+    }
+
     protected CachingProvider getCachingProvider() {
         return HazelcastServerCachingProvider.createCachingProvider(getHazelcastInstance());
+    }
+
+    protected int getMaxCacheSizeWithoutEviction(CacheConfig cacheConfig) {
+        int maxEntryCount = cacheConfig.getEvictionConfig().getSize();
+        return calculateMaxPartitionSize(maxEntryCount, getPartitionCount());
+    }
+
+    private int getPartitionCount() {
+        Node node = getNode(getHazelcastInstance());
+        if (node != null) {
+            return node.groupProperties.getInteger(GroupProperty.PARTITION_COUNT);
+        }
+        return Integer.valueOf(GroupProperty.PARTITION_COUNT.getDefaultValue());
+    }
+
+    protected void assertThatNoCacheEvictionHappened(ICache cache) {
+        try {
+            assertEquals("there should be no evicted values", 0, cache.getLocalCacheStatistics().getCacheEvictions());
+        } catch (UnsupportedOperationException e) {
+            // cache statistics are not supported on clients yet
+            EmptyStatement.ignore(e);
+        }
     }
 }

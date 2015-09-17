@@ -8,6 +8,7 @@ import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuil
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.util.CacheConcurrentHashMap;
+import com.hazelcast.util.EmptyStatement;
 import org.junit.Test;
 
 import javax.cache.Cache;
@@ -32,6 +33,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -48,7 +50,7 @@ import static org.junit.Assert.fail;
 public abstract class CacheBasicAbstractTest extends CacheTestSupport {
 
     @Test
-    public void testPutGetRemoveReplace() throws InterruptedException, ExecutionException {
+    public void testPutGetRemoveReplace() {
         ICache<String, String> cache = createCache();
 
         cache.put("key1", "value1");
@@ -85,7 +87,7 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
     }
 
     @Test
-    public void testAsyncGetPutRemove() throws InterruptedException, ExecutionException {
+    public void testAsyncGetPutRemove() throws ExecutionException, InterruptedException {
         final ICache<String, String> cache = createCache();
         final String key = "key";
         cache.put(key, "value1");
@@ -120,24 +122,27 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
     public void testPutIfAbsentAsync_success() throws InterruptedException, ExecutionException {
         ICache<String, String> cache = createCache();
         String key = randomString();
+
         ICompletableFuture<Boolean> iCompletableFuture = cache.putIfAbsentAsync(key, randomString());
         assertTrue(iCompletableFuture.get());
     }
 
     @Test
-    public void testPutIfAbsentAsync_fail() throws InterruptedException, ExecutionException {
+    public void testPutIfAbsentAsync_fail() throws ExecutionException, InterruptedException {
         ICache<String, String> cache = createCache();
         String key = randomString();
         cache.put(key, randomString());
+
         ICompletableFuture<Boolean> iCompletableFuture = cache.putIfAbsentAsync(key, randomString());
         assertFalse(iCompletableFuture.get());
     }
 
     @Test
-    public void testPutIfAbsentAsync_withExpiryPolicy() throws InterruptedException, ExecutionException {
+    public void testPutIfAbsentAsync_withExpiryPolicy() {
         final ICache<String, String> cache = createCache();
         final String key = randomString();
         HazelcastExpiryPolicy expiryPolicy = new HazelcastExpiryPolicy(1, 1, 1);
+
         cache.putIfAbsentAsync(key, randomString(), expiryPolicy);
         assertTrueEventually(new AssertTask() {
             @Override
@@ -156,13 +161,12 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
         cache.put(key, oldValue);
 
         ICompletableFuture<String> iCompletableFuture = cache.getAndReplaceAsync(key, newValue);
-
         assertEquals(iCompletableFuture.get(), oldValue);
         assertEquals(cache.get(key), newValue);
     }
 
     @Test
-    public void testGetAll_withEmptySet() throws InterruptedException, ExecutionException {
+    public void testGetAll_withEmptySet() {
         ICache<String, String> cache = createCache();
         Map<String, String> map = cache.getAll(Collections.<String>emptySet());
         assertEquals(0, map.size());
@@ -239,6 +243,7 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
     }
 
     @Test
+    @SuppressWarnings("WhileLoopReplaceableByForEach")
     public void testIterator() {
         ICache<Integer, Integer> cache = createCache();
         int size = 1111;
@@ -296,136 +301,117 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
     }
 
     @Test
-    public void testIteratorDuringInsertion() throws InterruptedException {
-        final AtomicBoolean stop = new AtomicBoolean(false);
-        final ICache<Integer, Integer> cache = createCache();
-        int size = 1111;
-        for (int i = 0; i < size; i++) {
+    @SuppressWarnings("WhileLoopReplaceableByForEach")
+    public void testIteratorDuringInsertion_withoutEviction() {
+        CacheConfig<Integer, Integer> config = getCacheConfigWithMaxSize(1000000);
+        final ICache<Integer, Integer> cache = createCache(config);
+        final int maxSize = getMaxCacheSizeWithoutEviction(config);
+
+        // we prefill the cache with half of the max size, so there will be new inserts from the AbstractCacheWorker
+        int prefillSize = maxSize / 2;
+        for (int i = 0; i < prefillSize; i++) {
             cache.put(i, i);
         }
 
-        Thread thread = new Thread() {
-            public void run() {
-                Random rand = new Random();
-                while (!stop.get()) {
-                    int i = rand.nextInt();
-                    try {
-                        cache.put(i, i);
-                        LockSupport.parkNanos(1);
-                    } catch (Throwable ignored) {
-                    }
-                }
+        AbstractCacheWorker worker = new AbstractCacheWorker() {
+            @Override
+            void doRun(Random random) {
+                int i = random.nextInt(maxSize);
+                cache.put(i, i);
             }
         };
-        thread.start();
-
-        // Give chance to thread for starting
-        sleepSeconds(1);
+        worker.awaitFirstIteration();
 
         try {
             int i = 0;
             Iterator<Cache.Entry<Integer, Integer>> iterator = cache.iterator();
             while (iterator.hasNext()) {
                 Cache.Entry<Integer, Integer> e = iterator.next();
-                int key = e.getKey();
-                int value = e.getValue();
+                Integer key = e.getKey();
+                Integer value = e.getValue();
                 assertEquals(key, value);
                 i++;
             }
-            assertTrue(i >= size);
+            assertTrue("should have iterated over at least " + prefillSize + " entries, but was " + i, i >= prefillSize);
+            assertThatNoCacheEvictionHappened(cache);
         } finally {
-            stop.set(true);
-            thread.join();
+            worker.shutdown();
         }
     }
 
     @Test
-    public void testIteratorDuringUpdate() throws InterruptedException {
-        final AtomicBoolean stop = new AtomicBoolean(false);
-        final ICache<Integer, Integer> cache = createCache();
-        final int size = 1111;
-        for (int i = 0; i < size; i++) {
+    @SuppressWarnings("WhileLoopReplaceableByForEach")
+    public void testIteratorDuringUpdate_withoutEviction() {
+        CacheConfig<Integer, Integer> config = getCacheConfigWithMaxSize(1000000);
+        final ICache<Integer, Integer> cache = createCache(config);
+        final int maxSize = getMaxCacheSizeWithoutEviction(config);
+
+        for (int i = 0; i < maxSize; i++) {
             cache.put(i, i);
         }
 
-        Thread thread = new Thread() {
-            public void run() {
-                Random rand = new Random();
-                while (!stop.get()) {
-                    int i = rand.nextInt(size);
-                    try {
-                        cache.put(i, -i);
-                        LockSupport.parkNanos(1);
-                    } catch (Throwable ignored) {
-                    }
-                }
+        AbstractCacheWorker worker = new AbstractCacheWorker() {
+            @Override
+            void doRun(Random random) {
+                int i = random.nextInt(maxSize);
+                cache.put(i, -i);
             }
         };
-        thread.start();
-
-        // Give chance to thread for starting
-        sleepSeconds(1);
+        worker.awaitFirstIteration();
 
         try {
             int i = 0;
             Iterator<Cache.Entry<Integer, Integer>> iterator = cache.iterator();
             while (iterator.hasNext()) {
                 Cache.Entry<Integer, Integer> e = iterator.next();
-                int key = e.getKey();
-                int value = e.getValue();
-                assertTrue("Key: " + key + ", Value: " + value, key == Math.abs(value));
+                Integer key = e.getKey();
+                Integer value = e.getValue();
+                assertTrue("key: " + key + ", value: " + value, key == Math.abs(value));
                 i++;
             }
-            assertEquals(size, i);
+            assertEquals("should have iterated over all " + maxSize + " entries", maxSize, i);
+            assertThatNoCacheEvictionHappened(cache);
         } finally {
-            stop.set(true);
-            thread.join();
+            worker.shutdown();
         }
     }
 
     @Test
-    public void testIteratorDuringRemoval() throws InterruptedException {
-        final AtomicBoolean stop = new AtomicBoolean(false);
-        final ICache<Integer, Integer> cache = createCache();
-        final int size = 2222;
-        for (int i = 0; i < size; i++) {
+    @SuppressWarnings("WhileLoopReplaceableByForEach")
+    public void testIteratorDuringRemoval_withoutEviction() {
+        CacheConfig<Integer, Integer> config = getCacheConfigWithMaxSize(1000000);
+        final ICache<Integer, Integer> cache = createCache(config);
+        final int maxSize = getMaxCacheSizeWithoutEviction(config);
+
+        for (int i = 0; i < maxSize; i++) {
             cache.put(i, i);
         }
 
-        Thread thread = new Thread() {
-            public void run() {
-                Random rand = new Random();
-                while (!stop.get()) {
-                    int i = rand.nextInt(size);
-                    try {
-                        cache.remove(i);
-                        LockSupport.parkNanos(1);
-                    } catch (Throwable ignored) {
-                    }
-                }
+        AbstractCacheWorker worker = new AbstractCacheWorker() {
+            @Override
+            void doRun(Random random) {
+                int i = random.nextInt(maxSize);
+                cache.remove(i);
             }
         };
-        thread.start();
-
-        // Give chance to thread for starting
-        sleepSeconds(1);
+        worker.awaitFirstIteration();
 
         try {
             int i = 0;
             Iterator<Cache.Entry<Integer, Integer>> iterator = cache.iterator();
             while (iterator.hasNext()) {
                 Cache.Entry<Integer, Integer> e = iterator.next();
-                int key = e.getKey();
+                Integer key = e.getKey();
                 Integer value = e.getValue();
                 if (value != null) {
-                    assertEquals(key, value.intValue());
+                    assertEquals(key, value);
                 }
                 i++;
             }
-            assertTrue(i <= size);
+            assertTrue("should have iterated over at most " + maxSize + " entries, but was " + i, i <= maxSize);
+            assertThatNoCacheEvictionHappened(cache);
         } finally {
-            stop.set(true);
-            thread.join();
+            worker.shutdown();
         }
     }
 
@@ -516,7 +502,7 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
     }
 
     @Test
-    public void testJSRCreateDestroyCreate() throws InterruptedException {
+    public void testJSRCreateDestroyCreate() {
         String cacheName = randomString();
 
         assertNull(cacheManager.getCache(cacheName));
@@ -524,8 +510,6 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
         CacheConfig<Integer, String> config = new CacheConfig<Integer, String>();
         Cache<Integer, String> cache = cacheManager.createCache(cacheName, config);
         assertNotNull(cache);
-
-        Thread.sleep(1000);
 
         Integer key = 1;
         String value1 = "value";
@@ -539,8 +523,8 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
         cacheManager.destroyCache(cacheName);
         assertNull(cacheManager.getCache(cacheName));
 
-        Cache<Integer, String> cache1 = cacheManager.createCache(cacheName, config);
-        assertNotNull(cache1);
+        Cache<Integer, String> cacheAfterDestroy = cacheManager.createCache(cacheName, config);
+        assertNotNull(cacheAfterDestroy);
     }
 
     @Test
@@ -565,24 +549,24 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
     @Test
     public void testInitableIterator() {
         int testSize = 3007;
-        SerializationService ss = new DefaultSerializationServiceBuilder().build();
+        SerializationService serializationService = new DefaultSerializationServiceBuilder().build();
         for (int fetchSize = 1; fetchSize < 102; fetchSize++) {
             CacheConcurrentHashMap<Data, String> map = new CacheConcurrentHashMap<Data, String>(1000);
             for (int i = 0; i < testSize; i++) {
                 Integer key = i;
-                Data data = ss.toData(key);
+                Data data = serializationService.toData(key);
                 String value1 = "value" + i;
                 map.put(data, value1);
             }
 
-            int nti = Integer.MAX_VALUE;
+            int nextTableIndex = Integer.MAX_VALUE;
             int total = 0;
             int remaining = testSize;
-            while (remaining > 0 && nti > 0) {
+            while (remaining > 0 && nextTableIndex > 0) {
                 int size = (remaining > fetchSize ? fetchSize : remaining);
-                CacheKeyIteratorResult iteratorResult = map.fetchNext(nti, size);
+                CacheKeyIteratorResult iteratorResult = map.fetchNext(nextTableIndex, size);
                 List<Data> keys = iteratorResult.getKeys();
-                nti = iteratorResult.getTableIndex();
+                nextTableIndex = iteratorResult.getTableIndex();
                 remaining -= keys.size();
                 total += keys.size();
             }
@@ -636,7 +620,7 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
             cache.put(1, 1);
             fail("Since cache is destroyed, operation on cache must with failed with 'IllegalStateException'");
         } catch (IllegalStateException e) {
-            // Expect this exception since cache is closed and destroyed
+            // expect this exception since cache is closed and destroyed
         } catch (Throwable t) {
             t.printStackTrace();
             fail("Since cache is destroyed, operation on cache must with failed with 'IllegalStateException', "
@@ -645,7 +629,7 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
     }
 
     @Test
-    public void testEntryProcessor_invoke() throws ExecutionException, InterruptedException {
+    public void testEntryProcessor_invoke() {
         ICache<String, String> cache = createCache();
         String value = randomString();
         String key = randomString();
@@ -658,7 +642,7 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
     }
 
     @Test
-    public void testEntryProcessor_invokeAll() throws ExecutionException, InterruptedException {
+    public void testEntryProcessor_invokeAll() {
         ICache<String, String> cache = createCache();
         int entryCount = 10;
         Map<String, String> localMap = new HashMap<String, String>();
@@ -688,5 +672,58 @@ public abstract class CacheBasicAbstractTest extends CacheTestSupport {
             entry.setValue(result);
             return result;
         }
+    }
+
+    private static abstract class AbstractCacheWorker {
+
+        private final Random random = new Random();
+        private final CountDownLatch firstIterationDone = new CountDownLatch(1);
+        private final AtomicBoolean isRunning = new AtomicBoolean(true);
+        private final CacheWorkerThread thread = new CacheWorkerThread();
+
+        public AbstractCacheWorker() {
+            thread.start();
+        }
+
+        public void awaitFirstIteration() {
+            try {
+                firstIterationDone.await();
+            } catch (InterruptedException e) {
+                fail("CacheWorkerThread did not start! " + e.getMessage());
+            }
+        }
+
+        public void shutdown() {
+            isRunning.set(false);
+            try {
+                thread.join();
+            } catch (InterruptedException e) {
+                fail("CacheWorkerThread did not stop! " + e.getMessage());
+            }
+        }
+
+        private class CacheWorkerThread extends Thread {
+
+            public void run() {
+                try {
+                    doRun(random);
+                    LockSupport.parkNanos(1);
+                } catch (Exception e) {
+                    EmptyStatement.ignore(e);
+                }
+                firstIterationDone.countDown();
+
+                while (isRunning.get()) {
+                    try {
+                        doRun(random);
+                        LockSupport.parkNanos(1);
+                    } catch (Exception e) {
+                        EmptyStatement.ignore(e);
+                    }
+                }
+            }
+        }
+
+        abstract void doRun(Random random);
     }
 }
