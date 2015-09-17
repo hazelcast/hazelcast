@@ -19,6 +19,7 @@ package com.hazelcast.instance;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.ServiceLoader;
 
+import java.lang.reflect.Constructor;
 import java.util.Iterator;
 
 public final class NodeExtensionFactory {
@@ -28,18 +29,21 @@ public final class NodeExtensionFactory {
     private NodeExtensionFactory() {
     }
 
-    public static NodeExtension create(ClassLoader classLoader) {
+    public static NodeExtension create(Node node) {
         try {
-            Iterator<NodeExtension> iter = ServiceLoader.iterator(NodeExtension.class, FACTORY_ID, classLoader);
+            ClassLoader classLoader = node.getConfigClassLoader();
+            Iterator<Class<NodeExtension>> iter = ServiceLoader.classIterator(FACTORY_ID, classLoader);
             while (iter.hasNext()) {
-                NodeExtension initializer = iter.next();
-                if (!(initializer.getClass().equals(DefaultNodeExtension.class))) {
-                    return initializer;
+                Class<NodeExtension> clazz = iter.next();
+                if (!(clazz.equals(DefaultNodeExtension.class))) {
+                    Constructor<NodeExtension> constructor = clazz
+                            .getDeclaredConstructor(new Class[] {Node.class});
+                    return constructor.newInstance(node);
                 }
             }
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }
-        return new DefaultNodeExtension();
+        return new DefaultNodeExtension(node);
     }
 }

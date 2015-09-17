@@ -163,8 +163,8 @@ public class Node {
             loggingService.setThisMember(localMember);
             logger = loggingService.getLogger(Node.class.getName());
             hazelcastThreadGroup = new HazelcastThreadGroup(hazelcastInstance.getName(), logger, configClassLoader);
-            nodeExtension = NodeExtensionFactory.create(configClassLoader);
-            nodeExtension.beforeStart(this);
+            nodeExtension = NodeExtensionFactory.create(this);
+            nodeExtension.beforeStart();
 
             serializationService = nodeExtension.createSerializationService();
             securityContext = config.getSecurityConfig().isEnabled() ? nodeExtension.getSecurityContext() : null;
@@ -176,7 +176,7 @@ public class Node {
             partitionService = new InternalPartitionServiceImpl(this);
             clusterService = new ClusterServiceImpl(this);
             textCommandService = new TextCommandServiceImpl(this);
-            nodeExtension.printNodeInfo(this);
+            nodeExtension.printNodeInfo();
             multicastService = createMulticastService(addressPicker.getBindAddress(), this, config, logger);
             discoveryService = createDiscoveryService(config);
             initializeListeners(config);
@@ -333,7 +333,7 @@ public class Node {
         } catch (Exception e) {
             logger.warning("ManagementCenterService could not be constructed!", e);
         }
-        nodeExtension.afterStart(this);
+        nodeExtension.afterStart();
         versionCheck.check(this, getBuildInfo().getVersion(), buildInfo.isEnterprise());
     }
 

@@ -38,17 +38,17 @@ public interface NodeExtension {
     /**
      * Called before node is started
      */
-    void beforeStart(Node node);
+    void beforeStart();
 
     /**
      * Called to print node information during startup
      */
-    void printNodeInfo(Node node);
+    void printNodeInfo();
 
     /**
      * Called after node is started
      */
-    void afterStart(Node node);
+    void afterStart();
 
     /**
      * Creates a <tt>SerializationService</tt> instance to be used by this <tt>Node</tt>.
