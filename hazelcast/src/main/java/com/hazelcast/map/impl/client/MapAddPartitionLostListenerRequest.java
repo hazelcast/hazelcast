@@ -62,7 +62,7 @@ public class MapAddPartitionLostListenerRequest extends CallableClientRequest
         };
 
         final String registrationId = mapService.getMapServiceContext().addPartitionLostListener(listener, name);
-        endpoint.setListenerRegistration(MapService.SERVICE_NAME, name, registrationId);
+        endpoint.addListenerDestroyAction(MapService.SERVICE_NAME, name, registrationId);
         return registrationId;
     }
 

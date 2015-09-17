@@ -46,7 +46,7 @@ public class RegisterMembershipListenerMessageTask
         ClusterServiceImpl service = getService(serviceName);
         ClientEndpoint endpoint = getEndpoint();
         String registrationId = service.addMembershipListener(new MembershipListenerImpl(endpoint));
-        endpoint.setListenerRegistration(serviceName, serviceName, registrationId);
+        endpoint.addListenerDestroyAction(serviceName, serviceName, registrationId);
         return registrationId;
     }
 

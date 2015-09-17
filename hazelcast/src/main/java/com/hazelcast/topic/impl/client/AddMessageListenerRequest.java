@@ -51,7 +51,7 @@ public class AddMessageListenerRequest extends CallableClientRequest implements 
         Data partitionKey = serializationService.toData(name);
         MessageListener listener = new MessageListenerImpl(endpoint, partitionKey, getCallId());
         String registrationId = service.addMessageListener(name, listener);
-        endpoint.setListenerRegistration(TopicService.SERVICE_NAME, name, registrationId);
+        endpoint.addListenerDestroyAction(TopicService.SERVICE_NAME, name, registrationId);
         return registrationId;
     }
 

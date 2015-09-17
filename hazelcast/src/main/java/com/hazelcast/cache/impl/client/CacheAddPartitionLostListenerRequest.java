@@ -72,7 +72,7 @@ public class CacheAddPartitionLostListenerRequest extends CallableClientRequest
                 getEventService().registerListener(AbstractCacheService.SERVICE_NAME,
                 name, filter, listenerAdapter);
         final String registrationId = registration.getId();
-        endpoint.setListenerRegistration(CacheService.SERVICE_NAME, name, registrationId);
+        endpoint.addListenerDestroyAction(CacheService.SERVICE_NAME, name, registrationId);
 
         return registrationId;
     }

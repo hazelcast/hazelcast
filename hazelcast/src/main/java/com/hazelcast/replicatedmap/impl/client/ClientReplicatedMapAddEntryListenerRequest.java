@@ -68,7 +68,7 @@ public class ClientReplicatedMapAddEntryListenerRequest
         } else {
             registrationId = replicatedRecordStore.addEntryListener(listener, predicate, key);
         }
-        endpoint.setListenerRegistration(ReplicatedMapService.SERVICE_NAME, getMapName(), registrationId);
+        endpoint.addListenerDestroyAction(ReplicatedMapService.SERVICE_NAME, getMapName(), registrationId);
         return registrationId;
     }
 

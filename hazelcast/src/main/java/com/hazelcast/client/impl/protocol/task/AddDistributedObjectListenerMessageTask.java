@@ -26,6 +26,7 @@ import com.hazelcast.spi.ProxyService;
 import com.hazelcast.spi.impl.proxyservice.impl.ProxyServiceImpl;
 
 import java.security.Permission;
+import java.util.concurrent.Callable;
 
 public class AddDistributedObjectListenerMessageTask
         extends AbstractCallableMessageTask<ClientAddDistributedObjectListenerCodec.RequestParameters>
@@ -37,9 +38,15 @@ public class AddDistributedObjectListenerMessageTask
 
     @Override
     protected Object call() throws Exception {
-        ProxyService proxyService = clientEngine.getProxyService();
-        String registrationId = proxyService.addProxyListener(this);
-        endpoint.setDistributedObjectListener(registrationId);
+        final ProxyService proxyService = clientEngine.getProxyService();
+        final String registrationId = proxyService.addProxyListener(this);
+        endpoint.addDestroyAction(registrationId, new Callable() {
+            @Override
+            public Boolean call() {
+                return proxyService.removeProxyListener(registrationId);
+            }
+        });
+
         return registrationId;
     }
 

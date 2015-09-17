@@ -40,7 +40,7 @@ public class CollectionRemoveListenerRequest extends BaseClientRemoveListenerReq
     }
 
     @Override
-    public Object call() throws Exception {
+    protected boolean deRegisterListener() {
         final ClientEngine clientEngine = getClientEngine();
         final EventService eventService = clientEngine.getEventService();
         return eventService.deregisterListener(serviceName, name, registrationId);

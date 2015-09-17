@@ -98,7 +98,7 @@ public abstract class AbstractMapAddEntryListenerRequest extends CallableClientR
 
         final EventFilter eventFilter = getEventFilter();
         final String registrationId = mapService.getMapServiceContext().addEventListener(listener, eventFilter, name);
-        endpoint.setListenerRegistration(MapService.SERVICE_NAME, name, registrationId);
+        endpoint.addListenerDestroyAction(MapService.SERVICE_NAME, name, registrationId);
         return registrationId;
     }
 

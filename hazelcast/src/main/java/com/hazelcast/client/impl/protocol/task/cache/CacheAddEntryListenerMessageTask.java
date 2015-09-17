@@ -26,9 +26,9 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CacheAddEntryListenerCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.instance.Node;
+import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.ListenerWrapperEventFilter;
 import com.hazelcast.spi.NotifiableEventListener;
@@ -37,6 +37,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.Serializable;
 import java.security.Permission;
 import java.util.Set;
+import java.util.concurrent.Callable;
 
 /**
  * Client request which registers an event listener on behalf of the client and delegates the received events
@@ -56,16 +57,24 @@ public class CacheAddEntryListenerMessageTask
         final ClientEndpoint endpoint = getEndpoint();
         final CacheService service = getService(CacheService.SERVICE_NAME);
         CacheEntryListener cacheEntryListener = new CacheEntryListener(endpoint, this);
-        return service.registerListener(parameters.name, cacheEntryListener, cacheEntryListener);
+
+        final String registrationId = service.registerListener(parameters.name, cacheEntryListener, cacheEntryListener);
+        endpoint.addDestroyAction(registrationId, new Callable<Boolean>() {
+            @Override
+            public Boolean call() throws Exception {
+                return service.deregisterListener(parameters.name, registrationId);
+            }
+        });
+        return registrationId;
     }
 
     @SuppressFBWarnings(value = "SE_NO_SERIALVERSIONID",
             justification = "Class is Serializable, but doesn't define serialVersionUID")
     private static final class CacheEntryListener
             implements CacheEventListener,
-                       NotifiableEventListener<CacheService>,
-                       ListenerWrapperEventFilter,
-                       Serializable {
+            NotifiableEventListener<CacheService>,
+            ListenerWrapperEventFilter,
+            Serializable {
 
         private final transient ClientEndpoint endpoint;
         private final transient CacheAddEntryListenerMessageTask cacheAddEntryListenerMessageTask;

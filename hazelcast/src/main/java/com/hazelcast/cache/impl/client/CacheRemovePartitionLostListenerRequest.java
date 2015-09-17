@@ -24,7 +24,7 @@ import com.hazelcast.client.impl.client.BaseClientRemoveListenerRequest;
 
 import java.security.Permission;
 
-public class CacheRemovePartitionLostListenerRequest  extends BaseClientRemoveListenerRequest {
+public class CacheRemovePartitionLostListenerRequest extends BaseClientRemoveListenerRequest {
 
 
     public CacheRemovePartitionLostListenerRequest() {
@@ -34,7 +34,7 @@ public class CacheRemovePartitionLostListenerRequest  extends BaseClientRemoveLi
         super(name, registrationId);
     }
 
-    public Object call() throws Exception {
+    protected boolean deRegisterListener() {
         final ICacheService service = getService();
         return service.getNodeEngine().getEventService().
                 deregisterListener(AbstractCacheService.SERVICE_NAME,

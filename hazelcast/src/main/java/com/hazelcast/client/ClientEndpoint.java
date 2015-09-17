@@ -23,6 +23,7 @@ import com.hazelcast.transaction.TransactionContext;
 
 import javax.security.auth.Subject;
 import javax.security.auth.login.LoginContext;
+import java.util.concurrent.Callable;
 
 /**
  * Represents an endpoint to a client. So for each client connected to a member, a ClientEndpoint object is available.
@@ -42,7 +43,33 @@ public interface ClientEndpoint {
     //TODO remove after requests removed
     void sendEvent(Object key, Object event, int callId);
 
-    void setListenerRegistration(String service, String topic, String id);
+
+    /**
+     * Adds a remove callable to be called when endpoint is destroyed to clean related listener
+     * Following line will be called when endpoint destroyed :
+     * eventService.deregisterListener(service, topic, id);
+     * Note: removeDestroyAction should be called when there is no need to destroy action anymore.
+     *
+     * @param service name of the related service of listener
+     * @param topic   topic name of listener(mostly distributed object name)
+     * @param id      registration id of remove action
+     */
+    void addListenerDestroyAction(String service, String topic, String id);
+
+    /**
+     * Adds a remove callable to be called when endpoint is destroyed
+     * Note: removeDestroyAction should be called when there is no need to destroy action anymore.
+     *
+     * @param registrationId registration id of destroy action
+     * @param removeAction   callable that will be called when endpoint is destroyed
+     */
+    void addDestroyAction(String registrationId, Callable<Boolean> removeAction);
+
+    /**
+     * @param id registration id of destroy action
+     * @return true if remove is successful
+     */
+    boolean removeDestroyAction(String id);
 
     String getUuid();
 
@@ -67,8 +94,6 @@ public interface ClientEndpoint {
     void authenticated(ClientPrincipal principal, Credentials credentials, boolean firstConnection);
 
     void authenticated(ClientPrincipal principal);
-
-    void setDistributedObjectListener(String registrationId);
 
     ClientPrincipal getPrincipal();
 

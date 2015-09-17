@@ -34,7 +34,7 @@ public class RemoveMessageListenerRequest extends BaseClientRemoveListenerReques
     }
 
     @Override
-    public Boolean call() throws Exception {
+    protected boolean deRegisterListener() {
         TopicService service = getService();
         return service.removeMessageListener(name, registrationId);
     }

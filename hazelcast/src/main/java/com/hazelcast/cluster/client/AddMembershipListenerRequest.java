@@ -45,7 +45,7 @@ public final class AddMembershipListenerRequest extends CallableClientRequest im
         ClientEndpoint endpoint = getEndpoint();
         String registrationId = service.addMembershipListener(new MembershipListenerImpl(endpoint));
         String name = ClusterServiceImpl.SERVICE_NAME;
-        endpoint.setListenerRegistration(name, name, registrationId);
+        endpoint.addListenerDestroyAction(name, name, registrationId);
 
         Collection<MemberImpl> members = service.getMemberImpls();
         List<Data> response = new ArrayList<Data>(members.size());

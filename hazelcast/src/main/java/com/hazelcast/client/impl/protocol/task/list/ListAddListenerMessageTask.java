@@ -51,7 +51,7 @@ public class ListAddListenerMessageTask
         final CollectionEventFilter filter = new CollectionEventFilter(parameters.includeValue);
         final EventRegistration registration = eventService.registerListener(getServiceName(), parameters.name, filter, listener);
         final String registrationId = registration.getId();
-        endpoint.setListenerRegistration(getServiceName(), parameters.name, registrationId);
+        endpoint.addListenerDestroyAction(getServiceName(), parameters.name, registrationId);
         return registrationId;
     }
 
