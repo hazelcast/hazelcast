@@ -34,7 +34,7 @@ public interface QueryableEntry extends Map.Entry {
 
     Data getValueData();
 
-    Comparable getAttribute(String attributeName) throws QueryException;
+    Object getAttribute(String attributeName) throws QueryException;
 
     AttributeType getAttributeType(String attributeName);
 }

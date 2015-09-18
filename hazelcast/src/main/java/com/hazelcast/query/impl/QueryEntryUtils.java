@@ -54,11 +54,11 @@ final class QueryEntryUtils {
     }
 
 
-    public static Comparable extractAttribute(String attributeName, Data key, Object value, SerializationService ss) {
+    public static Object extractAttribute(String attributeName, Object key, Object value, SerializationService ss) {
         if (KEY_ATTRIBUTE_NAME.equals(attributeName)) {
-            return (Comparable) ss.toObject(key);
+            return ss.toObject(key);
         } else if (THIS_ATTRIBUTE_NAME.equals(attributeName)) {
-            return (Comparable) ss.toObject(value);
+            return ss.toObject(value);
         }
 
         boolean isKey = isKey(attributeName);
@@ -68,7 +68,7 @@ final class QueryEntryUtils {
         return extractAttribute(attributeName, target, ss);
     }
 
-    public static Comparable extractAttribute(String attributeName, Object target, SerializationService ss) {
+    public static Object extractAttribute(String attributeName, Object target, SerializationService ss) {
         if (target instanceof Portable || target instanceof Data) {
             Data targetData = ss.toData(target);
             if (targetData.isPortable()) {
@@ -83,7 +83,7 @@ final class QueryEntryUtils {
     // This method is very inefficient because:
     // lot of time is spend on retrieving field/method and it isn't cached
     // the actual invocation on the Field, Method is also is quite expensive.
-    static Comparable extractViaReflection(String attributeName, Object obj) {
+    static Object extractViaReflection(String attributeName, Object obj) {
         try {
             return ReflectionHelper.extractValue(obj, attributeName);
         } catch (QueryException e) {

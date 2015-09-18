@@ -60,4 +60,19 @@ public final class ArrayUtils {
             }
         }
     }
+
+    public static <T> boolean contains(T[] array, T item) {
+        for (T o : array) {
+            if (o == null) {
+                if (item == null) {
+                    return true;
+                }
+            } else {
+                if (o.equals(item)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
 }

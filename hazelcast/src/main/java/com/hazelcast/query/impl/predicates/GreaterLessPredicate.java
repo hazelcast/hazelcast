@@ -53,7 +53,7 @@ public final class GreaterLessPredicate extends AbstractPredicate implements Neg
 
     @Override
     public boolean apply(Map.Entry mapEntry) {
-        final Comparable entryValue = readAttribute(mapEntry);
+        final Comparable entryValue = (Comparable) readAttribute(mapEntry);
         if (entryValue == null) {
             return false;
         }

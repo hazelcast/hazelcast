@@ -23,8 +23,10 @@ import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.IndexImpl;
 import com.hazelcast.query.impl.QueryContext;
 import com.hazelcast.query.impl.QueryableEntry;
+import com.hazelcast.query.impl.getters.MultiResultCollector;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -54,7 +56,26 @@ public class EqualPredicate extends AbstractPredicate implements NegatablePredic
 
     @Override
     public boolean apply(Map.Entry mapEntry) {
-        Comparable entryValue = readAttribute(mapEntry);
+        Object entryValue = readAttribute(mapEntry);
+        if (entryValue instanceof MultiResultCollector) {
+            return applyForMultiResult(mapEntry, (MultiResultCollector) entryValue);
+        }
+        return applyForSingleValue(mapEntry, (Comparable) entryValue);
+    }
+
+    private boolean applyForMultiResult(Map.Entry mapEntry, MultiResultCollector result) {
+        List<Object> results = result.getResults();
+        for (Object o : results) {
+            Comparable entryValue = (Comparable) convertAttribute(o);
+            boolean applied = applyForSingleValue(mapEntry, entryValue);
+            if (applied) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean applyForSingleValue(Map.Entry mapEntry, Comparable entryValue) {
         if (entryValue == null) {
             return value == null || value == IndexImpl.NULL;
         }

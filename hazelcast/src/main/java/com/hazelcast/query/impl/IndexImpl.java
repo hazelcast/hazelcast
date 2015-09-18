@@ -98,32 +98,34 @@ public class IndexImpl implements Index {
             converter = attributeType == null ? IDENTITY_CONVERTER : attributeType.getConverter();
         }
 
-        Comparable oldValue = null;
-        if (oldRecordValue != null) {
-            oldValue = QueryEntryUtils.extractAttribute(attribute, e.getKeyData(), oldRecordValue, ss);
-            oldValue = sanitizeValue(oldValue);
+        Object oldValue = null;
+        if(oldRecordValue != null) {
+            oldValue = QueryEntryUtils.extractAttribute(attribute, e.getKey(), oldRecordValue, ss);
         }
 
-        Comparable newValue = e.getAttribute(attribute);
-        newValue = sanitizeValue(newValue);
+        Object newValue = QueryEntryUtils.extractAttribute(attribute, e.getKey(), e.getValue(), ss);
+        createOrUpdateIndexStore(newValue, oldValue, e);
+    }
 
+    private void createOrUpdateIndexStore(Object newValue, Object oldValue, QueryableEntry e) {
+        newValue = sanitizeValue(newValue);
         if (oldValue == null) {
             // new
             indexStore.newIndex(newValue, e);
         } else {
             // update
+            oldValue = sanitizeValue(oldValue);
             indexStore.updateIndex(oldValue, newValue, e);
         }
     }
 
-    private static Comparable sanitizeValue(Comparable value) {
-        if (value == null) {
-            return NULL;
+    static Object sanitizeValue(Object newValue) {
+        if (newValue == null) {
+            newValue = NULL;
+        } else if (newValue.getClass().isEnum()) {
+            newValue = TypeConverters.ENUM_CONVERTER.convert((Comparable) newValue);
         }
-        if (value.getClass().isEnum()) {
-            return TypeConverters.ENUM_CONVERTER.convert(value);
-        }
-        return value;
+        return newValue;
     }
 
     @Override

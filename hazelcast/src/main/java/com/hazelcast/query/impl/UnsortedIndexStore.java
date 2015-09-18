@@ -34,7 +34,7 @@ public class UnsortedIndexStore extends BaseIndexStore {
             = new ConcurrentHashMap<Comparable, ConcurrentMap<Data, QueryableEntry>>(1000);
 
     @Override
-    public void newIndex(Comparable newValue, QueryableEntry record) {
+    public void newIndex(Object newValue, QueryableEntry record) {
         takeWriteLock();
         try {
             if (newValue instanceof IndexImpl.NullObject) {
@@ -43,7 +43,7 @@ public class UnsortedIndexStore extends BaseIndexStore {
                 ConcurrentMap<Data, QueryableEntry> records = recordMap.get(newValue);
                 if (records == null) {
                     records = new ConcurrentHashMap<Data, QueryableEntry>(1, LOAD_FACTOR, 1);
-                    recordMap.put(newValue, records);
+                    recordMap.put((Comparable) newValue, records);
                 }
                 records.put(record.getKeyData(), record);
             }
@@ -53,7 +53,7 @@ public class UnsortedIndexStore extends BaseIndexStore {
     }
 
     @Override
-    public void updateIndex(Comparable oldValue, Comparable newValue, QueryableEntry entry) {
+    public void updateIndex(Object oldValue, Object newValue, QueryableEntry entry) {
         takeWriteLock();
         try {
             removeIndex(oldValue, entry.getKeyData());
@@ -64,7 +64,7 @@ public class UnsortedIndexStore extends BaseIndexStore {
     }
 
     @Override
-    public void removeIndex(Comparable oldValue, Data indexKey) {
+    public void removeIndex(Object oldValue, Data indexKey) {
         takeWriteLock();
         try {
             if (oldValue instanceof IndexImpl.NullObject) {

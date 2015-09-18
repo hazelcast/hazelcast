@@ -47,7 +47,7 @@ public class BetweenPredicate extends AbstractPredicate {
 
     @Override
     public boolean apply(Map.Entry entry) {
-        Comparable entryValue = readAttribute(entry);
+        Comparable entryValue = (Comparable) readAttribute(entry);
         if (entryValue == null) {
             return false;
         }

@@ -92,7 +92,7 @@ public class QueryEntry implements QueryableEntry {
 
 
     @Override
-    public Comparable getAttribute(String attributeName) throws QueryException {
+    public Object getAttribute(String attributeName) throws QueryException {
         return QueryEntryUtils.extractAttribute(attributeName, key, value, serializationService);
     }
 

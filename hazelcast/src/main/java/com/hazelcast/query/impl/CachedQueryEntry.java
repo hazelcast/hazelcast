@@ -95,11 +95,11 @@ public class CachedQueryEntry implements QueryableEntry {
 
 
     @Override
-    public Comparable getAttribute(String attributeName) throws QueryException {
+    public Object getAttribute(String attributeName) throws QueryException {
         if (KEY_ATTRIBUTE_NAME.equals(attributeName)) {
-            return (Comparable) getKey();
+            return getKey();
         } else if (THIS_ATTRIBUTE_NAME.equals(attributeName)) {
-            return (Comparable) getValue();
+            return getValue();
         }
 
         boolean key = QueryEntryUtils.isKey(attributeName);
