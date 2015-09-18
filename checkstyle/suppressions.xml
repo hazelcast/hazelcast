@@ -229,6 +229,7 @@
     <suppress checks="NPathComplexity" files="com/hazelcast/query/impl/getters/ReflectionHelper"/>
     <suppress checks="ReturnCount" files="com/hazelcast/query/impl/getters/ReflectionHelper"/>
     <suppress checks="ClassDataAbstractionCoupling" files="com/hazelcast/query/impl/TypeConverters"/>
+    <suppress checks="ReturnCount" files="com/hazelcast/query/impl/QueryResultIterator"/>
 
     <!-- hazelcast-wm -->
     <suppress checks="JavadocMethod" files="com/hazelcast/web/"/>

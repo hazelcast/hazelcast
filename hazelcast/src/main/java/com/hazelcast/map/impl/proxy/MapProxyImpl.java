@@ -570,14 +570,14 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
     public Set<K> keySet(Predicate predicate) {
         checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
 
-        return query(predicate, IterationType.KEY, false);
+        return (Set) query(predicate, IterationType.KEY, false, true);
     }
 
     @Override
     public Set entrySet(Predicate predicate) {
         checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
 
-        return query(predicate, IterationType.ENTRY, false);
+        return (Set) query(predicate, IterationType.ENTRY, false, true);
     }
 
     @Override
@@ -585,7 +585,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
     public Collection<V> values(Predicate predicate) {
         checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
 
-        return query(predicate, IterationType.VALUE, false);
+        return query(predicate, IterationType.VALUE, false, false);
     }
 
     @Override

@@ -5,6 +5,7 @@ import com.hazelcast.map.impl.operation.AbstractMapOperation;
 import com.hazelcast.query.TruePredicate;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.util.IterationType;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -17,7 +18,7 @@ public class QueryOperationTest extends QueryOperationTestSupport {
 
     @Override
     protected AbstractMapOperation createQueryOperation() {
-        return new QueryOperation(MAP_NAME, TruePredicate.INSTANCE);
+        return new QueryOperation(MAP_NAME, TruePredicate.INSTANCE, IterationType.ENTRY);
     }
 
     @Test

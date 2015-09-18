@@ -24,6 +24,8 @@ import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.ReadonlyOperation;
+import com.hazelcast.util.IterationType;
+
 import java.io.IOException;
 import java.util.Collection;
 
@@ -33,13 +35,15 @@ public class QueryPartitionOperation extends AbstractMapOperation implements Par
 
     private Predicate predicate;
     private QueryResult result;
+    private IterationType iterationType;
 
     public QueryPartitionOperation() {
     }
 
-    public QueryPartitionOperation(String mapName, Predicate predicate) {
+    public QueryPartitionOperation(String mapName, Predicate predicate, IterationType iterationType) {
         super(mapName);
         this.predicate = predicate;
+        this.iterationType = iterationType;
     }
 
     @Override
@@ -48,7 +52,7 @@ public class QueryPartitionOperation extends AbstractMapOperation implements Par
         MapQueryEngine queryEngine = mapServiceContext.getMapQueryEngine();
 
         Collection<QueryableEntry> queryableEntries = queryEngine.queryOnPartition(name, predicate, getPartitionId());
-        result = queryEngine.newQueryResult(1);
+        result = queryEngine.newQueryResult(iterationType, 1);
         result.addAll(queryableEntries);
         result.setPartitionIds(singletonList(getPartitionId()));
     }
@@ -62,11 +66,13 @@ public class QueryPartitionOperation extends AbstractMapOperation implements Par
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeObject(predicate);
+        out.writeByte(iterationType.getId());
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         predicate = in.readObject();
+        iterationType = IterationType.getById(in.readByte());
     }
 }

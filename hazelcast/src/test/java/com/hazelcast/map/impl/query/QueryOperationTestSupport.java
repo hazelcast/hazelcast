@@ -13,6 +13,7 @@ import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.util.IterationType;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
@@ -55,9 +56,9 @@ public abstract class QueryOperationTestSupport {
             queryEntrySet.add(queryableEntry);
         }
 
-        QueryResult queryResult = new QueryResult(nodeResultLimit);
+        QueryResult queryResult = new QueryResult(IterationType.ENTRY, nodeResultLimit);
 
-        when(mapQueryEngine.newQueryResult(anyInt())).thenReturn(queryResult);
+        when(mapQueryEngine.newQueryResult(IterationType.ENTRY, anyInt())).thenReturn(queryResult);
         when(mapQueryEngine.queryOnPartition(MAP_NAME, TruePredicate.INSTANCE, Operation.GENERIC_PARTITION_ID))
                 .thenReturn(queryEntries);
 

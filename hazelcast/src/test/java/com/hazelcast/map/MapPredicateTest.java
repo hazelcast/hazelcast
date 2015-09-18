@@ -40,7 +40,7 @@ public class MapPredicateTest extends HazelcastTestSupport {
         listExpected.add("key2");
         listExpected.add("key3");
 
-        final List<String> list = new ArrayList<String>(map.keySet());
+        List<String> list = new ArrayList<String>(map.keySet());
 
         Collections.sort(list);
         Collections.sort(listExpected);
@@ -60,7 +60,7 @@ public class MapPredicateTest extends HazelcastTestSupport {
         listExpected.add("key2");
         listExpected.add("key3");
 
-        final List<String> list = new ArrayList<String>(map.keySet());
+        List<String> list = new ArrayList<String>(map.keySet());
 
         Collections.sort(list);
         Collections.sort(listExpected);
@@ -95,22 +95,22 @@ public class MapPredicateTest extends HazelcastTestSupport {
         map.put("c", "3");
         assertEquals(3, map.size());
         {
-            final Object[] values = map.values().toArray();
+            Object[] values = map.values().toArray();
             Arrays.sort(values);
             assertArrayEquals(new Object[]{"1", "2", "3"}, values);
         }
         {
-            final String[] values = map.values().toArray(new String[3]);
+            String[] values = map.values().toArray(new String[3]);
             Arrays.sort(values);
             assertArrayEquals(new String[]{"1", "2", "3"}, values);
         }
         {
-            final String[] values = map.values().toArray(new String[2]);
+            String[] values = map.values().toArray(new String[2]);
             Arrays.sort(values);
             assertArrayEquals(new String[]{"1", "2", "3"}, values);
         }
         {
-            final String[] values = map.values().toArray(new String[5]);
+            String[] values = map.values().toArray(new String[5]);
             Arrays.sort(values, 0, 3);
             assertArrayEquals(new String[]{"1", "2", "3", null, null}, values);
         }

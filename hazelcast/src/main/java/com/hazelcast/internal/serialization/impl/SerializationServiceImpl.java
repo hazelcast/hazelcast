@@ -20,12 +20,11 @@ import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
-import com.hazelcast.nio.BufferObjectDataInput;
-import com.hazelcast.nio.BufferObjectDataOutput;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.ByteArraySerializer;
-import com.hazelcast.nio.serialization.ClassDefinition;
+import com.hazelcast.internal.serialization.InputOutputFactory;
+import com.hazelcast.internal.serialization.ObjectDataInputStream;
+import com.hazelcast.internal.serialization.ObjectDataOutputStream;
+import com.hazelcast.internal.serialization.PortableContext;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.impl.ConstantSerializers.BooleanSerializer;
 import com.hazelcast.internal.serialization.impl.ConstantSerializers.ByteSerializer;
 import com.hazelcast.internal.serialization.impl.ConstantSerializers.CharArraySerializer;
@@ -42,22 +41,6 @@ import com.hazelcast.internal.serialization.impl.ConstantSerializers.ShortArrayS
 import com.hazelcast.internal.serialization.impl.ConstantSerializers.ShortSerializer;
 import com.hazelcast.internal.serialization.impl.ConstantSerializers.StringSerializer;
 import com.hazelcast.internal.serialization.impl.ConstantSerializers.TheByteArraySerializer;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.DataSerializable;
-import com.hazelcast.nio.serialization.DataSerializableFactory;
-import com.hazelcast.nio.serialization.FieldDefinition;
-import com.hazelcast.nio.serialization.FieldType;
-import com.hazelcast.nio.serialization.HazelcastSerializationException;
-import com.hazelcast.internal.serialization.InputOutputFactory;
-import com.hazelcast.internal.serialization.ObjectDataInputStream;
-import com.hazelcast.internal.serialization.ObjectDataOutputStream;
-import com.hazelcast.nio.serialization.Portable;
-import com.hazelcast.internal.serialization.PortableContext;
-import com.hazelcast.nio.serialization.PortableFactory;
-import com.hazelcast.nio.serialization.PortableReader;
-import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.nio.serialization.Serializer;
-import com.hazelcast.nio.serialization.StreamSerializer;
 import com.hazelcast.internal.serialization.impl.DefaultSerializers.BigDecimalSerializer;
 import com.hazelcast.internal.serialization.impl.DefaultSerializers.BigIntegerSerializer;
 import com.hazelcast.internal.serialization.impl.DefaultSerializers.ClassSerializer;
@@ -68,6 +51,26 @@ import com.hazelcast.internal.serialization.impl.DefaultSerializers.ObjectSerial
 import com.hazelcast.internal.serialization.impl.bufferpool.BufferPool;
 import com.hazelcast.internal.serialization.impl.bufferpool.BufferPoolFactory;
 import com.hazelcast.internal.serialization.impl.bufferpool.BufferPoolThreadLocal;
+import com.hazelcast.map.impl.query.QueryResult;
+import com.hazelcast.nio.BufferObjectDataInput;
+import com.hazelcast.nio.BufferObjectDataOutput;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.ByteArraySerializer;
+import com.hazelcast.nio.serialization.ClassDefinition;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.DataSerializableFactory;
+import com.hazelcast.nio.serialization.FieldDefinition;
+import com.hazelcast.nio.serialization.FieldType;
+import com.hazelcast.nio.serialization.HazelcastSerializationException;
+import com.hazelcast.nio.serialization.Portable;
+import com.hazelcast.nio.serialization.PortableFactory;
+import com.hazelcast.nio.serialization.PortableReader;
+import com.hazelcast.nio.serialization.Serializer;
+import com.hazelcast.nio.serialization.StreamSerializer;
+import com.hazelcast.query.impl.QueryResultEntry;
+import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
 
 import java.io.Externalizable;
 import java.io.IOException;
@@ -93,6 +96,8 @@ import static com.hazelcast.util.Preconditions.checkNotNull;
 import static java.lang.Boolean.parseBoolean;
 
 public class SerializationServiceImpl implements SerializationService {
+
+    public static final int FAT_PACKET_SIZE = 1000 * 1000;
 
     protected static final PartitioningStrategy EMPTY_PARTITIONING_STRATEGY = new PartitioningStrategy() {
         public Object getPartitionKey(Object key) {
@@ -247,12 +252,52 @@ public class SerializationServiceImpl implements SerializationService {
                 out.writeInt(partitionHash, ByteOrder.BIG_ENDIAN);
             }
 
-            return out.toByteArray();
+            byte[] result = out.toByteArray();
+            if (result != null && result.length > FAT_PACKET_SIZE) {
+                StringBuffer sb = new StringBuffer("fat packet:" + obj + " with size:" + result.length + "\n");
+                if (obj instanceof NormalResponse) {
+                    NormalResponse normalResponse = (NormalResponse) obj;
+                    if (normalResponse.getValue() instanceof QueryResult) {
+                        QueryResult queryResult = (QueryResult) normalResponse.getValue();
+                        sb.append(" query-result-size: " + queryResult.getResult().size() + "\n");
+                        int index = 1;
+                        for (QueryResultEntry entry : queryResult.getResult()) {
+                            sb.append("\titem: " + index + "\n");
+                            sb.append("\tkey " + details(entry.getKeyData()) + "\n");
+                            sb.append("\tvalue " + details(entry.getValueData()) + "\n");
+                            sb.append("\tindex " + details(entry.getIndexKey()) + "\n");
+                            sb.append("\n");
+                            index++;
+                        }
+                    }
+                }
+
+                try {
+                    throw new RuntimeException(sb.toString());
+                } catch (RuntimeException e) {
+                    e.printStackTrace();
+                }
+            }
+
+            return result;
         } catch (Throwable e) {
             throw handleException(e);
         } finally {
             pool.returnOutputBuffer(out);
         }
+    }
+
+    private String details(Data object) {
+        return "size:" + size(object) + " class:" + getClazz(object) + " value:" + toObject(object);
+    }
+
+    private String getClazz(Object object) {
+        Object o = toObject(object);
+        return o == null ? "null" : object.getClass().getName();
+    }
+
+    private int size(Data object) {
+        return object == null ? 0 : object.toByteArray().length;
     }
 
     @Override

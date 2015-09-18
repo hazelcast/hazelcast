@@ -27,7 +27,7 @@ import com.hazelcast.query.impl.QueryEntry;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.transaction.impl.Transaction;
 import com.hazelcast.util.IterationType;
-import com.hazelcast.util.QueryResultSet;
+import com.hazelcast.query.impl.QueryResultSet;
 
 import java.util.ArrayList;
 import java.util.Collection;
