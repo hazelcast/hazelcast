@@ -29,6 +29,14 @@ public interface Index {
 
     void clear();
 
+    /**
+     * Return converter associated with this Index.
+     * It can return <code>null</code> if no entry has been saved yet.
+     *
+     * @return
+     */
+    TypeConverters.TypeConverter getConverter();
+
     void removeEntryIndex(Data indexKey);
 
     Set<QueryableEntry> getRecords(Comparable[] values);

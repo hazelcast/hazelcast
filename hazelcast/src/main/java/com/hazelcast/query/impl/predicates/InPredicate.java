@@ -31,7 +31,7 @@ import java.util.Set;
  * In Predicate
  */
 public class InPredicate extends AbstractPredicate {
-    private Comparable[] values;
+    Comparable[] values;
     private volatile Set<Comparable> convertedInValues;
 
     public InPredicate() {

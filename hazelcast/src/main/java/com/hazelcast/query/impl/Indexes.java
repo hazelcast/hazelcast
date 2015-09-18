@@ -84,7 +84,13 @@ public class Indexes {
         }
     }
 
-    Index getIndex(String attribute) {
+    /**
+     * Get index for a given attribute. If the index does not exist then returns null.
+     *
+     * @param attribute
+     * @return Index for attribute or null if the index does not exist.
+     */
+    public Index getIndex(String attribute) {
         return mapIndexes.get(attribute);
     }
 

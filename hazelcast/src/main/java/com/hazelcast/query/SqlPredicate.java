@@ -18,7 +18,7 @@ package com.hazelcast.query;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.query.impl.IndexImpl;
+import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.QueryContext;
 import com.hazelcast.query.impl.QueryableEntry;
 
@@ -30,6 +30,8 @@ import java.util.Map;
 import java.util.Set;
 
 import com.hazelcast.query.impl.predicates.AbstractPredicate;
+import com.hazelcast.query.impl.predicates.Visitor;
+
 import static com.hazelcast.query.Predicates.and;
 import static com.hazelcast.query.Predicates.between;
 import static com.hazelcast.query.Predicates.equal;
@@ -47,11 +49,11 @@ import static com.hazelcast.query.Predicates.regex;
  * This class contains methods related to conversion of sql query to predicate.
  */
 
-public class SqlPredicate extends AbstractPredicate implements IndexAwarePredicate {
+public class SqlPredicate extends AbstractPredicate implements IndexAwarePredicate, VisitablePredicate {
 
     private static final long serialVersionUID = 1;
 
-    private transient Predicate predicate;
+    transient Predicate predicate;
     private String sql;
 
     public SqlPredicate(String sql) {
@@ -261,7 +263,7 @@ public class SqlPredicate extends AbstractPredicate implements IndexAwarePredica
         if (value != null) {
             return value;
         } else if (key instanceof String && ("null".equalsIgnoreCase((String) key))) {
-            return IndexImpl.NULL;
+            return null;
         } else {
             return key;
         }
@@ -320,5 +322,18 @@ public class SqlPredicate extends AbstractPredicate implements IndexAwarePredica
     @Override
     public int hashCode() {
         return sql.hashCode();
+    }
+
+    @Override
+    public Predicate accept(Visitor visitor, Indexes indexes) {
+        Predicate target = predicate;
+        if (predicate instanceof VisitablePredicate) {
+            target = ((VisitablePredicate) predicate).accept(visitor, indexes);
+        }
+        return target;
+    }
+
+    public Predicate getPredicate() {
+        return predicate;
     }
 }

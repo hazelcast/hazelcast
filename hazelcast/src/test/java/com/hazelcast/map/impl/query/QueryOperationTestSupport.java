@@ -8,11 +8,13 @@ import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.query.Predicate;
 import com.hazelcast.query.TruePredicate;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
+import org.mockito.internal.stubbing.answers.ReturnsArgumentAt;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
@@ -23,6 +25,7 @@ import java.util.Random;
 import java.util.Set;
 
 import static org.mockito.Matchers.anyInt;
+import static org.mockito.Matchers.anyObject;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -60,6 +63,7 @@ public abstract class QueryOperationTestSupport {
         when(mapQueryEngine.newQueryResult(anyInt())).thenReturn(queryResult);
         when(mapQueryEngine.queryOnPartition(MAP_NAME, TruePredicate.INSTANCE, Operation.GENERIC_PARTITION_ID))
                 .thenReturn(queryEntries);
+        when(mapQueryEngine.optimize((Predicate) anyObject(), (Indexes)anyObject())).thenAnswer(new ReturnsArgumentAt(0));
 
         Indexes indexes = mock(Indexes.class);
         when(indexes.query(TruePredicate.INSTANCE)).thenReturn(queryEntrySet);
