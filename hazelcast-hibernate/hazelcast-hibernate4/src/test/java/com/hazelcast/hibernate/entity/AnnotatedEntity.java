@@ -24,6 +24,15 @@ public class AnnotatedEntity {
         this.title = title;
     }
 
+    @NaturalId(mutable = true)
+    public String getTitle() {
+        return title;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
+    }
+
     @Id
     @GeneratedValue(generator="increment")
     @GenericGenerator(name="increment", strategy = "increment")
@@ -33,14 +42,5 @@ public class AnnotatedEntity {
 
     private void setId(Long id) {
         this.id = id;
-    }
-
-    @NaturalId(mutable = true)
-    public String getTitle() {
-        return title;
-    }
-
-    public void setTitle(String title) {
-        this.title = title;
     }
 }

@@ -224,35 +224,50 @@ public abstract class HibernateStatisticsTestSupport extends HibernateTestSuppor
 
     @Test
     public void testNaturalIdCacheStillHitsAfterIrrelevantNaturalIdUpdate() {
-        insertAnnotatedEntities(10);
-
-        sf.getCache().evictNaturalIdRegions();
+        insertAnnotatedEntities(2);
 
         Session session = sf.openSession();
         Transaction tx = session.beginTransaction();
-        Criteria criteria = session.createCriteria(AnnotatedEntity.class)
-                                   .add(Restrictions.naturalId().set("title", "dummy:0"))
-                                   .setCacheable(true);
-        criteria.uniqueResult();
 
-
-        AnnotatedEntity toBeUpdated = (AnnotatedEntity)session.byNaturalId(AnnotatedEntity.class).using("title","dummy:5").getReference();
-        toBeUpdated.setTitle("dummy501");
+        //1 cache hit since dummy:1 just inserted and still in the cache
+        AnnotatedEntity toBeUpdated = (AnnotatedEntity)session.byNaturalId(AnnotatedEntity.class).using("title", "dummy:1").getReference();
+        toBeUpdated.setTitle("dummy101");
         tx.commit();
         session.close();
 
-        sf.getStatistics().clear();
+        assertEquals(1, sf.getStatistics().getNaturalIdCacheHitCount());
 
-        //dummy:0 and dummy:5 are cached at this point.
-        //Only dummy:5 should be evicted from natural id cache not all items when we update dummy:5
-
+        //only dummy:1 should be evicted from cache on contrary to behavior of hibernate query cache without natural ids
         session = sf.openSession();
-        criteria = session.createCriteria(AnnotatedEntity.class).add(Restrictions.naturalId().set("title","dummy:0"))
-                          .setCacheable(true);
+        Criteria criteria = session.createCriteria(AnnotatedEntity.class).add(Restrictions.naturalId().set("title","dummy:0"))
+                                   .setCacheable(true);
         criteria.uniqueResult();
+
+        //cache hit dummy:0 + previous hit
+        assertEquals(2, sf.getStatistics().getNaturalIdCacheHitCount());
+    }
+
+    @Test
+    public void testNaturalIdCacheEvictsEntityOnUpdate() {
+        insertAnnotatedEntities(1);
+
+        Session session = sf.openSession();
+        Transaction tx = session.beginTransaction();
+
+        //1 cache hit since dummy:0 just inserted and still in the cache
+        AnnotatedEntity toBeUpdated = (AnnotatedEntity)session.byNaturalId(AnnotatedEntity.class).using("title", "dummy:0").getReference();
+        toBeUpdated.setTitle("dummy101");
+        tx.commit();
         session.close();
 
-        assertEquals(0, sf.getStatistics().getNaturalIdCacheMissCount());
         assertEquals(1, sf.getStatistics().getNaturalIdCacheHitCount());
+
+        //dummy:0 should be evicted and this leads to a cache miss
+        session = sf.openSession();
+        Criteria criteria = session.createCriteria(AnnotatedEntity.class).add(Restrictions.naturalId().set("title","dummy:0"))
+                                   .setCacheable(true);
+        criteria.uniqueResult();
+
+        assertEquals(1, sf.getStatistics().getNaturalIdCacheMissCount());
     }
 }
