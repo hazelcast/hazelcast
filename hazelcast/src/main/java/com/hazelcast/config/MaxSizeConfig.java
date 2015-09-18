@@ -80,7 +80,23 @@ public class MaxSizeConfig implements DataSerializable, Serializable {
         /**
          * Decide minimum free heap size to trigger cleanup
          */
-        FREE_HEAP_SIZE
+        FREE_HEAP_SIZE,
+        /**
+         * Decide maximum size with use native memory size
+         */
+        USED_NATIVE_MEMORY_SIZE,
+        /**
+         * Decide maximum size with use native memory percentage
+         */
+        USED_NATIVE_MEMORY_PERCENTAGE,
+        /**
+         * Decide minimum free native memory size to trigger cleanup
+         */
+        FREE_NATIVE_MEMORY_SIZE,
+        /**
+         * Decide minimum free native memory percentage to trigger cleanup
+         */
+        FREE_NATIVE_MEMORY_PERCENTAGE
     }
 
     public MaxSizeConfigReadOnly getAsReadOnly() {

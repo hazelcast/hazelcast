@@ -43,6 +43,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.net.URL;
+import java.text.MessageFormat;
 import java.util.Iterator;
 import java.util.List;
 
@@ -943,6 +944,29 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
             MapIndexConfig mapIndexConfig = iterator.next();
             assertEquals("name", mapIndexConfig.getAttribute());
             assertFalse(mapIndexConfig.isOrdered());
+        }
+    }
+
+    @Test
+    public void testMapNativeMaxSizePolicy() {
+        String xmlFormat = "<hazelcast xmlns=\"http://www.hazelcast.com/schema/config\">\n" +
+                "<map name=\"mymap\">" +
+                "<in-memory-format>NATIVE</in-memory-format>" +
+                "<max-size policy=\"{0}\">9991</max-size>" +
+                "</map>" +
+                "</hazelcast>";
+        MessageFormat messageFormat = new MessageFormat(xmlFormat);
+
+        MaxSizeConfig.MaxSizePolicy[] maxSizePolicies = MaxSizeConfig.MaxSizePolicy.values();
+        for (MaxSizeConfig.MaxSizePolicy maxSizePolicy : maxSizePolicies) {
+            Object[] objects = {maxSizePolicy.toString()};
+            String xml = messageFormat.format(objects);
+            Config config = buildConfig(xml);
+            MapConfig mapConfig = config.getMapConfig("mymap");
+            MaxSizeConfig maxSizeConfig = mapConfig.getMaxSizeConfig();
+
+            assertEquals(9991, maxSizeConfig.getSize());
+            assertEquals(maxSizePolicy, maxSizeConfig.getMaxSizePolicy());
         }
     }
 }

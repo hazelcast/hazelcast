@@ -220,7 +220,7 @@ public class TestFullApplicationContext {
     @Test
     public void testMapConfig() {
         assertNotNull(config);
-        assertEquals(10, config.getMapConfigs().size());
+        assertEquals(11, config.getMapConfigs().size());
 
         MapConfig testMapConfig = config.getMapConfig("testMap");
         assertNotNull(testMapConfig);
@@ -723,4 +723,13 @@ public class TestFullApplicationContext {
             assertFalse(mapIndexConfig.isOrdered());
         }
     }
+
+    @Test
+    public void testMapNativeMaxSizePolicy() {
+        MapConfig mapConfig = config.getMapConfig("map-with-native-max-size-policy");
+        MaxSizeConfig maxSizeConfig = mapConfig.getMaxSizeConfig();
+
+        assertEquals(MaxSizeConfig.MaxSizePolicy.USED_NATIVE_MEMORY_PERCENTAGE, maxSizeConfig.getMaxSizePolicy());
+    }
+
 }
