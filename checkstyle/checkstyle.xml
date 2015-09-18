@@ -224,7 +224,7 @@
         </module>
         <module name="InnerAssignment"/>
         <module name="ReturnCount">
-            <property name="max" value="5"/>
+            <property name="max" value="8"/>
         </module>
         <module name="NestedIfDepth">
             <property name="max" value="2"/>

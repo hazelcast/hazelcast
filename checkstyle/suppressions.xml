@@ -273,7 +273,6 @@
     <suppress checks="ParameterNumber" files="com/hazelcast/spi/impl/operationservice/impl/PartitionInvocation"/>
     <!-- these need to be solved -->
     <suppress checks="NPathComplexity" files="com/hazelcast/spi/impl/operationservice/impl/InvocationFuture"/>
-    <suppress checks="ReturnCount" files="com/hazelcast/spi/impl/operationservice/impl/InvocationFuture"/>
     <suppress checks="CyclomaticComplexity" files="com/hazelcast/spi/impl/operationservice/impl/InvocationFuture"/>
     <suppress checks="ClassDataAbstractionCoupling|MethodCount"
               files="com/hazelcast/spi/impl/eventservice/impl/EventServiceImpl"/>
@@ -300,7 +299,6 @@
     <suppress checks="JavadocType" files="com/hazelcast/logging/"/>
     <suppress checks="JavadocMethod" files="com/hazelcast/logging/"/>
     <suppress checks="JavadocVariable" files="com/hazelcast/logging/"/>
-    <suppress checks="ReturnCount" files="com/hazelcast/logging/Slf4jFactory"/>
 
     <!-- Partition -->
     <suppress checks="JavadocMethod" files="com/hazelcast/partition/"/>
@@ -349,7 +347,6 @@
     <suppress checks="JavadocType" files="com/hazelcast/multimap/"/>
     <suppress checks="JavadocMethod" files="com/hazelcast/multimap/"/>
     <suppress checks="JavadocVariable" files="com/hazelcast/multimap/"/>
-    <suppress checks="ReturnCount" files="com/hazelcast/multimap/impl/operations/MultiMapOperationFactory"/>
     <!-- todo: needs to be fixed -->
     <suppress checks="CyclomaticComplexity|MethodCount|ClassFanOutComplexity"
               files="com/hazelcast/multimap/impl/MultiMapService"/>
@@ -385,10 +382,9 @@
     <suppress checks="MagicNumber" files="com/hazelcast/internal/serialization/impl/DefaultPortableWriter"/>
     <suppress checks="MethodCount|MagicNumber" files="com/hazelcast/nio/DynamicByteBuffer"/>
     <suppress checks="MethodCount" files="com/hazelcast/nio/IOService"/>
-    <suppress checks="MagicNumber|ReturnCount" files="com/hazelcast/nio/IOUtil"/>
-    <suppress checks="ReturnCount" files="com/hazelcast/internal/serialization/impl/MorphingPortableReader"/>
+    <suppress checks="MagicNumber" files="com/hazelcast/nio/IOUtil"/>
     <suppress checks="MethodCount" files="com/hazelcast/nio/NodeIOService"/>
-    <suppress checks="MagicNumber|ReturnCount|MethodCount|NPathComplexity" files="com/hazelcast/nio/Packet"/>
+    <suppress checks="MagicNumber|MethodCount|NPathComplexity" files="com/hazelcast/nio/Packet"/>
     <suppress checks="NPathComplexity" files="com/hazelcast/nio/tcp/nonblocking/NonBlockingSocketReader"/>
     <suppress checks="MagicNumber|EmptyBlock|MethodCount" files="com/hazelcast/nio/tcp/nonblocking/NonBlockingWriteHandler"/>
     <suppress checks="ClassFanOutComplexity|ClassDataAbstractionCoupling|MethodCount|ParameterNumber"
@@ -454,10 +450,6 @@
     <suppress checks="MethodCount|ClassDataAbstractionCoupling" files="com/hazelcast/map/impl/MapServiceContextImpl"/>
     <suppress checks="MethodCount" files="com/hazelcast/map/impl/MapServiceContext"/>
     <suppress checks="ClassDataAbstractionCoupling" files="com/hazelcast/map/impl/tx/TransactionalMapProxySupport"/>
-
-    <!-- Metrics -->
-    <suppress checks="ReturnCount" files="com.hazelcast.internal.metrics.impl.FieldProbe"/>
-    <suppress checks="ReturnCount" files="com.hazelcast.internal.metrics.impl.MethodProbe"/>
 
     <!-- Util -->
     <suppress checks="" files="com/hazelcast/util/Base64"/>
