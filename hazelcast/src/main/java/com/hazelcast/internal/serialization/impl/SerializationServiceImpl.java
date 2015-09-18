@@ -81,6 +81,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
@@ -198,12 +199,18 @@ public class SerializationServiceImpl implements SerializationService {
             classDefMap.put(cd.getClassId(), cd);
         }
         for (ClassDefinition classDefinition : classDefinitions) {
-            registerClassDefinition(classDefinition, classDefMap, checkClassDefErrors);
+            registerClassDefinition(classDefinition, classDefMap, checkClassDefErrors, new HashSet<ClassDefinition>());
         }
     }
 
     private void registerClassDefinition(ClassDefinition cd, Map<Integer, ClassDefinition> classDefMap,
-                                         boolean checkClassDefErrors) {
+                                         boolean checkClassDefErrors, Set<ClassDefinition> visited) {
+        // Check for recursive structures
+        if (visited.contains(cd)) {
+            return;
+        }
+        visited.add(cd);
+
         final Set<String> fieldNames = cd.getFieldNames();
         for (String fieldName : fieldNames) {
             FieldDefinition fd = cd.getField(fieldName);
@@ -211,7 +218,7 @@ public class SerializationServiceImpl implements SerializationService {
                 int classId = fd.getClassId();
                 ClassDefinition nestedCd = classDefMap.get(classId);
                 if (nestedCd != null) {
-                    registerClassDefinition(nestedCd, classDefMap, checkClassDefErrors);
+                    registerClassDefinition(nestedCd, classDefMap, checkClassDefErrors, visited);
                     portableContext.registerClassDefinition(nestedCd);
                 } else if (checkClassDefErrors) {
                     throw new HazelcastSerializationException("Could not find registered ClassDefinition for class-id: "
