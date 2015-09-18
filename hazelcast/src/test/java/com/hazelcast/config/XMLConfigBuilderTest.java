@@ -66,22 +66,22 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testConfigurationURL() throws IOException{
-        URL configURL=getClass().getClassLoader().getResource("hazelcast-default.xml");
+    public void testConfigurationURL() throws IOException {
+        URL configURL = getClass().getClassLoader().getResource("hazelcast-default.xml");
         Config config = new XmlConfigBuilder(configURL).build();
-        assertEquals(configURL,config.getConfigurationUrl());
+        assertEquals(configURL, config.getConfigurationUrl());
     }
 
     @Test
-    public void testConfigurationWithFile() throws Exception{
+    public void testConfigurationWithFile() throws Exception {
         URL url = getClass().getClassLoader().getResource("hazelcast-default.xml");
         System.setProperty("hazelcast.config", url.getFile());
         Config config = new XmlConfigBuilder().build();
-        assertEquals(url,config.getConfigurationUrl());
+        assertEquals(url, config.getConfigurationUrl());
     }
 
     @Test
-    public void testConfigurationWithFileName() throws Exception{
+    public void testConfigurationWithFileName() throws Exception {
         File file = File.createTempFile("foo", "bar");
         file.deleteOnExit();
         String xml =
@@ -96,7 +96,7 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         writer.close();
 
         Config config = new XmlConfigBuilder(file.getAbsolutePath()).build();
-        assertEquals(file,config.getConfigurationFile());
+        assertEquals(file, config.getConfigurationFile());
     }
 
     @Test(expected = HazelcastException.class)
@@ -892,6 +892,130 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         assertEquals("com.abc.my.quorum.listener", quorumConfig.getListenerConfigs().get(0).getClassName());
         assertEquals("com.abc.my.second.listener", quorumConfig.getListenerConfigs().get(1).getClassName());
 
+    }
+
+    @Test
+    public void testIndexesConfig() throws Exception {
+        String xml =
+                "<hazelcast xmlns=\"http://www.hazelcast.com/schema/config\">\n" +
+                        "   <map name=\"people\">\n" +
+                        "       <indexes>\n" +
+                        "           <index ordered=\"false\">name</index>\n" +
+                        "           <index ordered=\"true\">age</index>\n" +
+                        "       </indexes>" +
+                        "   </map>" +
+                        "</hazelcast>";
+        Config config = buildConfig(xml);
+        MapConfig mapConfig = config.getMapConfig("people");
+        assertFalse(mapConfig.getMapIndexConfigs().isEmpty());
+        assertIndexEqual("name", false, mapConfig.getMapIndexConfigs().get(0));
+        assertIndexEqual("age", true, mapConfig.getMapIndexConfigs().get(1));
+    }
+
+    private static void assertIndexEqual(String expectedAttribute, boolean expectedOrdered, MapIndexConfig indexConfig) {
+        assertEquals(expectedAttribute, indexConfig.getAttribute());
+        assertEquals(expectedOrdered, indexConfig.isOrdered());
+    }
+
+    @Test
+    public void testAttributeConfig() throws Exception {
+        String xml =
+                "<hazelcast xmlns=\"http://www.hazelcast.com/schema/config\">\n" +
+                        "   <map name=\"people\">\n" +
+                        "       <attributes>\n" +
+                        "           <attribute extractor=\"com.car.PowerExtractor\">power</attribute>\n" +
+                        "           <attribute extractor=\"com.car.WeightExtractor\">weight</attribute>\n" +
+                        "       </attributes>" +
+                        "   </map>" +
+                        "</hazelcast>";
+        Config config = buildConfig(xml);
+        MapConfig mapConfig = config.getMapConfig("people");
+        assertFalse(mapConfig.getMapAttributeConfigs().isEmpty());
+        assertAttributeEqual("power", "com.car.PowerExtractor", mapConfig.getMapAttributeConfigs().get(0));
+        assertAttributeEqual("weight", "com.car.WeightExtractor", mapConfig.getMapAttributeConfigs().get(1));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testAttributeConfig_noName_emptyTag() throws Exception {
+        String xml =
+                "<hazelcast xmlns=\"http://www.hazelcast.com/schema/config\">\n" +
+                        "   <map name=\"people\">\n" +
+                        "       <attributes>\n" +
+                        "           <attribute extractor=\"com.car.WeightExtractor\"></attribute>\n" +
+                        "       </attributes>" +
+                        "   </map>" +
+                        "</hazelcast>";
+        buildConfig(xml);
+    }
+
+    private static void assertAttributeEqual(String expectedName, String expectedExtractor, MapAttributeConfig attributeConfig) {
+        assertEquals(expectedName, attributeConfig.getName());
+        assertEquals(expectedExtractor, attributeConfig.getExtractor());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testAttributeConfig_noName_singleTag() throws Exception {
+        String xml =
+                "<hazelcast xmlns=\"http://www.hazelcast.com/schema/config\">\n" +
+                        "   <map name=\"people\">\n" +
+                        "       <attributes>\n" +
+                        "           <attribute extractor=\"com.car.WeightExtractor\"/>\n" +
+                        "       </attributes>" +
+                        "   </map>" +
+                        "</hazelcast>";
+        buildConfig(xml);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testAttributeConfig_noName_noExtractor() throws Exception {
+        String xml =
+                "<hazelcast xmlns=\"http://www.hazelcast.com/schema/config\">\n" +
+                        "   <map name=\"people\">\n" +
+                        "       <attributes>\n" +
+                        "           <attribute></attribute>\n" +
+                        "       </attributes>" +
+                        "   </map>" +
+                        "</hazelcast>";
+        buildConfig(xml);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testAttributeConfig_noName_noExtractor_singleTag() throws Exception {
+        String xml =
+                "<hazelcast xmlns=\"http://www.hazelcast.com/schema/config\">\n" +
+                        "   <map name=\"people\">\n" +
+                        "       <attributes>\n" +
+                        "           <attribute/>\n" +
+                        "       </attributes>" +
+                        "   </map>" +
+                        "</hazelcast>";
+        buildConfig(xml);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testAttributeConfig_noExtractor() throws Exception {
+        String xml =
+                "<hazelcast xmlns=\"http://www.hazelcast.com/schema/config\">\n" +
+                        "   <map name=\"people\">\n" +
+                        "       <attributes>\n" +
+                        "           <attribute>weight</attribute>\n" +
+                        "       </attributes>" +
+                        "   </map>" +
+                        "</hazelcast>";
+        buildConfig(xml);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testAttributeConfig_emptyExtractor() throws Exception {
+        String xml =
+                "<hazelcast xmlns=\"http://www.hazelcast.com/schema/config\">\n" +
+                        "   <map name=\"people\">\n" +
+                        "       <attributes>\n" +
+                        "           <attribute extractor=\"\">weight</attribute>\n" +
+                        "       </attributes>" +
+                        "   </map>" +
+                        "</hazelcast>";
+        buildConfig(xml);
     }
 
     @Test

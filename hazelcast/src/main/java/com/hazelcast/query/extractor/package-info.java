@@ -14,28 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.query.impl.predicates;
-
-import com.hazelcast.query.impl.IndexImpl;
-import com.hazelcast.query.impl.QueryableEntry;
-
-import java.util.Map;
-
 /**
- * Utils for accessing attribute entries.
- *
+ * <p>Contains classes related to custom attribute extractors<br/>
+ * TODO: Improve this
  */
-public final class AttributeUtils {
 
-    private AttributeUtils() {
-    }
-
-    static Comparable readAttribute(Map.Entry entry, String attribute) {
-        QueryableEntry queryableEntry = (QueryableEntry) entry;
-        Comparable value = queryableEntry.getAttribute(attribute);
-        if (value == null) {
-            return IndexImpl.NULL;
-        }
-        return value;
-    }
-}
+package com.hazelcast.query.extractor;

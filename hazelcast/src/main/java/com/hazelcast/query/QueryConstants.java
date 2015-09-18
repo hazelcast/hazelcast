@@ -15,20 +15,29 @@
  */
 
 package com.hazelcast.query;
+
 /**
  * Contains constants for Query.
  */
-public final class QueryConstants {
+public enum QueryConstants {
 
     /**
      * Attribute name of the key.
      */
-    public static final String KEY_ATTRIBUTE_NAME = "__key";
+    KEY_ATTRIBUTE_NAME("__key"),
+
     /**
      * Attribute name of the "this".
      */
-    public static final String THIS_ATTRIBUTE_NAME = "this";
+    THIS_ATTRIBUTE_NAME("this");
 
-    private QueryConstants() {
+    private final String value;
+
+    QueryConstants(String value) {
+        this.value = value;
+    }
+
+    public String value() {
+        return value;
     }
 }

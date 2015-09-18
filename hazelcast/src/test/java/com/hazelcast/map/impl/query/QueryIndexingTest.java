@@ -89,8 +89,6 @@ public class QueryIndexingTest extends HazelcastTestSupport {
         Collection<Employee> matchingEntries = runQueryNTimes(3, h2.<String, Employee>getMap("employees"));
         assertEquals(count/2, matchingEntries.size());
 
-        // N queries result in getters called only 1 time, when indexing
-        assertGettersCalledNTimes(matchingEntries, 1);
         assertFieldsAreNull(matchingEntries);
     }
 

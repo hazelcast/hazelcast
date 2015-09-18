@@ -53,7 +53,7 @@ public class AndResultSetTest extends HazelcastTestSupport {
         return result;
     }
 
-    private class DummyEntry implements QueryableEntry {
+    private class DummyEntry extends QueryableEntry {
         @Override
         public Object getValue() {
             return null;
@@ -65,12 +65,17 @@ public class AndResultSetTest extends HazelcastTestSupport {
         }
 
         @Override
-        public Comparable getAttribute(String attributeName) throws QueryException {
+        public Comparable getAttributeValue(String attributeName) throws QueryException {
             return null;
         }
 
         @Override
         public AttributeType getAttributeType(String attributeName) {
+            return null;
+        }
+
+        @Override
+        public Object getTargetObject(boolean key) {
             return null;
         }
 

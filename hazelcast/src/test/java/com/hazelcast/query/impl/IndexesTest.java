@@ -47,13 +47,13 @@ public class IndexesTest {
 
     @Test
     public void testAndWithSingleEntry() throws Exception {
-        Indexes indexes = new Indexes(ss);
+        Indexes indexes = new Indexes(ss, Extractors.empty());
         indexes.addOrGetIndex("name", false);
         indexes.addOrGetIndex("age", true);
         indexes.addOrGetIndex("salary", true);
         for (int i = 0; i < 20000; i++) {
             Employee employee = new Employee(i + "Name", i % 80, (i % 2 == 0), 100 + (i % 1000));
-            indexes.saveEntryIndex(new QueryEntry(ss, toData(i), employee), null);
+            indexes.saveEntryIndex(new QueryEntry(ss, toData(i), employee, Extractors.empty()), null);
         }
         int count = 1000;
         Set<String> ages = new HashSet<String>(count);
@@ -73,13 +73,13 @@ public class IndexesTest {
 
     @Test
     public void testIndex() throws Exception {
-        Indexes indexes = new Indexes(ss);
+        Indexes indexes = new Indexes(ss, Extractors.empty());
         indexes.addOrGetIndex("name", false);
         indexes.addOrGetIndex("age", true);
         indexes.addOrGetIndex("salary", true);
         for (int i = 0; i < 2000; i++) {
             Employee employee = new Employee(i + "Name", i % 80, (i % 2 == 0), 100 + (i % 100));
-            indexes.saveEntryIndex(new QueryEntry(ss, toData(i), employee), null);
+            indexes.saveEntryIndex(new QueryEntry(ss, toData(i), employee, Extractors.empty()), null);
         }
 
         for (int i = 0; i < 10; i++) {
@@ -91,17 +91,17 @@ public class IndexesTest {
 
     @Test
     public void testIndex2() throws Exception {
-        Indexes indexes = new Indexes(ss);
+        Indexes indexes = new Indexes(ss, Extractors.empty());
         indexes.addOrGetIndex("name", false);
-        indexes.saveEntryIndex(new QueryEntry(ss, toData(1), new Value("abc")), null);
-        indexes.saveEntryIndex(new QueryEntry(ss, toData(2), new Value("xyz")), null);
-        indexes.saveEntryIndex(new QueryEntry(ss, toData(3), new Value("aaa")), null);
-        indexes.saveEntryIndex(new QueryEntry(ss, toData(4), new Value("zzz")), null);
-        indexes.saveEntryIndex(new QueryEntry(ss, toData(5), new Value("klm")), null);
-        indexes.saveEntryIndex(new QueryEntry(ss, toData(6), new Value("prs")), null);
-        indexes.saveEntryIndex(new QueryEntry(ss, toData(7), new Value("prs")), null);
-        indexes.saveEntryIndex(new QueryEntry(ss, toData(8), new Value("def")), null);
-        indexes.saveEntryIndex(new QueryEntry(ss, toData(9), new Value("qwx")), null);
+        indexes.saveEntryIndex(new QueryEntry(ss, toData(1), new Value("abc"), Extractors.empty()), null);
+        indexes.saveEntryIndex(new QueryEntry(ss, toData(2), new Value("xyz"), Extractors.empty()), null);
+        indexes.saveEntryIndex(new QueryEntry(ss, toData(3), new Value("aaa"), Extractors.empty()), null);
+        indexes.saveEntryIndex(new QueryEntry(ss, toData(4), new Value("zzz"), Extractors.empty()), null);
+        indexes.saveEntryIndex(new QueryEntry(ss, toData(5), new Value("klm"), Extractors.empty()), null);
+        indexes.saveEntryIndex(new QueryEntry(ss, toData(6), new Value("prs"), Extractors.empty()), null);
+        indexes.saveEntryIndex(new QueryEntry(ss, toData(7), new Value("prs"), Extractors.empty()), null);
+        indexes.saveEntryIndex(new QueryEntry(ss, toData(8), new Value("def"), Extractors.empty()), null);
+        indexes.saveEntryIndex(new QueryEntry(ss, toData(9), new Value("qwx"), Extractors.empty()), null);
         assertEquals(8, new HashSet(indexes.query(new SqlPredicate("name > 'aac'"))).size());
     }
 
@@ -113,7 +113,7 @@ public class IndexesTest {
      */
     @Test
     public void shouldNotThrowException_withNullValues_whenIndexAddedForValueField() throws Exception {
-        Indexes indexes = new Indexes(ss);
+        Indexes indexes = new Indexes(ss, Extractors.empty());
         indexes.addOrGetIndex("name", false);
 
         shouldReturnNull_whenQueryingOnKeys(indexes);
@@ -122,7 +122,7 @@ public class IndexesTest {
 
     @Test
     public void shouldNotThrowException_withNullValues_whenNoIndexAdded() throws Exception {
-        Indexes indexes = new Indexes(ss);
+        Indexes indexes = new Indexes(ss, Extractors.empty());
 
         shouldReturnNull_whenQueryingOnKeys(indexes);
     }
@@ -130,7 +130,7 @@ public class IndexesTest {
     private void shouldReturnNull_whenQueryingOnKeys(Indexes indexes) {
         for (int i = 0; i < 50; i++) {
             // passing null value to QueryEntry.
-            indexes.saveEntryIndex(new QueryEntry(ss, toData(i), null), null);
+            indexes.saveEntryIndex(new QueryEntry(ss, toData(i), null, Extractors.empty()), null);
         }
 
         Set<QueryableEntry> query = indexes.query(new SqlPredicate("__key > 10 "));
@@ -140,12 +140,12 @@ public class IndexesTest {
 
     @Test
     public void shouldNotThrowException_withNullValue_whenIndexAddedForKeyField() throws Exception {
-        Indexes indexes = new Indexes(ss);
+        Indexes indexes = new Indexes(ss, Extractors.empty());
         indexes.addOrGetIndex("__key", false);
 
         for (int i = 0; i < 100; i++) {
             // passing null value to QueryEntry.
-            indexes.saveEntryIndex(new QueryEntry(ss, toData(i), null), null);
+            indexes.saveEntryIndex(new QueryEntry(ss, toData(i), null, Extractors.empty()), null);
         }
 
         Set<QueryableEntry> query = indexes.query(new SqlPredicate("__key > 10 "));

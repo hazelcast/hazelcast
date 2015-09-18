@@ -42,7 +42,8 @@ public class IndexImplTest {
     @Before
     public void setUp() {
         SerializationService mockSerializationService = mock(SerializationService.class);
-        index = new IndexImpl(ATTRIBUTE_NAME, false, mockSerializationService);
+        Extractors mockExtractors = mock(Extractors.class);
+        index = new IndexImpl(ATTRIBUTE_NAME, false, mockSerializationService, mockExtractors);
     }
 
     @Test

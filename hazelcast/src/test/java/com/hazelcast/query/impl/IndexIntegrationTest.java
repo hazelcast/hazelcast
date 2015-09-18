@@ -21,24 +21,34 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.query.EntryObject;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.PredicateBuilder;
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.query.Predicates;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.io.IOException;
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 
+import static org.hamcrest.Matchers.hasSize;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThat;
 
-@RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
+@RunWith(HazelcastParallelClassRunner.class)
+@Category({QuickTest.class, ParallelTest.class})
 public class IndexIntegrationTest extends HazelcastTestSupport {
 
     @Test
@@ -74,6 +84,58 @@ public class IndexIntegrationTest extends HazelcastTestSupport {
         assertNull(map.get(1));
     }
 
+
+    @Test(timeout = 1000 * 60)
+    public void putAndQuery_whenMultipleMappingFound_thenDoNotReturnDuplicatedEntry() {
+        HazelcastInstance instance = createHazelcastInstance();
+        IMap<Integer, Body> map = instance.getMap(randomMapName());
+        map.addIndex("limbArray[any].fingerCount", true);
+
+        Limb leftHand = new Limb("hand", new Nail("red"));
+        Limb rightHand = new Limb("hand");
+        Body body = new Body("body", leftHand, rightHand);
+
+        map.put(1, body);
+
+        Predicate predicate = Predicates.greaterEqual("limbArray[any].fingerCount", 0);
+        Collection<Body> values = map.values(predicate);
+
+        assertThat(values, hasSize(1));
+    }
+
+    static class Body implements Serializable {
+        String name;
+        Limb[] limbArray = new Limb[0];
+        Collection<Limb> limbCollection = new ArrayList<Limb>();
+
+        Body(String name, Limb... limbs) {
+            this.name = name;
+            this.limbCollection = Arrays.asList(limbs);
+            this.limbArray = limbs;
+        }
+    }
+
+    static class Limb implements Serializable {
+        String name;
+        Nail[] nailArray = new Nail[0];
+        int fingerCount;
+        Collection<Nail> nailCollection = new ArrayList<Nail>();
+
+        Limb(String name, Nail... nails) {
+            this.name = name;
+            this.nailCollection = Arrays.asList(nails);
+            this.fingerCount = nails.length;
+            this.nailArray = nails;
+        }
+    }
+
+    static class Nail implements Serializable {
+        String colour;
+        private Nail(String colour) {
+            this.colour = colour;
+        }
+    }
+
     public static class Trade implements Serializable {
         private String currency;
         private Long amount;
@@ -95,6 +157,71 @@ public class IndexIntegrationTest extends HazelcastTestSupport {
 
         public void setAmount(Long amount) {
             this.amount = amount;
+        }
+    }
+
+    @Test
+    public void foo_methodGetters() {
+        HazelcastInstance hazelcastInstance = createHazelcastInstance();
+        IMap<Integer, SillySequence> map = hazelcastInstance.getMap(randomName());
+
+        SillySequence sillySequence = new SillySequence(0, 100);
+        map.put(0, sillySequence);
+
+        Predicate predicate = Predicates.equal("payload[any]", 3);
+        Collection<SillySequence> result = map.values(predicate);
+        assertThat(result, hasSize(1));
+    }
+
+    @Test
+    public void foo_fieldGetters() {
+        HazelcastInstance hazelcastInstance = createHazelcastInstance();
+        IMap<Integer, SillySequence> map = hazelcastInstance.getMap(randomName());
+
+        SillySequence sillySequence = new SillySequence(0, 100);
+        map.put(0, sillySequence);
+
+        Predicate predicate = Predicates.equal("payloadField[any]", 3);
+        Collection<SillySequence> result = map.values(predicate);
+        assertThat(result, hasSize(1));
+    }
+
+    static class SillySequence implements DataSerializable {
+        int count;
+        Collection<Integer> payloadField;
+
+        SillySequence() {
+
+        }
+
+        SillySequence(int from, int count) {
+            this.count = count;
+            this.payloadField = new ArrayList<Integer>(count);
+
+            int to = from + count;
+            for (int i = from; i < to; i++) {
+                payloadField.add(i);
+            }
+        }
+
+        public Collection<Integer> getPayload() {
+            return payloadField;
+        }
+
+        public int getCount() {
+            return count;
+        }
+
+        @Override
+        public void writeData(ObjectDataOutput out) throws IOException {
+            out.writeInt(count);
+            out.writeObject(payloadField);
+        }
+
+        @Override
+        public void readData(ObjectDataInput in) throws IOException {
+            count = in.readInt();
+            payloadField = in.readObject();
         }
     }
 
