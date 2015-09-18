@@ -19,6 +19,7 @@ import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -53,7 +54,7 @@ public class CompletableFutureTest extends HazelcastTestSupport {
     private static final RuntimeException NO_EXCEPTION = null;
 
     private ExecutionService executionService;
-    private CountDownLatch inExecutionLatch, startLogicLatch, executedLogic, finishedLatch, callbacksDoneLatch;
+    private CountDownLatch inExecutionLatch, startLogicLatch, executedLogic, callbacksDoneLatch;
     private AtomicReference<Object> reference1, reference2;
 
     @Rule
@@ -65,7 +66,6 @@ public class CompletableFutureTest extends HazelcastTestSupport {
         executionService = nodeEngine.getExecutionService();
         startLogicLatch = new CountDownLatch(1);
         executedLogic = new CountDownLatch(1);
-        finishedLatch = new CountDownLatch(1);
         inExecutionLatch = new CountDownLatch(1);
         reference1 = new AtomicReference<Object>();
         reference2 = new AtomicReference<Object>();
@@ -112,7 +112,7 @@ public class CompletableFutureTest extends HazelcastTestSupport {
     public void postregisterCallback() throws Exception {
         ICompletableFuture<String> f = submitAwaitingTask(expectedNumberOfCallbacks(1), NO_EXCEPTION);
         releaseAwaitingTask();
-        assertTaskFinishedEventually();
+        assertTaskFinishedEventually(f);
 
         f.andThen(storeTaskResponseToReference(reference1));
 
@@ -124,7 +124,7 @@ public class CompletableFutureTest extends HazelcastTestSupport {
     public void postregisterTwoCallbacks() throws Exception {
         ICompletableFuture<String> f = submitAwaitingTask(expectedNumberOfCallbacks(2), NO_EXCEPTION);
         releaseAwaitingTask();
-        assertTaskFinishedEventually();
+        assertTaskFinishedEventually(f);
 
         f.andThen(storeTaskResponseToReference(reference1));
         f.andThen(storeTaskResponseToReference(reference2));
@@ -138,7 +138,7 @@ public class CompletableFutureTest extends HazelcastTestSupport {
     public void postregisterTwoCallbacks_taskThrowsException() throws Exception {
         ICompletableFuture<String> f = submitAwaitingTask(expectedNumberOfCallbacks(2), THROW_TEST_EXCEPTION);
         releaseAwaitingTask();
-        assertTaskFinishedEventually();
+        assertTaskFinishedEventually(f);
 
         f.andThen(storeTaskResponseToReference(reference1));
         f.andThen(storeTaskResponseToReference(reference2));
@@ -174,7 +174,7 @@ public class CompletableFutureTest extends HazelcastTestSupport {
         assertEquals("success", result);
     }
 
-    @Test(timeout = 120000)
+    @Test(timeout = 60000)
     public void getWithTimeout_timesOut() throws Exception {
         ICompletableFuture<String> f = submitAwaitingTaskNoCallbacks(NO_EXCEPTION);
 
@@ -206,18 +206,18 @@ public class CompletableFutureTest extends HazelcastTestSupport {
 
     @Test
     public void cancellation_afterDone_taskNotCancelled_flagsSetCorrectly() throws Exception {
-        ICompletableFuture<String> f = submitAwaitingTaskNoCallbacks(NO_EXCEPTION);
+        final ICompletableFuture<String> f = submitAwaitingTaskNoCallbacks(NO_EXCEPTION);
         assertTaskInExecution();
         releaseAwaitingTask();
         assertTaskExecutedItsLogic();
-        assertTaskFinishedEventually();
+        assertTaskFinishedEventually(f);
 
         boolean firstCancelResult = f.cancel(false);
         boolean secondCancelResult = f.cancel(false);
 
         assertFalse("Cancellation should not succeed after task is done", firstCancelResult);
         assertFalse("Cancellation should not succeed after task is done", secondCancelResult);
-        assertTrue("Task should be done", f.isDone());
+
         assertFalse("Task should NOT be cancelled", f.isCancelled());
         assertEquals("success", f.get());
     }
@@ -228,13 +228,12 @@ public class CompletableFutureTest extends HazelcastTestSupport {
         assertTaskInExecution();
         releaseAwaitingTask();
         assertTaskExecutedItsLogic();
-        assertTaskFinishedEventually();
+        assertTaskFinishedEventually(f);
 
         assertTrue("Task should be done", f.isDone());
         assertFalse("Task should NOT be cancelled", f.isCancelled());
         assertEquals("success", f.get());
     }
-
 
     @Test(timeout = 60000)
     public void cancelAndGet_taskCancelled_withoutInterruption_logicExecuted() throws Exception {
@@ -244,7 +243,7 @@ public class CompletableFutureTest extends HazelcastTestSupport {
         boolean cancelResult = f.cancel(false);
         releaseAwaitingTask();
         assertTaskExecutedItsLogic(); // cancellation came, when task already awaiting, so logic executed
-        assertTaskFinishedEventually();
+        assertTaskFinishedEventually(f);
 
         assertTrue("Task cancellation should succeed", cancelResult);
         assertTrue("Task should be done", f.isDone());
@@ -253,7 +252,7 @@ public class CompletableFutureTest extends HazelcastTestSupport {
         f.get();
     }
 
-    @Test(timeout = 120000)
+    @Test(timeout = 60000)
     public void cancelAndGet_taskCancelled_withInterruption_noLogicExecuted() throws Exception {
         ICompletableFuture<String> f = submitAwaitingTaskNoCallbacks(NO_EXCEPTION);
         assertTaskInExecution();
@@ -261,7 +260,7 @@ public class CompletableFutureTest extends HazelcastTestSupport {
         boolean cancelResult = f.cancel(true);
 
         assertTaskInterruptedAndDidNotExecuteItsLogic();
-        assertTaskFinishedEventually(); // task did not have to be releases - interruption was enough
+        assertTaskFinishedEventually(f); // task did not have to be releases - interruption was enough
         assertTrue("Task cancellation should succeed", cancelResult);
         assertTrue("Task should be done", f.isDone());
         assertTrue("Task should be cancelled", f.isCancelled());
@@ -288,14 +287,12 @@ public class CompletableFutureTest extends HazelcastTestSupport {
             @Override
             public String call() throws Exception {
                 inExecutionLatch.countDown();
-                try {
-                    assertOpenEventually(startLogicLatch);
-                    executedLogic.countDown();
-                    if (exception != null) throw exception;
-                    return "success";
-                } finally {
-                    finishedLatch.countDown();
+                assertOpenEventually(startLogicLatch);
+                executedLogic.countDown();
+                if (exception != null) {
+                    throw exception;
                 }
+                return "success";
             }
         });
     }
@@ -338,8 +335,14 @@ public class CompletableFutureTest extends HazelcastTestSupport {
         assertEquals(1, executedLogic.getCount());
     }
 
-    private void assertTaskFinishedEventually() {
-        assertOpenEventually(finishedLatch);
+    private void assertTaskFinishedEventually(final ICompletableFuture future) {
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run()
+                    throws Exception {
+                assertTrue(future.isDone());
+            }
+        });
     }
 
     private void assertTaskInExecution() {
