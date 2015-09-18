@@ -63,7 +63,7 @@ public class CacheContextTest extends HazelcastTestSupport {
         return HazelcastServerCachingProvider.createCachingProvider(driverInstance);
     }
 
-    protected static class TestListener
+    public static class TestListener
             implements CacheEntryCreatedListener<String, String>, Serializable {
 
         @Override

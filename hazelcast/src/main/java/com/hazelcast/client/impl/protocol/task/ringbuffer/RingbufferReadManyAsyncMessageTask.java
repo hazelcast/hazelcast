@@ -26,6 +26,8 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.ringbuffer.impl.ReadResultSetImpl;
 import com.hazelcast.ringbuffer.impl.RingbufferService;
 import com.hazelcast.ringbuffer.impl.operations.ReadManyOperation;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.RingBufferPermission;
 import com.hazelcast.spi.Operation;
 
 import java.security.Permission;
@@ -72,16 +74,6 @@ public class RingbufferReadManyAsyncMessageTask
     }
 
     @Override
-    public Object[] getParameters() {
-        return null;
-    }
-
-    @Override
-    public Permission getRequiredPermission() {
-        return null;
-    }
-
-    @Override
     public String getMethodName() {
         return "readManyAsync";
     }
@@ -94,5 +86,16 @@ public class RingbufferReadManyAsyncMessageTask
     @Override
     public String getDistributedObjectName() {
         return parameters.name;
+    }
+
+    @Override
+    public Permission getRequiredPermission() {
+        return new RingBufferPermission(parameters.name, ActionConstants.ACTION_READ);
+    }
+
+    @Override
+    public Object[] getParameters() {
+
+        return new Object[]{parameters.startSequence, parameters.minCount, parameters.maxCount, null};
     }
 }

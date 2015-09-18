@@ -25,10 +25,13 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.CachePermission;
 import com.hazelcast.spi.Operation;
 
 import javax.cache.processor.EntryProcessor;
 import java.io.IOException;
+import java.security.Permission;
 
 /**
  * This client request  specifically calls {@link CacheEntryProcessorOperation} on the server side.
@@ -108,6 +111,26 @@ public class CacheEntryProcessorRequest
     @Override
     public void setCompletionId(Integer completionId) {
         this.completionId = completionId != null ? completionId : -1;
+    }
+
+    @Override
+    public Permission getRequiredPermission() {
+        return new CachePermission(name, ActionConstants.ACTION_READ);
+    }
+
+    @Override
+    public Object[] getParameters() {
+        return new Object[]{key, null, arguments};
+    }
+
+    @Override
+    public String getMethodName() {
+        return "invoke";
+    }
+
+    @Override
+    public String getDistributedObjectName() {
+        return name;
     }
 
 }

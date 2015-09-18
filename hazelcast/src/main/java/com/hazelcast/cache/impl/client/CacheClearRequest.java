@@ -26,6 +26,8 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.CachePermission;
 import com.hazelcast.spi.OperationFactory;
 
 import java.io.IOException;
@@ -125,7 +127,30 @@ public class CacheClearRequest
 
     @Override
     public Permission getRequiredPermission() {
-        return null;
+        return new CachePermission(name, ActionConstants.ACTION_REMOVE);
+    }
+
+    @Override
+    public Object[] getParameters() {
+        if (keys == null) {
+            return new Object[]{};
+        }
+
+        return new Object[]{keys};
+    }
+
+    @Override
+    public String getMethodName() {
+        if (isRemoveAll) {
+            return "removeAll";
+        }
+
+        return "clear";
+    }
+
+    @Override
+    public String getDistributedObjectName() {
+        return name;
     }
 
 }

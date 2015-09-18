@@ -23,6 +23,8 @@ import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.ringbuffer.impl.RingbufferService;
 import com.hazelcast.ringbuffer.impl.operations.GenericOperation;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.RingBufferPermission;
 import com.hazelcast.spi.Operation;
 
 import java.security.Permission;
@@ -60,7 +62,7 @@ public class RingbufferRemainingCapacityMessageTask
 
     @Override
     public Permission getRequiredPermission() {
-        return null;
+        return new RingBufferPermission(parameters.name, ActionConstants.ACTION_READ);
     }
 
     @Override

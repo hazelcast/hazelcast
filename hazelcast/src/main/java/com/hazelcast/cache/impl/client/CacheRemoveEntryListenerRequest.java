@@ -19,6 +19,8 @@ package com.hazelcast.cache.impl.client;
 import com.hazelcast.cache.impl.CachePortableHook;
 import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.client.impl.client.BaseClientRemoveListenerRequest;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.CachePermission;
 
 import java.security.Permission;
 
@@ -60,7 +62,17 @@ public class CacheRemoveEntryListenerRequest
 
     @Override
     public Permission getRequiredPermission() {
-        return null;
+        return new CachePermission(name, ActionConstants.ACTION_LISTEN);
+    }
+
+    @Override
+    public String getMethodName() {
+        return "deregisterCacheEntryListener";
+    }
+
+    @Override
+    public String getDistributedObjectName() {
+        return name;
     }
 
 }

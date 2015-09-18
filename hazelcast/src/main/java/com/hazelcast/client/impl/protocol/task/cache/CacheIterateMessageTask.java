@@ -64,4 +64,14 @@ public class CacheIterateMessageTask
     public String getDistributedObjectName() {
         return parameters.name;
     }
+
+    @Override
+    public Object[] getParameters() {
+        return new Object[]{};
+    }
+
+    @Override
+    public String getMethodName() {
+        return "iterator";
+    }
 }

@@ -17,6 +17,8 @@
 package com.hazelcast.ringbuffer.impl.client;
 
 import com.hazelcast.ringbuffer.impl.operations.GenericOperation;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.RingBufferPermission;
 import com.hazelcast.spi.Operation;
 
 import java.security.Permission;
@@ -44,6 +46,21 @@ public class SizeRequest extends RingbufferRequest {
 
     @Override
     public Permission getRequiredPermission() {
-        return null;
+        return new RingBufferPermission(name, ActionConstants.ACTION_READ);
+    }
+
+    @Override
+    public Object[] getParameters() {
+        return new Object[]{};
+    }
+
+    @Override
+    public String getMethodName() {
+        return "size";
+    }
+
+    @Override
+    public String getDistributedObjectName() {
+        return name;
     }
 }

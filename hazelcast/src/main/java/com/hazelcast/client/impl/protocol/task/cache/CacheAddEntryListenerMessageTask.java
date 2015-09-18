@@ -29,6 +29,8 @@ import com.hazelcast.instance.Node;
 import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.CachePermission;
 import com.hazelcast.spi.EventRegistration;
 import com.hazelcast.spi.ListenerWrapperEventFilter;
 import com.hazelcast.spi.NotifiableEventListener;
@@ -157,13 +159,8 @@ public class CacheAddEntryListenerMessageTask
     }
 
     @Override
-    public String getMethodName() {
-        return null;
-    }
-
-    @Override
     public Object[] getParameters() {
-        return null;
+        return new Object[]{};
     }
 
     @Override
@@ -173,7 +170,12 @@ public class CacheAddEntryListenerMessageTask
 
     @Override
     public Permission getRequiredPermission() {
-        return null;
+        return new CachePermission(parameters.name, ActionConstants.ACTION_LISTEN);
+    }
+
+    @Override
+    public String getMethodName() {
+        return "registerCacheEntryListener";
     }
 
 }

@@ -25,9 +25,12 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.CachePermission;
 import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
+import java.security.Permission;
 
 /**
  * This client request  specifically calls {@link CacheContainsKeyOperation} on the server side.
@@ -77,5 +80,25 @@ public class CacheContainsKeyRequest
         super.read(reader);
         final ObjectDataInput in = reader.getRawDataInput();
         key = in.readData();
+    }
+
+    @Override
+    public Permission getRequiredPermission() {
+        return new CachePermission(name, ActionConstants.ACTION_READ);
+    }
+
+    @Override
+    public Object[] getParameters() {
+        return new Object[]{key};
+    }
+
+    @Override
+    public String getMethodName() {
+        return "containsKey";
+    }
+
+    @Override
+    public String getDistributedObjectName() {
+        return name;
     }
 }

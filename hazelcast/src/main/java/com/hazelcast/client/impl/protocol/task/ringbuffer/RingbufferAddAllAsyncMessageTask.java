@@ -25,6 +25,8 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.ringbuffer.OverflowPolicy;
 import com.hazelcast.ringbuffer.impl.RingbufferService;
 import com.hazelcast.ringbuffer.impl.operations.AddAllOperation;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.RingBufferPermission;
 import com.hazelcast.spi.Operation;
 
 import java.security.Permission;
@@ -64,12 +66,12 @@ public class RingbufferAddAllAsyncMessageTask
 
     @Override
     public Object[] getParameters() {
-        return new Object[]{items(), OverflowPolicy.getById(parameters.overflowPolicy)};
+        return new Object[]{parameters.valueList, OverflowPolicy.getById(parameters.overflowPolicy)};
     }
 
     @Override
     public Permission getRequiredPermission() {
-        return null;
+        return new RingBufferPermission(parameters.name, ActionConstants.ACTION_PUT);
     }
 
     @Override

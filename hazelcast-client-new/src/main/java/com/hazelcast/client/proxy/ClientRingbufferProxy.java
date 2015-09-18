@@ -19,6 +19,7 @@ package com.hazelcast.client.proxy;
 import com.hazelcast.client.impl.ClientMessageDecoder;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.RingbufferAddAllAsyncCodec;
+import com.hazelcast.client.impl.protocol.codec.RingbufferAddAsyncCodec;
 import com.hazelcast.client.impl.protocol.codec.RingbufferAddCodec;
 import com.hazelcast.client.impl.protocol.codec.RingbufferCapacityCodec;
 import com.hazelcast.client.impl.protocol.codec.RingbufferHeadSequenceCodec;
@@ -33,8 +34,8 @@ import com.hazelcast.client.spi.impl.ClientInvocationFuture;
 import com.hazelcast.client.util.ClientDelegatingFuture;
 import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.IFunction;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.ringbuffer.OverflowPolicy;
 import com.hazelcast.ringbuffer.ReadResultSet;
 import com.hazelcast.ringbuffer.Ringbuffer;
@@ -157,7 +158,7 @@ public class ClientRingbufferProxy<E> extends ClientProxy implements Ringbuffer<
         checkNotNull(overflowPolicy, "overflowPolicy can't be null");
 
         Data element = toData(item);
-        ClientMessage request = RingbufferAddCodec.encodeRequest(name, overflowPolicy.getId(), element);
+        ClientMessage request = RingbufferAddAsyncCodec.encodeRequest(name, overflowPolicy.getId(), element);
         request.setPartitionId(partitionId);
 
         try {

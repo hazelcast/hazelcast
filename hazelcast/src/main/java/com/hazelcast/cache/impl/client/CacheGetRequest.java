@@ -25,10 +25,13 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.CachePermission;
 import com.hazelcast.spi.Operation;
 
 import javax.cache.expiry.ExpiryPolicy;
 import java.io.IOException;
+import java.security.Permission;
 
 /**
  * This client request  specifically calls {@link CacheGetOperation} on the server side.
@@ -83,6 +86,29 @@ public class CacheGetRequest
         final ObjectDataInput in = reader.getRawDataInput();
         key = in.readData();
         this.expiryPolicy = in.readObject();
+    }
+
+    @Override
+    public Permission getRequiredPermission() {
+        return new CachePermission(name, ActionConstants.ACTION_READ);
+    }
+
+    @Override
+    public Object[] getParameters() {
+        if (expiryPolicy == null) {
+            return new Object[]{key};
+        }
+        return new Object[]{key, expiryPolicy};
+    }
+
+    @Override
+    public String getMethodName() {
+        return "get";
+    }
+
+    @Override
+    public String getDistributedObjectName() {
+        return name;
     }
 
 }
