@@ -17,17 +17,20 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.core.ManagedContext;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.query.TruePredicate;
+import com.hazelcast.query.impl.FalsePredicate;
 import com.hazelcast.query.impl.QueryEntry;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
+
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.Map;
@@ -112,9 +115,16 @@ public class PartitionWideEntryOperation extends AbstractMultipleEntryOperation 
     }
 
     private boolean applyPredicate(Data dataKey, Object key, Object value) {
-        if (getPredicate() == null) {
+        Predicate predicate = getPredicate();
+
+        if (predicate == null || TruePredicate.INSTANCE == predicate) {
             return true;
         }
+
+        if (FalsePredicate.INSTANCE == predicate) {
+            return false;
+        }
+
         final SerializationService ss = getNodeEngine().getSerializationService();
         QueryEntry queryEntry = new QueryEntry(ss, dataKey, key, value);
         return getPredicate().apply(queryEntry);
