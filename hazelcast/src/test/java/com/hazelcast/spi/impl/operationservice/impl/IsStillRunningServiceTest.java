@@ -1,7 +1,9 @@
 package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
@@ -24,10 +26,12 @@ import org.junit.runner.RunWith;
 import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
@@ -89,7 +93,8 @@ public class IsStillRunningServiceTest extends HazelcastTestSupport {
         // the operation is going to run for 5 seconds, so we should be able to see it running on the remote node
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run()
+                    throws Exception {
                 int partitionId = operation.getPartitionId();
                 long callId = operation.getCallId();
                 OperationServiceImpl remoteOperationService = (OperationServiceImpl) getOperationService(remoteHz);
@@ -105,12 +110,13 @@ public class IsStillRunningServiceTest extends HazelcastTestSupport {
         // after the call is complete, the operation should not be running anymore eventually
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run()
+                    throws Exception {
                 InternalOperationService remoteOperationService = getOperationService(remoteHz);
                 OperationServiceImpl operationServiceImpl = (OperationServiceImpl) remoteOperationService;
                 IsStillRunningService isStillRunningService = operationServiceImpl.getIsStillRunningService();
-                boolean isRunning = isStillRunningService.isOperationExecuting(
-                        localAddress, operation.getPartitionId(), operation.getCallId());
+                boolean isRunning = isStillRunningService
+                        .isOperationExecuting(localAddress, operation.getPartitionId(), operation.getCallId());
                 assertFalse(isRunning);
             }
         });
@@ -146,11 +152,12 @@ public class IsStillRunningServiceTest extends HazelcastTestSupport {
         // after the call is complete, the operation should not be running anymore
         assertTrueEventually(new AssertTask() {
             @Override
-            public void run() throws Exception {
+            public void run()
+                    throws Exception {
                 OperationServiceImpl operationServiceImpl = (OperationServiceImpl) operationService;
                 IsStillRunningService isStillRunningService = operationServiceImpl.getIsStillRunningService();
-                boolean isRunning = isStillRunningService.isOperationExecuting(
-                        thisAddress, operation.getPartitionId(), operation.getCallId());
+                boolean isRunning = isStillRunningService
+                        .isOperationExecuting(thisAddress, operation.getPartitionId(), operation.getCallId());
                 assertFalse(isRunning);
             }
         });
@@ -230,6 +237,79 @@ public class IsStillRunningServiceTest extends HazelcastTestSupport {
         }, 2);
     }
 
+    @Test
+    public void testAsyncInvocationTimeoutsWhenNoResponseIsReceivedForIsStillRunningInvocation() {
+        int callTimeoutMillis = 500;
+        Config config = new Config();
+        config.setProperty(GroupProperties.PROP_OPERATION_CALL_TIMEOUT_MILLIS, String.valueOf(callTimeoutMillis));
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        HazelcastInstance local = factory.newHazelcastInstance(config);
+        HazelcastInstance remote = factory.newHazelcastInstance(config);
+        // invoke on the "remote" member
+        Address remoteAddress = getNode(remote).getThisAddress();
+
+        TargetInvocation orgInvocation = new TargetInvocation(getNodeEngineImpl(local), null,
+                new IsStillRunningServiceTest.DummyOperation(60000), remoteAddress, 0, 0, -1, null, true);
+        InvocationFuture future = orgInvocation.invoke();
+        final CountDownLatch timeoutLatch = new CountDownLatch(1);
+        future.andThen(new ExecutionCallback() {
+            @Override
+            public void onResponse(Object response) {
+
+            }
+
+            @Override
+            public void onFailure(Throwable t) {
+                if (t instanceof OperationTimeoutException) {
+                    timeoutLatch.countDown();
+                } else {
+                    t.printStackTrace();
+                }
+            }
+        });
+
+        long orgCallId = orgInvocation.op.getCallId();
+
+        TargetInvocation isStillExecutingInvocation = new TargetInvocation(getNodeEngineImpl(local), null,
+                new SleepingIsStillExecutingOperation(orgCallId, 60000), remoteAddress, 0, 0, -1, null, true);
+        InvocationFuture isStillExecutingFuture = isStillExecutingInvocation.invoke();
+        isStillExecutingFuture.andThen(new IsStillRunningService.IsOperationStillRunningCallback(orgInvocation));
+
+        assertOpenEventually(timeoutLatch, 30);
+    }
+
+    @Test(timeout = 60000)
+    public void testSyncInvocationTimeoutsWhenNoResponseIsReceivedForIsStillRunningInvocation()
+            throws TimeoutException, InterruptedException, ExecutionException {
+        int callTimeoutMillis = 500;
+        Config config = new Config();
+        config.setProperty(GroupProperties.PROP_OPERATION_CALL_TIMEOUT_MILLIS, String.valueOf(callTimeoutMillis));
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        HazelcastInstance local = factory.newHazelcastInstance(config);
+        HazelcastInstance remote = factory.newHazelcastInstance(config);
+        // invoke on the "remote" member
+        Address remoteAddress = getNode(remote).getThisAddress();
+
+        TargetInvocation orgInvocation = new TargetInvocation(getNodeEngineImpl(local), null,
+                new IsStillRunningServiceTest.DummyOperation(60000), remoteAddress, 0, 0, -1, null, true);
+        InvocationFuture future = orgInvocation.invoke();
+
+        long orgCallId = orgInvocation.op.getCallId();
+
+        TargetInvocation isStillExecutingInvocation = new TargetInvocation(getNodeEngineImpl(local), null,
+                new SleepingIsStillExecutingOperation(orgCallId, 60000), remoteAddress, 0, 0, -1, null, true);
+        InvocationFuture isStillExecutingFuture = isStillExecutingInvocation.invoke();
+        isStillExecutingFuture.andThen(new IsStillRunningService.IsOperationStillRunningCallback(orgInvocation));
+
+        try {
+            future.get();
+            fail();
+        } catch (ExecutionException e) {
+            assertTrue(e.getCause() instanceof OperationTimeoutException);
+        }
+
+    }
+
     public static class DummyOperation extends AbstractOperation {
         private int sleepMs;
 
@@ -258,5 +338,37 @@ public class IsStillRunningServiceTest extends HazelcastTestSupport {
             sleepMs = in.readInt();
         }
 
+    }
+
+    public static class SleepingIsStillExecutingOperation extends IsStillExecutingOperation {
+
+        private int sleepMs;
+
+        public SleepingIsStillExecutingOperation() {
+        }
+
+        public SleepingIsStillExecutingOperation(long operationCallId, int sleepMs) {
+            super(operationCallId, -1);
+            this.sleepMs = sleepMs;
+        }
+
+        @Override
+        public void run()
+                throws Exception {
+            sleepAtLeastMillis(sleepMs);
+            getResponseHandler().sendResponse(true);
+        }
+
+        @Override
+        protected void readInternal(ObjectDataInput in) throws IOException {
+            super.readInternal(in);
+            this.sleepMs = in.readInt();
+        }
+
+        @Override
+        protected void writeInternal(ObjectDataOutput out) throws IOException {
+            super.writeInternal(out);
+            out.writeInt(sleepMs);
+        }
     }
 }
