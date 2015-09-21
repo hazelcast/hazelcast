@@ -105,7 +105,9 @@ public class IsStillRunningService {
      */
     public void timeoutInvocationIfNotExecuting(Invocation invocation) {
         if (isStillRunningOperation(invocation)) {
-            // we don't want to is-still-running-operations; it can lead to a explosion of such invocations
+            // timeout the original invocation since IsStillExecutingOperation is timed out
+            final InvocationFuture future = invocation.invocationFuture;
+            future.set(false);
             return;
         }
 
@@ -215,7 +217,7 @@ public class IsStillRunningService {
         return true;
     }
 
-    private static class IsOperationStillRunningCallback implements ExecutionCallback<Object> {
+    static class IsOperationStillRunningCallback implements ExecutionCallback<Object> {
 
         private final Invocation invocation;
 
