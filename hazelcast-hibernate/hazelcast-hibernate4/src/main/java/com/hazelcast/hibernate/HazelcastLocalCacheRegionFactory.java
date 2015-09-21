@@ -49,6 +49,7 @@ public class HazelcastLocalCacheRegionFactory extends AbstractHazelcastCacheRegi
 
     public CollectionRegion buildCollectionRegion(final String regionName, final Properties properties,
                                                   final CacheDataDescription metadata) throws CacheException {
+        /* Collection regions are never versioned, so pass in null for metadata */
         final HazelcastCollectionRegion<LocalRegionCache> region = new HazelcastCollectionRegion<LocalRegionCache>(instance,
                 regionName, properties, metadata, new LocalRegionCache(regionName, instance, null));
         cleanupService.registerCache(region.getCache());
@@ -66,8 +67,9 @@ public class HazelcastLocalCacheRegionFactory extends AbstractHazelcastCacheRegi
     public NaturalIdRegion buildNaturalIdRegion(final String regionName, final Properties properties
             , final CacheDataDescription metadata)
             throws CacheException {
-        final HazelcastNaturalIdRegion<LocalRegionCache> region = new HazelcastNaturalIdRegion<LocalRegionCache>(instance,
-                regionName, properties, metadata, new LocalRegionCache(regionName, instance, metadata));
+        /* Natural id regions are never versioned, so pass in null for metadata */
+        HazelcastNaturalIdRegion<LocalRegionCache> region = new HazelcastNaturalIdRegion<LocalRegionCache>(instance,
+                regionName, properties, metadata, new LocalRegionCache(regionName, instance, null));
         cleanupService.registerCache(region.getCache());
         return region;
     }

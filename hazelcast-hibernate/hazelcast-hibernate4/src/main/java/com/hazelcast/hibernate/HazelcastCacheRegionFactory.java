@@ -45,8 +45,9 @@ public class HazelcastCacheRegionFactory extends AbstractHazelcastCacheRegionFac
 
     public CollectionRegion buildCollectionRegion(final String regionName, final Properties properties,
                                                   final CacheDataDescription metadata) throws CacheException {
+        /* Collection regions are never versioned, so pass in null for metadata */
         return new HazelcastCollectionRegion<IMapRegionCache>(instance, regionName, properties, metadata,
-                new IMapRegionCache(regionName, instance, properties, metadata));
+                new IMapRegionCache(regionName, instance, properties, null));
     }
 
     public EntityRegion buildEntityRegion(final String regionName, final Properties properties,
@@ -58,6 +59,7 @@ public class HazelcastCacheRegionFactory extends AbstractHazelcastCacheRegionFac
     public NaturalIdRegion buildNaturalIdRegion(final String regionName, final Properties properties,
                                                 final CacheDataDescription metadata)
             throws CacheException {
+        /* Natural id regions are never versioned, so pass in null for metadata */
         return new HazelcastNaturalIdRegion<IMapRegionCache>(instance, regionName, properties, metadata,
                 new IMapRegionCache(regionName, instance, properties, null));
     }
