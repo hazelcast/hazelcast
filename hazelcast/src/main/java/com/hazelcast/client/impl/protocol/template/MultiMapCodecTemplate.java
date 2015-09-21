@@ -69,7 +69,7 @@ public interface MultiMapCodecTemplate {
             event = {EventMessageConst.EVENT_ENTRY})
     void addEntryListener(String name, boolean includeValue);
 
-    @Request(id = 15, retryable = false, response = ResponseMessageConst.BOOLEAN)
+    @Request(id = 15, retryable = true, response = ResponseMessageConst.BOOLEAN)
     void removeEntryListener(String name, String registrationId);
 
     @Request(id = 16, retryable = false, response = ResponseMessageConst.VOID)

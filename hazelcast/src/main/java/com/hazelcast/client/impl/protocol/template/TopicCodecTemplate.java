@@ -32,7 +32,7 @@ public interface TopicCodecTemplate {
             , event = {EventMessageConst.EVENT_TOPIC})
     void addMessageListener(String name);
 
-    @Request(id = 3, retryable = false, response = ResponseMessageConst.BOOLEAN)
+    @Request(id = 3, retryable = true, response = ResponseMessageConst.BOOLEAN)
     void removeMessageListener(String name, String registrationId);
 
 }

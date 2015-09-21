@@ -93,8 +93,9 @@ public final class ClientListenerServiceImpl implements ClientListenerService {
                 return false;
             }
             ClientMessage removeRequest = listenerRemoveCodec.encodeRequest(realRegistrationId);
-            final Future future = new ClientInvocation(client, removeRequest).invoke();
-            return listenerRemoveCodec.decodeResponse((ClientMessage) future.get());
+            Future future = new ClientInvocation(client, removeRequest).invoke();
+            future.get();
+            return true;
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }

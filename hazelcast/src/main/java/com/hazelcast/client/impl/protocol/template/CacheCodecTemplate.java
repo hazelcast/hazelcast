@@ -90,10 +90,10 @@ public interface CacheCodecTemplate {
     @Request(id = 20, retryable = false, response = ResponseMessageConst.DATA)
     void put(String name, Data key, Data value, @Nullable Data expiryPolicy, boolean get, int completionId);
 
-    @Request(id = 21, retryable = false, response = ResponseMessageConst.BOOLEAN)
+    @Request(id = 21, retryable = true, response = ResponseMessageConst.BOOLEAN)
     void removeEntryListener(String name, String registrationId);
 
-    @Request(id = 22, retryable = false, response = ResponseMessageConst.BOOLEAN)
+    @Request(id = 22, retryable = true, response = ResponseMessageConst.BOOLEAN)
     void removeInvalidationListener(String name, String registrationId);
 
     @Request(id = 23, retryable = false, response = ResponseMessageConst.DATA)
