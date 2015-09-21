@@ -25,6 +25,8 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.CachePermission;
 import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.Operation;
 
@@ -104,7 +106,22 @@ public class CacheListenerRegistrationRequest
 
     @Override
     public Permission getRequiredPermission() {
-        return null;
+        return new CachePermission(name, ActionConstants.ACTION_LISTEN);
+    }
+
+    @Override
+    public Object[] getParameters() {
+        return new Object[]{cacheEntryListenerConfiguration};
+    }
+
+    @Override
+    public String getMethodName() {
+        return "registerCacheEntryListener";
+    }
+
+    @Override
+    public String getDistributedObjectName() {
+        return name;
     }
 
 }

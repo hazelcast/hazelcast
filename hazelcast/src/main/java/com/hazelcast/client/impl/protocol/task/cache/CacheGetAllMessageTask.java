@@ -25,9 +25,12 @@ import com.hazelcast.instance.Node;
 import com.hazelcast.map.impl.MapEntrySet;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.CachePermission;
 import com.hazelcast.spi.OperationFactory;
 
 import javax.cache.expiry.ExpiryPolicy;
+import java.security.Permission;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -76,13 +79,22 @@ public class CacheGetAllMessageTask
     }
 
     @Override
-    public String getServiceName() {
-        return CacheService.SERVICE_NAME;
+    public Permission getRequiredPermission() {
+        return new CachePermission(parameters.name, ActionConstants.ACTION_READ);
     }
 
     @Override
     public String getDistributedObjectName() {
         return parameters.name;
+    }
+    @Override
+    public String getMethodName() {
+        return "getAll";
+    }
+
+    @Override
+    public Object[] getParameters() {
+        return new Object[]{parameters.keys};
     }
 
 }

@@ -21,6 +21,8 @@ import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.ringbuffer.OverflowPolicy;
 import com.hazelcast.ringbuffer.impl.operations.AddOperation;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.RingBufferPermission;
 import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
@@ -49,11 +51,6 @@ public class AddRequest extends RingbufferRequest {
     }
 
     @Override
-    public Permission getRequiredPermission() {
-        return null;
-    }
-
-    @Override
     public void write(PortableWriter writer) throws IOException {
         super.write(writer);
         writer.getRawDataOutput().writeData(item);
@@ -63,5 +60,24 @@ public class AddRequest extends RingbufferRequest {
     public void read(PortableReader reader) throws IOException {
         super.read(reader);
         item = reader.getRawDataInput().readData();
+    }
+    @Override
+    public Permission getRequiredPermission() {
+        return new RingBufferPermission(name, ActionConstants.ACTION_PUT);
+    }
+
+    @Override
+    public Object[] getParameters() {
+        return new Object[]{item};
+    }
+
+    @Override
+    public String getMethodName() {
+        return "add";
+    }
+
+    @Override
+    public String getDistributedObjectName() {
+        return name;
     }
 }

@@ -22,9 +22,12 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CachePutCodec;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.CachePermission;
 import com.hazelcast.spi.Operation;
 
 import javax.cache.expiry.ExpiryPolicy;
+import java.security.Permission;
 
 /**
  * This client request  specifically calls {@link CachePutOperation} on the server side.
@@ -57,7 +60,29 @@ public class CachePutMessageTask
     }
 
     @Override
+    public Permission getRequiredPermission() {
+        return new CachePermission(parameters.name, ActionConstants.ACTION_PUT);
+    }
+
+    @Override
     public String getDistributedObjectName() {
         return parameters.name;
+    }
+
+    @Override
+    public Object[] getParameters() {
+        if (parameters.expiryPolicy == null) {
+            return new Object[]{parameters.key, parameters.value};
+        }
+        return new Object[]{parameters.key, parameters.value, parameters.expiryPolicy};
+    }
+
+    @Override
+    public String getMethodName() {
+        if (parameters.get) {
+            return "getAndPut";
+        }
+
+        return "put";
     }
 }

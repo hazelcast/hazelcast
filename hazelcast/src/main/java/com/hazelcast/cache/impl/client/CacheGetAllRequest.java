@@ -29,6 +29,8 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.CachePermission;
 import com.hazelcast.spi.OperationFactory;
 
 import javax.cache.expiry.ExpiryPolicy;
@@ -120,7 +122,7 @@ public class CacheGetAllRequest
 
     @Override
     public Permission getRequiredPermission() {
-        return null;
+        return new CachePermission(name, ActionConstants.ACTION_READ);
     }
 
     @Override

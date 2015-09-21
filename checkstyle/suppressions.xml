@@ -68,6 +68,7 @@
     <suppress checks="MethodCount" files="com/hazelcast/cache/impl/CacheRecordStore"/>
     <suppress checks="MethodCount" files="com/hazelcast/cache/impl/CacheService"/>
     <suppress checks="NPathComplexity" files="com/hazelcast/config/CacheConfig"/>
+    <suppress checks="NPathComplexity" files="com/hazelcast/cache/HazelcastExpiryPolicy"/>
     <suppress checks="NPathComplexity" files="com/hazelcast/cache/impl/HazelcastServerCachingProvider"/>
     <suppress checks="NPathComplexity" files="com/hazelcast/client/cache/impl/HazelcastClientCachingProvider"/>
     <suppress checks="NPathComplexity|CyclomaticComplexity" files="com/hazelcast/config/AbstractCacheConfig"/>
@@ -285,11 +286,14 @@
     <suppress checks="JavadocVariable" files="com/hazelcast/transaction/"/>
 
     <!-- Security -->
+    <suppress checks="ClassDataAbstractionCoupling" files="com/hazelcast/security/permission/ActionConstants"/>
     <suppress checks="JavadocMethod" files="com/hazelcast/security/"/>
     <suppress checks="JavadocType" files="com/hazelcast/security/"/>
     <suppress checks="JavadocMethod" files="com/hazelcast/security/"/>
     <suppress checks="JavadocVariable" files="com/hazelcast/security/"/>
     <suppress checks="BooleanExpressionComplexityCheck" files="com/hazelcast/security/permission/QueuePermission"/>
+    <suppress checks="BooleanExpressionComplexityCheck" files="com/hazelcast/security/permission/RingBufferPermission"/>
+    <suppress checks="BooleanExpressionComplexityCheck" files="com/hazelcast/security/permission/CachePermission"/>
     <suppress checks="BooleanExpressionComplexityCheck" files="com/hazelcast/security/permission/ReplicatedMapPermission"/>
     <suppress checks="BooleanExpressionComplexityCheck" files="com/hazelcast/security/permission/MapPermission"/>
     <suppress checks="BooleanExpressionComplexityCheck" files="com/hazelcast/security/permission/ListPermission"/>

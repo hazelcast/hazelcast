@@ -17,6 +17,8 @@
 package com.hazelcast.ringbuffer.impl.client;
 
 import com.hazelcast.ringbuffer.impl.operations.GenericOperation;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.RingBufferPermission;
 import com.hazelcast.spi.Operation;
 
 import java.security.Permission;
@@ -42,6 +44,21 @@ public class TailSequenceRequest extends RingbufferRequest {
 
     @Override
     public Permission getRequiredPermission() {
+        return new RingBufferPermission(name, ActionConstants.ACTION_READ);
+    }
+
+    @Override
+    public Object[] getParameters() {
         return null;
+    }
+
+    @Override
+    public String getMethodName() {
+        return "tailSequence";
+    }
+
+    @Override
+    public String getDistributedObjectName() {
+        return name;
     }
 }
