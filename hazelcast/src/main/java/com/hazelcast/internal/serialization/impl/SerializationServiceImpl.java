@@ -199,17 +199,19 @@ public class SerializationServiceImpl implements SerializationService {
             classDefMap.put(cd.getClassId(), cd);
         }
         for (ClassDefinition classDefinition : classDefinitions) {
-            registerClassDefinition(classDefinition, classDefMap, checkClassDefErrors, new HashSet<ClassDefinition>());
+            registerClassDefinition(classDefinition, classDefMap, checkClassDefErrors);
         }
     }
 
     private void registerClassDefinition(ClassDefinition cd, Map<Integer, ClassDefinition> classDefMap,
-                                         boolean checkClassDefErrors, Set<ClassDefinition> visited) {
+                                         boolean checkClassDefErrors) {
         // Check for recursive structures
-        if (visited.contains(cd)) {
+        ClassDefinition existingCd = portableContext.lookupClassDefinition(cd.getFactoryId(), cd.getClassId(), cd.getVersion());
+        if(existingCd != null) {
             return;
         }
-        visited.add(cd);
+
+        portableContext.registerClassDefinition(cd);
 
         final Set<String> fieldNames = cd.getFieldNames();
         for (String fieldName : fieldNames) {
@@ -218,7 +220,7 @@ public class SerializationServiceImpl implements SerializationService {
                 int classId = fd.getClassId();
                 ClassDefinition nestedCd = classDefMap.get(classId);
                 if (nestedCd != null) {
-                    registerClassDefinition(nestedCd, classDefMap, checkClassDefErrors, visited);
+                    registerClassDefinition(nestedCd, classDefMap, checkClassDefErrors);
                     portableContext.registerClassDefinition(nestedCd);
                 } else if (checkClassDefErrors) {
                     throw new HazelcastSerializationException("Could not find registered ClassDefinition for class-id: "
@@ -226,7 +228,6 @@ public class SerializationServiceImpl implements SerializationService {
                 }
             }
         }
-        portableContext.registerClassDefinition(cd);
     }
 
     @Override
