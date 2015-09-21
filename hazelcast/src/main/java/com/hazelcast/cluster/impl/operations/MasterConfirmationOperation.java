@@ -55,7 +55,7 @@ public class MasterConfirmationOperation extends AbstractClusterOperation implem
             operationService.send(new MemberRemoveOperation(clusterService.getThisAddress()), endpoint);
         } else {
             if (clusterService.isMaster()) {
-                clusterService.acceptMasterConfirmation(member, timestamp);
+                clusterService.getClusterHeartbeatManager().acceptMasterConfirmation(member, timestamp);
             } else {
                 logger.warning(endpoint + " has sent MasterConfirmation, but this node is not master!");
             }

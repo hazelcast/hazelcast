@@ -57,6 +57,8 @@ public abstract class AbstractJoiner implements Joiner {
     protected final ConcurrentMap<Address, Boolean> blacklistedAddresses = new ConcurrentHashMap<Address, Boolean>();
     protected final Config config;
     protected final Node node;
+    protected final ClusterServiceImpl clusterService;
+    protected final ClusterJoinManager clusterJoinManager;
     protected final ILogger logger;
 
     private final long mergeNextRunDelayMs;
@@ -66,6 +68,8 @@ public abstract class AbstractJoiner implements Joiner {
         this.node = node;
         this.logger = node.loggingService.getLogger(getClass());
         this.config = node.config;
+        this.clusterService = node.getClusterService();
+        this.clusterJoinManager = clusterService.getClusterJoinManager();
         mergeNextRunDelayMs = node.groupProperties.getMillis(GroupProperty.MERGE_NEXT_RUN_DELAY_SECONDS);
     }
 
@@ -117,7 +121,7 @@ public abstract class AbstractJoiner implements Joiner {
                 ensureConnectionToAllMembers();
             }
 
-            if (node.getClusterService().getSize() == 1) {
+            if (clusterService.getSize() == 1) {
                 final StringBuilder sb = new StringBuilder("\n");
                 sb.append(node.clusterService.membersString());
                 logger.info(sb.toString());
@@ -139,7 +143,7 @@ public abstract class AbstractJoiner implements Joiner {
                 }
 
                 allConnected = true;
-                Collection<Member> members = node.getClusterService().getMembers();
+                Collection<Member> members = clusterService.getMembers();
                 for (Member member : members) {
                     if (!member.localMember() && node.connectionManager.getOrConnect(member.getAddress()) == null) {
                         allConnected = false;
@@ -168,9 +172,8 @@ public abstract class AbstractJoiner implements Joiner {
             return false;
         }
 
-        ClusterServiceImpl clusterService = node.getClusterService();
         try {
-            boolean validJoinRequest = clusterService.validateJoinMessage(joinMessage);
+            boolean validJoinRequest = clusterJoinManager.validateJoinMessage(joinMessage);
             if (!validJoinRequest) {
                 logger.finest("Cannot process split brain merge message from " + joinMessage.getAddress()
                         + ", since join-message could not be validated.");
@@ -303,7 +306,7 @@ public abstract class AbstractJoiner implements Joiner {
         }
 
         Operation mergeClustersOperation = new MergeClustersOperation(targetAddress);
-        mergeClustersOperation.setNodeEngine(node.nodeEngine).setService(node.getClusterService())
+        mergeClustersOperation.setNodeEngine(node.nodeEngine).setService(clusterService)
                 .setOperationResponseHandler(createEmptyResponseHandler());
         operationService.runOperationOnCallingThread(mergeClustersOperation);
     }

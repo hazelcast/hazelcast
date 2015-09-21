@@ -18,6 +18,7 @@ package com.hazelcast.test;
 
 import com.hazelcast.cluster.Joiner;
 import com.hazelcast.cluster.impl.AbstractJoiner;
+import com.hazelcast.cluster.impl.ClusterJoinManager;
 import com.hazelcast.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.AddressPicker;
@@ -205,9 +206,10 @@ public final class TestNodeRegistry {
                     node.setJoined();
                     node.setAsMaster();
                 } else {
+                    final ClusterJoinManager clusterJoinManager = node.clusterService.getClusterJoinManager();
                     for (int i = 0; !node.joined() && node.getState() == NodeState.ACTIVE && i < 2000; i++) {
                         try {
-                            node.clusterService.sendJoinRequest(node.getMasterAddress(), true);
+                            clusterJoinManager.sendJoinRequest(node.getMasterAddress(), true);
                             Thread.sleep(50);
                         } catch (InterruptedException e) {
                             e.printStackTrace();

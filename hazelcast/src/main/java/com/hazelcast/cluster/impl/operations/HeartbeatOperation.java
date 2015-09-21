@@ -50,7 +50,7 @@ public final class HeartbeatOperation extends AbstractClusterOperation
             }
             return;
         }
-        service.onHeartbeat(member, timestamp);
+        service.getClusterHeartbeatManager().onHeartbeat(member, timestamp);
     }
 
     @Override

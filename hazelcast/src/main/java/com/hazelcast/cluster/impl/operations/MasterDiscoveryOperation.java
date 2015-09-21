@@ -37,7 +37,7 @@ public class MasterDiscoveryOperation extends AbstractClusterOperation implement
     @Override
     public void run() {
         ClusterServiceImpl cm = getService();
-        cm.answerMasterQuestion(joinMessage, getConnection());
+        cm.getClusterJoinManager().answerMasterQuestion(joinMessage, getConnection());
     }
 
     @Override

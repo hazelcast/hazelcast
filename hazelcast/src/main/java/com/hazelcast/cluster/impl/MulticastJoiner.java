@@ -83,7 +83,7 @@ public class MulticastJoiner extends AbstractJoiner {
                 if (logger.isFinestEnabled()) {
                     logger.finest("Joining to master " + master);
                 }
-                node.clusterService.sendJoinRequest(master, true);
+                clusterJoinManager.sendJoinRequest(master, true);
             } else {
                 break;
             }

@@ -112,7 +112,7 @@ public class TcpIpJoiner extends AbstractJoiner {
                 if (logger.isFinestEnabled()) {
                     logger.finest("Sending joinRequest " + targetAddress);
                 }
-                node.clusterService.sendJoinRequest(targetAddress, true);
+                clusterJoinManager.sendJoinRequest(targetAddress, true);
                 //noinspection BusyWait
                 Thread.sleep(JOIN_RETRY_WAIT_TIME);
             }
@@ -254,7 +254,7 @@ public class TcpIpJoiner extends AbstractJoiner {
                 if (logger.isFinestEnabled()) {
                     logger.finest("Sending join request to " + masterAddress);
                 }
-                node.clusterService.sendJoinRequest(masterAddress, true);
+                clusterJoinManager.sendJoinRequest(masterAddress, true);
             } else {
                 sendMasterQuestion(possibleAddresses);
             }
@@ -321,7 +321,7 @@ public class TcpIpJoiner extends AbstractJoiner {
                 if (logger.isFinestEnabled()) {
                     logger.finest("Joining to master " + master);
                 }
-                node.clusterService.sendJoinRequest(master, true);
+                clusterJoinManager.sendJoinRequest(master, true);
             } else {
                 break;
             }
@@ -354,7 +354,7 @@ public class TcpIpJoiner extends AbstractJoiner {
             if (logger.isFinestEnabled()) {
                 logger.finest("Sending master question to " + address);
             }
-            if (node.clusterService.sendMasterQuestion(address)) {
+            if (clusterJoinManager.sendMasterQuestion(address)) {
                 sent = true;
             }
         }
