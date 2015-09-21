@@ -20,13 +20,16 @@ package com.hazelcast.hibernate;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.Hazelcast;
 
+import com.hazelcast.hibernate.entity.AnnotatedEntity;
 import com.hazelcast.hibernate.entity.DummyEntity;
 import com.hazelcast.hibernate.entity.DummyProperty;
 import com.hazelcast.hibernate.instance.HazelcastMockInstanceLoader;
+import org.hibernate.Criteria;
 import org.hibernate.Query;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
+import org.hibernate.criterion.Restrictions;
 import org.hibernate.stat.SecondLevelCacheStatistics;
 import org.junit.After;
 import org.junit.Before;
@@ -38,6 +41,7 @@ import java.util.List;
 import java.util.Properties;
 import java.util.Set;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 public abstract class HibernateStatisticsTestSupport extends HibernateTestSupport {
 
@@ -46,6 +50,7 @@ public abstract class HibernateStatisticsTestSupport extends HibernateTestSuppor
 
     protected final String CACHE_ENTITY = DummyEntity.class.getName();
     protected final String CACHE_PROPERTY = DummyProperty.class.getName();
+    protected final String ANNOTATED_ENTITY = AnnotatedEntity.class.getName();
     private static  TestHazelcastFactory factory;
 
     @Before
@@ -96,6 +101,17 @@ public abstract class HibernateStatisticsTestSupport extends HibernateTestSuppor
         } finally {
             session.close();
         }
+    }
+
+    protected void insertAnnotatedEntities(int count) {
+        Session session = sf.openSession();
+        Transaction tx = session.beginTransaction();
+        for(int i=0; i< count; i++) {
+            AnnotatedEntity annotatedEntity = new AnnotatedEntity("dummy:"+i);
+            session.save(annotatedEntity);
+        }
+        tx.commit();
+        session.close();
     }
 
     protected List<DummyEntity> executeQuery(SessionFactory factory) {
@@ -204,5 +220,54 @@ public abstract class HibernateStatisticsTestSupport extends HibernateTestSuppor
         SecondLevelCacheStatistics dummyEntityCacheStats = sf.getStatistics().getSecondLevelCacheStatistics(CACHE_ENTITY);
         assertEquals(10, dummyEntityCacheStats.getMissCount());
         assertEquals(0, dummyEntityCacheStats.getHitCount());
+    }
+
+    @Test
+    public void testNaturalIdCacheStillHitsAfterIrrelevantNaturalIdUpdate() {
+        insertAnnotatedEntities(2);
+
+        Session session = sf.openSession();
+        Transaction tx = session.beginTransaction();
+
+        //1 cache hit since dummy:1 just inserted and still in the cache
+        AnnotatedEntity toBeUpdated = (AnnotatedEntity)session.byNaturalId(AnnotatedEntity.class).using("title", "dummy:1").getReference();
+        toBeUpdated.setTitle("dummy101");
+        tx.commit();
+        session.close();
+
+        assertEquals(1, sf.getStatistics().getNaturalIdCacheHitCount());
+
+        //only dummy:1 should be evicted from cache on contrary to behavior of hibernate query cache without natural ids
+        session = sf.openSession();
+        Criteria criteria = session.createCriteria(AnnotatedEntity.class).add(Restrictions.naturalId().set("title","dummy:0"))
+                                   .setCacheable(true);
+        criteria.uniqueResult();
+
+        //cache hit dummy:0 + previous hit
+        assertEquals(2, sf.getStatistics().getNaturalIdCacheHitCount());
+    }
+
+    @Test
+    public void testNaturalIdCacheEvictsEntityOnUpdate() {
+        insertAnnotatedEntities(1);
+
+        Session session = sf.openSession();
+        Transaction tx = session.beginTransaction();
+
+        //1 cache hit since dummy:0 just inserted and still in the cache
+        AnnotatedEntity toBeUpdated = (AnnotatedEntity)session.byNaturalId(AnnotatedEntity.class).using("title", "dummy:0").getReference();
+        toBeUpdated.setTitle("dummy101");
+        tx.commit();
+        session.close();
+
+        assertEquals(1, sf.getStatistics().getNaturalIdCacheHitCount());
+
+        //dummy:0 should be evicted and this leads to a cache miss
+        session = sf.openSession();
+        Criteria criteria = session.createCriteria(AnnotatedEntity.class).add(Restrictions.naturalId().set("title","dummy:0"))
+                                   .setCacheable(true);
+        criteria.uniqueResult();
+
+        assertEquals(1, sf.getStatistics().getNaturalIdCacheMissCount());
     }
 }

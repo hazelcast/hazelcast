@@ -39,6 +39,7 @@
 
         <mapping resource="com/hazelcast/hibernate/entity/DummyEntity.hbm.xml"/>
         <mapping resource="com/hazelcast/hibernate/entity/DummyProperty.hbm.xml"/>
+        <mapping class="com.hazelcast.hibernate.entity.AnnotatedEntity"/>
 
     </session-factory>
 </hibernate-configuration>
