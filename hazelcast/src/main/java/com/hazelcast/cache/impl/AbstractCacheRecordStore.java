@@ -607,7 +607,9 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
 
             if (isEventsEnabled()) {
                 publishEvent(createCacheUpdatedEvent(eventDataKey, eventDataValue, eventDataOldValue,
-                                                     record.getExpirationTime(), record.getAccessHit(),
+                                                     record.getExpirationTime(),
+                                                     record.getAccessTime(),
+                                                     record.getAccessHit(),
                                                      origin, completionId));
             }
             return record;
@@ -1447,7 +1449,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
 
     protected void closeListeners() {
         InternalEventService eventService = (InternalEventService) cacheService.getNodeEngine().getEventService();
-        Collection<EventRegistration> candidates = eventService.getRegistrations(CacheService.SERVICE_NAME, name);
+        Collection<EventRegistration> candidates = eventService.getRegistrations(ICacheService.SERVICE_NAME, name);
         for (EventRegistration eventRegistration : candidates) {
             eventService.close(eventRegistration);
         }

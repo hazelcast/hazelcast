@@ -17,8 +17,8 @@
 package com.hazelcast.cache.impl.operation;
 
 import com.hazelcast.cache.impl.CachePartitionSegment;
-import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.ICacheRecordStore;
+import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.cache.impl.record.CacheRecord;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.nio.ObjectDataInput;
@@ -78,8 +78,8 @@ public class CacheReplicationOperation extends AbstractOperation {
 
     @Override
     public void beforeRun() throws Exception {
-        //        //migrate CacheConfigs first
-        CacheService service = getService();
+        // Migrate CacheConfigs first
+        ICacheService service = getService();
         for (CacheConfig config : configs) {
             service.putCacheConfigIfAbsent(config);
         }
@@ -88,7 +88,7 @@ public class CacheReplicationOperation extends AbstractOperation {
     @Override
     public void run()
             throws Exception {
-        CacheService service = getService();
+        ICacheService service = getService();
         for (Map.Entry<String, Map<Data, CacheRecord>> entry : data.entrySet()) {
             ICacheRecordStore cache = service.getOrCreateRecordStore(entry.getKey(), getPartitionId());
             Map<Data, CacheRecord> map = entry.getValue();
@@ -107,7 +107,7 @@ public class CacheReplicationOperation extends AbstractOperation {
 
     @Override
     public String getServiceName() {
-        return CacheService.SERVICE_NAME;
+        return ICacheService.SERVICE_NAME;
     }
 
     @Override

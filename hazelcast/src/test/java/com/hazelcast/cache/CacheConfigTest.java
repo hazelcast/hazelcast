@@ -249,6 +249,28 @@ public class CacheConfigTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void cacheConfigXmlTest_DefaultMergePolicy() throws IOException {
+        Config config = new XmlConfigBuilder(configUrl1).build();
+
+        CacheSimpleConfig cacheWithDefaultMergePolicyConfig =
+                config.getCacheConfig("cacheWithDefaultMergePolicy");
+
+        assertNotNull(cacheWithDefaultMergePolicyConfig);
+        assertEquals(CacheSimpleConfig.DEFAULT_CACHE_MERGE_POLICY, cacheWithDefaultMergePolicyConfig.getMergePolicy());
+    }
+
+    @Test
+    public void cacheConfigXmlTest_CustomMergePolicy() throws IOException {
+        Config config = new XmlConfigBuilder(configUrl1).build();
+
+        CacheSimpleConfig cacheWithCustomMergePolicyConfig =
+                config.getCacheConfig("cacheWithCustomMergePolicy");
+
+        assertNotNull(cacheWithCustomMergePolicyConfig);
+        assertEquals("MyDummyMergePolicy", cacheWithCustomMergePolicyConfig.getMergePolicy());
+    }
+
+    @Test
     public void cacheConfigXmlTest_constructingToCacheConfig() throws Exception {
         Config config1 = new XmlConfigBuilder(configUrl1).build();
 
