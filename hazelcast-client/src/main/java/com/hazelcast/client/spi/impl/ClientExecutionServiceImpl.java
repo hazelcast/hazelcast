@@ -39,7 +39,7 @@ public final class ClientExecutionServiceImpl implements ClientExecutionService 
 
     private static final ILogger LOGGER = Logger.getLogger(ClientExecutionService.class);
     private static final long TERMINATE_TIMEOUT_SECONDS = 30;
-    private final ExecutorService executor;
+    private final ExecutorService userExecutor;
     private final ExecutorService internalExecutor;
     private final ScheduledExecutorService scheduledExecutor;
 
@@ -59,9 +59,9 @@ public final class ClientExecutionServiceImpl implements ClientExecutionService 
                         throw new RejectedExecutionException(message);
                     }
                 });
-        executor = new ThreadPoolExecutor(executorPoolSize, executorPoolSize, 0L, TimeUnit.MILLISECONDS,
+        userExecutor = new ThreadPoolExecutor(executorPoolSize, executorPoolSize, 0L, TimeUnit.MILLISECONDS,
                 new LinkedBlockingQueue<Runnable>(),
-                new PoolExecutorThreadFactory(threadGroup, name + ".cached-", classLoader),
+                new PoolExecutorThreadFactory(threadGroup, name + ".user-", classLoader),
                 new RejectedExecutionHandler() {
                     public void rejectedExecution(Runnable r, ThreadPoolExecutor executor) {
                         String message = "Internal executor rejected task: " + r + ", because client is shutting down...";
@@ -76,7 +76,7 @@ public final class ClientExecutionServiceImpl implements ClientExecutionService 
     }
 
     public <T> ICompletableFuture<T> submitInternal(Runnable runnable) {
-        CompletableFutureTask futureTask = new CompletableFutureTask(runnable, null, getAsyncExecutor());
+        CompletableFutureTask futureTask = new CompletableFutureTask(runnable, null, internalExecutor);
         internalExecutor.submit(futureTask);
         return futureTask;
     }
@@ -87,20 +87,20 @@ public final class ClientExecutionServiceImpl implements ClientExecutionService 
 
     @Override
     public void execute(Runnable command) {
-        executor.execute(command);
+        userExecutor.execute(command);
     }
 
     @Override
     public ICompletableFuture<?> submit(Runnable task) {
         CompletableFutureTask futureTask = new CompletableFutureTask(task, null, getAsyncExecutor());
-        internalExecutor.submit(futureTask);
+        userExecutor.submit(futureTask);
         return futureTask;
     }
 
     @Override
     public <T> ICompletableFuture<T> submit(Callable<T> task) {
         CompletableFutureTask<T> futureTask = new CompletableFutureTask<T>(task, getAsyncExecutor());
-        internalExecutor.submit(futureTask);
+        userExecutor.submit(futureTask);
         return futureTask;
     }
 
@@ -117,7 +117,7 @@ public final class ClientExecutionServiceImpl implements ClientExecutionService 
     public ScheduledFuture<?> scheduleAtFixedRate(final Runnable command, long initialDelay, long period, TimeUnit unit) {
         return scheduledExecutor.scheduleAtFixedRate(new Runnable() {
             public void run() {
-                execute(command);
+                executeInternal(command);
             }
         }, initialDelay, period, unit);
     }
@@ -133,29 +133,25 @@ public final class ClientExecutionServiceImpl implements ClientExecutionService 
 
     @Override
     public ExecutorService getAsyncExecutor() {
-        return executor;
+        return userExecutor;
     }
 
     public void shutdown() {
-        internalExecutor.shutdown();
-        try {
-            boolean success = internalExecutor.awaitTermination(TERMINATE_TIMEOUT_SECONDS, TimeUnit.SECONDS);
-            if (!success) {
-                LOGGER.warning("InternalExecutor awaitTermination could not completed in "
-                        + TERMINATE_TIMEOUT_SECONDS + " seconds");
-            }
-        } catch (InterruptedException e) {
-            LOGGER.warning("Internal Executor await termination is interrupted", e);
-        }
-        scheduledExecutor.shutdownNow();
+        shutdownExecutor("internal", internalExecutor);
+        shutdownExecutor("scheduled", scheduledExecutor);
+        shutdownExecutor("user", userExecutor);
+    }
+
+    private void shutdownExecutor(String name, ExecutorService executor) {
         executor.shutdown();
         try {
             boolean success = executor.awaitTermination(TERMINATE_TIMEOUT_SECONDS, TimeUnit.SECONDS);
             if (!success) {
-                LOGGER.warning("Executor awaitTermination could not completed in " + TERMINATE_TIMEOUT_SECONDS + " seconds");
+                LOGGER.warning(name + " executor awaitTermination could not completed in "
+                        + TERMINATE_TIMEOUT_SECONDS + " seconds");
             }
         } catch (InterruptedException e) {
-            LOGGER.warning("Executor await termination is interrupted", e);
+            LOGGER.warning(name + " executor await termination is interrupted", e);
         }
     }
 }
