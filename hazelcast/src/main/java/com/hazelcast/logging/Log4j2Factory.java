@@ -67,8 +67,10 @@ public class Log4j2Factory extends LoggerFactorySupport {
                 return Level.INFO;
             } else if (logger.isWarnEnabled()) {
                 return Level.WARNING;
-            } else {
+            } else if (logger.isFatalEnabled()) {
                 return Level.SEVERE;
+            } else {
+                return Level.OFF;
             }
         }
 
@@ -98,6 +100,8 @@ public class Log4j2Factory extends LoggerFactorySupport {
                 return org.apache.logging.log4j.Level.DEBUG;
             } else if (Level.FINEST == level) {
                 return org.apache.logging.log4j.Level.DEBUG;
+            } else if (Level.OFF == level) {
+                return org.apache.logging.log4j.Level.OFF;
             } else {
                 return org.apache.logging.log4j.Level.INFO;
             }

@@ -45,21 +45,23 @@ public class Slf4jFactory extends LoggerFactorySupport {
                 logger.error(message);
             } else if (Level.WARNING == level) {
                 logger.warn(message);
-            } else {
+            } else if (Level.OFF != level) {
                 logger.info(message);
             }
         }
 
         @Override
         public Level getLevel() {
-            if (logger.isErrorEnabled()) {
-                return Level.SEVERE;
-            } else if (logger.isWarnEnabled()) {
-                return Level.WARNING;
+            if (logger.isDebugEnabled()) {
+                return Level.FINEST;
             } else if (logger.isInfoEnabled()) {
                 return Level.INFO;
+            } else if (logger.isWarnEnabled()) {
+                return Level.WARNING;
+            } else if (logger.isErrorEnabled()) {
+                return Level.SEVERE;
             } else {
-                return Level.FINEST;
+                return Level.OFF;
             }
         }
 
@@ -90,7 +92,7 @@ public class Slf4jFactory extends LoggerFactorySupport {
                 logger.warn(message, thrown);
             } else if (Level.SEVERE == level) {
                 logger.error(message, thrown);
-            } else {
+            } else if (Level.OFF != level) {
                 logger.info(message, thrown);
             }
         }
