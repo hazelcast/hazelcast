@@ -219,7 +219,7 @@ public interface QueueCodecTemplate {
      * @param registrationId Id of the listener registration.
      * @return True if the item listener is removed, false otherwise
      */
-    @Request(id = 18, retryable = false, response = ResponseMessageConst.BOOLEAN)
+    @Request(id = 18, retryable = true, response = ResponseMessageConst.BOOLEAN)
     Object removeListener(String name, String registrationId);
 
     /**

@@ -404,7 +404,7 @@ public interface MapCodecTemplate {
      * @param registrationId id of registered listener.
      * @return true if registration is removed, false otherwise.
      */
-    @Request(id = 30, retryable = false, response = ResponseMessageConst.BOOLEAN)
+    @Request(id = 30, retryable = true, response = ResponseMessageConst.BOOLEAN)
     Object removeEntryListener(String name, String registrationId);
 
     /**
@@ -429,7 +429,7 @@ public interface MapCodecTemplate {
      * @param registrationId id of register
      * @return true if registration is removed, false otherwise.
      */
-    @Request(id = 32, retryable = false, response = ResponseMessageConst.BOOLEAN)
+    @Request(id = 32, retryable = true, response = ResponseMessageConst.BOOLEAN)
     Object removePartitionLostListener(String name, String registrationId);
 
     /**

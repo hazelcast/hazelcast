@@ -21,7 +21,7 @@ import com.hazelcast.nio.serialization.PortableWriter;
 
 import java.io.IOException;
 
-public abstract class BaseClientRemoveListenerRequest extends CallableClientRequest {
+public abstract class BaseClientRemoveListenerRequest extends CallableClientRequest implements RetryableRequest {
 
     protected String name;
     protected String registrationId;

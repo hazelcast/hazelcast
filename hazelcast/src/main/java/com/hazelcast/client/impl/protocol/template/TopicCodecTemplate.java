@@ -51,7 +51,7 @@ public interface TopicCodecTemplate {
      * @param registrationId Id of listener registration.
      * @return True if registration is removed, false otherwise
      */
-    @Request(id = 3, retryable = false, response = ResponseMessageConst.BOOLEAN)
+    @Request(id = 3, retryable = true, response = ResponseMessageConst.BOOLEAN)
     Object removeMessageListener(String name, String registrationId);
 
 

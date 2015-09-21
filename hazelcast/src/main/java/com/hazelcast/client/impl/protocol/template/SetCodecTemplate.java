@@ -162,7 +162,7 @@ public interface SetCodecTemplate {
      * @param registrationId The id retrieved during registration.
      * @return true if the listener with the provided id existed and removed, false otherwise.
      */
-    @Request(id = 12, retryable = false, response = ResponseMessageConst.BOOLEAN)
+    @Request(id = 12, retryable = true, response = ResponseMessageConst.BOOLEAN)
     Object removeListener(String name, String registrationId);
     
     /**

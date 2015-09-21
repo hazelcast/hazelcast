@@ -181,7 +181,7 @@ public interface MultiMapCodecTemplate {
      * @param registrationId Registration id of listener
      * @return True if registration is removed, false otherwise
      */
-    @Request(id = 15, retryable = false, response = ResponseMessageConst.BOOLEAN)
+    @Request(id = 15, retryable = true, response = ResponseMessageConst.BOOLEAN)
     Object removeEntryListener(String name, String registrationId);
 
     /**

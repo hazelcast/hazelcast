@@ -152,7 +152,7 @@ public interface ListCodecTemplate {
      * @param registrationId The id of the listener which was provided during registration.
      * @return True if unregistered, false otherwise.
      */
-    @Request(id = 12, retryable = false, response = ResponseMessageConst.BOOLEAN)
+    @Request(id = 12, retryable = true, response = ResponseMessageConst.BOOLEAN)
     Object removeListener(String name, String registrationId);
 
     /**
