@@ -36,14 +36,11 @@ public class InvocationFutureTest extends HazelcastTestSupport {
         operationService = getOperationService(local);
     }
 
-    // ================= isDone ==========================================
-
     @Test
     public void isDone_whenNullResponse() throws ExecutionException, InterruptedException {
         DummyOperation op = new DummyOperation(null);
 
         InternalCompletableFuture future = operationService.invokeOnTarget(null, op, getAddress(local));
-        // first we wait for the future to complete.
         future.get();
 
         assertTrue(future.isDone());
@@ -51,76 +48,40 @@ public class InvocationFutureTest extends HazelcastTestSupport {
 
     @Test
     public void isDone_whenWaitResponse() {
-        DummyOperation op = new DummyOperation() {
-            {
-                // we need to set the call-id to prevent running the operation on the calling-thread.
-                setPartitionId(1);
-            }
-
-            @Override
-            public void run() throws Exception {
-                Thread.sleep(5000);
-            }
-        };
+        DummyOperation op = new GetLostPartitionOperation();
 
         InvocationFuture future = (InvocationFuture) operationService.invokeOnTarget(null, op, getAddress(local));
         future.set(InternalResponse.WAIT_RESPONSE);
+
         assertFalse(future.isDone());
     }
 
     @Test
     public void isDone_whenInterruptedResponse() {
-        DummyOperation op = new DummyOperation() {
-            {
-                // we need to set the call-id to prevent running the operation on the calling-thread.
-                setPartitionId(1);
-            }
-
-            @Override
-            public void run() throws Exception {
-                Thread.sleep(5000);
-            }
-        };
+        DummyOperation op = new GetLostPartitionOperation();
 
         InvocationFuture future = (InvocationFuture) operationService.invokeOnTarget(null, op, getAddress(local));
         future.set(InternalResponse.INTERRUPTED_RESPONSE);
+
         assertTrue(future.isDone());
     }
 
     @Test
     public void isDone_whenTimeoutResponse() {
-        DummyOperation op = new DummyOperation() {
-            {
-                // we need to set the call-id to prevent running the operation on the calling-thread.
-                setPartitionId(1);
-            }
-
-            @Override
-            public void run() throws Exception {
-                Thread.sleep(5000);
-            }
-        };
+        DummyOperation op = new GetLostPartitionOperation();
 
         InvocationFuture future = (InvocationFuture) operationService.invokeOnTarget(null, op, getAddress(local));
         future.set(InternalResponse.TIMEOUT_RESPONSE);
+
         assertTrue(future.isDone());
     }
 
     @Test
     public void isDone_whenNoResponse() {
-        DummyOperation op = new DummyOperation() {
-            {
-                // we need to set the call-id to prevent running the operation on the calling-thread.
-                setPartitionId(1);
-            }
-
-            @Override
-            public void run() throws Exception {
-                Thread.sleep(5000);
-            }
-        };
+        DummyOperation op = new GetLostPartitionOperation();
 
         InternalCompletableFuture future = operationService.invokeOnTarget(null, op, getAddress(local));
+
         assertFalse(future.isDone());
     }
 
@@ -129,22 +90,19 @@ public class InvocationFutureTest extends HazelcastTestSupport {
         DummyOperation op = new DummyOperation("foobar");
 
         InternalCompletableFuture future = operationService.invokeOnTarget(null, op, getAddress(local));
+
         assertTrue(future.isDone());
     }
-
-    // ========================= andThen ==================================
 
     // There is a bug: https://github.com/hazelcast/hazelcast/issues/5001
     @Test
     public void andThen_whenNullResponse_thenCallbackExecuted() throws ExecutionException, InterruptedException {
         DummyOperation op = new DummyOperation(null);
-
+        final ExecutionCallback callback = mock(ExecutionCallback.class);
         InternalCompletableFuture future = operationService.invokeOnTarget(null, op, getAddress(local));
-        // first we wait for the future to complete.
         future.get();
 
-        // if we now register a callback, it could complete immediately since a response already has been set (NULL_RESPONSE)
-        final ExecutionCallback callback = mock(ExecutionCallback.class);
+        // Callback can be completed immediately since a response (NULL_RESPONSE) has been already set.
         future.andThen(callback);
 
         assertTrueEventually(new AssertTask() {
@@ -154,4 +112,18 @@ public class InvocationFutureTest extends HazelcastTestSupport {
             }
         });
     }
+
+    // Needed to have an invocation and this is the easiest way how to get one and do not bother with its result.
+    private static class GetLostPartitionOperation extends DummyOperation {
+        {
+            // we need to set the call-id to prevent running the operation on the calling-thread.
+            setPartitionId(1);
+        }
+
+        @Override
+        public void run() throws Exception {
+            Thread.sleep(5000);
+        }
+    }
+
 }

@@ -186,13 +186,13 @@ public final class ClassicOperationExecutor implements OperationExecutor {
         return threads;
     }
 
-    @SuppressFBWarnings({"EI_EXPOSE_REP" })
+    @SuppressFBWarnings({ "EI_EXPOSE_REP" })
     @Override
     public OperationRunner[] getPartitionOperationRunners() {
         return partitionOperationRunners;
     }
 
-    @SuppressFBWarnings({"EI_EXPOSE_REP" })
+    @SuppressFBWarnings({ "EI_EXPOSE_REP" })
     @Override
     public OperationRunner[] getGenericOperationRunners() {
         return genericOperationRunners;
@@ -248,18 +248,24 @@ public final class ClassicOperationExecutor implements OperationExecutor {
             return true;
         }
 
+        // allowed to invoke non partition specific task
         if (op.getPartitionId() < 0) {
             return true;
         }
 
-        // we are allowed to invoke from non PartitionOperationThreads (including GenericOperationThread)
+        // allowed to invoke from non PartitionOperationThreads (including GenericOperationThread)
         if (!(currentThread instanceof PartitionOperationThread)) {
             return true;
         }
 
-        // we are only allowed to invoke from a PartitionOperationThread if the operation belongs to that
-        // PartitionOperationThread.
         PartitionOperationThread partitionThread = (PartitionOperationThread) currentThread;
+        OperationRunner runner = partitionThread.getCurrentOperationRunner();
+        if (runner != null) {
+            // non null runner means it's a nested call
+            // in this case partitionId of both inner and outer operations have to match
+            return runner.getPartitionId() == op.getPartitionId();
+        }
+
         return toPartitionThreadIndex(op.getPartitionId()) == partitionThread.threadId;
     }
 

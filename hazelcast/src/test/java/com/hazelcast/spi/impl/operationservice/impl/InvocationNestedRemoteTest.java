@@ -6,89 +6,88 @@ import com.hazelcast.spi.OperationService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import java.util.concurrent.ExecutionException;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.assertNotEquals;
 
-/**
- * Test how well HZ deals with nested invocations.
- */
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class InvocationNestedRemoteTest extends InvocationNestedTest {
 
-    private final String response = "someresponse";
+    private static final String RESPONSE = "someresponse";
 
-    // ======================= remote invocations ============================================
+    @Rule
+    public ExpectedException expected = ExpectedException.none();
 
     @Test
-    public void whenPartition_callsGeneric() {
+    public void invokeOnPartition_outerGeneric_innerGeneric_forbidden() {
+        HazelcastInstance[] cluster = createHazelcastInstanceFactory(1).newInstances();
+        HazelcastInstance local = cluster[0];
+        OperationService operationService = getOperationService(local);
+
+        InnerOperation innerOperation = new InnerOperation(RESPONSE, GENERIC_OPERATION);
+        OuterOperation outerOperation = new OuterOperation(innerOperation, GENERIC_OPERATION);
+
+        expected.expect(Exception.class);
+        operationService.invokeOnPartition(null, outerOperation, outerOperation.getPartitionId());
+    }
+
+    @Test
+    public void invokeOnPartition_outerRemote_innerGeneric() {
         HazelcastInstance[] cluster = createHazelcastInstanceFactory(2).newInstances();
         HazelcastInstance local = cluster[0];
         HazelcastInstance remote = cluster[1];
         OperationService operationService = getOperationService(local);
 
-        InnerOperation innerOperation = new InnerOperation(response, -1);
+        InnerOperation innerOperation = new InnerOperation(RESPONSE, GENERIC_OPERATION);
         OuterOperation outerOperation = new OuterOperation(innerOperation, getPartitionId(remote));
-
         InternalCompletableFuture f = operationService.invokeOnPartition(null, outerOperation, outerOperation.getPartitionId());
 
-        assertEquals(response, f.getSafely());
+        assertEquals(RESPONSE, f.getSafely());
     }
 
     @Test
-    public void whenPartition_callsSamePartition() {
+    public void invokeOnPartition_outerRemote_innerSameInstance_samePartition() {
         HazelcastInstance[] cluster = createHazelcastInstanceFactory(2).newInstances();
         HazelcastInstance local = cluster[0];
         HazelcastInstance remote = cluster[1];
         OperationService operationService = getOperationService(local);
 
         int partitionId = getPartitionId(remote);
-        InnerOperation innerOperation = new InnerOperation(response, partitionId);
+        InnerOperation innerOperation = new InnerOperation(RESPONSE, partitionId);
         OuterOperation outerOperation = new OuterOperation(innerOperation, partitionId);
-
         InternalCompletableFuture f = operationService.invokeOnPartition(null, outerOperation, outerOperation.getPartitionId());
 
-        assertEquals(response, f.getSafely());
+        assertEquals(RESPONSE, f.getSafely());
     }
 
     @Test
-    public void whenPartition_callsDifferentPartition_butMappedToSameThread() throws ExecutionException, InterruptedException {
+    public void invokeOnPartition_outerRemote_innerSameInstance_callsDifferentPartition_mappedToSameThread() throws ExecutionException, InterruptedException {
         HazelcastInstance[] cluster = createHazelcastInstanceFactory(2).newInstances();
         HazelcastInstance local = cluster[0];
         HazelcastInstance remote = cluster[1];
         OperationService operationService = getOperationService(local);
 
         int outerPartitionId = getPartitionId(remote);
-        int innerPartitionId = 0;
-        for (; innerPartitionId < remote.getPartitionService().getPartitions().size(); innerPartitionId++) {
-            if (innerPartitionId == outerPartitionId) {
-                continue;
-            }
-
-            if (!getPartitionService(remote).getPartition(innerPartitionId).isLocal()) {
-                continue;
-            }
-
-            if (mappedToSameThread(operationService, outerPartitionId, innerPartitionId)) {
-                break;
-            }
-        }
-        InnerOperation innerOperation = new InnerOperation(response, innerPartitionId);
+        int innerPartitionId = randomPartitionIdMappedToSameThreadAsGivenPartitionIdOnInstance(outerPartitionId, remote, operationService);
+        InnerOperation innerOperation = new InnerOperation(RESPONSE, innerPartitionId);
         OuterOperation outerOperation = new OuterOperation(innerOperation, outerPartitionId);
-
         InternalCompletableFuture f = operationService.invokeOnPartition(null, outerOperation, outerOperation.getPartitionId());
 
-        assertEquals(response, f.getSafely());
+        expected.expect(IllegalThreadStateException.class);
+        expected.expectMessage("cannot make remote call");
+        f.getSafely();
     }
 
     @Test
-    public void whenPartition_callsIncorrectPartition() {
+    public void invokeOnPartition_outerRemote_innerDifferentInstance_forbidden() {
         HazelcastInstance[] cluster = createHazelcastInstanceFactory(2).newInstances();
         HazelcastInstance local = cluster[0];
         HazelcastInstance remote = cluster[1];
@@ -96,45 +95,61 @@ public class InvocationNestedRemoteTest extends InvocationNestedTest {
 
         int outerPartitionId = getPartitionId(remote);
         int innerPartitionId = getPartitionId(local);
-        InnerOperation innerOperation = new InnerOperation(response, innerPartitionId);
+        assertNotEquals("partitions should be different", innerPartitionId, outerPartitionId);
+        InnerOperation innerOperation = new InnerOperation(RESPONSE, innerPartitionId);
         OuterOperation outerOperation = new OuterOperation(innerOperation, outerPartitionId);
-
         InternalCompletableFuture f = operationService.invokeOnPartition(null, outerOperation, outerOperation.getPartitionId());
 
-        try {
-            f.getSafely();
-            fail();
-        } catch (IllegalThreadStateException e) {
-        }
+        expected.expect(IllegalThreadStateException.class);
+        expected.expectMessage("cannot make remote call");
+        f.getSafely();
     }
 
     @Test
-    public void whenGeneric_callsGeneric() {
+    public void invokeOnPartition_outerLocal_innerDifferentInstance_forbidden() {
         HazelcastInstance[] cluster = createHazelcastInstanceFactory(2).newInstances();
         HazelcastInstance local = cluster[0];
         HazelcastInstance remote = cluster[1];
         OperationService operationService = getOperationService(local);
 
-        InnerOperation innerOperation = new InnerOperation(response, -1);
-        OuterOperation outerOperation = new OuterOperation(innerOperation, -1);
+        int outerPartitionId = getPartitionId(local);
+        int innerPartitionId = getPartitionId(remote);
+        assertNotEquals("partitions should be different", innerPartitionId, outerPartitionId);
+        InnerOperation innerOperation = new InnerOperation(RESPONSE, innerPartitionId);
+        OuterOperation outerOperation = new OuterOperation(innerOperation, outerPartitionId);
+        InternalCompletableFuture f = operationService.invokeOnPartition(null, outerOperation, outerOperation.getPartitionId());
 
-        InternalCompletableFuture f = operationService.invokeOnTarget(null, outerOperation, getAddress(remote));
-
-        assertEquals(response, f.getSafely());
+        expected.expect(IllegalThreadStateException.class);
+        expected.expectMessage("cannot make remote call");
+        f.getSafely();
     }
 
     @Test
-    public void whenGeneric_callsPartition() {
+    public void invokeOnTarget_outerGeneric_innerGeneric() {
         HazelcastInstance[] cluster = createHazelcastInstanceFactory(2).newInstances();
         HazelcastInstance local = cluster[0];
         HazelcastInstance remote = cluster[1];
         OperationService operationService = getOperationService(local);
 
-        InnerOperation innerOperation = new InnerOperation(response, 0);
-        OuterOperation outerOperation = new OuterOperation(innerOperation, -1);
-
+        InnerOperation innerOperation = new InnerOperation(RESPONSE, GENERIC_OPERATION);
+        OuterOperation outerOperation = new OuterOperation(innerOperation, GENERIC_OPERATION);
         InternalCompletableFuture f = operationService.invokeOnTarget(null, outerOperation, getAddress(remote));
 
-        assertEquals(response, f.getSafely());
+        assertEquals(RESPONSE, f.getSafely());
     }
+
+    @Test
+    public void invokeOnTarget_outerGeneric_innerSameInstance() {
+        HazelcastInstance[] cluster = createHazelcastInstanceFactory(2).newInstances();
+        HazelcastInstance local = cluster[0];
+        HazelcastInstance remote = cluster[1];
+        OperationService operationService = getOperationService(local);
+
+        InnerOperation innerOperation = new InnerOperation(RESPONSE, 0);
+        OuterOperation outerOperation = new OuterOperation(innerOperation, GENERIC_OPERATION);
+        InternalCompletableFuture f = operationService.invokeOnTarget(null, outerOperation, getAddress(remote));
+
+        assertEquals(RESPONSE, f.getSafely());
+    }
+
 }

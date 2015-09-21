@@ -277,6 +277,7 @@
     <suppress checks="CyclomaticComplexity" files="com/hazelcast/spi/impl/operationservice/impl/InvocationFuture"/>
     <suppress checks="ClassDataAbstractionCoupling|MethodCount"
               files="com/hazelcast/spi/impl/eventservice/impl/EventServiceImpl"/>
+    <suppress checks="ReturnCount" files="com/hazelcast/spi/impl/operationexecutor/classic/ClassicOperationExecutor"/>
 
     <!-- Transaction -->
     <suppress checks="JavadocMethod" files="com/hazelcast/transaction/"/>

@@ -1,5 +1,6 @@
 package com.hazelcast.spi.impl.operationservice.impl;
 
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.AbstractOperation;
@@ -13,11 +14,13 @@ import java.io.IOException;
 
 public abstract class InvocationNestedTest extends HazelcastTestSupport {
 
-    public static boolean mappedToSameThread(OperationService operationService, int partitionId1, int partitionId2){
+    protected static final int GENERIC_OPERATION = -1;
+
+    public static boolean mappedToSameThread(OperationService operationService, int partitionId1, int partitionId2) {
         OperationServiceImpl operationServiceImpl = (OperationServiceImpl) operationService;
         ClassicOperationExecutor executor = (ClassicOperationExecutor) operationServiceImpl.getOperationExecutor();
-        int thread1 =  executor.toPartitionThreadIndex(partitionId1);
-        int thread2 =  executor.toPartitionThreadIndex(partitionId2);
+        int thread1 = executor.toPartitionThreadIndex(partitionId1);
+        int thread2 = executor.toPartitionThreadIndex(partitionId2);
         return thread1 == thread2;
     }
 
@@ -35,7 +38,6 @@ public abstract class InvocationNestedTest extends HazelcastTestSupport {
 
         @Override
         public void run() throws Exception {
-            System.out.println(Thread.currentThread());
             int partitionId = innerOperation.getPartitionId();
             OperationService operationService = getNodeEngine().getOperationService();
             InternalCompletableFuture f;
@@ -80,7 +82,6 @@ public abstract class InvocationNestedTest extends HazelcastTestSupport {
 
         @Override
         public void run() throws Exception {
-            System.out.println(Thread.currentThread());
         }
 
         @Override
@@ -100,4 +101,38 @@ public abstract class InvocationNestedTest extends HazelcastTestSupport {
             value = in.readObject();
         }
     }
+
+    protected static int randomPartitionIdNotMappedToSameThreadAsGivenPartitionIdOnInstance(HazelcastInstance hz, int givenPartitionId) {
+        int resultPartitionId;
+        for (resultPartitionId = 0; resultPartitionId < hz.getPartitionService().getPartitions().size(); resultPartitionId++) {
+            if (resultPartitionId == givenPartitionId) {
+                continue;
+            }
+            if (!getPartitionService(hz).getPartition(resultPartitionId).isLocal()) {
+                continue;
+            }
+            if (!mappedToSameThread(getOperationService(hz), givenPartitionId, resultPartitionId)) {
+                break;
+            }
+        }
+        return resultPartitionId;
+    }
+
+    protected static int randomPartitionIdMappedToSameThreadAsGivenPartitionIdOnInstance(int givenPartitionId, HazelcastInstance instance, OperationService operationService) {
+        int resultPartitionId = 0;
+        for (; resultPartitionId < instance.getPartitionService().getPartitions().size(); resultPartitionId++) {
+            if (resultPartitionId == givenPartitionId) {
+                continue;
+            }
+            if (!getPartitionService(instance).getPartition(resultPartitionId).isLocal()) {
+                continue;
+            }
+            if (mappedToSameThread(operationService, givenPartitionId, resultPartitionId)) {
+                break;
+            }
+        }
+        return resultPartitionId;
+    }
+
+
 }
