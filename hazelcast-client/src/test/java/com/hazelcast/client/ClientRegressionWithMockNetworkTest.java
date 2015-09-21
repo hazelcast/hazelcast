@@ -54,6 +54,7 @@ import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -76,6 +77,7 @@ import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
+@Ignore //https://github.com/hazelcast/hazelcast/issues/6153
 public class ClientRegressionWithMockNetworkTest
         extends HazelcastTestSupport {
 
