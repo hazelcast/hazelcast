@@ -62,7 +62,7 @@ public class ListSizeMessageTask
 
     @Override
     public Object[] getParameters() {
-        return new Object[]{};
+        return null;
     }
 
     @Override

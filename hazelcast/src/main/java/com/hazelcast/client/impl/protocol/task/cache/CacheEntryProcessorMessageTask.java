@@ -24,9 +24,12 @@ import com.hazelcast.client.impl.protocol.codec.CacheEntryProcessorCodec;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.CachePermission;
 import com.hazelcast.spi.Operation;
 
 import javax.cache.processor.EntryProcessor;
+import java.security.Permission;
 import java.util.ArrayList;
 
 /**
@@ -66,7 +69,23 @@ public class CacheEntryProcessorMessageTask
     }
 
     @Override
+    public Permission getRequiredPermission() {
+        return new CachePermission(parameters.name, ActionConstants.ACTION_READ,
+                ActionConstants.ACTION_REMOVE, ActionConstants.ACTION_PUT);
+    }
+
+    @Override
     public String getDistributedObjectName() {
         return parameters.name;
+    }
+
+    @Override
+    public Object[] getParameters() {
+        return new Object[]{parameters.key, parameters.entryProcessor, parameters.arguments};
+    }
+
+    @Override
+    public String getMethodName() {
+        return "invoke";
     }
 }

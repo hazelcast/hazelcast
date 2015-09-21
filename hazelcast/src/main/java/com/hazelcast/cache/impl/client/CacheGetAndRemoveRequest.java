@@ -25,9 +25,12 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.CachePermission;
 import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
+import java.security.Permission;
 
 /**
  * This client request  specifically calls {@link CacheGetAndRemoveOperation} on the server side.
@@ -85,6 +88,27 @@ public class CacheGetAndRemoveRequest
     @Override
     public void setCompletionId(Integer completionId) {
         this.completionId = completionId != null ? completionId : -1;
+    }
+
+    @Override
+    public Permission getRequiredPermission() {
+        return new CachePermission(name, ActionConstants.ACTION_READ, ActionConstants.ACTION_REMOVE);
+    }
+
+    @Override
+    public Object[] getParameters() {
+        return new Object[]{key};
+
+    }
+
+    @Override
+    public String getMethodName() {
+        return "getAndRemove";
+    }
+
+    @Override
+    public String getDistributedObjectName() {
+        return name;
     }
 
 }

@@ -42,7 +42,7 @@ public abstract class AbstractRemoveListenerMessageTask<P> extends AbstractCalla
     protected abstract String getRegistrationId();
 
     @Override
-    public final Object[] getParameters() {
+    public Object[] getParameters() {
         return new Object[]{getRegistrationId()};
     }
 }

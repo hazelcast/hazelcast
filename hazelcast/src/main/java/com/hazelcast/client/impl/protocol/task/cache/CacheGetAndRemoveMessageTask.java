@@ -22,7 +22,11 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CacheGetAndRemoveCodec;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.CachePermission;
 import com.hazelcast.spi.Operation;
+
+import java.security.Permission;
 
 /**
  * This client request  specifically calls {@link CacheGetAndRemoveOperation} on the server side.
@@ -53,7 +57,22 @@ public class CacheGetAndRemoveMessageTask
     }
 
     @Override
+    public Permission getRequiredPermission() {
+        return new CachePermission(parameters.name, ActionConstants.ACTION_READ, ActionConstants.ACTION_REMOVE);
+    }
+
+    @Override
     public String getDistributedObjectName() {
         return parameters.name;
+    }
+
+    @Override
+    public Object[] getParameters() {
+        return new Object[]{parameters.key};
+    }
+
+    @Override
+    public String getMethodName() {
+        return "getAndRemove";
     }
 }

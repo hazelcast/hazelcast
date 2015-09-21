@@ -25,10 +25,13 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.CachePermission;
 import com.hazelcast.spi.Operation;
 
 import javax.cache.expiry.ExpiryPolicy;
 import java.io.IOException;
+import java.security.Permission;
 
 /**
  * This client request  specifically calls {@link CachePutIfAbsentOperation} on the server side.
@@ -94,6 +97,29 @@ public class CachePutIfAbsentRequest
     @Override
     public void setCompletionId(Integer completionId) {
         this.completionId = completionId != null ? completionId : -1;
+    }
+
+    @Override
+    public Permission getRequiredPermission() {
+        return new CachePermission(name, ActionConstants.ACTION_PUT);
+    }
+
+    @Override
+    public Object[] getParameters() {
+        if (expiryPolicy == null) {
+            return new Object[]{key, value};
+        }
+        return new Object[]{key, value, expiryPolicy};
+    }
+
+    @Override
+    public String getMethodName() {
+        return "putIfAbsent";
+    }
+
+    @Override
+    public String getDistributedObjectName() {
+        return name;
     }
 
 }

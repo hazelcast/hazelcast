@@ -26,6 +26,8 @@ import com.hazelcast.client.impl.client.RetryableRequest;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.CachePermission;
 import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
@@ -85,7 +87,7 @@ public class CacheIterateRequest
 
     @Override
     public Permission getRequiredPermission() {
-        return null;
+        return new CachePermission(name, ActionConstants.ACTION_READ);
     }
 
     @Override
@@ -108,6 +110,21 @@ public class CacheIterateRequest
         tableIndex = reader.readInt("t");
         batch = reader.readInt("b");
         inMemoryFormat = InMemoryFormat.valueOf(reader.readUTF("i"));
+    }
+
+    @Override
+    public Object[] getParameters() {
+        return null;
+    }
+
+    @Override
+    public String getMethodName() {
+        return "iterator";
+    }
+
+    @Override
+    public String getDistributedObjectName() {
+        return name;
     }
 
 }

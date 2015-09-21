@@ -75,7 +75,7 @@ public abstract class BaseClientRemoveListenerRequest extends CallableClientRequ
     }
 
     @Override
-    public final Object[] getParameters() {
+    public Object[] getParameters() {
         return new Object[]{registrationId};
     }
 }

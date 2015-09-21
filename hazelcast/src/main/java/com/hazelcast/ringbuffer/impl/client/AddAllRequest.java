@@ -20,12 +20,16 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.ringbuffer.OverflowPolicy;
+import com.hazelcast.ringbuffer.impl.RingbufferService;
 import com.hazelcast.ringbuffer.impl.operations.AddAllOperation;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.RingBufferPermission;
 import com.hazelcast.spi.Operation;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 import java.security.Permission;
+import java.util.Arrays;
 
 public class AddAllRequest extends RingbufferRequest {
 
@@ -54,11 +58,6 @@ public class AddAllRequest extends RingbufferRequest {
     }
 
     @Override
-    public Permission getRequiredPermission() {
-        return null;
-    }
-
-    @Override
     public void write(PortableWriter writer) throws IOException {
         super.write(writer);
         writer.writeInt("o", overflowPolicy.getId());
@@ -78,5 +77,30 @@ public class AddAllRequest extends RingbufferRequest {
         for (int k = 0; k < items.length; k++) {
             items[k] = reader.getRawDataInput().readData();
         }
+    }
+
+    @Override
+    public Permission getRequiredPermission() {
+        return new RingBufferPermission(name, ActionConstants.ACTION_PUT);
+    }
+
+    @Override
+    public Object[] getParameters() {
+        return new Object[]{Arrays.asList(items), overflowPolicy};
+    }
+
+    @Override
+    public String getMethodName() {
+        return "addAllAsync";
+    }
+
+    @Override
+    public String getDistributedObjectName() {
+        return name;
+    }
+
+    @Override
+    public String getServiceName() {
+        return RingbufferService.SERVICE_NAME;
     }
 }

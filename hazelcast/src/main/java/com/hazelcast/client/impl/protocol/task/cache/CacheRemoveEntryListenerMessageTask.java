@@ -22,6 +22,8 @@ import com.hazelcast.client.impl.protocol.codec.CacheRemoveEntryListenerCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractRemoveListenerMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.CachePermission;
 
 import java.security.Permission;
 
@@ -70,12 +72,16 @@ public class CacheRemoveEntryListenerMessageTask
 
     @Override
     public Permission getRequiredPermission() {
-        return null;
+        return new CachePermission(parameters.name, ActionConstants.ACTION_LISTEN);
     }
 
     @Override
     public String getMethodName() {
-        return null;
+        return "deregisterCacheEntryListener";
     }
 
+    @Override
+    public Object[] getParameters() {
+        return null;
+    }
 }

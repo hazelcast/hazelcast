@@ -17,12 +17,14 @@
 package com.hazelcast.ringbuffer.impl.client;
 
 import com.hazelcast.core.IFunction;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.ringbuffer.impl.ReadResultSetImpl;
 import com.hazelcast.ringbuffer.impl.operations.ReadManyOperation;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.RingBufferPermission;
 import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
@@ -77,11 +79,6 @@ public class ReadManyRequest extends RingbufferRequest {
     }
 
     @Override
-    public Permission getRequiredPermission() {
-        return null;
-    }
-
-    @Override
     public void write(PortableWriter writer) throws IOException {
         super.write(writer);
         writer.writeLong("s", startSequence);
@@ -97,5 +94,25 @@ public class ReadManyRequest extends RingbufferRequest {
         this.minCount = reader.readInt("i");
         this.maxCount = reader.readInt("a");
         filterData = reader.getRawDataInput().readData();
+    }
+
+    @Override
+    public Permission getRequiredPermission() {
+        return new RingBufferPermission(name, ActionConstants.ACTION_READ);
+    }
+
+    @Override
+    public Object[] getParameters() {
+        return new Object[]{startSequence, minCount, maxCount, null};
+    }
+
+    @Override
+    public String getMethodName() {
+        return "readManyAsync";
+    }
+
+    @Override
+    public String getDistributedObjectName() {
+        return name;
     }
 }
