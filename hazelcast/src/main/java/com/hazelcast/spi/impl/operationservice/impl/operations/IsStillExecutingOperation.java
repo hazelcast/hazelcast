@@ -34,7 +34,7 @@ public class IsStillExecutingOperation extends AbstractOperation implements Urge
     private long operationCallId;
     private int operationPartitionId;
 
-    IsStillExecutingOperation() {
+    public IsStillExecutingOperation() {
     }
 
     public IsStillExecutingOperation(long operationCallId, int operationPartitionId) {
