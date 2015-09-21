@@ -21,13 +21,10 @@ import com.hazelcast.hibernate.local.LocalRegionCache;
 import com.hazelcast.hibernate.local.TimestampsRegionCache;
 import com.hazelcast.hibernate.region.HazelcastCollectionRegion;
 import com.hazelcast.hibernate.region.HazelcastEntityRegion;
+import com.hazelcast.hibernate.region.HazelcastNaturalIdRegion;
 import com.hazelcast.hibernate.region.HazelcastTimestampsRegion;
 import org.hibernate.cache.CacheException;
-import org.hibernate.cache.spi.CacheDataDescription;
-import org.hibernate.cache.spi.CollectionRegion;
-import org.hibernate.cache.spi.EntityRegion;
-import org.hibernate.cache.spi.RegionFactory;
-import org.hibernate.cache.spi.TimestampsRegion;
+import org.hibernate.cache.spi.*;
 
 import java.util.Properties;
 
@@ -61,6 +58,15 @@ public class HazelcastLocalCacheRegionFactory extends AbstractHazelcastCacheRegi
     public EntityRegion buildEntityRegion(final String regionName, final Properties properties,
                                           final CacheDataDescription metadata) throws CacheException {
         final HazelcastEntityRegion<LocalRegionCache> region = new HazelcastEntityRegion<LocalRegionCache>(instance,
+                regionName, properties, metadata, new LocalRegionCache(regionName, instance, metadata));
+        cleanupService.registerCache(region.getCache());
+        return region;
+    }
+
+    public NaturalIdRegion buildNaturalIdRegion(final String regionName, final Properties properties
+            , final CacheDataDescription metadata)
+            throws CacheException {
+        final HazelcastNaturalIdRegion<LocalRegionCache> region = new HazelcastNaturalIdRegion<LocalRegionCache>(instance,
                 regionName, properties, metadata, new LocalRegionCache(regionName, instance, metadata));
         cleanupService.registerCache(region.getCache());
         return region;

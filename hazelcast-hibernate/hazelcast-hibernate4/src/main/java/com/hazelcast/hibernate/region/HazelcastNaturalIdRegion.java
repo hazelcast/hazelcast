@@ -17,6 +17,7 @@
 package com.hazelcast.hibernate.region;
 
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.hibernate.RegionCache;
 import com.hazelcast.hibernate.access.NonStrictReadWriteAccessDelegate;
 import com.hazelcast.hibernate.access.ReadOnlyAccessDelegate;
 import com.hazelcast.hibernate.access.ReadWriteAccessDelegate;
@@ -32,12 +33,12 @@ import java.util.Properties;
 /**
  * Hazelcast based implementation used to store NaturalIds
  */
-public class HazelcastNaturalIdRegion extends AbstractTransactionalDataRegion<IMapRegionCache>
+public class HazelcastNaturalIdRegion<Cache extends RegionCache> extends AbstractTransactionalDataRegion<Cache>
         implements NaturalIdRegion {
 
     public HazelcastNaturalIdRegion(final HazelcastInstance instance, final String regionName,
-                                    final Properties props, final CacheDataDescription metadata) {
-        super(instance, regionName, props, metadata, new IMapRegionCache(regionName, instance, props, metadata));
+                                    final Properties props, final CacheDataDescription metadata, final Cache cache) {
+        super(instance, regionName, props, metadata, cache);
     }
 
     public NaturalIdRegionAccessStrategy buildAccessStrategy(final AccessType accessType) throws CacheException {
