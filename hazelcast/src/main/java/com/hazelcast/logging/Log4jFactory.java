@@ -36,16 +36,19 @@ public class Log4jFactory extends LoggerFactorySupport implements LoggerFactory 
 
         public Log4jLogger(Logger logger) {
             this.logger = logger;
-            if (logger.getLevel() == org.apache.log4j.Level.DEBUG) {
-                level = Level.FINEST;
-            } else if (logger.getLevel() == org.apache.log4j.Level.INFO) {
-                level = Level.INFO;
-            } else if (logger.getLevel() == org.apache.log4j.Level.WARN) {
-                level = Level.WARNING;
-            } else if (logger.getLevel() == org.apache.log4j.Level.FATAL) {
-                level = Level.SEVERE;
+            org.apache.log4j.Level log4jLevel = logger.getLevel();
+            if (log4jLevel == org.apache.log4j.Level.DEBUG) {
+                this.level = Level.FINEST;
+            } else if (log4jLevel == org.apache.log4j.Level.INFO) {
+                this.level = Level.INFO;
+            } else if (log4jLevel == org.apache.log4j.Level.WARN) {
+                this.level = Level.WARNING;
+            } else if (log4jLevel == org.apache.log4j.Level.FATAL) {
+                this.level = Level.SEVERE;
+            } else if (log4jLevel == org.apache.log4j.Level.OFF) {
+                this.level = Level.OFF;
             } else {
-                level = Level.INFO;
+                this.level = Level.INFO;
             }
         }
 
@@ -57,7 +60,7 @@ public class Log4jFactory extends LoggerFactorySupport implements LoggerFactory 
                 logger.fatal(message);
             } else if (Level.WARNING == level) {
                 logger.warn(message);
-            } else {
+            } else if (level != Level.OFF) {
                 logger.info(message);
             }
         }
@@ -77,6 +80,8 @@ public class Log4jFactory extends LoggerFactorySupport implements LoggerFactory 
                 return logger.isEnabledFor(org.apache.log4j.Level.WARN);
             } else if (Level.SEVERE == level) {
                 return logger.isEnabledFor(org.apache.log4j.Level.FATAL);
+            } else if (Level.OFF == level) {
+                return false;
             } else {
                 return logger.isEnabledFor(org.apache.log4j.Level.INFO);
             }
@@ -90,7 +95,7 @@ public class Log4jFactory extends LoggerFactorySupport implements LoggerFactory 
                 logger.warn(message, thrown);
             } else if (Level.SEVERE == level) {
                 logger.fatal(message, thrown);
-            } else {
+            } else if (Level.OFF != level) {
                 logger.info(message, thrown);
             }
         }
@@ -109,6 +114,8 @@ public class Log4jFactory extends LoggerFactorySupport implements LoggerFactory 
                 level = org.apache.log4j.Level.WARN;
             } else if (logRecord.getLevel() == Level.SEVERE) {
                 level = org.apache.log4j.Level.FATAL;
+            } else if (logRecord.getLevel() == Level.OFF) {
+                return;
             } else {
                 level = org.apache.log4j.Level.INFO;
             }
