@@ -35,7 +35,6 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.NightlyTest;
-import com.hazelcast.test.annotation.Repeat;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -83,7 +82,6 @@ public class JoinStressTest extends HazelcastTestSupport {
         testJoinWithManyNodes(true);
     }
 
-    @Repeat(50)
     @Test
     public void testJoincompletesCorrectlyWhenMultipleNodesStartedParallel() {
         int count = 10;
