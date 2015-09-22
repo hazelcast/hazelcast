@@ -18,7 +18,6 @@ package com.hazelcast.cache.impl.client;
 
 import com.hazelcast.cache.CacheNotExistsException;
 import com.hazelcast.cache.impl.CacheOperationProvider;
-import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.client.impl.client.AllPartitionsClientRequest;
 import com.hazelcast.config.CacheConfig;
@@ -61,7 +60,6 @@ abstract class AbstractCacheAllPartitionsRequest extends AllPartitionsClientRequ
     public void read(PortableReader reader)
             throws IOException {
         name = reader.readUTF("n");
-
     }
 
     @Override
@@ -71,7 +69,7 @@ abstract class AbstractCacheAllPartitionsRequest extends AllPartitionsClientRequ
 
     @Override
     public String getServiceName() {
-        return CacheService.SERVICE_NAME;
+        return ICacheService.SERVICE_NAME;
     }
 
 }

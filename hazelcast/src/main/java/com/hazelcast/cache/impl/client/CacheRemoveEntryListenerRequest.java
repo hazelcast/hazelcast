@@ -17,7 +17,7 @@
 package com.hazelcast.cache.impl.client;
 
 import com.hazelcast.cache.impl.CachePortableHook;
-import com.hazelcast.cache.impl.CacheService;
+import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.client.impl.client.BaseClientRemoveListenerRequest;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.CachePermission;
@@ -41,13 +41,13 @@ public class CacheRemoveEntryListenerRequest
 
     @Override
     protected boolean deRegisterListener() {
-        final CacheService service = getService();
+        final ICacheService service = getService();
         return service.deregisterListener(name, registrationId);
     }
 
     @Override
     public String getServiceName() {
-        return CacheService.SERVICE_NAME;
+        return ICacheService.SERVICE_NAME;
     }
 
     @Override

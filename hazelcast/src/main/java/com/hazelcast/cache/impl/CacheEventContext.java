@@ -30,6 +30,7 @@ public class CacheEventContext {
     private Data dataOldValue;
     private boolean isOldValueAvailable;
     private long expirationTime;
+    private long lastAccessTime;
     private long accessHit;
     private String origin;
     private int orderKey;
@@ -98,6 +99,14 @@ public class CacheEventContext {
     public CacheEventContext setExpirationTime(long expirationTime) {
         this.expirationTime = expirationTime;
         return this;
+    }
+
+    public long getLastAccessTime() {
+        return lastAccessTime;
+    }
+
+    public void setLastAccessTime(long lastAccessTime) {
+        this.lastAccessTime = lastAccessTime;
     }
 
     public long getAccessHit() {

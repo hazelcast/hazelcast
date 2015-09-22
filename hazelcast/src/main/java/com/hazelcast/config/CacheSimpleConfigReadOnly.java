@@ -154,4 +154,9 @@ public class CacheSimpleConfigReadOnly
     public CacheSimpleConfig setQuorumName(String quorumName) {
         throw new UnsupportedOperationException("This config is read-only cache: " + getName());
     }
+
+    @Override
+    public void setMergePolicy(String mergePolicy) {
+        throw new UnsupportedOperationException("This config is read-only cache: " + getName());
+    }
 }

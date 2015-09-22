@@ -16,7 +16,11 @@
 
 package com.hazelcast.cache.impl;
 
+import com.hazelcast.cache.StorageTypeAwareCacheMergePolicy;
 import com.hazelcast.cache.impl.maxsize.MaxSizeChecker;
+import com.hazelcast.cache.CacheEntryView;
+import com.hazelcast.cache.impl.merge.entry.LazyCacheEntryView;
+import com.hazelcast.cache.CacheMergePolicy;
 import com.hazelcast.cache.impl.record.CacheRecord;
 import com.hazelcast.cache.impl.record.CacheRecordFactory;
 import com.hazelcast.cache.impl.record.CacheRecordHashMap;
@@ -24,6 +28,9 @@ import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.util.Clock;
+
+import static com.hazelcast.cache.impl.operation.MutableOperation.IGNORE_COMPLETION;
 
 /**
  * <h1>On-Heap implementation of the {@link ICacheRecordStore} </h1>
@@ -51,7 +58,8 @@ import com.hazelcast.spi.NodeEngine;
  * @see com.hazelcast.cache.impl.operation.AbstractCacheOperation
  */
 public class CacheRecordStore
-        extends AbstractCacheRecordStore<CacheRecord, CacheRecordHashMap> {
+        extends AbstractCacheRecordStore<CacheRecord, CacheRecordHashMap>
+        implements SplitBrainAwareCacheRecordStore {
 
     protected SerializationService serializationService;
     protected CacheRecordFactory cacheRecordFactory;
@@ -156,6 +164,74 @@ public class CacheRecordStore
         } else {
             return serializationService.toData(obj);
         }
+    }
+
+    private CacheEntryView createCacheEntryView(Object key, Object value, long expirationTime, long lastAccessTime,
+                                                long accessHit, CacheMergePolicy mergePolicy) {
+        SerializationService ss =
+                mergePolicy instanceof StorageTypeAwareCacheMergePolicy
+                        // Null serialization service means that use as storage type without convertion
+                        ? null
+                        //  Non-null serialization service means that convertion is required
+                        : serializationService;
+        return new LazyCacheEntryView(key, value, expirationTime, lastAccessTime, accessHit, ss);
+    }
+
+    public CacheRecord merge(CacheEntryView<Data, Data> cacheEntryView, CacheMergePolicy mergePolicy) {
+        final long now = Clock.currentTimeMillis();
+        final long start = isStatisticsEnabled() ? System.nanoTime() : 0;
+
+        boolean merged = false;
+        Data key = cacheEntryView.getKey();
+        Data value = cacheEntryView.getValue();
+        long expiryTime = cacheEntryView.getExpirationTime();
+        CacheRecord record = records.get(key);
+        boolean isExpired = processExpiredEntry(key, record, now);
+
+        if (record == null || isExpired) {
+            Object newValue =
+                    mergePolicy.merge(name,
+                                      createCacheEntryView(
+                                            key,
+                                            value,
+                                            cacheEntryView.getExpirationTime(),
+                                            cacheEntryView.getLastAccessTime(),
+                                            cacheEntryView.getAccessHit(),
+                                            mergePolicy),
+                                      null);
+            if (newValue != null) {
+                record = createRecordWithExpiry(key, newValue, expiryTime, now, true, IGNORE_COMPLETION);
+                merged = record != null;
+            }
+        } else {
+            Object existingValue = record.getValue();
+            Object newValue =
+                    mergePolicy.merge(name,
+                                      createCacheEntryView(
+                                            key,
+                                            value,
+                                            cacheEntryView.getExpirationTime(),
+                                            cacheEntryView.getLastAccessTime(),
+                                            cacheEntryView.getAccessHit(),
+                                            mergePolicy),
+                                      createCacheEntryView(
+                                            key,
+                                            existingValue,
+                                            record.getExpirationTime(),
+                                            record.getAccessTime(),
+                                            record.getAccessHit(),
+                                            mergePolicy));
+            if (existingValue != newValue) {
+                merged = updateRecordWithExpiry(key, newValue, record, expiryTime, now, true, IGNORE_COMPLETION);
+            }
+        }
+
+        if (merged && isStatisticsEnabled()) {
+            statistics.increaseCachePuts(1);
+            statistics.addPutTimeNanos(System.nanoTime() - start);
+        }
+
+        return merged ? record : null;
     }
 
 }

@@ -98,7 +98,6 @@ public class CacheGetAndRemoveRequest
     @Override
     public Object[] getParameters() {
         return new Object[]{key};
-
     }
 
     @Override

@@ -18,8 +18,8 @@ package com.hazelcast.cache.impl.operation;
 
 import com.hazelcast.cache.impl.CacheClearResponse;
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
-import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.ICacheRecordStore;
+import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.cache.impl.record.CacheRecord;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -87,7 +87,7 @@ public class CacheLoadAllOperation
         }
 
         try {
-            final CacheService service = getService();
+            final ICacheService service = getService();
             cache = service.getOrCreateRecordStore(name, partitionId);
             final Set<Data> keysLoaded = cache.loadAll(filteredKeys, replaceExistingValues);
             shouldBackup = !keysLoaded.isEmpty();

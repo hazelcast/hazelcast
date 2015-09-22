@@ -38,8 +38,10 @@ import com.hazelcast.spi.PartitionAwareService;
 import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.spi.PostJoinAwareService;
 import com.hazelcast.spi.QuorumAwareService;
+import com.hazelcast.spi.SplitBrainHandlerService;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
+
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import javax.cache.configuration.CacheEntryListenerConfiguration;
@@ -55,7 +57,11 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 public abstract class AbstractCacheService
-        implements ICacheService, PostJoinAwareService, PartitionAwareService, QuorumAwareService {
+        implements  ICacheService,
+                    PostJoinAwareService,
+                    PartitionAwareService,
+                    QuorumAwareService,
+                    SplitBrainHandlerService {
 
     protected final ConcurrentMap<String, CacheConfig> configs = new ConcurrentHashMap<String, CacheConfig>();
     protected final ConcurrentMap<String, CacheContext> cacheContexts = new ConcurrentHashMap<String, CacheContext>();
@@ -81,21 +87,46 @@ public abstract class AbstractCacheService
 
     protected NodeEngine nodeEngine;
     protected CachePartitionSegment[] segments;
+    protected CacheEventHandler cacheEventHandler;
+    protected CacheSplitBrainHandler cacheSplitBrainHandler;
 
     @Override
     public final void init(NodeEngine nodeEngine, Properties properties) {
         this.nodeEngine = nodeEngine;
         int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
-        segments = new CachePartitionSegment[partitionCount];
+        this.segments = new CachePartitionSegment[partitionCount];
         for (int i = 0; i < partitionCount; i++) {
             segments[i] = new CachePartitionSegment(this, i);
         }
+        this.cacheEventHandler = new CacheEventHandler(nodeEngine);
+        this.cacheSplitBrainHandler = new CacheSplitBrainHandler(nodeEngine, configs, segments);
         postInit(nodeEngine, properties);
     }
 
     protected void postInit(NodeEngine nodeEngine, Properties properties) { };
 
     protected abstract ICacheRecordStore createNewRecordStore(String name, int partitionId);
+
+    @Override
+    public void reset() {
+        for (String objectName : configs.keySet()) {
+            destroyCache(objectName, true, null);
+        }
+        final CachePartitionSegment[] partitionSegments = segments;
+        for (CachePartitionSegment partitionSegment : partitionSegments) {
+            if (partitionSegment != null) {
+                partitionSegment.clear();
+            }
+        }
+    }
+
+    @Override
+    public void shutdown(boolean terminate) {
+        if (!terminate) {
+            cacheEventHandler.shutdown();
+            reset();
+        }
+    }
 
     @Override
     public DistributedObject createDistributedObject(String objectName) {
@@ -209,6 +240,7 @@ public abstract class AbstractCacheService
         return cacheContexts.get(name);
     }
 
+    @Override
     public CacheContext getOrCreateCacheContext(String name) {
         return ConcurrencyUtil.getOrPutIfAbsent(cacheContexts, name, cacheContexesConstructorFunction);
     }
@@ -292,59 +324,12 @@ public abstract class AbstractCacheService
 
     @Override
     public void publishEvent(CacheEventContext cacheEventContext) {
-        final EventService eventService = getNodeEngine().getEventService();
-        final String cacheName = cacheEventContext.getCacheName();
-        final Collection<EventRegistration> candidates = eventService.getRegistrations(SERVICE_NAME, cacheName);
-
-        if (candidates.isEmpty()) {
-            return;
-        }
-        final Object eventData;
-        final CacheEventType eventType = cacheEventContext.getEventType();
-        switch (eventType) {
-            case CREATED:
-            case UPDATED:
-            case REMOVED:
-            case EXPIRED:
-                final CacheEventData cacheEventData =
-                        new CacheEventDataImpl(cacheName, eventType, cacheEventContext.getDataKey(),
-                                               cacheEventContext.getDataValue(), cacheEventContext.getDataOldValue(),
-                                               cacheEventContext.isOldValueAvailable());
-                CacheEventSet eventSet = new CacheEventSet(eventType, cacheEventContext.getCompletionId());
-                eventSet.addEventData(cacheEventData);
-                eventData = eventSet;
-                break;
-            case EVICTED:
-                eventData = new CacheEventDataImpl(cacheName, CacheEventType.EVICTED,
-                                                   cacheEventContext.getDataKey(), null, null, false);
-                break;
-            case INVALIDATED:
-                eventData = new CacheEventDataImpl(cacheName, CacheEventType.INVALIDATED,
-                                                   cacheEventContext.getDataKey(), null, null, false);
-                break;
-            case COMPLETED:
-                CacheEventData completedEventData =
-                        new CacheEventDataImpl(cacheName, CacheEventType.COMPLETED, cacheEventContext.getDataKey(),
-                                               cacheEventContext.getDataValue(), null, false);
-                eventSet = new CacheEventSet(eventType, cacheEventContext.getCompletionId());
-                eventSet.addEventData(completedEventData);
-                eventData = eventSet;
-                break;
-            default:
-                throw new IllegalArgumentException(
-                        "Event Type not defined to create an eventData during publish : " + eventType.name());
-        }
-        nodeEngine.getEventService().publishEvent(SERVICE_NAME, candidates, eventData, cacheEventContext.getOrderKey());
+        cacheEventHandler.publishEvent(cacheEventContext);
     }
 
     @Override
     public void publishEvent(String cacheName, CacheEventSet eventSet, int orderKey) {
-        final EventService eventService = getNodeEngine().getEventService();
-        final Collection<EventRegistration> candidates = eventService.getRegistrations(SERVICE_NAME, cacheName);
-        if (candidates.isEmpty()) {
-            return;
-        }
-        nodeEngine.getEventService().publishEvent(SERVICE_NAME, candidates, eventSet, orderKey);
+        cacheEventHandler.publishEvent(cacheName, eventSet, orderKey);
     }
 
     @Override
@@ -476,8 +461,7 @@ public abstract class AbstractCacheService
         return postJoinCacheOperation;
     }
 
-
-    protected  void publishCachePartitionLostEvent(String cacheName, int partitionId) {
+    protected void publishCachePartitionLostEvent(String cacheName, int partitionId) {
         final Collection<EventRegistration> registrations = new LinkedList<EventRegistration>();
         for (EventRegistration registration : getRegistrations(cacheName)) {
             if (registration.getFilter() instanceof CachePartitionLostEventFilter) {
@@ -543,6 +527,38 @@ public abstract class AbstractCacheService
             return null;
         }
         return configs.get(cacheName).getQuorumName();
+    }
+
+    /**
+     * Registers and {@link com.hazelcast.cache.impl.client.CacheInvalidationListener} for specified <code>cacheName</code>.
+     *
+     * @param name      the name of the cache that {@link com.hazelcast.cache.impl.CacheEventListener} will be registered for
+     * @param listener  the {@link com.hazelcast.cache.impl.CacheEventListener} to be registered for specified <code>cache</code>
+     * @return the id which is unique for current registration
+     */
+    @Override
+    public String addInvalidationListener(String name, CacheEventListener listener) {
+        EventService eventService = nodeEngine.getEventService();
+        EventRegistration registration = eventService.registerLocalListener(SERVICE_NAME, name, listener);
+        return registration.getId();
+    }
+
+    /**
+     * Sends an invalidation event for given <code>cacheName</code> with specified <code>key</code>
+     * from mentioned source with <code>sourceUuid</code>.
+     *
+     * @param name       the name of the cache that invalidation event is sent for
+     * @param key        the {@link com.hazelcast.nio.serialization.Data} represents the invalidation event
+     * @param sourceUuid an id that represents the source for invalidation event
+     */
+    @Override
+    public void sendInvalidationEvent(String name, Data key, String sourceUuid) {
+        cacheEventHandler.sendInvalidationEvent(name, key, sourceUuid);
+    }
+
+    @Override
+    public Runnable prepareMergeRunnable() {
+        return cacheSplitBrainHandler.prepareMergeRunnable();
     }
 
 }

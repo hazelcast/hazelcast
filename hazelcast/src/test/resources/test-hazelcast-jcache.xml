@@ -87,6 +87,11 @@
         </expiry-policy-factory>
     </cache>
 
+    <cache name="cacheWithDefaultMergePolicy"/>
+    <cache name="cacheWithCustomMergePolicy">
+        <merge-policy>MyDummyMergePolicy</merge-policy>
+    </cache>
+
     <cache name="testCache">
         <key-type class-name="java.lang.Integer"/>
         <value-type class-name="java.lang.String"/>

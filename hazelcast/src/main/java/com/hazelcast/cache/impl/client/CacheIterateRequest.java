@@ -18,7 +18,6 @@ package com.hazelcast.cache.impl.client;
 
 import com.hazelcast.cache.impl.CacheOperationProvider;
 import com.hazelcast.cache.impl.CachePortableHook;
-import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.cache.impl.operation.CacheKeyIteratorOperation;
 import com.hazelcast.client.impl.client.PartitionClientRequest;
@@ -82,7 +81,7 @@ public class CacheIterateRequest
 
     @Override
     public final String getServiceName() {
-        return CacheService.SERVICE_NAME;
+        return ICacheService.SERVICE_NAME;
     }
 
     @Override

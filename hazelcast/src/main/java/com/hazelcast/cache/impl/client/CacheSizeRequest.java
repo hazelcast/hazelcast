@@ -18,7 +18,7 @@ package com.hazelcast.cache.impl.client;
 
 import com.hazelcast.cache.impl.CacheOperationProvider;
 import com.hazelcast.cache.impl.CachePortableHook;
-import com.hazelcast.cache.impl.CacheService;
+import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.cache.impl.operation.CacheSizeOperationFactory;
 import com.hazelcast.client.impl.client.RetryableRequest;
 import com.hazelcast.spi.OperationFactory;
@@ -43,7 +43,7 @@ public class CacheSizeRequest
     }
 
     public String getServiceName() {
-        return CacheService.SERVICE_NAME;
+        return ICacheService.SERVICE_NAME;
     }
 
     @Override
@@ -65,9 +65,8 @@ public class CacheSizeRequest
     @Override
     protected Object reduce(Map<Integer, Object> map) {
         int total = 0;
-        CacheService cacheService = getService();
         for (Object result : map.values()) {
-            Integer size = (Integer) cacheService.toObject(result);
+            Integer size = (Integer) serializationService.toObject(result);
             total += size;
         }
         return total;

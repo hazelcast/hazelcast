@@ -1043,6 +1043,8 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
                 cacheConfig.setQuorumName(value);
             } else if ("partition-lost-listeners".equals(nodeName)) {
                 cachePartitionLostListenerHandle(n, cacheConfig);
+            } else if ("merge-policy".equals(nodeName)) {
+                cacheConfig.setMergePolicy(value);
             }
         }
         this.config.addCacheConfig(cacheConfig);

@@ -73,13 +73,14 @@ public final class CacheEventContextUtil {
     }
 
     public static CacheEventContext createCacheUpdatedEvent(Data dataKey, Data dataValue, Data dataOldValue,
-                                                            long expirationTime, long accessHit, String origin,
-                                                            int completionId) {
+                                                            long expirationTime, long lastAccessTime, long accessHit,
+                                                            String origin, int completionId) {
         CacheEventContext cacheEventContext =
                 createBaseEventContext(CacheEventType.UPDATED, dataKey, dataValue,
                                        expirationTime, origin, completionId);
         cacheEventContext.setDataOldValue(dataOldValue);
         cacheEventContext.setIsOldValueAvailable(true);
+        cacheEventContext.setLastAccessTime(lastAccessTime);
         cacheEventContext.setAccessHit(accessHit);
         return cacheEventContext;
     }

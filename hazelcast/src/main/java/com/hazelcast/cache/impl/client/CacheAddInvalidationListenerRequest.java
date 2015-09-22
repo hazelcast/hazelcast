@@ -18,7 +18,7 @@ package com.hazelcast.cache.impl.client;
 
 import com.hazelcast.cache.impl.CacheContext;
 import com.hazelcast.cache.impl.CachePortableHook;
-import com.hazelcast.cache.impl.CacheService;
+import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.impl.client.CallableClientRequest;
 import com.hazelcast.client.impl.client.RetryableRequest;
@@ -45,16 +45,16 @@ public class CacheAddInvalidationListenerRequest
     @Override
     public Object call() {
         ClientEndpoint endpoint = getEndpoint();
-        CacheService cacheService = getService();
+        ICacheService cacheService = getService();
         CacheContext cacheContext = cacheService.getOrCreateCacheContext(name);
         CacheInvalidationListener listener = new CacheInvalidationListener(endpoint, getCallId(), cacheContext);
         String registrationId = cacheService.addInvalidationListener(name, listener);
-        endpoint.addListenerDestroyAction(CacheService.SERVICE_NAME, name, registrationId);
+        endpoint.addListenerDestroyAction(ICacheService.SERVICE_NAME, name, registrationId);
         return registrationId;
     }
 
     public String getServiceName() {
-        return CacheService.SERVICE_NAME;
+        return ICacheService.SERVICE_NAME;
     }
 
     @Override
