@@ -228,13 +228,36 @@ public class TestJCache {
     }    
 
     @Test
-    public void testCacheQuorumConfig() {
+    public void cacheConfigXmlTest_ClusterQuorum() {
         assertNotNull(instance1);
 
-        CacheSimpleConfig simpleConfig = instance1.getConfig().getCacheConfigs().get("cacheWithQuorumRef");
+        CacheSimpleConfig simpleConfig = instance1.getConfig().getCacheConfig("cacheWithQuorumRef");
 
         assertNotNull(simpleConfig);
 
         assertEquals("cacheQuorumRefString", simpleConfig.getQuorumName());
     }
+
+    @Test
+    public void cacheConfigXmlTest_DefaultMergePolicy() throws IOException {
+        assertNotNull(instance1);
+
+        CacheSimpleConfig cacheWithDefaultMergePolicyConfig =
+                instance1.getConfig().getCacheConfig("cacheWithDefaultMergePolicy");
+
+        assertNotNull(cacheWithDefaultMergePolicyConfig);
+        assertEquals(CacheSimpleConfig.DEFAULT_CACHE_MERGE_POLICY, cacheWithDefaultMergePolicyConfig.getMergePolicy());
+    }
+
+    @Test
+    public void cacheConfigXmlTest_CustomMergePolicy() throws IOException {
+        assertNotNull(instance1);
+
+        CacheSimpleConfig cacheWithCustomMergePolicyConfig =
+                instance1.getConfig().getCacheConfig("cacheWithCustomMergePolicy");
+
+        assertNotNull(cacheWithCustomMergePolicyConfig);
+        assertEquals("MyDummyMergePolicy", cacheWithCustomMergePolicyConfig.getMergePolicy());
+    }
+
 }

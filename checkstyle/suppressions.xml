@@ -61,6 +61,7 @@
     <suppress checks="" files="com/hazelcast/cluster/impl/operations/JoinCheckOperation"/>
 
     <!-- Cache -->
+    <suppress checks="MethodCount" files="com/hazelcast/config/CacheConfig"/>
     <suppress checks="MethodCount" files="com/hazelcast/cache/ICache"/>
     <suppress checks="MethodCount" files="com/hazelcast/client/cache/impl/AbstractClientCacheProxy"/>
     <suppress checks="ClassDataAbstractionCoupling|MethodCount|"

@@ -21,7 +21,7 @@ import com.hazelcast.cache.impl.CacheEventData;
 import com.hazelcast.cache.impl.CacheEventListener;
 import com.hazelcast.cache.impl.CacheEventSet;
 import com.hazelcast.cache.impl.CachePortableHook;
-import com.hazelcast.cache.impl.CacheService;
+import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.impl.ClientEndpointImpl;
 import com.hazelcast.client.impl.client.CallableClientRequest;
@@ -65,7 +65,7 @@ public class CacheAddEntryListenerRequest
     @Override
     public Object call() {
         final ClientEndpointImpl endpoint = (ClientEndpointImpl) getEndpoint();
-        final CacheService service = getService();
+        final ICacheService service = getService();
         CacheEntryListener cacheEntryListener = new CacheEntryListener(getCallId(), endpoint);
         final String registrationId = service.registerListener(name, cacheEntryListener, cacheEntryListener);
         endpoint.addDestroyAction(registrationId, new Callable<Boolean>() {
@@ -81,7 +81,7 @@ public class CacheAddEntryListenerRequest
             justification = "Class is Serializable, but doesn't define serialVersionUID")
     private static final class CacheEntryListener
             implements CacheEventListener,
-                       NotifiableEventListener<CacheService>,
+                       NotifiableEventListener<ICacheService>,
                        ListenerWrapperEventFilter,
                        Serializable {
 
@@ -117,14 +117,14 @@ public class CacheAddEntryListenerRequest
         }
 
         @Override
-        public void onRegister(CacheService service, String serviceName,
+        public void onRegister(ICacheService service, String serviceName,
                                String topic, EventRegistration registration) {
             CacheContext cacheContext = service.getOrCreateCacheContext(topic);
             cacheContext.increaseCacheEntryListenerCount();
         }
 
         @Override
-        public void onDeregister(CacheService service, String serviceName,
+        public void onDeregister(ICacheService service, String serviceName,
                                  String topic, EventRegistration registration) {
             CacheContext cacheContext = service.getOrCreateCacheContext(topic);
             cacheContext.decreaseCacheEntryListenerCount();
@@ -144,7 +144,7 @@ public class CacheAddEntryListenerRequest
 
     @Override
     public String getServiceName() {
-        return CacheService.SERVICE_NAME;
+        return ICacheService.SERVICE_NAME;
     }
 
     @Override

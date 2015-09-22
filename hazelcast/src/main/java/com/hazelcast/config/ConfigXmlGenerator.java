@@ -419,8 +419,7 @@ public class ConfigXmlGenerator {
             if (expiryPolicyFactoryConfig != null) {
                 if (StringUtil.isNullOrEmpty(expiryPolicyFactoryConfig.getClassName())) {
                     xml.append("<expiry-policy-factory class-name=\"")
-                            .append(expiryPolicyFactoryConfig.getClassName())
-                            .append("\"/>");
+                            .append(expiryPolicyFactoryConfig.getClassName()).append("\"/>");
                 } else {
                     TimedExpiryPolicyFactoryConfig timedExpiryPolicyFactoryConfig =
                             expiryPolicyFactoryConfig.getTimedExpiryPolicyFactoryConfig();
@@ -442,8 +441,7 @@ public class ConfigXmlGenerator {
             for (CacheSimpleEntryListenerConfig el : c.getCacheEntryListeners()) {
                 xml.append("<cache-entry-listener")
                         .append(" old-value-required=\"").append(el.isOldValueRequired()).append("\"")
-                        .append(" synchronous=\"").append(el.isSynchronous()).append("\"")
-                        .append(">");
+                        .append(" synchronous=\"").append(el.isSynchronous()).append("\"").append(">");
                 xml.append("<cache-entry-listener-factory class-name=\"")
                         .append(el.getCacheEntryListenerFactory()).append("\"/>");
                 xml.append("<cache-entry-event-filter-factory class-name=\"")
@@ -451,18 +449,15 @@ public class ConfigXmlGenerator {
                 xml.append("</cache-entry-listener>");
             }
             xml.append("</cache-entry-listeners>");
-
             wanReplicationConfigXmlGenerator(xml, c.getWanReplicationRef());
-
-            cachePartitionLostListenerConfigXmlGenerator(xml,
-                    c.getPartitionLostListenerConfigs());
-
+            cachePartitionLostListenerConfigXmlGenerator(xml, c.getPartitionLostListenerConfigs());
             evictionConfigXmlGenerator(xml, c.getEvictionConfig());
-
             if (c.getQuorumName() != null) {
                 xml.append("<quorum-ref>").append(c.getQuorumName()).append("</quorum-ref>");
             }
-
+            if (c.getMergePolicy() != null) {
+                xml.append("<merge-policy>").append(c.getMergePolicy()).append("</merge-policy>");
+            }
             xml.append("</cache>");
         }
     }

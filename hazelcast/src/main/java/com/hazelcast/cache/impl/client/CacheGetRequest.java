@@ -76,7 +76,6 @@ public class CacheGetRequest
         final ObjectDataOutput out = writer.getRawDataOutput();
         out.writeData(key);
         out.writeObject(expiryPolicy);
-
     }
 
     @Override

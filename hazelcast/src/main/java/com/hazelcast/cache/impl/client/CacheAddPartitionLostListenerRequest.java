@@ -16,9 +16,7 @@
 
 package com.hazelcast.cache.impl.client;
 
-import com.hazelcast.cache.impl.AbstractCacheService;
 import com.hazelcast.cache.impl.CachePortableHook;
-import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.cache.impl.event.CachePartitionLostEvent;
 import com.hazelcast.cache.impl.event.CachePartitionLostEventFilter;
@@ -68,15 +66,13 @@ public class CacheAddPartitionLostListenerRequest extends CallableClientRequest
                 new InternalCachePartitionLostListenerAdapter(listener);
         final EventFilter filter = new CachePartitionLostEventFilter();
         final ICacheService service = getService();
-        final EventRegistration registration = service.getNodeEngine().
-                getEventService().registerListener(AbstractCacheService.SERVICE_NAME,
-                name, filter, listenerAdapter);
+        final EventRegistration registration = service.getNodeEngine().getEventService()
+                .registerListener(ICacheService.SERVICE_NAME, name, filter, listenerAdapter);
         final String registrationId = registration.getId();
-        endpoint.addListenerDestroyAction(CacheService.SERVICE_NAME, name, registrationId);
+        endpoint.addListenerDestroyAction(ICacheService.SERVICE_NAME, name, registrationId);
 
         return registrationId;
     }
-
 
     @Override
     public void write(PortableWriter writer) throws IOException {
@@ -92,6 +88,7 @@ public class CacheAddPartitionLostListenerRequest extends CallableClientRequest
     public String getServiceName() {
         return ICacheService.SERVICE_NAME;
     }
+
     @Override
     public String getMethodName() {
         return "addCachePartitionLostListener";
@@ -116,4 +113,5 @@ public class CacheAddPartitionLostListenerRequest extends CallableClientRequest
     public String getDistributedObjectName() {
         return name;
     }
+
 }

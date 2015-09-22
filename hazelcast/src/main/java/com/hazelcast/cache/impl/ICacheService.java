@@ -55,6 +55,8 @@ public interface ICacheService extends ManagedService, RemoteService, MigrationA
 
     CacheStatisticsImpl createCacheStatIfAbsent(String name);
 
+    CacheContext getOrCreateCacheContext(String name);
+
     void destroyCache(String objectName, boolean isLocal, String callerUuid);
 
     void deleteCacheStat(String name);
@@ -83,6 +85,8 @@ public interface ICacheService extends ManagedService, RemoteService, MigrationA
      * Creates cache operations according to the storage-type of the cache
      */
     CacheOperationProvider getCacheOperationProvider(String nameWithPrefix, InMemoryFormat storageType);
+
+    String addInvalidationListener(String name, CacheEventListener listener);
 
     void sendInvalidationEvent(String name, Data key, String sourceUuid);
 }

@@ -17,7 +17,7 @@
 package com.hazelcast.cache.impl.operation;
 
 import com.hazelcast.cache.impl.CacheDataSerializerHook;
-import com.hazelcast.cache.impl.CacheService;
+import com.hazelcast.cache.impl.ICacheService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -30,8 +30,8 @@ import java.io.IOException;
  * statistics mxbeans of the cache.
  * @see com.hazelcast.cache.impl.AbstractHazelcastCacheManager#enableManagement(String, boolean)
  * @see com.hazelcast.cache.impl.AbstractHazelcastCacheManager#enableStatistics(String, boolean)
- * @see com.hazelcast.cache.impl.CacheService#setManagementEnabled(String, boolean)
- * @see com.hazelcast.cache.impl.CacheService#setStatisticsEnabled(String, boolean)
+ * @see com.hazelcast.cache.impl.ICacheService#setManagementEnabled(com.hazelcast.config.CacheConfig, String, boolean)
+ * @see com.hazelcast.cache.impl.ICacheService#setStatisticsEnabled(com.hazelcast.config.CacheConfig, String, boolean)
  */
 public class CacheManagementConfigOperation
         extends AbstractNamedOperation
@@ -51,13 +51,13 @@ public class CacheManagementConfigOperation
 
     @Override
     public String getServiceName() {
-        return CacheService.SERVICE_NAME;
+        return ICacheService.SERVICE_NAME;
     }
 
     @Override
     public void run()
             throws Exception {
-        final CacheService service = getService();
+        final ICacheService service = getService();
         if (isStat) {
             service.setStatisticsEnabled(null, name, enabled);
         } else {
