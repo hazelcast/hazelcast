@@ -96,8 +96,9 @@ public final class ClientListenerServiceImpl implements ClientListenerService {
                 return false;
             }
             request.setRegistrationId(realRegistrationId);
-            final Future<Boolean> future = new ClientInvocation(client, request).invoke();
-            return (Boolean) serializationService.toObject(future.get());
+            Future<Boolean> future = new ClientInvocation(client, request).invoke();
+            future.get();
+            return true;
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }

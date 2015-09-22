@@ -62,7 +62,7 @@ public interface SetCodecTemplate {
     event = {EventMessageConst.EVENT_ITEM})
     void addListener(String name, boolean includeValue);
 
-    @Request(id = 12, retryable = false, response = ResponseMessageConst.BOOLEAN)
+    @Request(id = 12, retryable = true, response = ResponseMessageConst.BOOLEAN)
     void removeListener(String name, String registrationId);
 
     @Request(id = 13, retryable = false, response = ResponseMessageConst.BOOLEAN)

@@ -71,7 +71,7 @@ public interface ReplicatedMapCodecTemplate {
             , event = {EventMessageConst.EVENT_ENTRY})
     void addEntryListener(String name);
 
-    @Request(id = 14, retryable = false, response = ResponseMessageConst.BOOLEAN)
+    @Request(id = 14, retryable = true, response = ResponseMessageConst.BOOLEAN)
     void removeEntryListener(String name, String registrationId);
 
     @Request(id = 15, retryable = true, response = ResponseMessageConst.LIST_DATA)

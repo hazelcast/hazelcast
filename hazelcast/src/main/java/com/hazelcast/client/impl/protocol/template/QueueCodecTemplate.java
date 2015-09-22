@@ -79,7 +79,7 @@ public interface QueueCodecTemplate {
             event = {EventMessageConst.EVENT_ITEM})
     void addListener(String name, boolean includeValue);
 
-    @Request(id = 18, retryable = false, response = ResponseMessageConst.BOOLEAN)
+    @Request(id = 18, retryable = true, response = ResponseMessageConst.BOOLEAN)
     void removeListener(String name, String registrationId);
 
     @Request(id = 19, retryable = false, response = ResponseMessageConst.INTEGER)

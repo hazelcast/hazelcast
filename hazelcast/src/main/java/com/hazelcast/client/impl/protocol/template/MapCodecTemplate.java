@@ -116,14 +116,14 @@ public interface MapCodecTemplate {
     @Request(id = 29, retryable = true, response = ResponseMessageConst.STRING, event = EventMessageConst.EVENT_ENTRY)
     void addNearCacheEntryListener(String name, boolean includeValue);
 
-    @Request(id = 30, retryable = false, response = ResponseMessageConst.BOOLEAN)
+    @Request(id = 30, retryable = true, response = ResponseMessageConst.BOOLEAN)
     void removeEntryListener(String name, String registrationId);
 
     @Request(id = 31, retryable = true, response = ResponseMessageConst.STRING,
             event = EventMessageConst.EVENT_MAPPARTITIONLOST)
     void addPartitionLostListener(String name);
 
-    @Request(id = 32, retryable = false, response = ResponseMessageConst.BOOLEAN)
+    @Request(id = 32, retryable = true, response = ResponseMessageConst.BOOLEAN)
     void removePartitionLostListener(String name, String registrationId);
 
     @Request(id = 33, retryable = true, response = ResponseMessageConst.ENTRY_VIEW)

@@ -51,7 +51,7 @@ public interface ClientMessageTemplate {
     @Request(id = 10, retryable = true, response = ResponseMessageConst.STRING, event = {EventMessageConst.EVENT_PARTITIONLOST})
     void addPartitionLostListener();
 
-    @Request(id = 11, retryable = false, response = ResponseMessageConst.BOOLEAN)
+    @Request(id = 11, retryable = true, response = ResponseMessageConst.BOOLEAN)
     void removePartitionLostListener(String registrationId);
 
     @Request(id = 12, retryable = false, response = ResponseMessageConst.DISTRIBUTED_OBJECT)
@@ -60,7 +60,7 @@ public interface ClientMessageTemplate {
     @Request(id = 13, retryable = true, response = ResponseMessageConst.STRING, event = {EventMessageConst.EVENT_DISTRIBUTEDOBJECT})
     void addDistributedObjectListener();
 
-    @Request(id = 14, retryable = false, response = ResponseMessageConst.BOOLEAN)
+    @Request(id = 14, retryable = true, response = ResponseMessageConst.BOOLEAN)
     void removeDistributedObjectListener(String registrationId);
 
     @Request(id = 15, retryable = true, response = ResponseMessageConst.VOID)
