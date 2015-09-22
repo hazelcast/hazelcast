@@ -137,7 +137,7 @@ public interface ClientMessageTemplate {
      * @param registrationId The id assigned during the listener registration.
      * @return true if the listener existed and removed, false otherwise.
      */
-    @Request(id = 11, retryable = false, response = ResponseMessageConst.BOOLEAN)
+    @Request(id = 11, retryable = true, response = ResponseMessageConst.BOOLEAN)
     Object removePartitionLostListener(String registrationId);
 
     /**
@@ -159,7 +159,7 @@ public interface ClientMessageTemplate {
      * @param registrationId The id assigned during the registration.
      * @return true if the listener existed and removed, false otherwise.
      */
-    @Request(id = 14, retryable = false, response = ResponseMessageConst.BOOLEAN)
+    @Request(id = 14, retryable = true, response = ResponseMessageConst.BOOLEAN)
     Object removeDistributedObjectListener(String registrationId);
 
     @Request(id = 15, retryable = true, response = ResponseMessageConst.VOID)

@@ -185,7 +185,7 @@ public interface ReplicatedMapCodecTemplate {
      * @param registrationId ID of the registered entry listener.
      * @return True if registration is removed, false otherwise.
      */
-    @Request(id = 14, retryable = false, response = ResponseMessageConst.BOOLEAN)
+    @Request(id = 14, retryable = true, response = ResponseMessageConst.BOOLEAN)
     Object removeEntryListener(String name, String registrationId);
 
     /**

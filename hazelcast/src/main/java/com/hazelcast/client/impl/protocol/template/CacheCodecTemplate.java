@@ -282,7 +282,7 @@ public interface CacheCodecTemplate {
      * @param registrationId The id assigned during the registration for the listener which shall be removed.
      * @return true if the listener is de-registered, false otherwise
      */
-    @Request(id = 21, retryable = false, response = ResponseMessageConst.BOOLEAN)
+    @Request(id = 21, retryable = true, response = ResponseMessageConst.BOOLEAN)
     Object removeEntryListener(String name, String registrationId);
 
     /**
@@ -291,7 +291,7 @@ public interface CacheCodecTemplate {
      * @param registrationId The id assigned during the registration for the listener which shall be removed.
      * @return true if the listener is de-registered, false otherwise
      */
-    @Request(id = 22, retryable = false, response = ResponseMessageConst.BOOLEAN)
+    @Request(id = 22, retryable = true, response = ResponseMessageConst.BOOLEAN)
     Object removeInvalidationListener(String name, String registrationId);
 
     /**
@@ -357,7 +357,7 @@ public interface CacheCodecTemplate {
      * @return true if registration is removed, false otherwise.
      */
 
-    @Request(id = 27, retryable = false, response = ResponseMessageConst.BOOLEAN)
+    @Request(id = 27, retryable = true, response = ResponseMessageConst.BOOLEAN)
     Object removePartitionLostListener(String name, String registrationId);
 
 }

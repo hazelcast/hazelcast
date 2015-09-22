@@ -172,11 +172,11 @@ class ClientMembershipListener extends ClientMembershipListenerCodec.AbstractEve
 
     private void memberRemoved(Member member) {
         members.remove(member);
+        applyMemberListChanges();
         final Connection connection = connectionManager.getConnection(member.getAddress());
         if (connection != null) {
             connectionManager.destroyConnection(connection);
         }
-        applyMemberListChanges();
         MembershipEvent event = new MembershipEvent(client.getCluster(), member, ClientInitialMembershipEvent.MEMBER_REMOVED,
                 Collections.unmodifiableSet(new LinkedHashSet<Member>(members)));
         clusterService.fireMembershipEvent(event);
