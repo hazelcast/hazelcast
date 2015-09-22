@@ -18,6 +18,7 @@ package com.hazelcast.internal.monitors;
 
 import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.instance.Node;
+import com.hazelcast.instance.NodeState;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
 import com.hazelcast.internal.metrics.DoubleGauge;
 import com.hazelcast.internal.metrics.LongGauge;
@@ -111,7 +112,7 @@ public class HealthMonitor {
         @Override
         public void run() {
             try {
-                while (node.isActive()) {
+                while (node.getState() == NodeState.ACTIVE) {
                     switch (monitorLevel) {
                         case NOISY:
                             if (healthMetrics.exceedsThreshold()) {

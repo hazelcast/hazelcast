@@ -23,11 +23,12 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.spi.impl.AllowedDuringShutdown;
 
 import java.io.IOException;
 
 public final class HeartbeatOperation extends AbstractClusterOperation
-        implements JoinOperation, IdentifiedDataSerializable {
+        implements JoinOperation, IdentifiedDataSerializable, AllowedDuringShutdown {
 
     private long timestamp;
 

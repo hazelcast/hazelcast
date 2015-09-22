@@ -21,6 +21,7 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.instance.Node;
+import com.hazelcast.instance.NodeState;
 import com.hazelcast.instance.TestUtil;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestEnvironment;
@@ -177,11 +178,7 @@ public abstract class AbstractWebFilterTest extends HazelcastTestSupport {
             return true;
         }
         Node node = TestUtil.getNode(hz);
-        if (node == null) {
-            return true;
-        } else {
-            return !node.isActive();
-        }
+        return node == null || node.getState() != NodeState.ACTIVE;
     }
 
     @AfterClass

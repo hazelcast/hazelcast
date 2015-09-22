@@ -64,6 +64,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
 import static com.hazelcast.cluster.impl.MulticastService.createMulticastService;
 import static com.hazelcast.instance.NodeShutdownHelper.shutdownNodeByFiringEvents;
@@ -71,13 +72,14 @@ import static com.hazelcast.util.UuidUtil.createMemberUuid;
 
 public class Node {
 
+    private static final AtomicReferenceFieldUpdater<Node, NodeState> NODE_STATE_UPDATER
+            = AtomicReferenceFieldUpdater.newUpdater(Node.class, NodeState.class, "state");
+
     private final ILogger logger;
 
     private final AtomicBoolean joined = new AtomicBoolean(false);
 
-    private volatile boolean active;
-
-    private volatile boolean completelyShutdown;
+    private volatile NodeState state;
 
     private final NodeShutdownHookThread shutdownHookThread = new NodeShutdownHookThread("hz.ShutdownThread");
 
@@ -105,7 +107,7 @@ public class Node {
 
     public final MemberImpl localMember;
 
-    private volatile Address masterAddress = null;
+    private volatile Address masterAddress;
 
     public final HazelcastInstanceImpl hazelcastInstance;
 
@@ -274,11 +276,7 @@ public class Node {
         masterAddress = master;
     }
 
-    public void start() {
-        if (logger.isFinestEnabled()) {
-            logger.finest("We are asked to start and completelyShutdown is " + String.valueOf(completelyShutdown));
-        }
-        if (completelyShutdown) return;
+    void start() {
         nodeEngine.start();
         connectionManager.start();
         if (config.getNetworkConfig().getJoin().getMulticastConfig().isEnabled()) {
@@ -287,12 +285,12 @@ public class Node {
                     hazelcastThreadGroup.getThreadNamePrefix("MulticastThread"));
             multicastServiceThread.start();
         }
-        setActive(true);
-        if (!completelyShutdown && groupProperties.getBoolean(GroupProperty.SHUTDOWNHOOK_ENABLED)) {
+        if (groupProperties.getBoolean(GroupProperty.SHUTDOWNHOOK_ENABLED)) {
             logger.finest("Adding ShutdownHook");
             Runtime.getRuntime().addShutdownHook(shutdownHookThread);
         }
-        logger.finest("finished starting threads, calling join");
+        state = NodeState.ACTIVE;
+
         join();
         int clusterSize = clusterService.getSize();
         if (config.getNetworkConfig().isPortAutoIncrement()
@@ -316,67 +314,85 @@ public class Node {
     public void shutdown(final boolean terminate) {
         long start = Clock.currentTimeMillis();
         if (logger.isFinestEnabled()) {
-            logger.finest("** we are being asked to shutdown when active = " + String.valueOf(active));
+            logger.finest("We are being asked to shutdown when state = " + state);
         }
-        if (!terminate && isActive() && joined()) {
+
+        if (!NODE_STATE_UPDATER.compareAndSet(this, NodeState.ACTIVE, NodeState.SHUTTING_DOWN)) {
+            waitIfAlreadyShuttingDown();
+            return;
+        }
+
+        if (!terminate) {
             final int maxWaitSeconds = groupProperties.getSeconds(GroupProperty.GRACEFUL_SHUTDOWN_MAX_WAIT);
             if (!partitionService.prepareToSafeShutdown(maxWaitSeconds, TimeUnit.SECONDS)) {
                 logger.warning("Graceful shutdown could not be completed in " + maxWaitSeconds + " seconds!");
             }
+            clusterService.sendShutdownMessage();
+        } else {
+            logger.warning("Terminating forcefully...");
         }
-        if (isActive()) {
-            if (!terminate) {
-                final int maxWaitSeconds = groupProperties.getSeconds(GroupProperty.GRACEFUL_SHUTDOWN_MAX_WAIT);
-                if (!partitionService.prepareToSafeShutdown(maxWaitSeconds, TimeUnit.SECONDS)) {
-                    logger.warning("Graceful shutdown could not be completed in " + maxWaitSeconds + " seconds!");
+
+        // set the joined=false first so that
+        // threads do not process unnecessary
+        // events, such as remove address
+        joined.set(false);
+        setMasterAddress(null);
+        try {
+            if (groupProperties.getBoolean(GroupProperty.SHUTDOWNHOOK_ENABLED)) {
+                Runtime.getRuntime().removeShutdownHook(shutdownHookThread);
+            }
+        } catch (Throwable ignored) {
+        }
+        versionCheck.shutdown();
+        if (managementCenterService != null) {
+            managementCenterService.shutdown();
+        }
+
+        textCommandService.stop();
+        if (multicastService != null) {
+            logger.info("Shutting down multicast service...");
+            multicastService.stop();
+        }
+        logger.info("Shutting down connection manager...");
+        connectionManager.shutdown();
+
+        logger.info("Shutting down node engine...");
+        nodeEngine.shutdown(terminate);
+
+        if (securityContext != null) {
+            securityContext.destroy();
+        }
+        nodeExtension.destroy();
+        logger.finest("Destroying serialization service...");
+        serializationService.destroy();
+
+        hazelcastThreadGroup.destroy();
+        logger.info("Hazelcast Shutdown is completed in " + (Clock.currentTimeMillis() - start) + " ms.");
+        state = NodeState.SHUT_DOWN;
+    }
+
+    private void waitIfAlreadyShuttingDown() {
+        if (state == NodeState.SHUT_DOWN) {
+            return;
+        }
+
+        if (state == NodeState.SHUTTING_DOWN) {
+            logger.info("Node is already shutting down... Waiting for shutdown process to complete...");
+            do {
+                try {
+                    Thread.sleep(500);
+                } catch (InterruptedException e) {
+                    logger.warning("Interrupted while waiting for shutdown!");
+                    return;
                 }
-                clusterService.sendShutdownMessage();
-            } else {
-                logger.warning("Terminating forcefully...");
-            }
-            // set the joined=false first so that
-            // threads do not process unnecessary
-            // events, such as remove address
-            joined.set(false);
-            setActive(false);
-            setMasterAddress(null);
-            try {
-                if (groupProperties.getBoolean(GroupProperty.SHUTDOWNHOOK_ENABLED))
-                    Runtime.getRuntime().removeShutdownHook(shutdownHookThread);
-            } catch (Throwable ignored) {
-            }
-            versionCheck.shutdown();
-            if (managementCenterService != null) {
-                managementCenterService.shutdown();
-            }
-
-            textCommandService.stop();
-            if (multicastService != null) {
-                logger.info("Shutting down multicast service...");
-                multicastService.stop();
-            }
-            logger.info("Shutting down connection manager...");
-            connectionManager.shutdown();
-
-            logger.info("Shutting down node engine...");
-            nodeEngine.shutdown(terminate);
-
-            if (securityContext != null) {
-                securityContext.destroy();
-            }
-            nodeExtension.destroy();
-            logger.finest("Destroying serialization service...");
-            serializationService.destroy();
-
-            hazelcastThreadGroup.destroy();
-            logger.info("Hazelcast Shutdown is completed in " + (Clock.currentTimeMillis() - start) + " ms.");
+            } while (state != NodeState.SHUT_DOWN);
         }
     }
 
     /**
      * Resets the internal cluster-state of the Node to be able to make it ready to join a new cluster.
      * After this method is called,
-     * a new join process can be triggered by calling {@link #rejoin()}.
+     * a new join process can be triggered by calling {@link #join()}.
      * <p/>
      * This method is called during merge process after a split-brain is detected.
      */
@@ -406,11 +422,6 @@ public class Node {
         return connectionManager;
     }
 
-    public void inactivate() {
-        joined.set(false);
-        setActive(false);
-    }
-
     public ClassLoader getConfigClassLoader() {
         return configClassLoader;
     }
@@ -432,12 +443,9 @@ public class Node {
         @Override
         public void run() {
             try {
-                if (isActive() && !completelyShutdown) {
-                    completelyShutdown = true;
+                if (state == NodeState.ACTIVE) {
+                    logger.info("Running shutdown hook... Current state: " + state);
                     hazelcastInstance.getLifecycleService().terminate();
-                } else {
-                    logger.finest(
-                            "shutdown hook - we are not --> active and not completely down so we are not calling shutdown");
                 }
             } catch (Exception e) {
                 logger.warning(e);
@@ -468,17 +476,6 @@ public class Node {
         return new ConfigCheck(config, joinerType);
     }
 
-    public void rejoin() {
-        prepareForJoin();
-        join();
-    }
-
-    private void prepareForJoin() {
-        masterAddress = null;
-        joined.set(false);
-        clusterService.reset();
-    }
-
     public void join() {
         if (joiner == null) {
             logger.warning("No join method is enabled! Starting standalone.");
@@ -487,7 +484,10 @@ public class Node {
         }
 
         try {
-            prepareForJoin();
+            masterAddress = null;
+            joined.set(false);
+            clusterService.reset();
+
             joiner.join();
         } catch (Throwable e) {
             logger.severe("Error while joining the cluster!", e);
@@ -541,17 +541,12 @@ public class Node {
     }
 
     /**
-     * @param active the active to set
+     * Returns the node state.
+     *
+     * @return current state of the node
      */
-    public void setActive(boolean active) {
-        this.active = active;
-    }
-
-    /**
-     * @return the active
-     */
-    public boolean isActive() {
-        return active;
+    public NodeState getState() {
+        return state;
     }
 
     @Override

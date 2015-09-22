@@ -26,12 +26,11 @@ import com.hazelcast.partition.ReplicaErrorLogger;
 import com.hazelcast.spi.BackupOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionAwareOperation;
-import com.hazelcast.spi.UrgentSystemOperation;
 
 import java.io.IOException;
 
 public class ReplicaSyncRetryResponse extends Operation
-        implements PartitionAwareOperation, BackupOperation, UrgentSystemOperation, MigrationCycleOperation {
+        implements PartitionAwareOperation, BackupOperation, MigrationCycleOperation {
 
     public ReplicaSyncRetryResponse() {
     }

@@ -20,6 +20,7 @@ import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.instance.NodeState;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
@@ -35,6 +36,7 @@ import com.hazelcast.spi.exception.RetryableException;
 import com.hazelcast.spi.exception.RetryableIOException;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.exception.WrongTargetException;
+import com.hazelcast.spi.impl.AllowedDuringShutdown;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationexecutor.OperationExecutor;
 import com.hazelcast.spi.impl.operationservice.impl.responses.CallTimeoutResponse;
@@ -269,13 +271,17 @@ abstract class Invocation implements OperationResponseHandler, Runnable {
     }
 
     private boolean engineActive() {
-        if (nodeEngine.isActive()) {
+        final NodeState state = nodeEngine.getNode().getState();
+        if (state == NodeState.ACTIVE) {
             return true;
         }
 
-        remote = false;
-        notify(new HazelcastInstanceNotActiveException());
-        return false;
+        boolean allowed = state == NodeState.SHUTTING_DOWN && (op instanceof AllowedDuringShutdown);
+        if (!allowed) {
+            notify(new HazelcastInstanceNotActiveException("State: " + state));
+            remote = false;
+        }
+        return allowed;
     }
 
     /**

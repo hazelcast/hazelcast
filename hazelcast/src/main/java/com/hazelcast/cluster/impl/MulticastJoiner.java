@@ -19,6 +19,7 @@ package com.hazelcast.cluster.impl;
 import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.instance.Node;
+import com.hazelcast.instance.NodeState;
 import com.hazelcast.nio.Address;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.EmptyStatement;
@@ -48,7 +49,9 @@ public class MulticastJoiner extends AbstractJoiner {
         long maxJoinMillis = getMaxJoinMillis();
         Address thisAddress = node.getThisAddress();
 
-        while (node.isActive() && !node.joined() && (Clock.currentTimeMillis() - joinStartTime < maxJoinMillis)) {
+        while (node.getState() == NodeState.ACTIVE && !node.joined()
+                && (Clock.currentTimeMillis() - joinStartTime < maxJoinMillis)) {
+
             // clear master node
             node.setMasterAddress(null);
 
@@ -72,7 +75,9 @@ public class MulticastJoiner extends AbstractJoiner {
         long maxMasterJoinTime = getMaxJoinTimeToMasterNode();
         long start = Clock.currentTimeMillis();
 
-        while (node.isActive() && !node.joined() && Clock.currentTimeMillis() - start < maxMasterJoinTime) {
+        while (node.getState() == NodeState.ACTIVE  && !node.joined()
+                && Clock.currentTimeMillis() - start < maxMasterJoinTime) {
+
             Address master = node.getMasterAddress();
             if (master != null) {
                 if (logger.isFinestEnabled()) {
@@ -155,7 +160,7 @@ public class MulticastJoiner extends AbstractJoiner {
                 logger.finest("Searching for master node. Max tries: " + maxTryCount.get());
             }
             JoinRequest joinRequest = node.createJoinRequest(false);
-            while (node.isActive() && currentTryCount.incrementAndGet() <= maxTryCount.get()) {
+            while (node.getState() == NodeState.ACTIVE  && currentTryCount.incrementAndGet() <= maxTryCount.get()) {
                 joinRequest.setTryCount(currentTryCount.get());
                 node.multicastService.send(joinRequest);
                 if (node.getMasterAddress() == null) {

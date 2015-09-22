@@ -19,6 +19,7 @@ package com.hazelcast.cluster.impl;
 import com.hazelcast.cluster.Joiner;
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.Node;
+import com.hazelcast.instance.NodeState;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Packet;
@@ -51,7 +52,7 @@ public class NodeMulticastListener implements MulticastListener {
         }
 
         JoinMessage joinMessage = (JoinMessage) msg;
-        if (node.isActive() && node.joined()) {
+        if (node.getState() == NodeState.ACTIVE && node.joined()) {
             handleActiveAndJoined(joinMessage);
         } else {
             handleNotActiveOrNotJoined(joinMessage);

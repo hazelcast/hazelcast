@@ -24,6 +24,7 @@ import com.hazelcast.config.SymmetricEncryptionConfig;
 import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.instance.HazelcastThreadGroup;
 import com.hazelcast.instance.Node;
+import com.hazelcast.instance.NodeState;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
 import com.hazelcast.internal.ascii.TextCommandService;
 import com.hazelcast.logging.ILogger;
@@ -57,7 +58,7 @@ public class NodeIOService implements IOService {
 
     @Override
     public boolean isActive() {
-        return node.isActive();
+        return node.getState() != NodeState.SHUT_DOWN;
     }
 
     @Override
