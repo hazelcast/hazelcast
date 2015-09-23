@@ -58,12 +58,12 @@ final class InvocationFuture<E> implements InternalCompletableFuture<E> {
 
     volatile boolean interrupted;
     volatile Object response;
+    final Invocation invocation;
 
     // Contains the number of threads waiting for a result from this future.
     // is updated through the WAITER_COUNT.
     private volatile int waiterCount;
     private final OperationServiceImpl operationService;
-    private final Invocation invocation;
     private volatile ExecutionCallbackNode<E> callbackHead;
 
     InvocationFuture(OperationServiceImpl operationService, Invocation invocation, ExecutionCallback callback) {
