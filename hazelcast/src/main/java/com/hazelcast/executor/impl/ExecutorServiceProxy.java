@@ -71,7 +71,7 @@ public class ExecutorServiceProxy
     public static final int SYNC_FREQUENCY = 100;
     public static final int SYNC_DELAY_MS = 10;
 
-    private static final AtomicIntegerFieldUpdater<ExecutorServiceProxy> CONSECUTIVE_SUBMITS_UPDATER = AtomicIntegerFieldUpdater
+    private static final AtomicIntegerFieldUpdater<ExecutorServiceProxy> CONSECUTIVE_SUBMITS = AtomicIntegerFieldUpdater
             .newUpdater(ExecutorServiceProxy.class, "consecutiveSubmits");
 
     private static final ExceptionHandler WHILE_SHUTDOWN_EXCEPTION_HANDLER =
@@ -82,7 +82,7 @@ public class ExecutorServiceProxy
     private final int partitionCount;
     private final ILogger logger;
 
-    // This field is never accessed directly but by the CONSECUTIVE_SUBMITS_UPDATER above
+    // This field is never accessed directly but by the CONSECUTIVE_SUBMITS above
     private volatile int consecutiveSubmits;
 
     private volatile long lastSubmitTime;
@@ -264,8 +264,8 @@ public class ExecutorServiceProxy
         long last = lastSubmitTime;
         long now = Clock.currentTimeMillis();
         if (last + SYNC_DELAY_MS < now) {
-            CONSECUTIVE_SUBMITS_UPDATER.set(this, 0);
-        } else if (CONSECUTIVE_SUBMITS_UPDATER.incrementAndGet(this) % SYNC_FREQUENCY == 0) {
+            CONSECUTIVE_SUBMITS.set(this, 0);
+        } else if (CONSECUTIVE_SUBMITS.incrementAndGet(this) % SYNC_FREQUENCY == 0) {
             sync = true;
         }
         lastSubmitTime = now;

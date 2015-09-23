@@ -30,9 +30,9 @@ public class IdGeneratorProxy
 
     public static final int BLOCK_SIZE = 10000;
 
-    private static final AtomicIntegerFieldUpdater<IdGeneratorProxy> RESIDUE_UPDATER = AtomicIntegerFieldUpdater
+    private static final AtomicIntegerFieldUpdater<IdGeneratorProxy> RESIDUE = AtomicIntegerFieldUpdater
             .newUpdater(IdGeneratorProxy.class, "residue");
-    private static final AtomicLongFieldUpdater<IdGeneratorProxy> LOCAL_UPDATER = AtomicLongFieldUpdater
+    private static final AtomicLongFieldUpdater<IdGeneratorProxy> LOCAL = AtomicLongFieldUpdater
             .newUpdater(IdGeneratorProxy.class, "local");
 
     private final String name;
@@ -56,8 +56,8 @@ public class IdGeneratorProxy
         synchronized (this) {
             boolean init = blockGenerator.compareAndSet(0, step + 1);
             if (init) {
-                LOCAL_UPDATER.set(this, step);
-                RESIDUE_UPDATER.set(this, (int) (id % BLOCK_SIZE) + 1);
+                LOCAL.set(this, step);
+                RESIDUE.set(this, (int) (id % BLOCK_SIZE) + 1);
             }
             return init;
         }
@@ -65,13 +65,13 @@ public class IdGeneratorProxy
 
     @Override
     public long newId() {
-        int value = RESIDUE_UPDATER.getAndIncrement(this);
+        int value = RESIDUE.getAndIncrement(this);
         if (value >= BLOCK_SIZE) {
             synchronized (this) {
                 value = residue;
                 if (value >= BLOCK_SIZE) {
-                    LOCAL_UPDATER.set(this, blockGenerator.getAndIncrement());
-                    RESIDUE_UPDATER.set(this, 0);
+                    LOCAL.set(this, blockGenerator.getAndIncrement());
+                    RESIDUE.set(this, 0);
                 }
                 //todo: we need to get rid of this.
                 return newId();
@@ -95,7 +95,7 @@ public class IdGeneratorProxy
         blockGenerator.destroy();
 
         //todo: this behavior is racy; imagine what happens when destroy is called by different threads
-        LOCAL_UPDATER.set(this, -1);
-        RESIDUE_UPDATER.set(this, BLOCK_SIZE);
+        LOCAL.set(this, -1);
+        RESIDUE.set(this, BLOCK_SIZE);
     }
 }

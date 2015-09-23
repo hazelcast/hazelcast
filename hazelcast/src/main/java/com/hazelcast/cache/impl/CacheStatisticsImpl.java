@@ -37,23 +37,23 @@ public class CacheStatisticsImpl
     private static final float FLOAT_HUNDRED = 100.0f;
     private static final long NANOSECONDS_IN_A_MICROSECOND = 1000L;
 
-    private static final AtomicLongFieldUpdater<CacheStatisticsImpl> REMOVALS_UPDATER =
+    private static final AtomicLongFieldUpdater<CacheStatisticsImpl> REMOVALS =
             AtomicLongFieldUpdater.newUpdater(CacheStatisticsImpl.class, "removals");
-    private static final AtomicLongFieldUpdater<CacheStatisticsImpl> EXPIRIES_UPDATER =
+    private static final AtomicLongFieldUpdater<CacheStatisticsImpl> EXPIRIES =
             AtomicLongFieldUpdater.newUpdater(CacheStatisticsImpl.class, "expiries");
-    private static final AtomicLongFieldUpdater<CacheStatisticsImpl> PUTS_UPDATER =
+    private static final AtomicLongFieldUpdater<CacheStatisticsImpl> PUTS =
             AtomicLongFieldUpdater.newUpdater(CacheStatisticsImpl.class, "puts");
-    private static final AtomicLongFieldUpdater<CacheStatisticsImpl> HITS_UPDATER =
+    private static final AtomicLongFieldUpdater<CacheStatisticsImpl> HITS =
             AtomicLongFieldUpdater.newUpdater(CacheStatisticsImpl.class, "hits");
-    private static final AtomicLongFieldUpdater<CacheStatisticsImpl> MISSES_UPDATER =
+    private static final AtomicLongFieldUpdater<CacheStatisticsImpl> MISSES =
             AtomicLongFieldUpdater.newUpdater(CacheStatisticsImpl.class, "misses");
-    private static final AtomicLongFieldUpdater<CacheStatisticsImpl> EVICTIONS_UPDATER =
+    private static final AtomicLongFieldUpdater<CacheStatisticsImpl> EVICTIONS =
             AtomicLongFieldUpdater.newUpdater(CacheStatisticsImpl.class, "evictions");
-    private static final AtomicLongFieldUpdater<CacheStatisticsImpl> PUT_TIME_TAKEN_NANOS_UPDATER =
+    private static final AtomicLongFieldUpdater<CacheStatisticsImpl> PUT_TIME_TAKEN_NANOS =
             AtomicLongFieldUpdater.newUpdater(CacheStatisticsImpl.class, "putTimeTakenNanos");
-    private static final AtomicLongFieldUpdater<CacheStatisticsImpl> GET_CACHE_TIME_TAKEN_NANOS_UPDATER =
+    private static final AtomicLongFieldUpdater<CacheStatisticsImpl> GET_CACHE_TIME_TAKEN_NANOS =
             AtomicLongFieldUpdater.newUpdater(CacheStatisticsImpl.class, "getCacheTimeTakenNanos");
-    private static final AtomicLongFieldUpdater<CacheStatisticsImpl> REMOVE_TIME_TAKEN_NANOS_UPDATER =
+    private static final AtomicLongFieldUpdater<CacheStatisticsImpl> REMOVE_TIME_TAKEN_NANOS =
             AtomicLongFieldUpdater.newUpdater(CacheStatisticsImpl.class, "removeTimeTakenNanos");
 
     private volatile long removals;
@@ -195,7 +195,7 @@ public class CacheStatisticsImpl
      * @param number the number by which the counter is increased.
      */
     public void increaseCacheRemovals(long number) {
-        REMOVALS_UPDATER.addAndGet(this, number);
+        REMOVALS.addAndGet(this, number);
     }
 
     /**
@@ -204,7 +204,7 @@ public class CacheStatisticsImpl
      * @param number the number by which the counter is increased.
      */
     public void increaseCacheExpiries(long number) {
-        EXPIRIES_UPDATER.addAndGet(this, number);
+        EXPIRIES.addAndGet(this, number);
     }
 
     /**
@@ -213,7 +213,7 @@ public class CacheStatisticsImpl
      * @param number the number by which the counter is increased.
      */
     public void increaseCachePuts(long number) {
-        PUTS_UPDATER.addAndGet(this, number);
+        PUTS.addAndGet(this, number);
     }
 
     /**
@@ -222,7 +222,7 @@ public class CacheStatisticsImpl
      * @param number the number by which the counter is increased.
      */
     public void increaseCacheHits(long number) {
-        HITS_UPDATER.addAndGet(this, number);
+        HITS.addAndGet(this, number);
     }
 
     /**
@@ -231,7 +231,7 @@ public class CacheStatisticsImpl
      * @param number the number by which the counter is increased.
      */
     public void increaseCacheMisses(long number) {
-        MISSES_UPDATER.addAndGet(this, number);
+        MISSES.addAndGet(this, number);
     }
 
     /**
@@ -240,7 +240,7 @@ public class CacheStatisticsImpl
      * @param number the number by which the counter is increased.
      */
     public void increaseCacheEvictions(long number) {
-        EVICTIONS_UPDATER.addAndGet(this, number);
+        EVICTIONS.addAndGet(this, number);
     }
 
     /**
@@ -252,12 +252,12 @@ public class CacheStatisticsImpl
         for (;;) {
             long nanos = getCacheTimeTakenNanos;
             if (nanos <= Long.MAX_VALUE - duration) {
-                if (GET_CACHE_TIME_TAKEN_NANOS_UPDATER.compareAndSet(this, nanos, nanos + duration)) {
+                if (GET_CACHE_TIME_TAKEN_NANOS.compareAndSet(this, nanos, nanos + duration)) {
                     return;
                 }
             } else {
                 //counter full. Just reset.
-                if (GET_CACHE_TIME_TAKEN_NANOS_UPDATER.compareAndSet(this, nanos, duration)) {
+                if (GET_CACHE_TIME_TAKEN_NANOS.compareAndSet(this, nanos, duration)) {
                     clear();
                     return;
                 }
@@ -274,12 +274,12 @@ public class CacheStatisticsImpl
         for (;;) {
             long nanos = putTimeTakenNanos;
             if (nanos <= Long.MAX_VALUE - duration) {
-                if (PUT_TIME_TAKEN_NANOS_UPDATER.compareAndSet(this, nanos, nanos + duration)) {
+                if (PUT_TIME_TAKEN_NANOS.compareAndSet(this, nanos, nanos + duration)) {
                     return;
                 }
             } else {
                 //counter full. Just reset.
-                if (PUT_TIME_TAKEN_NANOS_UPDATER.compareAndSet(this, nanos, duration)) {
+                if (PUT_TIME_TAKEN_NANOS.compareAndSet(this, nanos, duration)) {
                     clear();
                     return;
                 }
@@ -296,12 +296,12 @@ public class CacheStatisticsImpl
         for (;;) {
             long nanos = removeTimeTakenNanos;
             if (nanos <= Long.MAX_VALUE - duration) {
-                if (REMOVE_TIME_TAKEN_NANOS_UPDATER.compareAndSet(this, nanos, nanos + duration)) {
+                if (REMOVE_TIME_TAKEN_NANOS.compareAndSet(this, nanos, nanos + duration)) {
                     return;
                 }
             } else {
                 //counter full. Just reset.
-                if (REMOVE_TIME_TAKEN_NANOS_UPDATER.compareAndSet(this, nanos, duration)) {
+                if (REMOVE_TIME_TAKEN_NANOS.compareAndSet(this, nanos, duration)) {
                     clear();
                     return;
                 }
@@ -317,15 +317,15 @@ public class CacheStatisticsImpl
      * @return CacheStatisticsImpl with merged data.
      */
     public CacheStatisticsImpl accumulate(CacheStatisticsImpl other) {
-        PUTS_UPDATER.addAndGet(this, other.getCachePuts());
-        REMOVALS_UPDATER.addAndGet(this, other.getCacheRemovals());
-        EXPIRIES_UPDATER.addAndGet(this, other.getCacheExpiries());
-        EVICTIONS_UPDATER.addAndGet(this, other.getCacheEvictions());
-        HITS_UPDATER.addAndGet(this, other.getCacheHits());
-        MISSES_UPDATER.addAndGet(this, other.getCacheMisses());
-        PUT_TIME_TAKEN_NANOS_UPDATER.addAndGet(this, other.getCachePutTimeTakenNanos());
-        GET_CACHE_TIME_TAKEN_NANOS_UPDATER.addAndGet(this, other.getCacheGetTimeTakenNanos());
-        REMOVE_TIME_TAKEN_NANOS_UPDATER.addAndGet(this, other.getCacheRemoveTimeTakenNanos());
+        PUTS.addAndGet(this, other.getCachePuts());
+        REMOVALS.addAndGet(this, other.getCacheRemovals());
+        EXPIRIES.addAndGet(this, other.getCacheExpiries());
+        EVICTIONS.addAndGet(this, other.getCacheEvictions());
+        HITS.addAndGet(this, other.getCacheHits());
+        MISSES.addAndGet(this, other.getCacheMisses());
+        PUT_TIME_TAKEN_NANOS.addAndGet(this, other.getCachePutTimeTakenNanos());
+        GET_CACHE_TIME_TAKEN_NANOS.addAndGet(this, other.getCacheGetTimeTakenNanos());
+        REMOVE_TIME_TAKEN_NANOS.addAndGet(this, other.getCacheRemoveTimeTakenNanos());
         return this;
     }
 

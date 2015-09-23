@@ -29,11 +29,14 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
+import static java.lang.Boolean.FALSE;
+import static java.lang.Boolean.TRUE;
+
 class ExecutionCallbackAdapterFactory {
 
     //Updates the ExecutionCallbackAdapterFactory.done field. An AtomicBoolean is simpler, but creates another unwanted
     //object. Using this approach, you don't create that object.
-    private static final AtomicReferenceFieldUpdater<ExecutionCallbackAdapterFactory, Boolean> DONE_FIELD_UPDATER =
+    private static final AtomicReferenceFieldUpdater<ExecutionCallbackAdapterFactory, Boolean> DONE =
             AtomicReferenceFieldUpdater.newUpdater(ExecutionCallbackAdapterFactory.class, Boolean.class, "done");
 
     private final MultiExecutionCallback multiExecutionCallback;
@@ -41,7 +44,7 @@ class ExecutionCallbackAdapterFactory {
     private final Collection<Member> members;
     private final ILogger logger;
     @SuppressWarnings("CanBeFinal")
-    private volatile Boolean done = Boolean.FALSE;
+    private volatile Boolean done = FALSE;
 
     ExecutionCallbackAdapterFactory(ILogger logger, Collection<Member> members,
                                     MultiExecutionCallback multiExecutionCallback) {
@@ -74,7 +77,7 @@ class ExecutionCallbackAdapterFactory {
     }
 
     private boolean setDone() {
-        return DONE_FIELD_UPDATER.compareAndSet(this, Boolean.FALSE, Boolean.TRUE);
+        return DONE.compareAndSet(this, FALSE, TRUE);
     }
 
     private void triggerOnResponse(Member member, Object response) {

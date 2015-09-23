@@ -35,9 +35,9 @@ import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
  */
 public class ReplicatedRecord<K, V> implements IdentifiedDataSerializable {
 
-    private static final AtomicLongFieldUpdater<ReplicatedRecord> HITS_UPDATER = AtomicLongFieldUpdater
+    private static final AtomicLongFieldUpdater<ReplicatedRecord> HITS = AtomicLongFieldUpdater
             .newUpdater(ReplicatedRecord.class, "hits");
-    private static final AtomicReferenceFieldUpdater<ReplicatedRecord, VectorClockTimestamp> VECTOR_CLOCK_UPDATER =
+    private static final AtomicReferenceFieldUpdater<ReplicatedRecord, VectorClockTimestamp> VECTOR_CLOCK =
             AtomicReferenceFieldUpdater.newUpdater(ReplicatedRecord.class, VectorClockTimestamp.class, "vectorClockTimestamp");
 
     // These fields are only accessed through the updaters
@@ -96,7 +96,7 @@ public class ReplicatedRecord<K, V> implements IdentifiedDataSerializable {
             VectorClockTimestamp vectorClockTimestampCopy = VectorClockTimestamp.copyVector(vectorClockTimestamp);
             vectorClockTimestampCopy = vectorClockTimestampCopy.applyVector(otherVectorClockTimestamp);
             vectorClockTimestampCopy = vectorClockTimestampCopy.incrementClock(member);
-            if (VECTOR_CLOCK_UPDATER.compareAndSet(this, vectorClockTimestamp, vectorClockTimestampCopy)) {
+            if (VECTOR_CLOCK.compareAndSet(this, vectorClockTimestamp, vectorClockTimestampCopy)) {
                 return vectorClockTimestampCopy;
             }
         }
@@ -107,7 +107,7 @@ public class ReplicatedRecord<K, V> implements IdentifiedDataSerializable {
             VectorClockTimestamp vectorClockTimestamp = this.vectorClockTimestamp;
             VectorClockTimestamp vectorClockTimestampCopy = VectorClockTimestamp.copyVector(vectorClockTimestamp);
             vectorClockTimestampCopy = vectorClockTimestampCopy.applyVector(otherVectorClockTimestamp);
-            if (VECTOR_CLOCK_UPDATER.compareAndSet(this, vectorClockTimestamp, vectorClockTimestampCopy)) {
+            if (VECTOR_CLOCK.compareAndSet(this, vectorClockTimestamp, vectorClockTimestampCopy)) {
                 return vectorClockTimestampCopy;
             }
         }
@@ -118,7 +118,7 @@ public class ReplicatedRecord<K, V> implements IdentifiedDataSerializable {
             VectorClockTimestamp vectorClockTimestamp = this.vectorClockTimestamp;
             VectorClockTimestamp vectorClockTimestampCopy = VectorClockTimestamp.copyVector(vectorClockTimestamp);
             vectorClockTimestampCopy = vectorClockTimestampCopy.incrementClock(member);
-            if (VECTOR_CLOCK_UPDATER.compareAndSet(this, vectorClockTimestamp, vectorClockTimestampCopy)) {
+            if (VECTOR_CLOCK.compareAndSet(this, vectorClockTimestamp, vectorClockTimestampCopy)) {
                 return vectorClockTimestampCopy;
             }
         }
@@ -159,7 +159,7 @@ public class ReplicatedRecord<K, V> implements IdentifiedDataSerializable {
     }
 
     private void access() {
-        HITS_UPDATER.incrementAndGet(this);
+        HITS.incrementAndGet(this);
         lastAccessTime = Clock.currentTimeMillis();
     }
 
