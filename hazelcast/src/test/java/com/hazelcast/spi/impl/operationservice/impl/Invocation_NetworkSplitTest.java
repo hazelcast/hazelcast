@@ -54,7 +54,7 @@ import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class InvocationNetworkSplitTest extends HazelcastTestSupport {
+public class Invocation_NetworkSplitTest extends HazelcastTestSupport {
 
     @Test
     public void testWaitingInvocations_whenNodeSplitFromCluster() throws Exception {

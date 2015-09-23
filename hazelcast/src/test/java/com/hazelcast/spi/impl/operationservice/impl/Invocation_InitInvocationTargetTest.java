@@ -10,7 +10,7 @@ import org.junit.runner.RunWith;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class Invocation_initInvocationTargetTest {
+public class Invocation_InitInvocationTargetTest {
 
     @Test
     @Ignore//todo: needs to be implemented.

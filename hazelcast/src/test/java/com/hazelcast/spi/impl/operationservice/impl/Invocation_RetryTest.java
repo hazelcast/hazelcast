@@ -23,7 +23,7 @@ import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class InvocationRetryTest extends HazelcastTestSupport {
+public class Invocation_RetryTest extends HazelcastTestSupport {
 
     @Test
     public void whenPartitionTargetMemberDiesThenOperationSendToNewPartitionOwner() throws Exception {

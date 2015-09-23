@@ -27,7 +27,7 @@ import java.util.concurrent.CountDownLatch;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class AsyncInvocationTest extends HazelcastTestSupport {
+public class OperationServiceImpl_asyncInvokeOnPartitionTest extends HazelcastTestSupport {
 
     @Test
     public void testAsyncInvocation_SamePartitionThread_DifferentPartition() {

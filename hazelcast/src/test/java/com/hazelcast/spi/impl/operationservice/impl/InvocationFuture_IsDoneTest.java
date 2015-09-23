@@ -1,10 +1,8 @@
 package com.hazelcast.spi.impl.operationservice.impl;
 
-import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -18,14 +16,10 @@ import java.util.concurrent.ExecutionException;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.isNull;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class InvocationFutureTest extends HazelcastTestSupport {
+public class InvocationFuture_IsDoneTest extends HazelcastTestSupport {
 
     private HazelcastInstance local;
     private InternalOperationService operationService;
@@ -37,7 +31,7 @@ public class InvocationFutureTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void isDone_whenNullResponse() throws ExecutionException, InterruptedException {
+    public void whenNullResponse() throws ExecutionException, InterruptedException {
         DummyOperation op = new DummyOperation(null);
 
         InternalCompletableFuture future = operationService.invokeOnTarget(null, op, getAddress(local));
@@ -47,7 +41,7 @@ public class InvocationFutureTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void isDone_whenWaitResponse() {
+    public void whenWaitResponse() {
         DummyOperation op = new GetLostPartitionOperation();
 
         InvocationFuture future = (InvocationFuture) operationService.invokeOnTarget(null, op, getAddress(local));
@@ -57,7 +51,7 @@ public class InvocationFutureTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void isDone_whenInterruptedResponse() {
+    public void whenInterruptedResponse() {
         DummyOperation op = new GetLostPartitionOperation();
 
         InvocationFuture future = (InvocationFuture) operationService.invokeOnTarget(null, op, getAddress(local));
@@ -67,7 +61,7 @@ public class InvocationFutureTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void isDone_whenTimeoutResponse() {
+    public void whenTimeoutResponse() {
         DummyOperation op = new GetLostPartitionOperation();
 
         InvocationFuture future = (InvocationFuture) operationService.invokeOnTarget(null, op, getAddress(local));
@@ -94,24 +88,6 @@ public class InvocationFutureTest extends HazelcastTestSupport {
         assertTrue(future.isDone());
     }
 
-    // There is a bug: https://github.com/hazelcast/hazelcast/issues/5001
-    @Test
-    public void andThen_whenNullResponse_thenCallbackExecuted() throws ExecutionException, InterruptedException {
-        DummyOperation op = new DummyOperation(null);
-        final ExecutionCallback callback = mock(ExecutionCallback.class);
-        InternalCompletableFuture future = operationService.invokeOnTarget(null, op, getAddress(local));
-        future.get();
-
-        // Callback can be completed immediately since a response (NULL_RESPONSE) has been already set.
-        future.andThen(callback);
-
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                verify(callback, times(1)).onResponse(isNull());
-            }
-        });
-    }
 
     // Needed to have an invocation and this is the easiest way how to get one and do not bother with its result.
     private static class GetLostPartitionOperation extends DummyOperation {

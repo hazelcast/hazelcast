@@ -21,7 +21,7 @@ import java.util.concurrent.Future;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class InvocationRegressionTest extends HazelcastTestSupport {
+public class Invocation_RegressionTest extends HazelcastTestSupport {
     @Test(expected = ExecutionException.class, timeout = 120000)
     public void testIssue2509() throws Exception {
 
