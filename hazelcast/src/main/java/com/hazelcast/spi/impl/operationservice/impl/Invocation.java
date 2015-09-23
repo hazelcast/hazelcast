@@ -112,7 +112,7 @@ abstract class Invocation implements OperationResponseHandler, Runnable {
     final InvocationFuture invocationFuture;
     final OperationServiceImpl operationService;
 
-    // writes to that are normally handled through the INVOKE_COUNT_UPDATER to ensure atomic increments / decrements
+    // writes to that are normally handled through the INVOKE_COUNT to ensure atomic increments / decrements
     volatile int invokeCount;
 
     Invocation(NodeEngineImpl nodeEngine, String serviceName, Operation op, int partitionId,

@@ -72,7 +72,7 @@ import static com.hazelcast.util.UuidUtil.createMemberUuid;
 
 public class Node {
 
-    private static final AtomicReferenceFieldUpdater<Node, NodeState> NODE_STATE_UPDATER
+    private static final AtomicReferenceFieldUpdater<Node, NodeState> STATE
             = AtomicReferenceFieldUpdater.newUpdater(Node.class, NodeState.class, "state");
 
     private final ILogger logger;
@@ -317,7 +317,7 @@ public class Node {
             logger.finest("We are being asked to shutdown when state = " + state);
         }
 
-        if (!NODE_STATE_UPDATER.compareAndSet(this, NodeState.ACTIVE, NodeState.SHUTTING_DOWN)) {
+        if (!STATE.compareAndSet(this, NodeState.ACTIVE, NodeState.SHUTTING_DOWN)) {
             waitIfAlreadyShuttingDown();
             return;
         }

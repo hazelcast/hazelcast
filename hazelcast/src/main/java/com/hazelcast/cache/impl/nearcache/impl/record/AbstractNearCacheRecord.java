@@ -28,7 +28,7 @@ import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
  */
 public abstract class AbstractNearCacheRecord<V> implements NearCacheRecord<V> {
 
-    private static final AtomicIntegerFieldUpdater<AbstractNearCacheRecord> ACCESS_HIT_UPDATER =
+    private static final AtomicIntegerFieldUpdater<AbstractNearCacheRecord> ACCESS_HIT =
             AtomicIntegerFieldUpdater.newUpdater(AbstractNearCacheRecord.class, "accessHit");
 
     protected V value;
@@ -90,17 +90,17 @@ public abstract class AbstractNearCacheRecord<V> implements NearCacheRecord<V> {
 
     @Override
     public void setAccessHit(int accessHit) {
-        ACCESS_HIT_UPDATER.set(this, accessHit);
+        ACCESS_HIT.set(this, accessHit);
     }
 
     @Override
     public void incrementAccessHit() {
-        ACCESS_HIT_UPDATER.addAndGet(this, 1);
+        ACCESS_HIT.addAndGet(this, 1);
     }
 
     @Override
     public void resetAccessHit() {
-        ACCESS_HIT_UPDATER.set(this, 0);
+        ACCESS_HIT.set(this, 0);
     }
 
     @Override

@@ -26,17 +26,17 @@ import static com.hazelcast.util.JsonUtil.getLong;
 
 public class LocalExecutorStatsImpl implements LocalExecutorStats {
 
-    private static final AtomicLongFieldUpdater<LocalExecutorStatsImpl> PENDING_UPDATER = AtomicLongFieldUpdater
+    private static final AtomicLongFieldUpdater<LocalExecutorStatsImpl> PENDING = AtomicLongFieldUpdater
             .newUpdater(LocalExecutorStatsImpl.class, "pending");
-    private static final AtomicLongFieldUpdater<LocalExecutorStatsImpl> STARTED_UPDATER = AtomicLongFieldUpdater
+    private static final AtomicLongFieldUpdater<LocalExecutorStatsImpl> STARTED = AtomicLongFieldUpdater
             .newUpdater(LocalExecutorStatsImpl.class, "started");
-    private static final AtomicLongFieldUpdater<LocalExecutorStatsImpl> COMPLETED_UPDATER = AtomicLongFieldUpdater
+    private static final AtomicLongFieldUpdater<LocalExecutorStatsImpl> COMPLETED = AtomicLongFieldUpdater
             .newUpdater(LocalExecutorStatsImpl.class, "completed");
-    private static final AtomicLongFieldUpdater<LocalExecutorStatsImpl> CANCELLED_UPDATER = AtomicLongFieldUpdater
+    private static final AtomicLongFieldUpdater<LocalExecutorStatsImpl> CANCELLED = AtomicLongFieldUpdater
             .newUpdater(LocalExecutorStatsImpl.class, "cancelled");
-    private static final AtomicLongFieldUpdater<LocalExecutorStatsImpl> TOTAL_START_LATENCY_UPDATER = AtomicLongFieldUpdater
+    private static final AtomicLongFieldUpdater<LocalExecutorStatsImpl> TOTAL_START_LATENCY = AtomicLongFieldUpdater
             .newUpdater(LocalExecutorStatsImpl.class, "totalStartLatency");
-    private static final AtomicLongFieldUpdater<LocalExecutorStatsImpl> TOTAL_EXECUTION_TIME_UPDATER = AtomicLongFieldUpdater
+    private static final AtomicLongFieldUpdater<LocalExecutorStatsImpl> TOTAL_EXECUTION_TIME = AtomicLongFieldUpdater
             .newUpdater(LocalExecutorStatsImpl.class, "totalExecutionTime");
     private long creationTime;
 
@@ -53,26 +53,26 @@ public class LocalExecutorStatsImpl implements LocalExecutorStats {
     }
 
     public void startPending() {
-        PENDING_UPDATER.incrementAndGet(this);
+        PENDING.incrementAndGet(this);
     }
 
     public void startExecution(long elapsed) {
-        TOTAL_START_LATENCY_UPDATER.addAndGet(this, elapsed);
-        STARTED_UPDATER.incrementAndGet(this);
-        PENDING_UPDATER.decrementAndGet(this);
+        TOTAL_START_LATENCY.addAndGet(this, elapsed);
+        STARTED.incrementAndGet(this);
+        PENDING.decrementAndGet(this);
     }
 
     public void finishExecution(long elapsed) {
-        TOTAL_EXECUTION_TIME_UPDATER.addAndGet(this, elapsed);
-        COMPLETED_UPDATER.incrementAndGet(this);
+        TOTAL_EXECUTION_TIME.addAndGet(this, elapsed);
+        COMPLETED.incrementAndGet(this);
     }
 
     public void rejectExecution() {
-        PENDING_UPDATER.decrementAndGet(this);
+        PENDING.decrementAndGet(this);
     }
 
     public void cancelExecution() {
-        CANCELLED_UPDATER.incrementAndGet(this);
+        CANCELLED.incrementAndGet(this);
     }
 
     @Override
@@ -126,12 +126,12 @@ public class LocalExecutorStatsImpl implements LocalExecutorStats {
     @Override
     public void fromJson(JsonObject json) {
         creationTime = getLong(json, "creationTime", -1L);
-        PENDING_UPDATER.set(this, getLong(json, "pending", -1L));
-        STARTED_UPDATER.set(this, getLong(json, "started", -1L));
-        COMPLETED_UPDATER.set(this, getLong(json, "completed", -1L));
-        CANCELLED_UPDATER.set(this, getLong(json, "cancelled", -1L));
-        TOTAL_START_LATENCY_UPDATER.set(this, getLong(json, "totalStartLatency", -1L));
-        TOTAL_EXECUTION_TIME_UPDATER.set(this, getLong(json, "totalExecutionTime", -1L));
+        PENDING.set(this, getLong(json, "pending", -1L));
+        STARTED.set(this, getLong(json, "started", -1L));
+        COMPLETED.set(this, getLong(json, "completed", -1L));
+        CANCELLED.set(this, getLong(json, "cancelled", -1L));
+        TOTAL_START_LATENCY.set(this, getLong(json, "totalStartLatency", -1L));
+        TOTAL_EXECUTION_TIME.set(this, getLong(json, "totalExecutionTime", -1L));
     }
 
     @Override
