@@ -30,7 +30,7 @@ import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class InvocationRegistry_notifyTest extends HazelcastTestSupport {
+public class InvocationRegistry_NotifyTest extends HazelcastTestSupport {
 
     private InvocationRegistry invocationRegistry;
     private NodeEngineImpl nodeEngine;
