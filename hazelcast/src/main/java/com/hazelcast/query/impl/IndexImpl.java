@@ -94,14 +94,9 @@ public class IndexImpl implements Index {
         }
 
         Data key = e.getIndexKey();
-        Comparable oldValue = recordValues.remove(key);
         Comparable newValue = e.getAttribute(attribute);
-        if (newValue == null) {
-            newValue = NULL;
-        } else if (newValue.getClass().isEnum()) {
-            newValue = TypeConverters.ENUM_CONVERTER.convert(newValue);
-        }
-        recordValues.put(key, newValue);
+        newValue = sanitizeValue(newValue);
+        Comparable oldValue = recordValues.put(key, newValue);
         if (oldValue == null) {
             // new
             indexStore.newIndex(newValue, e);
@@ -109,6 +104,16 @@ public class IndexImpl implements Index {
             // update
             indexStore.updateIndex(oldValue, newValue, e);
         }
+    }
+
+    private Comparable sanitizeValue(Comparable value) {
+        if (value == null) {
+            return NULL;
+        }
+        if (value.getClass().isEnum()) {
+            return TypeConverters.ENUM_CONVERTER.convert(value);
+        }
+        return value;
     }
 
     @Override
