@@ -44,7 +44,7 @@ public class IOBalancerMemoryLeakTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testMemoryLeak() {
+    public void testEachConnectionUseDifferentSelectorEventually() throws IOException {
         HazelcastInstance instance = Hazelcast.newHazelcastInstance();
         HTTPCommunicator communicator = new HTTPCommunicator(instance);
         TcpIpConnectionManager connectionManager = (TcpIpConnectionManager) getConnectionManager(instance);
