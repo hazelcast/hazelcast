@@ -448,6 +448,21 @@ public abstract class HazelcastTestSupport {
         }
     }
 
+    protected static String generateKeyForPartition(HazelcastInstance instance, int partitionId) {
+        Cluster cluster = instance.getCluster();
+        checkPartitionCountGreaterOrEqualMemberCount(instance);
+
+        Member localMember = cluster.getLocalMember();
+        PartitionService partitionService = instance.getPartitionService();
+        while (true) {
+            String id = randomString();
+            Partition partition = partitionService.getPartition(id);
+            if (partition.getPartitionId() == partitionId) {
+                return id;
+            }
+        }
+    }
+
     private static void checkPartitionCountGreaterOrEqualMemberCount(HazelcastInstance instance) {
         Cluster cluster = instance.getCluster();
         int memberCount = cluster.getMembers().size();

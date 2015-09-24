@@ -16,18 +16,15 @@
 
 package com.hazelcast.map.impl.query;
 
-import com.hazelcast.map.impl.operation.AbstractMapOperation;
 import com.hazelcast.map.impl.MapServiceContext;
+import com.hazelcast.map.impl.operation.AbstractMapOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.ReadonlyOperation;
-import java.io.IOException;
-import java.util.Collection;
 
-import static java.util.Collections.singletonList;
+import java.io.IOException;
 
 public class QueryPartitionOperation extends AbstractMapOperation implements PartitionAwareOperation, ReadonlyOperation {
 
@@ -47,10 +44,7 @@ public class QueryPartitionOperation extends AbstractMapOperation implements Par
         MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         MapQueryEngine queryEngine = mapServiceContext.getMapQueryEngine();
 
-        Collection<QueryableEntry> queryableEntries = queryEngine.queryOnPartition(name, predicate, getPartitionId());
-        result = queryEngine.newQueryResult(1);
-        result.addAll(queryableEntries);
-        result.setPartitionIds(singletonList(getPartitionId()));
+        result = queryEngine.queryLocalPartition(name, predicate, getPartitionId());
     }
 
     @Override

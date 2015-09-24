@@ -28,14 +28,14 @@ import java.util.Map;
 
 public class QueryEventFilter extends EntryEventFilter {
 
-    Predicate predicate;
+    private Predicate predicate;
+
+    public QueryEventFilter() {
+    }
 
     public QueryEventFilter(boolean includeValue, Data key, Predicate predicate) {
         super(includeValue, key);
         this.predicate = predicate;
-    }
-
-    public QueryEventFilter() {
     }
 
     public Object getPredicate() {

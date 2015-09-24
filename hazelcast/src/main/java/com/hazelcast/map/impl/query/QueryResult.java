@@ -47,6 +47,11 @@ public class QueryResult implements DataSerializable {
         this.resultLimit = resultLimit;
     }
 
+    // just for testing
+    public long getResultLimit() {
+        return resultLimit;
+    }
+
     public void addAll(Collection<QueryableEntry> queryableEntries) {
         for (QueryableEntry entry : queryableEntries) {
             if (++resultSize > resultLimit) {

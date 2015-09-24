@@ -64,7 +64,7 @@ public class QueryResultSizeLimiter {
     static final int DISABLED = -1;
 
     private final MapServiceContext mapServiceContext;
-    private final ILogger log;
+    private final ILogger logger;
 
     private final int maxResultLimit;
     private final int maxLocalPartitionsLimitForPreCheck;
@@ -73,11 +73,11 @@ public class QueryResultSizeLimiter {
     private final boolean isQueryResultLimitEnabled;
     private final boolean isPreCheckEnabled;
 
-    public QueryResultSizeLimiter(MapServiceContext mapServiceContext, ILogger log) {
+    public QueryResultSizeLimiter(MapServiceContext mapServiceContext, ILogger logger) {
         NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
 
         this.mapServiceContext = mapServiceContext;
-        this.log = log;
+        this.logger = logger;
 
         GroupProperties groupProperties = nodeEngine.getGroupProperties();
         this.maxResultLimit = getMaxResultLimit(groupProperties);
@@ -146,6 +146,7 @@ public class QueryResultSizeLimiter {
 
     private int getMaxResultLimit(GroupProperties groupProperties) {
         int maxResultLimit = groupProperties.getInteger(QUERY_RESULT_SIZE_LIMIT);
+
         if (maxResultLimit == -1) {
             return DISABLED;
         }
@@ -153,7 +154,7 @@ public class QueryResultSizeLimiter {
             throw new IllegalArgumentException(QUERY_RESULT_SIZE_LIMIT + " has to be -1 (disabled) or a positive number!");
         }
         if (maxResultLimit < MINIMUM_MAX_RESULT_LIMIT) {
-            log.finest("Max result limit was set to minimal value of " + MINIMUM_MAX_RESULT_LIMIT);
+            logger.finest("Max result limit was set to minimal value of " + MINIMUM_MAX_RESULT_LIMIT);
             return MINIMUM_MAX_RESULT_LIMIT;
         }
         return maxResultLimit;
