@@ -26,11 +26,12 @@ import com.hazelcast.map.impl.query.QueryOperation;
 import com.hazelcast.map.impl.query.QueryPartitionOperation;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.impl.QueryResultEntry;
+import com.hazelcast.map.impl.query.QueryResultRow;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.impl.operationservice.InternalOperationService;
 import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.util.IterationType;
 
 import java.security.Permission;
 import java.util.ArrayList;
@@ -61,7 +62,7 @@ public abstract class AbstractMapQueryMessageTask<P> extends AbstractCallableMes
 
     @Override
     protected final Object call() throws Exception {
-        Collection<QueryResultEntry> result = new LinkedList<QueryResultEntry>();
+        Collection<QueryResultRow> result = new LinkedList<QueryResultRow>();
 
         Collection<Member> members = nodeEngine.getClusterService().getMembers();
         List<Future> futures = new ArrayList<Future>();
@@ -83,19 +84,20 @@ public abstract class AbstractMapQueryMessageTask<P> extends AbstractCallableMes
 
     protected abstract Predicate getPredicate();
 
-    protected abstract Object reduce(Collection<QueryResultEntry> result);
+    protected abstract Object reduce(Collection<QueryResultRow> result);
 
     private void createInvocations(Collection<Member> members, List<Future> futures, Predicate predicate) {
         final InternalOperationService operationService = nodeEngine.getOperationService();
         for (Member member : members) {
             Future future = operationService.createInvocationBuilder(SERVICE_NAME,
-                    new QueryOperation(getDistributedObjectName(), predicate),
+                    // todo: this is a performance issue; since always keys + values are downloaded.
+                    new QueryOperation(getDistributedObjectName(), predicate, IterationType.ENTRY),
                     member.getAddress()).invoke();
             futures.add(future);
         }
     }
 
-    private void collectResults(Collection<QueryResultEntry> result, List<Future> futures, Set<Integer> finishedPartitions)
+    private void collectResults(Collection<QueryResultRow> result, List<Future> futures, Set<Integer> finishedPartitions)
             throws InterruptedException, java.util.concurrent.ExecutionException {
 
         for (Future future : futures) {
@@ -104,7 +106,7 @@ public abstract class AbstractMapQueryMessageTask<P> extends AbstractCallableMes
                 Collection<Integer> partitionIds = queryResult.getPartitionIds();
                 if (partitionIds != null) {
                     finishedPartitions.addAll(partitionIds);
-                    result.addAll(queryResult.getResult());
+                    result.addAll(queryResult.getRows());
                 }
             }
         }
@@ -128,7 +130,9 @@ public abstract class AbstractMapQueryMessageTask<P> extends AbstractCallableMes
                                                        Predicate predicate) {
         final InternalOperationService operationService = nodeEngine.getOperationService();
         for (Integer partitionId : missingPartitionsList) {
-            QueryPartitionOperation queryPartitionOperation = new QueryPartitionOperation(getDistributedObjectName(), predicate);
+            //todo: potential performance problem since keys+values are retrieved.
+            QueryPartitionOperation queryPartitionOperation = new QueryPartitionOperation(
+                    getDistributedObjectName(), predicate, IterationType.ENTRY);
             queryPartitionOperation.setPartitionId(partitionId);
             try {
                 Future future = operationService.invokeOnPartition(SERVICE_NAME,
@@ -140,11 +144,11 @@ public abstract class AbstractMapQueryMessageTask<P> extends AbstractCallableMes
         }
     }
 
-    private void collectResultsFromMissingPartitions(Collection<QueryResultEntry> result, List<Future> futures)
+    private void collectResultsFromMissingPartitions(Collection<QueryResultRow> result, List<Future> futures)
             throws InterruptedException, java.util.concurrent.ExecutionException {
         for (Future future : futures) {
             QueryResult queryResult = (QueryResult) future.get();
-            result.addAll(queryResult.getResult());
+            result.addAll(queryResult.getRows());
         }
     }
 }

@@ -12,6 +12,7 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.util.IterationType;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -53,25 +54,25 @@ public class MapQueryEngineImpl_queryLocalPartition_resultSizeLimitTest extends 
     public void whenLimitNotExceeded() throws Exception {
         fillPartition(limit - 1);
 
-        QueryResult result = queryEngine.queryLocalPartition(map.getName(), TruePredicate.INSTANCE, PARTITION_ID);
+        QueryResult result = queryEngine.queryLocalPartition(map.getName(), TruePredicate.INSTANCE, PARTITION_ID, IterationType.ENTRY);
 
-        assertEquals(limit - 1, result.getResult().size());
+        assertEquals(limit - 1, result.getRows().size());
     }
 
     @Test
     public void whenLimitEquals() throws Exception {
         fillPartition(limit);
 
-        QueryResult result = queryEngine.queryLocalPartition(map.getName(), TruePredicate.INSTANCE, PARTITION_ID);
+        QueryResult result = queryEngine.queryLocalPartition(map.getName(), TruePredicate.INSTANCE, PARTITION_ID, IterationType.ENTRY);
 
-        assertEquals(limit, result.getResult().size());
+        assertEquals(limit, result.getRows().size());
     }
 
     @Test(expected = QueryResultSizeExceededException.class)
     public void whenLimitExceeded() throws Exception {
         fillPartition(limit + 1);
 
-        queryEngine.queryLocalPartition(map.getName(), TruePredicate.INSTANCE, PARTITION_ID);
+        queryEngine.queryLocalPartition(map.getName(), TruePredicate.INSTANCE, PARTITION_ID, IterationType.ENTRY);
     }
 
     private void fillPartition(int count) {

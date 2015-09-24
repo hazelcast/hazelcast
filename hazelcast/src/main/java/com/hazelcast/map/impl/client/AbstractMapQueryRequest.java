@@ -22,19 +22,19 @@ import com.hazelcast.client.impl.client.SecureRequest;
 import com.hazelcast.core.Member;
 import com.hazelcast.map.impl.MapPortableHook;
 import com.hazelcast.map.impl.MapService;
-import com.hazelcast.map.impl.query.QueryResult;
 import com.hazelcast.map.impl.query.QueryOperation;
 import com.hazelcast.map.impl.query.QueryPartitionOperation;
+import com.hazelcast.map.impl.query.QueryResult;
+import com.hazelcast.map.impl.query.QueryResultRow;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
+import com.hazelcast.util.BitSetUtils;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.IterationType;
-import com.hazelcast.util.QueryResultSet;
-import com.hazelcast.util.BitSetUtils;
 
 import java.io.IOException;
 import java.security.Permission;
@@ -65,7 +65,7 @@ abstract class AbstractMapQueryRequest extends InvocationClientRequest implement
 
     @Override
     protected final void invoke() {
-        QueryResultSet result = new QueryResultSet(null, iterationType, true);
+        List<QueryResultRow> result = new ArrayList<QueryResultRow>();
         try {
             Predicate predicate = getPredicate();
             int partitionCount = getClientEngine().getPartitionService().getPartitionCount();
@@ -78,15 +78,14 @@ abstract class AbstractMapQueryRequest extends InvocationClientRequest implement
         getEndpoint().sendResponse(result, getCallId());
     }
 
-    private BitSet invokeOnMembers(QueryResultSet result, Predicate predicate, int partitionCount)
+    private BitSet invokeOnMembers(Collection<QueryResultRow> result, Predicate predicate, int partitionCount)
             throws InterruptedException, ExecutionException {
         Collection<Member> members = getClientEngine().getClusterService().getMembers();
         List<Future> futures = createInvocations(members, predicate);
-        BitSet finishedPartitions = collectResults(result, futures, partitionCount);
-        return finishedPartitions;
+        return collectResults(result, futures, partitionCount);
     }
 
-    private void invokeOnMissingPartitions(QueryResultSet result, Predicate predicate,
+    private void invokeOnMissingPartitions(Collection<QueryResultRow> result, Predicate predicate,
                                            BitSet finishedPartitions, int partitionCount)
             throws InterruptedException, ExecutionException {
         if (hasMissingPartitions(finishedPartitions, partitionCount)) {
@@ -100,7 +99,7 @@ abstract class AbstractMapQueryRequest extends InvocationClientRequest implement
     private List<Future> createInvocations(Collection<Member> members, Predicate predicate) {
         List<Future> futures = new ArrayList<Future>(members.size());
         for (Member member : members) {
-            Future future = createInvocationBuilder(SERVICE_NAME, new QueryOperation(name, predicate),
+            Future future = createInvocationBuilder(SERVICE_NAME, new QueryOperation(name, predicate, iterationType),
                     member.getAddress()).invoke();
             futures.add(future);
         }
@@ -108,7 +107,7 @@ abstract class AbstractMapQueryRequest extends InvocationClientRequest implement
     }
 
     @SuppressWarnings("unchecked")
-    private BitSet collectResults(QueryResultSet result, List<Future> futures, int partitionCount)
+    private BitSet collectResults(Collection<QueryResultRow> result, List<Future> futures, int partitionCount)
             throws InterruptedException, ExecutionException {
         BitSet finishedPartitions = new BitSet(partitionCount);
         for (Future future : futures) {
@@ -121,7 +120,7 @@ abstract class AbstractMapQueryRequest extends InvocationClientRequest implement
                     //running. In this case we discard all results from this member and will target the missing
                     //partition separately later.
                     BitSetUtils.setBits(finishedPartitions, partitionIds);
-                    result.addAll(queryResult.getResult());
+                    result.addAll(queryResult.getRows());
                 }
             }
         }
@@ -145,10 +144,10 @@ abstract class AbstractMapQueryRequest extends InvocationClientRequest implement
     private void createInvocationsForMissingPartitions(List<Integer> missingPartitionsList, List<Future> futures,
                                                        Predicate predicate) {
         for (Integer partitionId : missingPartitionsList) {
-            QueryPartitionOperation queryPartitionOperation = new QueryPartitionOperation(name, predicate);
-            queryPartitionOperation.setPartitionId(partitionId);
+            QueryPartitionOperation op = new QueryPartitionOperation(name, predicate, iterationType);
+            op.setPartitionId(partitionId);
             try {
-                Future future = createInvocationBuilder(SERVICE_NAME, queryPartitionOperation, partitionId).invoke();
+                Future future = createInvocationBuilder(SERVICE_NAME, op, partitionId).invoke();
                 futures.add(future);
             } catch (Throwable t) {
                 throw ExceptionUtil.rethrow(t);
@@ -157,11 +156,11 @@ abstract class AbstractMapQueryRequest extends InvocationClientRequest implement
     }
 
     @SuppressWarnings("unchecked")
-    private void collectResultsFromMissingPartitions(QueryResultSet result, List<Future> futures)
+    private void collectResultsFromMissingPartitions(Collection<QueryResultRow> result, List<Future> futures)
             throws InterruptedException, ExecutionException {
         for (Future future : futures) {
             QueryResult queryResult = (QueryResult) future.get();
-            result.addAll(queryResult.getResult());
+            result.addAll(queryResult.getRows());
         }
     }
 

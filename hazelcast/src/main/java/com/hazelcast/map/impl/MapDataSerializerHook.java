@@ -21,14 +21,14 @@ import com.hazelcast.map.impl.operation.PutBackupOperation;
 import com.hazelcast.map.impl.operation.PutOperation;
 import com.hazelcast.map.impl.operation.RemoveBackupOperation;
 import com.hazelcast.map.impl.operation.RemoveOperation;
+import com.hazelcast.map.impl.query.QueryResultRow;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.internal.serialization.impl.ArrayDataSerializableFactory;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
-import com.hazelcast.query.impl.QueryResultEntryImpl;
 import com.hazelcast.util.ConstructorFunction;
-import com.hazelcast.util.QueryResultSet;
+import com.hazelcast.map.impl.query.QueryResultSet;
 
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.MAP_DS_FACTORY;
 import static com.hazelcast.internal.serialization.impl.FactoryIdHelper.MAP_DS_FACTORY_ID;
@@ -50,7 +50,7 @@ public final class MapDataSerializerHook implements DataSerializerHook {
     public static final int ENTRY_SET = 10;
     public static final int ENTRY_VIEW = 11;
     //    public static final int MAP_STATS = 12;
-    public static final int QUERY_RESULT_ENTRY = 13;
+    public static final int QUERY_RESULT_ROW = 13;
     public static final int QUERY_RESULT_SET = 14;
 
     private static final int LEN = QUERY_RESULT_SET + 1;
@@ -115,9 +115,9 @@ public final class MapDataSerializerHook implements DataSerializerHook {
 //                return new LocalMapStatsImpl();
 //            }
 //        };
-        constructors[QUERY_RESULT_ENTRY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+        constructors[QUERY_RESULT_ROW] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
-                return new QueryResultEntryImpl();
+                return new QueryResultRow();
             }
         };
         constructors[QUERY_RESULT_SET] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {

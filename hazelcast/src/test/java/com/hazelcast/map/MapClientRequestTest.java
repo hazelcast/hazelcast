@@ -57,7 +57,7 @@ import com.hazelcast.query.SqlPredicate;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.IterationType;
-import com.hazelcast.util.QueryResultSet;
+import com.hazelcast.map.impl.query.QueryResultSet;
 import com.hazelcast.util.ThreadUtil;
 import org.junit.Ignore;
 import org.junit.Test;

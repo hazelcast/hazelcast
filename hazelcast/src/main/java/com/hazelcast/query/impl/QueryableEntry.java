@@ -16,6 +16,7 @@
 
 package com.hazelcast.query.impl;
 
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.QueryException;
 
 import java.util.Map;
@@ -23,11 +24,17 @@ import java.util.Map;
 /**
  *  This interface contains methods related to Queryable Entry which means searched an indexed by sql query or predicate .
  */
-public interface QueryableEntry extends Map.Entry, QueryResultEntry {
+public interface QueryableEntry extends Map.Entry {
 
     Object getValue();
 
     Object getKey();
+
+    Data getIndexKey();
+
+    Data getKeyData();
+
+    Data getValueData();
 
     Comparable getAttribute(String attributeName) throws QueryException;
 

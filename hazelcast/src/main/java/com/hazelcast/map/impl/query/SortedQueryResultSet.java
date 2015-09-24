@@ -14,16 +14,18 @@
  * limitations under the License.
  */
 
-package com.hazelcast.util;
+package com.hazelcast.map.impl.query;
+
+import com.hazelcast.util.IterationType;
 
 import java.util.AbstractSet;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.NoSuchElementException;
 
 /**
- * Collection class for results of query operationsgit
+ * Collection class for results of query operations
  */
 public class SortedQueryResultSet extends AbstractSet<Map.Entry> {
 
@@ -42,7 +44,7 @@ public class SortedQueryResultSet extends AbstractSet<Map.Entry> {
     @Override
     public Iterator iterator() {
         if (entries == null) {
-            return new EmptyIterator();
+            return Collections.EMPTY_LIST.iterator();
         }
         return new SortedIterator();
     }
@@ -57,22 +59,25 @@ public class SortedQueryResultSet extends AbstractSet<Map.Entry> {
 
     private class SortedIterator implements Iterator {
 
-        final Iterator<Map.Entry> iter = entries.iterator();
+        private final Iterator<Map.Entry> iterator = entries.iterator();
 
         @Override
         public boolean hasNext() {
-            return iter.hasNext();
+            return iterator.hasNext();
         }
 
         @Override
         public Object next() {
-            Map.Entry entry = iter.next();
-            if (iterationType == IterationType.VALUE) {
-                return entry.getValue();
-            } else if (iterationType == IterationType.KEY) {
-                return entry.getKey();
-            } else {
-                return entry;
+            Map.Entry entry = iterator.next();
+            switch (iterationType) {
+                case KEY:
+                    return entry.getKey();
+                case VALUE:
+                    return entry.getValue();
+                case ENTRY:
+                    return entry;
+                default:
+                    throw new IllegalStateException("Unrecognized iterationType:" + iterationType);
             }
         }
 
@@ -81,23 +86,4 @@ public class SortedQueryResultSet extends AbstractSet<Map.Entry> {
             throw new UnsupportedOperationException();
         }
     }
-
-    private static class EmptyIterator implements Iterator {
-
-        @Override
-        public boolean hasNext() {
-            return false;
-        }
-
-        @Override
-        public Object next() {
-            throw new NoSuchElementException();
-        }
-
-        @Override
-        public void remove() {
-            throw new UnsupportedOperationException();
-        }
-    }
-
 }
