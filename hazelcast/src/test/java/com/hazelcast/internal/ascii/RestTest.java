@@ -34,9 +34,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
@@ -176,13 +175,13 @@ public class RestTest {
             this.address = "http:/" + instance.getCluster().getLocalMember().getSocketAddress().toString() + "/hazelcast/rest/";
         }
 
-        public String poll(String queueName, long timeout) {
+        public String poll(String queueName, long timeout) throws IOException {
             String url = address + "queues/" + queueName + "/" + String.valueOf(timeout);
             String result = doGet(url);
             return result;
         }
 
-        public int size(String queueName) {
+        public int size(String queueName) throws IOException {
             String url = address + "queues/" + queueName + "/size";
             Integer result = Integer.parseInt(doGet(url));
             return result;
@@ -211,7 +210,7 @@ public class RestTest {
             return urlConnection.getResponseCode();
         }
 
-        public String get(String mapName, String key) {
+        public String get(String mapName, String key) throws IOException {
             String url = address + "maps/" + mapName + "/" + key;
             String result = doGet(url);
             return result;
@@ -269,21 +268,16 @@ public class RestTest {
             return urlConnection.getResponseCode();
         }
 
-        private String doGet(final String url) {
-            String result = null;
+        private String doGet(final String url) throws IOException {
+            HttpURLConnection httpUrlConnection = (HttpURLConnection) (new URL(url)).openConnection();
             try {
-                HttpURLConnection httpUrlConnection = (HttpURLConnection) (new URL(url)).openConnection();
-                BufferedReader rd = new BufferedReader(new InputStreamReader(httpUrlConnection.getInputStream()));
-                StringBuilder data = new StringBuilder(150);
-                String line;
-                while ((line = rd.readLine()) != null) data.append(line);
-                rd.close();
-                result = data.toString();
+                InputStream inputStream = httpUrlConnection.getInputStream();
+                byte[] buffer = new byte[4096];
+                int readBytes = inputStream.read(buffer);
+                return readBytes == -1 ? "" : new String(buffer, 0, readBytes);
+            } finally {
                 httpUrlConnection.disconnect();
-            } catch (Exception e) {
-                e.printStackTrace();
             }
-            return result;
         }
     }
 }
