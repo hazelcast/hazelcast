@@ -48,7 +48,7 @@ public class QueryResult implements DataSerializable {
     }
 
     // just for testing
-    public long getResultLimit() {
+    long getResultLimit() {
         return resultLimit;
     }
 

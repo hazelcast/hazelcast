@@ -107,7 +107,7 @@ public class MapQueryEngineImpl implements MapQueryEngine {
         this.executor = nodeEngine.getExecutionService().getExecutor(QUERY_EXECUTOR);
     }
 
-    public QueryResultSizeLimiter getQueryResultSizeLimiter() {
+    QueryResultSizeLimiter getQueryResultSizeLimiter() {
         return queryResultSizeLimiter;
     }
 
@@ -121,14 +121,14 @@ public class MapQueryEngineImpl implements MapQueryEngine {
         predicate = queryOptimizer.optimize(predicate, mapContainer.getIndexes());
 
         // then we try to run using an index, but if that doesn't work, we'll try a full table scan
-        // This would be the point where a query-plan should be added. Is should determine if a full table scan
+        // This would be the point where a query-plan should be added. It should determine if a full table scan
         // or an index should be used.
         QueryResult result = tryQueryUsingIndexes(predicate, initialPartitions, mapContainer);
         if (result == null) {
             result = queryUsingFullTableScan(mapName, predicate, initialPartitions);
         }
 
-        if (checkPartitionState(initialPartitionStateVersion, predicate)) {
+        if (hasPartitionVersion(initialPartitionStateVersion, predicate)) {
             result.setPartitionIds(initialPartitions);
         }
 
@@ -245,8 +245,8 @@ public class MapQueryEngineImpl implements MapQueryEngine {
         return returnWithDeadline(lsFutures, QUERY_EXECUTION_TIMEOUT_MINUTES, MINUTES, RETHROW_EVERYTHING);
     }
 
-    private boolean checkPartitionState(int expectedPartitionStateVersion, Predicate predicate) {
-        if (expectedPartitionStateVersion != partitionService.getPartitionStateVersion()) {
+    private boolean hasPartitionVersion(int expectedVersion, Predicate predicate) {
+        if (expectedVersion != partitionService.getPartitionStateVersion()) {
             logger.info("Partition assignments changed while executing query: " + predicate);
             return false;
         }
