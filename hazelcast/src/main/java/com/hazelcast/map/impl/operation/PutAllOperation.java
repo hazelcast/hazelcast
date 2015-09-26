@@ -19,7 +19,7 @@ package com.hazelcast.map.impl.operation;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.map.impl.EntryViews;
-import com.hazelcast.map.impl.MapEntrySet;
+import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.map.impl.event.MapEventPublisher;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.nearcache.NearCacheProvider;
@@ -46,7 +46,7 @@ import java.util.Set;
 public class PutAllOperation extends AbstractMapOperation implements PartitionAwareOperation,
         BackupAwareOperation, MutatingOperation {
 
-    private MapEntrySet entrySet;
+    private MapEntries mapEntries;
     private boolean initialLoad;
     private List<Map.Entry<Data, Data>> backupEntrySet;
     private List<RecordInfo> backupRecordInfos;
@@ -55,14 +55,14 @@ public class PutAllOperation extends AbstractMapOperation implements PartitionAw
     public PutAllOperation() {
     }
 
-    public PutAllOperation(String name, MapEntrySet entrySet) {
+    public PutAllOperation(String name, MapEntries mapEntries) {
         super(name);
-        this.entrySet = entrySet;
+        this.mapEntries = mapEntries;
     }
 
-    public PutAllOperation(String name, MapEntrySet entrySet, boolean initialLoad) {
+    public PutAllOperation(String name, MapEntries mapEntries, boolean initialLoad) {
         super(name);
-        this.entrySet = entrySet;
+        this.mapEntries = mapEntries;
         this.initialLoad = initialLoad;
     }
 
@@ -74,10 +74,9 @@ public class PutAllOperation extends AbstractMapOperation implements PartitionAw
         final MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         this.recordStore = mapServiceContext.getRecordStore(partitionId, name);
         RecordStore recordStore = this.recordStore;
-        Set<Map.Entry<Data, Data>> entries = entrySet.getEntrySet();
         InternalPartitionService partitionService = getNodeEngine().getPartitionService();
         Set<Data> keysToInvalidate = new HashSet<Data>();
-        for (Map.Entry<Data, Data> entry : entries) {
+        for (Map.Entry<Data, Data> entry : mapEntries) {
             put(partitionId, mapServiceContext, recordStore, partitionService, keysToInvalidate, entry);
         }
         invalidateNearCaches(keysToInvalidate);
@@ -164,14 +163,14 @@ public class PutAllOperation extends AbstractMapOperation implements PartitionAw
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeObject(entrySet);
+        out.writeObject(mapEntries);
         out.writeBoolean(initialLoad);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        entrySet = in.readObject();
+        mapEntries = in.readObject();
         initialLoad = in.readBoolean();
     }
 }

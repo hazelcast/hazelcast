@@ -19,7 +19,7 @@ package com.hazelcast.map.impl.client;
 import com.hazelcast.client.impl.client.AllPartitionsClientRequest;
 import com.hazelcast.client.impl.client.RetryableRequest;
 import com.hazelcast.client.impl.client.SecureRequest;
-import com.hazelcast.map.impl.MapEntrySet;
+import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.map.impl.MapPortableHook;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.operation.MapGetAllOperationFactory;
@@ -51,10 +51,12 @@ public class MapGetAllRequest extends AllPartitionsClientRequest implements Port
         this.keys = keys;
     }
 
+    @Override
     public int getFactoryId() {
         return MapPortableHook.F_ID;
     }
 
+    @Override
     public int getClassId() {
         return MapPortableHook.GET_ALL;
     }
@@ -66,22 +68,23 @@ public class MapGetAllRequest extends AllPartitionsClientRequest implements Port
 
     @Override
     protected Object reduce(Map<Integer, Object> map) {
-        MapEntrySet resultSet = new MapEntrySet();
+        MapEntries result = new MapEntries();
         MapService mapService = getService();
         for (Map.Entry<Integer, Object> entry : map.entrySet()) {
-            MapEntrySet mapEntrySet = (MapEntrySet) mapService.getMapServiceContext().toObject(entry.getValue());
-            Set<Map.Entry<Data, Data>> entrySet = mapEntrySet.getEntrySet();
-            for (Map.Entry<Data, Data> dataEntry : entrySet) {
-                resultSet.add(dataEntry);
+            MapEntries mapEntries = (MapEntries) mapService.getMapServiceContext().toObject(entry.getValue());
+            for (Map.Entry<Data, Data> dataEntry : mapEntries) {
+                result.add(dataEntry);
             }
         }
-        return resultSet;
+        return result;
     }
 
+    @Override
     public String getServiceName() {
         return MapService.SERVICE_NAME;
     }
 
+    @Override
     public void write(PortableWriter writer) throws IOException {
         writer.writeUTF("n", name);
         writer.writeInt("size", keys.size());
@@ -93,6 +96,7 @@ public class MapGetAllRequest extends AllPartitionsClientRequest implements Port
         }
     }
 
+    @Override
     public void read(PortableReader reader) throws IOException {
         name = reader.readUTF("n");
         int size = reader.readInt("size");

@@ -21,7 +21,7 @@ import com.hazelcast.client.impl.protocol.codec.MapExecuteOnKeysCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractMultiPartitionMessageTask;
 import com.hazelcast.instance.Node;
 import com.hazelcast.map.EntryProcessor;
-import com.hazelcast.map.impl.MapEntrySet;
+import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.operation.MultipleEntryOperationFactory;
 import com.hazelcast.nio.Connection;
@@ -59,9 +59,8 @@ public class MapExecuteOnKeysMessageTask
         MapService mapService = getService(MapService.SERVICE_NAME);
         for (Object o : map.values()) {
             if (o != null) {
-                MapEntrySet entrySet = (MapEntrySet) mapService.getMapServiceContext().toObject(o);
-                Set<Map.Entry<Data, Data>> entries = entrySet.getEntrySet();
-                for (Map.Entry<Data, Data> entry : entries) {
+                MapEntries mapEntries = (MapEntries) mapService.getMapServiceContext().toObject(o);
+                for (Map.Entry<Data, Data> entry : mapEntries) {
                     dataMap.put(entry.getKey(), entry.getValue());
                 }
             }

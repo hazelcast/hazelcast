@@ -43,7 +43,7 @@ import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.MapPartitionLostEvent;
 import com.hazelcast.map.impl.LazyMapEntry;
 import com.hazelcast.map.impl.ListenerAdapter;
-import com.hazelcast.map.impl.MapEntrySet;
+import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.map.impl.SimpleEntryView;
 import com.hazelcast.map.impl.client.MapAddEntryListenerRequest;
 import com.hazelcast.map.impl.client.MapAddIndexRequest;
@@ -718,9 +718,8 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
             return result;
         }
         MapGetAllRequest request = new MapGetAllRequest(name, keySet);
-        MapEntrySet mapEntrySet = invoke(request);
-        Set<Entry<Data, Data>> entrySet = mapEntrySet.getEntrySet();
-        for (Entry<Data, Data> dataEntry : entrySet) {
+        MapEntries mapEntries = invoke(request);
+        for (Entry<Data, Data> dataEntry : mapEntries) {
             final V value = toObject(dataEntry.getValue());
             final K key = toObject(dataEntry.getKey());
             result.put(key, value);
@@ -897,9 +896,9 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
     @Override
     public Map<K, Object> executeOnEntries(EntryProcessor entryProcessor) {
         MapExecuteOnAllKeysRequest request = new MapExecuteOnAllKeysRequest(name, entryProcessor);
-        MapEntrySet entrySet = invoke(request);
+        MapEntries mapEntries = invoke(request);
         Map<K, Object> result = new HashMap<K, Object>();
-        for (Entry<Data, Data> dataEntry : entrySet.getEntrySet()) {
+        for (Entry<Data, Data> dataEntry : mapEntries) {
             final Data keyData = dataEntry.getKey();
             final Data valueData = dataEntry.getValue();
             K key = toObject(keyData);
@@ -911,9 +910,9 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
     @Override
     public Map<K, Object> executeOnEntries(EntryProcessor entryProcessor, Predicate predicate) {
         MapExecuteWithPredicateRequest request = new MapExecuteWithPredicateRequest(name, entryProcessor, predicate);
-        MapEntrySet entrySet = invoke(request);
+        MapEntries mapEntries = invoke(request);
         Map<K, Object> result = new HashMap<K, Object>();
-        for (Entry<Data, Data> dataEntry : entrySet.getEntrySet()) {
+        for (Entry<Data, Data> dataEntry : mapEntries) {
             final Data keyData = dataEntry.getKey();
             final Data valueData = dataEntry.getValue();
             K key = toObject(keyData);
@@ -968,9 +967,9 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
         }
 
         MapExecuteOnKeysRequest request = new MapExecuteOnKeysRequest(name, entryProcessor, dataKeys);
-        MapEntrySet entrySet = invoke(request);
+        MapEntries entrySet = invoke(request);
         Map<K, Object> result = new HashMap<K, Object>();
-        for (Entry<Data, Data> dataEntry : entrySet.getEntrySet()) {
+        for (Entry<Data, Data> dataEntry : entrySet) {
             final Data keyData = dataEntry.getKey();
             final Data valueData = dataEntry.getValue();
             K key = toObject(keyData);
@@ -1004,7 +1003,7 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
         ClientPartitionService partitionService = getContext().getPartitionService();
         int partitionCount = partitionService.getPartitionCount();
         List<Future<?>> futures = new ArrayList<Future<?>>(partitionCount);
-        MapEntrySet[] entrySetPerPartition = new MapEntrySet[partitionCount];
+        MapEntries[] entriesPerPartition = new MapEntries[partitionCount];
 
         for (Entry<? extends K, ? extends V> entry : m.entrySet()) {
             checkNotNull(entry.getKey(), NULL_KEY_IS_NOT_ALLOWED);
@@ -1014,21 +1013,21 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
             invalidateNearCache(keyData);
 
             int partitionId = partitionService.getPartitionId(keyData);
-            MapEntrySet entrySet = entrySetPerPartition[partitionId];
-            if (entrySet == null) {
-                entrySet = new MapEntrySet();
-                entrySetPerPartition[partitionId] = entrySet;
+            MapEntries entries = entriesPerPartition[partitionId];
+            if (entries == null) {
+                entries = new MapEntries();
+                entriesPerPartition[partitionId] = entries;
             }
 
-            entrySet.add(new AbstractMap.SimpleImmutableEntry<Data, Data>(keyData, toData(entry.getValue())));
+            entries.add(new AbstractMap.SimpleImmutableEntry<Data, Data>(keyData, toData(entry.getValue())));
         }
 
-        for (int partitionId = 0; partitionId < entrySetPerPartition.length; partitionId++) {
-            MapEntrySet entrySet = entrySetPerPartition[partitionId];
-            if (entrySet != null) {
+        for (int partitionId = 0; partitionId < entriesPerPartition.length; partitionId++) {
+            MapEntries entries = entriesPerPartition[partitionId];
+            if (entries != null) {
                 //If there is only one entry, consider how we can use MapPutRequest
                 //without having to get back the return value.
-                MapPutAllRequest request = new MapPutAllRequest(name, entrySet, partitionId);
+                MapPutAllRequest request = new MapPutAllRequest(name, entries, partitionId);
                 futures.add(new ClientInvocation(getClient(), request, partitionId).invoke());
             }
         }

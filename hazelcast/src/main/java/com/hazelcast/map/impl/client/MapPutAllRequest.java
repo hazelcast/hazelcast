@@ -18,7 +18,7 @@ package com.hazelcast.map.impl.client;
 
 import com.hazelcast.client.impl.client.PartitionClientRequest;
 import com.hazelcast.client.impl.client.SecureRequest;
-import com.hazelcast.map.impl.MapEntrySet;
+import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.map.impl.MapPortableHook;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.operation.PutAllOperation;
@@ -39,15 +39,15 @@ import java.util.Map;
 public class MapPutAllRequest extends PartitionClientRequest implements Portable, SecureRequest {
 
     protected String name;
-    private MapEntrySet entrySet;
+    private MapEntries entries;
     private int partitionId;
 
     public MapPutAllRequest() {
     }
 
-    public MapPutAllRequest(String name, MapEntrySet entrySet, int partitionId) {
+    public MapPutAllRequest(String name, MapEntries entries, int partitionId) {
         this.name = name;
-        this.entrySet = entrySet;
+        this.entries = entries;
         this.partitionId = partitionId;
     }
 
@@ -61,7 +61,7 @@ public class MapPutAllRequest extends PartitionClientRequest implements Portable
 
     @Override
     protected Operation prepareOperation() {
-        PutAllOperation operation = new PutAllOperation(name, entrySet);
+        PutAllOperation operation = new PutAllOperation(name, entries);
         operation.setPartitionId(partitionId);
         return operation;
     }
@@ -79,15 +79,15 @@ public class MapPutAllRequest extends PartitionClientRequest implements Portable
         writer.writeUTF("n", name);
         writer.writeInt("p", partitionId);
         ObjectDataOutput output = writer.getRawDataOutput();
-        entrySet.writeData(output);
+        entries.writeData(output);
     }
 
     public void read(PortableReader reader) throws IOException {
         name = reader.readUTF("n");
         partitionId = reader.readInt("p");
         ObjectDataInput input = reader.getRawDataInput();
-        entrySet = new MapEntrySet();
-        entrySet.readData(input);
+        entries = new MapEntries();
+        entries.readData(input);
     }
 
     public Permission getRequiredPermission() {
@@ -107,7 +107,7 @@ public class MapPutAllRequest extends PartitionClientRequest implements Portable
     @Override
     public Object[] getParameters() {
         final HashMap map = new HashMap();
-        for (Map.Entry<Data, Data> entry : entrySet.getEntrySet()) {
+        for (Map.Entry<Data, Data> entry : entries) {
             map.put(entry.getKey(), entry.getValue());
         }
         return new Object[]{map};

@@ -17,7 +17,7 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.map.impl.LocalMapStatsProvider;
-import com.hazelcast.map.impl.MapEntrySet;
+import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
@@ -29,6 +29,9 @@ import java.util.Set;
 import com.hazelcast.spi.ReadonlyOperation;
 
 public class MapEntrySetOperation extends AbstractMapOperation implements PartitionAwareOperation, ReadonlyOperation {
+
+    //todo: using a Set here is probably a bad choice since there are no duplicates, but sending a set over the
+    // wire is expensive since the hashmap needs to be rebuild on the otherside.
     private Set<Map.Entry<Data, Data>> entrySet;
 
     public MapEntrySetOperation(String name) {
@@ -52,6 +55,6 @@ public class MapEntrySetOperation extends AbstractMapOperation implements Partit
 
     @Override
     public Object getResponse() {
-        return new MapEntrySet(entrySet);
+        return new MapEntries(entrySet);
     }
 }

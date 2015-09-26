@@ -20,7 +20,7 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapGetAllCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractAllPartitionsMessageTask;
 import com.hazelcast.instance.Node;
-import com.hazelcast.map.impl.MapEntrySet;
+import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.operation.MapGetAllOperationFactory;
 import com.hazelcast.nio.Connection;
@@ -52,9 +52,8 @@ public class MapGetAllMessageTask
         HashMap<Data, Data> dataMap = new HashMap<Data, Data>();
         MapService mapService = getService(MapService.SERVICE_NAME);
         for (Map.Entry<Integer, Object> entry : map.entrySet()) {
-            MapEntrySet mapEntrySet = (MapEntrySet) mapService.getMapServiceContext().toObject(entry.getValue());
-            Set<Map.Entry<Data, Data>> entrySet = mapEntrySet.getEntrySet();
-            for (Map.Entry<Data, Data> dataEntry : entrySet) {
+            MapEntries mapEntries = (MapEntries) mapService.getMapServiceContext().toObject(entry.getValue());
+            for (Map.Entry<Data, Data> dataEntry : mapEntries) {
                 dataMap.put(dataEntry.getKey(), dataEntry.getValue());
             }
         }

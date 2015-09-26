@@ -40,7 +40,7 @@ import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.impl.EntryEventFilter;
 import com.hazelcast.map.impl.LocalMapStatsProvider;
 import com.hazelcast.map.impl.MapContainer;
-import com.hazelcast.map.impl.MapEntrySet;
+import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.PartitionContainer;
@@ -724,7 +724,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         try {
             responses = operationService.invokeOnPartitions(SERVICE_NAME, new MapGetAllOperationFactory(name, keys), partitions);
             for (Object response : responses.values()) {
-                Set<Map.Entry<Data, Data>> entries = ((MapEntrySet) toObject(response)).getEntrySet();
+                MapEntries entries = ((MapEntries) toObject(response));
                 for (Entry<Data, Data> entry : entries) {
                     result.put(toObject(entry.getKey()), toObject(entry.getValue()));
                     if (nearCache != null) {
@@ -780,38 +780,38 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
      * If there are multiple puts for different partitions on the same member, they are executed as different remote operations.
      * Probably this can be optimized in the future by making use of an PartitionIterating operation.
      *
-     * @param entries
+     * @param m
      */
-    protected void putAllInternal(Map<? extends Object, ? extends Object> entries) {
+    protected void putAllInternal(Map<? extends Object, ? extends Object> m) {
         int partitionCount = partitionService.getPartitionCount();
 
         try {
             List<Future> futures = new ArrayList<Future>(partitionCount);
-            MapEntrySet[] entrySetPerPartition = new MapEntrySet[partitionCount];
+            MapEntries[] entriesPerPartition = new MapEntries[partitionCount];
 
             // first we fill entrySetPerPartition
-            for (Entry entry : entries.entrySet()) {
+            for (Entry entry : m.entrySet()) {
                 checkNotNull(entry.getKey(), NULL_KEY_IS_NOT_ALLOWED);
                 checkNotNull(entry.getValue(), NULL_VALUE_IS_NOT_ALLOWED);
 
                 int partitionId = partitionService.getPartitionId(entry.getKey());
-                MapEntrySet entrySet = entrySetPerPartition[partitionId];
-                if (entrySet == null) {
-                    entrySet = new MapEntrySet();
-                    entrySetPerPartition[partitionId] = entrySet;
+                MapEntries entries = entriesPerPartition[partitionId];
+                if (entries == null) {
+                    entries = new MapEntries();
+                    entriesPerPartition[partitionId] = entries;
                 }
 
                 Data keyData = mapServiceContext.toData(entry.getKey(), partitionStrategy);
                 Data valueData = mapServiceContext.toData(entry.getValue());
-                entrySet.add(new AbstractMap.SimpleImmutableEntry<Data, Data>(keyData, valueData));
+                entries.add(new AbstractMap.SimpleImmutableEntry<Data, Data>(keyData, valueData));
             }
 
             // then we invoke the operations
-            for (int partitionId = 0; partitionId < entrySetPerPartition.length; partitionId++) {
-                MapEntrySet entrySet = entrySetPerPartition[partitionId];
-                if (entrySet != null) {
+            for (int partitionId = 0; partitionId < entriesPerPartition.length; partitionId++) {
+                MapEntries entries = entriesPerPartition[partitionId];
+                if (entries != null) {
                     // If there is a single entry, we could make use of a PutOperation since that is a bit cheaper
-                    Future f = createPutAllOperationFuture(name, entrySet, partitionId);
+                    Future f = createPutAllOperationFuture(name, entries, partitionId);
                     futures.add(f);
                 }
             }
@@ -825,9 +825,9 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         }
     }
 
-    private Future createPutAllOperationFuture(final String name, MapEntrySet entrySet, int partitionId) {
-        Operation op = new PutAllOperation(name, entrySet).setPartitionId(partitionId);
-        final long size = entrySet.getEntrySet().size();
+    private Future createPutAllOperationFuture(final String name, MapEntries entries, int partitionId) {
+        Operation op = new PutAllOperation(name, entries).setPartitionId(partitionId);
+        final long size = entries.size();
         final long time = System.currentTimeMillis();
         InternalCompletableFuture<Object> f = operationService.invokeOnPartition(SERVICE_NAME, op, partitionId);
         f.andThen(new ExecutionCallback() {
@@ -985,8 +985,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
             Map<Integer, Object> results = operationService.invokeOnPartitions(SERVICE_NAME, operationFactory, partitionsForKeys);
             for (Object o : results.values()) {
                 if (o != null) {
-                    MapEntrySet mapEntrySet = (MapEntrySet) o;
-                    for (Entry<Data, Data> entry : mapEntrySet.getEntrySet()) {
+                    for (Entry<Data, Data> entry : (MapEntries) o) {
                         result.put(toObject(entry.getKey()), toObject(entry.getValue()));
                     }
                 }
@@ -1037,8 +1036,8 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
                     new PartitionWideEntryWithPredicateOperationFactory(name, entryProcessor, predicate));
             for (Object o : results.values()) {
                 if (o != null) {
-                    MapEntrySet mapEntrySet = (MapEntrySet) o;
-                    for (Entry<Data, Data> entry : mapEntrySet.getEntrySet()) {
+                    MapEntries mapEntries = (MapEntries) o;
+                    for (Entry<Data, Data> entry : mapEntries) {
                         Data key = entry.getKey();
                         result.put(toObject(key), toObject(entry.getValue()));
                         invalidateNearCache(key);

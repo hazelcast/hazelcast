@@ -19,7 +19,7 @@ package com.hazelcast.map.impl.tx;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.map.QueryResultSizeExceededException;
-import com.hazelcast.map.impl.MapEntrySet;
+import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.map.impl.MapKeySet;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.query.QueryResult;
@@ -271,8 +271,8 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
                     );
             List<Map.Entry<Data, Data>> entries = new ArrayList<Map.Entry<Data, Data>>();
             for (Object result : results.values()) {
-                entries.addAll(((MapEntrySet) getService()
-                        .getMapServiceContext().toObject(result)).getEntrySet());
+                MapEntries mapEntries = ((MapEntries) getService().getMapServiceContext().toObject(result));
+                entries.addAll(mapEntries.entries());
             }
             return entries;
         } catch (Throwable t) {
