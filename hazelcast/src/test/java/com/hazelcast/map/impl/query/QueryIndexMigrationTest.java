@@ -33,6 +33,12 @@ import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.IterableUtil;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Ignore;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -50,24 +56,17 @@ import static com.hazelcast.test.TimeConstants.MINUTE;
 import static java.lang.Thread.interrupted;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
 public class QueryIndexMigrationTest extends HazelcastTestSupport {
 
+    private Random random = new Random();
+
     private TestHazelcastInstanceFactory nodeFactory;
     private ExecutorService executor;
-    private Random rand = new Random();
 
     @Before
     public void createFactory() {
@@ -77,7 +76,7 @@ public class QueryIndexMigrationTest extends HazelcastTestSupport {
     @After
     public void shutdown() throws Exception {
         shutdownNodeFactory();
-        if( executor != null ) {
+        if (executor != null) {
             executor.shutdownNow();
             executor.awaitTermination(ASSERT_TRUE_EVENTUALLY_TIMEOUT, SECONDS);
         }
@@ -85,16 +84,16 @@ public class QueryIndexMigrationTest extends HazelcastTestSupport {
 
     @Test(timeout = MINUTE)
     public void testQueryDuringAndAfterMigration() throws Exception {
-        HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
+        HazelcastInstance instance = nodeFactory.newHazelcastInstance();
         int count = 500;
-        IMap imap = h1.getMap("employees");
+        IMap<String, Employee> map = instance.getMap("employees");
         for (int i = 0; i < count; i++) {
-            imap.put(String.valueOf(i), new Employee("joe" + i, i % 60, ((i & 1) == 1), (double) i));
+            map.put(String.valueOf(i), new Employee("joe" + i, i % 60, ((i & 1) == 1), (double) i));
         }
 
         nodeFactory.newInstances(new Config(), 3);
 
-        final IMap employees = h1.getMap("employees");
+        final IMap<String, Employee> employees = instance.getMap("employees");
         assertTrueAllTheTime(new AssertTask() {
             @Override
             public void run() throws Exception {
@@ -109,21 +108,21 @@ public class QueryIndexMigrationTest extends HazelcastTestSupport {
 
     @Test
     public void testQueryDuringAndAfterMigrationWithIndex() throws Exception {
-        Config cfg = new Config();
-        final HazelcastInstance h1 = nodeFactory.newHazelcastInstance(cfg);
+        Config config = new Config();
+        HazelcastInstance instance = nodeFactory.newHazelcastInstance(config);
 
-        IMap imap = h1.getMap("employees");
-        imap.addIndex("name", false);
-        imap.addIndex("active", false);
+        IMap<String, Employee> map = instance.getMap("employees");
+        map.addIndex("name", false);
+        map.addIndex("active", false);
 
         int size = 500;
         for (int i = 0; i < size; i++) {
-            imap.put(String.valueOf(i), new Employee("joe" + i, i % 60, ((i & 1) == 1), (double) i));
+            map.put(String.valueOf(i), new Employee("joe" + i, i % 60, ((i & 1) == 1), (double) i));
         }
 
-        nodeFactory.newInstances(cfg, 3);
+        nodeFactory.newInstances(config, 3);
 
-        final IMap employees = h1.getMap("employees");
+        final IMap<String, Employee> employees = instance.getMap("employees");
         assertTrueAllTheTime(new AssertTask() {
             @Override
             public void run() throws Exception {
@@ -134,30 +133,28 @@ public class QueryIndexMigrationTest extends HazelcastTestSupport {
                 assertEquals(6, values.size());
             }
         }, 3);
-
     }
 
-    @Test
     @Ignore
+    @Test
     public void testQueryWithIndexesWhileMigrating() throws Exception {
-
-        HazelcastInstance h1 = nodeFactory.newHazelcastInstance();
-        IMap imap = h1.getMap("employees");
-        imap.addIndex("age", true);
-        imap.addIndex("active", false);
+        HazelcastInstance instance = nodeFactory.newHazelcastInstance();
+        IMap<String, Employee> map = instance.getMap("employees");
+        map.addIndex("age", true);
+        map.addIndex("active", false);
 
         for (int i = 0; i < 500; i++) {
-            imap.put("e" + i, new Employee("name" + i, i % 50, ((i & 1) == 1), (double) i));
+            map.put("e" + i, new Employee("name" + i, i % 50, ((i & 1) == 1), (double) i));
         }
-        assertEquals(500, imap.size());
-        Set<Map.Entry> entries = imap.entrySet(new SqlPredicate("active=true and age>44"));
+        assertEquals(500, map.size());
+        Set<Map.Entry<String, Employee>> entries = map.entrySet(new SqlPredicate("active=true and age>44"));
         assertEquals(30, entries.size());
 
         nodeFactory.newInstances(new Config(), 3);
 
         long startNow = Clock.currentTimeMillis();
         while ((Clock.currentTimeMillis() - startNow) < 10000) {
-            entries = imap.entrySet(new SqlPredicate("active=true and age>44"));
+            entries = map.entrySet(new SqlPredicate("active=true and age>44"));
             assertEquals(30, entries.size());
         }
     }
@@ -165,18 +162,18 @@ public class QueryIndexMigrationTest extends HazelcastTestSupport {
     /**
      * test for issue #359
      */
-    @Test(timeout = MINUTE)
     @Ignore
+    @Test(timeout = MINUTE)
     public void testIndexCleanupOnMigration() throws Exception {
-        final int n = 6;
+        int nodeCount = 6;
         final int runCount = 500;
         final Config config = newConfigWithIndex("testMap", "name");
-        executor = Executors.newFixedThreadPool(n);
+        executor = Executors.newFixedThreadPool(nodeCount);
         List<Future<?>> futures = new ArrayList<Future<?>>();
 
-        for (int i = 0; i < n; i++) {
-            sleepMillis(rand.nextInt((i + 1) * 100) + 10);
-            futures.add( executor.submit(new Runnable() {
+        for (int i = 0; i < nodeCount; i++) {
+            sleepMillis(random.nextInt((i + 1) * 100) + 10);
+            futures.add(executor.submit(new Runnable() {
                 public void run() {
                     HazelcastInstance hz = nodeFactory.newHazelcastInstance(config);
                     IMap<Object, Value> map = hz.getMap("testMap");
@@ -185,39 +182,39 @@ public class QueryIndexMigrationTest extends HazelcastTestSupport {
             }));
         }
 
-        for(Future<?> f: futures) {
-            f.get();
+        for (Future<?> future : futures) {
+            future.get();
         }
     }
 
-    private Config newConfigWithIndex(final String mapName, String attribute) {
-        final Config config = new Config();
+    private Config newConfigWithIndex(String mapName, String attribute) {
+        Config config = new Config();
         config.setProperty(GroupProperty.WAIT_SECONDS_BEFORE_JOIN, "0");
         config.getMapConfig(mapName).addMapIndexConfig(new MapIndexConfig(attribute, false));
         return config;
     }
 
     /**
-     * see zendesk ticket #82
+     * see Zendesk ticket #82
      */
     @Test(timeout = MINUTE)
     public void testQueryWithIndexDuringJoin() throws InterruptedException {
         final String name = "test";
-        final String FIND_ME = "find-me";
+        final String findMe = "find-me";
 
-        final int nodes = 5;
+        int nodeCount = 5;
         final int entryPerNode = 1000;
         final int modulo = 10;
-        final CountDownLatch latch = new CountDownLatch(nodes);
+        final CountDownLatch latch = new CountDownLatch(nodeCount);
         final Config config = newConfigWithIndex(name, "name");
 
-        for (int n = 0; n < nodes; n++) {
+        for (int i = 0; i < nodeCount; i++) {
             new Thread(new Runnable() {
                 @Override
                 public void run() {
                     HazelcastInstance hz = nodeFactory.newHazelcastInstance(config);
                     IMap<Object, Object> map = hz.getMap(name);
-                    fillMap(map, FIND_ME, entryPerNode, modulo);
+                    fillMap(map, findMe, entryPerNode, modulo);
                     latch.countDown();
                 }
             }).start();
@@ -225,14 +222,13 @@ public class QueryIndexMigrationTest extends HazelcastTestSupport {
 
         assertTrue(latch.await(1, MINUTES));
         Collection<HazelcastInstance> instances = nodeFactory.getAllHazelcastInstances();
-        assertEquals(nodes, instances.size());
+        assertEquals(nodeCount, instances.size());
         waitAllForSafeState(instances);
 
-        final int expected = entryPerNode / modulo * nodes;
-
+        int expected = entryPerNode / modulo * nodeCount;
         for (HazelcastInstance hz : instances) {
             IMap<Object, Object> map = hz.getMap(name);
-            Predicate predicate = equal("name", FIND_ME);
+            Predicate predicate = equal("name", findMe);
             for (int i = 0; i < 10; i++) {
                 int size = map.values(predicate).size();
                 assertEquals(expected, size);
@@ -241,22 +237,23 @@ public class QueryIndexMigrationTest extends HazelcastTestSupport {
     }
 
     private void updateMapAndRunQuery(final IMap<Object, Value> map, final int runCount) {
-        final String name = randomString();
+        String name = randomString();
         Predicate<?, ?> predicate = equal("name", name);
         map.put(name, new Value(name, 0));
-        map.size();  // helper call on nodes to sync partitions.. see issue github.com/hazelcast/hazelcast/issues/1282
+        // helper call on nodes to sync partitions (see issue github.com/hazelcast/hazelcast/issues/1282)
+        map.size();
 
-        for (int j = 1; j <= runCount && !interrupted(); j++) {
-            Value v = map.get(name);
-            v.setIndex(j);
-            map.put(name, v);
+        for (int i = 1; i <= runCount && !interrupted(); i++) {
+            Value value = map.get(name);
+            value.setIndex(i);
+            map.put(name, value);
 
-            sleepMillis(rand.nextInt(100) + 1);
+            sleepMillis(random.nextInt(100) + 1);
 
             Collection<Value> values = map.values(predicate);
             assertEquals(1, values.size());
-            Value v2 = IterableUtil.getFirst(values, null);
-            assertEquals(v, v2);
+            Value firstValue = IterableUtil.getFirst(values, null);
+            assertEquals(value, firstValue);
         }
     }
 
@@ -270,5 +267,4 @@ public class QueryIndexMigrationTest extends HazelcastTestSupport {
             map.put(randomString(), new Value(name, i));
         }
     }
-
 }
