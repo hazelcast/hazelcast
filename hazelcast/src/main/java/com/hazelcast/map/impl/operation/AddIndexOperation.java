@@ -16,21 +16,22 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
-import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.map.impl.record.Record;
+import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.QueryEntry;
-import com.hazelcast.spi.impl.MutatingOperation;
 import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.impl.AbstractNamedOperation;
+import com.hazelcast.spi.impl.MutatingOperation;
 import com.hazelcast.util.Clock;
+
 import java.io.IOException;
 import java.util.Iterator;
 
@@ -62,13 +63,14 @@ public class AddIndexOperation extends AbstractNamedOperation implements Partiti
         Indexes indexes = mapContainer.getIndexes();
         SerializationService ss = getNodeEngine().getSerializationService();
         Index index = indexes.addOrGetIndex(attributeName, ordered);
+
         final long now = getNow();
         final Iterator<Record> iterator = recordStore.iterator(now, false);
         while (iterator.hasNext()) {
             final Record record = iterator.next();
             Data key = record.getKey();
             Object value = record.getValue();
-            index.saveEntryIndex(new QueryEntry(ss, key, key, value));
+            index.saveEntryIndex(new QueryEntry(ss, key, key, value), null);
         }
     }
 

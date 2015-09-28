@@ -340,7 +340,7 @@ public class ClientSortLimitTest extends HazelcastTestSupport {
             set = map.entrySet(pagingPredicate);
             for (Map.Entry<Integer, Employee> entry : set) {
                 Employee e = entry.getValue();
-                QueryEntry qe = new QueryEntry(null, ss.toData(e.getId()), e.getId(), e);
+                QueryEntry qe = new QueryEntry(ss, ss.toData(e.getId()), e.getId(), e);
                 assertTrue(predicate.apply(qe));
                 results.add(e);
             }
