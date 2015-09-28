@@ -17,6 +17,7 @@
 package com.hazelcast.cluster.impl;
 
 import com.hazelcast.cluster.ClusterService;
+import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.cluster.MemberAttributeOperationType;
 import com.hazelcast.cluster.MemberInfo;
 import com.hazelcast.cluster.impl.operations.AuthenticationFailureOperation;
@@ -33,7 +34,6 @@ import com.hazelcast.cluster.impl.operations.MemberRemoveOperation;
 import com.hazelcast.cluster.impl.operations.PostJoinOperation;
 import com.hazelcast.cluster.impl.operations.SetMasterOperation;
 import com.hazelcast.cluster.impl.operations.TriggerMemberListPublishOperation;
-import com.hazelcast.core.Cluster;
 import com.hazelcast.core.InitialMembershipEvent;
 import com.hazelcast.core.InitialMembershipListener;
 import com.hazelcast.core.Member;
@@ -68,7 +68,11 @@ import com.hazelcast.spi.MembershipServiceEvent;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
+import com.hazelcast.spi.TransactionalService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.transaction.TransactionOptions;
+import com.hazelcast.transaction.TransactionalObject;
+import com.hazelcast.transaction.impl.Transaction;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.executor.ExecutorType;
@@ -112,8 +116,8 @@ import static java.lang.String.format;
 import static java.util.Collections.unmodifiableMap;
 import static java.util.Collections.unmodifiableSet;
 
-public final class ClusterServiceImpl implements ClusterService, ConnectionListener, ManagedService,
-        EventPublishingService<MembershipEvent, MembershipListener> {
+public class ClusterServiceImpl implements ClusterService, ConnectionListener, ManagedService,
+        EventPublishingService<MembershipEvent, MembershipListener>, TransactionalService {
 
     public static final String SERVICE_NAME = "hz:core:clusterService";
 
@@ -150,6 +154,8 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
 
     private final ConcurrentMap<MemberImpl, Long> masterConfirmationTimes = new ConcurrentHashMap<MemberImpl, Long>();
 
+    private final Map<Address, MemberImpl> membersRemovedWhileFrozen = new LinkedHashMap<Address, MemberImpl>();
+
     private final Node node;
     private final NodeEngineImpl nodeEngine;
 
@@ -172,6 +178,8 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
 
     private final ClusterClockImpl clusterClock;
 
+    private final ClusterStateManager clusterStateManager;
+
     private String clusterId;
 
     private long timeToStartJoin;
@@ -184,17 +192,19 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
     private volatile long lastHeartBeat;
 
     public ClusterServiceImpl(Node node) {
+
         this.node = node;
         nodeEngine = node.nodeEngine;
 
         logger = node.getLogger(ClusterService.class.getName());
         clusterClock = new ClusterClockImpl(logger);
-        whileFinalizeJoinsExceptionHandler = logAllExceptions(logger, "While waiting finalize join calls...", Level.WARNING);
+        whileFinalizeJoinsExceptionHandler = logAllExceptions(logger, "While waiting finalize join calls...",
+                Level.WARNING);
 
         thisAddress = node.getThisAddress();
         thisMember = node.getLocalMember();
 
-        registerMember(thisMember);
+        registerThisMember();
 
         maxWaitMillisBeforeJoin = node.groupProperties.getMillis(GroupProperty.MAX_WAIT_SECONDS_BEFORE_JOIN);
         waitMillisBeforeJoin = node.groupProperties.getMillis(GroupProperty.WAIT_SECONDS_BEFORE_JOIN);
@@ -209,21 +219,21 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         icmpTimeoutMillis = (int) node.groupProperties.getMillis(GroupProperty.ICMP_TIMEOUT);
 
         node.connectionManager.addConnectionListener(this);
-
         //MEMBERSHIP_EVENT_EXECUTOR is a single threaded executor to ensure that events are executed in correct order.
         nodeEngine.getExecutionService().register(MEMBERSHIP_EVENT_EXECUTOR_NAME, 1, Integer.MAX_VALUE, ExecutorType.CACHED);
 
+        clusterStateManager = new ClusterStateManager(node, lock);
         registerMetrics();
+    }
+
+    private void registerThisMember() {
+        setMembers(thisMember);
+        sendMembershipEvents(Collections.<MemberImpl>emptySet(), Collections.singleton(thisMember));
     }
 
     private static long getHeartBeatInterval(GroupProperties groupProperties) {
         long heartbeatInterval = groupProperties.getMillis(GroupProperty.HEARTBEAT_INTERVAL_SECONDS);
         return heartbeatInterval > 0 ? heartbeatInterval : TimeUnit.SECONDS.toMillis(1);
-    }
-
-    private void registerMember(MemberImpl thisMember) {
-        setMembers(thisMember);
-        sendMembershipEvents(Collections.<MemberImpl>emptySet(), Collections.singleton(thisMember));
     }
 
     private void registerMetrics() {
@@ -235,6 +245,11 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
     @Override
     public ClusterClockImpl getClusterClock() {
         return clusterClock;
+    }
+
+    @Override
+    public long getClusterTime() {
+        return clusterClock.getClusterTime();
     }
 
     @Override
@@ -513,7 +528,8 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         if (logger.isFinestEnabled()) {
             logger.finest("Sending MasterConfirmation to " + masterMember);
         }
-        nodeEngine.getOperationService().send(new MasterConfirmationOperation(clusterClock.getClusterTime()), masterAddress);
+        nodeEngine.getOperationService().send(new MasterConfirmationOperation(clusterClock.getClusterTime()),
+                masterAddress);
     }
 
     // will be called just before this node becomes the master
@@ -718,6 +734,10 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
                 return;
             }
 
+            if (checkClusterStateBeforeJoin(target)) {
+                return;
+            }
+
             long now = Clock.currentTimeMillis();
             if (logger.isFinestEnabled()) {
                 String timeToStart = (timeToStartJoin > 0 ? ", timeToStart: " + (timeToStartJoin - now) : "");
@@ -737,6 +757,20 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         } finally {
             lock.unlock();
         }
+    }
+
+    private boolean checkClusterStateBeforeJoin(Address target) {
+        if (clusterStateManager.getState() != ClusterState.ACTIVE) {
+            if (!membersRemovedWhileFrozen.containsKey(target)) {
+                String message = "Cluster state either is locked or doesn't allow new members to join -> "
+                        + clusterStateManager.stateToString();
+                logger.warning(message);
+                OperationService operationService = nodeEngine.getOperationService();
+                operationService.send(new BeforeJoinCheckFailureOperation(message), target);
+                return true;
+            }
+        }
+        return false;
     }
 
     private MemberInfo getMemberInfo(JoinRequest joinRequest, Address target) {
@@ -817,7 +851,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
                 boolean isPostJoinOperation = postJoinOps != null && postJoinOps.length > 0;
                 PostJoinOperation postJoinOp = isPostJoinOperation ? new PostJoinOperation(postJoinOps) : null;
                 Operation operation = new FinalizeJoinOperation(createMemberInfoList(getMemberImpls()), postJoinOp,
-                        clusterClock.getClusterTime(), false);
+                        clusterClock.getClusterTime(), clusterStateManager.getState(), false);
                 nodeEngine.getOperationService().send(operation, target);
             } else {
                 sendMasterAnswer(target);
@@ -972,6 +1006,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
             timeToStartJoin = 0;
             setMembersRef(Collections.singletonMap(thisAddress, thisMember));
             masterConfirmationTimes.clear();
+            clusterStateManager.reset();
         } finally {
             lock.unlock();
         }
@@ -1003,7 +1038,8 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
                 List<Future> calls = new ArrayList<Future>(count);
                 for (MemberInfo member : setJoins) {
                     long startTime = clusterClock.getClusterStartTime();
-                    Operation joinOperation = new FinalizeJoinOperation(memberInfos, postJoinOp, time, clusterId, startTime);
+                    Operation joinOperation = new FinalizeJoinOperation(memberInfos, postJoinOp, time,
+                            clusterId, startTime, clusterStateManager.getState());
                     calls.add(invokeClusterOperation(joinOperation, member.getAddress()));
                 }
                 for (MemberImpl member : members) {
@@ -1061,6 +1097,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
                     long now = Clock.currentTimeMillis();
                     onHeartbeat(member, now);
                     masterConfirmationTimes.put(member, now);
+                    membersRemovedWhileFrozen.remove(member.getAddress());
                 }
                 updatedMembers[memberIndex++] = member;
             }
@@ -1247,20 +1284,48 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
                 newMembers.remove(deadMember.getAddress());
                 masterConfirmationTimes.remove(deadMember);
                 setMembersRef(newMembers);
-                // sync call
-                node.getPartitionService().memberRemoved(deadMember);
-                // sync call
-                nodeEngine.onMemberLeft(deadMember);
+
                 if (node.isMaster()) {
                     if (logger.isFinestEnabled()) {
                         logger.finest(deadMember + " is dead, sending remove to all other members...");
                     }
                     invokeMemberRemoveOperation(deadMember.getAddress());
                 }
+
+                if (clusterStateManager.getState() == ClusterState.FROZEN) {
+                    membersRemovedWhileFrozen.put(deadMember.getAddress(), deadMember);
+                } else {
+                    onMemberRemove(deadMember, newMembers);
+                }
+
                 // async events
                 sendMembershipEventNotifications(deadMember,
                         unmodifiableSet(new LinkedHashSet<Member>(newMembers.values())), false);
             }
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    private void onMemberRemove(MemberImpl deadMember, Map<Address, MemberImpl> newMembers) {
+        // sync call
+        node.getPartitionService().memberRemoved(deadMember);
+        // sync call
+        nodeEngine.onMemberLeft(deadMember);
+    }
+
+    boolean isMemberRemovedInFrozenState(Address target) {
+        return membersRemovedWhileFrozen.containsKey(target);
+    }
+
+    void removeMembersDeadWhileFrozen() {
+        lock.lock();
+        try {
+            Map<Address, MemberImpl> memberMap = membersMapRef.get();
+            for (MemberImpl member : membersRemovedWhileFrozen.values()) {
+                onMemberRemove(member, memberMap);
+            }
+            membersRemovedWhileFrozen.clear();
         } finally {
             lock.unlock();
         }
@@ -1281,7 +1346,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
 
     private void sendMembershipEventNotifications(MemberImpl member, Set<Member> members, final boolean added) {
         int eventType = added ? MembershipEvent.MEMBER_ADDED : MembershipEvent.MEMBER_REMOVED;
-        MembershipEvent membershipEvent = new MembershipEvent(getClusterProxy(), member, eventType, members);
+        MembershipEvent membershipEvent = new MembershipEvent(this, member, eventType, members);
         Collection<MembershipAwareService> membershipAwareServices = nodeEngine.getServices(MembershipAwareService.class);
         if (membershipAwareServices != null && !membershipAwareServices.isEmpty()) {
             final MembershipServiceEvent event = new MembershipServiceEvent(membershipEvent);
@@ -1307,8 +1372,8 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
     private void sendMemberAttributeEvent(MemberImpl member, MemberAttributeOperationType operationType, String key,
                                           Object value) {
         final MemberAttributeServiceEvent event
-                = new MemberAttributeServiceEvent(getClusterProxy(), member, operationType, key, value);
-        MemberAttributeEvent attributeEvent = new MemberAttributeEvent(getClusterProxy(), member, operationType, key, value);
+                = new MemberAttributeServiceEvent(this, member, operationType, key, value);
+        MemberAttributeEvent attributeEvent = new MemberAttributeEvent(this, member, operationType, key, value);
         Collection<MembershipAwareService> membershipAwareServices = nodeEngine.getServices(MembershipAwareService.class);
         if (membershipAwareServices != null && !membershipAwareServices.isEmpty()) {
             for (final MembershipAwareService service : membershipAwareServices) {
@@ -1439,7 +1504,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         if (listener instanceof InitialMembershipListener) {
             lock.lock();
             try {
-                ((InitialMembershipListener) listener).init(new InitialMembershipEvent(getClusterProxy(), getMembers()));
+                ((InitialMembershipListener) listener).init(new InitialMembershipEvent(this, getMembers()));
                 registration = eventService.registerLocalListener(SERVICE_NAME, SERVICE_NAME, listener);
             } finally {
                 lock.unlock();
@@ -1477,10 +1542,6 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         }
     }
 
-    public Cluster getClusterProxy() {
-        return new ClusterProxy(this);
-    }
-
     public String membersString() {
         StringBuilder sb = new StringBuilder("\n\nMembers [");
         Collection<MemberImpl> members = getMemberImpls();
@@ -1493,6 +1554,43 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         }
         sb.append("\n}\n");
         return sb.toString();
+    }
+
+    @Override
+    public ClusterState getClusterState() {
+        return clusterStateManager.getState();
+    }
+
+    @Override
+    public <T extends TransactionalObject> T createTransactionalObject(String name, Transaction transaction) {
+        throw new UnsupportedOperationException(SERVICE_NAME + " does not support TransactionalObjects!");
+    }
+
+    @Override
+    public void rollbackTransaction(String transactionId) {
+        logger.info("Rolling back cluster state. Transaction: " + transactionId);
+        clusterStateManager.rollbackClusterState(transactionId);
+    }
+
+    @Override
+    public void changeClusterState(ClusterState newState) {
+        clusterStateManager.changeClusterState(newState);
+    }
+
+    @Override
+    public void changeClusterState(ClusterState newState, TransactionOptions options) {
+        clusterStateManager.changeClusterState(newState, options);
+    }
+
+    public void initialClusterState(ClusterState clusterState) {
+        if (node.joined()) {
+            throw new IllegalStateException("Cannot set initial state after node joined! -> " + clusterState);
+        }
+        clusterStateManager.initialClusterState(clusterState);
+    }
+
+    public ClusterStateManager getClusterStateManager() {
+        return clusterStateManager;
     }
 
     @Override

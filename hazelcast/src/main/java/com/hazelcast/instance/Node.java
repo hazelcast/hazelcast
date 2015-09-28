@@ -17,6 +17,7 @@
 package com.hazelcast.instance;
 
 import com.hazelcast.client.impl.ClientEngineImpl;
+import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.cluster.Joiner;
 import com.hazelcast.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.cluster.impl.ConfigCheck;
@@ -40,13 +41,13 @@ import com.hazelcast.core.MigrationListener;
 import com.hazelcast.internal.ascii.TextCommandService;
 import com.hazelcast.internal.ascii.TextCommandServiceImpl;
 import com.hazelcast.internal.management.ManagementCenterService;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingServiceImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.nio.Packet;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.partition.PartitionLostListener;
 import com.hazelcast.partition.impl.InternalPartitionServiceImpl;
@@ -70,7 +71,6 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
 import static com.hazelcast.cluster.impl.MulticastService.createMulticastService;
 import static com.hazelcast.instance.NodeShutdownHelper.shutdownNodeByFiringEvents;
@@ -78,14 +78,12 @@ import static com.hazelcast.util.UuidUtil.createMemberUuid;
 
 public class Node {
 
-    private static final AtomicReferenceFieldUpdater<Node, NodeState> STATE
-            = AtomicReferenceFieldUpdater.newUpdater(Node.class, NodeState.class, "state");
-
     private final ILogger logger;
 
     private final AtomicBoolean joined = new AtomicBoolean(false);
 
     private volatile NodeState state;
+    private final AtomicBoolean shuttingDown = new AtomicBoolean(false);
 
     private final NodeShutdownHookThread shutdownHookThread = new NodeShutdownHookThread("hz.ShutdownThread");
 
@@ -344,12 +342,12 @@ public class Node {
             logger.finest("We are being asked to shutdown when state = " + state);
         }
 
-        if (!STATE.compareAndSet(this, NodeState.ACTIVE, NodeState.SHUTTING_DOWN)) {
+        if (!setShuttingDown()) {
             waitIfAlreadyShuttingDown();
             return;
         }
 
-        if (!terminate) {
+        if (!terminate && clusterService.getClusterState() != ClusterState.SHUTTING_DOWN) {
             final int maxWaitSeconds = groupProperties.getSeconds(GroupProperty.GRACEFUL_SHUTDOWN_MAX_WAIT);
             if (!partitionService.prepareToSafeShutdown(maxWaitSeconds, TimeUnit.SECONDS)) {
                 logger.warning("Graceful shutdown could not be completed in " + maxWaitSeconds + " seconds!");
@@ -401,22 +399,35 @@ public class Node {
         state = NodeState.SHUT_DOWN;
     }
 
+    private boolean setShuttingDown() {
+        if (shuttingDown.compareAndSet(false, true)) {
+            state = NodeState.SHUTTING_DOWN;
+            return true;
+        }
+        return false;
+    }
+
     private void waitIfAlreadyShuttingDown() {
-        if (state == NodeState.SHUT_DOWN) {
+        if (!shuttingDown.get()) {
             return;
         }
-
-        if (state == NodeState.SHUTTING_DOWN) {
-            logger.info("Node is already shutting down... Waiting for shutdown process to complete...");
-            do {
-                try {
-                    Thread.sleep(500);
-                } catch (InterruptedException e) {
-                    logger.warning("Interrupted while waiting for shutdown!");
-                    return;
-                }
-            } while (state != NodeState.SHUT_DOWN);
+        logger.info("Node is already shutting down... Waiting for shutdown process to complete...");
+        while (state != NodeState.SHUT_DOWN) {
+            try {
+                Thread.sleep(500);
+            } catch (InterruptedException e) {
+                logger.warning("Interrupted while waiting for shutdown!");
+                return;
+            }
         }
+    }
+
+    public void changeStateToShuttingDown() {
+        if (clusterService.getClusterState() != ClusterState.SHUTTING_DOWN) {
+            throw new IllegalStateException("This method can be called only when cluster-state"
+                    + " is SHUTTING_DOWN!");
+        }
+        state = NodeState.SHUTTING_DOWN;
     }
 
     /**
@@ -427,6 +438,7 @@ public class Node {
      * This method is called during merge process after a split-brain is detected.
      */
     public void reset() {
+        state = NodeState.ACTIVE;
         setMasterAddress(null);
         joined.set(false);
         joiner.reset();

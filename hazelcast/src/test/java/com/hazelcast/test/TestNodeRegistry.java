@@ -70,6 +70,13 @@ public final class TestNodeRegistry {
     }
 
     public NodeContext createNodeContext(Address address) {
+        NodeEngineImpl nodeEngine;
+        if ((nodeEngine = nodes.get(address)) != null) {
+            if (nodeEngine.isActive()) {
+                throw new IllegalArgumentException("This address already in registry! " + address);
+            }
+            nodes.remove(address);
+        }
         return new MockNodeContext(joinAddresses, nodes, address, joinerLock);
     }
 
@@ -343,6 +350,7 @@ public final class TestNodeRegistry {
 
         public void destroyConnection(final Connection connection) {
             final Address endPoint = connection.getEndPoint();
+            mapConnections.remove(endPoint);
             ioService.getEventService().executeEventCallback(new StripedRunnable() {
                 @Override
                 public void run() {

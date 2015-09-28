@@ -16,6 +16,7 @@
 
 package com.hazelcast.partition.impl;
 
+import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.cluster.MemberInfo;
 import com.hazelcast.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.core.ExecutionCallback;
@@ -341,16 +342,12 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
 
     @Override
     public void firstArrangement() {
-        if (node.getState() != NodeState.ACTIVE) {
+        if (initialized) {
             return;
         }
 
         if (!node.isMaster()) {
             notifyMasterToAssignPartitions();
-            return;
-        }
-
-        if (initialized) {
             return;
         }
 
@@ -1503,7 +1500,11 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
     }
 
     public boolean isMigrationActive() {
-        return migrationActive.get();
+        if (!migrationActive.get()) {
+             return false;
+        }
+        ClusterState clusterState = node.getClusterService().getClusterState();
+        return clusterState == ClusterState.ACTIVE;
     }
 
     @Override

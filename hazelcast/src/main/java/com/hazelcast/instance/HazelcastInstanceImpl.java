@@ -295,7 +295,7 @@ public class HazelcastInstanceImpl implements HazelcastInstance {
 
     @Override
     public Cluster getCluster() {
-        return node.clusterService.getClusterProxy();
+        return node.clusterService;
     }
 
     @Override

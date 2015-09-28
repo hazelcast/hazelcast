@@ -102,7 +102,7 @@ public class Invocation_NetworkSplitTest extends HazelcastTestSupport {
 
         // Let node3 detect the split and merge it back to other two.
         ClusterServiceImpl clusterService3 = node3.getClusterService();
-        clusterService3.prepareToMerge(node1.address);
+//        clusterService3.prepareToMerge(node1.address);
         clusterService3.merge(node1.address);
 
         assertClusterSizeEventually(3, hz1);
@@ -173,7 +173,7 @@ public class Invocation_NetworkSplitTest extends HazelcastTestSupport {
 
         // Let node3 detect the split and merge it back to other two.
         ClusterServiceImpl clusterService3 = node3.getClusterService();
-        clusterService3.prepareToMerge(node1.address);
+//        clusterService3.prepareToMerge(node1.address);
         clusterService3.merge(node1.address);
 
         assertEquals(4, node1.getClusterService().getSize());
