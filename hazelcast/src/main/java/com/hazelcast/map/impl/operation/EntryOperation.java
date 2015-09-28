@@ -21,19 +21,19 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.core.ManagedContext;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.LazyMapEntry;
 import com.hazelcast.map.impl.LocalMapStatsProvider;
 import com.hazelcast.map.impl.MapContainer;
-import com.hazelcast.map.impl.event.MapEventPublisher;
 import com.hazelcast.map.impl.MapServiceContext;
+import com.hazelcast.map.impl.event.MapEventPublisher;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.Operation;
@@ -41,11 +41,11 @@ import com.hazelcast.spi.impl.MutatingOperation;
 import com.hazelcast.util.Clock;
 
 import java.io.IOException;
-import java.util.AbstractMap;
 import java.util.Map;
 
 import static com.hazelcast.map.impl.EntryViews.createSimpleEntryView;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
+import static com.hazelcast.map.impl.recordstore.RecordStore.DEFAULT_TTL;
 
 /**
  * GOTCHA : This operation LOADS missing keys from map-store, in contrast with PartitionWideEntryOperation.
@@ -185,7 +185,7 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
     private boolean entryAddedOrUpdated(Map.Entry entry, long now) {
         final Object value = entry.getValue();
         if (value != null) {
-            put(value);
+            put(dataKey, value);
             getLocalMapStats().incrementPuts(getLatencyFrom(now));
             eventType = pickEventTypeOrNull(entry);
             return true;
@@ -211,8 +211,8 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
         return null;
     }
 
-    private void put(Object value) {
-        recordStore.put(new AbstractMap.SimpleImmutableEntry<Data, Object>(dataKey, value));
+    private void put(Data dataKey, Object value) {
+        recordStore.put(dataKey, value, DEFAULT_TTL);
     }
 
 
