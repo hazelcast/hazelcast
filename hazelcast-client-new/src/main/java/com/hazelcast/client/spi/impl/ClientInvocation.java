@@ -24,14 +24,15 @@ import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.spi.ClientExecutionService;
 import com.hazelcast.client.spi.ClientInvocationService;
+import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
+import com.hazelcast.core.ICompletableFuture;
 import com.hazelcast.core.LifecycleService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
-import com.hazelcast.util.EmptyStatement;
 
 import java.io.IOException;
 import java.util.concurrent.RejectedExecutionException;
@@ -203,10 +204,8 @@ public class ClientInvocation implements Runnable {
             return false;
         }
         beforeRetry();
-
         try {
-            sleep();
-            ((ClientExecutionServiceImpl) executionService).executeInternal(this);
+            rescheduleInvocation();
         } catch (RejectedExecutionException e) {
             if (LOGGER.isFinestEnabled()) {
                 LOGGER.finest("Retry could not be scheduled ", e);
@@ -216,20 +215,34 @@ public class ClientInvocation implements Runnable {
         return true;
     }
 
-    protected void beforeRetry() {
+    private void rescheduleInvocation() {
+        executionService.schedule(new Runnable() {
+            @Override
+            public void run() {
+                ICompletableFuture<?> future = ((ClientExecutionServiceImpl) executionService)
+                        .submitInternal(ClientInvocation.this);
+                future.andThen(new ExecutionCallback() {
+                    @Override
+                    public void onResponse(Object response) {
+                    }
 
+                    @Override
+                    public void onFailure(Throwable t) {
+                        if (LOGGER.isFinestEnabled()) {
+                            LOGGER.finest("Failure during retry ", t);
+                        }
+                        clientInvocationFuture.setResponse(t);
+                    }
+                });
+            }
+        }, RETRY_WAIT_TIME_IN_SECONDS, TimeUnit.SECONDS);
+    }
+
+    protected void beforeRetry() {
     }
 
     protected boolean shouldRetry() {
         return reSendCount.incrementAndGet() < retryCountLimit;
-    }
-
-    private void sleep() {
-        try {
-            Thread.sleep(TimeUnit.SECONDS.toMillis(RETRY_WAIT_TIME_IN_SECONDS));
-        } catch (InterruptedException ignored) {
-            EmptyStatement.ignore(ignored);
-        }
     }
 
     private boolean isBindToSingleConnection() {
