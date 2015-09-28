@@ -16,6 +16,9 @@
 
 package com.hazelcast.map.impl.query;
 
+import static com.hazelcast.util.IterationType.ENTRY;
+import static java.util.Collections.newSetFromMap;
+
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
@@ -29,9 +32,6 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-
-import static com.hazelcast.util.IterationType.ENTRY;
-import static java.util.Collections.newSetFromMap;
 
 /**
  * Collection(Set) class for result of query operations.

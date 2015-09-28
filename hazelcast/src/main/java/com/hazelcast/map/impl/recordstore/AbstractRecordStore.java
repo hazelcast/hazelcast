@@ -16,6 +16,8 @@
 
 package com.hazelcast.map.impl.recordstore;
 
+import static com.hazelcast.map.impl.SizeEstimators.createMapSizeEstimator;
+
 import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.concurrent.lock.LockStore;
 import com.hazelcast.config.InMemoryFormat;
@@ -41,8 +43,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-
-import static com.hazelcast.map.impl.SizeEstimators.createMapSizeEstimator;
 
 /**
  * Contains record store common parts.
@@ -151,31 +151,20 @@ abstract class AbstractRecordStore implements RecordStore {
         return partitionId;
     }
 
-
-    protected void saveIndex(Record record) {
+    protected void saveIndex(Record record, Object oldValue) {
         Data dataKey = record.getKey();
         final Indexes indexes = mapContainer.getIndexes();
         if (indexes.hasIndex()) {
             SerializationService ss = mapServiceContext.getNodeEngine().getSerializationService();
             QueryableEntry queryableEntry = new QueryEntry(ss, dataKey, dataKey, record.getValue());
-            indexes.saveEntryIndex(queryableEntry);
+            indexes.saveEntryIndex(queryableEntry, oldValue);
         }
     }
 
-
-    protected void removeIndex(Data key) {
-        final Indexes indexes = mapContainer.getIndexes();
-        if (indexes.hasIndex()) {
-            indexes.removeEntryIndex(key);
-        }
-    }
-
-    protected void removeIndex(Set<Data> keys) {
-        final Indexes indexes = mapContainer.getIndexes();
-        if (indexes.hasIndex()) {
-            for (Data key : keys) {
-                indexes.removeEntryIndex(key);
-            }
+    protected void removeIndex(Record record) {
+        final Indexes indexService = mapContainer.getIndexes();
+        if (indexService.hasIndex()) {
+            indexService.removeEntryIndex(record);
         }
     }
 
@@ -185,12 +174,13 @@ abstract class AbstractRecordStore implements RecordStore {
      * @param keysToRemove   remove these keys from index.
      * @param keysToPreserve do not remove these keys.
      */
-    protected void removeIndexByPreservingKeys(Set<Data> keysToRemove, Set<Data> keysToPreserve) {
+
+    protected void removeIndexByPreservingKeys(Collection<Record> keysToRemove, Set<Data> keysToPreserve) {
         final Indexes indexes = mapContainer.getIndexes();
         if (indexes.hasIndex()) {
-            for (Data key : keysToRemove) {
-                if (!keysToPreserve.contains(key)) {
-                    indexes.removeEntryIndex(key);
+            for (Record record : keysToRemove) {
+                if (!keysToPreserve.contains(record.getKey())) {
+                    indexes.removeEntryIndex(record);
                 }
             }
         }

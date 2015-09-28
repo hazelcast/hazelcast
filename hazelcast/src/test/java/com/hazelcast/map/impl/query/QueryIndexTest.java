@@ -128,6 +128,19 @@ public class QueryIndexTest extends HazelcastTestSupport {
     }
 
     @Test(timeout = 1000 * 60)
+    public void testQueryDoesntMatchOldResults_whenEntriesAreUpdated() {
+        HazelcastInstance instance = createHazelcastInstance();
+        IMap<String, SampleObjects.Value> map = instance.getMap("default");
+        map.addIndex("name", true);
+
+        map.put("0", new Value("name"));
+        map.put("0", new Value("newName"));
+
+        Collection<SampleObjects.Value> values = map.values(new SqlPredicate("name='name'"));
+        assertEquals(0, values.size());
+    }
+
+    @Test(timeout = 1000 * 60)
         public void testOneIndexedFieldsWithTwoCriteriaField() throws Exception {
             HazelcastInstance h1 = createHazelcastInstance();
             IMap imap = h1.getMap("employees");
