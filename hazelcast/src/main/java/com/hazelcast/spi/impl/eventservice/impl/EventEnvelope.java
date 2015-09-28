@@ -24,16 +24,19 @@ import com.hazelcast.spi.impl.SpiDataSerializerHook;
 
 import java.io.IOException;
 
-public final class EventPacket implements IdentifiedDataSerializable {
+/**
+ * An Envelope around an event object. The envelope adds some additional metadata to the event.
+ */
+public final class EventEnvelope implements IdentifiedDataSerializable {
 
     private String id;
     private String serviceName;
     private Object event;
 
-    public EventPacket() {
+    public EventEnvelope() {
     }
 
-    EventPacket(String id, String serviceName, Object event) {
+    EventEnvelope(String id, String serviceName, Object event) {
         this.event = event;
         this.id = id;
         this.serviceName = serviceName;
@@ -58,7 +61,7 @@ public final class EventPacket implements IdentifiedDataSerializable {
 
     @Override
     public int getId() {
-        return SpiDataSerializerHook.EVENT_PACKET;
+        return SpiDataSerializerHook.EVENT_ENVELOPE;
     }
 
     @Override
@@ -88,7 +91,7 @@ public final class EventPacket implements IdentifiedDataSerializable {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("EventPacket{");
+        final StringBuilder sb = new StringBuilder("EventEnvelope{");
         sb.append("id='").append(id).append('\'');
         sb.append(", serviceName='").append(serviceName).append('\'');
         sb.append(", event=").append(event);

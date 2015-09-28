@@ -20,37 +20,37 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.EventPublishingService;
 import com.hazelcast.util.executor.StripedRunnable;
 
-public class EventPacketProcessor implements StripedRunnable {
+public class EventProcessor implements StripedRunnable {
 
     private final EventServiceImpl eventService;
     private final int orderKey;
-    private final EventPacket eventPacket;
+    private final EventEnvelope envelope;
 
-    public EventPacketProcessor(EventServiceImpl eventService, EventPacket packet, int orderKey) {
+    public EventProcessor(EventServiceImpl eventService, EventEnvelope envelope, int orderKey) {
         this.eventService = eventService;
-        this.eventPacket = packet;
+        this.envelope = envelope;
         this.orderKey = orderKey;
     }
 
     @Override
     public void run() {
-        process(eventPacket);
+        process(envelope);
     }
 
-    void process(EventPacket eventPacket) {
-        Object eventObject = getEventObject(eventPacket);
-        String serviceName = eventPacket.getServiceName();
+    void process(EventEnvelope envelope) {
+        Object event = getEvent(envelope);
+        String serviceName = envelope.getServiceName();
 
         EventPublishingService<Object, Object> service = getPublishingService(serviceName);
         if (service == null) {
             return;
         }
 
-        Registration registration = getRegistration(eventPacket, serviceName);
+        Registration registration = getRegistration(envelope, serviceName);
         if (registration == null) {
             return;
         }
-        service.dispatchEvent(eventObject, registration.getListener());
+        service.dispatchEvent(event, registration.getListener());
     }
 
     private EventPublishingService<Object, Object> getPublishingService(String serviceName) {
@@ -64,7 +64,7 @@ public class EventPacketProcessor implements StripedRunnable {
         return service;
     }
 
-    private Registration getRegistration(EventPacket eventPacket, String serviceName) {
+    private Registration getRegistration(EventEnvelope eventEnvelope, String serviceName) {
         EventServiceSegment segment = eventService.getSegment(serviceName, false);
         if (segment == null) {
             if (eventService.nodeEngine.isActive()) {
@@ -73,7 +73,7 @@ public class EventPacketProcessor implements StripedRunnable {
             return null;
         }
 
-        String id = eventPacket.getEventId();
+        String id = eventEnvelope.getEventId();
         Registration registration = (Registration) segment.getRegistrationIdMap().get(id);
         if (registration == null) {
             if (eventService.nodeEngine.isActive()) {
@@ -98,12 +98,12 @@ public class EventPacketProcessor implements StripedRunnable {
         return registration;
     }
 
-    private Object getEventObject(EventPacket eventPacket) {
-        Object eventObject = eventPacket.getEvent();
-        if (eventObject instanceof Data) {
-            eventObject = eventService.nodeEngine.toObject(eventObject);
+    private Object getEvent(EventEnvelope eventEnvelope) {
+        Object event = eventEnvelope.getEvent();
+        if (event instanceof Data) {
+            event = eventService.nodeEngine.toObject(event);
         }
-        return eventObject;
+        return event;
     }
 
     @Override
@@ -113,8 +113,8 @@ public class EventPacketProcessor implements StripedRunnable {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("EventPacketProcessor{");
-        sb.append("eventPacket=").append(eventPacket);
+        StringBuilder sb = new StringBuilder("EventProcessor{");
+        sb.append("envelope=").append(envelope);
         sb.append('}');
         return sb.toString();
     }

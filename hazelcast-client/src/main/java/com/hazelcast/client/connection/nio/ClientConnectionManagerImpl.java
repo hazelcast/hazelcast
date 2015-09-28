@@ -292,10 +292,10 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
 
     @Override
     public void handlePacket(Packet packet) {
-        final ClientConnection conn = (ClientConnection) packet.getConn();
+        ClientConnection conn = (ClientConnection) packet.getConn();
         conn.incrementPacketCount();
         if (packet.isHeaderSet(Packet.HEADER_EVENT)) {
-            final ClientListenerServiceImpl listenerService = (ClientListenerServiceImpl) client.getListenerService();
+            ClientListenerServiceImpl listenerService = (ClientListenerServiceImpl) client.getListenerService();
             listenerService.handleEventPacket(packet);
         } else {
             ClientInvocationService invocationService = client.getInvocationService();

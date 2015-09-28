@@ -297,11 +297,12 @@ public class EventServiceImpl implements InternalEventService {
         if (!(registration instanceof Registration)) {
             throw new IllegalArgumentException();
         }
+
         if (isLocal(registration)) {
             executeLocal(serviceName, event, registration, orderKey);
         } else {
-            final Address subscriber = registration.getSubscriber();
-            sendEventPacket(subscriber, new EventPacket(registration.getId(), serviceName, event), orderKey);
+            EventEnvelope eventEnvelope = new EventEnvelope(registration.getId(), serviceName, event);
+            sendEvent(registration.getSubscriber(), eventEnvelope, orderKey);
         }
     }
 
@@ -320,8 +321,8 @@ public class EventServiceImpl implements InternalEventService {
             if (eventData == null) {
                 eventData = serializationService.toData(event);
             }
-            EventPacket eventPacket = new EventPacket(registration.getId(), serviceName, eventData);
-            sendEventPacket(registration.getSubscriber(), eventPacket, orderKey);
+            EventEnvelope eventEnvelope = new EventEnvelope(registration.getId(), serviceName, eventData);
+            sendEvent(registration.getSubscriber(), eventEnvelope, orderKey);
         }
     }
 
@@ -338,8 +339,8 @@ public class EventServiceImpl implements InternalEventService {
             if (isLocal(registration)) {
                 continue;
             }
-            EventPacket eventPacket = new EventPacket(registration.getId(), serviceName, eventData);
-            sendEventPacket(registration.getSubscriber(), eventPacket, orderKey);
+            EventEnvelope eventEnvelope = new EventEnvelope(registration.getId(), serviceName, eventData);
+            sendEvent(registration.getSubscriber(), eventEnvelope, orderKey);
         }
     }
 
@@ -364,13 +365,13 @@ public class EventServiceImpl implements InternalEventService {
         }
     }
 
-    private void sendEventPacket(Address subscriber, EventPacket eventPacket, int orderKey) {
-        final String serviceName = eventPacket.getServiceName();
+    private void sendEvent(Address subscriber, EventEnvelope eventEnvelope, int orderKey) {
+        final String serviceName = eventEnvelope.getServiceName();
         final EventServiceSegment segment = getSegment(serviceName, true);
         boolean sync = segment.incrementPublish() % EVENT_SYNC_FREQUENCY == 0;
 
         if (sync) {
-            SendEventOperation op = new SendEventOperation(eventPacket, orderKey);
+            SendEventOperation op = new SendEventOperation(eventEnvelope, orderKey);
             Future f = nodeEngine.getOperationService()
                     .createInvocationBuilder(serviceName, op, subscriber)
                     .setTryCount(SEND_RETRY_COUNT).invoke();
@@ -380,7 +381,7 @@ public class EventServiceImpl implements InternalEventService {
                 ignore(ignored);
             }
         } else {
-            Packet packet = new Packet(serializationService.toBytes(eventPacket), orderKey);
+            Packet packet = new Packet(serializationService.toBytes(eventEnvelope), orderKey);
             packet.setHeader(Packet.HEADER_EVENT);
 
             if (!nodeEngine.getNode().getConnectionManager().transmit(packet, subscriber)) {
@@ -429,7 +430,7 @@ public class EventServiceImpl implements InternalEventService {
     @Override
     public void handle(Packet packet) {
         try {
-            eventExecutor.execute(new RemoteEventPacketProcessor(this, packet));
+            eventExecutor.execute(new RemoteEventProcessor(this, packet));
         } catch (RejectedExecutionException e) {
             rejectedCount.inc();
 
