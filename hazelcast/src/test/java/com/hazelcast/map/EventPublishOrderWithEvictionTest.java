@@ -27,7 +27,7 @@ import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
-public class EventPublishOrderWithEviction extends HazelcastTestSupport {
+public class EventPublishOrderWithEvictionTest extends HazelcastTestSupport {
 
     @Test
     public void testEntryEvictEventsEmitted_afterAddEvents() throws Exception {
