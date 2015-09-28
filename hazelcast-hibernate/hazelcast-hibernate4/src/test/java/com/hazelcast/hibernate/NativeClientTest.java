@@ -61,7 +61,6 @@ public class NativeClientTest
     public void tearDown() {
         if(clientSf !=null) {
             clientSf.close();
-            clientSf = null;
         }
     }
 
