@@ -552,7 +552,14 @@ public enum GroupProperty implements HazelcastProperty {
      * Forces the JCache provider, which can have values client or server, to force the provider type.
      * If not provided, the provider will be client or server, whichever is found on the classpath first respectively.
      */
-    JCACHE_PROVIDER_TYPE("hazelcast.jcache.provider.type");
+    JCACHE_PROVIDER_TYPE("hazelcast.jcache.provider.type"),
+
+    /**
+     * <p>Enables the Discovery SPI lookup over the old native implementations. This property is temporary and will
+     * eventually be removed when the experimental marker is removed.</p>
+     * <p>Discovery SPI is <b>disabled</b> by default</p>
+     */
+    DISCOVERY_SPI_ENABLED("hazelcast.discovery.enabled", false);
 
     private final String name;
     private final String defaultValue;

@@ -396,7 +396,7 @@ public class TcpIpJoiner extends AbstractJoiner {
         return null;
     }
 
-    private Collection<Address> getPossibleAddresses() {
+    protected Collection<Address> getPossibleAddresses() {
         final Collection<String> possibleMembers = getMembers();
         final Set<Address> possibleAddresses = new HashSet<Address>();
         final NetworkConfig networkConfig = config.getNetworkConfig();

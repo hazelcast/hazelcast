@@ -16,6 +16,7 @@
 
 package com.hazelcast.query.impl;
 
+import com.hazelcast.core.TypeConverter;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.QueryException;
 
@@ -35,7 +36,7 @@ public interface Index {
      *
      * @return
      */
-    TypeConverters.TypeConverter getConverter();
+    TypeConverter getConverter();
 
     void removeEntryIndex(Data indexKey);
 

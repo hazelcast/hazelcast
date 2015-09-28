@@ -21,7 +21,7 @@
     - no hazelcast.xml if present
 
 -->
-<hazelcast xsi:schemaLocation="http://www.hazelcast.com/schema/config hazelcast-config-3.5.xsd"
+<hazelcast xsi:schemaLocation="http://www.hazelcast.com/schema/config hazelcast-config-3.6.xsd"
            xmlns="http://www.hazelcast.com/schema/config"
            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
     <group>
@@ -61,6 +61,8 @@
                 <tag-key>type</tag-key>
                 <tag-value>hz-nodes</tag-value>
             </aws>
+            <discovery-strategies>
+            </discovery-strategies>
         </join>
         <interfaces enabled="false">
             <interface>10.10.1.*</interface>

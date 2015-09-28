@@ -28,6 +28,7 @@ import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.spi.impl.AwsAddressTranslator;
 import com.hazelcast.client.spi.impl.DefaultAddressTranslator;
+import com.hazelcast.client.spi.impl.discovery.DiscoveryAddressTranslator;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.Node;
@@ -38,6 +39,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionType;
 import com.hazelcast.nio.OutboundFrame;
+import com.hazelcast.spi.discovery.integration.DiscoveryService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.TestNodeRegistry;
 import com.hazelcast.util.ExceptionUtil;
@@ -71,7 +73,9 @@ public class TestClientRegistry {
         }
 
         @Override
-        public ClientConnectionManager createConnectionManager(ClientConfig config, HazelcastClientInstanceImpl client) {
+        public ClientConnectionManager createConnectionManager(ClientConfig config, HazelcastClientInstanceImpl client,
+                                                               DiscoveryService discoveryService) {
+
             final ClientAwsConfig awsConfig = config.getNetworkConfig().getAwsConfig();
             AddressTranslator addressTranslator;
             if (awsConfig != null && awsConfig.isEnabled()) {
@@ -81,6 +85,8 @@ public class TestClientRegistry {
                     LOGGER.log(Level.WARNING, "hazelcast-cloud.jar might be missing!");
                     throw e;
                 }
+            } else if (discoveryService != null) {
+                addressTranslator = new DiscoveryAddressTranslator(discoveryService);
             } else {
                 addressTranslator = new DefaultAddressTranslator();
             }

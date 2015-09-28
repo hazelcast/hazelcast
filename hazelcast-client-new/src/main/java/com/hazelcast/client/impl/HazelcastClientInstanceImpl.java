@@ -33,6 +33,7 @@ import com.hazelcast.client.spi.impl.ClientPartitionServiceImpl;
 import com.hazelcast.client.spi.impl.ClientSmartInvocationServiceImpl;
 import com.hazelcast.client.spi.impl.ClientTransactionManagerServiceImpl;
 import com.hazelcast.client.spi.impl.DefaultAddressProvider;
+import com.hazelcast.client.spi.impl.discovery.DiscoveryAddressProvider;
 import com.hazelcast.client.util.RoundRobinLB;
 import com.hazelcast.collection.impl.list.ListService;
 import com.hazelcast.collection.impl.queue.QueueService;
@@ -44,6 +45,7 @@ import com.hazelcast.concurrent.idgen.IdGeneratorService;
 import com.hazelcast.concurrent.lock.LockServiceImpl;
 import com.hazelcast.concurrent.semaphore.SemaphoreService;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.DiscoveryStrategiesConfig;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.core.Client;
 import com.hazelcast.core.ClientService;
@@ -83,6 +85,10 @@ import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.ringbuffer.impl.RingbufferService;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.UsernamePasswordCredentials;
+import com.hazelcast.spi.discovery.DiscoveryMode;
+import com.hazelcast.spi.discovery.integration.DiscoveryService;
+import com.hazelcast.spi.discovery.integration.DiscoveryServiceProvider;
+import com.hazelcast.spi.discovery.impl.DefaultDiscoveryServiceProvider;
 import com.hazelcast.spi.impl.SerializationServiceSupport;
 import com.hazelcast.topic.impl.TopicService;
 import com.hazelcast.topic.impl.reliable.ReliableTopicService;
@@ -130,6 +136,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
     private final LoadBalancer loadBalancer;
     private final ClientExtension clientExtension;
     private final Credentials credentials;
+    private final DiscoveryService discoveryService;
 
     public HazelcastClientInstanceImpl(ClientConfig config,
                                        ClientConnectionManagerFactory clientConnectionManagerFactory,
@@ -156,7 +163,8 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         loadBalancer = initLoadBalancer(config);
         transactionManager = new ClientTransactionManagerServiceImpl(this, loadBalancer);
         partitionService = new ClientPartitionServiceImpl(this);
-        connectionManager = clientConnectionManagerFactory.createConnectionManager(config, this);
+        discoveryService = initDiscoveryService(config);
+        connectionManager = clientConnectionManagerFactory.createConnectionManager(config, this, discoveryService);
         Collection<AddressProvider> addressProviders = createAddressProviders(externalAddressProvider);
         clusterService = new ClientClusterServiceImpl(this, addressProviders);
         invocationService = initInvocationService();
@@ -177,6 +185,10 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
             addressProviders.add(externalAddressProvider);
         }
 
+        if (discoveryService != null) {
+            addressProviders.add(new DiscoveryAddressProvider(discoveryService));
+        }
+
         if (awsConfig != null && awsConfig.isEnabled()) {
             try {
                 addressProviders.add(new AwsAddressProvider(awsConfig));
@@ -186,6 +198,19 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
             }
         }
         return addressProviders;
+    }
+
+    private DiscoveryService initDiscoveryService(ClientConfig config) {
+        ClientNetworkConfig networkConfig = config.getNetworkConfig();
+        DiscoveryStrategiesConfig discoveryStrategiesConfig = networkConfig.getDiscoveryStrategiesConfig().getAsReadOnly();
+        if (discoveryStrategiesConfig == null || !discoveryStrategiesConfig.isEnabled()) {
+            return null;
+        }
+        DiscoveryServiceProvider factory = discoveryStrategiesConfig.getDiscoveryServiceProvider();
+        if (factory == null) {
+            factory = new DefaultDiscoveryServiceProvider();
+        }
+        return factory.newDiscoveryService(DiscoveryMode.Client, discoveryStrategiesConfig, config.getClassLoader());
     }
 
     private LoadBalancer initLoadBalancer(ClientConfig config) {

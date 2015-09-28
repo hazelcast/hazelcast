@@ -31,7 +31,7 @@ public class TypeConverterTest {
 
     @Test
     public void testConvert_whenPassedNullValue_thenConvertToNullObject() {
-        TypeConverters.TypeConverter converter = new TypeConverters.TypeConverter() {
+        TypeConverters.BaseTypeConverter converter = new TypeConverters.BaseTypeConverter() {
             @Override
             Comparable convertInternal(Comparable value) {
                 return value;

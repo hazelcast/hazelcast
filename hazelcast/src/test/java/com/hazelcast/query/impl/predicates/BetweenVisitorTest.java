@@ -1,12 +1,11 @@
 package com.hazelcast.query.impl.predicates;
 
+import com.hazelcast.core.TypeConverter;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.FalsePredicate;
 import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.Indexes;
-import com.hazelcast.query.impl.TypeConverters;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
@@ -14,15 +13,20 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.query.Predicates.*;
+import static com.hazelcast.query.Predicates.and;
+import static com.hazelcast.query.Predicates.equal;
+import static com.hazelcast.query.Predicates.greaterEqual;
+import static com.hazelcast.query.Predicates.greaterThan;
+import static com.hazelcast.query.Predicates.lessEqual;
+import static com.hazelcast.query.Predicates.notEqual;
 import static com.hazelcast.query.impl.TypeConverters.INTEGER_CONVERTER;
+import static org.hamcrest.Matchers.hasItemInArray;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import static org.hamcrest.Matchers.*;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -180,7 +184,7 @@ public class BetweenVisitorTest {
         assertEquals(FalsePredicate.INSTANCE, result);
     }
 
-    private void useConverter(TypeConverters.TypeConverter converter) {
+    private void useConverter(TypeConverter converter) {
         when(mockIndex.getConverter()).thenReturn(converter);
     }
 

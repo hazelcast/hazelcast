@@ -21,7 +21,7 @@ import java.util.UUID;
 /**
  * TypeConverter to handle UUID
  */
-final class UUIDConverter extends TypeConverters.TypeConverter {
+final class UUIDConverter extends TypeConverters.BaseTypeConverter {
 
     @Override
     Comparable convertInternal(Comparable value) {

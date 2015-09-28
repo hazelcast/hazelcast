@@ -52,6 +52,7 @@ import java.text.DecimalFormat;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Properties;
 
@@ -370,6 +371,26 @@ public abstract class AbstractXmlConfigHelper {
         }
     }
 
+    protected void fillProperties(final org.w3c.dom.Node node, Map<String, Comparable> properties) {
+        if (properties == null) {
+            return;
+        }
+        for (org.w3c.dom.Node n : new IterableNodeList(node.getChildNodes())) {
+            if (n.getNodeType() == org.w3c.dom.Node.TEXT_NODE || n.getNodeType() == org.w3c.dom.Node.COMMENT_NODE) {
+                continue;
+            }
+            final String name = cleanNodeName(n.getNodeName());
+            final String propertyName;
+            if ("property".equals(name)) {
+                propertyName = getTextContent(n.getAttributes().getNamedItem("name")).trim();
+            } else {
+                // old way - probably should be deprecated
+                propertyName = name;
+            }
+            final String value = getTextContent(n).trim();
+            properties.put(propertyName, value);
+        }
+    }
 
     protected SerializationConfig parseSerialization(final Node node) {
         SerializationConfig serializationConfig = new SerializationConfig();

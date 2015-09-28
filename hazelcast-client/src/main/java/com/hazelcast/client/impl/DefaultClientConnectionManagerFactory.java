@@ -24,8 +24,10 @@ import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.connection.nio.ClientConnectionManagerImpl;
 import com.hazelcast.client.spi.impl.AwsAddressTranslator;
 import com.hazelcast.client.spi.impl.DefaultAddressTranslator;
+import com.hazelcast.client.spi.impl.discovery.DiscoveryAddressTranslator;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
+import com.hazelcast.spi.discovery.integration.DiscoveryService;
 
 import java.util.logging.Level;
 
@@ -37,7 +39,9 @@ public class DefaultClientConnectionManagerFactory implements ClientConnectionMa
     }
 
     @Override
-    public ClientConnectionManager createConnectionManager(ClientConfig config, HazelcastClientInstanceImpl client) {
+    public ClientConnectionManager createConnectionManager(ClientConfig config, HazelcastClientInstanceImpl client,
+                                                           DiscoveryService discoveryService) {
+
         final ClientAwsConfig awsConfig = config.getNetworkConfig().getAwsConfig();
         AddressTranslator addressTranslator;
         if (awsConfig != null && awsConfig.isEnabled()) {
@@ -47,6 +51,8 @@ public class DefaultClientConnectionManagerFactory implements ClientConnectionMa
                 LOGGER.log(Level.WARNING, "hazelcast-cloud.jar might be missing!");
                 throw e;
             }
+        } else if (discoveryService != null) {
+            addressTranslator = new DiscoveryAddressTranslator(discoveryService);
         } else {
             addressTranslator = new DefaultAddressTranslator();
         }

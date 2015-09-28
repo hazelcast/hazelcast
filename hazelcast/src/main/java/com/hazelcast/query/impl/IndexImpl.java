@@ -16,12 +16,12 @@
 
 package com.hazelcast.query.impl;
 
+import com.hazelcast.core.TypeConverter;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.query.QueryException;
-import com.hazelcast.query.impl.TypeConverters.TypeConverter;
 
 import java.io.IOException;
 import java.util.HashSet;

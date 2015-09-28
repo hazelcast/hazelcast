@@ -20,6 +20,8 @@ import com.hazelcast.client.util.RandomLB;
 import com.hazelcast.client.util.RoundRobinLB;
 import com.hazelcast.config.AbstractConfigBuilder;
 import com.hazelcast.config.ConfigLoader;
+import com.hazelcast.config.DiscoveryStrategyConfig;
+import com.hazelcast.config.DiscoveryStrategiesConfig;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.InMemoryFormat;
@@ -46,7 +48,9 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
@@ -324,9 +328,63 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
                 handleSSLConfig(child, clientNetworkConfig);
             } else if ("aws".equals(nodeName)) {
                 handleAWS(child, clientNetworkConfig);
+            } else if ("discovery-strategies".equals(nodeName)) {
+                handleDiscoveryStrategies(child, clientNetworkConfig);
             }
         }
         clientConfig.setNetworkConfig(clientNetworkConfig);
+    }
+
+    private void handleDiscoveryStrategies(Node node, ClientNetworkConfig clientNetworkConfig) {
+        DiscoveryStrategiesConfig discoveryStrategiesConfig = clientNetworkConfig.getDiscoveryStrategiesConfig();
+        for (Node child : new IterableNodeList(node.getChildNodes())) {
+            String name = cleanNodeName(child.getNodeName());
+            if ("discovery-strategy".equals(name)) {
+                handleDiscoveryStrategy(child, discoveryStrategiesConfig);
+            } else if ("node-filter".equals(name)) {
+                handleDiscoveryNodeFilter(child, discoveryStrategiesConfig);
+            }
+        }
+    }
+
+    private void handleDiscoveryNodeFilter(Node node, DiscoveryStrategiesConfig discoveryStrategiesConfig) {
+        NamedNodeMap atts = node.getAttributes();
+
+        Node att = atts.getNamedItem("class");
+        if (att != null) {
+            discoveryStrategiesConfig.setNodeFilterClass(getTextContent(att).trim());
+        }
+    }
+
+    private void handleDiscoveryStrategy(Node node, DiscoveryStrategiesConfig discoveryStrategiesConfig) {
+        NamedNodeMap atts = node.getAttributes();
+
+        boolean enabled = false;
+        String clazz = null;
+
+        for (int a = 0; a < atts.getLength(); a++) {
+            Node att = atts.item(a);
+            String value = getTextContent(att).trim();
+            if ("enabled".equalsIgnoreCase(att.getNodeName())) {
+                enabled = checkTrue(value);
+            } else if ("class".equals(att.getNodeName())) {
+                clazz = value;
+            }
+        }
+
+        if (!enabled || clazz == null) {
+            return;
+        }
+
+        Map<String, Comparable> properties = new HashMap<String, Comparable>();
+        for (Node child : new IterableNodeList(node.getChildNodes())) {
+            String name = cleanNodeName(child.getNodeName());
+            if ("properties".equals(name)) {
+                fillProperties(child, properties);
+            }
+        }
+
+        discoveryStrategiesConfig.addDiscoveryProviderConfig(new DiscoveryStrategyConfig(clazz, properties));
     }
 
     private void handleAWS(Node node, ClientNetworkConfig clientNetworkConfig) {

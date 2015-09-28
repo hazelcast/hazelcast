@@ -18,8 +18,10 @@ package com.hazelcast.client.impl;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.connection.ClientConnectionManager;
+import com.hazelcast.spi.discovery.integration.DiscoveryService;
 
 public interface ClientConnectionManagerFactory {
 
-    ClientConnectionManager createConnectionManager(ClientConfig config, HazelcastClientInstanceImpl client);
+    ClientConnectionManager createConnectionManager(ClientConfig config, HazelcastClientInstanceImpl client,
+                                                    DiscoveryService discoveryService);
 }
