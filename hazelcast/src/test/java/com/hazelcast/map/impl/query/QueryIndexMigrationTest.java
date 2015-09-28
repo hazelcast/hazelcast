@@ -16,6 +16,12 @@
 
 package com.hazelcast.map.impl.query;
 
+import static com.hazelcast.query.Predicates.equal;
+import static com.hazelcast.test.TimeConstants.MINUTE;
+import static java.lang.Thread.interrupted;
+import static java.util.concurrent.TimeUnit.MINUTES;
+import static java.util.concurrent.TimeUnit.SECONDS;
+
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.core.HazelcastInstance;
@@ -33,12 +39,6 @@ import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.IterableUtil;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -51,13 +51,14 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-import static com.hazelcast.query.Predicates.equal;
-import static com.hazelcast.test.TimeConstants.MINUTE;
-import static java.lang.Thread.interrupted;
-import static java.util.concurrent.TimeUnit.MINUTES;
-import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -135,7 +136,6 @@ public class QueryIndexMigrationTest extends HazelcastTestSupport {
         }, 3);
     }
 
-    @Ignore
     @Test
     public void testQueryWithIndexesWhileMigrating() throws Exception {
         HazelcastInstance instance = nodeFactory.newHazelcastInstance();
@@ -162,7 +162,6 @@ public class QueryIndexMigrationTest extends HazelcastTestSupport {
     /**
      * test for issue #359
      */
-    @Ignore
     @Test(timeout = MINUTE)
     public void testIndexCleanupOnMigration() throws Exception {
         int nodeCount = 6;

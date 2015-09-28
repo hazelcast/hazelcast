@@ -17,16 +17,23 @@
 package com.hazelcast.query.impl;
 
 import com.hazelcast.core.TypeConverter;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.query.QueryException;
 
 import java.util.Set;
+
 /**
  * This interface contains the methods related to index of Query.
  */
 public interface Index {
 
-    void saveEntryIndex(QueryableEntry e) throws QueryException;
+    /**
+     * Add entry to this index.
+     * @param e entry
+     * @param oldValue or null if there is no old value
+     * @throws QueryException
+     */
+    void saveEntryIndex(QueryableEntry e, Object oldValue) throws QueryException;
 
     void clear();
 
@@ -38,7 +45,7 @@ public interface Index {
      */
     TypeConverter getConverter();
 
-    void removeEntryIndex(Data indexKey);
+    void removeEntryIndex(Record record);
 
     Set<QueryableEntry> getRecords(Comparable[] values);
 

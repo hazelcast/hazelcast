@@ -17,6 +17,8 @@
 package com.hazelcast.query.impl;
 
 import com.hazelcast.core.TypeConverter;
+import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -26,7 +28,6 @@ import com.hazelcast.query.QueryException;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 /**
@@ -40,16 +41,18 @@ public class IndexImpl implements Index {
     public static final NullObject NULL = new NullObject();
 
     // indexKey -- indexValue
-    private final ConcurrentMap<Data, Comparable> recordValues = new ConcurrentHashMap<Data, Comparable>(1000);
     private final IndexStore indexStore;
     private final String attribute;
     private final boolean ordered;
 
     private volatile TypeConverter converter;
 
-    public IndexImpl(String attribute, boolean ordered) {
+    private final SerializationService ss;
+
+    public IndexImpl(String attribute, boolean ordered, SerializationService ss) {
         this.attribute = attribute;
         this.ordered = ordered;
+        this.ss = ss;
         indexStore = (ordered) ? new SortedIndexStore() : new UnsortedIndexStore();
     }
 
@@ -59,16 +62,20 @@ public class IndexImpl implements Index {
     }
 
     @Override
-    public void removeEntryIndex(Data indexKey) {
-        Comparable oldValue = recordValues.remove(indexKey);
-        if (oldValue != null) {
-            indexStore.removeIndex(oldValue, indexKey);
+    public void removeEntryIndex(Record record) {
+        Comparable value = QueryEntry.extractAttribute(attribute, record.getKey(), record.getValue(), ss);
+
+        if (value.getClass().isEnum()) {
+            value = TypeConverters.ENUM_CONVERTER.convert(value);
+        }
+
+        if (value != null) {
+            indexStore.removeIndex(value, (Data) record.getKey());
         }
     }
 
     @Override
     public void clear() {
-        recordValues.clear();
         indexStore.clear();
         // Clear converter
         converter = null;
@@ -79,7 +86,7 @@ public class IndexImpl implements Index {
     }
 
     @Override
-    public void saveEntryIndex(QueryableEntry e) throws QueryException {
+    public void saveEntryIndex(QueryableEntry e, Object oldRecordValue) throws QueryException {
         /*
          * At first, check if converter is not initialized, initialize it before saving an entry index
          * Because, if entity index is saved before,
@@ -93,10 +100,15 @@ public class IndexImpl implements Index {
             converter = attributeType == null ? TypeConverters.IDENTITY_CONVERTER : attributeType.getConverter();
         }
 
-        Data key = e.getIndexKey();
-        Comparable newValue = e.getAttribute(attribute);
+        Comparable oldValue = null;
+        if (oldRecordValue != null) {
+            oldValue = QueryEntry.extractAttribute(attribute, e.getKey(), oldRecordValue, ss);
+            oldValue = sanitizeValue(oldValue);
+        }
+
+        Comparable newValue = QueryEntry.extractAttribute(attribute, e.getKey(), e.getValue(), ss);
         newValue = sanitizeValue(newValue);
-        Comparable oldValue = recordValues.put(key, newValue);
+
         if (oldValue == null) {
             // new
             indexStore.newIndex(newValue, e);
@@ -106,7 +118,7 @@ public class IndexImpl implements Index {
         }
     }
 
-    private Comparable sanitizeValue(Comparable value) {
+    private static Comparable sanitizeValue(Comparable value) {
         if (value == null) {
             return NULL;
         }
@@ -166,10 +178,6 @@ public class IndexImpl implements Index {
 
     private Comparable convert(Comparable value) {
         return converter.convert(value);
-    }
-
-    public ConcurrentMap<Data, Comparable> getRecordValues() {
-        return recordValues;
     }
 
     @Override

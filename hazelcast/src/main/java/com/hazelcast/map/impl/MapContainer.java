@@ -16,11 +16,19 @@
 
 package com.hazelcast.map.impl;
 
+import static com.hazelcast.map.impl.ExpirationTimeSetter.calculateMaxIdleMillis;
+import static com.hazelcast.map.impl.ExpirationTimeSetter.calculateTTLMillis;
+import static com.hazelcast.map.impl.ExpirationTimeSetter.pickTTL;
+import static com.hazelcast.map.impl.ExpirationTimeSetter.setExpirationTime;
+import static com.hazelcast.map.impl.SizeEstimators.createNearCacheSizeEstimator;
+import static com.hazelcast.map.impl.mapstore.MapStoreContextFactory.createMapStoreContext;
+
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.PartitioningStrategyConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.core.IFunction;
 import com.hazelcast.core.PartitioningStrategy;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.impl.mapstore.MapStoreContext;
 import com.hazelcast.map.impl.record.DataRecordFactory;
@@ -31,7 +39,6 @@ import com.hazelcast.map.impl.record.RecordFactory;
 import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.ExceptionUtil;
@@ -42,13 +49,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
-
-import static com.hazelcast.map.impl.ExpirationTimeSetter.calculateMaxIdleMillis;
-import static com.hazelcast.map.impl.ExpirationTimeSetter.calculateTTLMillis;
-import static com.hazelcast.map.impl.ExpirationTimeSetter.pickTTL;
-import static com.hazelcast.map.impl.ExpirationTimeSetter.setExpirationTime;
-import static com.hazelcast.map.impl.SizeEstimators.createNearCacheSizeEstimator;
-import static com.hazelcast.map.impl.mapstore.MapStoreContextFactory.createMapStoreContext;
 
 /**
  * Map container.
@@ -63,7 +63,7 @@ public class MapContainer {
 
     private final Map<String, MapInterceptor> interceptorMap;
 
-    private final Indexes indexes = new Indexes();
+    private final Indexes indexes;
 
     private final SizeEstimator nearCacheSizeEstimator;
 
@@ -108,6 +108,7 @@ public class MapContainer {
         nearCacheSizeEstimator = createNearCacheSizeEstimator();
         mapStoreContext = createMapStoreContext(this);
         mapStoreContext.start();
+        indexes = new Indexes(nodeEngine.getSerializationService());
     }
 
     private RecordFactory createRecordFactory(NodeEngine nodeEngine) {

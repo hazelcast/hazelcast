@@ -16,7 +16,8 @@
 
 package com.hazelcast.query.impl;
 
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.query.IndexAwarePredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.QueryException;
@@ -34,6 +35,11 @@ public class Indexes {
     private final ConcurrentMap<String, Index> mapIndexes = new ConcurrentHashMap<String, Index>(3);
     private final AtomicReference<Index[]> indexes = new AtomicReference<Index[]>(EMPTY_INDEX);
     private volatile boolean hasIndex;
+    private final SerializationService ss;
+
+    public Indexes(SerializationService ss) {
+        this.ss = ss;
+    }
 
     public synchronized Index destroyIndex(String attribute) {
         return mapIndexes.remove(attribute);
@@ -44,7 +50,7 @@ public class Indexes {
         if (index != null) {
             return index;
         }
-        index = new IndexImpl(attribute, ordered);
+        index = new IndexImpl(attribute, ordered, ss);
         mapIndexes.put(attribute, index);
         Object[] indexObjects = mapIndexes.values().toArray();
         Index[] newIndexes = new Index[indexObjects.length];
@@ -66,10 +72,10 @@ public class Indexes {
         hasIndex = false;
     }
 
-    public void removeEntryIndex(Data indexKey) throws QueryException {
+    public void removeEntryIndex(Record record) throws QueryException {
         Index[] indexes = getIndexes();
         for (Index index : indexes) {
-            index.removeEntryIndex(indexKey);
+            index.removeEntryIndex(record);
         }
     }
 
@@ -77,10 +83,10 @@ public class Indexes {
         return hasIndex;
     }
 
-    public void saveEntryIndex(QueryableEntry queryableEntry) throws QueryException {
+    public void saveEntryIndex(QueryableEntry queryableEntry, Object oldValue) throws QueryException {
         Index[] indexes = getIndexes();
         for (Index index : indexes) {
-            index.saveEntryIndex(queryableEntry);
+            index.saveEntryIndex(queryableEntry, oldValue);
         }
     }
 
