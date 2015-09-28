@@ -17,8 +17,7 @@
 package com.hazelcast.wm.test.spring;
 
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.annotation.NightlyTest;
-import com.hazelcast.wm.test.JettyServer;
+import com.hazelcast.test.annotation.SlowTest;
 import com.hazelcast.wm.test.ServletContainer;
 import com.hazelcast.wm.test.TomcatServer;
 import org.apache.http.HttpStatus;
@@ -35,7 +34,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category(NightlyTest.class)
+@Category(SlowTest.class)
 public class SpringAwareWebFilterTest extends SpringAwareWebFilterTestSupport {
 
     @Override

@@ -16,7 +16,7 @@
 
 package com.hazelcast.wm.test;
 
-import com.hazelcast.test.annotation.NightlyTest;
+import com.hazelcast.test.annotation.SlowTest;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -26,7 +26,7 @@ import java.util.Collection;
 
 @RunWith(WebTestRunner.class)
 @DelegatedRunWith(Parameterized.class)
-@Category(NightlyTest.class)
+@Category(SlowTest.class)
 public class TomcatWebFilterTest extends WebFilterSlowTests {
 
     @Parameterized.Parameters(name = "Executing: {0}")

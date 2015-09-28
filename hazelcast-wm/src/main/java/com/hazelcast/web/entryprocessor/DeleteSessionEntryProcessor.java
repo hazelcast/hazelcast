@@ -49,10 +49,6 @@ public final class DeleteSessionEntryProcessor
     public DeleteSessionEntryProcessor() {
     }
 
-    public String getJvmId() {
-        return jvmId;
-    }
-
     public void setJvmId(String jvmId) {
         this.jvmId = jvmId;
     }

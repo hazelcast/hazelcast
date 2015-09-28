@@ -52,10 +52,6 @@ public class SessionState implements IdentifiedDataSerializable {
         return attributes;
     }
 
-    public void setAttribute(String key, Data value) {
-        attributes.put(key, value);
-    }
-
     public boolean addJvmId(String jvmId) {
         checkNotNull(jvmId, "JVM Id cannot be null.");
         return jvmIds.add(jvmId);
@@ -93,10 +89,6 @@ public class SessionState implements IdentifiedDataSerializable {
         for (int i = 0; i < attCount; i++) {
             attributes.put(in.readUTF(), in.readData());
         }
-    }
-
-    public void set(Map<String, Data> attributes) {
-        this.attributes.putAll(attributes);
     }
 
     @Override
