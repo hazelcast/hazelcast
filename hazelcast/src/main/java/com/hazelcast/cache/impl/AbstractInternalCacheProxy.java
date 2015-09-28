@@ -319,14 +319,16 @@ abstract class AbstractInternalCacheProxy<K, V>
         }
     }
 
-    public void countDownCompletionLatch(int id) {
-        final CountDownLatch countDownLatch = syncLocks.get(id);
-        if (countDownLatch == null) {
-            return;
-        }
-        countDownLatch.countDown();
-        if (countDownLatch.getCount() == 0) {
-            deregisterCompletionLatch(id);
+    public void countDownCompletionLatch(int countDownLatchId) {
+        if (countDownLatchId != IGNORE_COMPLETION) {
+            final CountDownLatch countDownLatch = syncLocks.get(countDownLatchId);
+            if (countDownLatch == null) {
+                return;
+            }
+            countDownLatch.countDown();
+            if (countDownLatch.getCount() == 0) {
+                deregisterCompletionLatch(countDownLatchId);
+            }
         }
     }
 
@@ -342,24 +344,30 @@ abstract class AbstractInternalCacheProxy<K, V>
     }
 
     protected void deregisterCompletionLatch(Integer countDownLatchId) {
-        syncLocks.remove(countDownLatchId);
+        if (countDownLatchId != IGNORE_COMPLETION) {
+            syncLocks.remove(countDownLatchId);
+        }
     }
 
     protected void waitCompletionLatch(Integer countDownLatchId) {
-        final CountDownLatch countDownLatch = syncLocks.get(countDownLatchId);
-        if (countDownLatch != null) {
-            awaitLatch(countDownLatch);
+        if (countDownLatchId != IGNORE_COMPLETION) {
+            final CountDownLatch countDownLatch = syncLocks.get(countDownLatchId);
+            if (countDownLatch != null) {
+                awaitLatch(countDownLatch);
+            }
         }
     }
 
     protected void waitCompletionLatch(Integer countDownLatchId, int offset) {
-        //fix completion count
-        final CountDownLatch countDownLatch = syncLocks.get(countDownLatchId);
-        if (countDownLatch != null) {
-            for (int i = 0; i < offset; i++) {
-                countDownLatch.countDown();
+        if (countDownLatchId != IGNORE_COMPLETION) {
+            //fix completion count
+            final CountDownLatch countDownLatch = syncLocks.get(countDownLatchId);
+            if (countDownLatch != null) {
+                for (int i = 0; i < offset; i++) {
+                    countDownLatch.countDown();
+                }
+                awaitLatch(countDownLatch);
             }
-            awaitLatch(countDownLatch);
         }
     }
 

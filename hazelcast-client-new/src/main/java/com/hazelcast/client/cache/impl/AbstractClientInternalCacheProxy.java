@@ -84,6 +84,7 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.cache.impl.CacheProxyUtil.validateNotNull;
+import static com.hazelcast.cache.impl.operation.MutableOperation.IGNORE_COMPLETION;
 
 /**
  * Abstract {@link com.hazelcast.cache.ICache} implementation which provides shared internal implementations
@@ -539,14 +540,16 @@ abstract class AbstractClientInternalCacheProxy<K, V>
         }
     }
 
-    public void countDownCompletionLatch(int id) {
-        final CountDownLatch countDownLatch = syncLocks.get(id);
-        if (countDownLatch == null) {
-            return;
-        }
-        countDownLatch.countDown();
-        if (countDownLatch.getCount() == 0) {
-            deregisterCompletionLatch(id);
+    public void countDownCompletionLatch(int countDownLatchId) {
+        if (countDownLatchId != IGNORE_COMPLETION) {
+            final CountDownLatch countDownLatch = syncLocks.get(countDownLatchId);
+            if (countDownLatch == null) {
+                return;
+            }
+            countDownLatch.countDown();
+            if (countDownLatch.getCount() == 0) {
+                deregisterCompletionLatch(countDownLatchId);
+            }
         }
     }
 
@@ -561,14 +564,18 @@ abstract class AbstractClientInternalCacheProxy<K, V>
     }
 
     protected void deregisterCompletionLatch(Integer countDownLatchId) {
-        syncLocks.remove(countDownLatchId);
+        if (countDownLatchId != IGNORE_COMPLETION) {
+            syncLocks.remove(countDownLatchId);
+        }
     }
 
     protected void waitCompletionLatch(Integer countDownLatchId, ICompletableFuture future)
             throws ExecutionException {
-        final CountDownLatch countDownLatch = syncLocks.get(countDownLatchId);
-        if (countDownLatch != null) {
-            awaitLatch(countDownLatch, future);
+        if (countDownLatchId != IGNORE_COMPLETION) {
+            final CountDownLatch countDownLatch = syncLocks.get(countDownLatchId);
+            if (countDownLatch != null) {
+                awaitLatch(countDownLatch, future);
+            }
         }
     }
 

@@ -55,11 +55,10 @@ public class CachePutOperation
             throws Exception {
         if (get) {
             response = cache.getAndPut(key, value, expiryPolicy, getCallerUuid(), completionId);
+            backupRecord = cache.getRecord(key);
         } else {
-            cache.put(key, value, expiryPolicy, getCallerUuid(), completionId);
-            response = null;
+            backupRecord = cache.put(key, value, expiryPolicy, getCallerUuid(), completionId);
         }
-        backupRecord = cache.getRecord(key);
     }
 
     @Override

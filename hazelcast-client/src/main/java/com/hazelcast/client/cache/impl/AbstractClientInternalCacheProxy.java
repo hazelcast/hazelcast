@@ -84,6 +84,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.cache.impl.CacheProxyUtil.validateNotNull;
+import static com.hazelcast.cache.impl.operation.MutableOperation.IGNORE_COMPLETION;
 
 /**
  * Abstract {@link com.hazelcast.cache.ICache} implementation which provides shared internal implementations
@@ -455,14 +456,16 @@ abstract class AbstractClientInternalCacheProxy<K, V>
         }
     }
 
-    public void countDownCompletionLatch(int id) {
-        final CountDownLatch countDownLatch = syncLocks.get(id);
-        if (countDownLatch == null) {
-            return;
-        }
-        countDownLatch.countDown();
-        if (countDownLatch.getCount() == 0) {
-            deregisterCompletionLatch(id);
+    public void countDownCompletionLatch(int countDownLatchId) {
+        if (countDownLatchId != IGNORE_COMPLETION) {
+            final CountDownLatch countDownLatch = syncLocks.get(countDownLatchId);
+            if (countDownLatch == null) {
+                return;
+            }
+            countDownLatch.countDown();
+            if (countDownLatch.getCount() == 0) {
+                deregisterCompletionLatch(countDownLatchId);
+            }
         }
     }
 
@@ -478,26 +481,32 @@ abstract class AbstractClientInternalCacheProxy<K, V>
     }
 
     protected void deregisterCompletionLatch(Integer countDownLatchId) {
-        syncLocks.remove(countDownLatchId);
+        if (countDownLatchId != IGNORE_COMPLETION) {
+            syncLocks.remove(countDownLatchId);
+        }
     }
 
     protected void waitCompletionLatch(Integer countDownLatchId, ICompletableFuture future)
             throws ExecutionException {
-        final CountDownLatch countDownLatch = syncLocks.get(countDownLatchId);
-        if (countDownLatch != null) {
-            awaitLatch(countDownLatch, future);
+        if (countDownLatchId != IGNORE_COMPLETION) {
+            final CountDownLatch countDownLatch = syncLocks.get(countDownLatchId);
+            if (countDownLatch != null) {
+                awaitLatch(countDownLatch, future);
+            }
         }
     }
 
     protected void waitCompletionLatch(Integer countDownLatchId, int offset, ICompletableFuture future)
             throws ExecutionException {
-        //fix completion count
-        final CountDownLatch countDownLatch = syncLocks.get(countDownLatchId);
-        if (countDownLatch != null) {
-            for (int i = 0; i < offset; i++) {
-                countDownLatch.countDown();
+        if (countDownLatchId != IGNORE_COMPLETION) {
+            //fix completion count
+            final CountDownLatch countDownLatch = syncLocks.get(countDownLatchId);
+            if (countDownLatch != null) {
+                for (int i = 0; i < offset; i++) {
+                    countDownLatch.countDown();
+                }
+                awaitLatch(countDownLatch, future);
             }
-            awaitLatch(countDownLatch, future);
         }
     }
 
