@@ -100,7 +100,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -127,7 +126,6 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
     private static final int HEART_BEAT_INTERVAL_FACTOR = 10;
 
     private static final int DEFAULT_MERGE_RUN_DELAY_MILLIS = 100;
-    private static final int PREPARE_TO_MERGE_EXECUTION_DELAY_SECONDS = 10;
     private static final int MERGE_EXECUTOR_SERVICE_QUEUE_CAPACITY = 1000;
 
     private static final int CLUSTER_OPERATION_RETRY_COUNT = 100;
@@ -147,8 +145,6 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
 
     private final AtomicReference<Set<MemberImpl>> membersRef
             = new AtomicReference<Set<MemberImpl>>(Collections.<MemberImpl>emptySet());
-
-    private final AtomicBoolean preparingToMerge = new AtomicBoolean();
 
     private final ConcurrentMap<MemberImpl, Long> heartbeatTimes = new ConcurrentHashMap<MemberImpl, Long>();
 
@@ -600,10 +596,6 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
     }
 
     private boolean ensureMemberIsRemovable(Address deadAddress) {
-        if (preparingToMerge.get()) {
-            logger.warning("Cluster-merge process is ongoing, won't process member removal " + deadAddress);
-            return false;
-        }
         if (!node.joined()) {
             return false;
         }
@@ -967,22 +959,10 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         }
     }
 
-    public void prepareToMerge(final Address newTargetAddress) {
-        preparingToMerge.set(true);
-        node.getJoiner().setTargetAddress(newTargetAddress);
-        nodeEngine.getExecutionService().schedule(new Runnable() {
-            public void run() {
-                merge(newTargetAddress);
-            }
-        }, PREPARE_TO_MERGE_EXECUTION_DELAY_SECONDS, TimeUnit.SECONDS);
-    }
-
     public void merge(Address newTargetAddress) {
-        if (preparingToMerge.compareAndSet(true, false)) {
-            node.getJoiner().setTargetAddress(newTargetAddress);
-            LifecycleServiceImpl lifecycleService = node.hazelcastInstance.getLifecycleService();
-            lifecycleService.runUnderLifecycleLock(new ClusterMergeTask(node));
-        }
+        node.getJoiner().setTargetAddress(newTargetAddress);
+        LifecycleServiceImpl lifecycleService = node.hazelcastInstance.getLifecycleService();
+        lifecycleService.runUnderLifecycleLock(new ClusterMergeTask(node));
     }
 
     private void joinReset() {
