@@ -77,8 +77,9 @@ public interface ICacheRecordStore {
      * @param value value to be associated with the specified key.
      * @param expiryPolicy custom expiry policy or null to use configured default value.
      * @param caller  uuid of the calling node or client.
+     * @return the stored {@link CacheRecord}  (added as new record or updated). <code>null</code> if record has expired.
      */
-    void put(Data key, Object value, ExpiryPolicy expiryPolicy, String caller, int completionId);
+    CacheRecord put(Data key, Object value, ExpiryPolicy expiryPolicy, String caller, int completionId);
 
     /**
      * Associates the specified value with the specified key in this cache,

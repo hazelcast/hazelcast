@@ -845,9 +845,8 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
 
     @Override
     public void putRecord(Data key, CacheRecord record) {
-        if (!records.containsKey(key)) {
-            evictIfRequired();
-        }
+        evictIfRequired();
+
         doPutRecord(key, (R) record);
     }
 
@@ -967,7 +966,11 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
             onPut(key, value, expiryPolicy, source, getValue, disableWriteThrough,
                   record, oldValue, isExpired, isOnNewPut, isSaveSucceed);
             updateGetAndPutStat(isSaveSucceed, getValue, oldValue == null, start);
-            return oldValue;
+            if (getValue) {
+                return oldValue;
+            } else {
+                return record;
+            }
         } catch (Throwable error) {
             onPutError(key, value, expiryPolicy, source, getValue, disableWriteThrough,
                        record, oldValue, isOnNewPut, error);
@@ -981,8 +984,8 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     }
 
     @Override
-    public void put(Data key, Object value, ExpiryPolicy expiryPolicy, String source, int completionId) {
-        put(key, value, expiryPolicy, source, false, false, completionId);
+    public R put(Data key, Object value, ExpiryPolicy expiryPolicy, String source, int completionId) {
+        return (R) put(key, value, expiryPolicy, source, false, false, completionId);
     }
 
     @Override
