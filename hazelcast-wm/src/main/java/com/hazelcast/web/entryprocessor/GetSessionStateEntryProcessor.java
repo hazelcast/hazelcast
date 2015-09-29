@@ -41,10 +41,6 @@ public final class GetSessionStateEntryProcessor implements EntryProcessor<Strin
     public GetSessionStateEntryProcessor() {
     }
 
-    public String getJvmId() {
-        return jvmId;
-    }
-
     public void setJvmId(String jvmId) {
         this.jvmId = jvmId;
     }

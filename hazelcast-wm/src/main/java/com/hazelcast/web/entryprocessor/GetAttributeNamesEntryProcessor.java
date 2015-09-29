@@ -42,10 +42,6 @@ public final class GetAttributeNamesEntryProcessor implements EntryProcessor<Str
     public GetAttributeNamesEntryProcessor() {
     }
 
-    public String getJvmId() {
-        return jvmId;
-    }
-
     public void setJvmId(String jvmId) {
         this.jvmId = jvmId;
     }
