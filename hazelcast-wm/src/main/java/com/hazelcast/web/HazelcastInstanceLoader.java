@@ -47,6 +47,9 @@ final class HazelcastInstanceLoader {
 
     private static final ILogger LOGGER = Logger.getLogger(HazelcastInstanceLoader.class);
 
+    private HazelcastInstanceLoader() {
+    }
+
     public static HazelcastInstance createInstance(final FilterConfig filterConfig, final Properties properties)
             throws ServletException {
         final String instanceName = properties.getProperty(INSTANCE_NAME);
