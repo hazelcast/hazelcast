@@ -16,6 +16,7 @@
 
 package com.hazelcast.cluster.impl;
 
+import com.hazelcast.cluster.MemberInfo;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -35,9 +36,9 @@ public class JoinRequest extends JoinMessage implements DataSerializable {
     public JoinRequest() {
     }
 
-    public JoinRequest(byte packetVersion, int buildNumber, Address address, String uuid, ConfigCheck config,
+    public JoinRequest(byte packetVersion, int buildNumber, Address address, String uuid, boolean liteMember, ConfigCheck config,
                        Credentials credentials, Map<String, Object> attributes) {
-        super(packetVersion, buildNumber, address, uuid, config);
+        super(packetVersion, buildNumber, address, uuid, liteMember, config);
         this.credentials = credentials;
         this.attributes = attributes;
     }
@@ -56,6 +57,10 @@ public class JoinRequest extends JoinMessage implements DataSerializable {
 
     public Map<String, Object> getAttributes() {
         return attributes;
+    }
+
+    public MemberInfo toMemberInfo() {
+        return new MemberInfo(address, uuid, attributes, liteMember);
     }
 
     @Override
@@ -89,16 +94,16 @@ public class JoinRequest extends JoinMessage implements DataSerializable {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder();
-        sb.append("JoinRequest");
-        sb.append("{packetVersion=").append(packetVersion);
-        sb.append(", buildNumber=").append(buildNumber);
-        sb.append(", address=").append(address);
-        sb.append(", uuid='").append(uuid).append('\'');
-        sb.append(", credentials=").append(credentials);
-        sb.append(", memberCount=").append(getMemberCount());
-        sb.append(", tryCount=").append(tryCount);
-        sb.append('}');
-        return sb.toString();
+        return "JoinRequest{"
+                + "packetVersion=" + packetVersion
+                + ", buildNumber=" + buildNumber
+                + ", address=" + address
+                + ", uuid='" + uuid + "'"
+                + ", liteMember=" + liteMember
+                + ", credentials=" + credentials
+                + ", memberCount=" + getMemberCount()
+                + ", tryCount=" + tryCount
+                + '}';
     }
+
 }

@@ -39,6 +39,7 @@ import com.hazelcast.core.InitialMembershipEvent;
 import com.hazelcast.core.InitialMembershipListener;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MemberAttributeEvent;
+import com.hazelcast.core.MemberSelector;
 import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MembershipListener;
 import com.hazelcast.instance.BuildInfo;
@@ -748,7 +749,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
     }
 
     private MemberInfo getMemberInfo(JoinRequest joinRequest, Address target) {
-        MemberInfo memberInfo = new MemberInfo(target, joinRequest.getUuid(), joinRequest.getAttributes());
+        MemberInfo memberInfo = joinRequest.toMemberInfo();
         if (!setJoins.contains(memberInfo)) {
             try {
                 checkSecureLogin(joinRequest, memberInfo);
@@ -1064,7 +1065,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
             for (MemberInfo memberInfo : members) {
                 MemberImpl member = currentMemberMap.get(memberInfo.getAddress());
                 if (member == null) {
-                    member = createMember(memberInfo.getAddress(), memberInfo.getUuid(), scopeId, memberInfo.getAttributes());
+                    member = createMember(memberInfo, scopeId);
                     newMembers.add(member);
                     long now = Clock.currentTimeMillis();
                     onHeartbeat(member, now);
@@ -1178,7 +1179,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
 
         BuildInfo buildInfo = node.getBuildInfo();
         JoinMessage joinMessage = new JoinMessage(Packet.VERSION, buildInfo.getBuildNumber(), thisAddress,
-                thisMember.getUuid(), node.createConfigCheck());
+                thisMember.getUuid(), node.isLiteMember(), node.createConfigCheck());
         return nodeEngine.getOperationService().send(new MasterDiscoveryOperation(joinMessage), toAddress);
     }
 
@@ -1335,10 +1336,11 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         }
     }
 
-    private MemberImpl createMember(Address address, String nodeUuid, String ipV6ScopeId, Map<String, Object> attributes) {
+    private MemberImpl createMember(MemberInfo memberInfo, String ipV6ScopeId) {
+        Address address = memberInfo.getAddress();
         address.setScopeId(ipV6ScopeId);
-        return new MemberImpl(address, thisAddress.equals(address), nodeUuid,
-                (HazelcastInstanceImpl) nodeEngine.getHazelcastInstance(), attributes);
+        return new MemberImpl(address, thisAddress.equals(address), memberInfo.getUuid(),
+                (HazelcastInstanceImpl) nodeEngine.getHazelcastInstance(), memberInfo.getAttributes(), memberInfo.isLiteMember());
     }
 
     @Override
@@ -1392,6 +1394,11 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
     }
 
     @Override
+    public Collection<Member> getMembers(MemberSelector selector) {
+        return (Collection) new MemberSelectingCollection(membersRef.get(), selector);
+    }
+
+    @Override
     public void shutdown(boolean terminate) {
         reset();
     }
@@ -1418,8 +1425,19 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
     @Probe(name = "size")
     @Override
     public int getSize() {
-        Collection<MemberImpl> members = getMemberImpls();
-        return (members != null ? members.size() : 0);
+        return getMembers().size();
+    }
+
+    @Override
+    public int getSize(MemberSelector selector) {
+        int size = 0;
+        for (MemberImpl member : membersRef.get()) {
+            if (selector.select(member)) {
+                size++;
+            }
+        }
+
+        return size;
     }
 
     public String addMembershipListener(MembershipListener listener) {

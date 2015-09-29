@@ -356,6 +356,27 @@ public class SerializationTest
         testMemberLeftException(uuid, host, port, member);
     }
 
+    @Test
+    public void testMemberLeftException_withLiteMemberImpl() throws IOException, ClassNotFoundException {
+        String uuid = UuidUtil.newUnsecureUuidString();
+        String host = "127.0.0.1";
+        int port = 5000;
+
+        Member member = new MemberImpl(new Address(host, port), false, uuid, null, null, true);
+
+        testMemberLeftException(uuid, host, port, member);
+    }
+
+    @Test
+    public void testMemberLeftException_withLiteSimpleMemberImpl() throws IOException, ClassNotFoundException {
+        String uuid = UuidUtil.newUnsecureUuidString();
+        String host = "127.0.0.1";
+        int port = 5000;
+
+        Member member = new SimpleMemberImpl(uuid, new InetSocketAddress(host, port), true);
+        testMemberLeftException(uuid, host, port, member);
+    }
+
     private void testMemberLeftException(String uuid, String host, int port, Member member)
             throws IOException, ClassNotFoundException {
 
@@ -373,5 +394,6 @@ public class SerializationTest
         assertEquals(uuid, member2.getUuid());
         assertEquals(host, member2.getAddress().getHost());
         assertEquals(port, member2.getAddress().getPort());
+        assertEquals(member.isLiteMember(), member2.isLiteMember());
     }
 }

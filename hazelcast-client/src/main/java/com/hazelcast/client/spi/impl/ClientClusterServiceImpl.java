@@ -24,6 +24,7 @@ import com.hazelcast.client.impl.ClientImpl;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.spi.ClientClusterService;
 import com.hazelcast.client.spi.ClientExecutionService;
+import com.hazelcast.cluster.impl.MemberSelectingCollection;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.core.Client;
 import com.hazelcast.core.Cluster;
@@ -31,6 +32,7 @@ import com.hazelcast.core.InitialMembershipEvent;
 import com.hazelcast.core.InitialMembershipListener;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MemberAttributeEvent;
+import com.hazelcast.core.MemberSelector;
 import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MembershipListener;
 import com.hazelcast.internal.serialization.SerializationService;
@@ -104,6 +106,11 @@ public class ClientClusterServiceImpl extends ClusterListenerSupport {
     }
 
     @Override
+    public Collection<Member> getMembers(MemberSelector selector) {
+        return new MemberSelectingCollection<Member>(getMemberList(), selector);
+    }
+
+    @Override
     public Address getMasterAddress() {
         final Collection<Member> memberList = getMemberList();
         Member member = memberList.iterator().next();
@@ -113,6 +120,18 @@ public class ClientClusterServiceImpl extends ClusterListenerSupport {
     @Override
     public int getSize() {
         return getMemberList().size();
+    }
+
+    @Override
+    public int getSize(MemberSelector selector) {
+        int size = 0;
+        for (Member member : getMemberList()) {
+            if (selector.select(member)) {
+                size++;
+            }
+        }
+
+        return size;
     }
 
     @Override
@@ -235,4 +254,5 @@ public class ClientClusterServiceImpl extends ClusterListenerSupport {
     void setMembersRef(Map<Address, Member> map) {
         membersRef.set(map);
     }
+
 }

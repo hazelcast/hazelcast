@@ -35,6 +35,7 @@ public final class MemberCodec {
     public static Member decode(ClientMessage clientMessage) {
         final Address address = AddressCodec.decode(clientMessage);
         String uuid = clientMessage.getStringUtf8();
+        boolean liteMember = clientMessage.getBoolean();
         int attributeSize = clientMessage.getInt();
         Map<String, Object> attributes = new HashMap<String, Object>();
         for (int i = 0; i < attributeSize; i++) {
@@ -43,12 +44,13 @@ public final class MemberCodec {
             attributes.put(key, value);
         }
 
-        return new com.hazelcast.client.impl.MemberImpl(address, uuid, attributes);
+        return new com.hazelcast.client.impl.MemberImpl(address, uuid, attributes, liteMember);
     }
 
     public static void encode(Member member, ClientMessage clientMessage) {
         AddressCodec.encode(member.getAddress(), clientMessage);
         clientMessage.set(member.getUuid());
+        clientMessage.set(member.isLiteMember());
         Map<String, Object> attributes = new HashMap<String, Object>(member.getAttributes());
         clientMessage.set(attributes.size());
         for (Map.Entry<String, Object> entry : attributes.entrySet()) {

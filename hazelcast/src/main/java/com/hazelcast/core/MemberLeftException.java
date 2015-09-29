@@ -58,6 +58,7 @@ public class MemberLeftException extends ExecutionException implements Retryable
         out.defaultWriteObject();
 
         out.writeUTF(member.getUuid());
+        out.writeBoolean(member.isLiteMember());
 
         boolean isImpl = member instanceof MemberImpl;
         out.writeBoolean(isImpl);
@@ -79,15 +80,16 @@ public class MemberLeftException extends ExecutionException implements Retryable
         in.defaultReadObject();
 
         String uuid = in.readUTF();
+        boolean liteMember = in.readBoolean();
 
         boolean isImpl = in.readBoolean();
         if (isImpl) {
             String host = in.readUTF();
             int port = in.readInt();
-            member = new MemberImpl(new Address(host, port), false, uuid, null);
+            member = new MemberImpl(new Address(host, port), false, uuid, null, null, liteMember);
         } else {
             InetSocketAddress socketAddress = (InetSocketAddress) in.readObject();
-            member = new MemberImpl(new Address(socketAddress), false, uuid, null);
+            member = new MemberImpl(new Address(socketAddress), false, uuid, null, null, liteMember);
         }
     }
 }

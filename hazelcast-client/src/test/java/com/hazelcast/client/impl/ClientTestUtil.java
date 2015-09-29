@@ -1,7 +1,7 @@
 package com.hazelcast.client.impl;
 
+import com.hazelcast.client.spi.ClientClusterService;
 import com.hazelcast.core.HazelcastInstance;
-import org.junit.Ignore;
 
 public final class ClientTestUtil {
 
@@ -13,6 +13,10 @@ public final class ClientTestUtil {
             impl = (HazelcastClientInstanceImpl) hz;
         }
         return impl;
+    }
+
+    public static ClientClusterService getClientClusterService(HazelcastInstance client) {
+        return ClientTestUtil.getHazelcastClientInstanceImpl(client).getClientClusterService();
     }
 
 }

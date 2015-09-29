@@ -27,8 +27,10 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class MemberInfo implements DataSerializable {
+
     private Address address;
     private String uuid;
+    private boolean liteMember;
     private Map<String, Object> attributes;
 
     public MemberInfo() {
@@ -39,13 +41,18 @@ public class MemberInfo implements DataSerializable {
     }
 
     public MemberInfo(Address address, String uuid, Map<String, Object> attributes) {
+        this(address, uuid, attributes, false);
+    }
+
+    public MemberInfo(Address address, String uuid, Map<String, Object> attributes, boolean liteMember) {
         this.address = address;
         this.uuid = uuid;
         this.attributes = new HashMap<String, Object>(attributes);
+        this.liteMember = liteMember;
     }
 
     public MemberInfo(MemberImpl member) {
-        this(member.getAddress(), member.getUuid(), member.getAttributes());
+        this(member.getAddress(), member.getUuid(), member.getAttributes(), member.isLiteMember());
     }
 
     public Address getAddress() {
@@ -60,6 +67,10 @@ public class MemberInfo implements DataSerializable {
         return attributes;
     }
 
+    public boolean isLiteMember() {
+        return liteMember;
+    }
+
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         address = new Address();
@@ -67,6 +78,7 @@ public class MemberInfo implements DataSerializable {
         if (in.readBoolean()) {
             uuid = in.readUTF();
         }
+        liteMember = in.readBoolean();
         int size = in.readInt();
         if (size > 0) {
             attributes = new HashMap<String, Object>();
@@ -86,6 +98,7 @@ public class MemberInfo implements DataSerializable {
         if (hasUuid) {
             out.writeUTF(uuid);
         }
+        out.writeBoolean(liteMember);
         out.writeInt(attributes == null ? 0 : attributes.size());
         if (attributes != null) {
             for (Map.Entry<String, Object> entry : attributes.entrySet()) {
@@ -129,6 +142,7 @@ public class MemberInfo implements DataSerializable {
     public String toString() {
         return "MemberInfo{"
                 + "address=" + address
+                + ", liteMember=" + liteMember
                 + '}';
     }
 }
