@@ -20,6 +20,7 @@ import com.hazelcast.client.impl.client.BaseClientRemoveListenerRequest;
 import com.hazelcast.client.impl.client.ClientRequest;
 import com.hazelcast.client.nearcache.ClientHeapNearCache;
 import com.hazelcast.client.nearcache.ClientNearCache;
+import com.hazelcast.client.spi.ClientClusterService;
 import com.hazelcast.client.spi.ClientPartitionService;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.spi.EventHandler;
@@ -50,6 +51,7 @@ import com.hazelcast.map.impl.client.MapAddIndexRequest;
 import com.hazelcast.map.impl.client.MapAddInterceptorRequest;
 import com.hazelcast.map.impl.client.MapAddNearCacheEntryListenerRequest;
 import com.hazelcast.map.impl.client.MapAddPartitionLostListenerRequest;
+import com.hazelcast.map.impl.client.MapClearNearCacheRequest;
 import com.hazelcast.map.impl.client.MapClearRequest;
 import com.hazelcast.map.impl.client.MapContainsKeyRequest;
 import com.hazelcast.map.impl.client.MapContainsValueRequest;
@@ -130,6 +132,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static com.hazelcast.cluster.memberselector.MemberSelectors.LITE_MEMBER_SELECTOR;
 import static com.hazelcast.map.impl.ListenerAdapters.createListenerAdapter;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.SortingUtil.getSortedQueryResultSet;
@@ -653,6 +656,8 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
         invalidateNearCache();
         MapEvictAllRequest request = new MapEvictAllRequest(name);
         invoke(request);
+
+        clearNearCachesOnLiteMembers();
     }
 
     @Override
@@ -1043,9 +1048,19 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
 
     @Override
     public void clear() {
-        MapClearRequest request = new MapClearRequest(name);
         invalidateNearCache();
+        final MapClearRequest request = new MapClearRequest(name);
         invoke(request);
+
+        clearNearCachesOnLiteMembers();
+    }
+
+    private void clearNearCachesOnLiteMembers() {
+        final ClientClusterService clusterService = getClient().getClientClusterService();
+        for (Member member : clusterService.getMembers(LITE_MEMBER_SELECTOR)) {
+            final MapClearNearCacheRequest request = new MapClearNearCacheRequest(name, member.getAddress());
+            invoke(request, member.getAddress());
+        }
     }
 
     @Override

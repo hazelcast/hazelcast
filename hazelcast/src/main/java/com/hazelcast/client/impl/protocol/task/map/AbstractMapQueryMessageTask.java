@@ -42,6 +42,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Future;
 
+import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 
 public abstract class AbstractMapQueryMessageTask<P> extends AbstractCallableMessageTask<P> {
@@ -64,7 +65,7 @@ public abstract class AbstractMapQueryMessageTask<P> extends AbstractCallableMes
     protected final Object call() throws Exception {
         Collection<QueryResultRow> result = new LinkedList<QueryResultRow>();
 
-        Collection<Member> members = nodeEngine.getClusterService().getMembers();
+        Collection<Member> members = nodeEngine.getClusterService().getMembers(DATA_MEMBER_SELECTOR);
         List<Future> futures = new ArrayList<Future>();
         Predicate predicate = getPredicate();
         createInvocations(members, futures, predicate);
