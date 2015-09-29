@@ -33,8 +33,10 @@ import com.hazelcast.map.ReachedMaxSizeException;
 import com.hazelcast.mapreduce.RemoteMapReduceException;
 import com.hazelcast.mapreduce.TopologyChangedException;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
+import com.hazelcast.partition.PartitionsCantBeAssignedException;
 import com.hazelcast.query.QueryException;
 import com.hazelcast.quorum.QuorumException;
+import com.hazelcast.replicatedmap.ReplicatedMapCantBeCreatedOnLiteMemberException;
 import com.hazelcast.ringbuffer.StaleSequenceException;
 import com.hazelcast.spi.exception.CallerNotMemberException;
 import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
@@ -511,8 +513,18 @@ public class ClientExceptionFactory {
                 return new UnsupportedCallbackException(null, message);
             }
         });
-
-
+        register(ClientProtocolErrorCodes.PARTITIONS_CANT_BE_ASSIGNED, PartitionsCantBeAssignedException.class, new ExceptionFactory() {
+            @Override
+            public Throwable createException(String message, Throwable cause) {
+                return new PartitionsCantBeAssignedException();
+            }
+        });
+        register(ClientProtocolErrorCodes.REPLICATED_MAP_CANT_BE_CREATED, ReplicatedMapCantBeCreatedOnLiteMemberException.class, new ExceptionFactory() {
+            @Override
+            public Throwable createException(String message, Throwable cause) {
+                return new ReplicatedMapCantBeCreatedOnLiteMemberException(message);
+            }
+        });
     }
 
     interface ExceptionFactory {

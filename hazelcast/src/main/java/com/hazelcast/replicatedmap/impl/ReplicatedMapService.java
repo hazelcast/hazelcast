@@ -25,6 +25,7 @@ import com.hazelcast.core.EntryListener;
 import com.hazelcast.monitor.LocalReplicatedMapStats;
 import com.hazelcast.monitor.impl.LocalReplicatedMapStatsImpl;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.replicatedmap.ReplicatedMapCantBeCreatedOnLiteMemberException;
 import com.hazelcast.replicatedmap.impl.messages.MultiReplicationMessage;
 import com.hazelcast.replicatedmap.impl.messages.ReplicationMessage;
 import com.hazelcast.replicatedmap.impl.record.AbstractReplicatedRecordStore;
@@ -48,6 +49,7 @@ import java.util.EventListener;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 /**
  * This is the main service implementation to handle replication and manages the backing
@@ -66,7 +68,8 @@ public class ReplicatedMapService
      */
     public static final String EVENT_TOPIC_NAME = SERVICE_NAME + ".replication";
 
-    private final ConcurrentHashMap<String, ReplicatedRecordStore> replicatedStorages = initReplicatedRecordStoreMapping();
+    private final ConcurrentMap<String, ReplicatedRecordStore> replicatedRecordStores
+            = new ConcurrentHashMap<String, ReplicatedRecordStore>();
 
     private final ConstructorFunction<String, ReplicatedRecordStore> constructor = buildConstructorFunction();
 
@@ -79,7 +82,11 @@ public class ReplicatedMapService
         this.nodeEngine = nodeEngine;
         this.config = nodeEngine.getConfig();
         this.eventService = nodeEngine.getEventService();
-        this.eventRegistration = eventService.registerListener(SERVICE_NAME, EVENT_TOPIC_NAME, new ReplicationListener());
+        if (!config.isLiteMember()) {
+            this.eventRegistration = eventService.registerListener(SERVICE_NAME, EVENT_TOPIC_NAME, new ReplicationListener());
+        } else {
+            this.eventRegistration = null;
+        }
     }
 
     @Override
@@ -93,22 +100,29 @@ public class ReplicatedMapService
 
     @Override
     public void shutdown(boolean terminate) {
-        for (ReplicatedRecordStore replicatedRecordStore : replicatedStorages.values()) {
+        if (config.isLiteMember()) {
+            return;
+        }
+
+        for (ReplicatedRecordStore replicatedRecordStore : replicatedRecordStores.values()) {
             replicatedRecordStore.destroy();
         }
-        replicatedStorages.clear();
+        replicatedRecordStores.clear();
     }
 
     @Override
     public DistributedObject createDistributedObject(String objectName) {
-        ReplicatedRecordStore replicatedRecordStore = ConcurrencyUtil
-                .getOrPutSynchronized(replicatedStorages, objectName, replicatedStorages, constructor);
+        final ReplicatedRecordStore replicatedRecordStore = getReplicatedRecordStore(objectName, true);
         return new ReplicatedMapProxy(nodeEngine, (AbstractReplicatedRecordStore) replicatedRecordStore);
     }
 
     @Override
     public void destroyDistributedObject(String objectName) {
-        ReplicatedRecordStore replicatedRecordStore = replicatedStorages.remove(objectName);
+        if (config.isLiteMember()) {
+            return;
+        }
+
+        ReplicatedRecordStore replicatedRecordStore = replicatedRecordStores.remove(objectName);
         if (replicatedRecordStore != null) {
             replicatedRecordStore.destroy();
         }
@@ -116,6 +130,12 @@ public class ReplicatedMapService
 
     @Override
     public void dispatchEvent(Object event, Object listener) {
+        if (config.isLiteMember()) {
+            final Class<?> eventClazz = event.getClass();
+            nodeEngine.getLogger(ReplicatedMapService.class).warning("Replicated map event ignored by lite member " + eventClazz);
+            return;
+        }
+
         if (event instanceof EntryEvent) {
             EntryEvent entryEvent = (EntryEvent) event;
             EntryListener entryListener = (EntryListener) listener;
@@ -138,7 +158,7 @@ public class ReplicatedMapService
             }
             String mapName = ((EntryEvent) event).getName();
             if (config.findReplicatedMapConfig(mapName).isStatisticsEnabled()) {
-                ReplicatedRecordStore recordStore = replicatedStorages.get(mapName);
+                ReplicatedRecordStore recordStore = replicatedRecordStores.get(mapName);
                 if (recordStore instanceof AbstractReplicatedRecordStore) {
                     LocalReplicatedMapStatsImpl stats = ((AbstractReplicatedRecordStore) recordStore).getReplicatedMapStats();
                     stats.incrementReceivedEvents();
@@ -154,10 +174,18 @@ public class ReplicatedMapService
     }
 
     public ReplicatedRecordStore getReplicatedRecordStore(String name, boolean create) {
-        if (create) {
-            return ConcurrencyUtil.getOrPutSynchronized(replicatedStorages, name, replicatedStorages, constructor);
+        if (config.isLiteMember()) {
+            throw new ReplicatedMapCantBeCreatedOnLiteMemberException(nodeEngine.getThisAddress());
         }
-        return replicatedStorages.get(name);
+
+        if (create) {
+            return ConcurrencyUtil.getOrPutSynchronized(replicatedRecordStores, name, replicatedRecordStores, constructor);
+        }
+        return replicatedRecordStores.get(name);
+    }
+
+    public int getReplicatedRecordStoresSize() {
+        return replicatedRecordStores.size();
     }
 
     public String addEventListener(EventListener entryListener, EventFilter eventFilter, String mapName) {
@@ -169,10 +197,6 @@ public class ReplicatedMapService
         return eventService.deregisterListener(SERVICE_NAME, mapName, registrationId);
     }
 
-    private ConcurrentHashMap<String, ReplicatedRecordStore> initReplicatedRecordStoreMapping() {
-        return new ConcurrentHashMap<String, ReplicatedRecordStore>();
-    }
-
     private ConstructorFunction<String, ReplicatedRecordStore> buildConstructorFunction() {
         return new ConstructorFunction<String, ReplicatedRecordStore>() {
 
@@ -180,7 +204,7 @@ public class ReplicatedMapService
             public ReplicatedRecordStore createNew(String name) {
                 ReplicatedMapConfig replicatedMapConfig = getReplicatedMapConfig(name);
                 InMemoryFormat inMemoryFormat = replicatedMapConfig.getInMemoryFormat();
-                AbstractReplicatedRecordStore replicatedRecordStorage = null;
+                AbstractReplicatedRecordStore replicatedRecordStorage;
                 switch (inMemoryFormat) {
                     case OBJECT:
                         replicatedRecordStorage = new ObjectReplicatedRecordStorage(name, nodeEngine,
@@ -202,8 +226,8 @@ public class ReplicatedMapService
 
     @Override
     public Map<String, LocalReplicatedMapStats> getStats() {
-        Map<String, LocalReplicatedMapStats> replicatedMapStats = MapUtil.createHashMap(replicatedStorages.size());
-        for (Map.Entry<String, ReplicatedRecordStore> entry : replicatedStorages.entrySet()) {
+        Map<String, LocalReplicatedMapStats> replicatedMapStats = MapUtil.createHashMap(replicatedRecordStores.size());
+        for (Map.Entry<String, ReplicatedRecordStore> entry : replicatedRecordStores.entrySet()) {
             String name = entry.getKey();
             LocalReplicatedMapStats replicatedMapStat =
                     ((AbstractReplicatedRecordStore) entry.getValue()).createReplicatedMapStats();
@@ -221,14 +245,14 @@ public class ReplicatedMapService
         public void onMessage(IdentifiedDataSerializable message) {
             if (message instanceof ReplicationMessage) {
                 ReplicationMessage replicationMessage = (ReplicationMessage) message;
-                ReplicatedRecordStore replicatedRecordStorage = replicatedStorages.get(replicationMessage.getName());
+                ReplicatedRecordStore replicatedRecordStorage = replicatedRecordStores.get(replicationMessage.getName());
                 ReplicationPublisher replicationPublisher = replicatedRecordStorage.getReplicationPublisher();
                 if (replicatedRecordStorage instanceof AbstractReplicatedRecordStore) {
                     replicationPublisher.queueUpdateMessage(replicationMessage);
                 }
             } else if (message instanceof MultiReplicationMessage) {
                 MultiReplicationMessage multiReplicationMessage = (MultiReplicationMessage) message;
-                ReplicatedRecordStore replicatedRecordStorage = replicatedStorages.get(multiReplicationMessage.getName());
+                ReplicatedRecordStore replicatedRecordStorage = replicatedRecordStores.get(multiReplicationMessage.getName());
                 ReplicationPublisher replicationPublisher = replicatedRecordStorage.getReplicationPublisher();
                 if (replicatedRecordStorage instanceof AbstractReplicatedRecordStore) {
                     replicationPublisher.queueUpdateMessages(multiReplicationMessage);

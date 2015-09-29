@@ -49,15 +49,18 @@ import com.hazelcast.replicatedmap.impl.client.ReplicatedMapGetResponse;
 import com.hazelcast.replicatedmap.impl.client.ReplicatedMapKeySet;
 import com.hazelcast.replicatedmap.impl.client.ReplicatedMapPortableEntryEvent;
 import com.hazelcast.replicatedmap.impl.client.ReplicatedMapValueCollection;
+import com.hazelcast.spi.Operation;
 
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 
 /**
  * The replicated map client side proxy implementation proxying all requests to a member node
@@ -69,8 +72,14 @@ public class ClientReplicatedMapProxy<K, V>
         extends ClientProxy
         implements ReplicatedMap<K, V> {
 
+    private static final AtomicIntegerFieldUpdater<ClientReplicatedMapProxy> TARGET_PARTITION_ID_UPDATER =
+            AtomicIntegerFieldUpdater.newUpdater(ClientReplicatedMapProxy.class, "targetPartitionId");
+
     private volatile ClientHeapNearCache<Object> nearCache;
     private final AtomicBoolean nearCacheInitialized = new AtomicBoolean();
+    // all requests are forwarded to the same node via a random partition id
+    // do not use this field directly. use getOrInitTargetPartitionId() instead.
+    private volatile int targetPartitionId = Operation.GENERIC_PARTITION_ID;
 
     public ClientReplicatedMapProxy(String serviceName, String objectName) {
         super(serviceName, objectName);
@@ -86,27 +95,31 @@ public class ClientReplicatedMapProxy<K, V>
 
     @Override
     public V put(K key, V value, long ttl, TimeUnit timeUnit) {
-        return invoke(new ClientReplicatedMapPutTtlRequest(getName(), key, value, timeUnit.toMillis(ttl)));
+        final ClientReplicatedMapPutTtlRequest request = new ClientReplicatedMapPutTtlRequest(getName(), key, value,
+                timeUnit.toMillis(ttl));
+        return invokeOnPartition(request, getOrInitTargetPartitionId());
     }
 
     @Override
     public int size() {
-        return (Integer) invoke(new ClientReplicatedMapSizeRequest(getName()));
+        return (Integer) invokeOnPartition(new ClientReplicatedMapSizeRequest(getName()), getOrInitTargetPartitionId());
     }
 
     @Override
     public boolean isEmpty() {
-        return (Boolean) invoke(new ClientReplicatedMapIsEmptyRequest(getName()));
+        return (Boolean) invokeOnPartition(new ClientReplicatedMapIsEmptyRequest(getName()), getOrInitTargetPartitionId());
     }
 
     @Override
     public boolean containsKey(Object key) {
-        return (Boolean) invoke(new ClientReplicatedMapContainsKeyRequest(getName(), key));
+        final ClientReplicatedMapContainsKeyRequest request = new ClientReplicatedMapContainsKeyRequest(getName(), key);
+        return (Boolean) invokeOnPartition(request, getOrInitTargetPartitionId());
     }
 
     @Override
     public boolean containsValue(Object value) {
-        return (Boolean) invoke(new ClientReplicatedMapContainsValueRequest(getName(), value));
+        final ClientReplicatedMapContainsValueRequest request = new ClientReplicatedMapContainsValueRequest(getName(), value);
+        return (Boolean) invokeOnPartition(request, getOrInitTargetPartitionId());
     }
 
     @Override
@@ -122,7 +135,8 @@ public class ClientReplicatedMapProxy<K, V>
             }
         }
 
-        ReplicatedMapGetResponse response = invoke(new ClientReplicatedMapGetRequest(getName(), key));
+        ClientReplicatedMapGetRequest request = new ClientReplicatedMapGetRequest(getName(), key);
+        ReplicatedMapGetResponse response = invokeOnPartition(request, getOrInitTargetPartitionId());
 
         V value = (V) response.getValue();
         if (nearCache != null) {
@@ -138,65 +152,71 @@ public class ClientReplicatedMapProxy<K, V>
 
     @Override
     public V remove(Object key) {
-        return invoke(new ClientReplicatedMapRemoveRequest(getName(), key));
+        return invokeOnPartition(new ClientReplicatedMapRemoveRequest(getName(), key), getOrInitTargetPartitionId());
     }
 
     @Override
     public void putAll(Map<? extends K, ? extends V> m) {
-        invoke(new ClientReplicatedMapPutAllRequest(getName(), new ReplicatedMapEntrySet(m.entrySet())));
+        final ClientReplicatedMapPutAllRequest request = new ClientReplicatedMapPutAllRequest(getName(),
+                new ReplicatedMapEntrySet(m.entrySet()));
+        invokeOnPartition(request, getOrInitTargetPartitionId());
     }
 
     @Override
     public void clear() {
-        ClientReplicatedMapClearRequest request = new ClientReplicatedMapClearRequest(getName());
-        invoke(request);
+        invokeOnPartition(new ClientReplicatedMapClearRequest(getName()), getOrInitTargetPartitionId());
     }
 
     @Override
     public boolean removeEntryListener(String id) {
-        final ClientReplicatedMapRemoveEntryListenerRequest request = new ClientReplicatedMapRemoveEntryListenerRequest(getName(),
-                id);
-        return stopListening(request, id);
+        final ClientReplicatedMapRemoveEntryListenerRequest request =
+                new ClientReplicatedMapRemoveEntryListenerRequest(getName(), id);
+        return stopListeningOnPartition(request, id, getOrInitTargetPartitionId());
     }
 
     @Override
     public String addEntryListener(EntryListener<K, V> listener) {
-        ClientReplicatedMapAddEntryListenerRequest request = new ClientReplicatedMapAddEntryListenerRequest(getName(), null,
-                null);
+        ClientReplicatedMapAddEntryListenerRequest request =
+                new ClientReplicatedMapAddEntryListenerRequest(getName(), null, null);
         EventHandler<ReplicatedMapPortableEntryEvent> handler = createHandler(listener);
-        return listen(request, null, handler);
+        return listenOnPartitionId(request, getOrInitTargetPartitionId(), handler);
     }
 
     @Override
     public String addEntryListener(EntryListener<K, V> listener, K key) {
-        ClientReplicatedMapAddEntryListenerRequest request = new ClientReplicatedMapAddEntryListenerRequest(getName(), null, key);
+        ClientReplicatedMapAddEntryListenerRequest request =
+                new ClientReplicatedMapAddEntryListenerRequest(getName(), null, key);
         EventHandler<ReplicatedMapPortableEntryEvent> handler = createHandler(listener);
-        return listen(request, null, handler);
+        return listenOnPartitionId(request, getOrInitTargetPartitionId(), handler);
     }
 
     @Override
     public String addEntryListener(EntryListener<K, V> listener, Predicate<K, V> predicate) {
-        ClientReplicatedMapAddEntryListenerRequest request = new ClientReplicatedMapAddEntryListenerRequest(getName(), predicate,
-                null);
+        ClientReplicatedMapAddEntryListenerRequest request =
+                new ClientReplicatedMapAddEntryListenerRequest(getName(), predicate, null);
         EventHandler<ReplicatedMapPortableEntryEvent> handler = createHandler(listener);
-        return listen(request, null, handler);
+        return listenOnPartitionId(request, getOrInitTargetPartitionId(), handler);
     }
 
     @Override
     public String addEntryListener(EntryListener<K, V> listener, Predicate<K, V> predicate, K key) {
         ClientRequest request = new ClientReplicatedMapAddEntryListenerRequest(getName(), predicate, key);
         EventHandler<ReplicatedMapPortableEntryEvent> handler = createHandler(listener);
-        return listen(request, null, handler);
+        return listenOnPartitionId(request, getOrInitTargetPartitionId(), handler);
     }
 
     @Override
     public Set<K> keySet() {
-        return ((ReplicatedMapKeySet) invoke(new ClientReplicatedMapKeySetRequest(getName()))).getKeySet();
+        final ClientReplicatedMapKeySetRequest request = new ClientReplicatedMapKeySetRequest(getName());
+        final ReplicatedMapKeySet response = invokeOnPartition(request, getOrInitTargetPartitionId());
+        return response.getKeySet();
     }
 
     @Override
     public Collection<V> values() {
-        return ((ReplicatedMapValueCollection) invoke(new ClientReplicatedMapValuesRequest(getName()))).getValues();
+        final ClientReplicatedMapValuesRequest request = new ClientReplicatedMapValuesRequest(getName());
+        final ReplicatedMapValueCollection response = invokeOnPartition(request, getOrInitTargetPartitionId());
+        return response.getValues();
     }
 
     @Override
@@ -208,7 +228,9 @@ public class ClientReplicatedMapProxy<K, V>
 
     @Override
     public Set<Entry<K, V>> entrySet() {
-        return ((ReplicatedMapEntrySet) invoke(new ClientReplicatedMapEntrySetRequest(getName()))).getEntrySet();
+        final ClientReplicatedMapEntrySetRequest request = new ClientReplicatedMapEntrySetRequest(getName());
+        final ReplicatedMapEntrySet response = invokeOnPartition(request, getOrInitTargetPartitionId());
+        return response.getEntrySet();
     }
 
     private EventHandler<ReplicatedMapPortableEntryEvent> createHandler(final EntryListener<K, V> listener) {
@@ -235,7 +257,7 @@ public class ClientReplicatedMapProxy<K, V>
             ClientRequest request = new ClientReplicatedMapAddNearCacheListenerRequest(getName());
             EventHandler handler = new ReplicatedMapNearCacheEventHandler();
 
-            String registrationId = getContext().getListenerService().startListening(request, null, handler);
+            String registrationId = getContext().getListenerService().startListening(request, getName(), handler);
             nearCache.setId(registrationId);
         } catch (Exception e) {
             Logger.getLogger(ClientHeapNearCache.class).severe(
@@ -248,7 +270,7 @@ public class ClientReplicatedMapProxy<K, V>
             String registrationId = nearCache.getId();
             BaseClientRemoveListenerRequest request =
                     new ClientReplicatedMapRemoveEntryListenerRequest(getName(), registrationId);
-            getContext().getListenerService().stopListening(request, registrationId);
+            getContext().getListenerService().stopListeningOnPartition(request, registrationId, getOrInitTargetPartitionId());
         }
     }
 
@@ -328,6 +350,19 @@ public class ClientReplicatedMapProxy<K, V>
         public void onListenerRegister() {
             invalidateNearCache();
         }
+    }
+
+    private int getOrInitTargetPartitionId() {
+        int targetPartitionId = this.targetPartitionId;
+        while (targetPartitionId == Operation.GENERIC_PARTITION_ID) {
+            final int partitionCount = getContext().getPartitionService().getPartitionCount();
+            targetPartitionId = new Random().nextInt(partitionCount);
+            if (!TARGET_PARTITION_ID_UPDATER.compareAndSet(this, -1, targetPartitionId)) {
+                targetPartitionId = this.targetPartitionId;
+            }
+        }
+
+        return targetPartitionId;
     }
 
 }

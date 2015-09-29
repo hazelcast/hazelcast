@@ -21,23 +21,30 @@ import com.hazelcast.client.impl.protocol.codec.ClientCreateProxyCodec;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.spi.InvocationBuilder;
+import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.ProxyService;
+import com.hazelcast.spi.impl.operationservice.InternalOperationService;
+import com.hazelcast.spi.impl.proxyservice.impl.operations.InitializeDistributedObjectOperation;
 
 import java.security.Permission;
 import java.util.Collection;
 
-public class CreateProxyMessageTask extends AbstractCallableMessageTask<ClientCreateProxyCodec.RequestParameters> {
+public class CreateProxyMessageTask extends AbstractInvocationMessageTask<ClientCreateProxyCodec.RequestParameters> {
 
     public CreateProxyMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
+    @Override
+    protected InvocationBuilder getInvocationBuilder(Operation op) {
+        final InternalOperationService operationService = nodeEngine.getOperationService();
+        return operationService.createInvocationBuilder(getServiceName(), op, parameters.target);
+    }
 
     @Override
-    protected Object call() {
-        ProxyService proxyService = clientEngine.getProxyService();
-        proxyService.initializeDistributedObject(parameters.serviceName, parameters.name);
-        return null;
+    protected Operation prepareOperation() {
+        return new InitializeDistributedObjectOperation(parameters.serviceName, parameters.name);
     }
 
     @Override

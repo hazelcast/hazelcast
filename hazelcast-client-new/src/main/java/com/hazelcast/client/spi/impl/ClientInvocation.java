@@ -50,8 +50,8 @@ import static com.hazelcast.client.config.ClientProperties.PROP_HEARTBEAT_INTERV
  */
 public class ClientInvocation implements Runnable {
 
+    public static final long RETRY_WAIT_TIME_IN_SECONDS = 1;
     protected static final int UNASSIGNED_PARTITION = -1;
-    private static final long RETRY_WAIT_TIME_IN_SECONDS = 1;
     private static final ILogger LOGGER = Logger.getLogger(ClientInvocation.class);
 
     protected ClientInvocationFuture clientInvocationFuture;
@@ -177,9 +177,7 @@ public class ClientInvocation implements Runnable {
             return;
         }
 
-        if (exception instanceof IOException
-                || exception instanceof HazelcastInstanceNotActiveException
-                || exception instanceof AuthenticationException) {
+        if (isRetryable(exception)) {
             if (handleRetry()) {
                 return;
             }
@@ -282,5 +280,11 @@ public class ClientInvocation implements Runnable {
 
     public boolean isInvoked() {
         return sendConnection != null;
+    }
+
+    public static boolean isRetryable(Throwable t) {
+        return t instanceof IOException
+                || t instanceof HazelcastInstanceNotActiveException
+                || t instanceof AuthenticationException;
     }
 }

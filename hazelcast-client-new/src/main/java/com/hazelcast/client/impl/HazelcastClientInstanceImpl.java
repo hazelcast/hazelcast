@@ -505,6 +505,10 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         return serializationService;
     }
 
+    public ProxyManager getProxyManager() {
+        return proxyManager;
+    }
+
     public ClientConnectionManager getConnectionManager() {
         return connectionManager;
     }
@@ -535,6 +539,10 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
 
     public ThreadGroup getThreadGroup() {
         return threadGroup;
+    }
+
+    public LoadBalancer getLoadBalancer() {
+        return loadBalancer;
     }
 
     public ClientExtension getClientExtension() {
