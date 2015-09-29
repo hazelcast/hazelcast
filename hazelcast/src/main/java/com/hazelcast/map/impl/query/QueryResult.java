@@ -19,32 +19,39 @@ package com.hazelcast.map.impl.query;
 import com.hazelcast.map.QueryResultSizeExceededException;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.DataSerializable;
-import com.hazelcast.query.impl.QueryResultEntry;
-import com.hazelcast.query.impl.QueryResultEntryImpl;
 import com.hazelcast.query.impl.QueryableEntry;
+import com.hazelcast.util.IterationType;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.LinkedList;
 
+/**
+ * Contains the result of a query evaluation.
+ *
+ * A QueryResults is a collections of {@link QueryResultRow} instances.
+ */
 public class QueryResult implements DataSerializable {
 
-    private final Collection<QueryResultEntry> result = new LinkedList<QueryResultEntry>();
+    // todo: probably arraylist cheaper.
+    private final Collection<QueryResultRow> rows = new LinkedList<QueryResultRow>();
 
     private Collection<Integer> partitionIds;
 
     private transient long resultLimit;
     private transient long resultSize;
+    private IterationType iterationType;
 
     public QueryResult() {
-        this(Long.MAX_VALUE);
+        resultLimit = Long.MAX_VALUE;
     }
 
-    public QueryResult(long resultLimit) {
+    public QueryResult(IterationType iterationType, long resultLimit) {
         this.resultLimit = resultLimit;
+        this.iterationType = iterationType;
     }
 
     // just for testing
@@ -52,14 +59,30 @@ public class QueryResult implements DataSerializable {
         return resultLimit;
     }
 
-    public void addAll(Collection<QueryableEntry> queryableEntries) {
-        for (QueryableEntry entry : queryableEntries) {
+    public void addAll(Collection<QueryableEntry> entries) {
+        for (QueryableEntry entry : entries) {
             if (++resultSize > resultLimit) {
                 throw new QueryResultSizeExceededException();
             }
-            QueryResultEntryImpl queryEntry = new QueryResultEntryImpl(
-                    entry.getKeyData(), entry.getIndexKey(), entry.getValueData());
-            result.add(queryEntry);
+
+            Data key = null;
+            Data value = null;
+            switch (iterationType) {
+                case KEY:
+                    key = entry.getKeyData();
+                    break;
+                case VALUE:
+                    value = entry.getValueData();
+                    break;
+                case ENTRY:
+                    key = entry.getKeyData();
+                    value = entry.getValueData();
+                    break;
+                default:
+                    throw new IllegalStateException("Unknown iterationtype:" + iterationType);
+            }
+
+            rows.add(new QueryResultRow(key, value));
         }
     }
 
@@ -71,8 +94,8 @@ public class QueryResult implements DataSerializable {
         this.partitionIds = partitionIds;
     }
 
-    public Collection<QueryResultEntry> getResult() {
-        return result;
+    public Collection<QueryResultRow> getRows() {
+        return rows;
     }
 
     @Override
@@ -84,13 +107,14 @@ public class QueryResult implements DataSerializable {
                 out.writeInt(partitionId);
             }
         }
-        int resultSize = result.size();
+
+        out.writeByte(iterationType.getId());
+
+        int resultSize = rows.size();
         out.writeInt(resultSize);
         if (resultSize > 0) {
-            Iterator<QueryResultEntry> iterator = result.iterator();
-            for (int i = 0; i < resultSize; i++) {
-                QueryResultEntryImpl queryableEntry = (QueryResultEntryImpl) iterator.next();
-                queryableEntry.writeData(out);
+            for (QueryResultRow row : rows) {
+                row.writeData(out);
             }
         }
     }
@@ -104,12 +128,15 @@ public class QueryResult implements DataSerializable {
                 partitionIds.add(in.readInt());
             }
         }
+
+        iterationType = IterationType.getById(in.readByte());
+
         int resultSize = in.readInt();
         if (resultSize > 0) {
             for (int i = 0; i < resultSize; i++) {
-                QueryResultEntryImpl resultEntry = new QueryResultEntryImpl();
-                resultEntry.readData(in);
-                result.add(resultEntry);
+                QueryResultRow row = new QueryResultRow();
+                row.readData(in);
+                rows.add(row);
             }
         }
     }

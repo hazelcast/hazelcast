@@ -44,8 +44,6 @@ import com.hazelcast.map.MapPartitionLostEvent;
 import com.hazelcast.map.impl.LazyMapEntry;
 import com.hazelcast.map.impl.ListenerAdapter;
 import com.hazelcast.map.impl.MapEntrySet;
-import com.hazelcast.map.impl.MapKeySet;
-import com.hazelcast.map.impl.MapValueCollection;
 import com.hazelcast.map.impl.SimpleEntryView;
 import com.hazelcast.map.impl.client.MapAddEntryListenerRequest;
 import com.hazelcast.map.impl.client.MapAddIndexRequest;
@@ -56,7 +54,6 @@ import com.hazelcast.map.impl.client.MapClearRequest;
 import com.hazelcast.map.impl.client.MapContainsKeyRequest;
 import com.hazelcast.map.impl.client.MapContainsValueRequest;
 import com.hazelcast.map.impl.client.MapDeleteRequest;
-import com.hazelcast.map.impl.client.MapEntrySetRequest;
 import com.hazelcast.map.impl.client.MapEvictAllRequest;
 import com.hazelcast.map.impl.client.MapEvictRequest;
 import com.hazelcast.map.impl.client.MapExecuteOnAllKeysRequest;
@@ -69,7 +66,6 @@ import com.hazelcast.map.impl.client.MapGetEntryViewRequest;
 import com.hazelcast.map.impl.client.MapGetRequest;
 import com.hazelcast.map.impl.client.MapIsEmptyRequest;
 import com.hazelcast.map.impl.client.MapIsLockedRequest;
-import com.hazelcast.map.impl.client.MapKeySetRequest;
 import com.hazelcast.map.impl.client.MapLoadAllKeysRequest;
 import com.hazelcast.map.impl.client.MapLoadGivenKeysRequest;
 import com.hazelcast.map.impl.client.MapLockRequest;
@@ -90,7 +86,7 @@ import com.hazelcast.map.impl.client.MapSizeRequest;
 import com.hazelcast.map.impl.client.MapTryPutRequest;
 import com.hazelcast.map.impl.client.MapTryRemoveRequest;
 import com.hazelcast.map.impl.client.MapUnlockRequest;
-import com.hazelcast.map.impl.client.MapValuesRequest;
+import com.hazelcast.map.impl.query.QueryResultRow;
 import com.hazelcast.map.listener.MapListener;
 import com.hazelcast.map.listener.MapPartitionLostListener;
 import com.hazelcast.mapreduce.Collator;
@@ -109,12 +105,12 @@ import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.query.TruePredicate;
 import com.hazelcast.spi.impl.PortableEntryEvent;
 import com.hazelcast.spi.impl.PortableMapPartitionLostEvent;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.IterationType;
 import com.hazelcast.util.Preconditions;
-import com.hazelcast.util.QueryResultSet;
 import com.hazelcast.util.ThreadUtil;
 import com.hazelcast.util.collection.InflatableSet;
 import com.hazelcast.util.executor.CompletedFuture;
@@ -697,18 +693,6 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
         return dataKeys;
     }
 
-    @Override
-    public Set<K> keySet() {
-        MapKeySetRequest request = new MapKeySetRequest(name);
-        MapKeySet mapKeySet = invoke(request);
-        Set<Data> keySetData = mapKeySet.getKeySet();
-        InflatableSet.Builder<K> setBuilder = InflatableSet.newBuilder(keySetData.size());
-        for (Data data : keySetData) {
-            final K key = toObject(data);
-            setBuilder.add(key);
-        }
-        return setBuilder.build();
-    }
 
     @Override
     @SuppressWarnings("unchecked")
@@ -749,62 +733,28 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
 
     @Override
     public Collection<V> values() {
-        MapValuesRequest request = new MapValuesRequest(name);
-        MapValueCollection mapValueCollection = invoke(request);
+        return values(TruePredicate.INSTANCE);
+    }
 
-        Collection<Data> collectionData = mapValueCollection.getValues();
-        Collection<V> collection = new ArrayList<V>(collectionData.size());
-        for (Data data : collectionData) {
-            V value = toObject(data);
-            collection.add(value);
+    @Override
+    public Collection<V> values(Predicate predicate) {
+        if (predicate instanceof PagingPredicate) {
+            return valuesForPagingPredicate((PagingPredicate) predicate);
         }
-        return collection;
+
+        MapQueryRequest request = new MapQueryRequest(name, predicate, IterationType.VALUE);
+        Collection<QueryResultRow> result = invoke(request);
+
+        List<V> values = new ArrayList<V>(result.size());
+        for (QueryResultRow row : result) {
+            values.add((V) toObject(row.getValue()));
+        }
+        return values;
     }
 
     @Override
     public Set<Entry<K, V>> entrySet() {
-        MapEntrySetRequest request = new MapEntrySetRequest(name);
-        MapEntrySet result = invoke(request);
-
-        Set<Entry<Data, Data>> entries = result.getEntrySet();
-        InflatableSet.Builder<Entry<K, V>> setBuilder = InflatableSet.newBuilder(entries.size());
-        for (Entry<Data, Data> dataEntry : entries) {
-            Data keyData = dataEntry.getKey();
-            Data valueData = dataEntry.getValue();
-            K key = toObject(keyData);
-            V value = toObject(valueData);
-            setBuilder.add(new AbstractMap.SimpleEntry<K, V>(key, value));
-        }
-        return setBuilder.build();
-    }
-
-    @Override
-    @SuppressWarnings("unchecked")
-    public Set<K> keySet(Predicate predicate) {
-        PagingPredicate pagingPredicate = null;
-        if (predicate instanceof PagingPredicate) {
-            pagingPredicate = (PagingPredicate) predicate;
-            pagingPredicate.setIterationType(IterationType.KEY);
-        }
-        MapQueryRequest request = new MapQueryRequest(name, predicate, IterationType.KEY);
-        QueryResultSet result = invoke(request);
-        if (pagingPredicate == null) {
-            InflatableSet.Builder<K> setBuilder = InflatableSet.newBuilder(result.size());
-            for (Object o : result) {
-                final K key = toObject(o);
-                setBuilder.add(key);
-            }
-            return setBuilder.build();
-        }
-
-        Iterator<Entry> iterator = result.rawIterator();
-        ArrayList<Map.Entry> resultList = new ArrayList<Map.Entry>();
-        while (iterator.hasNext()) {
-            Entry entry = iterator.next();
-            K key = toObject(entry.getKey());
-            resultList.add(new AbstractMap.SimpleImmutableEntry<K, V>(key, null));
-        }
-        return (Set<K>) getSortedQueryResultSet(resultList, pagingPredicate, IterationType.KEY);
+        return entrySet(TruePredicate.INSTANCE);
     }
 
     @Override
@@ -817,56 +767,67 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
         }
 
         MapQueryRequest request = new MapQueryRequest(name, predicate, IterationType.ENTRY);
-        QueryResultSet result = invoke(request);
+        Collection<QueryResultRow> result = invoke(request);
         if (pagingPredicate == null) {
             SerializationService serializationService = getContext().getSerializationService();
             InflatableSet.Builder<Entry<K, V>> setBuilder = InflatableSet.newBuilder(result.size());
-            for (Object data : result) {
-                AbstractMap.SimpleImmutableEntry<Data, Data> dataEntry = (AbstractMap.SimpleImmutableEntry<Data, Data>) data;
-                LazyMapEntry lazyEntry = new LazyMapEntry(dataEntry.getKey(), dataEntry.getValue(), serializationService);
-                setBuilder.add(lazyEntry);
+            for (QueryResultRow row : result) {
+                LazyMapEntry entry = new LazyMapEntry(row.getKey(), row.getValue(), serializationService);
+                setBuilder.add(entry);
             }
             return setBuilder.build();
         }
         ArrayList<Map.Entry> resultList = new ArrayList<Map.Entry>();
-        for (Object data : result) {
-            AbstractMap.SimpleImmutableEntry<Data, Data> dataEntry = (AbstractMap.SimpleImmutableEntry<Data, Data>) data;
-            K key = toObject(dataEntry.getKey());
-            V value = toObject(dataEntry.getValue());
+        for (QueryResultRow data : result) {
+            K key = toObject(data.getKey());
+            V value = toObject(data.getValue());
             resultList.add(new AbstractMap.SimpleEntry<K, V>(key, value));
         }
         return (Set) getSortedQueryResultSet(resultList, pagingPredicate, IterationType.ENTRY);
     }
 
     @Override
-    public Collection<V> values(Predicate predicate) {
+    public Set<K> keySet() {
+        return keySet(TruePredicate.INSTANCE);
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public Set<K> keySet(Predicate predicate) {
+        PagingPredicate pagingPredicate = null;
         if (predicate instanceof PagingPredicate) {
-            return valuesForPagingPredicate((PagingPredicate) predicate);
+            pagingPredicate = (PagingPredicate) predicate;
+            pagingPredicate.setIterationType(IterationType.KEY);
+        }
+        MapQueryRequest request = new MapQueryRequest(name, predicate, IterationType.KEY);
+        Collection<QueryResultRow> result = invoke(request);
+        if (pagingPredicate == null) {
+            InflatableSet.Builder<K> setBuilder = InflatableSet.newBuilder(result.size());
+            for (QueryResultRow row : result) {
+                K key = toObject(row.getKey());
+                setBuilder.add(key);
+            }
+            return setBuilder.build();
         }
 
-        MapQueryRequest request = new MapQueryRequest(name, predicate, IterationType.VALUE);
-        QueryResultSet result = invoke(request);
-
-        List<V> values = new ArrayList<V>(result.size());
-        for (Object data : result) {
-            V value = toObject(data);
-            values.add(value);
+        ArrayList<Map.Entry> resultList = new ArrayList<Map.Entry>(result.size());
+        for (QueryResultRow row : result) {
+            K key = toObject(row.getKey());
+            resultList.add(new AbstractMap.SimpleImmutableEntry<K, V>(key, null));
         }
-        return values;
+        return (Set<K>) getSortedQueryResultSet(resultList, pagingPredicate, IterationType.KEY);
     }
 
     private Collection<V> valuesForPagingPredicate(PagingPredicate pagingPredicate) {
-        pagingPredicate.setIterationType(IterationType.VALUE);
+        pagingPredicate.setIterationType(IterationType.ENTRY);
 
-        MapQueryRequest request = new MapQueryRequest(name, pagingPredicate, IterationType.VALUE);
-        QueryResultSet result = invoke(request);
+        MapQueryRequest request = new MapQueryRequest(name, pagingPredicate, IterationType.ENTRY);
+        Collection<QueryResultRow> result = invoke(request);
 
         List<Entry> resultList = new ArrayList<Entry>(result.size());
-        Iterator<Entry> iterator = result.rawIterator();
-        while (iterator.hasNext()) {
-            Entry entry = iterator.next();
-            K key = toObject(entry.getKey());
-            V value = toObject(entry.getValue());
+        for (QueryResultRow row : result) {
+            K key = toObject(row.getKey());
+            V value = toObject(row.getValue());
             resultList.add(new AbstractMap.SimpleImmutableEntry<Object, V>(key, value));
         }
 
@@ -875,7 +836,7 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
 
     @Override
     public Set<K> localKeySet() {
-        throw new UnsupportedOperationException("Locality is ambiguous for client!!!");
+        return localKeySet(TruePredicate.INSTANCE);
     }
 
     @Override
@@ -1044,24 +1005,24 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
         int partitionCount = partitionService.getPartitionCount();
         List<Future<?>> futures = new ArrayList<Future<?>>(partitionCount);
         MapEntrySet[] entrySetPerPartition = new MapEntrySet[partitionCount];
-        
+
         for (Entry<? extends K, ? extends V> entry : m.entrySet()) {
             checkNotNull(entry.getKey(), NULL_KEY_IS_NOT_ALLOWED);
             checkNotNull(entry.getValue(), NULL_VALUE_IS_NOT_ALLOWED);
-            
+
             final Data keyData = toData(entry.getKey());
             invalidateNearCache(keyData);
-            
+
             int partitionId = partitionService.getPartitionId(keyData);
             MapEntrySet entrySet = entrySetPerPartition[partitionId];
             if (entrySet == null) {
                 entrySet = new MapEntrySet();
                 entrySetPerPartition[partitionId] = entrySet;
             }
-            
+
             entrySet.add(new AbstractMap.SimpleImmutableEntry<Data, Data>(keyData, toData(entry.getValue())));
         }
-        
+
         for (int partitionId = 0; partitionId < entrySetPerPartition.length; partitionId++) {
             MapEntrySet entrySet = entrySetPerPartition[partitionId];
             if (entrySet != null) {

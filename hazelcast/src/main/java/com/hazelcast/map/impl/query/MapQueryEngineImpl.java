@@ -34,7 +34,6 @@ import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.TruePredicate;
 import com.hazelcast.query.impl.QueryEntry;
-import com.hazelcast.query.impl.QueryResultEntry;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.query.impl.predicates.QueryOptimizer;
 import com.hazelcast.spi.NodeEngine;
@@ -42,7 +41,6 @@ import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.IterationType;
-import com.hazelcast.util.QueryResultSet;
 import com.hazelcast.util.executor.ManagedExecutorService;
 
 import java.util.AbstractMap;
@@ -112,7 +110,9 @@ public class MapQueryEngineImpl implements MapQueryEngine {
     }
 
     @Override
-    public QueryResult queryLocalPartitions(String mapName, Predicate predicate) throws ExecutionException, InterruptedException {
+    public QueryResult queryLocalPartitions(String mapName, Predicate predicate, IterationType iterationType)
+            throws ExecutionException, InterruptedException {
+
         int initialPartitionStateVersion = partitionService.getPartitionStateVersion();
         Collection<Integer> initialPartitions = mapServiceContext.getOwnedPartitions();
         MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);
@@ -123,9 +123,9 @@ public class MapQueryEngineImpl implements MapQueryEngine {
         // then we try to run using an index, but if that doesn't work, we'll try a full table scan
         // This would be the point where a query-plan should be added. It should determine if a full table scan
         // or an index should be used.
-        QueryResult result = tryQueryUsingIndexes(predicate, initialPartitions, mapContainer);
+        QueryResult result = tryQueryUsingIndexes(predicate, initialPartitions, mapContainer, iterationType);
         if (result == null) {
-            result = queryUsingFullTableScan(mapName, predicate, initialPartitions);
+            result = queryUsingFullTableScan(mapName, predicate, initialPartitions, iterationType);
         }
 
         if (hasPartitionVersion(initialPartitionStateVersion, predicate)) {
@@ -137,7 +137,9 @@ public class MapQueryEngineImpl implements MapQueryEngine {
         return result;
     }
 
-    private QueryResult tryQueryUsingIndexes(Predicate predicate, Collection<Integer> partitions, MapContainer mapContainer) {
+    private QueryResult tryQueryUsingIndexes(Predicate predicate, Collection<Integer> partitions, MapContainer mapContainer,
+                                             IterationType iterationType) {
+
         if (partitionService.hasOnGoingMigrationLocal()) {
             return null;
         }
@@ -147,7 +149,7 @@ public class MapQueryEngineImpl implements MapQueryEngine {
             return null;
         }
 
-        QueryResult result = newQueryResult(partitions.size());
+        QueryResult result = newQueryResult(partitions.size(), iterationType);
         result.addAll(entries);
         return result;
     }
@@ -159,20 +161,23 @@ public class MapQueryEngineImpl implements MapQueryEngine {
         }
     }
 
-    private QueryResult queryUsingFullTableScan(String name, Predicate predicate, Collection<Integer> partitions)
+    private QueryResult queryUsingFullTableScan(String name, Predicate predicate, Collection<Integer> partitions,
+                                                IterationType iterationType)
             throws InterruptedException, ExecutionException {
 
         if (predicate instanceof PagingPredicate) {
-            return queryParallelForPaging(name, (PagingPredicate) predicate, partitions);
+            return queryParallelForPaging(name, (PagingPredicate) predicate, partitions, iterationType);
         } else if (parallelEvaluation) {
-            return queryParallel(name, predicate, partitions);
+            return queryParallel(name, predicate, partitions, iterationType);
         } else {
-            return querySequential(name, predicate, partitions);
+            return querySequential(name, predicate, partitions, iterationType);
         }
     }
 
-    protected QueryResult querySequential(String name, Predicate predicate, Collection<Integer> partitions) {
-        QueryResult result = newQueryResult(partitions.size());
+    protected QueryResult querySequential(String name, Predicate predicate, Collection<Integer> partitions,
+                                          IterationType iterationType) {
+
+        QueryResult result = newQueryResult(partitions.size(), iterationType);
         RetryableHazelcastException storedException = null;
         for (Integer partitionId : partitions) {
             try {
@@ -193,9 +198,9 @@ public class MapQueryEngineImpl implements MapQueryEngine {
         return result;
     }
 
-    private QueryResult queryParallel(String name, Predicate predicate, Collection<Integer> partitions)
-            throws InterruptedException, ExecutionException {
-        QueryResult result = newQueryResult(partitions.size());
+    private QueryResult queryParallel(String name, Predicate predicate, Collection<Integer> partitions,
+                                      IterationType iterationType) throws InterruptedException, ExecutionException {
+        QueryResult result = newQueryResult(partitions.size(), iterationType);
 
         List<Future<Collection<QueryableEntry>>> futures
                 = new ArrayList<Future<Collection<QueryableEntry>>>(partitions.size());
@@ -217,9 +222,9 @@ public class MapQueryEngineImpl implements MapQueryEngine {
         return result;
     }
 
-    private QueryResult queryParallelForPaging(String name, PagingPredicate predicate, Collection<Integer> partitions)
-            throws InterruptedException, ExecutionException {
-        QueryResult result = newQueryResult(partitions.size());
+    private QueryResult queryParallelForPaging(String name, PagingPredicate predicate, Collection<Integer> partitions,
+                                               IterationType iterationType) throws InterruptedException, ExecutionException {
+        QueryResult result = newQueryResult(partitions.size(), iterationType);
 
         List<Future<Collection<QueryableEntry>>> futures =
                 new ArrayList<Future<Collection<QueryableEntry>>>(partitions.size());
@@ -269,6 +274,7 @@ public class MapQueryEngineImpl implements MapQueryEngine {
                 continue;
             }
             QueryEntry queryEntry = new QueryEntry(serializationService, key, key, value);
+
             if (predicate.apply(queryEntry) && compareAnchor(pagingPredicate, queryEntry, nearestAnchorEntry)) {
                 resultList.add(queryEntry);
             }
@@ -277,9 +283,9 @@ public class MapQueryEngineImpl implements MapQueryEngine {
     }
 
     @Override
-    public QueryResult queryLocalPartition(String mapName, Predicate predicate, int partitionId) {
+    public QueryResult queryLocalPartition(String mapName, Predicate predicate, int partitionId, IterationType iterationType) {
         Collection<QueryableEntry> queryableEntries = queryTheLocalPartition(mapName, predicate, partitionId);
-        QueryResult result = newQueryResult(1);
+        QueryResult result = newQueryResult(1, iterationType);
         result.addAll(queryableEntries);
         result.setPartitionIds(singletonList(partitionId));
         return result;
@@ -300,18 +306,17 @@ public class MapQueryEngineImpl implements MapQueryEngine {
     }
 
     @Override
-    public Set queryLocalPartitions(String mapName, Predicate predicate, IterationType iterationType, boolean dataResult) {
-        checkIfNotPagingPredicate(predicate);
+    public void queryLocalPartitions(String mapName, Predicate predicate, QueryResultCollection result) {
+        checkNotPagingPredicate(predicate);
 
-        Set result = new QueryResultSet(serializationService, iterationType, dataResult);
         List<Integer> partitionIds = getLocalPartitionIds();
 
         try {
-            Future<QueryResult> future = queryOnLocalMember(mapName, predicate);
+            Future<QueryResult> future = queryOnLocalMember(mapName, predicate, result.getIterationType());
             List<Future<QueryResult>> futures = singletonList(future);
             addResultsOfPredicate(futures, result, partitionIds);
             if (partitionIds.isEmpty()) {
-                return result;
+                return;
             }
         } catch (Throwable t) {
             if (t.getCause() instanceof QueryResultSizeExceededException) {
@@ -321,13 +326,11 @@ public class MapQueryEngineImpl implements MapQueryEngine {
         }
 
         try {
-            List<Future<QueryResult>> futures = queryPartitions(mapName, predicate, partitionIds);
+            List<Future<QueryResult>> futures = queryPartitions(mapName, predicate, partitionIds, result.getIterationType());
             addResultsOfPredicate(futures, result, partitionIds);
         } catch (Throwable t) {
             throw rethrow(t);
         }
-
-        return result;
     }
 
     @Override
@@ -336,8 +339,11 @@ public class MapQueryEngineImpl implements MapQueryEngine {
         ArrayList<Map.Entry> resultList = new ArrayList<Map.Entry>();
         List<Integer> partitionIds = getLocalPartitionIds();
 
+        // in case of value, we also need to get the keys for sorting.
+        IterationType retrievalIterationType = iterationType == IterationType.VALUE ? IterationType.ENTRY : iterationType;
+
         try {
-            Future<QueryResult> future = queryOnLocalMember(mapName, predicate);
+            Future<QueryResult> future = queryOnLocalMember(mapName, predicate, retrievalIterationType);
             List<Future<QueryResult>> futures = singletonList(future);
             addResultsOfPagingPredicate(futures, resultList, partitionIds);
             if (partitionIds.isEmpty()) {
@@ -351,7 +357,7 @@ public class MapQueryEngineImpl implements MapQueryEngine {
         }
 
         try {
-            List<Future<QueryResult>> futures = queryPartitions(mapName, predicate, partitionIds);
+            List<Future<QueryResult>> futures = queryPartitions(mapName, predicate, partitionIds, retrievalIterationType);
             addResultsOfPagingPredicate(futures, resultList, partitionIds);
         } catch (Throwable t) {
             throw rethrow(t);
@@ -365,8 +371,11 @@ public class MapQueryEngineImpl implements MapQueryEngine {
         ArrayList<Map.Entry> resultList = new ArrayList<Map.Entry>();
         Set<Integer> partitionIds = getAllPartitionIds();
 
+        // in case of value, we also need to get the keys for sorting.
+        IterationType retrievalIterationType = iterationType == IterationType.VALUE ? IterationType.ENTRY : iterationType;
+
         try {
-            List<Future<QueryResult>> futures = queryOnMembers(mapName, predicate);
+            List<Future<QueryResult>> futures = queryOnMembers(mapName, predicate, retrievalIterationType);
             addResultsOfPagingPredicate(futures, resultList, partitionIds);
             if (partitionIds.isEmpty()) {
                 return getSortedQueryResultSet(resultList, predicate, iterationType);
@@ -379,7 +388,7 @@ public class MapQueryEngineImpl implements MapQueryEngine {
         }
 
         try {
-            List<Future<QueryResult>> futures = queryPartitions(mapName, predicate, partitionIds);
+            List<Future<QueryResult>> futures = queryPartitions(mapName, predicate, partitionIds, retrievalIterationType);
             addResultsOfPagingPredicate(futures, resultList, partitionIds);
         } catch (Throwable t) {
             throw rethrow(t);
@@ -389,20 +398,19 @@ public class MapQueryEngineImpl implements MapQueryEngine {
     }
 
     @Override
-    public Set queryAllPartitions(String mapName, Predicate predicate, IterationType iterationType, boolean dataResult) {
-        checkIfNotPagingPredicate(predicate);
+    public void queryAllPartitions(String mapName, Predicate predicate, QueryResultCollection result) {
+        checkNotPagingPredicate(predicate);
         if (predicate == TruePredicate.INSTANCE) {
             queryResultSizeLimiter.checkMaxResultLimitOnLocalPartitions(mapName);
         }
 
-        Set result = new QueryResultSet(serializationService, iterationType, dataResult);
         Set<Integer> partitionIds = getAllPartitionIds();
 
         try {
-            List<Future<QueryResult>> futures = queryOnMembers(mapName, predicate);
+            List<Future<QueryResult>> futures = queryOnMembers(mapName, predicate, result.getIterationType());
             addResultsOfPredicate(futures, result, partitionIds);
             if (partitionIds.isEmpty()) {
-                return result;
+                return;
             }
         } catch (Throwable t) {
             if (t.getCause() instanceof QueryResultSizeExceededException) {
@@ -412,13 +420,11 @@ public class MapQueryEngineImpl implements MapQueryEngine {
         }
 
         try {
-            List<Future<QueryResult>> futures = queryPartitions(mapName, predicate, partitionIds);
+            List<Future<QueryResult>> futures = queryPartitions(mapName, predicate, partitionIds, result.getIterationType());
             addResultsOfPredicate(futures, result, partitionIds);
         } catch (Throwable t) {
             throw rethrow(t);
         }
-
-        return result;
     }
 
     /**
@@ -427,40 +433,41 @@ public class MapQueryEngineImpl implements MapQueryEngine {
      * @param numberOfPartitions number of partitions to calculate result limit
      * @return {@link QueryResult}
      */
-    private QueryResult newQueryResult(int numberOfPartitions) {
-        return new QueryResult(queryResultSizeLimiter.getNodeResultLimit(numberOfPartitions));
+    private QueryResult newQueryResult(int numberOfPartitions, IterationType iterationType) {
+        return new QueryResult(iterationType, queryResultSizeLimiter.getNodeResultLimit(numberOfPartitions));
     }
 
-    private void checkIfNotPagingPredicate(Predicate predicate) {
+    private void checkNotPagingPredicate(Predicate predicate) {
         if (predicate instanceof PagingPredicate) {
             throw new IllegalArgumentException("Predicate should not be a paging predicate");
         }
     }
 
-    private Future<QueryResult> queryOnLocalMember(String mapName, Predicate predicate) {
-        QueryOperation operation = new QueryOperation(mapName, predicate);
+    private Future<QueryResult> queryOnLocalMember(String mapName, Predicate predicate, IterationType iterationType) {
+        QueryOperation operation = new QueryOperation(mapName, predicate, iterationType);
         return operationService.invokeOnTarget(MapService.SERVICE_NAME, operation, nodeEngine.getThisAddress());
     }
 
-    private List<Future<QueryResult>> queryOnMembers(String mapName, Predicate predicate) {
+    private List<Future<QueryResult>> queryOnMembers(String mapName, Predicate predicate, IterationType iterationType) {
         Collection<Member> members = clusterService.getMembers();
         List<Future<QueryResult>> futures = new ArrayList<Future<QueryResult>>(members.size());
         for (Member member : members) {
-            QueryOperation op = new QueryOperation(mapName, predicate);
+            QueryOperation op = new QueryOperation(mapName, predicate, iterationType);
             Future<QueryResult> future = operationService.invokeOnTarget(MapService.SERVICE_NAME, op, member.getAddress());
             futures.add(future);
         }
         return futures;
     }
 
-    private List<Future<QueryResult>> queryPartitions(String mapName, Predicate predicate, Collection<Integer> partitionIds) {
+    private List<Future<QueryResult>> queryPartitions(String mapName, Predicate predicate,
+                                                      Collection<Integer> partitionIds, IterationType iterationType) {
         if (partitionIds == null || partitionIds.isEmpty()) {
             return Collections.emptyList();
         }
 
         List<Future<QueryResult>> futures = new ArrayList<Future<QueryResult>>(partitionIds.size());
         for (Integer partitionId : partitionIds) {
-            QueryPartitionOperation op = new QueryPartitionOperation(mapName, predicate);
+            QueryPartitionOperation op = new QueryPartitionOperation(mapName, predicate, iterationType);
             op.setPartitionId(partitionId);
             try {
                 Future<QueryResult> future = operationService
@@ -489,9 +496,9 @@ public class MapQueryEngineImpl implements MapQueryEngine {
             Collection<Integer> tmpPartitionIds = queryResult.getPartitionIds();
             if (tmpPartitionIds != null) {
                 partitionIds.removeAll(tmpPartitionIds);
-                for (QueryResultEntry queryResultEntry : queryResult.getResult()) {
-                    Object key = toObject(queryResultEntry.getKeyData());
-                    Object value = toObject(queryResultEntry.getValueData());
+                for (QueryResultRow row : queryResult.getRows()) {
+                    Object key = toObject(row.getKey());
+                    Object value = toObject(row.getValue());
                     result.add(new AbstractMap.SimpleImmutableEntry<Object, Object>(key, value));
                 }
             }
@@ -502,8 +509,9 @@ public class MapQueryEngineImpl implements MapQueryEngine {
      * Adds results of non-paging predicates to result set and removes queried partition ids.
      */
     @SuppressWarnings("unchecked")
-    private void addResultsOfPredicate(List<Future<QueryResult>> futures, Set result, Collection<Integer> partitionIds)
-            throws ExecutionException, InterruptedException {
+    private void addResultsOfPredicate(List<Future<QueryResult>> futures, QueryResultCollection result,
+                                       Collection<Integer> partitionIds) throws ExecutionException, InterruptedException {
+
         for (Future<QueryResult> future : futures) {
             QueryResult queryResult = future.get();
             if (queryResult == null) {
@@ -512,7 +520,7 @@ public class MapQueryEngineImpl implements MapQueryEngine {
             Collection<Integer> queriedPartitionIds = queryResult.getPartitionIds();
             if (queriedPartitionIds != null) {
                 partitionIds.removeAll(queriedPartitionIds);
-                result.addAll(queryResult.getResult());
+                result.allAllRows(queryResult.getRows());
             }
         }
     }

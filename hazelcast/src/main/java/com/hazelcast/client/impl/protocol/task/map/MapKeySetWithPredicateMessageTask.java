@@ -22,7 +22,7 @@ import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.impl.QueryResultEntry;
+import com.hazelcast.map.impl.query.QueryResultRow;
 
 import java.util.Collection;
 import java.util.HashSet;
@@ -36,10 +36,10 @@ public class MapKeySetWithPredicateMessageTask
     }
 
     @Override
-    protected Object reduce(Collection<QueryResultEntry> result) {
+    protected Object reduce(Collection<QueryResultRow> result) {
         Set<Data> set = new HashSet<Data>(result.size());
-        for (QueryResultEntry resultEntry : result) {
-            set.add(resultEntry.getKeyData());
+        for (QueryResultRow resultEntry : result) {
+            set.add(resultEntry.getKey());
         }
         return set;
     }

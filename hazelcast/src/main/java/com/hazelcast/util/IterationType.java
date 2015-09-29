@@ -21,16 +21,50 @@ package com.hazelcast.util;
  * like values , keySet , query etc.
  */
 public enum IterationType {
+
     /**
      * Iterate over keys
      */
-    KEY,
+    KEY((byte) 0),
     /**
      * Iterate over values
      */
-    VALUE,
+    VALUE((byte) 1),
     /**
-     * Iterate over whole entry
+     * Iterate over whole entry (so key and value)
      */
-    ENTRY
+    ENTRY((byte) 2);
+
+    private final byte id;
+
+    IterationType(byte id) {
+        this.id = id;
+    }
+
+    /**
+     * Gets the id for the given IterationType.
+     *
+     * This reason this id is used instead of an the ordinal value is that the ordinal value is more prone to changes due to
+     * reordering.
+     *
+     * @return the id.
+     */
+    public byte getId() {
+        return id;
+    }
+
+    /**
+     * Returns the IterationType for the given id.
+     *
+     * @return the IterationType for the given id.
+     * @throws IllegalArgumentException if no IterationType was found.
+     */
+    public static IterationType getById(byte id) {
+        for (IterationType type : values()) {
+            if (type.id == id) {
+                return type;
+            }
+        }
+        throw new IllegalArgumentException("unknown id:" + id);
+    }
 }

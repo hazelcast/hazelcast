@@ -37,7 +37,8 @@ public interface MapQueryEngine {
      * @throws ExecutionException
      * @throws InterruptedException
      */
-    QueryResult queryLocalPartitions(String name, Predicate predicate) throws ExecutionException, InterruptedException;
+    QueryResult queryLocalPartitions(String name, Predicate predicate, IterationType iterationType)
+            throws ExecutionException, InterruptedException;
 
     /**
      * Executes a query a specific local partition.
@@ -49,19 +50,25 @@ public interface MapQueryEngine {
      * @param partitionId partition id.
      * @return result of query
      */
-    QueryResult queryLocalPartition(String mapName, Predicate predicate, int partitionId);
+    QueryResult queryLocalPartition(String mapName, Predicate predicate, int partitionId, IterationType iterationType);
 
     /**
      * Query all local partitions.
      *
      * @param mapName       map name.
      * @param predicate     except paging predicate.
-     * @param iterationType type of {@link com.hazelcast.util.IterationType}
-     * @param dataResult    <code>true</code> if results should contain {@link com.hazelcast.nio.serialization.Data} types,
-     *                      <code>false</code> for object types.
-     * @return {@link com.hazelcast.util.QueryResultSet}
+     * @param result    the collection where the results are going to be stored.
      */
-    Set queryLocalPartitions(String mapName, Predicate predicate, IterationType iterationType, boolean dataResult);
+    void queryLocalPartitions(String mapName, Predicate predicate, QueryResultCollection result);
+
+    /**
+     * Queries all partitions. Paging predicates are not allowed.
+     *
+     * @param mapName   map name.
+     * @param predicate except paging predicate.
+     * @param result    the collection where the results are going to be stored.
+     */
+    void queryAllPartitions(String mapName, Predicate predicate, QueryResultCollection result);
 
     /**
      * Query all local partitions with a paging predicate.
@@ -73,7 +80,7 @@ public interface MapQueryEngine {
      * @param mapName         map name.
      * @param pagingPredicate to queryOnMembers.
      * @param iterationType   type of {@link IterationType}
-     * @return {@link com.hazelcast.util.SortedQueryResultSet}
+     * @return {@link SortedQueryResultSet}
      */
     Set queryLocalPartitionsWithPagingPredicate(String mapName, PagingPredicate pagingPredicate, IterationType iterationType);
 
@@ -86,19 +93,9 @@ public interface MapQueryEngine {
      * @param mapName         map name.
      * @param pagingPredicate to queryOnMembers.
      * @param iterationType   type of {@link IterationType}
-     * @return {@link com.hazelcast.util.SortedQueryResultSet}
+     * @return {@link SortedQueryResultSet}
      */
     Set queryAllPartitionsWithPagingPredicate(String mapName, PagingPredicate pagingPredicate, IterationType iterationType);
 
-    /**
-     * Queries all partitions. Paging predicates are not allowed.
-     *
-     * @param mapName       map name.
-     * @param predicate     except paging predicate.
-     * @param iterationType type of {@link IterationType}
-     * @param dataResult    <code>true</code> if results should contain {@link com.hazelcast.nio.serialization.Data} types,
-     *                      <code>false</code> for object types.
-     * @return {@link com.hazelcast.util.QueryResultSet}
-     */
-    Set queryAllPartitions(String mapName, Predicate predicate, IterationType iterationType, boolean dataResult);
+
 }

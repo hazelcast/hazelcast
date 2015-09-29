@@ -44,7 +44,7 @@ import com.hazelcast.transaction.impl.Transaction;
 import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.IterationType;
-import com.hazelcast.util.QueryResultSet;
+import com.hazelcast.map.impl.query.QueryResultSet;
 import com.hazelcast.util.ThreadUtil;
 
 import java.util.ArrayList;
@@ -289,8 +289,7 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
         QueryResultSet result = new QueryResultSet(nodeEngine.getSerializationService(), iterationType, dataResult);
 
         try {
-            List<Future> futures = new ArrayList<Future>();
-            invokeQueryOperation(predicate, operationService, members, futures);
+            List futures = invokeQueryOperation(predicate, operationService, members, iterationType);
             collectResults(partitions, result, futures);
             if (partitions.size() == partitionCount) {
                 return result;
@@ -314,13 +313,15 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
         return result;
     }
 
-    private void invokeQueryOperation(Predicate predicate, OperationService operationService,
-                                      Collection<Member> members, List<Future> futures) {
+    private List<Future> invokeQueryOperation(Predicate predicate, OperationService operationService,
+                                              Collection<Member> members, IterationType iterationType) {
+        List<Future> futures = new ArrayList<Future>();
         for (Member member : members) {
             Future future = operationService
-                    .invokeOnTarget(SERVICE_NAME, new QueryOperation(name, predicate), member.getAddress());
+                    .invokeOnTarget(SERVICE_NAME, new QueryOperation(name, predicate, iterationType), member.getAddress());
             futures.add(future);
         }
+        return futures;
     }
 
     @SuppressWarnings("unchecked")
@@ -332,7 +333,7 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
                 Collection<Integer> partitionIds = queryResult.getPartitionIds();
                 if (partitionIds != null) {
                     plist.addAll(partitionIds);
-                    result.addAll(queryResult.getResult());
+                    result.addAll(queryResult.getRows());
                 }
             }
         }
@@ -349,7 +350,8 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
     private void invokeOperationOnMissingPartitions(Predicate predicate, OperationService operationService,
                                                     List<Integer> missingList, List<Future> futures) {
         for (Integer pid : missingList) {
-            QueryPartitionOperation queryPartitionOperation = new QueryPartitionOperation(name, predicate);
+            //todo: potential performance problem since both key/value are retrieved.
+            QueryPartitionOperation queryPartitionOperation = new QueryPartitionOperation(name, predicate, IterationType.ENTRY);
             queryPartitionOperation.setPartitionId(pid);
             try {
                 Future f = operationService.invokeOnPartition(SERVICE_NAME, queryPartitionOperation, pid);
@@ -365,7 +367,7 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
             throws InterruptedException, java.util.concurrent.ExecutionException {
         for (Future future : futures) {
             QueryResult queryResult = (QueryResult) future.get();
-            result.addAll(queryResult.getResult());
+            result.addAll(queryResult.getRows());
         }
     }
 

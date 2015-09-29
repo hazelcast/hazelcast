@@ -11,6 +11,7 @@ import com.hazelcast.query.impl.predicates.RuleBasedQueryOptimizer;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.util.IterationType;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -48,7 +49,7 @@ public class MapQueryEngineImpl_queryLocalPartitions_resultSizeLimitTest extends
 
     @Test
     public void checkResultLimit() throws Exception {
-        QueryResult result = queryEngine.queryLocalPartitions(map.getName(), TruePredicate.INSTANCE);
+        QueryResult result = queryEngine.queryLocalPartitions(map.getName(), TruePredicate.INSTANCE, IterationType.ENTRY);
 
         assertEquals(limit, result.getResultLimit());
     }
@@ -57,25 +58,25 @@ public class MapQueryEngineImpl_queryLocalPartitions_resultSizeLimitTest extends
     public void whenResultSizeLimitNotExceeded() throws Exception {
         fillMap(limit - 1);
 
-        QueryResult result = queryEngine.queryLocalPartitions(map.getName(), TruePredicate.INSTANCE);
+        QueryResult result = queryEngine.queryLocalPartitions(map.getName(), TruePredicate.INSTANCE, IterationType.ENTRY);
 
-        assertEquals(limit - 1, result.getResult().size());
+        assertEquals(limit - 1, result.getRows().size());
     }
 
     @Test
     public void whenResultSizeLimitEquals() throws Exception {
         fillMap(limit);
 
-        QueryResult result = queryEngine.queryLocalPartitions(map.getName(), TruePredicate.INSTANCE);
+        QueryResult result = queryEngine.queryLocalPartitions(map.getName(), TruePredicate.INSTANCE, IterationType.ENTRY);
 
-        assertEquals(limit, result.getResult().size());
+        assertEquals(limit, result.getRows().size());
     }
 
     @Test(expected = QueryResultSizeExceededException.class)
     public void whenResultSizeLimitExceeded() throws Exception {
         fillMap(limit + 1);
 
-        queryEngine.queryLocalPartitions(map.getName(), TruePredicate.INSTANCE);
+        queryEngine.queryLocalPartitions(map.getName(), TruePredicate.INSTANCE, IterationType.ENTRY);
     }
 
     private void fillMap(long count) {

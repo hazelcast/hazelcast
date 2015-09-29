@@ -6,6 +6,7 @@ import com.hazelcast.map.impl.MapService;
 import com.hazelcast.query.TruePredicate;
 import com.hazelcast.query.impl.predicates.RuleBasedQueryOptimizer;
 import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.util.IterationType;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -27,7 +28,7 @@ public class MapQueryEngineImpl_queryLocalPartitions_resultSizeNoLimitTest exten
 
     @Test
     public void checkResultLimit() throws Exception {
-        QueryResult result = queryEngine.queryLocalPartitions(map.getName(), TruePredicate.INSTANCE);
+        QueryResult result = queryEngine.queryLocalPartitions(map.getName(), TruePredicate.INSTANCE, IterationType.ENTRY);
 
         assertEquals(Long.MAX_VALUE, result.getResultLimit());
     }

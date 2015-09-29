@@ -24,6 +24,7 @@ import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.ReadonlyOperation;
 import com.hazelcast.spi.exception.TargetNotMemberException;
+import com.hazelcast.util.IterationType;
 
 import java.io.IOException;
 
@@ -33,19 +34,21 @@ public class QueryOperation extends AbstractMapOperation implements ReadonlyOper
 
     private Predicate predicate;
     private QueryResult result;
+    private IterationType iterationType;
 
     public QueryOperation() {
     }
 
-    public QueryOperation(String mapName, Predicate predicate) {
+    public QueryOperation(String mapName, Predicate predicate, IterationType iterationType) {
         super(mapName);
         this.predicate = predicate;
+        this.iterationType = iterationType;
     }
 
     @Override
     public void run() throws Exception {
         MapQueryEngine queryEngine = mapService.getMapServiceContext().getMapQueryEngine();
-        result = queryEngine.queryLocalPartitions(name, predicate);
+        result = queryEngine.queryLocalPartitions(name, predicate, iterationType);
     }
 
     @Override
@@ -66,6 +69,7 @@ public class QueryOperation extends AbstractMapOperation implements ReadonlyOper
         super.writeInternal(out);
         out.writeUTF(name);
         out.writeObject(predicate);
+        out.writeByte(iterationType.getId());
     }
 
     @Override
@@ -73,5 +77,6 @@ public class QueryOperation extends AbstractMapOperation implements ReadonlyOper
         super.readInternal(in);
         name = in.readUTF();
         predicate = in.readObject();
+        iterationType = IterationType.getById(in.readByte());
     }
 }

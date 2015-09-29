@@ -46,8 +46,11 @@ import org.junit.ComparisonFailure;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Modifier;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -617,16 +620,15 @@ public abstract class HazelcastTestSupport {
     }
 
     public static void assertIterableEquals(Iterable iterable, Object... values) {
-        int counter = 0;
+        List actual = new ArrayList();
         for (Object object : iterable) {
-            if (values.length < counter + 1) {
-                throw new AssertionError("Iterator and values sizes are not equal");
-            }
-            assertEquals(values[counter], object);
-            counter++;
+            actual.add(object);
         }
 
-        assertEquals("Iterator and values sizes are not equal", values.length, counter);
+        List expected = Arrays.asList(values);
+
+        assertEquals("size should match", expected.size(), actual.size());
+        assertEquals(expected, actual);
     }
 
     public static void assertCompletesEventually(final Future future) {

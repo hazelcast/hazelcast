@@ -27,7 +27,7 @@ import com.hazelcast.query.impl.QueryEntry;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.transaction.impl.Transaction;
 import com.hazelcast.util.IterationType;
-import com.hazelcast.util.QueryResultSet;
+import com.hazelcast.map.impl.query.QueryResultSet;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -390,7 +390,8 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
 
         SerializationService serializationService = getNodeEngine().getSerializationService();
 
-        QueryResultSet queryResultSet = (QueryResultSet) queryInternal(predicate, IterationType.ENTRY, false);
+        QueryResultSet queryResultSet =
+                (QueryResultSet) queryInternal(predicate, IterationType.ENTRY, false);
         // TODO: Can't we just use the original set?
         List<Object> valueSet = new ArrayList<Object>();
         Set<Object> keyWontBeIncluded = new HashSet<Object>();
@@ -429,7 +430,8 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
         return wrapper == null || wrapper.type == TxnValueWrapper.Type.REMOVED ? null : wrapper.value;
     }
 
-    private void removeFromResultSet(QueryResultSet queryResultSet, List<Object> valueSet, Set<Object> keyWontBeIncluded) {
+    private void removeFromResultSet(QueryResultSet queryResultSet,
+                                     List<Object> valueSet, Set<Object> keyWontBeIncluded) {
         Iterator<Map.Entry> iterator = queryResultSet.rawIterator();
         while (iterator.hasNext()) {
             Map.Entry entry = iterator.next();

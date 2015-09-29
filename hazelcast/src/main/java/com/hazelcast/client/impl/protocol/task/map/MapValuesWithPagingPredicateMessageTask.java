@@ -22,7 +22,7 @@ import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.impl.QueryResultEntry;
+import com.hazelcast.map.impl.query.QueryResultRow;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -37,10 +37,10 @@ public class MapValuesWithPagingPredicateMessageTask
     }
 
     @Override
-    protected Object reduce(Collection<QueryResultEntry> result) {
+    protected Object reduce(Collection<QueryResultRow> result) {
         HashMap<Data, Data> map = new HashMap<Data, Data>();
-        for (QueryResultEntry resultEntry : result) {
-            map.put(resultEntry.getKeyData(), resultEntry.getValueData());
+        for (QueryResultRow resultEntry : result) {
+            map.put(resultEntry.getKey(), resultEntry.getValue());
         }
         Set<Map.Entry<Data, Data>> entries = map.entrySet();
         return entries;
