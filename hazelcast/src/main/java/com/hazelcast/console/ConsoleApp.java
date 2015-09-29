@@ -296,7 +296,7 @@ public class ConsoleApp implements EntryListener, ItemListener, MessageListener 
             echo = Boolean.parseBoolean(args[1]);
             println("echo: " + echo);
         } else if ("ns".equals(first)) {
-            handleNamespace(args);
+            handleNamespace(command.substring(first.length()).trim());
         } else if ("whoami".equals(first)) {
             handleWhoami();
         } else if ("who".equals(first)) {
@@ -537,12 +537,11 @@ public class ConsoleApp implements EntryListener, ItemListener, MessageListener 
         }
     }
 
-    private void handleNamespace(String[] args) {
-        if (args.length > 1) {
-            namespace = args[1];
-            println("namespace: " + namespace);
-//                init();
+    private void handleNamespace(String namespace) {
+        if (!namespace.isEmpty()) {
+            this.namespace = namespace;
         }
+        println("namespace: " + namespace);
     }
 
     @edu.umd.cs.findbugs.annotations.SuppressWarnings("DM_GC")
