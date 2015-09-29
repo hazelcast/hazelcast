@@ -19,6 +19,7 @@ package com.hazelcast.mapreduce.impl.client;
 import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.impl.client.InvocationClientRequest;
 import com.hazelcast.cluster.ClusterService;
+import com.hazelcast.cluster.memberselector.MemberSelectors;
 import com.hazelcast.config.JobTrackerConfig;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.ICompletableFuture;
@@ -51,6 +52,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.concurrent.ExecutionException;
 
+import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
 import static com.hazelcast.mapreduce.impl.MapReduceUtil.executeOperation;
 
 /**
@@ -102,11 +104,15 @@ public class ClientMapReduceRequest<KeyIn, ValueIn> extends InvocationClientRequ
 
     @Override
     protected void invoke() {
+        MapReduceService mapReduceService = getService();
+        NodeEngine nodeEngine = mapReduceService.getNodeEngine();
+        ClusterService clusterService = nodeEngine.getClusterService();
+        if (clusterService.getSize(MemberSelectors.DATA_MEMBER_SELECTOR) == 0) {
+            throw new IllegalStateException("Could not register map reduce job since there are no nodes owning a partition");
+        }
+
         try {
             final ClientEndpoint endpoint = getEndpoint();
-
-            MapReduceService mapReduceService = getService();
-            NodeEngine nodeEngine = mapReduceService.getNodeEngine();
             AbstractJobTracker jobTracker = (AbstractJobTracker) mapReduceService.createDistributedObject(name);
             TrackableJobFuture jobFuture = new TrackableJobFuture(name, jobId, jobTracker, nodeEngine, null);
             if (jobTracker.registerTrackableJob(jobFuture)) {
@@ -138,7 +144,6 @@ public class ClientMapReduceRequest<KeyIn, ValueIn> extends InvocationClientRequ
 
     private <T> ICompletableFuture<T> startSupervisionTask(TrackableJobFuture<T> jobFuture, MapReduceService mapReduceService,
                                                            NodeEngine nodeEngine, JobTracker jobTracker) {
-
         JobTrackerConfig config = ((AbstractJobTracker) jobTracker).getJobTrackerConfig();
         boolean communicateStats = config.isCommunicateStats();
         if (chunkSize == -1) {
@@ -148,9 +153,9 @@ public class ClientMapReduceRequest<KeyIn, ValueIn> extends InvocationClientRequ
             topologyChangedStrategy = config.getTopologyChangedStrategy();
         }
 
-        ClusterService cs = nodeEngine.getClusterService();
-        Collection<Member> members = cs.getMembers();
-        for (Member member : members) {
+        ClusterService clusterService = nodeEngine.getClusterService();
+
+        for (Member member : clusterService.getMembers(KeyValueJobOperation.MEMBER_SELECTOR)) {
             Operation operation = new KeyValueJobOperation<KeyIn, ValueIn>(name, jobId, chunkSize, keyValueSource, mapper,
                     combinerFactory, reducerFactory, communicateStats, topologyChangedStrategy);
 
@@ -158,7 +163,7 @@ public class ClientMapReduceRequest<KeyIn, ValueIn> extends InvocationClientRequ
         }
 
         // After we prepared all the remote systems we can now start the processing
-        for (Member member : members) {
+        for (Member member : clusterService.getMembers(DATA_MEMBER_SELECTOR)) {
             Operation operation = new StartProcessingJobOperation<KeyIn>(name, jobId, keys, predicate);
             executeOperation(operation, member.getAddress(), mapReduceService, nodeEngine);
         }

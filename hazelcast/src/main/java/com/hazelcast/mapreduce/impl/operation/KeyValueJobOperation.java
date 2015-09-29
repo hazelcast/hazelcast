@@ -16,6 +16,8 @@
 
 package com.hazelcast.mapreduce.impl.operation;
 
+import com.hazelcast.core.ManagedContext;
+import com.hazelcast.core.MemberSelector;
 import com.hazelcast.mapreduce.CombinerFactory;
 import com.hazelcast.mapreduce.KeyValueSource;
 import com.hazelcast.mapreduce.Mapper;
@@ -24,7 +26,6 @@ import com.hazelcast.mapreduce.TopologyChangedStrategy;
 import com.hazelcast.mapreduce.impl.AbstractJobTracker;
 import com.hazelcast.mapreduce.impl.MapReduceDataSerializerHook;
 import com.hazelcast.mapreduce.impl.MapReduceService;
-import com.hazelcast.mapreduce.impl.MapReduceUtil;
 import com.hazelcast.mapreduce.impl.task.JobSupervisor;
 import com.hazelcast.mapreduce.impl.task.JobTaskConfiguration;
 import com.hazelcast.mapreduce.impl.task.TrackableJobFuture;
@@ -37,6 +38,12 @@ import com.hazelcast.spi.AbstractOperation;
 import java.io.IOException;
 import java.util.concurrent.CancellationException;
 
+import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
+import static com.hazelcast.cluster.memberselector.MemberSelectors.LITE_MEMBER_SELECTOR;
+import static com.hazelcast.cluster.memberselector.MemberSelectors.LOCAL_MEMBER_SELECTOR;
+import static com.hazelcast.cluster.memberselector.MemberSelectors.and;
+import static com.hazelcast.cluster.memberselector.MemberSelectors.or;
+
 /**
  * This operation is used to prepare a {@link com.hazelcast.mapreduce.KeyValueSource} based
  * map reduce operation on all cluster members.
@@ -47,6 +54,16 @@ import java.util.concurrent.CancellationException;
 public class KeyValueJobOperation<K, V>
         extends AbstractOperation
         implements IdentifiedDataSerializable {
+
+    /**
+     * Selects members that will run this operation
+     */
+    public static final MemberSelector MEMBER_SELECTOR;
+
+    static {
+        // run this job on data members and the local member if it is a lite member
+        MEMBER_SELECTOR = or(DATA_MEMBER_SELECTOR, and(LOCAL_MEMBER_SELECTOR, LITE_MEMBER_SELECTOR));
+    }
 
     private String name;
     private String jobId;
@@ -90,7 +107,7 @@ public class KeyValueJobOperation<K, V>
         }
 
         // Inject managed context
-        MapReduceUtil.injectManagedContext(getNodeEngine(), mapper, combinerFactory, reducerFactory, keyValueSource);
+        injectManagedContext(mapper, combinerFactory, reducerFactory, keyValueSource);
 
         // Build immutable configuration
         JobTaskConfiguration config = new JobTaskConfiguration(jobOwner, getNodeEngine(), chunkSize, name, jobId, mapper,
@@ -105,6 +122,18 @@ public class KeyValueJobOperation<K, V>
             if (future != null) {
                 Exception exception = new CancellationException("Operation was cancelled by the user");
                 future.setResult(exception);
+            }
+        }
+    }
+
+    private void injectManagedContext(Object injectee, Object... injectees) {
+        ManagedContext managedContext = getNodeEngine().getSerializationService().getManagedContext();
+        if (injectee != null) {
+            managedContext.initialize(injectee);
+        }
+        for (Object otherInjectee : injectees) {
+            if (otherInjectee != null) {
+                managedContext.initialize(otherInjectee);
             }
         }
     }

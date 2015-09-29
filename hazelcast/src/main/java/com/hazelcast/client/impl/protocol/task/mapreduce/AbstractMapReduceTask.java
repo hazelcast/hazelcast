@@ -19,6 +19,7 @@ package com.hazelcast.client.impl.protocol.task.mapreduce;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.task.AbstractMessageTask;
 import com.hazelcast.cluster.ClusterService;
+import com.hazelcast.cluster.memberselector.MemberSelectors;
 import com.hazelcast.config.JobTrackerConfig;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.Member;
@@ -48,6 +49,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
+import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
 import static com.hazelcast.mapreduce.impl.MapReduceUtil.executeOperation;
 
 public abstract class AbstractMapReduceTask<Parameters>
@@ -62,6 +64,12 @@ public abstract class AbstractMapReduceTask<Parameters>
     protected void processMessage() {
         MapReduceService mapReduceService = getService(MapReduceService.SERVICE_NAME);
         NodeEngine nodeEngine = mapReduceService.getNodeEngine();
+
+        ClusterService clusterService = nodeEngine.getClusterService();
+        if (clusterService.getSize(MemberSelectors.DATA_MEMBER_SELECTOR) == 0) {
+            throw new IllegalStateException("Could not register map reduce job since there are no nodes owning a partition");
+        }
+
         final String objectName = getDistributedObjectName();
         AbstractJobTracker jobTracker = (AbstractJobTracker) mapReduceService.createDistributedObject(objectName);
         TrackableJobFuture jobFuture = new TrackableJobFuture(objectName, getJobId(), jobTracker, nodeEngine, null);
@@ -90,44 +98,27 @@ public abstract class AbstractMapReduceTask<Parameters>
     protected abstract KeyPredicate getPredicate();
 
     private void startSupervisionTask(JobTracker jobTracker) {
-        MapReduceService mapReduceService = getService(MapReduceService.SERVICE_NAME);
+        final MapReduceService mapReduceService = getService(MapReduceService.SERVICE_NAME);
 
-        JobTrackerConfig config = ((AbstractJobTracker) jobTracker).getJobTrackerConfig();
-        boolean communicateStats = config.isCommunicateStats();
-        int chunkSize = getChunkSize();
-        if (chunkSize == -1) {
-            chunkSize = config.getChunkSize();
-        }
-        String topologyChangedStrategyStr = getTopologyChangedStrategy();
-        TopologyChangedStrategy topologyChangedStrategy;
-        if (topologyChangedStrategyStr == null) {
-            topologyChangedStrategy = config.getTopologyChangedStrategy();
-        } else {
-            topologyChangedStrategy = TopologyChangedStrategy.valueOf(topologyChangedStrategyStr.toUpperCase(Locale.ENGLISH));
-        }
+        final JobTrackerConfig config = ((AbstractJobTracker) jobTracker).getJobTrackerConfig();
+        final boolean communicateStats = config.isCommunicateStats();
+        final int chunkSize = getChunkSizeOrConfigChunkSize(config);
+        final TopologyChangedStrategy topologyChangedStrategy = getTopologyChangedStrategyOrConfigTopologyChangedStrategy(config);
 
-        ClusterService cs = nodeEngine.getClusterService();
-        Collection<Member> members = cs.getMembers();
+        final String name = getDistributedObjectName();
+        final String jobId = getJobId();
+        final KeyValueSource keyValueSource = getKeyValueSource();
+        final Mapper mapper = getMapper();
+        final CombinerFactory combinerFactory = getCombinerFactory();
+        final ReducerFactory reducerFactory = getReducerFactory();
+        final Collection keys = getKeys();
 
-        String name = getDistributedObjectName();
-        String jobId = getJobId();
-        KeyValueSource keyValueSource = getKeyValueSource();
-        Mapper mapper = getMapper();
-        CombinerFactory combinerFactory = getCombinerFactory();
-        ReducerFactory reducerFactory = getReducerFactory();
-        Collection keys = getKeys();
+        final Collection<Object> keyObjects = getKeyObjects(keys);
 
-        Collection<Object> keyObjects = null;
-        if (keys != null) {
-            keyObjects = new ArrayList<Object>(keys.size());
-            for (Object key : keys) {
-                keyObjects.add(serializationService.toObject(key));
-            }
-        }
+        final KeyPredicate predicate = getPredicate();
 
-        KeyPredicate predicate = getPredicate();
-
-        for (Member member : members) {
+        final ClusterService clusterService = nodeEngine.getClusterService();
+        for (Member member : clusterService.getMembers(KeyValueJobOperation.MEMBER_SELECTOR)) {
             Operation operation = new KeyValueJobOperation(name, jobId, chunkSize, keyValueSource, mapper, combinerFactory,
                     reducerFactory, communicateStats, topologyChangedStrategy);
 
@@ -135,10 +126,40 @@ public abstract class AbstractMapReduceTask<Parameters>
         }
 
         // After we prepared all the remote systems we can now start the processing
-        for (Member member : members) {
+        for (Member member : clusterService.getMembers(DATA_MEMBER_SELECTOR)) {
             Operation operation = new StartProcessingJobOperation(name, jobId, keyObjects, predicate);
             executeOperation(operation, member.getAddress(), mapReduceService, nodeEngine);
         }
+    }
+
+    private int getChunkSizeOrConfigChunkSize(JobTrackerConfig config) {
+        int chunkSize = getChunkSize();
+        if (chunkSize == -1) {
+            chunkSize = config.getChunkSize();
+        }
+        return chunkSize;
+    }
+
+    private TopologyChangedStrategy getTopologyChangedStrategyOrConfigTopologyChangedStrategy(JobTrackerConfig config) {
+        String topologyChangedStrategyStr = getTopologyChangedStrategy();
+        TopologyChangedStrategy topologyChangedStrategy;
+        if (topologyChangedStrategyStr == null) {
+            topologyChangedStrategy = config.getTopologyChangedStrategy();
+        } else {
+            topologyChangedStrategy = TopologyChangedStrategy.valueOf(topologyChangedStrategyStr.toUpperCase(Locale.ENGLISH));
+        }
+        return topologyChangedStrategy;
+    }
+
+    private Collection<Object> getKeyObjects(Collection keys) {
+        Collection<Object> keyObjects = null;
+        if (keys != null) {
+            keyObjects = new ArrayList<Object>(keys.size());
+            for (Object key : keys) {
+                keyObjects.add(serializationService.toObject(key));
+            }
+        }
+        return keyObjects;
     }
 
     @Override
