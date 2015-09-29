@@ -23,6 +23,7 @@ import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.instance.Node;
 import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.nio.IOUtil;
+
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -34,6 +35,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
+
+import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
 
 /**
  * Checks version of hazelcast with central server.
@@ -117,7 +120,7 @@ public final class VersionCheck {
         //Calculate native memory usage from native memory config
         NativeMemoryConfig memoryConfig = hazelcastNode.getConfig().getNativeMemoryConfig();
         final ClusterServiceImpl clusterService = hazelcastNode.getClusterService();
-        long totalNativeMemorySize = clusterService.getSize()
+        long totalNativeMemorySize = clusterService.getSize(DATA_MEMBER_SELECTOR)
                 * memoryConfig.getSize().bytes();
         String nativeMemoryParameter = (isEnterprise)
                 ? Long.toString(MemoryUnit.BYTES.toGigaBytes(totalNativeMemorySize)) : "0";

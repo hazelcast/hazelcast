@@ -79,7 +79,7 @@ public class ExecutorServiceTestSupport extends HazelcastTestSupport {
         }
     }
 
-    static class CountingDownExecutionCallback<T> implements ExecutionCallback<T> {
+    public static class CountingDownExecutionCallback<T> implements ExecutionCallback<T> {
 
         private final CountDownLatch latch;
 
@@ -388,6 +388,65 @@ public class ExecutorServiceTestSupport extends HazelcastTestSupport {
         @Override
         public void setHazelcastInstance(HazelcastInstance instance) {
             this.instance = instance;
+        }
+    }
+
+    public static class ResultSettingRunnable implements Runnable, HazelcastInstanceAware, Serializable {
+
+        private final String name;
+
+        public ResultSettingRunnable(String name) {
+            this.name = name;
+        }
+
+        private transient HazelcastInstance instance;
+
+        @Override
+        public void setHazelcastInstance(HazelcastInstance instance) {
+            this.instance = instance;
+        }
+
+        @Override
+        public void run() {
+            final Member member = instance.getCluster().getLocalMember();
+            instance.getMap(name).put(member, true);
+        }
+
+    }
+
+    public static class LocalMemberReturningCallable implements Callable<Member>, HazelcastInstanceAware, Serializable {
+
+
+        private transient HazelcastInstance instance;
+
+        @Override
+        public void setHazelcastInstance(HazelcastInstance instance) {
+            this.instance = instance;
+        }
+
+        @Override
+        public Member call() {
+            return instance.getCluster().getLocalMember();
+        }
+
+    }
+
+    public static class ResultHoldingMultiExecutionCallback implements MultiExecutionCallback {
+
+        private volatile Map<Member, Object> results;
+
+        public Map<Member, Object> getResults() {
+            return results;
+        }
+
+        @Override
+        public void onResponse(Member member, Object value) {
+            // ignored
+        }
+
+        @Override
+        public void onComplete(Map<Member, Object> values) {
+            this.results = values;
         }
     }
 }
