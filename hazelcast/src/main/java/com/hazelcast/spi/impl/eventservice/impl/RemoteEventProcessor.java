@@ -19,11 +19,11 @@ package com.hazelcast.spi.impl.eventservice.impl;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.util.executor.StripedRunnable;
 
-public class RemoteEventPacketProcessor extends EventPacketProcessor implements StripedRunnable {
+public class RemoteEventProcessor extends EventProcessor implements StripedRunnable {
     private EventServiceImpl eventService;
     private Packet packet;
 
-    public RemoteEventPacketProcessor(EventServiceImpl eventService, Packet packet) {
+    public RemoteEventProcessor(EventServiceImpl eventService, Packet packet) {
         super(eventService, null, packet.getPartitionId());
         this.eventService = eventService;
         this.packet = packet;
@@ -32,8 +32,8 @@ public class RemoteEventPacketProcessor extends EventPacketProcessor implements 
     @Override
     public void run() {
         try {
-            EventPacket eventPacket = (EventPacket) eventService.nodeEngine.toObject(packet);
-            process(eventPacket);
+            EventEnvelope eventEnvelope = (EventEnvelope) eventService.nodeEngine.toObject(packet);
+            process(eventEnvelope);
         } catch (Exception e) {
             eventService.logger.warning("Error while logging processing event", e);
         }

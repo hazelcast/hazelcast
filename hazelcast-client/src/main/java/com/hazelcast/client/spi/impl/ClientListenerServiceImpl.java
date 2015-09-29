@@ -117,6 +117,7 @@ public final class ClientListenerServiceImpl implements ClientListenerService {
         }
     }
 
+    @Override
     public void registerListener(String uuid, Integer callId) {
         registrationAliasMap.put(uuid, uuid);
         registrationMap.put(uuid, callId);
@@ -130,6 +131,7 @@ public final class ClientListenerServiceImpl implements ClientListenerService {
         }
     }
 
+    @Override
     public String deRegisterListener(String alias) {
         final String uuid = registrationAliasMap.remove(alias);
         if (uuid != null) {

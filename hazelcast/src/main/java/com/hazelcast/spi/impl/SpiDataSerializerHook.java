@@ -20,7 +20,7 @@ import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.impl.eventservice.impl.EventPacket;
+import com.hazelcast.spi.impl.eventservice.impl.EventEnvelope;
 import com.hazelcast.spi.impl.operationservice.impl.operations.PartitionIteratingOperation;
 import com.hazelcast.spi.impl.operationservice.impl.operations.PartitionIteratingOperation.PartitionResponse;
 import com.hazelcast.spi.impl.operationservice.impl.operations.Backup;
@@ -42,7 +42,7 @@ public final class SpiDataSerializerHook implements DataSerializerHook {
     public static final int PARTITION_ITERATOR = 3;
     public static final int PARTITION_RESPONSE = 4;
     public static final int PARALLEL_OPERATION_FACTORY = 5;
-    public static final int EVENT_PACKET = 6;
+    public static final int EVENT_ENVELOPE = 6;
     public static final int COLLECTION = 7;
     public static final int CALL_TIMEOUT_RESPONSE = 8;
     public static final int ERROR_RESPONSE = 9;
@@ -65,8 +65,8 @@ public final class SpiDataSerializerHook implements DataSerializerHook {
                         return new PartitionResponse();
                     case PARALLEL_OPERATION_FACTORY:
                         return new BinaryOperationFactory();
-                    case EVENT_PACKET:
-                        return new EventPacket();
+                    case EVENT_ENVELOPE:
+                        return new EventEnvelope();
                     case COLLECTION:
                         return new SerializableList();
                     case CALL_TIMEOUT_RESPONSE:
