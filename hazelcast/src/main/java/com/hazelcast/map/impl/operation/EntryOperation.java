@@ -211,8 +211,8 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
         return null;
     }
 
-    private void put(Data dataKey, Object value) {
-        recordStore.put(dataKey, value, DEFAULT_TTL);
+    private void put(Data key, Object value) {
+        recordStore.put(key, value, DEFAULT_TTL);
     }
 
 
