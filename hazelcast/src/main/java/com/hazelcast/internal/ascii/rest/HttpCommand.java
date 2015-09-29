@@ -98,7 +98,6 @@ public abstract class HttpCommand extends AbstractTextCommand {
         size += TextCommandConstants.RETURN.length;
         size += TextCommandConstants.RETURN.length;
         size += valueSize;
-        size += TextCommandConstants.RETURN.length;
         this.response = ByteBuffer.allocate(size);
         response.put(RES_200);
         if (contentType != null) {
@@ -113,7 +112,6 @@ public abstract class HttpCommand extends AbstractTextCommand {
         if (value != null) {
             response.put(value);
         }
-        response.put(TextCommandConstants.RETURN);
         response.flip();
     }
 
