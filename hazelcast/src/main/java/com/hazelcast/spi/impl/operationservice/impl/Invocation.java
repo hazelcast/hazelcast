@@ -16,6 +16,7 @@
 
 package com.hazelcast.spi.impl.operationservice.impl;
 
+import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.OperationTimeoutException;
@@ -26,6 +27,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.partition.InternalPartition;
+import com.hazelcast.partition.PartitionsCantBeAssignedException;
 import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.Operation;
@@ -51,6 +53,7 @@ import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import java.util.logging.Level;
 
+import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
 import static com.hazelcast.spi.ExecutionService.ASYNC_EXECUTOR;
 import static com.hazelcast.spi.OperationAccessor.setCallTimeout;
 import static com.hazelcast.spi.OperationAccessor.setCallerAddress;
@@ -294,18 +297,23 @@ abstract class Invocation implements OperationResponseHandler, Runnable {
 
         invTarget = getTarget();
 
+        final ClusterService clusterService = nodeEngine.getClusterService();
         if (invTarget == null) {
             remote = false;
             if (nodeEngine.isActive()) {
-                notify(new WrongTargetException(thisAddress, null, partitionId
-                        , replicaIndex, op.getClass().getName(), serviceName));
+                if (clusterService.getSize(DATA_MEMBER_SELECTOR) == 0) {
+                    notify(new PartitionsCantBeAssignedException());
+                } else {
+                    notify(new WrongTargetException(thisAddress, null, partitionId
+                            , replicaIndex, op.getClass().getName(), serviceName));
+                }
             } else {
                 notify(new HazelcastInstanceNotActiveException());
             }
             return false;
         }
 
-        targetMember = nodeEngine.getClusterService().getMember(invTarget);
+        targetMember = clusterService.getMember(invTarget);
         if (targetMember == null && !(isJoinOperation(op) || isWanReplicationOperation(op))) {
             notify(new TargetNotMemberException(invTarget, partitionId, op.getClass().getName(), serviceName));
             return false;

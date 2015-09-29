@@ -28,6 +28,7 @@ import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.partition.PartitionsCantBeAssignedException;
 import com.hazelcast.partition.client.GetPartitionsRequest;
 import com.hazelcast.partition.client.PartitionsResponse;
 import com.hazelcast.util.EmptyStatement;
@@ -38,6 +39,7 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
 import static com.hazelcast.util.HashUtil.hashToIndex;
 
 /**
@@ -78,12 +80,21 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
 
     private void getPartitionsBlocking() {
         while (!getPartitions() && client.getConnectionManager().isAlive()) {
+            if (isClusterFormedByOnlyLiteMembers()) {
+                throw new PartitionsCantBeAssignedException();
+            }
+
             try {
                 Thread.sleep(PARTITION_WAIT_TIME);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
         }
+    }
+
+    private boolean isClusterFormedByOnlyLiteMembers() {
+        final ClientClusterService clusterService = client.getClientClusterService();
+        return clusterService.getSize(DATA_MEMBER_SELECTOR) == 0;
     }
 
     private boolean getPartitions() {

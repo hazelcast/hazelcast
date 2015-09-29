@@ -17,6 +17,7 @@
 package com.hazelcast.partition.impl;
 
 import com.hazelcast.cluster.MemberInfo;
+import com.hazelcast.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.Member;
@@ -45,6 +46,7 @@ import com.hazelcast.partition.PartitionLostEvent;
 import com.hazelcast.partition.PartitionLostListener;
 import com.hazelcast.partition.PartitionRuntimeState;
 import com.hazelcast.partition.PartitionServiceProxy;
+import com.hazelcast.partition.PartitionsCantBeAssignedException;
 import com.hazelcast.partition.membergroup.MemberGroup;
 import com.hazelcast.partition.membergroup.MemberGroupFactory;
 import com.hazelcast.partition.membergroup.MemberGroupFactoryFactory;
@@ -98,6 +100,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
 
+import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
 import static com.hazelcast.partition.impl.InternalPartitionServiceState.MIGRATION_LOCAL;
 import static com.hazelcast.partition.impl.InternalPartitionServiceState.MIGRATION_ON_MASTER;
 import static com.hazelcast.partition.impl.InternalPartitionServiceState.REPLICA_NOT_SYNC;
@@ -105,7 +108,8 @@ import static com.hazelcast.partition.impl.InternalPartitionServiceState.SAFE;
 import static com.hazelcast.spi.impl.OperationResponseHandlerFactory.createErrorLoggingResponseHandler;
 import static com.hazelcast.util.FutureUtil.logAllExceptions;
 import static com.hazelcast.util.FutureUtil.waitWithDeadline;
-
+import static java.lang.Math.max;
+import static java.lang.Math.min;
 
 /**
  * The {@link InternalPartitionService} implementation.
@@ -155,6 +159,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
     private volatile int memberGroupsSize;
 
     // updates will be done under lock, but reads will be multithreaded.
+    // set to true when the partitions are assigned for the first time. remains true until partition service has been reset.
     private volatile boolean initialized;
 
     @Probe(name = "activeMigrationCount")
@@ -243,7 +248,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         long heartbeatIntervalMs = node.groupProperties.getMillis(GroupProperty.HEARTBEAT_INTERVAL_SECONDS);
         migrationDelayMs = Math.max(migrationDelayMs, heartbeatIntervalMs * 3);
 
-        migrationDelayMs = Math.min(migrationDelayMs, maxDelayMs);
+        migrationDelayMs = min(migrationDelayMs, maxDelayMs);
         return migrationDelayMs;
     }
 
@@ -285,23 +290,33 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
             firstArrangement();
         }
         if (partitions[partitionId].getOwnerOrNull() == null && !node.isMaster() && node.joined()) {
-            notifyMasterToAssignPartitions();
+            if (!isClusterFormedByOnlyLiteMembers()) {
+                notifyMasterToAssignPartitions();
+            }
         }
         return partitions[partitionId].getOwnerOrNull();
     }
 
     @Override
-    public Address getPartitionOwnerOrWait(int partition) {
-        Address owner = getPartitionOwner(partition);
-        while (owner == null) {
+    public Address getPartitionOwnerOrWait(int partitionId) {
+        Address owner;
+        while ((owner = getPartitionOwner(partitionId)) == null) {
+            if (isClusterFormedByOnlyLiteMembers()) {
+                throw new PartitionsCantBeAssignedException();
+            }
+
             try {
                 Thread.sleep(PARTITION_OWNERSHIP_WAIT_MILLIS);
             } catch (InterruptedException e) {
                 throw ExceptionUtil.rethrow(e);
             }
-            owner = getPartitionOwner(partition);
         }
         return owner;
+    }
+
+    private boolean isClusterFormedByOnlyLiteMembers() {
+        final ClusterServiceImpl clusterService = node.getClusterService();
+        return clusterService.getSize(DATA_MEMBER_SELECTOR) == 0;
     }
 
     private void notifyMasterToAssignPartitions() {
@@ -352,10 +367,14 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         }
     }
 
+    private Collection<MemberGroup> createMemberGroups() {
+        final Collection<Member> members = node.getClusterService().getMembers(DATA_MEMBER_SELECTOR);
+        return memberGroupFactory.createMemberGroups(members);
+    }
+
     private boolean initializePartitionAssignments() {
         PartitionStateGenerator psg = partitionStateGenerator;
-        final Set<Member> members = node.getClusterService().getMembers();
-        Collection<MemberGroup> memberGroups = memberGroupFactory.createMemberGroups(members);
+        Collection<MemberGroup> memberGroups = createMemberGroups();
         if (memberGroups.isEmpty()) {
             logger.warning("No member group is available to assign partition ownership...");
             return true;
@@ -378,8 +397,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
     }
 
     private void updateMemberGroupsSize() {
-        Set<Member> members = node.getClusterService().getMembers();
-        final Collection<MemberGroup> groups = memberGroupFactory.createMemberGroups(members);
+        final Collection<MemberGroup> groups = createMemberGroups();
         int size = 0;
         for (MemberGroup group : groups) {
             if (group.size() > 0) {
@@ -392,15 +410,19 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
     @Override
     public int getMemberGroupsSize() {
         int size = memberGroupsSize;
+        if (size > 0) {
+            return size;
+        }
+
         // size = 0 means service is not initialized yet.
-        // return 1 instead since there should be at least one member group
-        return size > 0 ? size : 1;
+        // return 1 if current node is a data member since there should be at least one member group
+        return node.isLiteMember() ? 0 : 1;
     }
 
     @Probe(name = "maxBackupCount")
     @Override
     public int getMaxBackupCount() {
-        return Math.min(getMemberGroupsSize() - 1, InternalPartition.MAX_BACKUP_COUNT);
+        return max(min(getMemberGroupsSize() - 1, InternalPartition.MAX_BACKUP_COUNT), 0);
     }
 
     @Override
@@ -1274,10 +1296,13 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
 
         for (InternalPartitionImpl partition : partitions) {
             if (partition.getReplicaAddress(1) == null) {
-                if (logger.isLoggable(level)) {
+                final boolean canTakeBackup = !isClusterFormedByOnlyLiteMembers();
+
+                if (canTakeBackup && logger.isLoggable(level)) {
                     logger.log(level, "Should take backup of partitionId=" + partition.getPartitionId());
                 }
-                return true;
+
+                return canTakeBackup;
             }
         }
         int replicaSyncProcesses = maxParallelReplications - replicaSyncProcessLock.availablePermits();
@@ -1412,23 +1437,18 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
 
     @Override
     public Map<Address, List<Integer>> getMemberPartitionsMap() {
-        final int members = node.getClusterService().getSize();
-        Map<Address, List<Integer>> memberPartitions = new HashMap<Address, List<Integer>>(members);
-        for (int i = 0; i < partitionCount; i++) {
-            Address owner;
-            while ((owner = getPartitionOwner(i)) == null) {
-                try {
-                    Thread.sleep(PARTITION_OWNERSHIP_WAIT_MILLIS);
-                } catch (InterruptedException e) {
-                    throw new HazelcastException(e);
-                }
-            }
+        final Collection<Member> dataMembers = node.getClusterService().getMembers(DATA_MEMBER_SELECTOR);
+        final int dataMembersSize = dataMembers.size();
+        Map<Address, List<Integer>> memberPartitions = new HashMap<Address, List<Integer>>(dataMembersSize);
+        for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
+            final Address owner = getPartitionOwnerOrWait(partitionId);
+
             List<Integer> ownedPartitions = memberPartitions.get(owner);
             if (ownedPartitions == null) {
                 ownedPartitions = new ArrayList<Integer>();
                 memberPartitions.put(owner, ownedPartitions);
             }
-            ownedPartitions.add(i);
+            ownedPartitions.add(partitionId);
         }
         return memberPartitions;
     }
@@ -1680,8 +1700,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
 
                 migrationQueue.clear();
                 PartitionStateGenerator psg = partitionStateGenerator;
-                Collection<MemberImpl> members = node.getClusterService().getMemberImpls();
-                Collection<MemberGroup> memberGroups = memberGroupFactory.createMemberGroups(members);
+                Collection<MemberGroup> memberGroups = createMemberGroups();
                 Address[][] newState = psg.reArrange(memberGroups, partitions);
 
                 if (!isMigrationAllowed()) {
@@ -1689,7 +1708,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
                 }
 
                 processNewPartitionState(newState);
-                syncPartitionRuntimeState(members);
+                syncPartitionRuntimeState();
             } finally {
                 lock.unlock();
             }
@@ -1885,7 +1904,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
     }
 
     private class MigrationThread extends Thread implements Runnable {
-        private final long sleepTime = Math.max(250L, partitionMigrationInterval);
+        private final long sleepTime = max(250L, partitionMigrationInterval);
         private volatile boolean migrating;
 
         MigrationThread(Node node) {
