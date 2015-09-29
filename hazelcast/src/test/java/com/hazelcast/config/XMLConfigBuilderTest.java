@@ -938,6 +938,65 @@ public class XMLConfigBuilderTest extends HazelcastTestSupport {
         assertEquals(133, queryCacheConfig.getEvictionConfig().getSize());
     }
 
+    @Test
+    public void testLiteMemberConfig() {
+        String xml = "<hazelcast xmlns=\"http://www.hazelcast.com/schema/config\">\n" +
+                "    <lite-member enabled=\"true\"/>\n" +
+                "</hazelcast>";
+
+        ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes());
+        XmlConfigBuilder configBuilder = new XmlConfigBuilder(bis);
+        final Config config = configBuilder.build();
+        assertTrue(config.isLiteMember());
+    }
+
+    @Test
+    public void testNonLiteMemberConfig() {
+        String xml = "<hazelcast xmlns=\"http://www.hazelcast.com/schema/config\">\n" +
+                "    <lite-member enabled=\"false\"/>\n" +
+                "</hazelcast>";
+
+        ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes());
+        XmlConfigBuilder configBuilder = new XmlConfigBuilder(bis);
+        final Config config = configBuilder.build();
+        assertFalse(config.isLiteMember());
+    }
+
+    @Test(expected = InvalidConfigurationException.class)
+    public void testNonLiteMemberConfigWithoutEnabledField() {
+        String xml = "<hazelcast xmlns=\"http://www.hazelcast.com/schema/config\">\n" +
+                "    <lite-member/>\n" +
+                "</hazelcast>";
+
+        ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes());
+        XmlConfigBuilder configBuilder = new XmlConfigBuilder(bis);
+        configBuilder.build();
+    }
+
+    @Test(expected = InvalidConfigurationException.class)
+    public void testInvalidLiteMemberConfig() {
+        String xml = "<hazelcast xmlns=\"http://www.hazelcast.com/schema/config\">\n" +
+                "    <lite-member enabled=\"dummytext\"/>\n" +
+                "</hazelcast>";
+
+        ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes());
+        XmlConfigBuilder configBuilder = new XmlConfigBuilder(bis);
+        configBuilder.build();
+    }
+
+    @Test(expected = InvalidConfigurationException.class)
+    public void testDuplicateLiteMemberConfig() {
+        String xml = "<hazelcast xmlns=\"http://www.hazelcast.com/schema/config\">\n" +
+                "    <lite-member enabled=\"true\"/>\n" +
+                "    <lite-member enabled=\"true\"/>\n" +
+                "</hazelcast>";
+
+        ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes());
+        XmlConfigBuilder configBuilder = new XmlConfigBuilder(bis);
+        configBuilder.build();
+        fail();
+    }
+
     private void assertIndexesEqual(QueryCacheConfig queryCacheConfig) {
         Iterator<MapIndexConfig> iterator = queryCacheConfig.getIndexConfigs().iterator();
         while (iterator.hasNext()) {

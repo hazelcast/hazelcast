@@ -65,6 +65,7 @@ import static com.hazelcast.config.XmlElements.JOB_TRACKER;
 import static com.hazelcast.config.XmlElements.LICENSE_KEY;
 import static com.hazelcast.config.XmlElements.LIST;
 import static com.hazelcast.config.XmlElements.LISTENERS;
+import static com.hazelcast.config.XmlElements.LITE_MEMBER;
 import static com.hazelcast.config.XmlElements.MANAGEMENT_CENTER;
 import static com.hazelcast.config.XmlElements.MAP;
 import static com.hazelcast.config.XmlElements.MEMBER_ATTRIBUTES;
@@ -320,10 +321,18 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
             handleManagementCenterConfig(node);
         } else if (QUORUM.isEqual(nodeName)) {
             handleQuorum(node);
+        } else if (LITE_MEMBER.isEqual(nodeName)) {
+            handleLiteMember(node);
         } else {
             return true;
         }
         return false;
+    }
+
+    private void handleLiteMember(Node node) {
+        Node attrEnabled = node.getAttributes().getNamedItem("enabled");
+        final boolean liteMember = attrEnabled != null && checkTrue(getTextContent(attrEnabled));
+        this.config.setLiteMember(liteMember);
     }
 
     private void handleQuorum(final org.w3c.dom.Node node) {
@@ -331,7 +340,7 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
         final String name = getAttribute(node, "name");
         quorumConfig.setName(name);
         Node attrEnabled = node.getAttributes().getNamedItem("enabled");
-        final boolean enabled = attrEnabled != null ? checkTrue(getTextContent(attrEnabled)) : false;
+        final boolean enabled = attrEnabled != null && checkTrue(getTextContent(attrEnabled));
         quorumConfig.setEnabled(enabled);
         for (org.w3c.dom.Node n : new IterableNodeList(node.getChildNodes())) {
             final String value = getTextContent(n).trim();

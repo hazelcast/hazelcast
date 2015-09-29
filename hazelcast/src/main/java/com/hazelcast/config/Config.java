@@ -118,6 +118,8 @@ public class Config {
 
     private String licenseKey;
 
+    private boolean liteMember;
+
     public Config() {
     }
 
@@ -1060,6 +1062,21 @@ public class Config {
         return this;
     }
 
+    /**
+     * @return indicates if the node is a lite member or not. Lite members do not own any partition.
+     */
+    public boolean isLiteMember() {
+        return liteMember;
+    }
+
+    /**
+     * @param liteMember sets if the node will be a lite member or not. Lite members do not own any partition.
+     */
+    public Config setLiteMember(boolean liteMember) {
+        this.liteMember = liteMember;
+        return this;
+    }
+
     private <T> T lookupByPattern(Map<String, T> configPatterns, String itemName) {
         T candidate = configPatterns.get(itemName);
         if (candidate != null) {
@@ -1132,6 +1149,7 @@ public class Config {
         sb.append(", partitionGroupConfig=").append(partitionGroupConfig);
         sb.append(", managementCenterConfig=").append(managementCenterConfig);
         sb.append(", securityConfig=").append(securityConfig);
+        sb.append(", liteMember=").append(liteMember);
         sb.append('}');
         return sb.toString();
     }
