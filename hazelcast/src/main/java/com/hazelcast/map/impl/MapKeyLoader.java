@@ -77,6 +77,7 @@ public class MapKeyLoader {
     private int maxSizePerNode;
     private int maxBatch;
     private int mapNamePartition;
+    private int partitionId;
     private boolean hasBackup;
 
     private LoadFinishedFuture loadFinished = new LoadFinishedFuture(true);
@@ -118,6 +119,7 @@ public class MapKeyLoader {
 
     public Future startInitialLoad(MapStoreContext mapStoreContext, int partitionId) {
 
+        this.partitionId = partitionId;
         this.mapNamePartition = partitionService.getPartitionId(toData.apply(mapName));
         Role newRole = assignRole(partitionService, mapNamePartition, partitionId);
 
@@ -320,18 +322,22 @@ public class MapKeyLoader {
     private ExecutionCallback<Boolean> ifLoadedCallback() {
         return new ExecutionCallback<Boolean>() {
             @Override
-            public void onResponse(Boolean loaded) {
-                if (loaded) {
-                    state.nextOrStay(State.LOADED);
-                    loadFinished.setResult(true);
+            public void onResponse(Boolean response) {
+                if (response) {
+                    sendLoadCompleted(null);
                 }
             }
 
             @Override
             public void onFailure(Throwable t) {
-                loadFinished.setResult(t);
+                sendLoadCompleted(t);
             }
         };
+    }
+
+    private void sendLoadCompleted(Throwable t) {
+        Operation op = new LoadStatusOperation(mapName, t);
+        opService.invokeOnPartition(SERVICE_NAME, op, partitionId);
     }
 
     private static final class LoadFinishedFuture extends AbstractCompletableFuture<Boolean>
