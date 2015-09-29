@@ -741,36 +741,6 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
     }
 
     @Override
-    public void put(Map.Entry<Data, Object> entry) {
-        checkIfLoaded();
-        final long now = getNow();
-
-        Data key = entry.getKey();
-        Object value = entry.getValue();
-        Record record = getRecordOrNull(key, now, false);
-        if (record == null) {
-            value = mapServiceContext.interceptPut(name, null, value);
-            value = mapDataStore.add(key, value, now);
-            record = createRecord(key, value, now);
-            records.put(key, record);
-            // increase size.
-            updateSizeEstimator(calculateRecordHeapCost(record));
-            saveIndex(record);
-        } else {
-            final Object oldValue = record.getValue();
-            value = mapServiceContext.interceptPut(name, oldValue, value);
-            value = mapDataStore.add(key, value, now);
-            onStore(record);
-            // if key exists before, first reduce size
-            updateSizeEstimator(-calculateRecordHeapCost(record));
-            updateRecord(record, value, now);
-            // then increase size
-            updateSizeEstimator(calculateRecordHeapCost(record));
-            saveIndex(record);
-        }
-    }
-
-    @Override
     public Object put(Data key, Object value, long ttl) {
         checkIfLoaded();
         final long now = getNow();
