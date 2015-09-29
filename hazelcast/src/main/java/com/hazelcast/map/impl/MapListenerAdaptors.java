@@ -22,6 +22,7 @@ import com.hazelcast.core.IMapEvent;
 import com.hazelcast.core.MapEvent;
 import com.hazelcast.map.listener.EntryAddedListener;
 import com.hazelcast.map.listener.EntryEvictedListener;
+import com.hazelcast.map.listener.EntryExpiredListener;
 import com.hazelcast.map.listener.EntryMergedListener;
 import com.hazelcast.map.listener.EntryRemovedListener;
 import com.hazelcast.map.listener.EntryUpdatedListener;
@@ -192,6 +193,26 @@ public final class MapListenerAdaptors {
 
 
     /**
+     * Converts an {@link EntryExpiredListener} to a {@link com.hazelcast.map.impl.ListenerAdapter}.
+     */
+    private static final ConstructorFunction<MapListener, ListenerAdapter> ENTRY_EXPIRED_LISTENER_ADAPTER_CONSTRUCTOR =
+            new ConstructorFunction<MapListener, ListenerAdapter>() {
+                @Override
+                public ListenerAdapter createNew(MapListener mapListener) {
+                    if (!(mapListener instanceof EntryExpiredListener)) {
+                        return null;
+                    }
+                    final EntryExpiredListener listener = (EntryExpiredListener) mapListener;
+                    return new ListenerAdapter() {
+                        @Override
+                        public void onEvent(IMapEvent event) {
+                            listener.entryExpired((EntryEvent) event);
+                        }
+                    };
+                }
+            };
+
+    /**
      * Register all {@link com.hazelcast.map.impl.ListenerAdapter} constructors
      * according to {@link com.hazelcast.core.EntryEventType}s.
      */
@@ -200,9 +221,10 @@ public final class MapListenerAdaptors {
         CONSTRUCTORS.put(EntryEventType.REMOVED, ENTRY_REMOVED_LISTENER_ADAPTER_CONSTRUCTOR);
         CONSTRUCTORS.put(EntryEventType.EVICTED, ENTRY_EVICTED_LISTENER_ADAPTER_CONSTRUCTOR);
         CONSTRUCTORS.put(EntryEventType.UPDATED, ENTRY_UPDATED_LISTENER_ADAPTER_CONSTRUCTOR);
+        CONSTRUCTORS.put(EntryEventType.MERGED, ENTRY_MERGED_LISTENER_ADAPTER_CONSTRUCTOR);
+        CONSTRUCTORS.put(EntryEventType.EXPIRED, ENTRY_EXPIRED_LISTENER_ADAPTER_CONSTRUCTOR);
         CONSTRUCTORS.put(EntryEventType.EVICT_ALL, MAP_EVICTED_LISTENER_ADAPTER_CONSTRUCTOR);
         CONSTRUCTORS.put(EntryEventType.CLEAR_ALL, MAP_CLEARED_LISTENER_ADAPTER_CONSTRUCTOR);
-        CONSTRUCTORS.put(EntryEventType.MERGED, ENTRY_MERGED_LISTENER_ADAPTER_CONSTRUCTOR);
     }
 
     private MapListenerAdaptors() {
