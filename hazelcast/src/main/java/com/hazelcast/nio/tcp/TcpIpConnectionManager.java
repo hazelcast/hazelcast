@@ -31,13 +31,13 @@ import com.hazelcast.nio.IOService;
 import com.hazelcast.nio.MemberSocketInterceptor;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.tcp.nonblocking.NonBlockingIOThreadingModel;
+import com.hazelcast.nio.tcp.nonblocking.iobalancer.IOBalancer;
 import com.hazelcast.spi.impl.PacketHandler;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.counters.MwCounter;
 import com.hazelcast.util.executor.StripedRunnable;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-
 import java.io.IOException;
 import java.net.Socket;
 import java.nio.channels.ServerSocketChannel;
@@ -188,6 +188,14 @@ public class TcpIpConnectionManager implements ConnectionManager, PacketHandler 
     // just for testing
     public Set<TcpIpConnection> getActiveConnections() {
         return activeConnections;
+    }
+
+    // just for testing
+    public IOBalancer getIoBalancer() {
+        if (ioThreadingModel instanceof NonBlockingIOThreadingModel) {
+            return ((NonBlockingIOThreadingModel) ioThreadingModel).getIOBalancer();
+        }
+        return null;
     }
 
     @Override

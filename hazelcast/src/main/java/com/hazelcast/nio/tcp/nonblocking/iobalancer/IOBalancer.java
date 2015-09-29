@@ -92,6 +92,16 @@ public class IOBalancer {
         this.enabled = isEnabled(inputThreads, outputThreads);
     }
 
+    // just for testing
+    LoadTracker getInLoadTracker() {
+        return inLoadTracker;
+    }
+
+    // just for testing
+    LoadTracker getOutLoadTracker() {
+        return outLoadTracker;
+    }
+
     public void connectionAdded(TcpIpConnection connection) {
         NonBlockingSocketReader socketReader = (NonBlockingSocketReader) connection.getSocketReader();
         NonBlockingSocketWriter socketWriter = (NonBlockingSocketWriter) connection.getSocketWriter();
