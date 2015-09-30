@@ -717,7 +717,7 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
             final String value = getTextContent(att).trim();
             if ("enabled".equals(lowerCaseInternal(att.getNodeName()))) {
                 multicastConfig.setEnabled(checkTrue(value));
-            } else if ("loopbackModeEnabled".equals(lowerCaseInternal(att.getNodeName()))) {
+            } else if ("loopbackmodeenabled".equals(lowerCaseInternal(att.getNodeName()))) {
                 multicastConfig.setLoopbackModeEnabled(checkTrue(value));
             }
         }
