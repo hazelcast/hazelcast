@@ -23,7 +23,6 @@ import com.hazelcast.spi.exception.RetryableException;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.net.InetSocketAddress;
 import java.util.concurrent.ExecutionException;
 
 /**
@@ -57,39 +56,24 @@ public class MemberLeftException extends ExecutionException implements Retryable
     private void writeObject(ObjectOutputStream out) throws IOException {
         out.defaultWriteObject();
 
+        Address address = member.getAddress();
+        String host  = address.getHost();
+        int port = address.getPort();
+
         out.writeUTF(member.getUuid());
+        out.writeUTF(host);
+        out.writeInt(port);
         out.writeBoolean(member.isLiteMember());
-
-        boolean isImpl = member instanceof MemberImpl;
-        out.writeBoolean(isImpl);
-
-        if (isImpl) {
-            MemberImpl memberImpl = (MemberImpl) member;
-            Address address = memberImpl.getAddress();
-            String host  = address.getHost();
-            int port = address.getPort();
-            out.writeUTF(host);
-            out.writeInt(port);
-        } else {
-            InetSocketAddress socketAddress = member.getSocketAddress();
-            out.writeObject(socketAddress);
-        }
     }
 
     private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
         in.defaultReadObject();
 
         String uuid = in.readUTF();
+        String host = in.readUTF();
+        int port = in.readInt();
         boolean liteMember = in.readBoolean();
 
-        boolean isImpl = in.readBoolean();
-        if (isImpl) {
-            String host = in.readUTF();
-            int port = in.readInt();
-            member = new MemberImpl(new Address(host, port), false, uuid, null, null, liteMember);
-        } else {
-            InetSocketAddress socketAddress = (InetSocketAddress) in.readObject();
-            member = new MemberImpl(new Address(socketAddress), false, uuid, null, null, liteMember);
-        }
+        member = new MemberImpl(new Address(host, port), false, uuid, null, null, liteMember);
     }
 }
