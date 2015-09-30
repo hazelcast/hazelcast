@@ -266,6 +266,16 @@ public interface RecordStore {
     boolean isExpirable();
 
     /**
+     * Checks whether a record is expired or not.
+     *
+     * @param record the record from record-store.
+     * @param now    current time in millis
+     * @param backup <code>true</code> if a backup partition, otherwise <code>false</code>.
+     * @return <code>true</code> if the record is expired, <code>false</code> otherwise.
+     */
+    boolean isExpired(Record record, long now, boolean backup);
+
+    /**
      * Loads all given keys from defined map store.
      *
      * @param keys                  keys to be loaded.

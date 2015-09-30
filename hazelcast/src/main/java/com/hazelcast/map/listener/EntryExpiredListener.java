@@ -19,10 +19,8 @@ package com.hazelcast.map.listener;
 import com.hazelcast.core.EntryEvent;
 
 /**
- * Invoked upon eviction of an entry.
- *
- * Implementations of this interface receive events after removal of the entry. Removals can be caused by
- * one of size-based-eviction, time-to-live based expiration or max-idle-seconds based expiration.
+ * Listener which is notified after removal of an entry due to the expiration-based-eviction.
+ * There are two sources of expiration based eviction, they are max-idle-seconds and time-to-live-seconds.
  *
  * Note that if your listener implements both {@link EntryExpiredListener} and {@link EntryEvictedListener} together,
  * there is a probability that the listener may receive both expiration and eviction events for the same entry. This is because,
@@ -31,16 +29,16 @@ import com.hazelcast.core.EntryEvent;
  * @param <K> the type of key.
  * @param <V> the type of value.
  *
- * @see EntryExpiredListener
+ * @see EntryEvictedListener
  *
- * @since 3.5
+ * @since 3.6
  */
-public interface EntryEvictedListener<K, V> extends MapListener {
+public interface EntryExpiredListener<K, V> extends MapListener {
 
     /**
-     * Invoked upon eviction of an entry.
+     * Invoked upon expiration of an entry.
      *
-     * @param event the event invoked when an entry is evicted
+     * @param event the event invoked when an entry is expired.
      */
-    void entryEvicted(EntryEvent<K, V> event);
+    void entryExpired(EntryEvent<K, V> event);
 }

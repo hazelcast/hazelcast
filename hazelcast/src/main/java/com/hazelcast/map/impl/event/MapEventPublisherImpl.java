@@ -18,6 +18,7 @@ package com.hazelcast.map.impl.event;
 
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.EntryView;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.map.impl.EntryEventFilter;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapPartitionLostEventFilter;
@@ -28,7 +29,6 @@ import com.hazelcast.map.impl.wan.MapReplicationRemove;
 import com.hazelcast.map.impl.wan.MapReplicationUpdate;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.query.impl.QueryEntry;
 import com.hazelcast.spi.EventFilter;
 import com.hazelcast.spi.EventRegistration;
@@ -291,7 +291,7 @@ public class MapEventPublisherImpl implements MapEventPublisher {
         final NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
         final SerializationService serializationService = nodeEngine.getSerializationService();
         Data testValue;
-        if (eventType == EntryEventType.REMOVED || eventType == EntryEventType.EVICTED) {
+        if (eventType == EntryEventType.REMOVED || eventType == EntryEventType.EVICTED || eventType == EntryEventType.EXPIRED) {
             testValue = dataOldValue;
         } else {
             testValue = dataValue;
