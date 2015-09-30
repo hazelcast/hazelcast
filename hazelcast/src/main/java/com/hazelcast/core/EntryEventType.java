@@ -27,11 +27,12 @@ public enum EntryEventType {
     EVICTED(4),
     EVICT_ALL(5),
     CLEAR_ALL(6),
-    MERGED(7);
+    MERGED(7),
+    EXPIRED(8);
 
     private int type;
 
-    private EntryEventType(final int type) {
+    EntryEventType(final int type) {
         this.type = type;
     }
 

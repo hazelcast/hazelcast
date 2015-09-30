@@ -31,6 +31,8 @@ import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.core.EntryEventType.EVICTED;
+import static com.hazelcast.core.EntryEventType.EXPIRED;
 import static com.hazelcast.map.impl.ExpirationTimeSetter.calculateExpirationWithDelay;
 import static com.hazelcast.map.impl.ExpirationTimeSetter.calculateMaxIdleMillis;
 import static com.hazelcast.map.impl.ExpirationTimeSetter.setExpirationTime;
@@ -358,7 +360,10 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
     private void doPostExpirationOperations(Data key, Object value) {
         final String mapName = this.name;
         final MapServiceContext mapServiceContext = this.mapServiceContext;
-        getEvictionOperator().fireEvent(key, value, mapName, mapServiceContext);
+
+        getEvictionOperator().fireEvent(key, value, mapName, EXPIRED, mapServiceContext);
+        getEvictionOperator().fireEvent(key, value, mapName, EVICTED, mapServiceContext);
+
     }
 
     void increaseRecordEvictionCriteriaNumber(Record record, EvictionPolicy evictionPolicy) {
