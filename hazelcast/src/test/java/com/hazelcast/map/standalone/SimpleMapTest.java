@@ -24,6 +24,8 @@ import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.Partition;
+import com.hazelcast.core.ReplicatedMap;
+import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.logging.ILogger;
 
 import java.util.LinkedList;
@@ -68,10 +70,11 @@ public final class SimpleMapTest {
         this.putPercentage = putPercentage;
         this.load = load;
         Config cfg = new XmlConfigBuilder().build();
+        cfg.getGroupConfig().setName("madafaga222");
+        cfg.setProperty(GroupProperties.PROP_HEALTH_MONITORING_DELAY_SECONDS, "5");
+        cfg.setProperty(GroupProperties.PROP_HEALTH_MONITORING_LEVEL, "NOISY");
 
         instance = Hazelcast.newHazelcastInstance(cfg);
-
-        Hazelcast.newHazelcastInstance(cfg);
         logger = instance.getLoggingService().getLogger("SimpleMapTest");
         random = new Random();
     }
@@ -83,11 +86,11 @@ public final class SimpleMapTest {
      * @throws InterruptedException
      */
     public static void main(String[] input) throws InterruptedException {
-        int threadCount = 40;
+        int threadCount = 2;
         int entryCount = 10 * 1000;
-        int valueSize = 1000;
-        int getPercentage = 40;
-        int putPercentage = 40;
+        int valueSize = 1;
+        int getPercentage = 0;
+        int putPercentage = 100;
         boolean load = false;
 
         if (input != null && input.length > 0) {
@@ -126,7 +129,7 @@ public final class SimpleMapTest {
     }
 
     private void run(ExecutorService es) {
-        final IMap<String, Object> map = instance.getMap(NAMESPACE);
+        final ReplicatedMap<String, Object> map = instance.getReplicatedMap(NAMESPACE);
         for (int i = 0; i < threadCount; i++) {
             es.execute(new Runnable() {
                 public void run() {

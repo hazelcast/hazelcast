@@ -42,8 +42,6 @@ public class LocalReplicatedMapStatsImpl implements LocalReplicatedMapStats {
             newUpdater(LocalReplicatedMapStatsImpl.class, "numberOfOtherOperations");
     private static final AtomicLongFieldUpdater<LocalReplicatedMapStatsImpl> NUMBER_OF_EVENTS =
             newUpdater(LocalReplicatedMapStatsImpl.class, "numberOfEvents");
-    private static final AtomicLongFieldUpdater<LocalReplicatedMapStatsImpl> NUMBER_OF_REPLICATION_EVENTS =
-            newUpdater(LocalReplicatedMapStatsImpl.class, "numberOfReplicationEvents");
     private static final AtomicLongFieldUpdater<LocalReplicatedMapStatsImpl> GET_COUNT =
             newUpdater(LocalReplicatedMapStatsImpl.class, "getCount");
     private static final AtomicLongFieldUpdater<LocalReplicatedMapStatsImpl> PUT_COUNT =
@@ -70,7 +68,6 @@ public class LocalReplicatedMapStatsImpl implements LocalReplicatedMapStats {
     private volatile long hits;
     private volatile long numberOfOtherOperations;
     private volatile long numberOfEvents;
-    private volatile long numberOfReplicationEvents;
     private volatile long getCount;
     private volatile long putCount;
     private volatile long removeCount;
@@ -271,16 +268,6 @@ public class LocalReplicatedMapStatsImpl implements LocalReplicatedMapStats {
         NUMBER_OF_EVENTS.incrementAndGet(this);
     }
 
-    @Override
-    public long getReplicationEventCount() {
-        return numberOfReplicationEvents;
-    }
-
-    public void incrementReceivedReplicationEvents() {
-        NUMBER_OF_REPLICATION_EVENTS.incrementAndGet(this);
-    }
-
-    @Override
     public long getHeapCost() {
         return 0;
     }
@@ -302,7 +289,6 @@ public class LocalReplicatedMapStatsImpl implements LocalReplicatedMapStats {
         root.add("removeCount", removeCount);
         root.add("numberOfOtherOperations", numberOfOtherOperations);
         root.add("numberOfEvents", numberOfEvents);
-        root.add("numberOfReplicationEvents", numberOfReplicationEvents);
         root.add("lastAccessTime", lastAccessTime);
         root.add("lastUpdateTime", lastUpdateTime);
         root.add("hits", hits);
@@ -324,7 +310,6 @@ public class LocalReplicatedMapStatsImpl implements LocalReplicatedMapStats {
         removeCount = getLong(json, "removeCount", -1L);
         numberOfOtherOperations = getLong(json, "numberOfOtherOperations", -1L);
         numberOfEvents = getLong(json, "numberOfEvents", -1L);
-        numberOfReplicationEvents = getLong(json, "numberOfReplicationEvents", -1L);
         lastAccessTime = getLong(json, "lastAccessTime", -1L);
         lastUpdateTime = getLong(json, "lastUpdateTime", -1L);
         hits = getLong(json, "hits", -1L);
@@ -346,7 +331,6 @@ public class LocalReplicatedMapStatsImpl implements LocalReplicatedMapStats {
                 + ", hits=" + hits
                 + ", numberOfOtherOperations=" + numberOfOtherOperations
                 + ", numberOfEvents=" + numberOfEvents
-                + ", numberOfReplicationEvents=" + numberOfReplicationEvents
                 + ", getCount=" + getCount
                 + ", putCount=" + putCount
                 + ", removeCount=" + removeCount

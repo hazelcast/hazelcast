@@ -27,6 +27,7 @@ import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.ReplicatedMapPermission;
 
 import java.security.Permission;
+import java.util.Collection;
 
 public class ReplicatedMapIsEmptyMessageTask
         extends AbstractCallableMessageTask<ReplicatedMapIsEmptyCodec.RequestParameters> {
@@ -37,9 +38,14 @@ public class ReplicatedMapIsEmptyMessageTask
 
     @Override
     protected Object call() throws Exception {
-        ReplicatedMapService replicatedMapService = getService(ReplicatedMapService.SERVICE_NAME);
-        ReplicatedRecordStore recordStore = replicatedMapService.getReplicatedRecordStore(parameters.name, true);
-        return recordStore.isEmpty();
+        ReplicatedMapService service = getService(ReplicatedMapService.SERVICE_NAME);
+        Collection<ReplicatedRecordStore> stores = service.getAllReplicatedRecordStores(parameters.name);
+        for (ReplicatedRecordStore store : stores) {
+            if (!store.isEmpty()) {
+                return false;
+            }
+        }
+        return true;
     }
 
     @Override

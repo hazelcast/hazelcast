@@ -491,7 +491,7 @@ public class SerializationServiceImpl implements SerializationService {
 
     protected final SerializerAdapter serializerFor(final Class type) {
         SerializerAdapter serializer;
-        if (overrideCustomSerialization) {
+        if (overrideCustomSerialization && constantTypesMap.get(type) == null) {
             serializer = lookupSerializer(type);
             if (serializer != null) {
                 return serializer;
