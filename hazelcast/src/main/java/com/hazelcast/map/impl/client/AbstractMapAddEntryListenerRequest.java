@@ -19,12 +19,12 @@ package com.hazelcast.map.impl.client;
 import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.impl.client.CallableClientRequest;
 import com.hazelcast.client.impl.client.RetryableRequest;
-import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.MapEvent;
 import com.hazelcast.map.impl.DataAwareEntryEvent;
 import com.hazelcast.map.impl.EntryEventFilter;
+import com.hazelcast.map.impl.MapListenerAdapter;
 import com.hazelcast.map.impl.MapPortableHook;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.query.QueryEventFilter;
@@ -66,7 +66,7 @@ public abstract class AbstractMapAddEntryListenerRequest extends CallableClientR
         final ClientEndpoint endpoint = getEndpoint();
         final MapService mapService = getService();
 
-        EntryAdapter<Object, Object> listener = new EntryAdapter<Object, Object>() {
+        MapListenerAdapter<Object, Object> listener = new MapListenerAdapter<Object, Object>() {
             @Override
             public void onEntryEvent(EntryEvent<Object, Object> event) {
                 if (endpoint.isAlive()) {
@@ -80,7 +80,7 @@ public abstract class AbstractMapAddEntryListenerRequest extends CallableClientR
                     Data oldValue = dataAwareEntryEvent.getOldValueData();
                     Data mergingValue = dataAwareEntryEvent.getMergingValueData();
                     PortableEntryEvent portableEntryEvent = new PortableEntryEvent(key, value, oldValue, mergingValue,
-                            event.getEventType(), event.getMember().getUuid());
+                             event.getEventType(), event.getMember().getUuid());
                     endpoint.sendEvent(key, portableEntryEvent, getCallId());
                 }
             }

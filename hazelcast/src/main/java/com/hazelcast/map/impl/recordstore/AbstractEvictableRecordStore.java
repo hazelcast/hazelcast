@@ -33,6 +33,8 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
+import static com.hazelcast.core.EntryEventType.EVICTED;
+import static com.hazelcast.core.EntryEventType.EXPIRED;
 import static com.hazelcast.map.impl.ExpirationTimeSetter.calculateExpirationWithDelay;
 import static com.hazelcast.map.impl.ExpirationTimeSetter.calculateMaxIdleMillis;
 import static com.hazelcast.map.impl.ExpirationTimeSetter.setExpirationTime;
@@ -72,12 +74,14 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
 
     private volatile boolean hasEntryWithCustomTTL;
     private final long expiryDelayMillis;
+    private final EvictionOperator evictionOperator;
 
     protected AbstractEvictableRecordStore(MapContainer mapContainer, int partitionId) {
         super(mapContainer, partitionId);
         NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
         GroupProperties groupProperties = nodeEngine.getGroupProperties();
         expiryDelayMillis = groupProperties.getMillis(GroupProperty.MAP_EXPIRY_DELAY_SECONDS);
+        evictionOperator = mapServiceContext.getEvictionOperator();
     }
 
     public boolean isEvictionEnabled() {
@@ -228,7 +232,7 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
             return;
         }
         final MapConfig mapConfig = mapContainer.getMapConfig();
-        getEvictionOperator().removeEvictableRecords(this, evictableSize, mapConfig, backup);
+        evictionOperator.removeEvictableRecords(this, evictableSize, mapConfig, backup);
     }
 
     private int getEvictableSize() {
@@ -236,16 +240,11 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
         if (size < 1) {
             return 0;
         }
-        final int evictableSize = getEvictionOperator().evictableSize(size, mapContainer.getMapConfig());
+        final int evictableSize = evictionOperator.evictableSize(size, mapContainer.getMapConfig());
         if (evictableSize < 1) {
             return 0;
         }
         return evictableSize;
-    }
-
-
-    private EvictionOperator getEvictionOperator() {
-        return mapServiceContext.getEvictionOperator();
     }
 
 
@@ -267,7 +266,6 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
     }
 
     private boolean isEvictable() {
-        final EvictionOperator evictionOperator = getEvictionOperator();
         final MaxSizeChecker maxSizeChecker = evictionOperator.getMaxSizeChecker();
         return maxSizeChecker.checkEvictable(mapContainer, partitionId);
     }
@@ -352,7 +350,12 @@ abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
     private void doPostExpirationOperations(Data key, Object value) {
         final String mapName = this.name;
         final MapServiceContext mapServiceContext = this.mapServiceContext;
-        getEvictionOperator().fireEvent(key, value, mapName, mapServiceContext);
+
+        // Fire EVICTED event also in case of expiration because historically eviction-listener
+        // listens all kind of eviction and expiration events and by firing EVICTED event we are preserving
+        // this behavior.
+        evictionOperator.fireEvent(key, value, mapName, EVICTED, mapServiceContext);
+        evictionOperator.fireEvent(key, value, mapName, EXPIRED, mapServiceContext);
     }
 
     void increaseRecordEvictionCriteriaNumber(Record record, EvictionPolicy evictionPolicy) {

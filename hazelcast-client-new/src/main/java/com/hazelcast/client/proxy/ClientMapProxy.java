@@ -1413,6 +1413,7 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
                 case REMOVED:
                 case UPDATED:
                 case EVICTED:
+                case EXPIRED:
                 case MERGED:
                     iMapEvent = createEntryEvent(key, value, oldValue, mergingValue, eventType, member);
                     break;
@@ -1503,6 +1504,7 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
                 case UPDATED:
                 case MERGED:
                 case EVICTED:
+                case EXPIRED:
                     nearCache.remove(key);
                     break;
                 case CLEAR_ALL:

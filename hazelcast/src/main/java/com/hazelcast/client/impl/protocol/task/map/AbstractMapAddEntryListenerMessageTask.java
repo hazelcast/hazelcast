@@ -19,10 +19,10 @@ package com.hazelcast.client.impl.protocol.task.map;
 import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
-import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.MapEvent;
+import com.hazelcast.map.impl.MapListenerAdapter;
 import com.hazelcast.instance.Node;
 import com.hazelcast.map.impl.DataAwareEntryEvent;
 import com.hazelcast.map.impl.MapService;
@@ -47,7 +47,7 @@ public abstract class AbstractMapAddEntryListenerMessageTask<Parameter>
         final ClientEndpoint endpoint = getEndpoint();
         final MapService mapService = getService(MapService.SERVICE_NAME);
 
-        EntryAdapter<Object, Object> listener = new MapListener();
+        MapListenerAdapter<Object, Object> listener = new MapListener();
         MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         final String name = getDistributedObjectName();
         final String registrationId = mapServiceContext.addEventListener(listener, getEventFilter(), name);
@@ -72,7 +72,7 @@ public abstract class AbstractMapAddEntryListenerMessageTask<Parameter>
         return new MapPermission(getDistributedObjectName(), ActionConstants.ACTION_LISTEN);
     }
 
-    private class MapListener extends EntryAdapter<Object, Object> {
+    private class MapListener extends MapListenerAdapter<Object, Object> {
 
         @Override
         public void onEntryEvent(EntryEvent<Object, Object> event) {
