@@ -20,7 +20,7 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapEntrySetCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractAllPartitionsMessageTask;
 import com.hazelcast.instance.Node;
-import com.hazelcast.map.impl.MapEntrySet;
+import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.operation.EntrySetOperationFactory;
 import com.hazelcast.nio.Connection;
@@ -51,7 +51,7 @@ public class MapEntrySetMessageTask
         Set<Map.Entry<Data, Data>> dataMap = new HashSet<Map.Entry<Data, Data>>();
         MapService service = getService(MapService.SERVICE_NAME);
         for (Object result : map.values()) {
-            Set<Map.Entry<Data, Data>> entries = ((MapEntrySet) service.getMapServiceContext().toObject(result)).getEntrySet();
+            MapEntries entries = ((MapEntries) service.getMapServiceContext().toObject(result));
             for (Map.Entry<Data, Data> entry : entries) {
                 dataMap.add(entry);
             }

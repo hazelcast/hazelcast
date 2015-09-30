@@ -22,7 +22,7 @@ import com.hazelcast.cache.impl.operation.CacheGetAllOperationFactory;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.CacheGetAllCodec;
 import com.hazelcast.instance.Node;
-import com.hazelcast.map.impl.MapEntrySet;
+import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.security.permission.ActionConstants;
@@ -69,9 +69,8 @@ public class CacheGetAllMessageTask
     protected Object reduce(Map<Integer, Object> map) {
         Set<Map.Entry<Data, Data>> reducedMap = new HashSet<Map.Entry<Data, Data>>(map.size());
         for (Map.Entry<Integer, Object> entry : map.entrySet()) {
-            MapEntrySet mapEntrySet = (MapEntrySet) nodeEngine.toObject(entry.getValue());
-            Set<Map.Entry<Data, Data>> entrySet = mapEntrySet.getEntrySet();
-            for (Map.Entry<Data, Data> dataEntry : entrySet) {
+            MapEntries mapEntries = (MapEntries) nodeEngine.toObject(entry.getValue());
+            for (Map.Entry<Data, Data> dataEntry : mapEntries) {
                 reducedMap.add(dataEntry);
             }
         }

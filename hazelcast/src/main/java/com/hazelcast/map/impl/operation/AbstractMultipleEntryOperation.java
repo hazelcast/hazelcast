@@ -25,10 +25,10 @@ import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.LazyMapEntry;
 import com.hazelcast.map.impl.LocalMapStatsProvider;
 import com.hazelcast.map.impl.MapContainer;
-import com.hazelcast.map.impl.MapEntrySet;
+import com.hazelcast.map.impl.MapEntries;
+import com.hazelcast.map.impl.event.MapEventPublisher;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
-import com.hazelcast.map.impl.event.MapEventPublisher;
 import com.hazelcast.map.impl.nearcache.NearCacheProvider;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.recordstore.RecordStore;
@@ -48,7 +48,7 @@ import static com.hazelcast.map.impl.recordstore.RecordStore.DEFAULT_TTL;
 
 abstract class AbstractMultipleEntryOperation extends AbstractMapOperation implements MutatingOperation {
 
-    protected MapEntrySet responses;
+    protected MapEntries responses;
     protected EntryProcessor entryProcessor;
     protected EntryBackupProcessor backupProcessor;
     protected transient RecordStore recordStore;
@@ -265,7 +265,7 @@ abstract class AbstractMultipleEntryOperation extends AbstractMapOperation imple
             return;
         }
         if (responses == null) {
-            responses = new MapEntrySet();
+            responses = new MapEntries();
         }
         responses.add(new AbstractMap.SimpleImmutableEntry<Data, Data>(key, response));
     }

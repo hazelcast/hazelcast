@@ -31,7 +31,7 @@ import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.InMemoryFormat;
-import com.hazelcast.map.impl.MapEntrySet;
+import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.spi.EventRegistration;
@@ -1301,9 +1301,9 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     }
 
     @Override
-    public MapEntrySet getAll(Set<Data> keySet, ExpiryPolicy expiryPolicy) {
+    public MapEntries getAll(Set<Data> keySet, ExpiryPolicy expiryPolicy) {
         expiryPolicy = getExpiryPolicy(expiryPolicy);
-        final MapEntrySet result = new MapEntrySet();
+        final MapEntries result = new MapEntries();
         for (Data key : keySet) {
             final Object value = get(key, expiryPolicy);
             if (value != null) {

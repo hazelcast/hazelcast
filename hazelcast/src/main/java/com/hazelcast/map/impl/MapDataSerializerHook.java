@@ -47,7 +47,7 @@ public final class MapDataSerializerHook implements DataSerializerHook {
 //    public static final int CACHED_RECORD = 7;
     public static final int KEY_SET = 8;
     public static final int VALUES = 9;
-    public static final int ENTRY_SET = 10;
+    public static final int MAP_ENTRIES = 10;
     public static final int ENTRY_VIEW = 11;
     //    public static final int MAP_STATS = 12;
     public static final int QUERY_RESULT_ROW = 13;
@@ -100,9 +100,9 @@ public final class MapDataSerializerHook implements DataSerializerHook {
                 return new MapValueCollection();
             }
         };
-        constructors[ENTRY_SET] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+        constructors[MAP_ENTRIES] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
-                return new MapEntrySet();
+                return new MapEntries();
             }
         };
         constructors[ENTRY_VIEW] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {

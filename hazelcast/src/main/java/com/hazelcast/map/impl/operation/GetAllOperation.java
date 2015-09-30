@@ -16,7 +16,7 @@
 
 package com.hazelcast.map.impl.operation;
 
-import com.hazelcast.map.impl.MapEntrySet;
+import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -33,7 +33,7 @@ import java.util.Set;
 public class GetAllOperation extends AbstractMapOperation implements ReadonlyOperation, PartitionAwareOperation {
 
     private Set<Data> keys = new HashSet<Data>();
-    private MapEntrySet entrySet;
+    private MapEntries entries;
     private transient RecordStore recordStore;
 
     public GetAllOperation() {
@@ -55,13 +55,13 @@ public class GetAllOperation extends AbstractMapOperation implements ReadonlyOpe
                 partitionKeySet.add(key);
             }
         }
-        entrySet = recordStore.getAll(partitionKeySet);
+        entries = recordStore.getAll(partitionKeySet);
     }
 
     @Override
     public void afterRun() throws Exception {
         super.afterRun();
-        if (!entrySet.isEmpty()) {
+        if (!entries.isEmpty()) {
             evict(false);
         }
     }
@@ -76,7 +76,7 @@ public class GetAllOperation extends AbstractMapOperation implements ReadonlyOpe
 
     @Override
     public Object getResponse() {
-        return entrySet;
+        return entries;
     }
 
     @Override

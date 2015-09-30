@@ -19,7 +19,7 @@ package com.hazelcast.cache.impl;
 import com.hazelcast.cache.CacheStatistics;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.core.ICompletableFuture;
-import com.hazelcast.map.impl.MapEntrySet;
+import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.partition.InternalPartitionService;
@@ -180,9 +180,8 @@ abstract class AbstractCacheProxy<K, V>
             OperationService operationService = getNodeEngine().getOperationService();
             Map<Integer, Object> responses = operationService.invokeOnPartitions(getServiceName(), factory, partitions);
             for (Object response : responses.values()) {
-                final Object responseObject = serializationService.toObject(response);
-                final Set<Map.Entry<Data, Data>> entries = ((MapEntrySet) responseObject).getEntrySet();
-                for (Map.Entry<Data, Data> entry : entries) {
+                MapEntries mapEntries = serializationService.toObject(response);
+                for (Map.Entry<Data, Data> entry : mapEntries) {
                     final V value = serializationService.toObject(entry.getValue());
                     final K key = serializationService.toObject(entry.getKey());
                     result.put(key, value);

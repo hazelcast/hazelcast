@@ -18,7 +18,7 @@ package com.hazelcast.cache.impl;
 
 import com.hazelcast.cache.impl.record.CacheRecord;
 import com.hazelcast.config.CacheConfig;
-import com.hazelcast.map.impl.MapEntrySet;
+import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.nio.serialization.Data;
 
 import javax.cache.expiry.ExpiryPolicy;
@@ -287,7 +287,7 @@ public interface ICacheRecordStore {
      * @return A simple wrapper for map of entries that were found for the given keys. Keys not found
      *         in the cache are not in the result.
      */
-    MapEntrySet getAll(Set<Data> keySet, ExpiryPolicy expiryPolicy);
+    MapEntries getAll(Set<Data> keySet, ExpiryPolicy expiryPolicy);
 
     /**
      *  Calculates the entry size of this store which reflects the partition size of the cache.

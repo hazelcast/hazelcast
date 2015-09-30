@@ -19,7 +19,7 @@ package com.hazelcast.map.impl.client;
 import com.hazelcast.client.impl.client.AllPartitionsClientRequest;
 import com.hazelcast.client.impl.client.SecureRequest;
 import com.hazelcast.map.EntryProcessor;
-import com.hazelcast.map.impl.MapEntrySet;
+import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.map.impl.MapPortableHook;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.operation.PartitionWideEntryOperationFactory;
@@ -32,10 +32,10 @@ import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.OperationFactory;
+
 import java.io.IOException;
 import java.security.Permission;
 import java.util.Map;
-import java.util.Set;
 
 public class MapExecuteOnAllKeysRequest extends AllPartitionsClientRequest implements Portable, SecureRequest {
 
@@ -57,13 +57,12 @@ public class MapExecuteOnAllKeysRequest extends AllPartitionsClientRequest imple
 
     @Override
     protected Object reduce(Map<Integer, Object> map) {
-        MapEntrySet result = new MapEntrySet();
+        MapEntries result = new MapEntries();
         MapService mapService = getService();
         for (Object o : map.values()) {
             if (o != null) {
-                MapEntrySet entrySet = (MapEntrySet) mapService.getMapServiceContext().toObject(o);
-                Set<Map.Entry<Data, Data>> entries = entrySet.getEntrySet();
-                for (Map.Entry<Data, Data> entry : entries) {
+                MapEntries mapEntries = (MapEntries) mapService.getMapServiceContext().toObject(o);
+                for (Map.Entry<Data, Data> entry : mapEntries) {
                     result.add(entry);
                 }
             }
