@@ -57,6 +57,11 @@ public interface RecordStore {
 
     boolean tryPut(Data dataKey, Object value, long ttl);
 
+    /**
+     * Returns {@code true} if key doesn't exist previously, otherwise returns {@code false}.
+     *
+     * @see com.hazelcast.core.IMap#set(Object, Object)
+     */
     boolean set(Data dataKey, Object value, long ttl);
 
     Object remove(Data dataKey);
