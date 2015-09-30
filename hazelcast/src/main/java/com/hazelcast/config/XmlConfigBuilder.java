@@ -52,10 +52,12 @@ import java.net.URL;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+
 import static com.hazelcast.config.MapStoreConfig.InitialLoadMode;
 import static com.hazelcast.config.XmlElements.CACHE;
 import static com.hazelcast.config.XmlElements.EXECUTOR_SERVICE;
@@ -202,6 +204,7 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
 
     private void parseAndBuildConfig(final Config config) throws Exception {
         this.config = config;
+        Locale.setDefault(Locale.getDefault());
         Document doc = parse(in);
         root = doc.getDocumentElement();
         try {
