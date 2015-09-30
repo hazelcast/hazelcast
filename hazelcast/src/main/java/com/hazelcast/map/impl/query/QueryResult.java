@@ -17,10 +17,11 @@
 package com.hazelcast.map.impl.query;
 
 import com.hazelcast.map.QueryResultSizeExceededException;
+import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.util.IterationType;
 
@@ -35,7 +36,7 @@ import java.util.LinkedList;
  *
  * A QueryResults is a collections of {@link QueryResultRow} instances.
  */
-public class QueryResult implements DataSerializable, Iterable<QueryResultRow> {
+public class QueryResult implements IdentifiedDataSerializable, Iterable<QueryResultRow> {
 
     // todo: probably arraylist cheaper.
     private final Collection<QueryResultRow> rows = new LinkedList<QueryResultRow>();
@@ -53,6 +54,11 @@ public class QueryResult implements DataSerializable, Iterable<QueryResultRow> {
     public QueryResult(IterationType iterationType, long resultLimit) {
         this.resultLimit = resultLimit;
         this.iterationType = iterationType;
+    }
+
+    // for testing
+    IterationType getIterationType() {
+        return iterationType;
     }
 
     @Override
@@ -118,6 +124,16 @@ public class QueryResult implements DataSerializable, Iterable<QueryResultRow> {
 
     public Collection<QueryResultRow> getRows() {
         return rows;
+    }
+
+    @Override
+    public int getFactoryId() {
+        return MapDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return MapDataSerializerHook.QUERY_RESULT;
     }
 
     @Override
