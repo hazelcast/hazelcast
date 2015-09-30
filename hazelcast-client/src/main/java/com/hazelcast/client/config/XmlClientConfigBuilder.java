@@ -69,6 +69,7 @@ import static com.hazelcast.client.config.ClientXmlElements.QUERY_CACHES;
 import static com.hazelcast.client.config.ClientXmlElements.SECURITY;
 import static com.hazelcast.client.config.ClientXmlElements.SERIALIZATION;
 import static com.hazelcast.client.config.ClientXmlElements.canOccurMultipleTimes;
+import static com.hazelcast.util.StringUtil.lowerCaseInternal;
 import static com.hazelcast.util.StringUtil.upperCaseInternal;
 
 /**
@@ -365,7 +366,7 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
         for (int a = 0; a < atts.getLength(); a++) {
             Node att = atts.item(a);
             String value = getTextContent(att).trim();
-            if ("enabled".equalsIgnoreCase(att.getNodeName())) {
+            if ("enabled".equals(lowerCaseInternal(att.getNodeName()))) {
                 enabled = checkTrue(value);
             } else if ("class".equals(att.getNodeName())) {
                 clazz = value;
@@ -424,7 +425,7 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
         for (int i = 0; i < atts.getLength(); i++) {
             final Node att = atts.item(i);
             final String value = getTextContent(att).trim();
-            if ("enabled".equalsIgnoreCase(att.getNodeName())) {
+            if ("enabled".equals(lowerCaseInternal(att.getNodeName()))) {
                 clientAwsConfig.setEnabled(checkTrue(value));
             } else if (att.getNodeName().equals("connection-timeout-seconds")) {
                 int timeout = getIntegerValue("connection-timeout-seconds", value, DEFAULT_VALUE);

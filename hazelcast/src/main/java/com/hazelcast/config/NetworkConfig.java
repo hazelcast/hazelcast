@@ -16,6 +16,8 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.util.StringUtil;
+
 import java.util.Collection;
 import java.util.HashSet;
 
@@ -56,7 +58,7 @@ public class NetworkConfig {
     private SSLConfig sslConfig;
 
     public NetworkConfig() {
-        String os = System.getProperty("os.name").toLowerCase();
+        String os = StringUtil.lowerCaseInternal(System.getProperty("os.name"));
         reuseAddress = (!os.contains("win"));
     }
 
