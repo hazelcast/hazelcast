@@ -48,7 +48,7 @@ public class QueryResultCollection<E> extends AbstractSet<E> {
                                  boolean unique, QueryResult queryResult) {
 
         this(serializationService, iterationType, binary, unique);
-        allAllRows(queryResult.getRows());
+        addAllRows(queryResult.getRows());
     }
 
 
@@ -61,7 +61,7 @@ public class QueryResultCollection<E> extends AbstractSet<E> {
         return iterationType;
     }
 
-    public void allAllRows(Collection<QueryResultRow> collection) {
+    public void addAllRows(Collection<QueryResultRow> collection) {
         rows.addAll(collection);
     }
 
