@@ -85,7 +85,8 @@ public interface EntryProcessor<K, V> extends Serializable {
 
     /**
      * Get the entry processor to be applied to backup entries.
-     * <p/>
+     *
+     * In case of a readonly execution, null can be returned to indicate that no backups should be made.
      *
      * @return the back up processor
      */
