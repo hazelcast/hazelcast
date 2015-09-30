@@ -3,6 +3,7 @@ package com.hazelcast.client.impl.querycache.subscriber;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.map.impl.client.MadePublishableRequest;
 import com.hazelcast.map.impl.client.PublisherCreateRequest;
+import com.hazelcast.map.impl.query.QueryResultSet;
 import com.hazelcast.map.impl.querycache.accumulator.AccumulatorInfo;
 import com.hazelcast.map.impl.querycache.InvokerWrapper;
 import com.hazelcast.map.impl.querycache.subscriber.AbstractQueryCacheEndToEndConstructor;
@@ -10,7 +11,7 @@ import com.hazelcast.map.impl.querycache.subscriber.InternalQueryCache;
 import com.hazelcast.map.impl.querycache.subscriber.QueryCacheEndToEndConstructor;
 import com.hazelcast.map.impl.querycache.subscriber.QueryCacheRequest;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.util.QueryResultSet;
+
 
 import java.util.AbstractMap;
 import java.util.Iterator;
