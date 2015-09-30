@@ -88,6 +88,7 @@ import static com.hazelcast.config.XmlElements.WAN_REPLICATION;
 import static com.hazelcast.config.XmlElements.canOccurMultipleTimes;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.StringUtil.isNullOrEmpty;
+import static com.hazelcast.util.StringUtil.lowerCaseInternal;
 import static com.hazelcast.util.StringUtil.upperCaseInternal;
 
 /**
@@ -503,7 +504,7 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
             }
         }
         for (org.w3c.dom.Node n : new IterableNodeList(node.getChildNodes())) {
-            if ("interface".equalsIgnoreCase(cleanNodeName(n.getNodeName()))) {
+            if ("interface".equals(lowerCaseInternal(cleanNodeName(n.getNodeName())))) {
                 final String value = getTextContent(n).trim();
                 interfaces.addInterface(value);
             }
@@ -650,7 +651,7 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
         for (int a = 0; a < atts.getLength(); a++) {
             final Node att = atts.item(a);
             final String value = getTextContent(att).trim();
-            if ("enabled".equalsIgnoreCase(att.getNodeName())) {
+            if ("enabled".equals(lowerCaseInternal(att.getNodeName()))) {
                 enabled = checkTrue(value);
             } else if ("class".equals(att.getNodeName())) {
                 clazz = value;
@@ -679,7 +680,7 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
         for (int a = 0; a < atts.getLength(); a++) {
             final Node att = atts.item(a);
             final String value = getTextContent(att).trim();
-            if ("enabled".equalsIgnoreCase(att.getNodeName())) {
+            if ("enabled".equals(lowerCaseInternal(att.getNodeName()))) {
                 awsConfig.setEnabled(checkTrue(value));
             } else if (att.getNodeName().equals("connection-timeout-seconds")) {
                 awsConfig.setConnectionTimeoutSeconds(getIntegerValue("connection-timeout-seconds", value, DEFAULT_VALUE));
@@ -714,9 +715,9 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
         for (int a = 0; a < atts.getLength(); a++) {
             final org.w3c.dom.Node att = atts.item(a);
             final String value = getTextContent(att).trim();
-            if ("enabled".equalsIgnoreCase(att.getNodeName())) {
+            if ("enabled".equals(lowerCaseInternal(att.getNodeName()))) {
                 multicastConfig.setEnabled(checkTrue(value));
-            } else if ("loopbackModeEnabled".equalsIgnoreCase(att.getNodeName())) {
+            } else if ("loopbackModeEnabled".equals(lowerCaseInternal(att.getNodeName()))) {
                 multicastConfig.setLoopbackModeEnabled(checkTrue(value));
             }
         }
@@ -736,7 +737,7 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
                 multicastConfig.setMulticastTimeToLive(Integer.parseInt(value));
             } else if ("trusted-interfaces".equals(cleanNodeName(n.getNodeName()))) {
                 for (org.w3c.dom.Node child : new IterableNodeList(n.getChildNodes())) {
-                    if ("interface".equalsIgnoreCase(cleanNodeName(child.getNodeName()))) {
+                    if ("interface".equals(lowerCaseInternal(cleanNodeName(child.getNodeName())))) {
                         multicastConfig.addTrustedInterface(getTextContent(child).trim());
                     }
                 }

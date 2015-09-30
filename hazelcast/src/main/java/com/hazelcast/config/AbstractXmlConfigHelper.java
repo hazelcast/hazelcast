@@ -291,15 +291,16 @@ public abstract class AbstractXmlConfigHelper {
     public static String cleanNodeName(final String nodeName) {
         String name = nodeName;
         if (name != null) {
-            name = nodeName.replaceAll("\\w+:", "").toLowerCase();
+            name = StringUtil.lowerCaseInternal(nodeName.replaceAll("\\w+:", ""));
         }
         return name;
     }
 
     protected boolean checkTrue(final String value) {
-        return "true".equalsIgnoreCase(value)
-                || "yes".equalsIgnoreCase(value)
-                || "on".equalsIgnoreCase(value);
+        String lowerCaseValue = StringUtil.lowerCaseInternal(value);
+        return "true".equals(lowerCaseValue)
+                || "yes".equals(lowerCaseValue)
+                || "on".equals(lowerCaseValue);
     }
 
     protected int getIntegerValue(final String parameterName, final String value, final int defaultValue) {
