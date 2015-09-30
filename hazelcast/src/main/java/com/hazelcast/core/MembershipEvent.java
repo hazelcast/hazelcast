@@ -22,8 +22,11 @@ import java.util.Set;
 import static java.lang.String.format;
 
 /**
- * Membership event fired when a new member is added
- * to the cluster and/or when a member leaves the cluster.
+ * Membership event fired when a new member is added to the cluster and/or when a member leaves the cluster
+ * or when there is a member attribute change via {@link Member#setBooleanAttribute(String, boolean)}
+ * and similar methods.
+ *
+ * Warning: If the event is triggered by a member attribute change then {@link #members} is <code>null</code>!
  *
  * @see MembershipListener
  */
