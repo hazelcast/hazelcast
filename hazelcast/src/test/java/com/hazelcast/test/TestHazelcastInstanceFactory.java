@@ -16,8 +16,9 @@
 
 package com.hazelcast.test;
 
+import static com.hazelcast.util.Preconditions.checkNotNull;
+
 import com.hazelcast.config.Config;
-import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.GroupProperty;
@@ -31,8 +32,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import static com.hazelcast.util.Preconditions.checkNotNull;
 
 public class TestHazelcastInstanceFactory {
 
@@ -187,7 +186,7 @@ public class TestHazelcastInstanceFactory {
 
     private static Config init(Config config) {
         if (config == null) {
-            config = new XmlConfigBuilder().build();
+            config = new Config(); //new XmlConfigBuilder().build();
         }
         config.setProperty(GroupProperty.WAIT_SECONDS_BEFORE_JOIN, "0");
         config.setProperty(GroupProperty.GRACEFUL_SHUTDOWN_MAX_WAIT, "120");

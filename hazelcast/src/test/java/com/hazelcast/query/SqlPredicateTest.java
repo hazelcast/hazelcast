@@ -16,6 +16,10 @@
 
 package com.hazelcast.query;
 
+import static com.hazelcast.instance.TestUtil.toData;
+
+import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.query.SampleObjects.Employee;
 import com.hazelcast.query.SampleObjects.ObjectWithBigDecimal;
 import com.hazelcast.query.SampleObjects.ObjectWithBoolean;
@@ -34,9 +38,6 @@ import com.hazelcast.query.impl.DateHelperTest;
 import com.hazelcast.query.impl.QueryEntry;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -48,15 +49,21 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.instance.TestUtil.toData;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
+
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class SqlPredicateTest {
+
+    final SerializationService ss = new DefaultSerializationServiceBuilder().build();
+
     @Test
     public void testEqualsWhenSqlMatches() throws Exception {
         SqlPredicate sql1 = new SqlPredicate("foo='bar'");
@@ -356,8 +363,8 @@ public class SqlPredicateTest {
         return new SqlPredicate(sql).toString();
     }
 
-    private static Map.Entry createEntry(final Object key, final Object value) {
-        return new QueryEntry(null, toData(key), key, value);
+    private Map.Entry createEntry(final Object key, final Object value) {
+        return new QueryEntry(ss, toData(key), key, value);
     }
 
     private void assertSqlTrue(String s, Object value) {

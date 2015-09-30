@@ -7,6 +7,8 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.GroupProperty;
+import com.hazelcast.nio.serialization.Portable;
+import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.nio.serialization.PortableTest.ChildPortableObject;
 import com.hazelcast.nio.serialization.PortableTest.GrandParentPortableObject;
 import com.hazelcast.nio.serialization.PortableTest.ParentPortableObject;
@@ -27,9 +29,6 @@ import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.util.UuidUtil;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -48,6 +47,10 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
@@ -788,6 +791,9 @@ public class QueryBasicTest extends HazelcastTestSupport {
     }
 
     private void testQueryUsingPortableObject(Config config, String mapName) {
+
+        addPortableFactories(config);
+
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         HazelcastInstance hz1 = factory.newHazelcastInstance(config);
         HazelcastInstance hz2 = factory.newHazelcastInstance(config);
@@ -800,6 +806,26 @@ public class QueryBasicTest extends HazelcastTestSupport {
 
         Collection<Object> values = map.values(new SqlPredicate("timestamp > 0"));
         assertEquals(1, values.size());
+    }
+
+    private void addPortableFactories(Config config) {
+        config.getSerializationConfig()
+        .addPortableFactory(1, new PortableFactory() {
+            @Override
+            public Portable create(int classId) {
+                return new GrandParentPortableObject(1L);
+            }
+        }).addPortableFactory(2, new PortableFactory() {
+            @Override
+            public Portable create(int classId) {
+                return new ParentPortableObject(1L);
+            }
+        }).addPortableFactory(3, new PortableFactory() {
+            @Override
+            public Portable create(int classId) {
+                return new ChildPortableObject(1L);
+            }
+        });
     }
 
     @Test(expected = QueryException.class)
@@ -831,8 +857,10 @@ public class QueryBasicTest extends HazelcastTestSupport {
     public void testQueryPortableObjectWithIndex() {
         String name = randomMapName();
         Config config = new Config();
+
         MapConfig mapConfig = new MapConfig(name)
                 .addMapIndexConfig(new MapIndexConfig("timestamp", true));
+
         config.addMapConfig(mapConfig);
 
         testQueryUsingPortableObject(config, name);
@@ -851,6 +879,9 @@ public class QueryBasicTest extends HazelcastTestSupport {
     }
 
     private void testQueryUsingNestedPortableObject(Config config, String name) {
+
+        addPortableFactories(config);
+
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         HazelcastInstance hz1 = factory.newHazelcastInstance(config);
         HazelcastInstance hz2 = factory.newHazelcastInstance(config);
