@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.eviction;
 
+import com.hazelcast.cluster.memberselector.MemberSelectors;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MaxSizeConfig;
@@ -213,7 +214,8 @@ public final class EvictionOperator {
                 evictableSize = Math.max(diffFromTargetSize, prunedSize);
                 break;
             case PER_NODE:
-                int memberCount = mapServiceContext.getNodeEngine().getClusterService().getMembers().size();
+                int memberCount = mapServiceContext.getNodeEngine().getClusterService()
+                                                   .getSize(MemberSelectors.DATA_MEMBER_SELECTOR);
                 int maxPartitionSize = (maxSize
                         * memberCount / mapServiceContext.getNodeEngine().getPartitionService().getPartitionCount());
                 targetSizePerPartition = Double.valueOf(maxPartitionSize
