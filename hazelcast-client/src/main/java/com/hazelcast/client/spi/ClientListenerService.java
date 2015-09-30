@@ -26,7 +26,11 @@ public interface ClientListenerService {
 
     String startListening(ClientRequest request, Object key, EventHandler handler);
 
+    String startListeningOnPartition(ClientRequest request, int partitionId, EventHandler handler);
+
     boolean stopListening(BaseClientRemoveListenerRequest request, String registrationId);
+
+    boolean stopListeningOnPartition(BaseClientRemoveListenerRequest request, String registrationId, int partitionId);
 
     void registerListener(String uuid, Integer callId);
 

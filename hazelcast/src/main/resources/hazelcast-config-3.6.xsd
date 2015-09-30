@@ -58,6 +58,7 @@
                 <xs:element name="security" type="security" minOccurs="0" maxOccurs="1"/>
                 <xs:element ref="member-attributes" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="quorum" type="quorum" minOccurs="0" maxOccurs="1"/>
+                <xs:element name="lite-member" type="lite-member" minOccurs="0" maxOccurs="1"/>
             </xs:choice>
             <xs:attribute name="id" type="xs:string" use="optional" default="default"/>
         </xs:complexType>
@@ -2660,5 +2661,15 @@
             <xs:extension base="listener-base">
             </xs:extension>
         </xs:simpleContent>
+    </xs:complexType>
+
+    <xs:complexType name="lite-member">
+        <xs:attribute name="enabled" type="xs:boolean" use="required">
+            <xs:annotation>
+                <xs:documentation>
+                    True to set the node as a lite member, false otherwise.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
     </xs:complexType>
 </xs:schema>

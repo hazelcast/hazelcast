@@ -17,6 +17,7 @@
 package com.hazelcast.cluster;
 
 import com.hazelcast.core.Member;
+import com.hazelcast.core.MemberSelector;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.CoreService;
@@ -63,6 +64,14 @@ public interface ClusterService extends CoreService {
     Collection<Member> getMembers();
 
     /**
+     * Returns a collection of the members that satisfy the given {@link com.hazelcast.core.MemberSelector}.
+     *
+     * @param selector {@link com.hazelcast.core.MemberSelector} instance to filter members to return
+     * @return members that satisfy the given {@link com.hazelcast.core.MemberSelector}.
+     */
+    Collection<Member> getMembers(MemberSelector selector);
+
+    /**
      * Returns the address of the master member.
      *
      * @return the address of the master member. Could be null if the master is not yet known.
@@ -89,6 +98,13 @@ public interface ClusterService extends CoreService {
      * @return the current number of members.
      */
     int getSize();
+
+    /**
+     * Gets the number of members that satisfy the given {@link com.hazelcast.core.MemberSelector} instance.
+     * @param selector {@link com.hazelcast.core.MemberSelector} instance that filters members to be counted.
+     * @return the number of members that satisfy the given {@link com.hazelcast.core.MemberSelector} instance.
+     */
+    int getSize(MemberSelector selector);
 
     /**
      * Returns the {@link com.hazelcast.cluster.ClusterClock} of the cluster.

@@ -64,17 +64,35 @@ public final class ClientListenerServiceImpl implements ClientListenerService {
     @Override
     public String startListening(ClientMessage clientMessage, Object key, EventHandler handler,
                                  ClientMessageDecoder responseDecoder) {
-        final ClientInvocationFuture future;
+
+        if (key != null) {
+            final int partitionId = client.getClientPartitionService().getPartitionId(key);
+            return startListeningOnPartition(clientMessage, partitionId, handler, responseDecoder);
+        }
+
+        try {
+            handler.beforeListenerRegister();
+            final ClientInvocationFuture future = new ClientListenerInvocation(client, handler, clientMessage,
+                    responseDecoder).invoke();
+            ClientMessage responseMessage = future.get();
+            String registrationId = responseDecoder.decodeClientMessage(responseMessage);
+
+            registerListener(registrationId, clientMessage.getCorrelationId());
+            return registrationId;
+        } catch (Exception e) {
+            throw ExceptionUtil.rethrow(e);
+        }
+    }
+
+    @Override
+    public String startListeningOnPartition(ClientMessage clientMessage, int partitionId, EventHandler handler,
+                                            ClientMessageDecoder responseDecoder) {
         try {
             handler.beforeListenerRegister();
 
-            if (key == null) {
-                future = new ClientListenerInvocation(client, handler, clientMessage, responseDecoder).invoke();
-            } else {
-                final int partitionId = client.getClientPartitionService().getPartitionId(key);
-                future = new ClientListenerInvocation(client, handler, clientMessage, partitionId,
+            final ClientInvocationFuture future = new ClientListenerInvocation(client, handler, clientMessage, partitionId,
                         responseDecoder).invoke();
-            }
+
             ClientMessage responseMessage = future.get();
             String registrationId = responseDecoder.decodeClientMessage(responseMessage);
 
@@ -95,6 +113,22 @@ public final class ClientListenerServiceImpl implements ClientListenerService {
             ClientMessage removeRequest = listenerRemoveCodec.encodeRequest(realRegistrationId);
             Future future = new ClientInvocation(client, removeRequest).invoke();
             future.get();
+            return true;
+        } catch (Exception e) {
+            throw ExceptionUtil.rethrow(e);
+        }
+    }
+
+    @Override
+    public boolean stopListeningOnPartition(String registrationId, ListenerRemoveCodec listenerRemoveCodec, int partitionId) {
+        try {
+            String realRegistrationId = deRegisterListener(registrationId);
+            if (realRegistrationId == null) {
+                return false;
+            }
+            ClientMessage removeRequest = listenerRemoveCodec.encodeRequest(realRegistrationId);
+            Future future = new ClientInvocation(client, removeRequest, partitionId).invoke();
+            listenerRemoveCodec.decodeResponse((ClientMessage) future.get());
             return true;
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);

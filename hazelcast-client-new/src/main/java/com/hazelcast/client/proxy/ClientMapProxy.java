@@ -27,6 +27,7 @@ import com.hazelcast.client.impl.protocol.codec.MapAddInterceptorCodec;
 import com.hazelcast.client.impl.protocol.codec.MapAddNearCacheEntryListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.MapAddPartitionLostListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.MapClearCodec;
+import com.hazelcast.client.impl.protocol.codec.MapClearNearCacheCodec;
 import com.hazelcast.client.impl.protocol.codec.MapContainsKeyCodec;
 import com.hazelcast.client.impl.protocol.codec.MapContainsValueCodec;
 import com.hazelcast.client.impl.protocol.codec.MapDeleteCodec;
@@ -78,6 +79,7 @@ import com.hazelcast.client.impl.protocol.codec.MapValuesWithPagingPredicateCode
 import com.hazelcast.client.impl.protocol.codec.MapValuesWithPredicateCodec;
 import com.hazelcast.client.nearcache.ClientHeapNearCache;
 import com.hazelcast.client.nearcache.ClientNearCache;
+import com.hazelcast.client.spi.ClientClusterService;
 import com.hazelcast.client.spi.ClientListenerService;
 import com.hazelcast.client.spi.ClientPartitionService;
 import com.hazelcast.client.spi.ClientProxy;
@@ -144,6 +146,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static com.hazelcast.cluster.memberselector.MemberSelectors.LITE_MEMBER_SELECTOR;
 import static com.hazelcast.map.impl.ListenerAdapters.createListenerAdapter;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.SortingUtil.getSortedQueryResultSet;
@@ -823,6 +826,8 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
         invalidateNearCache();
         ClientMessage request = MapEvictAllCodec.encodeRequest(name);
         invoke(request);
+
+        clearNearCachesOnLiteMembers();
     }
 
     @Override
@@ -1276,6 +1281,16 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
         ClientMessage request = MapClearCodec.encodeRequest(name);
         invalidateNearCache();
         invoke(request);
+
+        clearNearCachesOnLiteMembers();
+    }
+
+    private void clearNearCachesOnLiteMembers() {
+        final ClientClusterService clusterService = getClient().getClientClusterService();
+        for (Member member : clusterService.getMembers(LITE_MEMBER_SELECTOR)) {
+            final ClientMessage request = MapClearNearCacheCodec.encodeRequest(name, member.getAddress());
+            invoke(request, member.getAddress());
+        }
     }
 
     @Override

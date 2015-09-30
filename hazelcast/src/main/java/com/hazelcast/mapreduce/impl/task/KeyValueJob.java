@@ -17,6 +17,7 @@
 package com.hazelcast.mapreduce.impl.task;
 
 import com.hazelcast.cluster.ClusterService;
+import com.hazelcast.cluster.memberselector.MemberSelectors;
 import com.hazelcast.config.JobTrackerConfig;
 import com.hazelcast.core.Member;
 import com.hazelcast.mapreduce.Collator;
@@ -31,8 +32,7 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.util.UuidUtil;
 
-import java.util.Collection;
-
+import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
 import static com.hazelcast.mapreduce.impl.MapReduceUtil.executeOperation;
 
 /**
@@ -57,6 +57,11 @@ public class KeyValueJob<KeyIn, ValueIn>
 
     @Override
     protected <T> JobCompletableFuture<T> invoke(Collator collator) {
+        ClusterService clusterService = nodeEngine.getClusterService();
+        if (clusterService.getSize(MemberSelectors.DATA_MEMBER_SELECTOR) == 0) {
+            throw new IllegalStateException("Could not register map reduce job since there are no nodes owning a partition");
+        }
+
         String jobId = UuidUtil.newUnsecureUuidString();
 
         AbstractJobTracker jobTracker = (AbstractJobTracker) this.jobTracker;
@@ -64,6 +69,7 @@ public class KeyValueJob<KeyIn, ValueIn>
         if (jobTracker.registerTrackableJob(jobFuture)) {
             return startSupervisionTask(jobFuture, jobId);
         }
+
         throw new IllegalStateException("Could not register map reduce job");
     }
 
@@ -79,9 +85,8 @@ public class KeyValueJob<KeyIn, ValueIn>
             topologyChangedStrategy = config.getTopologyChangedStrategy();
         }
 
-        ClusterService cs = nodeEngine.getClusterService();
-        Collection<Member> members = cs.getMembers();
-        for (Member member : members) {
+        ClusterService clusterService = nodeEngine.getClusterService();
+        for (Member member : clusterService.getMembers(KeyValueJobOperation.MEMBER_SELECTOR)) {
             Operation operation = new KeyValueJobOperation<KeyIn, ValueIn>(name, jobId, chunkSize, keyValueSource, mapper,
                     combinerFactory, reducerFactory, communicateStats, topologyChangedStrategy);
 
@@ -89,7 +94,7 @@ public class KeyValueJob<KeyIn, ValueIn>
         }
 
         // After we prepared all the remote systems we can now start the processing
-        for (Member member : members) {
+        for (Member member : clusterService.getMembers(DATA_MEMBER_SELECTOR)) {
             Operation operation = new StartProcessingJobOperation<KeyIn>(name, jobId, keys, predicate);
             executeOperation(operation, member.getAddress(), mapReduceService, nodeEngine);
         }

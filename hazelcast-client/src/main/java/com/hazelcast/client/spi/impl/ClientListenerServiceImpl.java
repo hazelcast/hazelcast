@@ -70,16 +70,27 @@ public final class ClientListenerServiceImpl implements ClientListenerService {
 
     @Override
     public String startListening(ClientRequest request, Object key, EventHandler handler) {
-        final Future future;
+        if (key != null) {
+            final int partitionId = client.getClientPartitionService().getPartitionId(key);
+            return startListeningOnPartition(request, partitionId, handler);
+        }
+
         try {
             handler.beforeListenerRegister();
+            final Future future = new ClientInvocation(client, handler, request).invoke();
+            String registrationId = serializationService.toObject(future.get());
+            registerListener(registrationId, request.getCallId());
+            return registrationId;
+        } catch (Exception e) {
+            throw ExceptionUtil.rethrow(e);
+        }
+    }
 
-            if (key == null) {
-                future = new ClientInvocation(client, handler, request).invoke();
-            } else {
-                final int partitionId = client.getClientPartitionService().getPartitionId(key);
-                future = new ClientInvocation(client, handler, request, partitionId).invoke();
-            }
+    @Override
+    public String startListeningOnPartition(ClientRequest request, int partitionId, EventHandler handler) {
+        try {
+            handler.beforeListenerRegister();
+            final Future future = new ClientInvocation(client, handler, request, partitionId).invoke();
             String registrationId = serializationService.toObject(future.get());
             registerListener(registrationId, request.getCallId());
             return registrationId;
@@ -96,7 +107,25 @@ public final class ClientListenerServiceImpl implements ClientListenerService {
                 return false;
             }
             request.setRegistrationId(realRegistrationId);
+
             Future<Boolean> future = new ClientInvocation(client, request).invoke();
+            future.get();
+            return true;
+        } catch (Exception e) {
+            throw ExceptionUtil.rethrow(e);
+        }
+    }
+
+    @Override
+    public boolean stopListeningOnPartition(BaseClientRemoveListenerRequest request, String registrationId, int partitionId) {
+        try {
+            String realRegistrationId = deRegisterListener(registrationId);
+            if (realRegistrationId == null) {
+                return false;
+            }
+            request.setRegistrationId(realRegistrationId);
+
+            Future<Boolean> future = new ClientInvocation(client, request, partitionId).invoke();
             future.get();
             return true;
         } catch (Exception e) {

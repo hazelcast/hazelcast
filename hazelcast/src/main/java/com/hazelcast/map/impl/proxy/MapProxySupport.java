@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.proxy;
 
+import com.hazelcast.cluster.memberselector.MemberSelectors;
 import com.hazelcast.concurrent.lock.LockProxySupport;
 import com.hazelcast.concurrent.lock.LockServiceImpl;
 import com.hazelcast.config.EntryListenerConfig;
@@ -33,6 +34,7 @@ import com.hazelcast.core.IFunction;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapStore;
 import com.hazelcast.core.Member;
+import com.hazelcast.core.MemberSelector;
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.map.EntryProcessor;
@@ -127,6 +129,8 @@ import java.util.Set;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.cluster.memberselector.MemberSelectors.LITE_MEMBER_SELECTOR;
+import static com.hazelcast.cluster.memberselector.MemberSelectors.NON_LOCAL_MEMBER_SELECTOR;
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.util.IterableUtil.nullToEmpty;
 import static com.hazelcast.util.Preconditions.checkNotNull;
@@ -280,11 +284,12 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
 
     private boolean notOwnerPartitionForKey(Data key) {
         int partitionId = partitionService.getPartitionId(key);
-        return !partitionService.getPartitionOwner(partitionId).equals(thisAddress);
+        return !thisAddress.equals(partitionService.getPartitionOwner(partitionId));
     }
 
     private boolean cacheKeyAnyway() {
-        return getMapConfig().getNearCacheConfig().isCacheLocalEntries();
+        return getMapConfig().getNearCacheConfig().isCacheLocalEntries()
+                || getNodeEngine().getLocalMember().isLiteMember();
     }
 
     private Object putNearCache(Data key, Data value) {
@@ -369,7 +374,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
                 public void onResponse(Data response) {
                     if (nearCache != null) {
                         int partitionId = partitionService.getPartitionId(key);
-                        if (!partitionService.getPartitionOwner(partitionId).equals(thisAddress)
+                        if (!thisAddress.equals(partitionService.getPartitionOwner(partitionId))
                                 || getMapConfig().getNearCacheConfig().isCacheLocalEntries()) {
                             nearCache.put(key, response);
                         }
@@ -496,6 +501,12 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
             for (Object o : resultMap.values()) {
                 numberOfAffectedEntries += (Integer) o;
             }
+
+            MemberSelector selector = MemberSelectors.and(LITE_MEMBER_SELECTOR, NON_LOCAL_MEMBER_SELECTOR);
+            for (Member member : getNodeEngine().getClusterService().getMembers(selector)) {
+                operationService.invokeOnTarget(SERVICE_NAME, new EvictAllOperation(name), member.getAddress());
+            }
+
             if (numberOfAffectedEntries > 0) {
                 publishMapEvent(numberOfAffectedEntries, EntryEventType.EVICT_ALL);
             }
@@ -868,6 +879,12 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
             for (Object o : resultMap.values()) {
                 numberOfAffectedEntries += (Integer) o;
             }
+
+            MemberSelector selector = MemberSelectors.and(LITE_MEMBER_SELECTOR, NON_LOCAL_MEMBER_SELECTOR);
+            for (Member member : getNodeEngine().getClusterService().getMembers(selector)) {
+                operationService.invokeOnTarget(SERVICE_NAME, new ClearOperation(name), member.getAddress());
+            }
+
             if (numberOfAffectedEntries > 0) {
                 publishMapEvent(numberOfAffectedEntries, EntryEventType.CLEAR_ALL);
             }

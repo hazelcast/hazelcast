@@ -45,7 +45,7 @@ public interface JobPartitionState {
     /**
      * Definition of the processing states
      */
-    public static enum State {
+    enum State {
         /**
          * Partition waits for being calculated
          */

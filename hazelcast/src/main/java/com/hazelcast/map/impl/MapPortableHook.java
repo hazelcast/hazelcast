@@ -22,6 +22,7 @@ import com.hazelcast.map.impl.client.MapAddIndexRequest;
 import com.hazelcast.map.impl.client.MapAddInterceptorRequest;
 import com.hazelcast.map.impl.client.MapAddNearCacheEntryListenerRequest;
 import com.hazelcast.map.impl.client.MapAddPartitionLostListenerRequest;
+import com.hazelcast.map.impl.client.MapClearNearCacheRequest;
 import com.hazelcast.map.impl.client.MapClearRequest;
 import com.hazelcast.map.impl.client.MapContainsKeyRequest;
 import com.hazelcast.map.impl.client.MapContainsValueRequest;
@@ -128,6 +129,7 @@ public class MapPortableHook implements PortableHook {
     public static final int ADD_NEAR_CACHE_ENTRY_LISTENER = 50;
     public static final int ADD_MAP_PARTITION_LOST_LISTENER = 51;
     public static final int REMOVE_MAP_PARTITION_LOST_LISTENER = 52;
+    public static final int CLEAR_NEAR_CACHE = 53;
 
     @Override
     public int getFactoryId() {
@@ -138,7 +140,7 @@ public class MapPortableHook implements PortableHook {
     public PortableFactory createFactory() {
         return new PortableFactory() {
             final ConstructorFunction<Integer, Portable>[] constructors
-                    = new ConstructorFunction[REMOVE_MAP_PARTITION_LOST_LISTENER + 1];
+                    = new ConstructorFunction[CLEAR_NEAR_CACHE + 1];
 
             {
                 constructors[GET] = new ConstructorFunction<Integer, Portable>() {
@@ -425,6 +427,12 @@ public class MapPortableHook implements PortableHook {
                 constructors[REMOVE_MAP_PARTITION_LOST_LISTENER] = new ConstructorFunction<Integer, Portable>() {
                     public Portable createNew(Integer arg) {
                         return new MapRemovePartitionLostListenerRequest();
+                    }
+                };
+
+                constructors[CLEAR_NEAR_CACHE] = new ConstructorFunction<Integer, Portable>() {
+                    public Portable createNew(Integer arg) {
+                        return new MapClearNearCacheRequest();
                     }
                 };
             }

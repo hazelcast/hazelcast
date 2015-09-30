@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.Map;
 
+
 /**
  * @author mdogan 25/08/14
  */
@@ -32,13 +33,19 @@ public class SimpleMemberImpl implements Member {
 
     private String uuid;
     private InetSocketAddress address;
+    private boolean liteMember;
 
     public SimpleMemberImpl() {
     }
 
     public SimpleMemberImpl(String uuid, InetSocketAddress address) {
+        this(uuid, address, false);
+    }
+
+    public SimpleMemberImpl(String uuid, InetSocketAddress address, boolean liteMember) {
         this.uuid = uuid;
         this.address = address;
+        this.liteMember = liteMember;
     }
 
     @Override
@@ -64,6 +71,11 @@ public class SimpleMemberImpl implements Member {
     @Override
     public String getUuid() {
         return uuid;
+    }
+
+    @Override
+    public boolean isLiteMember() {
+        return liteMember;
     }
 
     @Override
@@ -160,11 +172,13 @@ public class SimpleMemberImpl implements Member {
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(uuid);
         out.writeObject(address);
+        out.writeBoolean(liteMember);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         uuid = in.readUTF();
         address = in.readObject();
+        liteMember = in.readBoolean();
     }
 }

@@ -137,9 +137,12 @@ public class Node {
 
     private final HazelcastThreadGroup hazelcastThreadGroup;
 
+    private final boolean liteMember;
+
     public Node(HazelcastInstanceImpl hazelcastInstance, Config config, NodeContext nodeContext) {
         this.hazelcastInstance = hazelcastInstance;
         this.config = config;
+        this.liteMember = config.isLiteMember();
         this.configClassLoader = config.getClassLoader();
         this.groupProperties = new GroupProperties(config);
         this.buildInfo = BuildInfoProvider.getBuildInfo();
@@ -157,7 +160,7 @@ public class Node {
         try {
             address = addressPicker.getPublicAddress();
             final Map<String, Object> memberAttributes = findMemberAttributes(config.getMemberAttributeConfig().asReadOnly());
-            localMember = new MemberImpl(address, true, createMemberUuid(address), hazelcastInstance, memberAttributes);
+            localMember = new MemberImpl(address, true, createMemberUuid(address), hazelcastInstance, memberAttributes, liteMember);
             loggingService.setThisMember(localMember);
             logger = loggingService.getLogger(Node.class.getName());
             hazelcastThreadGroup = new HazelcastThreadGroup(hazelcastInstance.getName(), logger, configClassLoader);
@@ -486,7 +489,7 @@ public class Node {
 
     public JoinMessage createSplitBrainJoinMessage() {
         return new JoinMessage(Packet.VERSION, buildInfo.getBuildNumber(), address, localMember.getUuid(),
-                createConfigCheck(), clusterService.getMemberAddresses());
+                localMember.isLiteMember(), createConfigCheck(), clusterService.getMemberAddresses());
     }
 
     public JoinRequest createJoinRequest(boolean withCredentials) {
@@ -494,7 +497,7 @@ public class Node {
                 ? securityContext.getCredentialsFactory().newCredentials() : null;
 
         return new JoinRequest(Packet.VERSION, buildInfo.getBuildNumber(), address,
-                localMember.getUuid(), createConfigCheck(), credentials,
+                localMember.getUuid(), localMember.isLiteMember(), createConfigCheck(), credentials,
                 config.getMemberAttributeConfig().getAttributes());
     }
 
@@ -580,6 +583,10 @@ public class Node {
      */
     public NodeState getState() {
         return state;
+    }
+
+    public boolean isLiteMember() {
+        return liteMember;
     }
 
     @Override

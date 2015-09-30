@@ -51,8 +51,18 @@ public abstract class ClientProxy implements DistributedObject {
         return context.getListenerService().startListening(registrationRequest, null, handler, responseDecoder);
     }
 
+    protected final String listenOnPartition(ClientMessage registrationRequest, int partitionId,
+                                             EventHandler handler, ClientMessageDecoder responseDecoder) {
+        return context.getListenerService().startListeningOnPartition(registrationRequest, partitionId, handler, responseDecoder);
+    }
+
     protected final boolean stopListening(String registrationId, ListenerRemoveCodec listenerRemoveCodec) {
         return context.getListenerService().stopListening(registrationId, listenerRemoveCodec);
+    }
+
+    protected final boolean stopListeningOnPartition(String registrationId, ListenerRemoveCodec listenerRemoveCodec,
+                                                     int partitionId) {
+        return context.getListenerService().stopListeningOnPartition(registrationId, listenerRemoveCodec, partitionId);
     }
 
     protected final ClientContext getContext() {

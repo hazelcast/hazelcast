@@ -18,9 +18,12 @@ package com.hazelcast.client.spi;
 
 import com.hazelcast.cache.impl.CacheService;
 import com.hazelcast.client.ClientExtension;
+import com.hazelcast.client.LoadBalancer;
 import com.hazelcast.client.cache.impl.ClientCacheDistributedObject;
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.config.ClientProperties;
 import com.hazelcast.client.config.ProxyFactoryConfig;
+import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.client.ClientCreateRequest;
 import com.hazelcast.client.impl.client.DistributedObjectListenerRequest;
@@ -59,27 +62,35 @@ import com.hazelcast.core.DistributedObjectListener;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IAtomicLong;
+import com.hazelcast.core.Member;
 import com.hazelcast.executor.impl.DistributedExecutorService;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.mapreduce.impl.MapReduceService;
 import com.hazelcast.multimap.impl.MultiMapService;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ClassLoaderUtil;
+import com.hazelcast.nio.Connection;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.ringbuffer.impl.RingbufferService;
 import com.hazelcast.spi.DefaultObjectNamespace;
 import com.hazelcast.spi.ObjectNamespace;
+import com.hazelcast.spi.exception.RetryableException;
 import com.hazelcast.spi.impl.PortableDistributedObjectEvent;
 import com.hazelcast.topic.impl.TopicService;
 import com.hazelcast.topic.impl.reliable.ReliableTopicService;
 import com.hazelcast.transaction.impl.xa.XAService;
+import com.hazelcast.util.EmptyStatement;
 import com.hazelcast.util.ExceptionUtil;
 
+import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 
 /**
  * The ProxyManager handles client proxy instantiation and retrieval at start- and runtime by registering
@@ -203,7 +214,7 @@ public final class ProxyManager {
             return current.get();
         }
         try {
-            initialize(clientProxy);
+            initializeWithRetry(clientProxy);
         } catch (Exception e) {
             proxies.remove(ns);
             proxyFuture.set(e);
@@ -218,12 +229,95 @@ public final class ProxyManager {
         proxies.remove(ns);
     }
 
-    private void initialize(ClientProxy clientProxy) throws Exception {
-        ClientCreateRequest request = new ClientCreateRequest(clientProxy.getName(), clientProxy.getServiceName());
+    private void initializeWithRetry(ClientProxy clientProxy) throws Exception {
+        final long retryCountLimit = getRetryCountLimit();
+        for (int retryCount = 0; retryCount < retryCountLimit; retryCount++) {
+            try {
+                initialize(clientProxy);
+                return;
+            } catch (Exception e) {
+                boolean retryable = isRetryable(e);
+
+                if (!retryable && e instanceof ExecutionException) {
+                    retryable = isRetryable(e.getCause());
+                }
+
+                if (retryable) {
+                    sleepForProxyInitRetry();
+                } else {
+                    throw e;
+                }
+            }
+        }
+    }
+
+    private long getRetryCountLimit() {
+        final ClientProperties clientProperties = client.getClientProperties();
+        int waitTime = clientProperties.getInvocationTimeoutSeconds().getInteger();
+        long retryTimeoutInSeconds = waitTime > 0 ? waitTime
+                : Integer.parseInt(ClientProperties.PROP_INVOCATION_TIMEOUT_SECONDS_DEFAULT);
+        return retryTimeoutInSeconds / ClientInvocation.RETRY_WAIT_TIME_IN_SECONDS;
+    }
+
+    private boolean isRetryable(final Throwable t) {
+        return t instanceof RetryableException || ClientInvocation.isRetryable(t);
+    }
+
+    private void sleepForProxyInitRetry() {
+        try {
+            Thread.sleep(TimeUnit.SECONDS.toMillis(ClientInvocation.RETRY_WAIT_TIME_IN_SECONDS));
+        } catch (InterruptedException ignored) {
+            EmptyStatement.ignore(ignored);
+        }
+    }
+
+    private void initialize(final ClientProxy clientProxy) throws Exception {
+        final Address target = findNextAddressToSendCreateRequest();
+        final Connection connection = getTargetOrOwnerConnection(target);
+        final ClientCreateRequest request = new ClientCreateRequest(clientProxy.getName(), clientProxy.getServiceName(), target);
         final ClientContext context = new ClientContext(client, this);
-        new ClientInvocation(client, request).invoke().get();
+        new ClientInvocation(client, request, connection).invoke().get();
         clientProxy.setContext(context);
         clientProxy.onInitialize();
+    }
+
+    private Connection getTargetOrOwnerConnection(final Address target) throws IOException {
+        if (target == null) {
+            throw new IOException("Not able to setup owner connection!");
+        }
+
+        final ClientConnectionManager connectionManager = client.getConnectionManager();
+        Connection connection = connectionManager.getConnection(target);
+        if (connection == null) {
+            final Address ownerConnectionAddress = client.getClientClusterService().getOwnerConnectionAddress();
+            if (ownerConnectionAddress == null) {
+                throw new IOException("Not able to setup owner connection!");
+            }
+
+            connection = connectionManager.getConnection(ownerConnectionAddress);
+            if (connection == null) {
+                throw new IOException("Client is not connected to member " + target);
+            }
+        }
+
+        return connection;
+    }
+
+    public Address findNextAddressToSendCreateRequest() {
+        final int clusterSize = client.getClientClusterService().getSize();
+        Member liteMember = null;
+
+        final LoadBalancer loadBalancer = client.getLoadBalancer();
+        for (int i = 0; i < clusterSize; i++) {
+            final Member member = loadBalancer.next();
+            if (!member.isLiteMember()) {
+                return member.getAddress();
+            } else if (liteMember == null) {
+                liteMember = member;
+            }
+        }
+
+        return liteMember != null ? liteMember.getAddress() : null;
     }
 
     public Collection<? extends DistributedObject> getDistributedObjects() {

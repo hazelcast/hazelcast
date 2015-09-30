@@ -16,40 +16,35 @@
 
 package com.hazelcast.client.impl.client;
 
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.spi.InvocationBuilder;
+import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.ProxyService;
+import com.hazelcast.spi.impl.proxyservice.impl.operations.InitializeDistributedObjectOperation;
 
 import java.io.IOException;
 import java.security.Permission;
 import java.util.Collection;
 
-public class ClientCreateRequest extends CallableClientRequest implements Portable, RetryableRequest, SecureRequest {
+public class ClientCreateRequest extends TargetClientRequest implements Portable, SecureRequest {
 
     private String name;
 
     private String serviceName;
 
+    private Address target;
+
     public ClientCreateRequest() {
     }
 
-    public ClientCreateRequest(String name, String serviceName) {
+    public ClientCreateRequest(String name, String serviceName, Address target) {
         this.name = name;
         this.serviceName = serviceName;
-    }
-
-    @Override
-    public Object call() throws Exception {
-        ProxyService proxyService = clientEngine.getProxyService();
-        proxyService.initializeDistributedObject(serviceName, name);
-        return null;
-    }
-
-    @Override
-    public String getServiceName() {
-        return serviceName;
+        this.target = target;
     }
 
     @Override
@@ -63,15 +58,33 @@ public class ClientCreateRequest extends CallableClientRequest implements Portab
     }
 
     @Override
+    protected Operation prepareOperation() {
+        return new InitializeDistributedObjectOperation(serviceName, name);
+    }
+
+    @Override
+    protected InvocationBuilder getInvocationBuilder(Operation op) {
+        return operationService.createInvocationBuilder(getServiceName(), op, target);
+    }
+
+    @Override
+    public String getServiceName() {
+        return serviceName;
+    }
+
+    @Override
     public void write(PortableWriter writer) throws IOException {
         writer.writeUTF("n", name);
         writer.writeUTF("s", serviceName);
+        target.writeData(writer.getRawDataOutput());
     }
 
     @Override
     public void read(PortableReader reader) throws IOException {
         name = reader.readUTF("n");
         serviceName = reader.readUTF("s");
+        target = new Address();
+        target.readData(reader.getRawDataInput());
     }
 
     @Override

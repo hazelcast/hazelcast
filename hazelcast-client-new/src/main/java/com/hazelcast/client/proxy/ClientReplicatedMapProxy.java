@@ -50,6 +50,7 @@ import com.hazelcast.core.ReplicatedMap;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.spi.Operation;
 
 import java.util.AbstractMap;
 import java.util.ArrayList;
@@ -60,9 +61,11 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
@@ -79,8 +82,14 @@ public class ClientReplicatedMapProxy<K, V>
     protected static final String NULL_KEY_IS_NOT_ALLOWED = "Null key is not allowed!";
     protected static final String NULL_VALUE_IS_NOT_ALLOWED = "Null value is not allowed!";
 
+    private static final AtomicIntegerFieldUpdater<ClientReplicatedMapProxy> TARGET_PARTITION_ID_UPDATER =
+            AtomicIntegerFieldUpdater.newUpdater(ClientReplicatedMapProxy.class, "targetPartitionId");
+
     private volatile ClientHeapNearCache<Object> nearCache;
     private final AtomicBoolean nearCacheInitialized = new AtomicBoolean();
+    // all requests are forwarded to the same node via a random partition id
+    // do not use this field directly. use getOrInitTargetPartitionId() instead.
+    private volatile int targetPartitionId = Operation.GENERIC_PARTITION_ID;
 
     public ClientReplicatedMapProxy(String serviceName, String objectName) {
         super(serviceName, objectName);
@@ -102,7 +111,7 @@ public class ClientReplicatedMapProxy<K, V>
         Data valueData = toData(value);
         Data keyData = toData(key);
         ClientMessage request = ReplicatedMapPutCodec.encodeRequest(name, keyData, valueData, timeUnit.toMillis(ttl));
-        ClientMessage response = invoke(request);
+        ClientMessage response = invokeOnPartition(request, getOrInitTargetPartitionId());
         ReplicatedMapPutCodec.ResponseParameters result = ReplicatedMapPutCodec.decodeResponse(response);
         return toObject(result.response);
 
@@ -111,7 +120,7 @@ public class ClientReplicatedMapProxy<K, V>
     @Override
     public int size() {
         ClientMessage request = ReplicatedMapSizeCodec.encodeRequest(name);
-        ClientMessage response = invoke(request);
+        ClientMessage response = invokeOnPartition(request, getOrInitTargetPartitionId());
         ReplicatedMapSizeCodec.ResponseParameters result = ReplicatedMapSizeCodec.decodeResponse(response);
         return result.response;
     }
@@ -119,7 +128,7 @@ public class ClientReplicatedMapProxy<K, V>
     @Override
     public boolean isEmpty() {
         ClientMessage request = ReplicatedMapIsEmptyCodec.encodeRequest(name);
-        ClientMessage response = invoke(request);
+        ClientMessage response = invokeOnPartition(request, getOrInitTargetPartitionId());
         ReplicatedMapIsEmptyCodec.ResponseParameters result = ReplicatedMapIsEmptyCodec.decodeResponse(response);
         return result.response;
     }
@@ -129,7 +138,7 @@ public class ClientReplicatedMapProxy<K, V>
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         Data keyData = toData(key);
         ClientMessage request = ReplicatedMapContainsKeyCodec.encodeRequest(name, keyData);
-        ClientMessage response = invoke(request);
+        ClientMessage response = invokeOnPartition(request, getOrInitTargetPartitionId());
         ReplicatedMapContainsKeyCodec.ResponseParameters result = ReplicatedMapContainsKeyCodec.decodeResponse(response);
         return result.response;
     }
@@ -139,7 +148,7 @@ public class ClientReplicatedMapProxy<K, V>
         checkNotNull(value, NULL_KEY_IS_NOT_ALLOWED);
         Data valueData = toData(value);
         ClientMessage request = ReplicatedMapContainsValueCodec.encodeRequest(name, valueData);
-        ClientMessage response = invoke(request);
+        ClientMessage response = invokeOnPartition(request, getOrInitTargetPartitionId());
         ReplicatedMapContainsValueCodec.ResponseParameters result = ReplicatedMapContainsValueCodec.decodeResponse(response);
         return result.response;
     }
@@ -160,7 +169,7 @@ public class ClientReplicatedMapProxy<K, V>
 
         Data keyData = toData(key);
         ClientMessage request = ReplicatedMapGetCodec.encodeRequest(name, keyData);
-        ClientMessage response = invoke(request);
+        ClientMessage response = invokeOnPartition(request, getOrInitTargetPartitionId());
 
         ReplicatedMapGetCodec.ResponseParameters result = ReplicatedMapGetCodec.decodeResponse(response);
 
@@ -181,7 +190,7 @@ public class ClientReplicatedMapProxy<K, V>
         checkNotNull(key, NULL_KEY_IS_NOT_ALLOWED);
         Data keyData = toData(key);
         ClientMessage request = ReplicatedMapRemoveCodec.encodeRequest(name, keyData);
-        ClientMessage response = invoke(request);
+        ClientMessage response = invokeOnPartition(request, getOrInitTargetPartitionId());
         ReplicatedMapRemoveCodec.ResponseParameters result = ReplicatedMapRemoveCodec.decodeResponse(response);
         return toObject(result.response);
     }
@@ -195,18 +204,18 @@ public class ClientReplicatedMapProxy<K, V>
         }
 
         ClientMessage request = ReplicatedMapPutAllCodec.encodeRequest(name, map);
-        invoke(request);
+        invokeOnPartition(request, getOrInitTargetPartitionId());
     }
 
     @Override
     public void clear() {
         ClientMessage request = ReplicatedMapClearCodec.encodeRequest(name);
-        invoke(request);
+        invokeOnPartition(request, getOrInitTargetPartitionId());
     }
 
     @Override
     public boolean removeEntryListener(String registrationId) {
-        return stopListening(registrationId, new ListenerRemoveCodec() {
+        return stopListeningOnPartition(registrationId, new ListenerRemoveCodec() {
             @Override
             public ClientMessage encodeRequest(String realRegistrationId) {
                 return ReplicatedMapRemoveEntryListenerCodec.encodeRequest(name, realRegistrationId);
@@ -216,7 +225,7 @@ public class ClientReplicatedMapProxy<K, V>
             public boolean decodeResponse(ClientMessage clientMessage) {
                 return ReplicatedMapRemoveEntryListenerCodec.decodeResponse(clientMessage).response;
             }
-        });
+        }, getOrInitTargetPartitionId());
     }
 
     @Override
@@ -229,7 +238,7 @@ public class ClientReplicatedMapProxy<K, V>
                 return (T) ReplicatedMapAddEntryListenerCodec.decodeResponse(clientMessage).response;
             }
         };
-        return listen(request, null, handler, responseDecoder);
+        return listenOnPartition(request, getOrInitTargetPartitionId(), handler, responseDecoder);
     }
 
     @Override
@@ -244,7 +253,7 @@ public class ClientReplicatedMapProxy<K, V>
                 return (T) ReplicatedMapAddEntryListenerToKeyCodec.decodeResponse(clientMessage).response;
             }
         };
-        return listen(request, keyData, handler, responseDecoder);
+        return listenOnPartition(request, getOrInitTargetPartitionId(), handler, responseDecoder);
     }
 
     @Override
@@ -258,7 +267,7 @@ public class ClientReplicatedMapProxy<K, V>
                 return (T) ReplicatedMapAddEntryListenerWithPredicateCodec.decodeResponse(clientMessage).response;
             }
         };
-        return listen(request, null, handler, responseDecoder);
+        return listenOnPartition(request, getOrInitTargetPartitionId(), handler, responseDecoder);
     }
 
     @Override
@@ -275,13 +284,13 @@ public class ClientReplicatedMapProxy<K, V>
                 return (T) ReplicatedMapAddEntryListenerToKeyWithPredicateCodec.decodeResponse(clientMessage).response;
             }
         };
-        return listen(request, keyData, handler, responseDecoder);
+        return listenOnPartition(request, getOrInitTargetPartitionId(), handler, responseDecoder);
     }
 
     @Override
     public Set<K> keySet() {
         ClientMessage request = ReplicatedMapKeySetCodec.encodeRequest(name);
-        ClientMessage response = invoke(request);
+        ClientMessage response = invokeOnPartition(request, getOrInitTargetPartitionId());
         ReplicatedMapKeySetCodec.ResponseParameters result = ReplicatedMapKeySetCodec.decodeResponse(response);
         Set<K> resultSet = new HashSet<K>(result.set.size());
         for (Data data : result.set) {
@@ -293,7 +302,7 @@ public class ClientReplicatedMapProxy<K, V>
     @Override
     public Collection<V> values() {
         ClientMessage request = ReplicatedMapValuesCodec.encodeRequest(name);
-        ClientMessage response = invoke(request);
+        ClientMessage response = invokeOnPartition(request, getOrInitTargetPartitionId());
         ReplicatedMapValuesCodec.ResponseParameters result = ReplicatedMapValuesCodec.decodeResponse(response);
         Collection<V> resultCollection = new ArrayList<V>(result.list.size());
         for (Data data : result.list) {
@@ -312,7 +321,7 @@ public class ClientReplicatedMapProxy<K, V>
     @Override
     public Set<Entry<K, V>> entrySet() {
         ClientMessage request = ReplicatedMapEntrySetCodec.encodeRequest(name);
-        ClientMessage response = invoke(request);
+        ClientMessage response = invokeOnPartition(request, getOrInitTargetPartitionId());
         ReplicatedMapEntrySetCodec.ResponseParameters result = ReplicatedMapEntrySetCodec.decodeResponse(response);
         Set<Entry<K, V>> resultCollection = new HashSet<Entry<K, V>>(result.entrySet.size());
         for (Entry<Data, Data> dataEntry : result.entrySet) {
@@ -346,7 +355,7 @@ public class ClientReplicatedMapProxy<K, V>
         try {
             ClientMessage request = ReplicatedMapAddNearCacheEntryListenerCodec.encodeRequest(name, false);
             EventHandler handler = new ReplicatedMapAddNearCacheEventHandler();
-            String registrationId = getContext().getListenerService().startListening(request, null, handler,
+            String registrationId = getContext().getListenerService().startListening(request, getName(), handler,
                     new ClientMessageDecoder() {
                         @Override
                         public <T> T decodeClientMessage(ClientMessage clientMessage) {
@@ -363,7 +372,7 @@ public class ClientReplicatedMapProxy<K, V>
     private void removeNearCacheInvalidationListener() {
         if (nearCache != null && nearCache.getId() != null) {
             String registrationId = nearCache.getId();
-            getContext().getListenerService().stopListening(registrationId, new ListenerRemoveCodec() {
+            getContext().getListenerService().stopListeningOnPartition(registrationId, new ListenerRemoveCodec() {
                 @Override
                 public ClientMessage encodeRequest(String realRegistrationId) {
                     return ReplicatedMapRemoveEntryListenerCodec.encodeRequest(name, realRegistrationId);
@@ -373,7 +382,7 @@ public class ClientReplicatedMapProxy<K, V>
                 public boolean decodeResponse(ClientMessage clientMessage) {
                     return ReplicatedMapRemoveEntryListenerCodec.decodeResponse(clientMessage).response;
                 }
-            });
+            }, getOrInitTargetPartitionId());
         }
     }
 
@@ -459,5 +468,18 @@ public class ClientReplicatedMapProxy<K, V>
                     throw new IllegalArgumentException("Not a known event type " + entryEventType);
             }
         }
+    }
+
+    private int getOrInitTargetPartitionId() {
+        int targetPartitionId = this.targetPartitionId;
+        while (targetPartitionId == Operation.GENERIC_PARTITION_ID) {
+            final int partitionCount = getContext().getPartitionService().getPartitionCount();
+            targetPartitionId = new Random().nextInt(partitionCount);
+            if (!TARGET_PARTITION_ID_UPDATER.compareAndSet(this, -1, targetPartitionId)) {
+                targetPartitionId = this.targetPartitionId;
+            }
+        }
+
+        return targetPartitionId;
     }
 }

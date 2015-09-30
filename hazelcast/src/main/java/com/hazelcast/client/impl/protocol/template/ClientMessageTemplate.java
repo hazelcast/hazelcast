@@ -21,6 +21,7 @@ import com.hazelcast.annotation.Nullable;
 import com.hazelcast.annotation.Request;
 import com.hazelcast.client.impl.protocol.EventMessageConst;
 import com.hazelcast.client.impl.protocol.ResponseMessageConst;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 
 @GenerateCodec(id = TemplateConstants.CLIENT_TEMPLATE_ID, name = "Client", ns = "Hazelcast.Client.Protocol.Codec")
@@ -87,7 +88,7 @@ public interface ClientMessageTemplate {
                             "hz:impl:xaService"
      */
     @Request(id = 5, retryable = false, response = ResponseMessageConst.VOID)
-    void createProxy(String name, String serviceName);
+    void createProxy(String name, String serviceName, Address target);
     /**
      *
      * @param name The distributed object name for which the proxy is being destroyed for.

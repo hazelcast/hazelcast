@@ -208,12 +208,12 @@ public class PartitionServiceProxy implements com.hazelcast.core.PartitionServic
 
         @Override
         public Member getOwner() {
-            Address address = partitionService.getPartitionOwner(partitionId);
+            // triggers initial partition assignment
+            final Address address = partitionService.getPartitionOwner(partitionId);
             if (address == null) {
                 return null;
             }
 
-            //todo: why are we calling the partitionService twice, why don't we immediately get the member?
             return partitionService.getMember(address);
         }
 

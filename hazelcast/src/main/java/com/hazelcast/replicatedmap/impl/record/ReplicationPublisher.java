@@ -17,8 +17,10 @@
 package com.hazelcast.replicatedmap.impl.record;
 
 import com.hazelcast.cluster.ClusterService;
+import com.hazelcast.cluster.memberselector.MemberSelectors;
 import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.core.Member;
+import com.hazelcast.core.MemberSelector;
 import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.logging.ILogger;
@@ -49,11 +51,15 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Random;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+
+import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
+import static com.hazelcast.cluster.memberselector.MemberSelectors.NON_LOCAL_MEMBER_SELECTOR;
 
 /**
  * This class implements the actual replication logic for replicated map
@@ -219,7 +225,7 @@ public class ReplicationPublisher<K, V>
     }
 
     public void retryWithDifferentReplicationNode(Member member) {
-        List<MemberImpl> members = new ArrayList<MemberImpl>(nodeEngine.getClusterService().getMemberImpls());
+        List<Member> members = new ArrayList<Member>(nodeEngine.getClusterService().getMembers(DATA_MEMBER_SELECTOR));
         members.remove(member);
 
         // If there are less than two members there is not other possible candidate to replicate from
@@ -242,12 +248,12 @@ public class ReplicationPublisher<K, V>
         }
     }
 
-    void sendPreProvisionRequest(List<MemberImpl> members) {
+    void sendPreProvisionRequest(List<Member> members) {
         if (members.size() == 0) {
             return;
         }
         int randomMember = memberRandomizer.nextInt(members.size());
-        MemberImpl newMember = members.get(randomMember);
+        Member newMember = members.get(randomMember);
         ReplicatedMapPostJoinOperation.MemberMapPair[] memberMapPairs = new ReplicatedMapPostJoinOperation.MemberMapPair[1];
         memberMapPairs[0] = new ReplicatedMapPostJoinOperation.MemberMapPair(newMember, name);
 
@@ -258,14 +264,15 @@ public class ReplicationPublisher<K, V>
     }
 
     private void executeRemoteClear(boolean emptyReplicationQueue) {
-        List<MemberImpl> failedMembers = new ArrayList<MemberImpl>(clusterService.getMemberImpls());
+        MemberSelector selector = MemberSelectors.and(DATA_MEMBER_SELECTOR, NON_LOCAL_MEMBER_SELECTOR);
+        List<Member> failedMembers = new ArrayList<Member>(clusterService.getMembers(selector));
         for (int i = 0; i < MAX_CLEAR_EXECUTION_RETRY; i++) {
-            Map<MemberImpl, InternalCompletableFuture> futures = executeClearOnMembers(failedMembers, emptyReplicationQueue);
+            Map<Member, InternalCompletableFuture> futures = executeClearOnMembers(failedMembers, emptyReplicationQueue);
 
             // Clear to collect new failing members
             failedMembers.clear();
 
-            for (Map.Entry<MemberImpl, InternalCompletableFuture> future : futures.entrySet()) {
+            for (Entry<Member, InternalCompletableFuture> future : futures.entrySet()) {
                 try {
                     future.getValue().get();
                 } catch (Exception e) {
@@ -284,17 +291,14 @@ public class ReplicationPublisher<K, V>
                 + failedMembers);
     }
 
-    private Map executeClearOnMembers(Collection<MemberImpl> members, boolean emptyReplicationQueue) {
-        Address thisAddress = clusterService.getThisAddress();
-
-        Map<MemberImpl, InternalCompletableFuture> futures = new HashMap<MemberImpl, InternalCompletableFuture>(members.size());
-        for (MemberImpl member : members) {
+    private Map<Member, InternalCompletableFuture> executeClearOnMembers(Collection<Member> members,
+                                                                         boolean emptyReplicationQueue) {
+        Map<Member, InternalCompletableFuture> futures = new HashMap<Member, InternalCompletableFuture>(members.size());
+        for (Member member : members) {
             Address address = member.getAddress();
-            if (!thisAddress.equals(address)) {
-                Operation operation = new ReplicatedMapClearOperation(name, emptyReplicationQueue);
-                InvocationBuilder ib = operationService.createInvocationBuilder(SERVICE_NAME, operation, address);
-                futures.put(member, ib.invoke());
-            }
+            Operation operation = new ReplicatedMapClearOperation(name, emptyReplicationQueue);
+            InvocationBuilder ib = operationService.createInvocationBuilder(SERVICE_NAME, operation, address);
+            futures.put(member, ib.invoke());
         }
         return futures;
     }

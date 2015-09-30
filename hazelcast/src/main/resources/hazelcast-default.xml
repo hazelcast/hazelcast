@@ -246,4 +246,6 @@
 
     <services enable-defaults="true"/>
 
+    <lite-member enabled="false"/>
+
 </hazelcast>

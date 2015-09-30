@@ -45,8 +45,8 @@ public final class MemberImpl
         super(address, uuid);
     }
 
-    public MemberImpl(Address address, String uuid, Map<String, Object> attributes) {
-        super(address, uuid, attributes);
+    public MemberImpl(Address address, String uuid, Map<String, Object> attributes, boolean liteMember) {
+        super(address, uuid, attributes, liteMember);
     }
 
     public MemberImpl(AbstractMember member) {

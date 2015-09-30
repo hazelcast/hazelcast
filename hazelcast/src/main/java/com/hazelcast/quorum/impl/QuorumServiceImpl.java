@@ -16,6 +16,7 @@
 
 package com.hazelcast.quorum.impl;
 
+import com.hazelcast.cluster.impl.MemberSelectingCollection;
 import com.hazelcast.config.QuorumConfig;
 import com.hazelcast.config.QuorumListenerConfig;
 import com.hazelcast.core.Member;
@@ -35,10 +36,12 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.QuorumAwareService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.util.ExceptionUtil;
+
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 
+import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 
 
@@ -163,7 +166,7 @@ public class QuorumServiceImpl implements EventPublishingService<QuorumEvent, Qu
     }
 
     private void updateQuorums(MembershipEvent event) {
-        Set<Member> members = event.getMembers();
+        final Collection<Member> members = new MemberSelectingCollection<Member>(event.getMembers(), DATA_MEMBER_SELECTOR);
         for (QuorumImpl quorum : quorums.values()) {
             quorum.update(members);
         }

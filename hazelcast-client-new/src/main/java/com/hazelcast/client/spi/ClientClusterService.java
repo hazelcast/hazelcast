@@ -18,6 +18,7 @@ package com.hazelcast.client.spi;
 
 import com.hazelcast.core.Client;
 import com.hazelcast.core.Member;
+import com.hazelcast.core.MemberSelector;
 import com.hazelcast.core.MembershipListener;
 import com.hazelcast.nio.Address;
 
@@ -57,6 +58,14 @@ public interface ClientClusterService {
     Collection<Member> getMemberList();
 
     /**
+     * Returns a collection of the members that satisfy the given {@link com.hazelcast.core.MemberSelector}.
+     *
+     * @param selector {@link com.hazelcast.core.MemberSelector} instance to filter members to return
+     * @return members that satisfy the given {@link com.hazelcast.core.MemberSelector}.
+     */
+    Collection<Member> getMembers(MemberSelector selector);
+
+    /**
      * Returns the address of the master member.
      *
      * @return The address of the master member. Could be null if the master is not yet known.
@@ -69,6 +78,13 @@ public interface ClientClusterService {
      * @return The current number of members.
      */
     int getSize();
+
+    /**
+     * Gets the number of members that satisfy the given {@link com.hazelcast.core.MemberSelector} instance.
+     * @param selector {@link com.hazelcast.core.MemberSelector} instance that filters members to be counted.
+     * @return the number of members that satisfy the given {@link com.hazelcast.core.MemberSelector} instance.
+     */
+    int getSize(MemberSelector selector);
 
     /**
      * Returns the cluster-time.
@@ -97,4 +113,5 @@ public interface ClientClusterService {
      * @return The address of the owner connection.
      */
     Address getOwnerConnectionAddress();
+
 }

@@ -20,6 +20,7 @@ import com.hazelcast.annotation.GenerateCodec;
 import com.hazelcast.annotation.Request;
 import com.hazelcast.client.impl.protocol.EventMessageConst;
 import com.hazelcast.client.impl.protocol.ResponseMessageConst;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 
 import java.util.Map;
@@ -735,4 +736,6 @@ public interface MapCodecTemplate {
     @Request(id = 58, retryable = false, response = ResponseMessageConst.SET_ENTRY)
     Object entriesWithPagingPredicate(String name, Data predicate);
 
+    @Request(id = 59, retryable = false, response = ResponseMessageConst.VOID)
+    void clearNearCache(String name, Address target);
 }

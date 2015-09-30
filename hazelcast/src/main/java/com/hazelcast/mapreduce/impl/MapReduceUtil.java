@@ -17,14 +17,11 @@
 package com.hazelcast.mapreduce.impl;
 
 import com.hazelcast.cluster.ClusterService;
-import com.hazelcast.core.ManagedContext;
 import com.hazelcast.core.Member;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.mapreduce.JobPartitionState;
 import com.hazelcast.mapreduce.PartitionIdAware;
 import com.hazelcast.mapreduce.RemoteMapReduceException;
-import com.hazelcast.mapreduce.impl.operation.KeysAssignmentOperation;
-import com.hazelcast.mapreduce.impl.operation.KeysAssignmentResult;
 import com.hazelcast.mapreduce.impl.operation.NotifyRemoteExceptionOperation;
 import com.hazelcast.mapreduce.impl.task.JobPartitionStateImpl;
 import com.hazelcast.mapreduce.impl.task.JobProcessInformationImpl;
@@ -33,6 +30,7 @@ import com.hazelcast.mapreduce.impl.task.JobTaskConfiguration;
 import com.hazelcast.mapreduce.impl.task.MemberAssigningJobProcessInformationImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.partition.InternalPartitionService;
+import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
@@ -43,18 +41,14 @@ import com.hazelcast.util.EmptyStatement;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.TimeoutException;
 
+import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
 import static com.hazelcast.mapreduce.JobPartitionState.State.MAPPING;
 import static com.hazelcast.mapreduce.JobPartitionState.State.PROCESSED;
 import static com.hazelcast.mapreduce.JobPartitionState.State.REDUCING;
 import static com.hazelcast.mapreduce.JobPartitionState.State.WAITING;
-import static com.hazelcast.mapreduce.impl.operation.RequestPartitionResult.ResultState.SUCCESSFUL;
 
 /**
  * This utility class contains a few basic operations that are needed in multiple places
@@ -77,7 +71,7 @@ public final class MapReduceUtil {
             int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
             return new JobProcessInformationImpl(partitionCount, supervisor);
         } else {
-            int partitionCount = nodeEngine.getClusterService().getSize();
+            int partitionCount = nodeEngine.getClusterService().getSize(DATA_MEMBER_SELECTOR);
             return new MemberAssigningJobProcessInformationImpl(partitionCount, supervisor);
         }
     }
@@ -161,124 +155,63 @@ public final class MapReduceUtil {
     private static boolean compareAndSwapPartitionState(int partitionId, JobPartitionState oldPartitionState,
                                                         JobProcessInformationImpl processInformation, Address owner,
                                                         JobPartitionState.State newState) {
-
         JobPartitionState newPartitionState = new JobPartitionStateImpl(owner, newState);
-        if (processInformation.updatePartitionState(partitionId, oldPartitionState, newPartitionState)) {
-            return true;
-        }
-        return false;
+        return processInformation.updatePartitionState(partitionId, oldPartitionState, newPartitionState);
     }
 
-    public static <K, V> Map<Address, Map<K, V>> mapResultToMember(JobSupervisor supervisor, Map<K, V> result) {
+    public static <V> List<V> executeOperation(Collection<Member> members,
+                                               OperationFactory operationFactory,
+                                               MapReduceService mapReduceService,
+                                               NodeEngine nodeEngine) {
+        final OperationService operationService = nodeEngine.getOperationService();
 
-        Set<Object> unassignedKeys = new HashSet<Object>();
-        for (Map.Entry<K, V> entry : result.entrySet()) {
-            Address address = supervisor.getReducerAddressByKey(entry.getKey());
-            if (address == null) {
-                unassignedKeys.add(entry.getKey());
-            }
-        }
+        final List<InternalCompletableFuture<V>> futures = new ArrayList<InternalCompletableFuture<V>>();
+        final List<V> results = new ArrayList<V>();
 
-        if (unassignedKeys.size() > 0) {
-            requestAssignment(unassignedKeys, supervisor);
-        }
-
-        // Now assign all keys
-        Map<Address, Map<K, V>> mapping = new HashMap<Address, Map<K, V>>();
-        for (Map.Entry<K, V> entry : result.entrySet()) {
-            Address address = supervisor.getReducerAddressByKey(entry.getKey());
-            if (address != null) {
-                Map<K, V> data = mapping.get(address);
-                if (data == null) {
-                    data = new HashMap<K, V>();
-                    mapping.put(address, data);
-                }
-                data.put(entry.getKey(), entry.getValue());
-            }
-        }
-        return mapping;
-    }
-
-    private static void requestAssignment(Set<Object> keys, JobSupervisor supervisor) {
-        try {
-            MapReduceService mapReduceService = supervisor.getMapReduceService();
-            String name = supervisor.getConfiguration().getName();
-            String jobId = supervisor.getConfiguration().getJobId();
-            KeysAssignmentResult assignmentResult = mapReduceService
-                    .processRequest(supervisor.getJobOwner(), new KeysAssignmentOperation(name, jobId, keys));
-
-            if (assignmentResult.getResultState() == SUCCESSFUL) {
-                Map<Object, Address> assignment = assignmentResult.getAssignment();
-                for (Map.Entry<Object, Address> entry : assignment.entrySet()) {
-                    // Cache the keys for later mappings
-                    if (!supervisor.assignKeyReducerAddress(entry.getKey(), entry.getValue())) {
-                        throw new IllegalStateException("Key reducer assignment in illegal state");
-                    }
-                }
-            }
-        } catch (Exception e) {
-            // Just announce it to higher levels
-            throw new RuntimeException(e);
-        }
-    }
-
-    public static String printPartitionStates(JobPartitionState[] partitionStates) {
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < partitionStates.length; i++) {
-            if (i > 0) {
-                sb.append(", ");
-            }
-            sb.append("[").append(i).append("=>");
-            sb.append(partitionStates[i] == null ? "null" : partitionStates[i].getState()).append("]");
-        }
-        return sb.toString();
-    }
-
-    public static <V> List<V> executeOperation(OperationFactory operationFactory, MapReduceService mapReduceService,
-                                               NodeEngine nodeEngine, boolean returnsResponse) {
-        ClusterService cs = nodeEngine.getClusterService();
-        OperationService os = nodeEngine.getOperationService();
-
-        Collection<Member> members = cs.getMembers();
-        List<V> results = returnsResponse ? new ArrayList<V>() : null;
-
-        List<Exception> exceptions = new ArrayList<Exception>(members.size());
+        final List<Exception> exceptions = new ArrayList<Exception>(members.size());
         for (Member member : members) {
             try {
                 Operation operation = operationFactory.createOperation();
-                if (cs.getThisAddress().equals(member.getAddress())) {
+                if (nodeEngine.getThisAddress().equals(member.getAddress())) {
                     // Locally we can call the operation directly
                     operation.setNodeEngine(nodeEngine);
                     operation.setCallerUuid(nodeEngine.getLocalMember().getUuid());
                     operation.setService(mapReduceService);
                     operation.run();
 
-                    if (returnsResponse) {
-                        V response = (V) operation.getResponse();
-                        if (response != null) {
-                            results.add(response);
-                        }
+                    V response = (V) operation.getResponse();
+                    if (response != null) {
+                        results.add(response);
                     }
                 } else {
-                    if (returnsResponse) {
-                        InvocationBuilder ib = os.createInvocationBuilder(SERVICE_NAME, operation, member.getAddress());
-
-                        V response = (V) ib.invoke().getSafely();
-                        if (response != null) {
-                            results.add(response);
-                        }
-                    } else {
-                        os.send(operation, member.getAddress());
-                    }
+                    InvocationBuilder ib = operationService.createInvocationBuilder(SERVICE_NAME,
+                                                                                    operation,
+                                                                                    member.getAddress());
+                    final InternalCompletableFuture<V> future = ib.invoke();
+                    futures.add(future);
                 }
             } catch (Exception e) {
                 exceptions.add(e);
             }
         }
 
+
+        for (InternalCompletableFuture<V> future : futures) {
+            try {
+                V response = future.getSafely();
+                if (response != null) {
+                    results.add(response);
+                }
+            } catch (Exception e) {
+                exceptions.add(e);
+            }
+        }
+
+
         if (exceptions.size() > 0) {
             throw new RemoteMapReduceException("Exception on mapreduce operation", exceptions);
         }
+
         return results;
     }
 
@@ -320,18 +253,6 @@ public final class MapReduceUtil {
 
     public static int mapSize(final int sourceSize) {
         return sourceSize == 0 ? 0 : (int) (sourceSize / DEFAULT_MAP_GROWTH_FACTOR) + 1;
-    }
-
-    public static void injectManagedContext(NodeEngine nodeEngine, Object injectee, Object... injectees) {
-        ManagedContext managedContext = nodeEngine.getSerializationService().getManagedContext();
-        if (injectee != null) {
-            managedContext.initialize(injectee);
-        }
-        for (Object otherInjectee : injectees) {
-            if (otherInjectee != null) {
-                managedContext.initialize(otherInjectee);
-            }
-        }
     }
 
     public static void enforcePartitionTableWarmup(MapReduceService mapReduceService) throws TimeoutException {

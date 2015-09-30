@@ -28,7 +28,12 @@ public interface ClientListenerService {
     String startListening(ClientMessage clientMessage, Object key, EventHandler handler,
                           ClientMessageDecoder responseDecoder);
 
+    String startListeningOnPartition(ClientMessage clientMessage, int partitionId, EventHandler handler,
+                                            ClientMessageDecoder responseDecoder);
+
     boolean stopListening(String registrationId, ListenerRemoveCodec listenerRemoveCodec);
+
+    boolean stopListeningOnPartition(String registrationId, ListenerRemoveCodec listenerRemoveCodec, int partitionId);
 
     void registerListener(String uuid, Integer callId);
 

@@ -20,6 +20,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.mapreduce.JobTracker;
 import com.hazelcast.quorum.QuorumService;
+import com.hazelcast.replicatedmap.ReplicatedMapCantBeCreatedOnLiteMemberException;
 import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.transaction.HazelcastXAResource;
 import com.hazelcast.transaction.TransactionContext;
@@ -92,6 +93,7 @@ public interface HazelcastInstance {
      *
      * @param name name of the distributed map
      * @return replicated map instance with specified name
+     * @throws ReplicatedMapCantBeCreatedOnLiteMemberException if it is called on a lite member
      * @since 3.2
      */
     <K, V> ReplicatedMap<K, V> getReplicatedMap(String name);
