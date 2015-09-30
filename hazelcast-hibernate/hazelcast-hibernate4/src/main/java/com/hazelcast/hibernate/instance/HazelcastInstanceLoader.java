@@ -19,13 +19,13 @@ package com.hazelcast.hibernate.instance;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ConfigLoader;
 import com.hazelcast.config.XmlConfigBuilder;
-import com.hazelcast.core.DuplicateInstanceNameException;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.hibernate.CacheEnvironment;
 import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
+import com.hazelcast.util.StringUtil;
 import org.hibernate.cache.CacheException;
 
 import java.io.IOException;
@@ -39,63 +39,51 @@ class HazelcastInstanceLoader implements IHazelcastInstanceLoader {
 
     private static final ILogger LOGGER = Logger.getLogger(HazelcastInstanceFactory.class);
 
-    private final Properties props = new Properties();
-    private String instanceName;
     private HazelcastInstance instance;
     private Config config;
+    private boolean shutDown;
 
+    @Override
     public void configure(Properties props) {
-        this.props.putAll(props);
-    }
-
-    public HazelcastInstance loadInstance() throws CacheException {
-        if (instance != null && instance.getLifecycleService().isRunning()) {
-            LOGGER.warning("Current HazelcastInstance is already loaded and running! "
-                    + "Returning current instance...");
-            return instance;
-        }
-        String configResourcePath = null;
-        instanceName = CacheEnvironment.getInstanceName(props);
-        configResourcePath = CacheEnvironment.getConfigFilePath(props);
-        if (!isEmpty(configResourcePath)) {
+        String configResourcePath = CacheEnvironment.getConfigFilePath(props);
+        if (!StringUtil.isNullOrEmptyAfterTrim(configResourcePath)) {
             try {
-                config = ConfigLoader.load(configResourcePath);
+                this.config = ConfigLoader.load(configResourcePath);
             } catch (IOException e) {
                 LOGGER.warning("IOException: " + e.getMessage());
             }
             if (config == null) {
-                throw new CacheException("Could not find configuration file: "
-                        + configResourcePath);
-            }
-        }
-        if (instanceName != null) {
-            instance = Hazelcast.getHazelcastInstanceByName(instanceName);
-            if (instance == null) {
-                try {
-                    createOrGetInstance();
-                } catch (DuplicateInstanceNameException ignored) {
-                    instance = Hazelcast.getHazelcastInstanceByName(instanceName);
-                }
+                throw new CacheException("Could not find configuration file: " + configResourcePath);
             }
         } else {
-            createOrGetInstance();
+            this.config = new XmlConfigBuilder().build();
+        }
+
+        String instanceName = CacheEnvironment.getInstanceName(props);
+
+        if (instanceName != null) {
+            config.setInstanceName(instanceName);
+        }
+
+        this.shutDown = CacheEnvironment.shutdownOnStop(props, (instanceName == null));
+
+    }
+
+    @Override
+    public HazelcastInstance loadInstance() throws CacheException {
+        if (config.getInstanceName() == null) {
+            instance = Hazelcast.newHazelcastInstance(config);
+        } else {
+            instance = Hazelcast.getOrCreateHazelcastInstance(config);
         }
         return instance;
     }
 
-    private void createOrGetInstance() throws DuplicateInstanceNameException {
-        if (config == null) {
-            config = new XmlConfigBuilder().build();
-        }
-        config.setInstanceName(instanceName);
-        instance = Hazelcast.newHazelcastInstance(config);
-    }
-
+    @Override
     public void unloadInstance() throws CacheException {
         if (instance == null) {
             return;
         }
-        final boolean shutDown = CacheEnvironment.shutdownOnStop(props, (instanceName == null));
         if (!shutDown) {
             LOGGER.warning(CacheEnvironment.SHUTDOWN_ON_STOP + " property is set to 'false'. "
                     + "Leaving current HazelcastInstance active! (Warning: Do not disable Hazelcast "
@@ -108,9 +96,5 @@ class HazelcastInstanceLoader implements IHazelcastInstanceLoader {
         } catch (Exception e) {
             throw new CacheException(e);
         }
-    }
-
-    private static boolean isEmpty(String s) {
-        return s == null || s.trim().length() == 0;
     }
 }

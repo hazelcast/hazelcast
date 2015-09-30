@@ -16,7 +16,6 @@
 
 package com.hazelcast.hibernate.instance;
 
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.hibernate.CacheEnvironment;
 import org.hibernate.cache.CacheException;
 
@@ -33,10 +32,6 @@ public final class HazelcastInstanceFactory {
     private static final String HZ_INSTANCE_LOADER_CLASSNAME = "com.hazelcast.hibernate.instance.HazelcastInstanceLoader";
 
     private HazelcastInstanceFactory() {
-    }
-
-    public static HazelcastInstance createInstance(Properties props) throws CacheException {
-        return createInstanceLoader(props).loadInstance();
     }
 
     public static IHazelcastInstanceLoader createInstanceLoader(Properties props) throws CacheException {
