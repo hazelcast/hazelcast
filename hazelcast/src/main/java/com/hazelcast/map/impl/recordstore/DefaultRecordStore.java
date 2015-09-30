@@ -50,6 +50,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;
 
@@ -66,7 +67,8 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
     private final MapStoreContext mapStoreContext;
     private final RecordStoreLoader recordStoreLoader;
     private final MapKeyLoader keyLoader;
-    private final Collection<Future> loadingFutures = new ArrayList<Future>();
+    // loadingFutures are modified by partition threads and could be accessed by query threads
+    private final Collection<Future> loadingFutures = new ConcurrentLinkedQueue<Future>();
 
     public DefaultRecordStore(MapContainer mapContainer, int partitionId,
                               MapKeyLoader keyLoader, ILogger logger) {
@@ -127,15 +129,21 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
 
     @Override
     public void checkIfLoaded() {
+        if (loadingFutures.isEmpty()) {
+            return;
+        }
+
         if (isLoaded()) {
+            List<Future> doneFutures = null;
             try {
-                // check all loading futures for exceptions
-                FutureUtil.checkAllDone(loadingFutures);
+                doneFutures = FutureUtil.getAllDone(loadingFutures);
+                // check all finished loading futures for exceptions
+                FutureUtil.checkAllDone(doneFutures);
             } catch (Exception e) {
                 logger.severe("Exception while loading map " + name, e);
                 ExceptionUtil.rethrow(e);
             } finally {
-                loadingFutures.clear();
+                loadingFutures.removeAll(doneFutures);
             }
         } else {
             keyLoader.triggerLoadingWithDelay();
