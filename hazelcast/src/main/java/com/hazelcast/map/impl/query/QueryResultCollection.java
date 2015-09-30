@@ -44,6 +44,14 @@ public class QueryResultCollection<E> extends AbstractSet<E> {
         }
     }
 
+    public QueryResultCollection(SerializationService serializationService, IterationType iterationType, boolean binary,
+                                 boolean unique, QueryResult queryResult) {
+
+        this(serializationService, iterationType, binary, unique);
+        allAllRows(queryResult.getRows());
+    }
+
+
     // just for testing
     Collection<QueryResultRow> getRows() {
         return rows;
