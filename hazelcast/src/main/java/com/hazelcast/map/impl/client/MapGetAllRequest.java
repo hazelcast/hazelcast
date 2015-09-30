@@ -16,13 +16,12 @@
 
 package com.hazelcast.map.impl.client;
 
-import com.hazelcast.client.impl.client.AllPartitionsClientRequest;
+import com.hazelcast.client.impl.client.PartitionClientRequest;
 import com.hazelcast.client.impl.client.RetryableRequest;
 import com.hazelcast.client.impl.client.SecureRequest;
-import com.hazelcast.map.impl.MapEntrySet;
 import com.hazelcast.map.impl.MapPortableHook;
 import com.hazelcast.map.impl.MapService;
-import com.hazelcast.map.impl.operation.MapGetAllOperationFactory;
+import com.hazelcast.map.impl.operation.GetAllOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -31,24 +30,25 @@ import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
-import com.hazelcast.spi.OperationFactory;
+import com.hazelcast.spi.Operation;
 import java.io.IOException;
 import java.security.Permission;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 
-public class MapGetAllRequest extends AllPartitionsClientRequest implements Portable, RetryableRequest, SecureRequest {
+public class MapGetAllRequest extends PartitionClientRequest implements Portable, RetryableRequest, SecureRequest {
 
     protected String name;
     private Set<Data> keys = new HashSet<Data>();
+    private int partitionId;
 
     public MapGetAllRequest() {
     }
 
-    public MapGetAllRequest(String name, Set<Data> keys) {
+    public MapGetAllRequest(String name, Set<Data> keys, int partitionId) {
         this.name = name;
         this.keys = keys;
+        this.partitionId = partitionId;
     }
 
     public int getFactoryId() {
@@ -60,22 +60,15 @@ public class MapGetAllRequest extends AllPartitionsClientRequest implements Port
     }
 
     @Override
-    protected OperationFactory createOperationFactory() {
-        return new MapGetAllOperationFactory(name, keys);
+    protected Operation prepareOperation() {
+        GetAllOperation operation = new GetAllOperation(name, keys);
+        operation.setPartitionId(partitionId);
+        return operation;
     }
 
     @Override
-    protected Object reduce(Map<Integer, Object> map) {
-        MapEntrySet resultSet = new MapEntrySet();
-        MapService mapService = getService();
-        for (Map.Entry<Integer, Object> entry : map.entrySet()) {
-            MapEntrySet mapEntrySet = (MapEntrySet) mapService.getMapServiceContext().toObject(entry.getValue());
-            Set<Map.Entry<Data, Data>> entrySet = mapEntrySet.getEntrySet();
-            for (Map.Entry<Data, Data> dataEntry : entrySet) {
-                resultSet.add(dataEntry);
-            }
-        }
-        return resultSet;
+    protected int getPartition() {
+        return partitionId;
     }
 
     public String getServiceName() {
@@ -84,6 +77,7 @@ public class MapGetAllRequest extends AllPartitionsClientRequest implements Port
 
     public void write(PortableWriter writer) throws IOException {
         writer.writeUTF("n", name);
+        writer.writeInt("p", partitionId);
         writer.writeInt("size", keys.size());
         if (!keys.isEmpty()) {
             ObjectDataOutput out = writer.getRawDataOutput();
@@ -95,6 +89,7 @@ public class MapGetAllRequest extends AllPartitionsClientRequest implements Port
 
     public void read(PortableReader reader) throws IOException {
         name = reader.readUTF("n");
+        partitionId = reader.readInt("p");
         int size = reader.readInt("size");
         if (size > 0) {
             ObjectDataInput input = reader.getRawDataInput();

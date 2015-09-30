@@ -900,19 +900,48 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
         if (keySet.isEmpty()) {
             return result;
         }
-        ClientMessage request = MapGetAllCodec.encodeRequest(name, keySet);
-        ClientMessage response = invoke(request);
-        MapGetAllCodec.ResponseParameters resultParameters = MapGetAllCodec.decodeResponse(response);
-
-        for (Entry<Data, Data> entry : resultParameters.entrySet) {
-
-            final V value = toObject(entry.getValue());
-            final K key = toObject(entry.getKey());
-            result.put(key, value);
-            if (nearCache != null) {
-                nearCache.put(entry.getKey(), value);
+        
+        ClientPartitionService partitionService = getContext().getPartitionService();
+        int partitionCount = partitionService.getPartitionCount();
+        List<Future<ClientMessage>> futures = new ArrayList<Future<ClientMessage>>(partitionCount);
+        
+        Map<Integer, Set<Data>> partitionToKeyData = new HashMap<Integer, Set<Data>>();
+        
+        for (Data keyData : keySet) {
+            int partitionId = partitionService.getPartitionId(keyData);
+            Set<Data> keyDataSet = partitionToKeyData.get(partitionId);
+            if (keyDataSet == null) {
+                keyDataSet = new HashSet<Data>();
+                partitionToKeyData.put(partitionId, keyDataSet);
+            }
+            keyDataSet.add(keyData);
+        }
+        
+        for (final Map.Entry<Integer, Set<Data>> entry : partitionToKeyData.entrySet()) {
+            int partitionId = entry.getKey();
+            ClientMessage request = MapGetAllCodec.encodeRequest(name, keySet);
+            futures.add(new ClientInvocation(getClient(), request, partitionId).invoke());
+        }
+        
+        for (Future<ClientMessage> future : futures) {
+            try {
+                ClientMessage response = future.get();
+                MapGetAllCodec.ResponseParameters resultParameters = MapGetAllCodec.decodeResponse(response);
+        
+                for (Entry<Data, Data> entry : resultParameters.entrySet) {
+        
+                    final V value = toObject(entry.getValue());
+                    final K key = toObject(entry.getKey());
+                    result.put(key, value);
+                    if (nearCache != null) {
+                        nearCache.put(entry.getKey(), value);
+                    }
+                }
+            } catch (Exception e) {
+                ExceptionUtil.rethrow(e);
             }
         }
+        
         return result;
     }
 
