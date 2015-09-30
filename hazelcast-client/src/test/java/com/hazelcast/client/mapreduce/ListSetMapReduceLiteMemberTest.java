@@ -3,7 +3,8 @@ package com.hazelcast.client.mapreduce;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
@@ -13,8 +14,8 @@ import org.junit.runner.RunWith;
 
 import static com.hazelcast.test.HazelcastTestSupport.assertClusterSizeEventually;
 
-@RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
+@RunWith(HazelcastParallelClassRunner.class)
+@Category({QuickTest.class, ParallelTest.class})
 public class ListSetMapReduceLiteMemberTest {
 
     private TestHazelcastFactory factory;

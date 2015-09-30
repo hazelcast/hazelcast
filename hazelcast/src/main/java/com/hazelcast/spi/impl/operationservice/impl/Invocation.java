@@ -27,7 +27,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.partition.InternalPartition;
-import com.hazelcast.partition.PartitionsCantBeAssignedException;
+import com.hazelcast.partition.NoDataMemberInClusterException;
 import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.Operation;
@@ -302,7 +302,9 @@ abstract class Invocation implements OperationResponseHandler, Runnable {
             remote = false;
             if (nodeEngine.isActive()) {
                 if (clusterService.getSize(DATA_MEMBER_SELECTOR) == 0) {
-                    notify(new PartitionsCantBeAssignedException());
+                    final NoDataMemberInClusterException exception = new NoDataMemberInClusterException(
+                            "Partitions can't be assigned since all nodes in the cluster are lite members");
+                    notify(exception);
                 } else {
                     notify(new WrongTargetException(thisAddress, null, partitionId
                             , replicaIndex, op.getClass().getName(), serviceName));

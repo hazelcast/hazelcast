@@ -60,7 +60,7 @@ public interface InternalPartitionService extends CoreService {
      * @param partitionId  the partitionId
      * @return owner of partition
      * @throws InterruptedException
-     * @throws PartitionsCantBeAssignedException if all nodes are lite members and partitions can't be assigned
+     * @throws NoDataMemberInClusterException if all nodes are lite members and partitions can't be assigned
      */
     Address getPartitionOwnerOrWait(int partitionId);
 

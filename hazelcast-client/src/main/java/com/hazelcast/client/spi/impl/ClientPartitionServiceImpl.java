@@ -28,7 +28,7 @@ import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.partition.PartitionsCantBeAssignedException;
+import com.hazelcast.partition.NoDataMemberInClusterException;
 import com.hazelcast.partition.client.GetPartitionsRequest;
 import com.hazelcast.partition.client.PartitionsResponse;
 import com.hazelcast.util.EmptyStatement;
@@ -81,7 +81,8 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
     private void getPartitionsBlocking() {
         while (!getPartitions() && client.getConnectionManager().isAlive()) {
             if (isClusterFormedByOnlyLiteMembers()) {
-                throw new PartitionsCantBeAssignedException();
+                throw new NoDataMemberInClusterException(
+                        "Partitions can't be assigned since all nodes in the cluster are lite members");
             }
 
             try {
@@ -94,7 +95,7 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
 
     private boolean isClusterFormedByOnlyLiteMembers() {
         final ClientClusterService clusterService = client.getClientClusterService();
-        return clusterService.getSize(DATA_MEMBER_SELECTOR) == 0;
+        return clusterService.getMembers(DATA_MEMBER_SELECTOR).isEmpty();
     }
 
     private boolean getPartitions() {

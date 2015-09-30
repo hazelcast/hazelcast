@@ -11,7 +11,6 @@ import com.hazelcast.core.Member;
 import com.hazelcast.instance.HazelcastInstanceFactory;
 import com.hazelcast.instance.Node;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
@@ -28,7 +27,7 @@ import static com.hazelcast.test.HazelcastTestSupport.getNode;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category({QuickTest.class, ParallelTest.class})
+@Category(QuickTest.class)
 public class LiteMemberJoinTest {
 
     @Before

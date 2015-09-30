@@ -21,13 +21,13 @@ import com.hazelcast.core.HazelcastException;
 /**
  * Thrown when there is no data member in the cluster to assign partitions
  */
-public class PartitionsCantBeAssignedException
+public class NoDataMemberInClusterException
         extends HazelcastException {
-    public PartitionsCantBeAssignedException() {
-        this("Partitions can't be assigned since all nodes in the cluster are lite members");
+    public NoDataMemberInClusterException() {
+        super();
     }
 
-    public PartitionsCantBeAssignedException(String message) {
+    public NoDataMemberInClusterException(String message) {
         super(message);
     }
 

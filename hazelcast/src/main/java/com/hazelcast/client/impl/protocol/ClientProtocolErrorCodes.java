@@ -93,7 +93,7 @@ public final class ClientProtocolErrorCodes {
     public static final int ACCESS_CONTROL = 68;
     public static final int LOGIN = 69;
     public static final int UNSUPPORTED_CALLBACK = 70;
-    public static final int PARTITIONS_CANT_BE_ASSIGNED = 71;
+    public static final int NO_DATA_MEMBER = 71;
     public static final int REPLICATED_MAP_CANT_BE_CREATED = 72;
 
     private ClientProtocolErrorCodes() {

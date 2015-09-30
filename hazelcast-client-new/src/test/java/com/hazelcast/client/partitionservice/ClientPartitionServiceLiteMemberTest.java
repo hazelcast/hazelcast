@@ -4,8 +4,9 @@ import com.hazelcast.client.spi.ClientPartitionService;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.partition.PartitionsCantBeAssignedException;
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.partition.NoDataMemberInClusterException;
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
@@ -16,8 +17,8 @@ import org.junit.runner.RunWith;
 import static com.hazelcast.client.impl.ClientTestUtil.getHazelcastClientInstanceImpl;
 import static org.junit.Assert.assertNotNull;
 
-@RunWith(HazelcastSerialClassRunner.class)
-@Category(QuickTest.class)
+@RunWith(HazelcastParallelClassRunner.class)
+@Category({QuickTest.class, ParallelTest.class})
 public class ClientPartitionServiceLiteMemberTest
         extends TestHazelcastFactory {
 
@@ -33,7 +34,7 @@ public class ClientPartitionServiceLiteMemberTest
         factory.terminateAll();
     }
 
-    @Test(expected = PartitionsCantBeAssignedException.class)
+    @Test(expected = NoDataMemberInClusterException.class)
     public void testGetPartitionsBlockingFailWithOnlyLiteMember() {
         factory.newHazelcastInstance(new Config().setLiteMember(true));
 

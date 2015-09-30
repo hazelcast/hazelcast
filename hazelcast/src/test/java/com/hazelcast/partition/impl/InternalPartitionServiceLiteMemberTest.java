@@ -3,7 +3,7 @@ package com.hazelcast.partition.impl;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.nio.Address;
-import com.hazelcast.partition.PartitionsCantBeAssignedException;
+import com.hazelcast.partition.NoDataMemberInClusterException;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -167,7 +167,7 @@ public class InternalPartitionServiceLiteMemberTest
         }
     }
 
-    @Test(expected = PartitionsCantBeAssignedException.class)
+    @Test(expected = NoDataMemberInClusterException.class)
     public void test_getPartitionOwnerOrWait_onMasterLiteMember() {
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
         final HazelcastInstance instance = factory.newHazelcastInstance(liteMemberConfig);
@@ -176,7 +176,7 @@ public class InternalPartitionServiceLiteMemberTest
         assertNull(partitionService.getPartitionOwnerOrWait(0));
     }
 
-    @Test(expected = PartitionsCantBeAssignedException.class)
+    @Test(expected = NoDataMemberInClusterException.class)
     public void test_getPartitionOwnerOrWait_onNonMasterLiteMember() {
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         final HazelcastInstance master = factory.newHazelcastInstance(liteMemberConfig);
@@ -189,7 +189,7 @@ public class InternalPartitionServiceLiteMemberTest
         assertNull(partitionService.getPartitionOwnerOrWait(0));
     }
 
-    @Test(expected = PartitionsCantBeAssignedException.class)
+    @Test(expected = NoDataMemberInClusterException.class)
     public void test_getPartitionOwnerOrWait_onLiteMemberAfterDataMemberTerminates() {
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         final HazelcastInstance master = factory.newHazelcastInstance();
@@ -203,7 +203,7 @@ public class InternalPartitionServiceLiteMemberTest
         assertNull(partitionService.getPartitionOwnerOrWait(0));
     }
 
-    @Test(expected = PartitionsCantBeAssignedException.class)
+    @Test(expected = NoDataMemberInClusterException.class)
     public void test_getPartitionOwnerOrWait_onLiteMemberAfterDataMemberShutsDown() {
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         final HazelcastInstance master = factory.newHazelcastInstance();
@@ -325,7 +325,7 @@ public class InternalPartitionServiceLiteMemberTest
      * GET MEMBER PARTITIONS MAP
      **/
 
-    @Test(expected = PartitionsCantBeAssignedException.class)
+    @Test(expected = NoDataMemberInClusterException.class)
     public void test_getMemberPartitionsMap_withOnlyLiteMembers() {
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
         final HazelcastInstance lite = factory.newHazelcastInstance(liteMemberConfig);

@@ -5,7 +5,7 @@ import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.partition.PartitionsCantBeAssignedException;
+import com.hazelcast.partition.NoDataMemberInClusterException;
 import com.hazelcast.spi.InternalCompletableFuture;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationFactory;
@@ -59,7 +59,7 @@ public class OperationServiceImpl_invokeOnPartitionLiteMemberTest
             future.get();
             fail("partition operation should not run on lite member!");
         } catch (ExecutionException e) {
-            assertTrue(e.getCause() instanceof PartitionsCantBeAssignedException);
+            assertTrue(e.getCause() instanceof NoDataMemberInClusterException);
         }
     }
 
@@ -86,7 +86,7 @@ public class OperationServiceImpl_invokeOnPartitionLiteMemberTest
         operationService.asyncInvokeOnPartition(null, operation, 0, callback);
 
         assertOpenEventually(callback.responseLatch);
-        assertTrue(callback.response instanceof PartitionsCantBeAssignedException);
+        assertTrue(callback.response instanceof NoDataMemberInClusterException);
     }
 
     @Test
@@ -103,7 +103,7 @@ public class OperationServiceImpl_invokeOnPartitionLiteMemberTest
         assertEquals("foobar", callback.response);
     }
 
-    @Test(expected = PartitionsCantBeAssignedException.class)
+    @Test(expected = NoDataMemberInClusterException.class)
     public void test_invokeOnPartitions_onLiteMember()
             throws Exception {
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
@@ -128,7 +128,7 @@ public class OperationServiceImpl_invokeOnPartitionLiteMemberTest
         assertEquals("foobar", resultMap.get(0));
     }
 
-    @Test(expected = PartitionsCantBeAssignedException.class)
+    @Test(expected = NoDataMemberInClusterException.class)
     public void test_invokeOnAllPartitions_onLiteMember()
             throws Exception {
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);

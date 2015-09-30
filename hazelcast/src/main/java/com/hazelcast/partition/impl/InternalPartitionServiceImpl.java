@@ -46,7 +46,7 @@ import com.hazelcast.partition.PartitionLostEvent;
 import com.hazelcast.partition.PartitionLostListener;
 import com.hazelcast.partition.PartitionRuntimeState;
 import com.hazelcast.partition.PartitionServiceProxy;
-import com.hazelcast.partition.PartitionsCantBeAssignedException;
+import com.hazelcast.partition.NoDataMemberInClusterException;
 import com.hazelcast.partition.membergroup.MemberGroup;
 import com.hazelcast.partition.membergroup.MemberGroupFactory;
 import com.hazelcast.partition.membergroup.MemberGroupFactoryFactory;
@@ -302,7 +302,8 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
         Address owner;
         while ((owner = getPartitionOwner(partitionId)) == null) {
             if (isClusterFormedByOnlyLiteMembers()) {
-                throw new PartitionsCantBeAssignedException();
+                throw new NoDataMemberInClusterException(
+                        "Partitions can't be assigned since all nodes in the cluster are lite members");
             }
 
             try {
@@ -316,7 +317,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService, M
 
     private boolean isClusterFormedByOnlyLiteMembers() {
         final ClusterServiceImpl clusterService = node.getClusterService();
-        return clusterService.getSize(DATA_MEMBER_SELECTOR) == 0;
+        return clusterService.getMembers(DATA_MEMBER_SELECTOR).isEmpty();
     }
 
     private void notifyMasterToAssignPartitions() {

@@ -24,7 +24,7 @@ import com.hazelcast.mapreduce.impl.task.JobSupervisor;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.partition.PartitionsCantBeAssignedException;
+import com.hazelcast.partition.NoDataMemberInClusterException;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -99,7 +99,7 @@ public class KeysAssignmentOperation
                 assignment.put(key, address);
             }
             this.result = new KeysAssignmentResult(SUCCESSFUL, assignment);
-        } catch (PartitionsCantBeAssignedException e) {
+        } catch (NoDataMemberInClusterException e) {
             supervisor.cancelAndNotify(e);
             this.result = new KeysAssignmentResult(CHECK_STATE_FAILED, assignment);
         }

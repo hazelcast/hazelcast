@@ -2,10 +2,13 @@ package com.hazelcast.cluster.impl;
 
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.Address;
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import java.util.HashSet;
 import java.util.Iterator;
@@ -20,7 +23,8 @@ import static com.hazelcast.cluster.memberselector.MemberSelectors.and;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-@Category(QuickTest.class)
+@RunWith(HazelcastParallelClassRunner.class)
+@Category({QuickTest.class, ParallelTest.class})
 public class MemberSelectingIteratorTest {
 
     private MemberImpl thisMember;
