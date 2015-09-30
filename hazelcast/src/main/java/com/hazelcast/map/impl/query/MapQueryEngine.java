@@ -59,7 +59,7 @@ public interface MapQueryEngine {
      * @param predicate     except paging predicate.
      * @param result    the collection where the results are going to be stored.
      */
-    void queryLocalPartitions(String mapName, Predicate predicate, QueryResultCollection result);
+    QueryResult invokeQueryLocalPartitions(String mapName, Predicate predicate, IterationType iterationType);
 
     /**
      * Queries all partitions. Paging predicates are not allowed.
@@ -68,7 +68,7 @@ public interface MapQueryEngine {
      * @param predicate except paging predicate.
      * @param result    the collection where the results are going to be stored.
      */
-    void queryAllPartitions(String mapName, Predicate predicate, QueryResultCollection result);
+    QueryResult invokeQueryAllPartitions(String mapName, Predicate predicate, IterationType iterationType);
 
     /**
      * Query all local partitions with a paging predicate.

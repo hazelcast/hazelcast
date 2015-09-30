@@ -29,6 +29,7 @@ import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.SimpleEntryView;
 import com.hazelcast.map.impl.query.MapQueryEngine;
+import com.hazelcast.map.impl.query.QueryResult;
 import com.hazelcast.map.impl.query.QueryResultCollection;
 import com.hazelcast.map.listener.MapListener;
 import com.hazelcast.map.listener.MapPartitionLostListener;
@@ -559,16 +560,6 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
     }
 
     @Override
-    public Collection<V> values() {
-        return values(TruePredicate.INSTANCE);
-    }
-
-    @Override
-    public Set entrySet() {
-        return entrySet(TruePredicate.INSTANCE);
-    }
-
-    @Override
     @SuppressWarnings("unchecked")
     public Set<K> keySet(Predicate predicate) {
         checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
@@ -577,11 +568,15 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
         if (predicate instanceof PagingPredicate) {
             return queryEngine.queryAllPartitionsWithPagingPredicate(name, (PagingPredicate) predicate, IterationType.KEY);
         } else {
-            QueryResultCollection<K> result = new QueryResultCollection<K>(
-                    getNodeEngine().getSerializationService(), IterationType.KEY, false, true);
-            queryEngine.queryAllPartitions(name, predicate, result);
-            return result;
+            QueryResult result = queryEngine.invokeQueryAllPartitions(name, predicate, IterationType.KEY);
+            return new QueryResultCollection<K>(
+                    getNodeEngine().getSerializationService(), IterationType.KEY, false, true, result);
         }
+    }
+
+    @Override
+    public Set entrySet() {
+        return entrySet(TruePredicate.INSTANCE);
     }
 
     @Override
@@ -592,11 +587,15 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
         if (predicate instanceof PagingPredicate) {
             return queryEngine.queryAllPartitionsWithPagingPredicate(name, (PagingPredicate) predicate, IterationType.ENTRY);
         } else {
-            QueryResultCollection<Map.Entry<K, V>> result = new QueryResultCollection<Map.Entry<K, V>>(
-                    getNodeEngine().getSerializationService(), IterationType.ENTRY, false, true);
-            queryEngine.queryAllPartitions(name, predicate, result);
-            return result;
+            QueryResult result = queryEngine.invokeQueryAllPartitions(name, predicate, IterationType.ENTRY);
+            return new QueryResultCollection<Map.Entry<K, V>>(
+                    getNodeEngine().getSerializationService(), IterationType.ENTRY, false, true, result);
         }
+    }
+
+    @Override
+    public Collection<V> values() {
+        return values(TruePredicate.INSTANCE);
     }
 
     @Override
@@ -608,10 +607,9 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
         if (predicate instanceof PagingPredicate) {
             return queryEngine.queryAllPartitionsWithPagingPredicate(name, (PagingPredicate) predicate, IterationType.VALUE);
         } else {
-            QueryResultCollection<V> result = new QueryResultCollection<V>(
-                    getNodeEngine().getSerializationService(), IterationType.VALUE, false, false);
-            queryEngine.queryAllPartitions(name, predicate, result);
-            return result;
+            QueryResult result = queryEngine.invokeQueryAllPartitions(name, predicate, IterationType.VALUE);
+            return new QueryResultCollection<V>(
+                    getNodeEngine().getSerializationService(), IterationType.VALUE, false, false, result);
         }
     }
 
@@ -629,11 +627,10 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
         if (predicate instanceof PagingPredicate) {
             return queryEngine.queryLocalPartitionsWithPagingPredicate(name, (PagingPredicate) predicate, IterationType.KEY);
         } else {
+            QueryResult result = queryEngine.invokeQueryLocalPartitions(name, predicate, IterationType.KEY);
             // todo: uqique is not needed since map keys are unique by nature.
-            QueryResultCollection<K> result = new QueryResultCollection<K>(
-                    getNodeEngine().getSerializationService(), IterationType.KEY, false, true);
-            queryEngine.queryLocalPartitions(name, predicate, result);
-            return result;
+            return new QueryResultCollection<K>(
+                    getNodeEngine().getSerializationService(), IterationType.KEY, false, true, result);
         }
     }
 

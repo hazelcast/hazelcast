@@ -46,7 +46,6 @@ public class QueryPartitionOperation extends AbstractMapOperation implements Par
     public void run() {
         MapServiceContext mapServiceContext = mapService.getMapServiceContext();
         MapQueryEngine queryEngine = mapServiceContext.getMapQueryEngine();
-
         result = queryEngine.queryLocalPartition(name, predicate, getPartitionId(), iterationType);
     }
 

@@ -27,6 +27,7 @@ import com.hazelcast.util.IterationType;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.LinkedList;
 
 /**
@@ -34,7 +35,7 @@ import java.util.LinkedList;
  *
  * A QueryResults is a collections of {@link QueryResultRow} instances.
  */
-public class QueryResult implements DataSerializable {
+public class QueryResult implements DataSerializable, Iterable<QueryResultRow> {
 
     // todo: probably arraylist cheaper.
     private final Collection<QueryResultRow> rows = new LinkedList<QueryResultRow>();
@@ -54,9 +55,30 @@ public class QueryResult implements DataSerializable {
         this.iterationType = iterationType;
     }
 
+    @Override
+    public Iterator<QueryResultRow> iterator() {
+        return rows.iterator();
+    }
+
+    public int size() {
+        return rows.size();
+    }
+
+    public boolean isEmpty() {
+        return rows.isEmpty();
+    }
+
     // just for testing
     long getResultLimit() {
         return resultLimit;
+    }
+
+    public void addAllRows(Collection<QueryResultRow> r) {
+        rows.addAll(r);
+    }
+
+    public void addRow(QueryResultRow row) {
+        rows.add(row);
     }
 
     public void addAll(Collection<QueryableEntry> entries) {
