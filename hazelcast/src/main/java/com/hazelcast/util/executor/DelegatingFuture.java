@@ -61,23 +61,15 @@ public class DelegatingFuture<V> implements ICompletableFuture<V> {
         }
     }
 
-
     @SuppressFBWarnings("IS2_INCONSISTENT_SYNC")
     @Override
-    public final V get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
-        if (!done) {
-            synchronized (mutex) {
-                if (!done) {
-                    try {
-                        value = getResult(future.get(timeout, unit));
-                    } catch (InterruptedException e) {
-                        error = e;
-                    } catch (ExecutionException e) {
-                        error = e;
-                    }
-                    done = true;
-                }
-            }
+    public final V get(final long timeout, final TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
+        try {
+            setResult(future.get(timeout, unit));
+        } catch (InterruptedException e) {
+            error = e;
+        } catch (ExecutionException e) {
+            error = e;
         }
         if (error != null) {
             if (error instanceof ExecutionException) {
@@ -95,18 +87,22 @@ public class DelegatingFuture<V> implements ICompletableFuture<V> {
         return value;
     }
 
-    private V getResult(Object object) {
-        if (hasDefaultValue) {
-            return defaultValue;
+    private void setResult(Object object) {
+        synchronized (mutex) {
+            if (value != null) {
+                if (hasDefaultValue) {
+                    value = defaultValue;
+                } else if (object instanceof Data) {
+                    Data data = (Data) object;
+                    object = serializationService.toObject(data);
+                    serializationService.disposeData(data);
+                    value = (V) object;
+                } else {
+                    value = (V) object;
+                }
+            }
         }
-        if (object instanceof Data) {
-            Data data = (Data) object;
-            object = serializationService.toObject(data);
-            serializationService.disposeData(data);
-        }
-        return (V) object;
     }
-
 
     @Override
     public boolean cancel(boolean mayInterruptIfRunning) {
@@ -156,27 +152,15 @@ public class DelegatingFuture<V> implements ICompletableFuture<V> {
 
         @Override
         public void onResponse(Object response) {
-            if (!done) {
-                synchronized (mutex) {
-                    if (!done) {
-                        value = getResult(response);
-                        done = true;
-                    }
-                }
-            }
+            setResult(response);
+            done = true;
             callback.onResponse((T) value);
         }
 
         @Override
         public void onFailure(Throwable t) {
-            if (!done) {
-                synchronized (mutex) {
-                    if (!done) {
-                        error = t;
-                        done = true;
-                    }
-                }
-            }
+            error = t;
+            done = true;
             callback.onFailure(t);
         }
     }
