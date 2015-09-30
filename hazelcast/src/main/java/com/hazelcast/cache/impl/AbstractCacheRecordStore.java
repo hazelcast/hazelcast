@@ -121,7 +121,6 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         if (evictionConfig == null) {
             throw new IllegalStateException("Eviction config cannot be null");
         }
-        this.records = createRecordCacheMap();
         if (cacheConfig.getCacheLoaderFactory() != null) {
             final Factory<CacheLoader> cacheLoaderFactory = cacheConfig.getCacheLoaderFactory();
             cacheLoader = cacheLoaderFactory.create();
@@ -135,6 +134,8 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         }
         final Factory<ExpiryPolicy> expiryPolicyFactory = cacheConfig.getExpiryPolicyFactory();
         this.defaultExpiryPolicy = expiryPolicyFactory.create();
+
+        this.records = createRecordCacheMap();
         this.maxSizeChecker = createCacheMaxSizeChecker(evictionConfig.getSize(), evictionConfig.getMaximumSizePolicy());
         this.evictionPolicyEvaluator = createEvictionPolicyEvaluator(evictionConfig);
         this.evictionChecker = createEvictionChecker(evictionConfig);
@@ -888,6 +889,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
     @Override
     public Object get(Data key, ExpiryPolicy expiryPolicy) {
         expiryPolicy = getExpiryPolicy(expiryPolicy);
+        final long start = isStatisticsEnabled() ? System.nanoTime() : 0;
         long now = Clock.currentTimeMillis();
         Object value = null;
         R record = records.get(key);
@@ -900,6 +902,9 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
                 }
                 value = readThroughCache(key);
                 if (value == null) {
+                    if (isStatisticsEnabled()) {
+                        statistics.addGetTimeNanos(System.nanoTime() - start);
+                    }
                     return null;
                 }
                 record = createRecordWithExpiry(key, value, expiryPolicy, now, true, IGNORE_COMPLETION);
@@ -909,6 +914,9 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
                 if (isStatisticsEnabled()) {
                     statistics.increaseCacheHits(1);
                 }
+            }
+            if (isStatisticsEnabled()) {
+                statistics.addGetTimeNanos(System.nanoTime() - start);
             }
             onGet(key, expiryPolicy, value, record);
             return value;
