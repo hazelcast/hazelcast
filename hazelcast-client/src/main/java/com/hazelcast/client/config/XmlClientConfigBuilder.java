@@ -50,6 +50,7 @@ import java.io.InputStream;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
@@ -132,6 +133,7 @@ public class XmlClientConfigBuilder extends AbstractConfigBuilder {
         DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
         dbf.setNamespaceAware(true);
         final DocumentBuilder builder = dbf.newDocumentBuilder();
+        Locale.setDefault(Locale.getDefault());
         try {
             return builder.parse(inputStream);
         } catch (final Exception e) {
