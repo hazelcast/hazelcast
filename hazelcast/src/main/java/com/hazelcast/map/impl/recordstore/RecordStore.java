@@ -17,6 +17,7 @@
 package com.hazelcast.map.impl.recordstore;
 
 import com.hazelcast.core.EntryView;
+import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.map.impl.mapstore.MapDataStore;
@@ -296,4 +297,7 @@ public interface RecordStore {
      * Performs initial loading from a MapLoader if it has not been done before
      **/
     void maybeDoInitialLoad();
+
+    /** Register a callback for when key loading is complete **/
+    void onKeyLoad(ExecutionCallback<Boolean> callback);
 }

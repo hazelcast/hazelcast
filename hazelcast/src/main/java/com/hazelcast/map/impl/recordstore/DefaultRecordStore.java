@@ -20,6 +20,7 @@ package com.hazelcast.map.impl.recordstore;
 import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.concurrent.lock.LockStore;
 import com.hazelcast.core.EntryView;
+import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.EntryViews;
 import com.hazelcast.map.impl.MapContainer;
@@ -125,6 +126,11 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore implements 
         if (keyLoader.shouldDoInitialLoad()) {
             loadAll(false);
         }
+    }
+
+    @Override
+    public void onKeyLoad(ExecutionCallback<Boolean> callback) {
+        keyLoader.onKeyLoad(callback);
     }
 
     @Override
