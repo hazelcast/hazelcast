@@ -44,6 +44,11 @@ public class QueryResultCollection<E> extends AbstractSet<E> {
         }
     }
 
+    // just for testing
+    Collection<QueryResultRow> getRows() {
+        return rows;
+    }
+
     public IterationType getIterationType() {
         return iterationType;
     }
