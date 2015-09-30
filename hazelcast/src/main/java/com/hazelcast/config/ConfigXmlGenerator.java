@@ -37,6 +37,7 @@ import java.util.List;
 import java.util.Properties;
 import java.util.Set;
 
+import static com.hazelcast.nio.IOUtil.closeResource;
 import static com.hazelcast.util.Preconditions.isNotNull;
 
 /**
@@ -685,9 +686,10 @@ public class ConfigXmlGenerator {
         if (!formatted) {
             return input;
         }
+        StreamResult xmlOutput = null;
         try {
             final Source xmlInput = new StreamSource(new StringReader(input));
-            final StreamResult xmlOutput = new StreamResult(new StringWriter());
+            xmlOutput = new StreamResult(new StringWriter());
             TransformerFactory transformerFactory = TransformerFactory.newInstance();
             /* Older versions of Xalan still use this method of setting indent values.
             * Attempt to make this work but don't completely fail if it's a problem.
@@ -714,10 +716,15 @@ public class ConfigXmlGenerator {
                 }
             }
             transformer.transform(xmlInput, xmlOutput);
-            return xmlOutput.getWriter().toString();
+            String response = xmlOutput.getWriter().toString();
+            return response;
         } catch (Exception e) {
             LOGGER.warning(e);
             return input;
+        } finally {
+            if (xmlOutput != null) {
+                closeResource(xmlOutput.getWriter());
+            }
         }
     }
 

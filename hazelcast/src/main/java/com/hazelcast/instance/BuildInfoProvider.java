@@ -21,6 +21,8 @@ import com.hazelcast.util.EmptyStatement;
 import java.io.InputStream;
 import java.util.Properties;
 
+import static com.hazelcast.nio.IOUtil.closeResource;
+
 /**
  * Provides information about current Hazelcast build.
  */
@@ -36,10 +38,11 @@ public final class BuildInfoProvider {
         try {
             if (inRuntimeProperties != null) {
                 runtimeProperties.load(inRuntimeProperties);
-                inRuntimeProperties.close();
             }
         } catch (Exception ignored) {
             EmptyStatement.ignore(ignored);
+        } finally {
+            closeResource(inRuntimeProperties);
         }
 
         String version = runtimeProperties.getProperty("hazelcast.version");
