@@ -55,9 +55,12 @@ public interface MapQueryEngine {
     /**
      * Query all local partitions.
      *
+     * todo: we need better explanation of difference between this method and
+     *  {@link #queryLocalPartitions(String, Predicate, IterationType)}
+     *
      * @param mapName       map name.
      * @param predicate     except paging predicate.
-     * @param result    the collection where the results are going to be stored.
+     * @param iterationType the IterationType
      */
     QueryResult invokeQueryLocalPartitions(String mapName, Predicate predicate, IterationType iterationType);
 
@@ -66,7 +69,7 @@ public interface MapQueryEngine {
      *
      * @param mapName   map name.
      * @param predicate except paging predicate.
-     * @param result    the collection where the results are going to be stored.
+     * @param iterationType the IterationType
      */
     QueryResult invokeQueryAllPartitions(String mapName, Predicate predicate, IterationType iterationType);
 
@@ -96,6 +99,4 @@ public interface MapQueryEngine {
      * @return {@link SortedQueryResultSet}
      */
     Set queryAllPartitionsWithPagingPredicate(String mapName, PagingPredicate pagingPredicate, IterationType iterationType);
-
-
 }
