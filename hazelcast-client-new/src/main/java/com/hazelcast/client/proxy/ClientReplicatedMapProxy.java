@@ -79,11 +79,10 @@ public class ClientReplicatedMapProxy<K, V>
         extends ClientProxy
         implements ReplicatedMap<K, V> {
 
-    private static final Random RANDOM_PARTITION_ID_GENERATOR = new Random();
-
     protected static final String NULL_KEY_IS_NOT_ALLOWED = "Null key is not allowed!";
     protected static final String NULL_VALUE_IS_NOT_ALLOWED = "Null value is not allowed!";
 
+    private static final Random RANDOM_PARTITION_ID_GENERATOR = new Random();
     private static final AtomicIntegerFieldUpdater<ClientReplicatedMapProxy> TARGET_PARTITION_ID_UPDATER =
             AtomicIntegerFieldUpdater.newUpdater(ClientReplicatedMapProxy.class, "targetPartitionId");
 
