@@ -737,7 +737,8 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
 
     @Override
     public Collection<V> values() {
-        return values(TruePredicate.INSTANCE);
+        // we pass null instead of TruePredicate.INSTANCE due to security. But null will be interpreted as TruePredicate.
+        return values(null);
     }
 
     @Override
@@ -758,7 +759,8 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
 
     @Override
     public Set<Entry<K, V>> entrySet() {
-        return entrySet(TruePredicate.INSTANCE);
+        // we pass null instead of TruePredicate.INSTANCE due to security. But null will be interpreted as TruePredicate.
+        return entrySet(null);
     }
 
     @Override
@@ -792,7 +794,8 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
 
     @Override
     public Set<K> keySet() {
-        return keySet(TruePredicate.INSTANCE);
+        // we pass null instead of TruePredicate.INSTANCE due to security. But null will be interpreted as TruePredicate.
+        return keySet(null);
     }
 
     @Override
