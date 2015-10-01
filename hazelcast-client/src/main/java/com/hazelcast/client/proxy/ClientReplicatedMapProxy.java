@@ -72,6 +72,8 @@ public class ClientReplicatedMapProxy<K, V>
         extends ClientProxy
         implements ReplicatedMap<K, V> {
 
+    private static final Random RANDOM_PARTITION_ID_GENERATOR = new Random();
+
     private static final AtomicIntegerFieldUpdater<ClientReplicatedMapProxy> TARGET_PARTITION_ID_UPDATER =
             AtomicIntegerFieldUpdater.newUpdater(ClientReplicatedMapProxy.class, "targetPartitionId");
 
@@ -356,7 +358,7 @@ public class ClientReplicatedMapProxy<K, V>
         int targetPartitionId = this.targetPartitionId;
         while (targetPartitionId == Operation.GENERIC_PARTITION_ID) {
             final int partitionCount = getContext().getPartitionService().getPartitionCount();
-            targetPartitionId = new Random().nextInt(partitionCount);
+            targetPartitionId = RANDOM_PARTITION_ID_GENERATOR.nextInt(partitionCount);
             if (!TARGET_PARTITION_ID_UPDATER.compareAndSet(this, -1, targetPartitionId)) {
                 targetPartitionId = this.targetPartitionId;
             }
