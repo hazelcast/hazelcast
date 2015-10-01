@@ -215,6 +215,15 @@ public class InvalidConfigurationTest {
     }
 
     @Test(expected = InvalidConfigurationException.class)
+    public void testWhenDoctypeAddedToXml() {
+        String xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                "<!DOCTYPE data [\n" +
+                "<!ENTITY e1 \"0123456789\" > ] >" +
+                "<hazelcast></hazelcast>";
+        buildConfig(xml);
+    }
+    
+    @Test(expected = InvalidConfigurationException.class)
     public void testWanConfigSnapshotEnabledForWrongPublisher() {
         String xml =
                 "<hazelcast xmlns=\"http://www.hazelcast.com/schema/config\">\n" +

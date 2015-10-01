@@ -220,6 +220,7 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
     protected Document parse(InputStream is) throws Exception {
         DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
         dbf.setNamespaceAware(true);
+        dbf.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
         final DocumentBuilder builder = dbf.newDocumentBuilder();
         Document doc;
         try {

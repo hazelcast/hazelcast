@@ -64,7 +64,9 @@ public final class CloudyUtility {
     private static Map<String, String> parseAddresses(InputStream in, AwsConfig awsConfig) {
         final DocumentBuilder builder;
         try {
-            builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+            DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+            dbf.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+            builder = dbf.newDocumentBuilder();
             Document doc = builder.parse(in);
             Element element = doc.getDocumentElement();
             NodeHolder elementNodeHolder = new NodeHolder(element);
