@@ -117,9 +117,9 @@ public class DescribeInstances {
         try {
             stream = callService(endpoint, signature);
             response = CloudyUtility.unmarshalTheResponse(stream, awsConfig);
+            return response;
         } finally {
             closeResource(stream);
-            return response;
         }
     }
 

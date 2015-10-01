@@ -195,10 +195,10 @@ public abstract class AbstractXmlConfigHelper {
         } catch (Exception e) {
             throw new InvalidConfigurationException(e.getMessage());
         } finally {
-        for (StreamSource source : schemas) {
-            closeResource(source.getInputStream());
-        }
-        closeResource(inputStream);
+            for (StreamSource source : schemas) {
+                closeResource(source.getInputStream());
+            }
+            closeResource(inputStream);
         }
     }
 
