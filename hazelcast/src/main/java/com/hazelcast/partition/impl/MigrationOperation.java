@@ -36,6 +36,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.logging.Level;
 
 @SuppressFBWarnings("EI_EXPOSE_REP")
@@ -229,6 +230,8 @@ public final class MigrationOperation extends BaseMigrationOperation {
                 Operation op = in.readObject();
                 tasks.add(op);
             }
+        } else {
+            tasks = Collections.emptyList();
         }
     }
 
