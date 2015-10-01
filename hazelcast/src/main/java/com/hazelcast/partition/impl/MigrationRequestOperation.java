@@ -87,13 +87,9 @@ public final class MigrationRequestOperation extends BaseMigrationOperation {
             verifyOwner(source, partition, owner);
             partitionService.addActiveMigration(migrationInfo);
             Collection<Operation> tasks = prepareMigrationTasks();
-            if (tasks.size() > 0) {
-                long[] replicaVersions = partitionService.getPartitionReplicaVersions(migrationInfo.getPartitionId());
-                invokeMigrationOperation(destination, replicaVersions, tasks);
-                returnResponse = false;
-            } else {
-                success = true;
-            }
+            long[] replicaVersions = partitionService.getPartitionReplicaVersions(migrationInfo.getPartitionId());
+            invokeMigrationOperation(destination, replicaVersions, tasks);
+            returnResponse = false;
         } catch (Throwable e) {
             logThrowable(e);
             success = false;
