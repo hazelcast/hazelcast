@@ -317,7 +317,7 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
         SerializationService serializationService = getNodeEngine().getSerializationService();
 
         QueryResult result = queryEngine.invokeQueryAllPartitions(name, predicate, IterationType.KEY);
-        Set<Object> queryResult = new QueryResultCollection(serializationService, IterationType.KEY, false, true, result);
+        Set<Object> queryResult = new QueryResultCollection(serializationService, IterationType.KEY, false, result);
 
         // TODO: Can't we just use the original set?
         Set<Object> keySet = new HashSet<Object>(queryResult);
@@ -363,7 +363,7 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
 
         QueryResult result = queryEngine.invokeQueryAllPartitions(name, predicate, IterationType.ENTRY);
         QueryResultCollection<Map.Entry> queryResult
-                = new QueryResultCollection<Map.Entry>(serializationService, IterationType.ENTRY, false, true, result);
+                = new QueryResultCollection<Map.Entry>(serializationService, IterationType.ENTRY, false, result);
 
         // TODO: Can't we just use the original set?
         List<Object> valueSet = new ArrayList<Object>();

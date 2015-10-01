@@ -130,7 +130,7 @@ abstract class AbstractMapQueryRequest extends InvocationClientRequest implement
                     //running. In this case we discard all results from this member and will target the missing
                     //partition separately later.
                     BitSetUtils.setBits(finishedPartitions, partitionIds);
-                    result.addAllRows(queryResult.getRows());
+                    result.addAllFrom(queryResult);
                 }
             }
         }
@@ -170,7 +170,7 @@ abstract class AbstractMapQueryRequest extends InvocationClientRequest implement
             throws InterruptedException, ExecutionException {
         for (Future future : futures) {
             QueryResult queryResult = (QueryResult) future.get();
-            result.addAllRows(queryResult.getRows());
+            result.addAllFrom(queryResult);
         }
     }
 

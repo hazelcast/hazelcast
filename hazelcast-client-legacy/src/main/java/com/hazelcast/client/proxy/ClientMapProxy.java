@@ -751,8 +751,10 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
         QueryResult result = invoke(request);
 
         List<V> values = new ArrayList<V>(result.size());
-        for (QueryResultRow row : result) {
-            values.add((V) toObject(row.getValue()));
+
+        for (QueryResult.Cursor cursor = result.openCursor(); cursor.next(); ) {
+            V value = (V) toObject(cursor.getValue());
+            values.add(value);
         }
         return values;
     }
@@ -777,16 +779,17 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
         if (pagingPredicate == null) {
             SerializationService serializationService = getContext().getSerializationService();
             InflatableSet.Builder<Entry<K, V>> setBuilder = InflatableSet.newBuilder(result.size());
-            for (QueryResultRow row : result) {
-                LazyMapEntry entry = new LazyMapEntry(row.getKey(), row.getValue(), serializationService);
+
+            for (QueryResult.Cursor cursor = result.openCursor(); cursor.next(); ) {
+                LazyMapEntry entry = new LazyMapEntry(cursor.getKey(), cursor.getValue(), serializationService);
                 setBuilder.add(entry);
             }
             return setBuilder.build();
         }
         ArrayList<Map.Entry> resultList = new ArrayList<Map.Entry>();
-        for (QueryResultRow data : result) {
-            K key = toObject(data.getKey());
-            V value = toObject(data.getValue());
+        for (QueryResult.Cursor cursor = result.openCursor(); cursor.next(); ) {
+            K key = toObject(cursor.getKey());
+            V value = toObject(cursor.getValue());
             resultList.add(new AbstractMap.SimpleEntry<K, V>(key, value));
         }
         return (Set) getSortedQueryResultSet(resultList, pagingPredicate, IterationType.ENTRY);
@@ -810,16 +813,16 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
         QueryResult result = invoke(request);
         if (pagingPredicate == null) {
             InflatableSet.Builder<K> setBuilder = InflatableSet.newBuilder(result.size());
-            for (QueryResultRow row : result) {
-                K key = toObject(row.getKey());
+            for (QueryResult.Cursor cursor = result.openCursor(); cursor.next(); ) {
+                K key = toObject(cursor.getKey());
                 setBuilder.add(key);
             }
             return setBuilder.build();
         }
 
         ArrayList<Map.Entry> resultList = new ArrayList<Map.Entry>(result.size());
-        for (QueryResultRow row : result) {
-            K key = toObject(row.getKey());
+        for (QueryResult.Cursor cursor = result.openCursor(); cursor.next(); ) {
+            K key = toObject(cursor.getKey());
             resultList.add(new AbstractMap.SimpleImmutableEntry<K, V>(key, null));
         }
         return (Set<K>) getSortedQueryResultSet(resultList, pagingPredicate, IterationType.KEY);
@@ -832,9 +835,9 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
         QueryResult result = invoke(request);
 
         List<Entry> resultList = new ArrayList<Entry>(result.size());
-        for (QueryResultRow row : result) {
-            K key = toObject(row.getKey());
-            V value = toObject(row.getValue());
+        for (QueryResult.Cursor cursor = result.openCursor(); cursor.next(); ) {
+            K key = toObject(cursor.getKey());
+            V value = toObject(cursor.getValue());
             resultList.add(new AbstractMap.SimpleImmutableEntry<Object, V>(key, value));
         }
 

@@ -589,7 +589,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
         } else {
             QueryResult result = queryEngine.invokeQueryAllPartitions(name, predicate, IterationType.KEY);
             return new QueryResultCollection<K>(
-                    getNodeEngine().getSerializationService(), IterationType.KEY, false, true, result);
+                    getNodeEngine().getSerializationService(), IterationType.KEY, false, result);
         }
     }
 
@@ -608,7 +608,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
         } else {
             QueryResult result = queryEngine.invokeQueryAllPartitions(name, predicate, IterationType.ENTRY);
             return new QueryResultCollection<Map.Entry<K, V>>(
-                    getNodeEngine().getSerializationService(), IterationType.ENTRY, false, true, result);
+                    getNodeEngine().getSerializationService(), IterationType.ENTRY, false, result);
         }
     }
 
@@ -628,7 +628,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
         } else {
             QueryResult result = queryEngine.invokeQueryAllPartitions(name, predicate, IterationType.VALUE);
             return new QueryResultCollection<V>(
-                    getNodeEngine().getSerializationService(), IterationType.VALUE, false, false, result);
+                    getNodeEngine().getSerializationService(), IterationType.VALUE, false, result);
         }
     }
 
@@ -649,7 +649,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
             QueryResult result = queryEngine.invokeQueryLocalPartitions(name, predicate, IterationType.KEY);
             // todo: uqique is not needed since map keys are unique by nature.
             return new QueryResultCollection<K>(
-                    getNodeEngine().getSerializationService(), IterationType.KEY, false, true, result);
+                    getNodeEngine().getSerializationService(), IterationType.KEY, false, result);
         }
     }
 

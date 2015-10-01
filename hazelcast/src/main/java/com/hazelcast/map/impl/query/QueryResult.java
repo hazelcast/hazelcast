@@ -28,23 +28,29 @@ import com.hazelcast.util.IterationType;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Iterator;
-import java.util.LinkedList;
+import java.util.List;
+
+import static java.lang.System.arraycopy;
 
 /**
  * Contains the result of a query evaluation.
  *
  * A QueryResults is a collections of {@link QueryResultRow} instances.
+ *
+ * The QueryResult is an append only data-structure.
  */
-public class QueryResult implements IdentifiedDataSerializable, Iterable<QueryResultRow> {
+public class QueryResult implements IdentifiedDataSerializable {
 
-    // todo: probably arraylist cheaper.
-    private final Collection<QueryResultRow> rows = new LinkedList<QueryResultRow>();
+    private static final int DEFAULT_CAPACITY = 256;
+    private static final int GROW_FACTOR = 4;
+
+    private int size;
+    private Data[] keys;
+    private Data[] values;
 
     private Collection<Integer> partitionIds;
 
     private transient long resultLimit;
-    private transient long resultSize;
     private IterationType iterationType;
 
     public QueryResult() {
@@ -61,17 +67,16 @@ public class QueryResult implements IdentifiedDataSerializable, Iterable<QueryRe
         return iterationType;
     }
 
-    @Override
-    public Iterator<QueryResultRow> iterator() {
-        return rows.iterator();
+    public Cursor openCursor() {
+        return new Cursor();
     }
 
     public int size() {
-        return rows.size();
+        return size;
     }
 
     public boolean isEmpty() {
-        return rows.isEmpty();
+        return size() == 0;
     }
 
     // just for testing
@@ -79,39 +84,159 @@ public class QueryResult implements IdentifiedDataSerializable, Iterable<QueryRe
         return resultLimit;
     }
 
-    public void addAllRows(Collection<QueryResultRow> r) {
-        rows.addAll(r);
+    public void add(Data key, Data value) {
+        ensureCapacity(size + 1);
+        addInternal(key, value);
     }
 
-    public void addRow(QueryResultRow row) {
-        rows.add(row);
+    public void addFrom(QueryResultRow row) {
+        ensureCapacity(size + 1);
+        addInternal(row.getKey(), row.getValue());
     }
 
-    public void addAll(Collection<QueryableEntry> entries) {
-        for (QueryableEntry entry : entries) {
-            if (++resultSize > resultLimit) {
-                throw new QueryResultSizeExceededException();
-            }
-
-            Data key = null;
-            Data value = null;
-            switch (iterationType) {
-                case KEY:
-                    key = entry.getKeyData();
-                    break;
-                case VALUE:
-                    value = entry.getValueData();
-                    break;
-                case ENTRY:
-                    key = entry.getKeyData();
-                    value = entry.getValueData();
-                    break;
-                default:
-                    throw new IllegalStateException("Unknown iterationtype:" + iterationType);
-            }
-
-            rows.add(new QueryResultRow(key, value));
+    public void addFrom(QueryableEntry entry) {
+        ensureCapacity(size + 1);
+        switch (iterationType) {
+            case KEY:
+                addInternal(entry.getKeyData(), null);
+                break;
+            case VALUE:
+                addInternal(null, entry.getValueData());
+                break;
+            case ENTRY:
+                addInternal(entry.getKeyData(), entry.getValueData());
+                break;
+            default:
+                throw new IllegalStateException("Unknown iterationType:" + iterationType);
         }
+    }
+
+    public void addAllFrom(QueryResult result) {
+        if (result.iterationType != iterationType) {
+            throw new IllegalArgumentException("IterationType mismatch, expected:" + iterationType
+                    + " but found:" + result.iterationType);
+        }
+
+        if (result.isEmpty()) {
+            return;
+        }
+
+        ensureCapacity(size + result.size);
+
+        switch (iterationType) {
+            case KEY:
+                arraycopy(result.keys, 0, keys, size, result.size);
+                break;
+            case VALUE:
+                arraycopy(result.values, 0, values, size, result.size);
+                break;
+            case ENTRY:
+                arraycopy(result.keys, 0, keys, size, result.size);
+                arraycopy(result.values, 0, values, size, result.size);
+                break;
+            default:
+                throw new IllegalStateException("Unknown iterationType:" + iterationType);
+        }
+        size += result.size;
+    }
+
+    public void addAllFrom(Collection<QueryableEntry> entries) {
+        ensureCapacity(size + entries.size());
+
+        switch (iterationType) {
+            case KEY:
+                for (QueryableEntry entry : entries) {
+                    addInternal(entry.getKeyData(), null);
+                }
+                break;
+            case VALUE:
+                for (QueryableEntry entry : entries) {
+                    addInternal(null, entry.getValueData());
+                }
+                break;
+            case ENTRY:
+                for (QueryableEntry entry : entries) {
+                    addInternal(entry.getKeyData(), entry.getValueData());
+                }
+                break;
+            default:
+                throw new IllegalStateException("Unknown iterationType:" + iterationType);
+        }
+    }
+
+    private void ensureCapacity(int minCapacity) {
+        if (minCapacity > resultLimit) {
+            throw new QueryResultSizeExceededException();
+        }
+
+        int currentCapacity = 0;
+        if (keys != null) {
+            currentCapacity = keys.length;
+        } else if (values != null) {
+            currentCapacity = values.length;
+        }
+
+        if (minCapacity <= currentCapacity) {
+            return;
+        }
+
+        switch (iterationType) {
+            case KEY:
+                keys = grow(keys, minCapacity);
+                break;
+            case VALUE:
+                values = grow(values, minCapacity);
+                break;
+            case ENTRY:
+                keys = grow(keys, minCapacity);
+                values = grow(values, minCapacity);
+                break;
+            default:
+                throw new IllegalStateException("Unknown iterationType:" + iterationType);
+        }
+    }
+
+    private Data[] grow(Data[] array, int minimumCapacity) {
+        int newCapacity = array == null ? DEFAULT_CAPACITY : GROW_FACTOR * array.length;
+
+        while (newCapacity < minimumCapacity) {
+            newCapacity *= 2;
+        }
+
+        if (newCapacity > resultLimit) {
+            newCapacity = (int) resultLimit;
+        }
+
+        if (array == null) {
+            return new Data[newCapacity];
+        }
+
+        Data[] newArray = new Data[newCapacity];
+        arraycopy(array, 0, newArray, 0, array.length);
+        return newArray;
+    }
+
+    /**
+     * Adds an item.
+     *
+     * This method relies on the fact that the capacity has been ensured.
+     */
+    private void addInternal(Data key, Data value) {
+        switch (iterationType) {
+            case KEY:
+                keys[size] = key;
+                break;
+            case VALUE:
+                values[size] = value;
+                break;
+            case ENTRY:
+                keys[size] = key;
+                values[size] = value;
+                break;
+            default:
+                throw new IllegalStateException("Unknown iterationType:" + iterationType);
+        }
+        size++;
     }
 
     public Collection<Integer> getPartitionIds() {
@@ -122,8 +247,13 @@ public class QueryResult implements IdentifiedDataSerializable, Iterable<QueryRe
         this.partitionIds = partitionIds;
     }
 
-    public Collection<QueryResultRow> getRows() {
-        return rows;
+    // todo: this method causes huge amount of litter.
+    public List<QueryResultRow> getRows() {
+        List<QueryResultRow> result = new ArrayList<QueryResultRow>(size);
+        for (Cursor cursor = openCursor(); cursor.next(); ) {
+            result.add(new QueryResultRow(cursor.getKey(), cursor.getValue()));
+        }
+        return result;
     }
 
     @Override
@@ -134,27 +264,6 @@ public class QueryResult implements IdentifiedDataSerializable, Iterable<QueryRe
     @Override
     public int getId() {
         return MapDataSerializerHook.QUERY_RESULT;
-    }
-
-    @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
-        int partitionSize = (partitionIds == null) ? 0 : partitionIds.size();
-        out.writeInt(partitionSize);
-        if (partitionSize > 0) {
-            for (Integer partitionId : partitionIds) {
-                out.writeInt(partitionId);
-            }
-        }
-
-        out.writeByte(iterationType.getId());
-
-        int resultSize = rows.size();
-        out.writeInt(resultSize);
-        if (resultSize > 0) {
-            for (QueryResultRow row : rows) {
-                row.writeData(out);
-            }
-        }
     }
 
     @Override
@@ -169,13 +278,110 @@ public class QueryResult implements IdentifiedDataSerializable, Iterable<QueryRe
 
         iterationType = IterationType.getById(in.readByte());
 
-        int resultSize = in.readInt();
-        if (resultSize > 0) {
-            for (int i = 0; i < resultSize; i++) {
-                QueryResultRow row = new QueryResultRow();
-                row.readData(in);
-                rows.add(row);
+        size = in.readInt();
+        switch (iterationType) {
+            case KEY:
+                keys = new Data[size];
+                for (int k = 0; k < size; k++) {
+                    keys[k] = in.readData();
+                }
+                break;
+            case VALUE:
+                values = new Data[size];
+                for (int k = 0; k < size; k++) {
+                    values[k] = in.readData();
+                }
+                break;
+            case ENTRY:
+                keys = new Data[size];
+                values = new Data[size];
+                for (int k = 0; k < size; k++) {
+                    keys[k] = in.readData();
+                    values[k] = in.readData();
+                }
+                break;
+            default:
+                throw new IllegalStateException("Unknown iterationType:" + iterationType);
+        }
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        int partitionSize = (partitionIds == null) ? 0 : partitionIds.size();
+        out.writeInt(partitionSize);
+        if (partitionSize > 0) {
+            for (Integer partitionId : partitionIds) {
+                out.writeInt(partitionId);
             }
+        }
+
+        out.writeByte(iterationType.getId());
+
+        out.writeInt(size);
+        switch (iterationType) {
+            case KEY:
+                for (int k = 0; k < size; k++) {
+                    out.writeData(keys[k]);
+                }
+                break;
+            case VALUE:
+                for (int k = 0; k < size; k++) {
+                    out.writeData(values[k]);
+                }
+                break;
+            case ENTRY:
+                for (int k = 0; k < size; k++) {
+                    out.writeData(keys[k]);
+                    out.writeData(values[k]);
+                }
+                break;
+            default:
+                throw new IllegalStateException("Unknown iterationType:" + iterationType);
+        }
+    }
+
+    public class Cursor {
+        private int index = -1;
+
+        /**
+         * Gets the key.
+         *
+         * @return the key, or null if no key is available.
+         */
+        public Data getKey() {
+            return keys == null ? null : keys[index];
+        }
+
+        /**
+         * Gets the value.
+         *
+         * @return the value, or null of no value is available.
+         */
+        public Data getValue() {
+            return values == null ? null : values[index];
+        }
+
+        /**
+         * Checks if there is a next item.
+         *
+         * @return true if there is a next item, false otherwise.
+         */
+        public boolean hasNext() {
+            return index + 1 < size;
+        }
+
+        /**
+         * Positions the cursor on the next item.
+         *
+         * @return true if a next item was found, false otherwise.
+         */
+        public boolean next() {
+            if (index == size - 1) {
+                return false;
+            }
+
+            index++;
+            return true;
         }
     }
 }

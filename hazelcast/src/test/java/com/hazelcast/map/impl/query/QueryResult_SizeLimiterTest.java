@@ -35,7 +35,7 @@ import static org.mockito.Mockito.when;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelTest.class})
-public class QueryResultSizeLimiterTest {
+public class QueryResult_SizeLimiterTest {
 
     private static final String ANY_MAP_NAME = "foobar";
     private static final int DEFAULT_PARTITION_COUNT = 271;
@@ -237,7 +237,7 @@ public class QueryResultSizeLimiterTest {
         when(mapServiceContext.getRecordStore(anyInt(), anyString())).thenReturn(recordStore);
         when(mapServiceContext.getOwnedPartitions()).thenReturn(localPartitions.keySet());
 
-        limiter = new QueryResultSizeLimiter(mapServiceContext, Logger.getLogger(QueryResultSizeLimiterTest.class));
+        limiter = new QueryResultSizeLimiter(mapServiceContext, Logger.getLogger(QueryResult_SizeLimiterTest.class));
     }
 
     private void populatePartitions(int[] localPartitionSize) {

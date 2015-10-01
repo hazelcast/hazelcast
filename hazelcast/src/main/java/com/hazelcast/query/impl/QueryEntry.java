@@ -18,6 +18,7 @@ package com.hazelcast.query.impl;
 
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.query.QueryException;
 
 /**
  * Entry of the Query.
@@ -27,11 +28,9 @@ public class QueryEntry extends QueryableEntry {
     private Data key;
     private Object value;
 
-    public QueryEntry() {
-    }
-
-    public QueryEntry(SerializationService serializationService, Data key, Object value, Extractors extractors) {
-        init(serializationService, key, value, extractors);
+    public QueryEntry(SerializationService serializationService, Extractors extractors) {
+        this.serializationService = serializationService;
+        this.extractors = extractors;
     }
 
     /**
@@ -51,16 +50,13 @@ public class QueryEntry extends QueryableEntry {
      * </code>
      * </pre>
      */
-    public void init(SerializationService serializationService, Data key, Object value, Extractors extractors) {
+    public void init(Data key, Object value) {
         if (key == null) {
-            throw new IllegalArgumentException("keyData cannot be null");
+            throw new IllegalArgumentException("key cannot be null");
         }
-
-        this.serializationService = serializationService;
 
         this.key = key;
         this.value = value;
-        this.extractors = extractors;
     }
 
     @Override
@@ -81,6 +77,11 @@ public class QueryEntry extends QueryableEntry {
     @Override
     public Data getValueData() {
         return serializationService.toData(value);
+    }
+
+    @Override
+    public Comparable getAttribute(String attributeName) throws QueryException {
+        return QueryEntryUtils.extractAttribute(attributeName, key, value, serializationService);
     }
 
     @Override
