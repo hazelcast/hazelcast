@@ -56,6 +56,7 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Properties;
 
+import static com.hazelcast.nio.IOUtil.closeResource;
 import static com.hazelcast.util.StringUtil.upperCaseInternal;
 
 /**
@@ -140,7 +141,7 @@ public abstract class AbstractXmlConfigHelper {
     protected void schemaValidation(Document doc)
             throws Exception {
         ArrayList<StreamSource> schemas = new ArrayList<StreamSource>();
-        InputStream inputStream;
+        InputStream inputStream = null;
         String lineSeperator = StringUtil.getLineSeperator();
         String schemaLocation = doc.getDocumentElement().getAttribute("xsi:schemaLocation");
         schemaLocation = schemaLocation.replaceAll("^ +| +$| (?= )", "");
@@ -193,6 +194,11 @@ public abstract class AbstractXmlConfigHelper {
             validator.validate(source);
         } catch (Exception e) {
             throw new InvalidConfigurationException(e.getMessage());
+        } finally {
+        for (StreamSource source : schemas) {
+            closeResource(source.getInputStream());
+        }
+        closeResource(inputStream);
         }
     }
 
