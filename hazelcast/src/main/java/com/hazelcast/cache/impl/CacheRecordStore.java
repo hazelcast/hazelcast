@@ -89,7 +89,11 @@ public class CacheRecordStore
 
     @Override
     protected CacheRecordHashMap createRecordCacheMap() {
-        return new CacheRecordHashMap(DEFAULT_INITIAL_CAPACITY);
+        if (isStatisticsEnabled())  {
+            return new CacheRecordHashMap(DEFAULT_INITIAL_CAPACITY, cacheContext);
+        } else  {
+            return new CacheRecordHashMap(DEFAULT_INITIAL_CAPACITY);
+        }
     }
 
     @Override

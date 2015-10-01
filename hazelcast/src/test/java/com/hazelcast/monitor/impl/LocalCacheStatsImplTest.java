@@ -21,6 +21,10 @@ public class LocalCacheStatsImplTest {
     public void testDefaultConstructor() {
         LocalCacheStatsImpl localCacheStats = new LocalCacheStatsImpl();
 
+        assertEquals(0, localCacheStats.getCreationTime());
+        assertEquals(0, localCacheStats.getLastUpdateTime());
+        assertEquals(0, localCacheStats.getLastAccessTime());
+        assertEquals(0, localCacheStats.getOwnedEntryCount());
         assertEquals(0, localCacheStats.getCacheHits());
         assertEquals(0, localCacheStats.getCacheHitPercentage(), 0.0001);
         assertEquals(0, localCacheStats.getCacheMisses());
@@ -39,6 +43,26 @@ public class LocalCacheStatsImplTest {
     @Test
     public void testSerialization() {
         CacheStatistics cacheStatistics = new CacheStatistics() {
+            @Override
+            public long getCreationTime() {
+                return 1986;
+            }
+
+            @Override
+            public long getLastUpdateTime() {
+                return 2014;
+            }
+
+            @Override
+            public long getLastAccessTime() {
+                return 2015;
+            }
+
+            @Override
+            public long getOwnedEntryCount() {
+                return 1000;
+            }
+
             @Override
             public long getCacheHits() {
                 return 127;
@@ -101,6 +125,10 @@ public class LocalCacheStatsImplTest {
         LocalCacheStatsImpl deserialized = new LocalCacheStatsImpl();
         deserialized.fromJson(serialized);
 
+        assertEquals(1986, deserialized.getCreationTime());
+        assertEquals(2014, deserialized.getLastUpdateTime());
+        assertEquals(2015, deserialized.getLastAccessTime());
+        assertEquals(1000, deserialized.getOwnedEntryCount());
         assertEquals(127, deserialized.getCacheHits());
         assertEquals(12.5f, deserialized.getCacheHitPercentage(), 0.0001);
         assertEquals(5, deserialized.getCacheMisses());

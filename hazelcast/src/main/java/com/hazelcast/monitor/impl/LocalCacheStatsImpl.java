@@ -19,7 +19,6 @@ package com.hazelcast.monitor.impl;
 import com.eclipsesource.json.JsonObject;
 import com.hazelcast.cache.CacheStatistics;
 import com.hazelcast.monitor.LocalCacheStats;
-import com.hazelcast.util.Clock;
 
 import static com.hazelcast.util.JsonUtil.getFloat;
 import static com.hazelcast.util.JsonUtil.getLong;
@@ -43,6 +42,9 @@ import static com.hazelcast.util.JsonUtil.getLong;
 public class LocalCacheStatsImpl implements LocalCacheStats {
 
     private long creationTime;
+    private long lastAccessTime;
+    private long lastUpdateTime;
+    private long ownedEntryCount;
     private long cacheHits;
     private float cacheHitPercentage;
     private long cacheMisses;
@@ -59,7 +61,10 @@ public class LocalCacheStatsImpl implements LocalCacheStats {
     }
 
     public LocalCacheStatsImpl(CacheStatistics cacheStatistics) {
-        creationTime = Clock.currentTimeMillis();
+        creationTime = cacheStatistics.getCreationTime();
+        lastAccessTime = cacheStatistics.getLastAccessTime();
+        lastUpdateTime = cacheStatistics.getLastUpdateTime();
+        ownedEntryCount = cacheStatistics.getOwnedEntryCount();
         cacheHits = cacheStatistics.getCacheHits();
         cacheHitPercentage = cacheStatistics.getCacheHitPercentage();
         cacheMisses = cacheStatistics.getCacheMisses();
@@ -71,6 +76,21 @@ public class LocalCacheStatsImpl implements LocalCacheStats {
         averageGetTime = cacheStatistics.getAverageGetTime();
         averagePutTime = cacheStatistics.getAveragePutTime();
         averageRemoveTime = cacheStatistics.getAverageRemoveTime();
+    }
+
+    @Override
+    public long getLastAccessTime() {
+        return lastAccessTime;
+    }
+
+    @Override
+    public long getLastUpdateTime() {
+        return lastUpdateTime;
+    }
+
+    @Override
+    public long getOwnedEntryCount() {
+        return ownedEntryCount;
     }
 
     @Override
@@ -137,6 +157,9 @@ public class LocalCacheStatsImpl implements LocalCacheStats {
     public JsonObject toJson() {
         JsonObject root = new JsonObject();
         root.add("creationTime", creationTime);
+        root.add("lastAccessTime", lastAccessTime);
+        root.add("lastUpdateTime", lastUpdateTime);
+        root.add("ownedEntryCount", ownedEntryCount);
         root.add("cacheHits", cacheHits);
         root.add("cacheHitPercentage", cacheHitPercentage);
         root.add("cacheMisses", cacheMisses);
@@ -154,6 +177,9 @@ public class LocalCacheStatsImpl implements LocalCacheStats {
     @Override
     public void fromJson(JsonObject json) {
         creationTime = getLong(json, "creationTime", -1L);
+        lastAccessTime = getLong(json, "lastAccessTime", -1L);
+        lastUpdateTime = getLong(json, "lastUpdateTime", -1L);
+        ownedEntryCount = getLong(json, "ownedEntryCount", -1L);
         cacheHits = getLong(json, "cacheHits", -1L);
         cacheHitPercentage = getFloat(json, "cacheHitPercentage", -1f);
         cacheMisses = getLong(json, "cacheMisses", -1L);
@@ -171,6 +197,9 @@ public class LocalCacheStatsImpl implements LocalCacheStats {
     public String toString() {
         return "LocalCacheStatsImpl{"
                 + "creationTime=" + creationTime
+                + ", lastAccessTime=" + lastAccessTime
+                + ", lastUpdateTime=" + lastUpdateTime
+                + ", ownedEntryCount=" + ownedEntryCount
                 + ", cacheHits=" + cacheHits
                 + ", cacheHitPercentage=" + cacheHitPercentage
                 + ", cacheMisses=" + cacheMisses

@@ -23,6 +23,27 @@ package com.hazelcast.monitor;
 public interface LocalCacheStats extends LocalInstanceStats {
 
     /**
+     * Gets the last access time to cache.
+     *
+     * @return the last access time to cache
+     */
+    long getLastAccessTime();
+
+    /**
+     * Gets the last update time to cache.
+     *
+     * @return the last update time to cache
+     */
+    long getLastUpdateTime();
+
+    /**
+     * Returns the owned entry count in the cache.
+     *
+     * @return the owned entry count in the cache
+     */
+    long getOwnedEntryCount();
+
+    /**
      * Returns the number of hits (successful get operations) on the cache.
      *
      * @return the number of hits (successful get operations) on the cache

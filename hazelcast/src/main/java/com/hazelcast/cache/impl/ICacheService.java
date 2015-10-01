@@ -16,6 +16,7 @@
 
 package com.hazelcast.cache.impl;
 
+import com.hazelcast.cache.CacheStatistics;
 import com.hazelcast.config.CacheConfig;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.InMemoryFormat;
@@ -79,7 +80,7 @@ public interface ICacheService extends ManagedService, RemoteService, MigrationA
 
     void deregisterAllListener(String name);
 
-    CacheStatisticsImpl getStatistics(String name);
+    CacheStatistics getStatistics(String name);
 
     /**
      * Creates cache operations according to the storage-type of the cache

@@ -20,6 +20,7 @@ import com.hazelcast.cache.CacheStatistics;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.util.Clock;
 
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
@@ -37,6 +38,10 @@ public class CacheStatisticsImpl
     private static final float FLOAT_HUNDRED = 100.0f;
     private static final long NANOSECONDS_IN_A_MICROSECOND = 1000L;
 
+    private static final AtomicLongFieldUpdater<CacheStatisticsImpl> LAST_ACCESS_TIME =
+            AtomicLongFieldUpdater.newUpdater(CacheStatisticsImpl.class, "lastAccessTime");
+    private static final AtomicLongFieldUpdater<CacheStatisticsImpl> LAST_UPDATE_TIME =
+            AtomicLongFieldUpdater.newUpdater(CacheStatisticsImpl.class, "lastUpdateTime");
     private static final AtomicLongFieldUpdater<CacheStatisticsImpl> REMOVALS =
             AtomicLongFieldUpdater.newUpdater(CacheStatisticsImpl.class, "removals");
     private static final AtomicLongFieldUpdater<CacheStatisticsImpl> EXPIRIES =
@@ -56,6 +61,13 @@ public class CacheStatisticsImpl
     private static final AtomicLongFieldUpdater<CacheStatisticsImpl> REMOVE_TIME_TAKEN_NANOS =
             AtomicLongFieldUpdater.newUpdater(CacheStatisticsImpl.class, "removeTimeTakenNanos");
 
+    /**
+     * This field is not mutated (read only) so no need to define it as volatile.
+     */
+    private long creationTime;
+
+    private volatile long lastAccessTime;
+    private volatile long lastUpdateTime;
     private volatile long removals;
     private volatile long expiries;
     private volatile long puts;
@@ -66,7 +78,43 @@ public class CacheStatisticsImpl
     private volatile long getCacheTimeTakenNanos;
     private volatile long removeTimeTakenNanos;
 
+    /**
+     * This field is used when this stats instance is deserialized.
+     * So it is not mutated (read only) and no need to define it as volatile.
+     */
+    private long ownedEntryCount;
+    private transient CacheContext cacheContext;
+
     public CacheStatisticsImpl() {
+    }
+
+    public CacheStatisticsImpl(long creationTime, CacheContext cacheContext) {
+        this.creationTime = creationTime;
+        this.cacheContext = cacheContext;
+    }
+
+    @Override
+    public long getCreationTime() {
+        return creationTime;
+    }
+
+    @Override
+    public long getLastAccessTime() {
+        return lastAccessTime;
+    }
+
+    @Override
+    public long getLastUpdateTime() {
+        return lastUpdateTime;
+    }
+
+    @Override
+    public long getOwnedEntryCount() {
+        if (cacheContext != null) {
+            return cacheContext.getEntryCount();
+        } else  {
+            return ownedEntryCount;
+        }
     }
 
     @Override
@@ -166,11 +214,11 @@ public class CacheStatisticsImpl
     @Override
     public float getAverageRemoveTime() {
         final long cacheRemoveTimeTakenNanos = getCacheRemoveTimeTakenNanos();
-        final long cacheGets = getCacheGets();
-        if (cacheRemoveTimeTakenNanos == 0 || cacheGets == 0) {
+        final long cacheRemoves = getCacheRemovals();
+        if (cacheRemoveTimeTakenNanos == 0 || cacheRemoves == 0) {
             return 0;
         }
-        return ((1f * cacheRemoveTimeTakenNanos) / cacheGets) / NANOSECONDS_IN_A_MICROSECOND;
+        return ((1f * cacheRemoveTimeTakenNanos) / cacheRemoves) / NANOSECONDS_IN_A_MICROSECOND;
     }
 
     /**
@@ -178,6 +226,9 @@ public class CacheStatisticsImpl
      * @see javax.cache.management.CacheStatisticsMXBean#clear()
      */
     public void clear() {
+        // TODO Should we clear `creationTime` also? In fact, it doesn't make sense
+        // TODO Should we clear `ownedEntryCount` also? In fact, it doesn't make sense
+
         puts = 0;
         misses = 0;
         removals = 0;
@@ -190,12 +241,47 @@ public class CacheStatisticsImpl
     }
 
     /**
+     * Sets the cache last access time as atomic if the given time is bigger than it.
+     *
+     * @param time time to set the cache last access time
+     */
+    public void setLastAccessTime(long time) {
+        for (;;) {
+            if (time > lastAccessTime) {
+                if (LAST_ACCESS_TIME.compareAndSet(this, lastAccessTime, time)) {
+                    break;
+                }
+            } else {
+                break;
+            }
+        }
+    }
+
+    /**
+     * Sets the cache last update time as atomic if the given time is bigger than it.
+     *
+     * @param time time to set the cache last update time
+     */
+    public void setLastUpdateTime(long time) {
+        for (;;) {
+            if (time > lastUpdateTime) {
+                if (LAST_UPDATE_TIME.compareAndSet(this, lastUpdateTime, time)) {
+                    break;
+                }
+            } else {
+                break;
+            }
+        }
+    }
+
+    /**
      * Increases the counter by the number specified.
      *
      * @param number the number by which the counter is increased.
      */
     public void increaseCacheRemovals(long number) {
         REMOVALS.addAndGet(this, number);
+        setLastUpdateTime(Clock.currentTimeMillis());
     }
 
     /**
@@ -205,6 +291,7 @@ public class CacheStatisticsImpl
      */
     public void increaseCacheExpiries(long number) {
         EXPIRIES.addAndGet(this, number);
+        setLastUpdateTime(Clock.currentTimeMillis());
     }
 
     /**
@@ -214,6 +301,7 @@ public class CacheStatisticsImpl
      */
     public void increaseCachePuts(long number) {
         PUTS.addAndGet(this, number);
+        setLastUpdateTime(Clock.currentTimeMillis());
     }
 
     /**
@@ -223,6 +311,7 @@ public class CacheStatisticsImpl
      */
     public void increaseCacheHits(long number) {
         HITS.addAndGet(this, number);
+        setLastAccessTime(Clock.currentTimeMillis());
     }
 
     /**
@@ -232,6 +321,7 @@ public class CacheStatisticsImpl
      */
     public void increaseCacheMisses(long number) {
         MISSES.addAndGet(this, number);
+        setLastAccessTime(Clock.currentTimeMillis());
     }
 
     /**
@@ -241,6 +331,7 @@ public class CacheStatisticsImpl
      */
     public void increaseCacheEvictions(long number) {
         EVICTIONS.addAndGet(this, number);
+        setLastUpdateTime(Clock.currentTimeMillis());
     }
 
     /**
@@ -309,29 +400,15 @@ public class CacheStatisticsImpl
         }
     }
 
-    /**
-     *
-     * Simple CacheStatistics adder. Can be used to merge two statistics data,
-     * such as the ones collected from multiple nodes.
-     * @param other CacheStatisticsImpl to be merged.
-     * @return CacheStatisticsImpl with merged data.
-     */
-    public CacheStatisticsImpl accumulate(CacheStatisticsImpl other) {
-        PUTS.addAndGet(this, other.getCachePuts());
-        REMOVALS.addAndGet(this, other.getCacheRemovals());
-        EXPIRIES.addAndGet(this, other.getCacheExpiries());
-        EVICTIONS.addAndGet(this, other.getCacheEvictions());
-        HITS.addAndGet(this, other.getCacheHits());
-        MISSES.addAndGet(this, other.getCacheMisses());
-        PUT_TIME_TAKEN_NANOS.addAndGet(this, other.getCachePutTimeTakenNanos());
-        GET_CACHE_TIME_TAKEN_NANOS.addAndGet(this, other.getCacheGetTimeTakenNanos());
-        REMOVE_TIME_TAKEN_NANOS.addAndGet(this, other.getCacheRemoveTimeTakenNanos());
-        return this;
-    }
-
     @Override
     public void writeData(ObjectDataOutput out)
             throws IOException {
+        out.writeLong(creationTime);
+
+        out.writeLong(lastAccessTime);
+        out.writeLong(lastUpdateTime);
+        out.writeLong(getOwnedEntryCount());
+
         out.writeLong(puts);
         out.writeLong(removals);
         out.writeLong(expiries);
@@ -348,6 +425,12 @@ public class CacheStatisticsImpl
     @Override
     public void readData(ObjectDataInput in)
             throws IOException {
+        creationTime = in.readLong();
+
+        lastAccessTime = in.readLong();
+        lastUpdateTime = in.readLong();
+        ownedEntryCount = in.readLong();
+
         puts = in.readLong();
         removals = in.readLong();
         expiries = in.readLong();
@@ -359,5 +442,24 @@ public class CacheStatisticsImpl
         putTimeTakenNanos = in.readLong();
         getCacheTimeTakenNanos = in.readLong();
         removeTimeTakenNanos = in.readLong();
+    }
+
+    @Override
+    public String toString() {
+        return "CacheStatisticsImpl{"
+                    + "creationTime=" + creationTime
+                    + ", lastAccessTime=" + lastAccessTime
+                    + ", lastUpdateTime=" + lastUpdateTime
+                    + ", ownedEntryCount=" + getOwnedEntryCount()
+                    + ", removals=" + removals
+                    + ", expiries=" + expiries
+                    + ", puts=" + puts
+                    + ", hits=" + hits
+                    + ", misses=" + misses
+                    + ", evictions=" + evictions
+                    + ", putTimeTakenNanos=" + putTimeTakenNanos
+                    + ", getCacheTimeTakenNanos=" + getCacheTimeTakenNanos
+                    + ", removeTimeTakenNanos=" + removeTimeTakenNanos
+                + '}';
     }
 }
