@@ -37,6 +37,7 @@ import java.util.regex.Pattern;
 
 import static com.hazelcast.aws.impl.Constants.DOC_VERSION;
 import static com.hazelcast.aws.impl.Constants.SIGNATURE_METHOD_V4;
+import static com.hazelcast.nio.IOUtil.closeResource;
 
 public class DescribeInstances {
     private static final String IAM_ROLE_ENDPOINT = "169.254.169.254";
@@ -110,9 +111,16 @@ public class DescribeInstances {
 
     public Map<String, String> execute() throws Exception {
         final String signature = rs.sign("ec2", attributes);
+        Map response = null;
+        InputStream stream = null;
         attributes.put("X-Amz-Signature", signature);
-        InputStream stream = callService(endpoint, signature);
-        return CloudyUtility.unmarshalTheResponse(stream, awsConfig);
+        try {
+            stream = callService(endpoint, signature);
+            response = CloudyUtility.unmarshalTheResponse(stream, awsConfig);
+        } finally {
+            closeResource(stream);
+            return response;
+        }
     }
 
     private InputStream callService(String endpoint, String signature) throws Exception {
