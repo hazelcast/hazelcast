@@ -38,6 +38,34 @@ package com.hazelcast.cache;
 public interface CacheStatistics {
 
     /**
+     * Gets the cache creation time.
+     *
+     * @return the cache creation time
+     */
+    long getCreationTime();
+
+    /**
+     * Gets the last access time to cache.
+     *
+     * @return the last access time to cache
+     */
+    long getLastAccessTime();
+
+    /**
+     * Gets the last update time to cache.
+     *
+     * @return the last update time to cache
+     */
+    long getLastUpdateTime();
+
+    /**
+     * Returns the owned entry count in the cache.
+     *
+     * @return the owned entry count in the cache
+     */
+    long getOwnedEntryCount();
+
+    /**
      * The number of get requests that were satisfied by the cache.
      * <p>
      * {@link javax.cache.Cache#containsKey(Object)} is not a get request for

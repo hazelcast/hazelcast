@@ -34,6 +34,7 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.spi.PostJoinAwareService;
+import com.hazelcast.util.Clock;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 
@@ -69,7 +70,9 @@ public abstract class AbstractCacheService
             new ConstructorFunction<String, CacheStatisticsImpl>() {
                 @Override
                 public CacheStatisticsImpl createNew(String name) {
-                    return new CacheStatisticsImpl();
+                    return new CacheStatisticsImpl(
+                            Clock.currentTimeMillis(),
+                            AbstractCacheService.this.getOrCreateCacheContext(name));
                 }
             };
 
