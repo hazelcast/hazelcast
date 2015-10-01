@@ -739,11 +739,16 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
     @Override
     public Collection<V> values() {
         // we pass null instead of TruePredicate.INSTANCE due to security. But null will be interpreted as TruePredicate.
-        return values(null);
+        return valuesInternal(null);
     }
 
     @Override
     public Collection<V> values(Predicate predicate) {
+        checkNotNull(predicate, "predicate can't be null");
+        return valuesInternal(predicate);
+    }
+
+    private Collection<V> valuesInternal(Predicate predicate) {
         if (predicate instanceof PagingPredicate) {
             return valuesForPagingPredicate((PagingPredicate) predicate);
         }
@@ -761,12 +766,17 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
     @Override
     public Set<Entry<K, V>> entrySet() {
         // we pass null instead of TruePredicate.INSTANCE due to security. But null will be interpreted as TruePredicate.
-        return entrySet(null);
+        return entrySetInternal(null);
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public Set<Entry<K, V>> entrySet(Predicate predicate) {
+        checkNotNull(predicate, "predicate can't be null");
+        return entrySetInternal(predicate);
+    }
+
+    @SuppressWarnings("unchecked")
+    private Set<Entry<K, V>> entrySetInternal(Predicate predicate) {
         PagingPredicate pagingPredicate = null;
         if (predicate instanceof PagingPredicate) {
             pagingPredicate = (PagingPredicate) predicate;
@@ -784,7 +794,7 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
             }
             return setBuilder.build();
         }
-        ArrayList<Map.Entry> resultList = new ArrayList<Map.Entry>();
+        ArrayList<Entry> resultList = new ArrayList<Entry>();
         for (QueryResultRow data : result) {
             K key = toObject(data.getKey());
             V value = toObject(data.getValue());
@@ -796,12 +806,17 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
     @Override
     public Set<K> keySet() {
         // we pass null instead of TruePredicate.INSTANCE due to security. But null will be interpreted as TruePredicate.
-        return keySet(null);
+        return keySetInternal(null);
     }
 
     @Override
     @SuppressWarnings("unchecked")
     public Set<K> keySet(Predicate predicate) {
+        checkNotNull(predicate, "predicate can't be null");
+        return keySetInternal(predicate);
+    }
+
+    private Set<K> keySetInternal(Predicate predicate) {
         PagingPredicate pagingPredicate = null;
         if (predicate instanceof PagingPredicate) {
             pagingPredicate = (PagingPredicate) predicate;
@@ -818,7 +833,7 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
             return setBuilder.build();
         }
 
-        ArrayList<Map.Entry> resultList = new ArrayList<Map.Entry>(result.size());
+        ArrayList<Entry> resultList = new ArrayList<Entry>(result.size());
         for (QueryResultRow row : result) {
             K key = toObject(row.getKey());
             resultList.add(new AbstractMap.SimpleImmutableEntry<K, V>(key, null));
