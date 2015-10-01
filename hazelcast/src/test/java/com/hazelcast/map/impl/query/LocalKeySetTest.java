@@ -103,12 +103,12 @@ public class LocalKeySetTest extends HazelcastTestSupport {
 
     @Test
     public void testResultType() {
-        map.put("1", "a");
+        map.put(localKey1, "a");
         Set<String> entries = map.localKeySet(TruePredicate.INSTANCE);
 
         QueryResultCollection collection = assertInstanceOf(QueryResultCollection.class, entries);
         QueryResultRow row = (QueryResultRow) collection.getRows().iterator().next();
-        assertEquals(serializationService.toData("1"), row.getKey());
+        assertEquals(localKey1, serializationService.toObject(row.getKey()));
         assertNull(row.getValue());
     }
 
