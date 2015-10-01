@@ -21,6 +21,7 @@ import com.hazelcast.map.impl.operation.PutBackupOperation;
 import com.hazelcast.map.impl.operation.PutOperation;
 import com.hazelcast.map.impl.operation.RemoveBackupOperation;
 import com.hazelcast.map.impl.operation.RemoveOperation;
+import com.hazelcast.map.impl.query.QueryResult;
 import com.hazelcast.map.impl.query.QueryResultRow;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.internal.serialization.DataSerializerHook;
@@ -52,8 +53,9 @@ public final class MapDataSerializerHook implements DataSerializerHook {
     //    public static final int MAP_STATS = 12;
     public static final int QUERY_RESULT_ROW = 13;
     public static final int QUERY_RESULT_SET = 14;
+    public static final int QUERY_RESULT = 15;
 
-    private static final int LEN = QUERY_RESULT_SET + 1;
+    private static final int LEN = QUERY_RESULT + 1;
 
     @Override
     public int getFactoryId() {
@@ -123,6 +125,11 @@ public final class MapDataSerializerHook implements DataSerializerHook {
         constructors[QUERY_RESULT_SET] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new QueryResultSet();
+            }
+        };
+        constructors[QUERY_RESULT] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new QueryResult();
             }
         };
 
