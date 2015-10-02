@@ -22,9 +22,9 @@ import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.MapEvent;
-import com.hazelcast.map.impl.MapListenerAdapter;
 import com.hazelcast.instance.Node;
 import com.hazelcast.map.impl.DataAwareEntryEvent;
+import com.hazelcast.map.impl.MapListenerAdapter;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.nio.Connection;
@@ -49,8 +49,9 @@ public abstract class AbstractMapAddEntryListenerMessageTask<Parameter>
 
         MapListenerAdapter<Object, Object> listener = new MapListener();
         MapServiceContext mapServiceContext = mapService.getMapServiceContext();
-        final String name = getDistributedObjectName();
-        final String registrationId = mapServiceContext.addEventListener(listener, getEventFilter(), name);
+        String name = getDistributedObjectName();
+        EventFilter eventFilter = getEventFilter();
+        String registrationId = mapServiceContext.addEventListener(listener, eventFilter, name);
         endpoint.addListenerDestroyAction(MapService.SERVICE_NAME, name, registrationId);
         return registrationId;
     }

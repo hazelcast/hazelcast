@@ -86,10 +86,6 @@ public class EntryEventData extends AbstractEventData {
         dataMergingValue = in.readData();
     }
 
-    public Object cloneWithoutValues() {
-        return new EntryEventData(getSource(), getMapName(), getCaller(), dataKey, null, null, null, getEventType());
-    }
-
     @Override
     public String toString() {
         return "EntryEventData{"

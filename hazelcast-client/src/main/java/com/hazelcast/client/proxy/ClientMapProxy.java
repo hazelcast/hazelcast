@@ -135,6 +135,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.cluster.memberselector.MemberSelectors.LITE_MEMBER_SELECTOR;
 import static com.hazelcast.map.impl.ListenerAdapters.createListenerAdapter;
+import static com.hazelcast.map.impl.MapListenerFlagOperator.setAndGetListenerFlags;
 import static com.hazelcast.util.Preconditions.checkNotNull;
 import static com.hazelcast.util.SortingUtil.getSortedQueryResultSet;
 
@@ -550,16 +551,12 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
 
     @Override
     public String addEntryListener(MapListener listener, boolean includeValue) {
-        MapAddEntryListenerRequest request = new MapAddEntryListenerRequest(name, includeValue);
-        EventHandler<PortableEntryEvent> handler = createHandler(listener, includeValue);
-        return listen(request, handler);
+        return addEntryListenerInternal(listener, null, includeValue, null);
     }
 
     @Override
     public String addEntryListener(EntryListener listener, boolean includeValue) {
-        MapAddEntryListenerRequest request = new MapAddEntryListenerRequest(name, includeValue);
-        EventHandler<PortableEntryEvent> handler = createHandler(listener, includeValue);
-        return listen(request, handler);
+        return addEntryListenerInternal(listener, null, includeValue, null);
     }
 
     @Override
@@ -583,48 +580,42 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
 
     @Override
     public String addEntryListener(MapListener listener, K key, boolean includeValue) {
-        final Data keyData = toData(key);
-        MapAddEntryListenerRequest request = new MapAddEntryListenerRequest(name, keyData, includeValue);
-        EventHandler<PortableEntryEvent> handler = createHandler(listener, includeValue);
-        return listen(request, keyData, handler);
+        return addEntryListenerInternal(listener, null, includeValue, key);
     }
 
     @Override
     public String addEntryListener(EntryListener listener, K key, boolean includeValue) {
-        final Data keyData = toData(key);
-        MapAddEntryListenerRequest request = new MapAddEntryListenerRequest(name, keyData, includeValue);
-        EventHandler<PortableEntryEvent> handler = createHandler(listener, includeValue);
-        return listen(request, keyData, handler);
+        return addEntryListenerInternal(listener, null, includeValue, key);
     }
 
     @Override
     public String addEntryListener(MapListener listener, Predicate<K, V> predicate, K key, boolean includeValue) {
-        final Data keyData = toData(key);
-        MapAddEntryListenerRequest request = new MapAddEntryListenerRequest(name, keyData, includeValue, predicate);
-        EventHandler<PortableEntryEvent> handler = createHandler(listener, includeValue);
-        return listen(request, keyData, handler);
+        return addEntryListenerInternal(listener, predicate, includeValue, key);
     }
 
     @Override
     public String addEntryListener(EntryListener listener, Predicate<K, V> predicate, K key, boolean includeValue) {
-        final Data keyData = toData(key);
-        MapAddEntryListenerRequest request = new MapAddEntryListenerRequest(name, keyData, includeValue, predicate);
-        EventHandler<PortableEntryEvent> handler = createHandler(listener, includeValue);
-        return listen(request, keyData, handler);
+        return addEntryListenerInternal(listener, predicate, includeValue, key);
     }
 
     @Override
     public String addEntryListener(MapListener listener, Predicate<K, V> predicate, boolean includeValue) {
-        MapAddEntryListenerRequest request = new MapAddEntryListenerRequest(name, null, includeValue, predicate);
-        EventHandler<PortableEntryEvent> handler = createHandler(listener, includeValue);
-        return listen(request, null, handler);
+        return addEntryListenerInternal(listener, predicate, includeValue, null);
     }
 
     @Override
     public String addEntryListener(EntryListener listener, Predicate<K, V> predicate, boolean includeValue) {
-        MapAddEntryListenerRequest request = new MapAddEntryListenerRequest(name, null, includeValue, predicate);
-        EventHandler<PortableEntryEvent> handler = createHandler(listener, includeValue);
-        return listen(request, null, handler);
+        return addEntryListenerInternal(listener, predicate, includeValue, null);
+    }
+
+    private String addEntryListenerInternal(Object listener, Predicate<K, V> predicate, boolean includeValue, K key) {
+        Data keyData = toData(key);
+        ListenerAdapter listenerAdaptor = createListenerAdapter(listener);
+        int listenerFlags = setAndGetListenerFlags(listenerAdaptor);
+        MapAddEntryListenerRequest request
+                = new MapAddEntryListenerRequest(name, keyData, includeValue, predicate, listenerFlags);
+        EventHandler<PortableEntryEvent> handler = createHandler(listenerAdaptor, includeValue);
+        return listen(request, keyData, handler);
     }
 
     @Override
@@ -1088,9 +1079,8 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
         return timeunit != null ? timeunit.toMillis(time) : time;
     }
 
-    private EventHandler<PortableEntryEvent> createHandler(final Object listener, final boolean includeValue) {
-        final ListenerAdapter listenerAdaptor = createListenerAdapter(listener);
-        return new ClientMapEventHandler(listenerAdaptor, includeValue);
+    private EventHandler<PortableEntryEvent> createHandler(final ListenerAdapter listenerAdapter, final boolean includeValue) {
+        return new ClientMapEventHandler(listenerAdapter, includeValue);
     }
 
     private void invalidateNearCache(Data key) {
