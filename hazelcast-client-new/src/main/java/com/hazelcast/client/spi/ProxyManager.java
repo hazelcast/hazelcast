@@ -92,6 +92,8 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.client.config.ClientProperty.INVOCATION_TIMEOUT_SECONDS;
+
 /**
  * The ProxyManager handles client proxy instantiation and retrieval at start- and runtime by registering
  * corresponding service manager names and their {@link com.hazelcast.client.spi.ClientProxyFactory}s.
@@ -247,10 +249,9 @@ public final class ProxyManager {
     }
 
     private long getRetryCountLimit() {
-        final ClientProperties clientProperties = client.getClientProperties();
-        int waitTime = clientProperties.getInvocationTimeoutSeconds().getInteger();
-        long retryTimeoutInSeconds = waitTime > 0 ? waitTime
-                : Integer.parseInt(ClientProperties.PROP_INVOCATION_TIMEOUT_SECONDS_DEFAULT);
+        ClientProperties clientProperties = client.getClientProperties();
+        int waitTime = clientProperties.getSeconds(INVOCATION_TIMEOUT_SECONDS);
+        long retryTimeoutInSeconds = waitTime > 0 ? waitTime : Integer.parseInt(INVOCATION_TIMEOUT_SECONDS.getDefaultValue());
         return retryTimeoutInSeconds / ClientInvocation.RETRY_WAIT_TIME_IN_SECONDS;
     }
 

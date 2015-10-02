@@ -33,13 +33,13 @@ import com.hazelcast.client.spi.ClientClusterService;
 import com.hazelcast.client.spi.ClientExecutionService;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.Member;
+import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionListener;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.UsernamePasswordCredentials;
 import com.hazelcast.util.Clock;
@@ -60,8 +60,9 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
-public abstract class ClusterListenerSupport implements ConnectionListener, ConnectionHeartbeatListener,
-        ClientClusterService {
+import static com.hazelcast.client.config.ClientProperty.SHUFFLE_MEMBER_LIST;
+
+public abstract class ClusterListenerSupport implements ConnectionListener, ConnectionHeartbeatListener, ClientClusterService {
 
     private static final ILogger LOGGER = Logger.getLogger(ClusterListenerSupport.class);
     private static final long TERMINATE_TIMEOUT_SECONDS = 30;
@@ -82,7 +83,7 @@ public abstract class ClusterListenerSupport implements ConnectionListener, Conn
     public ClusterListenerSupport(HazelcastClientInstanceImpl client, Collection<AddressProvider> addressProviders) {
         this.client = client;
         this.addressProviders = addressProviders;
-        this.shuffleMemberList = client.getClientProperties().getShuffleMemberList().getBoolean();
+        this.shuffleMemberList = client.getClientProperties().getBoolean(SHUFFLE_MEMBER_LIST);
         this.clusterExecutor = createSingleThreadExecutorService(client);
     }
 
@@ -267,7 +268,6 @@ public abstract class ClusterListenerSupport implements ConnectionListener, Conn
 
     @Override
     public void connectionAdded(Connection connection) {
-
     }
 
     @Override
@@ -292,7 +292,6 @@ public abstract class ClusterListenerSupport implements ConnectionListener, Conn
 
     @Override
     public void heartBeatStarted(Connection connection) {
-
     }
 
     @Override
@@ -302,4 +301,3 @@ public abstract class ClusterListenerSupport implements ConnectionListener, Conn
         }
     }
 }
-

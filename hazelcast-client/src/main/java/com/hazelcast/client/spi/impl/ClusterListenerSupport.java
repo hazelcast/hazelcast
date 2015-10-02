@@ -58,8 +58,9 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
-public abstract class ClusterListenerSupport implements ConnectionListener, ConnectionHeartbeatListener,
-        ClientClusterService {
+import static com.hazelcast.client.config.ClientProperty.SHUFFLE_MEMBER_LIST;
+
+public abstract class ClusterListenerSupport implements ConnectionListener, ConnectionHeartbeatListener, ClientClusterService {
 
     private static final ILogger LOGGER = Logger.getLogger(ClusterListenerSupport.class);
     private static final long TERMINATE_TIMEOUT_SECONDS = 30;
@@ -80,7 +81,7 @@ public abstract class ClusterListenerSupport implements ConnectionListener, Conn
     public ClusterListenerSupport(HazelcastClientInstanceImpl client, Collection<AddressProvider> addressProviders) {
         this.client = client;
         this.addressProviders = addressProviders;
-        this.shuffleMemberList = client.getClientProperties().getShuffleMemberList().getBoolean();
+        this.shuffleMemberList = client.getClientProperties().getBoolean(SHUFFLE_MEMBER_LIST);
         this.clusterExecutor = createSingleThreadExecutorService(client);
     }
 
@@ -250,7 +251,6 @@ public abstract class ClusterListenerSupport implements ConnectionListener, Conn
 
     @Override
     public void connectionAdded(Connection connection) {
-
     }
 
     @Override
@@ -275,7 +275,6 @@ public abstract class ClusterListenerSupport implements ConnectionListener, Conn
 
     @Override
     public void heartBeatStarted(Connection connection) {
-
     }
 
     @Override
@@ -285,4 +284,3 @@ public abstract class ClusterListenerSupport implements ConnectionListener, Conn
         }
     }
 }
-

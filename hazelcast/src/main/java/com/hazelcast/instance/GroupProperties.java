@@ -18,9 +18,7 @@ package com.hazelcast.instance;
 
 import com.hazelcast.config.Config;
 
-import java.util.concurrent.TimeUnit;
-
-import static java.lang.String.format;
+import static com.hazelcast.util.Preconditions.checkNotNull;
 
 /**
  * Container for configured Hazelcast properties ({@see GroupProperty}).
@@ -36,7 +34,7 @@ import static java.lang.String.format;
  * The old property definitions are deprecated since Hazelcast 3.6. Please use the new {@link GroupProperty} definitions instead.
  */
 @SuppressWarnings("unused")
-public class GroupProperties {
+public class GroupProperties extends HazelcastProperties {
 
     @Deprecated
     public static final String PROP_APPLICATION_VALIDATION_TOKEN = GroupProperty.APPLICATION_VALIDATION_TOKEN.getName();
@@ -278,8 +276,6 @@ public class GroupProperties {
     public static final String PROP_QUERY_MAX_LOCAL_PARTITION_LIMIT_FOR_PRE_CHECK
             = GroupProperty.QUERY_MAX_LOCAL_PARTITION_LIMIT_FOR_PRE_CHECK.getName();
 
-    private final String[] properties = new String[GroupProperty.values().length];
-
     /**
      * Creates a container with configured Hazelcast properties.
      * <p/>
@@ -289,134 +285,12 @@ public class GroupProperties {
      * @param config {@link Config} used to configure the {@link GroupProperty} values.
      */
     public GroupProperties(Config config) {
-        for (GroupProperty groupProperty : GroupProperty.values()) {
-            String configValue = (config != null) ? config.getProperty(groupProperty) : null;
-            if (configValue != null) {
-                properties[groupProperty.ordinal()] = configValue;
-                continue;
-            }
-            String propertyValue = groupProperty.getSystemProperty();
-            if (propertyValue != null) {
-                properties[groupProperty.ordinal()] = propertyValue;
-                continue;
-            }
-            GroupProperty parent = groupProperty.getParent();
-            if (parent != null) {
-                properties[groupProperty.ordinal()] = properties[parent.ordinal()];
-                continue;
-            }
-            properties[groupProperty.ordinal()] = groupProperty.getDefaultValue();
-        }
+        checkNotNull(config);
+        initProperties(config.getProperties(), GroupProperty.values());
     }
 
-    /**
-     * Returns the configured value of a {@link GroupProperty} as String.
-     *
-     * @param groupProperty the {@link GroupProperty} to get the value from
-     * @return the value or <tt>null</tt> if nothing has been configured
-     */
-    public String getString(GroupProperty groupProperty) {
-        return properties[groupProperty.ordinal()];
-    }
-
-    /**
-     * Returns the configured boolean value of a {@link GroupProperty}.
-     *
-     * @param groupProperty the {@link GroupProperty} to get the value from
-     * @return the value as boolean
-     */
-    public boolean getBoolean(GroupProperty groupProperty) {
-        return Boolean.valueOf(properties[groupProperty.ordinal()]);
-    }
-
-    /**
-     * Returns the configured int value of a {@link GroupProperty}.
-     *
-     * @param groupProperty the {@link GroupProperty} to get the value from
-     * @return the value as int
-     * @throws NumberFormatException if the value cannot be parsed
-     */
-    public int getInteger(GroupProperty groupProperty) {
-        return Integer.parseInt(properties[groupProperty.ordinal()]);
-    }
-
-    /**
-     * Returns the configured long value of a {@link GroupProperty}.
-     *
-     * @param groupProperty the {@link GroupProperty} to get the value from
-     * @return the value as long
-     * @throws NumberFormatException if the value cannot be parsed
-     */
-    public long getLong(GroupProperty groupProperty) {
-        return Long.parseLong(properties[groupProperty.ordinal()]);
-    }
-
-    /**
-     * Returns the configured float value of a {@link GroupProperty}.
-     *
-     * @param groupProperty the {@link GroupProperty} to get the value from
-     * @return the value as float
-     * @throws NumberFormatException if the value cannot be parsed
-     */
-    public float getFloat(GroupProperty groupProperty) {
-        return Float.valueOf(properties[groupProperty.ordinal()]);
-    }
-
-    /**
-     * Returns the configured value of a {@link GroupProperty} converted to nanoseconds.
-     *
-     * @param groupProperty the {@link GroupProperty} to get the value from
-     * @return the value in nanoseconds
-     * @throws IllegalArgumentException if the {@link GroupProperty} has no {@link TimeUnit}
-     */
-    public long getNanos(GroupProperty groupProperty) {
-        TimeUnit timeUnit = groupProperty.getTimeUnit();
-        return timeUnit.toNanos(getLong(groupProperty));
-    }
-
-    /**
-     * Returns the configured value of a {@link GroupProperty} converted to milliseconds.
-     *
-     * @param groupProperty the {@link GroupProperty} to get the value from
-     * @return the value in milliseconds
-     * @throws IllegalArgumentException if the {@link GroupProperty} has no {@link TimeUnit}
-     */
-    public long getMillis(GroupProperty groupProperty) {
-        TimeUnit timeUnit = groupProperty.getTimeUnit();
-        return timeUnit.toMillis(getLong(groupProperty));
-    }
-
-    /**
-     * Returns the configured value of a {@link GroupProperty} converted to seconds.
-     *
-     * @param groupProperty the {@link GroupProperty} to get the value from
-     * @return the value in seconds
-     * @throws IllegalArgumentException if the {@link GroupProperty} has no {@link TimeUnit}
-     */
-    public int getSeconds(GroupProperty groupProperty) {
-        TimeUnit timeUnit = groupProperty.getTimeUnit();
-        return (int) timeUnit.toSeconds(getLong(groupProperty));
-    }
-
-    /**
-     * Returns the configured enum value of a {@link GroupProperty}.
-     * <p/>
-     * The case of the enum is ignored.
-     *
-     * @param groupProperty the {@link GroupProperty} to get the value from
-     * @return the enum
-     * @throws IllegalArgumentException if the enum value can't be found
-     */
-    public <E extends Enum> E getEnum(GroupProperty groupProperty, Class<E> enumClazz) {
-        String value = getString(groupProperty);
-
-        for (E enumConstant : enumClazz.getEnumConstants()) {
-            if (enumConstant.name().equalsIgnoreCase(value)) {
-                return enumConstant;
-            }
-        }
-
-        throw new IllegalArgumentException(format("value '%s' for property '%s' is not a valid %s value",
-                value, groupProperty.getName(), enumClazz.getName()));
+    @Override
+    protected String[] createProperties() {
+        return new String[GroupProperty.values().length];
     }
 }

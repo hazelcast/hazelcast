@@ -17,7 +17,7 @@
 package com.hazelcast.client;
 
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.client.config.ClientProperties;
+import com.hazelcast.client.config.ClientProperty;
 import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.impl.ClientTestUtil;
 import com.hazelcast.client.impl.HazelcastClientInstanceImpl;
@@ -70,7 +70,7 @@ public class ClientConnectionTest extends HazelcastTestSupport {
 
         HazelcastInstance server = hazelcastFactory.newHazelcastInstance();
         ClientConfig config = new ClientConfig();
-        config.setProperty(ClientProperties.PROP_SHUFFLE_MEMBER_LIST, "false");
+        config.setProperty(ClientProperty.SHUFFLE_MEMBER_LIST, "false");
         config.getNetworkConfig().addAddress(illegalAddress).addAddress("localhost");
         HazelcastInstance client = hazelcastFactory.newHazelcastClient(config);
 
@@ -83,12 +83,11 @@ public class ClientConnectionTest extends HazelcastTestSupport {
 
     @Test
     public void testMemberConnectionOrder() {
-
         HazelcastInstance server1 = hazelcastFactory.newHazelcastInstance();
         HazelcastInstance server2 = hazelcastFactory.newHazelcastInstance();
 
         ClientConfig config = new ClientConfig();
-        config.setProperty(ClientProperties.PROP_SHUFFLE_MEMBER_LIST, "false");
+        config.setProperty(ClientProperty.SHUFFLE_MEMBER_LIST, "false");
         config.getNetworkConfig().setSmartRouting(false);
 
         InetSocketAddress socketAddress1 = server1.getCluster().getLocalMember().getSocketAddress();
@@ -141,5 +140,4 @@ public class ClientConnectionTest extends HazelcastTestSupport {
             count.incrementAndGet();
         }
     }
-
 }

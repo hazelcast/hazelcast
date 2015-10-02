@@ -16,175 +16,117 @@
 
 package com.hazelcast.client.config;
 
+import com.hazelcast.config.Config;
+import com.hazelcast.instance.HazelcastProperties;
+
+import static com.hazelcast.client.config.ClientProperty.EVENT_QUEUE_CAPACITY;
+import static com.hazelcast.client.config.ClientProperty.EVENT_THREAD_COUNT;
+import static com.hazelcast.client.config.ClientProperty.HEARTBEAT_INTERVAL;
+import static com.hazelcast.client.config.ClientProperty.HEARTBEAT_TIMEOUT;
+import static com.hazelcast.client.config.ClientProperty.INVOCATION_TIMEOUT_SECONDS;
+import static com.hazelcast.client.config.ClientProperty.SHUFFLE_MEMBER_LIST;
+
 /**
- * Client Properties
+ * Container for configured Hazelcast Client properties ({@see ClientProperty}).
+ * <p/>
+ * A {@link ClientProperty} can be set as:
+ * <p><ul>
+ * <li>an environmental variable using {@link System#setProperty(String, String)}</li>
+ * <li>the programmatic configuration using {@link Config#setProperty(String, String)}</li>
+ * <li>the XML configuration
+ * {@see http://docs.hazelcast.org/docs/latest-dev/manual/html-single/hazelcast-documentation.html#system-properties}</li>
+ * </ul></p>
+ * The old property definitions are deprecated since Hazelcast 3.6. Please use the new {@link ClientProperty} definitions instead.
  */
-public class ClientProperties {
+@SuppressWarnings("unused")
+public class ClientProperties extends HazelcastProperties {
 
     /**
-     * Client shuffles the given member list to prevent all clients to connect to the same node when
-     * this property is set to false. When it is set to true, the client tries to connect to the nodes
-     * in the given order.
+     * Deprecated since Hazelcast 3.6. Please use the new {@link ClientProperty#SHUFFLE_MEMBER_LIST} instead.
      */
-    public static final String PROP_SHUFFLE_MEMBER_LIST = "hazelcast.client.shuffle.member.list";
-    /**
-     * Default value of the shuffle member list is true unless the user specifies it explicitly.
-     */
-    public static final String PROP_SHUFFLE_INITIAL_MEMBER_LIST_DEFAULT = "true";
+    @Deprecated
+    public static final String PROP_SHUFFLE_MEMBER_LIST = SHUFFLE_MEMBER_LIST.getName();
 
     /**
-     * Client sends heartbeat messages to the members and this is the timeout for this sending operations. If there
-     * is not any message passing between the client and member within the given time via this property
-     * in milliseconds, the connection will be closed.
+     * Deprecated since Hazelcast 3.6. Please use the new {@link ClientProperty#SHUFFLE_MEMBER_LIST} instead.
      */
-    public static final String PROP_HEARTBEAT_TIMEOUT = "hazelcast.client.heartbeat.timeout";
-    /**
-     * Default value of the heartbeat timeout unless the user specifies it explicitly.
-     */
-    public static final String PROP_HEARTBEAT_TIMEOUT_DEFAULT = "60000";
+    @Deprecated
+    public static final String PROP_SHUFFLE_INITIAL_MEMBER_LIST_DEFAULT = SHUFFLE_MEMBER_LIST.getDefaultValue();
 
     /**
-     * Time interval between the heartbeats sent by the client to the nodes.
+     * Deprecated since Hazelcast 3.6. Please use the new {@link ClientProperty#HEARTBEAT_TIMEOUT} instead.
      */
-    public static final String PROP_HEARTBEAT_INTERVAL = "hazelcast.client.heartbeat.interval";
-    /**
-     * Default value of heartbeat interval unless the user specifies it explicitly.
-     */
-    public static final String PROP_HEARTBEAT_INTERVAL_DEFAULT = "5000";
+    @Deprecated
+    public static final String PROP_HEARTBEAT_TIMEOUT = HEARTBEAT_TIMEOUT.getName();
 
     /**
-     * Number of the threads to handle the incoming event packets.
+     * Deprecated since Hazelcast 3.6. Please use the new {@link ClientProperty#HEARTBEAT_TIMEOUT} instead.
      */
-    public static final String PROP_EVENT_THREAD_COUNT = "hazelcast.client.event.thread.count";
+    @Deprecated
+    public static final String PROP_HEARTBEAT_TIMEOUT_DEFAULT = HEARTBEAT_TIMEOUT.getDefaultValue();
 
     /**
-     * Default value of the number of threads to handle the incoming event packets.
+     * Deprecated since Hazelcast 3.6. Please use the new {@link ClientProperty#HEARTBEAT_INTERVAL} instead.
      */
-    public static final String PROP_EVENT_THREAD_COUNT_DEFAULT = "5";
+    @Deprecated
+    public static final String PROP_HEARTBEAT_INTERVAL = HEARTBEAT_INTERVAL.getName();
 
     /**
-     * Capacity of the executor that handles the incoming event packets.
+     * Deprecated since Hazelcast 3.6. Please use the new {@link ClientProperty#HEARTBEAT_INTERVAL} instead.
      */
-    public static final String PROP_EVENT_QUEUE_CAPACITY = "hazelcast.client.event.queue.capacity";
+    @Deprecated
+    public static final String PROP_HEARTBEAT_INTERVAL_DEFAULT = HEARTBEAT_INTERVAL.getDefaultValue();
 
     /**
-     * Default value of the capacity of the executor that handles the incoming event packets.
+     * Deprecated since Hazelcast 3.6. Please use the new {@link ClientProperty#EVENT_THREAD_COUNT} instead.
      */
-    public static final String PROP_EVENT_QUEUE_CAPACITY_DEFAULT = "1000000";
+    @Deprecated
+    public static final String PROP_EVENT_THREAD_COUNT = EVENT_THREAD_COUNT.getName();
 
     /**
-     * Time to give up on invocation when a member in the member list is not reachable.
+     * Deprecated since Hazelcast 3.6. Please use the new {@link ClientProperty#EVENT_THREAD_COUNT} instead.
      */
-    public static final String PROP_INVOCATION_TIMEOUT_SECONDS = "hazelcast.client.invocation.timeout.seconds";
+    @Deprecated
+    public static final String PROP_EVENT_THREAD_COUNT_DEFAULT = EVENT_THREAD_COUNT.getDefaultValue();
 
     /**
-     * Default value of invocation timeout seconds.
+     * Deprecated since Hazelcast 3.6. Please use the new {@link ClientProperty#EVENT_QUEUE_CAPACITY} instead.
      */
-    public static final String PROP_INVOCATION_TIMEOUT_SECONDS_DEFAULT = "120";
+    @Deprecated
+    public static final String PROP_EVENT_QUEUE_CAPACITY = EVENT_QUEUE_CAPACITY.getName();
 
+    /**
+     * Deprecated since Hazelcast 3.6. Please use the new {@link ClientProperty#EVENT_QUEUE_CAPACITY} instead.
+     */
+    @Deprecated
+    public static final String PROP_EVENT_QUEUE_CAPACITY_DEFAULT = EVENT_QUEUE_CAPACITY.getDefaultValue();
 
-    private final ClientProperty heartbeatTimeout;
-    private final ClientProperty heartbeatInterval;
-    private final ClientProperty eventThreadCount;
-    private final ClientProperty eventQueueCapacity;
-    private final ClientProperty invocationTimeout;
-    private final ClientProperty shuffleMemberList;
+    /**
+     * Deprecated since Hazelcast 3.6. Please use the new {@link ClientProperty#INVOCATION_TIMEOUT_SECONDS} instead.
+     */
+    @Deprecated
+    public static final String PROP_INVOCATION_TIMEOUT_SECONDS = INVOCATION_TIMEOUT_SECONDS.getName();
 
+    /**
+     * Deprecated since Hazelcast 3.6. Please use the new {@link ClientProperty#INVOCATION_TIMEOUT_SECONDS} instead.
+     */
+    @Deprecated
+    public static final String PROP_INVOCATION_TIMEOUT_SECONDS_DEFAULT = INVOCATION_TIMEOUT_SECONDS.getDefaultValue();
 
-    public ClientProperties(ClientConfig clientConfig) {
-        heartbeatTimeout = new ClientProperty(clientConfig, PROP_HEARTBEAT_TIMEOUT, PROP_HEARTBEAT_TIMEOUT_DEFAULT);
-        heartbeatInterval = new ClientProperty(clientConfig, PROP_HEARTBEAT_INTERVAL, PROP_HEARTBEAT_INTERVAL_DEFAULT);
-        eventThreadCount = new ClientProperty(clientConfig, PROP_EVENT_THREAD_COUNT, PROP_EVENT_THREAD_COUNT_DEFAULT);
-        eventQueueCapacity = new ClientProperty(clientConfig, PROP_EVENT_QUEUE_CAPACITY, PROP_EVENT_QUEUE_CAPACITY_DEFAULT);
-        invocationTimeout = new ClientProperty(clientConfig, PROP_INVOCATION_TIMEOUT_SECONDS,
-                PROP_INVOCATION_TIMEOUT_SECONDS_DEFAULT);
-        shuffleMemberList = new ClientProperty(clientConfig, PROP_SHUFFLE_MEMBER_LIST,
-                PROP_SHUFFLE_INITIAL_MEMBER_LIST_DEFAULT);
+    /**
+     * Creates a container with configured Hazelcast properties.
+     * <p/>
+     * Uses the environmental value if no value is defined in the configuration.
+     * Uses the default value if no environmental value is defined.
+     *
+     * @param config {@link Config} used to configure the {@link ClientProperty} values.
+     */
+    public ClientProperties(ClientConfig config) {
+        initProperties(config.getProperties(), ClientProperty.values());
     }
 
-    public ClientProperty getHeartbeatTimeout() {
-        return heartbeatTimeout;
-    }
-
-    public ClientProperty getHeartbeatInterval() {
-        return heartbeatInterval;
-    }
-
-    public ClientProperty getEventQueueCapacity() {
-        return eventQueueCapacity;
-    }
-
-    public ClientProperty getEventThreadCount() {
-        return eventThreadCount;
-    }
-
-    public ClientProperty getInvocationTimeoutSeconds() {
-        return invocationTimeout;
-    }
-
-    public ClientProperty getShuffleMemberList() {
-        return shuffleMemberList;
-    }
-
-    /**
-     * A single client property.
-     */
-    public static class ClientProperty {
-
-        private final String name;
-        private final String value;
-
-        ClientProperty(ClientConfig config, String name) {
-            this(config, name, (String) null);
-        }
-
-        ClientProperty(ClientConfig config, String name, ClientProperty defaultValue) {
-            this(config, name, defaultValue != null ? defaultValue.getString() : null);
-        }
-
-        ClientProperty(ClientConfig config, String name, String defaultValue) {
-            this.name = name;
-            String configValue = (config != null) ? config.getProperty(name) : null;
-            if (configValue != null) {
-                value = configValue;
-            } else if (System.getProperty(name) != null) {
-                value = System.getProperty(name);
-            } else {
-                value = defaultValue;
-            }
-        }
-
-        public String getName() {
-            return this.name;
-        }
-
-        public String getValue() {
-            return value;
-        }
-
-        public int getInteger() {
-            return Integer.parseInt(this.value);
-        }
-
-        public byte getByte() {
-            return Byte.parseByte(this.value);
-        }
-
-        public boolean getBoolean() {
-            return Boolean.valueOf(this.value);
-        }
-
-        public String getString() {
-            return value;
-        }
-
-        public long getLong() {
-            return Long.parseLong(this.value);
-        }
-
-        @Override
-        public String toString() {
-            return "ClientProperty [name=" + this.name + ", value=" + this.value + "]";
-        }
+    @Override
+    protected String[] createProperties() {
+        return new String[ClientProperty.values().length];
     }
 }

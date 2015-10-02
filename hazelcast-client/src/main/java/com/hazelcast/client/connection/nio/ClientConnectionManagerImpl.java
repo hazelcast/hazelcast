@@ -40,10 +40,10 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionListener;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.SocketInterceptor;
-import com.hazelcast.nio.tcp.nonblocking.NonBlockingIOThreadOutOfMemoryHandler;
-import com.hazelcast.nio.tcp.nonblocking.NonBlockingIOThread;
 import com.hazelcast.nio.tcp.SocketChannelWrapper;
 import com.hazelcast.nio.tcp.SocketChannelWrapperFactory;
+import com.hazelcast.nio.tcp.nonblocking.NonBlockingIOThread;
+import com.hazelcast.nio.tcp.nonblocking.NonBlockingIOThreadOutOfMemoryHandler;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
 
@@ -57,8 +57,8 @@ import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.hazelcast.client.config.ClientProperties.PROP_HEARTBEAT_INTERVAL_DEFAULT;
-import static com.hazelcast.client.config.ClientProperties.PROP_HEARTBEAT_TIMEOUT_DEFAULT;
+import static com.hazelcast.client.config.ClientProperty.HEARTBEAT_INTERVAL;
+import static com.hazelcast.client.config.ClientProperty.HEARTBEAT_TIMEOUT;
 import static com.hazelcast.client.config.SocketOptions.DEFAULT_BUFFER_SIZE_BYTE;
 import static com.hazelcast.client.config.SocketOptions.KILO_BYTE;
 
@@ -74,8 +74,8 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
     };
 
     private final int connectionTimeout;
-    private final int heartBeatInterval;
-    private final int heartBeatTimeout;
+    private final long heartBeatInterval;
+    private final long heartBeatTimeout;
 
     private final ConcurrentMap<Address, Object> connectionLockMap = new ConcurrentHashMap<Address, Object>();
 
@@ -98,22 +98,21 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
 
     protected volatile boolean alive;
 
-    public ClientConnectionManagerImpl(HazelcastClientInstanceImpl client,
-                                       AddressTranslator addressTranslator) {
+    public ClientConnectionManagerImpl(HazelcastClientInstanceImpl client, AddressTranslator addressTranslator) {
         this.client = client;
         this.addressTranslator = addressTranslator;
         final ClientConfig config = client.getClientConfig();
         final ClientNetworkConfig networkConfig = config.getNetworkConfig();
 
-        final int connTimeout = networkConfig.getConnectionTimeout();
+        int connTimeout = networkConfig.getConnectionTimeout();
         connectionTimeout = connTimeout == 0 ? Integer.MAX_VALUE : connTimeout;
 
-        final ClientProperties clientProperties = client.getClientProperties();
-        int timeout = clientProperties.getHeartbeatTimeout().getInteger();
-        this.heartBeatTimeout = timeout > 0 ? timeout : Integer.parseInt(PROP_HEARTBEAT_TIMEOUT_DEFAULT);
+        ClientProperties clientProperties = client.getClientProperties();
+        long timeout = clientProperties.getMillis(HEARTBEAT_TIMEOUT);
+        this.heartBeatTimeout = timeout > 0 ? timeout : Integer.parseInt(HEARTBEAT_TIMEOUT.getDefaultValue());
 
-        int interval = clientProperties.getHeartbeatInterval().getInteger();
-        heartBeatInterval = interval > 0 ? interval : Integer.parseInt(PROP_HEARTBEAT_INTERVAL_DEFAULT);
+        long interval = clientProperties.getMillis(HEARTBEAT_INTERVAL);
+        heartBeatInterval = interval > 0 ? interval : Integer.parseInt(HEARTBEAT_INTERVAL.getDefaultValue());
 
         executionService = (ClientExecutionServiceImpl) client.getClientExecutionService();
 
@@ -137,7 +136,6 @@ public class ClientConnectionManagerImpl implements ClientConnectionManager {
                 Logger.getLogger(ClientNonBlockingOutputThread.class),
                 OUT_OF_MEMORY_HANDLER);
     }
-
 
     private SocketInterceptor initSocketInterceptor(SocketInterceptorConfig sic) {
         if (sic != null && sic.isEnabled()) {
