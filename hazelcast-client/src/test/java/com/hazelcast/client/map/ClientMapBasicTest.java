@@ -1030,11 +1030,12 @@ public class ClientMapBasicTest {
             Object value = key+"value";
             map.put(key, value);
         }
-        expected.add(4);
+        expected.add("4value");
 
-        final Set keySet = map.keySet(new SqlPredicate("this == 4value"));
+        final Collection collection = map.values(new SqlPredicate("this == 4value"));
+        final Set resultSet = new TreeSet(collection);
 
-        assertEquals(expected, keySet);
+        assertEquals(expected, resultSet);
     }
 
     @Test
