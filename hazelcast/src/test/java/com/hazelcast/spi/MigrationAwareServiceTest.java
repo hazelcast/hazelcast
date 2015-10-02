@@ -23,6 +23,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.GroupProperty;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.TestUtil;
+import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -44,6 +45,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.LockSupport;
 
 import static org.junit.Assert.assertEquals;
@@ -374,4 +376,63 @@ public class MigrationAwareServiceTest extends HazelcastTestSupport {
         }
     }
 
+    @Test
+    public void migrationCommitEvents_shouldBeEqual_onSource_and_onDestination() throws Exception {
+        Config config = new Config();
+        final MigrationEventCounterService counter = new MigrationEventCounterService();
+        ServiceConfig serviceConfig = new ServiceConfig()
+                .setEnabled(true).setName("event-counter")
+                .setServiceImpl(counter);
+        config.getServicesConfig().addServiceConfig(serviceConfig);
+
+        final HazelcastInstance hz = factory.newHazelcastInstance(config);
+        warmUpPartitions(hz);
+
+        final AssertTask assertTask = new AssertTask() {
+            final InternalPartitionService partitionService = getNode(hz).getPartitionService();
+            @Override
+            public void run() throws Exception {
+                assertEquals(0, partitionService.getMigrationQueueSize());
+                assertEquals(counter.sourceCommits.get(), counter.destinationCommits.get());
+            }
+        };
+
+        factory.newHazelcastInstance(config);
+        assertTrueEventually(assertTask);
+
+        factory.newHazelcastInstance(config);
+        assertTrueEventually(assertTask);
+    }
+
+    private static class MigrationEventCounterService implements MigrationAwareService {
+
+        final AtomicInteger sourceCommits = new AtomicInteger();
+        final AtomicInteger destinationCommits = new AtomicInteger();
+
+        @Override
+        public Operation prepareReplicationOperation(PartitionReplicationEvent event) {
+            return null;
+        }
+
+        @Override
+        public void beforeMigration(PartitionMigrationEvent event) {
+        }
+
+        @Override
+        public void commitMigration(PartitionMigrationEvent event) {
+            if (event.getMigrationEndpoint() == MigrationEndpoint.SOURCE) {
+                sourceCommits.incrementAndGet();
+            } else {
+                destinationCommits.incrementAndGet();
+            }
+        }
+
+        @Override
+        public void rollbackMigration(PartitionMigrationEvent event) {
+        }
+
+        @Override
+        public void clearPartitionReplica(int partitionId) {
+        }
+    }
 }
