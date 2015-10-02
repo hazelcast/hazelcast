@@ -43,6 +43,8 @@ public interface MemberState extends JsonSerializable {
 
     LocalCacheStats getLocalCacheStats(String cacheName);
 
+    LocalWanStats getLocalWanStats(String schemeName);
+
     Collection<ClientEndPointDTO> getClients();
 
     MXBeansDTO getMXBeans();

@@ -34,6 +34,7 @@ import com.hazelcast.instance.Node;
 import com.hazelcast.internal.management.dto.ClientEndPointDTO;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.monitor.LocalExecutorStats;
+import com.hazelcast.monitor.LocalInstanceStats;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.monitor.LocalMemoryStats;
 import com.hazelcast.monitor.LocalMultiMapStats;
@@ -41,6 +42,7 @@ import com.hazelcast.monitor.LocalOperationStats;
 import com.hazelcast.monitor.LocalQueueStats;
 import com.hazelcast.monitor.LocalReplicatedMapStats;
 import com.hazelcast.monitor.LocalTopicStats;
+import com.hazelcast.monitor.LocalWanStats;
 import com.hazelcast.monitor.TimedMemberState;
 import com.hazelcast.monitor.impl.LocalCacheStatsImpl;
 import com.hazelcast.monitor.impl.LocalMemoryStatsImpl;
@@ -54,6 +56,7 @@ import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
 import com.hazelcast.spi.StatisticsAwareService;
 import com.hazelcast.topic.impl.TopicService;
+import com.hazelcast.wan.WanReplicationService;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -178,6 +181,9 @@ public class TimedMemberStateFactory {
                 } else if (service instanceof ReplicatedMapService) {
                     count = handleReplicatedMap(memberState, count, config, ((ReplicatedMapService) service).getStats(),
                             longInstanceNames);
+                } else if (service instanceof WanReplicationService) {
+                    count = handleWan(memberState, count, service.getStats(), longInstanceNames);
+
                 }
             }
         }
@@ -288,6 +294,18 @@ public class TimedMemberStateFactory {
                 longInstanceNames.add("c:" + name);
                 ++count;
             }
+        }
+        return count;
+    }
+
+    private int handleWan(MemberStateImpl memberState, int count, Map<String, LocalInstanceStats> wans,
+                          Set<String> longInstanceNames) {
+        for (Map.Entry<String, LocalInstanceStats> entry : wans.entrySet()) {
+            String schemeName = entry.getKey();
+            LocalWanStats stats = (LocalWanStats) entry.getValue();
+            memberState.putLocalWanStats(schemeName, stats);
+            longInstanceNames.add("w:" + schemeName);
+            count++;
         }
         return count;
     }
