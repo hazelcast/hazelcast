@@ -18,15 +18,20 @@ package com.hazelcast.map.impl.operation;
 
 
 import java.io.IOException;
+
+import com.hazelcast.map.impl.MapContainer;
+import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionAwareOperation;
 
-public class MapPartitionDestroyOperation extends Operation implements PartitionAwareOperation {
+public class MapPartitionDestroyOperation extends Operation implements PartitionAwareOperation, BackupAwareOperation {
     private final PartitionContainer partitionContainer;
     private final String mapName;
+    private int totalBackupCount;
 
     public MapPartitionDestroyOperation(PartitionContainer partitionContainer, String mapName) {
         this.partitionContainer = partitionContainer;
@@ -36,7 +41,9 @@ public class MapPartitionDestroyOperation extends Operation implements Partition
 
     @Override
     public void beforeRun() throws Exception {
-
+        MapService service = getService();
+        MapContainer mapContainer = service.getMapServiceContext().getMapContainer(mapName);
+        totalBackupCount = mapContainer.getTotalBackupCount();
     }
 
     @Override
@@ -71,5 +78,25 @@ public class MapPartitionDestroyOperation extends Operation implements Partition
         /*
         * It is local only operation and will never be serialized
         * */
+    }
+
+    @Override
+    public boolean shouldBackup() {
+        return true;
+    }
+
+    @Override
+    public int getSyncBackupCount() {
+        return totalBackupCount;
+    }
+
+    @Override
+    public int getAsyncBackupCount() {
+        return 0;
+    }
+
+    @Override
+    public Operation getBackupOperation() {
+        return new MapPartitionDestroyBackupOperation(mapName, getPartitionId());
     }
 }
