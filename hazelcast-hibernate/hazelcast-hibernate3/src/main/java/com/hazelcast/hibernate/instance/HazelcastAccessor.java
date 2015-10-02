@@ -28,7 +28,11 @@ import org.hibernate.engine.SessionFactoryImplementor;
 
 /**
  * Access underlying HazelcastInstance using Hibernate SessionFactory
+ *
+ * @deprecated Set instanceName for your Hazelcast instance and
+ * use {@link com.hazelcast.core.Hazelcast#getHazelcastInstanceByName(String instanceName)} instead
  */
+@Deprecated
 public final class HazelcastAccessor {
 
     static final ILogger LOGGER = Logger.getLogger(HazelcastAccessor.class);

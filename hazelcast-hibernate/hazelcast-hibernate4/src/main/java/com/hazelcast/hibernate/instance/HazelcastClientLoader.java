@@ -78,11 +78,6 @@ class HazelcastClientLoader implements IHazelcastInstanceLoader {
 
     @Override
     public HazelcastInstance loadInstance() throws CacheException {
-        if (client != null && client.getLifecycleService().isRunning()) {
-            LOGGER.warning("Current HazelcastClient is already active! Shutting it down...");
-            unloadInstance();
-        }
-
         client = HazelcastClient.newHazelcastClient(clientConfig);
         return client;
     }
