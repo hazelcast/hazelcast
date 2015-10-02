@@ -21,7 +21,10 @@ import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.SqlPredicate;
+import com.hazelcast.query.TruePredicate;
 import com.hazelcast.util.IterationType;
+import com.hazelcast.util.StringUtil;
+
 import java.io.IOException;
 
 public final class MapSQLQueryRequest extends AbstractMapQueryRequest {
@@ -38,6 +41,9 @@ public final class MapSQLQueryRequest extends AbstractMapQueryRequest {
 
     @Override
     protected Predicate getPredicate() {
+        if (StringUtil.isNullOrEmpty(sql)) {
+            return TruePredicate.INSTANCE;
+        }
         return new SqlPredicate(sql);
     }
 

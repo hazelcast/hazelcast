@@ -238,7 +238,7 @@ public class ClientMapTest {
             assertEquals(map.get(i), i);
         }
     }
-    
+
     @Test
     public void testAsyncGet() throws Exception {
         final IMap map = createMap();
@@ -505,13 +505,22 @@ public class ClientMapTest {
     }
 
     @Test
-    public void testValues() {
+    public void testValuesWithPredicate() {
         final IMap map = createMap();
         fillMap(map);
 
         final Collection values = map.values(new SqlPredicate("this == value1"));
         assertEquals(1, values.size());
         assertEquals("value1", values.iterator().next());
+    }
+
+    @Test
+    public void testValues() {
+        IMap map = createMap();
+        fillMap(map);
+
+        Collection values = map.values();
+        assertEquals(10, values.size());
     }
 
     @Test
