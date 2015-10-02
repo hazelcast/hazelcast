@@ -78,6 +78,20 @@ public final class StringUtil {
     }
 
     /**
+     * Checks if a string is empty or not after trim operation
+     *
+     * @param s the string to check.
+     * @return true if the string is null or empty, false otherwise
+     */
+
+    public static boolean isNullOrEmptyAfterTrim(String s) {
+        if (s == null) {
+            return true;
+        }
+        return s.trim().isEmpty();
+    }
+
+    /**
      * HC specific settings, operands etc. use this method.
      * Creates an uppercase string from the given string.
      *
