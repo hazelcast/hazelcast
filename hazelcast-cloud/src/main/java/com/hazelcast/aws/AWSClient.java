@@ -19,7 +19,6 @@ package com.hazelcast.aws;
 import com.hazelcast.aws.impl.DescribeInstances;
 import com.hazelcast.config.AwsConfig;
 
-import java.util.Collection;
 import java.util.Map;
 
 public class AWSClient {
@@ -42,11 +41,6 @@ public class AWSClient {
         if (awsConfig.getRegion() != null && awsConfig.getRegion().length() > 0) {
             setEndpoint("ec2." + awsConfig.getRegion() + ".amazonaws.com");
         }
-    }
-
-    public Collection<String> getPrivateIpAddresses() throws Exception {
-        final Map<String, String> result = new DescribeInstances(awsConfig, endpoint).execute();
-        return result.keySet();
     }
 
     public Map<String, String> getAddresses() throws Exception {
