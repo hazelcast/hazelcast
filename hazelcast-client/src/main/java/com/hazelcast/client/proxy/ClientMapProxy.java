@@ -88,6 +88,7 @@ import com.hazelcast.map.impl.client.MapSizeRequest;
 import com.hazelcast.map.impl.client.MapTryPutRequest;
 import com.hazelcast.map.impl.client.MapTryRemoveRequest;
 import com.hazelcast.map.impl.client.MapUnlockRequest;
+import com.hazelcast.map.impl.query.QueryResult;
 import com.hazelcast.map.impl.query.QueryResultRow;
 import com.hazelcast.map.listener.MapListener;
 import com.hazelcast.map.listener.MapPartitionLostListener;
@@ -748,7 +749,7 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
         }
 
         MapQueryRequest request = new MapQueryRequest(name, predicate, IterationType.VALUE);
-        Collection<QueryResultRow> result = invoke(request);
+        QueryResult result = invoke(request);
 
         List<V> values = new ArrayList<V>(result.size());
         for (QueryResultRow row : result) {
@@ -773,7 +774,7 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
         }
 
         MapQueryRequest request = new MapQueryRequest(name, predicate, IterationType.ENTRY);
-        Collection<QueryResultRow> result = invoke(request);
+        QueryResult result = invoke(request);
         if (pagingPredicate == null) {
             SerializationService serializationService = getContext().getSerializationService();
             InflatableSet.Builder<Entry<K, V>> setBuilder = InflatableSet.newBuilder(result.size());
@@ -807,7 +808,7 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
             pagingPredicate.setIterationType(IterationType.KEY);
         }
         MapQueryRequest request = new MapQueryRequest(name, predicate, IterationType.KEY);
-        Collection<QueryResultRow> result = invoke(request);
+        QueryResult result = invoke(request);
         if (pagingPredicate == null) {
             InflatableSet.Builder<K> setBuilder = InflatableSet.newBuilder(result.size());
             for (QueryResultRow row : result) {
@@ -829,7 +830,7 @@ public class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
         pagingPredicate.setIterationType(IterationType.ENTRY);
 
         MapQueryRequest request = new MapQueryRequest(name, pagingPredicate, IterationType.ENTRY);
-        Collection<QueryResultRow> result = invoke(request);
+        QueryResult result = invoke(request);
 
         List<Entry> resultList = new ArrayList<Entry>(result.size());
         for (QueryResultRow row : result) {
