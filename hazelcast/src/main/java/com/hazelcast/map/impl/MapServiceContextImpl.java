@@ -25,8 +25,8 @@ import com.hazelcast.map.impl.eviction.ExpirationManager;
 import com.hazelcast.map.impl.operation.MapPartitionDestroyOperation;
 import com.hazelcast.map.listener.MapPartitionLostListener;
 import com.hazelcast.map.merge.MergePolicyProvider;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.partition.InternalPartition;
 import com.hazelcast.partition.InternalPartitionService;
 import com.hazelcast.spi.EventFilter;
 import com.hazelcast.spi.EventRegistration;
@@ -181,19 +181,21 @@ class MapServiceContextImpl implements MapServiceContext {
     public void destroyMap(String mapName) {
         final PartitionContainer[] containers = partitionContainers;
         final List<Future> futures = new ArrayList<Future>(containers.length);
+        Address thisAddress = getNodeEngine().getThisAddress();
+        OperationService operationService = nodeEngine.getOperationService();
         for (PartitionContainer container : containers) {
-            if (container != null) {
-                int partitionId = container.getPartitionId();
-                InternalPartition partition = nodeEngine.getPartitionService().getPartition(partitionId);
-
-                if (partition.isLocal()) {
-                    OperationService operationService = nodeEngine.getOperationService();
-                    Operation operation = new MapPartitionDestroyOperation(container, mapName);
-
-                    Future f = operationService.invokeOnPartition(SERVICE_NAME, operation, partitionId);
-                    futures.add(f);
-                }
+            if (container == null) {
+                continue;
             }
+            int partitionId = container.getPartitionId();
+            Operation operation = new MapPartitionDestroyOperation(container, mapName);
+            operation.setPartitionId(partitionId);
+            // Execute the MapPartitionDestroyOperation on all partitions.
+            // We don't care if they are primary replicas or just backups
+            operation.setValidateTarget(false);
+
+            Future f = operationService.invokeOnTarget(SERVICE_NAME, operation, thisAddress);
+            futures.add(f);
         }
 
         try {
