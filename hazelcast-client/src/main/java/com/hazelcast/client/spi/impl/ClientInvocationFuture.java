@@ -43,6 +43,8 @@ public class ClientInvocationFuture<V> implements ICompletableFuture<V> {
 
     static final ILogger LOGGER = Logger.getLogger(ClientInvocationFuture.class);
 
+    private static final Object NULL_RESPONSE = new Object();
+
     private final ClientRequest request;
 
     private final ClientExecutionServiceImpl executionService;
@@ -159,6 +161,10 @@ public class ClientInvocationFuture<V> implements ICompletableFuture<V> {
     }
 
     private V resolveResponse() throws ExecutionException, TimeoutException, InterruptedException {
+        if (response == NULL_RESPONSE) {
+            return null;
+        }
+
         if (response instanceof Throwable) {
             return resolveException();
         }
@@ -168,11 +174,18 @@ public class ClientInvocationFuture<V> implements ICompletableFuture<V> {
         }
 
         if (responseDeserialized) {
-            response =  serializationService.toObject(response);
+            Object resp = serializationService.toObject(response);
 
             if (afterDeserializeFunction != null) {
-                response = afterDeserializeFunction.apply(response);
+                resp = afterDeserializeFunction.apply(resp);
             }
+
+            if (resp == null)  {
+                this.response = NULL_RESPONSE;
+                return null;
+            }
+
+            this.response = resp;
         }
 
         return (V) response;
