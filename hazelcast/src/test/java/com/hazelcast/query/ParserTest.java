@@ -116,10 +116,17 @@ public class ParserTest {
     }
 
     @Test
-    public void testNotEqual() {
+    public void testNotEqual1() {
         String s = "b != 30";
         List<String> list = parser.toPrefix(s);
         assertEquals(Arrays.asList("b", "30", "!="), list);
+    }
+
+    @Test
+    public void testNotEqual2() {
+        String s = "b <> 30";
+        List<String> list = parser.toPrefix(s);
+        assertEquals(Arrays.asList("b", "30", "<>"), list);
     }
 
     @Test

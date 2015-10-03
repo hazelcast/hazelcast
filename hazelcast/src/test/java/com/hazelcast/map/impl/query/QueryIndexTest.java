@@ -157,6 +157,8 @@ public class QueryIndexTest extends HazelcastTestSupport {
         map.put(3, new Value("aaa", 3));
         assertEquals(3, map.values(new SqlPredicate("name != 'aac'")).size());
         assertEquals(2, map.values(new SqlPredicate("index != 2")).size());
+        assertEquals(3, map.values(new SqlPredicate("name <> 'aac'")).size());
+        assertEquals(2, map.values(new SqlPredicate("index <> 2")).size());
         assertEquals(3, map.values(new PredicateBuilder().getEntryObject().get("name").notEqual("aac")).size());
         assertEquals(2, map.values(new PredicateBuilder().getEntryObject().get("index").notEqual(2)).size());
     }

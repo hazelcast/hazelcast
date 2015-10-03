@@ -158,6 +158,7 @@ public class SqlPredicateTest {
         assertSqlTrue("attribute = 123", value);
         assertSqlTrue("attribute = '123'", value);
         assertSqlTrue("attribute != 124", value);
+        assertSqlTrue("attribute <> 124", value);
         assertSqlFalse("attribute = 124", value);
         assertSqlTrue("attribute between 122 and 124", value);
         assertSqlTrue("attribute in (122, 123, 124)", value);
@@ -173,6 +174,8 @@ public class SqlPredicateTest {
         assertSqlTrue("name = NULL", nullNameValue);
         assertSqlTrue("name != null", value);
         assertSqlTrue("name != NULL", value);
+        assertSqlTrue("name <> null", value);
+        assertSqlTrue("name <> NULL", value);
         assertSqlTrue(" (name LIKE 'abc-%') AND (age <= " + 40 + ")", value);
         assertSqlTrue(" (name REGEX 'abc-.*') AND (age <= " + 40 + ")", value);
 
