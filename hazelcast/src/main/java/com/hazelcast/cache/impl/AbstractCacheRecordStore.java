@@ -113,7 +113,7 @@ public abstract class AbstractCacheRecordStore<R extends CacheRecord, CRM extend
         this.cacheConfig = cacheService.getCacheConfig(name);
         this.cacheContext = cacheService.getOrCreateCacheContext(name);
         if (cacheConfig == null) {
-            throw new CacheNotExistsException("Cache is already destroyed or not created yet, on "
+            throw new CacheNotExistsException("Cache " + name +" is already destroyed or not created yet, on "
                     + nodeEngine.getLocalMember());
         }
         this.wanReplicationEnabled = cacheConfig.getWanReplicationRef() != null;
