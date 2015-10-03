@@ -17,5 +17,10 @@
 /**
  * This package contains the public SPI for vendors and users to implement their
  * custom node / IP discovery strategy.
+ *
+ * @since 3.6
  */
+@Beta
 package com.hazelcast.spi.discovery;
+
+import com.hazelcast.spi.annotation.Beta;

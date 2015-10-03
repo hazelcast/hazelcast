@@ -16,44 +16,43 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.spi.discovery.integration.DiscoveryServiceProvider;
 import com.hazelcast.spi.discovery.DiscoveryStrategy;
 import com.hazelcast.spi.discovery.NodeFilter;
+import com.hazelcast.spi.discovery.integration.DiscoveryServiceProvider;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 
 /**
  * This configuration class describes the top-level config of the discovery
  * SPI and its discovery strategies.
  */
-public class DiscoveryStrategiesConfig {
+public class DiscoveryConfig {
 
     private final List<DiscoveryStrategyConfig> discoveryStrategyConfigs = new ArrayList<DiscoveryStrategyConfig>();
     private DiscoveryServiceProvider discoveryServiceProvider;
     private NodeFilter nodeFilter;
     private String nodeFilterClass;
 
-    private DiscoveryStrategiesConfig readonly;
+    private DiscoveryConfig readonly;
 
-    public DiscoveryStrategiesConfig() {
+    public DiscoveryConfig() {
     }
 
-    protected DiscoveryStrategiesConfig(DiscoveryServiceProvider discoveryServiceProvider, NodeFilter nodeFilter,
-                                        String nodeFilterClass, Collection<DiscoveryStrategyConfig> discoveryStrategyConfigs) {
+    protected DiscoveryConfig(DiscoveryServiceProvider discoveryServiceProvider, NodeFilter nodeFilter, String nodeFilterClass,
+                              Collection<DiscoveryStrategyConfig> discoveryStrategyConfigs) {
         this.discoveryServiceProvider = discoveryServiceProvider;
         this.nodeFilter = nodeFilter;
         this.nodeFilterClass = nodeFilterClass;
         this.discoveryStrategyConfigs.addAll(discoveryStrategyConfigs);
     }
 
-    public DiscoveryStrategiesConfig getAsReadOnly() {
+    public DiscoveryConfig getAsReadOnly() {
         if (readonly != null) {
             return readonly;
         }
-        readonly = new DiscoveryStrategiesConfigReadOnly(this);
+        readonly = new DiscoveryConfigReadOnly(this);
         return readonly;
     }
 
@@ -96,7 +95,7 @@ public class DiscoveryStrategiesConfig {
      * @return all enabled {@link DiscoveryStrategy} configurations
      */
     public Collection<DiscoveryStrategyConfig> getDiscoveryStrategyConfigs() {
-        return Collections.unmodifiableCollection(discoveryStrategyConfigs);
+        return discoveryStrategyConfigs;
     }
 
     /**

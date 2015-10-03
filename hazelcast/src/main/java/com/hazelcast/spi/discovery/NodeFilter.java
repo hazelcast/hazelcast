@@ -16,27 +16,32 @@
 
 package com.hazelcast.spi.discovery;
 
+import com.hazelcast.spi.annotation.Beta;
+
 /**
  * The NodeFilter, if supplied, will retrieve all discovered nodes and might
  * apply additional filtering based on vendor provided metadata. These metadata
- * are expected to be provided using the {@link DiscoveredNode#getProperties()}
+ * are expected to be provided using the {@link DiscoveryNode#getProperties()}
  * method and may contain additional information initially setup by the user.
  * <p/>
  * This is useful for additional security settings, to apply a certain type of
  * policy or to work around insufficient query languages of cloud providers.
  * <p/>
- * Denied {@link com.hazelcast.spi.discovery.DiscoveredNode}s will not be
+ * Denied {@link DiscoveryNode}s will not be
  * handed over to the Hazelcast connection framework and therefore are not
  * known to the discovered.
+ *
+ * @since 3.6
  */
+@Beta
 public interface NodeFilter {
 
     /**
-     * Accepts or denies a {@link com.hazelcast.spi.discovery.DiscoveredNode}
+     * Accepts or denies a {@link DiscoveryNode}
      * based on the implemented rules.
      *
      * @param candidate the candidate to be tested
-     * @return true if the DiscoveredNode is selected to be discovered, otherwise false.
+     * @return true if the DiscoveryNode is selected to be discovered, otherwise false.
      */
-    boolean test(DiscoveredNode candidate);
+    boolean test(DiscoveryNode candidate);
 }

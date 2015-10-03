@@ -21,14 +21,14 @@ import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.cluster.Joiner;
 import com.hazelcast.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.cluster.impl.ConfigCheck;
-import com.hazelcast.cluster.impl.JoinMessage;
 import com.hazelcast.cluster.impl.DiscoveryJoiner;
+import com.hazelcast.cluster.impl.JoinMessage;
 import com.hazelcast.cluster.impl.JoinRequest;
 import com.hazelcast.cluster.impl.MulticastJoiner;
 import com.hazelcast.cluster.impl.MulticastService;
 import com.hazelcast.cluster.impl.TcpIpJoiner;
 import com.hazelcast.config.Config;
-import com.hazelcast.config.DiscoveryStrategiesConfig;
+import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.JoinConfig;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.MemberAttributeConfig;
@@ -53,10 +53,12 @@ import com.hazelcast.partition.PartitionLostListener;
 import com.hazelcast.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.SecurityContext;
-import com.hazelcast.spi.discovery.DiscoveryMode;
+import com.hazelcast.spi.discovery.SimpleDiscoveryNode;
+import com.hazelcast.spi.discovery.impl.DefaultDiscoveryServiceProvider;
+import com.hazelcast.spi.discovery.integration.DiscoveryMode;
 import com.hazelcast.spi.discovery.integration.DiscoveryService;
 import com.hazelcast.spi.discovery.integration.DiscoveryServiceProvider;
-import com.hazelcast.spi.discovery.impl.DefaultDiscoveryServiceProvider;
+import com.hazelcast.spi.discovery.integration.DiscoveryServiceSettings;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.proxyservice.impl.ProxyServiceImpl;
 import com.hazelcast.util.Clock;
@@ -196,13 +198,19 @@ public class Node {
 
     private DiscoveryService createDiscoveryService(Config config) {
         JoinConfig joinConfig = config.getNetworkConfig().getJoin();
-        DiscoveryStrategiesConfig providersConfig = joinConfig.getDiscoveryStrategiesConfig().getAsReadOnly();
+        DiscoveryConfig discoveryConfig = joinConfig.getDiscoveryConfig().getAsReadOnly();
 
-        DiscoveryServiceProvider factory = providersConfig.getDiscoveryServiceProvider();
+        DiscoveryServiceProvider factory = discoveryConfig.getDiscoveryServiceProvider();
         if (factory == null) {
             factory = new DefaultDiscoveryServiceProvider();
         }
-        return factory.newDiscoveryService(DiscoveryMode.Member, providersConfig, config.getClassLoader());
+        ILogger logger = getLogger(DiscoveryService.class);
+
+        DiscoveryServiceSettings settings = new DiscoveryServiceSettings().setConfigClassLoader(configClassLoader)
+                .setLogger(logger).setDiscoveryMode(DiscoveryMode.Member).setDiscoveryConfig(discoveryConfig)
+                .setDiscoveryNode(new SimpleDiscoveryNode(localMember.getAddress(), localMember.getAttributes()));
+
+        return factory.newDiscoveryService(settings);
     }
 
     private void initializeListeners(Config config) {

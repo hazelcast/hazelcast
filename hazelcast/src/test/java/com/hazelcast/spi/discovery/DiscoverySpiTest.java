@@ -18,7 +18,7 @@ package com.hazelcast.spi.discovery;
 
 import com.hazelcast.config.AwsConfig;
 import com.hazelcast.config.Config;
-import com.hazelcast.config.DiscoveryStrategiesConfig;
+import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.DiscoveryStrategyConfig;
 import com.hazelcast.config.InterfacesConfig;
 import com.hazelcast.config.JoinConfig;
@@ -28,21 +28,24 @@ import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.config.properties.PropertyDefinition;
 import com.hazelcast.config.properties.PropertyTypeConverter;
 import com.hazelcast.config.properties.SimplePropertyDefinition;
+import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.discovery.impl.DefaultDiscoveryService;
 import com.hazelcast.spi.discovery.impl.DefaultDiscoveryServiceProvider;
+import com.hazelcast.spi.discovery.integration.DiscoveryMode;
 import com.hazelcast.spi.discovery.integration.DiscoveryService;
 import com.hazelcast.spi.discovery.integration.DiscoveryServiceProvider;
+import com.hazelcast.spi.discovery.integration.DiscoveryServiceSettings;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-import org.xml.sax.SAXException;
 
 import javax.xml.XMLConstants;
 import javax.xml.transform.Source;
@@ -56,15 +59,23 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CopyOnWriteArrayList;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
 public class DiscoverySpiTest
         extends HazelcastTestSupport {
+
+    private static final ILogger LOGGER = Logger.getLogger(DiscoverySpiTest.class);
 
     @Test
     public void testSchema() throws Exception {
@@ -97,12 +108,12 @@ public class DiscoverySpiTest
         MulticastConfig multicastConfig = joinConfig.getMulticastConfig();
         assertFalse(multicastConfig.isEnabled());
 
-        DiscoveryStrategiesConfig discoveryStrategiesConfig = joinConfig.getDiscoveryStrategiesConfig();
-        assertTrue(discoveryStrategiesConfig.isEnabled());
+        DiscoveryConfig discoveryConfig = joinConfig.getDiscoveryConfig();
+        assertTrue(discoveryConfig.isEnabled());
 
-        assertEquals(1, discoveryStrategiesConfig.getDiscoveryStrategyConfigs().size());
+        assertEquals(1, discoveryConfig.getDiscoveryStrategyConfigs().size());
 
-        DiscoveryStrategyConfig providerConfig = discoveryStrategiesConfig.getDiscoveryStrategyConfigs().iterator().next();
+        DiscoveryStrategyConfig providerConfig = discoveryConfig.getDiscoveryStrategyConfigs().iterator().next();
 
         assertEquals(3, providerConfig.getProperties().size());
         assertEquals("foo", providerConfig.getProperties().get("key-string"));
@@ -121,27 +132,37 @@ public class DiscoverySpiTest
         interfaces.setEnabled(true);
         interfaces.addInterface("127.0.0.1");
 
-        String[] addresses = {"127.0.0.1", "127.0.0.1", "127.0.0.1"};
-        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(50001, addresses);
+        List<DiscoveryNode> discoveryNodes = new CopyOnWriteArrayList<DiscoveryNode>();
+        DiscoveryStrategyFactory factory = new CollectingDiscoveryStrategyFactory(discoveryNodes);
 
-        final HazelcastInstance hazelcastInstance1 = factory.newHazelcastInstance(config);
-        final HazelcastInstance hazelcastInstance2 = factory.newHazelcastInstance(config);
-        final HazelcastInstance hazelcastInstance3 = factory.newHazelcastInstance(config);
+        DiscoveryConfig discoveryConfig = config.getNetworkConfig().getJoin().getDiscoveryConfig();
+        discoveryConfig.getDiscoveryStrategyConfigs().clear();
 
-        assertNotNull(hazelcastInstance1);
-        assertNotNull(hazelcastInstance2);
-        assertNotNull(hazelcastInstance3);
+        DiscoveryStrategyConfig strategyConfig = new DiscoveryStrategyConfig(factory, Collections.<String, Comparable>emptyMap());
+        discoveryConfig.addDiscoveryProviderConfig(strategyConfig);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run()
-                    throws Exception {
+        try {
+            final HazelcastInstance hazelcastInstance1 = Hazelcast.newHazelcastInstance(config);
+            final HazelcastInstance hazelcastInstance2 = Hazelcast.newHazelcastInstance(config);
+            final HazelcastInstance hazelcastInstance3 = Hazelcast.newHazelcastInstance(config);
 
-                assertEquals(3, hazelcastInstance1.getCluster().getMembers().size());
-                assertEquals(3, hazelcastInstance2.getCluster().getMembers().size());
-                assertEquals(3, hazelcastInstance3.getCluster().getMembers().size());
-            }
-        });
+            assertNotNull(hazelcastInstance1);
+            assertNotNull(hazelcastInstance2);
+            assertNotNull(hazelcastInstance3);
+
+            assertTrueEventually(new AssertTask() {
+                @Override
+                public void run()
+                        throws Exception {
+
+                    assertEquals(3, hazelcastInstance1.getCluster().getMembers().size());
+                    assertEquals(3, hazelcastInstance2.getCluster().getMembers().size());
+                    assertEquals(3, hazelcastInstance3.getCluster().getMembers().size());
+                }
+            });
+        } finally {
+            Hazelcast.shutdownAll();
+        }
     }
 
     @Test
@@ -152,13 +173,13 @@ public class DiscoverySpiTest
 
         JoinConfig joinConfig = config.getNetworkConfig().getJoin();
 
-        DiscoveryStrategiesConfig discoveryStrategiesConfig = joinConfig.getDiscoveryStrategiesConfig();
-        assertNotNull(discoveryStrategiesConfig);
-        assertNotNull(discoveryStrategiesConfig.getNodeFilterClass());
+        DiscoveryConfig discoveryConfig = joinConfig.getDiscoveryConfig();
+
+        Address address = new Address("localhost", 5701);
+        DiscoveryServiceSettings settings = buildDiscoveryServiceSettings(address, discoveryConfig, DiscoveryMode.Client);
 
         DiscoveryServiceProvider provider = new DefaultDiscoveryServiceProvider();
-        DiscoveryService discoveryService = provider.newDiscoveryService(DiscoveryMode.Client,
-                discoveryStrategiesConfig, DiscoverySpiTest.class.getClassLoader());
+        DiscoveryService discoveryService = provider.newDiscoveryService(settings);
 
         discoveryService.start();
         discoveryService.discoverNodes();
@@ -172,26 +193,126 @@ public class DiscoverySpiTest
         assertEquals(4, nodeFilter.getNodes().size());
     }
 
-    private static class TestDiscoveryStrategy implements DiscoveryStrategy {
+    @Test
+    public void test_AbstractDiscoveryStrategy_getOrNull() throws Exception {
+        PropertyDefinition first = new SimplePropertyDefinition("first", PropertyTypeConverter.STRING);
+        PropertyDefinition second = new SimplePropertyDefinition("second", PropertyTypeConverter.BOOLEAN);
+        PropertyDefinition third = new SimplePropertyDefinition("third", PropertyTypeConverter.INTEGER);
+        PropertyDefinition fourth = new SimplePropertyDefinition("fourth", true, PropertyTypeConverter.STRING);
 
-        @Override
-        public void start(DiscoveryMode discoveryMode) {
+        Map<String, Comparable> properties = new HashMap<String, Comparable>();
+        properties.put("first", "value-first");
+        properties.put("second", Boolean.FALSE);
+        properties.put("third", 100);
+
+        // System Property > System Environment > Configuration
+        // Property 'first' => "value-first"
+        // Property 'second' => true
+        setEnvironment("test.second", "true");
+        // Property 'third' => 300
+        setEnvironment("test.third", "200");
+        System.setProperty("test.third", "300");
+        // Property 'fourth' => null
+
+        PropertyDiscoveryStrategy strategy = new PropertyDiscoveryStrategy(LOGGER, properties);
+
+        // Without lookup of environment
+        assertEquals("value-first", strategy.getOrNull(first));
+        assertEquals(Boolean.FALSE, strategy.getOrNull(second));
+        assertEquals(100, strategy.getOrNull(third));
+        assertNull(strategy.getOrNull(fourth));
+
+        // With lookup of environment
+        assertEquals("value-first", strategy.getOrNull("test", first));
+        assertEquals(Boolean.TRUE, strategy.getOrNull("test", second));
+        assertEquals(300, strategy.getOrNull("test", third));
+        assertNull(strategy.getOrNull("test", fourth));
+    }
+
+    @Test
+    public void test_AbstractDiscoveryStrategy_getOrDefault() throws Exception {
+        PropertyDefinition value = new SimplePropertyDefinition("value", PropertyTypeConverter.INTEGER);
+
+        Map<String, Comparable> properties = Collections.emptyMap();
+        PropertyDiscoveryStrategy strategy = new PropertyDiscoveryStrategy(LOGGER, properties);
+
+        assertEquals(1111, (long) strategy.getOrDefault(value, 1111));
+        assertEquals(1111, (long) strategy.getOrDefault("test", value, 1111));
+    }
+
+    private static void setEnvironment(String key, String value) throws Exception {
+        Class[] classes = Collections.class.getDeclaredClasses();
+        Map<String, String> env = System.getenv();
+        for(Class cl : classes) {
+            if("java.util.Collections$UnmodifiableMap".equals(cl.getName())) {
+                Field field = cl.getDeclaredField("m");
+                field.setAccessible(true);
+                Object obj = field.get(env);
+                Map<String, String> map = (Map<String, String>) obj;
+                map.put(key, value);
+            }
+        }
+    }
+
+    private DiscoveryServiceSettings buildDiscoveryServiceSettings(Address address, DiscoveryConfig config, DiscoveryMode mode) {
+        return new DiscoveryServiceSettings().setConfigClassLoader(DiscoverySpiTest.class.getClassLoader())
+                                             .setDiscoveryConfig(config).setDiscoveryMode(mode).setLogger(LOGGER)
+                                             .setDiscoveryNode(new SimpleDiscoveryNode(address));
+    }
+
+    private static class PropertyDiscoveryStrategy extends AbstractDiscoveryStrategy {
+
+        public
+        PropertyDiscoveryStrategy(ILogger logger, Map<String, Comparable> properties) {
+            super(logger, properties);
         }
 
         @Override
-        public Collection<DiscoveredNode> discoverNodes() {
-            try {
-                List<DiscoveredNode> discoveredNodes = new ArrayList<DiscoveredNode>(4);
-                Address address = new Address("127.0.0.1", 50001);
-                discoveredNodes.add(new SimpleDiscoveredNode(address));
-                address = new Address("127.0.0.1", 50002);
-                discoveredNodes.add(new SimpleDiscoveredNode(address));
-                address = new Address("127.0.0.1", 50003);
-                discoveredNodes.add(new SimpleDiscoveredNode(address));
-                address = new Address("127.0.0.1", 50004);
-                discoveredNodes.add(new SimpleDiscoveredNode(address));
+        public Iterable<DiscoveryNode> discoverNodes() {
+            return null;
+        }
 
-                return discoveredNodes;
+        @Override
+        public <T extends Comparable> T getOrNull(PropertyDefinition property) {
+            return super.getOrNull(property);
+        }
+
+        @Override
+        public <T extends Comparable> T getOrNull(String prefix, PropertyDefinition property) {
+            return super.getOrNull(prefix, property);
+        }
+
+        @Override
+        public <T extends Comparable> T getOrDefault(PropertyDefinition property, T defaultValue) {
+            return super.getOrDefault(property, defaultValue);
+        }
+
+        @Override
+        public <T extends Comparable> T getOrDefault(String prefix, PropertyDefinition property, T defaultValue) {
+            return super.getOrDefault(prefix, property, defaultValue);
+        }
+    }
+
+    private static class TestDiscoveryStrategy implements DiscoveryStrategy {
+
+        @Override
+        public void start() {
+        }
+
+        @Override
+        public Collection<DiscoveryNode> discoverNodes() {
+            try {
+                List<DiscoveryNode> discoveryNodes = new ArrayList<DiscoveryNode>(4);
+                Address address = new Address("127.0.0.1", 50001);
+                discoveryNodes.add(new SimpleDiscoveryNode(address));
+                address = new Address("127.0.0.1", 50002);
+                discoveryNodes.add(new SimpleDiscoveryNode(address));
+                address = new Address("127.0.0.1", 50003);
+                discoveryNodes.add(new SimpleDiscoveryNode(address));
+                address = new Address("127.0.0.1", 50004);
+                discoveryNodes.add(new SimpleDiscoveryNode(address));
+
+                return discoveryNodes;
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
@@ -221,7 +342,8 @@ public class DiscoverySpiTest
         }
 
         @Override
-        public DiscoveryStrategy newDiscoveryStrategy(Map<String, Comparable> properties) {
+        public DiscoveryStrategy newDiscoveryStrategy(DiscoveryNode discoveryNode, ILogger logger,
+                                                      Map<String, Comparable> properties) {
             return new TestDiscoveryStrategy();
         }
 
@@ -231,17 +353,73 @@ public class DiscoverySpiTest
         }
     }
 
-    public static class TestNodeFilter implements NodeFilter {
+    public static class CollectingDiscoveryStrategyFactory implements DiscoveryStrategyFactory {
 
-        private final List<DiscoveredNode> nodes = new ArrayList<DiscoveredNode>();
+        private final List<DiscoveryNode> discoveryNodes;
+
+        private CollectingDiscoveryStrategyFactory(List<DiscoveryNode> discoveryNodes) {
+            this.discoveryNodes = discoveryNodes;
+        }
 
         @Override
-        public boolean test(DiscoveredNode candidate) {
+        public Class<? extends DiscoveryStrategy> getDiscoveryStrategyType() {
+            return CollectingDiscoveryStrategy.class;
+        }
+
+        @Override
+        public DiscoveryStrategy newDiscoveryStrategy(DiscoveryNode node, ILogger logger, Map<String, Comparable> properties) {
+            return new CollectingDiscoveryStrategy(node, discoveryNodes, logger, properties);
+        }
+
+        @Override
+        public Collection<PropertyDefinition> getConfigurationProperties() {
+            return null;
+        }
+    }
+
+    private static class CollectingDiscoveryStrategy extends AbstractDiscoveryStrategy {
+
+        private final List<DiscoveryNode> discoveryNodes;
+        private final DiscoveryNode discoveryNode;
+
+        public CollectingDiscoveryStrategy(DiscoveryNode discoveryNode, List<DiscoveryNode> discoveryNodes, ILogger logger,
+                                           Map<String, Comparable> properties) {
+            super(logger, properties);
+            this.discoveryNodes = discoveryNodes;
+            this.discoveryNode = discoveryNode;
+        }
+
+        @Override
+        public void start() {
+            super.start();
+            discoveryNodes.add(discoveryNode);
+            getLogger();
+            getProperties();
+        }
+
+        @Override
+        public Iterable<DiscoveryNode> discoverNodes() {
+            return new ArrayList<DiscoveryNode>(discoveryNodes);
+        }
+
+        @Override
+        public void destroy() {
+            super.destroy();
+            discoveryNodes.remove(discoveryNode);
+        }
+    }
+
+    public static class TestNodeFilter implements NodeFilter {
+
+        private final List<DiscoveryNode> nodes = new ArrayList<DiscoveryNode>();
+
+        @Override
+        public boolean test(DiscoveryNode candidate) {
             nodes.add(candidate);
             return true;
         }
 
-        private List<DiscoveredNode> getNodes() {
+        private List<DiscoveryNode> getNodes() {
             return nodes;
         }
     }

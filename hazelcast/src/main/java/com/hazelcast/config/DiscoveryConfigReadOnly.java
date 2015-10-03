@@ -20,14 +20,14 @@ import com.hazelcast.spi.discovery.integration.DiscoveryServiceProvider;
 import com.hazelcast.spi.discovery.NodeFilter;
 
 /**
- * Readonly version of {@link DiscoveryStrategiesConfig}
+ * Readonly version of {@link DiscoveryConfig}
  */
-public class DiscoveryStrategiesConfigReadOnly
-        extends DiscoveryStrategiesConfig {
+public class DiscoveryConfigReadOnly
+        extends DiscoveryConfig {
 
-    DiscoveryStrategiesConfigReadOnly(DiscoveryStrategiesConfig discoveryStrategiesConfig) {
-        super(discoveryStrategiesConfig.getDiscoveryServiceProvider(), discoveryStrategiesConfig.getNodeFilter(),
-                discoveryStrategiesConfig.getNodeFilterClass(), discoveryStrategiesConfig.getDiscoveryStrategyConfigs());
+    DiscoveryConfigReadOnly(DiscoveryConfig discoveryConfig) {
+        super(discoveryConfig.getDiscoveryServiceProvider(), discoveryConfig.getNodeFilter(),
+                discoveryConfig.getNodeFilterClass(), discoveryConfig.getDiscoveryStrategyConfigs());
     }
 
     @Override

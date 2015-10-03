@@ -19,10 +19,9 @@ package com.hazelcast.jclouds;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.nio.Address;
-import com.hazelcast.spi.discovery.DiscoveredNode;
-import com.hazelcast.spi.discovery.DiscoveryMode;
+import com.hazelcast.spi.discovery.DiscoveryNode;
 import com.hazelcast.spi.discovery.DiscoveryStrategy;
-import com.hazelcast.spi.discovery.SimpleDiscoveredNode;
+import com.hazelcast.spi.discovery.SimpleDiscoveryNode;
 import org.jclouds.compute.domain.NodeMetadata;
 
 import java.net.InetAddress;
@@ -48,25 +47,25 @@ public class JCloudsDiscoveryStrategy implements DiscoveryStrategy {
     }
 
     @Override
-    public void start(DiscoveryMode discoveryMode) {
+    public void start() {
         this.computeServiceBuilder.build();
     }
 
     @Override
-    public Iterable<DiscoveredNode> discoverNodes() {
-        List<DiscoveredNode> discoveredNodes = new ArrayList<DiscoveredNode>();
+    public Iterable<DiscoveryNode> discoverNodes() {
+        List<DiscoveryNode> discoveryNodes = new ArrayList<DiscoveryNode>();
         try {
             Iterable<? extends NodeMetadata> nodes =  computeServiceBuilder.getFilteredNodes();
             for (NodeMetadata metadata : nodes) {
                 if (metadata.getStatus() != NodeMetadata.Status.RUNNING) {
                     continue;
                 }
-                discoveredNodes.add(buildDiscoveredNode(metadata));
+                discoveryNodes.add(buildDiscoveredNode(metadata));
             }
         } catch (Exception e) {
             throw new HazelcastException("Failed to get registered addresses", e);
         }
-        return discoveredNodes;
+        return discoveryNodes;
     }
 
     @Override
@@ -74,7 +73,7 @@ public class JCloudsDiscoveryStrategy implements DiscoveryStrategy {
         computeServiceBuilder.destroy();
     }
 
-    private DiscoveredNode buildDiscoveredNode(NodeMetadata metadata) {
+    private DiscoveryNode buildDiscoveredNode(NodeMetadata metadata) {
         Address privateAddressInstance = null;
         if (!metadata.getPrivateAddresses().isEmpty()) {
             InetAddress privateAddress = mapAddress(metadata.getPrivateAddresses().iterator().next());
@@ -87,7 +86,7 @@ public class JCloudsDiscoveryStrategy implements DiscoveryStrategy {
             publicAddressInstance =  new Address(publicAddress, computeServiceBuilder.getServicePort());
         }
 
-        return new SimpleDiscoveredNode(privateAddressInstance, publicAddressInstance);
+        return new SimpleDiscoveryNode(privateAddressInstance, publicAddressInstance);
     }
 
     private InetAddress mapAddress(String address) {

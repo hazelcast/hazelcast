@@ -19,7 +19,7 @@ package com.hazelcast.cluster.impl;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Address;
-import com.hazelcast.spi.discovery.DiscoveredNode;
+import com.hazelcast.spi.discovery.DiscoveryNode;
 import com.hazelcast.spi.discovery.integration.DiscoveryService;
 
 import java.util.ArrayList;
@@ -37,14 +37,14 @@ public class DiscoveryJoiner
 
     @Override
     protected Collection<Address> getPossibleAddresses() {
-        Iterable<DiscoveredNode> discoveredNodes = discoveryService.discoverNodes();
+        Iterable<DiscoveryNode> discoveredNodes = discoveryService.discoverNodes();
 
         MemberImpl localMember = node.nodeEngine.getLocalMember();
         Address localAddress = localMember.getAddress();
 
         Collection<Address> possibleMembers = new ArrayList<Address>();
-        for (DiscoveredNode discoveredNode : discoveredNodes) {
-            Address discoveredAddress = discoveredNode.getPrivateAddress();
+        for (DiscoveryNode discoveryNode : discoveredNodes) {
+            Address discoveredAddress = discoveryNode.getPrivateAddress();
             if (localAddress.equals(discoveredAddress)) {
                 continue;
             }

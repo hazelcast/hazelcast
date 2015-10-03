@@ -636,27 +636,27 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
 
     private void handleDiscoveryStrategies(Node node) {
         final JoinConfig join = config.getNetworkConfig().getJoin();
-        final DiscoveryStrategiesConfig discoveryStrategiesConfig = join.getDiscoveryStrategiesConfig();
+        final DiscoveryConfig discoveryConfig = join.getDiscoveryConfig();
         for (Node child : new IterableNodeList(node.getChildNodes())) {
             final String name = cleanNodeName(child.getNodeName());
             if ("discovery-strategy".equals(name)) {
-                handleDiscoveryStrategy(child, discoveryStrategiesConfig);
+                handleDiscoveryStrategy(child, discoveryConfig);
             } else if ("node-filter".equals(name)) {
-                handleDiscoveryNodeFilter(child, discoveryStrategiesConfig);
+                handleDiscoveryNodeFilter(child, discoveryConfig);
             }
         }
     }
 
-    private void handleDiscoveryNodeFilter(Node node, DiscoveryStrategiesConfig discoveryStrategiesConfig) {
+    private void handleDiscoveryNodeFilter(Node node, DiscoveryConfig discoveryConfig) {
         final NamedNodeMap atts = node.getAttributes();
 
         final Node att = atts.getNamedItem("class");
         if (att != null) {
-            discoveryStrategiesConfig.setNodeFilterClass(getTextContent(att).trim());
+            discoveryConfig.setNodeFilterClass(getTextContent(att).trim());
         }
     }
 
-    private void handleDiscoveryStrategy(Node node, DiscoveryStrategiesConfig discoveryStrategiesConfig) {
+    private void handleDiscoveryStrategy(Node node, DiscoveryConfig discoveryConfig) {
         final NamedNodeMap atts = node.getAttributes();
 
         boolean enabled = false;
@@ -684,7 +684,7 @@ public class XmlConfigBuilder extends AbstractConfigBuilder implements ConfigBui
             }
         }
 
-        discoveryStrategiesConfig.addDiscoveryProviderConfig(new DiscoveryStrategyConfig(clazz, properties));
+        discoveryConfig.addDiscoveryProviderConfig(new DiscoveryStrategyConfig(clazz, properties));
     }
 
     private void handleAWS(Node node) {

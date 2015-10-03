@@ -17,6 +17,9 @@
 package com.hazelcast.spi.discovery;
 
 import com.hazelcast.config.properties.PropertyDefinition;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.spi.annotation.Beta;
 
 import java.util.Collection;
 import java.util.Map;
@@ -37,7 +40,10 @@ import java.util.Map;
  * provider plugins. Any kind of violation while verification of any type conversion error
  * as well as missing non-optional properties will throw an exception and prevent the node
  * from starting up.
+ *
+ * @since 3.6
  */
+@Beta
 public interface DiscoveryStrategyFactory {
 
     /**
@@ -49,12 +55,17 @@ public interface DiscoveryStrategyFactory {
 
     /**
      * Instantiates a new instance of the {@link DiscoveryStrategy} with the given configuration
-     * properties.
+     * properties. The provided {@link HazelcastInstance} can be used to register instances in
+     * a service registry whenever the discovery strategy is started.
      *
-     * @param properties the properties parsed from the configuration
+     * @param discoveryNode the current local <tt>DiscoveryNode</tt>, representing the local
+     *                      connection information if running on a Hazelcast member, otherwise on
+     *                      Hazelcast clients always <tt>null</tt>
+     * @param logger        the logger instance
+     * @param properties    the properties parsed from the configuration
      * @return a new instance of the discovery strategy
      */
-    DiscoveryStrategy newDiscoveryStrategy(Map<String, Comparable> properties);
+    DiscoveryStrategy newDiscoveryStrategy(DiscoveryNode discoveryNode, ILogger logger, Map<String, Comparable> properties);
 
     /**
      * Returns a set of the expected configuration properties. These properties contain

@@ -17,6 +17,7 @@
 package com.hazelcast.config.properties;
 
 import com.hazelcast.core.TypeConverter;
+import com.hazelcast.util.Preconditions;
 
 /**
  * This enum class contains basic {@link TypeConverter} implementations to
@@ -29,6 +30,7 @@ public enum PropertyTypeConverter implements TypeConverter {
     STRING {
         @Override
         public Comparable convert(Comparable value) {
+            Preconditions.checkNotNull(value, "The value to convert cannot be null");
             return value.toString();
         }
     },
@@ -110,5 +112,4 @@ public enum PropertyTypeConverter implements TypeConverter {
             throw new IllegalArgumentException("Cannot convert to boolean");
         }
     }
-    ;
 }

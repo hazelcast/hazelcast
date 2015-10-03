@@ -16,30 +16,37 @@
 
 package com.hazelcast.client.spi.impl.discovery;
 
+import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.client.config.XmlClientConfigBuilder;
-import com.hazelcast.client.test.TestHazelcastFactory;
+import com.hazelcast.client.connection.AddressTranslator;
 import com.hazelcast.config.AwsConfig;
 import com.hazelcast.config.Config;
-import com.hazelcast.config.DiscoveryStrategiesConfig;
+import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.DiscoveryStrategyConfig;
 import com.hazelcast.config.InterfacesConfig;
+import com.hazelcast.config.JoinConfig;
 import com.hazelcast.config.properties.PropertyDefinition;
 import com.hazelcast.config.properties.PropertyTypeConverter;
 import com.hazelcast.config.properties.SimplePropertyDefinition;
+import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
-import com.hazelcast.spi.discovery.DiscoveredNode;
-import com.hazelcast.spi.discovery.DiscoveryMode;
-import com.hazelcast.spi.discovery.integration.DiscoveryService;
-import com.hazelcast.spi.discovery.integration.DiscoveryServiceProvider;
+import com.hazelcast.spi.discovery.AbstractDiscoveryStrategy;
+import com.hazelcast.spi.discovery.DiscoveryNode;
 import com.hazelcast.spi.discovery.DiscoveryStrategy;
 import com.hazelcast.spi.discovery.DiscoveryStrategyFactory;
 import com.hazelcast.spi.discovery.NodeFilter;
-import com.hazelcast.spi.discovery.SimpleDiscoveredNode;
+import com.hazelcast.spi.discovery.SimpleDiscoveryNode;
 import com.hazelcast.spi.discovery.impl.DefaultDiscoveryService;
 import com.hazelcast.spi.discovery.impl.DefaultDiscoveryServiceProvider;
+import com.hazelcast.spi.discovery.integration.DiscoveryMode;
+import com.hazelcast.spi.discovery.integration.DiscoveryService;
+import com.hazelcast.spi.discovery.integration.DiscoveryServiceProvider;
+import com.hazelcast.spi.discovery.integration.DiscoveryServiceSettings;
 import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -47,7 +54,6 @@ import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-import org.xml.sax.SAXException;
 
 import javax.xml.XMLConstants;
 import javax.xml.transform.Source;
@@ -63,12 +69,18 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CopyOnWriteArrayList;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
 public class ClientDiscoverySpiTest extends HazelcastTestSupport {
+
+    private static final ILogger LOGGER = Logger.getLogger(ClientDiscoverySpiTest.class);
 
     @Test
     public void testSchema() throws Exception {
@@ -95,12 +107,12 @@ public class ClientDiscoverySpiTest extends HazelcastTestSupport {
         AwsConfig awsConfig = networkConfig.getAwsConfig();
         assertNull(awsConfig);
 
-        DiscoveryStrategiesConfig discoveryStrategiesConfig = networkConfig.getDiscoveryStrategiesConfig();
-        assertTrue(discoveryStrategiesConfig.isEnabled());
+        DiscoveryConfig discoveryConfig = networkConfig.getDiscoveryConfig();
+        assertTrue(discoveryConfig.isEnabled());
 
-        assertEquals(1, discoveryStrategiesConfig.getDiscoveryStrategyConfigs().size());
+        assertEquals(1, discoveryConfig.getDiscoveryStrategyConfigs().size());
 
-        DiscoveryStrategyConfig providerConfig = discoveryStrategiesConfig.getDiscoveryStrategyConfigs().iterator().next();
+        DiscoveryStrategyConfig providerConfig = discoveryConfig.getDiscoveryStrategyConfigs().iterator().next();
 
         assertEquals(3, providerConfig.getProperties().size());
         assertEquals("foo", providerConfig.getProperties().get("key-string"));
@@ -110,25 +122,40 @@ public class ClientDiscoverySpiTest extends HazelcastTestSupport {
 
     @Test
     public void testNodeStartup() {
-        TestHazelcastFactory factory = new TestHazelcastFactory();
-
         Config config = new Config();
+        config.setProperty("hazelcast.discovery.enabled", "true");
+
         config.getNetworkConfig().setPort(50001);
         InterfacesConfig interfaces = config.getNetworkConfig().getInterfaces();
         interfaces.clear();
         interfaces.setEnabled(true);
         interfaces.addInterface("127.0.0.1");
 
-        final HazelcastInstance hazelcastInstance1 = factory.newHazelcastInstance(config);
-        final HazelcastInstance hazelcastInstance2 = factory.newHazelcastInstance(config);
-        final HazelcastInstance hazelcastInstance3 = factory.newHazelcastInstance(config);
+        List<DiscoveryNode> discoveryNodes = new CopyOnWriteArrayList<DiscoveryNode>();
+        DiscoveryStrategyFactory factory = new CollectingDiscoveryStrategyFactory(discoveryNodes);
+
+        JoinConfig join = config.getNetworkConfig().getJoin();
+        join.getTcpIpConfig().setEnabled(false);
+        join.getMulticastConfig().setEnabled(false);
+        DiscoveryConfig discoveryConfig = join.getDiscoveryConfig();
+        discoveryConfig.getDiscoveryStrategyConfigs().clear();
+
+        DiscoveryStrategyConfig strategyConfig = new DiscoveryStrategyConfig(factory, Collections.<String, Comparable>emptyMap());
+        discoveryConfig.addDiscoveryProviderConfig(strategyConfig);
+
+        final HazelcastInstance hazelcastInstance1 = Hazelcast.newHazelcastInstance(config);
+        final HazelcastInstance hazelcastInstance2 = Hazelcast.newHazelcastInstance(config);
+        final HazelcastInstance hazelcastInstance3 = Hazelcast.newHazelcastInstance(config);
 
         try {
-            String xmlFileName = "hazelcast-client-discovery-spi-test.xml";
-            InputStream xmlResource = ClientDiscoverySpiTest.class.getClassLoader().getResourceAsStream(xmlFileName);
+            ClientConfig clientConfig = new ClientConfig();
+            discoveryConfig = clientConfig.getNetworkConfig().getDiscoveryConfig();
+            discoveryConfig.getDiscoveryStrategyConfigs().clear();
 
-            ClientConfig clientConfig = new XmlClientConfigBuilder(xmlResource).build();
-            final HazelcastInstance client = factory.newHazelcastClient(clientConfig);
+            strategyConfig = new DiscoveryStrategyConfig(factory, Collections.<String, Comparable>emptyMap());
+            discoveryConfig.addDiscoveryProviderConfig(strategyConfig);
+
+            final HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
 
             assertNotNull(hazelcastInstance1);
             assertNotNull(hazelcastInstance2);
@@ -147,7 +174,8 @@ public class ClientDiscoverySpiTest extends HazelcastTestSupport {
                 }
             });
         } finally {
-            factory.shutdownAll();
+            HazelcastClient.shutdownAll();
+            Hazelcast.shutdownAll();
         }
     }
 
@@ -159,13 +187,10 @@ public class ClientDiscoverySpiTest extends HazelcastTestSupport {
 
         ClientNetworkConfig networkConfig = clientConfig.getNetworkConfig();
 
-        DiscoveryStrategiesConfig discoveryStrategiesConfig = networkConfig.getDiscoveryStrategiesConfig();
-        assertNotNull(discoveryStrategiesConfig);
-        assertNotNull(discoveryStrategiesConfig.getNodeFilterClass());
+        DiscoveryConfig discoveryConfig = networkConfig.getDiscoveryConfig();
 
         DiscoveryServiceProvider provider = new DefaultDiscoveryServiceProvider();
-        DiscoveryService discoveryService = provider.newDiscoveryService(DiscoveryMode.Client,
-                discoveryStrategiesConfig, ClientDiscoverySpiTest.class.getClassLoader());
+        DiscoveryService discoveryService = provider.newDiscoveryService(buildDiscoveryServiceSettings(discoveryConfig));
 
         discoveryService.start();
         discoveryService.discoverNodes();
@@ -179,27 +204,56 @@ public class ClientDiscoverySpiTest extends HazelcastTestSupport {
         assertEquals(4, nodeFilter.getNodes().size());
     }
 
+    @Test
+    public void test_discovery_address_translator() throws Exception {
+        String xmlFileName = "hazelcast-client-discovery-spi-test.xml";
+        InputStream xmlResource = ClientDiscoverySpiTest.class.getClassLoader().getResourceAsStream(xmlFileName);
+        ClientConfig clientConfig = new XmlClientConfigBuilder(xmlResource).build();
+
+        ClientNetworkConfig networkConfig = clientConfig.getNetworkConfig();
+
+        DiscoveryConfig discoveryConfig = networkConfig.getDiscoveryConfig();
+
+        DiscoveryServiceProvider provider = new DefaultDiscoveryServiceProvider();
+        DiscoveryService discoveryService = provider.newDiscoveryService(buildDiscoveryServiceSettings(discoveryConfig));
+
+        AddressTranslator translator = new DiscoveryAddressTranslator(discoveryService);
+
+        Address address = new Address("127.0.0.1", 50001);
+
+        assertNull(translator.translate(null));
+        assertEquals(address, translator.translate(address));
+
+        // Enforce refresh of the internal mapping
+        assertEquals(address, translator.translate(address));
+    }
+
+    private DiscoveryServiceSettings buildDiscoveryServiceSettings(DiscoveryConfig config) {
+        return new DiscoveryServiceSettings().setConfigClassLoader(ClientDiscoverySpiTest.class.getClassLoader())
+                                             .setDiscoveryConfig(config).setDiscoveryMode(DiscoveryMode.Client).setLogger(LOGGER);
+    }
+
     private static class TestDiscoveryStrategy implements DiscoveryStrategy {
 
         @Override
-        public void start(DiscoveryMode discoveryMode) {
+        public void start() {
         }
 
         @Override
-        public Collection<DiscoveredNode> discoverNodes() {
+        public Collection<DiscoveryNode> discoverNodes() {
             try {
-                List<DiscoveredNode> discoveredNodes = new ArrayList<DiscoveredNode>(4);
+                List<DiscoveryNode> discoveryNodes = new ArrayList<DiscoveryNode>(4);
                 Address privateAddress = new Address("127.0.0.1", 1);
                 Address publicAddress = new Address("127.0.0.1", 50001);
-                discoveredNodes.add(new SimpleDiscoveredNode(privateAddress, publicAddress));
+                discoveryNodes.add(new SimpleDiscoveryNode(privateAddress, publicAddress));
                 publicAddress = new Address("127.0.0.1", 50002);
-                discoveredNodes.add(new SimpleDiscoveredNode(privateAddress, publicAddress));
+                discoveryNodes.add(new SimpleDiscoveryNode(privateAddress, publicAddress));
                 publicAddress = new Address("127.0.0.1", 50003);
-                discoveredNodes.add(new SimpleDiscoveredNode(privateAddress, publicAddress));
+                discoveryNodes.add(new SimpleDiscoveryNode(privateAddress, publicAddress));
                 publicAddress = new Address("127.0.0.1", 50004);
-                discoveredNodes.add(new SimpleDiscoveredNode(privateAddress, publicAddress));
+                discoveryNodes.add(new SimpleDiscoveryNode(privateAddress, publicAddress));
 
-                return discoveredNodes;
+                return discoveryNodes;
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
@@ -229,7 +283,8 @@ public class ClientDiscoverySpiTest extends HazelcastTestSupport {
         }
 
         @Override
-        public DiscoveryStrategy newDiscoveryStrategy(Map<String, Comparable> properties) {
+        public DiscoveryStrategy newDiscoveryStrategy(DiscoveryNode discoveryNode, ILogger logger,
+                                                      Map<String, Comparable> properties) {
             return new TestDiscoveryStrategy();
         }
 
@@ -239,17 +294,75 @@ public class ClientDiscoverySpiTest extends HazelcastTestSupport {
         }
     }
 
-    public static class TestNodeFilter implements NodeFilter {
+    public static class CollectingDiscoveryStrategyFactory implements DiscoveryStrategyFactory {
 
-        private final List<DiscoveredNode> nodes = new ArrayList<DiscoveredNode>();
+        private final List<DiscoveryNode> discoveryNodes;
+
+        private CollectingDiscoveryStrategyFactory(List<DiscoveryNode> discoveryNodes) {
+            this.discoveryNodes = discoveryNodes;
+        }
 
         @Override
-        public boolean test(DiscoveredNode candidate) {
+        public Class<? extends DiscoveryStrategy> getDiscoveryStrategyType() {
+            return CollectingDiscoveryStrategy.class;
+        }
+
+        @Override
+        public DiscoveryStrategy newDiscoveryStrategy(DiscoveryNode discoveryNode, ILogger logger,
+                                                      Map<String, Comparable> properties) {
+            return new CollectingDiscoveryStrategy(discoveryNode, discoveryNodes, logger, properties);
+        }
+
+        @Override
+        public Collection<PropertyDefinition> getConfigurationProperties() {
+            return null;
+        }
+    }
+
+
+    private static class CollectingDiscoveryStrategy extends AbstractDiscoveryStrategy {
+
+        private final List<DiscoveryNode> discoveryNodes;
+        private final DiscoveryNode discoveryNode;
+
+        public CollectingDiscoveryStrategy(DiscoveryNode discoveryNode, List<DiscoveryNode> discoveryNodes, ILogger logger,
+                                           Map<String, Comparable> properties) {
+            super(logger, properties);
+            this.discoveryNodes = discoveryNodes;
+            this.discoveryNode = discoveryNode;
+        }
+
+        @Override
+        public void start() {
+            super.start();
+            discoveryNodes.add(discoveryNode);
+            getLogger();
+            getProperties();
+        }
+
+        @Override
+        public Iterable<DiscoveryNode> discoverNodes() {
+            return new ArrayList<DiscoveryNode>(discoveryNodes);
+        }
+
+        @Override
+        public void destroy() {
+            super.destroy();
+            discoveryNodes.remove(discoveryNode);
+        }
+    }
+
+    public static class TestNodeFilter implements NodeFilter {
+
+        private final List<DiscoveryNode> nodes = new ArrayList<DiscoveryNode>();
+
+        @Override
+        public boolean test(DiscoveryNode candidate) {
             nodes.add(candidate);
             return true;
         }
 
-        private List<DiscoveredNode> getNodes() {
+        private List<DiscoveryNode> getNodes() {
             return nodes;
         }
     }
